@@ -34,7 +34,14 @@ function Bar(props: {
   );
 }
 
-export function FighterPanel({ fighter }: { fighter: FighterSnapshot }) {
+export function FighterPanel({
+  fighter,
+  tags = [],
+}: {
+  fighter: FighterSnapshot;
+  /** Elite modifiers or "Boss", shown on the plaque. */
+  tags?: readonly string[];
+}) {
   const next = fighter.rotation[fighter.nextSlot];
   return (
     <section className={`fighter fighter-${fighter.side}`} aria-label={fighter.name}>
@@ -42,6 +49,20 @@ export function FighterPanel({ fighter }: { fighter: FighterSnapshot }) {
         <h2>{fighter.name}</h2>
         <span className="level">Lv {fighter.level}</span>
       </header>
+      {tags.length > 0 && (
+        <ul className="fighter-tags" aria-label="Modifiers">
+          {tags.map((t) => (
+            <li key={t} className={t === "Boss" ? "tag boss" : "tag elite"}>
+              {t}
+            </li>
+          ))}
+        </ul>
+      )}
+      {fighter.telegraph && (
+        <p className="telegraph" role="alert" data-testid="telegraph">
+          Winding up {fighter.telegraph.skill}! {fighter.telegraph.remaining.toFixed(1)}s
+        </p>
+      )}
       <p className="weapon">
         {fighter.weapon} · {fighter.defaultAttack} · {HEAT_BEHAVIOR_LABEL[fighter.heatBehavior]}
       </p>

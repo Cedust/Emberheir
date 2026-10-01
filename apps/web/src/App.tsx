@@ -1,6 +1,6 @@
 import { GAME_TITLE } from "@emberheir/content";
 import { SIM_VERSION } from "@emberheir/sim";
-import { CombatDebug } from "./combat/CombatDebug";
+import { GameApp } from "./game/GameApp";
 
 export function App() {
   const buildDate = new Date(__BUILD_TIME__).toLocaleString();
@@ -8,11 +8,11 @@ export function App() {
   return (
     <main className="shell">
       <header className="page-header">
-        <p className="eyebrow">Dev Preview · M2 Items & Affixes</p>
+        <p className="eyebrow">Dev Preview · M3 Progression & Act 1</p>
         <h1>{GAME_TITLE}</h1>
       </header>
 
-      <CombatDebug />
+      <GameApp />
 
       <dl className="build">
         <dt>Build</dt>

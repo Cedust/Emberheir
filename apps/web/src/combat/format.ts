@@ -14,14 +14,7 @@ export interface LogLine {
   readonly text: string;
   /** Damage type or ailment for coloring, if any. */
   readonly tone:
-    | DamageType
-    | AilmentType
-    | "heal"
-    | "end"
-    | "skill"
-    | "trigger"
-    | "telegraph"
-    | null;
+    DamageType | AilmentType | "heal" | "end" | "skill" | "trigger" | "telegraph" | null;
 }
 
 const AILMENT_NAMES: Record<AilmentType, string> = {
