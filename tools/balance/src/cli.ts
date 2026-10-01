@@ -9,7 +9,7 @@ import {
 } from "@emberheir/content";
 import { Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
-import { playAct, summarizeActRuns } from "./act";
+import { playGenerations, summarizeActRuns } from "./act";
 import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
@@ -25,30 +25,40 @@ function runActMode(): void {
   if (!act) throw new Error(`Act ${args.act} is not in the PoC`);
   const runs = Math.min(args.runs, 500);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
-  console.log(`act=${act.name} runs=${runs} seed=${args.seed} attempts=${args.attempts}`);
+  console.log(
+    `act=${act.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${args.generations}`,
+  );
   console.log("");
   const rows = [];
   for (const starterWeapon of POC_GAME_DATA.starterWeapons) {
     if (args.weapon !== "all" && args.weapon !== starterWeapon) continue;
-    const reports = Array.from({ length: runs }, (_, i) =>
-      playAct(POC_GAME_DATA, {
+    const runsByGeneration = Array.from({ length: runs }, (_, i) =>
+      playGenerations(POC_GAME_DATA, {
         seed: args.seed + i,
         starterWeapon,
         actId: act.id,
         maxAttempts: args.attempts,
+        generations: args.generations,
       }),
     );
-    const s = summarizeActRuns(reports);
-    rows.push({
-      weapon: starterWeapon,
-      "cleared %": (s.clearRate * 100).toFixed(0),
-      "deaths before clear": s.avgDeaths.toFixed(1),
-      "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
-      "level at boss": s.avgLevelAtBoss.toFixed(1),
-      "avg fight s": s.avgFightSeconds.toFixed(1),
-      "boss fight s": s.avgBossSeconds.toFixed(1),
-      "elites / run": s.avgElites.toFixed(1),
-    });
+    for (let g = 1; g <= args.generations; g++) {
+      const reports = runsByGeneration.flatMap((r) => r.filter((x) => x.generation === g));
+      const s = summarizeActRuns(reports);
+      rows.push({
+        weapon: starterWeapon,
+        gen: g,
+        runs: reports.length,
+        "cleared %": (s.clearRate * 100).toFixed(0),
+        "deaths before clear": s.avgDeaths.toFixed(1),
+        "1st fight lost %": (s.firstFightLossRate * 100).toFixed(1),
+        "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
+        "level at boss": s.avgLevelAtBoss.toFixed(1),
+        "avg fight s": s.avgFightSeconds.toFixed(1),
+        "p90 fight s": s.p90FightSeconds.toFixed(1),
+        "boss fight s": s.avgBossSeconds.toFixed(1),
+        "elites / run": s.avgElites.toFixed(1),
+      });
+    }
   }
   console.table(rows);
 }

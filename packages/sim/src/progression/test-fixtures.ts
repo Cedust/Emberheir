@@ -42,8 +42,12 @@ export const TEST_ACT: ActData = {
 export const DEADLY_ACT: ActData = {
   ...TEST_ACT,
   id: "deadly-act",
+  number: 2,
   enemies: [DEADLY_ENEMY],
 };
+
+/** The last act of the test run: its boss starts the Prestige. */
+export const FINAL_ACT: ActData = { ...TEST_ACT, id: "final-act", number: 3 };
 
 export const SWORD_SKILL: SkillDefinition = { ...TEST_SKILL, id: "sword-skill", name: "Cut" };
 export const TREE_SKILL: SkillDefinition = { ...TEST_SKILL, id: "tree-skill", name: "Bash" };
@@ -119,7 +123,7 @@ export const TEST_GAME_DATA: GameData = {
   starterWeapons: ["test-sword", "test-wand"],
   startSkills: { "test-blade": SWORD_SKILL },
   skillTree: TEST_TREE,
-  acts: [TEST_ACT, DEADLY_ACT],
+  acts: [TEST_ACT, DEADLY_ACT, FINAL_ACT],
   eliteModifiers: [
     { id: "tough", name: "Tough", description: "", bonuses: { armor: 5 } },
     { id: "fast", name: "Fast", description: "", bonuses: { attackSpeed: 0.5 } },

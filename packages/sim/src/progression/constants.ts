@@ -6,15 +6,20 @@ import type { ItemSlot, Rarity } from "../items/types";
  * section 2 and 3, loot-rewards-v1.md, town-crafting-v1.md.
  */
 export const PROGRESSION = {
-  /** Level Cap of the first run; +10 per prestige later. */
+  /** Level Cap of the first run... */
   levelCap: 10,
+  /** ...and +10 per Prestige (level 100 in the tenth run). */
+  levelCapPerPrestige: 10,
   attributePointsPerLevel: 3,
   skillPointsPerLevel: 1,
   /**
    * XP needed to go from level N to N + 1 (index 0 = level 1 → 2). Steep early: a first clear
-   * of Act 1 lands around level 4–5.
+   * of Act 1 lands around level 5–6. Levels 10–20 are for the second run (after a Prestige).
    */
-  xpToNextLevel: [80, 140, 220, 320, 450, 620, 830, 1100, 1450],
+  xpToNextLevel: [
+    80, 140, 220, 320, 450, 620, 830, 1100, 1450, 1900, 2400, 3000, 3700, 4500, 5400, 6400, 7500,
+    8700, 10000,
+  ],
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: 20,
   xpPerMonsterLevel: 10,
@@ -57,6 +62,8 @@ export const PROGRESSION = {
 
   /** Elite chance = base + perStage × (stage in act − 1) (+ per act / prestige later). */
   eliteChanceBase: 0.05,
+  /** No Elites on the first stages of an act, so a fresh Heir cannot lose its first fight. */
+  eliteFreeStages: 2,
   eliteChancePerStage: 0.005,
   eliteChancePerAct: 0.02,
   eliteChanceCap: 0.5,
@@ -78,6 +85,21 @@ export const PROGRESSION = {
 
   /** Rotation Slots before the first prestige. */
   startRotationSlots: 1,
+
+  /**
+   * Prestige light (poc-umsetzungsplan-v1.md, M5): every Prestige gives one more Seal (Save
+   * Token), Rotation Slot 2 (the first Battle Plan upgrade), one Harvester's Ember and a fixed
+   * amount of Salvage Dust that replaces the burned stash (town-crafting-v1.md).
+   */
+  prestigeDustPerLevel: 150,
+  prestigeHarvesterEmber: 1,
+  /** Rotation Slots after the first Prestige. More Battle Plan upgrades come after the PoC. */
+  prestigeRotationSlots: 2,
+  /**
+   * Monster Levels of every act go up by this much per Prestige. Act 1 stays easy for a hero
+   * who keeps level and Seals but loses the rest of the gear (game-design-document-v1.md 3).
+   */
+  monsterLevelsPerPrestige: 2,
 
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,

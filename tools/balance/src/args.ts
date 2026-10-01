@@ -17,6 +17,8 @@ export interface BalanceArgs {
   act: number;
   /** Act mode: attempts (deaths + 1) before a run counts as stuck. */
   attempts: number;
+  /** Act mode: generations to play; each one after the first starts with a Prestige. */
+  generations: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -33,6 +35,7 @@ const DEFAULTS: BalanceArgs = {
   ilvl: 0,
   act: 0,
   attempts: 30,
+  generations: 1,
 };
 
 const NUMBER_FLAGS = {
@@ -42,6 +45,7 @@ const NUMBER_FLAGS = {
   "--ilvl": "ilvl",
   "--act": "act",
   "--attempts": "attempts",
+  "--generations": "generations",
 } as const;
 const STRING_FLAGS = { "--weapon": "weapon", "--enemy": "enemy" } as const;
 
@@ -73,5 +77,6 @@ export function parseArgs(argv: readonly string[]): BalanceArgs {
     }
   }
   if (args.level < 1) throw new Error("--level must be at least 1");
+  if (args.generations < 1) throw new Error("--generations must be at least 1");
   return args;
 }
