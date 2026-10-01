@@ -1,0 +1,13 @@
+{
+  "name": "@emberheir/sim",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Pure, deterministic game logic (combat, items, progression). No browser, no React.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "typecheck": "tsc -p tsconfig.json"
+  }
+}

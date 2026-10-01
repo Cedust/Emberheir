@@ -1,0 +1,18 @@
+{
+  "name": "@emberheir/balance",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "CLI to simulate many fights and report win rates and fight durations.",
+  "scripts": {
+    "start": "tsx src/cli.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "@emberheir/content": "*",
+    "@emberheir/sim": "*"
+  },
+  "devDependencies": {
+    "tsx": "^4.23.15"
+  }
+}
