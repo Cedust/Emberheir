@@ -13,12 +13,17 @@ import {
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../ui/Icon";
+import { useStageSize } from "../../ui/Stage";
 import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { ArenaScene, type EnemyLook, type HeroLook } from "./ArenaScene";
 import { Plaque, type PlaqueInfo } from "./Plaque";
 import { skillIcon, skillTint } from "./skills";
+
+/** Arena area between the run header and the skill footer, in stage pixels. */
+const ARENA_TOP = 60;
+const FOOTER_H = 132;
 
 /** `?dev` in the URL shows fight speed and Skip for testing (not part of the game design). */
 export const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
@@ -94,6 +99,10 @@ export function BattleView(props: {
   const [flash, setFlash] = useState<{ slot: number; n: number } | null>(null);
   const [speed, setSpeed] = useState<number>(1);
   const sceneRef = useRef<ArenaScene | null>(null);
+  const stage = useStageSize();
+  const arenaW = stage.w;
+  const arenaH = stage.h - ARENA_TOP - FOOTER_H;
+  const arenaRes = Math.min(4, (window.devicePixelRatio || 1) * stage.scale);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const pausedRef = useRef(props.paused);
   const speedRef = useRef(speed);
@@ -111,6 +120,7 @@ export function BattleView(props: {
     if (!host) return;
     const scene = new ArenaScene();
     scene.showNumbers = settings.damageNumbers;
+    scene.layout(arenaW, arenaH, arenaRes);
     sceneRef.current = scene;
     void scene.mount(host, looks.heroLook, looks.enemyLook);
     return () => {
@@ -120,6 +130,9 @@ export function BattleView(props: {
     // The looks are fixed for one encounter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+  useEffect(() => {
+    sceneRef.current?.layout(arenaW, arenaH, arenaRes);
+  }, [arenaW, arenaH, arenaRes]);
   useEffect(() => {
     if (sceneRef.current) sceneRef.current.showNumbers = settings.damageNumbers;
   }, [settings.damageNumbers]);

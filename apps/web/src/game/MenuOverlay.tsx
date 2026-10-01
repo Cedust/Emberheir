@@ -1,6 +1,6 @@
 import { AUTO_FLASK_OPTIONS, type SettingsApi } from "../ui/settings";
 import { Icon } from "../ui/Icon";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function SettingsPanel(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
@@ -56,6 +56,42 @@ export function SettingsPanel(props: { api: SettingsApi }) {
             </button>
           ))}
         </div>
+      </div>
+      <FullscreenRow />
+    </div>
+  );
+}
+
+/** Window or fullscreen (same as F11). Browsers only allow it after a click, so it is not saved. */
+function FullscreenRow() {
+  const [on, setOn] = useState(() => document.fullscreenElement !== null);
+  useEffect(() => {
+    const sync = () => setOn(document.fullscreenElement !== null);
+    document.addEventListener("fullscreenchange", sync);
+    return () => document.removeEventListener("fullscreenchange", sync);
+  }, []);
+  if (!document.fullscreenEnabled) return null;
+  const set = (v: boolean) => {
+    if (v === on) return;
+    const done = v ? document.documentElement.requestFullscreen() : document.exitFullscreen();
+    done.catch(() => {});
+  };
+  return (
+    <div className="setting-row">
+      <span>Display</span>
+      <div className="segmented" role="radiogroup" aria-label="Display">
+        {[false, true].map((v) => (
+          <button
+            key={String(v)}
+            type="button"
+            role="radio"
+            aria-checked={on === v}
+            className={on === v ? "on" : ""}
+            onClick={() => set(v)}
+          >
+            {v ? "Fullscreen" : "Window"}
+          </button>
+        ))}
       </div>
     </div>
   );

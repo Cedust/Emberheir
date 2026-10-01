@@ -68,7 +68,12 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
       aria-label={text.title}
       role="status"
     >
-      <svg className="ash" viewBox="0 0 1440 900" aria-hidden="true">
+      <svg
+        className="ash"
+        viewBox="0 0 1440 900"
+        preserveAspectRatio="xMidYMid slice"
+        aria-hidden="true"
+      >
         {ASH.map((a, i) => (
           <circle
             key={i}

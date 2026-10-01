@@ -55,6 +55,10 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
+  // A fixed new-game seed, so the first fight is always won.
+  await page.addInitScript(() => {
+    Math.random = () => 0.5;
+  });
   // ?dev shows the Skip button in fights.
   await page.goto("/?dev");
   await page.getByRole("button", { name: "New Game" }).click();

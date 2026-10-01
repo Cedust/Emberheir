@@ -19,7 +19,7 @@ import { useGame } from "./useGame";
 type Overlay = "character" | "tree" | "menu" | "compendium" | null;
 type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | null;
 
-/** The playable PoC: title → camp → Act 1 → camp, on a 1440 × 900 stage. */
+/** The playable PoC: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
 export function GameApp() {
   const game = useGame();
   const settings = useSettings();

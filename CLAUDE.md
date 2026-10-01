@@ -43,6 +43,10 @@ npm run test:e2e   # Playwright smoke tests (builds the web app)
   `<type>(<scope>): <summary>`, e.g. `feat(sim): add Heat bar`, `fix(web): ...`, `chore(ci): ...`.
   Types: `feat`, `fix`, `refactor`, `test`, `docs`, `chore`, `ci`, `build`, `perf`, `style`.
   Scopes: `sim`, `content`, `web`, `balance`, `docs`, `ci`, or omit for repo-wide changes.
+- Resolution independence (Timo): base is 1080p at 16:9. Screens are laid out in stage pixels
+  (always 900 tall, width from the aspect ratio, see `apps/web/src/ui/Stage.tsx`), so 1080p and
+  4K look identical. The game fills the window, no main view scrolls, and on ultrawide the
+  controls stay in the centered 16:9 area (`var(--safe-x)`). `e2e/resolution.spec.ts` checks it.
 - Use the UI tokens from `docs/design/ui-look-v1.md` (already defined in
   `apps/web/src/theme.css`). Light mode = Aged Parchment, dark mode = Scorched Parchment.
 

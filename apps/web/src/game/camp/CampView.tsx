@@ -2,6 +2,7 @@ import { POC_GAME_DATA } from "@emberheir/content";
 import { type GameState, PROGRESSION } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
+import { useStageSize } from "../../ui/Stage";
 import { fmt, walletEntries } from "../../ui/items";
 import type { GameApi } from "../useGame";
 
@@ -250,9 +251,20 @@ function Figure(props: { p: Persona; on: boolean }) {
   );
 }
 
-function Scene(props: { roadName: string }) {
+/** Width of the drawn camp; wider screens see more sky, hills and ground at the sides. */
+const SCENE_W = 1440;
+const BLEED = 1200;
+
+function Scene(props: { roadName: string; w: number; h: number; ox: number }) {
+  const { w, h, ox } = props;
   return (
-    <svg className="camp-scene" width="1440" height="836" viewBox="0 0 1440 836" aria-hidden="true">
+    <svg
+      className="camp-scene"
+      width={w}
+      height={h}
+      viewBox={`${-ox} 0 ${w} ${h}`}
+      aria-hidden="true"
+    >
       <defs>
         <linearGradient id="camp-sky" x1="0" y1="0" x2="0" y2="1">
           <stop offset="0" stopColor="#27313d" />
@@ -274,27 +286,33 @@ function Scene(props: { roadName: string }) {
           <stop offset="1" stopColor="#4a3f2c" stopOpacity="0" />
         </radialGradient>
       </defs>
-      <rect x="0" y="0" width="1440" height="320" fill="url(#camp-sky)" />
+      <rect x={-BLEED} y="0" width={SCENE_W + 2 * BLEED} height="320" fill="url(#camp-sky)" />
       <circle cx="1180" cy="120" r="28" fill="#f6dca8" opacity="0.8" />
       <path
-        d="M0 300 Q120 230 240 280 T480 270 T760 250 T1040 275 T1300 245 T1440 270 L1440 330 L0 330 Z"
+        d="M-1200 280 Q-900 230 -600 285 T-240 260 T0 300 Q120 230 240 280 T480 270 T760 250 T1040 275 T1300 245 T1440 270 T1700 250 T2000 280 T2300 255 T2640 270 L2640 330 L-1200 330 Z"
         fill="#4a3e33"
       />
       <path
-        d="M0 300 L40 220 L80 300 Z M60 310 L110 200 L160 310 Z M1260 310 L1310 190 L1360 310 Z M1340 305 L1390 230 L1440 305 Z"
+        d="M-300 305 L-240 215 L-180 305 Z M-120 300 L-80 240 L-40 300 Z M0 300 L40 220 L80 300 Z M60 310 L110 200 L160 310 Z M1260 310 L1310 190 L1360 310 Z M1340 305 L1390 230 L1440 305 Z M1500 300 L1550 210 L1600 300 Z M1640 310 L1680 250 L1720 310 Z"
         fill="#2f2822"
         stroke="#141210"
         strokeWidth="2"
       />
-      <rect x="0" y="310" width="1440" height="526" fill="url(#camp-ground)" />
+      <rect
+        x={-BLEED}
+        y="310"
+        width={SCENE_W + 2 * BLEED}
+        height={Math.max(526, h - 310)}
+        fill="url(#camp-ground)"
+      />
       <ellipse cx="720" cy="560" rx="620" ry="250" fill="url(#camp-clearing)" />
       <path
-        d="M1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836 L1440 836 Z"
+        d="M2640 400 L1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836 L1360 1400 L2640 1400 Z"
         fill="#8b6c45"
         opacity="0.8"
       />
       <path
-        d="M1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836"
+        d="M2640 400 L1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836 L1360 1400"
         fill="none"
         stroke="#2a1f17"
         strokeWidth="2.5"
@@ -398,6 +416,8 @@ export function CampView(props: {
   const { state, game } = props;
   const [picked, setPicked] = useState("heir");
   const [nanLine, setNanLine] = useState(0);
+  const size = useStageSize();
+  const ox = (size.w - SCENE_W) / 2;
   const act = POC_GAME_DATA.acts[0];
   const list = personas(state);
   const sel = list.find((p) => p.id === picked) ?? list[0];
@@ -449,8 +469,8 @@ export function CampView(props: {
       </header>
 
       <div className="camp-stage">
-        <Scene roadName={act.name} />
-        {/* Positions are in mock coordinates (1440 × 900); the scene starts below the header. */}
+        <Scene roadName={act.name} w={size.w} h={size.h - 64} ox={ox} />
+        {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
         {list.map((p) => {
           const w = p.object ? p.object.w : 130;
           const h = p.object ? p.object.h : Math.round(140 * (p.figure?.fs ?? 1)) + 34;
@@ -461,7 +481,7 @@ export function CampView(props: {
               key={p.id}
               type="button"
               className={`camp-target ${on ? "on" : ""} ${p.locked ? "locked" : ""}`}
-              style={{ left: p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
+              style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
               aria-label={`${p.name}, ${p.role}`}
               disabled={hardLocked}
               onClick={() => setPicked(p.id)}

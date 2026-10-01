@@ -35,8 +35,10 @@ const DAMAGE_COLORS: Record<string, number> = {
 
 const AILMENT_TINT: Record<string, number> = { burn: 0xff8a5a, chill: 0x9fe0ff, shock: 0xfff08a };
 
+/** The arena is drawn for 1440 × 708 stage pixels; wider or taller hosts see more ground. */
 const W = 1440;
 const H = 708;
+const BLEED = 1200;
 const GROUND_Y = 660;
 const HERO_X = 400;
 const ENEMY_X = 1040;
@@ -61,6 +63,8 @@ interface Figure {
 
 export class ArenaScene {
   private app: Application | null = null;
+  private readonly world = new Container();
+  private size = { w: W, h: H, resolution: 1 };
   private destroyed = false;
   private hero: Figure | null = null;
   private enemy: Figure | null = null;
@@ -73,15 +77,25 @@ export class ArenaScene {
   showNumbers = true;
   paused = false;
 
+  /**
+   * Host size in stage pixels and device pixels per stage pixel. The drawing stays centered
+   * and sits on the bottom edge; the canvas renders at the screen's real pixel density.
+   */
+  layout(w: number, h: number, resolution: number): void {
+    this.size = { w, h, resolution };
+    this.world.position.set((w - W) / 2, h - H);
+    this.app?.renderer.resize(w, h, resolution);
+  }
+
   async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<void> {
     const app = new Application();
     try {
       await app.init({
-        width: W,
-        height: H,
+        width: this.size.w,
+        height: this.size.h,
         backgroundAlpha: 0,
         antialias: true,
-        resolution: Math.min(2, window.devicePixelRatio || 1),
+        resolution: this.size.resolution,
         autoDensity: true,
       });
     } catch {
@@ -95,24 +109,25 @@ export class ArenaScene {
     this.app = app;
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
+    app.stage.addChild(this.world);
 
-    app.stage.addChild(drawGround());
+    this.world.addChild(drawGround());
     this.aura = new Graphics();
     if (enemy.elite || enemy.boss) {
       this.aura
         .ellipse(ENEMY_X, GROUND_Y - 120, enemy.boss ? 210 : 170, enemy.boss ? 180 : 150)
         .stroke({ color: enemy.boss ? 0xff8a1f : 0xffd84a, width: 3, alpha: 0.45 });
     }
-    app.stage.addChild(this.aura);
+    this.world.addChild(this.aura);
     this.telegraph = new Graphics()
       .ellipse(ENEMY_X, GROUND_Y - 130, 200, 170)
       .stroke({ color: 0xff6a2b, width: 5 });
     this.telegraph.alpha = 0;
-    app.stage.addChild(this.telegraph);
+    this.world.addChild(this.telegraph);
 
     this.hero = makeFigure("hero", drawHero(hero), HERO_X);
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
-    app.stage.addChild(this.hero.root, this.enemy.root);
+    this.world.addChild(this.hero.root, this.enemy.root);
 
     app.ticker.add((ticker) => this.tick(ticker.deltaMS / 1000));
   }
@@ -214,7 +229,7 @@ export class ArenaScene {
     text.anchor.set(0.5);
     text.position.set(x, GROUND_Y - 260 + spread(this.clock * 3.1) * 40);
     if (crit) text.rotation = -0.14;
-    this.app.stage.addChild(text);
+    this.world.addChild(text);
     this.floaters.push({
       text,
       vx: spread(this.clock * 5.7) * 12,
@@ -289,22 +304,26 @@ function drawGround(): Container {
   const c = new Container();
   c.addChild(
     new Graphics()
-      .moveTo(0, 410)
+      .moveTo(-BLEED, 380)
+      .quadraticCurveTo(-600, 160, 0, 410)
       .quadraticCurveTo(180, 110, 360, 145)
       .quadraticCurveTo(540, 180, 720, 130)
       .quadraticCurveTo(900, 120, 1080, 140)
       .quadraticCurveTo(1260, 160, 1440, 120)
-      .lineTo(1440, H)
-      .lineTo(0, H)
+      .quadraticCurveTo(2000, 180, W + BLEED, 150)
+      .lineTo(W + BLEED, H + BLEED)
+      .lineTo(-BLEED, H + BLEED)
       .closePath()
       .fill({ color: 0x000000, alpha: 0.16 }),
     new Graphics()
-      .moveTo(0, 500)
+      .moveTo(-BLEED, 260)
+      .quadraticCurveTo(-500, 240, 0, 500)
       .quadraticCurveTo(260, 220, 520, 240)
       .quadraticCurveTo(780, 260, 1040, 235)
       .quadraticCurveTo(1240, 220, 1440, 225)
-      .lineTo(1440, H)
-      .lineTo(0, H)
+      .quadraticCurveTo(1900, 260, W + BLEED, 240)
+      .lineTo(W + BLEED, H + BLEED)
+      .lineTo(-BLEED, H + BLEED)
       .closePath()
       .fill({ color: 0x000000, alpha: 0.18 }),
     new Graphics()
