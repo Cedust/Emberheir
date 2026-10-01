@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { storageKey } from "../storage";
 
 /** Player settings (Settings mock): stored per browser, not in the save game. */
 export interface Settings {
@@ -11,7 +12,7 @@ export interface Settings {
 export const DEFAULT_SETTINGS: Settings = { theme: "system", damageNumbers: true, autoFlask: 0.4 };
 export const AUTO_FLASK_OPTIONS = [0, 0.25, 0.4, 0.6] as const;
 
-const KEY = "emberheir.settings";
+const KEY = storageKey("settings");
 
 function load(): Settings {
   try {

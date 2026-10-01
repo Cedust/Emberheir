@@ -1,6 +1,7 @@
 import { GAME_TITLE, ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
 import { SIM_VERSION, getBase } from "@emberheir/sim";
 import { useState } from "react";
+import { PREVIEW_PR } from "../storage";
 import { Icon } from "../ui/Icon";
 import type { SettingsApi } from "../ui/settings";
 import { SettingsPanel } from "./MenuOverlay";
@@ -105,7 +106,8 @@ export function TitleScreen(props: {
         )}
       </div>
       <footer className="build-info mono">
-        Dev Preview · M4 · {__BUILD_COMMIT__} · {buildDate} · Sim {SIM_VERSION}
+        Dev Preview · {PREVIEW_PR ? `PR #${PREVIEW_PR}` : "M4"} · {__BUILD_COMMIT__} · {buildDate} ·
+        Sim {SIM_VERSION}
       </footer>
     </section>
   );

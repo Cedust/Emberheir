@@ -8,8 +8,9 @@ import {
   serializeGame,
 } from "@emberheir/sim";
 import { useCallback, useRef, useState } from "react";
+import { storageKey } from "../storage";
 
-export const SAVE_KEY = "emberheir.save";
+export const SAVE_KEY = storageKey("save");
 
 /** Reads the save game; broken or outdated saves are ignored. */
 export function loadSave(): GameState | null {

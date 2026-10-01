@@ -71,3 +71,9 @@ the matching version, do not run `playwright install` there.
 
 Every push to `main` deploys `apps/web` to GitHub Pages:
 https://cedust.github.io/Emberheir/
+
+Every PR gets its own preview at `https://cedust.github.io/Emberheir/pr-preview/pr-<n>/`
+(`.github/workflows/pr-preview.yml`); a bot comment on the PR links it, and it is removed when
+the PR is closed. Both are published to the `gh-pages` branch, which GitHub Pages serves. PR
+previews keep their own save game and settings (`apps/web/src/storage.ts`), so they never touch
+the main save.
