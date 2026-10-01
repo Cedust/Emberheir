@@ -82,4 +82,4 @@ export {
 export * from "./progression/index";
 
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
-export const SIM_VERSION = "0.3.0";
+export const SIM_VERSION = "0.4.0";

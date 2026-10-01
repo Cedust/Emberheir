@@ -36,7 +36,7 @@ export const TEST_ACT: ActData = {
   enemies: [WEAK_ENEMY],
   boss: TEST_BOSS,
   spoilsStages: [2],
-  essence: { id: "test-essence", name: "Test Essence" },
+  essence: { id: "test-essence", name: "Test Essence", affixId: "life" },
 };
 
 export const DEADLY_ACT: ActData = {

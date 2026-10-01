@@ -153,6 +153,11 @@ export interface Item {
   /** Item Tier (T1 = Item Level 1–10). Ascension can raise it later. */
   readonly tier: number;
   readonly affixes: readonly AffixRoll[];
+  /**
+   * Affix Lock (Mystic): after Temper or Imbue only this affix index can be changed again,
+   * until a Reforge clears it.
+   */
+  readonly lockedAffix?: number;
 }
 
 /** Everything needed to roll and read items. Built once from content. */

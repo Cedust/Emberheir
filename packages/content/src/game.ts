@@ -18,7 +18,7 @@ export const ACT1: ActData = {
   enemies: ACT1_ENEMIES,
   boss: GORRAK,
   spoilsStages: [5, 10],
-  essence: { id: "ash-essence", name: "Ash Essence" },
+  essence: { id: "ash-essence", name: "Ash Essence", affixId: "all-resistance" },
 };
 
 /** Everything the game loop in `@emberheir/sim` needs for the PoC. */
