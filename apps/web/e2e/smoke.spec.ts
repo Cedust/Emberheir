@@ -55,33 +55,51 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
-  await page.goto("/");
+  // ?dev shows the Skip button in fights.
+  await page.goto("/?dev");
   await page.getByRole("button", { name: "New Game" }).click();
   await page.getByRole("button", { name: /^Sword/ }).click();
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
 
-  await page.getByRole("button", { name: "Set Out" }).click();
-  await expect(page.getByRole("heading", { name: "Stage 1 of 15" })).toBeVisible();
-  await page.getByRole("button", { name: "Next Fight" }).click();
-  await page.getByRole("button", { name: "Skip to end" }).click();
-  await expect(page.getByTestId("fight-result")).toHaveText("Victory");
-  await page.getByRole("button", { name: "Claim Rewards" }).click();
+  await page.getByRole("button", { name: /SET OUT/ }).click();
+  await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
+  await expect(page.getByTestId("done-card")).toContainText("Stage 1 ahead");
+  await page.getByRole("button", { name: /NEXT STAGE/ }).click();
 
+  await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
+  await expect(page.getByRole("meter", { name: "Life" }).first()).toBeVisible();
+  await page.getByRole("button", { name: "Skip fight" }).click();
+  await expect(page.getByTestId("fight-result")).toHaveText("VICTORY");
+
+  // The rewards follow on their own after the banner.
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(3);
-  await page.getByRole("button", { name: "Take" }).first().click();
-  await page.getByRole("button", { name: "Continue", exact: true }).click();
-  await expect(page.getByRole("heading", { name: "Stage 2 of 15" })).toBeVisible();
+  await page.getByTestId("item-card").first().getByRole("button", { name: "Take" }).click();
+  await expect(page.getByTestId("done-card")).toContainText("Taken:");
 
   await page.reload();
   await page.getByRole("button", { name: /Continue/ }).click();
-  await expect(page.getByRole("heading", { name: "Stage 2 of 15" })).toBeVisible();
-  await page.getByRole("button", { name: "Character" }).first().click();
-  await expect(page.getByRole("dialog", { name: "Character" })).toBeVisible();
-  await expect(page.locator(".inv-item")).toHaveCount(1);
-  await page.getByRole("button", { name: "Close" }).click();
+  await expect(page.getByTestId("done-card")).toContainText("Taken:");
+  await page.keyboard.press("c");
+  const character = page.getByRole("dialog", { name: "Character" });
+  await expect(character).toBeVisible();
+  await expect(
+    character.getByRole("group", { name: "Inventory grid" }).getByTestId("grid-item"),
+  ).toHaveCount(1);
+  await character.getByRole("button", { name: "Close" }).click();
 
-  await page.getByRole("button", { name: "Retreat" }).click();
-  await expect(page.getByRole("status", { name: "Retreat" })).toBeVisible();
+  await page.getByRole("button", { name: "Retreat to Camp" }).click();
+  await expect(page.getByRole("status", { name: "RETREAT" })).toBeVisible();
+  await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
+  await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
+
+  // Thoric's forge and the Supply Wagon open from the Camp; Esc goes back.
+  await page.getByRole("button", { name: "Thoric, Blacksmith" }).click();
+  await page.getByRole("button", { name: "Open Forge" }).click();
+  await expect(page.getByRole("region", { name: "Thoric, Blacksmith" })).toBeVisible();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
+  await page.getByRole("button", { name: "Open Stash" }).click();
+  await expect(page.getByRole("group", { name: "Stash" })).toBeVisible();
   expect(errors).toEqual([]);
 });

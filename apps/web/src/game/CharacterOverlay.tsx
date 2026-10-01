@@ -1,33 +1,44 @@
-import { ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
+import { POC_GAME_DATA } from "@emberheir/content";
 import {
   ATTRIBUTES,
   type Attribute,
   type Attributes,
+  type EquipmentSlot,
   type GameState,
-  INVENTORY_SIZE,
+  type Item,
+  PROGRESSION,
   SLOT_NAMES,
   deriveStats,
-  describeItem,
   equipBlockReason,
+  estimateDps,
+  formatPercent,
+  heatPerSecond,
   heroSetup,
-  itemSize,
   itemSlotFor,
   salvageValue,
   unequipBlockReason,
-  usedCells,
+  xpToNextLevel,
 } from "@emberheir/sim";
 import { useState } from "react";
-import { ItemCard } from "../items/ItemCard";
+import { Icon } from "../ui/Icon";
+import {
+  ItemDetail,
+  ItemGrid,
+  ItemTile,
+  compareWithEquipped,
+  fmt,
+  walletEntries,
+} from "../ui/items";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 
 const ATTRIBUTE_INFO: Record<Attribute, { name: string; effects: string }> = {
-  strength: { name: "Strength", effects: "Physical Damage, Armor" },
-  dexterity: { name: "Dexterity", effects: "Crit Chance, Trigger Chance" },
-  agility: { name: "Agility", effects: "Attack Speed, Evasion" },
-  intelligence: { name: "Intelligence", effects: "Elemental Damage, All Resistance" },
-  wisdom: { name: "Wisdom", effects: "Heat Gain, Ailment Duration" },
-  vitality: { name: "Vitality", effects: "Life, Tenacity" },
+  strength: { name: "Strength", effects: "Physical Damage · Armor" },
+  dexterity: { name: "Dexterity", effects: "Crit Chance · Trigger Chance" },
+  agility: { name: "Agility", effects: "Attack Speed · Evasion" },
+  intelligence: { name: "Intelligence", effects: "Elemental Damage · All Resistance" },
+  wisdom: { name: "Wisdom", effects: "Heat Gain · Ailment Duration" },
+  vitality: { name: "Vitality", effects: "Life · Tenacity" },
 };
 
 const ZERO: Record<Attribute, number> = {
@@ -39,13 +50,36 @@ const ZERO: Record<Attribute, number> = {
   vitality: 0,
 };
 
-const pct = (v: number) => `${(v * 100).toFixed(1)} %`;
+/** Paperdoll layout of the PoC slots (Character mock, 400×500 box). */
+const DOLL: Partial<Record<EquipmentSlot, { x: number; y: number; w: number; h: number }>> = {
+  amulet: { x: 262, y: 30, w: 60, h: 60 },
+  body: { x: 145, y: 110, w: 110, h: 150 },
+  mainHand: { x: 20, y: 200, w: 90, h: 160 },
+  offHand: { x: 290, y: 200, w: 90, h: 160 },
+  ring1: { x: 170, y: 300, w: 60, h: 60 },
+};
 
-/** Character: equipment, attributes (pending → Confirm / Undo), stats and the inventory grid. */
-export function CharacterOverlay(props: { state: GameState; game: GameApi; onClose: () => void }) {
-  const { state, game } = props;
+const TABS = ["Offense", "Defense", "Heat"] as const;
+type Tab = (typeof TABS)[number];
+
+const pct = (v: number) => `${formatPercent(v)} %`;
+const HEAT_TEXT = { cooling: "Cooling", steady: "Steady", warming: "Warming" };
+
+/**
+ * Character (Character mock): paperdoll, attributes with pending points (Confirm / Undo),
+ * stats in tabs, the inventory grid and the item detail with compare. During a fight it is
+ * view only.
+ */
+export function CharacterOverlay(props: {
+  state: GameState;
+  game: GameApi;
+  inFight: boolean;
+  onClose: () => void;
+}) {
+  const { state, game, inFight } = props;
   const [pending, setPending] = useState<Record<Attribute, number>>(ZERO);
   const [selected, setSelected] = useState<string | null>(null);
+  const [tab, setTab] = useState<Tab>("Offense");
   const spent = ATTRIBUTES.reduce((n, a) => n + pending[a], 0);
   const left = state.hero.unspentAttributePoints - spent;
 
@@ -61,193 +95,288 @@ export function CharacterOverlay(props: { state: GameState; game: GameApi; onClo
   };
   const { setup, gear } = heroSetup(preview, POC_GAME_DATA);
   const stats = deriveStats(setup);
-  const selectedItem = state.inventory.find((p) => p.item.id === selected)?.item;
-  const equipReason = selectedItem
-    ? equipBlockReason(state, POC_GAME_DATA, selectedItem, "inventory")
-    : undefined;
+  const dps = estimateDps(setup, stats);
+
+  const equippedEntry = Object.entries(state.hero.equipment).find(([, it]) => it?.id === selected);
+  const equippedSlot = equippedEntry?.[0] as EquipmentSlot | undefined;
+  const invItem = state.inventory.find((p) => p.item.id === selected)?.item;
+  const sel: Item | undefined = equippedEntry?.[1] ?? invItem;
 
   const confirm = () => {
     game.dispatch({ type: "allocateAttributes", points: pending });
     setPending(ZERO);
   };
 
+  const next = xpToNextLevel(state.hero.level);
+  const xpText = Number.isFinite(next)
+    ? `${Math.floor((state.hero.xp / next) * 100)}% to Lv ${state.hero.level + 1} · Cap ${PROGRESSION.levelCap}`
+    : `Level cap ${PROGRESSION.levelCap} reached`;
+
+  const rows: Record<Tab, { label: string; value: string }[]> = {
+    Offense: [
+      { label: "Damage per second (estimate)", value: fmt(dps) },
+      {
+        label: `${setup.weapon.name} damage`,
+        value: `${Math.round(setup.weapon.damage.min)}–${Math.round(setup.weapon.damage.max)}`,
+      },
+      { label: "Attack Speed", value: `${stats.attackSpeed.toFixed(2)}/s` },
+      { label: "Physical Damage", value: `+${pct(stats.physicalDamage)}` },
+      { label: "Elemental Damage", value: `+${pct(stats.elementalDamage)}` },
+      { label: "Crit Chance", value: pct(stats.critChance) },
+      { label: "Crit Damage", value: "150 %" },
+      { label: "Trigger Chance", value: `+${pct(stats.triggerChance)}` },
+    ],
+    Defense: [
+      { label: "Life", value: fmt(stats.maxLife) },
+      { label: "Armor", value: fmt(stats.armor) },
+      { label: "Evasion", value: pct(stats.evasion) },
+      { label: "Block", value: pct(stats.blockChance) },
+      { label: "All Resistance", value: pct(stats.resistance) },
+      { label: "Tenacity", value: pct(stats.tenacity) },
+      { label: "Lifesteal", value: pct(stats.lifesteal) },
+    ],
+    Heat: [
+      { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },
+      { label: "Heat per second (estimate)", value: heatPerSecond(setup, stats).toFixed(1) },
+      { label: "Heat Gain", value: `+${pct(stats.heatGain)}` },
+      { label: "Starting Heat", value: fmt(stats.startingHeat) },
+      { label: "Ailment Duration", value: `+${pct(stats.ailmentDuration)}` },
+      {
+        label: "Battle Plan",
+        value: setup.rotation.map((r) => `${r.skill.name} ${r.level ?? 1}`).join(" · "),
+      },
+    ],
+  };
+
+  let footer = null;
+  if (sel && invItem) {
+    const reason = equipBlockReason(state, POC_GAME_DATA, invItem, "inventory");
+    footer = (
+      <div className="detail-buttons">
+        <button
+          type="button"
+          className="btn primary"
+          disabled={reason !== undefined}
+          title={reason ? EQUIP_BLOCK_TEXT[reason] : undefined}
+          onClick={() => {
+            game.dispatch({ type: "equip", itemId: invItem.id });
+            setSelected(null);
+          }}
+        >
+          Equip
+        </button>
+        <button
+          type="button"
+          className="btn"
+          disabled={inFight}
+          onClick={() => {
+            game.dispatch({ type: "salvage", itemId: invItem.id });
+            setSelected(null);
+          }}
+        >
+          Salvage · +{salvageValue(invItem)} Dust
+        </button>
+        {inFight ? (
+          <span className="block warn">Between stages only</span>
+        ) : (
+          reason && <span className="block warn">{EQUIP_BLOCK_TEXT[reason]}</span>
+        )}
+      </div>
+    );
+  } else if (sel && equippedSlot) {
+    const reason = unequipBlockReason(state, POC_GAME_DATA, equippedSlot);
+    const inactive = gear.inactive.find((i) => i.slot === equippedSlot);
+    footer = (
+      <div className="detail-buttons">
+        {inactive && <span className="block warn">Inactive: requirements not met</span>}
+        <button
+          type="button"
+          className="btn"
+          disabled={reason !== undefined}
+          title={reason ? UNEQUIP_BLOCK_TEXT[reason] : undefined}
+          onClick={() => game.dispatch({ type: "unequip", slot: equippedSlot })}
+        >
+          Unequip
+        </button>
+        {reason && reason !== "empty" && (
+          <span className="block warn">{UNEQUIP_BLOCK_TEXT[reason]}</span>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="overlay" role="dialog" aria-label="Character">
-      <div className="overlay-panel panel character">
+      <div className="overlay-panel character">
         <header className="overlay-header">
-          <h2>Character · Level {state.hero.level}</h2>
-          <button type="button" onClick={props.onClose}>
-            Close
+          <div className="run-title">
+            <span className="title-font big">CHARACTER</span>
+            <span className="sub">Heir of the Ember · Level {state.hero.level}</span>
+          </div>
+          <div className="xp-bar" title={xpText}>
+            <div
+              className="fill"
+              style={{
+                width: `${Number.isFinite(next) ? Math.min(100, (state.hero.xp / next) * 100) : 100}%`,
+              }}
+            />
+          </div>
+          <span className="sub">{xpText}</span>
+          <div className="grow" />
+          {inFight && <span className="view-only title-font">FIGHT PAUSED · VIEW ONLY</span>}
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Close"
+            title="Close (C or Esc)"
+            onClick={props.onClose}
+          >
+            <Icon name="close" size={20} />
           </button>
         </header>
+
         <div className="character-columns">
-          <section aria-label="Equipment">
-            <h3>Equipment</h3>
-            <ul className="equipment-list">
+          <section className="doll-column" aria-label="Equipment">
+            <span className="title-font section-title">Equipment</span>
+            <div className="paperdoll">
+              <svg className="silhouette" viewBox="0 0 400 420" aria-hidden="true">
+                <circle cx="200" cy="60" r="38" />
+                <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
+              </svg>
               {POC_GAME_DATA.equipmentSlots.map((slot) => {
-                const item = state.hero.equipment[slot];
-                const reason = unequipBlockReason(state, POC_GAME_DATA, slot);
-                const inactive = gear.inactive.find((i) => i.slot === slot)?.reason;
+                const pos = DOLL[slot];
+                if (!pos) return null;
+                const it = state.hero.equipment[slot];
+                const inactive = gear.inactive.some((i) => i.slot === slot);
                 return (
-                  <li key={slot}>
-                    <span className="slot-label">{SLOT_NAMES[itemSlotFor(slot)]}</span>
-                    {item ? (
-                      <>
-                        <ItemCard
-                          tooltip={describeItem(item, ITEM_CATALOG, state.hero.attributes)}
-                          inactive={inactive}
-                        />
-                        <button
-                          type="button"
-                          disabled={reason !== undefined}
-                          title={reason ? UNEQUIP_BLOCK_TEXT[reason] : undefined}
-                          onClick={() => game.dispatch({ type: "unequip", slot })}
-                        >
-                          Unequip
-                        </button>
-                      </>
-                    ) : (
-                      <span className="empty-slot">Empty</span>
-                    )}
-                  </li>
+                  <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
+                    <ItemTile
+                      item={it}
+                      label={SLOT_NAMES[itemSlotFor(slot)]}
+                      width={pos.w}
+                      height={pos.h}
+                      selected={!!it && it.id === selected}
+                      inactive={inactive}
+                      {...(it ? { onSelect: () => setSelected(it.id) } : {})}
+                    />
+                  </div>
                 );
               })}
-            </ul>
+            </div>
+            <p className="sub small">Click an item for details. Saved slots come with Prestige.</p>
           </section>
 
-          <section aria-label="Attributes">
-            <h3>Attributes</h3>
-            <p className="points" data-testid="attribute-points">
-              {left} Attribute Points
-            </p>
+          <section className="attr-column" aria-label="Attributes">
+            <div className="section-row">
+              <span className="title-font section-title">Attributes</span>
+              <span className={`points ${left > 0 ? "has" : ""}`} data-testid="attribute-points">
+                {left} Attribute Points
+              </span>
+            </div>
             <ul className="attributes">
               {ATTRIBUTES.map((a) => (
                 <li key={a}>
-                  <span className="attr-name">{ATTRIBUTE_INFO[a].name}</span>
-                  <span className="attr-value">
+                  <div className="attr-text">
+                    <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
+                    <span className="sub small">{ATTRIBUTE_INFO[a].effects}</span>
+                  </div>
+                  <span className="attr-value mono">
                     {state.hero.attributes[a] + pending[a]}
-                    {pending[a] > 0 && <em> (+{pending[a]})</em>}
+                    {pending[a] > 0 && <em className="added"> +{pending[a]}</em>}
                   </span>
-                  <button
-                    type="button"
-                    aria-label={`Add ${ATTRIBUTE_INFO[a].name}`}
-                    disabled={left <= 0 || state.run?.phase === "fight"}
-                    onClick={() => setPending((p) => ({ ...p, [a]: p[a] + 1 }))}
-                  >
-                    +
-                  </button>
-                  <span className="attr-effects">{ATTRIBUTE_INFO[a].effects}</span>
+                  {!inFight && (
+                    <button
+                      type="button"
+                      className="plus"
+                      aria-label={`Add ${ATTRIBUTE_INFO[a].name}`}
+                      disabled={left <= 0}
+                      onClick={() => setPending((p) => ({ ...p, [a]: p[a] + 1 }))}
+                    >
+                      +
+                    </button>
+                  )}
                 </li>
               ))}
             </ul>
-            <div className="attr-buttons">
-              <button type="button" className="primary" disabled={spent === 0} onClick={confirm}>
-                Confirm
-              </button>
-              <button type="button" disabled={spent === 0} onClick={() => setPending(ZERO)}>
-                Undo
-              </button>
+            {!inFight && (
+              <div className="attr-buttons">
+                <button
+                  type="button"
+                  className="btn primary"
+                  disabled={spent === 0}
+                  onClick={confirm}
+                >
+                  Confirm
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={spent === 0}
+                  onClick={() => setPending(ZERO)}
+                >
+                  Undo
+                </button>
+                <span className="sub small">Respec later only at Kaelen</span>
+              </div>
+            )}
+            <div className="tabs small-tabs" role="tablist">
+              {TABS.map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="tab"
+                  aria-selected={tab === t}
+                  className={`tab title-font ${tab === t ? "on" : ""}`}
+                  onClick={() => setTab(t)}
+                >
+                  {t}
+                </button>
+              ))}
             </div>
-            <dl className="stats">
-              <dt>Life</dt>
-              <dd>{stats.maxLife}</dd>
-              <dt>Weapon</dt>
-              <dd>
-                {setup.weapon.name} {Math.round(setup.weapon.damage.min)}–
-                {Math.round(setup.weapon.damage.max)}
-              </dd>
-              <dt>Attack Speed</dt>
-              <dd>{stats.attackSpeed.toFixed(2)}/s</dd>
-              <dt>Physical Damage</dt>
-              <dd>+{pct(stats.physicalDamage)}</dd>
-              <dt>Elemental Damage</dt>
-              <dd>+{pct(stats.elementalDamage)}</dd>
-              <dt>Crit Chance</dt>
-              <dd>{pct(stats.critChance)}</dd>
-              <dt>Armor</dt>
-              <dd>{Math.round(stats.armor)}</dd>
-              <dt>Evasion</dt>
-              <dd>{pct(stats.evasion)}</dd>
-              <dt>Resistance</dt>
-              <dd>{pct(stats.resistance)}</dd>
-              <dt>Heat Gain</dt>
-              <dd>+{pct(stats.heatGain)}</dd>
-              <dt>Rotation</dt>
-              <dd>
-                {setup.rotation.map((r) => `${r.skill.name} (Lv ${r.level ?? 1})`).join(", ")}
-              </dd>
+            <dl className="stat-rows">
+              {rows[tab].map((r) => (
+                <div key={r.label} className="stat-row">
+                  <dt>{r.label}</dt>
+                  <dd className="mono">{r.value}</dd>
+                </div>
+              ))}
             </dl>
           </section>
 
-          <section aria-label="Inventory">
-            <h3>
-              Inventory{" "}
-              <small>
-                {usedCells(state.inventory, ITEM_CATALOG)} / {INVENTORY_SIZE.w * INVENTORY_SIZE.h}
-              </small>
-            </h3>
-            <div
-              className="inventory-grid"
-              style={{
-                gridTemplateColumns: `repeat(${INVENTORY_SIZE.w}, var(--cell))`,
-                gridTemplateRows: `repeat(${INVENTORY_SIZE.h}, var(--cell))`,
-              }}
-            >
-              {state.inventory.map((p) => {
-                const size = itemSize(p.item, ITEM_CATALOG);
-                return (
-                  <button
-                    key={p.item.id}
-                    type="button"
-                    className={`inv-item rarity-${p.item.rarity}${selected === p.item.id ? " selected" : ""}`}
-                    style={{
-                      gridColumn: `${p.x + 1} / span ${size.w}`,
-                      gridRow: `${p.y + 1} / span ${size.h}`,
-                    }}
-                    title={p.item.name}
-                    onClick={() => setSelected(p.item.id)}
-                  >
-                    {p.item.name}
-                  </button>
-                );
-              })}
+          <section className="inv-column" aria-label="Inventory">
+            <div className="section-row">
+              <span className="title-font section-title">Inventory</span>
+              <span className="mono sub">{state.inventory.length} items</span>
             </div>
-            {selectedItem ? (
-              <div className="inv-detail">
-                <ItemCard
-                  tooltip={describeItem(selectedItem, ITEM_CATALOG, state.hero.attributes)}
-                />
-                <div className="loot-buttons">
-                  <button
-                    type="button"
-                    className="primary"
-                    disabled={equipReason !== undefined}
-                    title={equipReason ? EQUIP_BLOCK_TEXT[equipReason] : undefined}
-                    onClick={() => {
-                      game.dispatch({ type: "equip", itemId: selectedItem.id });
-                      setSelected(null);
-                    }}
-                  >
-                    Equip
-                  </button>
-                  <button
-                    type="button"
-                    disabled={state.run?.phase === "fight"}
-                    onClick={() => {
-                      game.dispatch({ type: "salvage", itemId: selectedItem.id });
-                      setSelected(null);
-                    }}
-                  >
-                    Salvage (+{salvageValue(selectedItem)} Dust)
-                  </button>
-                  {equipReason && (
-                    <span className="block-reason">{EQUIP_BLOCK_TEXT[equipReason]}</span>
-                  )}
-                </div>
-              </div>
+            <ItemGrid
+              placed={state.inventory}
+              size={{ w: PROGRESSION.inventoryWidth, h: PROGRESSION.inventoryHeight }}
+              cell={44}
+              selected={selected}
+              onSelect={(id) => setSelected(id)}
+              label="Inventory grid"
+            />
+            {sel ? (
+              <ItemDetail
+                item={sel}
+                heroAttributes={state.hero.attributes}
+                where={equippedSlot ? "EQUIPPED" : "INVENTORY"}
+                compare={invItem ? compareWithEquipped(state, invItem) : undefined}
+                footer={footer}
+                className="character-detail"
+              />
             ) : (
-              <p className="hint">Select an item to equip or salvage it.</p>
+              <div className="empty-pick panel-card sub">
+                Select an item to equip or salvage it.
+              </div>
             )}
+            <div className="wallet-row small-wallet">
+              {walletEntries(state).map((w) => (
+                <span key={w.key} className={`w-${w.key}`}>
+                  <b className="mono">{fmt(w.value)}</b> <span className="sub">{w.name}</span>
+                </span>
+              ))}
+            </div>
           </section>
         </div>
       </div>

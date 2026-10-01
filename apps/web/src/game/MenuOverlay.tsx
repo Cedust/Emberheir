@@ -1,0 +1,111 @@
+import { AUTO_FLASK_OPTIONS, type SettingsApi } from "../ui/settings";
+import { Icon } from "../ui/Icon";
+import { useState } from "react";
+
+export function SettingsPanel(props: { api: SettingsApi }) {
+  const { settings, update } = props.api;
+  return (
+    <div className="settings">
+      <div className="setting-row">
+        <span>Theme</span>
+        <div className="segmented" role="radiogroup" aria-label="Theme">
+          {(["system", "light", "dark"] as const).map((t) => (
+            <button
+              key={t}
+              type="button"
+              role="radio"
+              aria-checked={settings.theme === t}
+              className={settings.theme === t ? "on" : ""}
+              onClick={() => update({ theme: t })}
+            >
+              {t === "system" ? "System" : t === "light" ? "Parchment" : "Scorched"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="setting-row">
+        <span>Damage numbers</span>
+        <div className="segmented" role="radiogroup" aria-label="Damage numbers">
+          {[true, false].map((v) => (
+            <button
+              key={String(v)}
+              type="button"
+              role="radio"
+              aria-checked={settings.damageNumbers === v}
+              className={settings.damageNumbers === v ? "on" : ""}
+              onClick={() => update({ damageNumbers: v })}
+            >
+              {v ? "On" : "Off"}
+            </button>
+          ))}
+        </div>
+      </div>
+      <div className="setting-row">
+        <span>Auto-drink Ember Flask before a stage</span>
+        <div className="segmented" role="radiogroup" aria-label="Auto-drink">
+          {AUTO_FLASK_OPTIONS.map((v) => (
+            <button
+              key={v}
+              type="button"
+              role="radio"
+              aria-checked={settings.autoFlask === v}
+              className={settings.autoFlask === v ? "on" : ""}
+              onClick={() => update({ autoFlask: v })}
+            >
+              {v === 0 ? "Off" : `< ${Math.round(v * 100)}%`}
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/** Esc menu: Resume, Settings, Compendium, Quit to Title. The fight pauses while it is open. */
+export function MenuOverlay(props: {
+  settings: SettingsApi;
+  inFight: boolean;
+  onResume: () => void;
+  onCompendium: () => void;
+  onQuit: () => void;
+}) {
+  const [page, setPage] = useState<"main" | "settings">("main");
+  return (
+    <div className="overlay" role="dialog" aria-label="Menu">
+      <div className="overlay-panel menu-panel">
+        <header className="overlay-header">
+          <span className="title-font big">{page === "main" ? "MENU" : "SETTINGS"}</span>
+          <div className="grow" />
+          {props.inFight && <span className="view-only title-font">FIGHT PAUSED</span>}
+          <button type="button" className="icon-button" aria-label="Close" onClick={props.onResume}>
+            <Icon name="close" size={20} />
+          </button>
+        </header>
+        {page === "main" ? (
+          <div className="menu-buttons">
+            <button type="button" className="btn big primary" onClick={props.onResume}>
+              Resume
+            </button>
+            <button type="button" className="btn big" onClick={() => setPage("settings")}>
+              <Icon name="gear" size={18} /> Settings
+            </button>
+            <button type="button" className="btn big" onClick={props.onCompendium}>
+              <Icon name="book" size={18} /> Compendium
+            </button>
+            <button type="button" className="btn big ghost" onClick={props.onQuit}>
+              Quit to Title
+            </button>
+            <p className="sub small">Your game is saved after every action.</p>
+          </div>
+        ) : (
+          <>
+            <SettingsPanel api={props.settings} />
+            <button type="button" className="btn" onClick={() => setPage("main")}>
+              Back
+            </button>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
