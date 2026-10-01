@@ -14,6 +14,7 @@ export interface EliteModifier {
 
 /** Elite chance at a stage: base + per act + per stage in the act, capped. */
 export function eliteChance(act: number, stageInAct: number): number {
+  if (stageInAct <= PROGRESSION.eliteFreeStages) return 0;
   return Math.min(
     PROGRESSION.eliteChanceCap,
     PROGRESSION.eliteChanceBase +

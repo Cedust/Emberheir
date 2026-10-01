@@ -5,10 +5,16 @@ import { applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 
 describe("Elites", () => {
   it("chance rises per stage and act (loot-rewards-v1.md section 6)", () => {
-    expect(eliteChance(1, 1)).toBeCloseTo(0.05);
+    expect(eliteChance(1, 3)).toBeCloseTo(0.06);
     expect(eliteChance(1, 14)).toBeCloseTo(0.115);
     expect(eliteChance(6, 14)).toBeCloseTo(0.215);
     expect(eliteChance(100, 15)).toBe(PROGRESSION.eliteChanceCap);
+  });
+
+  it("never show up on the first stages of an act", () => {
+    expect(eliteChance(1, 1)).toBe(0);
+    expect(eliteChance(1, PROGRESSION.eliteFreeStages)).toBe(0);
+    expect(eliteChance(5, 1)).toBe(0);
   });
 
   it("get more modifiers with higher Monster Levels, at most 3", () => {

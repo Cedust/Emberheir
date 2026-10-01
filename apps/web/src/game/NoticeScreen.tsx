@@ -8,7 +8,9 @@ interface NoticeText {
   readonly facts: (n: Notice, act: string) => { k: string; v: string; tone: string }[];
 }
 
-const TEXT: Record<Notice["kind"], NoticeText> = {
+type NoticeKind = Exclude<Notice["kind"], "prestige">;
+
+const TEXT: Record<NoticeKind, NoticeText> = {
   death: {
     title: "ASHBOUND",
     sub: "You fell, and the ash gave you back. You keep everything: gear, Gold, Dust and Inventory. Only the way through this Act starts over.",
@@ -60,7 +62,8 @@ const ASH = (() => {
 /** Shown once after a run ends (Ashbound mock): death, retreat or a cleared act. */
 export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
   const { notice } = props;
-  const text = TEXT[notice.kind];
+  // Prestige has its own screen (Inheritance).
+  const text = TEXT[notice.kind === "prestige" ? "actCleared" : notice.kind];
   const act = getAct(POC_GAME_DATA, notice.actId);
   return (
     <section

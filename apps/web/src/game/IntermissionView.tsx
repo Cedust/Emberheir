@@ -13,6 +13,7 @@ import {
   rewardsDone,
   salvageValue,
   takeBlockReason,
+  levelCap,
   xpToNextLevel,
 } from "@emberheir/sim";
 import { Icon, type IconName } from "../ui/Icon";
@@ -60,7 +61,7 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi; setti
   const heal = canDrink ? Math.min(PROGRESSION.flaskHeal * 100, 100 - lifePct) : 0;
   const flaskMax = Math.max(PROGRESSION.flaskStartCharges, state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
-  const next = xpToNextLevel(hero.level);
+  const next = xpToNextLevel(hero.level, levelCap(state.legacy.prestige));
   return (
     <section className="panel-card hero-card" aria-label="Hero">
       <div className="hero-card-head">

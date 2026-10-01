@@ -398,7 +398,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     threshold: triggerThreshold(r.skill.heatCost, r.threshold),
   }));
   const chain = estimateRotation(slots, rate, stats.startingHeat);
-  const prestige = 0;
+  const prestige = state.legacy.prestige;
 
   const current = (i: number) => {
     const id = state.hero.rotation[i] ?? null;

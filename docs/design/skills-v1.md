@@ -66,7 +66,7 @@ Bei ca. 12 Heat pro Sekunde: Immolate nach ~2,5 s, Wither nach ~5,5 s, Soul Harv
 | Skill | Cost | Type | Effekt |
 |---|---|---|---|
 | **Power Strike** | 25 | Attack, Any | 220 % Weapon Damage |
-| **Flurry** | 50 | Attack, Any | 4 schnelle Treffer à 70 %, jeder kann critten und On-Hit auslösen |
+| **Flurry** | 50 | Attack, Any | 4 schnelle Treffer à 90 %, jeder kann critten und On-Hit auslösen |
 | **Sunder** | 40 | Attack, Melee | 150 % Weapon Damage, −20 % Armor für 6 s |
 | **Battle Cry** | 35 | Buff | +25 % Attack Speed für 5 s |
 | **Execute** | 90 | Attack, Any | 400 % Weapon Damage, doppelt gegen Gegner unter 30 % Life |

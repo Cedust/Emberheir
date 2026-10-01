@@ -14,6 +14,7 @@ describe("parseArgs", () => {
       ilvl: 0,
       act: 0,
       attempts: 30,
+      generations: 1,
     });
   });
 
@@ -40,6 +41,8 @@ describe("parseArgs", () => {
         "1",
         "--attempts",
         "5",
+        "--generations",
+        "2",
       ]),
     ).toEqual({
       runs: 50,
@@ -52,6 +55,7 @@ describe("parseArgs", () => {
       ilvl: 7,
       act: 1,
       attempts: 5,
+      generations: 2,
     });
   });
 
@@ -60,6 +64,7 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--runs", "abc"])).toThrow("non-negative integer");
     expect(() => parseArgs(["--weapon"])).toThrow("expects a value");
     expect(() => parseArgs(["--level", "0"])).toThrow("at least 1");
+    expect(() => parseArgs(["--generations", "0"])).toThrow("at least 1");
     expect(() => parseArgs(["--gear", "shiny"])).toThrow("--gear expects one of");
   });
 });

@@ -20,8 +20,8 @@ export const FLURRY: SkillDefinition = {
   type: "attack",
   heatCost: 50,
   tags: ["physical", "direct", "any"],
-  description: "4 quick hits for 70 % Weapon Damage each. Every hit can crit.",
-  hits: [{ kind: "weapon", multiplier: 0.7, count: 4 }],
+  description: "4 quick hits for 90 % Weapon Damage each. Every hit can crit.",
+  hits: [{ kind: "weapon", multiplier: 0.9, count: 4 }],
 };
 
 export const EXECUTE: SkillDefinition = {

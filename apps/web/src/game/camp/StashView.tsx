@@ -173,7 +173,17 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
             selected={selected}
             onSelect={pick("stash")}
             label="Stash"
+            burned={state.progress.stashBurned}
           />
+          {state.progress.stashBurned && (
+            <div className="burned-note panel-card" role="note">
+              <Icon name="fire" size={22} color="var(--accent)" />
+              <span>
+                <b>Burned in the harvest.</b> Thoric: &ldquo;I&apos;ll patch it up once you&apos;re
+                back from the field. Until then, nothing goes in.&rdquo;
+              </span>
+            </div>
+          )}
           <div className="section-row">
             <button
               type="button"

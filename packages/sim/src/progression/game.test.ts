@@ -11,7 +11,10 @@ import {
   heroRotation,
   heroSetup,
   itemPickWeights,
+  levelCap,
   moveBlockReason,
+  prestigeRewards,
+  sealsAvailable,
   newGame,
   SAVE_VERSION,
   spentInTree,
@@ -263,6 +266,98 @@ describe("game loop", () => {
     expect(s.hero.rotation).toEqual([null]);
     expect(s.wallet).toMatchObject({ gold: 0, harvesterEmber: 1 });
     expect(() => act(s, { type: "respecTree" })).toThrow(/Nothing/);
+  });
+
+  it("the final boss starts the Prestige: Seals keep their items, the rest burns", () => {
+    let s = act(start(), { type: "setOut", actId: "final-act" });
+    for (let i = 0; i < 2; i++) s = clearStage(s);
+    s = act(s, { type: "startStage" }, { type: "resolveFight" });
+    const loot = s.run?.rewards?.items ?? fail();
+    s = act(s, { type: "pickItem", index: 0, mode: "take" }, { type: "pickSpoils", index: 0 });
+    s = act(s, { type: "continue" });
+    expect(s.run).toBeNull();
+    expect(s.notice).toBeNull();
+    expect(s.pendingPrestige).toMatchObject({ actId: "final-act", enemyName: "Boss" });
+    expect(() => act(s, { type: "setOut", actId: "test-act" })).toThrow(/harvest/);
+    expect(sealsAvailable(s, data)).toBe(1);
+
+    // An equipped Ring to seal; the inventory holds the picked item.
+    const ring = { ...(loot[0] ?? fail()), id: "sealed-ring", baseId: "test-ring" };
+    s = { ...s, hero: { ...s.hero, equipment: { ...s.hero.equipment, ring1: ring } } };
+    const oldWeapon = s.hero.equipment.mainHand ?? fail();
+    const { level, attributes, learned } = s.hero;
+    expect(s.inventory).toHaveLength(1);
+    expect(() => act(s, { type: "prestige", sealedSlots: ["ring1", "mainHand"] })).toThrow(/Seals/);
+    expect(() => act(s, { type: "prestige", sealedSlots: ["helm"] })).toThrow(/slot/);
+
+    s = act(s, { type: "prestige", sealedSlots: ["ring1"] });
+    expect(s.pendingPrestige).toBeNull();
+    expect(s.notice).toMatchObject({ kind: "prestige", enemyName: "Boss" });
+    expect(s.hero.equipment.ring1?.id).toBe("sealed-ring");
+    // The unsealed weapon burned; the Heir picks up a plain one of the same kind.
+    expect(s.hero.equipment.mainHand).toMatchObject({ baseId: oldWeapon.baseId, rarity: "normal" });
+    expect(s.hero.equipment.mainHand?.id).not.toBe(oldWeapon.id);
+    expect(s.hero).toMatchObject({ level, attributes, learned });
+    expect(s.inventory).toEqual([]);
+    expect(s.stash).toEqual([]);
+    expect(s.wallet).toEqual({
+      gold: 0,
+      dust: PROGRESSION.prestigeDustPerLevel,
+      reforgeStones: 0,
+      essences: {},
+      harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
+      ascensionShards: 0,
+    });
+    expect(s.progress).toMatchObject({
+      actsCleared: [],
+      trainerUnlocked: true,
+      rotationSlots: 2,
+      stashBurned: true,
+    });
+    expect(s.legacy).toMatchObject({ prestige: 1, seals: ["ring1"] });
+    expect(s.legacy.chronicle).toEqual([
+      { generation: 1, sealed: ["ring1"], level, deaths: 0, enemyName: "Boss" },
+    ]);
+    expect(sealsAvailable(s, data)).toBe(2);
+    expect(levelCap(s.legacy.prestige)).toBe(
+      PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
+    );
+
+    // The Supply Wagon is burned until the first return to Camp.
+    s = act(s, { type: "dismissNotice" });
+    expect(moveBlockReason(s, data, "x", "stash")).toBe("burned");
+    s = act(s, { type: "setOut", actId: "test-act" }, { type: "startStage" });
+    // Monster Levels rise with every Prestige.
+    expect(s.run?.encounter?.level).toBe(1 + PROGRESSION.monsterLevelsPerPrestige);
+    s = act(s, { type: "retreat" });
+    expect(s.progress.stashBurned).toBe(false);
+  });
+
+  it("Prestige rewards grow with the Prestige level", () => {
+    expect(prestigeRewards(data, 1)).toEqual({
+      prestige: 1,
+      seals: 1,
+      rotationSlots: 2,
+      harvesterEmber: 1,
+      dust: PROGRESSION.prestigeDustPerLevel,
+      levelCap: 20,
+      monsterLevelBonus: PROGRESSION.monsterLevelsPerPrestige,
+    });
+    // Never more Seals than slots.
+    expect(prestigeRewards(data, 9).seals).toBe(data.equipmentSlots.length);
+  });
+
+  it("migrates M4 save games (version 2)", () => {
+    const s = start(4);
+    const v2 = {
+      ...s,
+      version: 2,
+      legacy: undefined,
+      pendingPrestige: undefined,
+      progress: { ...s.progress, stashBurned: undefined },
+    };
+    const migrated = deserializeGame(JSON.stringify(v2));
+    expect(migrated).toEqual(s);
   });
 
   it("migrates M3 save games (version 1)", () => {

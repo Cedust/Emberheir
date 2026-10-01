@@ -1801,14 +1801,15 @@
 .stage .legacy-body {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 860px minmax(0, 1fr);
+  grid-template-columns: 300px 760px minmax(0, 1fr);
+  min-height: 0;
 }
 
 .stage .legacy-ring {
   position: relative;
   width: 720px;
   height: 800px;
-  margin-left: 40px;
+  margin-left: 20px;
 }
 
 .stage .ring-line {
@@ -2131,6 +2132,417 @@
   background: var(--bg);
   color: var(--text);
   cursor: pointer;
+}
+
+/* --- prestige (Victory, Seal, Inheritance) ------------------------------------------------- */
+
+.stage .prestige {
+  align-items: center;
+}
+
+.stage .prestige-crumbs {
+  position: absolute;
+  top: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  z-index: 2;
+}
+
+.stage .prestige-crumbs li {
+  padding: 4px 14px;
+  border-radius: 14px;
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 1px;
+  color: #c9b896;
+  background: rgb(14 12 10 / 0.4);
+  border: 1.5px solid rgb(201 184 150 / 0.4);
+}
+
+.stage .prestige-crumbs li.on {
+  color: #1c1a18;
+  background: #ff8a3a;
+  border-color: #ff8a3a;
+}
+
+.stage .prestige-victory {
+  justify-content: center;
+  color: #ecdfc4;
+  background: radial-gradient(circle at 50% 40%, #6a2a10 0%, #2a120a 55%, #0e0806 100%);
+}
+
+.stage .victory-content {
+  width: 820px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 18px;
+  text-align: center;
+}
+
+.stage .victory-title {
+  margin: 0;
+  font-size: 64px;
+  font-weight: 900;
+  letter-spacing: 8px;
+  color: #ffb13b;
+}
+
+.stage .victory-quote {
+  margin: 0;
+  font-size: 24px;
+  font-style: italic;
+}
+
+.stage .victory-sub {
+  margin: 0;
+  font-size: 17px;
+  color: #b3a288;
+}
+
+.stage .prestige-victory .btn.primary,
+.stage .prestige .btn.primary {
+  background: #ff8a3a;
+  color: #1c1a18;
+  border-color: #0e0c0a;
+}
+
+.stage .prestige-seal,
+.stage .prestige-heir {
+  background: linear-gradient(180deg, #e8b48a 0%, #d9c6a0 45%);
+}
+
+:root[data-theme="dark"] .stage .prestige-seal,
+:root[data-theme="dark"] .stage .prestige-heir {
+  background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stage .prestige-seal,
+  :root:not([data-theme="light"]) .stage .prestige-heir {
+    background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
+  }
+}
+
+.stage .seal-head {
+  margin-top: 70px;
+  text-align: center;
+}
+
+.stage .seal-head h2 {
+  margin: 0 0 4px;
+  font-size: 34px;
+  letter-spacing: 4px;
+}
+
+.stage .seal-head p {
+  margin: 0;
+}
+
+.stage .seal-body {
+  flex-grow: 1;
+  width: 1400px;
+  display: grid;
+  grid-template-columns: 460px minmax(0, 1fr);
+  gap: 28px;
+  padding: 20px 0 28px;
+  min-height: 0;
+}
+
+.stage .seal-doll {
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .seal-pips {
+  display: flex;
+  gap: 6px;
+}
+
+.stage .seal-pips span {
+  width: 16px;
+  height: 16px;
+  transform: rotate(45deg);
+  border: 2px solid #ffb13b;
+}
+
+.stage .seal-pips span.on {
+  background: #ffb13b;
+  box-shadow: 0 0 10px rgb(255 177 59 / 0.7);
+}
+
+.stage .seal-doll .paperdoll {
+  margin: 0 auto;
+}
+
+.stage .doll-slot.burns .item-tile {
+  opacity: 0.7;
+}
+
+.stage .doll-slot.sealed .item-tile {
+  border-color: #ffb13b;
+  box-shadow: 0 0 18px rgb(255 177 59 / 0.7);
+}
+
+.stage .seal-mark,
+.stage .burn-mark {
+  position: absolute;
+  left: -8px;
+  top: -8px;
+  width: 22px;
+  height: 22px;
+  border-radius: 11px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 900;
+  pointer-events: none;
+}
+
+.stage .seal-mark {
+  background: #ffb13b;
+  border: 2px solid #0e0c0a;
+  color: #1c1a18;
+}
+
+.stage .burn-mark {
+  background: rgb(14 12 10 / 0.85);
+  border: 1.5px solid #ff5a1f;
+  color: #ff5a1f;
+}
+
+.stage .seal-side {
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto auto;
+  gap: 16px;
+  min-height: 0;
+}
+
+.stage .item-detail.sealed {
+  border-color: #ffb13b;
+  box-shadow: 0 0 18px rgb(255 177 59 / 0.35);
+}
+
+.stage .btn.seal-btn:not(:disabled) {
+  background: #ffb13b;
+  color: #1c1a18;
+  border-color: #0e0c0a;
+}
+
+.stage .burn-lists {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.stage .burn-lists .panel-card {
+  padding: 12px 16px;
+}
+
+.stage .burn-lists ul {
+  margin: 6px 0 0;
+  padding-left: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.stage .burn-lists .burns {
+  border-left: 5px solid #ff5a1f;
+}
+
+.stage .burn-lists .stays {
+  border-left: 5px solid #ffb13b;
+}
+
+.stage .seal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.stage .heir-body {
+  flex-grow: 1;
+  width: 1400px;
+  display: grid;
+  grid-template-columns: 420px minmax(0, 1fr);
+  gap: 32px;
+  padding: 80px 0 32px;
+  min-height: 0;
+}
+
+.stage .heir-nan {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.stage .heir-nan-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stage .heir-nan-head > div {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .heir-nan-head .title-font {
+  font-size: 22px;
+}
+
+.stage .heir-nan-lines p {
+  margin: 0 0 14px;
+  font-size: 19px;
+  font-style: italic;
+  line-height: 1.45;
+}
+
+.stage .heir-note {
+  padding: 10px 12px;
+  border: 1.5px dashed var(--edge);
+  border-radius: 4px;
+  line-height: 1.4;
+}
+
+.stage .heir-main {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stage .heir-rewards {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stage .heir-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  border-top: 5px solid var(--tone, var(--accent));
+}
+
+.stage .heir-card-name {
+  font-size: 22px;
+}
+
+.stage .tone-card-seal {
+  --tone: #ffb13b;
+}
+
+.stage .tone-card-accent {
+  --tone: #ff8a3a;
+}
+
+.stage .tone-card-ember {
+  --tone: #ff5a1f;
+}
+
+.stage .tone-card-dust {
+  --tone: #c9c2b8;
+}
+
+.stage .tone-card-good {
+  --tone: #4fe08a;
+}
+
+.stage .tone-card-epic {
+  --tone: #b36bff;
+}
+
+.stage .heir-caravan {
+  padding: 12px 16px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 16px;
+}
+
+.stage .heir-main .wake {
+  align-self: flex-end;
+}
+
+/* --- burned stash, legacy facts --------------------------------------------------------------- */
+
+.stage .item-grid.burned {
+  filter: sepia(0.6) brightness(0.6);
+  background-color: #2a120a;
+  border-color: #ff5a1f;
+}
+
+.stage .burned-note {
+  padding: 10px 14px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 15px;
+  border-left: 5px solid #ff5a1f;
+}
+
+.stage .legacy-facts {
+  padding: 24px 0 24px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stage .legacy-fact {
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage .ring-slot {
+  cursor: pointer;
+  font: inherit;
+}
+
+.stage .ring-slot.on {
+  box-shadow: 0 0 0 3px var(--text);
+}
+
+.stage .ring-slot.heirloom {
+  border: 2px solid #ffb13b;
+  box-shadow: 0 0 18px rgb(255 177 59 / 0.45);
+  color: var(--text);
+}
+
+.stage .ring-slot.heirloom.on {
+  box-shadow:
+    0 0 18px rgb(255 177 59 / 0.45),
+    0 0 0 3px var(--text);
+}
+
+.stage .ring-slot.heirloom .seal {
+  opacity: 1;
+  color: #ffb13b;
+}
+
+.stage .ring-slot .sub.small {
+  text-align: center;
+  line-height: 1.15;
+  padding: 0 4px;
+}
+
+.stage .chronicle {
+  display: flex;
+  flex-direction: column;
 }
 
 /* --- ultrawide ------------------------------------------------------------------------------ */

@@ -45,7 +45,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -162,10 +162,51 @@ export interface RunState {
 
 /** Shown once in the Camp after a run ends. */
 export interface Notice {
-  readonly kind: "death" | "retreat" | "actCleared";
+  /** "prestige" is the Inheritance screen after the final boss of the run. */
+  readonly kind: "death" | "retreat" | "actCleared" | "prestige";
   readonly actId: string;
   readonly stage: number;
   readonly enemyName?: string;
+}
+
+/** What one Prestige gives (docs/design/ui-views-v1.md, Prestige flow: Inheritance). */
+export interface PrestigeRewards {
+  /** Prestige level after it: 1 after the first final boss. */
+  readonly prestige: number;
+  /** Seals (Save Tokens) in total. */
+  readonly seals: number;
+  readonly rotationSlots: number;
+  readonly harvesterEmber: number;
+  /** Fixed Salvage Dust instead of the burned stash. */
+  readonly dust: number;
+  readonly levelCap: number;
+  /** Monster Levels added to every stage. */
+  readonly monsterLevelBonus: number;
+}
+
+/** One finished generation in the Legacy chronicle. */
+export interface ChronicleEntry {
+  readonly generation: number;
+  readonly sealed: readonly EquipmentSlot[];
+  readonly level: number;
+  readonly deaths: number;
+  readonly enemyName: string;
+}
+
+/** Everything that survives the fire (Legacy view at the Hearthfire). */
+export interface LegacyState {
+  /** Prestiges done so far. Generation = prestige + 1. */
+  readonly prestige: number;
+  /** Sealed slots: their items survive the next Prestige. Prefilled when the next one comes. */
+  readonly seals: readonly EquipmentSlot[];
+  readonly chronicle: readonly ChronicleEntry[];
+}
+
+/** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */
+export interface PendingPrestige {
+  readonly actId: string;
+  readonly stage: number;
+  readonly enemyName: string;
 }
 
 export interface GameStats {
@@ -194,11 +235,16 @@ export interface GameState {
     /** Kaelen (Skill Tree, Battle Plan) joins after the first act boss. */
     readonly trainerUnlocked: boolean;
     readonly rotationSlots: number;
+    /** The Supply Wagon burned at the Prestige; it is repaired on the first return to Camp. */
+    readonly stashBurned: boolean;
   };
   /** `null` = in the Camp. */
   readonly run: RunState | null;
   readonly notice: Notice | null;
   readonly stats: GameStats;
+  readonly legacy: LegacyState;
+  /** Set between the final boss and the Prestige. Blocks the Camp until it is done. */
+  readonly pendingPrestige: PendingPrestige | null;
 }
 
 export class GameActionError extends Error {}
@@ -266,10 +312,13 @@ export function newGame(
       deathsInAct: 0,
       trainerUnlocked: false,
       rotationSlots: PROGRESSION.startRotationSlots,
+      stashBurned: false,
     },
     run: null,
     notice: null,
     stats: { fights: 0, wins: 0, deaths: 0, retreats: 0, bossKills: 0 },
+    legacy: { prestige: 0, seals: [], chronicle: [] },
+    pendingPrestige: null,
   };
 }
 
@@ -282,6 +331,35 @@ export function getAct(data: GameData, actId: string): ActData {
 }
 
 export const stagesInAct = (act: ActData) => act.monsterLevels.length;
+
+/** The last act of the run: its boss is the final boss and leads to the Prestige. */
+export function isFinalAct(data: GameData, actId: string): boolean {
+  const last = Math.max(...data.acts.map((a) => a.number));
+  return getAct(data, actId).number === last;
+}
+
+/** Level Cap at a Prestige level: 10, then +10 per Prestige. */
+export function levelCap(prestige: number): number {
+  return PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige * prestige;
+}
+
+/** Monster Level of a stage; every Prestige raises it. */
+export function stageMonsterLevel(act: ActData, stage: number, prestige: number): number {
+  return (act.monsterLevels[stage - 1] ?? 1) + PROGRESSION.monsterLevelsPerPrestige * prestige;
+}
+
+/** What the Prestige at `prestige` (1 = the first one) gives. */
+export function prestigeRewards(data: GameData, prestige: number): PrestigeRewards {
+  return {
+    prestige,
+    seals: Math.min(prestige, data.equipmentSlots.length),
+    rotationSlots: Math.max(PROGRESSION.startRotationSlots, PROGRESSION.prestigeRotationSlots),
+    harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
+    dust: PROGRESSION.prestigeDustPerLevel * prestige,
+    levelCap: levelCap(prestige),
+    monsterLevelBonus: PROGRESSION.monsterLevelsPerPrestige * prestige,
+  };
+}
 
 /** The weapon a main-hand item gives when its requirements are not met: none. Fallback. */
 function fallbackWeapon(state: GameState, data: GameData): WeaponDefinition | undefined {
@@ -498,6 +576,8 @@ export type GameAction =
   /** Thoric and Liora (Camp only). */
   | { readonly type: "craft"; readonly request: CraftRequest }
   | { readonly type: "setRotationSkill"; readonly slot: number; readonly skillId: string | null }
+  /** After the final boss: seal slots, burn the rest, start the next generation. */
+  | { readonly type: "prestige"; readonly sealedSlots: readonly EquipmentSlot[] }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -541,6 +621,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return craft(state, data, action.request);
     case "setRotationSkill":
       return setRotationSkill(state, data, action.slot, action.skillId);
+    case "prestige":
+      return doPrestige(state, data, action.sealedSlots);
     case "dismissNotice":
       return { ...state, notice: null };
   }
@@ -555,6 +637,7 @@ function requireRun(state: GameState, ...phases: RunPhase[]): RunState {
 
 export function requireCamp(state: GameState): void {
   if (state.run) fail("Only in the Camp");
+  if (state.pendingPrestige) fail("The harvest comes first");
 }
 
 function setOut(state: GameState, data: GameData, actId: string): GameState {
@@ -578,7 +661,7 @@ function startStage(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission");
   const act = getAct(data, run.actId);
   const [rng, next] = nextRng(state);
-  const level = act.monsterLevels[run.stage - 1] ?? 1;
+  const level = stageMonsterLevel(act, run.stage, state.legacy.prestige);
   let encounter: Encounter;
   if (run.stage >= stagesInAct(act)) {
     encounter = {
@@ -610,13 +693,14 @@ function startStage(state: GameState, data: GameData): GameState {
   return { ...next, run: { ...run, phase: "fight", encounter } };
 }
 
-/** Back to the Camp: flask refilled, life full, act progress gone. */
-function toCamp(state: GameState, notice: Notice): GameState {
+/** Back to the Camp: flask refilled, life full, act progress gone, Supply Wagon repaired. */
+function toCamp(state: GameState, notice: Notice | null): GameState {
   return {
     ...state,
     run: null,
     notice,
     flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
+    progress: { ...state.progress, stashBurned: false },
   };
 }
 
@@ -657,7 +741,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
       : rank === "elite" && rng.chance(PROGRESSION.eliteAscensionShardChance)
         ? 1
         : 0;
-  const leveled = gainXp(state.hero.level, state.hero.xp, xp);
+  const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
   const items = rollItemChoices(data, encounter, rank, state.progress.deathsInAct, rng);
   const spoils: SpoilsCard[] =
     rank !== "normal" || act.spoilsStages.includes(run.stage)
@@ -878,7 +962,8 @@ function continueRun(state: GameState, data: GameData): GameState {
     const cleared = state.progress.actsCleared.includes(run.actId)
       ? state.progress.actsCleared
       : [...state.progress.actsCleared, run.actId];
-    return toCamp(
+    const enemyName = encounterName(encounter, run.actId, data);
+    const after = toCamp(
       {
         ...state,
         progress: {
@@ -888,13 +973,14 @@ function continueRun(state: GameState, data: GameData): GameState {
           trainerUnlocked: true,
         },
       },
-      {
-        kind: "actCleared",
-        actId: run.actId,
-        stage: run.stage,
-        enemyName: encounterName(encounter, run.actId, data),
-      },
+      isFinalAct(data, run.actId)
+        ? null
+        : { kind: "actCleared", actId: run.actId, stage: run.stage, enemyName },
     );
+    // The final boss of the run: the Prestige flow starts (Victory → Seal → Inheritance).
+    return isFinalAct(data, run.actId)
+      ? { ...after, pendingPrestige: { actId: run.actId, stage: run.stage, enemyName } }
+      : after;
   }
   return {
     ...state,
@@ -956,7 +1042,7 @@ function equipFromInventory(state: GameState, data: GameData, itemId: string): G
   };
 }
 
-export type MoveBlockReason = "camp" | "noRoom";
+export type MoveBlockReason = "camp" | "burned" | "noRoom";
 
 /** Why an item cannot move between inventory and stash right now. */
 export function moveBlockReason(
@@ -966,6 +1052,7 @@ export function moveBlockReason(
   to: "inventory" | "stash",
 ): MoveBlockReason | undefined {
   if (state.run) return "camp";
+  if (to === "stash" && state.progress.stashBurned) return "burned";
   const source = to === "stash" ? state.inventory : state.stash;
   const placed = source.find((p) => p.item.id === itemId);
   if (!placed) return undefined;
@@ -981,6 +1068,7 @@ function moveItem(
   to: "inventory" | "stash",
 ): GameState {
   requireCamp(state);
+  if (to === "stash" && state.progress.stashBurned) return fail("The Supply Wagon burned down");
   const source = to === "stash" ? state.inventory : state.stash;
   const placed =
     source.find((p) => p.item.id === itemId) ??
@@ -1109,6 +1197,88 @@ function setRotationSkill(
   return { ...state, hero: { ...state.hero, rotation: filled } };
 }
 
+// --- prestige --------------------------------------------------------------------------------
+
+/** Seals the coming Prestige allows (one more than the Prestiges done so far). */
+export function sealsAvailable(state: GameState, data: GameData): number {
+  return prestigeRewards(data, state.legacy.prestige + 1).seals;
+}
+
+/**
+ * Prestige light (M5): sealed slots keep their items, everything else burns (gear, inventory,
+ * stash, currencies except Harvester's Ember). Level, points, Skill Tree, Battle Plan and Ember
+ * stay. A hero without a sealed weapon picks up a plain one of the same kind.
+ */
+function doPrestige(
+  state: GameState,
+  data: GameData,
+  sealedSlots: readonly EquipmentSlot[],
+): GameState {
+  const pending = state.pendingPrestige ?? fail("No Prestige pending");
+  const sealed = [...new Set(sealedSlots)];
+  if (sealed.length !== sealedSlots.length) return fail("A slot can only be sealed once");
+  if (sealed.some((slot) => !data.equipmentSlots.includes(slot))) return fail("No such slot");
+  if (sealed.length > sealsAvailable(state, data)) return fail("Not enough Seals");
+
+  const [rng, next] = nextRng(state);
+  const prestige = state.legacy.prestige + 1;
+  const rewards = prestigeRewards(data, prestige);
+  const equipment: Partial<Record<EquipmentSlot, Item>> = {};
+  for (const slot of sealed) {
+    const item = state.hero.equipment[slot];
+    if (item) equipment[slot] = item;
+  }
+  if (!equipment.mainHand) {
+    const old = state.hero.equipment.mainHand;
+    const baseId = old?.baseId ?? data.starterWeapons[0] ?? fail("No starter weapon");
+    equipment.mainHand = rollItem(data.items, { baseId, itemLevel: 1, rarity: "normal" }, rng);
+  }
+  return {
+    ...next,
+    hero: { ...state.hero, equipment },
+    wallet: {
+      gold: 0,
+      dust: rewards.dust,
+      reforgeStones: 0,
+      essences: {},
+      harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
+      ascensionShards: 0,
+    },
+    inventory: [],
+    stash: [],
+    flaskCharges: PROGRESSION.flaskStartCharges,
+    progress: {
+      actsCleared: [],
+      deathsInAct: 0,
+      trainerUnlocked: true,
+      rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
+      stashBurned: true,
+    },
+    run: null,
+    legacy: {
+      prestige,
+      seals: sealed,
+      chronicle: [
+        ...state.legacy.chronicle,
+        {
+          generation: prestige,
+          sealed,
+          level: state.hero.level,
+          deaths: state.stats.deaths - state.legacy.chronicle.reduce((n, c) => n + c.deaths, 0),
+          enemyName: pending.enemyName,
+        },
+      ],
+    },
+    pendingPrestige: null,
+    notice: {
+      kind: "prestige",
+      actId: pending.actId,
+      stage: pending.stage,
+      enemyName: pending.enemyName,
+    },
+  };
+}
+
 // --- save games ------------------------------------------------------------------------------
 
 export function serializeGame(state: GameState): string {
@@ -1121,6 +1291,7 @@ export function deserializeGame(json: string): GameState {
   if (typeof parsed !== "object" || parsed === null) throw new Error("Save game is not an object");
   let state = parsed as Partial<GameState>;
   if (state.version === 1) state = migrateV1(state);
+  if (state.version === 2) state = migrateV2(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -1129,7 +1300,8 @@ export function deserializeGame(json: string): GameState {
     !state.wallet ||
     !state.progress ||
     !Array.isArray(state.inventory) ||
-    !Array.isArray(state.stash)
+    !Array.isArray(state.stash) ||
+    !state.legacy
   ) {
     throw new Error("Save game is incomplete");
   }
@@ -1147,5 +1319,16 @@ function migrateV1(state: Partial<GameState>): Partial<GameState> {
     ...(state.run
       ? { run: { ...state.run, rewards: rewards ? { ...rewards, ascensionShards: 0 } : null } }
       : {}),
+  };
+}
+
+/** v2 (M4) → v3 (M5): Prestige (legacy, pending Prestige, burned stash) is new. */
+function migrateV2(state: Partial<GameState>): Partial<GameState> {
+  return {
+    ...state,
+    version: 3,
+    legacy: { prestige: 0, seals: [], chronicle: [] },
+    pendingPrestige: null,
+    ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
   };
 }

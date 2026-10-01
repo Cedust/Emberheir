@@ -14,7 +14,7 @@ export const ASHEN_BRUTE: EnemyDefinition = {
   attributes: { strength: 8, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 10 },
   weapon: RUSTY_CLEAVER,
   skills: [HEAVY_SWING],
-  baseLife: 620,
+  baseLife: 540,
 };
 
 export const ASHEN_SKIRMISHER: EnemyDefinition = {
