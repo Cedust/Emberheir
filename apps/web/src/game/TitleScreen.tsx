@@ -43,7 +43,7 @@ export function TitleScreen(props: {
               <button type="button" className="btn big primary" onClick={props.onContinue}>
                 Continue
                 <small>
-                  Generation 1 · Level {save.hero.level} ·{" "}
+                  Generation {save.legacy.prestige + 1} · Level {save.hero.level} ·{" "}
                   {save.run ? `Act 1, Stage ${save.run.stage}` : "In the Camp"}
                 </small>
               </button>

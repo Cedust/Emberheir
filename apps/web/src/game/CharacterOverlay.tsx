@@ -17,6 +17,7 @@ import {
   itemSlotFor,
   salvageValue,
   unequipBlockReason,
+  levelCap,
   xpToNextLevel,
 } from "@emberheir/sim";
 import { useState } from "react";
@@ -51,13 +52,14 @@ const ZERO: Record<Attribute, number> = {
 };
 
 /** Paperdoll layout of the PoC slots (Character mock, 400×500 box). */
-const DOLL: Partial<Record<EquipmentSlot, { x: number; y: number; w: number; h: number }>> = {
-  amulet: { x: 262, y: 30, w: 60, h: 60 },
-  body: { x: 145, y: 110, w: 110, h: 150 },
-  mainHand: { x: 20, y: 200, w: 90, h: 160 },
-  offHand: { x: 290, y: 200, w: 90, h: 160 },
-  ring1: { x: 170, y: 300, w: 60, h: 60 },
-};
+export const DOLL: Partial<Record<EquipmentSlot, { x: number; y: number; w: number; h: number }>> =
+  {
+    amulet: { x: 262, y: 30, w: 60, h: 60 },
+    body: { x: 145, y: 110, w: 110, h: 150 },
+    mainHand: { x: 20, y: 200, w: 90, h: 160 },
+    offHand: { x: 290, y: 200, w: 90, h: 160 },
+    ring1: { x: 170, y: 300, w: 60, h: 60 },
+  };
 
 const TABS = ["Offense", "Defense", "Heat"] as const;
 type Tab = (typeof TABS)[number];
@@ -107,10 +109,11 @@ export function CharacterOverlay(props: {
     setPending(ZERO);
   };
 
-  const next = xpToNextLevel(state.hero.level);
+  const cap = levelCap(state.legacy.prestige);
+  const next = xpToNextLevel(state.hero.level, cap);
   const xpText = Number.isFinite(next)
-    ? `${Math.floor((state.hero.xp / next) * 100)}% to Lv ${state.hero.level + 1} · Cap ${PROGRESSION.levelCap}`
-    : `Level cap ${PROGRESSION.levelCap} reached`;
+    ? `${Math.floor((state.hero.xp / next) * 100)}% to Lv ${state.hero.level + 1} · Cap ${cap}`
+    : `Level cap ${cap} reached`;
 
   const rows: Record<Tab, { label: string; value: string }[]> = {
     Offense: [
@@ -248,8 +251,13 @@ export function CharacterOverlay(props: {
                 if (!pos) return null;
                 const it = state.hero.equipment[slot];
                 const inactive = gear.inactive.some((i) => i.slot === slot);
+                const sealed = state.legacy.seals.includes(slot);
                 return (
-                  <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
+                  <div
+                    key={slot}
+                    className={`doll-slot${sealed ? " sealed" : ""}`}
+                    style={{ left: pos.x, top: pos.y }}
+                  >
                     <ItemTile
                       item={it}
                       label={SLOT_NAMES[itemSlotFor(slot)]}
@@ -259,11 +267,18 @@ export function CharacterOverlay(props: {
                       inactive={inactive}
                       {...(it ? { onSelect: () => setSelected(it.id) } : {})}
                     />
+                    {sealed && (
+                      <span className="seal-mark" title="Sealed: survives the next harvest">
+                        ◆
+                      </span>
+                    )}
                   </div>
                 );
               })}
             </div>
-            <p className="sub small">Click an item for details. Saved slots come with Prestige.</p>
+            <p className="sub small">
+              Click an item for details. ◆ marks a sealed slot: its item survives the harvest.
+            </p>
           </section>
 
           <section className="attr-column" aria-label="Attributes">

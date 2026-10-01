@@ -31,6 +31,7 @@ export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
 
 export const MOVE_BLOCK_TEXT: Record<MoveBlockReason, string> = {
   camp: "The Supply Wagon is in the Camp",
+  burned: "The Supply Wagon burned. Thoric patches it on your first return",
   noRoom: "No room",
 };
 

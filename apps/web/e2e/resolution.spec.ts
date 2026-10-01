@@ -1,4 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
+import { saveAfterGorrak, seedSave } from "./fixtures";
 
 /**
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
@@ -93,6 +94,12 @@ for (const screen of SCREENS) {
 test("1080p and 4K show the same picture", async ({ page }) => {
   const at = async (width: number, height: number) => {
     await page.setViewportSize({ width, height });
+    // The stage rescales on the resize event; measure once it fills the new window.
+    await expect
+      .poll(() =>
+        page.evaluate(() => document.querySelector(".stage")?.getBoundingClientRect().width),
+      )
+      .toBeCloseTo(width, 0);
     await expect(page.getByRole("button", { name: /SET OUT/ })).toBeVisible();
     const box = await page.getByRole("button", { name: /SET OUT/ }).boundingBox();
     if (!box) throw new Error("no SET OUT button");
@@ -104,3 +111,32 @@ test("1080p and 4K show the same picture", async ({ page }) => {
   const uhd = await at(3840, 2160);
   fullHd.forEach((v, i) => expect(uhd[i]).toBeCloseTo(v, 3));
 });
+
+for (const screen of SCREENS) {
+  test(`${screen.name}: the Prestige flow and Legacy fit without scrolling`, async ({ page }) => {
+    const errors: string[] = [];
+    page.on("pageerror", (e) => errors.push(e.message));
+    await page.setViewportSize({ width: screen.width, height: screen.height });
+    await seedSave(page, saveAfterGorrak());
+    await page.goto("/");
+    await page.getByRole("button", { name: /Continue/ }).click();
+    const check = async (view: string) =>
+      expect(await layoutProblems(page), `${screen.name} ${view}`).toEqual([]);
+
+    await expect(page.getByRole("region", { name: "Victory" })).toBeVisible();
+    await check("victory");
+    await page.getByRole("button", { name: "Hold On to What Matters" }).click();
+    await check("seal");
+    await page.getByRole("button", { name: /^Body Armor:/ }).click();
+    await page.getByRole("button", { name: "Seal This Slot" }).click();
+    await page.getByRole("button", { name: "Let It Burn" }).click();
+    await expect(page.getByRole("region", { name: "Inheritance" })).toBeVisible();
+    await check("inheritance");
+    await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
+    await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
+    await page.getByRole("button", { name: "Open Legacy" }).click();
+    await expect(page.getByRole("region", { name: "Legacy" })).toBeVisible();
+    await check("legacy");
+    expect(errors).toEqual([]);
+  });
+}

@@ -7,6 +7,7 @@ import { Compendium } from "./Compendium";
 import { IntermissionView } from "./IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
 import { NoticeScreen } from "./NoticeScreen";
+import { InheritanceView, PrestigeView } from "./PrestigeView";
 import { TitleScreen } from "./TitleScreen";
 import { BattleView } from "./battle/BattleView";
 import { type CampTarget, CampView } from "./camp/CampView";
@@ -39,7 +40,7 @@ export function GameApp() {
     if (!state || lab) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
-      if (state.notice) return;
+      if (state.notice || state.pendingPrestige) return;
       const key = e.key.toLowerCase();
       if (key === "escape") {
         if (overlay) setOverlay(null);
@@ -96,6 +97,18 @@ export function GameApp() {
         onContinue={game.resume}
         onNewGame={game.start}
         onLab={() => setLab(true)}
+      />
+    );
+  } else if (state.pendingPrestige) {
+    screen = <PrestigeView key={state.nonce} state={state} game={game} />;
+  } else if (state.notice?.kind === "prestige") {
+    screen = (
+      <InheritanceView
+        state={state}
+        onWake={() => {
+          setCampScreen(null);
+          game.dispatch({ type: "dismissNotice" });
+        }}
       />
     );
   } else if (state.notice) {
@@ -162,7 +175,7 @@ export function GameApp() {
   return (
     <Stage>
       {screen}
-      {state && !state.notice && overlay === "character" && (
+      {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
         <CharacterOverlay
           state={state}
           game={game}

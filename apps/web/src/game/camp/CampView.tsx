@@ -440,6 +440,7 @@ export function CampView(props: {
         <div className="run-title">
           <span className="title-font">Camp at the {act.name}</span>
           <span className="sub">
+            {state.legacy.prestige > 0 ? `Generation ${state.legacy.prestige + 1} · ` : ""}
             {cleared
               ? `Act ${act.number} cleared · farm it again or prepare for the next Act`
               : `Act ${act.number} · Boss: ${act.boss.name}`}
