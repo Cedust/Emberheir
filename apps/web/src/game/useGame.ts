@@ -59,6 +59,21 @@ export function useGame() {
     [replace],
   );
 
+  /** Applies several actions as one step: all or nothing. */
+  const dispatchAll = useCallback(
+    (actions: readonly GameAction[]) => {
+      const prev = ref.current;
+      if (!prev) return;
+      try {
+        replace(actions.reduce((s, a) => applyAction(s, POC_GAME_DATA, a), prev));
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    },
+    [replace],
+  );
+
   const start = useCallback(
     (starterWeapon: string) => {
       const seed = Math.floor(Math.random() * 0x7fffffff);
@@ -78,7 +93,16 @@ export function useGame() {
     setState(null);
   }, []);
 
-  return { state, error, dispatch, start, resume, quit, clearError: () => setError(null) };
+  return {
+    state,
+    error,
+    dispatch,
+    dispatchAll,
+    start,
+    resume,
+    quit,
+    clearError: () => setError(null),
+  };
 }
 
 export type GameApi = ReturnType<typeof useGame>;

@@ -19,6 +19,11 @@ export const INVENTORY_SIZE: GridSize = {
   h: PROGRESSION.inventoryHeight,
 };
 
+export const STASH_SIZE: GridSize = {
+  w: PROGRESSION.stashWidth,
+  h: PROGRESSION.stashHeight,
+};
+
 /** How many grid cells an item takes (Ring 1×1, Sword 1×3, Body Armor 2×3, ...). */
 export function itemSize(item: Item, catalog: ItemCatalog): GridSize {
   const base = getBase(catalog, item.baseId);
@@ -79,4 +84,32 @@ export function usedCells(placed: readonly PlacedItem[], catalog: ItemCatalog): 
     const size = itemSize(p.item, catalog);
     return sum + size.w * size.h;
   }, 0);
+}
+
+/**
+ * Re-packs a grid: biggest items first, then by slot and name ("Sort" in the stash). If the
+ * items do not fit in that order, the grid stays as it is.
+ */
+export function packGrid(
+  placed: readonly PlacedItem[],
+  catalog: ItemCatalog,
+  grid: GridSize,
+): PlacedItem[] {
+  const area = (p: PlacedItem) => {
+    const size = itemSize(p.item, catalog);
+    return size.w * size.h;
+  };
+  const sorted = [...placed].sort(
+    (a, b) =>
+      area(b) - area(a) ||
+      getBase(catalog, a.item.baseId).slot.localeCompare(getBase(catalog, b.item.baseId).slot) ||
+      a.item.name.localeCompare(b.item.name),
+  );
+  let result: PlacedItem[] = [];
+  for (const p of sorted) {
+    const next = addToGrid(result, p.item, catalog, grid);
+    if (!next) return [...placed];
+    result = next;
+  }
+  return result;
 }

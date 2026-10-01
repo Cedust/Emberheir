@@ -11,7 +11,10 @@ import {
   heroRotation,
   heroSetup,
   itemPickWeights,
+  moveBlockReason,
   newGame,
+  SAVE_VERSION,
+  spentInTree,
   rewardsDone,
   serializeGame,
 } from "./game";
@@ -206,6 +209,75 @@ describe("game loop", () => {
     expect(pity.normal).toBe(base.normal);
     expect(itemPickWeights("elite", 0)).toMatchObject({ normal: 0, magic: 0 });
     expect(itemPickWeights("boss", 0)).toMatchObject({ normal: 0, magic: 0, rare: 0 });
+  });
+
+  it("bosses drop an Ascension Shard", () => {
+    let s = act(start(), { type: "setOut", actId: "test-act" });
+    for (let i = 0; i < 2; i++) s = clearStage(s);
+    s = act(s, { type: "startStage" }, { type: "resolveFight" });
+    expect(s.run?.rewards?.ascensionShards).toBe(PROGRESSION.bossAscensionShards);
+    expect(s.wallet.ascensionShards).toBe(PROGRESSION.bossAscensionShards);
+  });
+
+  it("the Supply Wagon stores items in the Camp, and Equip swaps back into the stash", () => {
+    let s = act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+    s = act(s, { type: "resolveFight" });
+    const items = s.run?.rewards?.items ?? fail();
+    const index = items.findIndex((i) => i.baseId === "test-sword");
+    s = act(s, { type: "pickItem", index, mode: "take" }, { type: "retreat" });
+    const loot = items[index] ?? fail();
+    expect(moveBlockReason(s, data, loot.id, "stash")).toBeUndefined();
+    s = act(s, { type: "moveItem", itemId: loot.id, to: "stash" });
+    expect(s.inventory).toHaveLength(0);
+    expect(s.stash.map((p) => p.item.id)).toEqual([loot.id]);
+
+    const old = s.hero.equipment.mainHand ?? fail();
+    s = act(s, { type: "equip", itemId: loot.id });
+    expect(s.hero.equipment.mainHand?.id).toBe(loot.id);
+    expect(s.stash.map((p) => p.item.id)).toEqual([old.id]);
+    s = act(s, { type: "sortStash" }, { type: "moveItem", itemId: old.id, to: "inventory" });
+    expect(s.inventory.map((p) => p.item.id)).toEqual([old.id]);
+
+    const inRun = act(s, { type: "setOut", actId: "test-act" });
+    expect(moveBlockReason(inRun, data, old.id, "stash")).toBe("camp");
+    expect(() => act(inRun, { type: "moveItem", itemId: old.id, to: "stash" })).toThrow();
+  });
+
+  it("Respec at Kaelen gives back Skill Points and Ember for Gold", () => {
+    let s = start();
+    s = {
+      ...s,
+      hero: { ...s.hero, unspentSkillPoints: 4 },
+      wallet: { ...s.wallet, gold: PROGRESSION.respecGold, harvesterEmber: 1 },
+      progress: { ...s.progress, trainerUnlocked: true },
+    };
+    s = act(
+      s,
+      { type: "learnNodes", nodeIds: ["a", "b", "b", "k"] },
+      { type: "setRotationSkill", slot: 0, skillId: TREE_SKILL.id },
+    );
+    expect(spentInTree(data, s.hero.learned)).toEqual({ skillPoints: 3, harvesterEmber: 1 });
+    s = act(s, { type: "respecTree" });
+    expect(s.hero.learned).toEqual({});
+    expect(s.hero.unspentSkillPoints).toBe(4);
+    expect(s.hero.rotation).toEqual([null]);
+    expect(s.wallet).toMatchObject({ gold: 0, harvesterEmber: 1 });
+    expect(() => act(s, { type: "respecTree" })).toThrow(/Nothing/);
+  });
+
+  it("migrates M3 save games (version 1)", () => {
+    const s = clearStage(act(start(3), { type: "setOut", actId: "test-act" }));
+    const v1 = {
+      ...s,
+      version: 1,
+      stash: undefined,
+      wallet: { ...s.wallet, ascensionShards: undefined },
+    };
+    const migrated = deserializeGame(JSON.stringify(v1));
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(migrated.stash).toEqual([]);
+    expect(migrated.wallet.ascensionShards).toBe(0);
+    expect(migrated.run).toEqual(s.run);
   });
 
   it("save games round-trip and reject other versions", () => {

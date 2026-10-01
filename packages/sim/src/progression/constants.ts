@@ -79,9 +79,19 @@ export const PROGRESSION = {
   /** Rotation Slots before the first prestige. */
   startRotationSlots: 1,
 
+  /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
+  bossAscensionShards: 1,
+  eliteAscensionShardChance: 0.1,
+
+  /** Skill Tree respec at Kaelen. */
+  respecGold: 50,
+
   /** Inventory grid (D2 style). */
   inventoryWidth: 10,
   inventoryHeight: 4,
+  /** Stash in the Supply Wagon: fixed size, no tabs. */
+  stashWidth: 10,
+  stashHeight: 10,
   /** Default item size per slot in grid cells (bases can override). */
   itemSizes: {
     mainHand: { w: 1, h: 3 },
@@ -94,4 +104,23 @@ export const PROGRESSION = {
     amulet: { w: 1, h: 1 },
     ring: { w: 1, h: 1 },
   } satisfies Record<ItemSlot, { w: number; h: number }>,
+} as const;
+
+/**
+ * Camp crafting costs (docs/design/town-crafting-v1.md section 3). Starting values: a full Act 1
+ * run brings roughly 100–150 Gold and a few hundred Salvage Dust.
+ */
+export const CRAFTING = {
+  /** Upgrade (+1 Tier) at Thoric: 1 Ascension Shard + this much Gold × current Tier. */
+  upgradeGoldPerTier: 60,
+  upgradeShards: 1,
+  /** Temper (reroll one affix value) at Liora. */
+  temperDust: 10,
+  temperGold: 15,
+  /** Reforge (reroll all affixes) at Liora. */
+  reforgeStones: 1,
+  /** Imbue (replace one affix with the Essence's affix) at Liora. */
+  imbueEssences: 1,
+  /** Distill: Salvage Dust into one Reforge Stone at Liora. */
+  distillDust: 60,
 } as const;

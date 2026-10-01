@@ -17,6 +17,8 @@ function gitCommit(): string {
 export default defineConfig({
   base: process.env.BASE_PATH ?? "/",
   plugins: [react()],
+  // PixiJS alone is ~500 kB; one bundle is fine for the PoC.
+  build: { chunkSizeWarningLimit: 1200 },
   define: {
     __BUILD_COMMIT__: JSON.stringify(gitCommit()),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),

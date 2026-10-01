@@ -1,5 +1,7 @@
 import type {
+  CraftBlockReason,
   EquipBlockReason,
+  MoveBlockReason,
   LearnBlockReason,
   SpoilsCard,
   UnequipBlockReason,
@@ -7,6 +9,7 @@ import type {
 
 export const EQUIP_BLOCK_TEXT: Record<EquipBlockReason, string> = {
   fight: "Not during a fight",
+  camp: "The Supply Wagon is in the Camp",
   requirements: "Requirements not met",
   noSlot: "No slot for this item",
   noRoom: "No room for the old item",
@@ -24,6 +27,31 @@ export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
   notConnected: "Learn a connected node first",
   noSkillPoints: "No Skill Points left",
   noEmber: "Needs Harvester's Ember",
+};
+
+export const MOVE_BLOCK_TEXT: Record<MoveBlockReason, string> = {
+  camp: "The Supply Wagon is in the Camp",
+  noRoom: "No room",
+};
+
+export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
+  camp: "Only in the Camp",
+  mystic: "Liora joins after the act boss falls",
+  noItem: "Choose an item",
+  maxTier: "Already at the highest Tier",
+  requirements: "You would not meet the new requirements. Unequip it first.",
+  noAffixes: "This item has no affixes",
+  noAffix: "Choose an affix",
+  locked: "Locked: only the locked-in affix can change",
+  trigger: "Trigger Affixes cannot be changed",
+  unknownEssence: "Choose an Essence",
+  affixDoesNotFit: "This Essence does not fit this item",
+  duplicateAffix: "The item already has this affix",
+  gold: "Not enough Gold",
+  dust: "Not enough Salvage Dust",
+  reforgeStones: "Not enough Reforge Stones",
+  ascensionShards: "Needs an Ascension Shard (bosses, sometimes Elites)",
+  essence: "Not enough Essence",
 };
 
 export function spoilsLabel(card: SpoilsCard, essenceName: string): string {

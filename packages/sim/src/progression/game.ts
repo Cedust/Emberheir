@@ -23,7 +23,8 @@ import { Rng } from "../rng";
 import { PROGRESSION } from "./constants";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
-import { type PlacedItem, addToGrid } from "./inventory";
+import { INVENTORY_SIZE, type PlacedItem, STASH_SIZE, addToGrid, packGrid } from "./inventory";
+import { type CraftRequest, craft } from "./crafting";
 import { type EnemyRank, autoRewards, gainXp, xpForKill } from "./leveling";
 import {
   type LearnedNodes,
@@ -43,8 +44,8 @@ import {
  * reads the state and sends actions. All randomness comes from the state's seed.
  */
 
-/** Bumped whenever the save game shape changes. */
-export const SAVE_VERSION = 1;
+/** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
+export const SAVE_VERSION = 2;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -57,8 +58,8 @@ export interface ActData {
   readonly boss: EnemyDefinition;
   /** Stages with a fixed Spoils pick (5 and 10). */
   readonly spoilsStages: readonly number[];
-  /** The act's Essence (Imbue currency). */
-  readonly essence: { readonly id: string; readonly name: string };
+  /** The act's Essence (Imbue currency) and the stat affix it imbues. */
+  readonly essence: { readonly id: string; readonly name: string; readonly affixId: string };
 }
 
 /** Everything content-related the game loop needs. Built once in `@emberheir/content`. */
@@ -86,6 +87,8 @@ export interface Wallet {
   readonly essences: Readonly<Record<string, number>>;
   /** Pays for Keystones; one per win over the Ashen Harvester. */
   readonly harvesterEmber: number;
+  /** Upgrade (+1 Item Tier) at the Blacksmith. Bosses, sometimes Elites. */
+  readonly ascensionShards: number;
 }
 
 export interface HeroState {
@@ -130,6 +133,7 @@ export interface Rewards {
   readonly gold: number;
   readonly dust: number;
   readonly reforgeStones: number;
+  readonly ascensionShards: number;
   readonly levelsGained: number;
   /** Item pick: 1 of these. */
   readonly items: readonly Item[];
@@ -180,6 +184,8 @@ export interface GameState {
   readonly hero: HeroState;
   readonly wallet: Wallet;
   readonly inventory: readonly PlacedItem[];
+  /** Supply Wagon: only reachable in the Camp. */
+  readonly stash: readonly PlacedItem[];
   readonly flaskCharges: number;
   readonly progress: {
     readonly actsCleared: readonly string[];
@@ -197,7 +203,7 @@ export interface GameState {
 
 export class GameActionError extends Error {}
 
-const fail = (message: string): never => {
+export const fail = (message: string): never => {
   throw new GameActionError(message);
 };
 
@@ -211,7 +217,7 @@ function mixSeed(seed: number, nonce: number): number {
 }
 
 /** A fresh random stream for one action, plus the state with the nonce moved on. */
-function nextRng(state: GameState): [Rng, GameState] {
+export function nextRng(state: GameState): [Rng, GameState] {
   return [new Rng(mixSeed(state.seed, state.nonce)), { ...state, nonce: state.nonce + 1 }];
 }
 
@@ -244,8 +250,16 @@ export function newGame(
       equipment: { mainHand: weapon },
       rotation: [null],
     },
-    wallet: { gold: 0, dust: 0, reforgeStones: 0, essences: {}, harvesterEmber: 0 },
+    wallet: {
+      gold: 0,
+      dust: 0,
+      reforgeStones: 0,
+      essences: {},
+      harvesterEmber: 0,
+      ascensionShards: 0,
+    },
     inventory: [],
+    stash: [],
     flaskCharges: PROGRESSION.flaskStartCharges,
     progress: {
       actsCleared: [],
@@ -403,7 +417,7 @@ export function targetSlot(
   return slots.find((s) => !equipment[s]) ?? slots[0];
 }
 
-export type EquipBlockReason = "fight" | "requirements" | "noSlot" | "noRoom";
+export type EquipBlockReason = "fight" | "camp" | "requirements" | "noSlot" | "noRoom";
 
 /**
  * Why an item cannot be equipped right now. The old item goes to the inventory and is never
@@ -413,17 +427,21 @@ export function equipBlockReason(
   state: GameState,
   data: GameData,
   item: Item,
-  from: "inventory" | "pick",
+  from: "inventory" | "stash" | "pick",
 ): EquipBlockReason | undefined {
   if (state.run?.phase === "fight") return "fight";
+  if (from === "stash" && state.run) return "camp";
   const slot = targetSlot(item, data, state.hero.equipment);
   if (!slot) return "noSlot";
   if (missingRequirements(item, data.items, state.hero.attributes).length) return "requirements";
   const old = state.hero.equipment[slot];
   if (!old) return undefined;
-  const grid =
-    from === "inventory" ? state.inventory.filter((p) => p.item.id !== item.id) : state.inventory;
-  return addToGrid(grid, old, data.items) ? undefined : "noRoom";
+  // The old item goes back where the new one came from.
+  const source = from === "stash" ? state.stash : state.inventory;
+  const grid = from === "pick" ? source : source.filter((p) => p.item.id !== item.id);
+  return addToGrid(grid, old, data.items, from === "stash" ? STASH_SIZE : INVENTORY_SIZE)
+    ? undefined
+    : "noRoom";
 }
 
 /** Why an item cannot be taken into the inventory (only "noRoom"). */
@@ -472,6 +490,13 @@ export type GameAction =
   | { readonly type: "unequip"; readonly slot: EquipmentSlot }
   | { readonly type: "salvage"; readonly itemId: string }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
+  /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
+  | { readonly type: "respecTree" }
+  /** Supply Wagon (Camp only): move an item between inventory and stash. */
+  | { readonly type: "moveItem"; readonly itemId: string; readonly to: "inventory" | "stash" }
+  | { readonly type: "sortStash" }
+  /** Thoric and Liora (Camp only). */
+  | { readonly type: "craft"; readonly request: CraftRequest }
   | { readonly type: "setRotationSkill"; readonly slot: number; readonly skillId: string | null }
   | { readonly type: "dismissNotice" };
 
@@ -506,6 +531,14 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return salvage(state, action.itemId);
     case "learnNodes":
       return learn(state, data, action.nodeIds);
+    case "respecTree":
+      return respecTree(state, data);
+    case "moveItem":
+      return moveItem(state, data, action.itemId, action.to);
+    case "sortStash":
+      return sortStash(state, data);
+    case "craft":
+      return craft(state, data, action.request);
     case "setRotationSkill":
       return setRotationSkill(state, data, action.slot, action.skillId);
     case "dismissNotice":
@@ -520,7 +553,7 @@ function requireRun(state: GameState, ...phases: RunPhase[]): RunState {
   return run;
 }
 
-function requireCamp(state: GameState): void {
+export function requireCamp(state: GameState): void {
   if (state.run) fail("Only in the Camp");
 }
 
@@ -618,6 +651,12 @@ function resolveFight(state: GameState, data: GameData): GameState {
       : rank === "elite"
         ? rng.int(...PROGRESSION.eliteReforgeStones)
         : 0;
+  const shards =
+    rank === "boss"
+      ? PROGRESSION.bossAscensionShards
+      : rank === "elite" && rng.chance(PROGRESSION.eliteAscensionShardChance)
+        ? 1
+        : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp);
   const items = rollItemChoices(data, encounter, rank, state.progress.deathsInAct, rng);
   const spoils: SpoilsCard[] =
@@ -651,6 +690,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
       gold: state.wallet.gold + auto.gold,
       dust: state.wallet.dust + auto.dust,
       reforgeStones: state.wallet.reforgeStones + stones,
+      ascensionShards: state.wallet.ascensionShards + shards,
     },
     run: {
       ...run,
@@ -662,6 +702,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         gold: auto.gold,
         dust: auto.dust,
         reforgeStones: stones,
+        ascensionShards: shards,
         levelsGained: leveled.levelsGained,
         items,
         itemPick: null,
@@ -724,7 +765,9 @@ function rollItemChoices(
 }
 
 function retreat(state: GameState, data: GameData): GameState {
-  const run = requireRun(state, "intermission", "fight");
+  const run = requireRun(state, "intermission", "fight", "rewards");
+  // Rewards are picked first, so no loot gets lost on the way back.
+  if (run.rewards && !rewardsDone(run.rewards)) return fail("Pick your rewards first");
   const enemyName = run.encounter ? encounterName(run.encounter, run.actId, data) : undefined;
   return toCamp(
     { ...state, stats: { ...state.stats, retreats: state.stats.retreats + 1 } },
@@ -895,12 +938,65 @@ function findInInventory(state: GameState, itemId: string): PlacedItem {
   return state.inventory.find((p) => p.item.id === itemId) ?? fail("Item not in the inventory");
 }
 
+/** Equips from the inventory or (in the Camp) the stash; the old item goes back there. */
 function equipFromInventory(state: GameState, data: GameData, itemId: string): GameState {
-  const placed = findInInventory(state, itemId);
-  const reason = equipBlockReason(state, data, placed.item, "inventory");
+  const fromStash = state.stash.find((p) => p.item.id === itemId);
+  const placed = fromStash ?? findInInventory(state, itemId);
+  const reason = equipBlockReason(state, data, placed.item, fromStash ? "stash" : "inventory");
   if (reason) return fail(`Cannot equip: ${reason}`);
-  const rest = state.inventory.filter((p) => p !== placed);
-  return equipItem(state, data, placed.item, rest);
+  const slot = targetSlot(placed.item, data, state.hero.equipment) ?? fail("No slot for this item");
+  const old = state.hero.equipment[slot];
+  const source = (fromStash ? state.stash : state.inventory).filter((p) => p !== placed);
+  const size = fromStash ? STASH_SIZE : INVENTORY_SIZE;
+  const back = old ? (addToGrid(source, old, data.items, size) ?? fail("No room")) : source;
+  return {
+    ...state,
+    ...(fromStash ? { stash: back } : { inventory: back }),
+    hero: { ...state.hero, equipment: { ...state.hero.equipment, [slot]: placed.item } },
+  };
+}
+
+export type MoveBlockReason = "camp" | "noRoom";
+
+/** Why an item cannot move between inventory and stash right now. */
+export function moveBlockReason(
+  state: GameState,
+  data: GameData,
+  itemId: string,
+  to: "inventory" | "stash",
+): MoveBlockReason | undefined {
+  if (state.run) return "camp";
+  const source = to === "stash" ? state.inventory : state.stash;
+  const placed = source.find((p) => p.item.id === itemId);
+  if (!placed) return undefined;
+  const target = to === "stash" ? state.stash : state.inventory;
+  const size = to === "stash" ? STASH_SIZE : INVENTORY_SIZE;
+  return addToGrid(target, placed.item, data.items, size) ? undefined : "noRoom";
+}
+
+function moveItem(
+  state: GameState,
+  data: GameData,
+  itemId: string,
+  to: "inventory" | "stash",
+): GameState {
+  requireCamp(state);
+  const source = to === "stash" ? state.inventory : state.stash;
+  const placed =
+    source.find((p) => p.item.id === itemId) ??
+    fail(`Item not in the ${to === "stash" ? "inventory" : "stash"}`);
+  const target = to === "stash" ? state.stash : state.inventory;
+  const size = to === "stash" ? STASH_SIZE : INVENTORY_SIZE;
+  const moved = addToGrid(target, placed.item, data.items, size) ?? fail("No room");
+  const rest = source.filter((p) => p !== placed);
+  return to === "stash"
+    ? { ...state, inventory: rest, stash: moved }
+    : { ...state, inventory: moved, stash: rest };
+}
+
+function sortStash(state: GameState, data: GameData): GameState {
+  requireCamp(state);
+  return { ...state, stash: packGrid(state.stash, data.items, STASH_SIZE) };
 }
 
 function unequip(state: GameState, data: GameData, slot: EquipmentSlot): GameState {
@@ -924,7 +1020,7 @@ function salvage(state: GameState, itemId: string): GameState {
   };
 }
 
-function requireTrainer(state: GameState): void {
+export function requireTrainer(state: GameState): void {
   requireCamp(state);
   if (!state.progress.trainerUnlocked) fail("Kaelen joins the Camp after the act boss");
 }
@@ -948,6 +1044,44 @@ function learn(state: GameState, data: GameData, nodeIds: readonly string[]): Ga
       unspentSkillPoints: result.budget.skillPoints,
     },
     wallet: { ...state.wallet, harvesterEmber: result.budget.harvesterEmber },
+  };
+}
+
+/** Skill Points and Harvester's Ember spent in the tree (the start node is free). */
+export function spentInTree(
+  data: GameData,
+  learned: LearnedNodes,
+): { readonly skillPoints: number; readonly harvesterEmber: number } {
+  let skillPoints = 0;
+  let harvesterEmber = 0;
+  for (const node of data.skillTree.nodes) {
+    if (node.id === data.skillTree.startNodeId) continue;
+    const ranks = learned[node.id] ?? 0;
+    if (node.kind === "keystone") harvesterEmber += ranks;
+    else skillPoints += ranks;
+  }
+  return { skillPoints, harvesterEmber };
+}
+
+function respecTree(state: GameState, data: GameData): GameState {
+  requireTrainer(state);
+  const spent = spentInTree(data, state.hero.learned);
+  if (spent.skillPoints + spent.harvesterEmber === 0) return fail("Nothing to respec");
+  if (state.wallet.gold < PROGRESSION.respecGold) return fail("Not enough Gold");
+  return {
+    ...state,
+    hero: {
+      ...state.hero,
+      learned: {},
+      unspentSkillPoints: state.hero.unspentSkillPoints + spent.skillPoints,
+      // Tree skills are gone, so the Battle Plan falls back to the Start Skill.
+      rotation: state.hero.rotation.map(() => null),
+    },
+    wallet: {
+      ...state.wallet,
+      gold: state.wallet.gold - PROGRESSION.respecGold,
+      harvesterEmber: state.wallet.harvesterEmber + spent.harvesterEmber,
+    },
   };
 }
 
@@ -985,12 +1119,33 @@ export function serializeGame(state: GameState): string {
 export function deserializeGame(json: string): GameState {
   const parsed: unknown = JSON.parse(json);
   if (typeof parsed !== "object" || parsed === null) throw new Error("Save game is not an object");
-  const state = parsed as Partial<GameState>;
+  let state = parsed as Partial<GameState>;
+  if (state.version === 1) state = migrateV1(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
-  if (!state.hero || !state.wallet || !state.progress || !Array.isArray(state.inventory)) {
+  if (
+    !state.hero ||
+    !state.wallet ||
+    !state.progress ||
+    !Array.isArray(state.inventory) ||
+    !Array.isArray(state.stash)
+  ) {
     throw new Error("Save game is incomplete");
   }
   return state as GameState;
+}
+
+/** v1 (M3) → v2 (M4): Ascension Shards and the stash are new. */
+function migrateV1(state: Partial<GameState>): Partial<GameState> {
+  const rewards = state.run?.rewards;
+  return {
+    ...state,
+    version: 2,
+    stash: state.stash ?? [],
+    ...(state.wallet ? { wallet: { ...state.wallet, ascensionShards: 0 } } : {}),
+    ...(state.run
+      ? { run: { ...state.run, rewards: rewards ? { ...rewards, ascensionShards: 0 } : null } }
+      : {}),
+  };
 }
