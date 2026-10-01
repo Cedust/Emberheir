@@ -153,9 +153,20 @@ export const CINDER_SPIT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 4, max: 6 },
+      damage: { min: 2, max: 4 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.6 }],
     },
   ],
+};
+
+/** Gorrak's telegraphed Heavy Attack: announced 2 s ahead, every 10 s. */
+export const GORRAK_SLAM: SkillDefinition = {
+  id: "gorrak-slam",
+  name: "Slam",
+  type: "attack",
+  heatCost: 0,
+  tags: ["physical", "direct", "melee"],
+  description: "A huge, announced blow for 400 % Weapon Damage.",
+  hits: [{ kind: "weapon", multiplier: 4 }],
 };

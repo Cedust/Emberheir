@@ -5,7 +5,7 @@ import {
   type ResolvedEquipment,
   type SkillDefinition,
   type WeaponDefinition,
-  ATTRIBUTES,
+  buildHeroSetup,
   resolveEquipment,
 } from "@emberheir/sim";
 import { ITEM_CATALOG } from "./items";
@@ -45,28 +45,23 @@ export function resolveHeroGear(loadout: HeroLoadout): ResolvedEquipment {
   );
 }
 
-/** Builds the hero's fight setup from gear and a Battle Plan. */
+/** Builds the hero's fight setup from gear and a Battle Plan (debug page and balance CLI). */
 export function createHeroSetup(loadout: HeroLoadout): CombatantSetup {
-  const gear = resolveHeroGear(loadout);
-  const weapon = gear.weapon ?? loadout.weapon;
-  if (!weapon) throw new Error("The hero needs a weapon or an active main-hand item");
-  const own = loadout.attributes ?? STARTING_ATTRIBUTES;
-  const attributes = Object.fromEntries(
-    ATTRIBUTES.map((a) => [a, own[a] + gear.attributes[a]]),
-  ) as Record<keyof Attributes, number>;
-
-  const startSkill = START_SKILLS[weapon.id];
-  const skills = loadout.skills ?? (startSkill ? [startSkill] : []);
-  return {
-    name: "Heir",
-    level: loadout.level ?? 1,
-    attributes,
-    weapon,
-    rotation: skills.map((skill, i) => {
-      const threshold = loadout.thresholds?.[i];
-      return threshold === undefined ? { skill } : { skill, threshold };
-    }),
-    bonuses: gear.bonuses,
-    ...(gear.triggers.length ? { triggers: gear.triggers } : {}),
-  };
+  return buildHeroSetup(
+    {
+      level: loadout.level ?? 1,
+      attributes: loadout.attributes ?? STARTING_ATTRIBUTES,
+      equipment: loadout.equipment ?? {},
+      fallbackWeapon: loadout.weapon,
+      rotation: (weapon) => {
+        const startSkill = START_SKILLS[weapon.id];
+        const skills = loadout.skills ?? (startSkill ? [startSkill] : []);
+        return skills.map((skill, i) => {
+          const threshold = loadout.thresholds?.[i];
+          return threshold === undefined ? { skill } : { skill, threshold };
+        });
+      },
+    },
+    ITEM_CATALOG,
+  ).setup;
 }

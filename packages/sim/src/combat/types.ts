@@ -198,6 +198,29 @@ export interface RotationSlot {
   readonly level?: number;
 }
 
+/**
+ * A telegraphed Heavy Attack (docs/design/gegner-bosse-v1.md section 5): every `interval`
+ * seconds the fighter winds up for `windup` seconds (no Default Attacks meanwhile), then
+ * unleashes `skill` for free. The wind-up is visible, so Reaction Slots can answer it later.
+ */
+export interface TelegraphSpec {
+  readonly skill: SkillDefinition;
+  readonly interval: number;
+  readonly windup: number;
+}
+
+/** Rule changes, e.g. from Keystones. They change rules, not just numbers. */
+export interface CombatRules {
+  /** Extra damage taken from every source (0.2 = +20 %). */
+  readonly damageTaken?: number;
+  /** Multiplies the Heat Cost of every Rotation skill. */
+  readonly skillCostMultiplier?: number;
+  /** Multiplies the damage of the Default Attack. */
+  readonly defaultAttackDamage?: number;
+  /** "Heat no longer cools down": Cooling weapons keep their Heat without landing hits. */
+  readonly noHeatDecay?: boolean;
+}
+
 /** Everything the simulation needs to put one fighter into the arena. */
 export interface CombatantSetup {
   readonly name: string;
@@ -215,4 +238,7 @@ export interface CombatantSetup {
   readonly damageMultiplier?: number;
   /** Fraction of max life the fighter starts with (life carries over between stages). */
   readonly lifeFraction?: number;
+  /** Telegraphed Heavy Attacks (bosses). */
+  readonly telegraphs?: readonly TelegraphSpec[];
+  readonly rules?: CombatRules;
 }

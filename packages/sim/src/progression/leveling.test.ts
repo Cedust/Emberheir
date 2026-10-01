@@ -1,0 +1,37 @@
+import { describe, expect, it } from "vitest";
+import { PROGRESSION } from "./constants";
+import { autoRewards, gainXp, xpForKill, xpLevelFactor, xpToNextLevel } from "./leveling";
+
+describe("leveling", () => {
+  it("follows the XP table and stops at the Level Cap", () => {
+    expect(xpToNextLevel(1)).toBe(PROGRESSION.xpToNextLevel[0]);
+    expect(xpToNextLevel(PROGRESSION.levelCap)).toBe(Infinity);
+  });
+
+  it("gains several levels at once and keeps the leftover XP", () => {
+    const [a = 0, b = 0] = PROGRESSION.xpToNextLevel;
+    expect(gainXp(1, 0, a + b + 5)).toEqual({ level: 3, xp: 5, levelsGained: 2 });
+    expect(gainXp(1, 10, a - 11)).toEqual({ level: 1, xp: a - 1, levelsGained: 0 });
+  });
+
+  it("caps the level and drops XP at the cap", () => {
+    expect(gainXp(9, 0, 1_000_000)).toEqual({ level: 10, xp: 0, levelsGained: 1 });
+  });
+
+  it("gives 10 % less XP per level above the enemy, at least 10 %", () => {
+    expect(xpLevelFactor(1, 3)).toBe(1);
+    expect(xpLevelFactor(4, 2)).toBeCloseTo(0.8);
+    expect(xpLevelFactor(30, 1)).toBe(PROGRESSION.xpMinFactor);
+    expect(xpForKill(2, "normal", 1)).toBe(PROGRESSION.xpBase + PROGRESSION.xpPerMonsterLevel);
+    expect(xpForKill(1, "boss", 1)).toBe(PROGRESSION.xpBase * PROGRESSION.bossRewardMultiplier.xp);
+  });
+
+  it("Elites and Bosses give more Gold and Dust", () => {
+    const normal = autoRewards(3, "normal");
+    const elite = autoRewards(3, "elite");
+    const boss = autoRewards(3, "boss");
+    expect(elite.gold).toBeGreaterThan(normal.gold);
+    expect(boss.gold).toBeGreaterThan(elite.gold);
+    expect(boss.dust).toBeGreaterThan(normal.dust);
+  });
+});

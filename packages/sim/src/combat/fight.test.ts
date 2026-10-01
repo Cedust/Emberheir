@@ -237,4 +237,103 @@ describe("Fight", () => {
     const heal = ofType(burned.events, "heal")[0];
     expect(heal?.amount).toBe(3); // round(5 × 0.5)
   });
+
+  describe("telegraphs", () => {
+    const SLAM: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "slam",
+      name: "Slam",
+      heatCost: 0,
+      hits: [{ kind: "weapon", multiplier: 5 }],
+    };
+    const boss = () =>
+      setup({
+        name: "Boss",
+        bonuses: NO_CRIT,
+        baseLife: 100_000,
+        telegraphs: [{ skill: SLAM, interval: 4, windup: 1.5 }],
+      });
+
+    it("announces the Heavy Attack, pauses attacks during the wind-up, then hits for free", () => {
+      const fight = new Fight(dummy(), boss(), 1);
+      fight.advance(4.01);
+      expect(ofType(fight.events, "telegraph")).toEqual([
+        { t: 4, type: "telegraph", side: "enemy", skill: "Slam", windup: 1.5 },
+      ]);
+      expect(fight.snapshot().enemy.telegraph).toMatchObject({ skill: "Slam", windup: 1.5 });
+      const hitsBefore = ofType(fight.events, "hit").length;
+      fight.advance(1.4);
+      // No Default Attack while winding up.
+      expect(ofType(fight.events, "hit")).toHaveLength(hitsBefore);
+      fight.advance(0.2);
+      const slam = ofType(fight.events, "hit").find((h) => h.source === "Slam");
+      expect(slam).toMatchObject({ source: "Slam", damage: 50 });
+      expect(ofType(fight.events, "skill").at(-1)).toMatchObject({ skill: "Slam", heatCost: 0 });
+      expect(fight.snapshot().enemy.telegraph).toBeNull();
+    });
+
+    it("repeats every interval after the wind-up", () => {
+      const fight = new Fight(dummy(), boss(), 1);
+      fight.advance(12);
+      expect(ofType(fight.events, "telegraph").map((e) => e.t)).toEqual([4, 9.5]);
+    });
+  });
+
+  describe("rules (Keystones)", () => {
+    it("damageTaken raises all damage the fighter takes", () => {
+      const fight = new Fight(dummy(), setup({ bonuses: NO_CRIT }), 1);
+      const fragile = new Fight(
+        dummy({ rules: { damageTaken: 0.2 } }),
+        setup({ bonuses: NO_CRIT }),
+        1,
+      );
+      fight.advance(1.01);
+      fragile.advance(1.01);
+      expect(ofType(fight.events, "hit")[0]?.damage).toBe(10);
+      expect(ofType(fragile.events, "hit")[0]?.damage).toBe(12);
+    });
+
+    it("skillCostMultiplier makes skills cheaper and defaultAttackDamage scales the attack", () => {
+      const hero = setup({
+        bonuses: NO_CRIT,
+        rotation: [{ skill: SKILL_B }],
+        rules: { skillCostMultiplier: 0.5, defaultAttackDamage: 0.5 },
+      });
+      const fight = new Fight(hero, dummy(), 1);
+      expect(fight.snapshot().hero.rotation[0]?.heatCost).toBe(15);
+      fight.advance(2.01);
+      // Attack 1: 5 damage, +10 Heat. Attack 2: 10 Heat < 15, Default Attack again.
+      fight.advance(1);
+      const skills = ofType(fight.events, "skill");
+      expect(skills[0]).toMatchObject({ skill: "Skill B", heatCost: 15 });
+      expect(ofType(fight.events, "hit")[0]?.damage).toBe(5);
+    });
+
+    it("noHeatDecay keeps Cooling Heat without hits", () => {
+      const idle: WeaponDefinition = {
+        ...TEST_WEAPON,
+        heatBehavior: "cooling",
+        attacksPerSecond: 0,
+      };
+      const heatAfter = (noHeatDecay: boolean) => {
+        const hero = setup({ weapon: idle, rules: { noHeatDecay }, bonuses: { startingHeat: 50 } });
+        const fight = new Fight(hero, dummy(), 1);
+        fight.advance(5);
+        return fight.snapshot().hero.heat;
+      };
+      expect(heatAfter(true)).toBe(50);
+      expect(heatAfter(false)).toBeLessThan(50);
+    });
+
+    it("attack skills scale with skill level", () => {
+      const strike: SkillDefinition = { ...TEST_SKILL, heatCost: 0 };
+      const fight = new Fight(
+        setup({ bonuses: NO_CRIT, rotation: [{ skill: strike, level: 3 }] }),
+        dummy(),
+        1,
+      );
+      fight.advance(1.01);
+      expect(ofType(fight.events, "hit")[0]?.damage).toBe(24);
+    });
+  });
 });

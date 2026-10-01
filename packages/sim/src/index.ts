@@ -13,6 +13,7 @@ export { triggerThreshold } from "./combat/heat";
 export {
   Fight,
   runFight,
+  skillCost,
   type CombatEvent,
   type FightResult,
   type FightSnapshot,
@@ -78,5 +79,7 @@ export {
   type ItemTooltip,
 } from "./items/describe";
 
+export * from "./progression/index";
+
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
-export const SIM_VERSION = "0.2.0";
+export const SIM_VERSION = "0.3.0";

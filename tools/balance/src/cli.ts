@@ -1,6 +1,7 @@
 import {
   ACT1_ENEMIES,
   GAME_TITLE,
+  POC_GAME_DATA,
   HERO_SKILLS,
   HERO_WEAPONS,
   createHeroSetup,
@@ -8,9 +9,49 @@ import {
 } from "@emberheir/content";
 import { Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
+import { playAct, summarizeActRuns } from "./act";
 import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
+
+if (args.act > 0) {
+  runActMode();
+  process.exit(0);
+}
+
+/** `--act 1`: plays whole acts with an autopilot (loot, flask, deaths) per starter weapon. */
+function runActMode(): void {
+  const act = POC_GAME_DATA.acts.find((a) => a.number === args.act);
+  if (!act) throw new Error(`Act ${args.act} is not in the PoC`);
+  const runs = Math.min(args.runs, 500);
+  console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
+  console.log(`act=${act.name} runs=${runs} seed=${args.seed} attempts=${args.attempts}`);
+  console.log("");
+  const rows = [];
+  for (const starterWeapon of POC_GAME_DATA.starterWeapons) {
+    if (args.weapon !== "all" && args.weapon !== starterWeapon) continue;
+    const reports = Array.from({ length: runs }, (_, i) =>
+      playAct(POC_GAME_DATA, {
+        seed: args.seed + i,
+        starterWeapon,
+        actId: act.id,
+        maxAttempts: args.attempts,
+      }),
+    );
+    const s = summarizeActRuns(reports);
+    rows.push({
+      weapon: starterWeapon,
+      "cleared %": (s.clearRate * 100).toFixed(0),
+      "deaths before clear": s.avgDeaths.toFixed(1),
+      "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
+      "level at boss": s.avgLevelAtBoss.toFixed(1),
+      "avg fight s": s.avgFightSeconds.toFixed(1),
+      "boss fight s": s.avgBossSeconds.toFixed(1),
+      "elites / run": s.avgElites.toFixed(1),
+    });
+  }
+  console.table(rows);
+}
 
 const pick = <T extends { id: string }>(list: readonly T[], id: string, what: string): T[] => {
   if (id === "all") return [...list];

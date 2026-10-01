@@ -64,4 +64,6 @@ export const COMBAT = {
 
   /** Spell skills gain this much base damage per skill level above 1. */
   spellDamagePerSkillLevel: 0.2,
+  /** Attack skills gain this much damage per skill level above 1. */
+  attackDamagePerSkillLevel: 0.1,
 } as const;
