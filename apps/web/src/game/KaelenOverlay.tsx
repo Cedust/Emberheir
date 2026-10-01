@@ -6,7 +6,6 @@ import {
   knownSkills,
   learnBlockReason,
   learnNodes,
-  neighbours,
   nodeMaxRanks,
   nodeRanks,
 } from "@emberheir/sim";
@@ -212,10 +211,11 @@ export function KaelenOverlay(props: { state: GameState; game: GameApi; onClose:
                   {selected.kind === "keystone" ? "Learn (1 Ember)" : "Learn (1 point)"}
                 </button>
                 {reason && <p className="block-reason">{LEARN_BLOCK_TEXT[reason]}</p>}
-                <p className="hint">
-                  Neighbours: {neighbours(SKILL_TREE, selected.id).length} · Keystones cost
-                  Harvester&apos;s Ember, taken from the Ashen Harvester.
-                </p>
+                {selected.kind === "keystone" && (
+                  <p className="hint">
+                    Keystones cost Harvester&apos;s Ember, taken from the Ashen Harvester.
+                  </p>
+                )}
               </aside>
             )}
             <div className="attr-buttons">

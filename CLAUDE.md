@@ -55,6 +55,7 @@ npm test                             # unit tests (Vitest)
 npm run balance -- --runs 1000 --seed 42   # all PoC weapons vs. all Act 1 enemies
 npm run balance -- --weapon sword --skills power-strike,flurry --enemy ashen-brute --level 3
 npm run balance -- --gear all --level 3     # compare no gear vs. Normal/Magic/Rare/Epic gear
+npm run balance -- --act 1 --runs 200      # autopilot plays Act 1: deaths, level at boss, fight length
 npm run format                       # Prettier
 ```
 
