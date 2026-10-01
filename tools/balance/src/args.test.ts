@@ -10,6 +10,8 @@ describe("parseArgs", () => {
       skills: [],
       enemy: "all",
       level: 1,
+      gear: "none",
+      ilvl: 0,
     });
   });
 
@@ -28,6 +30,10 @@ describe("parseArgs", () => {
         "ashen-brute",
         "--level",
         "3",
+        "--gear",
+        "rare",
+        "--ilvl",
+        "7",
       ]),
     ).toEqual({
       runs: 50,
@@ -36,6 +42,8 @@ describe("parseArgs", () => {
       skills: ["power-strike", "flurry"],
       enemy: "ashen-brute",
       level: 3,
+      gear: "rare",
+      ilvl: 7,
     });
   });
 
@@ -44,5 +52,6 @@ describe("parseArgs", () => {
     expect(() => parseArgs(["--runs", "abc"])).toThrow("non-negative integer");
     expect(() => parseArgs(["--weapon"])).toThrow("expects a value");
     expect(() => parseArgs(["--level", "0"])).toThrow("at least 1");
+    expect(() => parseArgs(["--gear", "shiny"])).toThrow("--gear expects one of");
   });
 });

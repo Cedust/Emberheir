@@ -1,11 +1,19 @@
-import type { AilmentType, CombatEvent, DamageType, Side } from "@emberheir/sim";
+import {
+  type AilmentType,
+  type CombatEvent,
+  type DamageType,
+  STAT_NAMES,
+  type Side,
+  formatPercent,
+  isPercentStat,
+} from "@emberheir/sim";
 
 export interface LogLine {
   readonly time: string;
   readonly side: Side | null;
   readonly text: string;
   /** Damage type or ailment for coloring, if any. */
-  readonly tone: DamageType | AilmentType | "heal" | "end" | "skill" | null;
+  readonly tone: DamageType | AilmentType | "heal" | "end" | "skill" | "trigger" | null;
 }
 
 const AILMENT_NAMES: Record<AilmentType, string> = {
@@ -73,6 +81,39 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         side: event.side,
         tone: "heal",
         text: `${names[event.side]} heals +${event.amount}`,
+      };
+    case "trigger":
+      return {
+        time,
+        side: event.side,
+        tone: "trigger",
+        text: `${names[event.side]} triggers ${event.name}`,
+      };
+    case "barrier":
+      return {
+        time,
+        side: event.side,
+        tone: "heal",
+        text: `${names[event.side]} gains ${event.amount} Barrier`,
+      };
+    case "buff": {
+      const amount = isPercentStat(event.stat)
+        ? `+${formatPercent(event.amount * event.stacks)} %`
+        : `+${event.amount * event.stacks}`;
+      const stacks = event.stacks > 1 ? `, ${event.stacks} stacks` : "";
+      return {
+        time,
+        side: event.side,
+        tone: null,
+        text: `${names[event.side]} gains ${amount} ${STAT_NAMES[event.stat]} for ${event.duration}s${stacks}`,
+      };
+    }
+    case "heatGain":
+      return {
+        time,
+        side: event.side,
+        tone: null,
+        text: `${names[event.side]} gains ${Math.round(event.amount)} Heat`,
       };
     case "death":
       return { time, side: event.side, tone: "end", text: `${names[event.side]} falls` };

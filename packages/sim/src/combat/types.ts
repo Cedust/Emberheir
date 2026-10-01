@@ -61,6 +61,78 @@ export interface StatBonuses {
   readonly lifesteal?: number;
   readonly physicalPenetration?: number;
   readonly elementalPenetration?: number;
+  /** Flat damage dealt back to the attacker for every hit taken. */
+  readonly thorns?: number;
+  /** Extra chance to inflict the ailment with every hit (0.05 = 5 %). */
+  readonly burnChance?: number;
+  readonly chillChance?: number;
+  readonly shockChance?: number;
+}
+
+/** Stats a timed buff may raise. Life is excluded so buffs never change max life mid-fight. */
+export type BuffStat = Exclude<keyof StatBonuses, "life">;
+
+/**
+ * When a trigger fires (docs/design/stat-liste-v2.md section 8). "Attack" means the fighter's
+ * Default Attack. Hits caused by triggers or Thorns never fire triggers themselves, so triggers
+ * cannot loop.
+ */
+export type TriggerCondition =
+  | { readonly kind: "fightStart" }
+  | { readonly kind: "everySeconds"; readonly seconds: number }
+  | { readonly kind: "everyNthAttack"; readonly n: number }
+  /** Own Default Attack or skill hit landed. */
+  | { readonly kind: "onHit" }
+  | { readonly kind: "onCrit" }
+  | { readonly kind: "onSkillUse" }
+  /** Took a hit that was not evaded. */
+  | { readonly kind: "whenHit" }
+  | { readonly kind: "onEvade" }
+  | { readonly kind: "onBlock" }
+  /** Own life dropped below the fraction. Re-arms once life is back above it. */
+  | { readonly kind: "lifeBelow"; readonly threshold: number };
+
+export type TriggerEffect =
+  /** Extra hit for X × Weapon Damage. Can be evaded like an attack. */
+  | { readonly kind: "weaponHit"; readonly multiplier: number }
+  /** Extra spell hit with its own damage. Cannot be evaded. */
+  | {
+      readonly kind: "spellHit";
+      readonly name: string;
+      readonly damage: DamageRange;
+      readonly damageType: DamageType;
+    }
+  /** Inflicts an ailment on the enemy. Burn uses the damage of the hit that fired the trigger. */
+  | { readonly kind: "ailment"; readonly ailment: AilmentType }
+  /** Heals a fraction of max life. */
+  | { readonly kind: "heal"; readonly fraction: number }
+  /** Grants Barrier equal to a fraction of max life. Barrier absorbs damage before life. */
+  | { readonly kind: "barrier"; readonly fraction: number }
+  | { readonly kind: "heat"; readonly amount: number }
+  /** Raises one stat for a while. Firing again adds a stack up to maxStacks and refreshes. */
+  | {
+      readonly kind: "buff";
+      readonly stat: BuffStat;
+      readonly amount: number;
+      readonly duration: number;
+      readonly maxStacks?: number;
+    }
+  /** An immediate extra Default Attack (e.g. the Sword's Riposte). */
+  | { readonly kind: "extraAttack" };
+
+/** A concrete trigger with final numbers: Condition → Chance → Effect → Internal Cooldown. */
+export interface TriggerSpec {
+  readonly id: string;
+  /** Shown in the combat log, e.g. "Second Wind". */
+  readonly name: string;
+  readonly condition: TriggerCondition;
+  /** 0..1 before Trigger Chance. Default 1. */
+  readonly chance?: number;
+  /** Internal Cooldown in seconds. Default 0. */
+  readonly cooldown?: number;
+  /** Fires at most once per fight. */
+  readonly oncePerFight?: boolean;
+  readonly effect: TriggerEffect;
 }
 
 export interface WeaponDefinition {
@@ -77,6 +149,8 @@ export interface WeaponDefinition {
   readonly range: "melee" | "ranged";
   readonly implicit: StatBonuses;
   readonly ailmentChances?: readonly AilmentChance[];
+  /** Innate triggers of the weapon type, e.g. the Sword's Riposte. */
+  readonly triggers?: readonly TriggerSpec[];
 }
 
 export type SkillType = "attack" | "spell" | "buff" | "curse";
@@ -131,8 +205,10 @@ export interface CombatantSetup {
   readonly attributes: Attributes;
   readonly weapon: WeaponDefinition;
   readonly rotation: readonly RotationSlot[];
-  /** Bonuses from gear etc. (M2). The weapon implicit is added automatically. */
+  /** Bonuses from gear etc. The weapon implicit is added automatically. */
   readonly bonuses?: StatBonuses;
+  /** Trigger affixes from gear. Weapon triggers are added automatically. */
+  readonly triggers?: readonly TriggerSpec[];
   /** Base life before Vitality. Defaults to the hero curve for `level`. */
   readonly baseLife?: number;
   /** Multiplies all damage dealt (monster level scaling). Default 1. */

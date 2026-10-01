@@ -12,9 +12,12 @@ export interface MatchupReport {
   readonly avgLifeLeftOnWin: number;
 }
 
-/** Runs `runs` fights with seeds `seed, seed + 1, ...` and summarizes them. */
+/**
+ * Runs `runs` fights with seeds `seed, seed + 1, ...` and summarizes them. `hero` may be a
+ * function of the run index, e.g. to roll new gear for every fight.
+ */
 export function simulateMatchup(
-  hero: CombatantSetup,
+  hero: CombatantSetup | ((run: number) => CombatantSetup),
   enemy: CombatantSetup,
   runs: number,
   seed: number,
@@ -23,7 +26,7 @@ export function simulateMatchup(
   let duration = 0;
   let lifeLeft = 0;
   for (let i = 0; i < runs; i++) {
-    const result = runFight(hero, enemy, seed + i);
+    const result = runFight(typeof hero === "function" ? hero(i) : hero, enemy, seed + i);
     count[result.winner ?? "draw"]++;
     duration += result.duration;
     if (result.winner === "hero") lifeLeft += result.final.hero.life / result.final.hero.maxLife;

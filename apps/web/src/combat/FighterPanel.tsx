@@ -1,4 +1,4 @@
-import type { FighterSnapshot } from "@emberheir/sim";
+import { type FighterSnapshot, STAT_NAMES, isPercentStat } from "@emberheir/sim";
 
 const HEAT_BEHAVIOR_LABEL = { cooling: "Cooling", steady: "Steady", warming: "Warming" } as const;
 
@@ -46,6 +46,11 @@ export function FighterPanel({ fighter }: { fighter: FighterSnapshot }) {
         {fighter.weapon} · {fighter.defaultAttack} · {HEAT_BEHAVIOR_LABEL[fighter.heatBehavior]}
       </p>
       <Bar kind="life" label="Life" value={fighter.life} max={fighter.maxLife} />
+      {fighter.barrier > 0 && (
+        <p className="barrier" data-testid="barrier">
+          Barrier {Math.round(fighter.barrier)}
+        </p>
+      )}
       <Bar
         kind="heat"
         label="Heat"
@@ -74,6 +79,16 @@ export function FighterPanel({ fighter }: { fighter: FighterSnapshot }) {
             {a.type.slice(1)} {a.remaining.toFixed(1)}s
           </li>
         ))}
+        {fighter.buffs.map((b) => (
+          <li key={b.name} className="chip buff">
+            {b.name}
+            {b.stacks > 1 ? ` ×${b.stacks}` : ""} (
+            {isPercentStat(b.stat)
+              ? `+${Math.round(b.amount * b.stacks * 100)} %`
+              : `+${b.amount * b.stacks}`}{" "}
+            {STAT_NAMES[b.stat]}) {b.remaining.toFixed(1)}s
+          </li>
+        ))}
       </ul>
 
       <dl className="stats">
@@ -89,6 +104,16 @@ export function FighterPanel({ fighter }: { fighter: FighterSnapshot }) {
         <dd>{(fighter.stats.resistance * 100).toFixed(1)} %</dd>
         <dt>Heat Gain</dt>
         <dd>+{(fighter.stats.heatGain * 100).toFixed(0)} %</dd>
+        <dt>Physical Damage</dt>
+        <dd>+{(fighter.stats.physicalDamage * 100).toFixed(0)} %</dd>
+        <dt>Elemental Damage</dt>
+        <dd>+{(fighter.stats.elementalDamage * 100).toFixed(0)} %</dd>
+        <dt>Block</dt>
+        <dd>
+          {(fighter.stats.blockChance * 100).toFixed(0)} % / {fighter.stats.blockValue}
+        </dd>
+        <dt>Lifesteal</dt>
+        <dd>{(fighter.stats.lifesteal * 100).toFixed(1)} %</dd>
       </dl>
     </section>
   );

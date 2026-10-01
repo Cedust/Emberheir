@@ -18,16 +18,32 @@ import {
   stepHeat,
   triggerThreshold,
 } from "./heat";
-import { type DerivedStats, deriveStats } from "./stats";
+import { type DerivedStats, deriveStats, sumBonuses } from "./stats";
+import {
+  type BuffState,
+  type TriggerState,
+  applyBuff,
+  buffBonuses,
+  createTriggerState,
+  isNthAttack,
+  markFired,
+  stepBuffs,
+  stepTriggers,
+  triggerChance,
+  triggerReady,
+} from "./triggers";
 import type {
   AilmentChance,
   AilmentType,
+  BuffStat,
   CombatantSetup,
   DamageRange,
   DamageType,
   HeatBehavior,
   Side,
   SkillDefinition,
+  TriggerCondition,
+  TriggerEffect,
 } from "./types";
 
 /** One entry of the combat log. `side` is always the fighter the event is about. */
@@ -72,6 +88,29 @@ export type CombatEvent =
       readonly damage: number;
     }
   | { readonly t: number; readonly type: "heal"; readonly side: Side; readonly amount: number }
+  /** A trigger affix (or weapon trigger) fired. Its effect follows as separate events. */
+  | { readonly t: number; readonly type: "trigger"; readonly side: Side; readonly name: string }
+  | {
+      readonly t: number;
+      readonly type: "barrier";
+      readonly side: Side;
+      readonly amount: number;
+    }
+  | {
+      readonly t: number;
+      readonly type: "buff";
+      readonly side: Side;
+      readonly stat: BuffStat;
+      readonly amount: number;
+      readonly stacks: number;
+      readonly duration: number;
+    }
+  | {
+      readonly t: number;
+      readonly type: "heatGain";
+      readonly side: Side;
+      readonly amount: number;
+    }
   | { readonly t: number; readonly type: "death"; readonly side: Side }
   | { readonly t: number; readonly type: "fightEnd"; readonly winner: Side | null };
 
@@ -91,12 +130,22 @@ export interface FighterSnapshot {
   readonly heatBehavior: HeatBehavior;
   readonly life: number;
   readonly maxLife: number;
+  /** Temporary extra life that absorbs damage first. */
+  readonly barrier: number;
   readonly heat: number;
   readonly maxHeat: number;
   readonly rotation: readonly RotationSlotSnapshot[];
   /** Index into `rotation` of the next skill. */
   readonly nextSlot: number;
   readonly ailments: readonly { readonly type: AilmentType; readonly remaining: number }[];
+  readonly buffs: readonly {
+    readonly name: string;
+    readonly stat: BuffStat;
+    readonly amount: number;
+    readonly stacks: number;
+    readonly remaining: number;
+  }[];
+  /** Current stats including active buffs. */
   readonly stats: DerivedStats;
 }
 
@@ -112,14 +161,40 @@ export interface FightSnapshot {
 interface Fighter {
   readonly side: Side;
   readonly setup: CombatantSetup;
-  readonly stats: DerivedStats;
+  /** Stats without buffs. */
+  readonly baseStats: DerivedStats;
+  /** Stats with buffs, recomputed whenever a buff starts or ends. */
+  stats: DerivedStats;
   life: number;
+  barrier: number;
   heat: number;
   /** 0..1, a Default Attack or skill fires when it reaches 1. */
   attackProgress: number;
   nextSlot: number;
   ailments: AilmentStates;
   secondsSinceLastHit: number;
+  /** Default Attacks so far (for "Every Nth Attack"). Extra attacks from triggers do not count. */
+  attackCount: number;
+  readonly triggers: TriggerState[];
+  buffs: BuffState[];
+}
+
+/** What happened in the moment a trigger condition was met. */
+interface TriggerContext {
+  /** Damage of the hit that fired the trigger (Burn from a trigger scales with it). */
+  readonly damage?: number;
+}
+
+/** Options of one resolved hit. */
+interface HitOptions {
+  readonly source: string;
+  readonly baseDamage: number;
+  readonly type: DamageType;
+  readonly evadable: boolean;
+  readonly multiplier: number;
+  readonly ailmentChances: readonly AilmentChance[];
+  /** Hits caused by triggers do not fire further triggers. */
+  readonly fromTrigger: boolean;
 }
 
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
@@ -127,17 +202,45 @@ const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 function createFighter(side: Side, setup: CombatantSetup): Fighter {
   const stats = deriveStats(setup);
   const lifeFraction = Math.min(1, Math.max(0, setup.lifeFraction ?? 1));
+  const triggers = [...(setup.weapon.triggers ?? []), ...(setup.triggers ?? [])];
   return {
     side,
     setup,
+    baseStats: stats,
     stats,
     life: Math.max(1, Math.round(stats.maxLife * lifeFraction)),
+    barrier: 0,
     heat: stats.startingHeat,
     attackProgress: 0,
     nextSlot: 0,
     ailments: {},
     secondsSinceLastHit: 0,
+    attackCount: 0,
+    triggers: triggers.map(createTriggerState),
+    buffs: [],
   };
+}
+
+/** Gear ailment chances (Chance to Burn etc.) are added to the hit's own chances. */
+function withStatAilmentChances(
+  chances: readonly AilmentChance[],
+  stats: DerivedStats,
+): AilmentChance[] {
+  const extra: Record<AilmentType, number> = {
+    burn: stats.burnChance,
+    chill: stats.chillChance,
+    shock: stats.shockChance,
+  };
+  const merged = chances.map((c) => ({
+    ailment: c.ailment,
+    chance: Math.min(1, c.chance + extra[c.ailment]),
+  }));
+  for (const ailment of ["burn", "chill", "shock"] as const) {
+    if (extra[ailment] > 0 && !chances.some((c) => c.ailment === ailment)) {
+      merged.push({ ailment, chance: extra[ailment] });
+    }
+  }
+  return merged;
 }
 
 /**
@@ -179,6 +282,12 @@ export class Fight {
   step(): readonly CombatEvent[] {
     if (this.result) return [];
     const start = this.log.length;
+    if (this.ticks === 0) {
+      for (const side of ["hero", "enemy"] as const) {
+        this.fireTriggers(this.fighters[side], "fightStart");
+        if (this.result) return this.log.slice(start);
+      }
+    }
     this.ticks++;
     const dt = COMBAT.tickSeconds;
 
@@ -263,6 +372,20 @@ export class Fight {
       f.secondsSinceLastHit,
       this.heatMultiplier(f),
     );
+
+    const buffs = stepBuffs(f.buffs, dt);
+    if (buffs.expired) {
+      f.buffs = buffs.buffs;
+      this.refreshStats(f);
+    } else {
+      f.buffs = buffs.buffs;
+    }
+
+    for (const index of stepTriggers(f.triggers, dt)) {
+      const state = f.triggers[index];
+      if (state) this.tryTrigger(f, state, {});
+      if (this.result) return;
+    }
   }
 
   /** Uses the next Rotation skill if Heat reached its Trigger Threshold, else a Default Attack. */
@@ -277,7 +400,8 @@ export class Fight {
     this.defaultAttack(f);
   }
 
-  private defaultAttack(f: Fighter): void {
+  /** A Default Attack. Extra attacks from triggers (`fromTrigger`) fire no further triggers. */
+  private defaultAttack(f: Fighter, fromTrigger = false): void {
     const weapon = f.setup.weapon;
     const landed = this.hit(f, {
       source: weapon.defaultAttack,
@@ -286,13 +410,19 @@ export class Fight {
       evadable: true,
       multiplier: 1,
       ailmentChances: weapon.ailmentChances ?? [],
+      fromTrigger,
     });
+    if (this.result) return;
     if (landed) {
       f.heat = addHeat(
         f.heat,
         heatFromOwnHit(weapon.heatBehavior, weapon.heatPerHit),
         this.heatMultiplier(f),
       );
+    }
+    if (!fromTrigger) {
+      f.attackCount++;
+      this.fireTriggers(f, "everyNthAttack");
     }
   }
 
@@ -304,6 +434,8 @@ export class Fight {
       skill: skill.name,
       heatCost: skill.heatCost,
     });
+    this.fireTriggers(f, "onSkillUse");
+    if (this.result) return;
     const target = this.fighters[other(f.side)];
     for (const hit of skill.hits) {
       const count = hit.count ?? 1;
@@ -318,6 +450,7 @@ export class Fight {
             evadable: true,
             multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
             ailmentChances: hit.ailmentChances ?? [],
+            fromTrigger: false,
           });
         } else {
           const levelScale = 1 + COMBAT.spellDamagePerSkillLevel * (level - 1);
@@ -328,6 +461,7 @@ export class Fight {
             evadable: false,
             multiplier: 1,
             ailmentChances: hit.ailmentChances ?? [],
+            fromTrigger: false,
           });
         }
       }
@@ -335,17 +469,7 @@ export class Fight {
   }
 
   /** Resolves one hit from `attacker` on the other fighter. Returns true if it landed. */
-  private hit(
-    attacker: Fighter,
-    h: {
-      source: string;
-      baseDamage: number;
-      type: DamageType;
-      evadable: boolean;
-      multiplier: number;
-      ailmentChances: readonly AilmentChance[];
-    },
-  ): boolean {
+  private hit(attacker: Fighter, h: HitOptions): boolean {
     const defender = this.fighters[other(attacker.side)];
     const outcome = resolveHit(
       {
@@ -363,6 +487,7 @@ export class Fight {
 
     if (outcome.kind === "evaded") {
       this.emit({ t: this.time, type: "evade", side: defender.side, source: h.source });
+      if (!h.fromTrigger) this.fireTriggers(defender, "onEvade");
       return false;
     }
 
@@ -396,17 +521,170 @@ export class Fight {
       this.heal(attacker, outcome.damage * attacker.stats.lifesteal);
     }
 
-    for (const { ailment, chance } of h.ailmentChances) {
+    for (const { ailment, chance } of withStatAilmentChances(h.ailmentChances, attacker.stats)) {
       if (!this.rng.chance(chance)) continue;
-      const duration = ailmentDuration(
-        ailment,
-        attacker.stats.ailmentDuration,
-        defender.stats.tenacity,
-      );
-      defender.ailments = applyAilment(defender.ailments, ailment, duration, outcome.damage);
-      this.emit({ t: this.time, type: "ailment", side: defender.side, ailment });
+      this.inflict(attacker, defender, ailment, outcome.damage);
+    }
+
+    if (h.fromTrigger) return true;
+
+    const context = { damage: outcome.damage };
+    this.fireTriggers(attacker, "onHit", context);
+    if (outcome.crit) this.fireTriggers(attacker, "onCrit", context);
+    this.fireTriggers(defender, "whenHit", context);
+    if (outcome.blocked) this.fireTriggers(defender, "onBlock", context);
+    if (this.result) return true;
+
+    if (defender.stats.thorns > 0) {
+      const thorns = Math.max(1, Math.round(defender.stats.thorns));
+      this.emit({
+        t: this.time,
+        type: "hit",
+        side: defender.side,
+        source: "Thorns",
+        damage: thorns,
+        damageType: "physical",
+        crit: false,
+        blocked: false,
+      });
+      this.damage(attacker, thorns);
     }
     return true;
+  }
+
+  private inflict(
+    attacker: Fighter,
+    defender: Fighter,
+    ailment: AilmentType,
+    hitDamage: number,
+  ): void {
+    const duration = ailmentDuration(
+      ailment,
+      attacker.stats.ailmentDuration,
+      defender.stats.tenacity,
+    );
+    defender.ailments = applyAilment(defender.ailments, ailment, duration, hitDamage);
+    this.emit({ t: this.time, type: "ailment", side: defender.side, ailment });
+  }
+
+  // --- triggers ----------------------------------------------------------------------------
+
+  /** Checks every trigger of `f` with the given condition kind. */
+  private fireTriggers(
+    f: Fighter,
+    kind: TriggerCondition["kind"],
+    context: TriggerContext = {},
+  ): void {
+    for (const state of f.triggers) {
+      if (this.result) return;
+      const condition = state.spec.condition;
+      if (condition.kind !== kind) continue;
+      if (kind === "everyNthAttack" && !isNthAttack(condition, f.attackCount)) continue;
+      this.tryTrigger(f, state, context);
+    }
+  }
+
+  /** Rolls the chance of a trigger whose condition is met and applies its effect. */
+  private tryTrigger(f: Fighter, state: TriggerState, context: TriggerContext): void {
+    if (!triggerReady(state)) return;
+    const chance = triggerChance(state.spec.chance ?? 1, f.stats.triggerChance);
+    if (chance < 1 && !this.rng.chance(chance)) return;
+    markFired(state);
+    this.emit({ t: this.time, type: "trigger", side: f.side, name: state.spec.name });
+    this.applyEffect(f, state.spec.id, state.spec.name, state.spec.effect, context);
+  }
+
+  private applyEffect(
+    f: Fighter,
+    id: string,
+    name: string,
+    effect: TriggerEffect,
+    context: TriggerContext,
+  ): void {
+    const target = this.fighters[other(f.side)];
+    switch (effect.kind) {
+      case "weaponHit":
+        this.hit(f, {
+          source: name,
+          baseDamage: this.roll(f.setup.weapon.damage) * effect.multiplier,
+          type: f.setup.weapon.damageType,
+          evadable: true,
+          multiplier: 1,
+          ailmentChances: [],
+          fromTrigger: true,
+        });
+        return;
+      case "spellHit":
+        this.hit(f, {
+          source: effect.name,
+          baseDamage: this.roll(effect.damage),
+          type: effect.damageType,
+          evadable: false,
+          multiplier: 1,
+          ailmentChances: [],
+          fromTrigger: true,
+        });
+        return;
+      case "ailment": {
+        const weapon = f.setup.weapon.damage;
+        this.inflict(f, target, effect.ailment, context.damage ?? (weapon.min + weapon.max) / 2);
+        return;
+      }
+      case "heal":
+        this.heal(f, f.stats.maxLife * effect.fraction);
+        return;
+      case "barrier": {
+        const before = f.barrier;
+        f.barrier = Math.min(
+          f.stats.maxLife,
+          f.barrier + Math.round(f.stats.maxLife * effect.fraction),
+        );
+        if (f.barrier > before) {
+          this.emit({ t: this.time, type: "barrier", side: f.side, amount: f.barrier - before });
+        }
+        return;
+      }
+      case "heat": {
+        const before = f.heat;
+        f.heat = addHeat(f.heat, effect.amount, this.heatMultiplier(f));
+        this.emit({ t: this.time, type: "heatGain", side: f.side, amount: f.heat - before });
+        return;
+      }
+      case "buff": {
+        f.buffs = applyBuff(
+          f.buffs,
+          { id, name, stat: effect.stat, amount: effect.amount, remaining: effect.duration },
+          effect.maxStacks ?? 1,
+        );
+        this.refreshStats(f);
+        const stacks = f.buffs.find((b) => b.id === id)?.stacks ?? 1;
+        this.emit({
+          t: this.time,
+          type: "buff",
+          side: f.side,
+          stat: effect.stat,
+          amount: effect.amount,
+          stacks,
+          duration: effect.duration,
+        });
+        return;
+      }
+      case "extraAttack":
+        this.defaultAttack(f, true);
+        return;
+    }
+  }
+
+  /** Recomputes stats from setup + active buffs (life and max life stay as they are). */
+  private refreshStats(f: Fighter): void {
+    if (f.buffs.length === 0) {
+      f.stats = f.baseStats;
+      return;
+    }
+    f.stats = deriveStats({
+      ...f.setup,
+      bonuses: sumBonuses(f.setup.bonuses, buffBonuses(f.buffs)),
+    });
   }
 
   private heal(f: Fighter, amount: number): void {
@@ -417,13 +695,30 @@ export class Fight {
     if (healed <= 0) return;
     f.life += healed;
     this.emit({ t: this.time, type: "heal", side: f.side, amount: healed });
+    for (const state of f.triggers) {
+      const c = state.spec.condition;
+      if (c.kind === "lifeBelow" && f.life / f.stats.maxLife >= c.threshold) state.armed = true;
+    }
   }
 
+  /** Barrier absorbs damage first, the rest goes to life. */
   private damage(f: Fighter, amount: number): void {
-    f.life = Math.max(0, f.life - amount);
+    const absorbed = Math.min(f.barrier, amount);
+    f.barrier -= absorbed;
+    f.life = Math.max(0, f.life - (amount - absorbed));
     if (f.life === 0) {
       this.emit({ t: this.time, type: "death", side: f.side });
       this.end(other(f.side));
+      return;
+    }
+    for (const state of f.triggers) {
+      const c = state.spec.condition;
+      if (c.kind !== "lifeBelow" || !state.armed) continue;
+      if (f.life / f.stats.maxLife < c.threshold) {
+        state.armed = false;
+        this.tryTrigger(f, state, {});
+        if (this.result) return;
+      }
     }
   }
 
@@ -446,6 +741,7 @@ export class Fight {
       heatBehavior: f.setup.weapon.heatBehavior,
       life: f.life,
       maxLife: f.stats.maxLife,
+      barrier: f.barrier,
       heat: f.heat,
       maxHeat: COMBAT.maxHeat,
       rotation: f.setup.rotation.map((slot) => ({
@@ -459,6 +755,13 @@ export class Fight {
         const state = f.ailments[type];
         return state ? [{ type, remaining: state.remaining }] : [];
       }),
+      buffs: f.buffs.map((b) => ({
+        name: b.name,
+        stat: b.stat,
+        amount: b.amount,
+        stacks: b.stacks,
+        remaining: b.remaining,
+      })),
       stats: f.stats,
     };
   }
