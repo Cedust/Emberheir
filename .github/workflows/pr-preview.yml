@@ -1,0 +1,43 @@
+name: PR preview
+
+# Builds every PR to https://<owner>.github.io/<repo>/pr-preview/pr-<n>/ on the gh-pages
+# branch, comments the link on the PR and removes the preview when the PR is closed.
+# The main preview at the site root is not touched.
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, closed]
+
+permissions:
+  contents: write
+  pull-requests: write
+
+concurrency:
+  group: gh-pages
+  cancel-in-progress: false
+
+jobs:
+  preview:
+    # PRs from forks get a read-only token and cannot push to gh-pages.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        if: github.event.action != 'closed'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+        if: github.event.action != 'closed'
+      - run: npm run build
+        if: github.event.action != 'closed'
+        env:
+          BASE_PATH: /${{ github.event.repository.name }}/pr-preview/pr-${{ github.event.number }}/
+          VITE_PREVIEW_PR: ${{ github.event.number }}
+          GITHUB_SHA: ${{ github.event.pull_request.head.sha }}
+      - uses: rossjrw/pr-preview-action@v1
+        with:
+          source-dir: apps/web/dist
+          umbrella-dir: pr-preview
+          action: ${{ github.event.action == 'closed' && 'remove' || 'deploy' }}
+          qr-code: "false"

@@ -2,7 +2,7 @@
 
 A browser auto-battler with rogue-lite and prestige systems. Proof of concept in development.
 
-- **Preview:** https://cedust.github.io/Emberheir/
+- **Preview:** https://cedust.github.io/Emberheir/ (each PR also gets its own preview, linked in the PR)
 - **Design:** [`docs/design/`](docs/design/) (start with the Game Design Document)
 - **Rules for contributors/agents:** [`CLAUDE.md`](CLAUDE.md)
 
