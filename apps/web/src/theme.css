@@ -146,6 +146,7 @@ h2 {
 }
 
 .controls label,
+.gear-controls label,
 .slot-config {
   display: grid;
   gap: 4px;
@@ -167,7 +168,10 @@ h2 {
 
 .controls select,
 .controls input,
-.controls button {
+.controls button,
+.gear-controls select,
+.gear-controls input,
+.gear-controls button {
   font: inherit;
   color: var(--text);
   background: var(--bg);
@@ -176,7 +180,8 @@ h2 {
   padding: 4px 8px;
 }
 
-.controls input[type="number"] {
+.controls input[type="number"],
+.gear-controls input[type="number"] {
   width: 80px;
 }
 
@@ -186,7 +191,8 @@ h2 {
   margin-left: auto;
 }
 
-.controls button {
+.controls button,
+.gear-controls button {
   font-family: var(--font-title);
   font-weight: 700;
   cursor: pointer;
@@ -202,6 +208,172 @@ h2 {
 .controls button:disabled {
   opacity: 0.5;
   cursor: default;
+}
+
+/* Gear */
+
+.gear {
+  padding: 16px;
+  display: grid;
+  gap: 12px;
+}
+
+.gear-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: end;
+  font-size: 0.9rem;
+}
+
+.gear-controls h2 {
+  margin-right: auto;
+  align-self: center;
+}
+
+.gear-empty {
+  margin: 0;
+  color: var(--text-sub);
+}
+
+.gear-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 12px;
+  align-items: start;
+}
+
+/* Item names on parchment use the darkened rarity text colors in light mode. */
+.item-card {
+  --rarity-text-normal: #5a5550;
+  --rarity-text-magic: #2d5bd0;
+  --rarity-text-rare: #a86f00;
+  --rarity-text-epic: #7a3fcf;
+  --rarity-text-legendary: #b84a00;
+  --affix-trigger: #a8401a;
+  --unmet: #b3261e;
+
+  border: 2px solid var(--frame);
+  border-top-width: 4px;
+  border-radius: 6px;
+  background: var(--bg);
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  line-height: 1.35;
+  display: grid;
+  gap: 6px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .item-card {
+    --rarity-text-normal: var(--rarity-normal);
+    --rarity-text-magic: var(--rarity-magic);
+    --rarity-text-rare: var(--rarity-rare);
+    --rarity-text-epic: var(--rarity-epic);
+    --rarity-text-legendary: var(--rarity-legendary);
+    --affix-trigger: #ffb070;
+    --unmet: #ff6b6b;
+  }
+}
+
+:root[data-theme="dark"] .item-card {
+  --rarity-text-normal: var(--rarity-normal);
+  --rarity-text-magic: var(--rarity-magic);
+  --rarity-text-rare: var(--rarity-rare);
+  --rarity-text-epic: var(--rarity-epic);
+  --rarity-text-legendary: var(--rarity-legendary);
+  --affix-trigger: #ffb070;
+  --unmet: #ff6b6b;
+}
+
+.item-card.rarity-normal {
+  --frame: var(--rarity-normal);
+  --name: var(--rarity-text-normal);
+}
+.item-card.rarity-magic {
+  --frame: var(--rarity-magic);
+  --name: var(--rarity-text-magic);
+}
+.item-card.rarity-rare {
+  --frame: var(--rarity-rare);
+  --name: var(--rarity-text-rare);
+}
+.item-card.rarity-epic {
+  --frame: var(--rarity-epic);
+  --name: var(--rarity-text-epic);
+  box-shadow: 0 0 10px rgb(179 107 255 / 0.35);
+}
+.item-card.rarity-legendary {
+  --frame: var(--rarity-legendary);
+  --name: var(--rarity-text-legendary);
+  box-shadow: 0 0 12px rgb(255 138 31 / 0.45);
+}
+
+.item-card.inactive {
+  opacity: 0.75;
+}
+
+.item-name {
+  font-family: var(--font-title);
+  font-size: 1rem;
+  margin: 0;
+  color: var(--name);
+}
+
+.item-type,
+.item-level {
+  margin: 0;
+  color: var(--text-sub);
+}
+
+.item-level {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+}
+
+.item-lines {
+  list-style: none;
+  margin: 0;
+  padding: 6px 0 0;
+  border-top: 1px solid var(--edge);
+}
+
+.item-implicit {
+  color: var(--text-sub);
+  font-style: italic;
+}
+
+.item-affixes .affix-stat {
+  color: var(--rarity-text-magic);
+}
+
+.item-affixes .affix-trigger {
+  color: var(--affix-trigger);
+  font-weight: 700;
+}
+
+.item-requirements,
+.item-inactive {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-sub);
+}
+
+.item-requirements .unmet,
+.item-inactive {
+  color: var(--unmet);
+  font-weight: 700;
+}
+
+.barrier {
+  margin: -4px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-sub);
+}
+
+.chip.buff {
+  color: #e8c07a;
 }
 
 /* Arena */
@@ -477,6 +649,10 @@ h2 {
 }
 .tone-skill {
   color: var(--accent);
+  font-weight: 700;
+}
+.tone-trigger {
+  color: var(--accent-2);
   font-weight: 700;
 }
 .tone-end {

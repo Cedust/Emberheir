@@ -16,6 +16,16 @@ export const SWORD: WeaponDefinition = {
   heatPerHit: 10,
   range: "melee",
   implicit: { evasion: 0.05 },
+  // Counter identity (docs/design/waffen-v1.md section 3).
+  triggers: [
+    {
+      id: "riposte",
+      name: "Riposte",
+      condition: { kind: "whenHit" },
+      chance: 0.15,
+      effect: { kind: "extraAttack" },
+    },
+  ],
 };
 
 export const FIRE_WAND: WeaponDefinition = {

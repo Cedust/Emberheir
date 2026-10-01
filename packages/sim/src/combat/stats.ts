@@ -22,6 +22,10 @@ export interface DerivedStats {
   readonly lifesteal: number;
   readonly physicalPenetration: number;
   readonly elementalPenetration: number;
+  readonly thorns: number;
+  readonly burnChance: number;
+  readonly chillChance: number;
+  readonly shockChance: number;
 }
 
 export function heroBaseLife(level: number): number {
@@ -49,6 +53,10 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     lifesteal: 0,
     physicalPenetration: 0,
     elementalPenetration: 0,
+    thorns: 0,
+    burnChance: 0,
+    chillChance: 0,
+    shockChance: 0,
   };
   for (const set of sets) {
     if (!set) continue;
@@ -99,5 +107,9 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     lifesteal: b.lifesteal,
     physicalPenetration: b.physicalPenetration,
     elementalPenetration: b.elementalPenetration,
+    thorns: b.thorns,
+    burnChance: clamp(b.burnChance, 0, 1),
+    chillChance: clamp(b.chillChance, 0, 1),
+    shockChance: clamp(b.shockChance, 0, 1),
   };
 }

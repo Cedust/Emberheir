@@ -4,9 +4,20 @@ import {
   HERO_WEAPONS,
   START_SKILLS,
   createHeroSetup,
+  resolveHeroGear,
+  rollPocGear,
 } from "@emberheir/content";
-import { Fight, type FightSnapshot, type SkillDefinition, createEnemySetup } from "@emberheir/sim";
-import { useEffect, useRef, useState } from "react";
+import {
+  type Equipment,
+  Fight,
+  type FightSnapshot,
+  type Rarity,
+  Rng,
+  type SkillDefinition,
+  createEnemySetup,
+} from "@emberheir/sim";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { GearPanel } from "../items/GearPanel";
 import { CombatLog } from "./CombatLog";
 import { FighterPanel } from "./FighterPanel";
 import { type LogLine, formatEvent, formatTime } from "./format";
@@ -27,6 +38,16 @@ const defaultSlots = (weaponId: string): SlotConfig[] => [
 
 const SPEEDS = [1, 2, 4, 8] as const;
 
+const GEAR_OPTIONS: readonly { value: Rarity | "mixed" | "none"; label: string }[] = [
+  { value: "none", label: "None" },
+  { value: "normal", label: "Normal" },
+  { value: "magic", label: "Magic" },
+  { value: "rare", label: "Rare" },
+  { value: "epic", label: "Epic" },
+  { value: "mixed", label: "Mixed" },
+];
+type GearOption = (typeof GEAR_OPTIONS)[number]["value"];
+
 const findSkill = (id: string): SkillDefinition | undefined => HERO_SKILLS.find((s) => s.id === id);
 
 export function CombatDebug() {
@@ -36,6 +57,23 @@ export function CombatDebug() {
   const [level, setLevel] = useState(1);
   const [seed, setSeed] = useState(1);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(2);
+  const [gearRarity, setGearRarity] = useState<GearOption>("rare");
+  const [itemLevel, setItemLevel] = useState(3);
+  const [gearSeed, setGearSeed] = useState(1);
+
+  // Same gear seed + options = same items, so a fight can be replayed with identical gear.
+  const equipment: Equipment = useMemo(
+    () =>
+      gearRarity === "none"
+        ? {}
+        : rollPocGear({ weaponBaseId: weaponId, rarity: gearRarity, itemLevel }, new Rng(gearSeed)),
+    [weaponId, gearRarity, itemLevel, gearSeed],
+  );
+  const weapon = HERO_WEAPONS.find((w) => w.id === weaponId);
+  const resolvedGear = useMemo(
+    () => resolveHeroGear({ equipment, ...(weapon ? { weapon } : {}) }),
+    [equipment, weapon],
+  );
 
   const fightRef = useRef<Fight | null>(null);
   const [snapshot, setSnapshot] = useState<FightSnapshot | null>(null);
@@ -76,7 +114,6 @@ export function CombatDebug() {
   }, [running]);
 
   const start = () => {
-    const weapon = HERO_WEAPONS.find((w) => w.id === weaponId);
     const enemy = ACT1_ENEMIES.find((e) => e.id === enemyId);
     if (!weapon || !enemy) return;
     const chosen = slots.flatMap((slot) => {
@@ -87,6 +124,7 @@ export function CombatDebug() {
     });
     const hero = createHeroSetup({
       weapon,
+      equipment,
       level,
       skills: chosen.map((c) => c.skill),
       thresholds: chosen.map((c) => c.threshold),
@@ -218,6 +256,50 @@ export function CombatDebug() {
           </button>
         </div>
       </form>
+
+      <section className="gear panel" aria-label="Gear">
+        <div className="gear-controls">
+          <h2>Gear</h2>
+          <label>
+            Rarity
+            <select
+              value={gearRarity}
+              onChange={(e) => setGearRarity(e.target.value as GearOption)}
+            >
+              {GEAR_OPTIONS.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label>
+            Item Level
+            <input
+              type="number"
+              min={1}
+              max={100}
+              value={itemLevel}
+              onChange={(e) =>
+                setItemLevel(Math.min(100, Math.max(1, Math.floor(Number(e.target.value) || 1))))
+              }
+            />
+          </label>
+          <label>
+            Gear seed
+            <input
+              type="number"
+              min={0}
+              value={gearSeed}
+              onChange={(e) => setGearSeed(Math.max(0, Math.floor(Number(e.target.value) || 0)))}
+            />
+          </label>
+          <button type="button" onClick={() => setGearSeed((s) => s + 1)}>
+            Roll gear
+          </button>
+        </div>
+        <GearPanel equipment={equipment} resolved={resolvedGear} />
+      </section>
 
       {snapshot && (
         <div className="arena">

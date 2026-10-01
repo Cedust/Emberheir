@@ -25,3 +25,24 @@ test("a debug fight runs to the end and fills the log", async ({ page }) => {
   await expect(log).toContainText(/wins|draw/);
   expect(errors).toEqual([]);
 });
+
+test("rolled gear shows item tooltips and goes into the fight", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+
+  await page.goto("/");
+  const cards = page.getByTestId("item-card");
+  await expect(cards).toHaveCount(5);
+  await expect(cards.first()).toContainText("Main Hand");
+  const firstName = await cards.first().locator(".item-name").textContent();
+
+  await page.getByLabel("Rarity").selectOption("epic");
+  await expect(cards.first()).toContainText(/Every|On |When |Life below/);
+  await page.getByRole("button", { name: "Roll gear" }).click();
+  await expect(cards.first().locator(".item-name")).not.toHaveText(firstName ?? "");
+
+  await page.getByRole("button", { name: "Start fight" }).click();
+  await page.getByRole("button", { name: "Skip to end" }).click();
+  await expect(page.getByTestId("fight-result")).toHaveText(/Victory|Defeat|Draw/);
+  expect(errors).toEqual([]);
+});

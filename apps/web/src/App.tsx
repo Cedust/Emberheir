@@ -8,7 +8,7 @@ export function App() {
   return (
     <main className="shell">
       <header className="page-header">
-        <p className="eyebrow">Dev Preview · M1 Combat Core</p>
+        <p className="eyebrow">Dev Preview · M2 Items & Affixes</p>
         <h1>{GAME_TITLE}</h1>
       </header>
 
