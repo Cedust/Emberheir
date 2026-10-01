@@ -84,7 +84,7 @@ body {
 h1 {
   font-family: var(--font-title);
   font-weight: 700;
-  font-size: clamp(2.5rem, 8vw, 4.5rem);
+  font-size: clamp(2rem, 6vw, 3rem);
   letter-spacing: 0.04em;
   margin: 0;
   color: var(--accent);
@@ -92,19 +92,22 @@ h1 {
 
 .shell {
   min-height: 100vh;
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 24px 16px 32px;
   display: grid;
-  place-items: center;
-  padding: 16px;
+  gap: 20px;
+  align-content: start;
 }
 
-.panel {
-  width: min(560px, 100%);
-  background: var(--panel);
-  border: 2px solid var(--edge);
-  border-radius: 6px;
-  box-shadow: var(--panel-shadow);
-  padding: 40px 32px;
+.page-header {
   text-align: center;
+}
+
+h2 {
+  font-family: var(--font-title);
+  font-size: 1.25rem;
+  margin: 0;
 }
 
 .eyebrow {
@@ -113,38 +116,383 @@ h1 {
   letter-spacing: 0.2em;
   font-size: 0.75rem;
   color: var(--accent-2);
-  margin: 0 0 8px;
+  margin: 0 0 4px;
 }
 
-.lead {
-  color: var(--text-sub);
-  margin: 12px 0 28px;
+.panel,
+.controls,
+.fighter,
+.log {
+  background: var(--panel);
+  border: 2px solid var(--edge);
+  border-radius: 6px;
+  box-shadow: var(--panel-shadow);
 }
 
-.acts {
+.combat-debug {
+  display: grid;
+  gap: 16px;
+}
+
+/* Controls */
+
+.controls {
   display: flex;
-  justify-content: center;
+  flex-wrap: wrap;
+  gap: 12px 16px;
+  align-items: end;
+  padding: 16px;
+  font-size: 0.9rem;
+}
+
+.controls label,
+.slot-config {
+  display: grid;
+  gap: 4px;
+  color: var(--text-sub);
+}
+
+.slot-config {
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: 4px 8px 8px;
+  margin: 0;
+  grid-template-columns: auto 80px;
+  column-gap: 6px;
+}
+
+.slot-config legend {
+  padding: 0 4px;
+}
+
+.controls select,
+.controls input,
+.controls button {
+  font: inherit;
+  color: var(--text);
+  background: var(--bg);
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  padding: 4px 8px;
+}
+
+.controls input[type="number"] {
+  width: 80px;
+}
+
+.buttons {
+  display: flex;
   gap: 8px;
+  margin-left: auto;
+}
+
+.controls button {
+  font-family: var(--font-title);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 6px 14px;
+}
+
+.controls button.primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--panel);
+}
+
+.controls button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+
+/* Arena */
+
+.arena {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+@media (max-width: 760px) {
+  .arena {
+    grid-template-columns: 1fr;
+  }
+}
+
+.vs {
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding-top: 24px;
+  min-width: 96px;
+}
+
+.clock {
+  font-family: var(--font-mono);
+  color: var(--text-sub);
+}
+
+.result {
+  font-family: var(--font-title);
+  font-size: 1.4rem;
+}
+
+.result-victory {
+  color: var(--heal);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.5);
+}
+
+.result-defeat {
+  color: var(--life);
+}
+
+.fighter {
+  padding: 16px;
+  display: grid;
+  gap: 8px;
+}
+
+.fighter header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.level,
+.weapon {
+  color: var(--text-sub);
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.bar {
+  position: relative;
+  height: 22px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.25);
+  overflow: hidden;
+}
+
+.bar-heat {
+  height: 16px;
+}
+
+.bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  transition: width 80ms linear;
+}
+
+.bar-life .bar-fill {
+  background: var(--life);
+}
+
+.bar-heat .bar-fill {
+  background: var(--heat-gradient);
+}
+
+.bar-marker {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  margin-left: -1px;
+  background: var(--text);
+}
+
+.bar-text {
+  position: relative;
+  display: block;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  line-height: 20px;
+  color: #fff;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.9);
+}
+
+.bar-heat .bar-text {
+  line-height: 14px;
+}
+
+.rotation {
+  display: flex;
+  gap: 6px;
   list-style: none;
   padding: 0;
-  margin: 0 0 28px;
+  margin: 0;
+  counter-reset: slot;
 }
 
-.act {
-  width: 40px;
-  height: 40px;
-  border-radius: 4px;
+.slot {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
   border: 1px solid var(--edge);
-  display: grid;
-  place-items: center;
-  font-family: var(--font-title);
-  color: #fff;
-  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+  border-radius: 4px;
+  padding: 4px 8px;
+  font-size: 0.85rem;
+  opacity: 0.7;
 }
 
-.act.locked {
-  opacity: 0.45;
-  filter: grayscale(0.6);
+.slot.next {
+  opacity: 1;
+  border-color: var(--heat);
+  box-shadow: 0 0 0 1px var(--heat);
+}
+
+.slot-cost {
+  font-family: var(--font-mono);
+  color: var(--text-sub);
+}
+
+.ailments {
+  display: flex;
+  gap: 6px;
+  min-height: 24px;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.chip {
+  font-size: 0.8rem;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 0.55);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: auto auto;
+  gap: 0 12px;
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--text-sub);
+}
+
+.stats dd {
+  margin: 0;
+  text-align: right;
+  font-family: var(--font-mono);
+}
+
+/* Combat log */
+
+.log {
+  list-style: none;
+  margin: 0;
+  padding: 12px 16px;
+  height: 320px;
+  overflow-y: auto;
+  font-size: 0.9rem;
+}
+
+.log-line {
+  display: flex;
+  gap: 12px;
+}
+
+.log-line.side-enemy {
+  padding-left: 24px;
+}
+
+.log-time {
+  font-family: var(--font-mono);
+  color: var(--text-sub);
+  min-width: 60px;
+}
+
+.log-empty {
+  color: var(--text-sub);
+}
+
+/*
+ * Damage type and ailment colors in the log. The log sits on parchment, so light mode uses the
+ * darkened text variants (docs/design/ui-look-v1.md: only text on parchment is darkened).
+ */
+.log {
+  --tone-physical: #5a5550;
+  --tone-fire: #c2410c;
+  --tone-cold: #0e7490;
+  --tone-lightning: #8a6d00;
+  --tone-void: #7a3fcf;
+  --tone-heal: #1f8a4c;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .log {
+    --tone-physical: var(--dmg-physical);
+    --tone-fire: var(--dmg-fire);
+    --tone-cold: var(--dmg-cold);
+    --tone-lightning: var(--dmg-lightning);
+    --tone-void: var(--dmg-void);
+    --tone-heal: var(--heal);
+  }
+}
+
+:root[data-theme="dark"] .log {
+  --tone-physical: var(--dmg-physical);
+  --tone-fire: var(--dmg-fire);
+  --tone-cold: var(--dmg-cold);
+  --tone-lightning: var(--dmg-lightning);
+  --tone-void: var(--dmg-void);
+  --tone-heal: var(--heal);
+}
+
+.tone-physical,
+.tone-fire,
+.tone-cold,
+.tone-lightning,
+.tone-void,
+.tone-burn,
+.tone-chill,
+.tone-shock,
+.tone-heal {
+  font-weight: 700;
+}
+
+.tone-physical {
+  color: var(--tone-physical);
+}
+.tone-fire,
+.tone-burn {
+  color: var(--tone-fire);
+}
+.tone-cold,
+.tone-chill {
+  color: var(--tone-cold);
+}
+.tone-lightning,
+.tone-shock {
+  color: var(--tone-lightning);
+}
+.tone-void {
+  color: var(--tone-void);
+}
+.tone-heal {
+  color: var(--tone-heal);
+}
+.tone-skill {
+  color: var(--accent);
+  font-weight: 700;
+}
+.tone-end {
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+/* Ailment chips sit on a dark pill, so they keep the original colors. */
+.chip.tone-burn {
+  color: var(--dmg-fire);
+}
+.chip.tone-chill {
+  color: var(--dmg-cold);
+}
+.chip.tone-shock {
+  color: var(--dmg-lightning);
 }
 
 .build {

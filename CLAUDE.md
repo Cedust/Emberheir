@@ -52,7 +52,8 @@ npm run test:e2e   # Playwright smoke tests (builds the web app)
 npm install
 npm run dev                          # web app at http://localhost:5173
 npm test                             # unit tests (Vitest)
-npm run balance -- --runs 1000 --seed 42
+npm run balance -- --runs 1000 --seed 42   # all PoC weapons vs. all Act 1 enemies
+npm run balance -- --weapon sword --skills power-strike,flurry --enemy ashen-brute --level 3
 npm run format                       # Prettier
 ```
 
