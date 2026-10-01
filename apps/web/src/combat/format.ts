@@ -13,7 +13,8 @@ export interface LogLine {
   readonly side: Side | null;
   readonly text: string;
   /** Damage type or ailment for coloring, if any. */
-  readonly tone: DamageType | AilmentType | "heal" | "end" | "skill" | "trigger" | null;
+  readonly tone:
+    DamageType | AilmentType | "heal" | "end" | "skill" | "trigger" | "telegraph" | null;
 }
 
 const AILMENT_NAMES: Record<AilmentType, string> = {
@@ -114,6 +115,13 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         side: event.side,
         tone: null,
         text: `${names[event.side]} gains ${Math.round(event.amount)} Heat`,
+      };
+    case "telegraph":
+      return {
+        time,
+        side: event.side,
+        tone: "telegraph",
+        text: `${names[event.side]} winds up ${event.skill}! (${event.windup}s)`,
       };
     case "death":
       return { time, side: event.side, tone: "end", text: `${names[event.side]} falls` };

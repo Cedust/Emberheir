@@ -1,6 +1,6 @@
 import type { EnemyDefinition } from "@emberheir/sim";
-import { CINDER_SPIT, HEAVY_SWING, QUICK_CUTS } from "./skills";
-import { CINDER_ROD, RUSTY_CLEAVER, TWIN_SHIVS } from "./weapons";
+import { CINDER_SPIT, GORRAK_SLAM, HEAVY_SWING, QUICK_CUTS } from "./skills";
+import { CINDER_ROD, PIT_MAUL, RUSTY_CLEAVER, TWIN_SHIVS } from "./weapons";
 
 /**
  * Act 1 (Ashen Fields) enemies, one per PoC archetype (docs/design/gegner-bosse-v1.md
@@ -14,7 +14,7 @@ export const ASHEN_BRUTE: EnemyDefinition = {
   attributes: { strength: 8, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 10 },
   weapon: RUSTY_CLEAVER,
   skills: [HEAVY_SWING],
-  baseLife: 450,
+  baseLife: 620,
 };
 
 export const ASHEN_SKIRMISHER: EnemyDefinition = {
@@ -25,7 +25,7 @@ export const ASHEN_SKIRMISHER: EnemyDefinition = {
   attributes: { strength: 4, dexterity: 8, agility: 15, intelligence: 0, wisdom: 2, vitality: 6 },
   weapon: TWIN_SHIVS,
   skills: [QUICK_CUTS],
-  baseLife: 320,
+  baseLife: 450,
   bonuses: { evasion: 0.12 },
 };
 
@@ -37,7 +37,7 @@ export const CINDER_CASTER: EnemyDefinition = {
   attributes: { strength: 0, dexterity: 4, agility: 2, intelligence: 10, wisdom: 6, vitality: 4 },
   weapon: CINDER_ROD,
   skills: [CINDER_SPIT],
-  baseLife: 300,
+  baseLife: 420,
 };
 
 export const ACT1_ENEMIES: readonly EnemyDefinition[] = [
@@ -45,3 +45,20 @@ export const ACT1_ENEMIES: readonly EnemyDefinition[] = [
   ASHEN_SKIRMISHER,
   CINDER_CASTER,
 ];
+
+/**
+ * Act 1 boss (docs/design/gegner-bosse-v1.md section 6): a slow brute whose Slam is announced
+ * every 10 s. It teaches Telegraphs and defensive play.
+ */
+export const GORRAK: EnemyDefinition = {
+  id: "gorrak",
+  name: "Gorrak, the Pit Brute",
+  archetype: "brute",
+  description: "Announces a crushing Slam every 10 seconds.",
+  attributes: { strength: 10, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 14 },
+  weapon: PIT_MAUL,
+  skills: [HEAVY_SWING],
+  baseLife: 520,
+  boss: true,
+  telegraphs: [{ skill: GORRAK_SLAM, interval: 10, windup: 2 }],
+};

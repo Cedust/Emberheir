@@ -12,6 +12,8 @@ describe("parseArgs", () => {
       level: 1,
       gear: "none",
       ilvl: 0,
+      act: 0,
+      attempts: 30,
     });
   });
 
@@ -34,6 +36,10 @@ describe("parseArgs", () => {
         "rare",
         "--ilvl",
         "7",
+        "--act",
+        "1",
+        "--attempts",
+        "5",
       ]),
     ).toEqual({
       runs: 50,
@@ -44,6 +50,8 @@ describe("parseArgs", () => {
       level: 3,
       gear: "rare",
       ilvl: 7,
+      act: 1,
+      attempts: 5,
     });
   });
 

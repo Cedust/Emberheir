@@ -39,6 +39,7 @@ export const FIRE_WAND_BASE: ItemBaseDefinition = {
   weapon: FIRE_WAND,
   requirements: { intelligence: 5 },
   affixWeights: { elemental: 1.5, physical: 0.5 },
+  size: { w: 1, h: 2 },
 };
 
 export const ROUND_SHIELD: ItemBaseDefinition = {

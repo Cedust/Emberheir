@@ -3,6 +3,7 @@ import type {
   CombatantSetup,
   SkillDefinition,
   StatBonuses,
+  TelegraphSpec,
   WeaponDefinition,
 } from "./types";
 
@@ -20,6 +21,10 @@ export interface EnemyDefinition {
   /** Base life at Monster Level 1 (before Vitality). */
   readonly baseLife: number;
   readonly bonuses?: StatBonuses;
+  /** Telegraphed Heavy Attacks (bosses). */
+  readonly telegraphs?: readonly TelegraphSpec[];
+  /** Act bosses are never Elites and give better rewards. */
+  readonly boss?: boolean;
 }
 
 /**
@@ -46,5 +51,6 @@ export function createEnemySetup(enemy: EnemyDefinition, level: number): Combata
     baseLife: enemy.baseLife * scaling.life,
     damageMultiplier: scaling.damage,
     ...(enemy.bonuses ? { bonuses: enemy.bonuses } : {}),
+    ...(enemy.telegraphs ? { telegraphs: enemy.telegraphs } : {}),
   };
 }

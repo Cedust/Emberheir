@@ -111,6 +111,14 @@ export type CombatEvent =
       readonly side: Side;
       readonly amount: number;
     }
+  /** A telegraphed Heavy Attack starts winding up; `skill` fires after `windup` seconds. */
+  | {
+      readonly t: number;
+      readonly type: "telegraph";
+      readonly side: Side;
+      readonly skill: string;
+      readonly windup: number;
+    }
   | { readonly t: number; readonly type: "death"; readonly side: Side }
   | { readonly t: number; readonly type: "fightEnd"; readonly winner: Side | null };
 
@@ -147,6 +155,12 @@ export interface FighterSnapshot {
   }[];
   /** Current stats including active buffs. */
   readonly stats: DerivedStats;
+  /** A Heavy Attack that is winding up right now. */
+  readonly telegraph: {
+    readonly skill: string;
+    readonly remaining: number;
+    readonly windup: number;
+  } | null;
 }
 
 export interface FightSnapshot {
@@ -177,6 +191,10 @@ interface Fighter {
   attackCount: number;
   readonly triggers: TriggerState[];
   buffs: BuffState[];
+  /** Seconds since the last telegraph ended, per telegraph. */
+  telegraphTimers: number[];
+  /** The telegraph winding up right now. */
+  windup: { index: number; remaining: number } | null;
 }
 
 /** What happened in the moment a trigger condition was met. */
@@ -199,6 +217,11 @@ interface HitOptions {
 
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 
+/** Heat Cost of a Rotation skill after rule changes (e.g. Keystones). */
+export function skillCost(setup: CombatantSetup, skill: SkillDefinition): number {
+  return Math.max(0, Math.round(skill.heatCost * (setup.rules?.skillCostMultiplier ?? 1)));
+}
+
 function createFighter(side: Side, setup: CombatantSetup): Fighter {
   const stats = deriveStats(setup);
   const lifeFraction = Math.min(1, Math.max(0, setup.lifeFraction ?? 1));
@@ -218,6 +241,8 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     attackCount: 0,
     triggers: triggers.map(createTriggerState),
     buffs: [],
+    telegraphTimers: (setup.telegraphs ?? []).map(() => 0),
+    windup: null,
   };
 }
 
@@ -294,12 +319,16 @@ export class Fight {
     for (const side of ["hero", "enemy"] as const) {
       this.stepStatus(this.fighters[side], dt);
       if (this.result) return this.log.slice(start);
+      this.stepTelegraphs(this.fighters[side], dt);
+      if (this.result) return this.log.slice(start);
     }
 
     // Fill both action bars; whoever passed 1 earlier inside this tick acts first.
+    // A fighter winding up a Heavy Attack does not attack meanwhile.
     const ready: { fighter: Fighter; overshoot: number }[] = [];
     for (const side of ["hero", "enemy"] as const) {
       const f = this.fighters[side];
+      if (f.windup) continue;
       const rate = f.stats.attackSpeed * chillFactor(f.ailments);
       f.attackProgress += dt * rate;
       if (f.attackProgress >= 1) {
@@ -346,6 +375,11 @@ export class Fight {
     this.log.push(event);
   }
 
+  /** "+X % damage taken" from Shock and rules (Keystones). */
+  private damageTaken(f: Fighter): number {
+    return damageTakenBonus(f.ailments) + (f.setup.rules?.damageTaken ?? 0);
+  }
+
   private heatMultiplier(f: Fighter): number {
     return heatGainMultiplier(f.stats.heatGain, chillFactor(f.ailments));
   }
@@ -355,7 +389,7 @@ export class Fight {
     const { states, burnTicks, expired } = stepAilments(f.ailments, dt);
     f.ailments = states;
     for (const tick of burnTicks) {
-      const damage = Math.max(1, Math.round(tick * (1 + damageTakenBonus(f.ailments))));
+      const damage = Math.max(1, Math.round(tick * (1 + this.damageTaken(f))));
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: "burn", damage });
       this.damage(f, damage);
       if (this.result) return;
@@ -365,8 +399,9 @@ export class Fight {
     }
 
     f.secondsSinceLastHit += dt;
+    const behavior = f.setup.weapon.heatBehavior;
     f.heat = stepHeat(
-      f.setup.weapon.heatBehavior,
+      f.setup.rules?.noHeatDecay && behavior === "cooling" ? "steady" : behavior,
       f.heat,
       dt,
       f.secondsSinceLastHit,
@@ -388,13 +423,44 @@ export class Fight {
     }
   }
 
+  /** Winds up telegraphed Heavy Attacks and unleashes them when the wind-up is over. */
+  private stepTelegraphs(f: Fighter, dt: number): void {
+    const telegraphs = f.setup.telegraphs;
+    if (!telegraphs?.length) return;
+    if (f.windup) {
+      f.windup.remaining -= dt;
+      if (f.windup.remaining > 1e-9) return;
+      const spec = telegraphs[f.windup.index];
+      f.windup = null;
+      if (spec) this.castSkill(f, spec.skill, 1);
+      return;
+    }
+    for (let i = 0; i < telegraphs.length; i++) {
+      const spec = telegraphs[i];
+      if (!spec) continue;
+      f.telegraphTimers[i] = (f.telegraphTimers[i] ?? 0) + dt;
+      if ((f.telegraphTimers[i] ?? 0) + 1e-9 < spec.interval) continue;
+      f.telegraphTimers[i] = 0;
+      f.windup = { index: i, remaining: spec.windup };
+      this.emit({
+        t: this.time,
+        type: "telegraph",
+        side: f.side,
+        skill: spec.skill.name,
+        windup: spec.windup,
+      });
+      return;
+    }
+  }
+
   /** Uses the next Rotation skill if Heat reached its Trigger Threshold, else a Default Attack. */
   private act(f: Fighter): void {
     const slot = f.setup.rotation[f.nextSlot];
-    if (slot && f.heat >= triggerThreshold(slot.skill.heatCost, slot.threshold)) {
-      f.heat -= slot.skill.heatCost;
+    const cost = slot ? skillCost(f.setup, slot.skill) : 0;
+    if (slot && f.heat >= triggerThreshold(cost, slot.threshold)) {
+      f.heat -= cost;
       f.nextSlot = (f.nextSlot + 1) % f.setup.rotation.length;
-      this.castSkill(f, slot.skill, slot.level ?? 1);
+      this.castSkill(f, slot.skill, slot.level ?? 1, cost);
       return;
     }
     this.defaultAttack(f);
@@ -408,7 +474,7 @@ export class Fight {
       baseDamage: this.roll(weapon.damage),
       type: weapon.damageType,
       evadable: true,
-      multiplier: 1,
+      multiplier: f.setup.rules?.defaultAttackDamage ?? 1,
       ailmentChances: weapon.ailmentChances ?? [],
       fromTrigger,
     });
@@ -426,14 +492,8 @@ export class Fight {
     }
   }
 
-  private castSkill(f: Fighter, skill: SkillDefinition, level: number): void {
-    this.emit({
-      t: this.time,
-      type: "skill",
-      side: f.side,
-      skill: skill.name,
-      heatCost: skill.heatCost,
-    });
+  private castSkill(f: Fighter, skill: SkillDefinition, level: number, heatCost = 0): void {
+    this.emit({ t: this.time, type: "skill", side: f.side, skill: skill.name, heatCost });
     this.fireTriggers(f, "onSkillUse");
     if (this.result) return;
     const target = this.fighters[other(f.side)];
@@ -443,9 +503,10 @@ export class Fight {
         if (hit.kind === "weapon") {
           const lowLife =
             hit.lowLifeBonus && target.life / target.stats.maxLife < hit.lowLifeBonus.threshold;
+          const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
           this.hit(f, {
             source: skill.name,
-            baseDamage: this.roll(f.setup.weapon.damage) * hit.multiplier,
+            baseDamage: this.roll(f.setup.weapon.damage) * hit.multiplier * levelScale,
             type: f.setup.weapon.damageType,
             evadable: true,
             multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
@@ -480,7 +541,7 @@ export class Fight {
         attackerLevel: attacker.setup.level,
         multiplier: h.multiplier * (attacker.setup.damageMultiplier ?? 1),
         defender: defender.stats,
-        defenderDamageTaken: damageTakenBonus(defender.ailments),
+        defenderDamageTaken: this.damageTaken(defender),
       },
       this.rng,
     );
@@ -744,12 +805,15 @@ export class Fight {
       barrier: f.barrier,
       heat: f.heat,
       maxHeat: COMBAT.maxHeat,
-      rotation: f.setup.rotation.map((slot) => ({
-        skillId: slot.skill.id,
-        name: slot.skill.name,
-        heatCost: slot.skill.heatCost,
-        threshold: triggerThreshold(slot.skill.heatCost, slot.threshold),
-      })),
+      rotation: f.setup.rotation.map((slot) => {
+        const cost = skillCost(f.setup, slot.skill);
+        return {
+          skillId: slot.skill.id,
+          name: slot.skill.name,
+          heatCost: cost,
+          threshold: triggerThreshold(cost, slot.threshold),
+        };
+      }),
       nextSlot: f.nextSlot,
       ailments: (["burn", "chill", "shock"] as const).flatMap((type) => {
         const state = f.ailments[type];
@@ -763,6 +827,13 @@ export class Fight {
         remaining: b.remaining,
       })),
       stats: f.stats,
+      telegraph: f.windup
+        ? {
+            skill: f.setup.telegraphs?.[f.windup.index]?.skill.name ?? "",
+            remaining: Math.max(0, f.windup.remaining),
+            windup: f.setup.telegraphs?.[f.windup.index]?.windup ?? 0,
+          }
+        : null,
     };
   }
 }

@@ -13,6 +13,10 @@ export interface BalanceArgs {
   gear: GearMode;
   /** Item Level of rolled gear; 0 = same as --level. */
   ilvl: number;
+  /** Act number to play with the autopilot (whole runs incl. loot and deaths); 0 = off. */
+  act: number;
+  /** Act mode: attempts (deaths + 1) before a run counts as stuck. */
+  attempts: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -27,6 +31,8 @@ const DEFAULTS: BalanceArgs = {
   level: 1,
   gear: "none",
   ilvl: 0,
+  act: 0,
+  attempts: 30,
 };
 
 const NUMBER_FLAGS = {
@@ -34,6 +40,8 @@ const NUMBER_FLAGS = {
   "--seed": "seed",
   "--level": "level",
   "--ilvl": "ilvl",
+  "--act": "act",
+  "--attempts": "attempts",
 } as const;
 const STRING_FLAGS = { "--weapon": "weapon", "--enemy": "enemy" } as const;
 

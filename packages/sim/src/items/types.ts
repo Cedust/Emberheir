@@ -69,6 +69,8 @@ export interface ItemBaseDefinition {
   readonly requirements?: Partial<Attributes>;
   /** Affix weighting by tag, e.g. `{ elemental: 2 }` makes elemental affixes twice as likely. */
   readonly affixWeights?: Readonly<Record<string, number>>;
+  /** Inventory grid cells (width × height). Default by slot, see PROGRESSION.itemSizes. */
+  readonly size?: { readonly w: number; readonly h: number };
 }
 
 /** What a stat affix raises: a stat, an attribute or the weapon's own damage (local). */
