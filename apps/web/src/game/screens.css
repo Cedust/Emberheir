@@ -321,6 +321,16 @@
   text-align: center;
 }
 
+.stage .inventory-button {
+  width: 100%;
+  justify-content: center;
+}
+
+.stage .inventory-button.inv-full {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
 .stage .hero-card {
   padding: 16px;
   display: flex;
@@ -1698,11 +1708,6 @@
   align-items: center;
   gap: 10px;
   font-size: 17px;
-}
-
-.stage .threshold-note {
-  margin-top: auto;
-  font-size: 12px;
 }
 
 .stage .skill-chip {

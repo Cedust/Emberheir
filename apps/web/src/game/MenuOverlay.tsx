@@ -114,7 +114,6 @@ export function MenuOverlay(props: {
             <button type="button" className="btn big ghost" onClick={props.onQuit}>
               Quit to Title
             </button>
-            <p className="sub small">Your game is saved after every action.</p>
           </div>
         ) : (
           <>

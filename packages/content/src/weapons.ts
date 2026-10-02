@@ -35,9 +35,10 @@ export const FIRE_WAND: WeaponDefinition = {
   id: "fire-wand",
   name: "Fire Wand",
   defaultAttack: "Spark",
-  damage: { min: 6, max: 9 },
+  damage: { min: 8, max: 13 },
   damageType: "fire",
-  attacksPerSecond: 1,
+  // Playtest 1: still felt too busy at 1.0 (Warming also fires Firebolt often), so 0.7.
+  attacksPerSecond: 0.7,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",
@@ -47,13 +48,13 @@ export const FIRE_WAND: WeaponDefinition = {
 export const HERO_WEAPONS: readonly WeaponDefinition[] = [SWORD, FIRE_WAND];
 
 // Enemy weapons. Enemies follow the same rules as the hero, including Heat.
-// Playtest 1: Act 1 drops less Rare and Epic gear, so enemy damage went down by 30 %.
+// Playtest 1: Act 1 drops less Rare and Epic gear, so enemy damage went down by ~40 %.
 
 export const RUSTY_CLEAVER: WeaponDefinition = {
   id: "rusty-cleaver",
   name: "Rusty Cleaver",
   defaultAttack: "Cleave",
-  damage: { min: 1.05, max: 1.6 },
+  damage: { min: 0.9, max: 1.35 },
   damageType: "physical",
   attacksPerSecond: 0.4,
   heatBehavior: "cooling",
@@ -66,7 +67,7 @@ export const TWIN_SHIVS: WeaponDefinition = {
   id: "twin-shivs",
   name: "Twin Shivs",
   defaultAttack: "Stab",
-  damage: { min: 0.5, max: 0.8 },
+  damage: { min: 0.43, max: 0.68 },
   damageType: "physical",
   attacksPerSecond: 1.1,
   heatBehavior: "cooling",
@@ -79,7 +80,7 @@ export const CINDER_ROD: WeaponDefinition = {
   id: "cinder-rod",
   name: "Cinder Rod",
   defaultAttack: "Ember",
-  damage: { min: 0.5, max: 1.05 },
+  damage: { min: 0.43, max: 0.9 },
   damageType: "fire",
   attacksPerSecond: 0.6,
   heatBehavior: "warming",
@@ -92,7 +93,7 @@ export const PIT_MAUL: WeaponDefinition = {
   id: "pit-maul",
   name: "Pit Maul",
   defaultAttack: "Smash",
-  damage: { min: 2.9, max: 3.9 },
+  damage: { min: 2.45, max: 3.3 },
   damageType: "physical",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",

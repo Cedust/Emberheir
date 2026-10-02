@@ -462,9 +462,6 @@ export function PersonaView(props: {
             onSelect={pickItem}
             label="Inventory"
           />
-          <p className="sub small">
-            Stash items are not at the forge. Move them to the inventory at the Supply Wagon.
-          </p>
         </aside>
       </div>
     </section>

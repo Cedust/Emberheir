@@ -270,16 +270,10 @@ function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolea
               <p className="skill-info">
                 <b>{selected.skill.name}</b> · {selected.skill.heatCost} Heat ·{" "}
                 {selected.skill.tags.join(" · ")}
-                <br />
-                <span className="sub small">
-                  Learning it adds the skill to your Battle Plan library.
-                </span>
               </p>
             )}
             {selected.kind === "keystone" && (
-              <p className="sub small">
-                Costs 1 Harvester&apos;s Ember in addition to 1 Skill Point.
-              </p>
+              <p className="sub small">Costs 1 Harvester&apos;s Ember.</p>
             )}
             {!viewOnly && (
               <>
@@ -321,10 +315,6 @@ function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolea
               </div>
             );
           })}
-          <p className="sub small">
-            Rupture, Affliction and the Prestige branches are not in the PoC. Each Prestige lets you
-            pick one new branch.
-          </p>
         </section>
         {!viewOnly && (
           <section className="pending-bar panel-card">
@@ -353,11 +343,7 @@ function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolea
             </button>
           </section>
         )}
-        {viewOnly && (
-          <p className="sub small view-only-hint">
-            View only. Learn new nodes at Kaelen in the Camp.
-          </p>
-        )}
+        {viewOnly && <p className="sub small view-only-hint">View only</p>}
       </aside>
     </div>
   );
@@ -411,9 +397,6 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         <section>
           <div className="section-row">
             <span className="title-font section-title">Rotation</span>
-            <span className="sub">
-              Runs left to right, then starts over. A skill fires once Heat reaches its threshold.
-            </span>
           </div>
           <div className="plan-slots">
             {ROTATION_UNLOCK.map((p, i) => {
@@ -440,9 +423,6 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       <span className="sub small">
                         Lv {k.level} · {k.skill.heatCost} Heat{k.startSkill ? " · Start Skill" : ""}
                       </span>
-                      <span className="sub small threshold-note">
-                        Fires at cost. Threshold unlocks at Prestige 2.
-                      </span>
                     </>
                   ) : (
                     <>
@@ -458,9 +438,6 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         <section>
           <div className="section-row">
             <span className="title-font section-title">Reactions</span>
-            <span className="sub">
-              Outside the rotation. Fire once when the condition hits, then cool down.
-            </span>
           </div>
           <div className="plan-slots reactions">
             {REACTION_UNLOCK.map((p) => (
@@ -474,7 +451,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         <section className="chain panel-card" aria-label="One rotation">
           <div className="section-row">
             <span className="title-font section-title">One rotation</span>
-            <span className="sub">Estimate at {rate.toFixed(1)} Heat/s, no hits taken</span>
+            <span className="sub">≈ {rate.toFixed(1)} Heat/s</span>
           </div>
           <div className="chain-row">
             {chain.length === 0 && (

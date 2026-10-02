@@ -125,9 +125,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
       <Crumbs step="seal" />
       <header className="seal-head">
         <h2 className="title-font">THE HARVEST BEGINS</h2>
-        <p className="sub">
-          The fire takes everything you don&apos;t seal. Choose which slots keep their item.
-        </p>
+        <p className="sub">Choose which slots keep their item.</p>
       </header>
       <div className="seal-body">
         <section className="seal-doll panel-card" aria-label="Seal slots">

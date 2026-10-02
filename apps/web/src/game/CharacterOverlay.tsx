@@ -280,9 +280,6 @@ export function CharacterOverlay(props: {
                 );
               })}
             </div>
-            <p className="sub small">
-              Click an item for details. ◆ marks a sealed slot: its item survives the harvest.
-            </p>
           </section>
 
           <section className="attr-column" aria-label="Attributes">
@@ -335,7 +332,6 @@ export function CharacterOverlay(props: {
                 >
                   Undo
                 </button>
-                <span className="sub small">Respec later only at Kaelen</span>
               </div>
             )}
             <div className="tabs small-tabs" role="tablist">

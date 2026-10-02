@@ -115,7 +115,6 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
         )}
         <span className="bar-label">{lifePct}%</span>
       </div>
-      <p className="sub small">Life carries over to the next stage. Barrier and Heat reset.</p>
       <div className="flask-row">
         <div className="flask-pips">
           {Array.from({ length: flaskMax }, (_, i) => (
@@ -181,9 +180,6 @@ function UpNext(props: { run: RunState }) {
           Stage {stages} · {stages === next ? "now" : `in ${stages - next}`}
         </span>
       </div>
-      {next === stages && (
-        <p className="warning small">The boss announces its heavy strikes. Watch its Heat.</p>
-      )}
     </section>
   );
 }
@@ -265,6 +261,8 @@ function EquippedPanel(props: {
   state: GameState;
   focus: EquipmentSlot | undefined;
   onFocus: (slot: EquipmentSlot) => void;
+  inventoryFull: boolean;
+  onInventory: () => void;
 }) {
   const { state, focus } = props;
   const equipped = focus ? state.hero.equipment[focus] : undefined;
@@ -306,12 +304,17 @@ function EquippedPanel(props: {
           testId="equipped-detail"
         />
       ) : (
-        <p className="sub small equipped-hint">
-          {focus
-            ? `${SLOT_NAMES[itemSlotFor(focus)]} slot is empty.`
-            : "Point at an item to see what you wear in its slot."}
-        </p>
+        focus && <p className="sub small equipped-hint">Empty slot</p>
       )}
+      <div className="grow" />
+      <button
+        type="button"
+        className={`btn inventory-button${props.inventoryFull ? " inv-full" : ""}`}
+        onClick={props.onInventory}
+      >
+        <Icon name="inventory" size={16} />
+        {props.inventoryFull ? "Inventory full" : "Open Inventory"} · {state.inventory.length}
+      </button>
     </aside>
   );
 }
@@ -412,7 +415,6 @@ export function IntermissionView(props: {
         : boss
           ? `${act.name} cleared`
           : `Ready for Stage ${nextStage}`;
-  const used = state.inventory.length;
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, POC_GAME_DATA, it) !== undefined);
@@ -461,14 +463,15 @@ export function IntermissionView(props: {
           {done && <DoneCard run={run} />}
           {step === "items" && (
             <div className="inventory-line">
-              <span className={anyBlocked ? "inv-full" : "sub"}>
-                {anyBlocked ? "Inventory full" : "Inventory"} · {used} items
-              </span>
-              <button type="button" className="btn" onClick={props.onCharacter}>
-                <Icon name="inventory" size={16} />
-                Open Inventory
+              <button
+                type="button"
+                className="btn"
+                title="Unpicked items become Salvage Dust"
+                onClick={() => game.dispatch({ type: "salvageAll" })}
+              >
+                Salvage All · +{(rewards?.items ?? []).reduce((n, it) => n + salvageValue(it), 0)}{" "}
+                Dust
               </button>
-              <span className="sub">Unpicked items become Salvage Dust</span>
             </div>
           )}
         </main>
@@ -481,6 +484,8 @@ export function IntermissionView(props: {
               : undefined)
           }
           onFocus={setFocus}
+          inventoryFull={anyBlocked}
+          onInventory={props.onCharacter}
         />
       </div>
       <footer className="intermission-footer bar-bottom">
@@ -498,16 +503,6 @@ export function IntermissionView(props: {
           ))}
         </div>
         <div className="grow" />
-        {step === "items" && (
-          <button
-            type="button"
-            className="btn"
-            title={`All 3 items become Dust (+${(rewards?.items ?? []).reduce((n, it) => n + salvageValue(it), 0)})`}
-            onClick={() => game.dispatch({ type: "salvageAll" })}
-          >
-            Salvage All
-          </button>
-        )}
         <button
           type="button"
           className="btn big primary next-stage"

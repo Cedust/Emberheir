@@ -38,13 +38,13 @@ export const FIREBOLT: SkillDefinition = {
   id: "firebolt",
   name: "Firebolt",
   type: "spell",
-  heatCost: 20,
+  heatCost: 30,
   tags: ["fire", "direct", "any"],
-  description: "A small, cheap Fire hit. 25 % chance to Burn.",
+  description: "A cheap Fire hit. 25 % chance to Burn.",
   hits: [
     {
       kind: "spell",
-      damage: { min: 9, max: 13 },
+      damage: { min: 14, max: 19 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.25 }],
     },
@@ -153,7 +153,7 @@ export const CINDER_SPIT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 1.4, max: 2.8 },
+      damage: { min: 1.2, max: 2.4 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.6 }],
     },
