@@ -1,4 +1,4 @@
-import { ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
+import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
   type DerivedStats,
   type GameState,
@@ -126,7 +126,7 @@ export function compareWithEquipped(state: GameState, item: Item) {
   const missing = missingRequirements(item, ITEM_CATALOG, state.hero.attributes);
   if (missing.length > 0)
     return { text: "Inactive until you meet its requirements", better: false };
-  return compareSummary(compareItem(state, POC_GAME_DATA, item));
+  return compareSummary(compareItem(state, GAME_DATA, item));
 }
 
 export function rarityName(item: Item): string {
@@ -278,7 +278,7 @@ export function ItemGrid(props: {
 /** Wallet entries in a fixed order. */
 export function walletEntries(state: GameState): { name: string; value: number; key: string }[] {
   const w = state.wallet;
-  const essence = POC_GAME_DATA.acts[0]?.essence;
+  const essence = GAME_DATA.acts[0]?.essence;
   return [
     { key: "gold", name: "Gold", value: w.gold },
     { key: "dust", name: "Dust", value: w.dust },

@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -52,7 +52,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
   const pick = (from: "inventory" | "stash") => (itemId: string, e?: MouseEvent) => {
     if (e?.ctrlKey || e?.metaKey) {
       const to = from === "inventory" ? "stash" : "inventory";
-      if (!moveBlockReason(state, POC_GAME_DATA, itemId, to)) move(itemId, to);
+      if (!moveBlockReason(state, GAME_DATA, itemId, to)) move(itemId, to);
       return;
     }
     setSelected(itemId);
@@ -66,7 +66,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
   }[] = [];
   if (sel) {
     if (sel.where === "inventory") {
-      const r = moveBlockReason(state, POC_GAME_DATA, sel.item.id, "stash");
+      const r = moveBlockReason(state, GAME_DATA, sel.item.id, "stash");
       buttons.push({
         label: "Move to Stash",
         block: r ? MOVE_BLOCK_TEXT[r] : undefined,
@@ -75,7 +75,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     }
     if (sel.where === "stash") {
-      const r = moveBlockReason(state, POC_GAME_DATA, sel.item.id, "inventory");
+      const r = moveBlockReason(state, GAME_DATA, sel.item.id, "inventory");
       buttons.push({
         label: "Move to Inventory",
         block: r ? MOVE_BLOCK_TEXT[r] : undefined,
@@ -84,7 +84,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     }
     if (sel.where !== "equipped") {
-      const r = equipBlockReason(state, POC_GAME_DATA, sel.item, sel.where);
+      const r = equipBlockReason(state, GAME_DATA, sel.item, sel.where);
       buttons.push({
         label: "Equip",
         block: r ? EQUIP_BLOCK_TEXT[r] : undefined,
@@ -92,7 +92,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     } else if (sel.slot) {
       const slot = sel.slot;
-      const r = unequipBlockReason(state, POC_GAME_DATA, slot);
+      const r = unequipBlockReason(state, GAME_DATA, slot);
       buttons.push({
         label: "Unequip",
         block: r ? UNEQUIP_BLOCK_TEXT[r] : undefined,
@@ -131,7 +131,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
         <aside className="stash-left">
           <span className="title-font section-title">Equipped</span>
           <div className="equipped-row">
-            {POC_GAME_DATA.equipmentSlots.map((slot) => {
+            {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
               return (
                 <ItemTile

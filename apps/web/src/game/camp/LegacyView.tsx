@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -38,7 +38,7 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
     legacy.chronicle.find((c) => c.sealed.includes(slot))?.generation;
   const s = state.stats;
   const selItem = heirloom(sel);
-  const inPoc = POC_GAME_DATA.equipmentSlots.includes(sel);
+  const inPoc = GAME_DATA.equipmentSlots.includes(sel);
   const facts = [
     {
       kind: "GENERATION",

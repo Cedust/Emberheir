@@ -1,11 +1,11 @@
 import {
   ACT1_ENEMIES,
   GAME_TITLE,
-  POC_GAME_DATA,
+  GAME_DATA,
   HERO_SKILLS,
   HERO_WEAPONS,
   createHeroSetup,
-  rollPocGear,
+  rollGear,
 } from "@emberheir/content";
 import { Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
@@ -21,7 +21,7 @@ if (args.act > 0) {
 
 /** `--act 1`: plays whole acts with an autopilot (loot, flask, deaths) per starter weapon. */
 function runActMode(): void {
-  const act = POC_GAME_DATA.acts.find((a) => a.number === args.act);
+  const act = GAME_DATA.acts.find((a) => a.number === args.act);
   if (!act) throw new Error(`Act ${args.act} is not in the PoC`);
   const runs = Math.min(args.runs, 500);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
@@ -30,10 +30,10 @@ function runActMode(): void {
   );
   console.log("");
   const rows = [];
-  for (const starterWeapon of POC_GAME_DATA.starterWeapons) {
+  for (const starterWeapon of GAME_DATA.starterWeapons) {
     if (args.weapon !== "all" && args.weapon !== starterWeapon) continue;
     const runsByGeneration = Array.from({ length: runs }, (_, i) =>
-      playGenerations(POC_GAME_DATA, {
+      playGenerations(GAME_DATA, {
         seed: args.seed + i,
         starterWeapon,
         actId: act.id,
@@ -98,7 +98,7 @@ for (const weapon of weapons) {
         ...(gear === "none"
           ? {}
           : {
-              equipment: rollPocGear(
+              equipment: rollGear(
                 { weaponBaseId: weapon.id, rarity: gear, itemLevel },
                 new Rng(args.seed + run + GEAR_SEED_OFFSET),
               ),

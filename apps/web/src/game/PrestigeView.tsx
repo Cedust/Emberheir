@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -53,8 +53,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const pending = state.pendingPrestige;
   const [step, setStep] = useState<Step>("victory");
-  const seals = sealsAvailable(state, POC_GAME_DATA);
-  const slots = POC_GAME_DATA.equipmentSlots;
+  const seals = sealsAvailable(state, GAME_DATA);
+  const slots = GAME_DATA.equipmentSlots;
   // Last time's Seals are placed again; they can be moved.
   const [sealed, setSealed] = useState<EquipmentSlot[]>(() =>
     state.legacy.seals.filter((s) => state.hero.equipment[s]).slice(0, seals),
@@ -245,8 +245,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
 export function InheritanceView(props: { state: GameState; onWake: () => void }) {
   const { state } = props;
   const prestige = state.legacy.prestige;
-  const r = prestigeRewards(POC_GAME_DATA, prestige);
-  const act = POC_GAME_DATA.acts[0];
+  const r = prestigeRewards(GAME_DATA, prestige);
+  const act = GAME_DATA.acts[0];
   const levels = act ? act.monsterLevels.map((l) => l + r.monsterLevelBonus) : [];
   const rewards = [
     {

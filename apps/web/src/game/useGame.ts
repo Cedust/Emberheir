@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type GameAction,
   type GameState,
@@ -51,7 +51,7 @@ export function useGame() {
       const prev = ref.current;
       if (!prev) return;
       try {
-        replace(applyAction(prev, POC_GAME_DATA, action));
+        replace(applyAction(prev, GAME_DATA, action));
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -66,7 +66,7 @@ export function useGame() {
       const prev = ref.current;
       if (!prev) return;
       try {
-        replace(actions.reduce((s, a) => applyAction(s, POC_GAME_DATA, a), prev));
+        replace(actions.reduce((s, a) => applyAction(s, GAME_DATA, a), prev));
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
@@ -78,7 +78,7 @@ export function useGame() {
   const start = useCallback(
     (starterWeapon: string) => {
       const seed = Math.floor(Math.random() * 0x7fffffff);
-      replace(newGame(POC_GAME_DATA, { seed, starterWeapon }));
+      replace(newGame(GAME_DATA, { seed, starterWeapon }));
     },
     [replace],
   );

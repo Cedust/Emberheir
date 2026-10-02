@@ -4,6 +4,7 @@ export { COMBAT } from "./combat/constants";
 export { deriveStats, heroBaseLife, sumBonuses, type DerivedStats } from "./combat/stats";
 export {
   armorReduction,
+  elementResistance,
   resistanceReduction,
   resolveHit,
   type HitInput,
@@ -45,6 +46,7 @@ export {
 } from "./items/affixes";
 export {
   basesForSlot,
+  affixPosition,
   createItemCatalog,
   getBase,
   pickWeighted,

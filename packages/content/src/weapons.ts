@@ -49,12 +49,13 @@ export const HERO_WEAPONS: readonly WeaponDefinition[] = [SWORD, FIRE_WAND];
 
 // Enemy weapons. Enemies follow the same rules as the hero, including Heat.
 // Playtest 1: Act 1 drops less Rare and Epic gear, so enemy damage went down by ~40 %.
+// M6: all 10 gear slots make the hero tougher, so Act 1 enemies hit 12 % harder again.
 
 export const RUSTY_CLEAVER: WeaponDefinition = {
   id: "rusty-cleaver",
   name: "Rusty Cleaver",
   defaultAttack: "Cleave",
-  damage: { min: 0.9, max: 1.35 },
+  damage: { min: 1.01, max: 1.51 },
   damageType: "physical",
   attacksPerSecond: 0.4,
   heatBehavior: "cooling",
@@ -67,7 +68,7 @@ export const TWIN_SHIVS: WeaponDefinition = {
   id: "twin-shivs",
   name: "Twin Shivs",
   defaultAttack: "Stab",
-  damage: { min: 0.43, max: 0.68 },
+  damage: { min: 0.48, max: 0.76 },
   damageType: "physical",
   attacksPerSecond: 1.1,
   heatBehavior: "cooling",
@@ -80,7 +81,7 @@ export const CINDER_ROD: WeaponDefinition = {
   id: "cinder-rod",
   name: "Cinder Rod",
   defaultAttack: "Ember",
-  damage: { min: 0.43, max: 0.9 },
+  damage: { min: 0.48, max: 1.01 },
   damageType: "fire",
   attacksPerSecond: 0.6,
   heatBehavior: "warming",
@@ -93,7 +94,7 @@ export const PIT_MAUL: WeaponDefinition = {
   id: "pit-maul",
   name: "Pit Maul",
   defaultAttack: "Smash",
-  damage: { min: 2.45, max: 3.3 },
+  damage: { min: 2.74, max: 3.7 },
   damageType: "physical",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",

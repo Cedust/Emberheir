@@ -1,10 +1,10 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import { describe, expect, it } from "vitest";
 import { playAct, playGenerations } from "./act";
 
 describe("act autopilot", () => {
   it("plays Act 1 to the end and reports it", () => {
-    const report = playAct(POC_GAME_DATA, {
+    const report = playAct(GAME_DATA, {
       seed: 1,
       starterWeapon: "sword",
       actId: "ashen-fields",
@@ -15,7 +15,7 @@ describe("act autopilot", () => {
   });
 
   it("prestiges after Gorrak and plays the next generation", () => {
-    const [first, second] = playGenerations(POC_GAME_DATA, {
+    const [first, second] = playGenerations(GAME_DATA, {
       seed: 2,
       starterWeapon: "fire-wand",
       actId: "ashen-fields",

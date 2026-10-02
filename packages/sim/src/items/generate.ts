@@ -26,6 +26,9 @@ export function createItemCatalog(content: {
   const affixes = new Map<string, AffixDefinition>();
   for (const affix of content.affixes) {
     if (affixes.has(affix.id)) throw new Error(`Duplicate affix id "${affix.id}"`);
+    if (affix.kind === "stat" && !affix.prefix === !affix.suffix) {
+      throw new Error(`Affix "${affix.id}" needs either a prefix or a suffix`);
+    }
     affixes.set(affix.id, affix);
   }
   return { bases, affixes, rareNames: content.rareNames };
@@ -66,17 +69,26 @@ export function basesForSlot(catalog: ItemCatalog, slot: ItemSlot): ItemBaseDefi
   return [...catalog.bases.values()].filter((b) => b.slot === slot);
 }
 
-/** Picks `count` different affixes from a pool by weight. */
+/** Whether an affix names a Magic item from the front or the back. Triggers are suffixes. */
+export function affixPosition(affix: AffixDefinition): "prefix" | "suffix" {
+  return affix.kind === "stat" && affix.prefix ? "prefix" : "suffix";
+}
+
+/**
+ * Picks `count` different affixes from a pool by weight. `allowed` can rule out affixes given
+ * the ones picked so far (Magic items: one prefix and one suffix at most).
+ */
 function pickAffixes(
   pool: readonly AffixDefinition[],
   base: ItemBaseDefinition,
   count: number,
   rng: Rng,
+  allowed: (affix: AffixDefinition, picked: readonly AffixDefinition[]) => boolean = () => true,
 ): AffixDefinition[] {
   const left = [...pool];
   const picked: AffixDefinition[] = [];
   while (picked.length < count) {
-    const next = pickWeighted(left, (a) => affixWeight(a, base), rng);
+    const next = pickWeighted(left, (a) => (allowed(a, picked) ? affixWeight(a, base) : 0), rng);
     if (!next) break;
     picked.push(next);
     left.splice(left.indexOf(next), 1);
@@ -103,10 +115,15 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     rng.int(counts.trigger[0], counts.trigger[1]) + (rng.chance(counts.extraTriggerChance) ? 1 : 0);
 
   const all = [...catalog.affixes.values()];
-  const chosen = [
-    ...pickAffixes(affixPool(all, base.slot, "stat"), base, statCount, rng),
-    ...pickAffixes(affixPool(all, base.slot, "trigger"), base, triggerCount, rng),
-  ];
+  const chosen: AffixDefinition[] = [];
+  // Magic items carry one prefix and one suffix at most, like in D2.
+  const allowed = (affix: AffixDefinition, picked: readonly AffixDefinition[]) =>
+    options.rarity !== "magic" ||
+    [...chosen, ...picked].every((c) => affixPosition(c) !== affixPosition(affix));
+  chosen.push(...pickAffixes(affixPool(all, base.slot, "stat"), base, statCount, rng, allowed));
+  chosen.push(
+    ...pickAffixes(affixPool(all, base.slot, "trigger"), base, triggerCount, rng, allowed),
+  );
   const rolls: AffixRoll[] = chosen.map((a) => ({
     affixId: a.id,
     quality: Number(rollQuality(itemLevel, options.rarity, rng).toFixed(4)),
@@ -132,9 +149,15 @@ function itemName(
 ): string {
   if (rarity === "normal" || affixes.length === 0) return base.name;
   if (rarity === "magic") {
-    const first = affixes[0];
-    if (!first) return base.name;
-    return `${base.name} ${first.kind === "stat" ? first.suffix : `of ${first.name}`}`;
+    const prefix = affixes.find((a) => affixPosition(a) === "prefix");
+    const suffix = affixes.find((a) => affixPosition(a) === "suffix");
+    const front = prefix?.kind === "stat" ? `${prefix.prefix} ` : "";
+    const back = !suffix
+      ? ""
+      : suffix.kind === "stat"
+        ? ` ${suffix.suffix ?? ""}`
+        : ` of ${suffix.name}`;
+    return `${front}${base.name}${back}`;
   }
   const { first, second } = catalog.rareNames;
   if (first.length === 0 || second.length === 0) return base.name;

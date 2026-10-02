@@ -53,6 +53,20 @@ describe("deriveStats", () => {
     expect(s.critChance).toBe(1);
   });
 
+  it("adds each element's own Resistance to All Resistance, under the same cap", () => {
+    const s = deriveStats(
+      setup({
+        attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+        bonuses: { allResistance: 0.1, fireResistance: 0.2, coldResistance: 2 },
+      }),
+    );
+    expect(s.resistance).toBeCloseTo(0.12);
+    expect(s.fireResistance).toBeCloseTo(0.32);
+    expect(s.coldResistance).toBe(COMBAT.maxResistance);
+    expect(s.lightningResistance).toBeCloseTo(0.12);
+    expect(s.voidResistance).toBeCloseTo(0.12);
+  });
+
   it("uses the hero life curve when no base life is given", () => {
     const noBaseLife = {
       name: "Heir",

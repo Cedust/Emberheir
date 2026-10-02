@@ -1,13 +1,13 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import type { Page } from "@playwright/test";
 import { type GameState, newGame, rollItem, Rng, serializeGame } from "@emberheir/sim";
 
 /** A save right after Gorrak fell: an Epic Body Armor to seal, loot in inventory and stash. */
 export function saveAfterGorrak(): string {
-  const base = newGame(POC_GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const rng = new Rng(7);
   const armor = rollItem(
-    POC_GAME_DATA.items,
+    GAME_DATA.items,
     { baseId: "chain-mail", itemLevel: 4, rarity: "epic" },
     rng,
   );

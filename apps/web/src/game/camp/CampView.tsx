@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import { type GameState, PROGRESSION } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
@@ -41,7 +41,7 @@ interface Persona {
 function personas(state: GameState): Persona[] {
   const trainer = state.progress.trainerUnlocked;
   const later = "Joins the caravan after Act 2.";
-  const afterBoss = `Joins the caravan once ${POC_GAME_DATA.acts[0]?.boss.name ?? "the boss"} falls.`;
+  const afterBoss = `Joins the caravan once ${GAME_DATA.acts[0]?.boss.name ?? "the boss"} falls.`;
   const points = state.hero.unspentAttributePoints;
   return [
     {
@@ -257,7 +257,7 @@ export function CampView(props: {
   const [nanLine, setNanLine] = useState(0);
   const size = useStageSize();
   const ox = (size.w - SCENE_W) / 2;
-  const act = POC_GAME_DATA.acts[0];
+  const act = GAME_DATA.acts[0];
   const list = personas(state);
   const gear = heirGear(state);
   const sel = list.find((p) => p.id === picked) ?? list[0];

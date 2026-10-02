@@ -93,8 +93,12 @@ interface AffixCommon {
 export interface StatAffixDefinition extends AffixCommon {
   readonly kind: "stat";
   readonly stat: AffixStat;
-  /** Magic item name suffix, e.g. "of the Bear" → "Sword of the Bear". */
-  readonly suffix: string;
+  /**
+   * Magic item name part (D2 style): either a prefix ("Sturdy") or a suffix ("of the Bear").
+   * A Magic item has at most one of each: "Sturdy Iron Helm of the Bear".
+   */
+  readonly prefix?: string;
+  readonly suffix?: string;
 }
 
 /**

@@ -5,7 +5,7 @@ import {
   START_SKILLS,
   createHeroSetup,
   resolveHeroGear,
-  rollPocGear,
+  rollGear,
 } from "@emberheir/content";
 import {
   type Equipment,
@@ -66,7 +66,7 @@ export function CombatDebug() {
     () =>
       gearRarity === "none"
         ? {}
-        : rollPocGear({ weaponBaseId: weaponId, rarity: gearRarity, itemLevel }, new Rng(gearSeed)),
+        : rollGear({ weaponBaseId: weaponId, rarity: gearRarity, itemLevel }, new Rng(gearSeed)),
     [weaponId, gearRarity, itemLevel, gearSeed],
   );
   const weapon = HERO_WEAPONS.find((w) => w.id === weaponId);

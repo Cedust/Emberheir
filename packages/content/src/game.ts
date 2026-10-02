@@ -1,8 +1,8 @@
-import type { ActData, GameData } from "@emberheir/sim";
+import { type ActData, EQUIPMENT_SLOTS, type GameData } from "@emberheir/sim";
 import { ELITE_MODIFIERS } from "./elites";
 import { ACT1_ENEMIES, GORRAK } from "./enemies";
 import { STARTING_ATTRIBUTES } from "./heroes";
-import { ITEM_BASES, ITEM_CATALOG, POC_EQUIPMENT_SLOTS } from "./items";
+import { ITEM_BASES, ITEM_CATALOG } from "./items";
 import { SKILL_TREE } from "./skill-tree";
 import { START_SKILLS } from "./skills";
 
@@ -21,11 +21,11 @@ export const ACT1: ActData = {
   essence: { id: "ash-essence", name: "Ash Essence", affixId: "all-resistance" },
 };
 
-/** Everything the game loop in `@emberheir/sim` needs for the PoC. */
-export const POC_GAME_DATA: GameData = {
+/** Everything the game loop in `@emberheir/sim` needs. */
+export const GAME_DATA: GameData = {
   items: ITEM_CATALOG,
   lootBases: ITEM_BASES.map((b) => b.id),
-  equipmentSlots: POC_EQUIPMENT_SLOTS,
+  equipmentSlots: EQUIPMENT_SLOTS,
   starterWeapons: ["sword", "fire-wand"],
   startSkills: START_SKILLS,
   skillTree: SKILL_TREE,

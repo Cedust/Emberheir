@@ -8,7 +8,7 @@ import {
   type SkillTreeBranch,
 } from "@emberheir/sim";
 import { ELITE_MODIFIERS } from "./elites";
-import { ACT1, POC_GAME_DATA } from "./game";
+import { ACT1, GAME_DATA } from "./game";
 import { createHeroSetup } from "./heroes";
 import { SKILL_TREE } from "./skill-tree";
 import { SWORD } from "./weapons";
@@ -68,8 +68,8 @@ describe("Act 1", () => {
   });
 
   it("a new game works with both starter weapons", () => {
-    for (const starterWeapon of POC_GAME_DATA.starterWeapons) {
-      const state = newGame(POC_GAME_DATA, { seed: 1, starterWeapon });
+    for (const starterWeapon of GAME_DATA.starterWeapons) {
+      const state = newGame(GAME_DATA, { seed: 1, starterWeapon });
       expect(state.hero.equipment.mainHand?.baseId).toBe(starterWeapon);
     }
   });

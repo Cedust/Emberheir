@@ -14,7 +14,13 @@ export interface DerivedStats {
   readonly evasion: number;
   readonly blockChance: number;
   readonly blockValue: number;
+  /** All Resistance (from Intelligence and gear) before the element's own Resistance. */
   readonly resistance: number;
+  /** Final Resistance per element: All Resistance + the element's own, capped. */
+  readonly fireResistance: number;
+  readonly coldResistance: number;
+  readonly lightningResistance: number;
+  readonly voidResistance: number;
   readonly heatGain: number;
   readonly startingHeat: number;
   readonly ailmentDuration: number;
@@ -46,6 +52,10 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     blockChance: 0,
     blockValue: 0,
     allResistance: 0,
+    fireResistance: 0,
+    coldResistance: 0,
+    lightningResistance: 0,
+    voidResistance: 0,
     heatGain: 0,
     startingHeat: 0,
     ailmentDuration: 0,
@@ -77,6 +87,8 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
   const a: Attributes = setup.attributes;
   const b = sumBonuses(setup.weapon.implicit, setup.bonuses);
   const baseLife = setup.baseLife ?? heroBaseLife(setup.level);
+  const allResistance = a.intelligence * COMBAT.allResistancePerIntelligence + b.allResistance;
+  const resist = (own: number) => clamp(allResistance + own, 0, COMBAT.maxResistance);
 
   return {
     maxLife: Math.round(baseLife + a.vitality * COMBAT.lifePerVitality + b.life),
@@ -95,11 +107,11 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     evasion: clamp(a.agility * COMBAT.evasionPerAgility + b.evasion, 0, COMBAT.maxEvasion),
     blockChance: clamp(b.blockChance, 0, COMBAT.maxBlockChance),
     blockValue: b.blockValue,
-    resistance: clamp(
-      a.intelligence * COMBAT.allResistancePerIntelligence + b.allResistance,
-      0,
-      COMBAT.maxResistance,
-    ),
+    resistance: clamp(allResistance, 0, COMBAT.maxResistance),
+    fireResistance: resist(b.fireResistance),
+    coldResistance: resist(b.coldResistance),
+    lightningResistance: resist(b.lightningResistance),
+    voidResistance: resist(b.voidResistance),
     heatGain: a.wisdom * COMBAT.heatGainPerWisdom + b.heatGain,
     startingHeat: clamp(b.startingHeat, 0, COMBAT.maxHeat),
     ailmentDuration: a.wisdom * COMBAT.ailmentDurationPerWisdom + b.ailmentDuration,

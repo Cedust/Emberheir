@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameAction,
@@ -43,7 +43,7 @@ export function nextStageActions(state: GameState): GameAction[] {
   let s = state;
   const step = (a: GameAction) => {
     actions.push(a);
-    s = applyAction(s, POC_GAME_DATA, a);
+    s = applyAction(s, GAME_DATA, a);
   };
   try {
     if (s.run?.phase === "rewards") step({ type: "continue" });
@@ -59,7 +59,7 @@ export function nextStageActions(state: GameState): GameAction[] {
 function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
   const { state, run, game } = props;
   const hero = state.hero;
-  const maxLife = deriveStats(heroSetup(state, POC_GAME_DATA).setup).maxLife;
+  const maxLife = deriveStats(heroSetup(state, GAME_DATA).setup).maxLife;
   const lifePct = Math.round(run.lifeFraction * 100);
   const canDrink = state.flaskCharges > 0 && run.lifeFraction < 1;
   const heal = canDrink ? Math.min(PROGRESSION.flaskHeal * 100, 100 - lifePct) : 0;
@@ -141,7 +141,7 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
 
 function UpNext(props: { run: RunState }) {
   const { run } = props;
-  const act = getAct(POC_GAME_DATA, run.actId);
+  const act = getAct(GAME_DATA, run.actId);
   const stages = act.monsterLevels.length;
   // During the rewards the next stage is stage + 1.
   const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
@@ -196,9 +196,9 @@ function ItemCards(props: {
   return (
     <div className="loot-cards">
       {rewards.items.map((item, i) => {
-        const equipReason = equipBlockReason(state, POC_GAME_DATA, item, "pick");
-        const takeReason = takeBlockReason(state, POC_GAME_DATA, item);
-        const slot = targetSlot(item, POC_GAME_DATA, state.hero.equipment);
+        const equipReason = equipBlockReason(state, GAME_DATA, item, "pick");
+        const takeReason = takeBlockReason(state, GAME_DATA, item);
+        const slot = targetSlot(item, GAME_DATA, state.hero.equipment);
         return (
           <div
             key={item.id}
@@ -274,7 +274,7 @@ function EquippedPanel(props: {
           <circle cx="200" cy="60" r="38" />
           <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
         </svg>
-        {POC_GAME_DATA.equipmentSlots.map((slot) => {
+        {GAME_DATA.equipmentSlots.map((slot) => {
           const pos = DOLL[slot];
           if (!pos) return null;
           return (
@@ -322,7 +322,7 @@ function EquippedPanel(props: {
 function SpoilsCards(props: { run: RunState; game: GameApi }) {
   const rewards = props.run.rewards;
   if (!rewards) return null;
-  const act = getAct(POC_GAME_DATA, props.run.actId);
+  const act = getAct(GAME_DATA, props.run.actId);
   return (
     <div className="spoils-cards">
       {rewards.spoils.map((card, i) => {
@@ -348,7 +348,7 @@ function SpoilsCards(props: { run: RunState; game: GameApi }) {
 
 function DoneCard(props: { run: RunState }) {
   const { run } = props;
-  const act = getAct(POC_GAME_DATA, run.actId);
+  const act = getAct(GAME_DATA, run.actId);
   const rewards = run.rewards;
   let line: string;
   let sub: string;
@@ -393,7 +393,7 @@ export function IntermissionView(props: {
   onMenu: () => void;
 }) {
   const { state, run, game } = props;
-  const act = getAct(POC_GAME_DATA, run.actId);
+  const act = getAct(GAME_DATA, run.actId);
   const rewards = run.rewards;
   const [focus, setFocus] = useState<EquipmentSlot | undefined>(undefined);
   const step = !rewards
@@ -417,7 +417,7 @@ export function IntermissionView(props: {
           : `Ready for Stage ${nextStage}`;
   const anyBlocked =
     step === "items" &&
-    (rewards?.items ?? []).some((it) => takeBlockReason(state, POC_GAME_DATA, it) !== undefined);
+    (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
   const gains: Record<string, number> = rewards
     ? {
         gold: rewards.gold,
@@ -480,7 +480,7 @@ export function IntermissionView(props: {
           focus={
             focus ??
             (step === "items" && rewards?.items[0]
-              ? targetSlot(rewards.items[0], POC_GAME_DATA, state.hero.equipment)
+              ? targetSlot(rewards.items[0], GAME_DATA, state.hero.equipment)
               : undefined)
           }
           onFocus={setFocus}

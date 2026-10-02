@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { Rng } from "../rng";
 import { ITEMS } from "./constants";
-import { createItemCatalog, pickWeighted, rollItem, rollRarity } from "./generate";
+import { affixPosition, createItemCatalog, pickWeighted, rollItem, rollRarity } from "./generate";
 import { TEST_CATALOG, TEST_RING, TEST_SWORD } from "./test-fixtures";
-import { RARITIES, type Rarity } from "./types";
+import { type AffixDefinition, RARITIES, type Rarity } from "./types";
 
 const roll = (rarity: Rarity, seed: number, baseId = "test-ring", itemLevel = 5) =>
   rollItem(TEST_CATALOG, { baseId, itemLevel, rarity }, new Rng(seed));
@@ -59,7 +59,35 @@ describe("rollItem", () => {
     expect(item.itemLevel).toBe(23);
     expect(item.tier).toBe(3);
     expect(item.name).toBe("Ash Bite");
-    expect(roll("magic", 2).name).toMatch(/^Test Ring of /);
+    expect(roll("magic", 2).name).toMatch(/^(Arcane )?Test Ring/);
+  });
+
+  it("names Magic items D2 style: one prefix and one suffix at most", () => {
+    const names = new Set<string>();
+    for (let seed = 1; seed <= 200; seed++) {
+      const item = roll("magic", seed);
+      const positions = item.affixes.map((a) => {
+        const affix = TEST_CATALOG.affixes.get(a.affixId);
+        if (!affix) throw new Error("unknown affix");
+        return affixPosition(affix);
+      });
+      expect(new Set(positions).size).toBe(positions.length);
+      expect(item.name).toMatch(/^(Arcane )?Test Ring( of .+)?$/);
+      names.add(item.name.startsWith("Arcane ") && item.name.includes(" of ") ? "both" : "one");
+    }
+    expect(names).toEqual(new Set(["both", "one"]));
+  });
+
+  it("rejects stat affixes without exactly one name part", () => {
+    const [strength] = TEST_CATALOG.affixes.values();
+    if (strength?.kind !== "stat") throw new Error("fixture changed");
+    const make = (affix: AffixDefinition) =>
+      createItemCatalog({ bases: [], affixes: [affix], rareNames: TEST_CATALOG.rareNames });
+    expect(() => make({ ...strength, prefix: "Mighty" })).toThrow("either a prefix or a suffix");
+    const bare = Object.fromEntries(
+      Object.entries(strength).filter(([key]) => key !== "suffix"),
+    ) as AffixDefinition;
+    expect(() => make(bare)).toThrow("either a prefix or a suffix");
   });
 
   it("rejects unknown bases and duplicate ids", () => {

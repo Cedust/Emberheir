@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import { type Notice, getAct } from "@emberheir/sim";
 
 interface NoticeText {
@@ -64,7 +64,7 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
   const { notice } = props;
   // Prestige has its own screen (Inheritance).
   const text = TEXT[notice.kind === "prestige" ? "actCleared" : notice.kind];
-  const act = getAct(POC_GAME_DATA, notice.actId);
+  const act = getAct(GAME_DATA, notice.actId);
   return (
     <section
       className={`screen notice-screen notice-${notice.kind}`}

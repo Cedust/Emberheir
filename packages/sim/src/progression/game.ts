@@ -16,6 +16,7 @@ import {
   type EquipmentSlot,
   type Item,
   type ItemCatalog,
+  type ItemSlot,
   RARITIES,
   type Rarity,
 } from "../items/types";
@@ -853,14 +854,22 @@ function rollItemChoices(
   rng: Rng,
 ): Item[] {
   const weights = itemPickWeights(rank, deathsInAct, actTier);
-  const bases = [...data.lootBases];
+  const bySlot = new Map<ItemSlot, string[]>();
+  for (const baseId of data.lootBases) {
+    const slot = getBase(data.items, baseId).slot;
+    bySlot.set(slot, [...(bySlot.get(slot) ?? []), baseId]);
+  }
+  const slots = [...bySlot.keys()];
   const items: Item[] = [];
   for (let i = 0; i < PROGRESSION.itemChoices; i++) {
-    // Different bases while possible, so the three cards differ.
-    const pool = bases.length ? bases : [...data.lootBases];
-    const baseId = pickWeighted(pool, () => 1, rng);
+    // Different slots while possible, so the three cards differ.
+    const pool = slots.length ? slots : [...bySlot.keys()];
+    const slot = pickWeighted(pool, (s) => PROGRESSION.lootSlotWeights[s], rng);
+    if (!slot) break;
+    slots.splice(slots.indexOf(slot), 1);
+    const bases = bySlot.get(slot) ?? [];
+    const baseId = bases[rng.int(0, bases.length - 1)];
     if (!baseId) break;
-    bases.splice(bases.indexOf(baseId), 1);
     items.push(
       rollItem(
         data.items,

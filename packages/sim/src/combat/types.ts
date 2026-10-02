@@ -54,6 +54,11 @@ export interface StatBonuses {
   readonly blockChance?: number;
   readonly blockValue?: number;
   readonly allResistance?: number;
+  /** Resistance against one element, added to All Resistance (same cap). */
+  readonly fireResistance?: number;
+  readonly coldResistance?: number;
+  readonly lightningResistance?: number;
+  readonly voidResistance?: number;
   readonly heatGain?: number;
   readonly startingHeat?: number;
   readonly ailmentDuration?: number;

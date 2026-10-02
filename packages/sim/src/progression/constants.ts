@@ -62,6 +62,22 @@ export const PROGRESSION = {
 
   /** Cards in the item pick after every win. */
   itemChoices: 3,
+  /**
+   * Item pick: each card picks an item slot by these weights (three different slots while
+   * possible), then a random base of that slot. So adding bases to a slot never makes weapons
+   * rarer. Rings fill two equipment slots and show up a bit more often.
+   */
+  lootSlotWeights: {
+    mainHand: 1.2,
+    offHand: 1,
+    helm: 1,
+    body: 1,
+    gloves: 1,
+    boots: 1,
+    belt: 1,
+    amulet: 1,
+    ring: 1.5,
+  } satisfies Record<ItemSlot, number>,
   /** Rarity weights of the item pick; Elites roll at least Rare, Bosses at least Epic. */
   rarityWeights: { normal: 40, magic: 35, rare: 20, epic: 5, legendary: 0 } satisfies Record<
     Rarity,

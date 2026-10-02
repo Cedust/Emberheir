@@ -1,4 +1,4 @@
-import { GAME_TITLE, ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
+import { GAME_TITLE, ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import { SIM_VERSION, getBase } from "@emberheir/sim";
 import { useState } from "react";
 import { PREVIEW_PR } from "../storage";
@@ -70,7 +70,7 @@ export function TitleScreen(props: {
             <h2 className="title-font">Choose your first weapon</h2>
             {save && <p className="warning">Starting a new game replaces your save.</p>}
             <div className="starter-cards">
-              {POC_GAME_DATA.starterWeapons.map((id) => {
+              {GAME_DATA.starterWeapons.map((id) => {
                 const info = STARTER_TEXT[id];
                 return (
                   <button

@@ -5,7 +5,7 @@ export * from "./enemies";
 export * from "./items";
 export * from "./elites";
 export { SKILL_TREE } from "./skill-tree";
-export { ACT1, POC_GAME_DATA } from "./game";
+export { ACT1, GAME_DATA } from "./game";
 export { STARTING_ATTRIBUTES, createHeroSetup, resolveHeroGear, type HeroLoadout } from "./heroes";
 
 export const GAME_TITLE = "Emberheir";

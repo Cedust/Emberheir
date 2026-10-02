@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   ATTRIBUTES,
   type Attribute,
@@ -96,7 +96,7 @@ export function CharacterOverlay(props: {
       ) as unknown as Attributes,
     },
   };
-  const { setup, gear } = heroSetup(preview, POC_GAME_DATA);
+  const { setup, gear } = heroSetup(preview, GAME_DATA);
   const stats = deriveStats(setup);
   const dps = estimateDps(setup, stats);
 
@@ -157,7 +157,7 @@ export function CharacterOverlay(props: {
 
   let footer = null;
   if (sel && invItem) {
-    const reason = equipBlockReason(state, POC_GAME_DATA, invItem, "inventory");
+    const reason = equipBlockReason(state, GAME_DATA, invItem, "inventory");
     footer = (
       <div className="detail-buttons">
         <button
@@ -191,7 +191,7 @@ export function CharacterOverlay(props: {
       </div>
     );
   } else if (sel && equippedSlot) {
-    const reason = unequipBlockReason(state, POC_GAME_DATA, equippedSlot);
+    const reason = unequipBlockReason(state, GAME_DATA, equippedSlot);
     const inactive = gear.inactive.find((i) => i.slot === equippedSlot);
     footer = (
       <div className="detail-buttons">
@@ -250,7 +250,7 @@ export function CharacterOverlay(props: {
                 <circle cx="200" cy="60" r="38" />
                 <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
               </svg>
-              {POC_GAME_DATA.equipmentSlots.map((slot) => {
+              {GAME_DATA.equipmentSlots.map((slot) => {
                 const pos = DOLL[slot];
                 if (!pos) return null;
                 const it = state.hero.equipment[slot];

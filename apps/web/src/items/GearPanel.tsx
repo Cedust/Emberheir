@@ -1,10 +1,15 @@
-import { ITEM_CATALOG, POC_EQUIPMENT_SLOTS, STARTING_ATTRIBUTES } from "@emberheir/content";
-import { type Equipment, type ResolvedEquipment, describeItem } from "@emberheir/sim";
+import { ITEM_CATALOG, STARTING_ATTRIBUTES } from "@emberheir/content";
+import {
+  EQUIPMENT_SLOTS,
+  type Equipment,
+  type ResolvedEquipment,
+  describeItem,
+} from "@emberheir/sim";
 import { ItemCard } from "./ItemCard";
 
-/** Shows the rolled PoC gear set as item cards. */
+/** Shows the rolled gear set as item cards. */
 export function GearPanel(props: { equipment: Equipment; resolved: ResolvedEquipment }) {
-  const items = POC_EQUIPMENT_SLOTS.flatMap((slot) => {
+  const items = EQUIPMENT_SLOTS.flatMap((slot) => {
     const item = props.equipment[slot];
     return item ? [{ slot, item }] : [];
   });

@@ -86,6 +86,12 @@ describe("resolveHit", () => {
     expect(resolveHit(input({ defender, type: "cold" }), rng())).toMatchObject({ damage: 70 });
   });
 
+  it("uses the element's own Resistance on top of All Resistance", () => {
+    const defender = stats({ allResistance: 0.1, fireResistance: 0.4 });
+    expect(resolveHit(input({ defender, type: "fire" }), rng())).toMatchObject({ damage: 50 });
+    expect(resolveHit(input({ defender, type: "void" }), rng())).toMatchObject({ damage: 90 });
+  });
+
   it("subtracts Block Value from blocked hits, down to 0", () => {
     const defender = stats({ blockChance: 1, blockValue: 30 });
     // Block chance is capped at 75 %, so look for a blocked hit.

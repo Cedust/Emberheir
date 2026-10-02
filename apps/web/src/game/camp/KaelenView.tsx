@@ -1,4 +1,4 @@
-import { POC_GAME_DATA, SKILL_TREE } from "@emberheir/content";
+import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
   type GameState,
   PROGRESSION,
@@ -373,9 +373,9 @@ function Flames(props: { wait: number }) {
 function BattlePlanTab(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const [slot, setSlot] = useState(0);
-  const { setup } = heroSetup(state, POC_GAME_DATA);
+  const { setup } = heroSetup(state, GAME_DATA);
   const stats = deriveStats(setup);
-  const known = knownSkills(state, POC_GAME_DATA, setup.weapon);
+  const known = knownSkills(state, GAME_DATA, setup.weapon);
   const rate = heatPerSecond(setup, stats);
   const slots = setup.rotation.map((r) => ({
     name: r.skill.name,
@@ -549,7 +549,7 @@ export function KaelenView(props: {
   const { state, game, viewOnly } = props;
   const [tab, setTab] = useState<"tree" | "plan">("tree");
   const [respec, setRespec] = useState(false);
-  const spent = spentInTree(POC_GAME_DATA, state.hero.learned);
+  const spent = spentInTree(GAME_DATA, state.hero.learned);
   const canRespec =
     !viewOnly && spent.skillPoints > 0 && state.wallet.gold >= PROGRESSION.respecGold;
 

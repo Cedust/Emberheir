@@ -1,4 +1,4 @@
-import { ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
+import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
   Fight,
@@ -38,7 +38,7 @@ const ARCHETYPE_TEXT: Record<string, string> = {
 
 function useLooks(state: GameState, run: RunState) {
   const encounter = run.encounter;
-  const act = getAct(POC_GAME_DATA, run.actId);
+  const act = getAct(GAME_DATA, run.actId);
   const enemyDef =
     encounter &&
     (act.boss.id === encounter.enemyId
@@ -52,7 +52,7 @@ function useLooks(state: GameState, run: RunState) {
     weapon: weapon?.weapon?.range === "ranged" ? "wand" : "sword",
     offHand: off ? (off.fitsWeaponRange === "ranged" ? "focus" : "shield") : null,
   };
-  const mods = encounter ? eliteModifiersOf(encounter, POC_GAME_DATA).map((m) => m.name) : [];
+  const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
   const enemyLook: EnemyLook = {
     archetype: enemyDef?.archetype ?? "brute",
     boss: encounter?.boss ?? false,
@@ -92,7 +92,7 @@ export function BattleView(props: {
   const looks = useLooks(state, run);
   // GameApp remounts this view for every encounter (key = fight seed).
   const [fight] = useState(() => {
-    const setups = currentFight(state, POC_GAME_DATA);
+    const setups = currentFight(state, GAME_DATA);
     return new Fight(setups.hero, setups.enemy, setups.seed);
   });
   const [snapshot, setSnapshot] = useState<FightSnapshot>(() => fight.snapshot());

@@ -1,4 +1,4 @@
-import { ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
+import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
   CRAFTING,
   type CraftCost,
@@ -119,7 +119,7 @@ function costText(cost: CraftCost): string {
     parts.push(`${cost.ascensionShards} Ascension Shard${cost.ascensionShards > 1 ? "s" : ""}`);
   }
   for (const [id, n] of Object.entries(cost.essences)) {
-    const name = POC_GAME_DATA.acts.find((a) => a.essence.id === id)?.essence.name ?? id;
+    const name = GAME_DATA.acts.find((a) => a.essence.id === id)?.essence.name ?? id;
     parts.push(`${n} ${name}`);
   }
   return parts.join(" · ") || "Free";
@@ -163,7 +163,7 @@ export function PersonaView(props: {
     () => state.hero.equipment.mainHand?.id ?? null,
   );
   const [affixIndex, setAffixIndex] = useState<number | null>(null);
-  const essenceId = POC_GAME_DATA.acts[0]?.essence.id ?? "";
+  const essenceId = GAME_DATA.acts[0]?.essence.id ?? "";
   const [last, setLast] = useState<string | null>(null);
 
   const found = itemId ? findCraftItem(state, itemId) : undefined;
@@ -210,7 +210,7 @@ export function PersonaView(props: {
     block = !item ? "Choose an item" : "Choose an affix";
   } else {
     cost = costText(craftCost(request, item));
-    const reason = craftBlockReason(state, POC_GAME_DATA, request);
+    const reason = craftBlockReason(state, GAME_DATA, request);
     block = reason ? CRAFT_BLOCK_TEXT[reason] : null;
   }
   // Locked-out affixes and triggers say so even before an affix is picked.
@@ -230,7 +230,7 @@ export function PersonaView(props: {
     // The sim is deterministic, so this preview is exactly what the dispatch will do.
     let after: GameState;
     try {
-      after = applyAction(state, POC_GAME_DATA, { type: "craft", request });
+      after = applyAction(state, GAME_DATA, { type: "craft", request });
     } catch {
       game.dispatch({ type: "craft", request });
       return;
@@ -262,14 +262,14 @@ export function PersonaView(props: {
   const liora = state.progress.trainerUnlocked;
   const actionName = def.actions.find((a) => a.k === kind)?.name ?? "";
   const after = item && kind !== "distill" && kind !== "socket" ? item : undefined;
-  const essence = POC_GAME_DATA.acts[0]?.essence;
+  const essence = GAME_DATA.acts[0]?.essence;
   const essenceHave = essence ? (state.wallet.essences[essence.id] ?? 0) : 0;
 
   return (
     <section className="screen persona-view" aria-label={`${def.name}, ${def.role}`}>
       <header className="persona-header bar-top">
         <span className="title-font eyebrow-big">
-          CAMP · {POC_GAME_DATA.acts[0]?.name.toUpperCase()}
+          CAMP · {GAME_DATA.acts[0]?.name.toUpperCase()}
         </span>
         <div className="tabs" role="tablist">
           {(["thoric", "liora"] as const).map((p) => (
@@ -436,7 +436,7 @@ export function PersonaView(props: {
         <aside className="persona-right">
           <span className="title-font section-title">Equipped</span>
           <div className="equipped-row">
-            {POC_GAME_DATA.equipmentSlots.map((slot) => {
+            {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
               return (
                 <ItemTile
