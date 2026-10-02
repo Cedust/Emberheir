@@ -1,3 +1,4 @@
+import { TRIGGER_CONDITIONS, TRIGGER_EFFECTS } from "./codex";
 import { describe, expect, it } from "vitest";
 import {
   EQUIPMENT_SLOTS,
@@ -29,8 +30,28 @@ describe("item content", () => {
   it("has at least 30 stat and 8 trigger affixes", () => {
     expect(STAT_AFFIXES.length).toBeGreaterThanOrEqual(30);
     expect(TRIGGER_AFFIXES.length).toBeGreaterThanOrEqual(8);
-    expect(AFFIXES.length).toBe(ITEM_CATALOG.affixes.size);
+    // Plus one never-dropping affix per Trigger Codex pair (Kindle).
+    expect(AFFIXES.length + TRIGGER_CONDITIONS.length * TRIGGER_EFFECTS.length).toBe(
+      ITEM_CATALOG.affixes.size,
+    );
     expect(ITEM_BASES.length).toBe(ITEM_CATALOG.bases.size);
+  });
+
+  it("every Codex part can be learned from a trigger affix that drops", () => {
+    const taught = TRIGGER_AFFIXES.flatMap((a) => (a.parts ? [a.parts] : []));
+    expect(taught).toHaveLength(TRIGGER_AFFIXES.length);
+    for (const c of TRIGGER_CONDITIONS) {
+      expect(
+        taught.some((p) => p.condition === c.id),
+        c.id,
+      ).toBe(true);
+    }
+    for (const e of TRIGGER_EFFECTS) {
+      expect(
+        taught.some((p) => p.effect === e.id),
+        e.id,
+      ).toBe(true);
+    }
   });
 
   it("every hero weapon has a base item, and every base can roll stat and trigger affixes", () => {

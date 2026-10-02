@@ -1,3 +1,4 @@
+import { TRIGGER_CONDITIONS, TRIGGER_EFFECTS } from "./codex";
 import {
   type AffixDefinition,
   EQUIPMENT_SLOTS,
@@ -587,6 +588,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.8, max: 1.4 },
     perTier: 0,
+    parts: { condition: "every-4th-attack", effect: "weapon-hit" },
   }),
   trigger({
     id: "searing-crit",
@@ -599,6 +601,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     cooldown: 1,
     value: { min: 0.25, max: 0.5 },
     perTier: 0,
+    parts: { condition: "on-crit", effect: "burn" },
   }),
   trigger({
     id: "frostbite",
@@ -611,6 +614,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     cooldown: 3,
     value: { min: 0.15, max: 0.3 },
     perTier: 0,
+    parts: { condition: "when-hit", effect: "chill" },
   }),
   trigger({
     id: "stoneskin",
@@ -624,6 +628,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.06, max: 0.12 },
     perTier: 0.1,
+    parts: { condition: "when-hit", effect: "barrier" },
   }),
   trigger({
     id: "second-wind",
@@ -636,6 +641,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.12, max: 0.22 },
     perTier: 0.1,
+    parts: { condition: "low-life", effect: "heal" },
   }),
   trigger({
     id: "ember-guard",
@@ -648,6 +654,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 6, max: 12 },
     perTier: 0.1,
+    parts: { condition: "on-block", effect: "heat" },
   }),
   trigger({
     id: "fleetfoot",
@@ -660,6 +667,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.1, max: 0.2 },
     perTier: 0.1,
+    parts: { condition: "on-evade", effect: "attack-speed" },
   }),
   trigger({
     id: "flame-pulse",
@@ -676,6 +684,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 1, max: 1.5 },
     perTier: 1,
+    parts: { condition: "every-6s", effect: "flame-pulse" },
   }),
   trigger({
     id: "battle-focus",
@@ -687,6 +696,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.04, max: 0.08 },
     perTier: 0.1,
+    parts: { condition: "on-skill-use", effect: "crit-chance" },
   }),
   trigger({
     id: "ember-mind",
@@ -699,6 +709,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 5, max: 10 },
     perTier: 0.1,
+    parts: { condition: "on-skill-use", effect: "heat" },
   }),
   trigger({
     id: "iron-will",
@@ -711,6 +722,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.1, max: 0.18 },
     perTier: 0.1,
+    parts: { condition: "half-life", effect: "barrier" },
   }),
   trigger({
     id: "static-charge",
@@ -723,6 +735,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     cooldown: 3,
     value: { min: 0.15, max: 0.3 },
     perTier: 0,
+    parts: { condition: "when-hit", effect: "shock" },
   }),
   trigger({
     id: "quickstep",
@@ -734,6 +747,59 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.1, max: 0.2 },
     perTier: 0.1,
+    parts: { condition: "every-8s", effect: "evasion" },
+  }),
+  trigger({
+    id: "rending-strikes",
+    name: "Rending Strikes",
+    slots: ["mainHand", "gloves", "ring"],
+    tags: ["offense", "physical", "ailment"],
+    condition: { kind: "onHit" },
+    effect: { kind: "ailment", ailment: "bleed" },
+    rolls: "chance",
+    cooldown: 1,
+    value: { min: 0.06, max: 0.12 },
+    perTier: 0,
+    parts: { condition: "on-hit", effect: "bleed" },
+  }),
+  trigger({
+    id: "venom-sting",
+    name: "Venom Sting",
+    slots: ["mainHand", "gloves", ...JEWELRY],
+    tags: ["crit", "physical", "ailment"],
+    condition: { kind: "onCrit" },
+    effect: { kind: "ailment", ailment: "poison" },
+    rolls: "chance",
+    cooldown: 1,
+    value: { min: 0.25, max: 0.5 },
+    perTier: 0,
+    parts: { condition: "on-crit", effect: "poison" },
+  }),
+  trigger({
+    id: "opening-ward",
+    name: "Opening Ward",
+    slots: ["offHand", "helm", "body"],
+    tags: ["defense"],
+    condition: { kind: "fightStart" },
+    oncePerFight: true,
+    effect: { kind: "barrier" },
+    rolls: "magnitude",
+    value: { min: 0.08, max: 0.15 },
+    perTier: 0.1,
+    parts: { condition: "fight-start", effect: "barrier" },
+  }),
+  trigger({
+    id: "riposte-guard",
+    name: "Riposte",
+    slots: ["offHand", "gloves"],
+    tags: ["block", "offense"],
+    condition: { kind: "onBlock" },
+    cooldown: 2,
+    effect: { kind: "extraAttack" },
+    rolls: "chance",
+    value: { min: 0.3, max: 0.6 },
+    perTier: 0,
+    parts: { condition: "on-block", effect: "extra-attack" },
   }),
 ];
 
@@ -757,6 +823,8 @@ export const ITEM_CATALOG = createItemCatalog({
   runewords: RUNEWORDS,
   powers: LEGENDARY_POWERS,
   uniques: UNIQUES,
+  conditions: TRIGGER_CONDITIONS,
+  effects: TRIGGER_EFFECTS,
 });
 
 // --- Gear sets ------------------------------------------------------------------------------
