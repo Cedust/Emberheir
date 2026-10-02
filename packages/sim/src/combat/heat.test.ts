@@ -39,9 +39,10 @@ describe("Heat", () => {
     expect(stepHeat("warming", 0, 1, 0, 1.5)).toBe(COMBAT.warmingHeatPerSecond * 1.5);
   });
 
-  it("Cooling decays only after 1.5 s without a landed hit", () => {
-    expect(stepHeat("cooling", 50, 0.05, 1.5, 1)).toBe(50);
-    expect(stepHeat("cooling", 50, 0.05, 1.55, 1)).toBeCloseTo(
+  it("Cooling decays only after the grace time without a landed hit", () => {
+    const grace = COMBAT.coolingGraceSeconds;
+    expect(stepHeat("cooling", 50, 0.05, grace, 1)).toBe(50);
+    expect(stepHeat("cooling", 50, 0.05, grace + 0.05, 1)).toBeCloseTo(
       50 - COMBAT.coolingDecayPerSecond * 0.05,
     );
     expect(stepHeat("cooling", 0.1, 1, 5, 1)).toBe(0);

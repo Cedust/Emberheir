@@ -1,8 +1,10 @@
 import { POC_GAME_DATA } from "@emberheir/content";
 import {
+  type EquipmentSlot,
   type GameAction,
   type GameState,
   PROGRESSION,
+  SLOT_NAMES,
   type RunState,
   type SpoilsCard,
   applyAction,
@@ -13,12 +15,15 @@ import {
   rewardsDone,
   salvageValue,
   takeBlockReason,
+  targetSlot,
+  itemSlotFor,
   levelCap,
   xpToNextLevel,
 } from "@emberheir/sim";
+import { useState } from "react";
 import { Icon, type IconName } from "../ui/Icon";
-import { ItemDetail, compareWithEquipped, fmt, walletEntries } from "../ui/items";
-import type { Settings } from "../ui/settings";
+import { ItemDetail, ItemTile, compareWithEquipped, fmt, walletEntries } from "../ui/items";
+import { DOLL } from "./CharacterOverlay";
 import { RunHeader } from "./RunHeader";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
@@ -30,10 +35,10 @@ const SPOILS_LOOK: Record<SpoilsCard["kind"], { icon: IconName; tint: string }> 
 };
 
 /**
- * NEXT STAGE as one step: finish the rewards, drink the flask if Life is below the auto-drink
- * setting, start the fight. After the boss, `continue` goes back to the Camp instead.
+ * NEXT STAGE as one step: finish the rewards, start the fight. The flask is only drunk by
+ * hand. After the boss, `continue` goes back to the Camp instead.
  */
-export function nextStageActions(state: GameState, autoFlask: number): GameAction[] {
+export function nextStageActions(state: GameState): GameAction[] {
   const actions: GameAction[] = [];
   let s = state;
   const step = (a: GameAction) => {
@@ -44,7 +49,6 @@ export function nextStageActions(state: GameState, autoFlask: number): GameActio
     if (s.run?.phase === "rewards") step({ type: "continue" });
     const run = s.run;
     if (run?.phase !== "intermission") return actions;
-    if (run.lifeFraction < autoFlask && s.flaskCharges > 0) step({ type: "useFlask" });
     step({ type: "startStage" });
   } catch {
     // useGame shows the error when it applies the same actions.
@@ -52,7 +56,7 @@ export function nextStageActions(state: GameState, autoFlask: number): GameActio
   return actions;
 }
 
-function HeroCard(props: { state: GameState; run: RunState; game: GameApi; settings: Settings }) {
+function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
   const { state, run, game } = props;
   const hero = state.hero;
   const maxLife = deriveStats(heroSetup(state, POC_GAME_DATA).setup).maxLife;
@@ -132,11 +136,6 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi; setti
               : "Flask empty"}
         </button>
       </div>
-      <p className="sub small">
-        {props.settings.autoFlask > 0
-          ? `Auto-drink below ${Math.round(props.settings.autoFlask * 100)}% Life (Menu)`
-          : "Auto-drink is off (Menu)"}
-      </p>
     </section>
   );
 }
@@ -189,7 +188,12 @@ function UpNext(props: { run: RunState }) {
   );
 }
 
-function ItemCards(props: { state: GameState; run: RunState; game: GameApi }) {
+function ItemCards(props: {
+  state: GameState;
+  run: RunState;
+  game: GameApi;
+  onFocus: (slot: EquipmentSlot | undefined) => void;
+}) {
   const { state, run, game } = props;
   const rewards = run.rewards;
   if (!rewards) return null;
@@ -198,46 +202,117 @@ function ItemCards(props: { state: GameState; run: RunState; game: GameApi }) {
       {rewards.items.map((item, i) => {
         const equipReason = equipBlockReason(state, POC_GAME_DATA, item, "pick");
         const takeReason = takeBlockReason(state, POC_GAME_DATA, item);
+        const slot = targetSlot(item, POC_GAME_DATA, state.hero.equipment);
         return (
-          <ItemDetail
+          <div
             key={item.id}
-            item={item}
-            heroAttributes={state.hero.attributes}
-            compare={compareWithEquipped(state, item)}
-            className="loot-card"
-            testId="item-card"
-            footer={
-              <div className="card-buttons">
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={equipReason !== undefined}
-                  title={
-                    equipReason
-                      ? EQUIP_BLOCK_TEXT[equipReason]
-                      : "Swap in, the old item goes to the inventory"
-                  }
-                  onClick={() => game.dispatch({ type: "pickItem", index: i, mode: "equip" })}
-                >
-                  {equipReason === "noRoom" ? "No room" : "Equip"}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={takeReason !== undefined}
-                  title={
-                    takeReason ? "This item does not fit into the inventory" : "Put into inventory"
-                  }
-                  onClick={() => game.dispatch({ type: "pickItem", index: i, mode: "take" })}
-                >
-                  {takeReason ? "No room" : "Take"}
-                </button>
-              </div>
-            }
-          />
+            className="loot-card-wrap"
+            onMouseEnter={() => props.onFocus(slot)}
+            onFocus={() => props.onFocus(slot)}
+          >
+            <ItemDetail
+              item={item}
+              heroAttributes={state.hero.attributes}
+              compare={compareWithEquipped(state, item)}
+              className="loot-card"
+              testId="item-card"
+              footer={
+                <div className="card-buttons">
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={equipReason !== undefined}
+                    title={
+                      equipReason
+                        ? EQUIP_BLOCK_TEXT[equipReason]
+                        : "Swap in, the old item goes to the inventory"
+                    }
+                    onClick={() => game.dispatch({ type: "pickItem", index: i, mode: "equip" })}
+                  >
+                    {equipReason === "noRoom" ? "No room" : "Equip"}
+                  </button>
+                  <button
+                    type="button"
+                    className="btn"
+                    disabled={takeReason !== undefined}
+                    title={
+                      takeReason
+                        ? "This item does not fit into the inventory"
+                        : "Put into inventory"
+                    }
+                    onClick={() => game.dispatch({ type: "pickItem", index: i, mode: "take" })}
+                  >
+                    {takeReason ? "No room" : "Take"}
+                  </button>
+                </div>
+              }
+            />
+          </div>
         );
       })}
     </div>
+  );
+}
+
+/** Scale of the Character paperdoll in the Equipped column. */
+const MINI_DOLL = 0.62;
+
+/**
+ * Equipped gear next to the item pick (playtest feedback): a small paperdoll and the details of
+ * the item in the slot the hovered loot card would replace, so comparing needs no Character view.
+ */
+function EquippedPanel(props: {
+  state: GameState;
+  focus: EquipmentSlot | undefined;
+  onFocus: (slot: EquipmentSlot) => void;
+}) {
+  const { state, focus } = props;
+  const equipped = focus ? state.hero.equipment[focus] : undefined;
+  return (
+    <aside className="intermission-right" aria-label="Equipped">
+      <span className="eyebrow">Equipped</span>
+      <div className="paperdoll mini" style={{ width: 400 * MINI_DOLL, height: 420 * MINI_DOLL }}>
+        <svg className="silhouette" viewBox="0 0 400 420" aria-hidden="true">
+          <circle cx="200" cy="60" r="38" />
+          <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
+        </svg>
+        {POC_GAME_DATA.equipmentSlots.map((slot) => {
+          const pos = DOLL[slot];
+          if (!pos) return null;
+          return (
+            <div
+              key={slot}
+              className={`doll-slot${slot === focus ? " focused" : ""}`}
+              style={{ left: pos.x * MINI_DOLL, top: pos.y * MINI_DOLL }}
+            >
+              <ItemTile
+                item={state.hero.equipment[slot]}
+                label={SLOT_NAMES[itemSlotFor(slot)]}
+                width={pos.w * MINI_DOLL}
+                height={pos.h * MINI_DOLL}
+                selected={slot === focus}
+                onSelect={() => props.onFocus(slot)}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {equipped ? (
+        <ItemDetail
+          item={equipped}
+          heroAttributes={state.hero.attributes}
+          where="EQUIPPED"
+          className="equipped-detail"
+          testId="equipped-detail"
+        />
+      ) : (
+        <p className="sub small equipped-hint">
+          {focus
+            ? `${SLOT_NAMES[itemSlotFor(focus)]} slot is empty.`
+            : "Point at an item to see what you wear in its slot."}
+        </p>
+      )}
+    </aside>
   );
 }
 
@@ -310,7 +385,6 @@ export function IntermissionView(props: {
   state: GameState;
   run: RunState;
   game: GameApi;
-  settings: Settings;
   onCharacter: () => void;
   onTree: () => void;
   onMenu: () => void;
@@ -318,6 +392,7 @@ export function IntermissionView(props: {
   const { state, run, game } = props;
   const act = getAct(POC_GAME_DATA, run.actId);
   const rewards = run.rewards;
+  const [focus, setFocus] = useState<EquipmentSlot | undefined>(undefined);
   const step = !rewards
     ? "ready"
     : rewards.itemPick === null
@@ -366,7 +441,7 @@ export function IntermissionView(props: {
       />
       <div className="intermission-body">
         <aside className="intermission-left">
-          <HeroCard state={state} run={run} game={game} settings={props.settings} />
+          <HeroCard state={state} run={run} game={game} />
           <UpNext run={run} />
         </aside>
         <main className="intermission-center">
@@ -381,7 +456,7 @@ export function IntermissionView(props: {
                 : ""}
             </p>
           )}
-          {step === "items" && <ItemCards state={state} run={run} game={game} />}
+          {step === "items" && <ItemCards state={state} run={run} game={game} onFocus={setFocus} />}
           {step === "spoils" && <SpoilsCards run={run} game={game} />}
           {done && <DoneCard run={run} />}
           {step === "items" && (
@@ -397,6 +472,16 @@ export function IntermissionView(props: {
             </div>
           )}
         </main>
+        <EquippedPanel
+          state={state}
+          focus={
+            focus ??
+            (step === "items" && rewards?.items[0]
+              ? targetSlot(rewards.items[0], POC_GAME_DATA, state.hero.equipment)
+              : undefined)
+          }
+          onFocus={setFocus}
+        />
       </div>
       <footer className="intermission-footer bar-bottom">
         <div className="wallet-row" aria-label="Wallet">
@@ -427,7 +512,7 @@ export function IntermissionView(props: {
           type="button"
           className="btn big primary next-stage"
           disabled={!done || (rewards !== null && !rewardsDone(rewards))}
-          onClick={() => game.dispatchAll(nextStageActions(state, props.settings.autoFlask))}
+          onClick={() => game.dispatchAll(nextStageActions(state))}
         >
           {boss
             ? "RETURN TO CAMP"

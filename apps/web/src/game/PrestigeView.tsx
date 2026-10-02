@@ -2,6 +2,7 @@ import { POC_GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
+  PROGRESSION,
   SLOT_NAMES,
   itemSlotFor,
   prestigeRewards,
@@ -280,8 +281,8 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
     },
     {
       kind: "LEVEL CAP",
-      name: `${r.levelCap - 10} → ${r.levelCap}`,
-      desc: "Ten more levels to earn this run.",
+      name: `${r.levelCap - PROGRESSION.levelCapPerPrestige} → ${r.levelCap}`,
+      desc: `${PROGRESSION.levelCapPerPrestige} more levels to earn this run.`,
       tone: "good",
     },
     {

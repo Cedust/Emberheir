@@ -4,7 +4,7 @@ import { CINDER_ROD, PIT_MAUL, RUSTY_CLEAVER, TWIN_SHIVS } from "./weapons";
 
 /**
  * Act 1 (Ashen Fields) enemies, one per PoC archetype (docs/design/gegner-bosse-v1.md
- * section 3). Values are for Monster Level 1.
+ * section 3). Values are for Monster Level 1. Playtest 1: life −25 % for the rarer Act 1 loot.
  */
 export const ASHEN_BRUTE: EnemyDefinition = {
   id: "ashen-brute",
@@ -14,7 +14,7 @@ export const ASHEN_BRUTE: EnemyDefinition = {
   attributes: { strength: 8, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 10 },
   weapon: RUSTY_CLEAVER,
   skills: [HEAVY_SWING],
-  baseLife: 540,
+  baseLife: 405,
 };
 
 export const ASHEN_SKIRMISHER: EnemyDefinition = {
@@ -25,7 +25,7 @@ export const ASHEN_SKIRMISHER: EnemyDefinition = {
   attributes: { strength: 4, dexterity: 8, agility: 15, intelligence: 0, wisdom: 2, vitality: 6 },
   weapon: TWIN_SHIVS,
   skills: [QUICK_CUTS],
-  baseLife: 450,
+  baseLife: 340,
   bonuses: { evasion: 0.12 },
 };
 
@@ -37,7 +37,7 @@ export const CINDER_CASTER: EnemyDefinition = {
   attributes: { strength: 0, dexterity: 4, agility: 2, intelligence: 10, wisdom: 6, vitality: 4 },
   weapon: CINDER_ROD,
   skills: [CINDER_SPIT],
-  baseLife: 420,
+  baseLife: 315,
 };
 
 export const ACT1_ENEMIES: readonly EnemyDefinition[] = [
@@ -58,7 +58,7 @@ export const GORRAK: EnemyDefinition = {
   attributes: { strength: 10, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 14 },
   weapon: PIT_MAUL,
   skills: [HEAVY_SWING],
-  baseLife: 520,
+  baseLife: 390,
   boss: true,
   telegraphs: [{ skill: GORRAK_SLAM, interval: 10, windup: 2 }],
 };

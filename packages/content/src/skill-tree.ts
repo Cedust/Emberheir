@@ -2,7 +2,7 @@ import type { SkillNode, SkillTreeDefinition } from "@emberheir/sim";
 import { CHAIN_LIGHTNING, EXECUTE, FIREBOLT, FLURRY, METEOR, POWER_STRIKE } from "./skills";
 
 /**
- * PoC Skill Tree (docs/design/skill-tree-v1.md): Core + Might + Arcana, 30 nodes, one Keystone
+ * PoC Skill Tree (docs/design/skill-tree-v1.md): Core + Might + Arcana, 37 nodes, one Keystone
  * per branch, 3 Skill nodes per branch. Coordinates are for the tree view: Core in the middle,
  * Might up left, Arcana up right. Numbers are starting values.
  */
@@ -58,7 +58,7 @@ const CORE: readonly SkillNode[] = [
     branch: "core",
     kind: "notable",
     description: "+10 % Tenacity, +25 Life.",
-    links: [],
+    links: ["core-endurance", "core-resolve"],
     x: 0,
     y: 2.4,
     bonuses: { tenacity: 0.1, life: 25 },
@@ -69,7 +69,7 @@ const CORE: readonly SkillNode[] = [
     branch: "core",
     kind: "minor",
     description: "+3 % Evasion.",
-    links: [],
+    links: ["core-alertness"],
     x: 0,
     y: -1.1,
     bonuses: { evasion: 0.03 },
@@ -96,6 +96,39 @@ const CORE: readonly SkillNode[] = [
     y: -0.6,
     bonuses: { startingHeat: 8 },
   },
+  {
+    id: "core-endurance",
+    name: "Endurance",
+    branch: "core",
+    kind: "minor",
+    description: "+20 Life.",
+    links: [],
+    x: -0.8,
+    y: 3.1,
+    bonuses: { life: 20 },
+  },
+  {
+    id: "core-resolve",
+    name: "Resolve",
+    branch: "core",
+    kind: "minor",
+    description: "+5 % Tenacity.",
+    links: [],
+    x: 0.8,
+    y: 3.1,
+    bonuses: { tenacity: 0.05 },
+  },
+  {
+    id: "core-alertness",
+    name: "Alertness",
+    branch: "core",
+    kind: "minor",
+    description: "+3 % Evasion.",
+    links: [],
+    x: 0,
+    y: -2,
+    bonuses: { evasion: 0.03 },
+  },
 ];
 
 const MIGHT: readonly SkillNode[] = [
@@ -116,7 +149,7 @@ const MIGHT: readonly SkillNode[] = [
     branch: "might",
     kind: "skill",
     description: "Unlocks Power Strike. Each rank adds a Skill Level.",
-    links: ["might-brutal-force"],
+    links: ["might-brutal-force", "might-grit"],
     x: -2.8,
     y: -1.1,
     maxRanks: 3,
@@ -185,7 +218,7 @@ const MIGHT: readonly SkillNode[] = [
     branch: "might",
     kind: "minor",
     description: "+8 % Physical Damage.",
-    links: ["might-execute", "might-swift-blades"],
+    links: ["might-execute", "might-swift-blades", "might-whetstone"],
     x: -5,
     y: -3.6,
     bonuses: { physicalDamage: 0.08 },
@@ -224,6 +257,28 @@ const MIGHT: readonly SkillNode[] = [
     y: -5.8,
     keystone: { noHeatDecay: true, damageTaken: 0.2 },
   },
+  {
+    id: "might-grit",
+    name: "Grit",
+    branch: "might",
+    kind: "minor",
+    description: "+10 Armor.",
+    links: [],
+    x: -3.8,
+    y: -0.6,
+    bonuses: { armor: 10 },
+  },
+  {
+    id: "might-whetstone",
+    name: "Whetstone",
+    branch: "might",
+    kind: "minor",
+    description: "+2 % Crit Chance.",
+    links: [],
+    x: -6,
+    y: -3.3,
+    bonuses: { critChance: 0.02 },
+  },
 ];
 
 /** Arcana mirrors Might on the right side. */
@@ -245,7 +300,7 @@ const ARCANA: readonly SkillNode[] = [
     branch: "arcana",
     kind: "skill",
     description: "Unlocks Firebolt. Each rank adds a Skill Level.",
-    links: ["arcana-kindled-mind"],
+    links: ["arcana-kindled-mind", "arcana-insight"],
     x: 2.8,
     y: -1.1,
     maxRanks: 3,
@@ -314,7 +369,7 @@ const ARCANA: readonly SkillNode[] = [
     branch: "arcana",
     kind: "minor",
     description: "+8 % Elemental Damage.",
-    links: ["arcana-meteor", "arcana-frost"],
+    links: ["arcana-meteor", "arcana-frost", "arcana-attunement"],
     x: 5,
     y: -3.6,
     bonuses: { elementalDamage: 0.08 },
@@ -352,6 +407,28 @@ const ARCANA: readonly SkillNode[] = [
     x: 5.9,
     y: -5.8,
     keystone: { skillCostMultiplier: 0.7, defaultAttackDamage: 0.5 },
+  },
+  {
+    id: "arcana-insight",
+    name: "Insight",
+    branch: "arcana",
+    kind: "minor",
+    description: "+5 % All Resistance.",
+    links: [],
+    x: 3.8,
+    y: -0.6,
+    bonuses: { allResistance: 0.05 },
+  },
+  {
+    id: "arcana-attunement",
+    name: "Attunement",
+    branch: "arcana",
+    kind: "minor",
+    description: "+6 % Elemental Damage.",
+    links: [],
+    x: 6,
+    y: -3.3,
+    bonuses: { elementalDamage: 0.06 },
   },
 ];
 

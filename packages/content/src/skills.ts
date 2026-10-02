@@ -153,7 +153,7 @@ export const CINDER_SPIT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 2, max: 4 },
+      damage: { min: 1.4, max: 2.8 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.6 }],
     },

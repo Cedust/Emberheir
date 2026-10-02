@@ -16,8 +16,8 @@ import { SWORD } from "./weapons";
 describe("PoC Skill Tree", () => {
   const nodes = SKILL_TREE.nodes;
 
-  it("has about 30 nodes in Core, Might and Arcana with unique ids and valid links", () => {
-    expect(nodes.length).toBe(30);
+  it("has about 37 nodes in Core, Might and Arcana with unique ids and valid links", () => {
+    expect(nodes.length).toBe(37);
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);

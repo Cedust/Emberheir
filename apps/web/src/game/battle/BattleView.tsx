@@ -260,12 +260,7 @@ export function BattleView(props: {
             <span className="title-font">
               Ember Flask {state.flaskCharges}/{flaskMax}
             </span>
-            <span className="sub">
-              Between stages
-              {settings.autoFlask > 0
-                ? ` · Auto below ${Math.round(settings.autoFlask * 100)}%`
-                : ""}
-            </span>
+            <span className="sub">Between stages</span>
           </div>
         </div>
 

@@ -161,8 +161,8 @@ describe("game loop", () => {
     expect(s.run?.rewards?.levelsGained).toBe(1);
     expect(s.hero.unspentAttributePoints).toBe(PROGRESSION.attributePointsPerLevel);
     expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.skillPointsPerLevel);
-    s = act(s, { type: "allocateAttributes", points: { strength: 2, vitality: 1 } });
-    expect(s.hero.attributes.strength).toBe(8);
+    s = act(s, { type: "allocateAttributes", points: { strength: 1, vitality: 1 } });
+    expect(s.hero.attributes.strength).toBe(7);
     expect(s.hero.unspentAttributePoints).toBe(0);
     expect(() => act(s, { type: "allocateAttributes", points: { strength: 1 } })).toThrow();
   });
@@ -212,6 +212,24 @@ describe("game loop", () => {
     expect(pity.normal).toBe(base.normal);
     expect(itemPickWeights("elite", 0)).toMatchObject({ normal: 0, magic: 0 });
     expect(itemPickWeights("boss", 0)).toMatchObject({ normal: 0, magic: 0, rare: 0 });
+  });
+
+  it("the Act Tier caps the rarity of the item pick", () => {
+    // Act 1: Normal and Magic from normal enemies, Rare from Elites, Epic from the boss.
+    expect(itemPickWeights("normal", 0, 1)).toMatchObject({ rare: 0, epic: 0 });
+    expect(itemPickWeights("normal", 0, 1).magic).toBeGreaterThan(0);
+    expect(itemPickWeights("elite", 0, 1)).toMatchObject({ normal: 0, magic: 0, epic: 0 });
+    expect(itemPickWeights("elite", 0, 1).rare).toBeGreaterThan(0);
+    expect(itemPickWeights("boss", 0, 1).epic).toBeGreaterThan(0);
+    // Act Tier 2 (Act 2, or Act 1 after a Prestige) unlocks Rare, Act Tier 3 Epic.
+    expect(itemPickWeights("normal", 0, 2)).toMatchObject({ epic: 0 });
+    expect(itemPickWeights("normal", 0, 2).rare).toBeGreaterThan(0);
+    expect(itemPickWeights("normal", 0, 3).epic).toBeGreaterThan(0);
+    // Pity lifts the highest allowed rarity, never a locked one.
+    expect(itemPickWeights("normal", 2, 1).magic).toBeGreaterThan(
+      itemPickWeights("normal", 0, 1).magic,
+    );
+    expect(itemPickWeights("normal", 2, 1)).toMatchObject({ rare: 0, epic: 0 });
   });
 
   it("bosses drop an Ascension Shard", () => {
@@ -340,7 +358,7 @@ describe("game loop", () => {
       rotationSlots: 2,
       harvesterEmber: 1,
       dust: PROGRESSION.prestigeDustPerLevel,
-      levelCap: 20,
+      levelCap: PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
       monsterLevelBonus: PROGRESSION.monsterLevelsPerPrestige,
     });
     // Never more Seals than slots.

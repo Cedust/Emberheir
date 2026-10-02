@@ -42,7 +42,7 @@ export const COMBAT = {
   maxHeat: 100,
   warmingHeatPerSecond: 12,
   /** Cooling: Heat starts to decay after this long without landing a hit... */
-  coolingGraceSeconds: 1.5,
+  coolingGraceSeconds: 2,
   /** ...and then drains at this rate. */
   coolingDecayPerSecond: 20,
   /** Cooling: Heat per 1 % of max life lost to a hit, capped per hit. */

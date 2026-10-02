@@ -197,6 +197,16 @@ export interface ItemTooltip {
   }[];
 }
 
+/**
+ * Attack Speed as an abstract Speed value instead of attacks per second (playtest 1):
+ * 0.8 attacks per second, the Sword's speed, is Speed 100. +10 % Attack Speed makes it 110.
+ */
+export const SPEED_BASE_ATTACKS_PER_SECOND = 0.8;
+
+export function speedValue(attacksPerSecond: number): number {
+  return Math.round((attacksPerSecond / SPEED_BASE_ATTACKS_PER_SECOND) * 100);
+}
+
 /** Everything a tooltip shows, as plain text. The UI only lays it out. */
 export function describeItem(
   item: Item,
@@ -209,7 +219,7 @@ export function describeItem(
   if (weapon) {
     baseLines.push(
       `${weapon.damage.min}–${weapon.damage.max} ${DAMAGE_TYPE_NAMES[weapon.damageType]} Damage`,
-      `${weapon.attacksPerSecond.toFixed(2)} Attacks per Second`,
+      `Speed ${speedValue(weapon.attacksPerSecond)}`,
       weapon.heatBehavior === "warming"
         ? `Heat: Warming, ${COMBAT.warmingHeatPerSecond} per second`
         : `Heat: ${weapon.heatBehavior === "cooling" ? "Cooling" : "Steady"}, ${weapon.heatPerHit} per Hit`,
