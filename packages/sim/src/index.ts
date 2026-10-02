@@ -68,6 +68,7 @@ export {
 export {
   RARITY_NAMES,
   SLOT_NAMES,
+  SPEED_BASE_ATTACKS_PER_SECOND,
   STAT_NAMES,
   describeBonuses,
   describeCondition,
@@ -76,10 +77,11 @@ export {
   describeStat,
   describeTrigger,
   formatPercent,
+  speedValue,
   type ItemTooltip,
 } from "./items/describe";
 
 export * from "./progression/index";
 
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
-export const SIM_VERSION = "0.4.0";
+export const SIM_VERSION = "0.5.0";

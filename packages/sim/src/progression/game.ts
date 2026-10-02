@@ -338,7 +338,7 @@ export function isFinalAct(data: GameData, actId: string): boolean {
   return getAct(data, actId).number === last;
 }
 
-/** Level Cap at a Prestige level: 10, then +10 per Prestige. */
+/** Level Cap at a Prestige level: 20, then +20 per Prestige. */
 export function levelCap(prestige: number): number {
   return PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige * prestige;
 }
@@ -742,7 +742,14 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
-  const items = rollItemChoices(data, encounter, rank, state.progress.deathsInAct, rng);
+  const items = rollItemChoices(
+    data,
+    encounter,
+    rank,
+    state.progress.deathsInAct,
+    act.number + state.legacy.prestige,
+    rng,
+  );
   const spoils: SpoilsCard[] =
     rank !== "normal" || act.spoilsStages.includes(run.stage)
       ? [
@@ -798,25 +805,41 @@ function resolveFight(state: GameState, data: GameData): GameState {
   };
 }
 
-/** Rarity weights of the item pick: Pity raises Rare and Epic, Elites and Bosses set a floor. */
+/** Highest rarity normal enemies drop at an Act Tier (act number + Prestige). */
+export function maxRarityForActTier(actTier: number): Rarity {
+  return PROGRESSION.maxRarityByActTier[actTier - 1] ?? PROGRESSION.maxRarityLate;
+}
+
+/**
+ * Rarity weights of the item pick. The Act Tier caps the rarity (Elites may reach Rare, the boss
+ * always drops Epic), Elites and Bosses set a floor, and Pity raises the two highest allowed
+ * rarities.
+ */
 export function itemPickWeights(
   rank: EnemyRank,
   deathsInAct: number,
+  actTier: number = Number.POSITIVE_INFINITY,
 ): Readonly<Record<Rarity, number>> {
-  const pity = 1 + PROGRESSION.pityPerDeath * Math.min(deathsInAct, PROGRESSION.pityMaxDeaths);
+  const idx = (r: Rarity) => RARITIES.indexOf(r);
   const floor =
     rank === "boss"
       ? PROGRESSION.bossMinRarity
       : rank === "elite"
         ? PROGRESSION.eliteMinRarity
         : "normal";
+  const actMax = maxRarityForActTier(actTier);
+  const max = idx(floor) > idx(actMax) ? floor : actMax;
+  const pity = 1 + PROGRESSION.pityPerDeath * Math.min(deathsInAct, PROGRESSION.pityMaxDeaths);
   const weights = { ...PROGRESSION.rarityWeights } as Record<Rarity, number>;
-  weights.rare *= pity;
-  weights.epic *= pity;
   for (const r of RARITIES) {
-    if (RARITIES.indexOf(r) < RARITIES.indexOf(floor)) weights[r] = 0;
+    if (idx(r) < idx(floor) || idx(r) > idx(max)) weights[r] = 0;
   }
-  // Legendary is not in the PoC; make sure the floor always leaves something to roll.
+  // Pity lifts the top two allowed rarities that can drop at all (Legendary is not in the PoC).
+  const allowed = RARITIES.filter((r) => weights[r] > 0);
+  for (const r of allowed.slice(-2)) {
+    if (idx(r) > idx(floor) || allowed.length === 1) weights[r] *= pity;
+  }
+  // Make sure the floor always leaves something to roll.
   if (RARITIES.every((r) => weights[r] === 0)) weights[floor] = 1;
   return weights;
 }
@@ -826,9 +849,10 @@ function rollItemChoices(
   encounter: Encounter,
   rank: EnemyRank,
   deathsInAct: number,
+  actTier: number,
   rng: Rng,
 ): Item[] {
-  const weights = itemPickWeights(rank, deathsInAct);
+  const weights = itemPickWeights(rank, deathsInAct, actTier);
   const bases = [...data.lootBases];
   const items: Item[] = [];
   for (let i = 0; i < PROGRESSION.itemChoices; i++) {

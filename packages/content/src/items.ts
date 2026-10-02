@@ -194,7 +194,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     slots: ["mainHand"],
     tags: ["offense"],
     weight: 14,
-    value: { min: 2, max: 5 },
+    value: { min: 3, max: 7 },
     perTier: 1,
   }),
   stat({
@@ -304,7 +304,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     slots: ["offHand", "body", "belt"],
     tags: ["defense"],
     weight: 6,
-    value: { min: 1, max: 3 },
+    value: { min: 2, max: 4 },
     perTier: 1,
   }),
   stat({

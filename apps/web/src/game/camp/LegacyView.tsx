@@ -187,10 +187,6 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
               <span>Now · the Heir walks the Ashen Fields.</span>
             </div>
           </section>
-          <p className="sub small">
-            Seals are placed when the harvest begins, right after the final boss falls. Here you
-            only look.
-          </p>
         </aside>
       </div>
     </section>

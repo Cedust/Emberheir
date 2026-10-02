@@ -5,21 +5,35 @@ import type { ItemSlot, Rarity } from "../items/types";
  * (`npm run balance -- --act 1`), not final design. Sources: game-design-document-v1.md
  * section 2 and 3, loot-rewards-v1.md, town-crafting-v1.md.
  */
-export const PROGRESSION = {
-  /** Level Cap of the first run... */
-  levelCap: 10,
-  /** ...and +10 per Prestige (level 100 in the tenth run). */
-  levelCapPerPrestige: 10,
-  attributePointsPerLevel: 3,
-  skillPointsPerLevel: 1,
-  /**
-   * XP needed to go from level N to N + 1 (index 0 = level 1 → 2). Steep early: a first clear
-   * of Act 1 lands around level 5–6. Levels 10–20 are for the second run (after a Prestige).
-   */
-  xpToNextLevel: [
+/**
+ * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 200. Steep early: a
+ * first clear of Act 1 lands around level 5–6 of 20. Past level 20 every level needs a little more
+ * than the one before; later acts will tune this.
+ */
+function buildXpTable(): readonly number[] {
+  const table = [
     80, 140, 220, 320, 450, 620, 830, 1100, 1450, 1900, 2400, 3000, 3700, 4500, 5400, 6400, 7500,
     8700, 10000,
-  ],
+  ];
+  let step = 1300;
+  while (table.length < 199) {
+    step += 50;
+    table.push((table[table.length - 1] ?? 0) + step);
+  }
+  return table;
+}
+
+export const PROGRESSION = {
+  /**
+   * Level Cap of the first run... Playtest 1: a cap of 10 was half reached after Act 1, so the
+   * cap doubled and each level gives fewer Attribute Points.
+   */
+  levelCap: 20,
+  /** ...and +20 per Prestige (level 200 in the tenth run). */
+  levelCapPerPrestige: 20,
+  attributePointsPerLevel: 2,
+  skillPointsPerLevel: 1,
+  xpToNextLevel: buildXpTable(),
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: 20,
   xpPerMonsterLevel: 10,
@@ -55,7 +69,16 @@ export const PROGRESSION = {
   >,
   eliteMinRarity: "rare" as Rarity,
   bossMinRarity: "epic" as Rarity,
-  /** Pity: every death in the current act raises Rare and Epic weights by this much... */
+  /**
+   * Highest rarity normal enemies drop, by Act Tier (act number + Prestige, index 0 = Act Tier 1).
+   * Playtest 1: all slots were Epic within Act 1. Now Act 1 drops Normal and Magic, Rare comes
+   * from Elites and Epic from the boss; Rare drops freely from Act Tier 2, Epic from Act Tier 3.
+   * Elites never roll above Rare before Epic is unlocked.
+   */
+  maxRarityByActTier: ["magic", "rare"] as readonly Rarity[],
+  /** Rarity for Act Tiers past the list. */
+  maxRarityLate: "epic" as Rarity,
+  /** Pity: every death in the current act raises the two highest allowed weights by this much... */
   pityPerDeath: 0.25,
   /** ...for at most this many deaths. Resets when the act boss falls. */
   pityMaxDeaths: 4,

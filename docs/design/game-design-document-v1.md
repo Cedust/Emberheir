@@ -32,6 +32,7 @@ Ein Held kämpft automatisch, der Spieler kämpft nie selbst. **Alle Entscheidun
 - **Retreat:** Mitten im Act freiwillig zurück ins Camp (wirkt wie ein Tod).
 - **Revisit Act:** Aus dem Camp einen bereits geschafften Act gezielt erneut farmen.
 - ✅ **Pity:** Nach mehreren Toden im selben Act steigt die Rarity in der Item-Auswahl leicht. Reset, sobald der Boss fällt.
+- ✅ **Rarity nach Act** (Playtest 1, 02.10.2026): In Act 1 droppen normale Gegner nur Normal und Magic, Elites Rare, der Boss Epic. Rare droppt frei ab Act-Stufe 2, Epic ab Act-Stufe 3 (Act-Stufe = Act-Nummer + Prestige).
 
 ### Prestige ✅
 - ✅ **Prestige ist Pflicht** (30.09.2026, Thread "Prestige-Pflicht"): Der Sieg über den Ashen Harvester (Stage 100) löst das Prestige sofort aus. Den Zeitpunkt wählt der Spieler trotzdem selbst: Wer noch farmen oder Items per Ascension Shard upgraden will, macht vorher Retreat oder Revisit Act. Wer gegen den Harvester antritt, tut das mit Absicht. Kein "Point of no return"-Hinweis, das lernt man im ersten Durchgang.
@@ -83,8 +84,8 @@ Ein Held kämpft automatisch, der Spieler kämpft nie selbst. **Alle Entscheidun
 
 ### Level ✅ (überarbeitet 30.09.2026, Thread "Level-Progression")
 - **Level, Attribut- und Skillpunkte bleiben beim Prestige erhalten** ✅. Der Heir erbt, was er gelernt hat. Respec jederzeit beim Trainer gegen Gold.
-- **Level Cap:** **10 im ersten Durchgang**, danach **+10 pro Prestige** ✅ → **Level 100** im 10. Durchgang. Das 10. Prestige hebt das Cap nicht mehr an, im Finale gibt es keine Level-Ups. Der erste Durchgang ist eine leichte, schnelle Einführung.
-- Jedes Level gibt **3 Attributpunkte**, **1 Skillpunkt** und automatisch etwas **Base Life** ✅.
+- **Level Cap:** **20 im ersten Durchgang**, danach **+20 pro Prestige** ✅ (Playtest 1, 02.10.2026; vorher 10/+10) → **Level 200** im 10. Durchgang. Das 10. Prestige hebt das Cap nicht mehr an, im Finale gibt es keine Level-Ups. Der erste Durchgang ist eine leichte, schnelle Einführung.
+- Jedes Level gibt **2 Attributpunkte** (Playtest 1, vorher 3), **1 Skillpunkt** und automatisch etwas **Base Life** ✅.
 - Jeder Durchgang bringt so 10 Skillpunkte, passend zu einem neuen Prestige-Ast mit ca. 10 Nodes. Am Ende ca. 100 Punkte bei ca. 160 Nodes → man muss sich spezialisieren.
 - **Attributpunkte** darf man **zwischen zwei Kämpfen** verteilen ✅ (im PoC testen). **Skillpunkte** nur beim **Trainer** im Camp ✅.
 - **Keystones** kosten **Harvester's Ember** ✅: ein Material, das man dem Ashen Harvester bei jedem Sieg über ihn klaut (1 pro Prestige). Im ersten Durchgang gibt es daher keinen Keystone. Nach 10 Siegen hat man 10, der letzte wird im Finale genutzt.
@@ -103,7 +104,7 @@ Ein Held kämpft automatisch, der Spieler kämpft nie selbst. **Alle Entscheidun
 - **Keine freie Heilung nach dem Sieg.** Life bleibt zwischen den Stages erhalten, ein Act ist ein zusammenhängender Lauf.
 - **Ember Flask** (Arbeitsname): eigener Slot, kein Gear, Heilung konkurriert nie mit Damage-Affixen.
   - Startet mit **3 Charges**, jede heilt **35 % Max Life**.
-  - Nur **zwischen den Stages** nutzbar, per Klick oder automatisch unter einer einstellbaren Life-Schwelle.
+  - Nur **zwischen den Stages** nutzbar, **nur per Klick** ✅ (Playtest 1, 02.10.2026: Auto-drink entfernt).
   - Wird im **Camp voll aufgefüllt**. Keine Charges mehr = typischer Grund für einen **Retreat**.
   - Nachschub im Act: **Flask Charge** als Karte in der **Spoils-Auswahl** (nach Elites, Bossen, Stage 5 und 10), nicht in der Item-Auswahl. Details: `loot-rewards-v1.md`.
   - Später: Upgrades (mehr Charges, stärkere Heilung) und **Flask-Modifier** für den nächsten Kampf (z. B. +20 % Attack Speed, entfernt Ailments, startet mit 30 Heat), über **Old Nan** ✅ (keine eigene Persona, 30.09.2026) oder als Prestige-Bonus. ✅ Flask-Upgrades bleiben beim Prestige erhalten.

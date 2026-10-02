@@ -3,7 +3,7 @@ import type { HeatBehavior } from "./types";
 
 /**
  * Heat rules per weapon behavior (docs/design/waffen-v1.md section 4):
- * - Cooling (melee): own hits + hits taken, decays after 1.5 s without a landed hit.
+ * - Cooling (melee): own hits + hits taken, decays after 2 s without a landed hit.
  * - Steady (bow, crossbow): own hits only, never decays.
  * - Warming (wand, staff): fixed gain per second, independent of Attack Speed.
  */

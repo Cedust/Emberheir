@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_ATTRIBUTES } from "../combat/test-fixtures";
-import { describeItem, describeStat, describeTrigger, formatPercent } from "./describe";
+import { describeItem, describeStat, describeTrigger, formatPercent, speedValue } from "./describe";
 import { TEST_CATALOG } from "./test-fixtures";
 
 describe("item text", () => {
@@ -10,6 +10,13 @@ describe("item text", () => {
     expect(describeStat("critChance", 0.035)).toBe("+3.5 % Crit Chance");
     expect(describeStat("burnChance", 0.05)).toBe("+5 % Chance to Burn");
     expect(describeStat("addedWeaponDamage", 5)).toBe("+3–5 Weapon Damage");
+  });
+
+  it("shows Attack Speed as a Speed value, the Sword is 100", () => {
+    expect(speedValue(0.8)).toBe(100);
+    expect(speedValue(1)).toBe(125);
+    expect(speedValue(0.8 * 1.1)).toBe(110);
+    expect(speedValue(0.4)).toBe(50);
   });
 
   it("formats triggers as Condition: Chance → Effect (limit)", () => {

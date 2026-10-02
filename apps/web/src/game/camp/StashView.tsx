@@ -107,7 +107,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       <header className="persona-header bar-top">
         <div className="run-title">
           <span className="title-font">SUPPLY WAGON</span>
-          <span className="sub">Stash · stays through death, burns in the harvest</span>
+          <span className="sub">Stash</span>
         </div>
         <div className="grow" />
         <div className="wallet-row small-wallet">
@@ -157,9 +157,6 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
             onSelect={pick("inventory")}
             label="Inventory"
           />
-          <p className="sub small">
-            Ctrl+Click moves an item straight across. Currency takes no space.
-          </p>
         </aside>
         <main className="stash-center">
           <div className="section-row">
@@ -193,7 +190,6 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
               <Icon name="cycle" size={16} />
               Sort
             </button>
-            <span className="sub">Fixed size. No extra tabs.</span>
           </div>
         </main>
         <aside className="stash-right">
@@ -226,9 +222,6 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
           ) : (
             <div className="empty-pick panel-card sub">Pick an item to see it here.</div>
           )}
-          <p className="sub small">
-            Salvage happens at Thoric. Equipping works here and in the Character view.
-          </p>
         </aside>
       </div>
     </section>

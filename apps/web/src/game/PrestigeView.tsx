@@ -2,6 +2,7 @@ import { POC_GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
+  PROGRESSION,
   SLOT_NAMES,
   itemSlotFor,
   prestigeRewards,
@@ -124,9 +125,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
       <Crumbs step="seal" />
       <header className="seal-head">
         <h2 className="title-font">THE HARVEST BEGINS</h2>
-        <p className="sub">
-          The fire takes everything you don&apos;t seal. Choose which slots keep their item.
-        </p>
+        <p className="sub">Choose which slots keep their item.</p>
       </header>
       <div className="seal-body">
         <section className="seal-doll panel-card" aria-label="Seal slots">
@@ -280,8 +279,8 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
     },
     {
       kind: "LEVEL CAP",
-      name: `${r.levelCap - 10} → ${r.levelCap}`,
-      desc: "Ten more levels to earn this run.",
+      name: `${r.levelCap - PROGRESSION.levelCapPerPrestige} → ${r.levelCap}`,
+      desc: `${PROGRESSION.levelCapPerPrestige} more levels to earn this run.`,
       tone: "good",
     },
     {

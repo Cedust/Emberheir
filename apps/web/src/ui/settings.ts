@@ -5,12 +5,9 @@ import { storageKey } from "../storage";
 export interface Settings {
   readonly theme: "system" | "light" | "dark";
   readonly damageNumbers: boolean;
-  /** Auto-drink the Ember Flask before a stage below this Life fraction; 0 = off. */
-  readonly autoFlask: number;
 }
 
-export const DEFAULT_SETTINGS: Settings = { theme: "system", damageNumbers: true, autoFlask: 0.4 };
-export const AUTO_FLASK_OPTIONS = [0, 0.25, 0.4, 0.6] as const;
+export const DEFAULT_SETTINGS: Settings = { theme: "system", damageNumbers: true };
 
 const KEY = storageKey("settings");
 
@@ -18,11 +15,16 @@ function load(): Settings {
   try {
     const raw = localStorage.getItem(KEY);
     return raw
-      ? { ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) }
+      ? pick({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) })
       : DEFAULT_SETTINGS;
   } catch {
     return DEFAULT_SETTINGS;
   }
+}
+
+/** Drops settings that no longer exist (e.g. the removed auto-drink) from old saves. */
+function pick(s: Settings): Settings {
+  return { theme: s.theme, damageNumbers: s.damageNumbers };
 }
 
 function applyTheme(theme: Settings["theme"]) {

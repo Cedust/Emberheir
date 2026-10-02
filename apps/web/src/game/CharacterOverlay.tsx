@@ -16,6 +16,7 @@ import {
   heroSetup,
   itemSlotFor,
   salvageValue,
+  speedValue,
   unequipBlockReason,
   levelCap,
   xpToNextLevel,
@@ -122,7 +123,10 @@ export function CharacterOverlay(props: {
         label: `${setup.weapon.name} damage`,
         value: `${Math.round(setup.weapon.damage.min)}–${Math.round(setup.weapon.damage.max)}`,
       },
-      { label: "Attack Speed", value: `${stats.attackSpeed.toFixed(2)}/s` },
+      {
+        label: "Speed (Attack Speed)",
+        value: String(speedValue(stats.attackSpeed)),
+      },
       { label: "Physical Damage", value: `+${pct(stats.physicalDamage)}` },
       { label: "Elemental Damage", value: `+${pct(stats.elementalDamage)}` },
       { label: "Crit Chance", value: pct(stats.critChance) },
@@ -276,9 +280,6 @@ export function CharacterOverlay(props: {
                 );
               })}
             </div>
-            <p className="sub small">
-              Click an item for details. ◆ marks a sealed slot: its item survives the harvest.
-            </p>
           </section>
 
           <section className="attr-column" aria-label="Attributes">
@@ -331,7 +332,6 @@ export function CharacterOverlay(props: {
                 >
                   Undo
                 </button>
-                <span className="sub small">Respec later only at Kaelen</span>
               </div>
             )}
             <div className="tabs small-tabs" role="tablist">

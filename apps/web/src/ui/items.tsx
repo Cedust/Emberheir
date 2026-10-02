@@ -14,6 +14,7 @@ import {
   getBase,
   itemSize,
   missingRequirements,
+  speedValue,
 } from "@emberheir/sim";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import { Icon, type IconName } from "./Icon";
@@ -143,6 +144,7 @@ export function ItemDetail(props: {
   testId?: string;
 }) {
   const { item } = props;
+  const weapon = getBase(ITEM_CATALOG, item.baseId).weapon;
   return (
     <article
       className={`item-detail rarity-${item.rarity} ${props.className ?? ""}`}
@@ -160,6 +162,11 @@ export function ItemDetail(props: {
       </div>
       <h3 className="item-detail-name rarity-text">{item.name}</h3>
       <span className="item-detail-base">{baseSummary(item)}</span>
+      {weapon && (
+        <span className="item-detail-speed" title="Attack Speed. Speed 100 is the Sword's speed.">
+          Speed <strong className="mono">{speedValue(weapon.attacksPerSecond)}</strong>
+        </span>
+      )}
       <div className="item-detail-rule" />
       <ul className="item-detail-lines">
         {itemLines(item, props.heroAttributes).map((l, i) => (

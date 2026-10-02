@@ -164,7 +164,6 @@ export function GameApp() {
         state={state}
         run={run}
         game={game}
-        settings={settings.settings}
         onCharacter={() => toggle("character")}
         onTree={() => toggle("tree")}
         onMenu={() => setOverlay("menu")}

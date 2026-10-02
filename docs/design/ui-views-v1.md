@@ -49,7 +49,7 @@ Spielsprache bleibt **Englisch** ✅: alle Beschriftungen, Buttons und Texte im 
 | View | Inhalt | PoC |
 |---|---|---|
 | **Title / Main Menu** | Logo, Continue, New Game, Settings | 🧪 (einfach) |
-| **Settings** | Light/Dark/System, Flask-Schwelle, Audio. **Kein Loot-Filter** ✅ (Timo 01.10.2026: nur 3 Karten pro Pick, Normal Items bleiben dank Sockets/Runewords bis ins Endgame nützlich) | 🧪 (einfach) |
+| **Settings** | Light/Dark/System, Audio (Flask-Schwelle entfernt, Playtest 1). **Kein Loot-Filter** ✅ (Timo 01.10.2026: nur 3 Karten pro Pick, Normal Items bleiben dank Sockets/Runewords bis ins Endgame nützlich) | 🧪 (einfach) |
 | **Prestige** | Sieg → Harvester-Text → Save Tokens auf Slots verteilen (das Harvesting beginnt) ✅ → Asche → Old Nan → Belohnungen wählen: neuer Ast, Battle-Plan-Upgrade, Ember. Kein "Point of no return"-Hinweis vor dem Kampf ✅ | 🧪 (light) |
 | **Compendium** | How to Play, Stats, Ailments, Mechaniken nachschlagen. Über Old Nan ✅ | 🧪 (einfach) |
 | **Runeword Codex** | Entdeckte Runewords, dauerhaft | später |
@@ -110,4 +110,4 @@ Board "Supply Wagon (Stash)" im Canvas. Drei Spalten: links getragene Items und 
 Neue Boards in der dritten Reihe des Canvas:
 - **Legacy (Hearthfire):** Das Hearthfire in der Mitte, die 10 Slots im Kreis darum. Versiegelte Slots zeigen ihr Heirloom (◆, Glühen), leere sind gestrichelt. Links Kennzahlen (Generation, Seals, Harvester's Ember frei/verbraucht, Level Cap, Äste, Battle Plan, was sonst bleibt). Rechts Details zum Heirloom ("Sealed since Generation 2") und die **Chronicle**: pro Generation, welcher Slot versiegelt und welcher Ast gewählt wurde. Nur ansehen, Seals setzt man im Prestige.
 - **Ashbound / Retreat:** Asche-Bildschirm mit Ort, Gegner und "Back to Camp", Old Nans Spruch, Platzhalter für den späteren Death Recap, Button "Wake at the Hearthfire". Retreat nutzt denselben Screen mit eigenem Titel und Spruch.
-- **Title, Settings, Compendium:** Title mit Logo, Continue (zeigt Generation, Act, Stage), New Game, Settings, Quit. Settings: Theme, Damage Numbers, Auto-drink Flask (Schwelle), Audio. Compendium bei Old Nan: Themenliste links (How to Play, Heat and Rotation, Attributes, Ailments, Items and Rarity, Death and Prestige), Artikel rechts.
+- **Title, Settings, Compendium:** Title mit Logo, Continue (zeigt Generation, Act, Stage), New Game, Settings, Quit. Settings: Theme, Damage Numbers, Audio. Compendium bei Old Nan: Themenliste links (How to Play, Heat and Rotation, Attributes, Ailments, Items and Rarity, Death and Prestige), Artikel rechts.

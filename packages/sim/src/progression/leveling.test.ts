@@ -8,6 +8,15 @@ describe("leveling", () => {
     expect(xpToNextLevel(PROGRESSION.levelCap)).toBe(Infinity);
   });
 
+  it("has XP for every level up to the last Level Cap", () => {
+    expect(PROGRESSION.xpToNextLevel).toHaveLength(
+      PROGRESSION.levelCap + 9 * PROGRESSION.levelCapPerPrestige - 1,
+    );
+    for (let i = 1; i < PROGRESSION.xpToNextLevel.length; i++) {
+      expect(PROGRESSION.xpToNextLevel[i]).toBeGreaterThan(PROGRESSION.xpToNextLevel[i - 1] ?? 0);
+    }
+  });
+
   it("gains several levels at once and keeps the leftover XP", () => {
     const [a = 0, b = 0] = PROGRESSION.xpToNextLevel;
     expect(gainXp(1, 0, a + b + 5)).toEqual({ level: 3, xp: 5, levelsGained: 2 });
@@ -15,7 +24,8 @@ describe("leveling", () => {
   });
 
   it("caps the level and drops XP at the cap", () => {
-    expect(gainXp(9, 0, 1_000_000)).toEqual({ level: 10, xp: 0, levelsGained: 1 });
+    const cap = PROGRESSION.levelCap;
+    expect(gainXp(cap - 1, 0, 1_000_000)).toEqual({ level: cap, xp: 0, levelsGained: 1 });
   });
 
   it("gives 10 % less XP per level above the enemy, at least 10 %", () => {

@@ -1,4 +1,4 @@
-import { AUTO_FLASK_OPTIONS, type SettingsApi } from "../ui/settings";
+import type { SettingsApi } from "../ui/settings";
 import { Icon } from "../ui/Icon";
 import { useEffect, useState } from "react";
 
@@ -36,23 +36,6 @@ export function SettingsPanel(props: { api: SettingsApi }) {
               onClick={() => update({ damageNumbers: v })}
             >
               {v ? "On" : "Off"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="setting-row">
-        <span>Auto-drink Ember Flask before a stage</span>
-        <div className="segmented" role="radiogroup" aria-label="Auto-drink">
-          {AUTO_FLASK_OPTIONS.map((v) => (
-            <button
-              key={v}
-              type="button"
-              role="radio"
-              aria-checked={settings.autoFlask === v}
-              className={settings.autoFlask === v ? "on" : ""}
-              onClick={() => update({ autoFlask: v })}
-            >
-              {v === 0 ? "Off" : `< ${Math.round(v * 100)}%`}
             </button>
           ))}
         </div>
@@ -131,7 +114,6 @@ export function MenuOverlay(props: {
             <button type="button" className="btn big ghost" onClick={props.onQuit}>
               Quit to Title
             </button>
-            <p className="sub small">Your game is saved after every action.</p>
           </div>
         ) : (
           <>

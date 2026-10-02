@@ -7,7 +7,7 @@ Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen
 
 - Keine festen Klassen. Die Build-Richtung entsteht aus Waffe (Range), Skill Tree (Damage Type) und Skills/Affixen (Delivery).
 - Jedes Level gibt Skillpunkte (und Attributpunkte).
-- Level und Skillpunkte bleiben beim Tod **und beim Prestige** ✅ (geändert 30.09.2026). Level Cap 10 im ersten Durchgang, dann +10 pro Prestige (Level 100 am Ende). Skillpunkte werden nur beim Trainer im Camp verteilt.
+- Level und Skillpunkte bleiben beim Tod **und beim Prestige** ✅ (geändert 30.09.2026). Level Cap 20 im ersten Durchgang, dann +20 pro Prestige (Level 200 am Ende; Playtest 1, 02.10.2026). Skillpunkte werden nur beim Trainer im Camp verteilt.
 - Der Tree wächst mit jedem Prestige. Der Spieler wählt selbst, welcher neue Ast freigeschaltet wird.
 
 ---
@@ -89,7 +89,7 @@ Bei jedem Prestige wählt man **einen neuen Ast** aus einem Pool. Jeder Prestige
 ## 4. Größenordnung 💡
 
 - Grund-Tree (Core + 4 Äste): ca. **60 Nodes** ✅ (verkleinert 30.09.2026). Die meisten sind Minor-Nodes.
-- Skillpunkte: 1 pro Level, Level bleiben beim Prestige ✅. Cap 10, dann +10 pro Prestige → am Ende ca. 100 Punkte bei ca. 160 Nodes (gut 60 %). Man muss sich also spezialisieren.
+- Skillpunkte: 1 pro Level, Level bleiben beim Prestige ✅. Cap 20, dann +20 pro Prestige → am Ende ca. 200 Punkte (Playtest 1, 02.10.2026; Tree braucht dafür mehr Minor Nodes, PoC: 37 Nodes). Man muss sich also spezialisieren.
 - **Keystones** kosten **Harvester's Ember** ✅, ein Material vom Ashen Harvester (1 pro Sieg über ihn, also 1 pro Prestige). Ersetzt die Keystone Points auf Level 10/25/40. Im ersten Durchgang kein Keystone.
 - Skill Slots sind **keine Nodes** ✅, sondern dauerhafte Upgrades außerhalb des Trees. Vorschlag 💡: Slot 1 von Beginn an, Slot 2 nach dem 1. Prestige, Slot 3 nach dem 3. Prestige.
 
