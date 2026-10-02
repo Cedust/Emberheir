@@ -27,6 +27,12 @@
   --rtext: var(--r-legendary);
 }
 
+.stage .special-unique,
+.stage .special-runeword {
+  --frame: var(--rarity-runeword);
+  --rtext: var(--r-unique);
+}
+
 .stage .rarity-text {
   color: var(--rtext, var(--text));
 }
@@ -271,6 +277,44 @@
   --glow: rgb(255 138 31 / 0.42);
 }
 
+.stage .special-unique.item-tile,
+.stage .special-unique.grid-item,
+.stage .special-runeword.item-tile,
+.stage .special-runeword.grid-item {
+  --glow: rgb(201 160 99 / 0.45);
+}
+
+/* Sockets: small holes along the bottom of a tile, glowing with their Runes. */
+.stage .socket-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.stage .socket-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0c0a08;
+  border: 1px solid #5a4a3a;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.9);
+}
+
+.stage .socket-dot.filled {
+  border-color: #1a1410;
+}
+
+.stage .line-power {
+  color: var(--r-legendary);
+  font-style: italic;
+  font-weight: 700;
+}
+
 .stage .item-tile.empty {
   border-style: dashed;
   border-color: var(--slot-edge);
@@ -393,6 +437,59 @@
 .stage .item-tooltip.tip-legendary {
   --tip-name: #ff9a3a;
   border-color: #a8561a;
+}
+
+.stage .item-tooltip.tip-unique,
+.stage .item-tooltip.tip-runeword {
+  --tip-name: #e0c27a;
+  border-color: #8a6a2c;
+  box-shadow:
+    0 0 22px rgb(201 160 99 / 0.28),
+    0 10px 30px rgb(0 0 0 / 0.6),
+    inset 0 0 24px rgb(0 0 0 / 0.6);
+}
+
+.stage .tip-recipe {
+  font-family: var(--font-title);
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: #c9a063;
+}
+
+.stage .tip-power {
+  margin-top: 4px;
+  color: #ff9a3a;
+  font-style: italic;
+}
+
+.stage .tip-power b {
+  font-family: var(--font-title);
+  font-style: normal;
+  display: block;
+}
+
+.stage .tip-sockets {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.stage .tip-socket {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #050403;
+  border: 1px solid #4a3a2c;
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.95);
+}
+
+.stage .tip-flavor {
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: italic;
+  color: #c9a063;
+  opacity: 0.85;
 }
 
 .stage .tip-tag {
@@ -979,6 +1076,12 @@
 
 .stage .w-essence.e-rot-essence .dot {
   background: #6a8a2a;
+}
+
+.stage .w-runes .dot {
+  background: #8fd06a;
+  border-radius: 2px;
+  transform: rotate(45deg);
 }
 
 .stage .w-flask .dot {
@@ -3170,4 +3273,270 @@
   width: 100%;
   height: 100%;
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+}
+
+/* --- Runes, Eldrin and Marisha (M8) ---------------------------------------------------------- */
+
+.stage .rune-stone.dim {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.stage .socket-row {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.stage .socket-hole {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, #0a0806 55%, #2a2018);
+  border: 2px solid #4a3a2c;
+  box-shadow: inset 0 3px 6px rgb(0 0 0 / 0.95);
+}
+
+.stage .socket-hole.new {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 3px 6px rgb(0 0 0 / 0.95),
+    0 0 12px rgb(255 138 58 / 0.6);
+}
+
+.stage .runeword-line {
+  color: var(--r-unique);
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+.stage .rune-pouch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stage .rune-chip,
+.stage .rune-cell,
+.stage .gamble-slot {
+  --rune: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--edge);
+  background: var(--slot-bg);
+  /* Slot backgrounds stay dark in both themes, so the text stays light. */
+  color: var(--rarity-normal);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.stage .rune-chip .sub,
+.stage .rune-cell .sub,
+.stage .gamble-slot .sub {
+  color: color-mix(in srgb, var(--rarity-normal) 65%, transparent);
+}
+
+.stage .rune-chip.on,
+.stage .rune-cell.on,
+.stage .gamble-slot.on {
+  border-color: var(--rune);
+  box-shadow:
+    0 0 0 1px var(--rune),
+    0 0 14px color-mix(in srgb, var(--rune) 45%, transparent);
+}
+
+.stage .rune-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stage .rune-cell {
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.stage .rune-cell:disabled {
+  cursor: default;
+}
+
+.stage .rune-cell.unknown {
+  opacity: 0.6;
+}
+
+.stage .rune-cell .ok {
+  color: var(--good);
+  font-weight: 700;
+}
+
+.stage .rune-bonus {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.stage .codex {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.stage .codex-row {
+  display: grid;
+  grid-template-columns: 170px auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+}
+
+.stage .codex-row.known .codex-name .title-font {
+  color: var(--r-unique);
+}
+
+.stage .codex-row.unknown {
+  opacity: 0.7;
+}
+
+.stage .codex-row.forged {
+  border-color: var(--rarity-runeword);
+}
+
+.stage .codex-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .codex-runes {
+  display: flex;
+  gap: 8px;
+}
+
+.stage .codex-rune {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+}
+
+.stage .codex-forged {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--r-unique);
+}
+
+.stage .merchant-stock {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stage .offer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stage .offer.on {
+  border-color: var(--accent);
+}
+
+.stage .offer.sold {
+  opacity: 0.4;
+}
+
+.stage .offer .item-tile {
+  position: relative;
+}
+
+.stage .gamble {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.stage .gamble-slots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  align-self: stretch;
+}
+
+.stage .gamble-slot {
+  flex-direction: column;
+  padding: 10px 6px;
+}
+
+.stage .gamble-art {
+  position: relative;
+  width: 58px;
+  height: 58px;
+}
+
+.stage .gamble-art .item-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: brightness(0) drop-shadow(0 0 1px #a08a6a);
+  opacity: 0.6;
+}
+
+.stage .gamble-q {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  color: var(--r-unique);
+  text-shadow: 0 0 8px rgb(0 0 0 / 0.9);
+}
+
+.stage .gamble-last {
+  display: flex;
+  justify-content: center;
+}
+
+.stage .gamble-last .item-tile {
+  position: relative;
+}
+
+.stage .rune-drops {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: -4px 0 8px;
+}
+
+.stage .rune-drop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  animation: rune-drop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+@keyframes rune-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .rune-drop {
+    animation: none;
+  }
 }

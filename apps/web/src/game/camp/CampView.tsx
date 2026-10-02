@@ -18,7 +18,7 @@ import { FIGURE_H, FIGURE_W, type HeirGear, PORTRAIT, PersonaArt } from "./art/P
 import { PaintDefs } from "./art/paint";
 
 export type CampTarget =
-  "legacy" | "character" | "forge" | "altar" | "kaelen" | "stash" | "compendium";
+  "legacy" | "character" | "forge" | "altar" | "kaelen" | "stash" | "compendium" | "shop" | "runes";
 
 const NAN_LINES = [
   "Sit, child. The fire remembers every one of you, even the clumsy ones.",
@@ -49,7 +49,8 @@ interface Persona {
 
 function personas(state: GameState, road: ActData): Persona[] {
   const trainer = state.progress.trainerUnlocked;
-  const later = "Joins the caravan later.";
+  const runesmith = state.progress.runesmithUnlocked;
+  const later = "Waits somewhere in the Rotwood.";
   const afterBoss = `Joins the caravan once ${GAME_DATA.acts[0]?.boss.name ?? "the boss"} falls.`;
   const points = state.hero.unspentAttributePoints;
   return [
@@ -109,7 +110,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#4a4a4e",
       figure: { fs: 1.1 },
       quote: "“Bring me steel. I’ll bring it back better. Mostly.”",
-      actions: [{ name: "Upgrade" }, { name: "Add Socket", later: true }, { name: "Salvage" }],
+      actions: [{ name: "Upgrade" }, { name: "Add Socket" }, { name: "Salvage" }],
       cta: "Open Forge",
       target: "forge",
     },
@@ -122,10 +123,11 @@ function personas(state: GameState, road: ActData): Persona[] {
       icon: "coins",
       cloak: "#7a5a24",
       figure: { fs: 0.95 },
-      quote: "Joins the caravan later.",
+      quote:
+        "“Buy now! Everything comes back stronger after the apocalypse. Especially my prices.”",
       actions: [{ name: "Base Items" }, { name: "Gamble" }],
-      cta: "Locked",
-      locked: "later",
+      cta: "Open Shop",
+      target: "shop",
     },
     {
       id: "liora",
@@ -166,10 +168,13 @@ function personas(state: GameState, road: ActData): Persona[] {
       icon: "rune",
       cloak: "#4f7a3a",
       figure: { fs: 1 },
-      quote: later,
+      quote: runesmith
+        ? "“Did you know there are runes older than the Harvester? Nobody asks about those.”"
+        : later,
       actions: [{ name: "Socket Runes" }, { name: "Combine Runes" }, { name: "Runeword Codex" }],
-      cta: "Locked",
-      locked: "later",
+      cta: runesmith ? "Open Runes" : "Locked",
+      target: "runes",
+      ...(runesmith ? {} : { locked: later }),
     },
     {
       id: "nyssa",

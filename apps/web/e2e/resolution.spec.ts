@@ -77,6 +77,12 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: "Open Stash" }).click();
     await check("stash");
     await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Marisha, Merchant" }).click();
+    await page.getByRole("button", { name: "Open Shop" }).click();
+    await check("shop");
+    await page.getByRole("button", { name: /^Gamble/ }).click();
+    await check("gamble");
+    await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: /SET OUT/ }).click();
     await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();

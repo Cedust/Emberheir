@@ -23,6 +23,7 @@
   --r-rare: #a86f00;
   --r-epic: #7a3fcf;
   --r-legendary: #b84a00;
+  --r-unique: #8a6a1c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,6 +48,7 @@
     --r-rare: #ffd84a;
     --r-epic: #c48cff;
     --r-legendary: #ff9d45;
+    --r-unique: #e0c27a;
   }
 }
 
@@ -70,6 +72,7 @@
   --r-rare: #ffd84a;
   --r-epic: #c48cff;
   --r-legendary: #ff9d45;
+  --r-unique: #e0c27a;
 }
 
 /* --- stage ---------------------------------------------------------------------------------- */

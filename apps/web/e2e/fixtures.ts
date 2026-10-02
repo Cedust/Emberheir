@@ -48,3 +48,21 @@ export function saveAfterAct1(): string {
   };
   return serializeGame(state);
 }
+
+/** A Camp save after the first trip into the Rotwood: Eldrin has joined, three Ash Runes in the pouch. */
+export function saveWithRunes(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 7 },
+    wallet: { ...base.wallet, gold: 400, runes: { ash: 3 } },
+    progress: {
+      ...base.progress,
+      actsCleared: ["ashen-fields"],
+      trainerUnlocked: true,
+      runesmithUnlocked: true,
+    },
+    legacy: { ...base.legacy, runesFound: ["ash"] },
+  };
+  return serializeGame(state);
+}

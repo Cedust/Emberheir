@@ -27,6 +27,7 @@ import { RunHeader } from "./RunHeader";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
+import { RuneStone, runeName } from "../ui/RuneArt";
 
 const SPOILS_LOOK: Record<SpoilsCard["kind"], { icon: IconName; tint: string }> = {
   flaskCharge: { icon: "flask", tint: "#c9322a" },
@@ -452,6 +453,20 @@ export function IntermissionView(props: {
                 ? ` · +${rewards.ascensionShards} Ascension Shard${rewards.ascensionShards > 1 ? "s" : ""}`
                 : ""}
             </p>
+          )}
+          {rewards && step !== "ready" && rewards.runes.length > 0 && (
+            <div className="rune-drops" data-testid="rune-drops">
+              {rewards.runes.map((id, i) => (
+                <span
+                  key={i}
+                  className="rune-drop"
+                  style={{ animationDelay: `${0.2 + i * 0.25}s` }}
+                >
+                  <RuneStone runeId={id} size={40} />
+                  <span className="title-font">{runeName(id)} Rune</span>
+                </span>
+              ))}
+            </div>
           )}
           {step === "items" && <ItemCards state={state} run={run} game={game} onFocus={setFocus} />}
           {step === "spoils" && <SpoilsCards run={run} game={game} />}

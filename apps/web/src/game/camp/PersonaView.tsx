@@ -6,13 +6,18 @@ import {
   type GameState,
   type Item,
   PROGRESSION,
-  RARITY_NAMES,
   SLOT_NAMES,
   actUnlocked,
   affixRollRange,
   applyAction,
   craftBlockReason,
   craftCost,
+  describeBonuses,
+  getBase,
+  matchRuneword,
+  merchantStock,
+  runeGroup,
+  type ItemSlot,
   describeStat,
   describeTrigger,
   findCraftItem,
@@ -25,7 +30,17 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { ItemGrid, ItemTile, baseSummary, fmt, walletEntries } from "../../ui/items";
+import {
+  ItemGrid,
+  ItemTile,
+  baseSummary,
+  fmt,
+  rarityClass,
+  rarityName,
+  walletEntries,
+} from "../../ui/items";
+import { runeName } from "../../ui/RuneArt";
+import { GamblePanel, MerchantStock, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
 import { CRAFT_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
@@ -33,8 +48,20 @@ import { Paperdoll, dollBox } from "../../ui/Paperdoll";
 /** Scale of the paperdoll next to the inventory. */
 const SIDE_DOLL = 0.85;
 
-export type PersonaId = "thoric" | "liora";
-type ActionKind = "upgrade" | "socket" | "salvage" | "reforge" | "temper" | "imbue" | "distill";
+export type PersonaId = "thoric" | "liora" | "eldrin" | "marisha";
+type ActionKind =
+  | "upgrade"
+  | "socket"
+  | "salvage"
+  | "reforge"
+  | "temper"
+  | "imbue"
+  | "distill"
+  | "rune"
+  | "combine"
+  | "codex"
+  | "buy"
+  | "gamble";
 
 interface PersonaDef {
   readonly name: string;
@@ -43,7 +70,7 @@ interface PersonaDef {
   readonly portrait: string;
   readonly accent: string;
   readonly quote: string;
-  readonly actions: readonly { k: ActionKind; name: string; desc: string; later?: boolean }[];
+  readonly actions: readonly { k: ActionKind; name: string; desc: string }[];
 }
 
 const PERSONAS: Record<PersonaId, PersonaDef> = {
@@ -56,7 +83,7 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
     quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
     actions: [
       { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
-      { k: "socket", name: "Add Socket", desc: "Sockets and runes come later.", later: true },
+      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
       { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Dust." },
     ],
   },
@@ -74,11 +101,55 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
       { k: "distill", name: "Distill", desc: "Turn Salvage Dust into a Reforge Stone." },
     ],
   },
+  eldrin: {
+    name: "Eldrin",
+    role: "Runesmith",
+    initial: "E",
+    portrait: "#2e4a26",
+    accent: "#8fd06a",
+    quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
+    actions: [
+      { k: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
+      { k: "combine", name: "Combine Runes", desc: "Three of a kind make the next Rune." },
+      { k: "codex", name: "Runeword Codex", desc: "Every Runeword you know." },
+    ],
+  },
+  marisha: {
+    name: "Marisha",
+    role: "Merchant",
+    initial: "M",
+    portrait: "#5a4218",
+    accent: "#e0c27a",
+    quote: "Gamble? Of course. The house always wins. I am the house.",
+    actions: [
+      { k: "buy", name: "Base Items", desc: "Normal items with full Sockets." },
+      { k: "gamble", name: "Gamble", desc: "A random item for a slot. Maybe Legendary." },
+    ],
+  },
+};
+
+export const PERSONA_ORDER: readonly PersonaId[] = ["thoric", "liora", "eldrin", "marisha"];
+
+/** Whether a persona travels with the caravan yet. */
+export function personaPresent(state: GameState, id: PersonaId): boolean {
+  if (id === "liora") return state.progress.trainerUnlocked;
+  if (id === "eldrin") return state.progress.runesmithUnlocked;
+  return true;
+}
+
+const PERSONA_LOCKED: Partial<Record<PersonaId, string>> = {
+  liora: "Liora joins after the act boss falls",
+  eldrin: "Eldrin waits somewhere in the Rotwood",
 };
 
 const ACTION_HINT: Record<ActionKind, string> = {
   upgrade: "Choose any item. Values grow with the Tier.",
-  socket: "Not in this version.",
+  socket: "Normal items only, before the first Rune.",
+  rune: "Choose an item with a free Socket, then a Rune.",
+  combine: "Choose a Rune you have three of.",
+  codex: "A Runeword shows itself once you have found all of its Runes.",
+  buy: "New stock whenever you come back from the road.",
+  gamble: "Choose a slot.",
   salvage: "Choose an item from your inventory.",
   reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
   temper: "Click the affix to reroll. It stays locked in afterwards.",
@@ -128,6 +199,7 @@ function costText(cost: CraftCost): string {
     const name = GAME_DATA.acts.find((a) => a.essence.id === id)?.essence.name ?? id;
     parts.push(`${n} ${name}`);
   }
+  for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
   return parts.join(" · ") || "Free";
 }
 
@@ -138,7 +210,7 @@ function ItemHead(props: { item: Item; label: string; dashed?: boolean; tier?: n
       <span className="eyebrow">{props.label}</span>
       <span className="title-font craft-item-name rarity-text">{item.name}</span>
       <span className="rarity-text small strong">
-        {RARITY_NAMES[item.rarity].toUpperCase()} · T{props.tier ?? item.tier}
+        {rarityName(item)} · T{props.tier ?? item.tier}
       </span>
       <span className="sub">{baseSummary(item)}</span>
       <div className="item-detail-rule" />
@@ -163,7 +235,13 @@ export function PersonaView(props: {
   const [kinds, setKinds] = useState<Record<PersonaId, ActionKind>>({
     thoric: "upgrade",
     liora: "reforge",
+    eldrin: "rune",
+    marisha: "buy",
   });
+  const [runeId, setRuneId] = useState<string | null>(null);
+  const [offer, setOffer] = useState<number | null>(null);
+  const [slot, setSlot] = useState<ItemSlot | null>(null);
+  const [gambled, setGambled] = useState<Item | null>(null);
   const kind = kinds[props.persona];
   const [itemId, setItemId] = useState<string | null>(
     () => state.hero.equipment.mainHand?.id ?? null,
@@ -194,6 +272,12 @@ export function PersonaView(props: {
   // --- what the action would do ------------------------------------------------------------
   let request: CraftRequest | null = null;
   if (kind === "distill") request = { kind: "distill" };
+  else if (item && kind === "socket") request = { kind: "addSocket", itemId: item.id };
+  else if (item && kind === "rune" && runeId) {
+    request = { kind: "socketRune", itemId: item.id, runeId };
+  } else if (kind === "combine" && runeId) request = { kind: "combineRunes", runeId };
+  else if (kind === "buy" && offer !== null) request = { kind: "buyBase", index: offer };
+  else if (kind === "gamble" && slot) request = { kind: "gamble", slot };
   else if (item && (kind === "upgrade" || kind === "reforge")) request = { kind, itemId: item.id };
   else if (item && kind === "temper" && affixIndex !== null) {
     request = { kind, itemId: item.id, affixIndex };
@@ -203,8 +287,28 @@ export function PersonaView(props: {
 
   let cost = "";
   let block: string | null = null;
-  if (kind === "socket") {
-    block = "Sockets come in a later version.";
+  if (kind === "codex") {
+    block = null;
+  } else if (
+    !request &&
+    (kind === "rune" ||
+      kind === "combine" ||
+      kind === "buy" ||
+      kind === "gamble" ||
+      kind === "socket")
+  ) {
+    block =
+      kind === "rune"
+        ? !item
+          ? "Choose an item"
+          : "Choose a Rune"
+        : kind === "combine"
+          ? "Choose a Rune"
+          : kind === "buy"
+            ? "Choose an item"
+            : kind === "gamble"
+              ? "Choose a slot"
+              : "Choose an item";
   } else if (kind === "salvage") {
     cost = item ? `Free · +${salvageValue(item)} Dust` : "Free";
     block = !item
@@ -221,7 +325,7 @@ export function PersonaView(props: {
     }
     block = !item ? "Choose an item" : "Choose an affix";
   } else {
-    cost = costText(craftCost(request, item));
+    cost = costText(craftCost(request, item, GAME_DATA, state));
     const reason = craftBlockReason(state, GAME_DATA, request);
     block = reason ? CRAFT_BLOCK_TEXT[reason] : null;
   }
@@ -247,9 +351,43 @@ export function PersonaView(props: {
       game.dispatch({ type: "craft", request });
       return;
     }
-    const next =
-      request.kind === "distill" ? undefined : findCraftItem(after, request.itemId)?.item;
+    const next = "itemId" in request ? findCraftItem(after, request.itemId)?.item : undefined;
     switch (request.kind) {
+      case "addSocket":
+        setLast(`${next?.name ?? "Item"} now has ${next?.sockets ?? 0} Sockets`);
+        break;
+      case "socketRune": {
+        const word = next?.runes?.length === next?.sockets ? next?.name : undefined;
+        setLast(
+          word &&
+            word !== item?.name &&
+            after.legacy.runewords.length > state.legacy.runewords.length
+            ? `Runeword forged: ${word}!`
+            : `Socketed ${runeName(request.runeId)}`,
+        );
+        if ((after.wallet.runes[request.runeId] ?? 0) === 0) setRuneId(null);
+        break;
+      }
+      case "combineRunes": {
+        const made = Object.keys(after.wallet.runes).find(
+          (id) => (after.wallet.runes[id] ?? 0) > (state.wallet.runes[id] ?? 0),
+        );
+        setLast(`Three ${runeName(request.runeId)} became ${made ? runeName(made) : "?"}`);
+        if ((after.wallet.runes[request.runeId] ?? 0) < 3) setRuneId(null);
+        break;
+      }
+      case "buyBase":
+        setLast(`Bought ${merchantStock(state, GAME_DATA)[request.index]?.name ?? "an item"}`);
+        setOffer(null);
+        break;
+      case "gamble": {
+        const fresh = after.inventory.find(
+          (p) => !state.inventory.some((q) => q.item.id === p.item.id),
+        );
+        setGambled(fresh?.item ?? null);
+        setLast(fresh ? `Gambled: ${fresh.item.name}` : "Gambled");
+        break;
+      }
       case "distill":
         setLast(`Distilled 1 Reforge Stone (${after.wallet.reforgeStones} now)`);
         break;
@@ -271,9 +409,17 @@ export function PersonaView(props: {
     game.dispatch({ type: "craft", request });
   };
 
-  const liora = state.progress.trainerUnlocked;
   const actionName = def.actions.find((a) => a.k === kind)?.name ?? "";
-  const after = item && kind !== "distill" && kind !== "socket" ? item : undefined;
+  const after = item && kind !== "distill" ? item : undefined;
+  const itemCenter = [
+    "upgrade",
+    "socket",
+    "salvage",
+    "reforge",
+    "temper",
+    "imbue",
+    "rune",
+  ].includes(kind);
   const essence = essences.find((e) => e.id === essenceId) ?? essences[0];
 
   return (
@@ -283,15 +429,15 @@ export function PersonaView(props: {
           CAMP · {nextAct(state, GAME_DATA).name.toUpperCase()}
         </span>
         <div className="tabs" role="tablist">
-          {(["thoric", "liora"] as const).map((p) => (
+          {PERSONA_ORDER.map((p) => (
             <button
               key={p}
               type="button"
               role="tab"
               aria-selected={props.persona === p}
               className={`tab title-font ${props.persona === p ? "on" : ""}`}
-              disabled={p === "liora" && !liora}
-              title={p === "liora" && !liora ? "Liora joins after the act boss falls" : undefined}
+              disabled={!personaPresent(state, p)}
+              title={personaPresent(state, p) ? undefined : PERSONA_LOCKED[p]}
               onClick={() => props.onPersona(p)}
             >
               {PERSONAS[p].name} · {PERSONAS[p].role}
@@ -339,7 +485,7 @@ export function PersonaView(props: {
               <button
                 key={a.k}
                 type="button"
-                className={`persona-action ${kind === a.k ? "on" : ""} ${a.later ? "later" : ""}`}
+                className={`persona-action ${kind === a.k ? "on" : ""}`}
                 aria-pressed={kind === a.k}
                 onClick={() => pickKind(a.k)}
               >
@@ -356,7 +502,13 @@ export function PersonaView(props: {
             <span className="sub">{ACTION_HINT[kind]}</span>
           </div>
 
-          {kind === "distill" ? (
+          {kind === "combine" || kind === "codex" ? (
+            <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
+          ) : kind === "buy" ? (
+            <MerchantStock state={state} selected={offer} onSelect={setOffer} />
+          ) : kind === "gamble" ? (
+            <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
+          ) : !itemCenter ? null : kind === "distill" ? (
             <div className="distill panel-card">
               <div className="distill-side">
                 <span className="mono huge">{CRAFTING.distillDust}</span>
@@ -370,12 +522,14 @@ export function PersonaView(props: {
             </div>
           ) : item ? (
             <div className="now-after">
-              <div
-                className={`craft-card panel-card rarity-${item.rarity}`}
-                data-testid="craft-now"
-              >
+              <div className={`craft-card panel-card ${rarityClass(item)}`} data-testid="craft-now">
                 <ItemHead item={item} label={`NOW · ${equipped ? "EQUIPPED" : "INVENTORY"}`} />
-                {item.affixes.length === 0 && <span className="sub">No affixes</span>}
+                {(kind === "rune" || kind === "socket") && (
+                  <SocketRow sockets={item.sockets ?? 0} runes={item.runes ?? []} />
+                )}
+                {item.affixes.length === 0 && kind !== "rune" && kind !== "socket" && (
+                  <span className="sub">No affixes</span>
+                )}
                 {item.affixes.map((_, i) => {
                   const t = affixText(item, i);
                   const pickable = kind === "temper" || kind === "imbue";
@@ -409,11 +563,14 @@ export function PersonaView(props: {
                 kind={kind}
                 affixIndex={affixIndex}
                 essenceAffix={essence?.affixId}
+                runeId={runeId}
               />
             </div>
           ) : (
             <div className="empty-pick panel-card sub">Choose an item on the right.</div>
           )}
+
+          {kind === "rune" && <RunePouch state={state} selected={runeId} onSelect={setRuneId} />}
 
           {kind === "imbue" && essence && (
             <div className="essence-row" role="radiogroup" aria-label="Essence">
@@ -446,18 +603,20 @@ export function PersonaView(props: {
               {last}
             </div>
           )}
-          <div className="cost-bar panel-card">
-            <div className="cost-text">
-              <span className="eyebrow">COST</span>
-              <span className="mono strong">{cost}</span>
-              <span className={block ? "block warn" : "block ok"}>
-                {block ?? "Ready. There is no Undo."}
-              </span>
+          {kind !== "codex" && (
+            <div className="cost-bar panel-card">
+              <div className="cost-text">
+                <span className="eyebrow">COST</span>
+                <span className="mono strong">{cost}</span>
+                <span className={block ? "block warn" : "block ok"}>
+                  {block ?? "Ready. There is no Undo."}
+                </span>
+              </div>
+              <button type="button" className="btn big primary" disabled={!!block} onClick={run}>
+                {kind === "buy" ? "Buy" : actionName}
+              </button>
             </div>
-            <button type="button" className="btn big primary" disabled={!!block} onClick={run}>
-              {actionName}
-            </button>
-          </div>
+          )}
         </main>
 
         <aside className="persona-right">
@@ -503,9 +662,41 @@ function AfterCard(props: {
   kind: ActionKind;
   affixIndex: number | null;
   essenceAffix: string | undefined;
+  runeId: string | null;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
+  if (kind === "socket") {
+    const sockets = (item.sockets ?? 0) + 1;
+    return (
+      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
+        <ItemHead item={item} label="AFTER" />
+        <SocketRow sockets={sockets} runes={item.runes ?? []} highlight={sockets - 1} />
+        <span className="after-line new">{sockets} Sockets</span>
+      </div>
+    );
+  }
+  if (kind === "rune") {
+    const runes = props.runeId ? [...(item.runes ?? []), props.runeId] : (item.runes ?? []);
+    const slot = getBase(ITEM_CATALOG, item.baseId).slot;
+    const word = matchRuneword(ITEM_CATALOG, slot, item.sockets ?? 0, runes);
+    return (
+      <div
+        className={`craft-card panel-card dashed ${word ? "special-runeword" : rarityClass(item)}`}
+      >
+        <ItemHead item={word ? { ...item, name: word.name } : item} label="AFTER" />
+        <SocketRow sockets={item.sockets ?? 0} runes={runes} highlight={runes.length - 1} />
+        {props.runeId && (
+          <span className="after-line new">
+            {describeBonuses(
+              ITEM_CATALOG.runes.get(props.runeId)?.bonuses[runeGroup(slot)] ?? {},
+            ).join(" · ")}
+          </span>
+        )}
+        {word && <span className="after-line new runeword-line">Runeword: {word.name}</span>}
+      </div>
+    );
+  }
   if (kind === "salvage") {
     return (
       <div className="craft-card panel-card dashed">
@@ -520,7 +711,7 @@ function AfterCard(props: {
   if (kind === "upgrade") {
     const up = upgradedItem(item);
     return (
-      <div className={`craft-card panel-card dashed rarity-${item.rarity}`}>
+      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
         <ItemHead item={up} label="AFTER" />
         {item.affixes.map((_, i) => {
           const before = affixText(item, i).text;
@@ -536,7 +727,7 @@ function AfterCard(props: {
   }
   if (kind === "reforge") {
     return (
-      <div className={`craft-card panel-card dashed rarity-${item.rarity}`}>
+      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
         <ItemHead item={{ ...item, name: "New name" }} label="AFTER" />
         {item.affixes.map((_, i) => (
           <span key={i} className="after-line new">
@@ -549,7 +740,7 @@ function AfterCard(props: {
   }
   // Temper and Imbue: only the chosen affix changes.
   return (
-    <div className={`craft-card panel-card dashed rarity-${item.rarity}`}>
+    <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
       <ItemHead item={item} label="AFTER" />
       {item.affixes.map((roll, i) => {
         if (i !== props.affixIndex) {

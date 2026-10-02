@@ -8,6 +8,7 @@ import {
   type PlacedItem,
   RARITY_NAMES,
   SLOT_NAMES,
+  activeRuneword,
   compareItem,
   describeItem,
   formatPercent,
@@ -20,6 +21,7 @@ import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
 import type { IconName } from "./Icon";
 import { ItemArt } from "./ItemArt";
 import { useItemHover } from "./ItemTooltip";
+import { SocketDots } from "./RuneArt";
 
 /** Icon per item (placeholder art: one Lucide-style icon per slot). */
 export function itemIcon(item: Item): IconName {
@@ -45,6 +47,23 @@ export function itemIcon(item: Item): IconName {
   }
 }
 
+/** Rarity classes of an item: Uniques and Runewords get their own gold frame and name. */
+export function rarityClass(item: Item): string {
+  const special = item.uniqueId
+    ? " special-unique"
+    : item.runes?.length && activeRuneword(item, ITEM_CATALOG)
+      ? " special-runeword"
+      : "";
+  return `rarity-${item.rarity}${special}`;
+}
+
+/** "UNIQUE", "RUNEWORD" or the rarity name. */
+export function rarityName(item: Item): string {
+  if (item.uniqueId) return "UNIQUE";
+  if (item.runes?.length && activeRuneword(item, ITEM_CATALOG)) return "RUNEWORD";
+  return RARITY_NAMES[item.rarity].toUpperCase();
+}
+
 export function slotLabel(item: Item): string {
   return SLOT_NAMES[getBase(ITEM_CATALOG, item.baseId).slot];
 }
@@ -60,12 +79,23 @@ export function baseSummary(item: Item): string {
 export function itemLines(
   item: Item,
   heroAttributes?: GameState["hero"]["attributes"],
-): { text: string; kind: "stat" | "trigger" | "implicit" | "req" | "unmet" }[] {
+): { text: string; kind: "stat" | "trigger" | "implicit" | "req" | "unmet" | "power" }[] {
   const tip = describeItem(item, ITEM_CATALOG, heroAttributes);
-  const lines: { text: string; kind: "stat" | "trigger" | "implicit" | "req" | "unmet" }[] = [];
+  const lines: {
+    text: string;
+    kind: "stat" | "trigger" | "implicit" | "req" | "unmet" | "power";
+  }[] = [];
   for (const l of tip.implicitLines) lines.push({ text: l, kind: "implicit" });
   for (const l of tip.affixLines) lines.push({ text: l.text, kind: l.kind });
-  if (tip.affixLines.length === 0 && item.rarity === "normal") {
+  if (tip.power) lines.push({ text: `${tip.power.name}: ${tip.power.text}`, kind: "power" });
+  if (tip.sockets) {
+    const runes = tip.sockets.runes.length ? `: ${tip.sockets.runes.join(" · ")}` : "";
+    lines.push({
+      text: `Sockets ${tip.sockets.runes.length}/${tip.sockets.total}${runes}`,
+      kind: "implicit",
+    });
+  }
+  if (tip.affixLines.length === 0 && item.rarity === "normal" && !tip.sockets) {
     lines.push({ text: "No affixes", kind: "implicit" });
   }
   for (const r of tip.requirements) {
@@ -138,10 +168,6 @@ export function compareWithEquipped(state: GameState, item: Item) {
   return compareSummary(compareItem(state, GAME_DATA, item));
 }
 
-export function rarityName(item: Item): string {
-  return RARITY_NAMES[item.rarity].toUpperCase();
-}
-
 /** Item card: slot, rarity, name, base, affix lines and an optional compare line. */
 export function ItemDetail(props: {
   item: Item;
@@ -157,7 +183,7 @@ export function ItemDetail(props: {
   const weapon = base.weapon;
   return (
     <article
-      className={`item-detail rarity-${item.rarity} ${props.className ?? ""}`}
+      className={`item-detail ${rarityClass(item)} ${props.className ?? ""}`}
       aria-label={item.name}
       data-testid={props.testId}
     >
@@ -171,8 +197,9 @@ export function ItemDetail(props: {
         </span>
       </div>
       <div className="item-detail-head">
-        <div className={`item-detail-art rarity-${item.rarity}`}>
+        <div className={`item-detail-art ${rarityClass(item)}`}>
           <ItemArt baseId={item.baseId} slot={base.slot} />
+          <SocketDots sockets={item.sockets ?? 0} runes={item.runes ?? []} />
         </div>
         <div className="item-detail-title">
           <h3 className="item-detail-name rarity-text">{item.name}</h3>
@@ -227,7 +254,7 @@ export function ItemTile(props: {
   return (
     <button
       type="button"
-      className={`item-tile ${item ? `rarity-${item.rarity}` : "empty"}${props.selected ? " selected" : ""}${props.inactive ? " inactive" : ""}`}
+      className={`item-tile ${item ? rarityClass(item) : "empty"}${props.selected ? " selected" : ""}${props.inactive ? " inactive" : ""}`}
       style={{ width: w, height: h }}
       aria-label={item ? `${props.label}: ${item.name}` : `${props.label}: empty`}
       title={active ? undefined : item ? `${props.label}: ${item.name}` : props.label}
@@ -240,6 +267,7 @@ export function ItemTile(props: {
       ) : (
         <span className="item-tile-label">{props.label}</span>
       )}
+      {item && <SocketDots sockets={item.sockets ?? 0} runes={item.runes ?? []} />}
       {item && <span className="item-tile-tier">T{item.tier}</span>}
     </button>
   );
@@ -258,7 +286,7 @@ function GridItem(props: {
   return (
     <button
       type="button"
-      className={`grid-item rarity-${p.item.rarity}${props.selected ? " selected" : ""}`}
+      className={`grid-item ${rarityClass(p.item)}${props.selected ? " selected" : ""}`}
       data-testid="grid-item"
       style={{
         left: p.x * cell,
@@ -272,6 +300,7 @@ function GridItem(props: {
       {...hover}
     >
       <ItemArt baseId={p.item.baseId} slot={base.slot} />
+      <SocketDots sockets={p.item.sockets ?? 0} runes={p.item.runes ?? []} />
     </button>
   );
 }
@@ -314,6 +343,7 @@ export function ItemGrid(props: {
 /** Wallet entries in a fixed order. */
 export function walletEntries(state: GameState): { name: string; value: number; key: string }[] {
   const w = state.wallet;
+  const runes = Object.values(w.runes).reduce((a, b) => a + b, 0);
   // The first act's Essence always shows; later ones once the hero owns some.
   const essences = GAME_DATA.acts
     .map((a) => a.essence)
@@ -328,6 +358,7 @@ export function walletEntries(state: GameState): { name: string; value: number; 
       name: e.name,
       value: w.essences[e.id] ?? 0,
     })),
+    ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
   ];
 }
 

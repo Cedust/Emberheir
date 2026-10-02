@@ -86,6 +86,14 @@ export function GameApp() {
         setPersona("liora");
         setCampScreen("persona");
         break;
+      case "shop":
+        setPersona("marisha");
+        setCampScreen("persona");
+        break;
+      case "runes":
+        setPersona("eldrin");
+        setCampScreen("persona");
+        break;
       default:
         setCampScreen(target);
     }

@@ -11,6 +11,7 @@ import {
   useState,
 } from "react";
 import { compareWithEquipped } from "./items";
+import { RuneStone } from "./RuneArt";
 import { useStageSize } from "./Stage";
 
 /**
@@ -144,15 +145,15 @@ export function ItemTooltipCard(props: {
   const { item } = props;
   const tip = describeItem(item, ITEM_CATALOG, props.state?.hero.attributes);
   const base = getBase(ITEM_CATALOG, item.baseId);
-  const kind = item.rarity === "normal" ? tip.slotName : `${tip.rarityName} ${tip.slotName}`;
+  const kind =
+    item.rarity === "normal" && !tip.special ? tip.slotName : `${tip.rarityName} ${tip.slotName}`;
   return (
-    <div className={`item-tooltip tip-${item.rarity}`}>
+    <div className={`item-tooltip tip-${tip.special ?? item.rarity}`}>
       {props.tag && <span className="tip-tag">{props.tag}</span>}
       <span className="tip-name">{item.name}</span>
-      {item.rarity !== "normal" && item.name !== base.name && (
-        <span className="tip-base">{base.name}</span>
-      )}
+      {item.name !== base.name && <span className="tip-base">{base.name}</span>}
       <span className="tip-kind">{kind}</span>
+      {tip.runewordRecipe && <span className="tip-recipe">&lsquo;{tip.runewordRecipe}&rsquo;</span>}
       <span className="tip-rule" />
       {tip.baseLines.map((l) => (
         <span key={l} className="tip-line tip-basic">
@@ -169,6 +170,24 @@ export function ItemTooltipCard(props: {
           {l.text}
         </span>
       ))}
+      {tip.power && (
+        <span className="tip-line tip-power">
+          <b>{tip.power.name}</b> {tip.power.text}
+        </span>
+      )}
+      {tip.sockets && (
+        <span className="tip-sockets">
+          {Array.from({ length: tip.sockets.total }, (_, i) => {
+            const id = item.runes?.[i];
+            return id ? (
+              <RuneStone key={i} runeId={id} size={22} />
+            ) : (
+              <span key={i} className="tip-socket" />
+            );
+          })}
+        </span>
+      )}
+      {tip.flavor && <span className="tip-flavor">{tip.flavor}</span>}
       {tip.requirements.length > 0 && <span className="tip-rule" />}
       {tip.requirements.map((r) => (
         <span key={r.attribute} className={`tip-line tip-req${r.met === false ? " unmet" : ""}`}>

@@ -54,6 +54,18 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   reforgeStones: "Not enough Reforge Stones",
   ascensionShards: "Needs an Ascension Shard (bosses, sometimes Elites)",
   essence: "Not enough Essence",
+  runesmith: "Eldrin joins after your first trip into the Rotwood",
+  notNormal: "Only Normal items take Sockets and Runes",
+  maxSockets: "No more Sockets fit this base",
+  hasRunes: "Runes are already socketed",
+  noSocket: "No free Socket",
+  fixed: "This item never changes",
+  unknownRune: "Choose a Rune",
+  maxRank: "Already the highest Rune",
+  sold: "Sold",
+  noStock: "Not in stock",
+  noRoom: "No room in the inventory",
+  runes: "Not enough Runes",
 };
 
 export function spoilsLabel(card: SpoilsCard, essenceName: string): string {
