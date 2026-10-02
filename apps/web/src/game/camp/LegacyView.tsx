@@ -10,7 +10,7 @@ import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
-import { HARVEST_BOSS } from "../labels";
+import { harvestBoss } from "../labels";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
   { slot: "helm", icon: "helm" },
@@ -53,7 +53,7 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
       value: `${legacy.seals.length} / 10`,
       desc:
         legacy.seals.length === 0
-          ? `The first one comes when ${HARVEST_BOSS} falls.`
+          ? `The first one comes when ${harvestBoss(legacy.prestige)} falls.`
           : "One more Seal with every harvest.",
     },
     {
@@ -167,7 +167,7 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
               <p className="title-font">Burns in the harvest</p>
               <p className="sub small">
                 {legacy.seals.length === 0
-                  ? `Your first Seal comes when ${HARVEST_BOSS} falls.`
+                  ? `Your first Seal comes when ${harvestBoss(legacy.prestige)} falls.`
                   : "One more Seal with every harvest. You can move Seals each time the harvest begins."}
               </p>
             </section>

@@ -143,7 +143,7 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
 function UpNext(props: { run: RunState }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
-  const stages = act.monsterLevels.length;
+  const stages = act.stages;
   // During the rewards the next stage is stage + 1.
   const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
   if (run.phase === "rewards" && run.encounter?.boss) {
@@ -349,7 +349,7 @@ function DoneCard(props: { run: RunState }) {
   let line: string;
   let sub: string;
   if (!rewards) {
-    const boss = run.stage === act.monsterLevels.length;
+    const boss = run.stage === act.stages;
     line = boss ? `${act.boss.name} waits` : `Stage ${run.stage} ahead`;
     sub = run.stage === 1 ? "The caravan watches you go." : "Catch your breath.";
   } else {
@@ -519,11 +519,7 @@ export function IntermissionView(props: {
           disabled={!done || (rewards !== null && !rewardsDone(rewards))}
           onClick={() => game.dispatchAll(nextStageActions(state))}
         >
-          {boss
-            ? "RETURN TO CAMP"
-            : nextStage === act.monsterLevels.length
-              ? "FACE THE BOSS"
-              : "NEXT STAGE"}
+          {boss ? "RETURN TO CAMP" : nextStage === act.stages ? "FACE THE BOSS" : "NEXT STAGE"}
           <Icon name="strike" size={18} />
         </button>
         {!boss && (

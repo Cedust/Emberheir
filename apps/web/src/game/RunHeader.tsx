@@ -4,7 +4,7 @@ import { Icon } from "../ui/Icon";
 /** Act progress as a bar (battle-view-v1.md): Camp, 15 stages, Spoils stages and the Boss. */
 export function ActProgress(props: { act: ActData; stage: number; cleared: boolean }) {
   const { act, stage } = props;
-  const stages = act.monsterLevels.length;
+  const stages = act.stages;
   const width = 760;
   const left0 = 36;
   const span = width - left0 - 20;

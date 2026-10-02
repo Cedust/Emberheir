@@ -2,7 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import type { Page } from "@playwright/test";
 import { type GameState, newGame, rollItem, Rng, serializeGame } from "@emberheir/sim";
 
-/** A save right after the Mother of Rot fell (the harvest boss): an Epic Body Armor to seal, loot in inventory and stash. */
+/** A save right after Gorrak fell in the first run (the harvest boss): an Epic Body Armor to seal. */
 export function saveAfterHarvestBoss(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const rng = new Rng(7);
@@ -21,9 +21,9 @@ export function saveAfterHarvestBoss(): string {
       equipment: { ...base.hero.equipment, body: armor },
     },
     wallet: { ...base.wallet, gold: 240, dust: 380, reforgeStones: 6, ascensionShards: 1 },
-    progress: { ...base.progress, actsCleared: ["ashen-fields", "rotwood"], trainerUnlocked: true },
-    stats: { fights: 22, wins: 19, deaths: 3, retreats: 0, bossKills: 2 },
-    pendingPrestige: { actId: "rotwood", stage: 15, enemyName: "Mother of Rot" },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    stats: { fights: 16, wins: 15, deaths: 1, retreats: 0, bossKills: 1 },
+    pendingPrestige: { actId: "ashen-fields", stage: 15, enemyName: "Gorrak, the Pit Brute" },
   };
   return serializeGame(state);
 }
@@ -38,13 +38,14 @@ export async function seedSave(page: Page, json: string): Promise<void> {
   }, json);
 }
 
-/** A save in the Camp after Gorrak fell: the road to the Rotwood is open. */
+/** A Camp save in the second run: Gorrak fell, the road to the Rotwood is open. */
 export function saveAfterAct1(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 6, unspentSkillPoints: 5 },
+    hero: { ...base.hero, level: 24, unspentSkillPoints: 5 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    legacy: { ...base.legacy, prestige: 1 },
   };
   return serializeGame(state);
 }
@@ -54,7 +55,7 @@ export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 7 },
+    hero: { ...base.hero, level: 24 },
     wallet: { ...base.wallet, gold: 400, runes: { ash: 3 } },
     progress: {
       ...base.progress,
@@ -62,7 +63,7 @@ export function saveWithRunes(): string {
       trainerUnlocked: true,
       runesmithUnlocked: true,
     },
-    legacy: { ...base.legacy, runesFound: ["ash"] },
+    legacy: { ...base.legacy, prestige: 1, runesFound: ["ash"] },
   };
   return serializeGame(state);
 }

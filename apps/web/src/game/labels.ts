@@ -1,11 +1,12 @@
 import { GAME_DATA } from "@emberheir/content";
-import type {
-  CraftBlockReason,
-  EquipBlockReason,
-  MoveBlockReason,
-  LearnBlockReason,
-  SpoilsCard,
-  UnequipBlockReason,
+import {
+  type CraftBlockReason,
+  type EquipBlockReason,
+  type MoveBlockReason,
+  type LearnBlockReason,
+  type SpoilsCard,
+  type UnequipBlockReason,
+  harvestAct,
 } from "@emberheir/sim";
 
 export const EQUIP_BLOCK_TEXT: Record<EquipBlockReason, string> = {
@@ -90,5 +91,7 @@ export function spoilsHint(card: SpoilsCard): string {
   }
 }
 
-/** Short name of the boss whose fall starts the harvest (the last act's boss, for now). */
-export const HARVEST_BOSS = (GAME_DATA.acts.at(-1)?.boss.name ?? "").split(",")[0] ?? "";
+/** Short name of the boss whose fall brings The Harvest in a run (the newest act's boss). */
+export function harvestBoss(prestige: number): string {
+  return harvestAct(GAME_DATA, prestige).boss.name.split(",")[0] ?? "";
+}

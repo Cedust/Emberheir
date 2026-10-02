@@ -5,6 +5,7 @@ import {
   PROGRESSION,
   SLOT_NAMES,
   itemSlotFor,
+  actsInRun,
   prestigeRewards,
   sealsAvailable,
 } from "@emberheir/sim";
@@ -12,13 +13,14 @@ import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ItemDetail, ItemTile, fmt } from "../ui/items";
 import type { GameApi } from "./useGame";
-import { HARVEST_BOSS } from "./labels";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 
 /** The boss's last words when its fall starts the harvest. */
 const LAST_WORDS: Record<string, string> = {
   "ashen-fields": "Hrrk... the Harvester... will want... its field back...",
   rotwood: "Rot... returns... The Harvester... always... reaps...",
+  "ember-wastes": "The fire... was never... mine...",
+  "frost-peaks": "Cold... keeps... nothing... from it...",
 };
 
 type Step = "victory" | "seal";
@@ -89,8 +91,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             &ldquo;{LAST_WORDS[pending.actId] ?? "...the Harvester... will come for you..."}&rdquo;
           </p>
           <p className="victory-sub">
-            Until the road leads further, {HARVEST_BOSS} stands in for the Ashen Harvester. Its fall
-            starts the harvest.
+            The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap
+            what grew.
           </p>
           <button type="button" className="btn big primary" onClick={() => setStep("seal")}>
             Hold On to What Matters
@@ -248,8 +250,8 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
   const { state } = props;
   const prestige = state.legacy.prestige;
   const r = prestigeRewards(GAME_DATA, prestige);
-  const act = GAME_DATA.acts[0];
-  const levels = act ? act.monsterLevels.map((l) => l + r.monsterLevelBonus) : [];
+  const acts = actsInRun(GAME_DATA, prestige);
+  const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
   const rewards = [
     {
       kind: "LEGACY SEAL",
@@ -286,9 +288,9 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       tone: "good",
     },
     {
-      kind: "WORLD",
-      name: `Monster Level ${Math.min(...levels)}–${Math.max(...levels)}`,
-      desc: "The Ashen Fields grow stronger, and so does their loot.",
+      kind: newAct ? "NEW ACT" : "WORLD",
+      name: newAct ? `Act ${newAct.number} · ${newAct.name}` : `${acts.length} Acts`,
+      desc: `Monster Level ${r.levelBand.start}–${r.levelBand.end}. The road leads further.`,
       tone: "epic",
     },
   ];

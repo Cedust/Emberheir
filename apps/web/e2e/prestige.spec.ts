@@ -10,7 +10,7 @@ test("The harvest boss falls: seal a slot, let it burn, wake as the next generat
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
-  await expect(page.getByRole("region", { name: "Victory" })).toContainText("MOTHER OF ROT FALLS");
+  await expect(page.getByRole("region", { name: "Victory" })).toContainText("GORRAK FALLS");
   await page.getByRole("button", { name: "Hold On to What Matters" }).click();
 
   const seal = page.getByRole("region", { name: "The Harvest Begins" });
@@ -25,6 +25,8 @@ test("The harvest boss falls: seal a slot, let it burn, wake as the next generat
   const heir = page.getByRole("region", { name: "Inheritance" });
   await expect(heir).toContainText("GENERATION 2");
   await expect(heir).toContainText("Rotation Slot 2");
+  await expect(heir).toContainText("NEW ACT");
+  await expect(heir).toContainText("Rotwood");
   await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
 
   // A reload keeps the new generation.

@@ -207,7 +207,7 @@ export function BattleView(props: {
         : "DRAW"
     : null;
   const flaskMax = Math.max(PROGRESSION.flaskStartCharges, state.flaskCharges);
-  const stages = looks.act.monsterLevels.length;
+  const stages = looks.act.stages;
 
   return (
     <section className="screen battle" aria-label="Battle" style={arenaStyle(looks.act.id)}>
