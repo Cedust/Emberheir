@@ -12,7 +12,9 @@ import type {
   RuneDefinition,
 } from "../items/types";
 import { Rng } from "../rng";
-import { CRAFTING, PROGRESSION } from "./constants";
+import { CODEX, CRAFTING, PROGRESSION } from "./constants";
+import { codexMastery, kindleTier, kindledIndex } from "./codex";
+import { kindledAffixId } from "../items/codex";
 import {
   type GameData,
   type GameState,
@@ -54,12 +56,29 @@ export type CraftRequest =
   /** Marisha: buy one of the Normal bases in stock. */
   | { readonly kind: "buyBase"; readonly index: number }
   /** Marisha: a random item for a slot, maybe even Legendary. */
-  | { readonly kind: "gamble"; readonly slot: ItemSlot };
+  | { readonly kind: "gamble"; readonly slot: ItemSlot }
+  /**
+   * Liora: a Trigger Codex Condition + Effect as a trigger on the item. Replaces the trigger at
+   * `affixIndex`, or fills the free trigger place of an item without one. One per item.
+   */
+  | {
+      readonly kind: "kindle";
+      readonly itemId: string;
+      readonly conditionId: string;
+      readonly effectId: string;
+      readonly affixIndex?: number;
+    };
 
 export type CraftKind = CraftRequest["kind"];
 
 /** Liora joins the caravan with Kaelen, after the first act boss. */
-export const MYSTIC_CRAFTS: readonly CraftKind[] = ["reforge", "temper", "imbue", "distill"];
+export const MYSTIC_CRAFTS: readonly CraftKind[] = [
+  "reforge",
+  "temper",
+  "imbue",
+  "distill",
+  "kindle",
+];
 /** Eldrin joins after the first trip into the Rotwood. */
 export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["socketRune", "combineRunes"];
 
@@ -72,6 +91,7 @@ export interface CraftCost {
   readonly essences: Readonly<Record<string, number>>;
   /** Runes by id. */
   readonly runes: Readonly<Record<string, number>>;
+  readonly kindling: number;
 }
 
 export type CraftBlockReason =
@@ -110,7 +130,16 @@ export type CraftBlockReason =
   | "dust"
   | "reforgeStones"
   | "ascensionShards"
-  | "essence";
+  | "essence"
+  /** Kindle: a Codex part that is not learned yet. */
+  | "unknownPart"
+  /** Kindle: the item already has a kindled trigger (only that one can be rekindled). */
+  | "kindled"
+  /** Kindle: the chosen affix is no trigger. */
+  | "notTrigger"
+  /** Kindle: a Normal item has no trigger place. */
+  | "noTriggerPlace"
+  | "kindling";
 
 /** Where a craftable item is: equipped or in the inventory (the stash is not at the forge). */
 export interface CraftItemLocation {
@@ -133,6 +162,7 @@ const NO_COST: CraftCost = {
   ascensionShards: 0,
   essences: {},
   runes: {},
+  kindling: 0,
 };
 
 /** What a craft costs. Upgrade gets more expensive with the Tier. */
@@ -182,6 +212,17 @@ export function craftCost(
       return { ...NO_COST, essences: { [request.essenceId]: CRAFTING.imbueEssences } };
     case "distill":
       return { ...NO_COST, dust: CRAFTING.distillDust };
+    case "kindle": {
+      const tier =
+        item && state
+          ? kindleTier(state.legacy.codex, request.conditionId, request.effectId, item)
+          : 1;
+      return {
+        ...NO_COST,
+        dust: CODEX.kindleDustPerTier * Math.max(1, tier),
+        kindling: CODEX.kindleKindling,
+      };
+    }
   }
 }
 
@@ -234,6 +275,7 @@ function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | 
   const w = state.wallet;
   if (w.ascensionShards < cost.ascensionShards) return "ascensionShards";
   if (w.reforgeStones < cost.reforgeStones) return "reforgeStones";
+  if (w.kindling < cost.kindling) return "kindling";
   for (const [id, n] of Object.entries(cost.essences)) {
     if ((w.essences[id] ?? 0) < n) return "essence";
   }
@@ -332,6 +374,11 @@ export function craftBlockReason(
       if (elsewhere) return "duplicateAffix";
       break;
     }
+    case "kindle": {
+      const reason = kindleBlockReason(state, item, request, catalog);
+      if (reason) return reason;
+      break;
+    }
   }
   return costBlockReason(state, craftCost(request, item, data, state));
 }
@@ -352,6 +399,7 @@ function pay(state: GameState, cost: CraftCost): GameState {
       dust: state.wallet.dust - cost.dust,
       reforgeStones: state.wallet.reforgeStones - cost.reforgeStones,
       ascensionShards: state.wallet.ascensionShards - cost.ascensionShards,
+      kindling: state.wallet.kindling - cost.kindling,
       essences,
       runes,
     },
@@ -473,6 +521,21 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         withAffix(item, request.affixIndex, { affixId: old.affixId, quality: quality(rng) }),
       );
     }
+    case "kindle": {
+      const [rng, next] = nextRng(paid);
+      const index = request.affixIndex ?? item.affixes.length;
+      const roll: AffixRoll = {
+        affixId: kindledAffixId(request.conditionId, request.effectId),
+        quality: Number((CODEX.kindleMaxQuality * quality(rng)).toFixed(4)),
+        kindled: true,
+        tier: kindleTier(state.legacy.codex, request.conditionId, request.effectId, item),
+      };
+      const affixes =
+        index < item.affixes.length
+          ? item.affixes.map((r, i) => (i === index ? roll : r))
+          : [...item.affixes, roll];
+      return replaceItem(next, location, { ...item, affixes, lockedAffix: index });
+    }
     case "imbue": {
       const [rng, next] = nextRng(paid);
       const essence = findEssence(data, request.essenceId) ?? fail("Unknown Essence");
@@ -483,6 +546,51 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
       );
     }
   }
+}
+
+// --- Trigger Codex -----------------------------------------------------------------------------
+
+function kindleBlockReason(
+  state: GameState,
+  item: Item,
+  request: Extract<CraftRequest, { kind: "kindle" }>,
+  catalog: ItemCatalog,
+): CraftBlockReason | undefined {
+  if (item.uniqueId || item.runes?.length) return "fixed";
+  const codex = state.legacy.codex;
+  if (
+    codexMastery(codex, "condition", request.conditionId) === 0 ||
+    codexMastery(codex, "effect", request.effectId) === 0 ||
+    !catalog.affixes.has(kindledAffixId(request.conditionId, request.effectId))
+  ) {
+    return "unknownPart";
+  }
+  const kindled = kindledIndex(item);
+  const isTrigger = (i: number) => {
+    const roll = item.affixes[i];
+    return roll !== undefined && catalog.affixes.get(roll.affixId)?.kind === "trigger";
+  };
+  if (request.affixIndex === undefined) {
+    if (item.rarity === "normal") return "noTriggerPlace";
+    if (item.affixes.some((_, i) => isTrigger(i))) return "notTrigger";
+    if (item.lockedAffix !== undefined) return "locked";
+    return undefined;
+  }
+  if (!item.affixes[request.affixIndex]) return "noAffix";
+  if (!isTrigger(request.affixIndex)) return "notTrigger";
+  if (kindled >= 0 && kindled !== request.affixIndex) return "kindled";
+  if (!affixUnlocked(item, request.affixIndex)) return "locked";
+  return undefined;
+}
+
+/** Trigger affix indexes Kindle can replace, or `[undefined]` for a free trigger place. */
+export function kindleTargets(item: Item, catalog: ItemCatalog): (number | undefined)[] {
+  const triggers = item.affixes.flatMap((r, i) =>
+    catalog.affixes.get(r.affixId)?.kind === "trigger" ? [i] : [],
+  );
+  if (triggers.length === 0) return item.rarity === "normal" ? [] : [undefined];
+  const kindled = kindledIndex(item);
+  return kindled >= 0 ? [kindled] : triggers;
 }
 
 // --- Runes -------------------------------------------------------------------------------------

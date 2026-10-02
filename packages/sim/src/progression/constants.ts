@@ -213,3 +213,21 @@ export const CRAFTING = {
     number
   >,
 } as const;
+
+/** Trigger Codex (docs/design/trigger-codex-v1.md). Starting values for the balance CLI. */
+export const CODEX = {
+  /** Trigger affixes whose Condition or Effect has its home in the fight drop this much more. */
+  homeWeight: 4,
+  /** The Quarry part (marked at Old Nan) drops this much more on top. */
+  quarryWeight: 3,
+  /** After this many Elite or boss item picks without the Quarry part, the next one has it. */
+  quarryPity: 5,
+  /** Kindled triggers roll at most this share of the range; only drops reach 100 %. */
+  kindleMaxQuality: 0.7,
+  /** Kindle at Liora: Dust × the kindled tier plus Kindling. */
+  kindleDustPerTier: 30,
+  kindleKindling: 1,
+  /** Kindling in the Spoils pick of Elites and bosses. */
+  eliteKindling: 1,
+  bossKindling: 2,
+} as const;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { PROGRESSION } from "./constants";
+import { CODEX, PROGRESSION } from "./constants";
 import {
   type GameAction,
   type GameState,
@@ -120,7 +120,11 @@ describe("game loop", () => {
     s = act(s, { type: "resolveFight" });
     expect(s.run?.rewards?.reforgeStones).toBeGreaterThanOrEqual(PROGRESSION.bossReforgeStones[0]);
     expect(s.run?.rewards?.items.every((i) => i.rarity === "epic")).toBe(true);
-    s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 0 }, { type: "continue" });
+    // Bosses and Elites offer Kindling instead of Reforge Stones.
+    expect(s.run?.rewards?.spoils[1]).toEqual({ kind: "kindling", amount: CODEX.bossKindling });
+    s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 1 });
+    expect(s.wallet.kindling).toBe(CODEX.bossKindling);
+    s = act(s, { type: "continue" });
     expect(s.run).toBeNull();
     expect(s.notice).toMatchObject({ kind: "actCleared", enemyName: "Boss" });
     expect(s.progress).toMatchObject({
@@ -351,6 +355,7 @@ describe("game loop", () => {
       harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
       ascensionShards: 0,
       runes: {},
+      kindling: 0,
     });
     expect(s.progress).toMatchObject({
       actsCleared: [],

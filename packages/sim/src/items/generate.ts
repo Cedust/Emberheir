@@ -13,8 +13,11 @@ import {
   type Rarity,
   type RuneDefinition,
   type RunewordDefinition,
+  type TriggerConditionPart,
+  type TriggerEffectPart,
   type UniqueDefinition,
 } from "./types";
+import { kindledAffixes } from "./codex";
 
 /** Builds a catalog from content lists and checks ids and references. */
 export function createItemCatalog(content: {
@@ -25,12 +28,24 @@ export function createItemCatalog(content: {
   runewords?: readonly RunewordDefinition[];
   powers?: readonly LegendaryPowerDefinition[];
   uniques?: readonly UniqueDefinition[];
+  conditions?: readonly TriggerConditionPart[];
+  effects?: readonly TriggerEffectPart[];
 }): ItemCatalog {
   const bases = byId(content.bases, "item base");
-  const affixes = byId(content.affixes, "affix");
+  const conditions = byId(content.conditions ?? [], "condition");
+  const effects = byId(content.effects ?? [], "effect");
+  const affixes = byId(
+    [...content.affixes, ...kindledAffixes(conditions.values(), effects.values())],
+    "affix",
+  );
   for (const affix of content.affixes) {
     if (affix.kind === "stat" && !affix.prefix === !affix.suffix) {
       throw new Error(`Affix "${affix.id}" needs either a prefix or a suffix`);
+    }
+    if (affix.kind === "trigger" && affix.parts) {
+      if (!conditions.has(affix.parts.condition) || !effects.has(affix.parts.effect)) {
+        throw new Error(`Affix "${affix.id}" uses unknown Codex parts`);
+      }
     }
   }
   const runes = byId(content.runes ?? [], "rune");
@@ -58,7 +73,17 @@ export function createItemCatalog(content: {
       throw new Error(`Unique "${unique.id}" uses unknown power "${unique.powerId}"`);
     }
   }
-  return { bases, affixes, rareNames: content.rareNames, runes, runewords, powers, uniques };
+  return {
+    bases,
+    affixes,
+    rareNames: content.rareNames,
+    runes,
+    runewords,
+    powers,
+    uniques,
+    conditions,
+    effects,
+  };
 }
 
 function byId<T extends { readonly id: string }>(list: readonly T[], what: string): Map<string, T> {
@@ -120,11 +145,16 @@ function pickAffixes(
   count: number,
   rng: Rng,
   allowed: (affix: AffixDefinition, picked: readonly AffixDefinition[]) => boolean = () => true,
+  factor: (affix: AffixDefinition) => number = () => 1,
 ): AffixDefinition[] {
   const left = [...pool];
   const picked: AffixDefinition[] = [];
   while (picked.length < count) {
-    const next = pickWeighted(left, (a) => (allowed(a, picked) ? affixWeight(a, base) : 0), rng);
+    const next = pickWeighted(
+      left,
+      (a) => (allowed(a, picked) ? affixWeight(a, base) * factor(a) : 0),
+      rng,
+    );
     if (!next) break;
     picked.push(next);
     left.splice(left.indexOf(next), 1);
@@ -136,6 +166,10 @@ export interface RollItemOptions {
   readonly baseId: string;
   readonly itemLevel: number;
   readonly rarity: Rarity;
+  /** Extra weight per affix, e.g. Trigger Codex homes (default 1). */
+  readonly affixFactor?: (affix: AffixDefinition) => number;
+  /** The item gets at least one trigger affix, picked from these ids if any fits (Quarry Pity). */
+  readonly forceTrigger?: readonly string[];
 }
 
 /**
@@ -147,8 +181,10 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
   const itemLevel = Math.max(1, Math.floor(options.itemLevel));
   const counts = ITEMS.affixCounts[options.rarity];
   const statCount = rng.int(counts.stat[0], counts.stat[1]);
-  const triggerCount =
+  const rolledTriggers =
     rng.int(counts.trigger[0], counts.trigger[1]) + (rng.chance(counts.extraTriggerChance) ? 1 : 0);
+  const forced = options.forceTrigger;
+  const triggerCount = forced ? Math.max(1, rolledTriggers) : rolledTriggers;
 
   const all = [...catalog.affixes.values()];
   const chosen: AffixDefinition[] = [];
@@ -156,9 +192,22 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
   const allowed = (affix: AffixDefinition, picked: readonly AffixDefinition[]) =>
     options.rarity !== "magic" ||
     [...chosen, ...picked].every((c) => affixPosition(c) !== affixPosition(affix));
-  chosen.push(...pickAffixes(affixPool(all, base.slot, "stat"), base, statCount, rng, allowed));
+  const factor = options.affixFactor;
+  const triggerPool = affixPool(all, base.slot, "trigger");
+  const wanted = forced ? triggerPool.filter((a) => forced.includes(a.id)) : [];
+  if (wanted.length) chosen.push(...pickAffixes(wanted, base, 1, rng, () => true, factor));
   chosen.push(
-    ...pickAffixes(affixPool(all, base.slot, "trigger"), base, triggerCount, rng, allowed),
+    ...pickAffixes(affixPool(all, base.slot, "stat"), base, statCount, rng, allowed, factor),
+  );
+  chosen.push(
+    ...pickAffixes(
+      triggerPool.filter((a) => !chosen.includes(a)),
+      base,
+      triggerCount - (wanted.length ? 1 : 0),
+      rng,
+      allowed,
+      factor,
+    ),
   );
   const rolls: AffixRoll[] = chosen.map((a) => ({
     affixId: a.id,

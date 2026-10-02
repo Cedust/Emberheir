@@ -10,6 +10,7 @@ import {
   type WeaponDefinition,
 } from "../combat/types";
 import { isPercentStat, resolveTrigger, statAffixValue, tierGrowth } from "./affixes";
+import { rollTier } from "./codex";
 import { ITEMS } from "./constants";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
@@ -124,7 +125,7 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) continue;
     if (affix.kind === "trigger") {
-      triggers.push(resolveTrigger(affix, item.tier, roll.quality));
+      triggers.push(resolveTrigger(affix, rollTier(item, roll), roll.quality));
       continue;
     }
     if (affix.stat === "addedWeaponDamage") continue;

@@ -6,6 +6,8 @@ import type {
   LegendaryPowerDefinition,
   RuneDefinition,
   RunewordDefinition,
+  TriggerConditionPart,
+  TriggerEffectPart,
   UniqueDefinition,
 } from "./types";
 
@@ -189,6 +191,7 @@ export const TEST_AFFIXES: readonly AffixDefinition[] = [
     rolls: "magnitude",
     value: { min: 0.1, max: 0.2 },
     perTier: 0,
+    parts: { condition: "life-below", effect: "heal" },
   },
   {
     kind: "trigger",
@@ -203,6 +206,47 @@ export const TEST_AFFIXES: readonly AffixDefinition[] = [
     rolls: "chance",
     value: { min: 0.2, max: 0.4 },
     perTier: 0,
+    parts: { condition: "on-crit", effect: "burn" },
+  },
+];
+
+export const TEST_CONDITIONS: readonly TriggerConditionPart[] = [
+  {
+    id: "life-below",
+    name: "Low Life",
+    condition: { kind: "lifeBelow", threshold: 0.35 },
+    oncePerFight: true,
+    home: { archetypes: ["brute"] },
+  },
+  {
+    id: "on-crit",
+    name: "On Crit",
+    condition: { kind: "onCrit" },
+    chance: 0.5,
+    cooldown: 1,
+    home: { archetypes: ["skirmisher"] },
+  },
+];
+
+export const TEST_EFFECTS: readonly TriggerEffectPart[] = [
+  {
+    id: "heal",
+    name: "Mend",
+    effect: { kind: "heal" },
+    rolls: "magnitude",
+    value: { min: 0.1, max: 0.2 },
+    perTier: 0.1,
+    cooldown: 10,
+    home: { boss: true },
+  },
+  {
+    id: "burn",
+    name: "Burn",
+    effect: { kind: "ailment", ailment: "burn" },
+    rolls: "chance",
+    value: { min: 0.2, max: 0.4 },
+    perTier: 0,
+    home: { actId: "test-act" },
   },
 ];
 
@@ -214,4 +258,6 @@ export const TEST_CATALOG = createItemCatalog({
   runewords: TEST_RUNEWORDS,
   powers: TEST_POWERS,
   uniques: TEST_UNIQUES,
+  conditions: TEST_CONDITIONS,
+  effects: TEST_EFFECTS,
 });

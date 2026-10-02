@@ -4,7 +4,15 @@ import { describeItem } from "./describe";
 import { itemModifiers } from "./equipment";
 import { createItemCatalog, rollItem, rollSockets, rollUnique, uniquesFor } from "./generate";
 import { activeRuneword, freeSockets, matchRuneword, runeBonuses } from "./runes";
-import { TEST_AFFIXES, TEST_AXE, TEST_CATALOG, TEST_RING, TEST_RUNES } from "./test-fixtures";
+import {
+  TEST_AFFIXES,
+  TEST_AXE,
+  TEST_CATALOG,
+  TEST_CONDITIONS,
+  TEST_EFFECTS,
+  TEST_RING,
+  TEST_RUNES,
+} from "./test-fixtures";
 import type { Item } from "./types";
 
 const axe = (runes: string[], sockets = 2, rarity: Item["rarity"] = "normal"): Item => ({
@@ -79,6 +87,8 @@ describe("Runes and Runewords", () => {
         rareNames: { first: [], second: [] },
         runes: TEST_RUNES,
         runewords: [{ id: "x", name: "X", runes: ["nope"], slots: ["mainHand"], bonuses: {} }],
+        conditions: TEST_CONDITIONS,
+        effects: TEST_EFFECTS,
       }),
     ).toThrow(/unknown rune/);
   });

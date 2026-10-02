@@ -140,6 +140,49 @@ export interface TriggerAffixDefinition extends AffixCommon {
   readonly oncePerFight?: boolean;
   readonly effect: TriggerEffectTemplate;
   readonly rolls: "magnitude" | "chance";
+  /** Trigger Codex parts it teaches when salvaged (docs/design/trigger-codex-v1.md). */
+  readonly parts?: { readonly condition: string; readonly effect: string };
+}
+
+/**
+ * Where a Trigger Codex part drops more often: enemy archetypes, an act, or act bosses. A
+ * trigger affix whose part has its home in the current fight is ×`homeWeight` likely.
+ */
+export interface CodexHome {
+  readonly archetypes?: readonly string[];
+  readonly actId?: string;
+  readonly boss?: boolean;
+}
+
+/** A Condition of the Trigger Codex: when a kindled trigger fires. */
+export interface TriggerConditionPart {
+  readonly id: string;
+  /** Shown in the Codex, e.g. "On Crit". */
+  readonly name: string;
+  readonly condition: TriggerCondition;
+  /**
+   * Scales the trigger chance: 1 for rare moments (On Crit, Every 4th Attack), lower for frequent
+   * ones (On Hit). Default 1.
+   */
+  readonly chance?: number;
+  readonly cooldown?: number;
+  readonly oncePerFight?: boolean;
+  readonly home: CodexHome;
+}
+
+/** An Effect of the Trigger Codex: what a kindled trigger does. */
+export interface TriggerEffectPart {
+  readonly id: string;
+  /** Shown in the Codex and the combat log, e.g. "Flame Pulse". */
+  readonly name: string;
+  readonly effect: TriggerEffectTemplate;
+  readonly rolls: "magnitude" | "chance";
+  /** Value at Tier 1 (quality 0..1), like a trigger affix. */
+  readonly value: ValueRange;
+  readonly perTier: number;
+  /** Least Internal Cooldown, so strong effects cannot fire on every hit. */
+  readonly cooldown?: number;
+  readonly home: CodexHome;
 }
 
 export type AffixDefinition = StatAffixDefinition | TriggerAffixDefinition;
@@ -148,6 +191,10 @@ export type AffixDefinition = StatAffixDefinition | TriggerAffixDefinition;
 export interface AffixRoll {
   readonly affixId: string;
   readonly quality: number;
+  /** Kindled at the Mystic (one per item). */
+  readonly kindled?: true;
+  /** Own tier of a kindled trigger (the Codex Mastery); never above the item's tier. */
+  readonly tier?: number;
 }
 
 /** A concrete item. Plain data (ids + numbers), so it can go into a save game as is. */
@@ -243,6 +290,9 @@ export interface ItemCatalog {
   readonly runewords: ReadonlyMap<string, RunewordDefinition>;
   readonly powers: ReadonlyMap<string, LegendaryPowerDefinition>;
   readonly uniques: ReadonlyMap<string, UniqueDefinition>;
+  /** Trigger Codex parts. Every Condition × Effect is also an affix (`kindledAffixId`). */
+  readonly conditions: ReadonlyMap<string, TriggerConditionPart>;
+  readonly effects: ReadonlyMap<string, TriggerEffectPart>;
 }
 
 export type Equipment = Readonly<Partial<Record<EquipmentSlot, Item>>>;

@@ -12,6 +12,7 @@ import { isPercentStat, resolveTrigger, statAffixValue } from "./affixes";
 import { addedDamageRange, itemWeapon, requirementsFor, scaledBaseStats } from "./equipment";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
+import { rollTier } from "./codex";
 import type { AffixStat, Item, ItemCatalog, ItemSlot, Rarity } from "./types";
 
 /** English display names. All game terms stay English in code, data and UI. */
@@ -195,7 +196,10 @@ export interface ItemTooltip {
   /** Weapon damage, attack speed, Armor, Block ... */
   readonly baseLines: readonly string[];
   readonly implicitLines: readonly string[];
-  readonly affixLines: readonly { readonly text: string; readonly kind: "stat" | "trigger" }[];
+  readonly affixLines: readonly {
+    readonly text: string;
+    readonly kind: "stat" | "trigger" | "kindled";
+  }[];
   /** "unique" and "runeword" items show their own label and color. */
   readonly special?: "unique" | "runeword";
   /** Legendary Power: name and rule text. */
@@ -258,14 +262,14 @@ export function describeItem(
     ...item.affixes,
     ...(word?.triggers ?? []),
     ...(power?.trigger ? [power.trigger] : []),
-  ].flatMap((roll): { text: string; kind: "stat" | "trigger" }[] => {
+  ].flatMap((roll): { text: string; kind: "stat" | "trigger" | "kindled" }[] => {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) return [];
     if (affix.kind === "trigger") {
       return [
         {
-          text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
-          kind: "trigger" as const,
+          text: describeTrigger(resolveTrigger(affix, rollTier(item, roll), roll.quality)),
+          kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
         },
       ];
     }

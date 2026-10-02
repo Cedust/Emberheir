@@ -59,6 +59,13 @@ export {
   type RollItemOptions,
 } from "./items/generate";
 export { activeRuneword, freeSockets, matchRuneword, runeBonuses, runeGroup } from "./items/runes";
+export {
+  codexPartsOf,
+  kindledAffix,
+  kindledAffixId,
+  kindledAffixes,
+  rollTier,
+} from "./items/codex";
 export { mergeRules } from "./combat/rules";
 export {
   addedDamageRange,

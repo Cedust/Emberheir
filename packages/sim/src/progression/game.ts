@@ -19,6 +19,7 @@ import {
   uniquesFor,
 } from "../items/generate";
 import {
+  type AffixDefinition,
   type Equipment,
   type EquipmentSlot,
   type Item,
@@ -28,7 +29,18 @@ import {
   type Rarity,
 } from "../items/types";
 import { Rng } from "../rng";
-import { PROGRESSION } from "./constants";
+import { CODEX, PROGRESSION } from "./constants";
+import {
+  type CodexPartKind,
+  type CodexState,
+  EMPTY_CODEX,
+  type QuarryMark,
+  codexAffixFactor,
+  codexMastery,
+  learnFromItem,
+  quarryAffixIds,
+  quarryFound,
+} from "./codex";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
 import { INVENTORY_SIZE, type PlacedItem, STASH_SIZE, addToGrid, packGrid } from "./inventory";
@@ -53,7 +65,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 4;
+export const SAVE_VERSION = 5;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -104,6 +116,8 @@ export interface Wallet {
   readonly ascensionShards: number;
   /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
   readonly runes: Readonly<Record<string, number>>;
+  /** Pays for Kindle at Liora; Elites and bosses give it in the Spoils pick. */
+  readonly kindling: number;
 }
 
 export interface HeroState {
@@ -136,7 +150,8 @@ export interface Encounter {
 export type SpoilsCard =
   | { readonly kind: "flaskCharge"; readonly amount: number }
   | { readonly kind: "reforgeStones"; readonly amount: number }
-  | { readonly kind: "essence"; readonly essenceId: string; readonly amount: number };
+  | { readonly kind: "essence"; readonly essenceId: string; readonly amount: number }
+  | { readonly kind: "kindling"; readonly amount: number };
 
 export type ItemPick =
   { readonly kind: "equip" | "take"; readonly index: number } | { readonly kind: "salvageAll" };
@@ -229,6 +244,10 @@ export interface LegacyState {
   readonly runewords: readonly string[];
   /** Runes ever found. A Runeword shows its recipe once all its Runes were found. */
   readonly runesFound: readonly string[];
+  /** Trigger Codex: Conditions and Effects learned from salvaged triggers. Permanent. */
+  readonly codex: CodexState;
+  /** The Codex part marked at Old Nan, if any. */
+  readonly quarry: QuarryMark | null;
 }
 
 /** Marisha restocks whenever the hero comes back from a fight (`key` = fights so far). */
@@ -343,6 +362,7 @@ export function newGame(
       harvesterEmber: 0,
       ascensionShards: 0,
       runes: {},
+      kindling: 0,
     },
     inventory: [],
     stash: [],
@@ -359,7 +379,15 @@ export function newGame(
     run: null,
     notice: null,
     stats: { fights: 0, wins: 0, deaths: 0, retreats: 0, bossKills: 0 },
-    legacy: { prestige: 0, seals: [], chronicle: [], runewords: [], runesFound: [] },
+    legacy: {
+      prestige: 0,
+      seals: [],
+      chronicle: [],
+      runewords: [],
+      runesFound: [],
+      codex: EMPTY_CODEX,
+      quarry: null,
+    },
     pendingPrestige: null,
   };
 }
@@ -674,7 +702,10 @@ export type GameAction =
   | { readonly type: "allocateAttributes"; readonly points: Partial<Attributes> }
   | { readonly type: "equip"; readonly itemId: string }
   | { readonly type: "unequip"; readonly slot: EquipmentSlot }
+  /** Salvage an inventory item; its trigger parts go into the Trigger Codex. */
   | { readonly type: "salvage"; readonly itemId: string }
+  /** Old Nan (Camp only): mark a known Codex part to hunt, or clear the mark. */
+  | { readonly type: "setQuarry"; readonly part: { kind: CodexPartKind; id: string } | null }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
   | { readonly type: "respecTree" }
@@ -716,7 +747,9 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "unequip":
       return unequip(state, data, action.slot);
     case "salvage":
-      return salvage(state, action.itemId);
+      return salvage(state, data, action.itemId);
+    case "setQuarry":
+      return setQuarry(state, action.part);
     case "learnNodes":
       return learn(state, data, action.nodeIds);
     case "respecTree":
@@ -857,6 +890,16 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
+  const quarry = state.legacy.quarry;
+  const fight = {
+    archetype: encounter.boss ? "boss" : findEnemy(act, encounter.enemyId).archetype,
+    actId: act.id,
+    boss: encounter.boss,
+  };
+  const forceQuarry =
+    quarry !== null && rank !== "normal" && quarry.misses + 1 >= CODEX.quarryPity
+      ? quarryAffixIds(data.items, quarry)
+      : undefined;
   const items = rollItemChoices(
     data,
     encounter,
@@ -864,13 +907,25 @@ function resolveFight(state: GameState, data: GameData): GameState {
     state.progress.deathsInAct,
     act.number + state.legacy.prestige,
     rng,
+    codexAffixFactor(data.items, fight, quarry),
+    forceQuarry,
   );
+  const nextQuarry: QuarryMark | null =
+    quarry && rank !== "normal"
+      ? { ...quarry, misses: quarryFound(items, data.items, quarry) ? 0 : quarry.misses + 1 }
+      : quarry;
   const runes = rollRuneDrops(data, rank, act.number + state.legacy.prestige, rng);
   const spoils: SpoilsCard[] =
     rank !== "normal" || act.spoilsStages.includes(run.stage)
       ? [
           { kind: "flaskCharge", amount: PROGRESSION.spoils.flaskCharges },
-          { kind: "reforgeStones", amount: PROGRESSION.spoils.reforgeStones },
+          // Elites and bosses already drop Reforge Stones; their Spoils offer Kindling instead.
+          rank === "normal"
+            ? { kind: "reforgeStones", amount: PROGRESSION.spoils.reforgeStones }
+            : {
+                kind: "kindling",
+                amount: rank === "boss" ? CODEX.bossKindling : CODEX.eliteKindling,
+              },
           { kind: "essence", essenceId: act.essence.id, amount: PROGRESSION.spoils.essences },
         ]
       : [];
@@ -903,6 +958,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
     legacy: {
       ...state.legacy,
       runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
+      quarry: nextQuarry,
     },
     run: {
       ...run,
@@ -973,6 +1029,8 @@ function rollItemChoices(
   deathsInAct: number,
   actTier: number,
   rng: Rng,
+  affixFactor?: (affix: AffixDefinition) => number,
+  forceTrigger?: readonly string[],
 ): Item[] {
   const weights = itemPickWeights(rank, deathsInAct, actTier);
   const bySlot = new Map<ItemSlot, string[]>();
@@ -1002,15 +1060,40 @@ function rollItemChoices(
         continue;
       }
     }
-    const baseId = bases[rng.int(0, bases.length - 1)];
+    // Quarry Pity: the first card carries the marked part (on a base that can have it).
+    const forced =
+      i === 0 && forceTrigger?.length
+        ? bases.filter((id) => fitsAnyAffix(data.items, id, forceTrigger))
+        : [];
+    const basePool = forced.length ? forced : bases;
+    const baseId = basePool[rng.int(0, basePool.length - 1)];
     if (!baseId) break;
-    const rarity = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
-    items.push(rollItem(data.items, { baseId, itemLevel: encounter.level, rarity }, rng));
+    const rolled = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
+    const rarity =
+      forced.length && RARITIES.indexOf(rolled) < RARITIES.indexOf("rare") ? "rare" : rolled;
+    items.push(
+      rollItem(
+        data.items,
+        {
+          baseId,
+          itemLevel: encounter.level,
+          rarity,
+          ...(affixFactor ? { affixFactor } : {}),
+          ...(forced.length && forceTrigger ? { forceTrigger } : {}),
+        },
+        rng,
+      ),
+    );
   }
   return items;
 }
 
 /** Adds Runes to the pouch. */
+function fitsAnyAffix(catalog: ItemCatalog, baseId: string, affixIds: readonly string[]): boolean {
+  const slot = getBase(catalog, baseId).slot;
+  return affixIds.some((id) => catalog.affixes.get(id)?.slots.includes(slot));
+}
+
 export function addRunes(
   pouch: Readonly<Record<string, number>>,
   runes: readonly string[],
@@ -1139,6 +1222,8 @@ function pickSpoils(state: GameState, index: number): GameState {
       ...state,
       wallet: { ...state.wallet, reforgeStones: state.wallet.reforgeStones + card.amount },
     };
+  } else if (card.kind === "kindling") {
+    next = { ...state, wallet: { ...state.wallet, kindling: state.wallet.kindling + card.amount } };
   } else {
     const essences = { ...state.wallet.essences };
     essences[card.essenceId] = (essences[card.essenceId] ?? 0) + card.amount;
@@ -1296,14 +1381,27 @@ function unequip(state: GameState, data: GameData, slot: EquipmentSlot): GameSta
   return { ...state, inventory, hero: { ...state.hero, equipment } };
 }
 
-function salvage(state: GameState, itemId: string): GameState {
+function salvage(state: GameState, data: GameData, itemId: string): GameState {
   if (state.run?.phase === "fight") return fail("Not during a fight");
   const placed = findInInventory(state, itemId);
+  const { codex } = learnFromItem(state.legacy.codex, placed.item, data.items);
   return {
     ...state,
     inventory: state.inventory.filter((p) => p !== placed),
     wallet: { ...state.wallet, dust: state.wallet.dust + salvageValue(placed.item) },
+    legacy: codex === state.legacy.codex ? state.legacy : { ...state.legacy, codex },
   };
+}
+
+function setQuarry(
+  state: GameState,
+  part: { readonly kind: CodexPartKind; readonly id: string } | null,
+): GameState {
+  requireCamp(state);
+  if (part && codexMastery(state.legacy.codex, part.kind, part.id) === 0) {
+    return fail("Only known Codex parts can be the Quarry");
+  }
+  return { ...state, legacy: { ...state.legacy, quarry: part ? { ...part, misses: 0 } : null } };
 }
 
 export function requireTrainer(state: GameState): void {
@@ -1442,6 +1540,7 @@ function doPrestige(
       harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
       ascensionShards: 0,
       runes: {},
+      kindling: 0,
     },
     inventory: [],
     stash: [],
@@ -1494,6 +1593,7 @@ export function deserializeGame(json: string): GameState {
   if (state.version === 1) state = migrateV1(state);
   if (state.version === 2) state = migrateV2(state);
   if (state.version === 3) state = migrateV3(state);
+  if (state.version === 4) state = migrateV4(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -1529,7 +1629,15 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
   return {
     ...state,
     version: 3,
-    legacy: { prestige: 0, seals: [], chronicle: [], runewords: [], runesFound: [] },
+    legacy: {
+      prestige: 0,
+      seals: [],
+      chronicle: [],
+      runewords: [],
+      runesFound: [],
+      codex: EMPTY_CODEX,
+      quarry: null,
+    },
     pendingPrestige: null,
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
   };
@@ -1548,5 +1656,15 @@ function migrateV3(state: Partial<GameState>): Partial<GameState> {
     ...(state.run
       ? { run: { ...state.run, rewards: rewards ? { ...rewards, runes: [] } : null } }
       : {}),
+  };
+}
+
+/** v4 (M8) → v5 (prestige rework): Trigger Codex, Quarry and Kindling are new. */
+function migrateV4(state: Partial<GameState>): Partial<GameState> {
+  return {
+    ...state,
+    version: 5,
+    ...(state.wallet ? { wallet: { ...state.wallet, kindling: 0 } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, codex: EMPTY_CODEX, quarry: null } } : {}),
   };
 }
