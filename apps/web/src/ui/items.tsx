@@ -17,7 +17,9 @@ import {
   speedValue,
 } from "@emberheir/sim";
 import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import { Icon, type IconName } from "./Icon";
+import type { IconName } from "./Icon";
+import { ItemArt } from "./ItemArt";
+import { useItemHover } from "./ItemTooltip";
 
 /** Icon per item (placeholder art: one Lucide-style icon per slot). */
 export function itemIcon(item: Item): IconName {
@@ -81,7 +83,11 @@ const STAT_LABEL: Partial<Record<keyof DerivedStats, string>> = {
   attackSpeed: "Attack Speed",
   evasion: "Evasion",
   blockChance: "Block",
-  resistance: "Resistance",
+  resistance: "All Resistance",
+  fireResistance: "Fire Resistance",
+  coldResistance: "Cold Resistance",
+  lightningResistance: "Lightning Resistance",
+  voidResistance: "Void Resistance",
   heatGain: "Heat Gain",
   startingHeat: "Starting Heat",
   tenacity: "Tenacity",
@@ -144,7 +150,8 @@ export function ItemDetail(props: {
   testId?: string;
 }) {
   const { item } = props;
-  const weapon = getBase(ITEM_CATALOG, item.baseId).weapon;
+  const base = getBase(ITEM_CATALOG, item.baseId);
+  const weapon = base.weapon;
   return (
     <article
       className={`item-detail rarity-${item.rarity} ${props.className ?? ""}`}
@@ -160,13 +167,23 @@ export function ItemDetail(props: {
           {rarityName(item)} · T{item.tier}
         </span>
       </div>
-      <h3 className="item-detail-name rarity-text">{item.name}</h3>
-      <span className="item-detail-base">{baseSummary(item)}</span>
-      {weapon && (
-        <span className="item-detail-speed" title="Attack Speed. Speed 100 is the Sword's speed.">
-          Speed <strong className="mono">{speedValue(weapon.attacksPerSecond)}</strong>
-        </span>
-      )}
+      <div className="item-detail-head">
+        <div className={`item-detail-art rarity-${item.rarity}`}>
+          <ItemArt baseId={item.baseId} slot={base.slot} />
+        </div>
+        <div className="item-detail-title">
+          <h3 className="item-detail-name rarity-text">{item.name}</h3>
+          <span className="item-detail-base">{baseSummary(item)}</span>
+          {weapon && (
+            <span
+              className="item-detail-speed"
+              title="Attack Speed. Speed 100 is the Sword's speed."
+            >
+              Speed <strong className="mono">{speedValue(weapon.attacksPerSecond)}</strong>
+            </span>
+          )}
+        </div>
+      </div>
       <div className="item-detail-rule" />
       <ul className="item-detail-lines">
         {itemLines(item, props.heroAttributes).map((l, i) => (
@@ -186,7 +203,7 @@ export function ItemDetail(props: {
   );
 }
 
-/** A square item tile for paperdolls and lists. */
+/** A square item tile for paperdolls and lists: painted icon, hover tooltip. */
 export function ItemTile(props: {
   item: Item | undefined;
   label: string;
@@ -196,28 +213,62 @@ export function ItemTile(props: {
   width?: number;
   height?: number;
   inactive?: boolean;
+  /** The tile shows a worn item (its tooltip then has nothing to compare with). */
+  equipped?: boolean;
 }) {
   const { item } = props;
   const w = props.width ?? props.size ?? 68;
   const h = props.height ?? props.size ?? 68;
+  const { active, ...hover } = useItemHover(item, props.equipped ?? true);
+  const base = item ? getBase(ITEM_CATALOG, item.baseId) : undefined;
   return (
     <button
       type="button"
       className={`item-tile ${item ? `rarity-${item.rarity}` : "empty"}${props.selected ? " selected" : ""}${props.inactive ? " inactive" : ""}`}
       style={{ width: w, height: h }}
       aria-label={item ? `${props.label}: ${item.name}` : `${props.label}: empty`}
-      title={item ? `${props.label}: ${item.name}` : props.label}
+      title={active ? undefined : item ? `${props.label}: ${item.name}` : props.label}
       onClick={props.onSelect}
       disabled={!props.onSelect}
+      {...hover}
     >
-      <Icon
-        name={item ? itemIcon(item) : "box"}
-        size={Math.min(w, h) > 70 ? 38 : 26}
-        className="rarity-stroke"
-        strokeWidth={1.8}
-      />
+      {item && base ? (
+        <ItemArt baseId={item.baseId} slot={base.slot} />
+      ) : (
+        <span className="item-tile-label">{props.label}</span>
+      )}
       {item && <span className="item-tile-tier">T{item.tier}</span>}
-      {!item && <span className="item-tile-label">{props.label}</span>}
+    </button>
+  );
+}
+
+function GridItem(props: {
+  placed: PlacedItem;
+  cell: number;
+  selected: boolean;
+  onSelect: (itemId: string, event?: ReactMouseEvent) => void;
+}) {
+  const { placed: p, cell } = props;
+  const base = getBase(ITEM_CATALOG, p.item.baseId);
+  const s = itemSize(p.item, ITEM_CATALOG);
+  const { active, ...hover } = useItemHover(p.item);
+  return (
+    <button
+      type="button"
+      className={`grid-item rarity-${p.item.rarity}${props.selected ? " selected" : ""}`}
+      data-testid="grid-item"
+      style={{
+        left: p.x * cell,
+        top: p.y * cell,
+        width: s.w * cell - 4,
+        height: s.h * cell - 4,
+      }}
+      aria-label={p.item.name}
+      title={active ? undefined : p.item.name}
+      onClick={(e) => props.onSelect(p.item.id, e)}
+      {...hover}
+    >
+      <ItemArt baseId={p.item.baseId} slot={base.slot} />
     </button>
   );
 }
@@ -244,33 +295,15 @@ export function ItemGrid(props: {
         backgroundSize: `${cell}px ${cell}px`,
       }}
     >
-      {props.placed.map((p) => {
-        const s = itemSize(p.item, ITEM_CATALOG);
-        return (
-          <button
-            key={p.item.id}
-            type="button"
-            className={`grid-item rarity-${p.item.rarity}${props.selected === p.item.id ? " selected" : ""}`}
-            data-testid="grid-item"
-            style={{
-              left: p.x * cell,
-              top: p.y * cell,
-              width: s.w * cell - 4,
-              height: s.h * cell - 4,
-            }}
-            aria-label={p.item.name}
-            title={p.item.name}
-            onClick={(e) => props.onSelect(p.item.id, e)}
-          >
-            <Icon
-              name={itemIcon(p.item)}
-              size={cell >= 40 ? 26 : 22}
-              className="rarity-stroke"
-              strokeWidth={1.8}
-            />
-          </button>
-        );
-      })}
+      {props.placed.map((p) => (
+        <GridItem
+          key={p.item.id}
+          placed={p}
+          cell={cell}
+          selected={props.selected === p.item.id}
+          onSelect={props.onSelect}
+        />
+      ))}
     </div>
   );
 }

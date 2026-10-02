@@ -26,6 +26,10 @@ import { Icon } from "../../ui/Icon";
 import { ItemGrid, ItemTile, baseSummary, fmt, walletEntries } from "../../ui/items";
 import { CRAFT_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
+import { Paperdoll, dollBox } from "../../ui/Paperdoll";
+
+/** Scale of the paperdoll next to the inventory. */
+const SIDE_DOLL = 0.85;
 
 export type PersonaId = "thoric" | "liora";
 type ActionKind = "upgrade" | "socket" | "salvage" | "reforge" | "temper" | "imbue" | "distill";
@@ -435,21 +439,24 @@ export function PersonaView(props: {
 
         <aside className="persona-right">
           <span className="title-font section-title">Equipped</span>
-          <div className="equipped-row">
+          <Paperdoll scale={SIDE_DOLL} className="side">
             {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
+              const pos = dollBox(slot, SIDE_DOLL);
               return (
-                <ItemTile
-                  key={slot}
-                  item={it}
-                  label={SLOT_NAMES[itemSlotFor(slot)]}
-                  size={68}
-                  selected={!!it && it.id === itemId}
-                  {...(it ? { onSelect: () => pickItem(it.id) } : {})}
-                />
+                <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
+                  <ItemTile
+                    item={it}
+                    label={SLOT_NAMES[itemSlotFor(slot)]}
+                    width={pos.w}
+                    height={pos.h}
+                    selected={!!it && it.id === itemId}
+                    {...(it ? { onSelect: () => pickItem(it.id) } : {})}
+                  />
+                </div>
               );
             })}
-          </div>
+          </Paperdoll>
           <div className="section-row">
             <span className="title-font section-title">Inventory</span>
             <span className="mono sub">{state.inventory.length} items</span>

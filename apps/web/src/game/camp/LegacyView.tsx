@@ -1,4 +1,3 @@
-import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -9,6 +8,7 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
+import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
@@ -38,7 +38,6 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
     legacy.chronicle.find((c) => c.sealed.includes(slot))?.generation;
   const s = state.stats;
   const selItem = heirloom(sel);
-  const inPoc = GAME_DATA.equipmentSlots.includes(sel);
   const facts = [
     {
       kind: "GENERATION",
@@ -127,7 +126,13 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
                 }
                 onClick={() => setSel(r.slot)}
               >
-                <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
+                {item ? (
+                  <span className="ring-art">
+                    <ItemArt baseId={item.baseId} slot={itemSlotFor(r.slot)} />
+                  </span>
+                ) : (
+                  <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
+                )}
                 <span className="sub small">{item ? item.name : slotName(r.slot)}</span>
                 <span className="seal">◆</span>
               </button>
@@ -160,11 +165,9 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
               <span className="eyebrow">NO SEAL · {slotName(sel).toUpperCase()}</span>
               <p className="title-font">Burns in the harvest</p>
               <p className="sub small">
-                {!inPoc
-                  ? "This slot is not in the PoC yet."
-                  : legacy.seals.length === 0
-                    ? "Your first Seal comes when Gorrak falls."
-                    : "One more Seal with every harvest. You can move Seals each time the harvest begins."}
+                {legacy.seals.length === 0
+                  ? "Your first Seal comes when Gorrak falls."
+                  : "One more Seal with every harvest. You can move Seals each time the harvest begins."}
               </p>
             </section>
           )}

@@ -23,10 +23,10 @@ import {
 import { useState } from "react";
 import { Icon, type IconName } from "../ui/Icon";
 import { ItemDetail, ItemTile, compareWithEquipped, fmt, walletEntries } from "../ui/items";
-import { DOLL } from "./CharacterOverlay";
 import { RunHeader } from "./RunHeader";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
+import { Paperdoll, dollBox } from "../ui/Paperdoll";
 
 const SPOILS_LOOK: Record<SpoilsCard["kind"], { icon: IconName; tint: string }> = {
   flaskCharge: { icon: "flask", tint: "#c9322a" },
@@ -269,32 +269,27 @@ function EquippedPanel(props: {
   return (
     <aside className="intermission-right" aria-label="Equipped">
       <span className="eyebrow">Equipped</span>
-      <div className="paperdoll mini" style={{ width: 400 * MINI_DOLL, height: 420 * MINI_DOLL }}>
-        <svg className="silhouette" viewBox="0 0 400 420" aria-hidden="true">
-          <circle cx="200" cy="60" r="38" />
-          <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
-        </svg>
+      <Paperdoll scale={MINI_DOLL} className="mini">
         {GAME_DATA.equipmentSlots.map((slot) => {
-          const pos = DOLL[slot];
-          if (!pos) return null;
+          const pos = dollBox(slot, MINI_DOLL);
           return (
             <div
               key={slot}
               className={`doll-slot${slot === focus ? " focused" : ""}`}
-              style={{ left: pos.x * MINI_DOLL, top: pos.y * MINI_DOLL }}
+              style={{ left: pos.x, top: pos.y }}
             >
               <ItemTile
                 item={state.hero.equipment[slot]}
                 label={SLOT_NAMES[itemSlotFor(slot)]}
-                width={pos.w * MINI_DOLL}
-                height={pos.h * MINI_DOLL}
+                width={pos.w}
+                height={pos.h}
                 selected={slot === focus}
                 onSelect={() => props.onFocus(slot)}
               />
             </div>
           );
         })}
-      </div>
+      </Paperdoll>
       {equipped ? (
         <ItemDetail
           item={equipped}

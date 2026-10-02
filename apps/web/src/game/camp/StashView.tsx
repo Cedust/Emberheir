@@ -22,6 +22,10 @@ import {
 } from "../../ui/items";
 import { EQUIP_BLOCK_TEXT, MOVE_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
+import { Paperdoll, dollBox } from "../../ui/Paperdoll";
+
+/** Scale of the paperdoll next to the inventory. */
+const SIDE_DOLL = 0.85;
 
 type Where = "equipped" | "inventory" | "stash";
 
@@ -130,21 +134,24 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       <div className="stash-body">
         <aside className="stash-left">
           <span className="title-font section-title">Equipped</span>
-          <div className="equipped-row">
+          <Paperdoll scale={SIDE_DOLL} className="side">
             {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
+              const pos = dollBox(slot, SIDE_DOLL);
               return (
-                <ItemTile
-                  key={slot}
-                  item={it}
-                  label={SLOT_NAMES[itemSlotFor(slot)]}
-                  size={62}
-                  selected={!!it && it.id === selected}
-                  {...(it ? { onSelect: () => setSelected(it.id) } : {})}
-                />
+                <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
+                  <ItemTile
+                    item={it}
+                    label={SLOT_NAMES[itemSlotFor(slot)]}
+                    width={pos.w}
+                    height={pos.h}
+                    selected={!!it && it.id === selected}
+                    {...(it ? { onSelect: () => setSelected(it.id) } : {})}
+                  />
+                </div>
               );
             })}
-          </div>
+          </Paperdoll>
           <div className="section-row">
             <span className="title-font section-title">Inventory</span>
             <span className="mono sub">{state.inventory.length} items</span>

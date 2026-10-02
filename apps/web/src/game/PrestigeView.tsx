@@ -11,8 +11,8 @@ import {
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ItemDetail, ItemTile, fmt } from "../ui/items";
-import { DOLL } from "./CharacterOverlay";
 import type { GameApi } from "./useGame";
+import { Paperdoll, dollBox } from "../ui/Paperdoll";
 
 type Step = "victory" | "seal";
 const STEPS = [
@@ -82,8 +82,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             &ldquo;Hrrk... the Harvester... will want... its field back...&rdquo;
           </p>
           <p className="victory-sub">
-            In the PoC, Gorrak stands in for the Ashen Harvester: his fall starts the harvest, a
-            light Prestige.
+            Until the road leads further, Gorrak stands in for the Ashen Harvester: his fall starts
+            the harvest.
           </p>
           <button type="button" className="btn big primary" onClick={() => setStep("seal")}>
             Hold On to What Matters
@@ -142,14 +142,9 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
               ? `${plural(free, "Seal")} left to place`
               : "All Seals placed. Click a sealed slot to move its Seal."}
           </span>
-          <div className="paperdoll">
-            <svg className="silhouette" viewBox="0 0 400 420" aria-hidden="true">
-              <circle cx="200" cy="60" r="38" />
-              <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
-            </svg>
+          <Paperdoll>
             {slots.map((slot) => {
-              const pos = DOLL[slot];
-              if (!pos) return null;
+              const pos = dollBox(slot);
               const it = state.hero.equipment[slot];
               const on = sealed.includes(slot);
               return (
@@ -175,7 +170,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                 </div>
               );
             })}
-          </div>
+          </Paperdoll>
         </section>
         <section className="seal-side">
           {sel ? (
@@ -311,8 +306,8 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
             <p>Another harvest, another Heir. Sit down, child. The fire&apos;s warm.</p>
           </div>
           <span className="sub small heir-note">
-            End of the PoC loop: you wake in the Camp before Act 1 and start again at Stage 1. Act 2
-            is not in the PoC. The Supply Wagon burned and gets patched on your first return.
+            You wake in the Camp before Act 1 and start again at Stage 1. The Supply Wagon burned
+            and gets patched on your first return.
           </span>
         </aside>
         <main className="heir-main">
