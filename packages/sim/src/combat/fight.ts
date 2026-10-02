@@ -1,11 +1,13 @@
 import { Rng } from "../rng";
 import {
   type AilmentStates,
+  advanceCorruption,
   ailmentDuration,
   applyAilment,
   chillFactor,
   clearAilment,
   damageTakenBonus,
+  dotDamagePerSecond,
   healingFactor,
   multiplyPoison,
   poisonStacks,
@@ -167,6 +169,12 @@ export interface FighterSnapshot {
     readonly stacks: number;
     readonly remaining: number;
   }[];
+  /** Curses on this fighter (Wither). */
+  readonly curses: readonly {
+    readonly name: string;
+    readonly dotDamageTaken: number;
+    readonly remaining: number;
+  }[];
   /** Current stats including active buffs. */
   readonly stats: DerivedStats;
   /** A Heavy Attack that is winding up right now. */
@@ -205,6 +213,7 @@ interface Fighter {
   attackCount: number;
   readonly triggers: TriggerState[];
   buffs: BuffState[];
+  curses: { id: string; name: string; dotDamageTaken: number; remaining: number }[];
   /** Seconds since the last telegraph ended, per telegraph. */
   telegraphTimers: number[];
   /** The telegraph winding up right now. */
@@ -225,6 +234,8 @@ interface HitOptions {
   readonly evadable: boolean;
   readonly multiplier: number;
   readonly ailmentChances: readonly AilmentChance[];
+  /** Ailments act as if the hit was this much stronger. Default 1. */
+  readonly ailmentPower?: number;
   /** Hits caused by triggers do not fire further triggers. */
   readonly fromTrigger: boolean;
 }
@@ -262,6 +273,7 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     attackCount: 0,
     triggers: triggers.map(createTriggerState),
     buffs: [],
+    curses: [],
     telegraphTimers: (setup.telegraphs ?? []).map(() => 0),
     windup: null,
   };
@@ -276,6 +288,7 @@ function withStatAilmentChances(
     burn: stats.burnChance,
     chill: stats.chillChance,
     shock: stats.shockChance,
+    corruption: stats.corruptionChance,
     bleed: stats.bleedChance,
     poison: stats.poisonChance,
   };
@@ -407,12 +420,19 @@ export class Fight {
     return heatGainMultiplier(f.stats.heatGain, chillFactor(f.ailments));
   }
 
+  /** Multiplier on damage over time dealt to `f`: damage taken, curses and the source's rules. */
+  private dotFactor(f: Fighter): number {
+    const cursed = f.curses.reduce((sum, c) => sum + c.dotDamageTaken, 0);
+    const source = this.fighters[other(f.side)];
+    return (1 + this.damageTaken(f) + cursed) * (source.setup.rules?.dotDamage ?? 1);
+  }
+
   /** Ailments, DoT ticks and passive Heat. */
   private stepStatus(f: Fighter, dt: number): void {
     const { states, ticks, expired } = stepAilments(f.ailments, dt);
     f.ailments = states;
     for (const tick of ticks) {
-      const damage = Math.max(1, Math.round(tick.damage * (1 + this.damageTaken(f))));
+      const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f)));
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);
       if (this.result) return;
@@ -420,6 +440,9 @@ export class Fight {
       const leech = source.setup.rules?.dotLifesteal ?? 0;
       if (leech > 0) this.heal(source, damage * leech);
     }
+    f.curses = f.curses
+      .map((c) => ({ ...c, remaining: c.remaining - dt }))
+      .filter((c) => c.remaining > 1e-9);
     for (const ailment of expired) {
       this.emit({ t: this.time, type: "ailmentExpired", side: f.side, ailment });
     }
@@ -481,7 +504,8 @@ export class Fight {
 
   /**
    * Uses the next Rotation skill if Heat reached its Trigger Threshold, else a Default Attack.
-   * A buff skill whose buff is still running is passed over, so it is not wasted.
+   * A buff skill whose buff is still running (or a curse still on the target) is passed over, so
+   * it is not wasted.
    */
   private act(f: Fighter): void {
     let slot = f.setup.rotation[f.nextSlot];
@@ -500,10 +524,14 @@ export class Fight {
     this.defaultAttack(f);
   }
 
+  /** A buff skill whose buff still runs, or a curse that still sits on the target. */
   private buffRunning(f: Fighter, skill: SkillDefinition): boolean {
-    return (
-      (skill.effects ?? []).some((e) => e.kind === "buff") && f.buffs.some((b) => b.id === skill.id)
-    );
+    const effects = skill.effects ?? [];
+    if (effects.some((e) => e.kind === "buff") && f.buffs.some((b) => b.id === skill.id)) {
+      return true;
+    }
+    const target = this.fighters[other(f.side)];
+    return effects.some((e) => e.kind === "curse") && target.curses.some((c) => c.id === skill.id);
   }
 
   /** A Default Attack. Extra attacks from triggers (`fromTrigger`) fire no further triggers. */
@@ -551,6 +579,7 @@ export class Fight {
             evadable: true,
             multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
             ailmentChances: hit.ailmentChances ?? [],
+            ailmentPower: hit.ailmentPower ?? 1,
             fromTrigger: false,
           });
         } else {
@@ -563,6 +592,7 @@ export class Fight {
             evadable: false,
             multiplier: 1,
             ailmentChances: hit.ailmentChances ?? [],
+            ailmentPower: hit.ailmentPower ?? 1,
             fromTrigger: false,
           });
         }
@@ -630,6 +660,41 @@ export class Fight {
       case "heal":
         this.heal(f, f.stats.maxLife * effect.fraction);
         return;
+      case "advanceCorruption":
+        target.ailments = advanceCorruption(target.ailments, effect.ticks);
+        return;
+      case "curse":
+        target.curses = [
+          ...target.curses.filter((c) => c.id !== skill.id),
+          {
+            id: skill.id,
+            name: skill.name,
+            dotDamageTaken: effect.dotDamageTaken,
+            remaining: effect.duration,
+          },
+        ];
+        return;
+      case "detonateDots": {
+        const perSecond = dotDamagePerSecond(target.ailments);
+        if (perSecond <= 0) return;
+        const levelScale = 1 + COMBAT.spellDamagePerSkillLevel * (level - 1);
+        const damage = Math.max(
+          1,
+          Math.round(perSecond * effect.seconds * levelScale * this.dotFactor(target)),
+        );
+        this.emit({
+          t: this.time,
+          type: "hit",
+          side: f.side,
+          source: skill.name,
+          damage,
+          damageType: "void",
+          crit: false,
+          blocked: false,
+        });
+        this.damage(target, damage);
+        return;
+      }
     }
   }
 
@@ -691,7 +756,7 @@ export class Fight {
 
     for (const { ailment, chance } of withStatAilmentChances(h.ailmentChances, attacker.stats)) {
       if (!this.rng.chance(chance)) continue;
-      this.inflict(attacker, defender, ailment, outcome.damage);
+      this.inflict(attacker, defender, ailment, outcome.damage * (h.ailmentPower ?? 1));
     }
     if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
       this.inflict(attacker, defender, "bleed", outcome.damage);
@@ -948,6 +1013,11 @@ export class Fight {
         const state = f.ailments[type];
         return state ? [{ type, remaining: state.remaining }] : [];
       }),
+      curses: f.curses.map((c) => ({
+        name: c.name,
+        dotDamageTaken: c.dotDamageTaken,
+        remaining: c.remaining,
+      })),
       buffs: f.buffs.map((b) => ({
         name: b.name,
         stat: b.stat,

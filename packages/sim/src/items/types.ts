@@ -62,6 +62,8 @@ export interface ItemBaseDefinition {
   readonly weapon?: WeaponDefinition;
   /** Off hand only: which weapons it fits (Shield → melee, Focus → ranged casters). */
   readonly fitsWeaponRange?: "melee" | "ranged";
+  /** Off hands for some weapon types only (a Quiver needs a Bow or Crossbow). Wins over range. */
+  readonly fitsWeapons?: readonly string[];
   /** Base values at Tier 1. Flat values (Armor, Block Value, Life) scale with the tier. */
   readonly baseStats?: StatBonuses;
   /** Fixed bonus of the base type, never scaled. */

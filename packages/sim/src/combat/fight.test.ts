@@ -545,3 +545,89 @@ describe("Legendary Power rules", () => {
     expect(heals.map((h) => h.amount)).toEqual(dots.map((d) => d.damage));
   });
 });
+
+describe("Affliction effects", () => {
+  const bleeding: WeaponDefinition = {
+    ...TEST_WEAPON,
+    ailmentChances: [{ ailment: "bleed", chance: 1 }],
+  };
+  const skill = (effects: SkillDefinition["effects"], hits: SkillDefinition["hits"] = []) =>
+    ({
+      ...TEST_SKILL,
+      id: "x",
+      name: "X",
+      heatCost: 10,
+      hits,
+      ...(effects ? { effects } : {}),
+    }) satisfies SkillDefinition;
+
+  it("DoT damage rule multiplies every tick", () => {
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rules: { dotDamage: 2 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.5);
+    const dots = ofType(fight.events, "dot");
+    expect(dots.length).toBeGreaterThan(0);
+    expect(dots.every((d) => d.damage === 10)).toBe(true);
+  });
+
+  it("a curse makes the target take more damage over time (Wither)", () => {
+    const wither = skill([{ kind: "curse", dotDamageTaken: 1, duration: 8 }]);
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: wither }] });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(3.1);
+    expect(fight.snapshot().enemy.curses).toMatchObject([{ name: "X", dotDamageTaken: 1 }]);
+    const dots = ofType(fight.events, "dot").map((d) => d.damage);
+    expect(dots.at(0)).toBe(5);
+    expect(dots.at(-1)).toBe(10);
+    // Not cast again while the curse sits on the enemy.
+    fight.advance(4);
+    expect(ofType(fight.events, "skill")).toHaveLength(1);
+  });
+
+  it("Soul Harvest deals seconds of all DoTs at once", () => {
+    const harvest = skill([{ kind: "detonateDots", seconds: 4 }]);
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: harvest }] });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    const hit = ofType(fight.events, "hit").find((h) => h.source === "X");
+    // Bleed 5/s × 4 s; the Bleed keeps running.
+    expect(hit?.damage).toBe(20);
+    expect(fight.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(true);
+  });
+
+  it("Ailment Power makes the ailment of a hit stronger (Immolate)", () => {
+    const immolate = skill(undefined, [
+      {
+        kind: "spell",
+        damage: { min: 20, max: 20 },
+        damageType: "fire",
+        ailmentChances: [{ ailment: "burn", chance: 1 }],
+        ailmentPower: 2,
+      },
+    ]);
+    const hero = setup({ bonuses: NO_CRIT, rotation: [{ skill: immolate }] });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(3.1);
+    // 20 × 2 × 25 % per second.
+    expect(ofType(fight.events, "dot").map((d) => d.damage)).toContain(10);
+  });
+
+  it("Corrupt lets the Corruption start higher", () => {
+    const corrupt = skill(
+      [{ kind: "advanceCorruption", ticks: 4 }],
+      [
+        {
+          kind: "spell",
+          damage: { min: 100, max: 100 },
+          damageType: "void",
+          ailmentChances: [{ ailment: "corruption", chance: 1 }],
+        },
+      ],
+    );
+    const hero = setup({ bonuses: NO_CRIT, rotation: [{ skill: corrupt }] });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(3.1);
+    // Base 10/s, grown by 4 ticks: 20 for the first tick.
+    expect(ofType(fight.events, "dot")[0]).toMatchObject({ ailment: "corruption", damage: 20 });
+  });
+});

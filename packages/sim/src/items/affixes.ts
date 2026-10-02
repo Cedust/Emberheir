@@ -33,6 +33,7 @@ const PERCENT_STATS: ReadonlySet<AffixStat> = new Set<AffixStat>([
   "burnChance",
   "chillChance",
   "shockChance",
+  "corruptionChance",
   "bleedChance",
   "poisonChance",
 ]);

@@ -127,6 +127,7 @@ const COMPARED: readonly (keyof DerivedStats)[] = [
   "tenacity",
   "lifesteal",
   "triggerChance",
+  "corruptionChance",
   "bleedChance",
   "poisonChance",
   "ailmentDuration",

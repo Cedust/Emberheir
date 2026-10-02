@@ -151,6 +151,15 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
 }
 
 /** Item slot an equipment slot takes. */
+/** Whether an off hand works with a weapon: by weapon type if it names some, else by range. */
+export function offHandFits(
+  base: ItemBaseDefinition,
+  weapon: WeaponDefinition | undefined,
+): boolean {
+  if (base.fitsWeapons) return weapon !== undefined && base.fitsWeapons.includes(weapon.id);
+  return !base.fitsWeaponRange || weapon?.range === base.fitsWeaponRange;
+}
+
 export function itemSlotFor(slot: EquipmentSlot): ItemSlot {
   return slot === "ring1" || slot === "ring2" ? "ring" : slot;
 }
@@ -208,8 +217,7 @@ export function resolveEquipment(
     if (base.slot !== itemSlotFor(slot)) return { kind: "wrongSlot" };
     const missing = missingRequirements(item, catalog, heroAttributes);
     if (missing.length) return { kind: "requirements", missing };
-    const range = (weapon ?? fallbackWeapon)?.range;
-    if (slot === "offHand" && base.fitsWeaponRange && range !== base.fitsWeaponRange) {
+    if (slot === "offHand" && !offHandFits(base, weapon ?? fallbackWeapon)) {
       return { kind: "offHandMismatch" };
     }
     return undefined;

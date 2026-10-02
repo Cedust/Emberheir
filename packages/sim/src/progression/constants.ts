@@ -149,7 +149,13 @@ export const PROGRESSION = {
    * A run's level band starts this far below the previous Level Cap (prestige-acts-v1.md 4): a
    * hero who keeps level and Seals but loses the rest of the gear regears on the first stages.
    */
-  levelBandStartBelowCap: 10,
+  levelBandStartBelowCap: 15,
+  /**
+   * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
+   * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
+   * first, so a run's newest act stays the hardest.
+   */
+  runPressure: { life: 0.25, damage: 0.15 },
 
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,

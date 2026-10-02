@@ -85,6 +85,11 @@ export interface ActData {
   readonly spoilsStages: readonly number[];
   /** The act's Essence (Imbue currency) and the stat affix it imbues. */
   readonly essence: { readonly id: string; readonly name: string; readonly affixId: string };
+  /**
+   * Act loot (gegner-bosse-v1.md section 9): affix weight multipliers by affix id, so each act
+   * drops the answer to its own question more often.
+   */
+  readonly favoredAffixes?: Readonly<Record<string, number>>;
 }
 
 /** Everything content-related the game loop needs. Built once in `@emberheir/content`. */
@@ -143,6 +148,8 @@ export interface Encounter {
   readonly boss: boolean;
   /** Elite modifier ids; empty for normal enemies. */
   readonly eliteModifiers: readonly string[];
+  /** Run Pressure on Life and damage (see `stagePressure`); missing means none. */
+  readonly pressure?: { readonly life: number; readonly damage: number };
   /** Fight seed: the same encounter always plays out the same. */
   readonly seed: number;
 }
@@ -463,13 +470,8 @@ export function levelBand(prestige: number): LevelBand {
   return { start, end: levelCap(prestige) };
 }
 
-/** Monster Level of a stage: the run's band, spread evenly over all stages of its acts. */
-export function stageMonsterLevel(
-  data: GameData,
-  act: ActData,
-  stage: number,
-  prestige: number,
-): number {
+/** How far into its run a stage is: 0 on the run's first stage, 1 on its last. */
+function runProgress(data: GameData, act: ActData, stage: number, prestige: number): number {
   const acts = actsInRun(data, prestige);
   const total = acts.reduce((n, a) => n + a.stages, 0);
   let index = 0;
@@ -479,8 +481,35 @@ export function stageMonsterLevel(
   }
   // Acts past the run (old saves) count as its last stage.
   index = Math.min(total - 1, index + stage - 1);
+  return index / Math.max(1, total - 1);
+}
+
+/** Monster Level of a stage: the run's band, spread evenly over all stages of its acts. */
+export function stageMonsterLevel(
+  data: GameData,
+  act: ActData,
+  stage: number,
+  prestige: number,
+): number {
   const { start, end } = levelBand(prestige);
-  return Math.round(start + ((end - start) * index) / Math.max(1, total - 1));
+  return Math.round(start + (end - start) * runProgress(data, act, stage, prestige));
+}
+
+/**
+ * Run Pressure of a stage (PROGRESSION.runPressure): 1 in a one-act run and on a run's first
+ * stage, rising to 1 + pressure × (acts − 1) on its last.
+ */
+export function stagePressure(
+  data: GameData,
+  act: ActData,
+  stage: number,
+  prestige: number,
+): { readonly life: number; readonly damage: number } {
+  const steps = (actsInRun(data, prestige).length - 1) * runProgress(data, act, stage, prestige);
+  return {
+    life: 1 + PROGRESSION.runPressure.life * steps,
+    damage: 1 + PROGRESSION.runPressure.damage * steps,
+  };
 }
 
 /** What the Prestige at `prestige` (1 = the first one) gives. */
@@ -585,7 +614,15 @@ export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteMod
 /** The enemy's fight setup for an encounter (Elites included). */
 export function enemySetup(encounter: Encounter, actId: string, data: GameData): CombatantSetup {
   const enemy = findEnemy(getAct(data, actId), encounter.enemyId);
-  const setup = createEnemySetup(enemy, encounter.level);
+  const base = createEnemySetup(enemy, encounter.level);
+  const p = encounter.pressure;
+  const setup = p
+    ? {
+        ...base,
+        baseLife: (base.baseLife ?? 0) * p.life,
+        damageMultiplier: (base.damageMultiplier ?? 1) * p.damage,
+      }
+    : base;
   const mods = eliteModifiersOf(encounter, data);
   return mods.length ? applyEliteModifiers(setup, mods) : setup;
 }
@@ -804,6 +841,8 @@ function startStage(state: GameState, data: GameData): GameState {
   const act = getAct(data, run.actId);
   const [rng, next] = nextRng(state);
   const level = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
+  const p = stagePressure(data, act, run.stage, state.legacy.prestige);
+  const pressure = p.life > 1 ? { pressure: p } : {};
   let encounter: Encounter;
   if (run.stage >= stagesInAct(act)) {
     encounter = {
@@ -811,6 +850,7 @@ function startStage(state: GameState, data: GameData): GameState {
       level,
       boss: true,
       eliteModifiers: [],
+      ...pressure,
       seed: rng.int(0, 0x7fffffff),
     };
   } else {
@@ -829,6 +869,7 @@ function startStage(state: GameState, data: GameData): GameState {
       level,
       boss: false,
       eliteModifiers: mods,
+      ...pressure,
       seed: rng.int(0, 0x7fffffff),
     };
   }
@@ -907,7 +948,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
     state.progress.deathsInAct,
     act.number + state.legacy.prestige,
     rng,
-    codexAffixFactor(data.items, fight, quarry),
+    actAffixFactor(act, codexAffixFactor(data.items, fight, quarry)),
     forceQuarry,
   );
   const nextQuarry: QuarryMark | null =
@@ -1089,6 +1130,15 @@ function rollItemChoices(
 }
 
 /** Adds Runes to the pouch. */
+/** Act loot (favored affixes, e.g. Fire Resistance in the Ember Wastes) on top of the Codex. */
+function actAffixFactor(
+  act: ActData,
+  codex: (affix: AffixDefinition) => number,
+): (affix: AffixDefinition) => number {
+  const favored = act.favoredAffixes ?? {};
+  return (affix) => codex(affix) * (favored[affix.id] ?? 1);
+}
+
 function fitsAnyAffix(catalog: ItemCatalog, baseId: string, affixIds: readonly string[]): boolean {
   const slot = getBase(catalog, baseId).slot;
   return affixIds.some((id) => catalog.affixes.get(id)?.slots.includes(slot));

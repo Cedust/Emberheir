@@ -9,6 +9,8 @@ import {
   isHarvestAct,
   levelBand,
   stageMonsterLevel,
+  stagePressure,
+  enemySetup,
   nextAct,
   currentFight,
   deserializeGame,
@@ -377,7 +379,7 @@ describe("game loop", () => {
     expect(moveBlockReason(s, data, "x", "stash")).toBe("burned");
     s = act(s, { type: "setOut", actId: "test-act" }, { type: "startStage" });
     // The new run's level band starts 10 below the old Level Cap.
-    expect(s.run?.encounter?.level).toBe(PROGRESSION.levelCap - 10);
+    expect(s.run?.encounter?.level).toBe(PROGRESSION.levelCap - PROGRESSION.levelBandStartBelowCap);
     expect(actUnlocked(s, data, "deadly-act")).toBe(false);
     s = act(s, { type: "retreat" });
     expect(s.progress.stashBurned).toBe(false);
@@ -392,7 +394,10 @@ describe("game loop", () => {
       dust: PROGRESSION.prestigeDustPerLevel,
       levelCap: PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
       acts: 2,
-      levelBand: { start: PROGRESSION.levelCap - 10, end: PROGRESSION.levelCap * 2 },
+      levelBand: {
+        start: PROGRESSION.levelCap - PROGRESSION.levelBandStartBelowCap,
+        end: PROGRESSION.levelCap * 2,
+      },
     });
     // Never more acts than the game has.
     expect(prestigeRewards(data, 9).acts).toBe(3);
@@ -460,15 +465,40 @@ describe("the road through the acts", () => {
 
   it("the level band rises evenly over all stages of the run", () => {
     expect(levelBand(0)).toEqual({ start: 1, end: 20 });
-    expect(levelBand(1)).toEqual({ start: 10, end: 40 });
-    expect(levelBand(3)).toEqual({ start: 50, end: 80 });
+    expect(levelBand(1)).toEqual({ start: 5, end: 40 });
+    expect(levelBand(3)).toEqual({ start: 45, end: 80 });
     // Run 1: one act of 3 stages, 1 → 20.
     expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 11, 20]);
-    // Run 2: two acts, 6 stages from 10 to 40; the second act carries on where the first ends.
+    // Run 2: two acts, 6 stages from 5 to 40; the second act carries on where the first ends.
     const second = data.acts[1] ?? fail();
-    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(10);
-    expect(stageMonsterLevel(data, second, 1, 1)).toBe(28);
+    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(5);
+    expect(stageMonsterLevel(data, second, 1, 1)).toBe(26);
     expect(stageMonsterLevel(data, second, 3, 1)).toBe(40);
+  });
+
+  it("Run Pressure grows along a run with more than one act and toughens its monsters", () => {
+    const second = data.acts[1] ?? fail();
+    expect(stagePressure(data, TEST_ACT, 3, 0)).toEqual({ life: 1, damage: 1 });
+    expect(stagePressure(data, TEST_ACT, 1, 1)).toEqual({ life: 1, damage: 1 });
+    expect(stagePressure(data, second, 3, 1)).toEqual({
+      life: 1 + PROGRESSION.runPressure.life,
+      damage: 1 + PROGRESSION.runPressure.damage,
+    });
+    const encounter = {
+      enemyId: TEST_ACT.enemies[0]?.id ?? fail(),
+      level: 5,
+      boss: false,
+      eliteModifiers: [],
+      seed: 1,
+    };
+    const plain = enemySetup(encounter, TEST_ACT.id, data);
+    const pressed = enemySetup(
+      { ...encounter, pressure: { life: 2, damage: 1.5 } },
+      TEST_ACT.id,
+      data,
+    );
+    expect(pressed.baseLife).toBeCloseTo((plain.baseLife ?? 0) * 2);
+    expect(pressed.damageMultiplier).toBeCloseTo((plain.damageMultiplier ?? 1) * 1.5);
   });
 
   it("opens one act after the other and lets cleared acts be revisited", () => {

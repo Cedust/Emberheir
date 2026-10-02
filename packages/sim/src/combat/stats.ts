@@ -32,6 +32,7 @@ export interface DerivedStats {
   readonly burnChance: number;
   readonly chillChance: number;
   readonly shockChance: number;
+  readonly corruptionChance: number;
   readonly bleedChance: number;
   readonly poisonChance: number;
 }
@@ -69,6 +70,7 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     burnChance: 0,
     chillChance: 0,
     shockChance: 0,
+    corruptionChance: 0,
     bleedChance: 0,
     poisonChance: 0,
   };
@@ -128,6 +130,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     burnChance: clamp(b.burnChance, 0, 1),
     chillChance: clamp(b.chillChance, 0, 1),
     shockChance: clamp(b.shockChance, 0, 1),
+    corruptionChance: clamp(b.corruptionChance, 0, 1),
     bleedChance: clamp(b.bleedChance, 0, 1),
     poisonChance: clamp(b.poisonChance, 0, 1),
   };

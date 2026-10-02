@@ -18,9 +18,9 @@ export const ELEMENTS = ["fire", "cold", "lightning", "void"] as const;
 export type Element = (typeof ELEMENTS)[number];
 export type DamageType = "physical" | Element;
 
-/** Ailments: Burn, Chill, Shock (elemental) and Bleed, Poison (physical). */
-export type AilmentType = "burn" | "chill" | "shock" | "bleed" | "poison";
-export const AILMENT_TYPES = ["burn", "chill", "shock", "bleed", "poison"] as const;
+/** Ailments: Burn, Chill, Shock, Corruption (elemental) and Bleed, Poison (physical). */
+export type AilmentType = "burn" | "chill" | "shock" | "corruption" | "bleed" | "poison";
+export const AILMENT_TYPES = ["burn", "chill", "shock", "corruption", "bleed", "poison"] as const;
 
 /** How a weapon fills the Heat bar, see docs/design/waffen-v1.md section 4. */
 export type HeatBehavior = "cooling" | "steady" | "warming";
@@ -73,6 +73,7 @@ export interface StatBonuses {
   readonly burnChance?: number;
   readonly chillChance?: number;
   readonly shockChance?: number;
+  readonly corruptionChance?: number;
   readonly bleedChance?: number;
   readonly poisonChance?: number;
 }
@@ -180,6 +181,8 @@ export type SkillHit =
       readonly ailmentChances?: readonly AilmentChance[];
       /** Execute: multiply damage when the target is below this life fraction. */
       readonly lowLifeBonus?: { readonly threshold: number; readonly multiplier: number };
+      /** Ailments from this hit act as if the hit was this much stronger. Default 1. */
+      readonly ailmentPower?: number;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -190,6 +193,8 @@ export type SkillHit =
       /** Each further hit deals this fraction of the previous one (Chain Lightning). */
       readonly falloff?: number;
       readonly ailmentChances?: readonly AilmentChance[];
+      /** Ailments from this hit act as if the hit was this much stronger (Immolate). Default 1. */
+      readonly ailmentPower?: number;
     };
 
 /** What a skill does besides its hits. Effects follow the hits, in order. */
@@ -206,7 +211,13 @@ export type SkillEffect =
   /** Toxic Burst: multiplies the target's Poison stacks (up to the cap). */
   | { readonly kind: "multiplyPoison"; readonly factor: number }
   /** Heals the caster by a fraction of max life (Burn halves it). */
-  | { readonly kind: "heal"; readonly fraction: number };
+  | { readonly kind: "heal"; readonly fraction: number }
+  /** Corrupt: the target's Corruption grows by this many ticks at once. */
+  | { readonly kind: "advanceCorruption"; readonly ticks: number }
+  /** Curse (Wither): the target takes `amount` more damage over time for a while. */
+  | { readonly kind: "curse"; readonly dotDamageTaken: number; readonly duration: number }
+  /** Soul Harvest: deals `seconds` worth of all DoTs on the target at once; they keep running. */
+  | { readonly kind: "detonateDots"; readonly seconds: number };
 
 export interface SkillDefinition {
   readonly id: string;
@@ -259,6 +270,8 @@ export interface CombatRules {
   readonly execute?: { readonly below: number; readonly bonus: number };
   /** Heals this fraction of the damage your ailments deal over time. */
   readonly dotLifesteal?: number;
+  /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
+  readonly dotDamage?: number;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */

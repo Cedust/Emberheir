@@ -1,10 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  advanceCorruption,
   ailmentDuration,
   applyAilment,
   chillFactor,
   clearAilment,
   damageTakenBonus,
+  dotDamagePerSecond,
   healingFactor,
   multiplyPoison,
   poisonStacks,
@@ -120,5 +122,34 @@ describe("Poison", () => {
     s = applyAilment(s, "poison", 5, 100);
     expect(poisonStacks(multiplyPoison(s, 2))).toBe(4);
     expect(multiplyPoison({}, 2)).toEqual({});
+  });
+});
+
+describe("Corruption", () => {
+  it("grows with every tick and keeps its growth when refreshed", () => {
+    const corrupted = applyAilment({}, "corruption", 6, 100);
+    const first = run(corrupted, 3);
+    // Base 10/s, +25 % of the base per tick.
+    expect(first.ticks).toEqual([10, 12.5, 15]);
+    const refreshed = applyAilment(first.states, "corruption", 6, 50);
+    expect(refreshed.corruption?.ramp).toBe(3);
+    expect(refreshed.corruption?.remaining).toBe(6);
+    expect(run(refreshed, 1).ticks).toEqual([17.5]);
+  });
+
+  it("stops growing at the cap and can jump ahead (Corrupt)", () => {
+    const corrupted = advanceCorruption(applyAilment({}, "corruption", 6, 100), 99);
+    expect(corrupted.corruption?.ramp).toBe(COMBAT.corruptionMaxRamp);
+    expect(advanceCorruption({}, 3)).toEqual({});
+  });
+});
+
+describe("dotDamagePerSecond", () => {
+  it("adds up every DoT and every Poison stack", () => {
+    let states = applyAilment({}, "bleed", 3, 10); // 5/s
+    states = applyAilment(states, "poison", 5, 10); // 1/s
+    states = applyAilment(states, "poison", 5, 10); // 1/s
+    states = advanceCorruption(applyAilment(states, "corruption", 6, 100), 4); // 10 × 2
+    expect(dotDamagePerSecond(states)).toBeCloseTo(27);
   });
 });

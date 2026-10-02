@@ -3,14 +3,16 @@ import type { AilmentType } from "./types";
 
 /**
  * A damage-over-time ailment that refreshes on re-application: Burn (Fire, reduces the target's
- * healing) and Bleed (Physical, short and strong).
+ * healing), Bleed (Physical, short and strong) and Corruption (Void, grows with every tick).
  */
 export interface DotState {
-  /** Damage per tick (one tick per second). */
+  /** Damage per tick (one tick per second); Corruption's base before its growth. */
   readonly damagePerSecond: number;
   readonly remaining: number;
   /** Seconds until the next damage tick. */
   readonly nextTickIn: number;
+  /** Corruption: ticks it has grown so far (each adds `corruptionRampPerTick` of the base). */
+  readonly ramp?: number;
 }
 
 /** Chill (-Attack Speed, -Heat Gain) and Shock (+damage taken) only have a duration. */
@@ -32,6 +34,7 @@ export interface PoisonState {
 
 export interface AilmentStates {
   readonly burn?: DotState;
+  readonly corruption?: DotState;
   readonly bleed?: DotState;
   readonly poison?: PoisonState;
   readonly chill?: TimedAilmentState;
@@ -39,7 +42,16 @@ export interface AilmentStates {
 }
 
 /** Damage-over-time ailments, in the order their ticks are applied. */
-export const DOT_AILMENTS = ["burn", "bleed", "poison"] as const;
+export const DOT_AILMENTS = ["burn", "corruption", "bleed", "poison"] as const;
+
+/** The DoTs that refresh and keep one damage value (Poison stacks instead). */
+const REFRESHING_DOTS = ["burn", "corruption", "bleed"] as const;
+
+const DOT_PER_SECOND = {
+  burn: COMBAT.burnDamagePerSecond,
+  corruption: COMBAT.corruptionDamagePerSecond,
+  bleed: COMBAT.bleedDamagePerSecond,
+} as const;
 
 const EPSILON = 1e-9;
 
@@ -47,6 +59,7 @@ const BASE_DURATION: Record<AilmentType, number> = {
   burn: COMBAT.burnDurationSeconds,
   chill: COMBAT.chillDurationSeconds,
   shock: COMBAT.shockDurationSeconds,
+  corruption: COMBAT.corruptionDurationSeconds,
   bleed: COMBAT.bleedDurationSeconds,
   poison: COMBAT.poisonDurationSeconds,
 };
@@ -63,8 +76,9 @@ export function ailmentDuration(
 }
 
 /**
- * Applies an ailment. Burn and Bleed refresh their duration and keep the stronger of the old and
- * the new damage; Poison adds a stack (the oldest falls off at the cap); Chill and Shock refresh.
+ * Applies an ailment. Burn, Corruption and Bleed refresh their duration and keep the stronger of
+ * the old and the new damage (Corruption keeps its growth); Poison adds a stack (the oldest falls
+ * off at the cap); Chill and Shock refresh.
  *
  * @param hitDamage damage of the hit that caused the ailment (the DoTs scale with it)
  */
@@ -75,14 +89,19 @@ export function applyAilment(
   hitDamage: number,
 ): AilmentStates {
   if (duration <= 0) return states;
-  if (type === "burn" || type === "bleed") {
+  if (type === "burn" || type === "bleed" || type === "corruption") {
     const previous = states[type];
-    const perSecond = type === "burn" ? COMBAT.burnDamagePerSecond : COMBAT.bleedDamagePerSecond;
-    const damagePerSecond = Math.max(previous?.damagePerSecond ?? 0, hitDamage * perSecond);
-    return {
-      ...states,
-      [type]: { damagePerSecond, remaining: duration, nextTickIn: previous?.nextTickIn ?? 1 },
+    const damagePerSecond = Math.max(
+      previous?.damagePerSecond ?? 0,
+      hitDamage * DOT_PER_SECOND[type],
+    );
+    const dot: DotState = {
+      damagePerSecond,
+      remaining: duration,
+      nextTickIn: previous?.nextTickIn ?? 1,
+      ...(type === "corruption" ? { ramp: previous?.ramp ?? 0 } : {}),
     };
+    return { ...states, [type]: dot };
   }
   if (type === "poison") {
     const stack = {
@@ -139,19 +158,31 @@ export function stepAilments(states: AilmentStates, dt: number): AilmentStepResu
   const ticks: { ailment: (typeof DOT_AILMENTS)[number]; damage: number }[] = [];
   const expired: AilmentType[] = [];
 
-  for (const type of ["burn", "bleed"] as const) {
+  for (const type of REFRESHING_DOTS) {
     const dot = states[type];
     if (!dot) continue;
     let { nextTickIn } = dot;
+    let ramp = dot.ramp;
     const remaining = dot.remaining - dt;
     nextTickIn -= dt;
     // A tick counts if it falls inside this step and not after the DoT ran out.
     while (nextTickIn <= EPSILON && nextTickIn <= remaining + EPSILON) {
-      ticks.push({ ailment: type, damage: dot.damagePerSecond });
+      ticks.push({
+        ailment: type,
+        damage: dotTickDamage(ramp === undefined ? dot : { ...dot, ramp }),
+      });
+      if (ramp !== undefined) ramp = Math.min(COMBAT.corruptionMaxRamp, ramp + 1);
       nextTickIn += 1;
     }
     if (remaining <= EPSILON) expired.push(type);
-    else next[type] = { damagePerSecond: dot.damagePerSecond, remaining, nextTickIn };
+    else {
+      next[type] = {
+        damagePerSecond: dot.damagePerSecond,
+        remaining,
+        nextTickIn,
+        ...(ramp !== undefined ? { ramp } : {}),
+      };
+    }
   }
 
   if (states.poison) {
@@ -183,6 +214,30 @@ export function stepAilments(states: AilmentStates, dt: number): AilmentStepResu
   }
 
   return { states: next, ticks, expired };
+}
+
+/** Damage of the next tick of a refreshing DoT (Corruption adds its growth). */
+export function dotTickDamage(dot: DotState): number {
+  return dot.damagePerSecond * (1 + COMBAT.corruptionRampPerTick * (dot.ramp ?? 0));
+}
+
+/** Corruption grows by `ticks` at once (Corrupt starts on a higher stage). */
+export function advanceCorruption(states: AilmentStates, ticks: number): AilmentStates {
+  const corruption = states.corruption;
+  if (!corruption) return states;
+  const ramp = Math.min(COMBAT.corruptionMaxRamp, (corruption.ramp ?? 0) + ticks);
+  return { ...states, corruption: { ...corruption, ramp } };
+}
+
+/** Damage all DoTs on a fighter deal per second right now (Soul Harvest). */
+export function dotDamagePerSecond(states: AilmentStates): number {
+  let total = 0;
+  for (const type of REFRESHING_DOTS) {
+    const dot = states[type];
+    if (dot) total += dotTickDamage(dot);
+  }
+  for (const stack of states.poison?.stacks ?? []) total += stack.damagePerSecond;
+  return total;
 }
 
 /** "+X % damage taken" from Shock. */

@@ -120,3 +120,24 @@ describe("weighted picks", () => {
     expect([...seen].sort()).toEqual(RARITIES.filter((r) => r !== "legendary").sort());
   });
 });
+
+describe("Act loot", () => {
+  it("an affix factor makes favored affixes roll far more often", () => {
+    const count = (favored?: Record<string, number>) => {
+      let hits = 0;
+      for (let seed = 1; seed <= 200; seed++) {
+        const options = { baseId: "test-ring", itemLevel: 5, rarity: "magic" as const };
+        const item = rollItem(
+          TEST_CATALOG,
+          favored
+            ? { ...options, affixFactor: (a: { id: string }) => favored[a.id] ?? 1 }
+            : options,
+          new Rng(seed),
+        );
+        if (item.affixes.some((a) => a.affixId === "crit")) hits++;
+      }
+      return hits;
+    };
+    expect(count({ crit: 20 })).toBeGreaterThan(count() * 2);
+  });
+});

@@ -13,6 +13,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let critsApplyBleed = false;
   let critChanceMultiplier = 1;
   let dotLifesteal = 0;
+  let dotDamage = 1;
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
   let execute: CombatRules["execute"];
   for (const r of sources) {
@@ -24,6 +25,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     critsApplyBleed ||= r.critsApplyBleed ?? false;
     critChanceMultiplier *= r.critChanceMultiplier ?? 1;
     dotLifesteal += r.dotLifesteal ?? 0;
+    dotDamage *= r.dotDamage ?? 1;
     for (const echo of r.ailmentEcho ?? []) {
       if (!ailmentEcho.some((e) => e.from === echo.from && e.to === echo.to))
         ailmentEcho.push(echo);
@@ -38,6 +40,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     critsApplyBleed,
     critChanceMultiplier,
     ...(dotLifesteal > 0 ? { dotLifesteal } : {}),
+    ...(dotDamage !== 1 ? { dotDamage } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
     ...(execute ? { execute } : {}),
   };
