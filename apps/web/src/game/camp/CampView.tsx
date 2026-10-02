@@ -1,5 +1,12 @@
-import { GAME_DATA } from "@emberheir/content";
-import { type GameState, PROGRESSION } from "@emberheir/sim";
+import { ACTS, GAME_DATA } from "@emberheir/content";
+import {
+  type ActData,
+  type GameState,
+  PROGRESSION,
+  actUnlocked,
+  actsInOrder,
+  nextAct,
+} from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { useStageSize } from "../../ui/Stage";
@@ -17,6 +24,8 @@ const NAN_LINES = [
   "Sit, child. The fire remembers every one of you, even the clumsy ones.",
   "Heat is a fickle friend. Swords lose it when they rest, wands gather it while they wait.",
   "Gorrak swings slow and hard. When his Heat runs high, be ready.",
+  "The Rotwood bleeds you slowly. Tenacity shortens whatever clings to you.",
+  "The Mother of Rot feeds whenever she can. Fire spoils her meal.",
   "Dying costs you the road, not your things. Keep walking.",
   "Thoric fixes steel. Liora fixes moods. Neither fixes you.",
 ];
@@ -38,9 +47,9 @@ interface Persona {
   readonly locked?: string;
 }
 
-function personas(state: GameState): Persona[] {
+function personas(state: GameState, road: ActData): Persona[] {
   const trainer = state.progress.trainerUnlocked;
-  const later = "Joins the caravan after Act 2.";
+  const later = "Joins the caravan later.";
   const afterBoss = `Joins the caravan once ${GAME_DATA.acts[0]?.boss.name ?? "the boss"} falls.`;
   const points = state.hero.unspentAttributePoints;
   return [
@@ -171,10 +180,12 @@ function personas(state: GameState): Persona[] {
       icon: "bow",
       cloak: "#3b5a2c",
       figure: { fs: 1 },
-      quote: later,
+      quote: trainer
+        ? `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`
+        : afterBoss,
       actions: [{ name: "Act Preview" }, { name: "Revisit Act" }],
-      cta: "Locked",
-      locked: "later",
+      cta: `Set Out · Act ${road.number}`,
+      ...(trainer ? {} : { locked: afterBoss }),
     },
     {
       id: "wagon",
@@ -257,15 +268,20 @@ export function CampView(props: {
   const [nanLine, setNanLine] = useState(0);
   const size = useStageSize();
   const ox = (size.w - SCENE_W) / 2;
-  const act = GAME_DATA.acts[0];
-  const list = personas(state);
+  const [road, setRoad] = useState<string | null>(null);
+  const acts = actsInOrder(GAME_DATA);
+  const next = nextAct(state, GAME_DATA);
+  // The road the Heir takes: the next act unless a cleared one is picked to farm it again.
+  const act = acts.find((a) => a.id === road && actUnlocked(state, GAME_DATA, a.id)) ?? next;
+  const list = personas(state, act);
   const gear = heirGear(state);
   const sel = list.find((p) => p.id === picked) ?? list[0];
-  if (!act || !sel) return null;
+  if (!sel) return null;
   const cleared = state.progress.actsCleared.includes(act.id);
   const quote = sel.id === "nan" ? `“${NAN_LINES[nanLine % NAN_LINES.length]}”` : sel.quote;
   const cta = () => {
     if (sel.id === "nan") setNanLine((n) => n + 1);
+    else if (sel.id === "nyssa" && !sel.locked) game.dispatch({ type: "setOut", actId: act.id });
     else if (sel.target && !sel.locked) props.onOpen(sel.target);
   };
   return (
@@ -278,11 +294,11 @@ export function CampView(props: {
         </div>
         <div className="divider" />
         <div className="run-title">
-          <span className="title-font">Camp at the {act.name}</span>
+          <span className="title-font">Camp at the {next.name}</span>
           <span className="sub">
             {state.legacy.prestige > 0 ? `Generation ${state.legacy.prestige + 1} · ` : ""}
             {cleared
-              ? `Act ${act.number} cleared · farm it again or prepare for the next Act`
+              ? `Act ${act.number} cleared · farm it again`
               : `Act ${act.number} · Boss: ${act.boss.name}`}
             {state.progress.deathsInAct > 0 ? ` · Pity ${state.progress.deathsInAct}` : ""}
           </span>
@@ -389,14 +405,56 @@ export function CampView(props: {
         </section>
 
         <div className="set-out">
-          <span className="hint-light">Flask refilled · wounds healed</span>
-          <button
-            type="button"
-            className="btn big primary glow"
-            onClick={() => game.dispatch({ type: "setOut", actId: act.id })}
-          >
-            SET OUT · ACT {act.number}
-          </button>
+          <div className="road" role="radiogroup" aria-label="Road">
+            {acts.map((a) => {
+              const open = actUnlocked(state, GAME_DATA, a.id);
+              const done = state.progress.actsCleared.includes(a.id);
+              const on = a.id === act.id;
+              const info = ACTS.find((x) => x.id === a.id);
+              return (
+                <button
+                  key={a.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={on}
+                  aria-label={`Act ${a.number}, ${a.name}`}
+                  disabled={!open}
+                  className={`road-act ${on ? "on" : ""} ${done ? "done" : ""} ${open ? "" : "locked"}`}
+                  style={
+                    {
+                      "--act-top": info?.arenaGradient[0],
+                      "--act-bottom": info?.arenaGradient[1],
+                    } as React.CSSProperties
+                  }
+                  onClick={() => setRoad(a.id)}
+                >
+                  <span className="road-num title-font">{a.number}</span>
+                  <span className="road-text">
+                    <span className="road-name title-font">{a.name}</span>
+                    <span className="sub">
+                      {info?.focus}
+                      {open ? ` · ${a.boss.name}` : ""}
+                    </span>
+                  </span>
+                  {done ? (
+                    <Icon name="check" size={16} className="road-mark" />
+                  ) : !open ? (
+                    <Icon name="lock" size={14} className="road-mark" />
+                  ) : null}
+                </button>
+              );
+            })}
+          </div>
+          <div className="set-out-go">
+            <span className="hint-light">Flask refilled · wounds healed</span>
+            <button
+              type="button"
+              className="btn big primary glow"
+              onClick={() => game.dispatch({ type: "setOut", actId: act.id })}
+            >
+              SET OUT · ACT {act.number}
+            </button>
+          </div>
         </div>
       </div>
     </section>

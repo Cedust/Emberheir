@@ -1,3 +1,4 @@
+import { GAME_DATA } from "@emberheir/content";
 import type {
   CraftBlockReason,
   EquipBlockReason,
@@ -76,3 +77,6 @@ export function spoilsHint(card: SpoilsCard): string {
       return "Imbue: set one stat affix at the Mystic.";
   }
 }
+
+/** Short name of the boss whose fall starts the harvest (the last act's boss, for now). */
+export const HARVEST_BOSS = (GAME_DATA.acts.at(-1)?.boss.name ?? "").split(",")[0] ?? "";

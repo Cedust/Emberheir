@@ -1,14 +1,16 @@
 import { expect, test } from "@playwright/test";
-import { saveAfterGorrak, seedSave } from "./fixtures";
+import { saveAfterHarvestBoss, seedSave } from "./fixtures";
 
-test("Gorrak's fall: seal a slot, let it burn, wake as the next generation", async ({ page }) => {
+test("The harvest boss falls: seal a slot, let it burn, wake as the next generation", async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await seedSave(page, saveAfterGorrak());
+  await seedSave(page, saveAfterHarvestBoss());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
-  await expect(page.getByRole("region", { name: "Victory" })).toContainText("GORRAK FALLS");
+  await expect(page.getByRole("region", { name: "Victory" })).toContainText("MOTHER OF ROT FALLS");
   await page.getByRole("button", { name: "Hold On to What Matters" }).click();
 
   const seal = page.getByRole("region", { name: "The Harvest Begins" });

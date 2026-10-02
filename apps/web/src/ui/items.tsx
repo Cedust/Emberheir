@@ -93,6 +93,9 @@ const STAT_LABEL: Partial<Record<keyof DerivedStats, string>> = {
   tenacity: "Tenacity",
   lifesteal: "Lifesteal",
   triggerChance: "Trigger Chance",
+  bleedChance: "Chance to Bleed",
+  poisonChance: "Chance to Poison",
+  ailmentDuration: "Ailment Duration",
 };
 const FLAT = new Set<keyof DerivedStats>(["maxLife", "armor", "startingHeat"]);
 
@@ -311,15 +314,20 @@ export function ItemGrid(props: {
 /** Wallet entries in a fixed order. */
 export function walletEntries(state: GameState): { name: string; value: number; key: string }[] {
   const w = state.wallet;
-  const essence = GAME_DATA.acts[0]?.essence;
+  // The first act's Essence always shows; later ones once the hero owns some.
+  const essences = GAME_DATA.acts
+    .map((a) => a.essence)
+    .filter((e, i) => i === 0 || (w.essences[e.id] ?? 0) > 0);
   return [
     { key: "gold", name: "Gold", value: w.gold },
     { key: "dust", name: "Dust", value: w.dust },
     { key: "reforge", name: "Reforge", value: w.reforgeStones },
     { key: "shards", name: "Shards", value: w.ascensionShards },
-    ...(essence
-      ? [{ key: "essence", name: essence.name, value: w.essences[essence.id] ?? 0 }]
-      : []),
+    ...essences.map((e) => ({
+      key: `essence e-${e.id}`,
+      name: e.name,
+      value: w.essences[e.id] ?? 0,
+    })),
   ];
 }
 

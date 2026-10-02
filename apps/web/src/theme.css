@@ -604,11 +604,15 @@ h2 {
   --tone-cold: #0e7490;
   --tone-lightning: #8a6d00;
   --tone-void: #7a3fcf;
+  --tone-bleed: #b3203a;
+  --tone-poison: #5f7a0e;
   --tone-heal: #1f8a4c;
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .log {
+    --tone-bleed: var(--dmg-bleed);
+    --tone-poison: var(--dmg-poison);
     --tone-physical: var(--dmg-physical);
     --tone-fire: var(--dmg-fire);
     --tone-cold: var(--dmg-cold);
@@ -619,6 +623,8 @@ h2 {
 }
 
 :root[data-theme="dark"] .log {
+  --tone-bleed: var(--dmg-bleed);
+  --tone-poison: var(--dmg-poison);
   --tone-physical: var(--dmg-physical);
   --tone-fire: var(--dmg-fire);
   --tone-cold: var(--dmg-cold);
@@ -635,8 +641,16 @@ h2 {
 .tone-burn,
 .tone-chill,
 .tone-shock,
+.tone-bleed,
+.tone-poison,
 .tone-heal {
   font-weight: 700;
+}
+.tone-bleed {
+  color: var(--tone-bleed, var(--dmg-bleed));
+}
+.tone-poison {
+  color: var(--tone-poison, var(--dmg-poison));
 }
 
 .tone-physical {
@@ -682,6 +696,12 @@ h2 {
 }
 .chip.tone-shock {
   color: var(--dmg-lightning);
+}
+.chip.tone-bleed {
+  color: var(--dmg-bleed);
+}
+.chip.tone-poison {
+  color: var(--dmg-poison);
 }
 
 .build {

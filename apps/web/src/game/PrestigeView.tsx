@@ -12,7 +12,14 @@ import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ItemDetail, ItemTile, fmt } from "../ui/items";
 import type { GameApi } from "./useGame";
+import { HARVEST_BOSS } from "./labels";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
+
+/** The boss's last words when its fall starts the harvest. */
+const LAST_WORDS: Record<string, string> = {
+  "ashen-fields": "Hrrk... the Harvester... will want... its field back...",
+  rotwood: "Rot... returns... The Harvester... always... reaps...",
+};
 
 type Step = "victory" | "seal";
 const STEPS = [
@@ -79,11 +86,11 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             {(pending.enemyName.split(",")[0] ?? "").toUpperCase()} FALLS
           </h2>
           <p className="victory-quote">
-            &ldquo;Hrrk... the Harvester... will want... its field back...&rdquo;
+            &ldquo;{LAST_WORDS[pending.actId] ?? "...the Harvester... will come for you..."}&rdquo;
           </p>
           <p className="victory-sub">
-            Until the road leads further, Gorrak stands in for the Ashen Harvester: his fall starts
-            the harvest.
+            Until the road leads further, {HARVEST_BOSS} stands in for the Ashen Harvester. Its fall
+            starts the harvest.
           </p>
           <button type="button" className="btn big primary" onClick={() => setStep("seal")}>
             Hold On to What Matters

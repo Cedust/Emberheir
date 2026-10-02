@@ -117,6 +117,42 @@ const ART: Readonly<Record<string, Art>> = {
       </>
     ),
   },
+  axe: {
+    w: 32,
+    h: 96,
+    draw: () => (
+      <>
+        <P d="M14 22H18.4L18 90Q16.2 92 14.4 90Z" fill="url(#ia-wood)" />
+        <L d="M15.4 26L15.6 86" color="#e9b984" w={0.8} op={0.6} />
+        <L d="M14.2 64L18.2 66M14.2 70L18.2 72M14.2 76L18.2 78" w={1} op={0.7} />
+        <P d="M13 22H19.6V30H13Z" fill="url(#ia-iron)" w={1.2} />
+        <P d="M13.4 12Q6 8 3 4Q1 18 4 32Q8 27 13.4 25Z" fill="url(#ia-steel)" />
+        <L d="M5.6 9Q4 18 6 27" color={SHINE} w={1} op={0.8} />
+        <P d="M19.2 14L27 10L26 22L19.2 22Z" fill="url(#ia-iron)" w={1.2} />
+        <P d="M13 12H19.6V22H13Z" fill="url(#ia-iron)" w={1.4} />
+        <L d="M16.3 14V20" color={SHINE} w={0.8} op={0.6} />
+      </>
+    ),
+  },
+  dagger: {
+    w: 32,
+    h: 64,
+    draw: () => (
+      <>
+        <P d="M16 3L20 10L19.4 36H12.6L12 10Z" fill="url(#ia-steel)" />
+        <L d="M16 9V33" color="#4b5560" w={1.3} />
+        <L d="M13.6 11V34" color={SHINE} w={0.9} op={0.7} />
+        <P
+          d="M7 36.5Q7 35 9 35H23Q25 35 25 36.5Q25 38.5 23 39H9Q7 38.5 7 36.5Z"
+          fill="url(#ia-darkgold)"
+        />
+        <P d="M13.4 39H18.6V53H13.4Z" fill="url(#ia-darkleather)" />
+        <L d="M13.4 42L18.6 44M13.4 46L18.6 48M13.4 50L18.6 52" w={0.9} op={0.7} />
+        <P d={circle(16, 56.5, 3.6)} fill="url(#ia-darkgold)" />
+        <Gem cx={16} cy={36.9} r={2.2} fill="url(#ia-sapphire)" />
+      </>
+    ),
+  },
   "round-shield": {
     w: 64,
     h: 64,

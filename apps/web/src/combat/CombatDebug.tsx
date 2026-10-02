@@ -1,5 +1,8 @@
 import {
+  ACT1,
   ACT1_ENEMIES,
+  ACT2,
+  ACT2_ENEMIES,
   HERO_SKILLS,
   HERO_WEAPONS,
   START_SKILLS,
@@ -21,6 +24,9 @@ import { GearPanel } from "../items/GearPanel";
 import { CombatLog } from "./CombatLog";
 import { FighterPanel } from "./FighterPanel";
 import { type LogLine, formatEvent, formatTime } from "./format";
+
+/** Every enemy of the playable acts, bosses included. */
+const ENEMIES = [...ACT1_ENEMIES, ACT1.boss, ...ACT2_ENEMIES, ACT2.boss];
 
 interface SlotConfig {
   skillId: string;
@@ -53,7 +59,7 @@ const findSkill = (id: string): SkillDefinition | undefined => HERO_SKILLS.find(
 export function CombatDebug() {
   const [weaponId, setWeaponId] = useState(HERO_WEAPONS[0]?.id ?? "");
   const [slots, setSlots] = useState<SlotConfig[]>(() => defaultSlots(weaponId));
-  const [enemyId, setEnemyId] = useState(ACT1_ENEMIES[0]?.id ?? "");
+  const [enemyId, setEnemyId] = useState(ENEMIES[0]?.id ?? "");
   const [level, setLevel] = useState(1);
   const [seed, setSeed] = useState(1);
   const [speed, setSpeed] = useState<(typeof SPEEDS)[number]>(2);
@@ -114,7 +120,7 @@ export function CombatDebug() {
   }, [running]);
 
   const start = () => {
-    const enemy = ACT1_ENEMIES.find((e) => e.id === enemyId);
+    const enemy = ENEMIES.find((e) => e.id === enemyId);
     if (!weapon || !enemy) return;
     const chosen = slots.flatMap((slot) => {
       const skill = findSkill(slot.skillId);
@@ -208,7 +214,7 @@ export function CombatDebug() {
         <label>
           Enemy
           <select value={enemyId} onChange={(e) => setEnemyId(e.target.value)}>
-            {ACT1_ENEMIES.map((e) => (
+            {ENEMIES.map((e) => (
               <option key={e.id} value={e.id}>
                 {e.name}
               </option>

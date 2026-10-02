@@ -977,6 +977,10 @@
   background: #6b5a3e;
 }
 
+.stage .w-essence.e-rot-essence .dot {
+  background: #6a8a2a;
+}
+
 .stage .w-flask .dot {
   background: #e5484d;
 }
@@ -1333,10 +1337,93 @@
   right: calc(var(--safe-x) + 28px);
   bottom: 28px;
   display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  z-index: 6;
+}
+
+.stage .set-out-go {
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  z-index: 6;
+}
+
+/* The road: one card per act, painted in the act's arena colors. */
+.stage .road {
+  display: flex;
+  gap: 10px;
+}
+
+.stage .road-act {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 232px;
+  height: 64px;
+  padding: 0 14px 0 0;
+  overflow: hidden;
+  border: 2px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: var(--card-shadow);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .road-act:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.stage .road-act.on {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 18px rgb(255 138 58 / 0.45);
+}
+
+.stage .road-act.locked {
+  cursor: default;
+  opacity: 0.6;
+  filter: grayscale(0.7);
+}
+
+.stage .road-num {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  align-self: stretch;
+  background: linear-gradient(180deg, var(--act-top), var(--act-bottom));
+  color: #f3e6c8;
+  font-size: 24px;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+
+.stage .road-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stage .road-name {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.stage .road-text .sub {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage .road-mark {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: var(--accent);
 }
 
 .stage .hint-light {
@@ -1553,9 +1640,24 @@
   font-weight: 700;
 }
 
-.stage .essence-chip.empty {
+.stage button.essence-chip {
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stage .essence-chip:not(.on) {
   border-color: var(--edge);
+}
+
+.stage .essence-chip.empty {
   color: var(--text-sub);
+}
+
+.stage .essence-chip.on.empty {
+  border-color: var(--accent);
 }
 
 .stage .distill {
@@ -1894,10 +1996,17 @@
 
 .stage .tree-canvas {
   position: relative;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 70%, rgb(255 138 58 / 0.1), transparent 60%);
+}
+
+.stage .tree-canvas > .skill-tree {
+  max-width: 100%;
+  max-height: 100%;
 }
 
 .stage .skill-tree .link {

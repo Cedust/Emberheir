@@ -21,6 +21,8 @@ const AILMENT_NAMES: Record<AilmentType, string> = {
   burn: "Burn",
   chill: "Chill",
   shock: "Shock",
+  bleed: "Bleed",
+  poison: "Poison",
 };
 
 export function formatTime(seconds: number): string {
@@ -60,7 +62,7 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         time,
         side: event.side,
         tone: event.ailment,
-        text: `${names[event.side]} suffers ${AILMENT_NAMES[event.ailment]}`,
+        text: `${names[event.side]} suffers ${AILMENT_NAMES[event.ailment]}${event.stacks && event.stacks > 1 ? ` (${event.stacks} stacks)` : ""}`,
       };
     case "ailmentExpired":
       return {

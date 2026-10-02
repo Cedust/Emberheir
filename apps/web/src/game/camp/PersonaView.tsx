@@ -8,6 +8,7 @@ import {
   PROGRESSION,
   RARITY_NAMES,
   SLOT_NAMES,
+  actUnlocked,
   affixRollRange,
   applyAction,
   craftBlockReason,
@@ -16,6 +17,7 @@ import {
   describeTrigger,
   findCraftItem,
   itemSlotFor,
+  nextAct,
   resolveTrigger,
   salvageValue,
   statAffixValue,
@@ -167,7 +169,13 @@ export function PersonaView(props: {
     () => state.hero.equipment.mainHand?.id ?? null,
   );
   const [affixIndex, setAffixIndex] = useState<number | null>(null);
-  const essenceId = GAME_DATA.acts[0]?.essence.id ?? "";
+  // Every act brings its own Essence; those of acts the road has reached can be imbued.
+  const essences = GAME_DATA.acts
+    .filter(
+      (a) => actUnlocked(state, GAME_DATA, a.id) || (state.wallet.essences[a.essence.id] ?? 0) > 0,
+    )
+    .map((a) => a.essence);
+  const [essenceId, setEssenceId] = useState(() => essences[0]?.id ?? "");
   const [last, setLast] = useState<string | null>(null);
 
   const found = itemId ? findCraftItem(state, itemId) : undefined;
@@ -266,14 +274,13 @@ export function PersonaView(props: {
   const liora = state.progress.trainerUnlocked;
   const actionName = def.actions.find((a) => a.k === kind)?.name ?? "";
   const after = item && kind !== "distill" && kind !== "socket" ? item : undefined;
-  const essence = GAME_DATA.acts[0]?.essence;
-  const essenceHave = essence ? (state.wallet.essences[essence.id] ?? 0) : 0;
+  const essence = essences.find((e) => e.id === essenceId) ?? essences[0];
 
   return (
     <section className="screen persona-view" aria-label={`${def.name}, ${def.role}`}>
       <header className="persona-header bar-top">
         <span className="title-font eyebrow-big">
-          CAMP · {GAME_DATA.acts[0]?.name.toUpperCase()}
+          CAMP · {nextAct(state, GAME_DATA).name.toUpperCase()}
         </span>
         <div className="tabs" role="tablist">
           {(["thoric", "liora"] as const).map((p) => (
@@ -409,11 +416,27 @@ export function PersonaView(props: {
           )}
 
           {kind === "imbue" && essence && (
-            <div className="essence-row">
+            <div className="essence-row" role="radiogroup" aria-label="Essence">
               <span className="strong">New affix:</span>
-              <span className={`essence-chip on ${essenceHave > 0 ? "" : "empty"}`}>
-                {essence.name}: {item ? rangeText(item, essence.affixId) : "?"} · have {essenceHave}
-              </span>
+              {essences.map((e) => {
+                const have = state.wallet.essences[e.id] ?? 0;
+                const on = e.id === essence.id;
+                return (
+                  <button
+                    key={e.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={on}
+                    className={`essence-chip ${on ? "on" : ""} ${have > 0 ? "" : "empty"}`}
+                    onClick={() => {
+                      setEssenceId(e.id);
+                      setAffixIndex(null);
+                    }}
+                  >
+                    {e.name}: {item ? rangeText(item, e.affixId) : "?"} · have {have}
+                  </button>
+                );
+              })}
             </div>
           )}
 

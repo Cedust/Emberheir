@@ -1,11 +1,15 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type Notice, getAct } from "@emberheir/sim";
+import { type ActData, type Notice, getAct } from "@emberheir/sim";
 
 interface NoticeText {
   readonly title: string;
   readonly sub: string;
   readonly nan: string;
-  readonly facts: (n: Notice, act: string) => { k: string; v: string; tone: string }[];
+  readonly facts: (
+    n: Notice,
+    act: ActData,
+    next: ActData | undefined,
+  ) => { k: string; v: string; tone: string }[];
 }
 
 type NoticeKind = Exclude<Notice["kind"], "prestige">;
@@ -16,9 +20,9 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You fell, and the ash gave you back. You keep everything: gear, Gold, Dust and Inventory. Only the way through this Act starts over.",
     nan: "The ash spat you back out. It does that. It likes you.",
     facts: (n, act) => [
-      { k: "FELL AT", v: `Act 1 · Stage ${n.stage}`, tone: "text" },
+      { k: "FELL AT", v: `Act ${act.number} · Stage ${n.stage}`, tone: "text" },
       { k: "BY", v: n.enemyName ?? "Unknown", tone: "rare" },
-      { k: "BACK TO", v: `Camp · ${act}`, tone: "accent" },
+      { k: "BACK TO", v: `Camp · ${act.name}`, tone: "accent" },
     ],
   },
   retreat: {
@@ -26,21 +30,33 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You left the fight and went back to camp. Same rules as a death: you keep everything, and the Act starts over.",
     nan: "Sensible. Dead heroes don't farm.",
     facts: (n, act) => [
-      { k: "LEFT AT", v: `Act 1 · Stage ${n.stage}`, tone: "text" },
+      { k: "LEFT AT", v: `Act ${act.number} · Stage ${n.stage}`, tone: "text" },
       { k: "KEPT", v: "Everything", tone: "good" },
-      { k: "BACK TO", v: `Camp · ${act}`, tone: "accent" },
+      { k: "BACK TO", v: `Camp · ${act.name}`, tone: "accent" },
     ],
   },
   actCleared: {
     title: "ACT CLEARED",
-    sub: "The boss is down and the caravan moves on. Kaelen will train you now, and Liora has unpacked her jars.",
+    sub: "The boss is down and the caravan moves on. The road ahead is open.",
     nan: "Gorrak is down. Kaelen has seen enough to train you now.",
-    facts: (_n, act) => [
-      { k: "CLEARED", v: act, tone: "text" },
-      { k: "NEW IN CAMP", v: "Kaelen · Liora", tone: "good" },
-      { k: "BACK TO", v: `Camp · ${act}`, tone: "accent" },
+    facts: (_n, act, next) => [
+      { k: "CLEARED", v: act.name, tone: "text" },
+      ...(act.number === 1
+        ? [{ k: "NEW IN CAMP", v: "Kaelen · Liora · Nyssa", tone: "good" }]
+        : []),
+      {
+        k: "ROAD AHEAD",
+        v: next ? `Act ${next.number} · ${next.name}` : "Farm or rest",
+        tone: "accent",
+      },
     ],
   },
+};
+
+/** Old Nan's word after each act boss. */
+const CLEARED_NAN: Record<string, string> = {
+  "ashen-fields": "Gorrak is down. Kaelen has seen enough to train you now.",
+  rotwood: "The Mother of Rot is compost now. The forest can finally breathe.",
 };
 
 /** Drifting ash: fixed pseudo-random dots (same layout every time). */
@@ -65,6 +81,8 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
   // Prestige has its own screen (Inheritance).
   const text = TEXT[notice.kind === "prestige" ? "actCleared" : notice.kind];
   const act = getAct(GAME_DATA, notice.actId);
+  const next = GAME_DATA.acts.find((a) => a.number === act.number + 1);
+  const nan = notice.kind === "actCleared" ? (CLEARED_NAN[act.id] ?? text.nan) : text.nan;
   return (
     <section
       className={`screen notice-screen notice-${notice.kind}`}
@@ -92,7 +110,7 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
         <h2 className="notice-title title-font">{text.title}</h2>
         <p className="notice-sub">{text.sub}</p>
         <div className="notice-facts">
-          {text.facts(notice, act.name).map((f) => (
+          {text.facts(notice, act, next).map((f) => (
             <div key={f.k} className="fact">
               <span className="eyebrow">{f.k}</span>
               <span className={`title-font tone-${f.tone}`}>{f.v}</span>
@@ -101,7 +119,7 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
         </div>
         <div className="nan-line">
           <span className="nan-portrait title-font">N</span>
-          <span className="quote">Old Nan: &ldquo;{text.nan}&rdquo;</span>
+          <span className="quote">Old Nan: &ldquo;{nan}&rdquo;</span>
         </div>
         {notice.kind === "death" && (
           <p className="recap-placeholder sub">

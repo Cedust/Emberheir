@@ -9,6 +9,15 @@ const SKILL_ICONS: Record<string, IconName> = {
   "ice-lance": "snow",
   "chain-lightning": "bolt",
   meteor: "meteor",
+  lacerate: "claw",
+  "venom-coat": "venom",
+  rend: "rend",
+  "toxic-burst": "toxic",
+  rake: "claw",
+  "blight-spit": "venom",
+  "rot-spray": "toxic",
+  "moss-mend": "drop",
+  devour: "drop",
 };
 
 export function skillIcon(skillId: string): IconName {
@@ -23,6 +32,10 @@ const SKILL_TINTS: Record<string, string> = {
   "ice-lance": "#2d6a8a",
   "chain-lightning": "#8a7a20",
   meteor: "#a8401a",
+  lacerate: "#8a1f2c",
+  "venom-coat": "#4f6a12",
+  rend: "#6a1420",
+  "toxic-burst": "#5f7a0e",
 };
 
 export function skillTint(skillId: string): string {

@@ -1,5 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
-import { saveAfterGorrak, seedSave } from "./fixtures";
+import { saveAfterHarvestBoss, seedSave } from "./fixtures";
 
 /**
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
@@ -117,7 +117,7 @@ for (const screen of SCREENS) {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
-    await seedSave(page, saveAfterGorrak());
+    await seedSave(page, saveAfterHarvestBoss());
     await page.goto("/");
     await page.getByRole("button", { name: /Continue/ }).click();
     const check = async (view: string) =>

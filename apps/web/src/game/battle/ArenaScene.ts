@@ -8,7 +8,7 @@ import { Application, Container, Graphics, Text } from "pixi.js";
  */
 
 export interface HeroLook {
-  readonly weapon: "sword" | "wand";
+  readonly weapon: "sword" | "wand" | "axe" | "dagger";
   readonly offHand: "shield" | "focus" | null;
 }
 
@@ -16,6 +16,8 @@ export interface EnemyLook {
   readonly archetype: string;
   readonly boss: boolean;
   readonly elite: boolean;
+  /** Act number: every act dresses its enemies in its own colors. */
+  readonly act: number;
 }
 
 /** Original damage-type colors (ui-look-v1.md): the arena uses them in both modes. */
@@ -28,12 +30,20 @@ const DAMAGE_COLORS: Record<string, number> = {
   burn: 0xff6a2b,
   chill: 0x6fd3ff,
   shock: 0xffe14d,
+  bleed: 0xe0314b,
+  poison: 0xb5d82c,
   heal: 0x4fe08a,
   barrier: 0xe8e2d6,
   miss: 0xd8d0c4,
 };
 
-const AILMENT_TINT: Record<string, number> = { burn: 0xff8a5a, chill: 0x9fe0ff, shock: 0xfff08a };
+const AILMENT_TINT: Record<string, number> = {
+  burn: 0xff8a5a,
+  chill: 0x9fe0ff,
+  shock: 0xfff08a,
+  bleed: 0xff9a9a,
+  poison: 0xc4f0a0,
+};
 
 /** The arena is drawn for 1440 × 708 stage pixels; wider or taller hosts see more ground. */
 const W = 1440;
@@ -386,6 +396,35 @@ function drawHero(look: HeroLook): Container {
         .lineTo(82, -246)
         .stroke({ color: 0x7a5a24, width: 7, cap: "round" }),
     );
+  } else if (look.weapon === "axe") {
+    c.addChild(
+      new Graphics()
+        .moveTo(66, -232)
+        .lineTo(140, -352)
+        .stroke({ color: 0x7a5a24, width: 9, cap: "round" }),
+      new Graphics()
+        .moveTo(122, -334)
+        .quadraticCurveTo(150, -372, 182, -348)
+        .quadraticCurveTo(170, -318, 150, -300)
+        .closePath()
+        .fill(0xc9c2b8)
+        .stroke(line),
+    );
+  } else if (look.weapon === "dagger") {
+    c.addChild(
+      new Graphics()
+        .moveTo(76, -244)
+        .lineTo(126, -300)
+        .stroke({ color: INK, width: 9, cap: "round" }),
+      new Graphics()
+        .moveTo(76, -244)
+        .lineTo(126, -300)
+        .stroke({ color: 0xd8d4cc, width: 4, cap: "round" }),
+      new Graphics()
+        .moveTo(66, -252)
+        .lineTo(86, -232)
+        .stroke({ color: 0x3f5a2e, width: 7, cap: "round" }),
+    );
   } else {
     c.addChild(
       new Graphics()
@@ -399,18 +438,44 @@ function drawHero(look: HeroLook): Container {
   return c;
 }
 
-const ENEMY_COLORS: Record<string, { body: number; trim: number; head: number }> = {
+type Palette = { body: number; trim: number; head: number };
+
+const ENEMY_COLORS: Record<string, Palette> = {
   brute: { body: 0x6b5a3e, trim: 0x4a3c29, head: 0x9a8a70 },
   skirmisher: { body: 0x5a4a33, trim: 0x8a7552, head: 0xb3a288 },
   caster: { body: 0x7a2a20, trim: 0xff6a2b, head: 0x9a8a70 },
 };
 
+/** Rotwood: moss, bark and rot instead of ash. */
+const ROTWOOD_COLORS: Record<string, Palette> = {
+  skirmisher: { body: 0x3f4a2a, trim: 0x7a8a4a, head: 0x9aa078 },
+  afflicter: { body: 0x4a5a26, trim: 0x9fe04a, head: 0x8a9a6a },
+  thornback: { body: 0x5a4630, trim: 0x3a2c1e, head: 0x8a7a5a },
+  warden: { body: 0x2f4a32, trim: 0x6a8a4a, head: 0x9aa480 },
+};
+
+/** Which body an archetype uses: robed casters, broad brutes or lean fighters. */
+const BODY: Record<string, "robe" | "broad" | "lean"> = {
+  caster: "robe",
+  afflicter: "robe",
+  brute: "broad",
+  thornback: "broad",
+  warden: "broad",
+  skirmisher: "lean",
+};
+
 function drawEnemy(look: EnemyLook): Container {
   const c = new Container();
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
-  const col = ENEMY_COLORS[look.archetype] ?? ENEMY_COLORS.brute ?? { body: 0, trim: 0, head: 0 };
-  const scale = look.boss ? 1.1 : look.archetype === "brute" ? 1 : 0.86;
-  if (look.archetype === "caster") {
+  const fallback = { body: 0, trim: 0, head: 0 };
+  const col =
+    (look.act === 2 ? ROTWOOD_COLORS[look.archetype] : undefined) ??
+    ENEMY_COLORS[look.archetype] ??
+    ROTWOOD_COLORS[look.archetype] ??
+    fallback;
+  const body = BODY[look.archetype] ?? "broad";
+  const scale = look.boss ? 1.1 : body === "broad" ? 1 : 0.86;
+  if (body === "robe") {
     c.addChild(
       new Graphics()
         .moveTo(-80, -150)
@@ -434,8 +499,17 @@ function drawEnemy(look: EnemyLook): Container {
         .stroke({ color: 0x5e4a36, width: 7, cap: "round" }),
       new Graphics().circle(-142, -346, 13).fill(col.trim).stroke(line),
     );
+    if (look.archetype === "afflicter") {
+      for (const [x, y] of [
+        [-30, -300],
+        [24, -260],
+        [-6, -210],
+      ] as const) {
+        c.addChild(new Graphics().ellipse(x, y, 9, 13).fill({ color: col.trim, alpha: 0.85 }));
+      }
+    }
   } else {
-    const wide = look.archetype === "brute" ? 140 : 100;
+    const wide = body === "broad" ? 140 : 100;
     c.addChild(
       new Graphics()
         .moveTo(-wide, -150)
@@ -463,7 +537,45 @@ function drawEnemy(look: EnemyLook): Container {
         .quadraticCurveTo(0, -384, 24, -374)
         .stroke({ color: INK, width: 4 }),
     );
-    if (look.archetype === "brute") {
+    if (look.archetype === "thornback") {
+      // Thorns along the back and the shoulders.
+      for (const [x, y, r] of [
+        [-120, -300, -0.9],
+        [-80, -350, -0.5],
+        [-20, -372, -0.1],
+        [40, -366, 0.3],
+        [100, -330, 0.7],
+        [136, -270, 1.1],
+      ] as const) {
+        const tip = { x: x + Math.sin(r) * 46, y: y - Math.cos(r) * 46 };
+        c.addChild(
+          new Graphics()
+            .poly([x - 12, y + 6, tip.x, tip.y, x + 12, y + 6])
+            .fill(col.trim)
+            .stroke(line),
+        );
+      }
+    }
+    if (look.archetype === "warden") {
+      c.addChild(
+        new Graphics()
+          .moveTo(-wide - 30, -120)
+          .lineTo(-wide - 30, -470)
+          .stroke({ color: 0x5e4a36, width: 10, cap: "round" }),
+        new Graphics()
+          .circle(-wide - 30, -480, 18)
+          .fill(col.trim)
+          .stroke(line),
+        new Graphics()
+          .ellipse(-wide + 10, -230, 46, 58)
+          .fill(0x4a3c29)
+          .stroke(line),
+        new Graphics()
+          .ellipse(-wide + 10, -230, 22, 30)
+          .fill(col.trim)
+          .stroke(line),
+      );
+    } else if (look.archetype === "brute" || look.archetype === "thornback") {
       c.addChild(
         new Graphics().ellipse(-wide, -260, 42, 34).fill(col.head).stroke(line),
         new Graphics()

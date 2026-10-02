@@ -1,4 +1,4 @@
-import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
+import { ACTS, ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
   Fight,
@@ -34,7 +34,16 @@ const ARCHETYPE_TEXT: Record<string, string> = {
   brute: "Brute",
   skirmisher: "Skirmisher",
   caster: "Caster",
+  afflicter: "Afflicter",
+  warden: "Warden",
+  thornback: "Thornback",
 };
+
+/** The arena sky in the act's colors (ui-look-v1.md: arena tinted per Act). */
+function arenaStyle(actId: string): React.CSSProperties | undefined {
+  const g = ACTS.find((a) => a.id === actId)?.arenaGradient;
+  return g ? { background: `linear-gradient(180deg, ${g[0]} 0%, ${g[1]} 100%)` } : undefined;
+}
 
 function useLooks(state: GameState, run: RunState) {
   const encounter = run.encounter;
@@ -48,8 +57,14 @@ function useLooks(state: GameState, run: RunState) {
   const offHand = state.hero.equipment.offHand;
   const weapon = mainHand ? getBase(ITEM_CATALOG, mainHand.baseId) : undefined;
   const off = offHand ? getBase(ITEM_CATALOG, offHand.baseId) : undefined;
+  const kind = weapon?.weapon?.id;
   const heroLook: HeroLook = {
-    weapon: weapon?.weapon?.range === "ranged" ? "wand" : "sword",
+    weapon:
+      weapon?.weapon?.range === "ranged"
+        ? "wand"
+        : kind === "axe" || kind === "dagger"
+          ? kind
+          : "sword",
     offHand: off ? (off.fitsWeaponRange === "ranged" ? "focus" : "shield") : null,
   };
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
@@ -57,6 +72,7 @@ function useLooks(state: GameState, run: RunState) {
     archetype: enemyDef?.archetype ?? "brute",
     boss: encounter?.boss ?? false,
     elite: mods.length > 0,
+    act: act.number,
   };
   const heroInfo: PlaqueInfo = {
     name: "Heir of the Ember",
@@ -194,7 +210,7 @@ export function BattleView(props: {
   const stages = looks.act.monsterLevels.length;
 
   return (
-    <section className="screen battle" aria-label="Battle">
+    <section className="screen battle" aria-label="Battle" style={arenaStyle(looks.act.id)}>
       <div className="arena-host" ref={hostRef} />
       <RunHeader
         act={looks.act}

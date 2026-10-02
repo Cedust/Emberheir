@@ -741,6 +741,22 @@
   background: var(--dmg-lightning);
 }
 
+.stage .status-chip.ailment-bleed {
+  border-color: var(--dmg-bleed);
+}
+
+.stage .status-chip.ailment-bleed .swatch {
+  background: var(--dmg-bleed);
+}
+
+.stage .status-chip.ailment-poison {
+  border-color: var(--dmg-poison);
+}
+
+.stage .status-chip.ailment-poison .swatch {
+  background: var(--dmg-poison);
+}
+
 .stage .status-chip.buff {
   border-color: var(--heal);
 }
