@@ -16,11 +16,12 @@ import {
   createItemCatalog,
   getBase,
   itemSlotFor,
+  offHandFits,
   rollItem,
   rollRarity,
 } from "@emberheir/sim";
 import { LEGENDARY_POWERS, POWER_TRIGGERS, RUNES, RUNEWORDS, UNIQUES } from "./legendary";
-import { AXE, DAGGER, FIRE_WAND, SWORD } from "./weapons";
+import { AXE, BOW, CROSSBOW, DAGGER, FIRE_WAND, SWORD } from "./weapons";
 
 /**
  * Items (docs/design/item-system-v1.md): all 10 slots, Normal to Epic. Most slots have a light
@@ -72,6 +73,28 @@ export const DAGGER_BASE: ItemBaseDefinition = {
   maxSockets: 2,
 };
 
+export const BOW_BASE: ItemBaseDefinition = {
+  id: "bow",
+  name: "Bow",
+  slot: "mainHand",
+  weapon: BOW,
+  requirements: { dexterity: 7 },
+  affixWeights: { ailment: 1.5, speed: 1.3, elemental: 0.5 },
+  size: { w: 2, h: 3 },
+  maxSockets: 3,
+};
+
+export const CROSSBOW_BASE: ItemBaseDefinition = {
+  id: "crossbow",
+  name: "Crossbow",
+  slot: "mainHand",
+  weapon: CROSSBOW,
+  requirements: { strength: 5, dexterity: 5 },
+  affixWeights: { physical: 1.5, crit: 1.3, elemental: 0.5 },
+  size: { w: 2, h: 3 },
+  maxSockets: 3,
+};
+
 export const ROUND_SHIELD: ItemBaseDefinition = {
   id: "round-shield",
   name: "Round Shield",
@@ -88,9 +111,25 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   name: "Ember Focus",
   slot: "offHand",
   fitsWeaponRange: "ranged",
+  // A Focus is for casters; a Bow or Crossbow takes a Quiver.
+  fitsWeapons: ["fire-wand"],
   implicit: { elementalDamage: 0.08, heatGain: 0.05 },
   requirements: { intelligence: 6 },
   affixWeights: { elemental: 1.5, heat: 1.5, block: 0, physical: 0.5 },
+  maxSockets: 2,
+};
+
+/** Quiver (item-system-v1.md): the off hand of Bows and Crossbows. */
+export const QUIVER: ItemBaseDefinition = {
+  id: "quiver",
+  name: "Quiver",
+  slot: "offHand",
+  fitsWeaponRange: "ranged",
+  fitsWeapons: ["bow", "crossbow"],
+  implicit: { attackSpeed: 0.05, critChance: 0.02 },
+  requirements: { dexterity: 6 },
+  affixWeights: { speed: 1.5, crit: 1.5, ailment: 1.2, block: 0 },
+  size: { w: 1, h: 3 },
   maxSockets: 2,
 };
 
@@ -270,8 +309,11 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   FIRE_WAND_BASE,
   AXE_BASE,
   DAGGER_BASE,
+  BOW_BASE,
+  CROSSBOW_BASE,
   ROUND_SHIELD,
   EMBER_FOCUS,
+  QUIVER,
   LEATHER_JERKIN,
   CHAIN_MAIL,
   SILK_ROBE,
@@ -570,6 +612,16 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     value: { min: 0.04, max: 0.1 },
     perTier: 0.1,
   }),
+  stat({
+    id: "corruption-chance",
+    stat: "corruptionChance",
+    prefix: "Blighted",
+    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    tags: ["ailment", "elemental"],
+    weight: 5,
+    value: { min: 0.04, max: 0.1 },
+    perTier: 0.1,
+  }),
 ];
 
 // --- Trigger affixes -------------------------------------------------------------------------
@@ -839,10 +891,12 @@ export interface GearRollOptions {
 
 /** Bases that suit a weapon: an off hand that fits it, armor for the weapon's main attribute. */
 function suitsWeapon(base: ItemBaseDefinition, weapon: WeaponDefinition): boolean {
-  if (base.fitsWeaponRange && base.fitsWeaponRange !== weapon.range) return false;
+  if (base.slot === "offHand" && !offHandFits(base, weapon)) return false;
   const required = Object.keys(base.requirements ?? {});
   const own =
-    weapon.range === "melee" ? ["strength", "agility", "dexterity"] : ["intelligence", "wisdom"];
+    weapon.damageType === "physical"
+      ? ["strength", "agility", "dexterity"]
+      : ["intelligence", "wisdom"];
   return required.every((a) => own.includes(a));
 }
 

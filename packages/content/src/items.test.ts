@@ -110,7 +110,13 @@ describe("item content", () => {
           new Rng(seed),
         );
         expect(Object.keys(gear).sort()).toEqual([...EQUIPMENT_SLOTS].sort());
-        const strongHero = { ...STARTING_ATTRIBUTES, strength: 30, agility: 30, intelligence: 30 };
+        const strongHero = {
+          ...STARTING_ATTRIBUTES,
+          strength: 30,
+          dexterity: 30,
+          agility: 30,
+          intelligence: 30,
+        };
         const resolved = resolveEquipment(gear, ITEM_CATALOG, strongHero);
         expect(resolved.inactive).toEqual([]);
         expect(resolved.weapon?.id).toBe(weapon.id);

@@ -149,6 +149,67 @@ export const TOXIC_BURST: SkillDefinition = {
   effects: [{ kind: "multiplyPoison", factor: 2 }],
 };
 
+// Affliction: Elemental Over Time (skills-v1.md section 3).
+
+export const IMMOLATE: SkillDefinition = {
+  id: "immolate",
+  name: "Immolate",
+  type: "spell",
+  heatCost: 30,
+  tags: ["fire", "over-time", "any"],
+  description: "A small Fire hit that sets a strong Burn.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 9, max: 13 },
+      damageType: "fire",
+      ailmentChances: [{ ailment: "burn", chance: 1 }],
+      ailmentPower: 3,
+    },
+  ],
+};
+
+export const CORRUPT: SkillDefinition = {
+  id: "corrupt",
+  name: "Corrupt",
+  type: "spell",
+  heatCost: 40,
+  tags: ["void", "over-time", "any"],
+  description: "A Void hit that Corrupts. The Corruption starts four steps stronger.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 12, max: 18 },
+      damageType: "void",
+      ailmentChances: [{ ailment: "corruption", chance: 1 }],
+      ailmentPower: 2,
+    },
+  ],
+  effects: [{ kind: "advanceCorruption", ticks: 4 }],
+};
+
+export const WITHER: SkillDefinition = {
+  id: "wither",
+  name: "Wither",
+  type: "curse",
+  heatCost: 35,
+  tags: ["over-time", "any"],
+  description: "Curse: the enemy takes 30 % more damage over time for 8 s.",
+  hits: [],
+  effects: [{ kind: "curse", dotDamageTaken: 0.3, duration: 8 }],
+};
+
+export const SOUL_HARVEST: SkillDefinition = {
+  id: "soul-harvest",
+  name: "Soul Harvest",
+  type: "spell",
+  heatCost: 70,
+  tags: ["void", "over-time", "any"],
+  description: "Deals 4 seconds of all damage over time at once. The ailments keep running.",
+  hits: [],
+  effects: [{ kind: "detonateDots", seconds: 4 }],
+};
+
 /** Skills the hero can put into the Battle Plan. */
 export const HERO_SKILLS: readonly SkillDefinition[] = [
   POWER_STRIKE,
@@ -162,6 +223,10 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   VENOM_COAT,
   REND,
   TOXIC_BURST,
+  IMMOLATE,
+  CORRUPT,
+  WITHER,
+  SOUL_HARVEST,
 ];
 
 /** Every weapon brings one Start Skill that is equipped automatically. */
@@ -170,6 +235,8 @@ export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   "fire-wand": FIREBOLT,
   axe: LACERATE,
   dagger: VENOM_COAT,
+  bow: LACERATE,
+  crossbow: POWER_STRIKE,
 };
 
 // Enemy skills.
@@ -300,4 +367,131 @@ export const GORRAK_SLAM: SkillDefinition = {
   tags: ["physical", "direct", "melee"],
   description: "A huge, announced blow for 400 % Weapon Damage.",
   hits: [{ kind: "weapon", multiplier: 4 }],
+};
+
+// Act 3 (Ember Wastes) enemy skills.
+
+/** Cinder Imp: a flurry of burning swipes. */
+export const FLAME_DASH: SkillDefinition = {
+  id: "flame-dash",
+  name: "Flame Dash",
+  type: "attack",
+  heatCost: 30,
+  tags: ["fire", "over-time", "melee"],
+  description: "3 hits for 80 % Weapon Damage, each with a 30 % chance to Burn.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 0.8,
+      count: 3,
+      ailmentChances: [{ ailment: "burn", chance: 0.3 }],
+    },
+  ],
+};
+
+export const FIREBALL: SkillDefinition = {
+  id: "fireball",
+  name: "Fireball",
+  type: "spell",
+  heatCost: 45,
+  tags: ["fire", "direct", "any"],
+  description: "A big Fire hit. 80 % chance to Burn.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 1.8, max: 3 },
+      damageType: "fire",
+      ailmentChances: [{ ailment: "burn", chance: 0.8 }],
+    },
+  ],
+};
+
+/** Obsidian Guard: hardens its shell. */
+export const OBSIDIAN_SHELL: SkillDefinition = {
+  id: "obsidian-shell",
+  name: "Obsidian Shell",
+  type: "buff",
+  heatCost: 70,
+  tags: ["defense"],
+  description: "+40 Armor for 6 s.",
+  hits: [],
+  effects: [{ kind: "buff", stat: "armor", amount: 40, duration: 6 }],
+};
+
+/** Cinder Tyrant's telegraph: the ground bursts open. */
+export const ERUPTION: SkillDefinition = {
+  id: "eruption",
+  name: "Eruption",
+  type: "spell",
+  heatCost: 0,
+  tags: ["fire", "direct", "any"],
+  description: "An announced burst of fire that always Burns.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 5, max: 7 },
+      damageType: "fire",
+      ailmentChances: [{ ailment: "burn", chance: 1 }],
+    },
+  ],
+};
+
+// Act 4 (Frost Peaks) enemy skills.
+
+/** Frost Wolf: a leap with chilling teeth. */
+export const POUNCE: SkillDefinition = {
+  id: "pounce",
+  name: "Pounce",
+  type: "attack",
+  heatCost: 35,
+  tags: ["cold", "direct", "melee"],
+  description: "2 hits for 100 % Weapon Damage, each with a 50 % chance to Chill.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 1,
+      count: 2,
+      ailmentChances: [{ ailment: "chill", chance: 0.5 }],
+    },
+  ],
+};
+
+export const ICE_BOLT: SkillDefinition = {
+  id: "ice-bolt",
+  name: "Ice Bolt",
+  type: "spell",
+  heatCost: 45,
+  tags: ["cold", "direct", "any"],
+  description: "A Cold hit that always Chills.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 1.6, max: 2.8 },
+      damageType: "cold",
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    },
+  ],
+};
+
+/** Frost Warden: mends cracks in its ice. */
+export const GLACIAL_MEND: SkillDefinition = {
+  id: "glacial-mend",
+  name: "Glacial Mend",
+  type: "buff",
+  heatCost: 80,
+  tags: ["life"],
+  description: "Heals 6 % of its Life.",
+  hits: [],
+  effects: [{ kind: "heal", fraction: 0.06 }],
+};
+
+/** Rime Warden's telegraph: a wall of snow comes down. */
+export const AVALANCHE: SkillDefinition = {
+  id: "avalanche",
+  name: "Avalanche",
+  type: "attack",
+  heatCost: 0,
+  tags: ["cold", "direct", "melee"],
+  description: "An announced blow for 350 % Weapon Damage that always Chills.",
+  hits: [{ kind: "weapon", multiplier: 3.5, ailmentChances: [{ ailment: "chill", chance: 1 }] }],
 };

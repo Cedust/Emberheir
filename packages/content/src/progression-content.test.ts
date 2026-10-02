@@ -19,18 +19,18 @@ import { SWORD } from "./weapons";
 describe("Skill Tree", () => {
   const nodes = SKILL_TREE.nodes;
 
-  it("has Core, Might, Arcana and Rupture with unique ids and valid links", () => {
-    expect(nodes.length).toBe(50);
+  it("has all five branches with unique ids and valid links", () => {
+    expect(nodes.length).toBe(62);
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
     expect(new Set(nodes.map((n) => n.branch))).toEqual(
-      new Set(["core", "might", "arcana", "rupture"]),
+      new Set(["core", "might", "arcana", "rupture", "affliction"]),
     );
   });
 
   it("has 3–4 Skill nodes and 1 Keystone per branch", () => {
-    for (const branch of ["might", "arcana", "rupture"] as SkillTreeBranch[]) {
+    for (const branch of ["might", "arcana", "rupture", "affliction"] as SkillTreeBranch[]) {
       const inBranch = nodes.filter((n) => n.branch === branch);
       const skills = inBranch.filter((n) => n.kind === "skill" && n.skill).length;
       expect(skills).toBeGreaterThanOrEqual(3);

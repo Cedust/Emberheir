@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ACTS } from "./acts";
 import { GAME_DATA } from "./game";
+import { ITEM_CATALOG } from "./items";
 
 describe("ACTS", () => {
   it("has 7 acts numbered 1..7 with unique ids", () => {
@@ -16,6 +17,20 @@ describe("ACTS", () => {
       });
       expect(act.stages).toBe(15);
     }
-    expect(GAME_DATA.acts.map((a) => a.id)).toEqual(["ashen-fields", "rotwood"]);
+    expect(GAME_DATA.acts.map((a) => a.id)).toEqual([
+      "ashen-fields",
+      "rotwood",
+      "ember-wastes",
+      "frost-peaks",
+    ]);
+  });
+
+  it("act loot only favors affixes that exist", () => {
+    for (const act of GAME_DATA.acts) {
+      for (const id of Object.keys(act.favoredAffixes ?? {})) {
+        expect(ITEM_CATALOG.affixes.has(id), `${act.id}: ${id}`).toBe(true);
+      }
+      expect(ITEM_CATALOG.affixes.has(act.essence.affixId), act.id).toBe(true);
+    }
   });
 });

@@ -28,9 +28,9 @@ describe("combat content", () => {
     }
   });
 
-  it("hero weapons cover Cooling and Warming", () => {
+  it("hero weapons cover all three Heat behaviors", () => {
     expect(new Set(HERO_WEAPONS.map((w) => w.heatBehavior))).toEqual(
-      new Set(["cooling", "warming"]),
+      new Set(["cooling", "steady", "warming"]),
     );
   });
 

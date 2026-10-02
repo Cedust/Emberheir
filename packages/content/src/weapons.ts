@@ -79,7 +79,51 @@ export const DAGGER: WeaponDefinition = {
   ailmentChances: [{ ailment: "poison", chance: 0.2 }],
 };
 
-export const HERO_WEAPONS: readonly WeaponDefinition[] = [SWORD, FIRE_WAND, AXE, DAGGER];
+/**
+ * Bow (waffen-v1.md): Physical · Ranged · Over Time. A quick Shoot that can Bleed or Poison.
+ * Steady Heat: fills with own hits only and never cools down.
+ */
+export const BOW: WeaponDefinition = {
+  id: "bow",
+  name: "Bow",
+  defaultAttack: "Shoot",
+  damage: { min: 8, max: 14 },
+  damageType: "physical",
+  attacksPerSecond: 1,
+  heatBehavior: "steady",
+  // 12 Heat/s ÷ 1.0 attacks/s.
+  heatPerHit: 12,
+  range: "ranged",
+  implicit: { bleedChance: 0.04, poisonChance: 0.04 },
+  ailmentChances: [
+    { ailment: "bleed", chance: 0.1 },
+    { ailment: "poison", chance: 0.1 },
+  ],
+};
+
+/** Crossbow (waffen-v1.md): Physical · Ranged · Direct. Very slow Bolts that pierce Armor. */
+export const CROSSBOW: WeaponDefinition = {
+  id: "crossbow",
+  name: "Crossbow",
+  defaultAttack: "Bolt",
+  damage: { min: 21, max: 32 },
+  damageType: "physical",
+  attacksPerSecond: 0.45,
+  heatBehavior: "steady",
+  // 12 Heat/s ÷ 0.45 attacks/s.
+  heatPerHit: 27,
+  range: "ranged",
+  implicit: { physicalPenetration: 0.2 },
+};
+
+export const HERO_WEAPONS: readonly WeaponDefinition[] = [
+  SWORD,
+  FIRE_WAND,
+  AXE,
+  DAGGER,
+  BOW,
+  CROSSBOW,
+];
 
 // Enemy weapons. Enemies follow the same rules as the hero, including Heat.
 // Playtest 1: Act 1 drops less Rare and Epic gear, so enemy damage went down by ~40 %.
@@ -205,4 +249,145 @@ export const ROT_LASH: WeaponDefinition = {
   range: "melee",
   implicit: {},
   ailmentChances: [{ ailment: "poison", chance: 0.4 }],
+};
+
+// Act 3 (Ember Wastes) enemy weapons: Fire and Burn.
+
+export const EMBER_CLAWS: WeaponDefinition = {
+  id: "ember-claws",
+  name: "Ember Claws",
+  defaultAttack: "Scorch",
+  damage: { min: 0.66, max: 1.01 },
+  damageType: "fire",
+  attacksPerSecond: 1,
+  heatBehavior: "cooling",
+  heatPerHit: 12,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "burn", chance: 0.2 }],
+};
+
+export const MAGMA_FIST: WeaponDefinition = {
+  id: "magma-fist",
+  name: "Magma Fist",
+  defaultAttack: "Pound",
+  damage: { min: 1.54, max: 2.31 },
+  damageType: "fire",
+  attacksPerSecond: 0.45,
+  heatBehavior: "cooling",
+  heatPerHit: 27,
+  range: "melee",
+  implicit: {},
+};
+
+export const PYRE_STAFF: WeaponDefinition = {
+  id: "pyre-staff",
+  name: "Pyre Staff",
+  defaultAttack: "Flame",
+  damage: { min: 0.66, max: 1.21 },
+  damageType: "fire",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [{ ailment: "burn", chance: 0.35 }],
+};
+
+export const OBSIDIAN_GLAIVE: WeaponDefinition = {
+  id: "obsidian-glaive",
+  name: "Obsidian Glaive",
+  defaultAttack: "Cut",
+  damage: { min: 0.94, max: 1.43 },
+  damageType: "physical",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+};
+
+export const TYRANT_BRAND: WeaponDefinition = {
+  id: "tyrant-brand",
+  name: "Tyrant's Brand",
+  defaultAttack: "Brand",
+  damage: { min: 2.42, max: 3.41 },
+  damageType: "fire",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "burn", chance: 0.3 }],
+};
+
+// Act 4 (Frost Peaks) enemy weapons: Cold and Chill.
+
+export const FROST_FANGS: WeaponDefinition = {
+  id: "frost-fangs",
+  name: "Frost Fangs",
+  defaultAttack: "Bite",
+  damage: { min: 0.71, max: 1.09 },
+  damageType: "cold",
+  attacksPerSecond: 1.05,
+  heatBehavior: "cooling",
+  heatPerHit: 12,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "chill", chance: 0.15 }],
+};
+
+export const GLACIER_MAUL: WeaponDefinition = {
+  id: "glacier-maul",
+  name: "Glacier Maul",
+  defaultAttack: "Crush",
+  damage: { min: 1.67, max: 2.47 },
+  damageType: "physical",
+  attacksPerSecond: 0.42,
+  heatBehavior: "cooling",
+  heatPerHit: 28,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "chill", chance: 0.2 }],
+};
+
+export const RIME_WAND: WeaponDefinition = {
+  id: "rime-wand",
+  name: "Rime Wand",
+  defaultAttack: "Frost",
+  damage: { min: 0.69, max: 1.32 },
+  damageType: "cold",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [{ ailment: "chill", chance: 0.25 }],
+};
+
+export const ICE_SHARDS: WeaponDefinition = {
+  id: "ice-shards",
+  name: "Ice Shards",
+  defaultAttack: "Shard",
+  damage: { min: 0.8, max: 1.21 },
+  damageType: "cold",
+  attacksPerSecond: 0.7,
+  heatBehavior: "cooling",
+  heatPerHit: 17,
+  range: "melee",
+  implicit: {},
+};
+
+export const WARDEN_HALBERD: WeaponDefinition = {
+  id: "warden-halberd",
+  name: "Warden's Halberd",
+  defaultAttack: "Sweep",
+  damage: { min: 2.64, max: 3.68 },
+  damageType: "cold",
+  attacksPerSecond: 0.5,
+  heatBehavior: "cooling",
+  heatPerHit: 24,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "chill", chance: 0.35 }],
 };
