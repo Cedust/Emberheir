@@ -64,3 +64,15 @@ Nach dem Prestige ist das Gear weg, aber der Codex bleibt. Mit dem ersten Kindli
 - Genaue Liste der Conditions und Effects mit Heimat (bei M8/M9 mit dem Content).
 - Werte: 70 %-Grenze, Pity nach 5 Elites, Kindling-Menge (Balance-CLI).
 - Name: "Kindle" und "Kindling" passen zur Glut-Welt, Alternativen willkommen.
+
+## 8. Umsetzung (PR #10, 02.10.2026)
+
+Werte und Entscheidungen, die Claude ohne Rückfrage gesetzt hat (alle in `CODEX` in `packages/sim/src/progression/constants.ts`):
+
+- **12 Conditions, 14 Effects** (`packages/content/src/codex.ts`). Jede kann aus mindestens einem droppenden Trigger-Affix gelernt werden; dafür kamen 4 neue Trigger-Affixe dazu (Rending Strikes, Venom Sting, Opening Ward, Riposte).
+- **Lernen:** nur über Salvage (Thoric oder Inventar), nicht über das Auto-Salvage der nicht gewählten Loot-Karten. Mastery = Item Tier.
+- **Kindle (Liora):** Tier = niedrigere Mastery, höchstens Item Tier; Roll = 70 % eines normalen Rolls. Kosten 30 Dust × Tier + 1 Kindling. Füllt den Trigger-Platz eines Items ohne Trigger (ab Magic) oder ersetzt einen Trigger. Ein gekindelter Trigger pro Item, er sperrt das Item für den Affix-Lock.
+- **Häufige Conditions** (On Hit, When Hit) senken die Chance, starke Effects (Heal, Barrier) haben einen Mindest-Cooldown.
+- **Kindling:** Elites 1, Bosse 2, in der Spoils-Auswahl statt der Reforge Stones (die droppen bei Elites und Bossen ohnehin). Kindling verbrennt beim Prestige, der Codex bleibt.
+- **Heimat:** ×4 Gewicht, Quarry ×3 obendrauf, Pity nach 5 Elite-/Boss-Picks ohne Treffer (die erste Karte bekommt den Baustein, mindestens Rare).
+- **Codex-Ansicht** bei Old Nan (Chip "Trigger Codex"): unbekannte Bausteine als "? ? ?" mit Heimat, Quarry markieren/aufheben.
