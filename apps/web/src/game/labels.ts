@@ -67,6 +67,11 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   noStock: "Not in stock",
   noRoom: "No room in the inventory",
   runes: "Not enough Runes",
+  unknownPart: "Learn both parts first: salvage items with that trigger",
+  kindled: "Only one kindled trigger per item",
+  notTrigger: "Choose a trigger to replace",
+  noTriggerPlace: "Normal items have no trigger place",
+  kindling: "Needs Kindling (Elite and boss Spoils)",
 };
 
 export function spoilsLabel(card: SpoilsCard, essenceName: string): string {
@@ -77,6 +82,8 @@ export function spoilsLabel(card: SpoilsCard, essenceName: string): string {
       return `${card.amount} Reforge Stones`;
     case "essence":
       return `${card.amount} ${essenceName}`;
+    case "kindling":
+      return `${card.amount} Kindling`;
   }
 }
 
@@ -88,6 +95,8 @@ export function spoilsHint(card: SpoilsCard): string {
       return "Reroll all affixes of an item at the Mystic.";
     case "essence":
       return "Imbue: set one stat affix at the Mystic.";
+    case "kindling":
+      return "Kindle: build a trigger from the Codex at the Mystic.";
   }
 }
 

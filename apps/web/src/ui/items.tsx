@@ -79,11 +79,14 @@ export function baseSummary(item: Item): string {
 export function itemLines(
   item: Item,
   heroAttributes?: GameState["hero"]["attributes"],
-): { text: string; kind: "stat" | "trigger" | "implicit" | "req" | "unmet" | "power" }[] {
+): {
+  text: string;
+  kind: "stat" | "trigger" | "kindled" | "implicit" | "req" | "unmet" | "power";
+}[] {
   const tip = describeItem(item, ITEM_CATALOG, heroAttributes);
   const lines: {
     text: string;
-    kind: "stat" | "trigger" | "implicit" | "req" | "unmet" | "power";
+    kind: "stat" | "trigger" | "kindled" | "implicit" | "req" | "unmet" | "power";
   }[] = [];
   for (const l of tip.implicitLines) lines.push({ text: l, kind: "implicit" });
   for (const l of tip.affixLines) lines.push({ text: l.text, kind: l.kind });
@@ -359,6 +362,7 @@ export function walletEntries(state: GameState): { name: string; value: number; 
       value: w.essences[e.id] ?? 0,
     })),
     ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
+    ...(w.kindling > 0 ? [{ key: "kindling", name: "Kindling", value: w.kindling }] : []),
   ];
 }
 

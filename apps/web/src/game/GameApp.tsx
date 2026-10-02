@@ -6,6 +6,7 @@ import { Stage } from "../ui/Stage";
 import { useSettings } from "../ui/settings";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
+import { TriggerCodex } from "./camp/TriggerCodex";
 import { IntermissionView } from "./IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
 import { NoticeScreen } from "./NoticeScreen";
@@ -19,7 +20,7 @@ import { type PersonaId, PersonaView } from "./camp/PersonaView";
 import { StashView } from "./camp/StashView";
 import { useGame } from "./useGame";
 
-type Overlay = "character" | "tree" | "menu" | "compendium" | null;
+type Overlay = "character" | "tree" | "menu" | "compendium" | "codex" | null;
 type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | null;
 
 /** The game: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
@@ -77,6 +78,9 @@ export function GameApp() {
         break;
       case "compendium":
         setOverlay("compendium");
+        break;
+      case "codex":
+        setOverlay("codex");
         break;
       case "forge":
         setPersona("thoric");
@@ -198,6 +202,9 @@ export function GameApp() {
           <KaelenView state={state} game={game} viewOnly onClose={() => setOverlay(null)} />
         )}
         {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
+        {state && overlay === "codex" && (
+          <TriggerCodex state={state} game={game} onClose={() => setOverlay(null)} />
+        )}
         {state && overlay === "menu" && (
           <MenuOverlay
             settings={settings}

@@ -1,7 +1,16 @@
 import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
+  CODEX,
+  type CodexPartKind,
   CRAFTING,
   type CraftCost,
+  type LearnedPart,
+  codexMastery,
+  kindleTargets,
+  kindleTier,
+  kindledAffixId,
+  learnFromItem,
+  rollTier,
   type CraftRequest,
   type GameState,
   type Item,
@@ -57,6 +66,7 @@ type ActionKind =
   | "temper"
   | "imbue"
   | "distill"
+  | "kindle"
   | "rune"
   | "combine"
   | "codex"
@@ -99,6 +109,7 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
       { k: "temper", name: "Temper", desc: "Reroll the value of one affix." },
       { k: "imbue", name: "Imbue", desc: "Replace one affix with an Essence." },
       { k: "distill", name: "Distill", desc: "Turn Salvage Dust into a Reforge Stone." },
+      { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
     ],
   },
   eldrin: {
@@ -155,6 +166,7 @@ const ACTION_HINT: Record<ActionKind, string> = {
   temper: "Click the affix to reroll. It stays locked in afterwards.",
   imbue: "Click the affix to replace, then choose an Essence.",
   distill: "No item needed.",
+  kindle: "Choose an item, then a Condition and an Effect you have learned.",
 };
 
 function affixText(item: Item, index: number): { text: string; trigger: boolean } {
@@ -162,7 +174,10 @@ function affixText(item: Item, index: number): { text: string; trigger: boolean 
   const affix = roll ? ITEM_CATALOG.affixes.get(roll.affixId) : undefined;
   if (!roll || !affix) return { text: "?", trigger: false };
   if (affix.kind === "trigger") {
-    return { text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)), trigger: true };
+    return {
+      text: describeTrigger(resolveTrigger(affix, rollTier(item, roll), roll.quality)),
+      trigger: true,
+    };
   }
   return {
     text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality)),
@@ -200,6 +215,7 @@ function costText(cost: CraftCost): string {
     parts.push(`${n} ${name}`);
   }
   for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
+  if (cost.kindling) parts.push(`${cost.kindling} Kindling`);
   return parts.join(" · ") || "Free";
 }
 
@@ -255,10 +271,20 @@ export function PersonaView(props: {
     .map((a) => a.essence);
   const [essenceId, setEssenceId] = useState(() => essences[0]?.id ?? "");
   const [last, setLast] = useState<string | null>(null);
+  const [conditionId, setConditionId] = useState<string | null>(null);
+  const [effectId, setEffectId] = useState<string | null>(null);
 
   const found = itemId ? findCraftItem(state, itemId) : undefined;
   const item = found?.item;
   const equipped = !!found?.slot;
+  const targets = item ? kindleTargets(item, ITEM_CATALOG) : [];
+  const kindleIndex =
+    affixIndex !== null && targets.includes(affixIndex)
+      ? affixIndex
+      : targets.length === 1
+        ? targets[0]
+        : null;
+  const learned = item ? learnFromItem(state.legacy.codex, item, ITEM_CATALOG).learned : [];
 
   const pickItem = (id: string) => {
     setItemId(id);
@@ -283,6 +309,14 @@ export function PersonaView(props: {
     request = { kind, itemId: item.id, affixIndex };
   } else if (item && kind === "imbue" && affixIndex !== null) {
     request = { kind, itemId: item.id, affixIndex, essenceId };
+  } else if (item && kind === "kindle" && conditionId && effectId && kindleIndex !== null) {
+    request = {
+      kind,
+      itemId: item.id,
+      conditionId,
+      effectId,
+      ...(kindleIndex !== undefined ? { affixIndex: kindleIndex } : {}),
+    };
   }
 
   let cost = "";
@@ -309,6 +343,14 @@ export function PersonaView(props: {
             : kind === "gamble"
               ? "Choose a slot"
               : "Choose an item";
+  } else if (kind === "kindle" && !request) {
+    block = !item
+      ? "Choose an item"
+      : targets.length === 0
+        ? CRAFT_BLOCK_TEXT.noTriggerPlace
+        : kindleIndex === null
+          ? CRAFT_BLOCK_TEXT.notTrigger
+          : "Choose a Condition and an Effect";
   } else if (kind === "salvage") {
     cost = item ? `Free · +${salvageValue(item)} Dust` : "Free";
     block = !item
@@ -337,7 +379,10 @@ export function PersonaView(props: {
   const run = () => {
     if (block) return;
     if (kind === "salvage" && item) {
-      setLast(`Salvaged ${item.name}: +${salvageValue(item)} Dust`);
+      const names = learned.map((l) => partName(l.kind, l.id)).join(", ");
+      setLast(
+        `Salvaged ${item.name}: +${salvageValue(item)} Dust${names ? ` · Codex: ${names}` : ""}`,
+      );
       game.dispatch({ type: "salvage", itemId: item.id });
       setItemId(null);
       return;
@@ -397,6 +442,11 @@ export function PersonaView(props: {
       case "reforge":
         setLast(`Reforged into ${next?.name ?? "?"}`);
         break;
+      case "kindle": {
+        const index = request.affixIndex ?? item?.affixes.length ?? 0;
+        if (next) setLast(`Kindled: ${affixText(next, index).text}`);
+        break;
+      }
       case "temper":
       case "imbue":
         if (item && next) {
@@ -418,6 +468,7 @@ export function PersonaView(props: {
     "reforge",
     "temper",
     "imbue",
+    "kindle",
     "rune",
   ].includes(kind);
   const essence = essences.find((e) => e.id === essenceId) ?? essences[0];
@@ -532,17 +583,20 @@ export function PersonaView(props: {
                 )}
                 {item.affixes.map((_, i) => {
                   const t = affixText(item, i);
-                  const pickable = kind === "temper" || kind === "imbue";
+                  const kindling = kind === "kindle";
+                  const pickable = kind === "temper" || kind === "imbue" || kindling;
                   const lockedOut = item.lockedAffix !== undefined && item.lockedAffix !== i;
-                  const disabled = !pickable || lockedOut || t.trigger;
+                  const disabled = kindling
+                    ? !targets.includes(i) || lockedOut
+                    : !pickable || lockedOut || t.trigger;
                   return (
                     <button
                       key={i}
                       type="button"
-                      className={`affix-line ${t.trigger ? "trigger" : ""} ${affixIndex === i && pickable ? "on" : ""}`}
+                      className={`affix-line ${t.trigger ? "trigger" : ""} ${item.affixes[i]?.kindled ? "kindled" : ""} ${(kindling ? kindleIndex === i : affixIndex === i && pickable) ? "on" : ""}`}
                       disabled={disabled}
                       title={
-                        t.trigger && pickable
+                        t.trigger && pickable && !kindling
                           ? "Trigger Affixes cannot be changed"
                           : lockedOut && pickable
                             ? "Locked: only the locked-in affix can change"
@@ -561,9 +615,20 @@ export function PersonaView(props: {
               <AfterCard
                 item={after}
                 kind={kind}
-                affixIndex={affixIndex}
+                affixIndex={kind === "kindle" ? (kindleIndex ?? null) : affixIndex}
                 essenceAffix={essence?.affixId}
                 runeId={runeId}
+                learned={learned}
+                kindle={
+                  conditionId && effectId && kindleIndex !== null
+                    ? {
+                        conditionId,
+                        effectId,
+                        index: kindleIndex ?? item.affixes.length,
+                        tier: kindleTier(state.legacy.codex, conditionId, effectId, item),
+                      }
+                    : undefined
+                }
               />
             </div>
           ) : (
@@ -571,6 +636,16 @@ export function PersonaView(props: {
           )}
 
           {kind === "rune" && <RunePouch state={state} selected={runeId} onSelect={setRuneId} />}
+
+          {kind === "kindle" && (
+            <KindleParts
+              state={state}
+              conditionId={conditionId}
+              effectId={effectId}
+              onCondition={setConditionId}
+              onEffect={setEffectId}
+            />
+          )}
 
           {kind === "imbue" && essence && (
             <div className="essence-row" role="radiogroup" aria-label="Essence">
@@ -663,6 +738,8 @@ function AfterCard(props: {
   affixIndex: number | null;
   essenceAffix: string | undefined;
   runeId: string | null;
+  learned: readonly LearnedPart[];
+  kindle: { conditionId: string; effectId: string; index: number; tier: number } | undefined;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
@@ -705,6 +782,37 @@ function AfterCard(props: {
         <span className="sub">The item is gone for good.</span>
         <div className="item-detail-rule" />
         <span className="after-line new">+{salvageValue(item)} Salvage Dust</span>
+        {props.learned.map((l) => (
+          <span key={`${l.kind}-${l.id}`} className="after-line new kindled">
+            Codex: {partName(l.kind, l.id)} T{l.mastery}
+            {l.isNew ? " · new" : ""}
+          </span>
+        ))}
+      </div>
+    );
+  }
+  if (kind === "kindle") {
+    const k = props.kindle;
+    const affix = k ? kindledAffix(k.conditionId, k.effectId) : undefined;
+    return (
+      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
+        <ItemHead item={item} label="AFTER" />
+        {item.affixes.map((_, i) =>
+          i === k?.index ? null : (
+            <span key={i} className="after-line">
+              {affixText(item, i).text}
+            </span>
+          ),
+        )}
+        {k && affix ? (
+          <span className="after-line new kindled">
+            <span className="locked-in">UP TO</span>{" "}
+            {describeTrigger(resolveTrigger(affix, k.tier, CODEX.kindleMaxQuality))}{" "}
+            <span className="locked-in">T{k.tier}</span>
+          </span>
+        ) : (
+          <span className="after-line sub">? new trigger</span>
+        )}
       </div>
     );
   }
@@ -757,6 +865,62 @@ function AfterCard(props: {
           </span>
         );
       })}
+    </div>
+  );
+}
+
+const kindledAffix = (conditionId: string, effectId: string) => {
+  const affix = ITEM_CATALOG.affixes.get(kindledAffixId(conditionId, effectId));
+  return affix?.kind === "trigger" ? affix : undefined;
+};
+
+function partName(kind: CodexPartKind, id: string): string {
+  const part =
+    kind === "condition" ? ITEM_CATALOG.conditions.get(id) : ITEM_CATALOG.effects.get(id);
+  return part?.name ?? id;
+}
+
+/** Kindle: the learned Conditions and Effects with their Mastery. */
+function KindleParts(props: {
+  state: GameState;
+  conditionId: string | null;
+  effectId: string | null;
+  onCondition: (id: string) => void;
+  onEffect: (id: string) => void;
+}) {
+  const codex = props.state.legacy.codex;
+  const row = (
+    label: string,
+    kind: CodexPartKind,
+    selected: string | null,
+    onPick: (id: string) => void,
+  ) => {
+    const parts = [
+      ...(kind === "condition" ? ITEM_CATALOG.conditions : ITEM_CATALOG.effects).values(),
+    ].filter((p) => codexMastery(codex, kind, p.id) > 0);
+    return (
+      <div className="kindle-row" role="radiogroup" aria-label={label}>
+        <span className="strong">{label}</span>
+        {parts.length === 0 && <span className="sub">Salvage triggers at Thoric.</span>}
+        {parts.map((p) => (
+          <button
+            key={p.id}
+            type="button"
+            role="radio"
+            aria-checked={selected === p.id}
+            className={`essence-chip ${selected === p.id ? "on" : ""}`}
+            onClick={() => onPick(p.id)}
+          >
+            {p.name} · T{codexMastery(codex, kind, p.id)}
+          </button>
+        ))}
+      </div>
+    );
+  };
+  return (
+    <div className="kindle-parts">
+      {row("Condition", "condition", props.conditionId, props.onCondition)}
+      {row("Effect", "effect", props.effectId, props.onEffect)}
     </div>
   );
 }

@@ -33,6 +33,7 @@ const SPOILS_LOOK: Record<SpoilsCard["kind"], { icon: IconName; tint: string }> 
   flaskCharge: { icon: "flask", tint: "#c9322a" },
   reforgeStones: { icon: "stone", tint: "#2d5bd0" },
   essence: { icon: "drop", tint: "#6b5a3e" },
+  kindling: { icon: "fire", tint: "#e0782a" },
 };
 
 /**

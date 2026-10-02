@@ -360,7 +360,8 @@ h2 {
   color: var(--rarity-text-magic);
 }
 
-.item-affixes .affix-trigger {
+.item-affixes .affix-trigger,
+.item-affixes .affix-kindled {
   color: var(--affix-trigger);
   font-weight: 700;
 }

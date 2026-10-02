@@ -18,7 +18,16 @@ import { FIGURE_H, FIGURE_W, type HeirGear, PORTRAIT, PersonaArt } from "./art/P
 import { PaintDefs } from "./art/paint";
 
 export type CampTarget =
-  "legacy" | "character" | "forge" | "altar" | "kaelen" | "stash" | "compendium" | "shop" | "runes";
+  | "legacy"
+  | "character"
+  | "forge"
+  | "altar"
+  | "kaelen"
+  | "stash"
+  | "compendium"
+  | "codex"
+  | "shop"
+  | "runes";
 
 const NAN_LINES = [
   "Sit, child. The fire remembers every one of you, even the clumsy ones.",
@@ -97,7 +106,12 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#5e4a36",
       figure: { fs: 0.9 },
       quote: "",
-      actions: [{ name: "Talk" }, { name: "Compendium" }, { name: "Ember Flask" }],
+      actions: [
+        { name: "Talk" },
+        { name: "Compendium" },
+        { name: "Trigger Codex" },
+        { name: "Ember Flask" },
+      ],
       cta: "Talk",
     },
     {
@@ -139,7 +153,13 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#2d5bd0",
       figure: { fs: 0.95 },
       quote: trainer ? "“I foresaw you would come. I also foresee you paying.”" : afterBoss,
-      actions: [{ name: "Reforge" }, { name: "Temper" }, { name: "Imbue" }, { name: "Distill" }],
+      actions: [
+        { name: "Reforge" },
+        { name: "Temper" },
+        { name: "Imbue" },
+        { name: "Distill" },
+        { name: "Kindle" },
+      ],
       cta: trainer ? "Open Altar" : "Locked",
       target: "altar",
       ...(trainer ? {} : { locked: "boss" }),
@@ -382,12 +402,12 @@ export function CampView(props: {
           <p className="quote">{quote}</p>
           <div className="chip-row">
             {sel.actions.map((a) =>
-              sel.id === "nan" && a.name === "Compendium" ? (
+              sel.id === "nan" && (a.name === "Compendium" || a.name === "Trigger Codex") ? (
                 <button
                   key={a.name}
                   type="button"
                   className="action-chip link"
-                  onClick={() => props.onOpen("compendium")}
+                  onClick={() => props.onOpen(a.name === "Compendium" ? "compendium" : "codex")}
                 >
                   {a.name}
                 </button>

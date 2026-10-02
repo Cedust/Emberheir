@@ -167,9 +167,15 @@
   font-size: 15px;
 }
 
-.stage .line-trigger {
+.stage .line-trigger,
+.stage .line-kindled {
   color: var(--trigger-text);
   font-weight: 700;
+}
+
+.stage .line-kindled::before {
+  content: "✦ ";
+  color: #e0782a;
 }
 
 .stage .line-implicit {
@@ -545,9 +551,15 @@
   color: #7fa6ff;
 }
 
-.stage .tip-trigger {
+.stage .tip-trigger,
+.stage .tip-kindled {
   color: #ffb070;
   font-weight: 700;
+}
+
+.stage .tip-kindled::before {
+  content: "✦ ";
+  color: #ff7a2a;
 }
 
 .stage .tip-req {
@@ -1086,6 +1098,12 @@
 
 .stage .w-flask .dot {
   background: #e5484d;
+}
+
+.stage .w-kindling .dot {
+  background: #e0782a;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
 }
 
 .stage .camp-stage {
@@ -2701,6 +2719,116 @@
 
 .stage .compendium-text h3 {
   font-size: 24px;
+}
+
+/* --- Trigger Codex ------------------------------------------------------------------------ */
+
+.stage .trigger-codex {
+  width: 1180px;
+  height: 720px;
+}
+
+.stage .codex-body {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 16px 24px;
+  min-height: 0;
+}
+
+.stage .codex-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.stage .codex-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stage .codex-part {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  text-align: left;
+}
+
+.stage .codex-part.known .codex-name {
+  font-weight: 700;
+  color: var(--rarity-epic);
+}
+
+.stage .codex-part.unknown {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.stage .codex-part.unknown .codex-name {
+  letter-spacing: 3px;
+  color: var(--text-sub);
+}
+
+.stage .codex-part.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.stage .codex-part.quarry {
+  border-color: #e0782a;
+}
+
+.stage .codex-part > svg {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #e0782a;
+}
+
+.stage .codex-meta {
+  font-size: 12px;
+}
+
+.stage .codex-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 12px 24px;
+  border-top: 2px solid var(--edge);
+}
+
+.stage .kindle-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .kindle-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage .kindle-row .strong {
+  width: 84px;
+}
+
+.stage .after-line.kindled,
+.stage .affix-line.kindled {
+  color: #e0782a;
 }
 
 /* --- title ---------------------------------------------------------------------------------- */

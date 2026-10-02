@@ -1,6 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import type { Page } from "@playwright/test";
-import { type GameState, newGame, rollItem, Rng, serializeGame } from "@emberheir/sim";
+import { type GameState, type Item, newGame, rollItem, Rng, serializeGame } from "@emberheir/sim";
 
 /** A save right after Gorrak fell in the first run (the harvest boss): an Epic Body Armor to seal. */
 export function saveAfterHarvestBoss(): string {
@@ -64,6 +64,33 @@ export function saveWithRunes(): string {
       runesmithUnlocked: true,
     },
     legacy: { ...base.legacy, prestige: 1, runesFound: ["ash"] },
+  };
+  return serializeGame(state);
+}
+
+/** A Camp save with a learned Trigger Codex, Kindling and a Magic ring without a trigger. */
+export function saveWithCodex(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const ring: Item = {
+    id: "codex-ring",
+    baseId: "iron-ring",
+    name: "Sturdy Iron Ring",
+    rarity: "magic",
+    itemLevel: 18,
+    tier: 2,
+    affixes: [{ affixId: "life", quality: 0.6 }],
+  };
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 20 },
+    wallet: { ...base.wallet, dust: 400, kindling: 2 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    legacy: {
+      ...base.legacy,
+      prestige: 1,
+      codex: { conditions: { "on-crit": 2, "when-hit": 1 }, effects: { burn: 2, barrier: 3 } },
+    },
   };
   return serializeGame(state);
 }

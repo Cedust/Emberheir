@@ -31,6 +31,10 @@ const ENTRIES: { title: string; text: string }[] = [
     text: "Reforge rerolls all affixes for a Reforge Stone. Temper rerolls one affix value, Imbue replaces one affix with an Essence. After Temper or Imbue only that affix can change again until you Reforge. Trigger Affixes cannot be tempered or imbued. Distill turns Dust into a Reforge Stone. There is no Undo.",
   },
   {
+    title: "Trigger Codex",
+    text: "Salvage an item with a trigger at Thoric and the Codex learns its Condition and its Effect, at the item's Tier (Mastery). Liora's Kindle puts any learned Condition and Effect together as a trigger, for Kindling from Elite and boss Spoils. Old Nan can mark a part as your Quarry: it drops more often, and for sure after a few Elites.",
+  },
+  {
     title: "Attributes",
     text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Agility: Attack Speed, Evasion. Intelligence: Elemental Damage, All Resistance. Wisdom: Heat Gain, Ailment Duration. Vitality: Life, Tenacity. Crit Damage is always 150%.",
   },
