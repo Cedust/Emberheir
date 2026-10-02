@@ -60,8 +60,11 @@ export interface ActData {
   readonly id: string;
   readonly number: number;
   readonly name: string;
-  /** Monster Level per stage (index 0 = stage 1). The last stage is the boss stage. */
-  readonly monsterLevels: readonly number[];
+  /**
+   * Stages in the act; the last one is the boss stage. Monster Levels come from the run's level
+   * band (`stageMonsterLevel`), not from the act.
+   */
+  readonly stages: number;
   readonly enemies: readonly EnemyDefinition[];
   readonly boss: EnemyDefinition;
   /** Eldrin (Runesmith) waits in this act; he joins after the first trip into it. */
@@ -194,8 +197,16 @@ export interface PrestigeRewards {
   /** Fixed Salvage Dust instead of the burned stash. */
   readonly dust: number;
   readonly levelCap: number;
-  /** Monster Levels added to every stage. */
-  readonly monsterLevelBonus: number;
+  /** Acts the next run has (one more per Prestige, up to all of them). */
+  readonly acts: number;
+  /** Monster Levels of the next run: first stage and the harvest boss. */
+  readonly levelBand: LevelBand;
+}
+
+/** Monster Levels of a run: they rise evenly over all its stages from `start` to `end`. */
+export interface LevelBand {
+  readonly start: number;
+  readonly end: number;
 }
 
 /** One finished generation in the Legacy chronicle. */
@@ -361,7 +372,7 @@ export function getAct(data: GameData, actId: string): ActData {
   return act;
 }
 
-export const stagesInAct = (act: ActData) => act.monsterLevels.length;
+export const stagesInAct = (act: ActData) => act.stages;
 
 /** Acts in their order through the run. */
 export function actsInOrder(data: GameData): ActData[] {
@@ -369,11 +380,25 @@ export function actsInOrder(data: GameData): ActData[] {
 }
 
 /**
- * Whether the hero may set out into an act: the first act always, every later one once the act
- * before it fell in this generation. Cleared acts can be revisited to farm.
+ * The acts of a run (prestige-acts-v1.md): run n has acts 1..n, so every Prestige opens one more
+ * act until the whole world is open.
+ */
+export function actsInRun(data: GameData, prestige: number): ActData[] {
+  return actsInOrder(data).slice(0, Math.max(1, prestige + 1));
+}
+
+/** The newest act of the run: its boss brings The Harvest (the Prestige). */
+export function harvestAct(data: GameData, prestige: number): ActData {
+  const acts = actsInRun(data, prestige);
+  return acts[acts.length - 1] ?? fail("No acts");
+}
+
+/**
+ * Whether the hero may set out into an act: it must belong to this run, and the act before it
+ * must have fallen in this generation. Cleared acts can be revisited to farm.
  */
 export function actUnlocked(state: GameState, data: GameData, actId: string): boolean {
-  const acts = actsInOrder(data);
+  const acts = actsInRun(data, state.legacy.prestige);
   const index = acts.findIndex((a) => a.id === actId);
   if (index < 0) return false;
   const before = acts[index - 1];
@@ -382,17 +407,16 @@ export function actUnlocked(state: GameState, data: GameData, actId: string): bo
 
 /** The act the journey continues with: the first unlocked act that has not fallen yet. */
 export function nextAct(state: GameState, data: GameData): ActData {
-  const acts = actsInOrder(data);
+  const acts = actsInRun(data, state.legacy.prestige);
   const open = acts.find(
     (a) => !state.progress.actsCleared.includes(a.id) && actUnlocked(state, data, a.id),
   );
   return open ?? acts[acts.length - 1] ?? fail("No acts");
 }
 
-/** The last act of the run: its boss is the final boss and leads to the Prestige. */
-export function isFinalAct(data: GameData, actId: string): boolean {
-  const last = Math.max(...data.acts.map((a) => a.number));
-  return getAct(data, actId).number === last;
+/** Whether the boss of this act brings The Harvest in the given run (the newest act or later). */
+export function isHarvestAct(data: GameData, actId: string, prestige: number): boolean {
+  return getAct(data, actId).number >= harvestAct(data, prestige).number;
 }
 
 /** Level Cap at a Prestige level: 20, then +20 per Prestige. */
@@ -400,9 +424,35 @@ export function levelCap(prestige: number): number {
   return PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige * prestige;
 }
 
-/** Monster Level of a stage; every Prestige raises it. */
-export function stageMonsterLevel(act: ActData, stage: number, prestige: number): number {
-  return (act.monsterLevels[stage - 1] ?? 1) + PROGRESSION.monsterLevelsPerPrestige * prestige;
+/**
+ * The run's level band (prestige-acts-v1.md section 4): it starts 10 below the previous Level
+ * Cap, so the first stages are a gentle regear window, and ends at the new cap with the harvest
+ * boss.
+ */
+export function levelBand(prestige: number): LevelBand {
+  const start =
+    prestige === 0 ? 1 : Math.max(1, levelCap(prestige - 1) - PROGRESSION.levelBandStartBelowCap);
+  return { start, end: levelCap(prestige) };
+}
+
+/** Monster Level of a stage: the run's band, spread evenly over all stages of its acts. */
+export function stageMonsterLevel(
+  data: GameData,
+  act: ActData,
+  stage: number,
+  prestige: number,
+): number {
+  const acts = actsInRun(data, prestige);
+  const total = acts.reduce((n, a) => n + a.stages, 0);
+  let index = 0;
+  for (const a of acts) {
+    if (a.id === act.id) break;
+    index += a.stages;
+  }
+  // Acts past the run (old saves) count as its last stage.
+  index = Math.min(total - 1, index + stage - 1);
+  const { start, end } = levelBand(prestige);
+  return Math.round(start + ((end - start) * index) / Math.max(1, total - 1));
 }
 
 /** What the Prestige at `prestige` (1 = the first one) gives. */
@@ -414,7 +464,8 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
     harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
     dust: PROGRESSION.prestigeDustPerLevel * prestige,
     levelCap: levelCap(prestige),
-    monsterLevelBonus: PROGRESSION.monsterLevelsPerPrestige * prestige,
+    acts: actsInRun(data, prestige).length,
+    levelBand: levelBand(prestige),
   };
 }
 
@@ -719,7 +770,7 @@ function startStage(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission");
   const act = getAct(data, run.actId);
   const [rng, next] = nextRng(state);
-  const level = stageMonsterLevel(act, run.stage, state.legacy.prestige);
+  const level = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
   let encounter: Encounter;
   if (run.stage >= stagesInAct(act)) {
     encounter = {
@@ -1110,6 +1161,7 @@ function continueRun(state: GameState, data: GameData): GameState {
       ? state.progress.actsCleared
       : [...state.progress.actsCleared, run.actId];
     const enemyName = encounterName(encounter, run.actId, data);
+    const harvest = isHarvestAct(data, run.actId, state.legacy.prestige);
     const after = toCamp(
       {
         ...state,
@@ -1121,12 +1173,10 @@ function continueRun(state: GameState, data: GameData): GameState {
         },
       },
       data,
-      isFinalAct(data, run.actId)
-        ? null
-        : { kind: "actCleared", actId: run.actId, stage: run.stage, enemyName },
+      harvest ? null : { kind: "actCleared", actId: run.actId, stage: run.stage, enemyName },
     );
-    // The final boss of the run: the Prestige flow starts (Victory → Seal → Inheritance).
-    return isFinalAct(data, run.actId)
+    // The boss of the newest act: The Harvest and the Prestige flow start.
+    return harvest
       ? { ...after, pendingPrestige: { actId: run.actId, stage: run.stage, enemyName } }
       : after;
   }

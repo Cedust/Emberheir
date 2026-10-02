@@ -40,6 +40,8 @@ describe("equipment stats", () => {
     const sword = item("test-sword", [{ affixId: "added", quality: 1 }], 2);
     // TEST_WEAPON 10–10 × 2 (T2) + added 6 × 2 = 12 → +6–12.
     expect(itemWeapon(sword, TEST_CATALOG)?.damage).toEqual({ min: 26, max: 32 });
+    // Spells grow with the tier like weapon damage.
+    expect(itemWeapon(sword, TEST_CATALOG)?.spellPower).toBe(2);
     expect(itemWeapon(item("test-shield"), TEST_CATALOG)).toBeUndefined();
   });
 

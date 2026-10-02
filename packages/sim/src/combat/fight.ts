@@ -554,7 +554,8 @@ export class Fight {
             fromTrigger: false,
           });
         } else {
-          const levelScale = 1 + COMBAT.spellDamagePerSkillLevel * (level - 1);
+          const levelScale =
+            (1 + COMBAT.spellDamagePerSkillLevel * (level - 1)) * (f.setup.weapon.spellPower ?? 1);
           this.hit(f, {
             source: skill.name,
             baseDamage: this.roll(hit.damage) * levelScale * (hit.falloff ?? 1) ** i,

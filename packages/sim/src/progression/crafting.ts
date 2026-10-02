@@ -505,7 +505,7 @@ export function soldOut(state: GameState): readonly number[] {
 /** Item Level of Marisha's goods: the boss level of the act ahead. */
 export function merchantItemLevel(state: GameState, data: GameData): number {
   const act = nextAct(state, data);
-  return stageMonsterLevel(act, act.monsterLevels.length, state.legacy.prestige);
+  return stageMonsterLevel(data, act, act.stages, state.legacy.prestige);
 }
 
 /** Item slots Marisha gambles on: every slot the loot can show. */

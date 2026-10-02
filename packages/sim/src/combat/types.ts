@@ -159,6 +159,11 @@ export interface WeaponDefinition {
   readonly ailmentChances?: readonly AilmentChance[];
   /** Innate triggers of the weapon type, e.g. the Sword's Riposte. */
   readonly triggers?: readonly TriggerSpec[];
+  /**
+   * Spells cast with this weapon deal this much more base damage. Hero weapons get their Item
+   * Tier growth, so spells keep pace with weapon damage. Default 1.
+   */
+  readonly spellPower?: number;
 }
 
 export type SkillType = "attack" | "spell" | "buff" | "curse";

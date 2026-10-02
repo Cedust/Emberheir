@@ -7,22 +7,21 @@ import type { EnemyRank } from "./leveling";
  * section 2 and 3, loot-rewards-v1.md, town-crafting-v1.md.
  */
 /**
- * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 200. Steep early: a
- * first clear of Act 1 lands around level 5–6 of 20. Past level 20 every level needs a little more
- * than the one before; later acts will tune this.
+ * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 200. Each run spreads
+ * its Level Band over all its stages (prestige-acts-v1.md section 4), one fight per stage, so a
+ * level costs about `xpKillsPerLevel` normal kills of the same Monster Level. The hero keeps pace
+ * with the monsters, and the XP penalty for being above them stops it from running ahead.
  */
-function buildXpTable(): readonly number[] {
-  const table = [
-    80, 140, 220, 320, 450, 620, 830, 1100, 1450, 1900, 2400, 3000, 3700, 4500, 5400, 6400, 7500,
-    8700, 10000,
-  ];
-  let step = 1300;
-  while (table.length < 199) {
-    step += 50;
-    table.push((table[table.length - 1] ?? 0) + step);
-  }
+function buildXpTable(base: number, perLevel: number, killsPerLevel: number): readonly number[] {
+  const table: number[] = [];
+  for (let level = 1; level < 200; level++)
+    table.push(Math.round(killsPerLevel * (base + perLevel * (level - 1))));
   return table;
 }
+
+const XP_BASE = 20;
+const XP_PER_MONSTER_LEVEL = 10;
+const XP_KILLS_PER_LEVEL = 0.8;
 
 export const PROGRESSION = {
   /**
@@ -34,10 +33,10 @@ export const PROGRESSION = {
   levelCapPerPrestige: 20,
   attributePointsPerLevel: 2,
   skillPointsPerLevel: 1,
-  xpToNextLevel: buildXpTable(),
+  xpToNextLevel: buildXpTable(XP_BASE, XP_PER_MONSTER_LEVEL, XP_KILLS_PER_LEVEL),
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
-  xpBase: 20,
-  xpPerMonsterLevel: 10,
+  xpBase: XP_BASE,
+  xpPerMonsterLevel: XP_PER_MONSTER_LEVEL,
   /** Enemies below the hero's level give 10 % less XP per level, at least 10 %. */
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
@@ -122,7 +121,7 @@ export const PROGRESSION = {
   eliteLifeMultiplier: 1.4,
   eliteDamageMultiplier: 1.15,
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
-  monsterLevelsPerEliteModifier: 10,
+  monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
   /** Spoils pick amounts (loot-rewards-v1.md section 4). */
@@ -147,10 +146,10 @@ export const PROGRESSION = {
   /** Rotation Slots after the first Prestige. More Battle Plan upgrades come after the PoC. */
   prestigeRotationSlots: 2,
   /**
-   * Monster Levels of every act go up by this much per Prestige. Act 1 stays easy for a hero
-   * who keeps level and Seals but loses the rest of the gear (game-design-document-v1.md 3).
+   * A run's level band starts this far below the previous Level Cap (prestige-acts-v1.md 4): a
+   * hero who keeps level and Seals but loses the rest of the gear regears on the first stages.
    */
-  monsterLevelsPerPrestige: 2,
+  levelBandStartBelowCap: 10,
 
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,

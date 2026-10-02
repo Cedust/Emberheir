@@ -6,7 +6,9 @@ import {
   GameActionError,
   actUnlocked,
   applyAction,
-  isFinalAct,
+  isHarvestAct,
+  levelBand,
+  stageMonsterLevel,
   nextAct,
   currentFight,
   deserializeGame,
@@ -28,15 +30,20 @@ import {
   rollRuneDrops,
 } from "./game";
 import { Rng } from "../rng";
-import { TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
+import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
 const start = (seed = 1) => newGame(data, { seed, starterWeapon: "test-sword" });
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
-/** Opens the road to every act, as if the earlier bosses had fallen. */
-const unlocked = (state: GameState): GameState => ({
+/** A later run: Prestige `prestige` opens that many more acts. */
+const inRun = (state: GameState, prestige: number): GameState => ({
   ...state,
+  legacy: { ...state.legacy, prestige },
+});
+/** The third run with the road to every act open, as if the earlier bosses had fallen. */
+const unlocked = (state: GameState): GameState => ({
+  ...inRun(state, 2),
   progress: { ...state.progress, actsCleared: ["test-act", "deadly-act"] },
 });
 
@@ -100,11 +107,16 @@ describe("game loop", () => {
   });
 
   it("clears the act after the boss: back to Camp, Kaelen joins, Pity resets", () => {
-    let s = act(start(), { type: "setOut", actId: "test-act" });
+    // The second run: Act 1's boss is no longer the harvest.
+    let s = act(inRun(start(), 1), { type: "setOut", actId: "test-act" });
     s = { ...s, progress: { ...s.progress, deathsInAct: 3 } };
     for (let i = 0; i < 2; i++) s = clearStage(s);
     s = act(s, { type: "startStage" });
-    expect(s.run?.encounter).toMatchObject({ enemyId: "boss", boss: true, level: 2 });
+    expect(s.run?.encounter).toMatchObject({
+      enemyId: "boss",
+      boss: true,
+      level: stageMonsterLevel(data, TEST_ACT, 3, 1),
+    });
     s = act(s, { type: "resolveFight" });
     expect(s.run?.rewards?.reforgeStones).toBeGreaterThanOrEqual(PROGRESSION.bossReforgeStones[0]);
     expect(s.run?.rewards?.items.every((i) => i.rarity === "epic")).toBe(true);
@@ -298,8 +310,9 @@ describe("game loop", () => {
     expect(() => act(s, { type: "respecTree" })).toThrow(/Nothing/);
   });
 
-  it("the final boss starts the Prestige: Seals keep their items, the rest burns", () => {
-    let s = act(unlocked(start()), { type: "setOut", actId: "final-act" });
+  it("the boss of the newest act starts the Prestige: Seals keep their items, the rest burns", () => {
+    // The first run has only the first act; its boss brings The Harvest.
+    let s = act(start(), { type: "setOut", actId: "test-act" });
     for (let i = 0; i < 2; i++) s = clearStage(s);
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     const loot = s.run?.rewards?.items ?? fail();
@@ -307,7 +320,7 @@ describe("game loop", () => {
     s = act(s, { type: "continue" });
     expect(s.run).toBeNull();
     expect(s.notice).toBeNull();
-    expect(s.pendingPrestige).toMatchObject({ actId: "final-act", enemyName: "Boss" });
+    expect(s.pendingPrestige).toMatchObject({ actId: "test-act", enemyName: "Boss" });
     expect(() => act(s, { type: "setOut", actId: "test-act" })).toThrow(/harvest/);
     expect(sealsAvailable(s, data)).toBe(1);
 
@@ -358,8 +371,9 @@ describe("game loop", () => {
     s = act(s, { type: "dismissNotice" });
     expect(moveBlockReason(s, data, "x", "stash")).toBe("burned");
     s = act(s, { type: "setOut", actId: "test-act" }, { type: "startStage" });
-    // Monster Levels rise with every Prestige.
-    expect(s.run?.encounter?.level).toBe(1 + PROGRESSION.monsterLevelsPerPrestige);
+    // The new run's level band starts 10 below the old Level Cap.
+    expect(s.run?.encounter?.level).toBe(PROGRESSION.levelCap - 10);
+    expect(actUnlocked(s, data, "deadly-act")).toBe(false);
     s = act(s, { type: "retreat" });
     expect(s.progress.stashBurned).toBe(false);
   });
@@ -372,8 +386,11 @@ describe("game loop", () => {
       harvesterEmber: 1,
       dust: PROGRESSION.prestigeDustPerLevel,
       levelCap: PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
-      monsterLevelBonus: PROGRESSION.monsterLevelsPerPrestige,
+      acts: 2,
+      levelBand: { start: PROGRESSION.levelCap - 10, end: PROGRESSION.levelCap * 2 },
     });
+    // Never more acts than the game has.
+    expect(prestigeRewards(data, 9).acts).toBe(3);
     // Never more Seals than slots.
     expect(prestigeRewards(data, 9).seals).toBe(data.equipmentSlots.length);
   });
@@ -420,8 +437,37 @@ function fail(): never {
 }
 
 describe("the road through the acts", () => {
+  it("each run opens one more act", () => {
+    const s = start();
+    expect(actUnlocked(s, data, "test-act")).toBe(true);
+    expect(
+      actUnlocked(
+        { ...s, progress: { ...s.progress, actsCleared: ["test-act"] } },
+        data,
+        "deadly-act",
+      ),
+    ).toBe(false);
+    expect(isHarvestAct(data, "test-act", 0)).toBe(true);
+    expect(isHarvestAct(data, "test-act", 1)).toBe(false);
+    expect(isHarvestAct(data, "deadly-act", 1)).toBe(true);
+    expect(isHarvestAct(data, "final-act", 5)).toBe(true);
+  });
+
+  it("the level band rises evenly over all stages of the run", () => {
+    expect(levelBand(0)).toEqual({ start: 1, end: 20 });
+    expect(levelBand(1)).toEqual({ start: 10, end: 40 });
+    expect(levelBand(3)).toEqual({ start: 50, end: 80 });
+    // Run 1: one act of 3 stages, 1 → 20.
+    expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 11, 20]);
+    // Run 2: two acts, 6 stages from 10 to 40; the second act carries on where the first ends.
+    const second = data.acts[1] ?? fail();
+    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(10);
+    expect(stageMonsterLevel(data, second, 1, 1)).toBe(28);
+    expect(stageMonsterLevel(data, second, 3, 1)).toBe(40);
+  });
+
   it("opens one act after the other and lets cleared acts be revisited", () => {
-    let s = start();
+    let s = inRun(start(), 2);
     expect(actUnlocked(s, data, "test-act")).toBe(true);
     expect(actUnlocked(s, data, "deadly-act")).toBe(false);
     expect(nextAct(s, data).id).toBe("test-act");
@@ -437,9 +483,7 @@ describe("the road through the acts", () => {
     expect(act(s, { type: "setOut", actId: "test-act" }).run?.actId).toBe("test-act");
   });
 
-  it("only the last act's boss starts the Prestige", () => {
-    expect(isFinalAct(data, "test-act")).toBe(false);
-    expect(isFinalAct(data, "final-act")).toBe(true);
+  it("the journey leads to the newest act of the run", () => {
     expect(nextAct(unlocked(start()), data).id).toBe("final-act");
   });
 });

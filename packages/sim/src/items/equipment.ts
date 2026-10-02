@@ -78,6 +78,7 @@ export function itemWeapon(item: Item, catalog: ItemCatalog): WeaponDefinition |
   const { min, max } = addedDamageRange(added);
   return {
     ...base.weapon,
+    spellPower: growth,
     damage: {
       min: Math.round(base.weapon.damage.min * growth) + min,
       max: Math.round(base.weapon.damage.max * growth) + max,

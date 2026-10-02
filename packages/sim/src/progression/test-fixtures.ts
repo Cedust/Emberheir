@@ -32,7 +32,7 @@ export const TEST_ACT: ActData = {
   id: "test-act",
   number: 1,
   name: "Test Act",
-  monsterLevels: [1, 1, 2],
+  stages: 3,
   enemies: [WEAK_ENEMY],
   boss: TEST_BOSS,
   spoilsStages: [2],

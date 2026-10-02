@@ -166,6 +166,18 @@ describe("Fight", () => {
       );
       leveled.advance(1.01);
       expect(ofType(leveled.events, "hit")[0]?.damage).toBe(48);
+
+      const powered = new Fight(
+        setup({
+          bonuses: NO_CRIT,
+          weapon: { ...TEST_WEAPON, spellPower: 2 },
+          rotation: [{ skill: chain }],
+        }),
+        dummy(),
+        1,
+      );
+      powered.advance(1.01);
+      expect(ofType(powered.events, "hit")[0]?.damage).toBe(80);
     });
   });
 
