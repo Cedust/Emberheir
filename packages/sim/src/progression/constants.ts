@@ -1,4 +1,5 @@
 import type { ItemSlot, Rarity } from "../items/types";
+import type { EnemyRank } from "./leveling";
 
 /**
  * Tuning numbers for progression and rewards. Starting values for the balance CLI
@@ -50,6 +51,17 @@ export const PROGRESSION = {
   /** Reward multipliers for Elites and Bosses (XP, Gold, Dust). */
   eliteRewardMultiplier: { xp: 3, gold: 2, dust: 2 },
   bossRewardMultiplier: { xp: 6, gold: 5, dust: 4 },
+  /** Chance that one card of the item pick is Legendary, by enemy rank. */
+  legendaryChance: { normal: 0, elite: 0.04, boss: 0.25 } satisfies Record<EnemyRank, number>,
+  /** Share of those Legendary cards that become a Unique (if one fits). */
+  uniqueShare: 0.35,
+  /** Expected Runes per win by rank (fractions are chances, 1.5 = one plus 50 % a second). */
+  runeDrops: { normal: 0.06, elite: 0.5, boss: 1.5 } satisfies Record<EnemyRank, number>,
+  /** Rune ranks that drop: base + per Act Tier (Act 1 → up to rank 3, Act 2 → 5). */
+  runeRankBase: 1,
+  runeRanksPerActTier: 2,
+  /** Each Rune rank drops this much less often than the one below it. */
+  runeRankFalloff: 0.5,
   /** Guaranteed Reforge Stones (min, max). */
   eliteReforgeStones: [2, 3],
   bossReforgeStones: [4, 6],
@@ -184,4 +196,21 @@ export const CRAFTING = {
   imbueEssences: 1,
   /** Distill: Salvage Dust into one Reforge Stone at Liora. */
   distillDust: 60,
+  /** Add Socket at Thoric: Gold plus Dust × the new Socket count. */
+  addSocketGold: 25,
+  addSocketDust: 15,
+  /** Eldrin: Socket a Rune / combine three into the next rank, Gold × rank. */
+  socketRuneGoldPerRank: 8,
+  combineRunesGoldPerRank: 15,
+  combineRunesCount: 3,
+  /** Marisha: offers in stock, prices. */
+  merchantOffers: 6,
+  basePriceFlat: 20,
+  basePricePerSocket: 15,
+  gambleFlat: 60,
+  gamblePerItemLevel: 12,
+  gambleRarityWeights: { normal: 0, magic: 55, rare: 30, epic: 12, legendary: 3 } satisfies Record<
+    Rarity,
+    number
+  >,
 } as const;

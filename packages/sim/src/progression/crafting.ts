@@ -1,11 +1,29 @@
 import { affixPool, rollQuality, statAffixValue, unlockedStages } from "../items/affixes";
 import { ITEMS } from "../items/constants";
 import { missingRequirements } from "../items/equipment";
-import { getBase, rollItem } from "../items/generate";
-import type { AffixRoll, EquipmentSlot, Item, ItemCatalog } from "../items/types";
-import type { Rng } from "../rng";
-import { CRAFTING } from "./constants";
-import { type GameData, type GameState, fail, nextRng, requireCamp } from "./game";
+import { getBase, rollItem, rollRarity, rollUnique, uniquesFor } from "../items/generate";
+import { freeSockets, matchRuneword } from "../items/runes";
+import type {
+  AffixRoll,
+  EquipmentSlot,
+  Item,
+  ItemCatalog,
+  ItemSlot,
+  RuneDefinition,
+} from "../items/types";
+import { Rng } from "../rng";
+import { CRAFTING, PROGRESSION } from "./constants";
+import {
+  type GameData,
+  type GameState,
+  addRunes,
+  fail,
+  nextAct,
+  nextRng,
+  requireCamp,
+  stageMonsterLevel,
+} from "./game";
+import { addToGrid } from "./inventory";
 
 /**
  * Camp crafting (docs/design/town-crafting-v1.md section 3, Persona mock): Thoric upgrades the
@@ -26,12 +44,24 @@ export type CraftRequest =
       readonly affixIndex: number;
       readonly essenceId: string;
     }
-  | { readonly kind: "distill" };
+  | { readonly kind: "distill" }
+  /** Thoric: +1 Socket on a Normal item without Runes, up to the base's maximum. */
+  | { readonly kind: "addSocket"; readonly itemId: string }
+  /** Eldrin: a Rune from the pouch into the next free Socket. Runes never come out again. */
+  | { readonly kind: "socketRune"; readonly itemId: string; readonly runeId: string }
+  /** Eldrin: three Runes of one kind into one Rune of the next rank. */
+  | { readonly kind: "combineRunes"; readonly runeId: string }
+  /** Marisha: buy one of the Normal bases in stock. */
+  | { readonly kind: "buyBase"; readonly index: number }
+  /** Marisha: a random item for a slot, maybe even Legendary. */
+  | { readonly kind: "gamble"; readonly slot: ItemSlot };
 
 export type CraftKind = CraftRequest["kind"];
 
 /** Liora joins the caravan with Kaelen, after the first act boss. */
 export const MYSTIC_CRAFTS: readonly CraftKind[] = ["reforge", "temper", "imbue", "distill"];
+/** Eldrin joins after the first trip into the Rotwood. */
+export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["socketRune", "combineRunes"];
 
 export interface CraftCost {
   readonly gold: number;
@@ -40,12 +70,31 @@ export interface CraftCost {
   readonly ascensionShards: number;
   /** Essences by id. */
   readonly essences: Readonly<Record<string, number>>;
+  /** Runes by id. */
+  readonly runes: Readonly<Record<string, number>>;
 }
 
 export type CraftBlockReason =
   | "camp"
   /** Liora has not joined the caravan yet. */
   | "mystic"
+  /** Eldrin has not joined the caravan yet. */
+  | "runesmith"
+  /** Sockets and Runes are for Normal items only. */
+  | "notNormal"
+  | "maxSockets"
+  /** Sockets can only be added before the first Rune goes in. */
+  | "hasRunes"
+  | "noSocket"
+  /** Runewords and Uniques never change. */
+  | "fixed"
+  | "unknownRune"
+  | "maxRank"
+  | "sold"
+  | "noStock"
+  /** No room in the inventory for a bought item. */
+  | "noRoom"
+  | "runes"
   | "noItem"
   | "maxTier"
   /** An equipped item would stop working: its new requirements are not met. */
@@ -77,11 +126,48 @@ export function findCraftItem(state: GameState, itemId: string): CraftItemLocati
   return placed ? { item: placed.item } : undefined;
 }
 
-const NO_COST: CraftCost = { gold: 0, dust: 0, reforgeStones: 0, ascensionShards: 0, essences: {} };
+const NO_COST: CraftCost = {
+  gold: 0,
+  dust: 0,
+  reforgeStones: 0,
+  ascensionShards: 0,
+  essences: {},
+  runes: {},
+};
 
 /** What a craft costs. Upgrade gets more expensive with the Tier. */
-export function craftCost(request: CraftRequest, item?: Item): CraftCost {
+export function craftCost(
+  request: CraftRequest,
+  item?: Item,
+  data?: GameData,
+  state?: GameState,
+): CraftCost {
+  const runeRank = (id: string) => data?.items.runes.get(id)?.rank ?? 1;
   switch (request.kind) {
+    case "addSocket":
+      return {
+        ...NO_COST,
+        gold: CRAFTING.addSocketGold,
+        dust: CRAFTING.addSocketDust * ((item?.sockets ?? 0) + 1),
+      };
+    case "socketRune":
+      return {
+        ...NO_COST,
+        gold: CRAFTING.socketRuneGoldPerRank * runeRank(request.runeId),
+        runes: { [request.runeId]: 1 },
+      };
+    case "combineRunes":
+      return {
+        ...NO_COST,
+        gold: CRAFTING.combineRunesGoldPerRank * runeRank(request.runeId),
+        runes: { [request.runeId]: CRAFTING.combineRunesCount },
+      };
+    case "buyBase": {
+      const offer = state && data ? merchantStock(state, data)[request.index] : undefined;
+      return { ...NO_COST, gold: offer ? basePrice(offer) : 0 };
+    }
+    case "gamble":
+      return { ...NO_COST, gold: state && data ? gamblePrice(merchantItemLevel(state, data)) : 0 };
     case "upgrade":
       return {
         ...NO_COST,
@@ -151,6 +237,9 @@ function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | 
   for (const [id, n] of Object.entries(cost.essences)) {
     if ((w.essences[id] ?? 0) < n) return "essence";
   }
+  for (const [id, n] of Object.entries(cost.runes)) {
+    if ((w.runes[id] ?? 0) < n) return "runes";
+  }
   if (w.dust < cost.dust) return "dust";
   if (w.gold < cost.gold) return "gold";
   return undefined;
@@ -164,7 +253,28 @@ export function craftBlockReason(
 ): CraftBlockReason | undefined {
   if (state.run) return "camp";
   if (MYSTIC_CRAFTS.includes(request.kind) && !state.progress.trainerUnlocked) return "mystic";
+  if (RUNESMITH_CRAFTS.includes(request.kind) && !state.progress.runesmithUnlocked) {
+    return "runesmith";
+  }
   if (request.kind === "distill") return costBlockReason(state, craftCost(request));
+  if (request.kind === "combineRunes") {
+    const rune = data.items.runes.get(request.runeId);
+    if (!rune) return "unknownRune";
+    if (!nextRune(data, rune.rank)) return "maxRank";
+    return costBlockReason(state, craftCost(request, undefined, data));
+  }
+  if (request.kind === "buyBase") {
+    const offer = merchantStock(state, data)[request.index];
+    if (!offer) return "noStock";
+    if (soldOut(state).includes(request.index)) return "sold";
+    if (!addToGrid(state.inventory, offer, data.items)) return "noRoom";
+    return costBlockReason(state, craftCost(request, undefined, data, state));
+  }
+  if (request.kind === "gamble") {
+    if (!merchantSlots(data).includes(request.slot)) return "noStock";
+    if (!hasRoomFor(state, data, request.slot)) return "noRoom";
+    return costBlockReason(state, craftCost(request, undefined, data, state));
+  }
 
   const found = findCraftItem(state, request.itemId);
   if (!found) return "noItem";
@@ -180,14 +290,31 @@ export function craftBlockReason(
       break;
     }
     case "reforge":
+      if (item.uniqueId) return "fixed";
       if (item.affixes.length === 0) return "noAffixes";
       break;
+    case "addSocket": {
+      if (item.rarity !== "normal") return "notNormal";
+      if (item.runes?.length) return "hasRunes";
+      if ((item.sockets ?? 0) >= (getBase(catalog, item.baseId).maxSockets ?? 0)) {
+        return "maxSockets";
+      }
+      break;
+    }
+    case "socketRune": {
+      if (item.rarity !== "normal") return "notNormal";
+      if (!catalog.runes.has(request.runeId)) return "unknownRune";
+      if (freeSockets(item) <= 0) return "noSocket";
+      break;
+    }
     case "temper": {
+      if (item.uniqueId) return "fixed";
       const reason = affixBlockReason(item, request.affixIndex, catalog);
       if (reason) return reason;
       break;
     }
     case "imbue": {
+      if (item.uniqueId) return "fixed";
       const reason = affixBlockReason(item, request.affixIndex, catalog);
       if (reason) return reason;
       const essence = findEssence(data, request.essenceId);
@@ -206,12 +333,17 @@ export function craftBlockReason(
       break;
     }
   }
-  return costBlockReason(state, craftCost(request, item));
+  return costBlockReason(state, craftCost(request, item, data, state));
 }
 
 function pay(state: GameState, cost: CraftCost): GameState {
   const essences = { ...state.wallet.essences };
   for (const [id, n] of Object.entries(cost.essences)) essences[id] = (essences[id] ?? 0) - n;
+  const runes = Object.fromEntries(
+    Object.entries(state.wallet.runes)
+      .map(([id, n]) => [id, n - (cost.runes[id] ?? 0)] as const)
+      .filter(([, n]) => n > 0),
+  );
   return {
     ...state,
     wallet: {
@@ -221,6 +353,7 @@ function pay(state: GameState, cost: CraftCost): GameState {
       reforgeStones: state.wallet.reforgeStones - cost.reforgeStones,
       ascensionShards: state.wallet.ascensionShards - cost.ascensionShards,
       essences,
+      runes,
     },
   };
 }
@@ -258,15 +391,57 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
       wallet: { ...paid.wallet, reforgeStones: paid.wallet.reforgeStones + 1 },
     };
   }
+  if (request.kind === "combineRunes") {
+    const paid = pay(state, craftCost(request, undefined, data));
+    const rank = data.items.runes.get(request.runeId)?.rank ?? fail("Unknown Rune");
+    const next = nextRune(data, rank) ?? fail("No higher Rune");
+    return {
+      ...paid,
+      wallet: { ...paid.wallet, runes: addRunes(paid.wallet.runes, [next.id]) },
+      legacy: {
+        ...paid.legacy,
+        runesFound: [...new Set([...paid.legacy.runesFound, next.id])],
+      },
+    };
+  }
+  if (request.kind === "buyBase") {
+    const offer = merchantStock(state, data)[request.index] ?? fail("Not in stock");
+    const paid = pay(state, craftCost(request, undefined, data, state));
+    return {
+      ...paid,
+      inventory: addToGrid(paid.inventory, offer, data.items) ?? fail("No room"),
+      merchant: { key: merchantKey(state), sold: [...soldOut(state), request.index] },
+    };
+  }
+  if (request.kind === "gamble") {
+    const paid = pay(state, craftCost(request, undefined, data, state));
+    const [rng, next] = nextRng(paid);
+    const item = gambleItem(next, data, request.slot, rng);
+    return { ...next, inventory: addToGrid(next.inventory, item, data.items) ?? fail("No room") };
+  }
 
   const location = findCraftItem(state, request.itemId) ?? fail("Item not found");
   const { item } = location;
-  const paid = pay(state, craftCost(request, item));
+  const paid = pay(state, craftCost(request, item, data, state));
   const quality = (rng: Rng) => Number(rollQuality(item.itemLevel, item.rarity, rng).toFixed(4));
 
   switch (request.kind) {
     case "upgrade":
       return replaceItem(paid, location, upgradedItem(item));
+    case "addSocket":
+      return replaceItem(paid, location, { ...item, sockets: (item.sockets ?? 0) + 1 });
+    case "socketRune": {
+      const runes = [...(item.runes ?? []), request.runeId];
+      const slot = getBase(data.items, item.baseId).slot;
+      const word = matchRuneword(data.items, slot, item.sockets ?? 0, runes);
+      const socketed: Item = { ...item, runes, ...(word ? { name: word.name } : {}) };
+      const placed = replaceItem(paid, location, socketed);
+      if (!word || placed.legacy.runewords.includes(word.id)) return placed;
+      return {
+        ...placed,
+        legacy: { ...placed.legacy, runewords: [...placed.legacy.runewords, word.id] },
+      };
+    }
     case "reforge": {
       const [rng, next] = nextRng(paid);
       const rolled = rollItem(
@@ -274,15 +449,18 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         { baseId: item.baseId, itemLevel: item.itemLevel, rarity: item.rarity },
         rng,
       );
-      // Base, Tier and Rarity stay; the lock is gone.
+      // Base, Tier, Rarity, Sockets, Runes and the Legendary Power stay; the lock is gone.
       const reforged: Item = {
         id: item.id,
         baseId: item.baseId,
-        name: rolled.name,
+        name: item.runes?.length ? item.name : rolled.name,
         rarity: item.rarity,
         itemLevel: item.itemLevel,
         tier: item.tier,
         affixes: rolled.affixes,
+        ...(item.sockets ? { sockets: item.sockets } : {}),
+        ...(item.runes ? { runes: item.runes } : {}),
+        ...(item.powerId ? { powerId: item.powerId } : {}),
       };
       return replaceItem(next, location, reforged);
     }
@@ -305,4 +483,85 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
       );
     }
   }
+}
+
+// --- Runes -------------------------------------------------------------------------------------
+
+/** The Rune one rank higher (Combine Runes), if there is one. */
+export function nextRune(data: GameData, rank: number): RuneDefinition | undefined {
+  return [...data.items.runes.values()].find((r) => r.rank === rank + 1);
+}
+
+// --- Marisha (Merchant) ------------------------------------------------------------------------
+
+/** The stock changes whenever the hero comes back from fighting. */
+const merchantKey = (state: GameState) => state.stats.fights + 1000 * state.legacy.prestige;
+
+/** Offers already sold from the current stock. */
+export function soldOut(state: GameState): readonly number[] {
+  return state.merchant.key === merchantKey(state) ? state.merchant.sold : [];
+}
+
+/** Item Level of Marisha's goods: the boss level of the act ahead. */
+export function merchantItemLevel(state: GameState, data: GameData): number {
+  const act = nextAct(state, data);
+  return stageMonsterLevel(act, act.monsterLevels.length, state.legacy.prestige);
+}
+
+/** Item slots Marisha gambles on: every slot the loot can show. */
+export function merchantSlots(data: GameData): ItemSlot[] {
+  return [...new Set(data.lootBases.map((id) => getBase(data.items, id).slot))];
+}
+
+/**
+ * Marisha's stock: Normal bases with the most Sockets they can have (Runeword bases), rolled
+ * from the save's seed, so reloading does not change it.
+ */
+export function merchantStock(state: GameState, data: GameData): Item[] {
+  const rng = new Rng((state.seed ^ Math.imul(merchantKey(state) + 7, 0x2c1b3c6d)) >>> 0);
+  const socketable = data.lootBases.filter((id) => (getBase(data.items, id).maxSockets ?? 0) > 0);
+  const level = merchantItemLevel(state, data);
+  const stock: Item[] = [];
+  const left = [...socketable];
+  for (let i = 0; i < CRAFTING.merchantOffers && left.length; i++) {
+    const baseId = left.splice(rng.int(0, left.length - 1), 1)[0] ?? "";
+    const base = getBase(data.items, baseId);
+    const item = rollItem(data.items, { baseId, itemLevel: level, rarity: "normal" }, rng);
+    stock.push({ ...item, sockets: base.maxSockets ?? 0 });
+  }
+  return stock;
+}
+
+export function basePrice(item: Item): number {
+  return CRAFTING.basePriceFlat + CRAFTING.basePricePerSocket * (item.sockets ?? 0) * item.tier;
+}
+
+export function gamblePrice(itemLevel: number): number {
+  return CRAFTING.gambleFlat + CRAFTING.gamblePerItemLevel * itemLevel;
+}
+
+/** Whether a gamble for this slot would find room: checked with the slot's biggest base. */
+function hasRoomFor(state: GameState, data: GameData, slot: ItemSlot): boolean {
+  return data.lootBases
+    .filter((id) => getBase(data.items, id).slot === slot)
+    .every((baseId) => {
+      const probe = rollItem(data.items, { baseId, itemLevel: 1, rarity: "normal" }, new Rng(1));
+      return addToGrid(state.inventory, probe, data.items) !== null;
+    });
+}
+
+/** A gambled item: random base of the slot, rarity by Marisha's odds, Uniques possible. */
+export function gambleItem(state: GameState, data: GameData, slot: ItemSlot, rng: Rng): Item {
+  const level = merchantItemLevel(state, data);
+  const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
+  const rarity = rollRarity(rng, CRAFTING.gambleRarityWeights);
+  if (rarity === "legendary") {
+    const uniques = uniquesFor(data.items, level, bases);
+    if (uniques.length && rng.chance(PROGRESSION.uniqueShare)) {
+      const unique = uniques[rng.int(0, uniques.length - 1)];
+      if (unique) return rollUnique(data.items, unique.id, level, rng);
+    }
+  }
+  const baseId = bases[rng.int(0, bases.length - 1)] ?? fail("Nothing to gamble on");
+  return rollItem(data.items, { baseId, itemLevel: level, rarity }, rng);
 }

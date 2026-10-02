@@ -10,7 +10,14 @@ import type {
 } from "../combat/types";
 import { ATTRIBUTES } from "../combat/types";
 import { type ResolvedEquipment, itemSlotFor, missingRequirements } from "../items/equipment";
-import { getBase, pickWeighted, rollItem, rollRarity } from "../items/generate";
+import {
+  getBase,
+  pickWeighted,
+  rollItem,
+  rollRarity,
+  rollUnique,
+  uniquesFor,
+} from "../items/generate";
 import {
   type Equipment,
   type EquipmentSlot,
@@ -46,7 +53,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -57,6 +64,8 @@ export interface ActData {
   readonly monsterLevels: readonly number[];
   readonly enemies: readonly EnemyDefinition[];
   readonly boss: EnemyDefinition;
+  /** Eldrin (Runesmith) waits in this act; he joins after the first trip into it. */
+  readonly runesmith?: boolean;
   /** Stages with a fixed Spoils pick (5 and 10). */
   readonly spoilsStages: readonly number[];
   /** The act's Essence (Imbue currency) and the stat affix it imbues. */
@@ -90,6 +99,8 @@ export interface Wallet {
   readonly harvesterEmber: number;
   /** Upgrade (+1 Item Tier) at the Blacksmith. Bosses, sometimes Elites. */
   readonly ascensionShards: number;
+  /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
+  readonly runes: Readonly<Record<string, number>>;
 }
 
 export interface HeroState {
@@ -135,6 +146,8 @@ export interface Rewards {
   readonly dust: number;
   readonly reforgeStones: number;
   readonly ascensionShards: number;
+  /** Runes that dropped (straight into the pouch). */
+  readonly runes: readonly string[];
   readonly levelsGained: number;
   /** Item pick: 1 of these. */
   readonly items: readonly Item[];
@@ -201,6 +214,16 @@ export interface LegacyState {
   /** Sealed slots: their items survive the next Prestige. Prefilled when the next one comes. */
   readonly seals: readonly EquipmentSlot[];
   readonly chronicle: readonly ChronicleEntry[];
+  /** Runeword Codex: Runewords forged at least once. Permanent. */
+  readonly runewords: readonly string[];
+  /** Runes ever found. A Runeword shows its recipe once all its Runes were found. */
+  readonly runesFound: readonly string[];
+}
+
+/** Marisha restocks whenever the hero comes back from a fight (`key` = fights so far). */
+export interface MerchantState {
+  readonly key: number;
+  readonly sold: readonly number[];
 }
 
 /** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */
@@ -238,7 +261,11 @@ export interface GameState {
     readonly rotationSlots: number;
     /** The Supply Wagon burned at the Prestige; it is repaired on the first return to Camp. */
     readonly stashBurned: boolean;
+    /** Eldrin (Runesmith) joined the caravan. Stays through every Prestige. */
+    readonly runesmithUnlocked: boolean;
   };
+  /** Marisha's stock: which offers of the current stock are sold. */
+  readonly merchant: MerchantState;
   /** `null` = in the Camp. */
   readonly run: RunState | null;
   readonly notice: Notice | null;
@@ -304,6 +331,7 @@ export function newGame(
       essences: {},
       harvesterEmber: 0,
       ascensionShards: 0,
+      runes: {},
     },
     inventory: [],
     stash: [],
@@ -314,11 +342,13 @@ export function newGame(
       trainerUnlocked: false,
       rotationSlots: PROGRESSION.startRotationSlots,
       stashBurned: false,
+      runesmithUnlocked: false,
     },
+    merchant: { key: 0, sold: [] },
     run: null,
     notice: null,
     stats: { fights: 0, wins: 0, deaths: 0, retreats: 0, bossKills: 0 },
-    legacy: { prestige: 0, seals: [], chronicle: [] },
+    legacy: { prestige: 0, seals: [], chronicle: [], runewords: [], runesFound: [] },
     pendingPrestige: null,
   };
 }
@@ -722,13 +752,18 @@ function startStage(state: GameState, data: GameData): GameState {
 }
 
 /** Back to the Camp: flask refilled, life full, act progress gone, Supply Wagon repaired. */
-function toCamp(state: GameState, notice: Notice | null): GameState {
+function toCamp(state: GameState, data: GameData, notice: Notice | null): GameState {
+  const fromRunesmithAct = state.run ? getAct(data, state.run.actId).runesmith === true : false;
   return {
     ...state,
     run: null,
     notice,
     flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
-    progress: { ...state.progress, stashBurned: false },
+    progress: {
+      ...state.progress,
+      stashBurned: false,
+      runesmithUnlocked: state.progress.runesmithUnlocked || fromRunesmithAct,
+    },
   };
 }
 
@@ -748,6 +783,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         stats: { ...stats, deaths: stats.deaths + 1 },
         progress: { ...state.progress, deathsInAct: state.progress.deathsInAct + 1 },
       },
+      data,
       { kind: "death", actId: run.actId, stage: run.stage, enemyName },
     );
   }
@@ -778,6 +814,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
     act.number + state.legacy.prestige,
     rng,
   );
+  const runes = rollRuneDrops(data, rank, act.number + state.legacy.prestige, rng);
   const spoils: SpoilsCard[] =
     rank !== "normal" || act.spoilsStages.includes(run.stage)
       ? [
@@ -810,6 +847,11 @@ function resolveFight(state: GameState, data: GameData): GameState {
       dust: state.wallet.dust + auto.dust,
       reforgeStones: state.wallet.reforgeStones + stones,
       ascensionShards: state.wallet.ascensionShards + shards,
+      runes: addRunes(state.wallet.runes, runes),
+    },
+    legacy: {
+      ...state.legacy,
+      runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
     },
     run: {
       ...run,
@@ -822,6 +864,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         dust: auto.dust,
         reforgeStones: stones,
         ascensionShards: shards,
+        runes,
         levelsGained: leveled.levelsGained,
         items,
         itemPick: null,
@@ -888,6 +931,8 @@ function rollItemChoices(
   }
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
+  // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
+  const legendaryCard = rng.chance(PROGRESSION.legendaryChance[rank]) ? rng.int(0, 2) : -1;
   for (let i = 0; i < PROGRESSION.itemChoices; i++) {
     // Different slots while possible, so the three cards differ.
     const pool = slots.length ? slots : [...bySlot.keys()];
@@ -895,17 +940,57 @@ function rollItemChoices(
     if (!slot) break;
     slots.splice(slots.indexOf(slot), 1);
     const bases = bySlot.get(slot) ?? [];
+    if (i === legendaryCard) {
+      const uniques = uniquesFor(data.items, encounter.level, bases);
+      const unique =
+        uniques.length > 0 && rng.chance(PROGRESSION.uniqueShare)
+          ? uniques[rng.int(0, uniques.length - 1)]
+          : undefined;
+      if (unique) {
+        items.push(rollUnique(data.items, unique.id, encounter.level, rng));
+        continue;
+      }
+    }
     const baseId = bases[rng.int(0, bases.length - 1)];
     if (!baseId) break;
-    items.push(
-      rollItem(
-        data.items,
-        { baseId, itemLevel: encounter.level, rarity: rollRarity(rng, weights) },
-        rng,
-      ),
-    );
+    const rarity = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
+    items.push(rollItem(data.items, { baseId, itemLevel: encounter.level, rarity }, rng));
   }
   return items;
+}
+
+/** Adds Runes to the pouch. */
+export function addRunes(
+  pouch: Readonly<Record<string, number>>,
+  runes: readonly string[],
+): Record<string, number> {
+  const next = { ...pouch };
+  for (const id of runes) next[id] = (next[id] ?? 0) + 1;
+  return next;
+}
+
+/** Highest Rune rank that drops at an Act Tier (act number + Prestige). */
+export function maxRuneRank(actTier: number): number {
+  return PROGRESSION.runeRankBase + PROGRESSION.runeRanksPerActTier * actTier;
+}
+
+/** Runes a win drops: by chance per rank, lower Rune ranks far more often (like D2). */
+export function rollRuneDrops(
+  data: GameData,
+  rank: EnemyRank,
+  actTier: number,
+  rng: Rng,
+): string[] {
+  const max = maxRuneRank(actTier);
+  const pool = [...data.items.runes.values()].filter((r) => r.rank <= max);
+  const drops: string[] = [];
+  const count = PROGRESSION.runeDrops[rank];
+  for (let i = 0; i < Math.ceil(count); i++) {
+    if (!rng.chance(Math.min(1, count - i))) continue;
+    const rune = pickWeighted(pool, (r) => PROGRESSION.runeRankFalloff ** (r.rank - 1), rng);
+    if (rune) drops.push(rune.id);
+  }
+  return drops;
 }
 
 function retreat(state: GameState, data: GameData): GameState {
@@ -913,10 +998,12 @@ function retreat(state: GameState, data: GameData): GameState {
   // Rewards are picked first, so no loot gets lost on the way back.
   if (run.rewards && !rewardsDone(run.rewards)) return fail("Pick your rewards first");
   const enemyName = run.encounter ? encounterName(run.encounter, run.actId, data) : undefined;
-  return toCamp(
-    { ...state, stats: { ...state.stats, retreats: state.stats.retreats + 1 } },
-    { kind: "retreat", actId: run.actId, stage: run.stage, ...(enemyName ? { enemyName } : {}) },
-  );
+  return toCamp({ ...state, stats: { ...state.stats, retreats: state.stats.retreats + 1 } }, data, {
+    kind: "retreat",
+    actId: run.actId,
+    stage: run.stage,
+    ...(enemyName ? { enemyName } : {}),
+  });
 }
 
 function requireRewards(state: GameState): { run: RunState; rewards: Rewards } {
@@ -1033,6 +1120,7 @@ function continueRun(state: GameState, data: GameData): GameState {
           trainerUnlocked: true,
         },
       },
+      data,
       isFinalAct(data, run.actId)
         ? null
         : { kind: "actCleared", actId: run.actId, stage: run.stage, enemyName },
@@ -1303,6 +1391,7 @@ function doPrestige(
       essences: {},
       harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
       ascensionShards: 0,
+      runes: {},
     },
     inventory: [],
     stash: [],
@@ -1313,9 +1402,11 @@ function doPrestige(
       trainerUnlocked: true,
       rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
       stashBurned: true,
+      runesmithUnlocked: state.progress.runesmithUnlocked,
     },
     run: null,
     legacy: {
+      ...state.legacy,
       prestige,
       seals: sealed,
       chronicle: [
@@ -1352,6 +1443,7 @@ export function deserializeGame(json: string): GameState {
   let state = parsed as Partial<GameState>;
   if (state.version === 1) state = migrateV1(state);
   if (state.version === 2) state = migrateV2(state);
+  if (state.version === 3) state = migrateV3(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -1387,8 +1479,24 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
   return {
     ...state,
     version: 3,
-    legacy: { prestige: 0, seals: [], chronicle: [] },
+    legacy: { prestige: 0, seals: [], chronicle: [], runewords: [], runesFound: [] },
     pendingPrestige: null,
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
+  };
+}
+
+/** v3 (M5–M7) → v4 (M8): Runes, Runeword Codex, Eldrin and Marisha's stock are new. */
+function migrateV3(state: Partial<GameState>): Partial<GameState> {
+  const rewards = state.run?.rewards;
+  return {
+    ...state,
+    version: 4,
+    merchant: { key: 0, sold: [] },
+    ...(state.wallet ? { wallet: { ...state.wallet, runes: {} } } : {}),
+    ...(state.progress ? { progress: { ...state.progress, runesmithUnlocked: false } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, runewords: [], runesFound: [] } } : {}),
+    ...(state.run
+      ? { run: { ...state.run, rewards: rewards ? { ...rewards, runes: [] } : null } }
+      : {}),
   };
 }

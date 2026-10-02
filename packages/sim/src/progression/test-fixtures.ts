@@ -44,6 +44,7 @@ export const DEADLY_ACT: ActData = {
   id: "deadly-act",
   number: 2,
   enemies: [DEADLY_ENEMY],
+  runesmith: true,
 };
 
 /** The last act of the test run: its boss starts the Prestige. */

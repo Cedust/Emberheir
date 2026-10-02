@@ -26,14 +26,17 @@ export const ITEMS = {
     magic: { stat: [1, 2], trigger: [0, 0], extraTriggerChance: 0.1 },
     rare: { stat: [3, 4], trigger: [0, 0], extraTriggerChance: 0.25 },
     epic: { stat: [4, 5], trigger: [1, 1], extraTriggerChance: 0.2 },
-    // Legendary Powers come later; until then a Legendary rolls like an Epic.
+    // Fewer affixes than Epic, but a Legendary Power on top.
     legendary: { stat: [3, 4], trigger: [1, 1], extraTriggerChance: 0 },
   } satisfies Record<
     Rarity,
     { stat: [number, number]; trigger: [number, number]; extraTriggerChance: number }
   >,
 
-  /** Default rarity weights for a random drop (Legendary is not in the PoC). */
+  /** Chance that a dropped Normal item of a socketable base has Sockets. */
+  socketChance: 0.6,
+
+  /** Default rarity weights for a random drop (Legendaries come from bosses and gambling). */
   rarityWeights: { normal: 40, magic: 35, rare: 20, epic: 5, legendary: 0 } satisfies Record<
     Rarity,
     number

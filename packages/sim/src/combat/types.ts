@@ -248,6 +248,12 @@ export interface CombatRules {
   readonly critsApplyBleed?: boolean;
   /** Multiplies the final Crit Chance (Blood Price halves it). */
   readonly critChanceMultiplier?: number;
+  /** Legendary Powers: inflicting `from` also inflicts `to` ("Your Burn also Shocks"). */
+  readonly ailmentEcho?: readonly { readonly from: AilmentType; readonly to: AilmentType }[];
+  /** Hits deal `bonus` more damage to an enemy below `below` of its max life. */
+  readonly execute?: { readonly below: number; readonly bonus: number };
+  /** Heals this fraction of the damage your ailments deal over time. */
+  readonly dotLifesteal?: number;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */

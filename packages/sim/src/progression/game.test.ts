@@ -23,7 +23,11 @@ import {
   spentInTree,
   rewardsDone,
   serializeGame,
+  addRunes,
+  maxRuneRank,
+  rollRuneDrops,
 } from "./game";
+import { Rng } from "../rng";
 import { TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
@@ -333,6 +337,7 @@ describe("game loop", () => {
       essences: {},
       harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
       ascensionShards: 0,
+      runes: {},
     });
     expect(s.progress).toMatchObject({
       actsCleared: [],
@@ -436,5 +441,53 @@ describe("the road through the acts", () => {
     expect(isFinalAct(data, "test-act")).toBe(false);
     expect(isFinalAct(data, "final-act")).toBe(true);
     expect(nextAct(unlocked(start()), data).id).toBe("final-act");
+  });
+});
+
+describe("Runes in the run", () => {
+  it("Runes drop by rank: bosses always, lower ranks far more often", () => {
+    const counts: Record<string, number> = {};
+    for (let seed = 1; seed <= 300; seed++) {
+      const boss = rollRuneDrops(data, "boss", 1, new Rng(seed));
+      expect(boss.length).toBeGreaterThanOrEqual(1);
+      for (const id of boss) counts[id] = (counts[id] ?? 0) + 1;
+    }
+    expect(Object.keys(counts).sort()).toEqual(["ash", "moss", "thorn"]);
+    expect(counts.ash ?? 0).toBeGreaterThan(counts.moss ?? 0);
+    expect(counts.moss ?? 0).toBeGreaterThan(counts.thorn ?? 0);
+    // Act Tier 1 allows up to rank 3; the pool is capped there.
+    expect(maxRuneRank(1)).toBe(3);
+    expect(rollRuneDrops(data, "normal", 1, new Rng(1)).length).toBeLessThanOrEqual(1);
+  });
+
+  it("dropped Runes go into the pouch and are remembered as found", () => {
+    let s = act(start(3), { type: "setOut", actId: "test-act" });
+    for (let i = 0; i < 3 && s.run; i++) s = clearStage(s);
+    const found = s.legacy.runesFound;
+    const pouch = Object.values(s.wallet.runes).reduce((a, b) => a + b, 0);
+    // The boss drops at least one Rune.
+    expect(pouch).toBeGreaterThanOrEqual(1);
+    expect(found.length).toBeGreaterThanOrEqual(1);
+    expect(addRunes({ ash: 1 }, ["ash", "moss"])).toEqual({ ash: 2, moss: 1 });
+  });
+
+  it("Eldrin joins after the first trip into his act, even a deadly one", () => {
+    let s = act(unlocked(start()), { type: "setOut", actId: "deadly-act" });
+    expect(s.progress.runesmithUnlocked).toBe(false);
+    s = act(s, { type: "startStage" }, { type: "resolveFight" });
+    expect(s.run).toBeNull();
+    expect(s.progress.runesmithUnlocked).toBe(true);
+  });
+
+  it("v3 save games get an empty pouch and Codex", () => {
+    const v3 = JSON.parse(serializeGame(start())) as Record<string, unknown>;
+    const wallet = { ...(v3.wallet as object) } as Record<string, unknown>;
+    delete wallet.runes;
+    const old = { ...v3, version: 3, wallet, merchant: undefined };
+    const s = deserializeGame(JSON.stringify(old));
+    expect(s.version).toBe(SAVE_VERSION);
+    expect(s.wallet.runes).toEqual({});
+    expect(s.legacy.runewords).toEqual([]);
+    expect(s.progress.runesmithUnlocked).toBe(false);
   });
 });

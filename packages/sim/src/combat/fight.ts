@@ -41,6 +41,7 @@ import type {
   AilmentChance,
   AilmentType,
   BuffStat,
+  CombatRules,
   CombatantSetup,
   DamageRange,
   DamageType,
@@ -235,6 +236,13 @@ export function skillCost(setup: CombatantSetup, skill: SkillDefinition): number
   return Math.max(0, Math.round(skill.heatCost * (setup.rules?.skillCostMultiplier ?? 1)));
 }
 
+/** Execute (Legendary Power): more damage against an enemy below the life threshold. */
+function executeFactor(rules: CombatRules | undefined, defender: Fighter): number {
+  const execute = rules?.execute;
+  if (!execute) return 1;
+  return defender.life / defender.stats.maxLife < execute.below ? 1 + execute.bonus : 1;
+}
+
 function createFighter(side: Side, setup: CombatantSetup): Fighter {
   const stats = deriveStats(setup);
   const lifeFraction = Math.min(1, Math.max(0, setup.lifeFraction ?? 1));
@@ -408,6 +416,9 @@ export class Fight {
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);
       if (this.result) return;
+      const source = this.fighters[other(f.side)];
+      const leech = source.setup.rules?.dotLifesteal ?? 0;
+      if (leech > 0) this.heal(source, damage * leech);
     }
     for (const ailment of expired) {
       this.emit({ t: this.time, type: "ailmentExpired", side: f.side, ailment });
@@ -631,7 +642,10 @@ export class Fight {
         evadable: h.evadable,
         attacker: attacker.stats,
         attackerLevel: attacker.setup.level,
-        multiplier: h.multiplier * (attacker.setup.damageMultiplier ?? 1),
+        multiplier:
+          h.multiplier *
+          (attacker.setup.damageMultiplier ?? 1) *
+          executeFactor(attacker.setup.rules, defender),
         defender: defender.stats,
         defenderDamageTaken: this.damageTaken(defender),
       },
@@ -713,7 +727,13 @@ export class Fight {
     defender: Fighter,
     ailment: AilmentType,
     hitDamage: number,
+    echo = true,
   ): void {
+    if (echo) {
+      for (const e of attacker.setup.rules?.ailmentEcho ?? []) {
+        if (e.from === ailment) this.inflict(attacker, defender, e.to, hitDamage, false);
+      }
+    }
     const duration = ailmentDuration(
       ailment,
       attacker.stats.ailmentDuration,

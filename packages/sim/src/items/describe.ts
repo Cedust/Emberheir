@@ -1,4 +1,5 @@
 import { COMBAT } from "../combat/constants";
+import { sumBonuses } from "../combat/stats";
 import { ATTRIBUTES, type Attribute, type Attributes, type DamageType } from "../combat/types";
 import type {
   BuffStat,
@@ -10,6 +11,7 @@ import type {
 import { isPercentStat, resolveTrigger, statAffixValue } from "./affixes";
 import { addedDamageRange, itemWeapon, requirementsFor, scaledBaseStats } from "./equipment";
 import { getBase } from "./generate";
+import { activeRuneword, runeBonuses } from "./runes";
 import type { AffixStat, Item, ItemCatalog, ItemSlot, Rarity } from "./types";
 
 /** English display names. All game terms stay English in code, data and UI. */
@@ -194,6 +196,15 @@ export interface ItemTooltip {
   readonly baseLines: readonly string[];
   readonly implicitLines: readonly string[];
   readonly affixLines: readonly { readonly text: string; readonly kind: "stat" | "trigger" }[];
+  /** "unique" and "runeword" items show their own label and color. */
+  readonly special?: "unique" | "runeword";
+  /** Legendary Power: name and rule text. */
+  readonly power?: { readonly name: string; readonly text: string };
+  /** Sockets with the socketed Runes in order (Normal items only). */
+  readonly sockets?: { readonly total: number; readonly runes: readonly string[] };
+  /** Runeword recipe shown under the name, e.g. "Ash · Ember". */
+  readonly runewordRecipe?: string;
+  readonly flavor?: string;
   readonly requirements: readonly {
     readonly attribute: Attribute;
     readonly name: string;
@@ -239,7 +250,15 @@ export function describeItem(
     ...(weapon?.triggers ?? []).map(describeTrigger),
   ];
 
-  const affixLines = item.affixes.flatMap((roll): { text: string; kind: "stat" | "trigger" }[] => {
+  const word = activeRuneword(item, catalog);
+  const power = item.powerId ? catalog.powers.get(item.powerId) : undefined;
+  const unique = item.uniqueId ? catalog.uniques.get(item.uniqueId) : undefined;
+  const runeName = (id: string) => catalog.runes.get(id)?.name ?? id;
+  const affixLines = [
+    ...item.affixes,
+    ...(word?.triggers ?? []),
+    ...(power?.trigger ? [power.trigger] : []),
+  ].flatMap((roll): { text: string; kind: "stat" | "trigger" }[] => {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) return [];
     if (affix.kind === "trigger") {
@@ -257,6 +276,17 @@ export function describeItem(
       },
     ];
   });
+  // Runeword and Rune bonuses read like affixes.
+  const extra = sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses);
+  const wordAttributes = ATTRIBUTES.flatMap((a) =>
+    word?.attributes?.[a] ? [describeStat(a, word.attributes[a])] : [],
+  );
+  affixLines.push(
+    ...[...wordAttributes, ...describeBonuses(extra)].map((text) => ({
+      text,
+      kind: "stat" as const,
+    })),
+  );
   // Stat affixes first, triggers last (like the tooltip mock).
   affixLines.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "stat" ? -1 : 1));
 
@@ -274,10 +304,18 @@ export function describeItem(
     ];
   });
 
+  const special = unique ? "unique" : word ? "runeword" : undefined;
   return {
     name: item.name,
     rarity: item.rarity,
-    rarityName: RARITY_NAMES[item.rarity],
+    rarityName: unique ? "Unique" : word ? "Runeword" : RARITY_NAMES[item.rarity],
+    ...(special ? { special } : {}),
+    ...(power ? { power: { name: power.name, text: power.description } } : {}),
+    ...(item.sockets
+      ? { sockets: { total: item.sockets, runes: (item.runes ?? []).map(runeName) } }
+      : {}),
+    ...(word ? { runewordRecipe: word.runes.map(runeName).join(" · ") } : {}),
+    ...(unique?.flavor ? { flavor: unique.flavor } : {}),
     baseName: base.name,
     slotName: SLOT_NAMES[base.slot],
     tier: item.tier,

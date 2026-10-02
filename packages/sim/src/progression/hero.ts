@@ -1,3 +1,4 @@
+import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import {
   ATTRIBUTES,
@@ -51,7 +52,7 @@ export function buildHeroSetup(
     rotation: options.rotation(weapon),
     bonuses: sumBonuses(gear.bonuses, options.bonuses?.(weapon)),
     ...(gear.triggers.length ? { triggers: gear.triggers } : {}),
-    ...(options.rules ? { rules: options.rules } : {}),
+    ...(options.rules || gear.rules ? { rules: mergeRules(options.rules, gear.rules) } : {}),
     ...(options.lifeFraction !== undefined ? { lifeFraction: options.lifeFraction } : {}),
   };
   return { setup, gear };

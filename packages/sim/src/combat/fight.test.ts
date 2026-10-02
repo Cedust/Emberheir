@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
 import { type CombatEvent, Fight, runFight } from "./fight";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
-import type { SkillDefinition, WeaponDefinition } from "./types";
+import type { CombatantSetup, SkillDefinition, WeaponDefinition } from "./types";
 
 /** Hero that never crits, so damage numbers are exact. */
 const NO_CRIT = { critChance: -1 };
@@ -489,5 +489,47 @@ describe("Blood Price", () => {
     const bleeds = ofType(fight.events, "ailment").filter((e) => e.ailment === "bleed").length;
     expect(crits).toBeGreaterThan(0);
     expect(bleeds).toBe(crits);
+  });
+});
+
+describe("Legendary Power rules", () => {
+  it("Ailment Echo: inflicting one ailment also inflicts another", () => {
+    const hero = setup({
+      bonuses: { ...NO_CRIT, bleedChance: 1 },
+      rules: { ailmentEcho: [{ from: "bleed", to: "poison" }] },
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(1.1);
+    expect(ofType(fight.events, "ailment").map((e) => e.ailment)).toEqual(["poison", "bleed"]);
+  });
+
+  it("Execute: more damage against an enemy below the threshold", () => {
+    const hero = (rules?: CombatantSetup["rules"]) =>
+      setup({ bonuses: NO_CRIT, ...(rules ? { rules } : {}) });
+    const low = dummy({ lifeFraction: 0.2 });
+    const plain = new Fight(hero(), low, 1);
+    const sharp = new Fight(hero({ execute: { below: 0.3, bonus: 0.5 } }), low, 1);
+    plain.advance(1.1);
+    sharp.advance(1.1);
+    expect(ofType(plain.events, "hit")[0]?.damage).toBe(10);
+    expect(ofType(sharp.events, "hit")[0]?.damage).toBe(15);
+    // Above the threshold nothing changes.
+    const full = new Fight(hero({ execute: { below: 0.3, bonus: 0.5 } }), dummy(), 1);
+    full.advance(1.1);
+    expect(ofType(full.events, "hit")[0]?.damage).toBe(10);
+  });
+
+  it("DoT Lifesteal: your ailment ticks heal you", () => {
+    const hero = setup({
+      bonuses: { ...NO_CRIT, bleedChance: 1 },
+      rules: { dotLifesteal: 1 },
+      lifeFraction: 0.5,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.5);
+    const heals = ofType(fight.events, "heal").filter((e) => e.side === "hero");
+    const dots = ofType(fight.events, "dot");
+    expect(dots.length).toBeGreaterThan(0);
+    expect(heals.map((h) => h.amount)).toEqual(dots.map((d) => d.damage));
   });
 });

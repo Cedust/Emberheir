@@ -50,10 +50,16 @@ export {
   createItemCatalog,
   getBase,
   pickWeighted,
+  powersForSlot,
   rollItem,
   rollRarity,
+  rollSockets,
+  rollUnique,
+  uniquesFor,
   type RollItemOptions,
 } from "./items/generate";
+export { activeRuneword, freeSockets, matchRuneword, runeBonuses, runeGroup } from "./items/runes";
+export { mergeRules } from "./combat/rules";
 export {
   addedDamageRange,
   itemModifiers,
@@ -86,4 +92,4 @@ export {
 export * from "./progression/index";
 
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
-export const SIM_VERSION = "0.5.0";
+export const SIM_VERSION = "0.7.0";

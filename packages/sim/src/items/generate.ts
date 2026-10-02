@@ -8,30 +8,66 @@ import {
   type ItemBaseDefinition,
   type ItemCatalog,
   type ItemSlot,
+  type LegendaryPowerDefinition,
   RARITIES,
   type Rarity,
+  type RuneDefinition,
+  type RunewordDefinition,
+  type UniqueDefinition,
 } from "./types";
 
-/** Builds a catalog from content lists and checks that ids are unique. */
+/** Builds a catalog from content lists and checks ids and references. */
 export function createItemCatalog(content: {
   bases: readonly ItemBaseDefinition[];
   affixes: readonly AffixDefinition[];
   rareNames: ItemCatalog["rareNames"];
+  runes?: readonly RuneDefinition[];
+  runewords?: readonly RunewordDefinition[];
+  powers?: readonly LegendaryPowerDefinition[];
+  uniques?: readonly UniqueDefinition[];
 }): ItemCatalog {
-  const bases = new Map<string, ItemBaseDefinition>();
-  for (const base of content.bases) {
-    if (bases.has(base.id)) throw new Error(`Duplicate item base id "${base.id}"`);
-    bases.set(base.id, base);
-  }
-  const affixes = new Map<string, AffixDefinition>();
+  const bases = byId(content.bases, "item base");
+  const affixes = byId(content.affixes, "affix");
   for (const affix of content.affixes) {
-    if (affixes.has(affix.id)) throw new Error(`Duplicate affix id "${affix.id}"`);
     if (affix.kind === "stat" && !affix.prefix === !affix.suffix) {
       throw new Error(`Affix "${affix.id}" needs either a prefix or a suffix`);
     }
-    affixes.set(affix.id, affix);
   }
-  return { bases, affixes, rareNames: content.rareNames };
+  const runes = byId(content.runes ?? [], "rune");
+  const runewords = byId(content.runewords ?? [], "runeword");
+  const powers = byId(content.powers ?? [], "legendary power");
+  const uniques = byId(content.uniques ?? [], "unique");
+  const needAffix = (id: string, owner: string) => {
+    if (!affixes.has(id)) throw new Error(`${owner} uses unknown affix "${id}"`);
+  };
+  for (const word of runewords.values()) {
+    for (const rune of word.runes) {
+      if (!runes.has(rune)) throw new Error(`Runeword "${word.id}" uses unknown rune "${rune}"`);
+    }
+    for (const t of word.triggers ?? []) needAffix(t.affixId, `Runeword "${word.id}"`);
+  }
+  for (const power of powers.values()) {
+    if (power.trigger) needAffix(power.trigger.affixId, `Power "${power.id}"`);
+  }
+  for (const unique of uniques.values()) {
+    if (!bases.has(unique.baseId)) {
+      throw new Error(`Unique "${unique.id}" uses unknown base "${unique.baseId}"`);
+    }
+    for (const a of unique.affixes) needAffix(a.affixId, `Unique "${unique.id}"`);
+    if (unique.powerId && !powers.has(unique.powerId)) {
+      throw new Error(`Unique "${unique.id}" uses unknown power "${unique.powerId}"`);
+    }
+  }
+  return { bases, affixes, rareNames: content.rareNames, runes, runewords, powers, uniques };
+}
+
+function byId<T extends { readonly id: string }>(list: readonly T[], what: string): Map<string, T> {
+  const map = new Map<string, T>();
+  for (const entry of list) {
+    if (map.has(entry.id)) throw new Error(`Duplicate ${what} id "${entry.id}"`);
+    map.set(entry.id, entry);
+  }
+  return map;
 }
 
 export function getBase(catalog: ItemCatalog, baseId: string): ItemBaseDefinition {
@@ -128,6 +164,11 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     affixId: a.id,
     quality: Number(rollQuality(itemLevel, options.rarity, rng).toFixed(4)),
   }));
+  const power =
+    options.rarity === "legendary"
+      ? pickWeighted(powersForSlot(catalog, base.slot), () => 1, rng)
+      : undefined;
+  const sockets = options.rarity === "normal" ? rollSockets(base, rng) : 0;
 
   return {
     id: rng.int(0, 0x7fffffff).toString(36).padStart(6, "0"),
@@ -137,6 +178,57 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     itemLevel,
     tier: tierForItemLevel(itemLevel),
     affixes: rolls,
+    ...(sockets > 0 ? { sockets } : {}),
+    ...(power ? { powerId: power.id } : {}),
+  };
+}
+
+/** Legendary Powers that can roll on a slot. */
+export function powersForSlot(catalog: ItemCatalog, slot: ItemSlot): LegendaryPowerDefinition[] {
+  return [...catalog.powers.values()].filter((p) => p.slots.includes(slot));
+}
+
+/** Sockets of a dropped Normal item: sometimes none, else 1 up to the base's maximum. */
+export function rollSockets(base: ItemBaseDefinition, rng: Rng): number {
+  const max = base.maxSockets ?? 0;
+  if (max <= 0 || !rng.chance(ITEMS.socketChance)) return 0;
+  return rng.int(1, max);
+}
+
+/** Uniques that can drop at an Item Level for one of the given bases. */
+export function uniquesFor(
+  catalog: ItemCatalog,
+  itemLevel: number,
+  baseIds?: readonly string[],
+): UniqueDefinition[] {
+  return [...catalog.uniques.values()].filter(
+    (u) => u.minItemLevel <= itemLevel && (!baseIds || baseIds.includes(u.baseId)),
+  );
+}
+
+/** Rolls a Unique: its fixed affixes with a quality inside each range. */
+export function rollUnique(
+  catalog: ItemCatalog,
+  uniqueId: string,
+  itemLevel: number,
+  rng: Rng,
+): Item {
+  const unique = catalog.uniques.get(uniqueId);
+  if (!unique) throw new Error(`Unknown unique "${uniqueId}"`);
+  const level = Math.max(1, Math.floor(itemLevel));
+  return {
+    id: rng.int(0, 0x7fffffff).toString(36).padStart(6, "0"),
+    baseId: unique.baseId,
+    name: unique.name,
+    rarity: "legendary",
+    itemLevel: level,
+    tier: tierForItemLevel(level),
+    affixes: unique.affixes.map((a) => ({
+      affixId: a.affixId,
+      quality: Number((a.quality.min + rng.next() * (a.quality.max - a.quality.min)).toFixed(4)),
+    })),
+    uniqueId: unique.id,
+    ...(unique.powerId ? { powerId: unique.powerId } : {}),
   };
 }
 

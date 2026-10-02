@@ -1,3 +1,4 @@
+import { mergeRules } from "../combat/rules";
 import type { CombatRules, SkillDefinition, StatBonuses } from "../combat/types";
 import { sumBonuses } from "../combat/stats";
 
@@ -159,27 +160,5 @@ export function treeSkills(
 
 /** Rules of all learned Keystones combined. */
 export function keystoneRules(tree: SkillTreeDefinition, learned: LearnedNodes): CombatRules {
-  let damageTaken = 0;
-  let skillCostMultiplier = 1;
-  let defaultAttackDamage = 1;
-  let noHeatDecay = false;
-  let critsApplyBleed = false;
-  let critChanceMultiplier = 1;
-  for (const node of learnedKeystones(tree, learned)) {
-    const k = node.keystone ?? {};
-    damageTaken += k.damageTaken ?? 0;
-    skillCostMultiplier *= k.skillCostMultiplier ?? 1;
-    defaultAttackDamage *= k.defaultAttackDamage ?? 1;
-    noHeatDecay ||= k.noHeatDecay ?? false;
-    critsApplyBleed ||= k.critsApplyBleed ?? false;
-    critChanceMultiplier *= k.critChanceMultiplier ?? 1;
-  }
-  return {
-    damageTaken,
-    skillCostMultiplier,
-    defaultAttackDamage,
-    noHeatDecay,
-    critsApplyBleed,
-    critChanceMultiplier,
-  };
+  return mergeRules(...learnedKeystones(tree, learned).map((node) => node.keystone));
 }
