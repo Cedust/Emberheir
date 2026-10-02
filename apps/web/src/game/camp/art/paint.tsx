@@ -17,7 +17,7 @@ export function S(props: { d: string; fill: string; w?: number; flat?: boolean; 
         d={props.d}
         fill={props.fill}
         stroke={INK}
-        strokeWidth={props.w ?? 2}
+        strokeWidth={props.w ?? 2.5}
         strokeLinejoin="round"
         strokeLinecap="round"
         opacity={props.op}

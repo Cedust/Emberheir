@@ -5,7 +5,8 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { useStageSize } from "../../ui/Stage";
 import { fmt, walletEntries } from "../../ui/items";
 import type { GameApi } from "../useGame";
-import { CampBackdrop, CampFx, HEARTH_X, SCENE_W } from "./art/CampScene";
+import { CampBackdrop, CampFx, HEARTH_X, SCENE_W, campLights } from "./art/CampScene";
+import { CampLight } from "./art/CampLight";
 import { FIGURE_H, FIGURE_W, type HeirGear, PORTRAIT, PersonaArt } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
 
@@ -192,6 +193,10 @@ function personas(state: GameState): Persona[] {
   ];
 }
 
+/** On-screen size of a figure at fs = 1, in stage pixels. */
+const FIG_W = 96;
+const FIG_H = 168;
+
 function heirGear(state: GameState): HeirGear {
   const { mainHand, offHand } = state.hero.equipment;
   const off = offHand?.baseId === "round-shield" ? "shield" : offHand ? "focus" : undefined;
@@ -209,8 +214,8 @@ function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: number 
   const mirror = p.x > HEARTH_X;
   return (
     <svg
-      width={Math.round(80 * f.fs)}
-      height={Math.round(140 * f.fs)}
+      width={Math.round(FIG_W * f.fs)}
+      height={Math.round(FIG_H * f.fs)}
       viewBox={`0 0 ${FIGURE_W} ${FIGURE_H}`}
       className={props.on ? "figure on" : "figure"}
       aria-hidden="true"
@@ -311,7 +316,7 @@ export function CampView(props: {
         {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
         {list.map((p, i) => {
           const w = p.object ? p.object.w : 130;
-          const h = p.object ? p.object.h : Math.round(140 * (p.figure?.fs ?? 1)) + 34;
+          const h = p.object ? p.object.h : Math.round(FIG_H * (p.figure?.fs ?? 1)) + 34;
           const on = picked === p.id;
           const hardLocked = p.locked === "later";
           return (
@@ -335,6 +340,13 @@ export function CampView(props: {
             </button>
           );
         })}
+
+        <CampLight
+          w={size.w}
+          h={size.h - 64}
+          ox={ox}
+          lights={campLights({ orb: state.progress.trainerUnlocked })}
+        />
 
         <section className="persona-card panel-card" aria-label={sel.name}>
           <div className="persona-head">

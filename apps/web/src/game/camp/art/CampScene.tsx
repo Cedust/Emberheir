@@ -1,4 +1,6 @@
 import type { CSSProperties } from "react";
+import { DirtPattern, Foreground, HearthPlaza, Palisade } from "./CampDetail";
+import type { CampLightSource } from "./CampLight";
 import { INK, L, S, circ } from "./paint";
 
 /**
@@ -245,6 +247,7 @@ export function CampBackdrop(props: { roadName: string; w: number; h: number; ox
           <stop offset="0" stopColor="#fff3d0" stopOpacity="0.6" />
           <stop offset="1" stopColor="#fff3d0" stopOpacity="0" />
         </radialGradient>
+        <DirtPattern />
         <radialGradient id="camp-vignette" cx="0.5" cy="0.55" r="0.75">
           <stop offset="0.55" stopColor="#0e0a08" stopOpacity="0" />
           <stop offset="1" stopColor="#0e0a08" stopOpacity="0.7" />
@@ -307,7 +310,10 @@ export function CampBackdrop(props: { roadName: string; w: number; h: number; ox
         height={Math.max(540, h - 300)}
         fill="url(#camp-ground)"
       />
+      <rect x={X0} y="300" width={X1 - X0} height={Math.max(540, h - 300)} fill="url(#camp-dirt)" />
       <ellipse cx={HEARTH_X} cy="540" rx="700" ry="290" fill="url(#camp-clearing)" />
+      <Palisade x0={X0} x1={452} y={334} />
+      <Palisade x0={990} x1={X1} y={334} />
       <path
         d="M2640 400 L1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836 L1360 1400 L2640 1400 Z"
         fill="url(#camp-road)"
@@ -337,6 +343,8 @@ export function CampBackdrop(props: { roadName: string; w: number; h: number; ox
           strokeWidth="1.5"
         />
       ))}
+
+      <HearthPlaza cx={HEARTH_X} cy={600} />
 
       {/* Tents behind the fire, with a string of lanterns */}
       <Tent x={540} y={302} w={150} h={88} fill="#c9a979" flag="#a8401a" />
@@ -429,10 +437,107 @@ export function CampBackdrop(props: { roadName: string; w: number; h: number; ox
         </text>
       </g>
 
+      <Foreground x0={X0} x1={X1} h={h} />
       <rect x={X0} y="0" width={X1 - X0} height={h} fill="url(#camp-vignette)" />
       <rect x={X0} y="0" width={X1 - X0} height={h} filter="url(#paint-grain)" opacity="0.8" />
     </svg>
   );
+}
+
+const FLAME_OUTER =
+  "M668 548 C658 520 676 500 682 478 C686 492 694 496 697 488 C694 466 706 450 712 424 C718 444 726 452 730 446 C738 432 736 416 732 402 C752 424 760 452 754 476 C762 470 766 460 766 450 C780 474 778 516 772 548 Z";
+const FLAME_MID =
+  "M686 548 C682 526 694 512 700 496 C704 506 710 508 712 500 C712 486 718 474 724 460 C732 480 740 490 738 506 C746 500 750 494 750 486 C758 506 758 530 754 548 Z";
+const FLAME_CORE =
+  "M704 548 C700 534 708 522 714 510 C718 520 722 522 724 514 C732 526 736 538 732 548 Z";
+
+/** The Hearthfire's flames; braziers reuse them scaled down (base center at 720, 548). */
+function Flames(props: { transform?: string }) {
+  return (
+    <g className="flames" transform={props.transform}>
+      <path
+        className="flame f1"
+        d={FLAME_OUTER}
+        fill="#ff6a2b"
+        stroke={INK}
+        strokeWidth="2.5"
+        strokeLinejoin="round"
+      />
+      <path className="flame f2" d={FLAME_MID} fill="#ffb13b" />
+      <path className="flame f3" d={FLAME_CORE} fill="#fff0c0" />
+    </g>
+  );
+}
+
+/** A standing brazier; x, y is where its legs meet the ground. */
+function Brazier(props: { x: number; y: number }) {
+  const { x, y } = props;
+  const k = 0.32;
+  return (
+    <g>
+      <ellipse cx={x} cy={y + 2} rx="24" ry="5" fill="#000" opacity="0.35" />
+      <L
+        d={`M${x - 20} ${y} L${x - 10} ${y - 44} M${x + 20} ${y} L${x + 10} ${y - 44} M${x} ${y + 2} L${x} ${y - 40}`}
+        color="#2a2622"
+        w={5}
+      />
+      <L
+        d={`M${x - 20} ${y} L${x - 10} ${y - 44} M${x + 20} ${y} L${x + 10} ${y - 44} M${x} ${y + 2} L${x} ${y - 40}`}
+        color="#5a5a62"
+        w={2.4}
+      />
+      <Flames transform={`translate(${f(x - 720 * k)} ${f(y - 54 - 548 * k)}) scale(${k})`} />
+      <S d={`M${x - 24} ${y - 54} Q${x} ${y - 30} ${x + 24} ${y - 54} Z`} fill="#4a4a52" w={2.2} />
+      <ellipse cx={x} cy={y - 54} rx="24" ry="3.5" fill="#ff8a3a" stroke={INK} strokeWidth="2" />
+    </g>
+  );
+}
+
+/** Where the braziers stand, in scene coordinates. */
+const BRAZIERS = [
+  { x: 190, y: 560 },
+  { x: 1236, y: 552 },
+];
+
+/** Every light in the camp, for the lighting layer. */
+export function campLights(opts: { orb: boolean }): CampLightSource[] {
+  const lanterns = [585, 630, 675, 765, 810, 845].map((x, i) => ({
+    x,
+    y: [239, 246, 242, 245, 242, 230][i] ?? 240,
+    rx: 46,
+    ry: 40,
+    color: "#ffc070",
+    strength: 0.45,
+  }));
+  return [
+    { x: HEARTH_X, y: 520, rx: 400, ry: 250, color: "#ff8a3a", strength: 0.55, flicker: "fire" },
+    { x: HEARTH_X, y: 500, rx: 150, ry: 120, color: "#ffd27a", strength: 0.5, flicker: "fire" },
+    ...BRAZIERS.map((b) => ({
+      x: b.x,
+      y: b.y - 70,
+      rx: 170,
+      ry: 120,
+      color: "#ff9a40",
+      strength: 0.5,
+      flicker: "fire" as const,
+    })),
+    { x: 292, y: 466, rx: 90, ry: 60, color: "#ff7a2a", strength: 0.55, flicker: "soft" },
+    ...lanterns,
+    ...(opts.orb
+      ? [
+          {
+            x: 660,
+            y: 300,
+            rx: 80,
+            ry: 80,
+            color: "#6fd3ff",
+            strength: 0.5,
+            flicker: "soft" as const,
+          },
+        ]
+      : []),
+    { x: 1180, y: 112, rx: 520, ry: 300, color: "#8ea6d8", strength: 0.18 },
+  ];
 }
 
 const SPARKS = [
@@ -491,26 +596,7 @@ export function CampFx(props: { w: number; h: number; ox: number }) {
         ))}
       <L d="M686 612 L702 566 M754 612 L738 566 M720 616 L720 570" color="#2a2622" w={6} />
       <L d="M686 612 L702 566 M754 612 L738 566 M720 616 L720 570" color="#5a5a62" w={3} />
-      <g className="flames">
-        <path
-          className="flame f1"
-          d="M668 548 C658 520 676 500 682 478 C686 492 694 496 697 488 C694 466 706 450 712 424 C718 444 726 452 730 446 C738 432 736 416 732 402 C752 424 760 452 754 476 C762 470 766 460 766 450 C780 474 778 516 772 548 Z"
-          fill="#ff6a2b"
-          stroke={INK}
-          strokeWidth="2.5"
-          strokeLinejoin="round"
-        />
-        <path
-          className="flame f2"
-          d="M686 548 C682 526 694 512 700 496 C704 506 710 508 712 500 C712 486 718 474 724 460 C732 480 740 490 738 506 C746 500 750 494 750 486 C758 506 758 530 754 548 Z"
-          fill="#ffb13b"
-        />
-        <path
-          className="flame f3"
-          d="M704 548 C700 534 708 522 714 510 C718 520 722 522 724 514 C732 526 736 538 732 548 Z"
-          fill="#fff0c0"
-        />
-      </g>
+      <Flames />
       <S d="M650 546 Q720 612 790 546 Z" fill="#4a4a52" w={2.5} />
       <ellipse
         cx={HEARTH_X}
@@ -542,6 +628,22 @@ export function CampFx(props: { w: number; h: number; ox: number }) {
           />
         ))}
       </g>
+      <g fill="#8a8078" filter="url(#soft-blur)">
+        {[0, 2.2, 4.4].map((d) => (
+          <ellipse
+            key={d}
+            className="smoke"
+            cx={HEARTH_X}
+            cy="400"
+            rx="26"
+            ry="18"
+            style={{ animationDelay: `${-d}s` }}
+          />
+        ))}
+      </g>
+      {BRAZIERS.map((b) => (
+        <Brazier key={b.x} x={b.x} y={b.y} />
+      ))}
     </svg>
   );
 }
