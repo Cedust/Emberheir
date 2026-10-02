@@ -3,6 +3,7 @@ export * from "./weapons";
 export * from "./skills";
 export * from "./enemies";
 export * from "./items";
+export * from "./legendary";
 export * from "./elites";
 export { SKILL_TREE } from "./skill-tree";
 export { ACT1, ACT2, GAME_DATA } from "./game";

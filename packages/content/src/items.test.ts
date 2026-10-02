@@ -7,11 +7,13 @@ import {
   basesForSlot,
   createEnemySetup,
   describeItem,
+  powersForSlot,
   resolveEquipment,
   runFight,
   type Rarity,
 } from "@emberheir/sim";
 import { ACT1_ENEMIES } from "./enemies";
+import { RUNES, RUNEWORDS, UNIQUES } from "./legendary";
 import { STARTING_ATTRIBUTES, createHeroSetup } from "./heroes";
 import {
   AFFIXES,
@@ -60,8 +62,23 @@ describe("item content", () => {
     for (const affix of AFFIXES) {
       expect(affix.value.min, affix.id).toBeGreaterThan(0);
       expect(affix.value.max, affix.id).toBeGreaterThanOrEqual(affix.value.min);
-      expect(affix.slots.length, affix.id).toBeGreaterThan(0);
+      // Weight 0 = granted only by Legendary Powers, never rolled.
+      if (affix.weight > 0) expect(affix.slots.length, affix.id).toBeGreaterThan(0);
     }
+  });
+
+  it("every Runeword fits some base, every slot has a Legendary Power", () => {
+    for (const word of RUNEWORDS) {
+      const fits = ITEM_BASES.some(
+        (b) => word.slots.includes(b.slot) && (b.maxSockets ?? 0) >= word.runes.length,
+      );
+      expect(fits, word.id).toBe(true);
+      expect(new Set(RUNES.map((r) => r.rank)).size).toBe(RUNES.length);
+    }
+    for (const slot of new Set(ITEM_BASES.map((b) => b.slot))) {
+      expect(powersForSlot(ITEM_CATALOG, slot).length, slot).toBeGreaterThan(0);
+    }
+    expect(ITEM_CATALOG.uniques.size).toBe(UNIQUES.length);
   });
 
   it("rolls a full 10-slot gear set with a fitting off hand", () => {

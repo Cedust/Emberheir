@@ -32,6 +32,7 @@ export const ACT2: ActData = {
   monsterLevels: [5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10],
   enemies: ACT2_ENEMIES,
   boss: MOTHER_OF_ROT,
+  runesmith: true,
   spoilsStages: [5, 10],
   essence: { id: "rot-essence", name: "Rot Essence", affixId: "tenacity" },
 };

@@ -18,6 +18,7 @@ import {
   rollItem,
   rollRarity,
 } from "@emberheir/sim";
+import { LEGENDARY_POWERS, POWER_TRIGGERS, RUNES, RUNEWORDS, UNIQUES } from "./legendary";
 import { AXE, DAGGER, FIRE_WAND, SWORD } from "./weapons";
 
 /**
@@ -35,6 +36,7 @@ export const SWORD_BASE: ItemBaseDefinition = {
   weapon: SWORD,
   requirements: { strength: 5 },
   affixWeights: { physical: 1.5, elemental: 0.5 },
+  maxSockets: 3,
 };
 
 export const FIRE_WAND_BASE: ItemBaseDefinition = {
@@ -45,6 +47,7 @@ export const FIRE_WAND_BASE: ItemBaseDefinition = {
   requirements: { intelligence: 5 },
   affixWeights: { elemental: 1.5, physical: 0.5 },
   size: { w: 1, h: 2 },
+  maxSockets: 2,
 };
 
 export const AXE_BASE: ItemBaseDefinition = {
@@ -54,6 +57,7 @@ export const AXE_BASE: ItemBaseDefinition = {
   weapon: AXE,
   requirements: { strength: 7 },
   affixWeights: { physical: 1.5, ailment: 1.5, elemental: 0.5 },
+  maxSockets: 3,
 };
 
 export const DAGGER_BASE: ItemBaseDefinition = {
@@ -64,6 +68,7 @@ export const DAGGER_BASE: ItemBaseDefinition = {
   requirements: { dexterity: 6 },
   affixWeights: { crit: 1.5, ailment: 1.5, elemental: 0.5 },
   size: { w: 1, h: 2 },
+  maxSockets: 2,
 };
 
 export const ROUND_SHIELD: ItemBaseDefinition = {
@@ -74,6 +79,7 @@ export const ROUND_SHIELD: ItemBaseDefinition = {
   baseStats: { armor: 4, blockChance: 0.15, blockValue: 2 },
   requirements: { strength: 6 },
   affixWeights: { defense: 1.5, elemental: 0.5 },
+  maxSockets: 3,
 };
 
 export const EMBER_FOCUS: ItemBaseDefinition = {
@@ -84,6 +90,7 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   implicit: { elementalDamage: 0.08, heatGain: 0.05 },
   requirements: { intelligence: 6 },
   affixWeights: { elemental: 1.5, heat: 1.5, block: 0, physical: 0.5 },
+  maxSockets: 2,
 };
 
 export const LEATHER_JERKIN: ItemBaseDefinition = {
@@ -94,6 +101,7 @@ export const LEATHER_JERKIN: ItemBaseDefinition = {
   implicit: { evasion: 0.03 },
   requirements: { agility: 6 },
   affixWeights: { speed: 1.5 },
+  maxSockets: 3,
 };
 
 export const CHAIN_MAIL: ItemBaseDefinition = {
@@ -104,6 +112,7 @@ export const CHAIN_MAIL: ItemBaseDefinition = {
   // The heavy armor needs points in Strength first.
   requirements: { strength: 10 },
   affixWeights: { defense: 1.5 },
+  maxSockets: 4,
 };
 
 export const SILK_ROBE: ItemBaseDefinition = {
@@ -114,6 +123,7 @@ export const SILK_ROBE: ItemBaseDefinition = {
   implicit: { allResistance: 0.05 },
   requirements: { intelligence: 6 },
   affixWeights: { elemental: 1.5, heat: 1.5 },
+  maxSockets: 3,
 };
 
 export const LEATHER_CAP: ItemBaseDefinition = {
@@ -124,6 +134,7 @@ export const LEATHER_CAP: ItemBaseDefinition = {
   implicit: { evasion: 0.02 },
   requirements: { agility: 6 },
   affixWeights: { speed: 1.5 },
+  maxSockets: 2,
 };
 
 export const IRON_HELM: ItemBaseDefinition = {
@@ -133,6 +144,7 @@ export const IRON_HELM: ItemBaseDefinition = {
   baseStats: { armor: 7 },
   requirements: { strength: 9 },
   affixWeights: { defense: 1.5 },
+  maxSockets: 3,
 };
 
 export const CIRCLET: ItemBaseDefinition = {
@@ -143,6 +155,7 @@ export const CIRCLET: ItemBaseDefinition = {
   implicit: { heatGain: 0.05 },
   requirements: { intelligence: 6 },
   affixWeights: { elemental: 1.5, heat: 1.5 },
+  maxSockets: 2,
 };
 
 export const LEATHER_GLOVES: ItemBaseDefinition = {
@@ -724,7 +737,11 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   }),
 ];
 
-export const AFFIXES: readonly AffixDefinition[] = [...STAT_AFFIXES, ...TRIGGER_AFFIXES];
+export const AFFIXES: readonly AffixDefinition[] = [
+  ...STAT_AFFIXES,
+  ...TRIGGER_AFFIXES,
+  ...POWER_TRIGGERS,
+];
 
 /** Name parts for Rare and Epic items. */
 export const RARE_NAMES = {
@@ -736,6 +753,10 @@ export const ITEM_CATALOG = createItemCatalog({
   bases: ITEM_BASES,
   affixes: AFFIXES,
   rareNames: RARE_NAMES,
+  runes: RUNES,
+  runewords: RUNEWORDS,
+  powers: LEGENDARY_POWERS,
+  uniques: UNIQUES,
 });
 
 // --- Gear sets ------------------------------------------------------------------------------
