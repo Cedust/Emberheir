@@ -8,6 +8,7 @@ const AILMENT_NAMES: Record<string, string> = {
   shock: "Shock",
   bleed: "Bleed",
   poison: "Poison",
+  corruption: "Corruption",
 };
 
 export interface PlaqueInfo {
@@ -99,6 +100,13 @@ export function Plaque(props: { fighter: FighterSnapshot; info: PlaqueInfo; mirr
               {a.stacks && a.stacks > 1 ? `×${a.stacks} ` : ""}
               {a.remaining.toFixed(1)}s
             </span>
+          </span>
+        ))}
+        {f.curses.map((c) => (
+          <span key={c.name} className="status-chip curse" title={c.name}>
+            <span className="swatch" />
+            <b>{c.name}</b>
+            <span className="mono sub">{c.remaining.toFixed(1)}s</span>
           </span>
         ))}
         {f.buffs.map((b) => (

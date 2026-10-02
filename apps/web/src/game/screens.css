@@ -2280,7 +2280,7 @@
 
 .stage .branch-row {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr) 44px;
+  grid-template-columns: 96px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 10px;
 }

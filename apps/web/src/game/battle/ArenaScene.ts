@@ -8,7 +8,7 @@ import { Application, Container, Graphics, Text } from "pixi.js";
  */
 
 export interface HeroLook {
-  readonly weapon: "sword" | "wand" | "axe" | "dagger";
+  readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow";
   readonly offHand: "shield" | "focus" | null;
 }
 
@@ -32,6 +32,7 @@ const DAMAGE_COLORS: Record<string, number> = {
   shock: 0xffe14d,
   bleed: 0xe0314b,
   poison: 0xb5d82c,
+  corruption: 0xa35cff,
   heal: 0x4fe08a,
   barrier: 0xe8e2d6,
   miss: 0xd8d0c4,
@@ -43,6 +44,7 @@ const AILMENT_TINT: Record<string, number> = {
   shock: 0xfff08a,
   bleed: 0xff9a9a,
   poison: 0xc4f0a0,
+  corruption: 0xc9a0ff,
 };
 
 /** The arena is drawn for 1440 × 708 stage pixels; wider or taller hosts see more ground. */
@@ -425,6 +427,42 @@ function drawHero(look: HeroLook): Container {
         .lineTo(86, -232)
         .stroke({ color: 0x3f5a2e, width: 7, cap: "round" }),
     );
+  } else if (look.weapon === "bow") {
+    c.addChild(
+      new Graphics()
+        .moveTo(96, -390)
+        .quadraticCurveTo(170, -290, 96, -170)
+        .stroke({ color: INK, width: 10, cap: "round" }),
+      new Graphics()
+        .moveTo(96, -390)
+        .quadraticCurveTo(170, -290, 96, -170)
+        .stroke({ color: 0x9a6a34, width: 5, cap: "round" }),
+      new Graphics().moveTo(96, -390).lineTo(96, -170).stroke({ color: 0xe8e2d6, width: 2 }),
+    );
+  } else if (look.weapon === "crossbow") {
+    c.addChild(
+      new Graphics()
+        .moveTo(40, -262)
+        .lineTo(170, -270)
+        .stroke({ color: INK, width: 14, cap: "round" }),
+      new Graphics()
+        .moveTo(40, -262)
+        .lineTo(170, -270)
+        .stroke({ color: 0x7a5a24, width: 8, cap: "round" }),
+      new Graphics()
+        .moveTo(150, -330)
+        .quadraticCurveTo(186, -270, 150, -208)
+        .stroke({ color: INK, width: 9, cap: "round" }),
+      new Graphics()
+        .moveTo(150, -330)
+        .quadraticCurveTo(186, -270, 150, -208)
+        .stroke({ color: 0xc9c2b8, width: 4, cap: "round" }),
+      new Graphics()
+        .moveTo(150, -330)
+        .lineTo(110, -268)
+        .lineTo(150, -208)
+        .stroke({ color: 0xe8e2d6, width: 2 }),
+    );
   } else {
     c.addChild(
       new Graphics()
@@ -454,6 +492,28 @@ const ROTWOOD_COLORS: Record<string, Palette> = {
   warden: { body: 0x2f4a32, trim: 0x6a8a4a, head: 0x9aa480 },
 };
 
+/** Ember Wastes: obsidian, magma and glowing seams. */
+const EMBER_COLORS: Record<string, Palette> = {
+  skirmisher: { body: 0x5a2416, trim: 0xff8a3c, head: 0xc2603a },
+  brute: { body: 0x2e2420, trim: 0xff6a2b, head: 0x6a4a3a },
+  caster: { body: 0x7a1e12, trim: 0xffb13b, head: 0xb08a70 },
+  warden: { body: 0x1f1a1e, trim: 0xff6a2b, head: 0x5a4a50 },
+};
+
+/** Frost Peaks: ice, fur and pale stone. */
+const FROST_COLORS: Record<string, Palette> = {
+  skirmisher: { body: 0x8a96a0, trim: 0xe8f2f8, head: 0xc0ccd4 },
+  thornback: { body: 0x5a8aa8, trim: 0xbfe8ff, head: 0x8ab8d0 },
+  caster: { body: 0x2a4a6a, trim: 0x6fd3ff, head: 0xc8d8e0 },
+  warden: { body: 0x3a4a5a, trim: 0x9fe0ff, head: 0xa8b8c4 },
+};
+
+const ACT_COLORS: Record<number, Record<string, Palette>> = {
+  2: ROTWOOD_COLORS,
+  3: EMBER_COLORS,
+  4: FROST_COLORS,
+};
+
 /** Which body an archetype uses: robed casters, broad brutes or lean fighters. */
 const BODY: Record<string, "robe" | "broad" | "lean"> = {
   caster: "robe",
@@ -469,7 +529,7 @@ function drawEnemy(look: EnemyLook): Container {
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const fallback = { body: 0, trim: 0, head: 0 };
   const col =
-    (look.act === 2 ? ROTWOOD_COLORS[look.archetype] : undefined) ??
+    ACT_COLORS[look.act]?.[look.archetype] ??
     ENEMY_COLORS[look.archetype] ??
     ROTWOOD_COLORS[look.archetype] ??
     fallback;

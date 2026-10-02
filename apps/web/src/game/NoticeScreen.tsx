@@ -57,6 +57,8 @@ const TEXT: Record<NoticeKind, NoticeText> = {
 const CLEARED_NAN: Record<string, string> = {
   "ashen-fields": "Gorrak is down. Kaelen has seen enough to train you now.",
   rotwood: "The Mother of Rot is compost now. The forest can finally breathe.",
+  "ember-wastes": "The Cinder Tyrant cools into a very large paperweight.",
+  "frost-peaks": "The Rime Warden shatters. Somebody pack a scarf for the next act.",
 };
 
 /** Drifting ash: fixed pseudo-random dots (same layout every time). */

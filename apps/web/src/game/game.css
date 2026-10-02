@@ -388,7 +388,8 @@
 }
 
 .stage .run-header .run-title {
-  width: 190px;
+  width: 240px;
+  white-space: nowrap;
 }
 
 .stage .act-progress {
@@ -758,6 +759,24 @@
 
 .stage .status-chip.ailment-poison .swatch {
   background: var(--dmg-poison);
+}
+
+.stage .status-chip.ailment-corruption {
+  border-color: var(--dmg-void);
+}
+
+.stage .status-chip.ailment-corruption .swatch {
+  background: var(--dmg-void);
+}
+
+.stage .status-chip.curse {
+  border-color: var(--dmg-void);
+  border-style: dashed;
+}
+
+.stage .status-chip.curse .swatch {
+  background: var(--dmg-void);
+  transform: rotate(45deg);
 }
 
 .stage .status-chip.buff {

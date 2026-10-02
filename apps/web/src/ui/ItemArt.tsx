@@ -153,6 +153,55 @@ const ART: Readonly<Record<string, Art>> = {
       </>
     ),
   },
+  bow: {
+    w: 64,
+    h: 96,
+    draw: () => (
+      <>
+        <P d="M22 6Q50 24 52 48Q50 72 22 90L18 86Q42 70 44 48Q42 26 18 10Z" fill="url(#ia-wood)" />
+        <L d="M24 12Q46 28 47 48Q46 68 24 84" color="#e9b984" w={0.9} op={0.6} />
+        <P d="M42 40H52V56H42Z" fill="url(#ia-darkleather)" w={1.2} />
+        <L d="M42 44L52 46M42 49L52 51M42 54L52 56" w={0.8} op={0.7} />
+        <L d="M20 8L20 88" color="#efe6d2" w={1.1} />
+        <P d={circle(20, 8, 2.4)} fill="url(#ia-iron)" w={1} />
+        <P d={circle(20, 88, 2.4)} fill="url(#ia-iron)" w={1} />
+      </>
+    ),
+  },
+  crossbow: {
+    w: 64,
+    h: 96,
+    draw: () => (
+      <>
+        <P d="M28 20H36L37 90Q32 93 27 90Z" fill="url(#ia-wood)" />
+        <L d="M30 24L30.6 86" color="#e9b984" w={0.8} op={0.6} />
+        <P d="M6 26Q32 10 58 26L56 31Q32 18 8 31Z" fill="url(#ia-steel)" />
+        <L d="M10 27Q32 15 54 27" color={SHINE} w={0.9} op={0.7} />
+        <L d="M8 30L32 48L56 30" color="#efe6d2" w={1.1} />
+        <P d="M27 44H37V52H27Z" fill="url(#ia-iron)" w={1.2} />
+        <P d="M30 8L34 8L33 44H31Z" fill="url(#ia-iron)" w={1} />
+        <P d="M32 2L35 9H29Z" fill="url(#ia-steel)" w={1} />
+        <P d="M30 62L34 62L35 70H29Z" fill="url(#ia-darkgold)" w={1} />
+      </>
+    ),
+  },
+  quiver: {
+    w: 32,
+    h: 96,
+    draw: () => (
+      <>
+        <L d="M11 20L8 4M16 20V2M21 20L24 5" color="#7f512a" w={1.6} />
+        <P d="M8 4L5 9L11 8Z" fill="#e5484d" w={0.9} />
+        <P d="M16 2L13 7H19Z" fill="#efe6d2" w={0.9} />
+        <P d="M24 5L21 9L27 9Z" fill="#e5484d" w={0.9} />
+        <P d="M6 18H26L24 88Q16 93 8 88Z" fill="url(#ia-leather)" />
+        <P d="M6 18H26V25H6Z" fill="url(#ia-darkleather)" w={1.2} />
+        <L d="M9 30Q16 33 23 30M9 78Q16 81 23 78" w={0.9} op={0.7} />
+        <L d="M10 34L10 74" color="#f0c08a" w={0.9} op={0.5} />
+        <P d="M12 48H20V58H12Z" fill="url(#ia-darkgold)" w={1} />
+      </>
+    ),
+  },
   "round-shield": {
     w: 64,
     h: 64,

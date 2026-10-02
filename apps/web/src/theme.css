@@ -644,6 +644,7 @@ h2 {
 .tone-shock,
 .tone-bleed,
 .tone-poison,
+.tone-corruption,
 .tone-heal {
   font-weight: 700;
 }
@@ -669,7 +670,8 @@ h2 {
 .tone-shock {
   color: var(--tone-lightning);
 }
-.tone-void {
+.tone-void,
+.tone-corruption {
   color: var(--tone-void);
 }
 .tone-heal {
@@ -703,6 +705,9 @@ h2 {
 }
 .chip.tone-poison {
   color: var(--dmg-poison);
+}
+.chip.tone-corruption {
+  color: var(--dmg-void);
 }
 
 .build {

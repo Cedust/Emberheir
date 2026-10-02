@@ -23,6 +23,7 @@ const AILMENT_NAMES: Record<AilmentType, string> = {
   shock: "Shock",
   bleed: "Bleed",
   poison: "Poison",
+  corruption: "Corruption",
 };
 
 export function formatTime(seconds: number): string {

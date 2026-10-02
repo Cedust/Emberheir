@@ -60,10 +60,10 @@ function useLooks(state: GameState, run: RunState) {
   const kind = weapon?.weapon?.id;
   const heroLook: HeroLook = {
     weapon:
-      weapon?.weapon?.range === "ranged"
-        ? "wand"
-        : kind === "axe" || kind === "dagger"
-          ? kind
+      kind === "axe" || kind === "dagger" || kind === "bow" || kind === "crossbow"
+        ? kind
+        : weapon?.weapon?.range === "ranged"
+          ? "wand"
           : "sword",
     offHand: off ? (off.fitsWeaponRange === "ranged" ? "focus" : "shield") : null,
   };

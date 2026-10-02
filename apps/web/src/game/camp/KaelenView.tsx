@@ -38,6 +38,7 @@ const BRANCHES = [
   { id: "might", name: "Might", color: "#c9c2b8" },
   { id: "arcana", name: "Arcana", color: "#5b8cff" },
   { id: "rupture", name: "Rupture", color: "#d0505c" },
+  { id: "affliction", name: "Affliction", color: "#a35cff" },
 ] as const;
 const branchColor = (b: string) => BRANCHES.find((x) => x.id === b)?.color ?? "#b3a288";
 
