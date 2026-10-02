@@ -46,6 +46,8 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   burnChance: "Chance to Burn",
   chillChance: "Chance to Chill",
   shockChance: "Chance to Shock",
+  bleedChance: "Chance to Bleed",
+  poisonChance: "Chance to Poison",
   addedWeaponDamage: "Weapon Damage",
 };
 

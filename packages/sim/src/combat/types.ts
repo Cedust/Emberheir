@@ -18,8 +18,9 @@ export const ELEMENTS = ["fire", "cold", "lightning", "void"] as const;
 export type Element = (typeof ELEMENTS)[number];
 export type DamageType = "physical" | Element;
 
-/** Ailments implemented so far (PoC: Burn, Chill, Shock). */
-export type AilmentType = "burn" | "chill" | "shock";
+/** Ailments: Burn, Chill, Shock (elemental) and Bleed, Poison (physical). */
+export type AilmentType = "burn" | "chill" | "shock" | "bleed" | "poison";
+export const AILMENT_TYPES = ["burn", "chill", "shock", "bleed", "poison"] as const;
 
 /** How a weapon fills the Heat bar, see docs/design/waffen-v1.md section 4. */
 export type HeatBehavior = "cooling" | "steady" | "warming";
@@ -72,6 +73,8 @@ export interface StatBonuses {
   readonly burnChance?: number;
   readonly chillChance?: number;
   readonly shockChance?: number;
+  readonly bleedChance?: number;
+  readonly poisonChance?: number;
 }
 
 /** Stats a timed buff may raise. Life is excluded so buffs never change max life mid-fight. */
@@ -184,6 +187,22 @@ export type SkillHit =
       readonly ailmentChances?: readonly AilmentChance[];
     };
 
+/** What a skill does besides its hits. Effects follow the hits, in order. */
+export type SkillEffect =
+  /** Buff skills: raises a stat of the caster for a while (refreshes when cast again). */
+  | {
+      readonly kind: "buff";
+      readonly stat: BuffStat;
+      readonly amount: number;
+      readonly duration: number;
+    }
+  /** Rend: ends the target's Bleed and deals its remaining damage × multiplier at once. */
+  | { readonly kind: "consumeBleed"; readonly multiplier: number }
+  /** Toxic Burst: multiplies the target's Poison stacks (up to the cap). */
+  | { readonly kind: "multiplyPoison"; readonly factor: number }
+  /** Heals the caster by a fraction of max life (Burn halves it). */
+  | { readonly kind: "heal"; readonly fraction: number };
+
 export interface SkillDefinition {
   readonly id: string;
   readonly name: string;
@@ -192,6 +211,7 @@ export interface SkillDefinition {
   readonly tags: readonly string[];
   readonly description: string;
   readonly hits: readonly SkillHit[];
+  readonly effects?: readonly SkillEffect[];
 }
 
 /** One Rotation Slot of the Battle Plan. */
@@ -224,6 +244,10 @@ export interface CombatRules {
   readonly defaultAttackDamage?: number;
   /** "Heat no longer cools down": Cooling weapons keep their Heat without landing hits. */
   readonly noHeatDecay?: boolean;
+  /** Blood Price: every Crit inflicts Bleed. */
+  readonly critsApplyBleed?: boolean;
+  /** Multiplies the final Crit Chance (Blood Price halves it). */
+  readonly critChanceMultiplier?: number;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */

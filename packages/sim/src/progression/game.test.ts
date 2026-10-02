@@ -4,7 +4,10 @@ import {
   type GameAction,
   type GameState,
   GameActionError,
+  actUnlocked,
   applyAction,
+  isFinalAct,
+  nextAct,
   currentFight,
   deserializeGame,
   equipBlockReason,
@@ -27,6 +30,11 @@ const data = TEST_GAME_DATA;
 const start = (seed = 1) => newGame(data, { seed, starterWeapon: "test-sword" });
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
+/** Opens the road to every act, as if the earlier bosses had fallen. */
+const unlocked = (state: GameState): GameState => ({
+  ...state,
+  progress: { ...state.progress, actsCleared: ["test-act", "deadly-act"] },
+});
 
 /** Plays one stage: fight, take nothing (Salvage All), skip spoils, continue. */
 function clearStage(state: GameState): GameState {
@@ -108,7 +116,7 @@ describe("game loop", () => {
   });
 
   it("death sends the hero back to Camp, keeps gear and counts for Pity", () => {
-    let s = act(start(), { type: "setOut", actId: "deadly-act" });
+    let s = act(unlocked(start()), { type: "setOut", actId: "deadly-act" });
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run).toBeNull();
     expect(s.notice).toMatchObject({ kind: "death", stage: 1, enemyName: "Killer" });
@@ -287,7 +295,7 @@ describe("game loop", () => {
   });
 
   it("the final boss starts the Prestige: Seals keep their items, the rest burns", () => {
-    let s = act(start(), { type: "setOut", actId: "final-act" });
+    let s = act(unlocked(start()), { type: "setOut", actId: "final-act" });
     for (let i = 0; i < 2; i++) s = clearStage(s);
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     const loot = s.run?.rewards?.items ?? fail();
@@ -405,3 +413,28 @@ describe("game loop", () => {
 function fail(): never {
   throw new Error("unexpected");
 }
+
+describe("the road through the acts", () => {
+  it("opens one act after the other and lets cleared acts be revisited", () => {
+    let s = start();
+    expect(actUnlocked(s, data, "test-act")).toBe(true);
+    expect(actUnlocked(s, data, "deadly-act")).toBe(false);
+    expect(nextAct(s, data).id).toBe("test-act");
+    expect(() => act(s, { type: "setOut", actId: "deadly-act" })).toThrow(/closed/);
+
+    s = act(s, { type: "setOut", actId: "test-act" });
+    while (s.run) s = clearStage(s);
+    expect(s.notice).toMatchObject({ kind: "actCleared" });
+    expect(actUnlocked(s, data, "deadly-act")).toBe(true);
+    expect(actUnlocked(s, data, "final-act")).toBe(false);
+    expect(nextAct(s, data).id).toBe("deadly-act");
+    // Revisit Act: the cleared act stays open.
+    expect(act(s, { type: "setOut", actId: "test-act" }).run?.actId).toBe("test-act");
+  });
+
+  it("only the last act's boss starts the Prestige", () => {
+    expect(isFinalAct(data, "test-act")).toBe(false);
+    expect(isFinalAct(data, "final-act")).toBe(true);
+    expect(nextAct(unlocked(start()), data).id).toBe("final-act");
+  });
+});

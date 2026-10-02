@@ -338,3 +338,156 @@ describe("Fight", () => {
     });
   });
 });
+
+describe("Bleed, Poison and skill effects", () => {
+  const always = (ailment: "bleed" | "poison"): WeaponDefinition => ({
+    ...TEST_WEAPON,
+    ailmentChances: [{ ailment, chance: 1 }],
+  });
+
+  it("Bleed ticks for half the hit per second", () => {
+    const fight = new Fight(setup({ weapon: always("bleed"), bonuses: NO_CRIT }), dummy(), 1);
+    const events = fight.advance(2.5);
+    const dots = ofType(events, "dot");
+    expect(dots.every((d) => d.ailment === "bleed" && d.damage === 5)).toBe(true);
+    expect(dots.length).toBeGreaterThan(0);
+  });
+
+  it("Poison stacks with every hit and reports the stacks", () => {
+    const fight = new Fight(setup({ weapon: always("poison"), bonuses: NO_CRIT }), dummy(), 1);
+    fight.advance(3.2);
+    const poison = fight.snapshot().enemy.ailments.find((a) => a.type === "poison");
+    expect(poison?.stacks).toBe(3);
+    const stacks = ofType(fight.events, "ailment").map((e) => e.stacks);
+    expect(stacks).toEqual([1, 2, 3]);
+  });
+
+  it("gear Chance to Bleed adds Bleed to hits that have none", () => {
+    const fight = new Fight(setup({ bonuses: { ...NO_CRIT, bleedChance: 1 } }), dummy(), 1);
+    fight.advance(1.1);
+    expect(ofType(fight.events, "ailment").map((e) => e.ailment)).toEqual(["bleed"]);
+  });
+
+  it("a buff skill raises a stat for a while (Venom Coat)", () => {
+    const coat: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "coat",
+      name: "Coat",
+      type: "buff",
+      heatCost: 10,
+      hits: [],
+      effects: [{ kind: "buff", stat: "poisonChance", amount: 1, duration: 3 }],
+    };
+    const fight = new Fight(setup({ bonuses: NO_CRIT, rotation: [{ skill: coat }] }), dummy(), 1);
+    // One hit for the Heat, then Coat on the second action at 2 s.
+    fight.advance(2.5);
+    expect(fight.snapshot().hero.stats.poisonChance).toBe(1);
+    fight.advance(1);
+    expect(ofType(fight.events, "ailment").some((e) => e.ailment === "poison")).toBe(true);
+    expect(fight.snapshot().hero.buffs[0]).toMatchObject({ name: "Coat", stat: "poisonChance" });
+    // Not cast again while the buff runs, so the Heat is not wasted.
+    expect(ofType(fight.events, "skill")).toHaveLength(1);
+  });
+
+  it("Rend ends the Bleed and deals the rest at once, multiplied", () => {
+    const rend: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "rend",
+      name: "Rend",
+      heatCost: 10,
+      hits: [],
+      effects: [{ kind: "consumeBleed", multiplier: 1.5 }],
+    };
+    const hero = setup({ weapon: always("bleed"), bonuses: NO_CRIT, rotation: [{ skill: rend }] });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    const rendHit = ofType(fight.events, "hit").find((h) => h.source === "Rend");
+    // Bleed from the first hit (5/s for 3 s), 1 tick gone at the moment of Rend: 2 ticks × 5 × 1.5.
+    expect(rendHit?.damage).toBe(15);
+    expect(fight.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(false);
+  });
+
+  it("Toxic Burst doubles the Poison stacks", () => {
+    const burst: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "burst",
+      name: "Burst",
+      heatCost: 20,
+      hits: [],
+      effects: [{ kind: "multiplyPoison", factor: 2 }],
+    };
+    const hero = setup({
+      weapon: always("poison"),
+      bonuses: NO_CRIT,
+      rotation: [{ skill: burst }],
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(3.05);
+    // Two Poison hits, then Burst on the third action.
+    expect(fight.snapshot().enemy.ailments.find((a) => a.type === "poison")?.stacks).toBe(4);
+  });
+
+  it("a heal skill heals the caster, halved by Burn", () => {
+    const mend: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "mend",
+      name: "Mend",
+      heatCost: 0,
+      hits: [],
+      effects: [{ kind: "heal", fraction: 0.2 }],
+    };
+    const healer = setup({
+      lifeFraction: 0.5,
+      weapon: { ...TEST_WEAPON, attacksPerSecond: 0 },
+      telegraphs: [{ skill: mend, interval: 1, windup: 0.5 }],
+    });
+    const plain = new Fight(dummy(), healer, 1);
+    plain.advance(1.6);
+    expect(ofType(plain.events, "heal")[0]?.amount).toBe(20);
+
+    const burner = dummy({
+      weapon: { ...TEST_WEAPON, attacksPerSecond: 1, damage: { min: 1, max: 1 } },
+      bonuses: { burnChance: 1, critChance: -1 },
+    });
+    const burnt = new Fight(burner, healer, 1);
+    burnt.advance(1.6);
+    expect(ofType(burnt.events, "heal")[0]?.amount).toBe(10);
+  });
+
+  it("enemies can bring their own triggers", () => {
+    const fight = new Fight(
+      dummy(),
+      setup({
+        lifeFraction: 0.5,
+        weapon: { ...TEST_WEAPON, attacksPerSecond: 0 },
+        triggers: [
+          {
+            id: "regrow",
+            name: "Regrow",
+            condition: { kind: "everySeconds", seconds: 1 },
+            effect: { kind: "heal", fraction: 0.1 },
+          },
+        ],
+      }),
+      1,
+    );
+    fight.advance(1.1);
+    expect(ofType(fight.events, "heal")[0]?.amount).toBe(10);
+  });
+});
+
+describe("Blood Price", () => {
+  it("halves Crit Chance and makes every Crit Bleed", () => {
+    const hero = setup({
+      bonuses: { critChance: 0.95 },
+      rules: { critsApplyBleed: true, critChanceMultiplier: 0.5 },
+    });
+    const fight = new Fight(hero, dummy(), 3);
+    expect(fight.snapshot().hero.stats.critChance).toBeCloseTo(0.5);
+    fight.advance(10);
+    const crits = ofType(fight.events, "hit").filter((h) => h.crit).length;
+    const bleeds = ofType(fight.events, "ailment").filter((e) => e.ailment === "bleed").length;
+    expect(crits).toBeGreaterThan(0);
+    expect(bleeds).toBe(crits);
+  });
+});

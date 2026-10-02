@@ -333,6 +333,32 @@ export function getAct(data: GameData, actId: string): ActData {
 
 export const stagesInAct = (act: ActData) => act.monsterLevels.length;
 
+/** Acts in their order through the run. */
+export function actsInOrder(data: GameData): ActData[] {
+  return [...data.acts].sort((a, b) => a.number - b.number);
+}
+
+/**
+ * Whether the hero may set out into an act: the first act always, every later one once the act
+ * before it fell in this generation. Cleared acts can be revisited to farm.
+ */
+export function actUnlocked(state: GameState, data: GameData, actId: string): boolean {
+  const acts = actsInOrder(data);
+  const index = acts.findIndex((a) => a.id === actId);
+  if (index < 0) return false;
+  const before = acts[index - 1];
+  return !before || state.progress.actsCleared.includes(before.id);
+}
+
+/** The act the journey continues with: the first unlocked act that has not fallen yet. */
+export function nextAct(state: GameState, data: GameData): ActData {
+  const acts = actsInOrder(data);
+  const open = acts.find(
+    (a) => !state.progress.actsCleared.includes(a.id) && actUnlocked(state, data, a.id),
+  );
+  return open ?? acts[acts.length - 1] ?? fail("No acts");
+}
+
 /** The last act of the run: its boss is the final boss and leads to the Prestige. */
 export function isFinalAct(data: GameData, actId: string): boolean {
   const last = Math.max(...data.acts.map((a) => a.number));
@@ -644,6 +670,7 @@ export function requireCamp(state: GameState): void {
 function setOut(state: GameState, data: GameData, actId: string): GameState {
   requireCamp(state);
   getAct(data, actId);
+  if (!actUnlocked(state, data, actId)) fail("The road there is still closed");
   return {
     ...state,
     notice: null,

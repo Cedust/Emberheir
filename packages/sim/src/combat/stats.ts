@@ -32,6 +32,8 @@ export interface DerivedStats {
   readonly burnChance: number;
   readonly chillChance: number;
   readonly shockChance: number;
+  readonly bleedChance: number;
+  readonly poisonChance: number;
 }
 
 export function heroBaseLife(level: number): number {
@@ -67,6 +69,8 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     burnChance: 0,
     chillChance: 0,
     shockChance: 0,
+    bleedChance: 0,
+    poisonChance: 0,
   };
   for (const set of sets) {
     if (!set) continue;
@@ -96,7 +100,8 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     physicalDamage: a.strength * COMBAT.physicalDamagePerStrength + b.physicalDamage,
     elementalDamage: a.intelligence * COMBAT.elementalDamagePerIntelligence + b.elementalDamage,
     critChance: clamp(
-      COMBAT.baseCritChance + a.dexterity * COMBAT.critChancePerDexterity + b.critChance,
+      (COMBAT.baseCritChance + a.dexterity * COMBAT.critChancePerDexterity + b.critChance) *
+        (setup.rules?.critChanceMultiplier ?? 1),
       0,
       1,
     ),
@@ -123,5 +128,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     burnChance: clamp(b.burnChance, 0, 1),
     chillChance: clamp(b.chillChance, 0, 1),
     shockChance: clamp(b.shockChance, 0, 1),
+    bleedChance: clamp(b.bleedChance, 0, 1),
+    poisonChance: clamp(b.poisonChance, 0, 1),
   };
 }

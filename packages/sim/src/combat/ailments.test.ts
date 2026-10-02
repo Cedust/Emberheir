@@ -3,8 +3,12 @@ import {
   ailmentDuration,
   applyAilment,
   chillFactor,
+  clearAilment,
   damageTakenBonus,
   healingFactor,
+  multiplyPoison,
+  poisonStacks,
+  remainingBleedDamage,
   stepAilments,
 } from "./ailments";
 import { COMBAT } from "./constants";
@@ -25,7 +29,7 @@ function run(states: ReturnType<typeof applyAilment>, seconds: number) {
   for (let i = 0; i < Math.round(seconds / 0.05); i++) {
     const r = stepAilments(s, 0.05);
     s = r.states;
-    ticks.push(...r.burnTicks);
+    ticks.push(...r.ticks.map((t) => t.damage));
     expired.push(...r.expired);
   }
   return { states: s, ticks, expired };
@@ -72,5 +76,49 @@ describe("Chill and Shock", () => {
 
   it("ignores zero durations (e.g. full Tenacity)", () => {
     expect(applyAilment({}, "shock", 0, 0)).toEqual({});
+  });
+});
+
+describe("Bleed", () => {
+  it("is short and strong: half the hit per second for 3 s", () => {
+    const bleeding = applyAilment({}, "bleed", COMBAT.bleedDurationSeconds, 40);
+    const { ticks, expired } = run(bleeding, 4);
+    expect(ticks).toEqual([20, 20, 20]);
+    expect(expired).toEqual(["bleed"]);
+  });
+
+  it("tells the damage still to come and can be cleared", () => {
+    let s = applyAilment({}, "bleed", 3, 40);
+    expect(remainingBleedDamage(s)).toBe(60);
+    s = run(s, 1.5).states;
+    expect(remainingBleedDamage(s)).toBe(40);
+    expect(clearAilment(s, "bleed").bleed).toBeUndefined();
+    expect(remainingBleedDamage({})).toBe(0);
+  });
+});
+
+describe("Poison", () => {
+  it("stacks, and every stack runs out on its own", () => {
+    let s = applyAilment({}, "poison", 5, 100);
+    s = run(s, 2).states;
+    s = applyAilment(s, "poison", 5, 100);
+    expect(poisonStacks(s)).toBe(2);
+    const { ticks, expired } = run(s, 6);
+    // Ticks at 3 s, 4 s, 5 s with both stacks, then only the second stack until 7 s.
+    expect(ticks).toEqual([20, 20, 20, 10, 10]);
+    expect(expired).toEqual(["poison"]);
+  });
+
+  it("caps the stacks, dropping the oldest", () => {
+    let s = {};
+    for (let i = 0; i < COMBAT.poisonMaxStacks + 5; i++) s = applyAilment(s, "poison", 5, i);
+    expect(poisonStacks(s)).toBe(COMBAT.poisonMaxStacks);
+  });
+
+  it("can be multiplied (Toxic Burst)", () => {
+    let s = applyAilment({}, "poison", 5, 100);
+    s = applyAilment(s, "poison", 5, 100);
+    expect(poisonStacks(multiplyPoison(s, 2))).toBe(4);
+    expect(multiplyPoison({}, 2)).toEqual({});
   });
 });

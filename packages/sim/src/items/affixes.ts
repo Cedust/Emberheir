@@ -33,6 +33,8 @@ const PERCENT_STATS: ReadonlySet<AffixStat> = new Set<AffixStat>([
   "burnChance",
   "chillChance",
   "shockChance",
+  "bleedChance",
+  "poisonChance",
 ]);
 
 export function isPercentStat(stat: AffixStat): boolean {

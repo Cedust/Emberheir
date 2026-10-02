@@ -61,6 +61,13 @@ export const COMBAT = {
   shockDurationSeconds: 3,
   /** Shock: target takes +X damage. */
   shockDamageTaken: 0.2,
+  /** Bleed: short and strong, X of the triggering hit per second. Refreshes like Burn. */
+  bleedDamagePerSecond: 0.5,
+  bleedDurationSeconds: 3,
+  /** Poison: every stack deals X of its hit per second and runs out on its own. */
+  poisonDamagePerSecond: 0.1,
+  poisonDurationSeconds: 5,
+  poisonMaxStacks: 20,
 
   /** Spell skills gain this much base damage per skill level above 1. */
   spellDamagePerSkillLevel: 0.2,

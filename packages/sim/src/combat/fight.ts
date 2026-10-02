@@ -4,8 +4,12 @@ import {
   ailmentDuration,
   applyAilment,
   chillFactor,
+  clearAilment,
   damageTakenBonus,
   healingFactor,
+  multiplyPoison,
+  poisonStacks,
+  remainingBleedDamage,
   stepAilments,
 } from "./ailments";
 import { COMBAT } from "./constants";
@@ -32,6 +36,7 @@ import {
   triggerChance,
   triggerReady,
 } from "./triggers";
+import { AILMENT_TYPES } from "./types";
 import type {
   AilmentChance,
   AilmentType,
@@ -42,6 +47,7 @@ import type {
   HeatBehavior,
   Side,
   SkillDefinition,
+  SkillEffect,
   TriggerCondition,
   TriggerEffect,
 } from "./types";
@@ -73,6 +79,8 @@ export type CombatEvent =
       readonly type: "ailment";
       readonly side: Side;
       readonly ailment: AilmentType;
+      /** Poison stacks after this application. */
+      readonly stacks?: number;
     }
   | {
       readonly t: number;
@@ -145,7 +153,12 @@ export interface FighterSnapshot {
   readonly rotation: readonly RotationSlotSnapshot[];
   /** Index into `rotation` of the next skill. */
   readonly nextSlot: number;
-  readonly ailments: readonly { readonly type: AilmentType; readonly remaining: number }[];
+  /** Active ailments; Poison also tells its stacks (`remaining` = longest stack). */
+  readonly ailments: readonly {
+    readonly type: AilmentType;
+    readonly remaining: number;
+    readonly stacks?: number;
+  }[];
   readonly buffs: readonly {
     readonly name: string;
     readonly stat: BuffStat;
@@ -255,12 +268,14 @@ function withStatAilmentChances(
     burn: stats.burnChance,
     chill: stats.chillChance,
     shock: stats.shockChance,
+    bleed: stats.bleedChance,
+    poison: stats.poisonChance,
   };
   const merged = chances.map((c) => ({
     ailment: c.ailment,
     chance: Math.min(1, c.chance + extra[c.ailment]),
   }));
-  for (const ailment of ["burn", "chill", "shock"] as const) {
+  for (const ailment of AILMENT_TYPES) {
     if (extra[ailment] > 0 && !chances.some((c) => c.ailment === ailment)) {
       merged.push({ ailment, chance: extra[ailment] });
     }
@@ -386,11 +401,11 @@ export class Fight {
 
   /** Ailments, DoT ticks and passive Heat. */
   private stepStatus(f: Fighter, dt: number): void {
-    const { states, burnTicks, expired } = stepAilments(f.ailments, dt);
+    const { states, ticks, expired } = stepAilments(f.ailments, dt);
     f.ailments = states;
-    for (const tick of burnTicks) {
-      const damage = Math.max(1, Math.round(tick * (1 + this.damageTaken(f))));
-      this.emit({ t: this.time, type: "dot", side: f.side, ailment: "burn", damage });
+    for (const tick of ticks) {
+      const damage = Math.max(1, Math.round(tick.damage * (1 + this.damageTaken(f))));
+      this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);
       if (this.result) return;
     }
@@ -453,9 +468,17 @@ export class Fight {
     }
   }
 
-  /** Uses the next Rotation skill if Heat reached its Trigger Threshold, else a Default Attack. */
+  /**
+   * Uses the next Rotation skill if Heat reached its Trigger Threshold, else a Default Attack.
+   * A buff skill whose buff is still running is passed over, so it is not wasted.
+   */
   private act(f: Fighter): void {
-    const slot = f.setup.rotation[f.nextSlot];
+    let slot = f.setup.rotation[f.nextSlot];
+    if (slot && this.buffRunning(f, slot.skill)) {
+      f.nextSlot = (f.nextSlot + 1) % f.setup.rotation.length;
+      slot = f.setup.rotation[f.nextSlot];
+      if (slot && this.buffRunning(f, slot.skill)) slot = undefined;
+    }
     const cost = slot ? skillCost(f.setup, slot.skill) : 0;
     if (slot && f.heat >= triggerThreshold(cost, slot.threshold)) {
       f.heat -= cost;
@@ -464,6 +487,12 @@ export class Fight {
       return;
     }
     this.defaultAttack(f);
+  }
+
+  private buffRunning(f: Fighter, skill: SkillDefinition): boolean {
+    return (
+      (skill.effects ?? []).some((e) => e.kind === "buff") && f.buffs.some((b) => b.id === skill.id)
+    );
   }
 
   /** A Default Attack. Extra attacks from triggers (`fromTrigger`) fire no further triggers. */
@@ -527,6 +556,69 @@ export class Fight {
         }
       }
     }
+    for (const effect of skill.effects ?? []) {
+      if (this.result) return;
+      this.applySkillEffect(f, target, skill, effect, level);
+    }
+  }
+
+  private applySkillEffect(
+    f: Fighter,
+    target: Fighter,
+    skill: SkillDefinition,
+    effect: SkillEffect,
+    level: number,
+  ): void {
+    switch (effect.kind) {
+      case "buff":
+        this.applyEffect(
+          f,
+          skill.id,
+          skill.name,
+          { kind: "buff", stat: effect.stat, amount: effect.amount, duration: effect.duration },
+          {},
+        );
+        return;
+      case "consumeBleed": {
+        const rest = remainingBleedDamage(target.ailments);
+        if (rest <= 0) return;
+        target.ailments = clearAilment(target.ailments, "bleed");
+        this.emit({ t: this.time, type: "ailmentExpired", side: target.side, ailment: "bleed" });
+        const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
+        const damage = Math.max(
+          1,
+          Math.round(rest * effect.multiplier * levelScale * (1 + this.damageTaken(target))),
+        );
+        this.emit({
+          t: this.time,
+          type: "hit",
+          side: f.side,
+          source: skill.name,
+          damage,
+          damageType: "physical",
+          crit: false,
+          blocked: false,
+        });
+        this.damage(target, damage);
+        return;
+      }
+      case "multiplyPoison": {
+        const before = poisonStacks(target.ailments);
+        if (before === 0) return;
+        target.ailments = multiplyPoison(target.ailments, effect.factor);
+        this.emit({
+          t: this.time,
+          type: "ailment",
+          side: target.side,
+          ailment: "poison",
+          stacks: poisonStacks(target.ailments),
+        });
+        return;
+      }
+      case "heal":
+        this.heal(f, f.stats.maxLife * effect.fraction);
+        return;
+    }
   }
 
   /** Resolves one hit from `attacker` on the other fighter. Returns true if it landed. */
@@ -586,6 +678,9 @@ export class Fight {
       if (!this.rng.chance(chance)) continue;
       this.inflict(attacker, defender, ailment, outcome.damage);
     }
+    if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
+      this.inflict(attacker, defender, "bleed", outcome.damage);
+    }
 
     if (h.fromTrigger) return true;
 
@@ -625,7 +720,14 @@ export class Fight {
       defender.stats.tenacity,
     );
     defender.ailments = applyAilment(defender.ailments, ailment, duration, hitDamage);
-    this.emit({ t: this.time, type: "ailment", side: defender.side, ailment });
+    if (duration <= 0) return;
+    this.emit({
+      t: this.time,
+      type: "ailment",
+      side: defender.side,
+      ailment,
+      ...(ailment === "poison" ? { stacks: poisonStacks(defender.ailments) } : {}),
+    });
   }
 
   // --- triggers ----------------------------------------------------------------------------
@@ -815,7 +917,13 @@ export class Fight {
         };
       }),
       nextSlot: f.nextSlot,
-      ailments: (["burn", "chill", "shock"] as const).flatMap((type) => {
+      ailments: AILMENT_TYPES.flatMap((type): FighterSnapshot["ailments"] => {
+        if (type === "poison") {
+          const stacks = f.ailments.poison?.stacks ?? [];
+          if (!stacks.length) return [];
+          const remaining = Math.max(...stacks.map((s) => s.remaining));
+          return [{ type, remaining, stacks: stacks.length }];
+        }
         const state = f.ailments[type];
         return state ? [{ type, remaining: state.remaining }] : [];
       }),

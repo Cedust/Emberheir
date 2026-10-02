@@ -163,12 +163,23 @@ export function keystoneRules(tree: SkillTreeDefinition, learned: LearnedNodes):
   let skillCostMultiplier = 1;
   let defaultAttackDamage = 1;
   let noHeatDecay = false;
+  let critsApplyBleed = false;
+  let critChanceMultiplier = 1;
   for (const node of learnedKeystones(tree, learned)) {
     const k = node.keystone ?? {};
     damageTaken += k.damageTaken ?? 0;
     skillCostMultiplier *= k.skillCostMultiplier ?? 1;
     defaultAttackDamage *= k.defaultAttackDamage ?? 1;
     noHeatDecay ||= k.noHeatDecay ?? false;
+    critsApplyBleed ||= k.critsApplyBleed ?? false;
+    critChanceMultiplier *= k.critChanceMultiplier ?? 1;
   }
-  return { damageTaken, skillCostMultiplier, defaultAttackDamage, noHeatDecay };
+  return {
+    damageTaken,
+    skillCostMultiplier,
+    defaultAttackDamage,
+    noHeatDecay,
+    critsApplyBleed,
+    critChanceMultiplier,
+  };
 }

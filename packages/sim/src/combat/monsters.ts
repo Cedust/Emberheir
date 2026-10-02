@@ -4,10 +4,13 @@ import type {
   SkillDefinition,
   StatBonuses,
   TelegraphSpec,
+  TriggerSpec,
   WeaponDefinition,
 } from "./types";
 
-export type EnemyArchetype = "brute" | "skirmisher" | "caster";
+/** Enemy archetypes (docs/design/gegner-bosse-v1.md section 3): each asks the build a question. */
+export type EnemyArchetype =
+  "brute" | "skirmisher" | "caster" | "afflicter" | "warden" | "thornback";
 
 /** An enemy template. Its numbers are for Monster Level 1 and scale with the level. */
 export interface EnemyDefinition {
@@ -23,6 +26,8 @@ export interface EnemyDefinition {
   readonly bonuses?: StatBonuses;
   /** Telegraphed Heavy Attacks (bosses). */
   readonly telegraphs?: readonly TelegraphSpec[];
+  /** Innate triggers, e.g. a Warden healing itself. */
+  readonly triggers?: readonly TriggerSpec[];
   /** Act bosses are never Elites and give better rewards. */
   readonly boss?: boolean;
 }
@@ -52,5 +57,6 @@ export function createEnemySetup(enemy: EnemyDefinition, level: number): Combata
     damageMultiplier: scaling.damage,
     ...(enemy.bonuses ? { bonuses: enemy.bonuses } : {}),
     ...(enemy.telegraphs ? { telegraphs: enemy.telegraphs } : {}),
+    ...(enemy.triggers ? { triggers: enemy.triggers } : {}),
   };
 }
