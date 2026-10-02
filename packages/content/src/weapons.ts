@@ -35,8 +35,9 @@ export const FIRE_WAND: WeaponDefinition = {
   id: "fire-wand",
   name: "Fire Wand",
   defaultAttack: "Spark",
-  // M7: +10 %, the Wand died far more often than the Sword.
-  damage: { min: 9, max: 14 },
+  // M7: +10 %, the Wand died far more often than the Sword. Prestige rework: +15 % for the
+  // Level Band up to 20.
+  damage: { min: 10, max: 16 },
   damageType: "fire",
   // Playtest 1: still felt too busy at 1.0 (Warming also fires Firebolt often), so 0.7.
   attacksPerSecond: 0.7,

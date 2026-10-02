@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import {
+  actsInRun,
   createEnemySetup,
+  levelCap,
   neighbours,
   newGame,
   runFight,
+  stageMonsterLevel,
   stagesInAct,
   type SkillTreeBranch,
 } from "@emberheir/sim";
@@ -52,12 +55,10 @@ describe("Skill Tree", () => {
 });
 
 describe("Act 1", () => {
-  it("has 15 stages at Monster Level 1–3 and Gorrak above them", () => {
+  it("has 15 stages: the first run climbs from Monster Level 1 to Gorrak at the Level Cap", () => {
     expect(stagesInAct(ACT1)).toBe(15);
-    const normal = ACT1.monsterLevels.slice(0, 14);
-    expect(Math.min(...normal)).toBe(1);
-    expect(Math.max(...normal)).toBe(3);
-    expect(ACT1.monsterLevels[14]).toBeGreaterThan(3);
+    expect(stageMonsterLevel(GAME_DATA, ACT1, 1, 0)).toBe(1);
+    expect(stageMonsterLevel(GAME_DATA, ACT1, 15, 0)).toBe(levelCap(0));
     expect(ACT1.boss.telegraphs?.length).toBe(1);
   });
 
@@ -80,10 +81,14 @@ describe("Act 1", () => {
 });
 
 describe("Act 2", () => {
-  it("picks up the level band where Act 1 ends", () => {
+  it("opens in the second run and picks up the level band where Act 1 ends", () => {
     expect(stagesInAct(ACT2)).toBe(15);
-    expect(ACT2.monsterLevels[0]).toBeGreaterThan(ACT1.monsterLevels[13] ?? 0);
-    expect(ACT2.monsterLevels[14]).toBeGreaterThan(ACT2.monsterLevels[13] ?? 0);
+    expect(actsInRun(GAME_DATA, 0).map((a) => a.id)).toEqual(["ashen-fields"]);
+    expect(actsInRun(GAME_DATA, 1).map((a) => a.id)).toEqual(["ashen-fields", "rotwood"]);
+    expect(stageMonsterLevel(GAME_DATA, ACT2, 1, 1)).toBeGreaterThan(
+      stageMonsterLevel(GAME_DATA, ACT1, 15, 1),
+    );
+    expect(stageMonsterLevel(GAME_DATA, ACT2, 15, 1)).toBe(levelCap(1));
   });
 
   it("the Mother of Rot poisons the hero and feeds to heal", () => {

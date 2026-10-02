@@ -5,6 +5,7 @@ import {
   type Item,
   PROGRESSION,
   RARITIES,
+  actsInRun,
   applyAction,
   currentFight,
   type LearnedNodes,
@@ -211,11 +212,10 @@ export function playGenerations(
     : { ...data, starterWeapons: [...data.starterWeapons, options.starterWeapon] };
   let s = newGame(start, { seed: options.seed, starterWeapon: options.starterWeapon });
   const reports: ActRunReport[] = [];
-  const acts = [...data.acts]
-    .sort((a, b) => a.number - b.number)
-    .filter((a) => a.number <= options.upToAct);
   for (let generation = 1; generation <= options.generations; generation++) {
     let allCleared = true;
+    // Run n has acts 1..n (prestige-acts-v1.md); the newest act's boss brings The Harvest.
+    const acts = actsInRun(data, s.legacy.prestige).filter((a) => a.number <= options.upToAct);
     for (const act of acts) {
       const before = s.stats;
       const fightSeconds: number[] = [];

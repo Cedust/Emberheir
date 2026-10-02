@@ -14,7 +14,7 @@ describe("ACTS", () => {
         number: act.number,
         name: act.name,
       });
-      expect(act.monsterLevels).toHaveLength(15);
+      expect(act.stages).toBe(15);
     }
     expect(GAME_DATA.acts.map((a) => a.id)).toEqual(["ashen-fields", "rotwood"]);
   });

@@ -44,7 +44,7 @@ export const FIREBOLT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 14, max: 19 },
+      damage: { min: 16, max: 22 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.25 }],
     },

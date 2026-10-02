@@ -15,7 +15,7 @@ describe("act autopilot", () => {
     expect(report.fightSeconds.length).toBeGreaterThan(0);
   });
 
-  it("plays the acts in order, prestiges after the last boss and starts again", () => {
+  it("each run is one act longer: prestiges after the newest act's boss and starts again", () => {
     const reports = playGenerations(GAME_DATA, {
       seed: 2,
       starterWeapon: "fire-wand",
@@ -25,11 +25,10 @@ describe("act autopilot", () => {
     });
     expect(reports.map((r) => [r.generation, r.act])).toEqual([
       [1, 1],
-      [1, 2],
       [2, 1],
       [2, 2],
     ]);
-    expect(reports.slice(0, 2).every((r) => r.cleared)).toBe(true);
-    expect(reports[2]?.fights).toBeGreaterThanOrEqual(15);
+    expect(reports[0]?.cleared).toBe(true);
+    expect(reports[1]?.fights).toBeGreaterThanOrEqual(15);
   });
 });

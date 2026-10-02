@@ -30,9 +30,11 @@ function runActMode(): void {
   const last = GAME_DATA.acts.find((a) => a.number === args.act);
   if (!last) throw new Error(`Act ${args.act} is not playable yet`);
   const runs = Math.min(args.runs, 500);
+  // Run n has acts 1..n, so reaching act N takes N runs (prestige-acts-v1.md).
+  const generations = Math.max(args.generations, last.number);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
-    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${args.generations}`,
+    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations}`,
   );
   console.log("");
   const rows = [];
@@ -44,10 +46,10 @@ function runActMode(): void {
         starterWeapon,
         upToAct: last.number,
         maxAttempts: args.attempts,
-        generations: args.generations,
+        generations,
       }),
     ).flat();
-    for (let g = 1; g <= args.generations; g++) {
+    for (let g = 1; g <= generations; g++) {
       for (const act of GAME_DATA.acts.filter((a) => a.number <= last.number)) {
         const reports = all.filter((x) => x.generation === g && x.act === act.number);
         if (!reports.length) continue;
