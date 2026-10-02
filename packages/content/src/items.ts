@@ -18,7 +18,7 @@ import {
   rollItem,
   rollRarity,
 } from "@emberheir/sim";
-import { FIRE_WAND, SWORD } from "./weapons";
+import { AXE, DAGGER, FIRE_WAND, SWORD } from "./weapons";
 
 /**
  * Items (docs/design/item-system-v1.md): all 10 slots, Normal to Epic. Most slots have a light
@@ -44,6 +44,25 @@ export const FIRE_WAND_BASE: ItemBaseDefinition = {
   weapon: FIRE_WAND,
   requirements: { intelligence: 5 },
   affixWeights: { elemental: 1.5, physical: 0.5 },
+  size: { w: 1, h: 2 },
+};
+
+export const AXE_BASE: ItemBaseDefinition = {
+  id: "axe",
+  name: "Axe",
+  slot: "mainHand",
+  weapon: AXE,
+  requirements: { strength: 7 },
+  affixWeights: { physical: 1.5, ailment: 1.5, elemental: 0.5 },
+};
+
+export const DAGGER_BASE: ItemBaseDefinition = {
+  id: "dagger",
+  name: "Dagger",
+  slot: "mainHand",
+  weapon: DAGGER,
+  requirements: { dexterity: 6 },
+  affixWeights: { crit: 1.5, ailment: 1.5, elemental: 0.5 },
   size: { w: 1, h: 2 },
 };
 
@@ -235,6 +254,8 @@ export const GARNET_RING: ItemBaseDefinition = {
 export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   SWORD_BASE,
   FIRE_WAND_BASE,
+  AXE_BASE,
+  DAGGER_BASE,
   ROUND_SHIELD,
   EMBER_FOCUS,
   LEATHER_JERKIN,
@@ -506,6 +527,26 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     perTier: 0.1,
   }),
   stat({
+    id: "bleed-chance",
+    stat: "bleedChance",
+    prefix: "Serrated",
+    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    tags: ["ailment", "physical"],
+    weight: 6,
+    value: { min: 0.04, max: 0.1 },
+    perTier: 0.1,
+  }),
+  stat({
+    id: "poison-chance",
+    stat: "poisonChance",
+    prefix: "Venomous",
+    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    tags: ["ailment", "physical"],
+    weight: 6,
+    value: { min: 0.05, max: 0.12 },
+    perTier: 0.1,
+  }),
+  stat({
     id: "shock-chance",
     stat: "shockChance",
     prefix: "Static",
@@ -711,7 +752,8 @@ export interface GearRollOptions {
 function suitsWeapon(base: ItemBaseDefinition, weapon: WeaponDefinition): boolean {
   if (base.fitsWeaponRange && base.fitsWeaponRange !== weapon.range) return false;
   const required = Object.keys(base.requirements ?? {});
-  const own = weapon.range === "melee" ? ["strength", "agility"] : ["intelligence", "wisdom"];
+  const own =
+    weapon.range === "melee" ? ["strength", "agility", "dexterity"] : ["intelligence", "wisdom"];
   return required.every((a) => own.includes(a));
 }
 

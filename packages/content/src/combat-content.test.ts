@@ -1,23 +1,23 @@
 import { describe, expect, it } from "vitest";
 import { createEnemySetup, deriveStats, runFight } from "@emberheir/sim";
-import { ACT1_ENEMIES } from "./enemies";
+import { ACT1_ENEMIES, ACT2_ENEMIES } from "./enemies";
 import { createHeroSetup } from "./heroes";
 import { FLURRY, HERO_SKILLS, POWER_STRIKE, START_SKILLS } from "./skills";
 import { HERO_WEAPONS, SWORD } from "./weapons";
 
 describe("combat content", () => {
   it("has unique ids", () => {
-    for (const list of [HERO_SKILLS, HERO_WEAPONS, ACT1_ENEMIES]) {
+    for (const list of [HERO_SKILLS, HERO_WEAPONS, [...ACT1_ENEMIES, ...ACT2_ENEMIES]]) {
       const ids = list.map((x) => x.id);
       expect(new Set(ids).size).toBe(ids.length);
     }
   });
 
-  it("skills cost 20-100 Heat and deal damage", () => {
+  it("skills cost 20-100 Heat and do something", () => {
     for (const skill of HERO_SKILLS) {
       expect(skill.heatCost, skill.id).toBeGreaterThanOrEqual(20);
       expect(skill.heatCost, skill.id).toBeLessThanOrEqual(100);
-      expect(skill.hits.length, skill.id).toBeGreaterThan(0);
+      expect(skill.hits.length + (skill.effects?.length ?? 0), skill.id).toBeGreaterThan(0);
     }
   });
 
@@ -28,8 +28,10 @@ describe("combat content", () => {
     }
   });
 
-  it("PoC weapons cover Cooling and Warming", () => {
-    expect(HERO_WEAPONS.map((w) => w.heatBehavior).sort()).toEqual(["cooling", "warming"]);
+  it("hero weapons cover Cooling and Warming", () => {
+    expect(new Set(HERO_WEAPONS.map((w) => w.heatBehavior))).toEqual(
+      new Set(["cooling", "warming"]),
+    );
   });
 
   it("hero setup takes skills and Trigger Thresholds per slot", () => {

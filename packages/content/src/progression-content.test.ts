@@ -8,26 +8,30 @@ import {
   type SkillTreeBranch,
 } from "@emberheir/sim";
 import { ELITE_MODIFIERS } from "./elites";
-import { ACT1, GAME_DATA } from "./game";
+import { ACT1, ACT2, GAME_DATA } from "./game";
 import { createHeroSetup } from "./heroes";
 import { SKILL_TREE } from "./skill-tree";
 import { SWORD } from "./weapons";
 
-describe("PoC Skill Tree", () => {
+describe("Skill Tree", () => {
   const nodes = SKILL_TREE.nodes;
 
-  it("has about 37 nodes in Core, Might and Arcana with unique ids and valid links", () => {
-    expect(nodes.length).toBe(37);
+  it("has Core, Might, Arcana and Rupture with unique ids and valid links", () => {
+    expect(nodes.length).toBe(50);
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
-    expect(new Set(nodes.map((n) => n.branch))).toEqual(new Set(["core", "might", "arcana"]));
+    expect(new Set(nodes.map((n) => n.branch))).toEqual(
+      new Set(["core", "might", "arcana", "rupture"]),
+    );
   });
 
-  it("has 3 Skill nodes and 1 Keystone per branch", () => {
-    for (const branch of ["might", "arcana"] as SkillTreeBranch[]) {
+  it("has 3–4 Skill nodes and 1 Keystone per branch", () => {
+    for (const branch of ["might", "arcana", "rupture"] as SkillTreeBranch[]) {
       const inBranch = nodes.filter((n) => n.branch === branch);
-      expect(inBranch.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(3);
+      const skills = inBranch.filter((n) => n.kind === "skill" && n.skill).length;
+      expect(skills).toBeGreaterThanOrEqual(3);
+      expect(skills).toBeLessThanOrEqual(4);
       expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(1);
     }
   });
@@ -67,10 +71,27 @@ describe("Act 1", () => {
     expect(result.events.some((e) => e.type === "telegraph")).toBe(true);
   });
 
-  it("a new game works with both starter weapons", () => {
+  it("a new game works with every starter weapon", () => {
     for (const starterWeapon of GAME_DATA.starterWeapons) {
       const state = newGame(GAME_DATA, { seed: 1, starterWeapon });
       expect(state.hero.equipment.mainHand?.baseId).toBe(starterWeapon);
     }
+  });
+});
+
+describe("Act 2", () => {
+  it("picks up the level band where Act 1 ends", () => {
+    expect(stagesInAct(ACT2)).toBe(15);
+    expect(ACT2.monsterLevels[0]).toBeGreaterThan(ACT1.monsterLevels[13] ?? 0);
+    expect(ACT2.monsterLevels[14]).toBeGreaterThan(ACT2.monsterLevels[13] ?? 0);
+  });
+
+  it("the Mother of Rot poisons the hero and feeds to heal", () => {
+    const hero = createHeroSetup({ weapon: SWORD, level: 9 });
+    const result = runFight(hero, createEnemySetup(ACT2.boss, 10), 1);
+    const events = result.events;
+    expect(events.some((e) => e.type === "ailment" && e.ailment === "poison")).toBe(true);
+    expect(events.some((e) => e.type === "telegraph" && e.skill === "Devour")).toBe(true);
+    expect(events.some((e) => e.type === "heal" && e.side === "enemy")).toBe(true);
   });
 });

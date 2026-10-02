@@ -1,6 +1,6 @@
 import { type ActData, EQUIPMENT_SLOTS, type GameData } from "@emberheir/sim";
 import { ELITE_MODIFIERS } from "./elites";
-import { ACT1_ENEMIES, GORRAK } from "./enemies";
+import { ACT1_ENEMIES, ACT2_ENEMIES, GORRAK, MOTHER_OF_ROT } from "./enemies";
 import { STARTING_ATTRIBUTES } from "./heroes";
 import { ITEM_BASES, ITEM_CATALOG } from "./items";
 import { SKILL_TREE } from "./skill-tree";
@@ -21,6 +21,21 @@ export const ACT1: ActData = {
   essence: { id: "ash-essence", name: "Ash Essence", affixId: "all-resistance" },
 };
 
+/**
+ * Act 2 for the run: Rotwood, Bleed and Poison. Its Monster Levels pick up where Act 1 ends
+ * (the run's level band, gegner-bosse-v1.md section 7), the Mother of Rot one level above.
+ */
+export const ACT2: ActData = {
+  id: "rotwood",
+  number: 2,
+  name: "Rotwood",
+  monsterLevels: [5, 5, 5, 6, 6, 6, 7, 7, 7, 8, 8, 8, 9, 9, 10],
+  enemies: ACT2_ENEMIES,
+  boss: MOTHER_OF_ROT,
+  spoilsStages: [5, 10],
+  essence: { id: "rot-essence", name: "Rot Essence", affixId: "tenacity" },
+};
+
 /** Everything the game loop in `@emberheir/sim` needs. */
 export const GAME_DATA: GameData = {
   items: ITEM_CATALOG,
@@ -29,7 +44,7 @@ export const GAME_DATA: GameData = {
   starterWeapons: ["sword", "fire-wand"],
   startSkills: START_SKILLS,
   skillTree: SKILL_TREE,
-  acts: [ACT1],
+  acts: [ACT1, ACT2],
   eliteModifiers: ELITE_MODIFIERS,
   startingAttributes: STARTING_ATTRIBUTES,
 };

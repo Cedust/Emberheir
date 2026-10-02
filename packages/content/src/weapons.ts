@@ -35,7 +35,8 @@ export const FIRE_WAND: WeaponDefinition = {
   id: "fire-wand",
   name: "Fire Wand",
   defaultAttack: "Spark",
-  damage: { min: 8, max: 13 },
+  // M7: +10 %, the Wand died far more often than the Sword.
+  damage: { min: 9, max: 14 },
   damageType: "fire",
   // Playtest 1: still felt too busy at 1.0 (Warming also fires Firebolt often), so 0.7.
   attacksPerSecond: 0.7,
@@ -45,7 +46,39 @@ export const FIRE_WAND: WeaponDefinition = {
   implicit: { elementalDamage: 0.1 },
 };
 
-export const HERO_WEAPONS: readonly WeaponDefinition[] = [SWORD, FIRE_WAND];
+/** Axe (waffen-v1.md): mid-slow Hack with a Bleed chance. Rupture's Bleed weapon. */
+export const AXE: WeaponDefinition = {
+  id: "axe",
+  name: "Axe",
+  defaultAttack: "Hack",
+  damage: { min: 12, max: 21 },
+  damageType: "physical",
+  attacksPerSecond: 0.65,
+  heatBehavior: "cooling",
+  // 12 Heat/s ÷ 0.65 attacks/s.
+  heatPerHit: 18,
+  range: "melee",
+  implicit: { physicalDamage: 0.1 },
+  ailmentChances: [{ ailment: "bleed", chance: 0.25 }],
+};
+
+/** Dagger (waffen-v1.md): very fast Stab with a Poison chance and extra Crit Chance. */
+export const DAGGER: WeaponDefinition = {
+  id: "dagger",
+  name: "Dagger",
+  defaultAttack: "Stab",
+  damage: { min: 8, max: 12 },
+  damageType: "physical",
+  attacksPerSecond: 1.25,
+  heatBehavior: "cooling",
+  // 12 Heat/s ÷ 1.25 attacks/s.
+  heatPerHit: 10,
+  range: "melee",
+  implicit: { critChance: 0.05 },
+  ailmentChances: [{ ailment: "poison", chance: 0.2 }],
+};
+
+export const HERO_WEAPONS: readonly WeaponDefinition[] = [SWORD, FIRE_WAND, AXE, DAGGER];
 
 // Enemy weapons. Enemies follow the same rules as the hero, including Heat.
 // Playtest 1: Act 1 drops less Rare and Epic gear, so enemy damage went down by ~40 %.
@@ -101,4 +134,74 @@ export const PIT_MAUL: WeaponDefinition = {
   heatPerHit: 24,
   range: "melee",
   implicit: {},
+};
+
+// Act 2 (Rotwood) enemy weapons: Bleed and Poison.
+
+export const THORN_CLAWS: WeaponDefinition = {
+  id: "thorn-claws",
+  name: "Thorn Claws",
+  defaultAttack: "Claw",
+  damage: { min: 0.61, max: 0.94 },
+  damageType: "physical",
+  attacksPerSecond: 1,
+  heatBehavior: "cooling",
+  heatPerHit: 12,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "bleed", chance: 0.15 }],
+};
+
+export const SPORE_SAC: WeaponDefinition = {
+  id: "spore-sac",
+  name: "Spore Sac",
+  defaultAttack: "Spore",
+  damage: { min: 0.55, max: 0.99 },
+  damageType: "physical",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [{ ailment: "poison", chance: 0.3 }],
+};
+
+export const BRANCH_FLAIL: WeaponDefinition = {
+  id: "branch-flail",
+  name: "Branch Flail",
+  defaultAttack: "Lash",
+  damage: { min: 1.32, max: 1.98 },
+  damageType: "physical",
+  attacksPerSecond: 0.45,
+  heatBehavior: "cooling",
+  heatPerHit: 27,
+  range: "melee",
+  implicit: {},
+};
+
+export const WARDEN_STAFF: WeaponDefinition = {
+  id: "warden-staff",
+  name: "Warden Staff",
+  defaultAttack: "Strike",
+  damage: { min: 0.83, max: 1.26 },
+  damageType: "physical",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+};
+
+export const ROT_LASH: WeaponDefinition = {
+  id: "rot-lash",
+  name: "Rot Lash",
+  defaultAttack: "Lash",
+  damage: { min: 1.65, max: 2.42 },
+  damageType: "physical",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "poison", chance: 0.4 }],
 };

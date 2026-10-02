@@ -1,5 +1,8 @@
 import {
   ACT1_ENEMIES,
+  ACT2_ENEMIES,
+  ACT2,
+  ACT1,
   GAME_TITLE,
   GAME_DATA,
   HERO_SKILLS,
@@ -19,45 +22,52 @@ if (args.act > 0) {
   process.exit(0);
 }
 
-/** `--act 1`: plays whole acts with an autopilot (loot, flask, deaths) per starter weapon. */
+/**
+ * `--act 2`: plays the run from Act 1 up to that act with an autopilot (loot, flask, deaths),
+ * per starter weapon (`--weapon axe` also plays a weapon that only drops).
+ */
 function runActMode(): void {
-  const act = GAME_DATA.acts.find((a) => a.number === args.act);
-  if (!act) throw new Error(`Act ${args.act} is not in the PoC`);
+  const last = GAME_DATA.acts.find((a) => a.number === args.act);
+  if (!last) throw new Error(`Act ${args.act} is not playable yet`);
   const runs = Math.min(args.runs, 500);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
-    `act=${act.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${args.generations}`,
+    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${args.generations}`,
   );
   console.log("");
   const rows = [];
-  for (const starterWeapon of GAME_DATA.starterWeapons) {
-    if (args.weapon !== "all" && args.weapon !== starterWeapon) continue;
-    const runsByGeneration = Array.from({ length: runs }, (_, i) =>
+  const weapons = args.weapon === "all" ? GAME_DATA.starterWeapons : [args.weapon];
+  for (const starterWeapon of weapons) {
+    const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(GAME_DATA, {
         seed: args.seed + i,
         starterWeapon,
-        actId: act.id,
+        upToAct: last.number,
         maxAttempts: args.attempts,
         generations: args.generations,
       }),
-    );
+    ).flat();
     for (let g = 1; g <= args.generations; g++) {
-      const reports = runsByGeneration.flatMap((r) => r.filter((x) => x.generation === g));
-      const s = summarizeActRuns(reports);
-      rows.push({
-        weapon: starterWeapon,
-        gen: g,
-        runs: reports.length,
-        "cleared %": (s.clearRate * 100).toFixed(0),
-        "deaths before clear": s.avgDeaths.toFixed(1),
-        "1st fight lost %": (s.firstFightLossRate * 100).toFixed(1),
-        "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
-        "level at boss": s.avgLevelAtBoss.toFixed(1),
-        "avg fight s": s.avgFightSeconds.toFixed(1),
-        "p90 fight s": s.p90FightSeconds.toFixed(1),
-        "boss fight s": s.avgBossSeconds.toFixed(1),
-        "elites / run": s.avgElites.toFixed(1),
-      });
+      for (const act of GAME_DATA.acts.filter((a) => a.number <= last.number)) {
+        const reports = all.filter((x) => x.generation === g && x.act === act.number);
+        if (!reports.length) continue;
+        const s = summarizeActRuns(reports);
+        rows.push({
+          weapon: starterWeapon,
+          gen: g,
+          act: act.number,
+          runs: reports.length,
+          "cleared %": (s.clearRate * 100).toFixed(0),
+          "deaths before clear": s.avgDeaths.toFixed(1),
+          "1st fight lost %": (s.firstFightLossRate * 100).toFixed(1),
+          "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
+          "level at boss": s.avgLevelAtBoss.toFixed(1),
+          "avg fight s": s.avgFightSeconds.toFixed(1),
+          "p90 fight s": s.p90FightSeconds.toFixed(1),
+          "boss fight s": s.avgBossSeconds.toFixed(1),
+          "elites / run": s.avgElites.toFixed(1),
+        });
+      }
     }
   }
   console.table(rows);
@@ -72,7 +82,7 @@ const pick = <T extends { id: string }>(list: readonly T[], id: string, what: st
 };
 
 const weapons = pick(HERO_WEAPONS, args.weapon, "weapon");
-const enemies = pick(ACT1_ENEMIES, args.enemy, "enemy");
+const enemies = pick([...ACT1_ENEMIES, ACT1.boss, ...ACT2_ENEMIES, ACT2.boss], args.enemy, "enemy");
 const skills = args.skills.flatMap((id) => pick(HERO_SKILLS, id, "skill"));
 const gearModes: Exclude<GearMode, "all">[] =
   args.gear === "all" ? GEAR_MODES.filter((g) => g !== "all" && g !== "mixed") : [args.gear];

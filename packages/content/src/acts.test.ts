@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { ACTS } from "./acts";
+import { GAME_DATA } from "./game";
 
 describe("ACTS", () => {
   it("has 7 acts numbered 1..7 with unique ids", () => {
@@ -7,7 +8,14 @@ describe("ACTS", () => {
     expect(new Set(ACTS.map((a) => a.id)).size).toBe(ACTS.length);
   });
 
-  it("only Act 1 is playable in the PoC", () => {
-    expect(ACTS.filter((a) => a.playableInPoc).map((a) => a.id)).toEqual(["ashen-fields"]);
+  it("playable acts match the catalog and come in order", () => {
+    for (const act of GAME_DATA.acts) {
+      expect(ACTS.find((a) => a.id === act.id)).toMatchObject({
+        number: act.number,
+        name: act.name,
+      });
+      expect(act.monsterLevels).toHaveLength(15);
+    }
+    expect(GAME_DATA.acts.map((a) => a.id)).toEqual(["ashen-fields", "rotwood"]);
   });
 });

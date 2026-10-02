@@ -18,13 +18,15 @@ import {
 } from "@emberheir/sim";
 
 /**
- * Plays whole acts with a simple autopilot to answer the PoC questions "how long does a fight
- * take" and "how often do you die before the boss" (game-design-document-v1.md section 11).
+ * Plays whole acts with a simple autopilot to answer "how long does a fight take" and "how often
+ * do you die before the boss" (game-design-document-v1.md section 11).
  */
 
 export interface ActRunReport {
   /** 1 = the first run, 2 = after the first Prestige, ... */
   readonly generation: number;
+  /** Act number (1 = Ashen Fields). */
+  readonly act: number;
   readonly cleared: boolean;
   /** Deaths before the boss fell. */
   readonly deaths: number;
@@ -40,10 +42,12 @@ export interface ActRunReport {
   readonly firstFightLost: boolean;
 }
 
-/** Attribute points per level for each starter weapon. */
+/** Attribute points per level for each weapon. */
 const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   sword: ["strength", "agility", "vitality"],
   "fire-wand": ["intelligence", "wisdom", "vitality"],
+  axe: ["strength", "vitality", "wisdom"],
+  dagger: ["dexterity", "agility", "vitality"],
 };
 
 const rarityRank = (item: Item) => RARITIES.indexOf(item.rarity);
@@ -56,8 +60,12 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
   if (!rewards) return s;
   let best = -1;
   let bestGain = 0;
+  const weaponId = s.hero.equipment.mainHand?.baseId;
   rewards.items.forEach((item, i) => {
     if (equipBlockReason(s, data, item, "pick")) return;
+    // The autopilot sticks to its weapon type, like a player who planned the build.
+    const base = data.items.bases.get(item.baseId);
+    if (base?.weapon && item.baseId !== weaponId) return;
     const slot = targetSlot(item, data, s.hero.equipment);
     const current = slot ? s.hero.equipment[slot] : undefined;
     const gain = score(item) - (current ? score(current) : -1);
@@ -103,6 +111,14 @@ const TREE_PLAN: Record<string, { readonly nodes: readonly string[]; readonly sl
   "fire-wand": {
     nodes: ["arcana-chain-lightning", "arcana-kindled-mind", "arcana-storm-weaver"],
     slot2: "chain-lightning",
+  },
+  axe: {
+    nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
+    slot2: "rend",
+  },
+  dagger: {
+    nodes: ["rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
+    slot2: "toxic-burst",
   },
 };
 
@@ -174,93 +190,111 @@ function autopilotPrestige(state: GameState, data: GameData): GameState {
 }
 
 /**
- * Plays an act until its boss falls or `maxAttempts` attempts are used up. With `generations`
- * above 1 it prestiges after the final boss and plays the act again: one report per generation.
+ * Plays the run act by act, from Act 1 up to `upToAct`, until each boss falls or `maxAttempts`
+ * attempts per act are used up. With `generations` above 1 it prestiges after the final boss and
+ * plays the acts again: one report per act and generation.
  */
 export function playGenerations(
   data: GameData,
   options: {
     readonly seed: number;
     readonly starterWeapon: string;
-    readonly actId: string;
+    /** Last act to play (its number). */
+    readonly upToAct: number;
     readonly maxAttempts: number;
     readonly generations: number;
   },
 ): ActRunReport[] {
-  let s = newGame(data, { seed: options.seed, starterWeapon: options.starterWeapon });
+  // Weapons that only drop (Axe, Dagger) can be tested as if the hero started with them.
+  const start = data.starterWeapons.includes(options.starterWeapon)
+    ? data
+    : { ...data, starterWeapons: [...data.starterWeapons, options.starterWeapon] };
+  let s = newGame(start, { seed: options.seed, starterWeapon: options.starterWeapon });
   const reports: ActRunReport[] = [];
+  const acts = [...data.acts]
+    .sort((a, b) => a.number - b.number)
+    .filter((a) => a.number <= options.upToAct);
   for (let generation = 1; generation <= options.generations; generation++) {
-    const before = s.stats;
-    const fightSeconds: number[] = [];
-    let bossSeconds = 0;
-    let levelAtBoss = 0;
-    let elites = 0;
-    const deathStages: number[] = [];
-    let bossDeaths = 0;
-    let firstFightLost = false;
-    let cleared = false;
-    s = spendSkillPoints(s, data, options.starterWeapon);
-    for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
-      s = applyAction(s, data, { type: "setOut", actId: options.actId });
-      while (s.run) {
-        s = spendPoints(s, data, options.starterWeapon);
-        if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
-          s = applyAction(s, data, { type: "useFlask" });
+    let allCleared = true;
+    for (const act of acts) {
+      const before = s.stats;
+      const fightSeconds: number[] = [];
+      let bossSeconds = 0;
+      let levelAtBoss = 0;
+      let elites = 0;
+      const deathStages: number[] = [];
+      let bossDeaths = 0;
+      let firstFightLost = false;
+      let cleared = false;
+      for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
+        s = spendSkillPoints(s, data, options.starterWeapon);
+        s = applyAction(s, data, { type: "setOut", actId: act.id });
+        while (s.run) {
+          s = spendPoints(s, data, options.starterWeapon);
+          if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+            s = applyAction(s, data, { type: "useFlask" });
+          }
+          s = applyAction(s, data, { type: "startStage" });
+          const fight = currentFight(s, data);
+          const result = runFight(fight.hero, fight.enemy, fight.seed);
+          const encounter = s.run?.encounter;
+          if (encounter?.boss) {
+            bossSeconds = result.duration;
+            levelAtBoss = s.hero.level;
+          } else {
+            fightSeconds.push(result.duration);
+            if (encounter?.eliteModifiers.length) elites++;
+          }
+          const stage = s.run?.stage ?? 0;
+          const first = s.stats.fights === before.fights;
+          s = applyAction(s, data, { type: "resolveFight" });
+          if (!s.run && s.notice?.kind === "death") {
+            if (first) firstFightLost = true;
+            deathStages.push(stage);
+            if (encounter?.boss) bossDeaths++;
+          }
+          if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
         }
-        s = applyAction(s, data, { type: "startStage" });
-        const fight = currentFight(s, data);
-        const result = runFight(fight.hero, fight.enemy, fight.seed);
-        const encounter = s.run?.encounter;
-        if (encounter?.boss) {
-          bossSeconds = result.duration;
-          levelAtBoss = s.hero.level;
-        } else {
-          fightSeconds.push(result.duration);
-          if (encounter?.eliteModifiers.length) elites++;
-        }
-        const stage = s.run?.stage ?? 0;
-        const first = s.stats.fights === before.fights;
-        s = applyAction(s, data, { type: "resolveFight" });
-        if (!s.run && s.notice?.kind === "death") {
-          if (first) firstFightLost = true;
-          deathStages.push(stage);
-          if (encounter?.boss) bossDeaths++;
-        }
-        if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+        cleared = s.pendingPrestige !== null || s.notice?.kind === "actCleared";
+        if (!s.pendingPrestige) s = applyAction(s, data, { type: "dismissNotice" });
       }
-      cleared = s.pendingPrestige !== null || s.notice?.kind === "actCleared";
-      if (!s.pendingPrestige) s = applyAction(s, data, { type: "dismissNotice" });
+      reports.push({
+        generation,
+        act: act.number,
+        cleared,
+        deaths: s.stats.deaths - before.deaths,
+        fights: s.stats.fights - before.fights,
+        levelAtBoss,
+        fightSeconds,
+        bossSeconds,
+        elites,
+        deathStages,
+        bossDeaths,
+        firstFightLost,
+      });
+      if (!cleared) {
+        allCleared = false;
+        break;
+      }
     }
-    reports.push({
-      generation,
-      cleared,
-      deaths: s.stats.deaths - before.deaths,
-      fights: s.stats.fights - before.fights,
-      levelAtBoss,
-      fightSeconds,
-      bossSeconds,
-      elites,
-      deathStages,
-      bossDeaths,
-      firstFightLost,
-    });
-    if (!cleared || generation === options.generations || !s.pendingPrestige) break;
+    if (!allCleared || generation === options.generations || !s.pendingPrestige) break;
     s = autopilotPrestige(s, data);
   }
   return reports;
 }
 
-/** Plays one generation of an act (see `playGenerations`). */
+/** Plays one generation up to one act (see `playGenerations`). The report of that act. */
 export function playAct(
   data: GameData,
   options: {
     readonly seed: number;
     readonly starterWeapon: string;
-    readonly actId: string;
+    readonly upToAct: number;
     readonly maxAttempts: number;
   },
 ): ActRunReport {
-  const [report] = playGenerations(data, { ...options, generations: 1 });
+  const reports = playGenerations(data, { ...options, generations: 1 });
+  const report = reports[reports.length - 1];
   if (!report) throw new Error("No report");
   return report;
 }

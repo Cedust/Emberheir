@@ -60,7 +60,8 @@ npm run balance -- --runs 1000 --seed 42   # all PoC weapons vs. all Act 1 enemi
 npm run balance -- --weapon sword --skills power-strike,flurry --enemy ashen-brute --level 3
 npm run balance -- --gear all --level 3     # compare no gear vs. Normal/Magic/Rare/Epic gear
 npm run balance -- --act 1 --runs 200      # autopilot plays Act 1: deaths, level at boss, fight length
-npm run balance -- --act 1 --generations 2 # ...then prestiges after Gorrak and plays Act 1 again
+npm run balance -- --act 2 --runs 200      # ...plays Act 1 and Act 2 (Rotwood) in a row
+npm run balance -- --act 2 --generations 2 # ...then prestiges after the Mother of Rot and starts again
 npm run format                       # Prettier
 ```
 

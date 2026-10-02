@@ -7,23 +7,29 @@ describe("act autopilot", () => {
     const report = playAct(GAME_DATA, {
       seed: 1,
       starterWeapon: "sword",
-      actId: "ashen-fields",
+      upToAct: 1,
       maxAttempts: 20,
     });
+    expect(report.act).toBe(1);
     expect(report.fights).toBeGreaterThanOrEqual(15);
     expect(report.fightSeconds.length).toBeGreaterThan(0);
   });
 
-  it("prestiges after Gorrak and plays the next generation", () => {
-    const [first, second] = playGenerations(GAME_DATA, {
+  it("plays the acts in order, prestiges after the last boss and starts again", () => {
+    const reports = playGenerations(GAME_DATA, {
       seed: 2,
       starterWeapon: "fire-wand",
-      actId: "ashen-fields",
+      upToAct: 2,
       maxAttempts: 30,
       generations: 2,
     });
-    expect(first?.cleared).toBe(true);
-    expect(second?.generation).toBe(2);
-    expect(second?.fights).toBeGreaterThanOrEqual(15);
+    expect(reports.map((r) => [r.generation, r.act])).toEqual([
+      [1, 1],
+      [1, 2],
+      [2, 1],
+      [2, 2],
+    ]);
+    expect(reports.slice(0, 2).every((r) => r.cleared)).toBe(true);
+    expect(reports[2]?.fights).toBeGreaterThanOrEqual(15);
   });
 });

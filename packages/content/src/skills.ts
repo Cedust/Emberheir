@@ -104,7 +104,52 @@ export const METEOR: SkillDefinition = {
   ],
 };
 
-/** Skills the hero can put into the Battle Plan in the PoC. */
+// Rupture: Physical Over Time (skills-v1.md section 3).
+
+export const LACERATE: SkillDefinition = {
+  id: "lacerate",
+  name: "Lacerate",
+  type: "attack",
+  heatCost: 25,
+  tags: ["physical", "over-time", "any"],
+  description: "100 % Weapon Damage. Always Bleeds.",
+  hits: [{ kind: "weapon", multiplier: 1, ailmentChances: [{ ailment: "bleed", chance: 1 }] }],
+};
+
+export const VENOM_COAT: SkillDefinition = {
+  id: "venom-coat",
+  name: "Venom Coat",
+  type: "buff",
+  heatCost: 40,
+  tags: ["physical", "over-time", "any"],
+  description: "For 8 s, every hit Poisons.",
+  hits: [],
+  effects: [{ kind: "buff", stat: "poisonChance", amount: 1, duration: 8 }],
+};
+
+export const REND: SkillDefinition = {
+  id: "rend",
+  name: "Rend",
+  type: "attack",
+  heatCost: 60,
+  tags: ["physical", "over-time", "melee"],
+  description: "120 % Weapon Damage, then ends the Bleed and deals the rest at once, ×1.5.",
+  hits: [{ kind: "weapon", multiplier: 1.2 }],
+  effects: [{ kind: "consumeBleed", multiplier: 1.5 }],
+};
+
+export const TOXIC_BURST: SkillDefinition = {
+  id: "toxic-burst",
+  name: "Toxic Burst",
+  type: "attack",
+  heatCost: 80,
+  tags: ["physical", "over-time", "any"],
+  description: "100 % Weapon Damage that Poisons, then doubles the Poison stacks.",
+  hits: [{ kind: "weapon", multiplier: 1, ailmentChances: [{ ailment: "poison", chance: 1 }] }],
+  effects: [{ kind: "multiplyPoison", factor: 2 }],
+};
+
+/** Skills the hero can put into the Battle Plan. */
 export const HERO_SKILLS: readonly SkillDefinition[] = [
   POWER_STRIKE,
   FLURRY,
@@ -113,12 +158,18 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   ICE_LANCE,
   CHAIN_LIGHTNING,
   METEOR,
+  LACERATE,
+  VENOM_COAT,
+  REND,
+  TOXIC_BURST,
 ];
 
 /** Every weapon brings one Start Skill that is equipped automatically. */
 export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   sword: POWER_STRIKE,
   "fire-wand": FIREBOLT,
+  axe: LACERATE,
+  dagger: VENOM_COAT,
 };
 
 // Enemy skills.
@@ -158,6 +209,86 @@ export const CINDER_SPIT: SkillDefinition = {
       ailmentChances: [{ ailment: "burn", chance: 0.6 }],
     },
   ],
+};
+
+/** Rotwood: claws that open wounds. */
+export const RAKE: SkillDefinition = {
+  id: "rake",
+  name: "Rake",
+  type: "attack",
+  heatCost: 35,
+  tags: ["physical", "over-time", "melee"],
+  description: "2 hits for 90 % Weapon Damage, each Bleeds.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 0.9,
+      count: 2,
+      ailmentChances: [{ ailment: "bleed", chance: 1 }],
+    },
+  ],
+};
+
+/** Rotwood: a glob of rot that Poisons three times. */
+export const BLIGHT_SPIT: SkillDefinition = {
+  id: "blight-spit",
+  name: "Blight Spit",
+  type: "spell",
+  heatCost: 45,
+  tags: ["physical", "over-time", "any"],
+  description: "3 small hits, each Poisons.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 0.99, max: 1.54 },
+      damageType: "physical",
+      count: 3,
+      ailmentChances: [{ ailment: "poison", chance: 1 }],
+    },
+  ],
+};
+
+/** Rotwood Warden: heals itself, which Burn halves. */
+export const MOSS_MEND: SkillDefinition = {
+  id: "moss-mend",
+  name: "Moss Mend",
+  type: "buff",
+  heatCost: 80,
+  tags: ["life"],
+  description: "Heals 8 % of its Life.",
+  hits: [],
+  effects: [{ kind: "heal", fraction: 0.08 }],
+};
+
+/** Mother of Rot: a spray that piles Poison on the hero. */
+export const ROT_SPRAY: SkillDefinition = {
+  id: "rot-spray",
+  name: "Rot Spray",
+  type: "spell",
+  heatCost: 50,
+  tags: ["physical", "over-time", "any"],
+  description: "4 hits, each Poisons.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 0.99, max: 1.43 },
+      damageType: "physical",
+      count: 4,
+      ailmentChances: [{ ailment: "poison", chance: 1 }],
+    },
+  ],
+};
+
+/** Mother of Rot's telegraph: she feeds on the rot and heals, unless she burns. */
+export const DEVOUR: SkillDefinition = {
+  id: "devour",
+  name: "Devour",
+  type: "buff",
+  heatCost: 0,
+  tags: ["life"],
+  description: "An announced feast that heals 10 % of her Life.",
+  hits: [],
+  effects: [{ kind: "heal", fraction: 0.1 }],
 };
 
 /** Gorrak's telegraphed Heavy Attack: announced 2 s ahead, every 10 s. */
