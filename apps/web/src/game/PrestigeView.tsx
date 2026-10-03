@@ -88,6 +88,11 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const open = openBranches(state, GAME_DATA);
   const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
   if (!pending) return null;
+  // The final Prestige keeps everything: no Seal step, nothing burns.
+  const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
+  const finish = () =>
+    game.dispatch({ type: "prestige", sealedSlots: [], ...(branch ? { branchId: branch } : {}) });
+  const afterBranch = () => (final ? finish() : setStep("seal"));
 
   if (step === "victory") {
     return (
@@ -107,16 +112,18 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             &ldquo;{LAST_WORDS[pending.actId] ?? "...the Harvester... will come for you..."}&rdquo;
           </p>
           <p className="victory-sub">
-            {pending.actId === "emberfall"
-              ? "The Harvester breaks apart. Its ember scatters over the world, and everything burns down to grow again."
-              : "The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap what grew."}
+            {final
+              ? "The Harvester breaks apart, but its ember does not scatter. It flees into one last flame, and this time nothing burns."
+              : pending.actId === "emberfall"
+                ? "The Harvester breaks apart. Its ember scatters over the world, and everything burns down to grow again."
+                : "The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap what grew."}
           </p>
           <button
             type="button"
             className="btn big primary"
-            onClick={() => setStep(open.length ? "branch" : "seal")}
+            onClick={() => (open.length ? setStep("branch") : afterBranch())}
           >
-            Hold On to What Matters
+            {final ? "Keep Everything" : "Hold On to What Matters"}
           </button>
         </div>
       </section>
@@ -168,7 +175,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             type="button"
             className="btn big primary"
             disabled={!branch}
-            onClick={() => setStep("seal")}
+            onClick={afterBranch}
           >
             Take {open.find((b) => b.id === branch)?.name ?? "it"}
           </button>
@@ -334,11 +341,14 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
   const acts = actsInRun(GAME_DATA, prestige);
   const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
   const newBranch = SKILL_TREE.prestigeBranches?.find((b) => b.id === state.legacy.branches.at(-1));
+  const final = prestige >= PROGRESSION.finalPrestige;
   const rewards = [
     {
       kind: "LEGACY SEAL",
       name: `${r.seals} / 10 Seals`,
-      desc: "Sealed slots keep their item through every harvest.",
+      desc: final
+        ? "Every slot is sealed. Nothing burns any more."
+        : "Sealed slots keep their item through every harvest.",
       tone: "seal",
     },
     ...(r.planUpgrade
@@ -367,22 +377,36 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       desc: "Unlocks one Keystone in the Skill Tree.",
       tone: "ember",
     },
+    ...(final
+      ? []
+      : [
+          {
+            kind: "SALVAGE DUST",
+            name: `+${fmt(r.dust)} Dust`,
+            desc: "A fresh start for crafting, whatever burned.",
+            tone: "dust",
+          },
+        ]),
+    ...(final
+      ? []
+      : [
+          {
+            kind: "LEVEL CAP",
+            name: `${r.levelCap - PROGRESSION.levelCapPerPrestige} → ${r.levelCap}`,
+            desc: `${PROGRESSION.levelCapPerPrestige} more levels to earn this run.`,
+            tone: "good",
+          },
+        ]),
     {
-      kind: "SALVAGE DUST",
-      name: `+${fmt(r.dust)} Dust`,
-      desc: "A fresh start for crafting, whatever burned.",
-      tone: "dust",
-    },
-    {
-      kind: "LEVEL CAP",
-      name: `${r.levelCap - PROGRESSION.levelCapPerPrestige} → ${r.levelCap}`,
-      desc: `${PROGRESSION.levelCapPerPrestige} more levels to earn this run.`,
-      tone: "good",
-    },
-    {
-      kind: newAct ? "NEW ACT" : "WORLD",
-      name: newAct ? `Act ${newAct.number} · ${newAct.name}` : `${acts.length} Acts`,
-      desc: `Monster Level ${r.levelBand.start}–${r.levelBand.end}. The road leads further.`,
+      kind: final ? "THE LAST EMBER" : newAct ? "NEW ACT" : "WORLD",
+      name: final
+        ? "The last flame"
+        : newAct
+          ? `Act ${newAct.number} · ${newAct.name}`
+          : `${acts.length} Acts`,
+      desc: final
+        ? "Six Warden echoes, then the Harvester's Core. Enter it from the Camp."
+        : `Monster Level ${r.levelBand.start}–${r.levelBand.end}. The road leads further.`,
       tone: "epic",
     },
   ];
@@ -399,16 +423,29 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
             </div>
           </div>
           <div className="heir-nan-lines">
-            <p>
-              It&apos;s down. And there it goes, the whole field, up in smoke. Don&apos;t worry,
-              dear, it&apos;ll grow back. It always does.
-            </p>
-            <p>Hold on to what matters. The fire can&apos;t take what you&apos;ve sealed.</p>
-            <p>Another harvest, another Heir. Sit down, child. The fire&apos;s warm.</p>
+            {final ? (
+              <>
+                <p>Down again. But look, dear: the field is still there. Nothing caught.</p>
+                <p>
+                  One flame got away. Small, mean and very hot. Everything you own is yours to keep
+                  now, so go and put it out.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  It&apos;s down. And there it goes, the whole field, up in smoke. Don&apos;t worry,
+                  dear, it&apos;ll grow back. It always does.
+                </p>
+                <p>Hold on to what matters. The fire can&apos;t take what you&apos;ve sealed.</p>
+                <p>Another harvest, another Heir. Sit down, child. The fire&apos;s warm.</p>
+              </>
+            )}
           </div>
           <span className="sub small heir-note">
-            You wake in the Camp before Act 1 and start again at Stage 1. The Supply Wagon burned
-            and gets patched on your first return.
+            {final
+              ? "You wake in the Camp with everything you had. The Last Ember waits by the road."
+              : "You wake in the Camp before Act 1 and start again at Stage 1. The Supply Wagon burned and gets patched on your first return."}
           </span>
         </aside>
         <main className="heir-main">

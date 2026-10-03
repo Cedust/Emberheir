@@ -1015,6 +1015,53 @@
   color: #b3a288;
 }
 
+/* The ending: a warm dawn instead of ash. */
+.stage .notice-ending {
+  background: radial-gradient(circle at 50% 60%, #6a3212 0%, #2a160c 45%, #0b0806 100%);
+}
+
+.stage .ending-glow {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 177 59 / 0.28) 0%, rgb(255 138 31 / 0) 60%);
+  animation: ending-breathe 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ending-breathe {
+  50% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+.stage .notice-ending .notice-content {
+  width: 1000px;
+}
+
+.stage .notice-ending .notice-title {
+  color: #ffd27a;
+  font-size: 64px;
+  white-space: nowrap;
+  text-shadow: 0 0 30px rgb(255 138 31 / 0.55);
+}
+
+.stage .ending-eyebrow {
+  color: #ff8a3a;
+  letter-spacing: 6px;
+}
+
+.stage .ending-credits {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #b3a288;
+}
+
 .stage .notice-screen .btn.primary {
   background: #ff8a3a;
   color: #1c1a18;
@@ -1461,6 +1508,13 @@
   align-items: flex-end;
   gap: 14px;
   z-index: 6;
+}
+
+.stage .finale-button {
+  background: linear-gradient(180deg, #5a1d08, #1a0a04);
+  color: #ffd27a;
+  border-color: #ff8a1f;
+  box-shadow: 0 0 18px rgb(255 138 31 / 0.45);
 }
 
 .stage .set-out-go {

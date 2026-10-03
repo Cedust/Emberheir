@@ -5,6 +5,7 @@ import {
   PROGRESSION,
   actUnlocked,
   actsInOrder,
+  finaleOpen,
   nextAct,
 } from "@emberheir/sim";
 import { useState } from "react";
@@ -475,6 +476,17 @@ export function CampView(props: {
             })}
           </div>
           <div className="set-out-go">
+            {finaleOpen(state, GAME_DATA) && (
+              <button
+                type="button"
+                className="btn big finale-button"
+                title={state.legacy.finaleWon ? "Walk it again" : "Six echoes, then the Core"}
+                onClick={() => game.dispatch({ type: "enterFinale" })}
+              >
+                <Icon name="fire" size={18} />
+                THE LAST EMBER
+              </button>
+            )}
             <span className="hint-light">Flask refilled · wounds healed</span>
             <button
               type="button"

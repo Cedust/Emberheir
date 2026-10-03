@@ -8,8 +8,10 @@ import {
   type RunState,
   currentFight,
   eliteModifiersOf,
+  encounterEnemy,
   getAct,
   getBase,
+  isFinaleAct,
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../ui/Icon";
@@ -40,22 +42,22 @@ const ARCHETYPE_TEXT: Record<string, string> = {
   thornback: "Thornback",
 };
 
-/** The arena sky in the act's colors (ui-look-v1.md: arena tinted per Act). */
-function arenaStyle(actId: string): React.CSSProperties | undefined {
-  const g = ACTS.find((a) => a.id === actId)?.arenaGradient;
+/** The Last Ember burns in the dark. */
+const FINALE_GRADIENT = ["#5a1d08", "#080404"] as const;
+
+/** The arena sky in the act's colors (ui-look-v1.md: arena tinted per Act; an echo brings its own). */
+function arenaStyle(run: RunState): React.CSSProperties | undefined {
+  const g =
+    ACTS.find((a) => a.id === (run.encounter?.echo ?? run.actId))?.arenaGradient ??
+    (isFinaleAct(GAME_DATA, run.actId) ? FINALE_GRADIENT : undefined);
   return g ? { background: `linear-gradient(180deg, ${g[0]} 0%, ${g[1]} 100%)` } : undefined;
 }
 
 function useLooks(state: GameState, run: RunState) {
   const encounter = run.encounter;
   const act = getAct(GAME_DATA, run.actId);
-  const enemyDef =
-    encounter &&
-    (encounter.thief
-      ? GAME_DATA.thief
-      : act.boss.id === encounter.enemyId
-        ? act.boss
-        : act.enemies.find((e) => e.id === encounter.enemyId));
+  const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
+  const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
   const mainHand = state.hero.equipment.mainHand;
   const offHand = state.hero.equipment.offHand;
   const weapon = mainHand ? getBase(ITEM_CATALOG, mainHand.baseId) : undefined;
@@ -80,7 +82,7 @@ function useLooks(state: GameState, run: RunState) {
     archetype: enemyDef?.archetype ?? "brute",
     boss: encounter?.boss ?? false,
     elite: mods.length > 0,
-    act: act.number,
+    act: (echo ?? act).number,
     ...(encounter?.thief ? { thief: true } : {}),
   };
   const heroInfo: PlaqueInfo = {
@@ -89,8 +91,8 @@ function useLooks(state: GameState, run: RunState) {
     icon: "user",
   };
   const enemyInfo: PlaqueInfo = {
-    name: enemyDef?.name ?? "Enemy",
-    sub: `${encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
+    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : (enemyDef?.name ?? "Enemy"),
+    sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
     icon: encounter?.boss ? "boss" : ((enemyDef?.archetype ?? "brute") as "brute"),
     ...(encounter?.boss ? { tag: "BOSS" as const } : mods.length ? { tag: "ELITE" as const } : {}),
     mods,
@@ -244,7 +246,7 @@ export function BattleView(props: {
   const stages = looks.act.stages;
 
   return (
-    <section className="screen battle" aria-label="Battle" style={arenaStyle(looks.act.id)}>
+    <section className="screen battle" aria-label="Battle" style={arenaStyle(run)}>
       <div className="arena-host" ref={hostRef} />
       <RunHeader
         act={looks.act}

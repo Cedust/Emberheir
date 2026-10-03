@@ -27,6 +27,10 @@ const ENTRIES: { title: string; text: string }[] = [
     text: "A boss drops a Hoard: 6 cards, take 2. Every Warden has its own trophies, the Trophy Wall in the Camp shows which you found. From Act 2 on, an Ember Thief sometimes shows up. Kill it before it runs off and its sack holds 4 cards, take 2, one at least Rare.",
   },
   {
+    title: "The Last Ember",
+    text: "After the tenth Prestige nothing burns any more: every slot is sealed. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
+  },
+  {
     title: "Elites and Bosses",
     text: "Elites carry modifiers and drop better loot, sometimes an Ascension Shard. The boss of each Act telegraphs its heavy attack: watch for 'Charging'. Bosses always drop an Ascension Shard.",
   },

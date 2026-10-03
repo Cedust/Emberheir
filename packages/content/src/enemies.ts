@@ -732,3 +732,58 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
     },
   ],
 };
+
+/**
+ * The Last Ember (M11): what is left of the Harvester, its last flame. One phase that only gets
+ * hotter: the flame flares more often, it rekindles once, and the Last Harvest comes faster.
+ */
+export const HARVESTER_CORE: EnemyDefinition = {
+  id: "harvester-core",
+  name: "The Harvester's Core",
+  archetype: "harvester",
+  description: "The last flame. It burns hotter the longer it lives.",
+  attributes: {
+    strength: 12,
+    dexterity: 8,
+    agility: 6,
+    intelligence: 14,
+    wisdom: 10,
+    vitality: 18,
+  },
+  weapon: HARVEST_SCYTHE,
+  skills: [SOUL_REAP],
+  baseLife: 1500,
+  boss: true,
+  bonuses: { allResistance: 0.25 },
+  telegraphs: [
+    { skill: HARVEST_SWING, interval: 9, windup: 2 },
+    { skill: LAST_HARVEST, interval: 8, windup: 2, belowLife: 0.5 },
+  ],
+  triggers: [
+    {
+      id: "core-flare",
+      name: "Last Flame",
+      condition: { kind: "everySeconds", seconds: 3 },
+      effect: {
+        kind: "spellHit",
+        name: "Last Flame",
+        damage: { min: 0.5, max: 0.8 },
+        damageType: "fire",
+      },
+    },
+    {
+      id: "core-rekindle",
+      name: "Rekindle",
+      condition: { kind: "lifeBelow", threshold: 0.25 },
+      oncePerFight: true,
+      effect: { kind: "heal", fraction: 0.15 },
+    },
+    {
+      id: "core-frenzy",
+      name: "Burning Out",
+      condition: { kind: "lifeBelow", threshold: 0.5 },
+      oncePerFight: true,
+      effect: { kind: "buff", stat: "attackSpeed", amount: 0.3, duration: 999 },
+    },
+  ],
+};

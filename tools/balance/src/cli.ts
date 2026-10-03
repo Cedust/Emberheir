@@ -17,7 +17,7 @@ import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
 
-if (args.act > 0) {
+if (args.act > 0 || args.finale > 0) {
   runActMode();
   process.exit(0);
 }
@@ -27,11 +27,12 @@ if (args.act > 0) {
  * per starter weapon (`--weapon axe` also plays a weapon that only drops).
  */
 function runActMode(): void {
+  if (args.finale) args.act = Math.max(args.act, 7);
   const last = GAME_DATA.acts.find((a) => a.number === args.act);
   if (!last) throw new Error(`Act ${args.act} is not playable yet`);
   const runs = Math.min(args.runs, 500);
   // Run n has acts 1..n, so reaching act N takes N runs (prestige-acts-v1.md).
-  const generations = Math.max(args.generations, last.number);
+  const generations = args.finale ? 10 : Math.max(args.generations, last.number);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
     `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations}`,
@@ -47,10 +48,13 @@ function runActMode(): void {
         upToAct: last.number,
         maxAttempts: args.attempts,
         generations,
+        finale: args.finale > 0,
       }),
     ).flat();
-    for (let g = 1; g <= generations; g++) {
-      for (const act of GAME_DATA.acts.filter((a) => a.number <= last.number)) {
+    const finale = GAME_DATA.finale;
+    for (let g = 1; g <= generations + 1; g++) {
+      const acts = g > generations ? (finale ? [finale] : []) : GAME_DATA.acts;
+      for (const act of acts.filter((a) => g > generations || a.number <= last.number)) {
         const reports = all.filter((x) => x.generation === g && x.act === act.number);
         if (!reports.length) continue;
         const s = summarizeActRuns(reports);

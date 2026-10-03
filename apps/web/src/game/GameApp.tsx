@@ -9,7 +9,7 @@ import { Compendium } from "./Compendium";
 import { TriggerCodex } from "./camp/TriggerCodex";
 import { IntermissionView } from "./IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
-import { NoticeScreen } from "./NoticeScreen";
+import { EndingScreen, NoticeScreen } from "./NoticeScreen";
 import { InheritanceView, PrestigeView } from "./PrestigeView";
 import { TitleScreen } from "./TitleScreen";
 import { BattleView } from "./battle/BattleView";
@@ -119,6 +119,16 @@ export function GameApp() {
       <InheritanceView
         state={state}
         onWake={() => {
+          setCampScreen(null);
+          game.dispatch({ type: "dismissNotice" });
+        }}
+      />
+    );
+  } else if (state.notice?.kind === "ending") {
+    screen = (
+      <EndingScreen
+        state={state}
+        onDismiss={() => {
           setCampScreen(null);
           game.dispatch({ type: "dismissNotice" });
         }}

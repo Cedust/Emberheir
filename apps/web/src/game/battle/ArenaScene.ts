@@ -626,6 +626,21 @@ function drawEnemy(look: EnemyLook): Container {
         new Graphics().circle(-14, -372, 6).fill(col.trim),
         new Graphics().circle(14, -372, 6).fill(col.trim),
       );
+      if (look.act > 7) {
+        // The Core (The Last Ember): the last flame burns in its chest.
+        c.addChild(
+          new Graphics().circle(0, -245, 62).fill({ color: 0xff8a1f, alpha: 0.22 }),
+          new Graphics().circle(0, -245, 38).fill({ color: 0xffb13b, alpha: 0.45 }),
+          new Graphics()
+            .moveTo(0, -300)
+            .quadraticCurveTo(26, -258, 18, -228)
+            .quadraticCurveTo(0, -210, -18, -228)
+            .quadraticCurveTo(-26, -258, 0, -300)
+            .closePath()
+            .fill(0xffd27a)
+            .stroke({ color: 0xff8a1f, width: 3 }),
+        );
+      }
     }
     if (look.archetype === "afflicter") {
       for (const [x, y] of [

@@ -1,4 +1,4 @@
-import { GAME_DATA } from "@emberheir/content";
+import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import type { Page } from "@playwright/test";
 import {
   type GameState,
@@ -226,4 +226,51 @@ export function saveThiefFight(): string {
     },
   };
   return serializeGame(state);
+}
+
+/** The tenth run: every act cleared, nine branches taken. */
+function lateGame(prestige: number): GameState {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const branches = (SKILL_TREE.prestigeBranches ?? []).map((b) => b.id).slice(0, prestige);
+  return {
+    ...base,
+    hero: { ...base.hero, level: 200 },
+    progress: {
+      ...base.progress,
+      actsCleared: GAME_DATA.acts.map((a) => a.id),
+      trainerUnlocked: true,
+      rotationSlots: 4,
+    },
+    stats: { fights: 2841, wins: 2790, deaths: 51, retreats: 4, bossKills: 88 },
+    legacy: { ...base.legacy, prestige, branches },
+  };
+}
+
+/** The Ashen Harvester fell in the tenth run: the final Prestige waits. */
+export function saveBeforeFinalPrestige(): string {
+  const state = lateGame(9);
+  return serializeGame({
+    ...state,
+    pendingPrestige: { actId: "emberfall", stage: 15, enemyName: "The Ashen Harvester" },
+  });
+}
+
+/** After the final Prestige: the Camp with The Last Ember open. */
+export function saveFinaleCamp(): string {
+  return serializeGame(lateGame(10));
+}
+
+/** The Harvester's Core is out: the ending. */
+export function saveEnding(): string {
+  const state = lateGame(10);
+  return serializeGame({
+    ...state,
+    legacy: { ...state.legacy, finaleAttempts: 3, finaleWon: true },
+    notice: {
+      kind: "ending",
+      actId: "last-ember",
+      stage: 7,
+      enemyName: "The Harvester's Core",
+    },
+  });
 }

@@ -34,6 +34,7 @@ import {
   rarityClass,
   walletEntries,
 } from "../ui/items";
+import { finaleFoe, inFinale } from "./finale";
 import { RunHeader } from "./RunHeader";
 import { BoonBar, ShrineCards } from "./Boons";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
@@ -203,6 +204,24 @@ function UpNext(props: { run: RunState }) {
   const stages = act.stages;
   // During the rewards the next stage is stage + 1.
   const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  if (inFinale(act)) {
+    return (
+      <section className="panel-card up-next" aria-label="Up next">
+        <span className="eyebrow">Up next</span>
+        <div className="up-row">
+          <span className="title-font">Stage {next}</span>
+          <span className="sub">{finaleFoe(next)}</span>
+        </div>
+        {next < stages && (
+          <div className="up-row">
+            <Icon name="boss" size={16} color="#ff8a1f" />
+            <span>{act.boss.name}</span>
+            <span className="sub">Stage {stages}</span>
+          </div>
+        )}
+      </section>
+    );
+  }
   if (run.phase === "rewards" && run.encounter?.boss) {
     return (
       <section className="panel-card up-next" aria-label="Up next">
@@ -611,20 +630,28 @@ function DoneCard(props: { run: RunState }) {
   let sub: string;
   if (!rewards) {
     const boss = run.stage === act.stages;
-    line = boss ? `${act.boss.name} waits` : `Stage ${run.stage} ahead`;
+    line = inFinale(act)
+      ? `${finaleFoe(run.stage)} waits`
+      : boss
+        ? `${act.boss.name} waits`
+        : `Stage ${run.stage} ahead`;
     sub = run.stage === 1 ? "The caravan watches you go." : "Catch your breath.";
   } else {
     const pick = rewards.itemPick;
     const item = pick && pick.kind !== "salvageAll" ? rewards.items[pick.index] : undefined;
-    line = item
-      ? `${pick?.kind === "equip" ? "Equipped" : "Taken"}: ${item.name}`
-      : "All items salvaged";
+    line = inFinale(act)
+      ? `${finaleFoe(run.stage)} fades`
+      : item
+        ? `${pick?.kind === "equip" ? "Equipped" : "Taken"}: ${item.name}`
+        : "All items salvaged";
     const spoil = rewards.spoilsPick !== null ? rewards.spoils[rewards.spoilsPick] : undefined;
-    sub = spoil
-      ? `Spoils: ${spoilsLabel(spoil, act.essence.name)}`
-      : rewards.spoils.length
-        ? ""
-        : "No spoils this stage";
+    sub = inFinale(act)
+      ? ""
+      : spoil
+        ? `Spoils: ${spoilsLabel(spoil, act.essence.name)}`
+        : rewards.spoils.length
+          ? ""
+          : "No spoils this stage";
     const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
     const boonName = boon && GAME_DATA.boons?.find((b) => b.id === boon.id)?.name;
     if (boonName) sub += `${sub ? " · " : ""}Boon: ${boonName}`;
@@ -668,7 +695,8 @@ export function IntermissionView(props: {
           : "done";
   const done = step === "ready" || step === "done";
   const nextStage = run.phase === "rewards" ? run.stage + 1 : run.stage;
-  const boss = run.encounter?.boss === true && run.phase === "rewards";
+  // An act boss ends the run; a finale echo does not.
+  const boss = run.encounter?.boss === true && run.phase === "rewards" && !inFinale(act);
   const title =
     step === "spoils"
       ? "SPOILS"
@@ -725,7 +753,7 @@ export function IntermissionView(props: {
         <main className="intermission-center">
           <h2 className="screen-title title-font">{title}</h2>
           <p className="screen-sub">{subtitle}</p>
-          {rewards && step !== "ready" && (
+          {rewards && step !== "ready" && !inFinale(act) && (
             <p className="auto-rewards sub" data-testid="auto-rewards">
               +{fmt(rewards.xp)} XP · +{fmt(rewards.gold)} Gold · +{fmt(rewards.dust)} Dust
               {rewards.reforgeStones > 0 ? ` · +${rewards.reforgeStones} Reforge Stones` : ""}

@@ -327,6 +327,8 @@ export function playGenerations(
     readonly upToAct: number;
     readonly maxAttempts: number;
     readonly generations: number;
+    /** After the last generation: the final Prestige and The Last Ember (report act = 8). */
+    readonly finale?: boolean;
   },
 ): ActRunReport[] {
   // Weapons that only drop (Axe, Dagger) can be tested as if the hero started with them.
@@ -414,7 +416,73 @@ export function playGenerations(
     if (!allCleared || generation === options.generations || !s.pendingPrestige) break;
     s = autopilotPrestige(s, data);
   }
+  if (options.finale && data.finale && s.pendingPrestige) {
+    s = autopilotPrestige(s, data);
+    if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
+      reports.push(playFinale(s, data, options.generations + 1, options.maxAttempts));
+    }
+  }
   return reports;
+}
+
+/** The Last Ember with the autopilot: attempts until the Core falls (best Boon after each win). */
+function playFinale(
+  state: GameState,
+  data: GameData,
+  generation: number,
+  maxAttempts: number,
+): ActRunReport {
+  let s = state;
+  const before = s.stats;
+  const fightSeconds: number[] = [];
+  const deathStages: number[] = [];
+  const deathEnemies: string[] = [];
+  let bossSeconds = 0;
+  let cleared = false;
+  for (let attempt = 0; attempt < maxAttempts && !cleared; attempt++) {
+    s = applyAction(s, data, { type: "enterFinale" });
+    while (s.run) {
+      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+        s = applyAction(s, data, { type: "useFlask" });
+      }
+      s = applyAction(s, data, { type: "startStage" });
+      const fight = currentFight(s, data);
+      const result = runFight(fight.hero, fight.enemy, fight.seed);
+      const stage = s.run?.stage ?? 0;
+      const enemyId = s.run?.encounter?.enemyId ?? "";
+      if (stage === data.finale?.stages) bossSeconds = result.duration;
+      else fightSeconds.push(result.duration);
+      s = applyAction(s, data, { type: "resolveFight" });
+      if (!s.run && s.notice?.kind === "death") {
+        deathStages.push(stage);
+        deathEnemies.push(enemyId);
+      }
+      const offer = s.run?.rewards?.boonOffer;
+      if (offer?.length) {
+        s = applyAction(s, data, { type: "pickBoon", index: bestBoon(s, data, offer) });
+      }
+      if (s.run?.phase === "rewards") s = applyAction(s, data, { type: "continue" });
+    }
+    cleared = s.notice?.kind === "ending";
+    s = applyAction(s, data, { type: "dismissNotice" });
+  }
+  return {
+    generation,
+    act: data.finale?.number ?? 8,
+    cleared,
+    deaths: s.stats.deaths - before.deaths,
+    deathEnemies,
+    fights: s.stats.fights - before.fights,
+    levelAtBoss: s.hero.level,
+    fightSeconds,
+    bossSeconds,
+    elites: 0,
+    thieves: 0,
+    thievesCaught: 0,
+    deathStages,
+    bossDeaths: deathStages.filter((st) => st === data.finale?.stages).length,
+    firstFightLost: false,
+  };
 }
 
 /** Plays one generation up to one act (see `playGenerations`). The report of that act. */

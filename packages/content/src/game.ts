@@ -11,6 +11,7 @@ import {
   ACT6_ENEMIES,
   ACT7_ENEMIES,
   ASHEN_HARVESTER,
+  HARVESTER_CORE,
   CINDER_TYRANT,
   GORRAK,
   MOTHER_OF_ROT,
@@ -130,6 +131,21 @@ export const ACT7: ActData = {
   favoredAffixes: { "all-resistance": 2, life: 1.5 },
 };
 
+/**
+ * The Last Ember (M11): after the final Prestige, a gauntlet of the six Warden echoes and the
+ * Harvester's Core. Stages 1–6 are the echoes (picked by the sim), stage 7 is the Core.
+ */
+export const LAST_EMBER: ActData = {
+  id: "last-ember",
+  number: 8,
+  name: "The Last Ember",
+  stages: 7,
+  enemies: [],
+  boss: HARVESTER_CORE,
+  spoilsStages: [],
+  essence: { id: "harvest-essence", name: "Harvest Essence", affixId: "all-resistance" },
+};
+
 /** Everything the game loop in `@emberheir/sim` needs. */
 export const GAME_DATA: GameData = {
   items: ITEM_CATALOG,
@@ -144,5 +160,6 @@ export const GAME_DATA: GameData = {
   startingAttributes: STARTING_ATTRIBUTES,
   boons: BOONS_CONTENT,
   thief: EMBER_THIEF,
+  finale: LAST_EMBER,
   boonFamilies: BOON_FAMILIES,
 };

@@ -102,6 +102,11 @@ describe("boss abilities", () => {
     expect(bossAbilities(data, TEST_ACT, 9)).toHaveLength(3);
   });
 
+  it("the Harvester has none: its phases already grow with the run", () => {
+    const harvester = { ...TEST_ACT, boss: { ...TEST_ACT.boss, archetype: "harvester" as const } };
+    expect(bossAbilities(data, harvester, 9)).toEqual([]);
+  });
+
   it("apply like Elite modifiers", () => {
     const encounter = {
       enemyId: TEST_ACT.boss.id,

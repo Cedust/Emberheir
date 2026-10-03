@@ -71,7 +71,7 @@ Teil 2 → Teil 3 → Teil 1 → Ember Thief. Danach kommt M11 „The Last Ember
 
 Änderungen: Act-Bosse haben × 1,5 Life (`PROGRESSION.bossLife`, nicht der Harvester), die Run
 Pressure steigt auf + 80 % Life und + 35 % Damage pro Act nach dem ersten, der Harvester nimmt nur
-die Hälfte der Damage-Pressure (`harvesterPressure`).
+die Hälfte der Damage-Pressure (`harvesterPressure`). Mit M11 geändert: siehe m11-umsetzung.md.
 
 `npm run balance -- --act 7 --generations 7 --runs 12` (alle Runs werden geschafft), jeweils der
 neueste Act des Runs:

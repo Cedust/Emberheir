@@ -175,8 +175,19 @@ export const PROGRESSION = {
    * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.
    */
   bossLife: 1.5,
-  /** Share of the Run Pressure on damage that the Harvester takes. */
-  harvesterPressure: 0.5,
+  /**
+   * The Last Ember (M11): the Prestige after which the world no longer burns. The finale's foes
+   * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
+   * instead of the Run Pressure).
+   */
+  finalPrestige: 10,
+  finale: { life: 2, damage: 1.4 },
+  /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
+  finaleEchoAbilities: 5,
+  /** Fusion Boons are this much likelier in the finale's Stolen Fire. */
+  finaleFusionWeight: 1,
+  /** Share of the Run Pressure on Life and damage that the Harvester takes. */
+  harvesterPressure: { life: 0.7, damage: 0.2 },
 
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,

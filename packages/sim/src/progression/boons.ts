@@ -221,6 +221,8 @@ export function rollBoonOffer(
     readonly active: readonly ActiveBoon[];
     readonly damageType: DamageType;
     readonly reactionSlot: boolean;
+    /** Weight of Fusion Boons (the finale raises it). */
+    readonly fusionWeight?: number;
   },
   rng: Rng,
 ): BoonPick[] {
@@ -238,7 +240,11 @@ export function rollBoonOffer(
     return options.open.includes(d.family);
   });
   const weight = (d: BoonDefinition) =>
-    d.fusion ? BOONS.fusionWeight : preferred.has(d.family) ? BOONS.preferredWeight : 1;
+    d.fusion
+      ? (options.fusionWeight ?? BOONS.fusionWeight)
+      : preferred.has(d.family)
+        ? BOONS.preferredWeight
+        : 1;
   const offer: BoonPick[] = [];
   const left = [...pool];
   while (offer.length < BOONS.offerSize && left.length) {

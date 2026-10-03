@@ -15,6 +15,7 @@ describe("parseArgs", () => {
       act: 0,
       attempts: 30,
       generations: 1,
+      finale: 0,
     });
   });
 
@@ -56,6 +57,7 @@ describe("parseArgs", () => {
       act: 1,
       attempts: 5,
       generations: 2,
+      finale: 0,
     });
   });
 

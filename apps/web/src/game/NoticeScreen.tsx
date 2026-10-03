@@ -1,5 +1,5 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type ActData, type Notice, getAct } from "@emberheir/sim";
+import { type ActData, type GameState, type Notice, getAct, isFinaleAct } from "@emberheir/sim";
 
 interface NoticeText {
   readonly title: string;
@@ -12,7 +12,12 @@ interface NoticeText {
   ) => { k: string; v: string; tone: string }[];
 }
 
-type NoticeKind = Exclude<Notice["kind"], "prestige">;
+type NoticeKind = Exclude<Notice["kind"], "prestige" | "ending">;
+
+/** "Act 3 · Stage 4", or "The Last Ember · Stage 4". */
+const where = (act: ActData, stage: number) =>
+  `${isFinaleAct(GAME_DATA, act.id) ? act.name : `Act ${act.number}`} · Stage ${stage}`;
+const camp = (act: ActData) => (isFinaleAct(GAME_DATA, act.id) ? "Camp" : `Camp · ${act.name}`);
 
 const TEXT: Record<NoticeKind, NoticeText> = {
   death: {
@@ -20,9 +25,9 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You fell, and the ash gave you back. You keep everything: gear, Gold, Dust and Inventory. Only the way through this Act starts over.",
     nan: "The ash spat you back out. It does that. It likes you.",
     facts: (n, act) => [
-      { k: "FELL AT", v: `Act ${act.number} · Stage ${n.stage}`, tone: "text" },
+      { k: "FELL AT", v: where(act, n.stage), tone: "text" },
       { k: "BY", v: n.enemyName ?? "Unknown", tone: "rare" },
-      { k: "BACK TO", v: `Camp · ${act.name}`, tone: "accent" },
+      { k: "BACK TO", v: camp(act), tone: "accent" },
     ],
   },
   retreat: {
@@ -30,9 +35,9 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You left the fight and went back to camp. Same rules as a death: you keep everything, and the Act starts over.",
     nan: "Sensible. Dead heroes don't farm.",
     facts: (n, act) => [
-      { k: "LEFT AT", v: `Act ${act.number} · Stage ${n.stage}`, tone: "text" },
+      { k: "LEFT AT", v: where(act, n.stage), tone: "text" },
       { k: "KEPT", v: "Everything", tone: "good" },
-      { k: "BACK TO", v: `Camp · ${act.name}`, tone: "accent" },
+      { k: "BACK TO", v: camp(act), tone: "accent" },
     ],
   },
   actCleared: {
@@ -77,11 +82,79 @@ const ASH = (() => {
   }));
 })();
 
+function Ash() {
+  return (
+    <svg
+      className="ash"
+      viewBox="0 0 1440 900"
+      preserveAspectRatio="xMidYMid slice"
+      aria-hidden="true"
+    >
+      {ASH.map((a, i) => (
+        <circle
+          key={i}
+          cx={a.x}
+          cy={a.y}
+          r={a.r}
+          opacity={a.o}
+          fill={a.ember ? "#ff8a3a" : "#b3a288"}
+        />
+      ))}
+    </svg>
+  );
+}
+
+/** The end of the game (M11): the Harvester's Core is out. Stats, Old Nan, credits. */
+export function EndingScreen(props: { state: GameState; onDismiss: () => void }) {
+  const { state } = props;
+  const facts = [
+    { k: "PRESTIGES", v: String(state.legacy.prestige) },
+    { k: "ATTEMPTS", v: String(state.legacy.finaleAttempts ?? 1) },
+    { k: "FIGHTS", v: state.stats.fights.toLocaleString("en-US") },
+    { k: "DEATHS", v: state.stats.deaths.toLocaleString("en-US") },
+    { k: "TROPHIES", v: String(state.legacy.trophies.length) },
+  ];
+  return (
+    <section className="screen notice-screen notice-ending" aria-label="The End" role="status">
+      <Ash />
+      <div className="ending-glow" aria-hidden />
+      <div className="notice-content">
+        <span className="eyebrow ending-eyebrow">The Last Ember</span>
+        <h2 className="notice-title title-font">THE FIRE IS HOME</h2>
+        <p className="notice-sub">
+          The Harvester&apos;s last flame goes out. No more harvests. The ash settles, and the
+          caravan stays.
+        </p>
+        <div className="notice-facts">
+          {facts.map((f) => (
+            <div key={f.k} className="fact">
+              <span className="eyebrow">{f.k}</span>
+              <span className="title-font tone-accent">{f.v}</span>
+            </div>
+          ))}
+        </div>
+        <div className="nan-line">
+          <span className="nan-portrait title-font">N</span>
+          <span className="quote">
+            Old Nan: &ldquo;No smoke. No ash. Just... quiet. Well. I suppose I&apos;ll need to
+            remember my name after all.&rdquo;
+          </span>
+        </div>
+        <p className="ending-credits sub">Emberheir · an idea by Timo · built by Claude</p>
+        <button type="button" className="btn big primary" onClick={props.onDismiss}>
+          Back to the Hearthfire
+        </button>
+      </div>
+    </section>
+  );
+}
+
 /** Shown once after a run ends (Ashbound mock): death, retreat or a cleared act. */
 export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
   const { notice } = props;
-  // Prestige has its own screen (Inheritance).
-  const text = TEXT[notice.kind === "prestige" ? "actCleared" : notice.kind];
+  // Prestige and the ending have their own screens.
+  const text =
+    TEXT[notice.kind === "prestige" || notice.kind === "ending" ? "actCleared" : notice.kind];
   const act = getAct(GAME_DATA, notice.actId);
   const next = GAME_DATA.acts.find((a) => a.number === act.number + 1);
   const nan = notice.kind === "actCleared" ? (CLEARED_NAN[act.id] ?? text.nan) : text.nan;
@@ -91,23 +164,7 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
       aria-label={text.title}
       role="status"
     >
-      <svg
-        className="ash"
-        viewBox="0 0 1440 900"
-        preserveAspectRatio="xMidYMid slice"
-        aria-hidden="true"
-      >
-        {ASH.map((a, i) => (
-          <circle
-            key={i}
-            cx={a.x}
-            cy={a.y}
-            r={a.r}
-            opacity={a.o}
-            fill={a.ember ? "#ff8a3a" : "#b3a288"}
-          />
-        ))}
-      </svg>
+      <Ash />
       <div className="notice-content">
         <h2 className="notice-title title-font">{text.title}</h2>
         <p className="notice-sub">{text.sub}</p>
