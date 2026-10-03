@@ -141,7 +141,14 @@ export type CombatEvent =
   /** The fighter is stunned and cannot act for `seconds`. */
   | { readonly t: number; readonly type: "stun"; readonly side: Side; readonly seconds: number }
   | { readonly t: number; readonly type: "death"; readonly side: Side }
-  | { readonly t: number; readonly type: "fightEnd"; readonly winner: Side | null };
+  | {
+      readonly t: number;
+      readonly type: "fightEnd";
+      readonly winner: Side | null;
+      readonly fled?: Side;
+    }
+  /** A fighter with `fleeAfter` ran away; the fight ends without a winner. */
+  | { readonly t: number; readonly type: "flee"; readonly side: Side };
 
 export interface ReactionSlotSnapshot {
   readonly skillId: string;
@@ -213,6 +220,8 @@ export interface FightSnapshot {
   readonly over: boolean;
   /** `null` while running or after a draw (time limit). */
   readonly winner: Side | null;
+  /** The side that ran away, if one did (the fight then has no winner). */
+  readonly fled: Side | null;
   readonly hero: FighterSnapshot;
   readonly enemy: FighterSnapshot;
 }
@@ -374,7 +383,7 @@ export class Fight {
   private readonly fighters: Record<Side, Fighter>;
   private readonly log: CombatEvent[] = [];
   private ticks = 0;
-  private result: { winner: Side | null } | undefined;
+  private result: { winner: Side | null; fled: Side | null } | undefined;
 
   constructor(hero: CombatantSetup, enemy: CombatantSetup, seed: number) {
     this.rng = new Rng(seed);
@@ -391,6 +400,10 @@ export class Fight {
 
   get winner(): Side | null {
     return this.result?.winner ?? null;
+  }
+
+  get fled(): Side | null {
+    return this.result?.fled ?? null;
   }
 
   /** The full combat log so far. */
@@ -443,6 +456,15 @@ export class Fight {
       if (this.result) break;
     }
 
+    if (!this.result) {
+      for (const f of [this.fighters.enemy, this.fighters.hero]) {
+        if (f.setup.fleeAfter !== undefined && this.time >= f.setup.fleeAfter) {
+          this.emit({ t: this.time, type: "flee", side: f.side });
+          this.end(null, f.side);
+          break;
+        }
+      }
+    }
     if (!this.result && this.time >= COMBAT.maxFightSeconds) this.end(null);
     return this.log.slice(start);
   }
@@ -465,6 +487,7 @@ export class Fight {
       time: this.time,
       over: this.over,
       winner: this.winner,
+      fled: this.fled,
       hero: this.fighterSnapshot(this.fighters.hero),
       enemy: this.fighterSnapshot(this.fighters.enemy),
     };
@@ -1281,9 +1304,9 @@ export class Fight {
     this.checkReactionThresholds();
   }
 
-  private end(winner: Side | null): void {
-    this.result = { winner };
-    this.emit({ t: this.time, type: "fightEnd", winner });
+  private end(winner: Side | null, fled: Side | null = null): void {
+    this.result = { winner, fled };
+    this.emit({ t: this.time, type: "fightEnd", winner, ...(fled ? { fled } : {}) });
   }
 
   private roll(range: DamageRange): number {
@@ -1357,6 +1380,8 @@ export class Fight {
 
 export interface FightResult {
   readonly winner: Side | null;
+  /** The side that ran away (the Ember Thief), if one did. */
+  readonly fled: Side | null;
   /** Fight length in seconds. */
   readonly duration: number;
   readonly events: readonly CombatEvent[];
@@ -1369,6 +1394,7 @@ export function runFight(hero: CombatantSetup, enemy: CombatantSetup, seed: numb
   fight.runToEnd();
   return {
     winner: fight.winner,
+    fled: fight.fled,
     duration: fight.time,
     events: fight.events,
     final: fight.snapshot(),

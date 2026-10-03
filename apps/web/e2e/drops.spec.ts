@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveBossHoard, saveShrine, seedSave } from "./fixtures";
+import { saveBossHoard, saveShrine, saveThiefFight, seedSave } from "./fixtures";
 
 test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Trophy Wall", async ({
   page,
@@ -58,5 +58,17 @@ test("Ember Shrine: steal one of three Boons, it shows under the hero in the nex
   await expect(
     page.getByRole("region", { name: "Battle" }).getByTestId("boon-bar").locator(".boon-chip"),
   ).toHaveCount(2);
+  expect(errors).toEqual([]);
+});
+
+test("Ember Thief: a countdown shows how long until it runs off", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveThiefFight());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  const battle = page.getByRole("region", { name: "Battle" });
+  await expect(battle).toContainText("Ember Thief");
+  await expect(page.getByTestId("thief-timer")).toContainText(/Flees in \d+s/);
   expect(errors).toEqual([]);
 });

@@ -1019,3 +1019,19 @@ describe("Battle Plan", () => {
     expect(last(crescendo)).toBeGreaterThan(last(plain));
   });
 });
+
+describe("fleeing (Ember Thief)", () => {
+  it("a fighter with fleeAfter runs away: no winner, the flee is logged", () => {
+    const result = runFight(setup(), dummy({ fleeAfter: 15 }), 1);
+    expect(result.winner).toBeNull();
+    expect(result.fled).toBe("enemy");
+    expect(result.duration).toBeCloseTo(15, 1);
+    expect(result.events.some((e) => e.type === "flee" && e.side === "enemy")).toBe(true);
+  });
+
+  it("killed before it runs, the fight is won as usual", () => {
+    const result = runFight(setup(), setup({ baseLife: 5, fleeAfter: 15 }), 1);
+    expect(result.winner).toBe("hero");
+    expect(result.fled).toBeNull();
+  });
+});

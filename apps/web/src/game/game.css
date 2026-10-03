@@ -1176,3 +1176,25 @@
   border-radius: 6px;
   background: rgb(20 16 12 / 0.55);
 }
+
+.stage .thief-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #2e2610;
+  border: 2px solid #ffd84a;
+  color: #fff1bf;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage .thief-timer.hurry {
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.stage .fight-banner.escaped {
+  color: #ffd84a;
+}

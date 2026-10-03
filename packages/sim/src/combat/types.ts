@@ -378,6 +378,8 @@ export interface CombatantSetup {
   /** Reaction Slots of the Battle Plan. */
   readonly reactions?: readonly ReactionSlot[];
   readonly capstone?: Capstone;
+  /** Runs away after this many seconds of fight time (the Ember Thief). */
+  readonly fleeAfter?: number;
   /** Opening Move: cast for free right when the fight starts. */
   readonly openingMove?: { readonly skill: SkillDefinition; readonly level?: number };
 }

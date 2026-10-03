@@ -68,6 +68,7 @@ function runActMode(): void {
           "p90 fight s": s.p90FightSeconds.toFixed(1),
           "boss fight s": s.avgBossSeconds.toFixed(1),
           "elites / run": s.avgElites.toFixed(1),
+          "thief caught %": s.avgThieves ? (s.thiefCatchRate * 100).toFixed(0) : "-",
           "top killer": s.topKiller,
         });
       }

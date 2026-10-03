@@ -17,6 +17,7 @@ import {
   RIME_WARDEN,
   STORM_HERALD,
   VOIDBORN_MAW,
+  EMBER_THIEF,
 } from "./enemies";
 import { STARTING_ATTRIBUTES } from "./heroes";
 import { ITEM_BASES, ITEM_CATALOG } from "./items";
@@ -142,5 +143,6 @@ export const GAME_DATA: GameData = {
   bossAbilities: BOSS_ABILITIES,
   startingAttributes: STARTING_ATTRIBUTES,
   boons: BOONS_CONTENT,
+  thief: EMBER_THIEF,
   boonFamilies: BOON_FAMILIES,
 };

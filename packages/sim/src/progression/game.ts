@@ -151,6 +151,8 @@ export interface GameData {
   /** Stolen Fire Boons (Spielspaß Teil 1); no Shrines without them. */
   readonly boons?: readonly BoonDefinition[];
   readonly boonFamilies?: readonly BoonFamilyDefinition[];
+  /** The Ember Thief (runs away after `PROGRESSION.thiefFleeSeconds`); none without it. */
+  readonly thief?: EnemyDefinition;
   readonly startingAttributes: Attributes;
 }
 
@@ -199,6 +201,8 @@ export interface Encounter {
   readonly pressure?: { readonly life: number; readonly damage: number };
   /** Fight seed: the same encounter always plays out the same. */
   readonly seed: number;
+  /** The Ember Thief instead of the stage's enemy. */
+  readonly thief?: boolean;
 }
 
 export type SpoilsCard =
@@ -225,6 +229,8 @@ export interface Rewards {
   readonly items: readonly Item[];
   /** Boss Hoard: how many cards the hero takes (missing = 1). */
   readonly picks?: number;
+  /** The Ember Thief was caught (small Hoard) or got away (normal loot). */
+  readonly thief?: "caught" | "escaped";
   /** Cards already taken while more picks are left. */
   readonly taken?: readonly { readonly index: number; readonly kind: "equip" | "take" }[];
   /** Set once the item pick is over. */
@@ -781,6 +787,12 @@ export function heroSetup(
   );
 }
 
+/** The enemy of an encounter: the act's enemy or boss, or the Ember Thief. */
+function encounterEnemy(encounter: Encounter, act: ActData, data: GameData): EnemyDefinition {
+  if (encounter.thief) return data.thief ?? fail("No Ember Thief in this game");
+  return findEnemy(act, encounter.enemyId);
+}
+
 function findEnemy(act: ActData, id: string): EnemyDefinition {
   const enemy = act.boss.id === id ? act.boss : act.enemies.find((e) => e.id === id);
   if (!enemy) throw new GameActionError(`Unknown enemy "${id}" in ${act.id}`);
@@ -806,8 +818,9 @@ export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteMod
 
 /** The enemy's fight setup for an encounter (Elites included). */
 export function enemySetup(encounter: Encounter, actId: string, data: GameData): CombatantSetup {
-  const enemy = findEnemy(getAct(data, actId), encounter.enemyId);
-  const base = createEnemySetup(enemy, encounter.level);
+  const enemy = encounterEnemy(encounter, getAct(data, actId), data);
+  const created = createEnemySetup(enemy, encounter.level);
+  const base = encounter.thief ? { ...created, fleeAfter: PROGRESSION.thiefFleeSeconds } : created;
   const p = encounter.pressure;
   const setup = p
     ? {
@@ -821,7 +834,7 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
 }
 
 export function encounterName(encounter: Encounter, actId: string, data: GameData): string {
-  return findEnemy(getAct(data, actId), encounter.enemyId).name;
+  return encounterEnemy(encounter, getAct(data, actId), data).name;
 }
 
 export function encounterRank(encounter: Encounter): EnemyRank {
@@ -1062,7 +1075,11 @@ function startStage(state: GameState, data: GameData): GameState {
     const enemy = act.enemies[rng.int(0, act.enemies.length - 1)];
     if (!enemy) return fail(`Act ${act.id} has no enemies`);
     const mods: string[] = [];
-    if (rng.chance(eliteChance(act.number, run.stage))) {
+    const thief =
+      data.thief !== undefined &&
+      act.number >= PROGRESSION.thiefFromAct &&
+      rng.chance(PROGRESSION.thiefChance);
+    if (!thief && rng.chance(eliteChance(act.number, run.stage))) {
       const pool = [...data.eliteModifiers];
       for (let i = 0; i < eliteModifierCount(level) && pool.length; i++) {
         const [mod] = pool.splice(rng.int(0, pool.length - 1), 1);
@@ -1070,12 +1087,13 @@ function startStage(state: GameState, data: GameData): GameState {
       }
     }
     encounter = {
-      enemyId: enemy.id,
+      enemyId: thief && data.thief ? data.thief.id : enemy.id,
       level,
       boss: false,
       eliteModifiers: mods,
       ...pressure,
       seed: rng.int(0, 0x7fffffff),
+      ...(thief ? { thief: true } : {}),
     };
   }
   return { ...next, run: { ...run, phase: "fight", encounter } };
@@ -1109,7 +1127,10 @@ function resolveFight(state: GameState, data: GameData): GameState {
   const stats = { ...state.stats, fights: state.stats.fights + 1 };
   const enemyName = encounterName(encounter, run.actId, data);
 
-  if (result.winner !== "hero") {
+  // The Ember Thief got away: the stage still counts, with the normal loot.
+  const escaped = encounter.thief === true && result.fled === "enemy";
+  const caught = encounter.thief === true && result.winner === "hero";
+  if (result.winner !== "hero" && !escaped) {
     // A draw at the time limit counts as a defeat: the act has to be tried again.
     return toCamp(
       {
@@ -1142,7 +1163,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
   const quarry = state.legacy.quarry;
   const fight = {
-    archetype: encounter.boss ? "boss" : findEnemy(act, encounter.enemyId).archetype,
+    archetype: encounter.boss ? "boss" : encounterEnemy(encounter, act, data).archetype,
     actId: act.id,
     boss: encounter.boss,
   };
@@ -1153,7 +1174,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
   const items = rollItemChoices(
     data,
     act.id,
-    encounter,
+    caught ? encounter : { ...encounter, thief: false },
     rank,
     state.progress.deathsInAct,
     act.number + state.legacy.prestige,
@@ -1251,6 +1272,8 @@ function resolveFight(state: GameState, data: GameData): GameState {
         report: fightReport(result.events),
         items,
         ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
+        ...(caught ? { picks: PROGRESSION.thiefPicks, thief: "caught" as const } : {}),
+        ...(escaped ? { thief: "escaped" as const } : {}),
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
         ...(newTrophies.length ? { newTrophies } : {}),
         itemPick: null,
@@ -1312,7 +1335,14 @@ function rollItemChoices(
   affixFactor?: (affix: AffixDefinition) => number,
   forceTrigger?: readonly string[],
 ): Item[] {
-  const count = rank === "boss" ? PROGRESSION.bossHoardCards : PROGRESSION.itemChoices;
+  const count =
+    rank === "boss"
+      ? PROGRESSION.bossHoardCards
+      : encounter.thief
+        ? PROGRESSION.thiefCards
+        : PROGRESSION.itemChoices;
+  // A caught Ember Thief always drops one card that is at least Rare.
+  const rareCard = encounter.thief ? rng.int(0, count - 1) : -1;
   const weights = itemPickWeights(rank, deathsInAct, actTier);
   const bySlot = new Map<ItemSlot, string[]>();
   for (const baseId of data.lootBases) {
@@ -1367,7 +1397,9 @@ function rollItemChoices(
     if (!baseId) break;
     const rolled = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
     const rarity =
-      forced.length && RARITIES.indexOf(rolled) < RARITIES.indexOf("rare") ? "rare" : rolled;
+      (forced.length || i === rareCard) && RARITIES.indexOf(rolled) < RARITIES.indexOf("rare")
+        ? "rare"
+        : rolled;
     items.push(
       rollItem(
         data.items,

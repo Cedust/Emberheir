@@ -198,3 +198,32 @@ export function saveShrine(): string {
   };
   return serializeGame(state);
 }
+
+/** A save in a fight against the Ember Thief in the Rotwood (second run). */
+export function saveThiefFight(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const act = GAME_DATA.acts[1];
+  if (!act || !GAME_DATA.thief) throw new Error("No Rotwood or Thief");
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 22 },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"] },
+    legacy: { ...base.legacy, prestige: 1 },
+    run: {
+      actId: act.id,
+      stage: 3,
+      lifeFraction: 1,
+      phase: "fight",
+      encounter: {
+        enemyId: GAME_DATA.thief.id,
+        level: 21,
+        boss: false,
+        eliteModifiers: [],
+        seed: 11,
+        thief: true,
+      },
+      rewards: null,
+    },
+  };
+  return serializeGame(state);
+}

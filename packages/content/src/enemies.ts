@@ -93,6 +93,22 @@ export const ASHEN_SKIRMISHER: EnemyDefinition = {
   bonuses: { evasion: 0.12 },
 };
 
+/**
+ * The Ember Thief (Spielspaß Teil 3 C): a rare guest on normal stages from Act 2 on, carrying a
+ * sack of stolen loot. Little Life and a weak blade, but it runs away after 15 seconds.
+ */
+export const EMBER_THIEF: EnemyDefinition = {
+  id: "ember-thief",
+  name: "Ember Thief",
+  archetype: "skirmisher",
+  description: "Runs off with a sack of loot. Catch it.",
+  attributes: { strength: 0, dexterity: 4, agility: 12, intelligence: 0, wisdom: 0, vitality: 2 },
+  weapon: { ...TWIN_SHIVS, id: "thief-knife", damage: { min: 1, max: 3 } },
+  skills: [],
+  baseLife: 175,
+  bonuses: { evasion: 0.1 },
+};
+
 export const CINDER_CASTER: EnemyDefinition = {
   id: "cinder-caster",
   name: "Cinder Caster",

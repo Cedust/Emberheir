@@ -413,14 +413,14 @@ function ItemCards(props: {
   const focus = (item: Item) => props.onFocus(targetSlot(item, GAME_DATA, state.hero.equipment));
 
   if (items.length > 3) {
-    // Boss Hoard: six cards as small faces, the chosen one in full next to them.
+    // Boss Hoard (six cards) or the Ember Thief's sack (four): small faces, the chosen one in full.
     const firstOpen = items.findIndex((_, i) => shown[i] && !taken.has(i));
     const pick = selected !== undefined && shown[selected] ? selected : firstOpen;
     const detail = pick >= 0 ? items[pick] : undefined;
     return (
       <div className="hoard-layout">
         {trophy && <TrophyToast item={trophy} />}
-        <div className="hoard-cards">
+        <div className={`hoard-cards${items.length <= 4 ? " two" : ""}`}>
           {items.map((item, i) =>
             shown[i] ? (
               <button
@@ -680,8 +680,10 @@ export function IntermissionView(props: {
   const subtitle =
     step === "items"
       ? rewards && rewards.items.length > 3
-        ? `Boss Hoard · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
-        : "Choose 1 of 3 items"
+        ? `${rewards.thief === "caught" ? "Ember Thief caught" : "Boss Hoard"} · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
+        : rewards?.thief === "escaped"
+          ? "The thief got away · choose 1 of 3 items"
+          : "Choose 1 of 3 items"
       : step === "spoils"
         ? `${rewards?.rank === "boss" ? "Boss defeated" : rewards?.rank === "elite" ? "Elite defeated" : `Stage ${run.stage}`} · choose 1 of 3 spoils`
         : step === "shrine"

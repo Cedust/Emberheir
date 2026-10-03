@@ -3,6 +3,7 @@ import { bossTrophies, uniquesFor } from "../items/generate";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type GameAction,
+  type GameData,
   type GameState,
   GameActionError,
   actUnlocked,
@@ -33,7 +34,7 @@ import {
   rollRuneDrops,
 } from "./game";
 import { Rng } from "../rng";
-import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
+import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
 const start = (seed = 1) => newGame(data, { seed, starterWeapon: "test-sword" });
@@ -622,5 +623,83 @@ describe("Runes in the run", () => {
     expect(s.wallet.runes).toEqual({});
     expect(s.legacy.runewords).toEqual([]);
     expect(s.progress.runesmithUnlocked).toBe(false);
+  });
+});
+
+describe("Ember Thief", () => {
+  const THIEF = { ...WEAK_ENEMY, id: "ember-thief", name: "Ember Thief" };
+  const atStage = (data: GameData, seed: number): GameState => {
+    const s = newGame(data, { seed, starterWeapon: "test-sword" });
+    return {
+      ...s,
+      run: {
+        actId: "final-act",
+        stage: 1,
+        lifeFraction: 1,
+        phase: "intermission",
+        encounter: null,
+        rewards: null,
+      },
+    };
+  };
+  /** First seed whose Stage 1 rolls the Thief. */
+  const thiefSeed = (data: GameData) => {
+    for (let seed = 1; seed < 2000; seed++) {
+      const s = applyAction(atStage(data, seed), data, { type: "startStage" });
+      if (s.run?.encounter?.thief) return seed;
+    }
+    throw new Error("No Thief in 2000 seeds");
+  };
+
+  it("shows up on normal stages from Act 2 on, about 3 % of the time", () => {
+    const data = { ...TEST_GAME_DATA, thief: THIEF };
+    let thieves = 0;
+    for (let seed = 1; seed <= 2000; seed++) {
+      const s = applyAction(atStage(data, seed), data, { type: "startStage" });
+      if (s.run?.encounter?.thief) thieves++;
+    }
+    expect(thieves / 2000).toBeGreaterThan(0.015);
+    expect(thieves / 2000).toBeLessThan(0.05);
+    // Never in Act 1, never without Thief data.
+    const act1 = (seed: number) =>
+      applyAction(
+        {
+          ...atStage(data, seed),
+          run: { ...(atStage(data, seed).run ?? fail()), actId: "test-act" },
+        },
+        data,
+        { type: "startStage" },
+      );
+    for (let seed = 1; seed <= 300; seed++)
+      expect(act1(seed).run?.encounter?.thief).toBeUndefined();
+  });
+
+  it("caught: a small Hoard of 4 cards, take 2, one at least Rare", () => {
+    const data = { ...TEST_GAME_DATA, thief: THIEF };
+    const seed = thiefSeed(data);
+    let s = applyAction(atStage(data, seed), data, { type: "startStage" });
+    expect(enemySetup(s.run?.encounter ?? fail(), "final-act", data).fleeAfter).toBe(
+      PROGRESSION.thiefFleeSeconds,
+    );
+    s = applyAction(s, data, { type: "resolveFight" });
+    const rewards = s.run?.rewards ?? fail();
+    expect(rewards.thief).toBe("caught");
+    expect(rewards.items).toHaveLength(PROGRESSION.thiefCards);
+    expect(rewards.picks).toBe(PROGRESSION.thiefPicks);
+    expect(rewards.items.some((it) => ["rare", "epic", "legendary"].includes(it.rarity))).toBe(
+      true,
+    );
+  });
+
+  it("escaped: the stage still counts, with the normal three cards", () => {
+    const tough = { ...THIEF, baseLife: 1_000_000 };
+    const data = { ...TEST_GAME_DATA, thief: tough };
+    const seed = thiefSeed(data);
+    let s = applyAction(atStage(data, seed), data, { type: "startStage" });
+    s = applyAction(s, data, { type: "resolveFight" });
+    expect(s.run?.phase).toBe("rewards");
+    expect(s.run?.rewards?.thief).toBe("escaped");
+    expect(s.run?.rewards?.items).toHaveLength(PROGRESSION.itemChoices);
+    expect(s.stats.deaths).toBe(0);
   });
 });

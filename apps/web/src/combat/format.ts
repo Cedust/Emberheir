@@ -142,12 +142,18 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
       };
     case "death":
       return { time, side: event.side, tone: "end", text: `${names[event.side]} falls` };
+    case "flee":
+      return { time, side: event.side, tone: "end", text: `${names[event.side]} escapes` };
     case "fightEnd":
       return {
         time,
         side: null,
         tone: "end",
-        text: event.winner ? `${names[event.winner]} wins` : "Time is up: draw",
+        text: event.winner
+          ? `${names[event.winner]} wins`
+          : event.fled
+            ? "No winner"
+            : "Time is up: draw",
       };
   }
 }

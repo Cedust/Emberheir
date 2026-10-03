@@ -51,9 +51,11 @@ function useLooks(state: GameState, run: RunState) {
   const act = getAct(GAME_DATA, run.actId);
   const enemyDef =
     encounter &&
-    (act.boss.id === encounter.enemyId
-      ? act.boss
-      : act.enemies.find((e) => e.id === encounter.enemyId));
+    (encounter.thief
+      ? GAME_DATA.thief
+      : act.boss.id === encounter.enemyId
+        ? act.boss
+        : act.enemies.find((e) => e.id === encounter.enemyId));
   const mainHand = state.hero.equipment.mainHand;
   const offHand = state.hero.equipment.offHand;
   const weapon = mainHand ? getBase(ITEM_CATALOG, mainHand.baseId) : undefined;
@@ -79,6 +81,7 @@ function useLooks(state: GameState, run: RunState) {
     boss: encounter?.boss ?? false,
     elite: mods.length > 0,
     act: act.number,
+    ...(encounter?.thief ? { thief: true } : {}),
   };
   const heroInfo: PlaqueInfo = {
     name: "Heir of the Ember",
@@ -230,7 +233,12 @@ export function BattleView(props: {
       ? "VICTORY"
       : snapshot.winner === "enemy"
         ? "DEFEAT"
-        : "DRAW"
+        : snapshot.fled === "enemy"
+          ? "ESCAPED"
+          : "DRAW"
+    : null;
+  const thiefLeft = run.encounter?.thief
+    ? Math.max(0, Math.ceil(PROGRESSION.thiefFleeSeconds - snapshot.time))
     : null;
   const flaskMax = Math.max(PROGRESSION.flaskStartCharges, state.flaskCharges);
   const stages = looks.act.stages;
@@ -261,6 +269,16 @@ export function BattleView(props: {
         <div className="enemy-column">
           <Plaque fighter={enemy} info={looks.enemyInfo} mirrored />
           <div className="enemy-skills">
+            {thiefLeft !== null && !over && (
+              <div
+                className={`thief-timer${thiefLeft <= 5 ? " hurry" : ""}`}
+                role="timer"
+                data-testid="thief-timer"
+              >
+                <Icon name="retreat" size={18} color="#ffd84a" />
+                <span>Flees in {thiefLeft}s</span>
+              </div>
+            )}
             {enemy.telegraph && (
               <div className="telegraph-warning" role="alert">
                 <Icon name="warning" size={18} color="#ffb13b" />

@@ -57,6 +57,15 @@ export const PROGRESSION = {
   /** Boss Hoard: cards after a boss and how many of them the hero takes. */
   bossHoardCards: 6,
   bossHoardPicks: 2,
+  /**
+   * Ember Thief (Teil 3 C): a rare enemy on normal stages from this act on. It runs away after a
+   * while; caught, it drops a small Hoard with one card at least Rare.
+   */
+  thiefFromAct: 2,
+  thiefChance: 0.03,
+  thiefFleeSeconds: 15,
+  thiefCards: 4,
+  thiefPicks: 2,
   /** Chance per boss kill that one Hoard card is a trophy from the boss's own list. */
   bossTrophyChance: 0.1,
   /** The top Rune ranks only drop from Elites and Bosses, this much rarer on top of the falloff. */

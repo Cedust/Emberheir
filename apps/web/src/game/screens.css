@@ -4641,3 +4641,7 @@
     animation: none;
   }
 }
+
+.stage .hoard-cards.two {
+  grid-template-columns: repeat(2, 172px);
+}

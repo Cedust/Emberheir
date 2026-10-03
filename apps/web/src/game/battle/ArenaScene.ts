@@ -18,6 +18,8 @@ export interface EnemyLook {
   readonly elite: boolean;
   /** Act number: every act dresses its enemies in its own colors. */
   readonly act: number;
+  /** The Ember Thief carries a glowing sack of loot on its back. */
+  readonly thief?: boolean;
 }
 
 /** Original damage-type colors (ui-look-v1.md): the arena uses them in both modes. */
@@ -731,6 +733,20 @@ function drawEnemy(look: EnemyLook): Container {
         );
       }
     }
+  }
+  if (look.thief) {
+    const sack = new Container();
+    sack.addChild(
+      new Graphics().circle(84, -330, 70).fill({ color: 0xffb13b, alpha: 0.3 }),
+      new Graphics().ellipse(84, -320, 54, 60).fill(0xc9954a).stroke(line),
+      new Graphics()
+        .moveTo(64, -380)
+        .lineTo(104, -380)
+        .stroke({ color: INK, width: 5, cap: "round" }),
+      new Graphics().circle(70, -392, 10).fill(0xffd84a).stroke(line),
+      new Graphics().circle(96, -396, 9).fill(0xffd84a).stroke(line),
+    );
+    c.addChildAt(sack, 0);
   }
   if (look.boss && look.archetype !== "harvester") {
     c.addChild(

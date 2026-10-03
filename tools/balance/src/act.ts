@@ -46,6 +46,9 @@ export interface ActRunReport {
   readonly fightSeconds: readonly number[];
   readonly bossSeconds: number;
   readonly elites: number;
+  /** Ember Thieves met and caught. */
+  readonly thieves: number;
+  readonly thievesCaught: number;
   /** Stage of every death. */
   readonly deathStages: readonly number[];
   readonly bossDeaths: number;
@@ -342,6 +345,8 @@ export function playGenerations(
       let bossSeconds = 0;
       let levelAtBoss = 0;
       let elites = 0;
+      let thieves = 0;
+      let thievesCaught = 0;
       const deathStages: number[] = [];
       const deathEnemies: string[] = [];
       let bossDeaths = 0;
@@ -365,6 +370,10 @@ export function playGenerations(
           } else {
             fightSeconds.push(result.duration);
             if (encounter?.eliteModifiers.length) elites++;
+            if (encounter?.thief) {
+              thieves++;
+              if (result.winner === "hero") thievesCaught++;
+            }
           }
           const stage = s.run?.stage ?? 0;
           const first = s.stats.fights === before.fights;
@@ -391,6 +400,8 @@ export function playGenerations(
         fightSeconds,
         bossSeconds,
         elites,
+        thieves,
+        thievesCaught,
         deathStages,
         bossDeaths,
         firstFightLost,
@@ -435,6 +446,9 @@ export interface ActSummary {
   /** Share of runs that lost their very first fight. */
   readonly firstFightLossRate: number;
   readonly avgElites: number;
+  /** Ember Thieves per run and the share caught before they ran. */
+  readonly avgThieves: number;
+  readonly thiefCatchRate: number;
   /** Share of deaths that happened at the boss. */
   readonly bossDeathShare: number;
   /** The enemy that killed the hero most often, e.g. "storm-caller (42 %)". */
@@ -460,6 +474,13 @@ export function summarizeActRuns(reports: readonly ActRunReport[]): ActSummary {
       : 0,
     avgBossSeconds: avg(cleared.map((r) => r.bossSeconds)),
     avgElites: avg(reports.map((r) => r.elites)),
+    avgThieves: avg(reports.map((r) => r.thieves)),
+    thiefCatchRate:
+      reports.reduce((n, r) => n + r.thievesCaught, 0) /
+      Math.max(
+        1,
+        reports.reduce((n, r) => n + r.thieves, 0),
+      ),
     bossDeathShare:
       reports.reduce((n, r) => n + r.bossDeaths, 0) /
       Math.max(
