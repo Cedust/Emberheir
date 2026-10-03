@@ -8,6 +8,7 @@ import {
   clearAilment,
   damageTakenBonus,
   dotDamagePerSecond,
+  extendAilments,
   healingFactor,
   multiplyPoison,
   poisonStacks,
@@ -48,9 +49,13 @@ import type {
   DamageRange,
   DamageType,
   HeatBehavior,
+  ReactionSlot,
+  RotationSlot,
   Side,
   SkillDefinition,
   SkillEffect,
+  SlotCondition,
+  SlotModifier,
   TriggerCondition,
   TriggerEffect,
 } from "./types";
@@ -63,6 +68,8 @@ export type CombatEvent =
       readonly side: Side;
       readonly skill: string;
       readonly heatCost: number;
+      /** How it was cast, if not by the Rotation: a Reaction Slot or a free repeat. */
+      readonly via?: "reaction" | "reverb" | "echo";
     }
   | {
       readonly t: number;
@@ -130,8 +137,20 @@ export type CombatEvent =
       readonly skill: string;
       readonly windup: number;
     }
+  /** The fighter is stunned and cannot act for `seconds`. */
+  | { readonly t: number; readonly type: "stun"; readonly side: Side; readonly seconds: number }
   | { readonly t: number; readonly type: "death"; readonly side: Side }
   | { readonly t: number; readonly type: "fightEnd"; readonly winner: Side | null };
+
+export interface ReactionSlotSnapshot {
+  readonly skillId: string;
+  readonly name: string;
+  readonly heatCost: number;
+  /** Seconds until the slot is ready again. */
+  readonly cooldownLeft: number;
+  /** The condition was met; the skill fires as soon as Heat allows. */
+  readonly pending: boolean;
+}
 
 export interface RotationSlotSnapshot {
   readonly skillId: string;
@@ -156,6 +175,7 @@ export interface FighterSnapshot {
   readonly rotation: readonly RotationSlotSnapshot[];
   /** Index into `rotation` of the next skill. */
   readonly nextSlot: number;
+  readonly reactions: readonly ReactionSlotSnapshot[];
   /** Active ailments; Poison also tells its stacks (`remaining` = longest stack). */
   readonly ailments: readonly {
     readonly type: AilmentType;
@@ -177,6 +197,8 @@ export interface FighterSnapshot {
   }[];
   /** Current stats including active buffs. */
   readonly stats: DerivedStats;
+  /** Seconds the fighter is still stunned (0 = can act). */
+  readonly stunned: number;
   /** A Heavy Attack that is winding up right now. */
   readonly telegraph: {
     readonly skill: string;
@@ -218,7 +240,28 @@ interface Fighter {
   telegraphTimers: number[];
   /** The telegraph winding up right now. */
   windup: { index: number; remaining: number } | null;
+  /** Seconds the fighter is still stunned. */
+  stunned: number;
+  /** Hits taken that were not evaded (for "Every Nth Hit Taken"). */
+  hitsTaken: number;
+  readonly reactions: ReactionState[];
+  /** Heat spent on skills so far (Crescendo). */
+  heatSpent: number;
+  /** Full passes through the Rotation so far (Ignition makes the first one free). */
+  rotationPasses: number;
 }
+
+interface ReactionState {
+  readonly spec: ReactionSlot;
+  cooldownLeft: number;
+  /** Thresholds: false after firing until the value is back above. */
+  armed: boolean;
+  /** Seconds the met condition has been waiting for Heat; null = not waiting. */
+  pending: number | null;
+}
+
+/** A reaction waits this long for Heat before it gives up. */
+const REACTION_PATIENCE = 4;
 
 /** What happened in the moment a trigger condition was met. */
 interface TriggerContext {
@@ -254,6 +297,11 @@ function executeFactor(rules: CombatRules | undefined, defender: Fighter): numbe
   return defender.life / defender.stats.maxLife < execute.below ? 1 + execute.bonus : 1;
 }
 
+/** Crescendo (Capstone): +2 % damage for every 100 Heat spent this fight. */
+function crescendoFactor(f: Fighter): number {
+  return f.setup.capstone?.kind === "crescendo" ? 1 + 0.02 * Math.floor(f.heatSpent / 100) : 1;
+}
+
 function createFighter(side: Side, setup: CombatantSetup): Fighter {
   const stats = deriveStats(setup);
   const lifeFraction = Math.min(1, Math.max(0, setup.lifeFraction ?? 1));
@@ -265,7 +313,7 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     stats,
     life: Math.max(1, Math.round(stats.maxLife * lifeFraction)),
     barrier: 0,
-    heat: stats.startingHeat,
+    heat: setup.capstone?.kind === "ignition" ? COMBAT.maxHeat : stats.startingHeat,
     attackProgress: 0,
     nextSlot: 0,
     ailments: {},
@@ -276,6 +324,16 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     curses: [],
     telegraphTimers: (setup.telegraphs ?? []).map(() => 0),
     windup: null,
+    stunned: 0,
+    hitsTaken: 0,
+    reactions: (setup.reactions ?? []).map((spec) => ({
+      spec,
+      cooldownLeft: 0,
+      armed: true,
+      pending: null,
+    })),
+    heatSpent: 0,
+    rotationPasses: 0,
   };
 }
 
@@ -347,6 +405,7 @@ export class Fight {
       for (const side of ["hero", "enemy"] as const) {
         this.fireTriggers(this.fighters[side], "fightStart");
         if (this.result) return this.log.slice(start);
+        this.react(this.fighters[side], "fightStart");
       }
     }
     this.ticks++;
@@ -364,7 +423,7 @@ export class Fight {
     const ready: { fighter: Fighter; overshoot: number }[] = [];
     for (const side of ["hero", "enemy"] as const) {
       const f = this.fighters[side];
-      if (f.windup) continue;
+      if (f.windup || f.stunned > 1e-9) continue;
       const rate = f.stats.attackSpeed * chillFactor(f.ailments);
       f.attackProgress += dt * rate;
       if (f.attackProgress >= 1) {
@@ -470,10 +529,21 @@ export class Fight {
       if (state) this.tryTrigger(f, state, {});
       if (this.result) return;
     }
+
+    for (const r of f.reactions) {
+      r.cooldownLeft = Math.max(0, r.cooldownLeft - dt);
+      if (r.pending === null) continue;
+      r.pending += dt;
+      if (r.pending > REACTION_PATIENCE) r.pending = null;
+    }
   }
 
   /** Winds up telegraphed Heavy Attacks and unleashes them when the wind-up is over. */
   private stepTelegraphs(f: Fighter, dt: number): void {
+    if (f.stunned > 1e-9) {
+      f.stunned = Math.max(0, f.stunned - dt);
+      return;
+    }
     const telegraphs = f.setup.telegraphs;
     if (!telegraphs?.length) return;
     if (f.windup) {
@@ -486,11 +556,12 @@ export class Fight {
     }
     for (let i = 0; i < telegraphs.length; i++) {
       const spec = telegraphs[i];
-      if (!spec) continue;
+      if (!spec || !this.phaseActive(f, spec.belowLife)) continue;
       f.telegraphTimers[i] = (f.telegraphTimers[i] ?? 0) + dt;
       if ((f.telegraphTimers[i] ?? 0) + 1e-9 < spec.interval) continue;
       f.telegraphTimers[i] = 0;
       f.windup = { index: i, remaining: spec.windup };
+      this.react(this.fighters[other(f.side)], "enemyWindup");
       this.emit({
         t: this.time,
         type: "telegraph",
@@ -502,26 +573,158 @@ export class Fight {
     }
   }
 
+  /** Boss phases: a trigger or telegraph with `belowLife` waits until life drops below it. */
+  private phaseActive(f: Fighter, belowLife: number | undefined): boolean {
+    return belowLife === undefined || f.life / f.stats.maxLife < belowLife;
+  }
+
   /**
-   * Uses the next Rotation skill if Heat reached its Trigger Threshold, else a Default Attack.
-   * A buff skill whose buff is still running (or a curse still on the target) is passed over, so
-   * it is not wasted.
+   * A pending Reaction Slot goes first if Heat allows. Otherwise the next Rotation skill fires if
+   * Heat reached its Trigger Threshold, else a Default Attack. Rotation slots whose buff (or curse)
+   * still runs, or whose "skip if" condition does not hold, are passed over.
    */
   private act(f: Fighter): void {
-    let slot = f.setup.rotation[f.nextSlot];
-    if (slot && this.buffRunning(f, slot.skill)) {
-      f.nextSlot = (f.nextSlot + 1) % f.setup.rotation.length;
-      slot = f.setup.rotation[f.nextSlot];
-      if (slot && this.buffRunning(f, slot.skill)) slot = undefined;
+    if (this.actReaction(f)) return;
+    const rotation = f.setup.rotation;
+    let slot: RotationSlot | undefined;
+    for (let tries = 0; tries < rotation.length; tries++) {
+      const candidate = rotation[f.nextSlot];
+      if (candidate && !this.buffRunning(f, candidate.skill) && this.slotReady(f, candidate)) {
+        slot = candidate;
+        break;
+      }
+      this.advanceRotation(f);
     }
-    const cost = slot ? skillCost(f.setup, slot.skill) : 0;
-    if (slot && f.heat >= triggerThreshold(cost, slot.threshold)) {
-      f.heat -= cost;
-      f.nextSlot = (f.nextSlot + 1) % f.setup.rotation.length;
-      this.castSkill(f, slot.skill, slot.level ?? 1, cost);
+    const index = f.nextSlot;
+    const free = f.setup.capstone?.kind === "ignition" && f.rotationPasses === 0;
+    const cost = slot && !free ? this.slotCost(f, slot.skill, slot.modifiers) : 0;
+    const threshold = slot ? triggerThreshold(cost, free ? 0 : slot.threshold) : 0;
+    if (slot && f.heat >= threshold) {
+      const overcharge = slot.modifiers?.includes("overcharge") ? Math.max(0, f.heat - cost) : 0;
+      const paid = cost + overcharge;
+      f.heat -= paid;
+      this.advanceRotation(f);
+      const power = 1 + Math.min(0.5, overcharge / 100);
+      this.castSlot(
+        f,
+        slot.skill,
+        this.slotLevel(slot.level, slot.modifiers),
+        paid,
+        power,
+        slot.modifiers,
+      );
+      const capstone = f.setup.capstone;
+      if (!this.result && capstone?.kind === "echo" && capstone.slot === index) {
+        this.castSkill(f, slot.skill, this.slotLevel(slot.level, slot.modifiers), 0, 0.5, "echo");
+      }
       return;
     }
     this.defaultAttack(f);
+  }
+
+  private advanceRotation(f: Fighter): void {
+    const length = Math.max(1, f.setup.rotation.length);
+    f.nextSlot = (f.nextSlot + 1) % length;
+    if (f.nextSlot === 0) f.rotationPasses++;
+  }
+
+  /** Heat Cost of a slot: rules (Keystones) and the Thrifty modifier. */
+  private slotCost(
+    f: Fighter,
+    skill: SkillDefinition,
+    modifiers: readonly SlotModifier[] | undefined,
+  ): number {
+    const base = skillCost(f.setup, skill);
+    return modifiers?.includes("thrifty") ? Math.round(base * 0.85) : base;
+  }
+
+  private slotLevel(level: number | undefined, modifiers: readonly SlotModifier[] | undefined) {
+    return (level ?? 1) + (modifiers?.includes("empowered") ? 1 : 0);
+  }
+
+  /** "Skip if…": a Rotation Slot with a condition only fires while it holds. */
+  private slotReady(f: Fighter, slot: RotationSlot): boolean {
+    return slot.condition ? this.conditionHolds(f, slot.condition) : true;
+  }
+
+  private conditionHolds(f: Fighter, condition: SlotCondition): boolean {
+    const target = this.fighters[other(f.side)];
+    switch (condition.kind) {
+      case "enemyHas":
+        return condition.ailment === "poison"
+          ? poisonStacks(target.ailments) > 0
+          : target.ailments[condition.ailment] !== undefined;
+      case "enemyBelow":
+        return target.life / target.stats.maxLife < condition.fraction;
+      case "lifeBelow":
+        return f.life / f.stats.maxLife < condition.fraction;
+    }
+  }
+
+  /** Casts a slot's skill and rolls Reverb (20 % chance to repeat it for free). */
+  private castSlot(
+    f: Fighter,
+    skill: SkillDefinition,
+    level: number,
+    paid: number,
+    power: number,
+    modifiers: readonly SlotModifier[] | undefined,
+    via?: "reaction",
+  ): void {
+    this.castSkill(f, skill, level, paid, power, via);
+    if (this.result || !modifiers?.includes("reverb")) return;
+    if (this.rng.chance(0.2)) this.castSkill(f, skill, level, 0, 1, "reverb");
+  }
+
+  /** Marks Reaction Slots of `f` whose condition just happened as pending. */
+  private react(f: Fighter, kind: "fightStart" | "enemyWindup" | "ailmented"): void {
+    for (const r of f.reactions) {
+      if (r.spec.condition.kind === kind && r.cooldownLeft <= 1e-9) r.pending = 0;
+    }
+  }
+
+  /** Threshold reactions: fire once when the value drops below, re-arm once it is back above. */
+  private checkReactionThresholds(): void {
+    for (const side of ["hero", "enemy"] as const) {
+      const f = this.fighters[side];
+      const target = this.fighters[other(side)];
+      for (const r of f.reactions) {
+        const c = r.spec.condition;
+        if (c.kind !== "lifeBelow" && c.kind !== "enemyBelow") continue;
+        const who = c.kind === "lifeBelow" ? f : target;
+        const below = who.life / who.stats.maxLife < c.fraction;
+        if (!below) {
+          r.armed = true;
+        } else if (r.armed && r.cooldownLeft <= 1e-9) {
+          r.armed = false;
+          r.pending = 0;
+        }
+      }
+    }
+  }
+
+  /** Fires the first pending Reaction Slot if Heat allows. True if one fired. */
+  private actReaction(f: Fighter): boolean {
+    const vigil = f.setup.capstone?.kind === "vigil";
+    for (const r of f.reactions) {
+      if (r.pending === null) continue;
+      const cost = vigil ? 0 : this.slotCost(f, r.spec.skill, r.spec.modifiers);
+      if (f.heat < cost) continue;
+      f.heat -= cost;
+      r.pending = null;
+      r.cooldownLeft = r.spec.cooldown * (vigil ? 2 : 1);
+      this.castSlot(
+        f,
+        r.spec.skill,
+        this.slotLevel(r.spec.level, r.spec.modifiers),
+        cost,
+        1,
+        r.spec.modifiers,
+        "reaction",
+      );
+      return true;
+    }
+    return false;
   }
 
   /** A buff skill whose buff still runs, or a curse that still sits on the target. */
@@ -560,11 +763,31 @@ export class Fight {
     }
   }
 
-  private castSkill(f: Fighter, skill: SkillDefinition, level: number, heatCost = 0): void {
-    this.emit({ t: this.time, type: "skill", side: f.side, skill: skill.name, heatCost });
+  /**
+   * Casts a skill. `power` scales its hits (Overcharge, Echo); `via` marks casts that did not
+   * come from the Rotation.
+   */
+  private castSkill(
+    f: Fighter,
+    skill: SkillDefinition,
+    level: number,
+    heatCost = 0,
+    power = 1,
+    via?: "reaction" | "reverb" | "echo",
+  ): void {
+    this.emit({
+      t: this.time,
+      type: "skill",
+      side: f.side,
+      skill: skill.name,
+      heatCost,
+      ...(via ? { via } : {}),
+    });
+    f.heatSpent += heatCost;
     this.fireTriggers(f, "onSkillUse");
     if (this.result) return;
     const target = this.fighters[other(f.side)];
+    let landed = false;
     for (const hit of skill.hits) {
       const count = hit.count ?? 1;
       for (let i = 0; i < count && !this.result; i++) {
@@ -572,9 +795,9 @@ export class Fight {
           const lowLife =
             hit.lowLifeBonus && target.life / target.stats.maxLife < hit.lowLifeBonus.threshold;
           const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
-          this.hit(f, {
+          const ok = this.hit(f, {
             source: skill.name,
-            baseDamage: this.roll(f.setup.weapon.damage) * hit.multiplier * levelScale,
+            baseDamage: this.roll(f.setup.weapon.damage) * hit.multiplier * levelScale * power,
             type: f.setup.weapon.damageType,
             evadable: true,
             multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
@@ -582,12 +805,13 @@ export class Fight {
             ailmentPower: hit.ailmentPower ?? 1,
             fromTrigger: false,
           });
+          landed = ok || landed;
         } else {
           const levelScale =
             (1 + COMBAT.spellDamagePerSkillLevel * (level - 1)) * (f.setup.weapon.spellPower ?? 1);
-          this.hit(f, {
+          const ok = this.hit(f, {
             source: skill.name,
-            baseDamage: this.roll(hit.damage) * levelScale * (hit.falloff ?? 1) ** i,
+            baseDamage: this.roll(hit.damage) * levelScale * (hit.falloff ?? 1) ** i * power,
             type: hit.damageType,
             evadable: false,
             multiplier: 1,
@@ -595,12 +819,26 @@ export class Fight {
             ailmentPower: hit.ailmentPower ?? 1,
             fromTrigger: false,
           });
+          landed = ok || landed;
         }
       }
     }
     for (const effect of skill.effects ?? []) {
       if (this.result) return;
       this.applySkillEffect(f, target, skill, effect, level);
+    }
+    const capstone = f.setup.capstone?.kind;
+    if (capstone === "lingeringFlame" && landed && !this.result) {
+      target.ailments = extendAilments(target.ailments, 0.5);
+    }
+    if (capstone === "emberWard" && heatCost > 0) {
+      // 100 Heat paid = 10 % of Max Life as Barrier; this source fills it up to 20 %.
+      const cap = f.stats.maxLife * 0.2;
+      const gain = Math.min(Math.max(0, cap - f.barrier), f.stats.maxLife * heatCost * 0.001);
+      if (gain >= 1) {
+        f.barrier += Math.round(gain);
+        this.emit({ t: this.time, type: "barrier", side: f.side, amount: Math.round(gain) });
+      }
     }
   }
 
@@ -660,6 +898,15 @@ export class Fight {
       case "heal":
         this.heal(f, f.stats.maxLife * effect.fraction);
         return;
+      case "barrier":
+        this.addBarrier(
+          f,
+          f.stats.maxLife * effect.fraction * (1 + COMBAT.spellDamagePerSkillLevel * (level - 1)),
+        );
+        return;
+      case "stun":
+        this.stun(target, effect.seconds);
+        return;
       case "advanceCorruption":
         target.ailments = advanceCorruption(target.ailments, effect.ticks);
         return;
@@ -698,6 +945,23 @@ export class Fight {
     }
   }
 
+  /** Stuns a fighter; Tenacity shortens it (at most by 75 %). */
+  private stun(target: Fighter, seconds: number): void {
+    const time = seconds * (1 - Math.min(0.75, target.stats.tenacity));
+    if (time <= 0) return;
+    target.stunned = Math.max(target.stunned, time);
+    this.emit({ t: this.time, type: "stun", side: target.side, seconds: time });
+  }
+
+  /** Adds Barrier (up to max life). */
+  private addBarrier(f: Fighter, amount: number): void {
+    const before = f.barrier;
+    f.barrier = Math.min(f.stats.maxLife, f.barrier + Math.round(amount));
+    if (f.barrier > before) {
+      this.emit({ t: this.time, type: "barrier", side: f.side, amount: f.barrier - before });
+    }
+  }
+
   /** Resolves one hit from `attacker` on the other fighter. Returns true if it landed. */
   private hit(attacker: Fighter, h: HitOptions): boolean {
     const defender = this.fighters[other(attacker.side)];
@@ -711,7 +975,8 @@ export class Fight {
         multiplier:
           h.multiplier *
           (attacker.setup.damageMultiplier ?? 1) *
-          executeFactor(attacker.setup.rules, defender),
+          executeFactor(attacker.setup.rules, defender) *
+          crescendoFactor(attacker),
         defender: defender.stats,
         defenderDamageTaken: this.damageTaken(defender),
       },
@@ -768,6 +1033,8 @@ export class Fight {
     this.fireTriggers(attacker, "onHit", context);
     if (outcome.crit) this.fireTriggers(attacker, "onCrit", context);
     this.fireTriggers(defender, "whenHit", context);
+    defender.hitsTaken++;
+    this.fireTriggers(defender, "everyNthHitTaken", context);
     if (outcome.blocked) this.fireTriggers(defender, "onBlock", context);
     if (this.result) return true;
 
@@ -807,6 +1074,7 @@ export class Fight {
     );
     defender.ailments = applyAilment(defender.ailments, ailment, duration, hitDamage);
     if (duration <= 0) return;
+    this.react(defender, "ailmented");
     this.emit({
       t: this.time,
       type: "ailment",
@@ -829,13 +1097,19 @@ export class Fight {
       const condition = state.spec.condition;
       if (condition.kind !== kind) continue;
       if (kind === "everyNthAttack" && !isNthAttack(condition, f.attackCount)) continue;
+      if (
+        condition.kind === "everyNthHitTaken" &&
+        (condition.n <= 0 || f.hitsTaken % condition.n !== 0)
+      ) {
+        continue;
+      }
       this.tryTrigger(f, state, context);
     }
   }
 
   /** Rolls the chance of a trigger whose condition is met and applies its effect. */
   private tryTrigger(f: Fighter, state: TriggerState, context: TriggerContext): void {
-    if (!triggerReady(state)) return;
+    if (!triggerReady(state) || !this.phaseActive(f, state.spec.belowLife)) return;
     const chance = triggerChance(state.spec.chance ?? 1, f.stats.triggerChance);
     if (chance < 1 && !this.rng.chance(chance)) return;
     markFired(state);
@@ -882,17 +1156,9 @@ export class Fight {
       case "heal":
         this.heal(f, f.stats.maxLife * effect.fraction);
         return;
-      case "barrier": {
-        const before = f.barrier;
-        f.barrier = Math.min(
-          f.stats.maxLife,
-          f.barrier + Math.round(f.stats.maxLife * effect.fraction),
-        );
-        if (f.barrier > before) {
-          this.emit({ t: this.time, type: "barrier", side: f.side, amount: f.barrier - before });
-        }
+      case "barrier":
+        this.addBarrier(f, f.stats.maxLife * effect.fraction);
         return;
-      }
       case "heat": {
         const before = f.heat;
         f.heat = addHeat(f.heat, effect.amount, this.heatMultiplier(f));
@@ -921,6 +1187,28 @@ export class Fight {
       case "extraAttack":
         this.defaultAttack(f, true);
         return;
+      case "stun":
+        this.stun(target, effect.seconds);
+        return;
+      case "reflect": {
+        if (!context.damage) return;
+        const damage = Math.max(
+          1,
+          Math.round(Math.min(context.damage * effect.fraction, target.stats.maxLife * effect.cap)),
+        );
+        this.emit({
+          t: this.time,
+          type: "hit",
+          side: f.side,
+          source: name,
+          damage,
+          damageType: effect.damageType,
+          crit: false,
+          blocked: false,
+        });
+        this.damage(target, damage);
+        return;
+      }
     }
   }
 
@@ -948,6 +1236,7 @@ export class Fight {
       const c = state.spec.condition;
       if (c.kind === "lifeBelow" && f.life / f.stats.maxLife >= c.threshold) state.armed = true;
     }
+    this.checkReactionThresholds();
   }
 
   /** Barrier absorbs damage first, the rest goes to life. */
@@ -969,6 +1258,7 @@ export class Fight {
         if (this.result) return;
       }
     }
+    this.checkReactionThresholds();
   }
 
   private end(winner: Side | null): void {
@@ -1003,6 +1293,13 @@ export class Fight {
         };
       }),
       nextSlot: f.nextSlot,
+      reactions: f.reactions.map((r) => ({
+        skillId: r.spec.skill.id,
+        name: r.spec.skill.name,
+        heatCost: this.slotCost(f, r.spec.skill, r.spec.modifiers),
+        cooldownLeft: r.cooldownLeft,
+        pending: r.pending !== null,
+      })),
       ailments: AILMENT_TYPES.flatMap((type): FighterSnapshot["ailments"] => {
         if (type === "poison") {
           const stacks = f.ailments.poison?.stacks ?? [];
@@ -1026,6 +1323,7 @@ export class Fight {
         remaining: b.remaining,
       })),
       stats: f.stats,
+      stunned: f.stunned,
       telegraph: f.windup
         ? {
             skill: f.setup.telegraphs?.[f.windup.index]?.skill.name ?? "",

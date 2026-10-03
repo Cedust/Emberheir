@@ -10,7 +10,7 @@ import type {
 
 /** Enemy archetypes (docs/design/gegner-bosse-v1.md section 3): each asks the build a question. */
 export type EnemyArchetype =
-  "brute" | "skirmisher" | "caster" | "afflicter" | "warden" | "thornback";
+  "brute" | "skirmisher" | "caster" | "afflicter" | "warden" | "thornback" | "harvester";
 
 /** An enemy template. Its numbers are for Monster Level 1 and scale with the level. */
 export interface EnemyDefinition {

@@ -254,3 +254,28 @@ export function chillFactor(states: AilmentStates): number {
 export function healingFactor(states: AilmentStates): number {
   return states.burn ? 1 - COMBAT.burnHealingReduction : 1;
 }
+
+/**
+ * Lingering Flame (Capstone): every running ailment gains `fraction` of its base duration, up to
+ * twice its base duration.
+ */
+export function extendAilments(states: AilmentStates, fraction: number): AilmentStates {
+  const extend = (type: AilmentType, remaining: number) =>
+    Math.min(BASE_DURATION[type] * 2, remaining + BASE_DURATION[type] * fraction);
+  const next: { -readonly [K in keyof AilmentStates]: AilmentStates[K] } = { ...states };
+  for (const type of ["burn", "corruption", "bleed"] as const) {
+    const s = states[type];
+    if (s) next[type] = { ...s, remaining: extend(type, s.remaining) };
+  }
+  for (const type of ["chill", "shock"] as const) {
+    const s = states[type];
+    if (s) next[type] = { remaining: extend(type, s.remaining) };
+  }
+  if (states.poison) {
+    next.poison = {
+      ...states.poison,
+      stacks: states.poison.stacks.map((p) => ({ ...p, remaining: extend("poison", p.remaining) })),
+    };
+  }
+  return next;
+}

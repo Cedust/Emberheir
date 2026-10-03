@@ -3,11 +3,15 @@ import { type EnemyDefinition, createEnemySetup } from "../combat/monsters";
 import type {
   Attribute,
   Attributes,
+  Capstone,
   CombatantSetup,
+  ReactionSlot,
   RotationSlot,
   SkillDefinition,
+  SlotModifier,
   WeaponDefinition,
 } from "../combat/types";
+import { COMBAT } from "../combat/constants";
 import { ATTRIBUTES } from "../combat/types";
 import { type ResolvedEquipment, itemSlotFor, missingRequirements } from "../items/equipment";
 import {
@@ -29,6 +33,19 @@ import {
   type Rarity,
 } from "../items/types";
 import { Rng } from "../rng";
+import {
+  BATTLE_PLAN_LADDER,
+  type BattlePlanState,
+  CAPSTONES,
+  EMPTY_PLAN,
+  REACTION_COOLDOWN,
+  SLOT_MODIFIERS,
+  battlePlanUnlocks,
+  capstoneSpec,
+  reactionCondition,
+  slotCondition,
+  slotModifiers,
+} from "./battle-plan";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type CodexPartKind,
@@ -48,11 +65,13 @@ import { type CraftRequest, craft } from "./crafting";
 import { type EnemyRank, autoRewards, gainXp, xpForKill } from "./leveling";
 import {
   type LearnedNodes,
+  type PrestigeBranchDefinition,
   type SkillTreeDefinition,
   keystoneRules,
   learnNodes,
   treeBonuses,
   treeSkills,
+  treeTriggers,
 } from "./skill-tree";
 
 /**
@@ -65,7 +84,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -106,6 +125,11 @@ export interface GameData {
   readonly skillTree: SkillTreeDefinition;
   readonly acts: readonly ActData[];
   readonly eliteModifiers: readonly EliteModifier[];
+  /**
+   * Boss abilities (roadmap M10): a boss gains one per Prestige after the run its act opened in,
+   * starting at a different place in the list for each act.
+   */
+  readonly bossAbilities?: readonly EliteModifier[];
   readonly startingAttributes: Attributes;
 }
 
@@ -140,6 +164,8 @@ export interface HeroState {
    * does not know (any more) are skipped.
    */
   readonly rotation: readonly (string | null)[];
+  /** Thresholds, Modifiers, Reaction Slots and the Capstone (see `battlePlanUnlocks`). */
+  readonly plan: BattlePlanState;
 }
 
 export interface Encounter {
@@ -215,6 +241,8 @@ export interface PrestigeRewards {
   /** Seals (Save Tokens) in total. */
   readonly seals: number;
   readonly rotationSlots: number;
+  /** The Battle Plan upgrade this Prestige unlocks (`BATTLE_PLAN_LADDER`). */
+  readonly planUpgrade: string | null;
   readonly harvesterEmber: number;
   /** Fixed Salvage Dust instead of the burned stash. */
   readonly dust: number;
@@ -255,6 +283,8 @@ export interface LegacyState {
   readonly codex: CodexState;
   /** The Codex part marked at Old Nan, if any. */
   readonly quarry: QuarryMark | null;
+  /** Prestige branches of the Skill Tree, one chosen per Prestige. Permanent. */
+  readonly branches: readonly string[];
 }
 
 /** Marisha restocks whenever the hero comes back from a fight (`key` = fights so far). */
@@ -360,6 +390,7 @@ export function newGame(
       learned: {},
       equipment: { mainHand: weapon },
       rotation: [null],
+      plan: EMPTY_PLAN,
     },
     wallet: {
       gold: 0,
@@ -378,7 +409,7 @@ export function newGame(
       actsCleared: [],
       deathsInAct: 0,
       trainerUnlocked: false,
-      rotationSlots: PROGRESSION.startRotationSlots,
+      rotationSlots: battlePlanUnlocks(0).rotationSlots,
       stashBurned: false,
       runesmithUnlocked: false,
     },
@@ -394,6 +425,7 @@ export function newGame(
       runesFound: [],
       codex: EMPTY_CODEX,
       quarry: null,
+      branches: [],
     },
     pendingPrestige: null,
   };
@@ -466,7 +498,14 @@ export function levelCap(prestige: number): number {
  */
 export function levelBand(prestige: number): LevelBand {
   const start =
-    prestige === 0 ? 1 : Math.max(1, levelCap(prestige - 1) - PROGRESSION.levelBandStartBelowCap);
+    prestige === 0
+      ? 1
+      : Math.max(
+          1,
+          levelCap(prestige - 1) -
+            PROGRESSION.levelBandStartBelowCap -
+            PROGRESSION.levelBandStartBelowCapPerPrestige * (prestige - 1),
+        );
   return { start, end: levelCap(prestige) };
 }
 
@@ -517,7 +556,8 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
   return {
     prestige,
     seals: Math.min(prestige, data.equipmentSlots.length),
-    rotationSlots: Math.max(PROGRESSION.startRotationSlots, PROGRESSION.prestigeRotationSlots),
+    rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
+    planUpgrade: BATTLE_PLAN_LADDER[prestige - 1]?.name ?? null,
     harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
     dust: PROGRESSION.prestigeDustPerLevel * prestige,
     levelCap: levelCap(prestige),
@@ -558,23 +598,87 @@ export function knownSkills(
   return result;
 }
 
-/** The Rotation Slots the hero fights with. */
+/** The Rotation Slots the hero fights with, with the unlocked Battle Plan choices. */
 export function heroRotation(
   state: GameState,
   data: GameData,
   weapon: WeaponDefinition,
 ): RotationSlot[] {
+  return heroRotationSlots(state, data, weapon).map((s) => s.slot);
+}
+
+/** Like `heroRotation`, but each slot remembers its Battle Plan index (Echo, Modifiers). */
+function heroRotationSlots(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): { readonly slot: RotationSlot; readonly index: number }[] {
   const known = knownSkills(state, data, weapon);
   const start = known.find((k) => k.startSkill);
-  const slots: RotationSlot[] = [];
-  for (const id of state.hero.rotation.slice(0, state.progress.rotationSlots)) {
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
+  const { plan } = state.hero;
+  const slots: { slot: RotationSlot; index: number }[] = [];
+  state.hero.rotation.slice(0, state.progress.rotationSlots).forEach((id, index) => {
     const entry = id === null ? start : known.find((k) => k.skill.id === id);
-    if (entry && !slots.some((s) => s.skill.id === entry.skill.id)) {
-      slots.push({ skill: entry.skill, level: entry.level });
-    }
+    if (!entry || slots.some((s) => s.slot.skill.id === entry.skill.id)) return;
+    const threshold = unlocks.thresholds ? plan.thresholds[index] : null;
+    const modifiers = slotModifiers(plan.modifiers, index, unlocks);
+    const condition = unlocks.conditions ? slotCondition(plan.conditions[index]) : undefined;
+    slots.push({
+      index,
+      slot: {
+        skill: entry.skill,
+        level: entry.level,
+        ...(threshold != null ? { threshold } : {}),
+        ...(modifiers.length ? { modifiers } : {}),
+        ...(condition ? { condition } : {}),
+      },
+    });
+  });
+  if (slots.length === 0 && start) {
+    slots.push({ index: 0, slot: { skill: start.skill, level: start.level } });
   }
-  if (slots.length === 0 && start) slots.push({ skill: start.skill, level: start.level });
   return slots;
+}
+
+/** The hero's Reaction Slots (Battle Plan, from the 4th Prestige on). */
+export function heroReactions(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): ReactionSlot[] {
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
+  const known = knownSkills(state, data, weapon);
+  const { plan } = state.hero;
+  const result: ReactionSlot[] = [];
+  plan.reactions.slice(0, unlocks.reactionSlots).forEach((r, index) => {
+    if (!r) return;
+    const entry = known.find((k) => k.skill.id === r.skillId);
+    const condition = reactionCondition(r.conditionId);
+    if (!entry || !condition) return;
+    const modifiers = slotModifiers(plan.reactionModifiers, index, unlocks);
+    result.push({
+      skill: entry.skill,
+      level: entry.level,
+      condition,
+      cooldown: REACTION_COOLDOWN,
+      ...(modifiers.length ? { modifiers } : {}),
+    });
+  });
+  return result;
+}
+
+/** The Capstone the hero fights with; Echo points at the slot's index in the fight rotation. */
+function heroCapstone(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): Capstone | undefined {
+  if (!battlePlanUnlocks(state.legacy.prestige).capstone) return undefined;
+  const spec = capstoneSpec(state.hero.plan);
+  if (spec?.kind !== "echo") return spec;
+  const slot = heroRotationSlots(state, data, weapon).findIndex((s) => s.index === spec.slot);
+  return slot >= 0 ? { kind: "echo", slot } : undefined;
 }
 
 /** The hero's fight setup from the current state. */
@@ -590,7 +694,10 @@ export function heroSetup(
       equipment: hero.equipment,
       fallbackWeapon: fallbackWeapon(state, data),
       rotation: (weapon) => heroRotation(state, data, weapon),
+      reactions: (weapon) => heroReactions(state, data, weapon),
+      capstone: (weapon) => heroCapstone(state, data, weapon),
       bonuses: (weapon) => treeBonuses(data.skillTree, hero.learned, weapon.range),
+      triggers: (weapon) => treeTriggers(data.skillTree, hero.learned, weapon.range),
       rules: keystoneRules(data.skillTree, hero.learned),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
@@ -604,9 +711,19 @@ function findEnemy(act: ActData, id: string): EnemyDefinition {
   return enemy;
 }
 
+/** The abilities an act boss has in a run: one more per Prestige after its act opened. */
+export function bossAbilities(data: GameData, act: ActData, prestige: number): EliteModifier[] {
+  const list = data.bossAbilities ?? [];
+  const count = Math.min(list.length, Math.max(0, prestige - (act.number - 1)));
+  return Array.from({ length: count }, (_, i) => list[(act.number - 1 + i) % list.length]).filter(
+    (m): m is EliteModifier => m !== undefined,
+  );
+}
+
 export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteModifier[] {
   return encounter.eliteModifiers.flatMap((id) => {
-    const mod = data.eliteModifiers.find((m) => m.id === id);
+    const mod =
+      data.eliteModifiers.find((m) => m.id === id) ?? data.bossAbilities?.find((m) => m.id === id);
     return mod ? [mod] : [];
   });
 }
@@ -752,8 +869,15 @@ export type GameAction =
   /** Thoric and Liora (Camp only). */
   | { readonly type: "craft"; readonly request: CraftRequest }
   | { readonly type: "setRotationSkill"; readonly slot: number; readonly skillId: string | null }
+  /** Kaelen: Thresholds, Modifiers, Conditions, Reaction Slots, Capstone. */
+  | { readonly type: "setBattlePlan"; readonly plan: BattlePlanState }
   /** After the final boss: seal slots, burn the rest, start the next generation. */
-  | { readonly type: "prestige"; readonly sealedSlots: readonly EquipmentSlot[] }
+  | {
+      readonly type: "prestige";
+      readonly sealedSlots: readonly EquipmentSlot[];
+      /** Prestige branch to unlock; required while branches are left. */
+      readonly branchId?: string;
+    }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -799,8 +923,10 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return craft(state, data, action.request);
     case "setRotationSkill":
       return setRotationSkill(state, data, action.slot, action.skillId);
+    case "setBattlePlan":
+      return setBattlePlan(state, data, action.plan);
     case "prestige":
-      return doPrestige(state, data, action.sealedSlots);
+      return doPrestige(state, data, action.sealedSlots, action.branchId);
     case "dismissNotice":
       return { ...state, notice: null };
   }
@@ -849,7 +975,7 @@ function startStage(state: GameState, data: GameData): GameState {
       enemyId: act.boss.id,
       level,
       boss: true,
-      eliteModifiers: [],
+      eliteModifiers: bossAbilities(data, act, state.legacy.prestige).map((m) => m.id),
       ...pressure,
       seed: rng.int(0, 0x7fffffff),
     };
@@ -1463,10 +1589,13 @@ function learn(state: GameState, data: GameData, nodeIds: readonly string[]): Ga
   requireTrainer(state);
   let result: ReturnType<typeof learnNodes>;
   try {
-    result = learnNodes(data.skillTree, state.hero.learned, nodeIds, {
-      skillPoints: state.hero.unspentSkillPoints,
-      harvesterEmber: state.wallet.harvesterEmber,
-    });
+    result = learnNodes(
+      data.skillTree,
+      state.hero.learned,
+      nodeIds,
+      { skillPoints: state.hero.unspentSkillPoints, harvesterEmber: state.wallet.harvesterEmber },
+      state.legacy.branches,
+    );
   } catch (e) {
     return fail(e instanceof Error ? e.message : String(e));
   }
@@ -1543,7 +1672,90 @@ function setRotationSkill(
   return { ...state, hero: { ...state.hero, rotation: filled } };
 }
 
+/** Checks a Battle Plan against the unlocks; changing a chosen Capstone costs Gold. */
+function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState): GameState {
+  requireTrainer(state);
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
+  const slots = state.progress.rotationSlots;
+  const fit = <T>(list: readonly T[], length: number, empty: T): T[] =>
+    Array.from({ length }, (_, i) => list[i] ?? empty);
+
+  const thresholds = fit(plan.thresholds, slots, null);
+  if (thresholds.some((t) => t !== null && (!unlocks.thresholds || !validThreshold(t)))) {
+    return fail("Invalid Trigger Threshold");
+  }
+  const checkModifiers = (list: readonly (readonly SlotModifier[])[], length: number) => {
+    const fitted = fit(list, length, [] as readonly SlotModifier[]);
+    for (const mods of fitted) {
+      if (mods.length > unlocks.modifiers || new Set(mods).size !== mods.length) {
+        fail("Too many Slot Modifiers");
+      }
+      if (mods.some((m) => !SLOT_MODIFIERS.some((d) => d.id === m))) fail("Unknown Slot Modifier");
+    }
+    return fitted;
+  };
+  const modifiers = checkModifiers(plan.modifiers, slots);
+  const conditions = fit(plan.conditions, slots, null);
+  if (conditions.some((c) => c !== null && (!unlocks.conditions || !slotCondition(c)))) {
+    return fail("Invalid Rotation Condition");
+  }
+  const weapon = heroSetup(state, data).setup.weapon;
+  const known = knownSkills(state, data, weapon);
+  const reactions = fit(plan.reactions, unlocks.reactionSlots, null);
+  if (plan.reactions.slice(unlocks.reactionSlots).some((r) => r))
+    return fail("Reaction Slot locked");
+  for (const r of reactions) {
+    if (!r) continue;
+    if (!known.some((k) => k.skill.id === r.skillId)) return fail("Unknown skill");
+    if (!reactionCondition(r.conditionId)) return fail("Unknown Reaction condition");
+  }
+  const reactionModifiers = checkModifiers(plan.reactionModifiers, unlocks.reactionSlots);
+
+  const capstone = plan.capstone;
+  let gold = state.wallet.gold;
+  if (capstone) {
+    if (!unlocks.capstone) return fail("Capstone locked");
+    if (!CAPSTONES.some((c) => c.id === capstone.id)) return fail("Unknown Capstone");
+    if (!Number.isInteger(capstone.slot) || capstone.slot < 0 || capstone.slot >= slots) {
+      return fail("No such Rotation Slot");
+    }
+    const old = state.hero.plan.capstone;
+    if (old && old.id !== capstone.id) {
+      if (gold < PROGRESSION.capstoneChangeGold) return fail("Not enough Gold");
+      gold -= PROGRESSION.capstoneChangeGold;
+    }
+  } else if (state.hero.plan.capstone) {
+    return fail("A Capstone cannot be removed");
+  }
+  return {
+    ...state,
+    hero: {
+      ...state.hero,
+      plan: {
+        thresholds,
+        modifiers,
+        conditions,
+        reactions,
+        reactionModifiers,
+        capstone: capstone ? { id: capstone.id, slot: capstone.slot } : null,
+      },
+    },
+    wallet: { ...state.wallet, gold },
+  };
+}
+
+function validThreshold(t: number): boolean {
+  return Number.isFinite(t) && t >= 0 && t <= COMBAT.maxHeat;
+}
+
 // --- prestige --------------------------------------------------------------------------------
+
+/** Prestige branches the coming Prestige can unlock. */
+export function openBranches(state: GameState, data: GameData): PrestigeBranchDefinition[] {
+  return (data.skillTree.prestigeBranches ?? []).filter(
+    (b) => !state.legacy.branches.includes(b.id),
+  );
+}
 
 /** Seals the coming Prestige allows (one more than the Prestiges done so far). */
 export function sealsAvailable(state: GameState, data: GameData): number {
@@ -1559,8 +1771,13 @@ function doPrestige(
   state: GameState,
   data: GameData,
   sealedSlots: readonly EquipmentSlot[],
+  branchId: string | undefined,
 ): GameState {
   const pending = state.pendingPrestige ?? fail("No Prestige pending");
+  const open = openBranches(state, data);
+  if (branchId === undefined ? open.length > 0 : !open.some((b) => b.id === branchId)) {
+    return fail("Choose an open Prestige branch");
+  }
   const sealed = [...new Set(sealedSlots)];
   if (sealed.length !== sealedSlots.length) return fail("A slot can only be sealed once");
   if (sealed.some((slot) => !data.equipmentSlots.includes(slot))) return fail("No such slot");
@@ -1608,6 +1825,7 @@ function doPrestige(
       ...state.legacy,
       prestige,
       seals: sealed,
+      branches: branchId ? [...state.legacy.branches, branchId] : state.legacy.branches,
       chronicle: [
         ...state.legacy.chronicle,
         {
@@ -1644,6 +1862,7 @@ export function deserializeGame(json: string): GameState {
   if (state.version === 2) state = migrateV2(state);
   if (state.version === 3) state = migrateV3(state);
   if (state.version === 4) state = migrateV4(state);
+  if (state.version === 5) state = migrateV5(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -1687,6 +1906,7 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
       runesFound: [],
       codex: EMPTY_CODEX,
       quarry: null,
+      branches: [],
     },
     pendingPrestige: null,
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
@@ -1716,5 +1936,15 @@ function migrateV4(state: Partial<GameState>): Partial<GameState> {
     version: 5,
     ...(state.wallet ? { wallet: { ...state.wallet, kindling: 0 } } : {}),
     ...(state.legacy ? { legacy: { ...state.legacy, codex: EMPTY_CODEX, quarry: null } } : {}),
+  };
+}
+
+/** v5 → v6 (M10): Battle Plan choices beyond the Rotation, Prestige branches. */
+function migrateV5(state: Partial<GameState>): Partial<GameState> {
+  return {
+    ...state,
+    version: 6,
+    ...(state.hero ? { hero: { ...state.hero, plan: EMPTY_PLAN } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, branches: [] } } : {}),
   };
 }

@@ -99,7 +99,9 @@ export type TriggerCondition =
   | { readonly kind: "onEvade" }
   | { readonly kind: "onBlock" }
   /** Own life dropped below the fraction. Re-arms once life is back above it. */
-  | { readonly kind: "lifeBelow"; readonly threshold: number };
+  | { readonly kind: "lifeBelow"; readonly threshold: number }
+  /** Every Nth hit taken that was not evaded (Storm Herald's reflect). */
+  | { readonly kind: "everyNthHitTaken"; readonly n: number };
 
 export type TriggerEffect =
   /** Extra hit for X × Weapon Damage. Can be evaded like an attack. */
@@ -127,7 +129,19 @@ export type TriggerEffect =
       readonly maxStacks?: number;
     }
   /** An immediate extra Default Attack (e.g. the Sword's Riposte). */
-  | { readonly kind: "extraAttack" };
+  | { readonly kind: "extraAttack" }
+  /** The enemy cannot act for a moment: no attacks, skills or wind-ups (the Mace's Smash). */
+  | { readonly kind: "stun"; readonly seconds: number }
+  /**
+   * Sends a fraction of the hit that fired the trigger back to the attacker, at most `cap` of the
+   * attacker's max life, so big hits are punished without one-shotting.
+   */
+  | {
+      readonly kind: "reflect";
+      readonly fraction: number;
+      readonly cap: number;
+      readonly damageType: DamageType;
+    };
 
 /** A concrete trigger with final numbers: Condition → Chance → Effect → Internal Cooldown. */
 export interface TriggerSpec {
@@ -141,6 +155,8 @@ export interface TriggerSpec {
   readonly cooldown?: number;
   /** Fires at most once per fight. */
   readonly oncePerFight?: boolean;
+  /** Boss phases: only active while own life is below this fraction. */
+  readonly belowLife?: number;
   readonly effect: TriggerEffect;
 }
 
@@ -212,6 +228,10 @@ export type SkillEffect =
   | { readonly kind: "multiplyPoison"; readonly factor: number }
   /** Heals the caster by a fraction of max life (Burn halves it). */
   | { readonly kind: "heal"; readonly fraction: number }
+  /** Gives the caster Barrier: a fraction of max life, +Skill Level like spell damage. */
+  | { readonly kind: "barrier"; readonly fraction: number }
+  /** Stuns the target (Tenacity shortens it). */
+  | { readonly kind: "stun"; readonly seconds: number }
   /** Corrupt: the target's Corruption grows by this many ticks at once. */
   | { readonly kind: "advanceCorruption"; readonly ticks: number }
   /** Curse (Wither): the target takes `amount` more damage over time for a while. */
@@ -230,6 +250,21 @@ export interface SkillDefinition {
   readonly effects?: readonly SkillEffect[];
 }
 
+/**
+ * Slot Modifiers (skills-v1.md section 6): one per slot from the 5th Prestige, two from the 9th.
+ * - `thrifty`: −15 % Heat Cost.
+ * - `empowered`: +1 Skill Level.
+ * - `reverb`: 20 % chance to repeat the skill at once for free.
+ * - `overcharge`: Heat above the Cost is spent too and adds as much % effect (up to +50 %).
+ */
+export type SlotModifier = "thrifty" | "empowered" | "reverb" | "overcharge";
+
+/** "Skip if…" for Rotation Slots (8th Prestige): the slot only fires while this holds. */
+export type SlotCondition =
+  | { readonly kind: "enemyHas"; readonly ailment: AilmentType }
+  | { readonly kind: "enemyBelow"; readonly fraction: number }
+  | { readonly kind: "lifeBelow"; readonly fraction: number };
+
 /** One Rotation Slot of the Battle Plan. */
 export interface RotationSlot {
   readonly skill: SkillDefinition;
@@ -237,7 +272,43 @@ export interface RotationSlot {
   readonly threshold?: number;
   /** Skill Level (node ranks + item bonuses). Default 1. */
   readonly level?: number;
+  readonly modifiers?: readonly SlotModifier[];
+  /** The slot is passed over while the condition does not hold. */
+  readonly condition?: SlotCondition;
 }
+
+/**
+ * When a Reaction Slot fires (skills-v1.md section 6). Thresholds fire once on crossing and
+ * re-arm once the value is back above; events fire whenever they happen.
+ */
+export type ReactionCondition =
+  | { readonly kind: "fightStart" }
+  | { readonly kind: "lifeBelow"; readonly fraction: number }
+  | { readonly kind: "enemyWindup" }
+  | { readonly kind: "enemyBelow"; readonly fraction: number }
+  | { readonly kind: "ailmented" };
+
+/**
+ * A Reaction Slot: outside the Rotation, fires when its condition is met. It pays Heat from the
+ * same bar and goes before the next Rotation skill; the Rotation pointer stays where it is.
+ */
+export interface ReactionSlot {
+  readonly skill: SkillDefinition;
+  readonly level?: number;
+  readonly condition: ReactionCondition;
+  /** Seconds before the slot can fire again. */
+  readonly cooldown: number;
+  readonly modifiers?: readonly SlotModifier[];
+}
+
+/** Battle Plan Capstones (skills-v1.md section 6): one of six at the 10th Prestige. */
+export type Capstone =
+  | { readonly kind: "echo"; readonly slot: number }
+  | { readonly kind: "crescendo" }
+  | { readonly kind: "vigil" }
+  | { readonly kind: "ignition" }
+  | { readonly kind: "lingeringFlame" }
+  | { readonly kind: "emberWard" };
 
 /**
  * A telegraphed Heavy Attack (docs/design/gegner-bosse-v1.md section 5): every `interval`
@@ -248,6 +319,8 @@ export interface TelegraphSpec {
   readonly skill: SkillDefinition;
   readonly interval: number;
   readonly windup: number;
+  /** Boss phases: only winds up while own life is below this fraction. */
+  readonly belowLife?: number;
 }
 
 /** Rule changes, e.g. from Keystones. They change rules, not just numbers. */
@@ -294,4 +367,7 @@ export interface CombatantSetup {
   /** Telegraphed Heavy Attacks (bosses). */
   readonly telegraphs?: readonly TelegraphSpec[];
   readonly rules?: CombatRules;
+  /** Reaction Slots of the Battle Plan. */
+  readonly reactions?: readonly ReactionSlot[];
+  readonly capstone?: Capstone;
 }

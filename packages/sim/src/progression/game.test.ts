@@ -390,6 +390,7 @@ describe("game loop", () => {
       prestige: 1,
       seals: 1,
       rotationSlots: 2,
+      planUpgrade: "Rotation Slot 2",
       harvesterEmber: 1,
       dust: PROGRESSION.prestigeDustPerLevel,
       levelCap: PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
@@ -466,7 +467,7 @@ describe("the road through the acts", () => {
   it("the level band rises evenly over all stages of the run", () => {
     expect(levelBand(0)).toEqual({ start: 1, end: 20 });
     expect(levelBand(1)).toEqual({ start: 5, end: 40 });
-    expect(levelBand(3)).toEqual({ start: 45, end: 80 });
+    expect(levelBand(3)).toEqual({ start: 35, end: 80 });
     // Run 1: one act of 3 stages, 1 → 20.
     expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 11, 20]);
     // Run 2: two acts, 6 stages from 5 to 40; the second act carries on where the first ends.

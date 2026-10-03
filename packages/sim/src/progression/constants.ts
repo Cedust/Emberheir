@@ -133,23 +133,20 @@ export const PROGRESSION = {
   flaskMaxCharges: 5,
   flaskHeal: 0.35,
 
-  /** Rotation Slots before the first prestige. */
-  startRotationSlots: 1,
-
   /**
-   * Prestige light (poc-umsetzungsplan-v1.md, M5): every Prestige gives one more Seal (Save
-   * Token), Rotation Slot 2 (the first Battle Plan upgrade), one Harvester's Ember and a fixed
-   * amount of Salvage Dust that replaces the burned stash (town-crafting-v1.md).
+   * Every Prestige gives one more Seal (Save Token), one Battle Plan upgrade (battle-plan.ts),
+   * a Prestige branch, one Harvester's Ember and a fixed amount of Salvage Dust that replaces the
+   * burned stash (town-crafting-v1.md).
    */
   prestigeDustPerLevel: 150,
   prestigeHarvesterEmber: 1,
-  /** Rotation Slots after the first Prestige. More Battle Plan upgrades come after the PoC. */
-  prestigeRotationSlots: 2,
   /**
    * A run's level band starts this far below the previous Level Cap (prestige-acts-v1.md 4): a
    * hero who keeps level and Seals but loses the rest of the gear regears on the first stages.
    */
   levelBandStartBelowCap: 15,
+  /** ...and 5 more per Prestige after the first, because the hero regears from further behind. */
+  levelBandStartBelowCapPerPrestige: 5,
   /**
    * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
    * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
@@ -160,6 +157,9 @@ export const PROGRESSION = {
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,
   eliteAscensionShardChance: 0.1,
+
+  /** Switching to another Battle Plan Capstone at Kaelen. */
+  capstoneChangeGold: 200,
 
   /** Skill Tree respec at Kaelen. */
   respecGold: 50,

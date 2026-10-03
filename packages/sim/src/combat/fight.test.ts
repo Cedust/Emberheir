@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
 import { type CombatEvent, Fight, runFight } from "./fight";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
-import type { CombatantSetup, SkillDefinition, WeaponDefinition } from "./types";
+import type { CombatantSetup, SkillDefinition, SlotModifier, WeaponDefinition } from "./types";
 
 /** Hero that never crits, so damage numbers are exact. */
 const NO_CRIT = { critChance: -1 };
@@ -629,5 +629,303 @@ describe("Affliction effects", () => {
     fight.advance(3.1);
     // Base 10/s, grown by 4 ticks: 20 for the first tick.
     expect(ofType(fight.events, "dot")[0]).toMatchObject({ ailment: "corruption", damage: 20 });
+  });
+});
+
+describe("M10 building blocks", () => {
+  it("Stun stops the target's attacks for a moment (Mace Smash)", () => {
+    const mace: WeaponDefinition = {
+      ...TEST_WEAPON,
+      triggers: [
+        {
+          id: "smash",
+          name: "Smash",
+          condition: { kind: "everyNthAttack", n: 1 },
+          effect: { kind: "stun", seconds: 0.5 },
+        },
+      ],
+    };
+    const enemy = setup({ name: "Enemy", baseLife: 100_000 });
+    const plain = runFight(setup({ baseLife: 100_000 }), enemy, 1);
+    const stunning = new Fight(setup({ weapon: mace, baseLife: 100_000 }), enemy, 1);
+    stunning.advance(10);
+    const enemyAttacks = (events: readonly CombatEvent[]) =>
+      ofType(events, "hit").filter((e) => e.side === "enemy" && e.t <= 10).length;
+    expect(ofType(stunning.events, "stun").length).toBeGreaterThan(0);
+    expect(enemyAttacks(stunning.events)).toBeLessThan(enemyAttacks(plain.events));
+  });
+
+  it("skills can give Barrier (scaled by Skill Level) and stun (Iron Bastion, Frost Nova)", () => {
+    const bastion: SkillDefinition = {
+      id: "bastion",
+      name: "Bastion",
+      type: "buff",
+      heatCost: 20,
+      tags: [],
+      description: "",
+      hits: [],
+      effects: [
+        { kind: "barrier", fraction: 0.2 },
+        { kind: "stun", seconds: 1 },
+      ],
+    };
+    const barrier = (level: number) => {
+      const fight = new Fight(
+        setup({ bonuses: { startingHeat: 100 }, rotation: [{ skill: bastion, level }] }),
+        dummy(),
+        1,
+      );
+      fight.advance(1.01);
+      expect(ofType(fight.events, "stun")[0]?.seconds).toBe(1);
+      return ofType(fight.events, "barrier")[0]?.amount ?? 0;
+    };
+    expect(barrier(1)).toBeGreaterThan(0);
+    expect(barrier(3)).toBeGreaterThan(barrier(1));
+  });
+
+  it("Every Nth Hit Taken reflects part of the hit back (Storm Herald)", () => {
+    const fight = new Fight(
+      setup({ weapon: { ...TEST_WEAPON, damageType: "physical" }, bonuses: NO_CRIT }),
+      dummy({
+        triggers: [
+          {
+            id: "reflect",
+            name: "Static Mirror",
+            condition: { kind: "everyNthHitTaken", n: 5 },
+            effect: { kind: "reflect", fraction: 1, cap: 1, damageType: "lightning" },
+          },
+        ],
+      }),
+      1,
+    );
+    fight.advance(10.05);
+    const mirrored = ofType(fight.events, "hit").filter((e) => e.source === "Static Mirror");
+    const heroHits = ofType(fight.events, "hit").filter((e) => e.side === "hero").length;
+    expect(mirrored.length).toBe(Math.floor(heroHits / 5));
+    expect(mirrored[0]?.damageType).toBe("lightning");
+  });
+
+  it("reflected damage is capped at a share of the attacker's max life", () => {
+    const fight = new Fight(
+      setup({ baseLife: 1000, weapon: { ...TEST_WEAPON, damage: { min: 500, max: 500 } } }),
+      dummy({
+        triggers: [
+          {
+            id: "reflect",
+            name: "Static Mirror",
+            condition: { kind: "everyNthHitTaken", n: 1 },
+            effect: { kind: "reflect", fraction: 1, cap: 0.05, damageType: "lightning" },
+          },
+        ],
+      }),
+      1,
+    );
+    fight.advance(1.05);
+    const mirrored = ofType(fight.events, "hit").find((e) => e.source === "Static Mirror");
+    expect(mirrored?.damage).toBe(Math.round(fight.snapshot().hero.maxLife * 0.05));
+  });
+
+  it("boss phases: triggers and telegraphs with belowLife wait for their phase", () => {
+    const enemy = dummy({
+      baseLife: 1000,
+      triggers: [
+        {
+          id: "phase-aura",
+          name: "Phase Aura",
+          condition: { kind: "everySeconds", seconds: 1 },
+          belowLife: 0.5,
+          effect: { kind: "heat", amount: 1 },
+        },
+      ],
+      telegraphs: [{ skill: SKILL_A, interval: 1, windup: 0.5, belowLife: 0.5 }],
+    });
+    const early = new Fight(dummy(), enemy, 1);
+    early.advance(5);
+    expect(ofType(early.events, "trigger")).toHaveLength(0);
+    expect(ofType(early.events, "telegraph")).toHaveLength(0);
+    const late = new Fight(dummy(), { ...enemy, lifeFraction: 0.4 }, 1);
+    late.advance(5);
+    expect(ofType(late.events, "trigger").length).toBeGreaterThan(0);
+    expect(ofType(late.events, "telegraph").length).toBeGreaterThan(0);
+  });
+});
+
+describe("Battle Plan", () => {
+  const GUARD: SkillDefinition = {
+    ...TEST_SKILL,
+    id: "guard",
+    name: "Guard",
+    type: "buff",
+    heatCost: 10,
+    hits: [],
+    effects: [{ kind: "buff", stat: "armor", amount: 50, duration: 3 }],
+  };
+  const skills = (events: readonly CombatEvent[], name?: string) =>
+    ofType(events, "skill").filter((e) => e.side === "hero" && (!name || e.skill === name));
+
+  it("a Reaction Slot fires once when life drops below its threshold", () => {
+    const fight = new Fight(
+      setup({
+        baseLife: 100,
+        reactions: [{ skill: GUARD, condition: { kind: "lifeBelow", fraction: 0.5 }, cooldown: 5 }],
+      }),
+      setup({ name: "Enemy", baseLife: 100_000, bonuses: NO_CRIT }),
+      1,
+    );
+    fight.runToEnd();
+    const guards = skills(fight.events, "Guard");
+    expect(guards).toHaveLength(1);
+    expect(guards[0]?.via).toBe("reaction");
+  });
+
+  it("a reaction to the enemy's wind-up goes before the Rotation, whose pointer stays", () => {
+    const fight = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        rotation: [{ skill: SKILL_A }, { skill: SKILL_B }],
+        reactions: [{ skill: GUARD, condition: { kind: "enemyWindup" }, cooldown: 10 }],
+      }),
+      dummy({ telegraphs: [{ skill: SKILL_A, interval: 0.5, windup: 3 }] }),
+      1,
+    );
+    fight.advance(3);
+    const names = skills(fight.events).map((e) => e.skill);
+    expect(names.slice(0, 3)).toEqual(["Guard", "Skill A", "Skill B"]);
+  });
+
+  it("Thrifty lowers the cost, Empowered adds a Skill Level, Overcharge spends extra Heat", () => {
+    const base = { bonuses: { startingHeat: 100, ...NO_CRIT } };
+    const run = (modifiers?: readonly SlotModifier[]) => {
+      const fight = new Fight(
+        setup({ ...base, rotation: [{ skill: SKILL_A, ...(modifiers ? { modifiers } : {}) }] }),
+        dummy(),
+        1,
+      );
+      fight.advance(1.01);
+      return { skill: skills(fight.events)[0], hit: ofType(fight.events, "hit")[0] };
+    };
+    const plain = run(undefined);
+    expect(run(["thrifty"]).skill?.heatCost).toBe(17);
+    expect(run(["empowered"]).hit?.damage).toBeGreaterThan(plain.hit?.damage ?? 0);
+    const over = run(["overcharge"]);
+    expect(over.skill?.heatCost).toBe(100);
+    expect(over.hit?.damage).toBe(Math.round((plain.hit?.damage ?? 0) * 1.5));
+  });
+
+  it("Reverb sometimes repeats the skill for free", () => {
+    const fight = new Fight(
+      setup({ rotation: [{ skill: SKILL_A, modifiers: ["reverb"] }] }),
+      dummy(),
+      3,
+    );
+    fight.advance(60);
+    const reverbs = skills(fight.events).filter((e) => e.via === "reverb");
+    const casts = skills(fight.events).filter((e) => !e.via);
+    expect(reverbs.length).toBeGreaterThan(0);
+    expect(reverbs.length).toBeLessThan(casts.length * 0.4);
+    expect(reverbs.every((e) => e.heatCost === 0)).toBe(true);
+  });
+
+  it("a Rotation Slot with a condition is skipped while it does not hold", () => {
+    const fight = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        rotation: [
+          { skill: SKILL_B, condition: { kind: "enemyHas", ailment: "burn" } },
+          { skill: SKILL_A },
+        ],
+      }),
+      dummy(),
+      1,
+    );
+    fight.advance(5);
+    expect(skills(fight.events, "Skill B")).toHaveLength(0);
+    expect(skills(fight.events, "Skill A").length).toBeGreaterThan(0);
+  });
+
+  it("Capstones: Ignition, Echo, Vigil, Crescendo, Lingering Flame and Ember Ward", () => {
+    const ignition = new Fight(
+      setup({ rotation: [{ skill: SKILL_A }], capstone: { kind: "ignition" } }),
+      dummy(),
+      1,
+    );
+    ignition.advance(1.01);
+    expect(ignition.snapshot().hero.heat).toBeGreaterThan(90);
+    expect(skills(ignition.events)[0]?.heatCost).toBe(0);
+
+    const echo = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        rotation: [{ skill: SKILL_A }],
+        capstone: { kind: "echo", slot: 0 },
+      }),
+      dummy(),
+      1,
+    );
+    echo.advance(1.01);
+    expect(skills(echo.events).map((e) => e.via)).toEqual([undefined, "echo"]);
+
+    const vigil = new Fight(
+      setup({
+        reactions: [{ skill: GUARD, condition: { kind: "fightStart" }, cooldown: 5 }],
+        capstone: { kind: "vigil" },
+      }),
+      dummy(),
+      1,
+    );
+    vigil.advance(1.01);
+    expect(skills(vigil.events, "Guard")[0]?.heatCost).toBe(0);
+    expect(vigil.snapshot().hero.reactions[0]?.cooldownLeft).toBeGreaterThan(5);
+
+    const lingering = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        rotation: [
+          {
+            skill: {
+              ...SKILL_A,
+              hits: [
+                {
+                  kind: "weapon",
+                  multiplier: 1,
+                  ailmentChances: [{ ailment: "shock", chance: 1 }],
+                },
+              ],
+            },
+          },
+        ],
+        capstone: { kind: "lingeringFlame" },
+      }),
+      dummy(),
+      1,
+    );
+    lingering.advance(1.01);
+    expect(lingering.snapshot().enemy.ailments[0]?.remaining).toBeGreaterThan(
+      COMBAT.shockDurationSeconds,
+    );
+
+    const ward = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        rotation: [{ skill: SKILL_B }],
+        capstone: { kind: "emberWard" },
+      }),
+      dummy(),
+      1,
+    );
+    ward.advance(1.01);
+    expect(ward.snapshot().hero.barrier).toBe(Math.round(ward.snapshot().hero.maxLife * 0.03));
+
+    const plain = runFight(setup({ rotation: [{ skill: SKILL_A }], bonuses: NO_CRIT }), dummy(), 1);
+    const crescendo = runFight(
+      setup({ rotation: [{ skill: SKILL_A }], bonuses: NO_CRIT, capstone: { kind: "crescendo" } }),
+      dummy(),
+      1,
+    );
+    const last = (r: typeof plain) =>
+      ofType(r.events, "hit")
+        .filter((e) => e.side === "hero")
+        .at(-1)?.damage ?? 0;
+    expect(last(crescendo)).toBeGreaterThan(last(plain));
   });
 });

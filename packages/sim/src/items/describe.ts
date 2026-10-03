@@ -139,6 +139,8 @@ export function describeCondition(condition: TriggerCondition): string {
       return "On Block";
     case "lifeBelow":
       return `Life below ${formatPercent(condition.threshold)} %`;
+    case "everyNthHitTaken":
+      return `Every ${ordinal(condition.n)} Hit Taken`;
   }
 }
 
@@ -167,6 +169,10 @@ export function describeEffect(effect: TriggerEffect): string {
     }
     case "extraAttack":
       return "strike back with a Default Attack";
+    case "stun":
+      return `stun the enemy for ${effect.seconds} s`;
+    case "reflect":
+      return `reflect ${formatPercent(effect.fraction)} % of the hit as ${DAMAGE_TYPE_NAMES[effect.damageType]} Damage`;
   }
 }
 
