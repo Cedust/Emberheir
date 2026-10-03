@@ -20,6 +20,7 @@ import {
   pickWeighted,
   rollItem,
   rollRarity,
+  bossTrophies,
   rollUnique,
   uniquesFor,
 } from "../items/generate";
@@ -203,9 +204,16 @@ export interface Rewards {
   /** Runes that dropped (straight into the pouch). */
   readonly runes: readonly string[];
   readonly levelsGained: number;
-  /** Item pick: 1 of these. */
+  /** Item pick: `picks` (default 1) of these. */
   readonly items: readonly Item[];
+  /** Boss Hoard: how many cards the hero takes (missing = 1). */
+  readonly picks?: number;
+  /** Cards already taken while more picks are left. */
+  readonly taken?: readonly { readonly index: number; readonly kind: "equip" | "take" }[];
+  /** Set once the item pick is over. */
   readonly itemPick: ItemPick | null;
+  /** Uniques seen for the first time (they go up on the Trophy Wall). */
+  readonly newTrophies?: readonly string[];
   /** Dust from auto-salvaging the items that were not picked. */
   readonly salvagedDust: number;
   /** Spoils pick, empty if this fight has none. */
@@ -290,6 +298,8 @@ export interface LegacyState {
   readonly quarry: QuarryMark | null;
   /** Prestige branches of the Skill Tree, one chosen per Prestige. Permanent. */
   readonly branches: readonly string[];
+  /** Trophy Wall: Uniques ever found. Permanent like the Runeword Codex. */
+  readonly trophies: readonly string[];
 }
 
 /** Marisha restocks whenever the hero comes back from a fight (`key` = fights so far). */
@@ -431,6 +441,7 @@ export function newGame(
       codex: EMPTY_CODEX,
       quarry: null,
       branches: [],
+      trophies: [],
     },
     pendingPrestige: null,
   };
@@ -1089,6 +1100,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
       : undefined;
   const items = rollItemChoices(
     data,
+    act.id,
     encounter,
     rank,
     state.progress.deathsInAct,
@@ -1102,6 +1114,8 @@ function resolveFight(state: GameState, data: GameData): GameState {
       ? { ...quarry, misses: quarryFound(items, data.items, quarry) ? 0 : quarry.misses + 1 }
       : quarry;
   const runes = rollRuneDrops(data, rank, act.number + state.legacy.prestige, rng);
+  const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
+  const newTrophies = [...new Set(found)].filter((id) => !state.legacy.trophies.includes(id));
   const spoils: SpoilsCard[] =
     rank !== "normal" || act.spoilsStages.includes(run.stage)
       ? [
@@ -1146,6 +1160,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
       ...state.legacy,
       runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
       quarry: nextQuarry,
+      trophies: [...state.legacy.trophies, ...newTrophies],
     },
     run: {
       ...run,
@@ -1162,6 +1177,8 @@ function resolveFight(state: GameState, data: GameData): GameState {
         levelsGained: leveled.levelsGained,
         report: fightReport(result.events),
         items,
+        ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
+        ...(newTrophies.length ? { newTrophies } : {}),
         itemPick: null,
         salvagedDust: 0,
         spoils,
@@ -1212,6 +1229,7 @@ export function itemPickWeights(
 
 function rollItemChoices(
   data: GameData,
+  actId: string,
   encounter: Encounter,
   rank: EnemyRank,
   deathsInAct: number,
@@ -1220,6 +1238,7 @@ function rollItemChoices(
   affixFactor?: (affix: AffixDefinition) => number,
   forceTrigger?: readonly string[],
 ): Item[] {
+  const count = rank === "boss" ? PROGRESSION.bossHoardCards : PROGRESSION.itemChoices;
   const weights = itemPickWeights(rank, deathsInAct, actTier);
   const bySlot = new Map<ItemSlot, string[]>();
   for (const baseId of data.lootBases) {
@@ -1229,8 +1248,24 @@ function rollItemChoices(
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
   // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
-  const legendaryCard = rng.chance(PROGRESSION.legendaryChance[rank]) ? rng.int(0, 2) : -1;
-  for (let i = 0; i < PROGRESSION.itemChoices; i++) {
+  const legendaryCard = rng.chance(PROGRESSION.legendaryChance[rank]) ? rng.int(0, count - 1) : -1;
+  // A boss may drop one of its own trophies (Teil 3 "Boss-Trophäen").
+  const trophies =
+    rank === "boss" && encounter.boss
+      ? bossTrophies(data.items, actId).filter((u) => u.minItemLevel <= encounter.level)
+      : [];
+  const trophy =
+    trophies.length && rng.chance(PROGRESSION.bossTrophyChance)
+      ? trophies[rng.int(0, trophies.length - 1)]
+      : undefined;
+  const trophyCard = trophy ? rng.int(0, count - 1) : -1;
+  for (let i = 0; i < count; i++) {
+    if (trophy && i === trophyCard) {
+      items.push(rollUnique(data.items, trophy.id, encounter.level, rng));
+      const slot = getBase(data.items, trophy.baseId).slot;
+      if (slots.includes(slot)) slots.splice(slots.indexOf(slot), 1);
+      continue;
+    }
     // Different slots while possible, so the three cards differ.
     const pool = slots.length ? slots : [...bySlot.keys()];
     const slot = pickWeighted(pool, (s) => PROGRESSION.lootSlotWeights[s], rng);
@@ -1313,12 +1348,19 @@ export function rollRuneDrops(
   rng: Rng,
 ): string[] {
   const max = maxRuneRank(actTier);
-  const pool = [...data.items.runes.values()].filter((r) => r.rank <= max);
+  // The top ranks are the Ber and Jah of Emberheir: only Elites and Bosses, and rarely.
+  const topRank = Math.max(...[...data.items.runes.values()].map((r) => r.rank));
+  const high = (r: { rank: number }) => r.rank > topRank - PROGRESSION.highRuneRanks;
+  const pool = [...data.items.runes.values()].filter(
+    (r) => r.rank <= max && (rank !== "normal" || !high(r)),
+  );
   const drops: string[] = [];
   const count = PROGRESSION.runeDrops[rank];
+  const weight = (r: { rank: number }) =>
+    PROGRESSION.runeRankFalloff ** (r.rank - 1) * (high(r) ? PROGRESSION.highRuneFactor : 1);
   for (let i = 0; i < Math.ceil(count); i++) {
     if (!rng.chance(Math.min(1, count - i))) continue;
-    const rune = pickWeighted(pool, (r) => PROGRESSION.runeRankFalloff ** (r.rank - 1), rng);
+    const rune = pickWeighted(pool, weight, rng);
     if (rune) drops.push(rune.id);
   }
   return drops;
@@ -1367,6 +1409,8 @@ function pickItem(
 ): GameState {
   const { run, rewards } = requireRewards(state);
   if (rewards.itemPick) return fail("Item already picked");
+  const taken = rewards.taken ?? [];
+  if (taken.some((t) => t.index === index)) return fail("Item already taken");
   const item = rewards.items[index] ?? fail("No such item");
   let next: GameState;
   if (mode === "equip") {
@@ -1377,31 +1421,37 @@ function pickItem(
     const inventory = addToGrid(state.inventory, item, data.items) ?? fail("No room");
     next = { ...state, inventory };
   }
-  const salvaged = rewards.items
-    .filter((_, i) => i !== index)
-    .reduce((sum, it) => sum + salvageValue(it), 0);
-  return {
-    ...next,
-    wallet: { ...next.wallet, dust: next.wallet.dust + salvaged },
-    run: {
-      ...run,
-      rewards: { ...rewards, itemPick: { kind: mode, index }, salvagedDust: salvaged },
-    },
-  };
+  const nowTaken = [...taken, { index, kind: mode }];
+  // Boss Hoard: more picks left, the rest waits.
+  if (nowTaken.length < (rewards.picks ?? 1)) {
+    return { ...next, run: { ...run, rewards: { ...rewards, taken: nowTaken } } };
+  }
+  return finishItemPick(next, run, { ...rewards, taken: nowTaken }, { kind: mode, index });
 }
 
-function salvageAll(state: GameState): GameState {
-  const { run, rewards } = requireRewards(state);
-  if (rewards.itemPick) return fail("Item already picked");
-  const salvaged = rewards.items.reduce((sum, it) => sum + salvageValue(it), 0);
+/** Ends the item pick: every card not taken is salvaged. */
+function finishItemPick(
+  state: GameState,
+  run: RunState,
+  rewards: Rewards,
+  pick: ItemPick,
+): GameState {
+  const taken = new Set((rewards.taken ?? []).map((t) => t.index));
+  const salvaged = rewards.items
+    .filter((_, i) => !taken.has(i))
+    .reduce((sum, it) => sum + salvageValue(it), 0);
   return {
     ...state,
     wallet: { ...state.wallet, dust: state.wallet.dust + salvaged },
-    run: {
-      ...run,
-      rewards: { ...rewards, itemPick: { kind: "salvageAll" }, salvagedDust: salvaged },
-    },
+    run: { ...run, rewards: { ...rewards, itemPick: pick, salvagedDust: salvaged } },
   };
+}
+
+/** Salvages every card that was not taken (all of them before the first pick). */
+function salvageAll(state: GameState): GameState {
+  const { run, rewards } = requireRewards(state);
+  if (rewards.itemPick) return fail("Item already picked");
+  return finishItemPick(state, run, rewards, { kind: "salvageAll" });
 }
 
 function pickSpoils(state: GameState, index: number): GameState {
@@ -1943,6 +1993,7 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
       codex: EMPTY_CODEX,
       quarry: null,
       branches: [],
+      trophies: [],
     },
     pendingPrestige: null,
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
@@ -1985,12 +2036,21 @@ function migrateV5(state: Partial<GameState>): Partial<GameState> {
   };
 }
 
-/** v6 → v7 (Spielspaß plan): the faster Battle Plan ladder grants its slots to older heroes. */
+/**
+ * v6 → v7 (Spielspaß plan): the faster Battle Plan ladder grants its slots to older heroes; the
+ * Trophy Wall starts with the Uniques the hero carries.
+ */
 function migrateV6(state: Partial<GameState>): Partial<GameState> {
   const prestige = state.legacy?.prestige ?? 0;
+  const carried = [
+    ...Object.values(state.hero?.equipment ?? {}),
+    ...(state.inventory ?? []).map((p) => p.item),
+    ...(state.stash ?? []).map((p) => p.item),
+  ].flatMap((item) => (item?.uniqueId ? [item.uniqueId] : []));
   return {
     ...state,
     version: 7,
+    ...(state.legacy ? { legacy: { ...state.legacy, trophies: [...new Set(carried)] } } : {}),
     ...(state.progress
       ? {
           progress: {

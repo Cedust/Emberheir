@@ -465,7 +465,14 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
     const paid = pay(state, craftCost(request, undefined, data, state));
     const [rng, next] = nextRng(paid);
     const item = gambleItem(next, data, request.slot, rng);
-    return { ...next, inventory: addToGrid(next.inventory, item, data.items) ?? fail("No room") };
+    const trophy = item.uniqueId && !next.legacy.trophies.includes(item.uniqueId);
+    return {
+      ...next,
+      inventory: addToGrid(next.inventory, item, data.items) ?? fail("No room"),
+      ...(trophy && item.uniqueId
+        ? { legacy: { ...next.legacy, trophies: [...next.legacy.trophies, item.uniqueId] } }
+        : {}),
+    };
   }
 
   const location = findCraftItem(state, request.itemId) ?? fail("Item not found");

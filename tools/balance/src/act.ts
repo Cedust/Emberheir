@@ -68,26 +68,30 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
   let s = state;
   const rewards = s.run?.rewards;
   if (!rewards) return s;
-  let best = -1;
-  let bestGain = 0;
-  const weaponId = s.hero.equipment.mainHand?.baseId;
-  rewards.items.forEach((item, i) => {
-    if (equipBlockReason(s, data, item, "pick")) return;
-    // The autopilot sticks to its weapon type, like a player who planned the build.
-    const base = data.items.bases.get(item.baseId);
-    if (base?.weapon && item.baseId !== weaponId) return;
-    const slot = targetSlot(item, data, s.hero.equipment);
-    const current = slot ? s.hero.equipment[slot] : undefined;
-    const gain = score(item) - (current ? score(current) : -1);
-    if (gain > bestGain) {
-      best = i;
-      bestGain = gain;
-    }
-  });
-  s =
-    best >= 0
-      ? applyAction(s, data, { type: "pickItem", index: best, mode: "equip" })
-      : applyAction(s, data, { type: "salvageAll" });
+  // Boss Hoard: up to `picks` cards, the best upgrade each time.
+  while (s.run?.rewards && !s.run.rewards.itemPick) {
+    const taken = new Set((s.run.rewards.taken ?? []).map((t) => t.index));
+    let best = -1;
+    let bestGain = 0;
+    const weaponId = s.hero.equipment.mainHand?.baseId;
+    rewards.items.forEach((item, i) => {
+      if (taken.has(i) || equipBlockReason(s, data, item, "pick")) return;
+      // The autopilot sticks to its weapon type, like a player who planned the build.
+      const base = data.items.bases.get(item.baseId);
+      if (base?.weapon && item.baseId !== weaponId) return;
+      const slot = targetSlot(item, data, s.hero.equipment);
+      const current = slot ? s.hero.equipment[slot] : undefined;
+      const gain = score(item) - (current ? score(current) : -1);
+      if (gain > bestGain) {
+        best = i;
+        bestGain = gain;
+      }
+    });
+    s =
+      best >= 0
+        ? applyAction(s, data, { type: "pickItem", index: best, mode: "equip" })
+        : applyAction(s, data, { type: "salvageAll" });
+  }
   // Old items are never needed again by the autopilot.
   for (const placed of s.inventory) {
     s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });

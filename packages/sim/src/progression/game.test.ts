@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { bossTrophies, uniquesFor } from "../items/generate";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type GameAction,
@@ -321,7 +322,12 @@ describe("game loop", () => {
     for (let i = 0; i < 2; i++) s = clearStage(s);
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     const loot = s.run?.rewards?.items ?? fail();
-    s = act(s, { type: "pickItem", index: 0, mode: "take" }, { type: "pickSpoils", index: 0 });
+    // The Boss Hoard: 2 of 6 cards.
+    expect(loot).toHaveLength(PROGRESSION.bossHoardCards);
+    s = act(s, { type: "pickItem", index: 0, mode: "take" });
+    expect(s.run?.rewards?.itemPick).toBeNull();
+    expect(() => act(s, { type: "pickItem", index: 0, mode: "take" })).toThrow(/taken/);
+    s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 0 });
     s = act(s, { type: "continue" });
     expect(s.run).toBeNull();
     expect(s.notice).toBeNull();
@@ -523,6 +529,46 @@ describe("the road through the acts", () => {
   });
 });
 
+describe("Boss trophies and the Trophy Wall", () => {
+  it("a boss sometimes drops its own trophy, which goes up on the Trophy Wall once", () => {
+    let hits = 0;
+    let bosses = 0;
+    for (let seed = 1; seed <= 80; seed++) {
+      let s = act(start(seed), { type: "setOut", actId: "test-act" });
+      for (let i = 0; i < 2; i++) s = clearStage(s);
+      s = act(s, { type: "startStage" }, { type: "resolveFight" });
+      const rewards = s.run?.rewards;
+      if (!rewards) continue;
+      bosses++;
+      if (!rewards.items.some((it) => it.uniqueId === "boss-trophy")) continue;
+      hits++;
+      expect(rewards.newTrophies).toContain("boss-trophy");
+      expect(s.legacy.trophies).toContain("boss-trophy");
+    }
+    expect(bosses).toBeGreaterThan(40);
+    // About 10 % of boss kills.
+    expect(hits).toBeGreaterThan(0);
+    expect(hits).toBeLessThan(bosses * 0.3);
+  });
+
+  it("normal Unique drops and gambles never give a boss trophy", () => {
+    expect(uniquesFor(data.items, 50).map((u) => u.id)).not.toContain("boss-trophy");
+    expect(bossTrophies(data.items, "test-act").map((u) => u.id)).toEqual(["boss-trophy"]);
+  });
+
+  it("v6 save games start the Trophy Wall with the Uniques the hero carries", () => {
+    const s = start();
+    const ring = { ...(s.hero.equipment.mainHand ?? fail()), id: "u", uniqueId: "band" };
+    const v6 = {
+      ...s,
+      version: 6,
+      hero: { ...s.hero, equipment: { ...s.hero.equipment, ring1: ring } },
+      legacy: { ...s.legacy, trophies: undefined },
+    };
+    expect(deserializeGame(JSON.stringify(v6)).legacy.trophies).toEqual(["band"]);
+  });
+});
+
 describe("Runes in the run", () => {
   it("Runes drop by rank: bosses always, lower ranks far more often", () => {
     const counts: Record<string, number> = {};
@@ -537,6 +583,14 @@ describe("Runes in the run", () => {
     // Act Tier 1 allows up to rank 3; the pool is capped there.
     expect(maxRuneRank(1)).toBe(3);
     expect(rollRuneDrops(data, "normal", 1, new Rng(1)).length).toBeLessThanOrEqual(1);
+  });
+
+  it("the top Rune ranks never drop from normal enemies", () => {
+    for (let seed = 1; seed <= 200; seed++) {
+      expect(rollRuneDrops(data, "normal", 9, new Rng(seed)).every((id) => id === "ash")).toBe(
+        true,
+      );
+    }
   });
 
   it("dropped Runes go into the pouch and are remembered as found", () => {

@@ -6,6 +6,7 @@ import {
   Rng,
   affixPool,
   basesForSlot,
+  bossTrophies,
   createEnemySetup,
   describeItem,
   powersForSlot,
@@ -13,8 +14,9 @@ import {
   runFight,
   type Rarity,
 } from "@emberheir/sim";
+import { ACTS } from "./acts";
 import { ACT1_ENEMIES } from "./enemies";
-import { RUNES, RUNEWORDS, UNIQUES } from "./legendary";
+import { BOSS_TROPHIES, RUNES, RUNEWORDS, UNIQUES } from "./legendary";
 import { STARTING_ATTRIBUTES, createHeroSetup } from "./heroes";
 import {
   AFFIXES,
@@ -99,7 +101,26 @@ describe("item content", () => {
     for (const slot of new Set(ITEM_BASES.map((b) => b.slot))) {
       expect(powersForSlot(ITEM_CATALOG, slot).length, slot).toBeGreaterThan(0);
     }
-    expect(ITEM_CATALOG.uniques.size).toBe(UNIQUES.length);
+    expect(ITEM_CATALOG.uniques.size).toBe(UNIQUES.length + BOSS_TROPHIES.length);
+  });
+
+  it("every boss trophy has a real base, affixes, a power for its slot and a boss", () => {
+    const acts = new Set(ACTS.map((a) => a.id));
+    for (const u of [...ITEM_CATALOG.uniques.values()]) {
+      const base = ITEM_CATALOG.bases.get(u.baseId);
+      expect(base, u.id).toBeDefined();
+      for (const a of u.affixes) expect(ITEM_CATALOG.affixes.has(a.affixId), a.affixId).toBe(true);
+      const power = u.powerId ? ITEM_CATALOG.powers.get(u.powerId) : undefined;
+      if (u.powerId) expect(power?.slots, u.id).toContain(base?.slot);
+      if (power?.trigger) expect(ITEM_CATALOG.affixes.has(power.trigger.affixId)).toBe(true);
+      if (u.bossOf) expect(acts.has(u.bossOf), u.id).toBe(true);
+    }
+    for (const act of ACTS) {
+      expect(bossTrophies(ITEM_CATALOG, act.id).length, act.id).toBeGreaterThanOrEqual(2);
+    }
+    for (const slot of new Set(ITEM_BASES.map((b) => b.slot))) {
+      expect(powersForSlot(ITEM_CATALOG, slot).every((p) => !p.uniqueOnly)).toBe(true);
+    }
   });
 
   it("rolls a full 10-slot gear set with a fitting off hand", () => {

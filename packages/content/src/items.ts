@@ -20,7 +20,14 @@ import {
   rollItem,
   rollRarity,
 } from "@emberheir/sim";
-import { LEGENDARY_POWERS, POWER_TRIGGERS, RUNES, RUNEWORDS, UNIQUES } from "./legendary";
+import {
+  BOSS_TROPHIES,
+  LEGENDARY_POWERS,
+  POWER_TRIGGERS,
+  RUNES,
+  RUNEWORDS,
+  UNIQUES,
+} from "./legendary";
 import { AXE, BOW, CROSSBOW, DAGGER, FIRE_WAND, MACE, STAFF, SWORD } from "./weapons";
 
 /**
@@ -897,7 +904,7 @@ export const ITEM_CATALOG = createItemCatalog({
   runes: RUNES,
   runewords: RUNEWORDS,
   powers: LEGENDARY_POWERS,
-  uniques: UNIQUES,
+  uniques: [...UNIQUES, ...BOSS_TROPHIES],
   conditions: TRIGGER_CONDITIONS,
   effects: TRIGGER_EFFECTS,
 });

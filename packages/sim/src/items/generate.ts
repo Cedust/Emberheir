@@ -234,7 +234,7 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
 
 /** Legendary Powers that can roll on a slot. */
 export function powersForSlot(catalog: ItemCatalog, slot: ItemSlot): LegendaryPowerDefinition[] {
-  return [...catalog.powers.values()].filter((p) => p.slots.includes(slot));
+  return [...catalog.powers.values()].filter((p) => !p.uniqueOnly && p.slots.includes(slot));
 }
 
 /** Sockets of a dropped Normal item: sometimes none, else 1 up to the base's maximum. */
@@ -244,15 +244,20 @@ export function rollSockets(base: ItemBaseDefinition, rng: Rng): number {
   return rng.int(1, max);
 }
 
-/** Uniques that can drop at an Item Level for one of the given bases. */
+/** Uniques that can drop at an Item Level for one of the given bases (boss trophies aside). */
 export function uniquesFor(
   catalog: ItemCatalog,
   itemLevel: number,
   baseIds?: readonly string[],
 ): UniqueDefinition[] {
   return [...catalog.uniques.values()].filter(
-    (u) => u.minItemLevel <= itemLevel && (!baseIds || baseIds.includes(u.baseId)),
+    (u) => !u.bossOf && u.minItemLevel <= itemLevel && (!baseIds || baseIds.includes(u.baseId)),
   );
+}
+
+/** The boss trophies of an act: Uniques only its boss drops. */
+export function bossTrophies(catalog: ItemCatalog, actId: string): UniqueDefinition[] {
+  return [...catalog.uniques.values()].filter((u) => u.bossOf === actId);
 }
 
 /** Rolls a Unique: its fixed affixes with a quality inside each range. */

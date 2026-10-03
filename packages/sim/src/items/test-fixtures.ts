@@ -113,6 +113,14 @@ export const TEST_UNIQUES: readonly UniqueDefinition[] = [
     minItemLevel: 1,
     flavor: "Round.",
   },
+  {
+    id: "boss-trophy",
+    name: "The Boss's Band",
+    baseId: "test-ring",
+    affixes: [{ affixId: "life", quality: { min: 0.9, max: 1 } }],
+    minItemLevel: 1,
+    bossOf: "test-act",
+  },
 ];
 
 export const TEST_RING: ItemBaseDefinition = {

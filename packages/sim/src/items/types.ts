@@ -263,6 +263,8 @@ export interface LegendaryPowerDefinition {
   readonly rules?: CombatRules;
   readonly bonuses?: StatBonuses;
   readonly trigger?: AffixRoll;
+  /** Only its Unique carries it; random Legendary items never roll it (boss trophies). */
+  readonly uniqueOnly?: boolean;
 }
 
 /** A Unique item: fixed base, name, affixes and maybe a Legendary Power. */
@@ -280,6 +282,8 @@ export interface UniqueDefinition {
   readonly minItemLevel: number;
   /** One line of flavor text for the tooltip. */
   readonly flavor?: string;
+  /** Boss trophy: only this act's boss drops it (Teil 3 "Boss-Trophäen"). */
+  readonly bossOf?: string;
 }
 
 /** Everything needed to roll and read items. Built once from content. */

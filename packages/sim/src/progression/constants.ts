@@ -54,6 +54,14 @@ export const PROGRESSION = {
   legendaryChance: { normal: 0, elite: 0.04, boss: 0.25 } satisfies Record<EnemyRank, number>,
   /** Share of those Legendary cards that become a Unique (if one fits). */
   uniqueShare: 0.35,
+  /** Boss Hoard: cards after a boss and how many of them the hero takes. */
+  bossHoardCards: 6,
+  bossHoardPicks: 2,
+  /** Chance per boss kill that one Hoard card is a trophy from the boss's own list. */
+  bossTrophyChance: 0.1,
+  /** The top Rune ranks only drop from Elites and Bosses, this much rarer on top of the falloff. */
+  highRuneRanks: 2,
+  highRuneFactor: 0.3,
   /** Expected Runes per win by rank (fractions are chances, 1.5 = one plus 50 % a second). */
   runeDrops: { normal: 0.06, elite: 0.5, boss: 1.5 } satisfies Record<EnemyRank, number>,
   /** Rune ranks that drop: base + per Act Tier (Act 1 → up to rank 3, Act 2 → 5). */

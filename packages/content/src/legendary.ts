@@ -38,6 +38,30 @@ function rune(
   return { id, name, rank, bonuses: { weapon, armor } };
 }
 
+/** A trigger only a Legendary Power grants: fixed magnitude `value`, `perTier` more per tier. */
+function powerTrigger(
+  id: string,
+  name: string,
+  condition: TriggerAffixDefinition["condition"],
+  effect: TriggerAffixDefinition["effect"],
+  value: number,
+  perTier: number,
+): TriggerAffixDefinition {
+  return {
+    kind: "trigger",
+    id,
+    name,
+    slots: [],
+    weight: 0,
+    tags: [],
+    condition,
+    effect,
+    rolls: "magnitude",
+    value: { min: value, max: value },
+    perTier,
+  };
+}
+
 // --- Runewords -------------------------------------------------------------------------------
 
 /** The exact Runes in order, in a Normal item with exactly that many Sockets. */
@@ -171,6 +195,101 @@ export const POWER_TRIGGERS: readonly TriggerAffixDefinition[] = [
     value: { min: 0.4, max: 0.4 },
     perTier: 0.1,
   },
+  // Boss trophies (Teil 3): each Warden drops its own mechanic.
+  powerTrigger(
+    "counter-slam",
+    "Counter Slam",
+    { kind: "everyNthHitTaken", n: 5 },
+    {
+      kind: "weaponHit",
+    },
+    2,
+    0.3,
+  ),
+  powerTrigger(
+    "thorn-flurry",
+    "Thorn Flurry",
+    { kind: "everyNthAttack", n: 3 },
+    {
+      kind: "extraAttack",
+    },
+    1,
+    0,
+  ),
+  powerTrigger(
+    "tyrants-wrath",
+    "Tyrant's Wrath",
+    { kind: "lifeBelow", threshold: 0.3 },
+    { kind: "buff", stat: "attackSpeed", duration: 6 },
+    0.5,
+    0.1,
+  ),
+  powerTrigger(
+    "eruption",
+    "Eruption",
+    { kind: "everySeconds", seconds: 12 },
+    { kind: "spellHit", name: "Eruption", damage: { min: 30, max: 45 }, damageType: "fire" },
+    1,
+    0.6,
+  ),
+  {
+    ...powerTrigger(
+      "ice-barrier",
+      "Ice Barrier",
+      { kind: "lifeBelow", threshold: 0.5 },
+      {
+        kind: "barrier",
+      },
+      0.3,
+      0.05,
+    ),
+    cooldown: 10,
+  },
+  powerTrigger(
+    "avalanche",
+    "Avalanche",
+    { kind: "everyNthAttack", n: 10 },
+    {
+      kind: "weaponHit",
+    },
+    3,
+    0.4,
+  ),
+  {
+    ...powerTrigger(
+      "heralds-bolt",
+      "Herald's Bolt",
+      { kind: "onCrit" },
+      {
+        kind: "spellHit",
+        name: "Herald's Bolt",
+        damage: { min: 14, max: 22 },
+        damageType: "lightning",
+      },
+      1,
+      0.6,
+    ),
+    cooldown: 1,
+  },
+  powerTrigger(
+    "tailwind",
+    "Tailwind",
+    { kind: "onEvade" },
+    { kind: "buff", stat: "attackSpeed", duration: 4, maxStacks: 3 },
+    0.08,
+    0.01,
+  ),
+  {
+    ...powerTrigger(
+      "rift-pulse",
+      "Rift Pulse",
+      { kind: "onSkillUse" },
+      { kind: "spellHit", name: "Rift Pulse", damage: { min: 18, max: 28 }, damageType: "void" },
+      1,
+      0.6,
+    ),
+    chance: 0.4,
+  },
 ];
 
 /** Rule-changing powers, one fixed per Legendary item (D3 style). */
@@ -267,6 +386,114 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     slots: ["boots", "gloves"],
     bonuses: { heatGain: 0.15, attackSpeed: 0.1 },
   },
+  // --- Boss trophies (Teil 3 "Boss-Trophäen") ---
+  {
+    id: "counter-slam",
+    uniqueOnly: true,
+    name: "Counter Slam",
+    description: "Every 5th hit taken: a Counter Slam for 200 % weapon damage.",
+    slots: ["body"],
+    trigger: { affixId: "counter-slam", quality: 1 },
+  },
+  {
+    id: "mothers-brood",
+    uniqueOnly: true,
+    name: "Mother's Brood",
+    description: "Your Bleed, Poison, Burn and Corruption deal 30 % more damage.",
+    slots: ["belt"],
+    rules: { dotDamage: 1.3 },
+  },
+  {
+    id: "thorn-flurry",
+    uniqueOnly: true,
+    name: "Thorn Flurry",
+    description: "Every 3rd attack strikes again.",
+    slots: ["mainHand"],
+    trigger: { affixId: "thorn-flurry", quality: 1 },
+  },
+  {
+    id: "tyrants-wrath",
+    uniqueOnly: true,
+    name: "Tyrant's Wrath",
+    description: "Below 30 % Life: +50 % Attack Speed for 6 s.",
+    slots: ["helm"],
+    bonuses: { fireResistance: 0.15 },
+    trigger: { affixId: "tyrants-wrath", quality: 1 },
+  },
+  {
+    id: "eruption",
+    uniqueOnly: true,
+    name: "Eruption",
+    description: "Every 12 s: an Eruption of fire.",
+    slots: ["amulet"],
+    trigger: { affixId: "eruption", quality: 1 },
+  },
+  {
+    id: "ice-barrier",
+    uniqueOnly: true,
+    name: "Ice Barrier",
+    description: "Below 50 % Life: a Barrier of 30 % of your Life (every 10 s at most).",
+    slots: ["offHand"],
+    trigger: { affixId: "ice-barrier", quality: 1 },
+  },
+  {
+    id: "avalanche",
+    uniqueOnly: true,
+    name: "Avalanche",
+    description: "Every 10th attack is an Avalanche for 300 % weapon damage.",
+    slots: ["mainHand"],
+    bonuses: { chillChance: 0.15 },
+    trigger: { affixId: "avalanche", quality: 1 },
+  },
+  {
+    id: "heralds-bolt",
+    uniqueOnly: true,
+    name: "Herald's Bolt",
+    description: "Every Crit calls down a bolt of lightning.",
+    slots: ["ring"],
+    trigger: { affixId: "heralds-bolt", quality: 1 },
+  },
+  {
+    id: "tailwind",
+    uniqueOnly: true,
+    name: "Tailwind",
+    description: "Every evade: +8 % Attack Speed for 4 s, up to 3 times.",
+    slots: ["boots"],
+    bonuses: { evasion: 0.03 },
+    trigger: { affixId: "tailwind", quality: 1 },
+  },
+  {
+    id: "endless-hunger",
+    uniqueOnly: true,
+    name: "Endless Hunger",
+    description: "Your Corruption also Poisons; your ailments heal you for 10 % of their damage.",
+    slots: ["amulet"],
+    rules: { ailmentEcho: [{ from: "corruption", to: "poison" }], dotLifesteal: 0.1 },
+  },
+  {
+    id: "rift-pulse",
+    uniqueOnly: true,
+    name: "Rift Pulse",
+    description: "Skills have a 40 % chance to send out a Rift Pulse.",
+    slots: ["gloves"],
+    trigger: { affixId: "rift-pulse", quality: 1 },
+  },
+  {
+    id: "last-harvest",
+    uniqueOnly: true,
+    name: "Last Harvest",
+    description: "+60 % damage to enemies below 35 % Life.",
+    slots: ["belt"],
+    rules: { execute: { below: 0.35, bonus: 0.6 } },
+  },
+  {
+    id: "stolen-fire",
+    uniqueOnly: true,
+    name: "Stolen Fire",
+    description: "Skills cost 25 % less Heat; your ailments deal 20 % more damage.",
+    slots: ["mainHand"],
+    rules: { skillCostMultiplier: 0.75, dotDamage: 1.2 },
+  },
 ];
 
 // --- Uniques ---------------------------------------------------------------------------------
@@ -287,6 +514,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     powerId: "heavy-hand",
     minItemLevel: 1,
     flavor: "Still warm. Still angry.",
+    bossOf: "ashen-fields",
   },
   {
     id: "cinderwick",
@@ -352,6 +580,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     powerId: "blood-echo",
     minItemLevel: 5,
     flavor: "Pulled from the Mother of Rot. It was not hers.",
+    bossOf: "rotwood",
   },
   {
     id: "barkhide-bulwark",
@@ -380,3 +609,197 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     flavor: "Something lives in the left sleeve. It is friendly.",
   },
 ];
+
+/** Boss trophies: each Warden drops two or three of its own (about 10 % per kill). */
+export const BOSS_TROPHIES: readonly UniqueDefinition[] = [
+  trophy(
+    "ashmaw-pauldron",
+    "Ashmaw Pauldron",
+    "chain-mail",
+    "ashen-fields",
+    "counter-slam",
+    [
+      ["armor", 0.7],
+      ["life", 0.6],
+      ["strength", 0.6],
+    ],
+    "Gorrak wore it to every fight. It remembers all of them.",
+  ),
+  trophy(
+    "rotmothers-cradle",
+    "Rotmother's Cradle",
+    "sash",
+    "rotwood",
+    "mothers-brood",
+    [
+      ["poison-chance", 0.7],
+      ["ailment-duration", 0.6],
+      ["life", 0.5],
+    ],
+    "Something inside it still hums a lullaby.",
+  ),
+  trophy(
+    "thornsong",
+    "Thornsong",
+    "dagger",
+    "rotwood",
+    "thorn-flurry",
+    [
+      ["bleed-chance", 0.7],
+      ["attack-speed", 0.6],
+      ["crit-chance", 0.5],
+    ],
+    "It sings when it cuts. Badly.",
+  ),
+  trophy(
+    "tyrants-crown",
+    "Tyrant's Crown",
+    "iron-helm",
+    "ember-wastes",
+    "tyrants-wrath",
+    [
+      ["life", 0.7],
+      ["armor", 0.6],
+      ["fire-resistance", 0.7],
+    ],
+    "Heavy is the head. Hot, too.",
+  ),
+  trophy(
+    "eruption-core",
+    "Eruption Core",
+    "ember-pendant",
+    "ember-wastes",
+    "eruption",
+    [
+      ["elemental-damage", 0.7],
+      ["burn-chance", 0.6],
+      ["intelligence", 0.6],
+    ],
+    "Keep it away from the wagon.",
+  ),
+  trophy(
+    "wardenshell",
+    "Wardenshell",
+    "round-shield",
+    "frost-peaks",
+    "ice-barrier",
+    [
+      ["block-chance", 0.7],
+      ["cold-resistance", 0.7],
+      ["life", 0.6],
+    ],
+    "Cold to the touch. Colder to the blow.",
+  ),
+  trophy(
+    "avalanche-bow",
+    "Avalanche Bow",
+    "bow",
+    "frost-peaks",
+    "avalanche",
+    [
+      ["added-weapon-damage", 0.7],
+      ["chill-chance", 0.6],
+      ["dexterity", 0.6],
+    ],
+    "Draw slowly. The mountain is listening.",
+  ),
+  trophy(
+    "heraldic-coil",
+    "Heraldic Coil",
+    "iron-ring",
+    "storm-spires",
+    "heralds-bolt",
+    [
+      ["crit-chance", 0.7],
+      ["lightning-resistance", 0.6],
+      ["attack-speed", 0.5],
+    ],
+    "It announces you. Loudly.",
+  ),
+  trophy(
+    "stormcallers-greaves",
+    "Stormcaller's Greaves",
+    "greaves",
+    "storm-spires",
+    "tailwind",
+    [
+      ["agility", 0.7],
+      ["evasion", 0.6],
+      ["life", 0.5],
+    ],
+    "The wind follows them like a dog.",
+  ),
+  trophy(
+    "maws-hunger",
+    "Maw's Hunger",
+    "bone-amulet",
+    "void-rift",
+    "endless-hunger",
+    [
+      ["corruption-chance", 0.7],
+      ["ailment-duration", 0.6],
+      ["void-resistance", 0.6],
+    ],
+    "It is never full. Neither are you, now.",
+  ),
+  trophy(
+    "riftwalker-wraps",
+    "Riftwalker Wraps",
+    "silk-wraps",
+    "void-rift",
+    "rift-pulse",
+    [
+      ["elemental-damage", 0.7],
+      ["heat-gain", 0.6],
+      ["wisdom", 0.6],
+    ],
+    "Your hands are somewhere else. Mostly.",
+  ),
+  trophy(
+    "reapers-due",
+    "Reaper's Due",
+    "heavy-belt",
+    "emberfall",
+    "last-harvest",
+    [
+      ["life", 0.8],
+      ["physical-damage", 0.6],
+      ["all-resistance", 0.6],
+    ],
+    "Everything is harvested in the end.",
+  ),
+  trophy(
+    "the-stolen-flame",
+    "The Stolen Flame",
+    "staff",
+    "emberfall",
+    "stolen-fire",
+    [
+      ["elemental-damage", 0.8],
+      ["heat-gain", 0.7],
+      ["corruption-chance", 0.6],
+    ],
+    "The first Heir took it. Every Heir since has paid for it.",
+  ),
+];
+
+function trophy(
+  id: string,
+  name: string,
+  baseId: string,
+  bossOf: string,
+  powerId: string,
+  affixes: readonly (readonly [string, number])[],
+  flavor: string,
+): UniqueDefinition {
+  return {
+    id,
+    name,
+    baseId,
+    affixes: affixes.map(([affixId, min]) => ({ affixId, quality: q(min) })),
+    powerId,
+    minItemLevel: 1,
+    flavor,
+    bossOf,
+  };
+}
