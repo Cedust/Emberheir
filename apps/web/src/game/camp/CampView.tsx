@@ -73,7 +73,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#a8401a",
       object: { w: 150, h: 200 },
       quote: "Whatever rests near the fire survives the burning.",
-      actions: [{ name: "Heirlooms" }, { name: "Save Tokens" }, { name: "Harvester's Ember" }],
+      actions: [{ name: "Heirlooms" }, { name: "Trophy Wall" }, { name: "Harvester's Ember" }],
       cta: "Open Legacy",
       target: "legacy",
     },

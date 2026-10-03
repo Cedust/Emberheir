@@ -1,6 +1,14 @@
 import { GAME_DATA } from "@emberheir/content";
 import type { Page } from "@playwright/test";
-import { type GameState, type Item, newGame, rollItem, Rng, serializeGame } from "@emberheir/sim";
+import {
+  type GameState,
+  type Item,
+  newGame,
+  rollItem,
+  rollUnique,
+  Rng,
+  serializeGame,
+} from "@emberheir/sim";
 
 /** A save right after Gorrak fell in the first run (the harvest boss): an Epic Body Armor to seal. */
 export function saveAfterHarvestBoss(): string {
@@ -90,6 +98,55 @@ export function saveWithCodex(): string {
       ...base.legacy,
       prestige: 1,
       codex: { conditions: { "on-crit": 2, "when-hit": 1 }, effects: { burn: 2, barrier: 3 } },
+    },
+  };
+  return serializeGame(state);
+}
+
+/** The Rotwood's boss just fell in run 3: a Boss Hoard of six cards, one of them a new trophy. */
+export function saveBossHoard(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const rng = new Rng(3);
+  const act = GAME_DATA.acts[1];
+  if (!act) throw new Error("No Rotwood");
+  const roll = (baseId: string, rarity: Item["rarity"]) =>
+    rollItem(GAME_DATA.items, { baseId, itemLevel: 20, rarity }, rng);
+  const items: Item[] = [
+    roll("iron-helm", "epic"),
+    roll("leather-boots", "epic"),
+    rollUnique(GAME_DATA.items, "thornsong", 20, rng),
+    roll("sash", "epic"),
+    roll("garnet-ring", "epic"),
+    roll("leather-gloves", "epic"),
+  ];
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 30 },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    legacy: { ...base.legacy, prestige: 2, trophies: ["thornsong"] },
+    run: {
+      actId: act.id,
+      stage: act.stages,
+      lifeFraction: 0.6,
+      phase: "rewards",
+      encounter: { enemyId: act.boss.id, level: 20, boss: true, eliteModifiers: [], seed: 9 },
+      rewards: {
+        rank: "boss",
+        xp: 400,
+        gold: 120,
+        dust: 40,
+        reforgeStones: 4,
+        ascensionShards: 1,
+        runes: ["moss"],
+        levelsGained: 0,
+        items,
+        picks: 2,
+        itemPick: null,
+        salvagedDust: 0,
+        spoils: [],
+        spoilsPick: null,
+        newTrophies: ["thornsong"],
+      },
     },
   };
   return serializeGame(state);

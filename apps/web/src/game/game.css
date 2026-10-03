@@ -1125,3 +1125,41 @@
   border-style: solid;
   border-color: var(--accent);
 }
+
+/* A fallen boss: a burst of embers behind the banner before the Hoard drops. */
+.stage .fight-banner.boss-kill::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 900px;
+  height: 900px;
+  margin: -450px 0 0 -450px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 190 90 / 0.55),
+    rgb(255 120 40 / 0.18) 40%,
+    transparent 70%
+  );
+  z-index: -1;
+  animation: boss-burst 1.8s ease-out forwards;
+}
+
+@keyframes boss-burst {
+  from {
+    transform: scale(0.1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .fight-banner.boss-kill::before {
+    animation: none;
+    opacity: 0.4;
+  }
+}

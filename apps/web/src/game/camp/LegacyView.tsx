@@ -11,6 +11,7 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
 import { harvestBoss } from "../labels";
+import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
   { slot: "helm", icon: "helm" },
@@ -28,9 +29,14 @@ const RING: { slot: EquipmentSlot; icon: IconName }[] = [
 const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
 
 /** The Hearthfire (Legacy mock): Heirlooms in the ring of 10 slots, what stays, the chronicle. */
-export function LegacyView(props: { state: GameState; onClose: () => void }) {
+export function LegacyView(props: {
+  state: GameState;
+  onClose: () => void;
+  initialTab?: "heirlooms" | "trophies";
+}) {
   const { state } = props;
   const { legacy } = state;
+  const [tab, setTab] = useState<"heirlooms" | "trophies">(props.initialTab ?? "heirlooms");
   const generation = legacy.prestige + 1;
   const [sel, setSel] = useState<EquipmentSlot>(legacy.seals[0] ?? "mainHand");
   const heirloom = (slot: EquipmentSlot) =>
@@ -85,6 +91,26 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
           <span className="sub">Everything that survives the fire</span>
         </div>
         <span className="gen-tag title-font">Generation {generation}</span>
+        <div className="tabs" role="tablist">
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "heirlooms"}
+            className={`tab title-font ${tab === "heirlooms" ? "on" : ""}`}
+            onClick={() => setTab("heirlooms")}
+          >
+            Heirlooms
+          </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "trophies"}
+            className={`tab title-font ${tab === "trophies" ? "on" : ""}`}
+            onClick={() => setTab("trophies")}
+          >
+            Trophy Wall · {legacy.trophies.length}/{TROPHY_COUNT}
+          </button>
+        </div>
         <div className="grow" />
         <button
           type="button"
@@ -96,103 +122,107 @@ export function LegacyView(props: { state: GameState; onClose: () => void }) {
           <Icon name="close" size={20} />
         </button>
       </header>
-      <div className="legacy-body">
-        <aside className="legacy-facts">
-          {facts.map((f) => (
-            <div key={f.kind} className="legacy-fact panel-card">
-              <div className="section-row">
-                <span className="eyebrow">{f.kind}</span>
-                <span className="mono">{f.value}</span>
-              </div>
-              <span className="sub small">{f.desc}</span>
-            </div>
-          ))}
-        </aside>
-        <div className="legacy-ring">
-          <div className="ring-line" />
-          {RING.map((r, i) => {
-            const a = ((-90 + i * 36) * Math.PI) / 180;
-            const item = heirloom(r.slot);
-            return (
-              <button
-                key={r.slot}
-                type="button"
-                className={`ring-slot${item ? ` heirloom rarity-${item.rarity}` : ""}${sel === r.slot ? " on" : ""}`}
-                style={{ left: 360 + Math.cos(a) * 270 - 52, top: 400 + Math.sin(a) * 270 - 52 }}
-                title={
-                  item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: no Heirloom`
-                }
-                aria-label={
-                  item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: no Heirloom`
-                }
-                onClick={() => setSel(r.slot)}
-              >
-                {item ? (
-                  <span className="ring-art">
-                    <ItemArt baseId={item.baseId} slot={itemSlotFor(r.slot)} />
-                  </span>
-                ) : (
-                  <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
-                )}
-                <span className="sub small">{item ? item.name : slotName(r.slot)}</span>
-                <span className="seal">◆</span>
-              </button>
-            );
-          })}
-          <div className="ring-center">
-            <Icon name="fire" size={64} color="var(--accent)" />
-            <span className="title-font big">{legacy.seals.length} / 10 Heirlooms</span>
-            <span className="sub">
-              {legacy.seals.length ? "Click a slot for details" : "Nothing sealed yet"}
-            </span>
-          </div>
-        </div>
-        <aside className="legacy-side">
-          {selItem ? (
-            <ItemDetail
-              item={selItem}
-              where="HEIRLOOM"
-              className="sealed"
-              footer={
-                <span className="sub small">
-                  Sealed since Generation {sealedSince(sel) ?? legacy.prestige}. A better drop for
-                  this slot replaces it, and the Seal moves with it. Thoric can raise its Tier with
-                  an Ascension Shard.
-                </span>
-              }
-            />
-          ) : (
-            <section className="panel-card">
-              <span className="eyebrow">NO SEAL · {slotName(sel).toUpperCase()}</span>
-              <p className="title-font">Burns in the harvest</p>
-              <p className="sub small">
-                {legacy.seals.length === 0
-                  ? `Your first Seal comes when ${harvestBoss(legacy.prestige)} falls.`
-                  : "One more Seal with every harvest. You can move Seals each time the harvest begins."}
-              </p>
-            </section>
-          )}
-          <section className="panel-card chronicle" aria-label="Chronicle">
-            <span className="title-font section-title">Chronicle</span>
-            {legacy.chronicle.map((c) => (
-              <div key={c.generation} className="chronicle-row">
-                <span className="mono">Gen {c.generation}</span>
-                <span>
-                  {c.sealed.length
-                    ? `Sealed the ${c.sealed.map(slotName).join(", ")}.`
-                    : "Sealed nothing."}{" "}
-                  {c.enemyName.split(",")[0]} fell at Level {c.level} after {c.deaths} death
-                  {c.deaths === 1 ? "" : "s"}.
-                </span>
+      {tab === "trophies" ? (
+        <TrophyWall state={state} />
+      ) : (
+        <div className="legacy-body">
+          <aside className="legacy-facts">
+            {facts.map((f) => (
+              <div key={f.kind} className="legacy-fact panel-card">
+                <div className="section-row">
+                  <span className="eyebrow">{f.kind}</span>
+                  <span className="mono">{f.value}</span>
+                </div>
+                <span className="sub small">{f.desc}</span>
               </div>
             ))}
-            <div className="chronicle-row">
-              <span className="mono accent">Gen {generation}</span>
-              <span>Now · the Heir walks the Ashen Fields.</span>
+          </aside>
+          <div className="legacy-ring">
+            <div className="ring-line" />
+            {RING.map((r, i) => {
+              const a = ((-90 + i * 36) * Math.PI) / 180;
+              const item = heirloom(r.slot);
+              return (
+                <button
+                  key={r.slot}
+                  type="button"
+                  className={`ring-slot${item ? ` heirloom rarity-${item.rarity}` : ""}${sel === r.slot ? " on" : ""}`}
+                  style={{ left: 360 + Math.cos(a) * 270 - 52, top: 400 + Math.sin(a) * 270 - 52 }}
+                  title={
+                    item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: no Heirloom`
+                  }
+                  aria-label={
+                    item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: no Heirloom`
+                  }
+                  onClick={() => setSel(r.slot)}
+                >
+                  {item ? (
+                    <span className="ring-art">
+                      <ItemArt baseId={item.baseId} slot={itemSlotFor(r.slot)} />
+                    </span>
+                  ) : (
+                    <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
+                  )}
+                  <span className="sub small">{item ? item.name : slotName(r.slot)}</span>
+                  <span className="seal">◆</span>
+                </button>
+              );
+            })}
+            <div className="ring-center">
+              <Icon name="fire" size={64} color="var(--accent)" />
+              <span className="title-font big">{legacy.seals.length} / 10 Heirlooms</span>
+              <span className="sub">
+                {legacy.seals.length ? "Click a slot for details" : "Nothing sealed yet"}
+              </span>
             </div>
-          </section>
-        </aside>
-      </div>
+          </div>
+          <aside className="legacy-side">
+            {selItem ? (
+              <ItemDetail
+                item={selItem}
+                where="HEIRLOOM"
+                className="sealed"
+                footer={
+                  <span className="sub small">
+                    Sealed since Generation {sealedSince(sel) ?? legacy.prestige}. A better drop for
+                    this slot replaces it, and the Seal moves with it. Thoric can raise its Tier
+                    with an Ascension Shard.
+                  </span>
+                }
+              />
+            ) : (
+              <section className="panel-card">
+                <span className="eyebrow">NO SEAL · {slotName(sel).toUpperCase()}</span>
+                <p className="title-font">Burns in the harvest</p>
+                <p className="sub small">
+                  {legacy.seals.length === 0
+                    ? `Your first Seal comes when ${harvestBoss(legacy.prestige)} falls.`
+                    : "One more Seal with every harvest. You can move Seals each time the harvest begins."}
+                </p>
+              </section>
+            )}
+            <section className="panel-card chronicle" aria-label="Chronicle">
+              <span className="title-font section-title">Chronicle</span>
+              {legacy.chronicle.map((c) => (
+                <div key={c.generation} className="chronicle-row">
+                  <span className="mono">Gen {c.generation}</span>
+                  <span>
+                    {c.sealed.length
+                      ? `Sealed the ${c.sealed.map(slotName).join(", ")}.`
+                      : "Sealed nothing."}{" "}
+                    {c.enemyName.split(",")[0]} fell at Level {c.level} after {c.deaths} death
+                    {c.deaths === 1 ? "" : "s"}.
+                  </span>
+                </div>
+              ))}
+              <div className="chronicle-row">
+                <span className="mono accent">Gen {generation}</span>
+                <span>Now · the Heir walks the Ashen Fields.</span>
+              </div>
+            </section>
+          </aside>
+        </div>
+      )}
     </section>
   );
 }

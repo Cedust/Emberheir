@@ -158,12 +158,14 @@ export function BattleView(props: {
     if (sceneRef.current) sceneRef.current.showNumbers = settings.damageNumbers;
   }, [settings.damageNumbers]);
 
-  // The fight loop.
+  // The fight loop. A boss on its last breath falls in slow motion (Teil 3 D).
+  const bossFight = run.encounter?.boss === true;
+  const slowRef = useRef(1);
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
     const loop = (now: number) => {
-      const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current;
+      const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current * slowRef.current;
       last = now;
       if (!pausedRef.current) {
         const before = fight.events.length;
@@ -184,19 +186,23 @@ export function BattleView(props: {
         const slot = reaction ? 10 + index : index;
         if (index >= 0) setFlash((f) => ({ slot, n: (f?.n ?? 0) + 1 }));
       }
+      if (bossFight) slowRef.current = snap.enemy.life / snap.enemy.maxLife < 0.08 ? 0.35 : 1;
       setSnapshot(snap);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [fight]);
+  }, [fight, bossFight]);
 
   // When the fight is over, show the banner briefly, then let the sim resolve it.
   const over = snapshot.over;
   useEffect(() => {
     if (!over) return;
-    const timer = window.setTimeout(() => game.dispatch({ type: "resolveFight" }), 1600);
+    const timer = window.setTimeout(
+      () => game.dispatch({ type: "resolveFight" }),
+      bossFight && snapshot.winner === "hero" ? 2400 : 1600,
+    );
     return () => window.clearTimeout(timer);
-  }, [over, game]);
+  }, [over, game, bossFight, snapshot.winner]);
 
   const skip = () => {
     const before = fight.events.length;
@@ -262,7 +268,10 @@ export function BattleView(props: {
       </div>
 
       {result && (
-        <div className={`fight-banner ${result.toLowerCase()}`} data-testid="fight-result">
+        <div
+          className={`fight-banner ${result.toLowerCase()}${bossFight && snapshot.winner === "hero" ? " boss-kill" : ""}`}
+          data-testid="fight-result"
+        >
           {result}
         </div>
       )}

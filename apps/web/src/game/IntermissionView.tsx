@@ -2,6 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameAction,
+  type Item,
   type GameState,
   PROGRESSION,
   SLOT_NAMES,
@@ -13,6 +14,7 @@ import {
   heroReactions,
   equipBlockReason,
   getAct,
+  getBase,
   heroSetup,
   rewardsDone,
   salvageValue,
@@ -22,14 +24,23 @@ import {
   levelCap,
   xpToNextLevel,
 } from "@emberheir/sim";
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Icon, type IconName } from "../ui/Icon";
-import { ItemDetail, ItemTile, compareWithEquipped, fmt, walletEntries } from "../ui/items";
+import {
+  ItemDetail,
+  ItemTile,
+  compareWithEquipped,
+  fmt,
+  rarityClass,
+  walletEntries,
+} from "../ui/items";
 import { RunHeader } from "./RunHeader";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 import { RuneStone, runeName } from "../ui/RuneArt";
+import { ItemArt } from "../ui/ItemArt";
+import { type DropSound, playSound } from "../ui/sound";
 import { skillIcon, skillTint } from "./battle/skills";
 import { ShareBar } from "./camp/KaelenView";
 
@@ -229,6 +240,158 @@ function UpNext(props: { run: RunState }) {
   );
 }
 
+const TOP_RUNE_RANK = Math.max(...[...GAME_DATA.items.runes.values()].map((r) => r.rank));
+const isHighRune = (id: string) =>
+  (GAME_DATA.items.runes.get(id)?.rank ?? 0) > TOP_RUNE_RANK - PROGRESSION.highRuneRanks;
+
+/** Runes fall onto the ground with a glowing glyph and a clink before they go to the pouch. */
+function RuneDrops(props: { runes: readonly string[] }) {
+  useEffect(() => {
+    const timers = props.runes.map((id, i) =>
+      window.setTimeout(
+        () => playSound(isHighRune(id) ? "highRune" : "rune"),
+        (0.2 + i * 0.25) * 1000 + 350,
+      ),
+    );
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [props.runes]);
+  return (
+    <div className="rune-drops" data-testid="rune-drops">
+      {props.runes.map((id, i) => (
+        <span
+          key={i}
+          className={`rune-drop${isHighRune(id) ? " high" : ""}`}
+          style={{ animationDelay: `${0.2 + i * 0.25}s` }}
+        >
+          <span className="rune-glyph-glow" aria-hidden />
+          <RuneStone runeId={id} size={40} />
+          <span className="title-font">{runeName(id)} Rune</span>
+        </span>
+      ))}
+    </div>
+  );
+}
+
+/** Pause after a card turns over, by what it shows (Teil 3 D: ab Rare Glow und Pause). */
+function revealPause(item: Item): number {
+  if (item.uniqueId) return 1300;
+  if (item.rarity === "legendary") return 1000;
+  if (item.rarity === "rare" || item.rarity === "epic") return 550;
+  return 170;
+}
+
+function revealSound(item: Item): DropSound {
+  if (item.uniqueId) return "unique";
+  if (item.rarity === "legendary") return "legendary";
+  if (item.rarity === "rare" || item.rarity === "epic") return "rare";
+  return "flip";
+}
+
+const reducedMotion = () =>
+  typeof window !== "undefined" && window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+
+/**
+ * Loot cards lie face down and turn over one by one: Normal and Magic quickly, Rare and Epic with
+ * a glow and a pause, Legendary and Unique with a pillar of light. A click turns a card at once.
+ */
+function useReveal(items: readonly Item[]): [readonly boolean[], (i: number) => void] {
+  const [shown, setShown] = useState<boolean[]>(() => items.map(() => reducedMotion()));
+  const reveal = useCallback(
+    (i: number) => {
+      if (shown[i]) return;
+      const item = items[i];
+      if (item) playSound(revealSound(item));
+      setShown((cur) => cur.map((v, j) => v || j === i));
+    },
+    [items, shown],
+  );
+  useEffect(() => {
+    const next = shown.indexOf(false);
+    if (next < 0) return;
+    const before = shown.lastIndexOf(true, next);
+    const prev = before >= 0 ? items[before] : undefined;
+    const timer = window.setTimeout(() => reveal(next), prev ? revealPause(prev) : 250);
+    return () => window.clearTimeout(timer);
+  }, [shown, items, reveal]);
+  return [shown, reveal];
+}
+
+/** Equip / Take for one loot card, or the "Taken" stamp in the Boss Hoard. */
+function PickButtons(props: {
+  state: GameState;
+  game: GameApi;
+  item: Item;
+  index: number;
+  taken: boolean;
+}) {
+  const { state, game, item, index } = props;
+  if (props.taken) {
+    return (
+      <div className="card-buttons">
+        <span className="taken-stamp title-font">Taken</span>
+      </div>
+    );
+  }
+  const equipReason = equipBlockReason(state, GAME_DATA, item, "pick");
+  const takeReason = takeBlockReason(state, GAME_DATA, item);
+  return (
+    <div className="card-buttons">
+      <button
+        type="button"
+        className="btn primary"
+        disabled={equipReason !== undefined}
+        title={
+          equipReason
+            ? EQUIP_BLOCK_TEXT[equipReason]
+            : "Swap in, the old item goes to the inventory"
+        }
+        onClick={() => game.dispatch({ type: "pickItem", index, mode: "equip" })}
+      >
+        {equipReason === "noRoom" ? "No room" : "Equip"}
+      </button>
+      <button
+        type="button"
+        className="btn"
+        disabled={takeReason !== undefined}
+        title={takeReason ? "This item does not fit into the inventory" : "Put into inventory"}
+        onClick={() => game.dispatch({ type: "pickItem", index, mode: "take" })}
+      >
+        {takeReason ? "No room" : "Take"}
+      </button>
+    </div>
+  );
+}
+
+function CardBack(props: { item: Item; small?: boolean; onReveal: () => void }) {
+  const { item } = props;
+  return (
+    <button
+      type="button"
+      className={`card-back rarity-${item.rarity}${item.uniqueId ? " special-unique" : ""}`}
+      data-testid="card-back"
+      aria-label="Turn the card over"
+      onClick={props.onReveal}
+    >
+      <span className="card-back-sigil">
+        <Icon name="fire" size={props.small ? 34 : 56} color="currentColor" />
+      </span>
+    </button>
+  );
+}
+
+function TrophyToast(props: { item: Item }) {
+  const { item } = props;
+  return (
+    <div className="trophy-toast" role="status">
+      <span className="trophy-toast-art">
+        <ItemArt baseId={item.baseId} slot={getBase(GAME_DATA.items, item.baseId).slot} />
+      </span>
+      <span className="eyebrow">NEW TROPHY</span>
+      <span className="title-font">{item.name}</span>
+    </div>
+  );
+}
+
 function ItemCards(props: {
   state: GameState;
   run: RunState;
@@ -237,56 +400,108 @@ function ItemCards(props: {
 }) {
   const { state, run, game } = props;
   const rewards = run.rewards;
+  const items = rewards?.items ?? [];
+  const [shown, reveal] = useReveal(items);
+  const [selected, setSelected] = useState<number | undefined>(undefined);
   if (!rewards) return null;
+  const taken = new Set((rewards.taken ?? []).map((t) => t.index));
+  const trophy = items.find(
+    (it, i) => shown[i] && it.uniqueId && rewards.newTrophies?.includes(it.uniqueId),
+  );
+  const focus = (item: Item) => props.onFocus(targetSlot(item, GAME_DATA, state.hero.equipment));
+
+  if (items.length > 3) {
+    // Boss Hoard: six cards as small faces, the chosen one in full next to them.
+    const firstOpen = items.findIndex((_, i) => shown[i] && !taken.has(i));
+    const pick = selected !== undefined && shown[selected] ? selected : firstOpen;
+    const detail = pick >= 0 ? items[pick] : undefined;
+    return (
+      <div className="hoard-layout">
+        {trophy && <TrophyToast item={trophy} />}
+        <div className="hoard-cards">
+          {items.map((item, i) =>
+            shown[i] ? (
+              <button
+                key={item.id}
+                type="button"
+                className={`hoard-face ${rarityClass(item)}${item.rarity === "legendary" ? " pillar" : ""}${taken.has(i) ? " taken" : ""}${pick === i ? " on" : ""}`}
+                aria-pressed={pick === i}
+                data-testid="hoard-card"
+                onClick={() => {
+                  setSelected(i);
+                  focus(item);
+                }}
+              >
+                {item.rarity === "legendary" && <span className="light-pillar" aria-hidden />}
+                <span className="hoard-art">
+                  <ItemArt baseId={item.baseId} slot={getBase(GAME_DATA.items, item.baseId).slot} />
+                </span>
+                <span className="title-font rarity-text hoard-name">{item.name}</span>
+                <span className="sub small">
+                  {SLOT_NAMES[getBase(GAME_DATA.items, item.baseId).slot]}
+                </span>
+                {taken.has(i) && <span className="taken-stamp title-font">Taken</span>}
+              </button>
+            ) : (
+              <div key={item.id} className="hoard-back">
+                <CardBack item={item} small onReveal={() => reveal(i)} />
+              </div>
+            ),
+          )}
+        </div>
+        <div className="hoard-detail">
+          {detail && pick >= 0 ? (
+            <ItemDetail
+              item={detail}
+              heroAttributes={state.hero.attributes}
+              compare={taken.has(pick) ? undefined : compareWithEquipped(state, detail)}
+              className="loot-card"
+              testId="item-card"
+              footer={
+                <PickButtons
+                  state={state}
+                  game={game}
+                  item={detail}
+                  index={pick}
+                  taken={taken.has(pick)}
+                />
+              }
+            />
+          ) : (
+            <div className="hoard-wait sub">…</div>
+          )}
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="loot-cards">
-      {rewards.items.map((item, i) => {
-        const equipReason = equipBlockReason(state, GAME_DATA, item, "pick");
-        const takeReason = takeBlockReason(state, GAME_DATA, item);
-        const slot = targetSlot(item, GAME_DATA, state.hero.equipment);
+      {trophy && <TrophyToast item={trophy} />}
+      {items.map((item, i) => {
+        if (!shown[i]) {
+          return (
+            <div key={item.id} className="loot-card-wrap">
+              <CardBack item={item} onReveal={() => reveal(i)} />
+            </div>
+          );
+        }
+        const big = item.rarity === "legendary";
         return (
           <div
             key={item.id}
-            className="loot-card-wrap"
-            onMouseEnter={() => props.onFocus(slot)}
-            onFocus={() => props.onFocus(slot)}
+            className={`loot-card-wrap revealed${big ? " pillar" : ""}`}
+            onMouseEnter={() => focus(item)}
+            onFocus={() => focus(item)}
           >
+            {big && <span className="light-pillar" aria-hidden />}
             <ItemDetail
               item={item}
               heroAttributes={state.hero.attributes}
               compare={compareWithEquipped(state, item)}
               className="loot-card"
               testId="item-card"
-              footer={
-                <div className="card-buttons">
-                  <button
-                    type="button"
-                    className="btn primary"
-                    disabled={equipReason !== undefined}
-                    title={
-                      equipReason
-                        ? EQUIP_BLOCK_TEXT[equipReason]
-                        : "Swap in, the old item goes to the inventory"
-                    }
-                    onClick={() => game.dispatch({ type: "pickItem", index: i, mode: "equip" })}
-                  >
-                    {equipReason === "noRoom" ? "No room" : "Equip"}
-                  </button>
-                  <button
-                    type="button"
-                    className="btn"
-                    disabled={takeReason !== undefined}
-                    title={
-                      takeReason
-                        ? "This item does not fit into the inventory"
-                        : "Put into inventory"
-                    }
-                    onClick={() => game.dispatch({ type: "pickItem", index: i, mode: "take" })}
-                  >
-                    {takeReason ? "No room" : "Take"}
-                  </button>
-                </div>
-              }
+              footer={<PickButtons state={state} game={game} item={item} index={i} taken={false} />}
             />
           </div>
         );
@@ -450,7 +665,9 @@ export function IntermissionView(props: {
   const title = step === "spoils" ? "SPOILS" : step === "ready" ? "READY" : "VICTORY";
   const subtitle =
     step === "items"
-      ? "Choose 1 of 3 items"
+      ? rewards && rewards.items.length > 3
+        ? `Boss Hoard · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
+        : "Choose 1 of 3 items"
       : step === "spoils"
         ? `${rewards?.rank === "boss" ? "Boss defeated" : rewards?.rank === "elite" ? "Elite defeated" : `Stage ${run.stage}`} · choose 1 of 3 spoils`
         : boss
@@ -500,20 +717,17 @@ export function IntermissionView(props: {
             </p>
           )}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
-            <div className="rune-drops" data-testid="rune-drops">
-              {rewards.runes.map((id, i) => (
-                <span
-                  key={i}
-                  className="rune-drop"
-                  style={{ animationDelay: `${0.2 + i * 0.25}s` }}
-                >
-                  <RuneStone runeId={id} size={40} />
-                  <span className="title-font">{runeName(id)} Rune</span>
-                </span>
-              ))}
-            </div>
+            <RuneDrops key={run.encounter?.seed ?? run.stage} runes={rewards.runes} />
           )}
-          {step === "items" && <ItemCards state={state} run={run} game={game} onFocus={setFocus} />}
+          {step === "items" && (
+            <ItemCards
+              key={run.encounter?.seed ?? run.stage}
+              state={state}
+              run={run}
+              game={game}
+              onFocus={setFocus}
+            />
+          )}
           {step === "spoils" && <SpoilsCards run={run} game={game} />}
           {done && <DoneCard run={run} />}
           {step === "items" && (
@@ -524,7 +738,10 @@ export function IntermissionView(props: {
                 title="Unpicked items become Salvage Dust"
                 onClick={() => game.dispatch({ type: "salvageAll" })}
               >
-                Salvage All · +{(rewards?.items ?? []).reduce((n, it) => n + salvageValue(it), 0)}{" "}
+                {rewards?.taken?.length ? "Salvage the Rest" : "Salvage All"} · +
+                {(rewards?.items ?? [])
+                  .filter((_, i) => !rewards?.taken?.some((t) => t.index === i))
+                  .reduce((n, it) => n + salvageValue(it), 0)}{" "}
                 Dust
               </button>
             </div>

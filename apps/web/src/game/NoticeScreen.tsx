@@ -38,12 +38,10 @@ const TEXT: Record<NoticeKind, NoticeText> = {
   actCleared: {
     title: "ACT CLEARED",
     sub: "The boss is down and the caravan moves on. The road ahead is open.",
-    nan: "Gorrak is down. Kaelen has seen enough to train you now.",
+    nan: "Gorrak is down. Liora finally agrees to see you.",
     facts: (_n, act, next) => [
       { k: "CLEARED", v: act.name, tone: "text" },
-      ...(act.number === 1
-        ? [{ k: "NEW IN CAMP", v: "Kaelen · Liora · Nyssa", tone: "good" }]
-        : []),
+      ...(act.number === 1 ? [{ k: "NEW IN CAMP", v: "Liora · Nyssa", tone: "good" }] : []),
       {
         k: "ROAD AHEAD",
         v: next ? `Act ${next.number} · ${next.name}` : "Farm or rest",
@@ -55,7 +53,7 @@ const TEXT: Record<NoticeKind, NoticeText> = {
 
 /** Old Nan's word after each act boss. */
 const CLEARED_NAN: Record<string, string> = {
-  "ashen-fields": "Gorrak is down. Kaelen has seen enough to train you now.",
+  "ashen-fields": "Gorrak is down. Liora finally agrees to see you.",
   rotwood: "The Mother of Rot is compost now. The forest can finally breathe.",
   "ember-wastes": "The Cinder Tyrant cools into a very large paperweight.",
   "frost-peaks": "The Rime Warden shatters. Somebody pack a scarf for the next act.",
