@@ -43,22 +43,35 @@ const plan = (patch: Partial<BattlePlanState>): GameAction => ({
 });
 
 describe("Battle Plan", () => {
-  it("unlocks one upgrade per Prestige", () => {
+  it("run 1 is a tutorial, all slots stand by Prestige 5, later Prestiges add depth", () => {
     expect(battlePlanUnlocks(0)).toEqual({
       rotationSlots: 1,
       thresholds: false,
       reactionSlots: 0,
+      reactionConditions: false,
       modifiers: 0,
       conditions: false,
+      openingMove: false,
+      rareModifiers: false,
       capstone: false,
     });
-    expect(battlePlanUnlocks(4)).toMatchObject({ rotationSlots: 3, reactionSlots: 1 });
+    expect(battlePlanUnlocks(1)).toMatchObject({ rotationSlots: 2, reactionSlots: 1 });
+    expect(battlePlanUnlocks(4)).toMatchObject({
+      rotationSlots: 3,
+      reactionSlots: 2,
+      reactionConditions: true,
+      modifiers: 1,
+    });
+    expect(battlePlanUnlocks(5)).toMatchObject({ rotationSlots: 4, reactionSlots: 2 });
     expect(battlePlanUnlocks(10)).toEqual({
       rotationSlots: 4,
       thresholds: true,
       reactionSlots: 2,
+      reactionConditions: true,
       modifiers: 2,
       conditions: true,
+      openingMove: true,
+      rareModifiers: true,
       capstone: true,
     });
   });
@@ -68,9 +81,54 @@ describe("Battle Plan", () => {
     expect(() => act(s, plan({ thresholds: [60] }))).toThrow(/Threshold/);
     expect(() => act(s, plan({ modifiers: [["thrifty"]] }))).toThrow(/Modifier/);
     expect(() =>
-      act(s, plan({ reactions: [{ skillId: TREE_SKILL.id, conditionId: "life-50" }] })),
+      act(s, plan({ reactions: [null, { skillId: TREE_SKILL.id, conditionId: "life-50" }] })),
+    ).toThrow(/locked/);
+    expect(() =>
+      act(s, plan({ reactions: [{ skillId: TREE_SKILL.id, conditionId: "enemy-heals" }] })),
     ).toThrow(/locked/);
     expect(() => act(s, plan({ capstone: { id: "vigil", slot: 0 } }))).toThrow(/locked/);
+    expect(() => act(s, plan({ openingMove: TREE_SKILL.id }))).toThrow(/locked/);
+    expect(() => act(hero(3), plan({ modifiers: [["reverb"]] }))).toThrow(/locked/);
+    expect(() => act(hero(0), plan({ reactions: [] }))).not.toThrow();
+  });
+
+  it("the Battle Plan can change between stages, but not mid-fight", () => {
+    let s = act(hero(1), { type: "setOut", actId: "test-act" });
+    s = act(s, { type: "setRotationSkill", slot: 1, skillId: TREE_SKILL.id });
+    s = act(s, plan({ reactions: [{ skillId: TREE_SKILL.id, conditionId: "fight-start" }] }));
+    expect(heroSetup(s, data).setup.reactions).toHaveLength(1);
+    s = act(s, { type: "startStage" });
+    expect(() => act(s, plan({}))).toThrow(/fight/);
+    expect(() => act(s, { type: "learnNodes", nodeIds: ["a"] })).toThrow(/Camp/);
+  });
+
+  it("the Opening Move is cast for free when the fight starts", () => {
+    const s = act(hero(8), plan({ openingMove: TREE_SKILL.id }));
+    expect(heroSetup(s, data).setup.openingMove).toEqual({ skill: TREE_SKILL, level: 1 });
+  });
+
+  it("locked choices in older save games are ignored", () => {
+    const s = hero(1);
+    const old: GameState = {
+      ...s,
+      hero: {
+        ...s.hero,
+        plan: {
+          ...EMPTY_PLAN,
+          modifiers: [["reverb"]],
+          reactions: [{ skillId: TREE_SKILL.id, conditionId: "ailmented" }],
+        },
+      },
+    };
+    const setup = heroSetup(old, data).setup;
+    expect(setup.rotation[0]?.modifiers).toBeUndefined();
+    expect(setup.reactions).toBeUndefined();
+  });
+
+  it("v6 save games get the Rotation Slots of the faster ladder", () => {
+    const s = hero(2);
+    const v6 = { ...s, version: 6, progress: { ...s.progress, rotationSlots: 2 } };
+    expect(deserializeGame(JSON.stringify(v6)).progress.rotationSlots).toBe(3);
   });
 
   it("puts Thresholds, Modifiers and Conditions on the Rotation Slots", () => {
@@ -101,7 +159,7 @@ describe("Battle Plan", () => {
 
   it("fills Reaction Slots with known skills", () => {
     const s = act(
-      hero(7),
+      hero(4),
       plan({ reactions: [null, { skillId: TREE_SKILL.id, conditionId: "life-30" }] }),
     );
     expect(heroSetup(s, data).setup.reactions).toEqual([

@@ -793,6 +793,74 @@ describe("Battle Plan", () => {
     expect(names.slice(0, 3)).toEqual(["Guard", "Skill A", "Skill B"]);
   });
 
+  it("the Opening Move is cast for free right when the fight starts", () => {
+    const fight = new Fight(setup({ openingMove: { skill: GUARD } }), dummy(), 1);
+    fight.advance(0.01);
+    expect(skills(fight.events)).toEqual([
+      expect.objectContaining({ skill: "Guard", heatCost: 0, via: "opening" }),
+    ]);
+  });
+
+  it("reacts when the enemy heals", () => {
+    const fight = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        reactions: [{ skill: GUARD, condition: { kind: "enemyHeals" }, cooldown: 10 }],
+      }),
+      setup({ name: "Enemy", bonuses: { ...NO_CRIT, lifesteal: 0.5 }, lifeFraction: 0.5 }),
+      1,
+    );
+    fight.advance(3);
+    expect(ofType(fight.events, "heal").some((e) => e.side === "enemy")).toBe(true);
+    expect(skills(fight.events, "Guard")[0]?.via).toBe("reaction");
+  });
+
+  it("reacts when its own Barrier breaks", () => {
+    const shell: SkillDefinition = {
+      ...GUARD,
+      id: "shell",
+      name: "Shell",
+      effects: [{ kind: "barrier", fraction: 0.02 }],
+    };
+    const fight = new Fight(
+      setup({
+        bonuses: { startingHeat: 100 },
+        openingMove: { skill: shell },
+        reactions: [{ skill: GUARD, condition: { kind: "barrierBreaks" }, cooldown: 10 }],
+      }),
+      setup({ name: "Enemy", baseLife: 100_000 }),
+      1,
+    );
+    fight.advance(1);
+    expect(ofType(fight.events, "barrier")).toHaveLength(1);
+    expect(skills(fight.events, "Guard")).toHaveLength(0);
+    fight.advance(5);
+    expect(skills(fight.events, "Guard")[0]?.via).toBe("reaction");
+  });
+
+  it("reacts once the enemy carries enough ailment stacks", () => {
+    const poisoning: WeaponDefinition = {
+      ...TEST_WEAPON,
+      damageType: "physical",
+      ailmentChances: [{ ailment: "poison", chance: 1 }],
+    };
+    const fight = new Fight(
+      setup({
+        weapon: poisoning,
+        bonuses: { startingHeat: 100 },
+        reactions: [{ skill: GUARD, condition: { kind: "enemyStacks", count: 3 }, cooldown: 10 }],
+      }),
+      dummy(),
+      1,
+    );
+    fight.advance(1.5);
+    expect(skills(fight.events, "Guard")).toHaveLength(0);
+    fight.advance(6);
+    const stacks = ofType(fight.events, "ailment").map((e) => e.stacks ?? 0);
+    expect(Math.max(...stacks)).toBeGreaterThanOrEqual(3);
+    expect(skills(fight.events, "Guard")).toHaveLength(1);
+  });
+
   it("Thrifty lowers the cost, Empowered adds a Skill Level, Overcharge spends extra Heat", () => {
     const base = { bonuses: { startingHeat: 100, ...NO_CRIT } };
     const run = (modifiers?: readonly SlotModifier[]) => {

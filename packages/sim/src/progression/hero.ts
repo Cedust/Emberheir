@@ -27,6 +27,7 @@ export interface HeroBuildOptions {
   readonly rotation: (weapon: WeaponDefinition) => readonly RotationSlot[];
   readonly reactions?: (weapon: WeaponDefinition) => readonly ReactionSlot[];
   readonly capstone?: (weapon: WeaponDefinition) => Capstone | undefined;
+  readonly openingMove?: (weapon: WeaponDefinition) => CombatantSetup["openingMove"];
   /** Extra bonuses, e.g. from the Skill Tree, by weapon range. */
   readonly bonuses?: (weapon: WeaponDefinition) => StatBonuses;
   /** Extra triggers, e.g. from Prestige branch nodes. */
@@ -54,6 +55,7 @@ export function buildHeroSetup(
   const reactions = options.reactions?.(weapon) ?? [];
   const triggers = [...gear.triggers, ...(options.triggers?.(weapon) ?? [])];
   const capstone = options.capstone?.(weapon);
+  const openingMove = options.openingMove?.(weapon);
   const setup: CombatantSetup = {
     name: "Heir",
     level: options.level,
@@ -62,6 +64,7 @@ export function buildHeroSetup(
     rotation: options.rotation(weapon),
     ...(reactions.length ? { reactions } : {}),
     ...(capstone ? { capstone } : {}),
+    ...(openingMove ? { openingMove } : {}),
     bonuses: sumBonuses(gear.bonuses, options.bonuses?.(weapon)),
     ...(triggers.length ? { triggers } : {}),
     ...(options.rules || gear.rules ? { rules: mergeRules(options.rules, gear.rules) } : {}),

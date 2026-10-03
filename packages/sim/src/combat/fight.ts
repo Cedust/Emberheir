@@ -3,6 +3,7 @@ import {
   type AilmentStates,
   advanceCorruption,
   ailmentDuration,
+  ailmentStacks,
   applyAilment,
   chillFactor,
   clearAilment,
@@ -69,7 +70,7 @@ export type CombatEvent =
       readonly skill: string;
       readonly heatCost: number;
       /** How it was cast, if not by the Rotation: a Reaction Slot or a free repeat. */
-      readonly via?: "reaction" | "reverb" | "echo";
+      readonly via?: "reaction" | "reverb" | "echo" | "opening";
     }
   | {
       readonly t: number;
@@ -406,6 +407,11 @@ export class Fight {
         this.fireTriggers(this.fighters[side], "fightStart");
         if (this.result) return this.log.slice(start);
         this.react(this.fighters[side], "fightStart");
+        const opening = this.fighters[side].setup.openingMove;
+        if (opening) {
+          this.castSkill(this.fighters[side], opening.skill, opening.level ?? 1, 0, 1, "opening");
+          if (this.result) return this.log.slice(start);
+        }
       }
     }
     this.ticks++;
@@ -677,7 +683,10 @@ export class Fight {
   }
 
   /** Marks Reaction Slots of `f` whose condition just happened as pending. */
-  private react(f: Fighter, kind: "fightStart" | "enemyWindup" | "ailmented"): void {
+  private react(
+    f: Fighter,
+    kind: "fightStart" | "enemyWindup" | "ailmented" | "enemyHeals" | "barrierBreaks",
+  ): void {
     for (const r of f.reactions) {
       if (r.spec.condition.kind === kind && r.cooldownLeft <= 1e-9) r.pending = 0;
     }
@@ -690,9 +699,15 @@ export class Fight {
       const target = this.fighters[other(side)];
       for (const r of f.reactions) {
         const c = r.spec.condition;
-        if (c.kind !== "lifeBelow" && c.kind !== "enemyBelow") continue;
-        const who = c.kind === "lifeBelow" ? f : target;
-        const below = who.life / who.stats.maxLife < c.fraction;
+        let below: boolean;
+        if (c.kind === "enemyStacks") {
+          below = ailmentStacks(target.ailments) >= c.count;
+        } else if (c.kind === "lifeBelow" || c.kind === "enemyBelow") {
+          const who = c.kind === "lifeBelow" ? f : target;
+          below = who.life / who.stats.maxLife < c.fraction;
+        } else {
+          continue;
+        }
         if (!below) {
           r.armed = true;
         } else if (r.armed && r.cooldownLeft <= 1e-9) {
@@ -773,7 +788,7 @@ export class Fight {
     level: number,
     heatCost = 0,
     power = 1,
-    via?: "reaction" | "reverb" | "echo",
+    via?: "reaction" | "reverb" | "echo" | "opening",
   ): void {
     this.emit({
       t: this.time,
@@ -1075,6 +1090,7 @@ export class Fight {
     defender.ailments = applyAilment(defender.ailments, ailment, duration, hitDamage);
     if (duration <= 0) return;
     this.react(defender, "ailmented");
+    this.checkReactionThresholds();
     this.emit({
       t: this.time,
       type: "ailment",
@@ -1232,6 +1248,7 @@ export class Fight {
     if (healed <= 0) return;
     f.life += healed;
     this.emit({ t: this.time, type: "heal", side: f.side, amount: healed });
+    this.react(this.fighters[other(f.side)], "enemyHeals");
     for (const state of f.triggers) {
       const c = state.spec.condition;
       if (c.kind === "lifeBelow" && f.life / f.stats.maxLife >= c.threshold) state.armed = true;
@@ -1243,6 +1260,7 @@ export class Fight {
   private damage(f: Fighter, amount: number): void {
     const absorbed = Math.min(f.barrier, amount);
     f.barrier -= absorbed;
+    if (absorbed > 0 && f.barrier <= 0) this.react(f, "barrierBreaks");
     f.life = Math.max(0, f.life - (amount - absorbed));
     if (f.life === 0) {
       this.emit({ t: this.time, type: "death", side: f.side });

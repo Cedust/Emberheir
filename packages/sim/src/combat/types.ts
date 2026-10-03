@@ -286,7 +286,13 @@ export type ReactionCondition =
   | { readonly kind: "lifeBelow"; readonly fraction: number }
   | { readonly kind: "enemyWindup" }
   | { readonly kind: "enemyBelow"; readonly fraction: number }
-  | { readonly kind: "ailmented" };
+  | { readonly kind: "ailmented" }
+  /** The opponent regains Life (Lifesteal, heals). */
+  | { readonly kind: "enemyHeals" }
+  /** Own Barrier is used up by a hit. */
+  | { readonly kind: "barrierBreaks" }
+  /** The opponent carries at least `count` ailment stacks (each Poison stack counts). */
+  | { readonly kind: "enemyStacks"; readonly count: number };
 
 /**
  * A Reaction Slot: outside the Rotation, fires when its condition is met. It pays Heat from the
@@ -370,4 +376,6 @@ export interface CombatantSetup {
   /** Reaction Slots of the Battle Plan. */
   readonly reactions?: readonly ReactionSlot[];
   readonly capstone?: Capstone;
+  /** Opening Move: cast for free right when the fight starts. */
+  readonly openingMove?: { readonly skill: SkillDefinition; readonly level?: number };
 }

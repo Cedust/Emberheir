@@ -197,10 +197,9 @@ describe("game loop", () => {
     expect(() => act(s, { type: "allocateAttributes", points: { strength: 1 } })).toThrow();
   });
 
-  it("the Skill Tree and Battle Plan are only at Kaelen, after the act boss", () => {
+  it("Kaelen teaches the Skill Tree from the first Camp on", () => {
     let s = { ...start(), hero: { ...start().hero, unspentSkillPoints: 3 } };
-    expect(() => act(s, { type: "learnNodes", nodeIds: ["a"] })).toThrow(/Kaelen/);
-    s = { ...s, progress: { ...s.progress, trainerUnlocked: true } };
+    expect(s.progress.trainerUnlocked).toBe(false);
     s = act(s, { type: "learnNodes", nodeIds: ["a", "b", "b"] });
     expect(s.hero.unspentSkillPoints).toBe(0);
     const weapon = heroSetup(s, data).setup.weapon;
@@ -390,7 +389,7 @@ describe("game loop", () => {
       prestige: 1,
       seals: 1,
       rotationSlots: 2,
-      planUpgrade: "Rotation Slot 2",
+      planUpgrade: "Rotation Slot 2 · Reaction Slot 1",
       harvesterEmber: 1,
       dust: PROGRESSION.prestigeDustPerLevel,
       levelCap: PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,

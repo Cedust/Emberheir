@@ -21,6 +21,7 @@ export {
   type FighterSnapshot,
   type RotationSlotSnapshot,
 } from "./combat/fight";
+export { AILMENT_SOURCE, damageShare, fightReport, type FightReport } from "./combat/report";
 export {
   createEnemySetup,
   monsterLevelScaling,

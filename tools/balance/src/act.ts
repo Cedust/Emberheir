@@ -209,7 +209,7 @@ function learnTowards(s: GameState, data: GameData, target: string): GameState {
  */
 function spendSkillPoints(state: GameState, data: GameData, weaponId: string): GameState {
   const plan = TREE_PLAN[weaponId];
-  if (!plan || !state.progress.trainerUnlocked || state.run) return state;
+  if (!plan || state.run) return state;
   let s = state;
   for (const target of plan.nodes) s = learnTowards(s, data, target);
   const branchNodes = s.legacy.branches.flatMap((b) =>
@@ -234,7 +234,9 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
   }
   const unlocks = battlePlanUnlocks(s.legacy.prestige);
   const mods = (first: SlotModifier): SlotModifier[] =>
-    (["reverb", first] as SlotModifier[]).slice(2 - unlocks.modifiers);
+    ([unlocks.rareModifiers ? "reverb" : "overcharge", first] as SlotModifier[]).slice(
+      2 - unlocks.modifiers,
+    );
   const reaction =
     unlocks.reactionSlots > 0 && plan.reaction && known.has(plan.reaction.skillId)
       ? plan.reaction
@@ -250,6 +252,7 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
         reactions: reaction ? [reaction] : [],
         reactionModifiers: reaction ? [mods("thrifty")] : [],
         capstone: unlocks.capstone ? (s.hero.plan.capstone ?? { id: "crescendo", slot: 0 }) : null,
+        openingMove: unlocks.openingMove ? (rotation[0] ?? null) : null,
       },
     });
   } catch {

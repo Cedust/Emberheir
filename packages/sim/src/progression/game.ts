@@ -1,5 +1,6 @@
 import { type FightResult, runFight } from "../combat/fight";
 import { type EnemyDefinition, createEnemySetup } from "../combat/monsters";
+import { type FightReport, fightReport } from "../combat/report";
 import type {
   Attribute,
   Attributes,
@@ -42,7 +43,9 @@ import {
   SLOT_MODIFIERS,
   battlePlanUnlocks,
   capstoneSpec,
+  modifierAllowed,
   reactionCondition,
+  reactionConditionAllowed,
   slotCondition,
   slotModifiers,
 } from "./battle-plan";
@@ -84,7 +87,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 6;
+export const SAVE_VERSION = 7;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -208,6 +211,8 @@ export interface Rewards {
   /** Spoils pick, empty if this fight has none. */
   readonly spoils: readonly SpoilsCard[];
   readonly spoilsPick: number | null;
+  /** What the Battle Plan did in this fight (missing in older saves). */
+  readonly report?: FightReport;
 }
 
 export type RunPhase = "intermission" | "fight" | "rewards";
@@ -654,7 +659,9 @@ export function heroReactions(
   plan.reactions.slice(0, unlocks.reactionSlots).forEach((r, index) => {
     if (!r) return;
     const entry = known.find((k) => k.skill.id === r.skillId);
-    const condition = reactionCondition(r.conditionId);
+    const condition = reactionConditionAllowed(r.conditionId, unlocks)
+      ? reactionCondition(r.conditionId)
+      : undefined;
     if (!entry || !condition) return;
     const modifiers = slotModifiers(plan.reactionModifiers, index, unlocks);
     result.push({
@@ -666,6 +673,18 @@ export function heroReactions(
     });
   });
   return result;
+}
+
+/** The Opening Move (Battle Plan, 8th Prestige): a known skill cast for free at fight start. */
+function heroOpeningMove(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): CombatantSetup["openingMove"] {
+  const id = state.hero.plan.openingMove;
+  if (!id || !battlePlanUnlocks(state.legacy.prestige).openingMove) return undefined;
+  const entry = knownSkills(state, data, weapon).find((k) => k.skill.id === id);
+  return entry ? { skill: entry.skill, level: entry.level } : undefined;
 }
 
 /** The Capstone the hero fights with; Echo points at the slot's index in the fight rotation. */
@@ -696,6 +715,7 @@ export function heroSetup(
       rotation: (weapon) => heroRotation(state, data, weapon),
       reactions: (weapon) => heroReactions(state, data, weapon),
       capstone: (weapon) => heroCapstone(state, data, weapon),
+      openingMove: (weapon) => heroOpeningMove(state, data, weapon),
       bonuses: (weapon) => treeBonuses(data.skillTree, hero.learned, weapon.range),
       triggers: (weapon) => treeTriggers(data.skillTree, hero.learned, weapon.range),
       rules: keystoneRules(data.skillTree, hero.learned),
@@ -1140,6 +1160,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ascensionShards: shards,
         runes,
         levelsGained: leveled.levelsGained,
+        report: fightReport(result.events),
         items,
         itemPick: null,
         salvagedDust: 0,
@@ -1580,9 +1601,15 @@ function setQuarry(
   return { ...state, legacy: { ...state.legacy, quarry: part ? { ...part, misses: 0 } : null } };
 }
 
+/** Kaelen travels with the caravan from the first Camp on; the Skill Tree is Camp-only. */
 export function requireTrainer(state: GameState): void {
   requireCamp(state);
-  if (!state.progress.trainerUnlocked) fail("Kaelen joins the Camp after the act boss");
+}
+
+/** The Battle Plan can be changed in the Camp and between stages, never mid-fight. */
+function requirePlanEdit(state: GameState): void {
+  if (state.pendingPrestige) fail("The harvest comes first");
+  if (state.run?.phase === "fight") fail("Not during a fight");
 }
 
 function learn(state: GameState, data: GameData, nodeIds: readonly string[]): GameState {
@@ -1654,7 +1681,7 @@ function setRotationSkill(
   slot: number,
   skillId: string | null,
 ): GameState {
-  requireTrainer(state);
+  requirePlanEdit(state);
   if (!Number.isInteger(slot) || slot < 0 || slot >= state.progress.rotationSlots) {
     return fail("No such Rotation Slot");
   }
@@ -1674,7 +1701,7 @@ function setRotationSkill(
 
 /** Checks a Battle Plan against the unlocks; changing a chosen Capstone costs Gold. */
 function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState): GameState {
-  requireTrainer(state);
+  requirePlanEdit(state);
   const unlocks = battlePlanUnlocks(state.legacy.prestige);
   const slots = state.progress.rotationSlots;
   const fit = <T>(list: readonly T[], length: number, empty: T): T[] =>
@@ -1691,6 +1718,7 @@ function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState):
         fail("Too many Slot Modifiers");
       }
       if (mods.some((m) => !SLOT_MODIFIERS.some((d) => d.id === m))) fail("Unknown Slot Modifier");
+      if (mods.some((m) => !modifierAllowed(m, unlocks))) fail("Slot Modifier locked");
     }
     return fitted;
   };
@@ -1708,8 +1736,14 @@ function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState):
     if (!r) continue;
     if (!known.some((k) => k.skill.id === r.skillId)) return fail("Unknown skill");
     if (!reactionCondition(r.conditionId)) return fail("Unknown Reaction condition");
+    if (!reactionConditionAllowed(r.conditionId, unlocks)) return fail("Reaction condition locked");
   }
   const reactionModifiers = checkModifiers(plan.reactionModifiers, unlocks.reactionSlots);
+  const openingMove = plan.openingMove ?? null;
+  if (openingMove !== null) {
+    if (!unlocks.openingMove) return fail("Opening Move locked");
+    if (!known.some((k) => k.skill.id === openingMove)) return fail("Unknown skill");
+  }
 
   const capstone = plan.capstone;
   let gold = state.wallet.gold;
@@ -1738,6 +1772,7 @@ function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState):
         reactions,
         reactionModifiers,
         capstone: capstone ? { id: capstone.id, slot: capstone.slot } : null,
+        openingMove,
       },
     },
     wallet: { ...state.wallet, gold },
@@ -1863,6 +1898,7 @@ export function deserializeGame(json: string): GameState {
   if (state.version === 3) state = migrateV3(state);
   if (state.version === 4) state = migrateV4(state);
   if (state.version === 5) state = migrateV5(state);
+  if (state.version === 6) state = migrateV6(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -1946,5 +1982,25 @@ function migrateV5(state: Partial<GameState>): Partial<GameState> {
     version: 6,
     ...(state.hero ? { hero: { ...state.hero, plan: EMPTY_PLAN } } : {}),
     ...(state.legacy ? { legacy: { ...state.legacy, branches: [] } } : {}),
+  };
+}
+
+/** v6 → v7 (Spielspaß plan): the faster Battle Plan ladder grants its slots to older heroes. */
+function migrateV6(state: Partial<GameState>): Partial<GameState> {
+  const prestige = state.legacy?.prestige ?? 0;
+  return {
+    ...state,
+    version: 7,
+    ...(state.progress
+      ? {
+          progress: {
+            ...state.progress,
+            rotationSlots: Math.max(
+              state.progress.rotationSlots,
+              battlePlanUnlocks(prestige).rotationSlots,
+            ),
+          },
+        }
+      : {}),
   };
 }

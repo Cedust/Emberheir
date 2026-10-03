@@ -117,6 +117,14 @@ export function applyAilment(
 /** Number of Poison stacks. */
 export const poisonStacks = (states: AilmentStates) => states.poison?.stacks.length ?? 0;
 
+/** All ailment stacks: every Poison stack counts, every other running ailment counts once. */
+export function ailmentStacks(states: AilmentStates): number {
+  const others = (["burn", "corruption", "bleed", "chill", "shock"] as const).filter(
+    (t) => states[t],
+  ).length;
+  return poisonStacks(states) + others;
+}
+
 /** Bleed damage that is still to come (Rend deals it at once). */
 export function remainingBleedDamage(states: AilmentStates): number {
   const bleed = states.bleed;
