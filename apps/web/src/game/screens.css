@@ -1494,6 +1494,30 @@
   cursor: pointer;
 }
 
+/* Many acts: only the chosen one shows its name, the others shrink to their number. */
+.stage .road.compact .road-act:not(.on) {
+  width: 52px;
+  padding: 0;
+}
+
+.stage .road.compact .road-act:not(.on) .road-text {
+  display: none;
+}
+
+.stage .road.compact .road-act:not(.on) .road-num {
+  flex-basis: 100%;
+}
+
+.stage .road.compact .road-act:not(.on) .road-mark {
+  top: 3px;
+  right: 3px;
+  color: #f3e6c8;
+}
+
+.stage .road.compact .road-act.on {
+  width: 260px;
+}
+
 .stage .road-act:hover:not(:disabled) {
   border-color: var(--accent);
 }
@@ -2130,6 +2154,60 @@
   max-height: 100%;
 }
 
+.stage .tree-views {
+  position: absolute;
+  top: 12px;
+  left: 20px;
+  z-index: 1;
+}
+
+.stage .prestige-branches {
+  align-self: stretch;
+  flex-grow: 1;
+  padding: 62px 20px 44px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  gap: 10px 14px;
+  align-content: start;
+}
+
+.stage .pb-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 14px;
+  border-left: 4px solid var(--branch);
+}
+
+.stage .pb-card.closed {
+  opacity: 0.5;
+}
+
+.stage .pb-card.closed > .icon {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+}
+
+.stage .pb-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.stage .pb-name {
+  font-size: 17px;
+  color: var(--branch);
+}
+
+.stage .pb-tree .node-ranks {
+  font-size: 10px;
+}
+
 .stage .skill-tree .link {
   stroke: var(--edge);
   stroke-width: 3;
@@ -2341,7 +2419,7 @@
 }
 
 .stage .plan-slots.reactions {
-  grid-template-columns: repeat(2, 220px);
+  grid-template-columns: repeat(2, 260px) auto;
 }
 
 .stage .plan-slot {
@@ -2352,6 +2430,84 @@
   gap: 6px;
   text-align: left;
   cursor: pointer;
+}
+
+.stage .plan-slot-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .plan-select {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.stage .plan-select .eyebrow {
+  font-size: 10px;
+}
+
+.stage .plan-select select {
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.stage .plan-slots.reactions .reaction-note {
+  align-self: end;
+}
+
+.stage .capstones {
+  padding: 14px 16px;
+}
+
+.stage .capstones ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.stage .capstone {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .capstone.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgb(255 138 58 / 0.35);
+}
+
+.stage .capstone:disabled:not(.on) {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .stage .plan-slot.on {
@@ -2423,6 +2579,7 @@
 }
 
 .stage .plan-side {
+  min-height: 0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -2433,6 +2590,14 @@
 
 .stage .known {
   padding: 14px 16px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .known .known-skills {
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .stage .known-skills {
@@ -3043,17 +3208,20 @@
 }
 
 .stage .prestige-seal,
+.stage .prestige-branch,
 .stage .prestige-heir {
   background: linear-gradient(180deg, #e8b48a 0%, #d9c6a0 45%);
 }
 
 :root[data-theme="dark"] .stage .prestige-seal,
+:root[data-theme="dark"] .stage .prestige-branch,
 :root[data-theme="dark"] .stage .prestige-heir {
   background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stage .prestige-seal,
+  :root:not([data-theme="light"]) .stage .prestige-branch,
   :root:not([data-theme="light"]) .stage .prestige-heir {
     background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
   }
@@ -3072,6 +3240,49 @@
 
 .stage .seal-head p {
   margin: 0;
+}
+
+.stage .branch-picks {
+  flex-grow: 1;
+  width: 1400px;
+  padding: 28px 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 14px;
+}
+
+.stage .branch-picks > .branch-pick {
+  width: 262px;
+}
+
+.stage .branch-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-top: 4px solid var(--branch);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .branch-pick.on {
+  border-color: var(--accent);
+  border-top-color: var(--branch);
+  box-shadow: 0 0 14px rgb(255 138 58 / 0.45);
+}
+
+.stage .branch-pick-name {
+  font-size: 21px;
+  color: var(--branch);
+}
+
+.stage .branch-footer {
+  padding-bottom: 40px;
 }
 
 .stage .seal-body {

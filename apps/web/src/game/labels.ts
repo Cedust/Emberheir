@@ -29,6 +29,7 @@ export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
   notConnected: "Learn a connected node first",
   noSkillPoints: "No Skill Points left",
   noEmber: "Needs Harvester's Ember",
+  branchLocked: "Unlock this branch at a Prestige",
 };
 
 export const MOVE_BLOCK_TEXT: Record<MoveBlockReason, string> = {

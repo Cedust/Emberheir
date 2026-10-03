@@ -153,6 +153,37 @@ const ART: Readonly<Record<string, Art>> = {
       </>
     ),
   },
+  mace: {
+    w: 32,
+    h: 96,
+    draw: () => (
+      <>
+        <P d="M14 34H18.4L18 90Q16.2 92 14.4 90Z" fill="url(#ia-wood)" />
+        <L d="M14.2 70L18.2 72M14.2 76L18.2 78M14.2 82L18.2 84" w={1} op={0.7} />
+        <P
+          d="M16 4L19 12L26 10L22 17L28 22L21 24L22 32L16 28L10 32L11 24L4 22L10 17L6 10L13 12Z"
+          fill="url(#ia-iron)"
+        />
+        <P d={circle(16, 19, 7)} fill="url(#ia-steel)" w={1.2} />
+        <L d="M13 15Q15 13 18 14" color={SHINE} w={0.9} op={0.8} />
+        <P d="M12.6 30H19.8V36H12.6Z" fill="url(#ia-darkgold)" w={1.2} />
+      </>
+    ),
+  },
+  staff: {
+    w: 32,
+    h: 128,
+    draw: () => (
+      <>
+        <P d="M14.4 26Q13 70 14.6 124Q16.2 126 17.8 124Q19 70 17.8 26Z" fill="url(#ia-wood)" />
+        <L d="M15.6 30Q15 70 15.8 120" color="#e9b984" w={0.8} op={0.6} />
+        <L d="M14.2 54Q16 57 18 54M14.2 92Q16 95 18 92" w={1} op={0.7} />
+        <P d="M10 26Q8 16 12 8Q16 2 20 8Q24 16 22 26Q16 30 10 26Z" fill="url(#ia-darkleather)" />
+        <P d={circle(16, 16, 6.5)} fill="url(#ia-amethyst)" w={1.2} />
+        <circle cx={14} cy={14} r={1.6} fill={SHINE} opacity={0.8} />
+      </>
+    ),
+  },
   bow: {
     w: 64,
     h: 96,
@@ -653,6 +684,7 @@ export function ItemArtDefs() {
         {radial("ia-ember", ["#fff6c0", "#ff9a3a", "#a82a0c"])}
         {radial("ia-sapphire", ["#d8ecff", "#4f8cff", "#14307a"])}
         {radial("ia-garnet", ["#ffc0c4", "#d02a46", "#5a0a1a"])}
+        {radial("ia-amethyst", ["#f0dcff", "#a35cff", "#3a1260"])}
         {glow("ia-glow-ember", "#ff9a3a")}
         {glow("ia-glow-sapphire", "#5b8cff")}
         {glow("ia-glow-garnet", "#ff4a64")}

@@ -102,6 +102,13 @@ export function Plaque(props: { fighter: FighterSnapshot; info: PlaqueInfo; mirr
             </span>
           </span>
         ))}
+        {f.stunned > 0 && (
+          <span className="status-chip stun" title="Stunned">
+            <span className="swatch" />
+            <b>Stunned</b>
+            <span className="mono sub">{f.stunned.toFixed(1)}s</span>
+          </span>
+        )}
         {f.curses.map((c) => (
           <span key={c.name} className="status-chip curse" title={c.name}>
             <span className="swatch" />

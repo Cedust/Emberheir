@@ -60,7 +60,12 @@ function useLooks(state: GameState, run: RunState) {
   const kind = weapon?.weapon?.id;
   const heroLook: HeroLook = {
     weapon:
-      kind === "axe" || kind === "dagger" || kind === "bow" || kind === "crossbow"
+      kind === "axe" ||
+      kind === "dagger" ||
+      kind === "bow" ||
+      kind === "crossbow" ||
+      kind === "mace" ||
+      kind === "staff"
         ? kind
         : weapon?.weapon?.range === "ranged"
           ? "wand"
@@ -173,8 +178,11 @@ export function BattleView(props: {
       sceneRef.current?.onSnapshot(snap);
       const used = [...fresh].reverse().find((e) => e.type === "skill" && e.side === "hero");
       if (used?.type === "skill") {
-        const slot = snap.hero.rotation.findIndex((r) => r.name === used.skill);
-        if (slot >= 0) setFlash((f) => ({ slot, n: (f?.n ?? 0) + 1 }));
+        const reaction = used.via === "reaction";
+        const list = reaction ? snap.hero.reactions : snap.hero.rotation;
+        const index = list.findIndex((r) => r.name === used.skill);
+        const slot = reaction ? 10 + index : index;
+        if (index >= 0) setFlash((f) => ({ slot, n: (f?.n ?? 0) + 1 }));
       }
       setSnapshot(snap);
     };
@@ -308,6 +316,27 @@ export function BattleView(props: {
               </div>
             );
           })}
+          {hero.reactions.length > 0 && <span className="skillbar-divider" aria-hidden="true" />}
+          {hero.reactions.map((slot, i) => (
+            <div
+              key={`r-${slot.skillId}`}
+              className="skill-slot-wrap reaction"
+              title={`Reaction: ${slot.name} · ${slot.heatCost} Heat`}
+            >
+              <div
+                className={`skill-slot reaction ${slot.cooldownLeft > 0 ? "cooling" : ""} ${flash?.slot === 10 + i ? `fired-${flash.n % 2}` : ""}`}
+                style={{ background: skillTint(slot.skillId) }}
+                data-testid="reaction-slot"
+              >
+                <Icon name={skillIcon(slot.skillId)} size={26} color="#fff6e4" />
+                <span className="pos mono">R{i + 1}</span>
+                {slot.cooldownLeft > 0 && (
+                  <span className="cooldown mono">{Math.ceil(slot.cooldownLeft)}</span>
+                )}
+              </div>
+              <span className="skill-caption">{slot.name}</span>
+            </div>
+          ))}
         </div>
 
         <div className="footer-right">

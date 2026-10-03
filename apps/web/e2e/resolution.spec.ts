@@ -132,6 +132,9 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "Victory" })).toBeVisible();
     await check("victory");
     await page.getByRole("button", { name: "Hold On to What Matters" }).click();
+    await expect(page.getByRole("region", { name: "Bloodline" })).toBeVisible();
+    await check("bloodline");
+    await page.getByRole("button", { name: /^Take / }).click();
     await check("seal");
     await page.getByRole("button", { name: /^Body Armor:/ }).click();
     await page.getByRole("button", { name: "Seal This Slot" }).click();

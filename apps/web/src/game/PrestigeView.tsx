@@ -1,4 +1,4 @@
-import { GAME_DATA } from "@emberheir/content";
+import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -6,6 +6,8 @@ import {
   SLOT_NAMES,
   itemSlotFor,
   actsInRun,
+  openBranches,
+  prestigeBranchNodes,
   prestigeRewards,
   sealsAvailable,
 } from "@emberheir/sim";
@@ -21,11 +23,15 @@ const LAST_WORDS: Record<string, string> = {
   rotwood: "Rot... returns... The Harvester... always... reaps...",
   "ember-wastes": "The fire... was never... mine...",
   "frost-peaks": "Cold... keeps... nothing... from it...",
+  "storm-spires": "The storm... was only... its breath...",
+  "void-rift": "Even nothing... gets... harvested...",
+  emberfall: "You cannot keep... the ember... Heir... It always... grows back...",
 };
 
-type Step = "victory" | "seal";
+type Step = "victory" | "branch" | "seal";
 const STEPS = [
   { id: "victory", name: "Victory" },
+  { id: "branch", name: "Bloodline" },
   { id: "seal", name: "Seal" },
   { id: "heir", name: "Inheritance" },
 ] as const;
@@ -41,6 +47,14 @@ function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
     </ol>
   );
 }
+
+const BRANCH_COLORS: Record<string, string> = {
+  core: "#c9a063",
+  might: "#c9c2b8",
+  arcana: "#5b8cff",
+  rupture: "#d0505c",
+  affliction: "#a35cff",
+};
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -71,6 +85,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const [selected, setSelected] = useState<EquipmentSlot>(
     () => slots.find((s) => state.hero.equipment[s]) ?? "mainHand",
   );
+  const open = openBranches(state, GAME_DATA);
+  const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
   if (!pending) return null;
 
   if (step === "victory") {
@@ -91,11 +107,70 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             &ldquo;{LAST_WORDS[pending.actId] ?? "...the Harvester... will come for you..."}&rdquo;
           </p>
           <p className="victory-sub">
-            The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap
-            what grew.
+            {pending.actId === "emberfall"
+              ? "The Harvester breaks apart. Its ember scatters over the world, and everything burns down to grow again."
+              : "The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap what grew."}
           </p>
-          <button type="button" className="btn big primary" onClick={() => setStep("seal")}>
+          <button
+            type="button"
+            className="btn big primary"
+            onClick={() => setStep(open.length ? "branch" : "seal")}
+          >
             Hold On to What Matters
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "branch") {
+    return (
+      <section className="screen prestige prestige-branch" aria-label="Bloodline">
+        <Crumbs step="branch" />
+        <header className="seal-head">
+          <h2 className="title-font">THE BLOODLINE GROWS</h2>
+          <p className="sub">Choose a new branch for the Skill Tree. It stays forever.</p>
+        </header>
+        <div className="branch-picks">
+          {open.map((b) => {
+            const nodes = prestigeBranchNodes(SKILL_TREE, b.id);
+            const skill = nodes.find((n) => n.skill)?.skill;
+            const keystone = nodes.find((n) => n.kind === "keystone");
+            const on = b.id === branch;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                className={`branch-pick panel-card ${on ? "on" : ""}`}
+                aria-pressed={on}
+                style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
+                onClick={() => setBranch(b.id)}
+              >
+                <span className="eyebrow">{b.branch.toUpperCase()}</span>
+                <span className="title-font branch-pick-name">{b.name}</span>
+                <span className="sub">{b.theme}</span>
+                {skill && (
+                  <span className="small">
+                    Skill · <b>{skill.name}</b>
+                  </span>
+                )}
+                {keystone && (
+                  <span className="small">
+                    Keystone · <b>{keystone.name}</b>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="branch-footer">
+          <button
+            type="button"
+            className="btn big primary"
+            disabled={!branch}
+            onClick={() => setStep("seal")}
+          >
+            Take {open.find((b) => b.id === branch)?.name ?? "it"}
           </button>
         </div>
       </section>
@@ -234,7 +309,13 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             <button
               type="button"
               className="btn big primary"
-              onClick={() => game.dispatch({ type: "prestige", sealedSlots: sealed })}
+              onClick={() =>
+                game.dispatch({
+                  type: "prestige",
+                  sealedSlots: sealed,
+                  ...(branch ? { branchId: branch } : {}),
+                })
+              }
             >
               Let It Burn
             </button>
@@ -252,6 +333,7 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
   const r = prestigeRewards(GAME_DATA, prestige);
   const acts = actsInRun(GAME_DATA, prestige);
   const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
+  const newBranch = SKILL_TREE.prestigeBranches?.find((b) => b.id === state.legacy.branches.at(-1));
   const rewards = [
     {
       kind: "LEGACY SEAL",
@@ -259,12 +341,22 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       desc: "Sealed slots keep their item through every harvest.",
       tone: "seal",
     },
-    ...(prestige === 1
+    ...(r.planUpgrade
       ? [
           {
             kind: "BATTLE PLAN",
-            name: `Rotation Slot ${r.rotationSlots}`,
-            desc: "Two skills in your rotation. Set them up at Kaelen.",
+            name: r.planUpgrade,
+            desc: "Set it up at Kaelen.",
+            tone: "accent",
+          },
+        ]
+      : []),
+    ...(newBranch
+      ? [
+          {
+            kind: "PRESTIGE BRANCH",
+            name: newBranch.name,
+            desc: newBranch.theme,
             tone: "accent",
           },
         ]

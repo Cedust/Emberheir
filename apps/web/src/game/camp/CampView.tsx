@@ -430,7 +430,11 @@ export function CampView(props: {
         </section>
 
         <div className="set-out">
-          <div className="road" role="radiogroup" aria-label="Road">
+          <div
+            className={`road ${acts.length > 4 ? "compact" : ""}`}
+            role="radiogroup"
+            aria-label="Road"
+          >
             {acts.map((a) => {
               const open = actUnlocked(state, GAME_DATA, a.id);
               const done = state.progress.actsCleared.includes(a.id);
@@ -443,6 +447,7 @@ export function CampView(props: {
                   role="radio"
                   aria-checked={on}
                   aria-label={`Act ${a.number}, ${a.name}`}
+                  title={`Act ${a.number} · ${a.name}`}
                   disabled={!open}
                   className={`road-act ${on ? "on" : ""} ${done ? "done" : ""} ${open ? "" : "locked"}`}
                   style={

@@ -8,7 +8,7 @@ import { Application, Container, Graphics, Text } from "pixi.js";
  */
 
 export interface HeroLook {
-  readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow";
+  readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow" | "mace" | "staff";
   readonly offHand: "shield" | "focus" | null;
 }
 
@@ -427,6 +427,25 @@ function drawHero(look: HeroLook): Container {
         .lineTo(86, -232)
         .stroke({ color: 0x3f5a2e, width: 7, cap: "round" }),
     );
+  } else if (look.weapon === "mace") {
+    c.addChild(
+      new Graphics()
+        .moveTo(70, -250)
+        .lineTo(136, -340)
+        .stroke({ color: 0x7a5a24, width: 9, cap: "round" }),
+      new Graphics().circle(142, -350, 22).fill(0x8a8f96).stroke(line),
+      new Graphics().poly([142, -386, 150, -370, 134, -370]).fill(0x8a8f96).stroke(line),
+      new Graphics().poly([178, -350, 162, -342, 162, -358]).fill(0x8a8f96).stroke(line),
+    );
+  } else if (look.weapon === "staff") {
+    c.addChild(
+      new Graphics()
+        .moveTo(90, -150)
+        .lineTo(130, -420)
+        .stroke({ color: 0x5e4a36, width: 9, cap: "round" }),
+      new Graphics().circle(132, -432, 16).fill(0xa35cff).stroke(line),
+      new Graphics().circle(132, -432, 26).stroke({ color: 0xc9a0ff, width: 2, alpha: 0.6 }),
+    );
   } else if (look.weapon === "bow") {
     c.addChild(
       new Graphics()
@@ -508,16 +527,45 @@ const FROST_COLORS: Record<string, Palette> = {
   warden: { body: 0x3a4a5a, trim: 0x9fe0ff, head: 0xa8b8c4 },
 };
 
+/** Storm Spires: slate, copper and violet sparks. */
+const STORM_COLORS: Record<string, Palette> = {
+  skirmisher: { body: 0x4a4a7a, trim: 0xffe14d, head: 0x9a9ac0 },
+  brute: { body: 0x3a3a52, trim: 0xb87333, head: 0x7a7a90 },
+  caster: { body: 0x2a2a5a, trim: 0xffe14d, head: 0xb0b0d0 },
+  thornback: { body: 0x8a5a2a, trim: 0xffe14d, head: 0xb87333 },
+};
+
+/** Void Rift: near-black with violet glows. */
+const VOID_COLORS: Record<string, Palette> = {
+  skirmisher: { body: 0x2a1a3a, trim: 0xa35cff, head: 0x4a3a5a },
+  brute: { body: 0x1e1828, trim: 0x6a3a9a, head: 0x3a3048 },
+  caster: { body: 0x3a1a5a, trim: 0xc9a0ff, head: 0x6a5a7a },
+  afflicter: { body: 0x2a1a40, trim: 0xa35cff, head: 0x5a4a6a },
+};
+
+/** Emberfall: ash grey and the last embers. */
+const EMBERFALL_COLORS: Record<string, Palette> = {
+  brute: { body: 0x4a4440, trim: 0xff8a1f, head: 0x8a8078 },
+  caster: { body: 0x3a3634, trim: 0xa35cff, head: 0x9a9088 },
+  skirmisher: { body: 0x2e2a28, trim: 0xe0314b, head: 0x6a625c },
+  warden: { body: 0x3a3430, trim: 0xff6a2b, head: 0x7a7068 },
+  harvester: { body: 0x1a1614, trim: 0xff8a1f, head: 0xe8e2d6 },
+};
+
 const ACT_COLORS: Record<number, Record<string, Palette>> = {
   2: ROTWOOD_COLORS,
   3: EMBER_COLORS,
   4: FROST_COLORS,
+  5: STORM_COLORS,
+  6: VOID_COLORS,
+  7: EMBERFALL_COLORS,
 };
 
 /** Which body an archetype uses: robed casters, broad brutes or lean fighters. */
 const BODY: Record<string, "robe" | "broad" | "lean"> = {
   caster: "robe",
   afflicter: "robe",
+  harvester: "robe",
   brute: "broad",
   thornback: "broad",
   warden: "broad",
@@ -559,6 +607,24 @@ function drawEnemy(look: EnemyLook): Container {
         .stroke({ color: 0x5e4a36, width: 7, cap: "round" }),
       new Graphics().circle(-142, -346, 13).fill(col.trim).stroke(line),
     );
+    if (look.archetype === "harvester") {
+      // A scythe instead of a staff, and two ember eyes in the hood.
+      c.addChild(
+        new Graphics()
+          .moveTo(-150, -120)
+          .lineTo(-150, -500)
+          .stroke({ color: 0x3a2a1e, width: 10, cap: "round" }),
+        new Graphics()
+          .moveTo(-150, -500)
+          .quadraticCurveTo(-60, -540, 10, -470)
+          .quadraticCurveTo(-70, -500, -150, -470)
+          .closePath()
+          .fill(0xd8d4cc)
+          .stroke(line),
+        new Graphics().circle(-14, -372, 6).fill(col.trim),
+        new Graphics().circle(14, -372, 6).fill(col.trim),
+      );
+    }
     if (look.archetype === "afflicter") {
       for (const [x, y] of [
         [-30, -300],
@@ -666,7 +732,7 @@ function drawEnemy(look: EnemyLook): Container {
       }
     }
   }
-  if (look.boss) {
+  if (look.boss && look.archetype !== "harvester") {
     c.addChild(
       new Graphics()
         .poly([-40, -430, -30, -470, -12, -446, 0, -480, 12, -446, 30, -470, 40, -430])

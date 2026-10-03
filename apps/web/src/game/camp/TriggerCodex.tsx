@@ -17,6 +17,7 @@ const ARCHETYPE_NAMES: Record<string, string> = {
   afflicter: "Afflicters",
   thornback: "Thornbacks",
   warden: "Wardens",
+  harvester: "The Harvester",
 };
 
 /** Where a part drops more often, e.g. "Rotwood" or "Skirmishers · Bosses". */

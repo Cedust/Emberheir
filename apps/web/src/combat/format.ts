@@ -26,6 +26,8 @@ const AILMENT_NAMES: Record<AilmentType, string> = {
   corruption: "Corruption",
 };
 
+const VIA = { reaction: "Reaction", reverb: "Reverb", echo: "Echo" } as const;
+
 export function formatTime(seconds: number): string {
   return `${seconds.toFixed(2)}s`;
 }
@@ -39,7 +41,7 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         time,
         side: event.side,
         tone: "skill",
-        text: `${names[event.side]} uses ${event.skill} (−${event.heatCost} Heat)`,
+        text: `${names[event.side]} uses ${event.skill} (${event.via ? `${VIA[event.via]}, ` : ""}−${event.heatCost} Heat)`,
       };
     case "hit": {
       const target = names[event.side === "hero" ? "enemy" : "hero"];
@@ -125,6 +127,13 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         side: event.side,
         tone: "telegraph",
         text: `${names[event.side]} winds up ${event.skill}! (${event.windup}s)`,
+      };
+    case "stun":
+      return {
+        time,
+        side: event.side,
+        tone: "telegraph",
+        text: `${names[event.side]} is stunned (${event.seconds.toFixed(1)}s)`,
       };
     case "death":
       return { time, side: event.side, tone: "end", text: `${names[event.side]} falls` };

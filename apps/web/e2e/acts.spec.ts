@@ -11,10 +11,11 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   const camp = page.getByRole("region", { name: "Camp" });
   await expect(camp).toContainText("Camp at the Rotwood");
   const road = page.getByRole("radiogroup");
-  await expect(road.getByRole("radio")).toHaveCount(4);
-  // Acts 3 and 4 open with later Prestiges.
-  await expect(road.getByRole("radio", { name: /Ember Wastes/ })).toBeDisabled();
-  await expect(road.getByRole("radio", { name: /Frost Peaks/ })).toBeDisabled();
+  await expect(road.getByRole("radio")).toHaveCount(7);
+  // Acts 3 to 7 open with later Prestiges.
+  for (const name of [/Ember Wastes/, /Frost Peaks/, /Storm Spires/, /Void Rift/, /Emberfall/]) {
+    await expect(road.getByRole("radio", { name })).toBeDisabled();
+  }
   await expect(road.getByRole("radio", { name: /Rotwood/ })).toBeChecked();
 
   // Revisit Act 1, then go on to the Rotwood.

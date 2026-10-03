@@ -769,6 +769,15 @@
   background: var(--dmg-void);
 }
 
+.stage .status-chip.stun {
+  border-color: var(--dmg-lightning);
+}
+
+.stage .status-chip.stun .swatch {
+  background: var(--dmg-lightning);
+  border-radius: 50%;
+}
+
 .stage .status-chip.curse {
   border-color: var(--dmg-void);
   border-style: dashed;
@@ -1052,6 +1061,31 @@
     transform: scale(1.15);
     filter: brightness(1.6);
   }
+}
+
+.stage .skillbar-divider {
+  align-self: stretch;
+  width: 2px;
+  margin: 6px 4px 22px;
+  background: var(--edge);
+}
+
+.stage .skill-slot.reaction {
+  width: 56px;
+  height: 56px;
+  border-style: dashed;
+}
+
+.stage .skill-slot.reaction.cooling > svg {
+  opacity: 0.35;
+}
+
+.stage .skill-slot .cooldown {
+  position: absolute;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff6e4;
+  text-shadow: 0 1px 2px #000;
 }
 
 .stage .skill-caption {

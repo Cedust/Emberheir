@@ -59,6 +59,8 @@ const CLEARED_NAN: Record<string, string> = {
   rotwood: "The Mother of Rot is compost now. The forest can finally breathe.",
   "ember-wastes": "The Cinder Tyrant cools into a very large paperweight.",
   "frost-peaks": "The Rime Warden shatters. Somebody pack a scarf for the next act.",
+  "storm-spires": "The Storm Herald is grounded. My hair will never lie flat again.",
+  "void-rift": "The Maw is shut. Don't look into the hole it left, dear.",
 };
 
 /** Drifting ash: fixed pseudo-random dots (same layout every time). */
