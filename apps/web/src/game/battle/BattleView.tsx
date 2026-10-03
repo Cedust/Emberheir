@@ -226,7 +226,6 @@ export function BattleView(props: {
         sub={`Stage ${run.stage} / ${stages}`}
         cleared={false}
         attributePoints={state.hero.unspentAttributePoints}
-        treeUnlocked={state.progress.trainerUnlocked}
         skillPoints={state.hero.unspentSkillPoints}
         onCharacter={props.onCharacter}
         onTree={props.onTree}

@@ -173,11 +173,10 @@ function personas(state: GameState, road: ActData): Persona[] {
       icon: "sword",
       cloak: "#6a2a20",
       figure: { fs: 1.05 },
-      quote: trainer ? "“Late to one battle. Never late to training.”" : afterBoss,
+      quote: "“Late to one battle. Never late to training.”",
       actions: [{ name: "Skill Tree" }, { name: "Battle Plan" }, { name: "Respec" }],
-      cta: trainer ? "Open Skill Tree" : "Locked",
+      cta: "Open Skill Tree",
       target: "kaelen",
-      ...(trainer ? {} : { locked: "boss" }),
     },
     {
       id: "eldrin",

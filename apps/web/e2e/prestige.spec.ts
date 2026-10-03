@@ -50,7 +50,7 @@ test("The harvest boss falls: seal a slot, let it burn, wake as the next generat
   await expect(legacy).toContainText("Sealed the Body Armor.");
   await page.keyboard.press("Escape");
 
-  // The Supply Wagon burned; Rotation Slot 2 is open at Kaelen.
+  // The Supply Wagon burned; Rotation Slot 2 and Reaction Slot 1 are open at Kaelen.
   await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
   await page.getByRole("button", { name: "Open Stash" }).click();
   await expect(page.getByRole("note")).toContainText("Burned in the harvest");
@@ -60,5 +60,6 @@ test("The harvest boss falls: seal a slot, let it burn, wake as the next generat
   await expect(page.getByTestId("branch-warden")).toContainText("from Iron Will");
   await page.getByRole("tab", { name: "Battle Plan" }).click();
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
+  await expect(page.getByTestId("reaction-slot-0")).toBeVisible();
   expect(errors).toEqual([]);
 });

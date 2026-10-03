@@ -1,7 +1,9 @@
 import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
+  AILMENT_SOURCE,
   BATTLE_PLAN_LADDER,
   type BattlePlanState,
+  type BattlePlanUnlocks,
   CAPSTONES,
   type GameState,
   PROGRESSION,
@@ -12,6 +14,9 @@ import {
   type SkillNode,
   type SlotModifier,
   battlePlanUnlocks,
+  damageShare,
+  modifierAllowed,
+  reactionConditionAllowed,
   unlockPrestige,
   deriveStats,
   estimateRotation,
@@ -533,11 +538,11 @@ function PlanSelect(props: {
 }
 
 const NO_MODIFIER = { id: "", name: "—" };
-const MODIFIER_OPTIONS = [NO_MODIFIER, ...SLOT_MODIFIERS];
 
 /** Modifier dropdowns of one slot (one per unlocked Modifier). */
 function ModifierSelects(props: {
   count: number;
+  unlocks: BattlePlanUnlocks;
   value: readonly SlotModifier[];
   onChange: (mods: SlotModifier[]) => void;
 }) {
@@ -548,9 +553,12 @@ function ModifierSelects(props: {
           key={m}
           label={props.count > 1 ? `Modifier ${m + 1}` : "Modifier"}
           value={props.value[m] ?? ""}
-          options={MODIFIER_OPTIONS.filter(
+          options={[NO_MODIFIER, ...SLOT_MODIFIERS].filter(
             (o) =>
-              o.id === "" || o.id === props.value[m] || !props.value.includes(o.id as SlotModifier),
+              o.id === "" ||
+              o.id === props.value[m] ||
+              (modifierAllowed(o.id as SlotModifier, props.unlocks) &&
+                !props.value.includes(o.id as SlotModifier)),
           )}
           onChange={(id) => {
             const next = [...props.value];
@@ -560,6 +568,19 @@ function ModifierSelects(props: {
         />
       ))}
     </>
+  );
+}
+
+/** Damage share of one slot in the last fight ("Plan-Feedback ohne Text"). */
+export function ShareBar(props: { share: number; label?: string }) {
+  const pct = Math.round(props.share * 100);
+  return (
+    <span className="share-bar" title={`${props.label ?? "Damage"} last fight: ${pct} %`}>
+      <span className="share-track">
+        <span className="share-fill" style={{ width: `${pct}%` }} />
+      </span>
+      <span className="mono small">{pct}%</span>
+    </span>
   );
 }
 
@@ -597,6 +618,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     ...known.map((k) => ({ id: k.skill.id, name: k.skill.name })),
   ];
   const capstoneCost = plan.capstone ? PROGRESSION.capstoneChangeGold : 0;
+  const report = state.run?.rewards?.report;
 
   return (
     <div className="plan-layout">
@@ -650,6 +672,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       Lv {k.level} · {cost} Heat{k.startSkill ? " · Start Skill" : ""}
                     </span>
                   </button>
+                  {report && <ShareBar share={damageShare(report, k.skill.name)} />}
                   {unlocks.thresholds && (
                     <PlanSelect
                       label="Fires at Heat"
@@ -664,6 +687,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                   )}
                   <ModifierSelects
                     count={unlocks.modifiers}
+                    unlocks={unlocks}
                     value={plan.modifiers[i] ?? []}
                     onChange={(mods) => setPlan({ modifiers: at(plan.modifiers, i, mods, []) })}
                   />
@@ -714,6 +738,11 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                   ) : (
                     <span className="sub">Empty</span>
                   )}
+                  {report && skill && (
+                    <span className="sub small mono" title="Fired last fight">
+                      ×{report.reactions.find((x) => x.skill === skill.skill.name)?.casts ?? 0}
+                    </span>
+                  )}
                   <PlanSelect
                     label="Skill"
                     value={r?.skillId ?? ""}
@@ -733,7 +762,9 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                     <PlanSelect
                       label="When"
                       value={r.conditionId}
-                      options={REACTION_CONDITIONS}
+                      options={REACTION_CONDITIONS.filter(
+                        (c) => c.id === r.conditionId || reactionConditionAllowed(c.id, unlocks),
+                      )}
                       onChange={(id) =>
                         setPlan({
                           reactions: at(plan.reactions, i, { ...r, conditionId: id }, null),
@@ -743,6 +774,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                   )}
                   <ModifierSelects
                     count={unlocks.modifiers}
+                    unlocks={unlocks}
                     value={plan.reactionModifiers[i] ?? []}
                     onChange={(mods) =>
                       setPlan({ reactionModifiers: at(plan.reactionModifiers, i, mods, []) })
@@ -751,6 +783,18 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                 </div>
               );
             })}
+            {unlocks.openingMove ? (
+              <div className="plan-slot panel-card" data-testid="opening-move">
+                <span className="eyebrow">OPENING MOVE</span>
+                <PlanSelect
+                  label="Skill"
+                  value={plan.openingMove ?? ""}
+                  options={skillOptions}
+                  onChange={(id) => setPlan({ openingMove: id || null })}
+                />
+                <span className="sub small">Free at fight start</span>
+              </div>
+            ) : null}
             {unlocks.reactionSlots > 0 && (
               <span className="sub small reaction-note">{REACTION_COOLDOWN} s cooldown</span>
             )}
@@ -760,6 +804,17 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
           <div className="section-row">
             <span className="title-font section-title">One rotation</span>
             <span className="sub">≈ {rate.toFixed(1)} Heat/s</span>
+            {report && (
+              <span className="chain-report">
+                <span className="sub small">{setup.weapon.defaultAttack}</span>
+                <ShareBar
+                  share={damageShare(report, setup.weapon.defaultAttack)}
+                  label={setup.weapon.defaultAttack}
+                />
+                <span className="sub small">{AILMENT_SOURCE}</span>
+                <ShareBar share={damageShare(report, AILMENT_SOURCE)} label={AILMENT_SOURCE} />
+              </span>
+            )}
           </div>
           <div className="chain-row">
             {chain.length === 0 && (
@@ -885,11 +940,16 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
 export function KaelenView(props: {
   state: GameState;
   game: GameApi;
+  /** The Skill Tree is view-only (during a run). */
   viewOnly: boolean;
+  /** The Battle Plan can be changed (Camp and between stages, not mid-fight). */
+  planEditable?: boolean;
+  initialTab?: "tree" | "plan";
   onClose: () => void;
 }) {
   const { state, game, viewOnly } = props;
-  const [tab, setTab] = useState<"tree" | "plan">("tree");
+  const planEditable = props.planEditable ?? !viewOnly;
+  const [tab, setTab] = useState<"tree" | "plan">(props.initialTab ?? "tree");
   const [respec, setRespec] = useState(false);
   const spent = spentInTree(GAME_DATA, state.hero.learned);
   const canRespec =
@@ -918,7 +978,7 @@ export function KaelenView(props: {
             >
               Skill Tree
             </button>
-            {!viewOnly && (
+            {planEditable && (
               <button
                 type="button"
                 role="tab"
@@ -987,7 +1047,7 @@ export function KaelenView(props: {
             <Icon name="close" size={20} />
           </button>
         </header>
-        {tab === "tree" || viewOnly ? (
+        {tab === "tree" || !planEditable ? (
           <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />
         ) : (
           <BattlePlanTab state={state} game={game} />

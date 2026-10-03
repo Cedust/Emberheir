@@ -26,7 +26,12 @@ const AILMENT_NAMES: Record<AilmentType, string> = {
   corruption: "Corruption",
 };
 
-const VIA = { reaction: "Reaction", reverb: "Reverb", echo: "Echo" } as const;
+const VIA = {
+  reaction: "Reaction",
+  reverb: "Reverb",
+  echo: "Echo",
+  opening: "Opening Move",
+} as const;
 
 export function formatTime(seconds: number): string {
   return `${seconds.toFixed(2)}s`;

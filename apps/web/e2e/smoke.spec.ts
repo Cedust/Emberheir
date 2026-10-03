@@ -78,6 +78,17 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // The rewards follow on their own after the banner.
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(3);
+
+  // Between stages the Battle Plan shows its damage share and can be changed.
+  const plan = page.getByRole("region", { name: "Battle Plan" });
+  await expect(plan).toContainText("%");
+  await plan.getByRole("button", { name: "Edit Battle Plan" }).click();
+  await expect(page.getByRole("tab", { name: "Battle Plan" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByTestId("rotation-slot-0")).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByTestId("item-card").first().getByRole("button", { name: "Take" }).click();
   await expect(page.getByTestId("done-card")).toContainText("Taken:");
 

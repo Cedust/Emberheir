@@ -8,7 +8,9 @@ import {
   type RunState,
   type SpoilsCard,
   applyAction,
+  damageShare,
   deriveStats,
+  heroReactions,
   equipBlockReason,
   getAct,
   heroSetup,
@@ -28,6 +30,8 @@ import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 import { RuneStone, runeName } from "../ui/RuneArt";
+import { skillIcon, skillTint } from "./battle/skills";
+import { ShareBar } from "./camp/KaelenView";
 
 const SPOILS_LOOK: Record<SpoilsCard["kind"], { icon: IconName; tint: string }> = {
   flaskCharge: { icon: "flask", tint: "#c9322a" },
@@ -137,6 +141,45 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
               : "Flask empty"}
         </button>
       </div>
+    </section>
+  );
+}
+
+/** The Battle Plan at a glance, with each slot's damage share in the last fight. */
+function PlanCard(props: { state: GameState; run: RunState; onPlan: () => void }) {
+  const { state, run } = props;
+  const { setup } = heroSetup(state, GAME_DATA);
+  const reactions = heroReactions(state, GAME_DATA, setup.weapon);
+  const report = run.rewards?.report;
+  const rows = [
+    ...setup.rotation.map((r) => ({ id: r.skill.id, name: r.skill.name, reaction: false })),
+    ...reactions.map((r) => ({ id: r.skill.id, name: r.skill.name, reaction: true })),
+  ];
+  return (
+    <section className="panel-card plan-card" aria-label="Battle Plan">
+      <span className="eyebrow">Battle Plan</span>
+      <ul>
+        {rows.map((r) => (
+          <li key={`${r.id}-${r.reaction}`} className={r.reaction ? "reaction" : ""}>
+            <span className="skill-chip" style={{ background: skillTint(r.id) }}>
+              <Icon name={skillIcon(r.id)} size={16} color="#fff6e4" />
+            </span>
+            <span className="plan-card-name">{r.name}</span>
+            {report &&
+              (r.reaction ? (
+                <span className="mono small">
+                  ×{report.reactions.find((x) => x.skill === r.name)?.casts ?? 0}
+                </span>
+              ) : (
+                <ShareBar share={damageShare(report, r.name)} />
+              ))}
+          </li>
+        ))}
+      </ul>
+      <button type="button" className="btn" onClick={props.onPlan}>
+        <Icon name="cycle" size={16} />
+        Edit Battle Plan
+      </button>
     </section>
   );
 }
@@ -387,6 +430,7 @@ export function IntermissionView(props: {
   game: GameApi;
   onCharacter: () => void;
   onTree: () => void;
+  onPlan: () => void;
   onMenu: () => void;
 }) {
   const { state, run, game } = props;
@@ -432,7 +476,6 @@ export function IntermissionView(props: {
         sub={rewards ? `Stage ${run.stage} cleared` : `Stage ${run.stage} next`}
         cleared={!!rewards}
         attributePoints={state.hero.unspentAttributePoints}
-        treeUnlocked={state.progress.trainerUnlocked}
         skillPoints={state.hero.unspentSkillPoints}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
@@ -442,6 +485,7 @@ export function IntermissionView(props: {
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
           <UpNext run={run} />
+          <PlanCard state={state} run={run} onPlan={props.onPlan} />
         </aside>
         <main className="intermission-center">
           <h2 className="screen-title title-font">{title}</h2>

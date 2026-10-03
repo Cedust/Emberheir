@@ -64,7 +64,6 @@ export function RunHeader(props: {
   sub: string;
   cleared: boolean;
   attributePoints: number;
-  treeUnlocked: boolean;
   skillPoints: number;
   onCharacter: () => void;
   onTree: () => void;
@@ -94,19 +93,12 @@ export function RunHeader(props: {
         type="button"
         className="hud-button"
         onClick={props.onTree}
-        disabled={!props.treeUnlocked}
-        title={
-          props.treeUnlocked
-            ? "Skill Tree (view only)"
-            : "Kaelen teaches the Skill Tree after Gorrak"
-        }
+        title="Skill Tree and Battle Plan"
       >
         <Icon name="tree" size={18} />
         <span>Skill Tree</span>
         <kbd>T</kbd>
-        {props.treeUnlocked && props.skillPoints > 0 && (
-          <span className="badge">{props.skillPoints}</span>
-        )}
+        {props.skillPoints > 0 && <span className="badge">{props.skillPoints}</span>}
       </button>
       <button
         type="button"

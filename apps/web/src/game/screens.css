@@ -3879,3 +3879,77 @@
     animation: none;
   }
 }
+
+/* Battle Plan feedback: damage share of a slot in the last fight. */
+.stage .share-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 90px;
+}
+
+.stage .share-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--edge);
+  overflow: hidden;
+}
+
+.stage .share-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.stage .chain-report {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: auto 110px auto 110px;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.stage .plan-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .plan-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .plan-card li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.stage .plan-card li.reaction .skill-chip {
+  border-style: dashed;
+}
+
+.stage .plan-card li .mono {
+  justify-self: end;
+}
+
+.stage .plan-card .skill-chip {
+  width: 28px;
+  height: 28px;
+  border-width: 1.5px;
+}
+
+.stage .plan-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
