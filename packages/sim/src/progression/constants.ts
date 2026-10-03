@@ -169,7 +169,14 @@ export const PROGRESSION = {
    * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
    * first, so a run's newest act stays the hardest.
    */
-  runPressure: { life: 0.25, damage: 0.15 },
+  runPressure: { life: 0.8, damage: 0.35 },
+  /**
+   * Act bosses have this much more Life than their content value, so a boss fight lasts about
+   * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.
+   */
+  bossLife: 1.5,
+  /** Share of the Run Pressure on damage that the Harvester takes. */
+  harvesterPressure: 0.5,
 
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,

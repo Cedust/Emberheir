@@ -820,13 +820,22 @@ export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteMod
 export function enemySetup(encounter: Encounter, actId: string, data: GameData): CombatantSetup {
   const enemy = encounterEnemy(encounter, getAct(data, actId), data);
   const created = createEnemySetup(enemy, encounter.level);
-  const base = encounter.thief ? { ...created, fleeAfter: PROGRESSION.thiefFleeSeconds } : created;
+  const base = encounter.thief
+    ? { ...created, fleeAfter: PROGRESSION.thiefFleeSeconds }
+    : encounter.boss && enemy.archetype !== "harvester"
+      ? { ...created, baseLife: (created.baseLife ?? 0) * PROGRESSION.bossLife }
+      : created;
   const p = encounter.pressure;
+  // The Harvester takes only part of the Run Pressure on its damage: it is already the run's peak.
+  const damagePressure =
+    p && enemy.archetype === "harvester"
+      ? 1 + (p.damage - 1) * PROGRESSION.harvesterPressure
+      : p?.damage;
   const setup = p
     ? {
         ...base,
         baseLife: (base.baseLife ?? 0) * p.life,
-        damageMultiplier: (base.damageMultiplier ?? 1) * p.damage,
+        damageMultiplier: (base.damageMultiplier ?? 1) * (damagePressure ?? 1),
       }
     : base;
   const mods = eliteModifiersOf(encounter, data);
