@@ -11,3 +11,4 @@ export { ACT1, ACT2, GAME_DATA } from "./game";
 export { STARTING_ATTRIBUTES, createHeroSetup, resolveHeroGear, type HeroLoadout } from "./heroes";
 
 export const GAME_TITLE = "Emberheir";
+export { PRESTIGE_BRANCHES } from "./prestige-branches";

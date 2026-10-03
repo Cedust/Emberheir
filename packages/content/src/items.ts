@@ -21,7 +21,7 @@ import {
   rollRarity,
 } from "@emberheir/sim";
 import { LEGENDARY_POWERS, POWER_TRIGGERS, RUNES, RUNEWORDS, UNIQUES } from "./legendary";
-import { AXE, BOW, CROSSBOW, DAGGER, FIRE_WAND, SWORD } from "./weapons";
+import { AXE, BOW, CROSSBOW, DAGGER, FIRE_WAND, MACE, STAFF, SWORD } from "./weapons";
 
 /**
  * Items (docs/design/item-system-v1.md): all 10 slots, Normal to Epic. Most slots have a light
@@ -95,6 +95,27 @@ export const CROSSBOW_BASE: ItemBaseDefinition = {
   maxSockets: 3,
 };
 
+export const MACE_BASE: ItemBaseDefinition = {
+  id: "mace",
+  name: "Mace",
+  slot: "mainHand",
+  weapon: MACE,
+  requirements: { strength: 8 },
+  affixWeights: { physical: 1.5, defense: 1.2, elemental: 0.5 },
+  maxSockets: 3,
+};
+
+export const STAFF_BASE: ItemBaseDefinition = {
+  id: "staff",
+  name: "Staff",
+  slot: "mainHand",
+  weapon: STAFF,
+  requirements: { intelligence: 6, wisdom: 4 },
+  affixWeights: { elemental: 1.5, ailment: 1.5, physical: 0.3 },
+  size: { w: 1, h: 4 },
+  maxSockets: 4,
+};
+
 export const ROUND_SHIELD: ItemBaseDefinition = {
   id: "round-shield",
   name: "Round Shield",
@@ -112,7 +133,7 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   slot: "offHand",
   fitsWeaponRange: "ranged",
   // A Focus is for casters; a Bow or Crossbow takes a Quiver.
-  fitsWeapons: ["fire-wand"],
+  fitsWeapons: ["fire-wand", "staff"],
   implicit: { elementalDamage: 0.08, heatGain: 0.05 },
   requirements: { intelligence: 6 },
   affixWeights: { elemental: 1.5, heat: 1.5, block: 0, physical: 0.5 },
@@ -311,6 +332,8 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   DAGGER_BASE,
   BOW_BASE,
   CROSSBOW_BASE,
+  MACE_BASE,
+  STAFF_BASE,
   ROUND_SHIELD,
   EMBER_FOCUS,
   QUIVER,

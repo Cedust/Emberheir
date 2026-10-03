@@ -15,14 +15,10 @@ describe("ACTS", () => {
         number: act.number,
         name: act.name,
       });
-      expect(act.stages).toBe(15);
     }
-    expect(GAME_DATA.acts.map((a) => a.id)).toEqual([
-      "ashen-fields",
-      "rotwood",
-      "ember-wastes",
-      "frost-peaks",
-    ]);
+    expect(GAME_DATA.acts.map((a) => a.id)).toEqual(ACTS.map((a) => a.id));
+    // 6 × 15 stages + Emberfall's 10 = 100 stages to the Harvester.
+    expect(GAME_DATA.acts.reduce((n, a) => n + a.stages, 0)).toBe(100);
   });
 
   it("act loot only favors affixes that exist", () => {

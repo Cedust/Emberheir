@@ -116,6 +116,50 @@ export const CROSSBOW: WeaponDefinition = {
   implicit: { physicalPenetration: 0.2 },
 };
 
+/**
+ * Mace (waffen-v1.md): Physical · Melee · Direct, control. A slow Smash; every 4th Default
+ * Attack stuns the enemy for a moment.
+ */
+export const MACE: WeaponDefinition = {
+  id: "mace",
+  name: "Mace",
+  defaultAttack: "Smash",
+  damage: { min: 14, max: 23 },
+  damageType: "physical",
+  attacksPerSecond: 0.6,
+  heatBehavior: "cooling",
+  // 12 Heat/s ÷ 0.6 attacks/s.
+  heatPerHit: 20,
+  range: "melee",
+  implicit: { physicalPenetration: 0.1 },
+  triggers: [
+    {
+      id: "stagger",
+      name: "Stagger",
+      condition: { kind: "everyNthAttack", n: 4 },
+      effect: { kind: "stun", seconds: 0.5 },
+    },
+  ],
+};
+
+/**
+ * Staff (waffen-v1.md): Elemental · Ranged · Over Time. A slow Void Channel with a 30 % chance
+ * to Corrupt. Warming Heat like the Wand.
+ */
+export const STAFF: WeaponDefinition = {
+  id: "staff",
+  name: "Staff",
+  defaultAttack: "Channel",
+  damage: { min: 12, max: 20 },
+  damageType: "void",
+  attacksPerSecond: 0.55,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: { ailmentDuration: 0.15 },
+  ailmentChances: [{ ailment: "corruption", chance: 0.3 }],
+};
+
 export const HERO_WEAPONS: readonly WeaponDefinition[] = [
   SWORD,
   FIRE_WAND,
@@ -123,6 +167,8 @@ export const HERO_WEAPONS: readonly WeaponDefinition[] = [
   DAGGER,
   BOW,
   CROSSBOW,
+  MACE,
+  STAFF,
 ];
 
 // Enemy weapons. Enemies follow the same rules as the hero, including Heat.
@@ -390,4 +436,230 @@ export const WARDEN_HALBERD: WeaponDefinition = {
   range: "melee",
   implicit: {},
   ailmentChances: [{ ailment: "chill", chance: 0.35 }],
+};
+
+// Act 5 (Storm Spires) enemy weapons: Lightning and Shock.
+
+export const STORM_TALONS: WeaponDefinition = {
+  id: "storm-talons",
+  name: "Storm Talons",
+  defaultAttack: "Rake",
+  damage: { min: 0.69, max: 1.06 },
+  damageType: "lightning",
+  attacksPerSecond: 1.05,
+  heatBehavior: "cooling",
+  heatPerHit: 12,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "shock", chance: 0.1 }],
+};
+
+export const THUNDER_MAUL: WeaponDefinition = {
+  id: "thunder-maul",
+  name: "Thunder Maul",
+  defaultAttack: "Pound",
+  damage: { min: 1.62, max: 2.39 },
+  damageType: "physical",
+  attacksPerSecond: 0.45,
+  heatBehavior: "cooling",
+  heatPerHit: 26,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "shock", chance: 0.12 }],
+};
+
+export const STORM_ROD: WeaponDefinition = {
+  id: "storm-rod",
+  name: "Storm Rod",
+  defaultAttack: "Zap",
+  damage: { min: 0.67, max: 1.28 },
+  damageType: "lightning",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [{ ailment: "shock", chance: 0.15 }],
+};
+
+export const COPPER_FISTS: WeaponDefinition = {
+  id: "copper-fists",
+  name: "Copper Fists",
+  defaultAttack: "Jolt",
+  damage: { min: 1.17, max: 1.75 },
+  damageType: "lightning",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+};
+
+export const HERALD_SPEAR: WeaponDefinition = {
+  id: "herald-spear",
+  name: "Herald's Spear",
+  defaultAttack: "Lance",
+  damage: { min: 2.34, max: 3.33 },
+  damageType: "lightning",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "shock", chance: 0.3 }],
+};
+
+// Act 6 (Void Rift) enemy weapons: Void and Corruption.
+
+export const RIFT_CLAWS: WeaponDefinition = {
+  id: "rift-claws",
+  name: "Rift Claws",
+  defaultAttack: "Tear",
+  damage: { min: 0.8, max: 1.22 },
+  damageType: "void",
+  attacksPerSecond: 1.05,
+  heatBehavior: "cooling",
+  heatPerHit: 12,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "corruption", chance: 0.15 }],
+};
+
+export const HOLLOW_FIST: WeaponDefinition = {
+  id: "hollow-fist",
+  name: "Hollow Fist",
+  defaultAttack: "Crush",
+  damage: { min: 1.67, max: 2.48 },
+  damageType: "physical",
+  attacksPerSecond: 0.45,
+  heatBehavior: "cooling",
+  heatPerHit: 26,
+  range: "melee",
+  implicit: {},
+};
+
+export const SEER_EYE: WeaponDefinition = {
+  id: "seer-eye",
+  name: "Seer's Eye",
+  defaultAttack: "Gaze",
+  damage: { min: 0.76, max: 1.46 },
+  damageType: "void",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [{ ailment: "corruption", chance: 0.25 }],
+};
+
+export const GLOOM_THREADS: WeaponDefinition = {
+  id: "gloom-threads",
+  name: "Gloom Threads",
+  defaultAttack: "Lash",
+  damage: { min: 0.72, max: 1.1 },
+  damageType: "void",
+  attacksPerSecond: 0.75,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [{ ailment: "corruption", chance: 0.35 }],
+};
+
+export const MAW_JAWS: WeaponDefinition = {
+  id: "maw-jaws",
+  name: "Maw",
+  defaultAttack: "Bite",
+  damage: { min: 2.5, max: 3.6 },
+  damageType: "void",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "corruption", chance: 1 }],
+};
+
+// Act 7 (Emberfall) enemy weapons: everything at once.
+
+export const REVENANT_BLADE: WeaponDefinition = {
+  id: "revenant-blade",
+  name: "Revenant Blade",
+  defaultAttack: "Cleave",
+  damage: { min: 1.67, max: 2.46 },
+  damageType: "physical",
+  attacksPerSecond: 0.5,
+  heatBehavior: "cooling",
+  heatPerHit: 24,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [
+    { ailment: "bleed", chance: 0.2 },
+    { ailment: "burn", chance: 0.2 },
+  ],
+};
+
+export const WRAITH_FLAME: WeaponDefinition = {
+  id: "wraith-flame",
+  name: "Wraith Flame",
+  defaultAttack: "Flicker",
+  damage: { min: 0.7, max: 1.32 },
+  damageType: "fire",
+  attacksPerSecond: 0.6,
+  heatBehavior: "warming",
+  heatPerHit: 0,
+  range: "ranged",
+  implicit: {},
+  ailmentChances: [
+    { ailment: "burn", chance: 0.2 },
+    { ailment: "corruption", chance: 0.15 },
+  ],
+};
+
+export const HOUND_FANGS: WeaponDefinition = {
+  id: "hound-fangs",
+  name: "Harrow Fangs",
+  defaultAttack: "Maul",
+  damage: { min: 0.74, max: 1.13 },
+  damageType: "physical",
+  attacksPerSecond: 1.05,
+  heatBehavior: "cooling",
+  heatPerHit: 12,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [
+    { ailment: "bleed", chance: 0.15 },
+    { ailment: "poison", chance: 0.15 },
+  ],
+};
+
+export const CINDER_LANCE: WeaponDefinition = {
+  id: "cinder-lance",
+  name: "Cinder Lance",
+  defaultAttack: "Thrust",
+  damage: { min: 0.84, max: 1.25 },
+  damageType: "fire",
+  attacksPerSecond: 0.7,
+  heatBehavior: "cooling",
+  heatPerHit: 17,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [{ ailment: "chill", chance: 0.15 }],
+};
+
+export const HARVEST_SCYTHE: WeaponDefinition = {
+  id: "harvest-scythe",
+  name: "Harvest Scythe",
+  defaultAttack: "Reap",
+  damage: { min: 2.55, max: 3.61 },
+  damageType: "physical",
+  attacksPerSecond: 0.55,
+  heatBehavior: "cooling",
+  heatPerHit: 22,
+  range: "melee",
+  implicit: {},
+  ailmentChances: [
+    { ailment: "bleed", chance: 0.25 },
+    { ailment: "poison", chance: 0.25 },
+  ],
 };

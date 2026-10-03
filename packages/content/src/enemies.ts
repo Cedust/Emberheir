@@ -1,6 +1,17 @@
 import type { EnemyDefinition } from "@emberheir/sim";
 import {
+  ARC_DASH,
+  ASHFALL,
   AVALANCHE,
+  CONSUME,
+  FORKED_BOLT,
+  HARVEST_SWING,
+  HEX,
+  LAST_HARVEST,
+  RIFT_SNAP,
+  SOUL_REAP,
+  THUNDERCLAP,
+  VOID_LANCE,
   BLIGHT_SPIT,
   CINDER_SPIT,
   DEVOUR,
@@ -19,6 +30,21 @@ import {
   ROT_SPRAY,
 } from "./skills";
 import {
+  CINDER_LANCE,
+  COPPER_FISTS,
+  GLOOM_THREADS,
+  HARVEST_SCYTHE,
+  HERALD_SPEAR,
+  HOLLOW_FIST,
+  HOUND_FANGS,
+  MAW_JAWS,
+  REVENANT_BLADE,
+  RIFT_CLAWS,
+  SEER_EYE,
+  STORM_ROD,
+  STORM_TALONS,
+  THUNDER_MAUL,
+  WRAITH_FLAME,
   BRANCH_FLAIL,
   CINDER_ROD,
   EMBER_CLAWS,
@@ -375,4 +401,318 @@ export const RIME_WARDEN: EnemyDefinition = {
     oncePerFight: true,
     effect: { kind: "barrier", fraction: 0.15 } as const,
   })),
+};
+
+/**
+ * Act 5 (Storm Spires) enemies: Lightning and Shock. Shock makes every hit hurt more, so
+ * Lightning Resistance and Tenacity are the answers.
+ */
+export const STORM_SPRITE: EnemyDefinition = {
+  id: "storm-sprite",
+  name: "Storm Sprite",
+  archetype: "skirmisher",
+  description: "Darts in, crackling.",
+  attributes: { strength: 4, dexterity: 8, agility: 16, intelligence: 4, wisdom: 2, vitality: 6 },
+  weapon: STORM_TALONS,
+  skills: [ARC_DASH],
+  baseLife: 260,
+  bonuses: { evasion: 0.12, lightningResistance: 0.3 },
+};
+
+export const THUNDER_BRUTE: EnemyDefinition = {
+  id: "thunder-brute",
+  name: "Thunder Brute",
+  archetype: "brute",
+  description: "Slow, crushing blows that Shock.",
+  attributes: { strength: 12, dexterity: 2, agility: 0, intelligence: 2, wisdom: 2, vitality: 12 },
+  weapon: THUNDER_MAUL,
+  skills: [HEAVY_SWING],
+  baseLife: 340,
+  bonuses: { armor: 22, lightningResistance: 0.4 },
+};
+
+export const STORM_CALLER: EnemyDefinition = {
+  id: "storm-caller",
+  name: "Storm Caller",
+  archetype: "caster",
+  description: "Forked lightning from afar. Little Life.",
+  attributes: { strength: 0, dexterity: 4, agility: 2, intelligence: 12, wisdom: 6, vitality: 4 },
+  weapon: STORM_ROD,
+  skills: [FORKED_BOLT],
+  baseLife: 245,
+  bonuses: { lightningResistance: 0.3 },
+};
+
+export const STATIC_GOLEM: EnemyDefinition = {
+  id: "static-golem",
+  name: "Static Golem",
+  archetype: "thornback",
+  description: "Every 5th hit it takes jumps back at you.",
+  attributes: { strength: 8, dexterity: 2, agility: 0, intelligence: 4, wisdom: 2, vitality: 12 },
+  weapon: COPPER_FISTS,
+  skills: [HEAVY_SWING],
+  baseLife: 340,
+  bonuses: { armor: 18, thorns: 1, lightningResistance: 0.4 },
+  triggers: [
+    {
+      id: "static-discharge",
+      name: "Static Discharge",
+      condition: { kind: "everyNthHitTaken", n: 5 },
+      effect: { kind: "reflect", fraction: 0.4, cap: 0.04, damageType: "lightning" },
+    },
+  ],
+};
+
+export const ACT5_ENEMIES: readonly EnemyDefinition[] = [
+  STORM_SPRITE,
+  THUNDER_BRUTE,
+  STORM_CALLER,
+  STATIC_GOLEM,
+];
+
+/**
+ * Act 5 boss (docs/design/gegner-bosse-v1.md section 6): Shocks you, reflects every 5th hit and
+ * claps thunder every 11 s. It teaches tempo against big hits.
+ */
+export const STORM_HERALD: EnemyDefinition = {
+  id: "storm-herald",
+  name: "Storm Herald",
+  archetype: "caster",
+  description: "Shocks you, sends every 5th hit back, Thunderclap every 11 seconds.",
+  attributes: { strength: 8, dexterity: 6, agility: 4, intelligence: 10, wisdom: 6, vitality: 14 },
+  weapon: HERALD_SPEAR,
+  skills: [FORKED_BOLT],
+  baseLife: 410,
+  boss: true,
+  bonuses: { lightningResistance: 0.4 },
+  telegraphs: [{ skill: THUNDERCLAP, interval: 11, windup: 2 }],
+  triggers: [
+    {
+      id: "herald-mirror",
+      name: "Storm Mirror",
+      condition: { kind: "everyNthHitTaken", n: 5 },
+      effect: { kind: "reflect", fraction: 0.8, cap: 0.08, damageType: "lightning" },
+    },
+  ],
+};
+
+/**
+ * Act 6 (Void Rift) enemies: Void and Corruption. Corruption grows the longer it sits on you,
+ * so killing fast and Tenacity both help.
+ */
+export const RIFT_STALKER: EnemyDefinition = {
+  id: "rift-stalker",
+  name: "Rift Stalker",
+  archetype: "skirmisher",
+  description: "Claws that leave a little nothing behind.",
+  attributes: { strength: 6, dexterity: 8, agility: 14, intelligence: 2, wisdom: 2, vitality: 6 },
+  weapon: RIFT_CLAWS,
+  skills: [QUICK_CUTS],
+  baseLife: 275,
+  bonuses: { evasion: 0.12, voidResistance: 0.3 },
+};
+
+export const HOLLOW_BRUTE: EnemyDefinition = {
+  id: "hollow-brute",
+  name: "Hollow Brute",
+  archetype: "brute",
+  description: "Empty inside, heavy outside.",
+  attributes: { strength: 12, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 14 },
+  weapon: HOLLOW_FIST,
+  skills: [HEAVY_SWING],
+  baseLife: 385,
+  bonuses: { armor: 24, voidResistance: 0.4 },
+};
+
+export const VOID_SEER: EnemyDefinition = {
+  id: "void-seer",
+  name: "Void Seer",
+  archetype: "caster",
+  description: "Void Lances that always Corrupt. Little Life.",
+  attributes: { strength: 0, dexterity: 4, agility: 2, intelligence: 12, wisdom: 8, vitality: 4 },
+  weapon: SEER_EYE,
+  skills: [VOID_LANCE],
+  baseLife: 255,
+  bonuses: { voidResistance: 0.3 },
+};
+
+export const GLOOM_WEAVER: EnemyDefinition = {
+  id: "gloom-weaver",
+  name: "Gloom Weaver",
+  archetype: "afflicter",
+  description: "Hexes you so every ailment hurts more.",
+  attributes: { strength: 0, dexterity: 4, agility: 2, intelligence: 8, wisdom: 10, vitality: 6 },
+  weapon: GLOOM_THREADS,
+  skills: [HEX],
+  baseLife: 270,
+  bonuses: { voidResistance: 0.3 },
+};
+
+export const ACT6_ENEMIES: readonly EnemyDefinition[] = [
+  RIFT_STALKER,
+  HOLLOW_BRUTE,
+  VOID_SEER,
+  GLOOM_WEAVER,
+];
+
+/**
+ * Act 6 boss (docs/design/gegner-bosse-v1.md section 6): every bite Corrupts, Consume makes the
+ * Corruption jump ahead, Rift Snap every 12 s, Enrage below 30 %. It teaches killing fast.
+ */
+export const VOIDBORN_MAW: EnemyDefinition = {
+  id: "voidborn-maw",
+  name: "Voidborn Maw",
+  archetype: "afflicter",
+  description: "Every bite Corrupts and the Corruption keeps growing. Rift Snap every 12 seconds.",
+  attributes: { strength: 10, dexterity: 4, agility: 2, intelligence: 8, wisdom: 8, vitality: 14 },
+  weapon: MAW_JAWS,
+  skills: [CONSUME],
+  baseLife: 430,
+  boss: true,
+  bonuses: { voidResistance: 0.4 },
+  telegraphs: [{ skill: RIFT_SNAP, interval: 12, windup: 2 }],
+  triggers: [
+    {
+      id: "maw-hunger",
+      name: "Hunger",
+      condition: { kind: "lifeBelow", threshold: 0.3 },
+      oncePerFight: true,
+      effect: { kind: "buff", stat: "attackSpeed", amount: 0.4, duration: 999 },
+    },
+  ],
+};
+
+/**
+ * Act 7 (Emberfall) enemies: the end of the world, every element at once. Only 10 stages
+ * (stage 91–100), then the Harvester.
+ */
+export const ASH_REVENANT: EnemyDefinition = {
+  id: "ash-revenant",
+  name: "Ash Revenant",
+  archetype: "brute",
+  description: "A fallen Heir. Bleeds and Burns.",
+  attributes: { strength: 12, dexterity: 4, agility: 2, intelligence: 2, wisdom: 2, vitality: 14 },
+  weapon: REVENANT_BLADE,
+  skills: [HEAVY_SWING],
+  baseLife: 400,
+  bonuses: { armor: 24, allResistance: 0.15 },
+};
+
+export const EMBER_WRAITH: EnemyDefinition = {
+  id: "ember-wraith",
+  name: "Ember Wraith",
+  archetype: "caster",
+  description: "Grey fire that Burns and Corrupts. Little Life.",
+  attributes: { strength: 0, dexterity: 4, agility: 4, intelligence: 12, wisdom: 8, vitality: 4 },
+  weapon: WRAITH_FLAME,
+  skills: [FIREBALL],
+  baseLife: 265,
+  bonuses: { allResistance: 0.15 },
+};
+
+export const HARROW_HOUND: EnemyDefinition = {
+  id: "harrow-hound",
+  name: "Harrow Hound",
+  archetype: "skirmisher",
+  description: "The Harvester's hound. Bleeds and Poisons.",
+  attributes: { strength: 6, dexterity: 8, agility: 16, intelligence: 0, wisdom: 2, vitality: 6 },
+  weapon: HOUND_FANGS,
+  skills: [RAKE],
+  baseLife: 285,
+  bonuses: { evasion: 0.12, allResistance: 0.15 },
+};
+
+export const CINDER_KNIGHT: EnemyDefinition = {
+  id: "cinder-knight",
+  name: "Cinder Knight",
+  archetype: "warden",
+  description: "Blocks, hardens, and burns behind a Barrier when hurt.",
+  attributes: { strength: 8, dexterity: 2, agility: 2, intelligence: 4, wisdom: 6, vitality: 10 },
+  weapon: CINDER_LANCE,
+  skills: [OBSIDIAN_SHELL],
+  baseLife: 330,
+  bonuses: { blockChance: 0.18, blockValue: 1, allResistance: 0.15 },
+  triggers: [
+    {
+      id: "cinder-ward",
+      name: "Cinder Ward",
+      condition: { kind: "lifeBelow", threshold: 0.5 },
+      oncePerFight: true,
+      effect: { kind: "barrier", fraction: 0.15 },
+    },
+  ],
+};
+
+export const ACT7_ENEMIES: readonly EnemyDefinition[] = [
+  ASH_REVENANT,
+  EMBER_WRAITH,
+  HARROW_HOUND,
+  CINDER_KNIGHT,
+];
+
+/**
+ * The Ashen Harvester (gegner-bosse-v1.md section 6): three phases, each echoing two of the
+ * Act bosses before it.
+ * - Phase 1 (full Life): Gorrak's Slam and the Mother's Poison.
+ * - Phase 2 (below 66 %): the Tyrant's Fire Aura and the Warden's Ice Barrier.
+ * - Phase 3 (below 33 %): the Herald's mirror, the Maw's Corruption and an Enrage.
+ */
+export const ASHEN_HARVESTER: EnemyDefinition = {
+  id: "ashen-harvester",
+  name: "The Ashen Harvester",
+  archetype: "harvester",
+  description: "Three phases. Every Act boss you beat comes back in it.",
+  attributes: { strength: 12, dexterity: 6, agility: 4, intelligence: 10, wisdom: 8, vitality: 16 },
+  weapon: HARVEST_SCYTHE,
+  skills: [SOUL_REAP],
+  baseLife: 520,
+  boss: true,
+  bonuses: { allResistance: 0.2 },
+  telegraphs: [
+    { skill: HARVEST_SWING, interval: 10, windup: 2 },
+    { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66 },
+    { skill: LAST_HARVEST, interval: 11, windup: 2, belowLife: 0.33 },
+  ],
+  triggers: [
+    {
+      id: "harvest-aura",
+      name: "Ash Aura",
+      condition: { kind: "everySeconds", seconds: 2 },
+      belowLife: 0.66,
+      effect: {
+        kind: "spellHit",
+        name: "Ash Aura",
+        damage: { min: 0.6, max: 0.9 },
+        damageType: "fire",
+      },
+    },
+    {
+      id: "harvest-ice",
+      name: "Rime Shell",
+      condition: { kind: "lifeBelow", threshold: 0.66 },
+      oncePerFight: true,
+      effect: { kind: "barrier", fraction: 0.15 },
+    },
+    {
+      id: "harvest-mirror",
+      name: "Storm Mirror",
+      condition: { kind: "everyNthHitTaken", n: 5 },
+      belowLife: 0.33,
+      effect: { kind: "reflect", fraction: 0.6, cap: 0.06, damageType: "lightning" },
+    },
+    {
+      id: "harvest-hunger",
+      name: "Endless Hunger",
+      condition: { kind: "everySeconds", seconds: 3 },
+      belowLife: 0.33,
+      effect: { kind: "ailment", ailment: "corruption" },
+    },
+    {
+      id: "harvest-enrage",
+      name: "Reaping Frenzy",
+      condition: { kind: "lifeBelow", threshold: 0.33 },
+      oncePerFight: true,
+      effect: { kind: "buff", stat: "attackSpeed", amount: 0.4, duration: 999 },
+    },
+  ],
 };

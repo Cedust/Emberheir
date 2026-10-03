@@ -15,6 +15,7 @@ import {
   VENOM_COAT,
   WITHER,
 } from "./skills";
+import { PRESTIGE_BRANCHES, PRESTIGE_BRANCH_NODES } from "./prestige-branches";
 
 /**
  * Skill Tree (docs/design/skill-tree-v1.md): Core + Might + Arcana + Rupture + Affliction, one
@@ -741,6 +742,7 @@ const AFFLICTION: readonly SkillNode[] = [
 ];
 
 export const SKILL_TREE: SkillTreeDefinition = {
-  nodes: [...CORE, ...MIGHT, ...ARCANA, ...RUPTURE, ...AFFLICTION],
+  nodes: [...CORE, ...MIGHT, ...ARCANA, ...RUPTURE, ...AFFLICTION, ...PRESTIGE_BRANCH_NODES],
   startNodeId: "core-heart",
+  prestigeBranches: PRESTIGE_BRANCHES,
 };

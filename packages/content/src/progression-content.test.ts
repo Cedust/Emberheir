@@ -19,8 +19,10 @@ import { SWORD } from "./weapons";
 describe("Skill Tree", () => {
   const nodes = SKILL_TREE.nodes;
 
+  const base = nodes.filter((n) => !n.prestigeBranch);
+
   it("has all five branches with unique ids and valid links", () => {
-    expect(nodes.length).toBe(62);
+    expect(base.length).toBe(62);
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
@@ -31,7 +33,7 @@ describe("Skill Tree", () => {
 
   it("has 3–4 Skill nodes and 1 Keystone per branch", () => {
     for (const branch of ["might", "arcana", "rupture", "affliction"] as SkillTreeBranch[]) {
-      const inBranch = nodes.filter((n) => n.branch === branch);
+      const inBranch = base.filter((n) => n.branch === branch);
       const skills = inBranch.filter((n) => n.kind === "skill" && n.skill).length;
       expect(skills).toBeGreaterThanOrEqual(3);
       expect(skills).toBeLessThanOrEqual(4);
@@ -51,6 +53,23 @@ describe("Skill Tree", () => {
       }
     }
     expect(seen.size).toBe(nodes.length);
+  });
+
+  it("has ten Prestige branches with one Skill and one Keystone each", () => {
+    const branches = SKILL_TREE.prestigeBranches ?? [];
+    expect(branches).toHaveLength(10);
+    for (const b of branches) {
+      const inBranch = nodes.filter((n) => n.prestigeBranch === b.id);
+      expect(inBranch, b.id).toHaveLength(10);
+      expect(inBranch.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(1);
+      expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(1);
+      // It hangs off a base node of its own branch.
+      const anchor = base.find((n) => n.id === b.anchor);
+      expect(anchor?.branch, b.id).toBe(b.branch);
+      expect(neighbours(SKILL_TREE, b.anchor).some((id) => id.startsWith(`pb-${b.id}-`))).toBe(
+        true,
+      );
+    }
   });
 });
 

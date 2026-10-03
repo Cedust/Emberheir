@@ -210,6 +210,160 @@ export const SOUL_HARVEST: SkillDefinition = {
   effects: [{ kind: "detonateDots", seconds: 4 }],
 };
 
+// Prestige branch skills (skill-tree-v1.md section 3): one per branch.
+
+export const FEINT: SkillDefinition = {
+  id: "feint",
+  name: "Feint",
+  type: "attack",
+  heatCost: 35,
+  tags: ["physical", "direct", "melee"],
+  description: "160 % Weapon Damage, then +15 % Crit Chance for 4 s.",
+  hits: [{ kind: "weapon", multiplier: 1.6 }],
+  effects: [{ kind: "buff", stat: "critChance", amount: 0.15, duration: 4 }],
+};
+
+export const PIERCING_SHOT: SkillDefinition = {
+  id: "piercing-shot",
+  name: "Piercing Shot",
+  type: "attack",
+  heatCost: 45,
+  tags: ["physical", "direct", "ranged"],
+  description: "280 % Weapon Damage.",
+  hits: [{ kind: "weapon", multiplier: 2.8 }],
+};
+
+export const CLEAVE: SkillDefinition = {
+  id: "cleave",
+  name: "Cleave",
+  type: "attack",
+  heatCost: 55,
+  tags: ["physical", "over-time", "melee"],
+  description: "180 % Weapon Damage that always Bleeds, half again as hard.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 1.8,
+      ailmentChances: [{ ailment: "bleed", chance: 1 }],
+      ailmentPower: 1.5,
+    },
+  ],
+};
+
+export const PLAGUE_CLOUD: SkillDefinition = {
+  id: "plague-cloud",
+  name: "Plague Cloud",
+  type: "attack",
+  heatCost: 50,
+  tags: ["physical", "over-time", "any"],
+  description: "3 hits for 60 % Weapon Damage. Each one Poisons.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 0.6,
+      count: 3,
+      ailmentChances: [{ ailment: "poison", chance: 1 }],
+    },
+  ],
+};
+
+export const THUNDERSTRIKE: SkillDefinition = {
+  id: "thunderstrike",
+  name: "Thunderstrike",
+  type: "spell",
+  heatCost: 55,
+  tags: ["lightning", "direct", "any"],
+  description: "A heavy Lightning hit. 50 % chance to Shock.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 40, max: 62 },
+      damageType: "lightning",
+      ailmentChances: [{ ailment: "shock", chance: 0.5 }],
+    },
+  ],
+};
+
+export const FROST_NOVA: SkillDefinition = {
+  id: "frost-nova",
+  name: "Frost Nova",
+  type: "spell",
+  heatCost: 50,
+  tags: ["cold", "direct", "any"],
+  description: "A Cold hit that always Chills and freezes the enemy for 0.8 s.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 24, max: 34 },
+      damageType: "cold",
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    },
+  ],
+  effects: [{ kind: "stun", seconds: 0.8 }],
+};
+
+export const INFERNO: SkillDefinition = {
+  id: "inferno",
+  name: "Inferno",
+  type: "spell",
+  heatCost: 60,
+  tags: ["fire", "over-time", "any"],
+  description: "A Fire hit that sets a very strong Burn.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 22, max: 30 },
+      damageType: "fire",
+      ailmentChances: [{ ailment: "burn", chance: 1 }],
+      ailmentPower: 4,
+    },
+  ],
+};
+
+export const VOID_RIFT: SkillDefinition = {
+  id: "void-rift",
+  name: "Void Rift",
+  type: "spell",
+  heatCost: 55,
+  tags: ["void", "over-time", "any"],
+  description: "A Void hit that Corrupts. The Corruption starts six steps stronger.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 18, max: 26 },
+      damageType: "void",
+      ailmentChances: [{ ailment: "corruption", chance: 1 }],
+      ailmentPower: 2,
+    },
+  ],
+  effects: [{ kind: "advanceCorruption", ticks: 6 }],
+};
+
+export const IRON_BASTION: SkillDefinition = {
+  id: "iron-bastion",
+  name: "Iron Bastion",
+  type: "buff",
+  heatCost: 45,
+  tags: ["any"],
+  description: "Gain Barrier worth 20 % of your max Life.",
+  hits: [],
+  effects: [{ kind: "barrier", fraction: 0.2 }],
+};
+
+export const RALLY: SkillDefinition = {
+  id: "rally",
+  name: "Rally",
+  type: "buff",
+  heatCost: 30,
+  tags: ["any"],
+  description: "For 6 s, +30 % Heat Gain and +10 % Attack Speed.",
+  hits: [],
+  effects: [
+    { kind: "buff", stat: "heatGain", amount: 0.3, duration: 6 },
+    { kind: "buff", stat: "attackSpeed", amount: 0.1, duration: 6 },
+  ],
+};
+
 /** Skills the hero can put into the Battle Plan. */
 export const HERO_SKILLS: readonly SkillDefinition[] = [
   POWER_STRIKE,
@@ -227,9 +381,37 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   CORRUPT,
   WITHER,
   SOUL_HARVEST,
+  FEINT,
+  PIERCING_SHOT,
+  CLEAVE,
+  PLAGUE_CLOUD,
+  THUNDERSTRIKE,
+  FROST_NOVA,
+  INFERNO,
+  VOID_RIFT,
+  IRON_BASTION,
+  RALLY,
 ];
 
 /** Every weapon brings one Start Skill that is equipped automatically. */
+/** Staff start skill: a slow Void bolt that Corrupts. */
+export const VOID_BOLT: SkillDefinition = {
+  id: "void-bolt",
+  name: "Void Bolt",
+  type: "spell",
+  heatCost: 35,
+  tags: ["void", "over-time", "any"],
+  description: "A Void hit. 50 % chance to Corrupt.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 17, max: 25 },
+      damageType: "void",
+      ailmentChances: [{ ailment: "corruption", chance: 0.5 }],
+    },
+  ],
+};
+
 export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   sword: POWER_STRIKE,
   "fire-wand": FIREBOLT,
@@ -237,6 +419,8 @@ export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   dagger: VENOM_COAT,
   bow: LACERATE,
   crossbow: POWER_STRIKE,
+  mace: POWER_STRIKE,
+  staff: VOID_BOLT,
 };
 
 // Enemy skills.
@@ -494,4 +678,200 @@ export const AVALANCHE: SkillDefinition = {
   tags: ["cold", "direct", "melee"],
   description: "An announced blow for 350 % Weapon Damage that always Chills.",
   hits: [{ kind: "weapon", multiplier: 3.5, ailmentChances: [{ ailment: "chill", chance: 1 }] }],
+};
+
+// Act 5 (Storm Spires) enemy skills.
+
+/** Storm Sprite: a crackling dash. */
+export const ARC_DASH: SkillDefinition = {
+  id: "arc-dash",
+  name: "Arc Dash",
+  type: "attack",
+  heatCost: 30,
+  tags: ["lightning", "direct", "melee"],
+  description: "3 hits for 80 % Weapon Damage, each with a 30 % chance to Shock.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 0.8,
+      count: 3,
+      ailmentChances: [{ ailment: "shock", chance: 0.3 }],
+    },
+  ],
+};
+
+/** Storm Caller: lightning that jumps three times. */
+export const FORKED_BOLT: SkillDefinition = {
+  id: "forked-bolt",
+  name: "Forked Bolt",
+  type: "spell",
+  heatCost: 45,
+  tags: ["lightning", "direct", "any"],
+  description: "3 Lightning hits, each 70 % of the one before. 40 % chance to Shock.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 1.2, max: 2 },
+      damageType: "lightning",
+      count: 3,
+      falloff: 0.7,
+      ailmentChances: [{ ailment: "shock", chance: 0.4 }],
+    },
+  ],
+};
+
+/** Storm Herald's telegraph: a clap of thunder that always Shocks. */
+export const THUNDERCLAP: SkillDefinition = {
+  id: "thunderclap",
+  name: "Thunderclap",
+  type: "spell",
+  heatCost: 0,
+  tags: ["lightning", "direct", "any"],
+  description: "An announced burst of lightning that always Shocks.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 5.5, max: 7.5 },
+      damageType: "lightning",
+      ailmentChances: [{ ailment: "shock", chance: 1 }],
+    },
+  ],
+};
+
+// Act 6 (Void Rift) enemy skills.
+
+/** Void Seer: a lance of nothing. */
+export const VOID_LANCE: SkillDefinition = {
+  id: "void-lance",
+  name: "Void Lance",
+  type: "spell",
+  heatCost: 45,
+  tags: ["void", "direct", "any"],
+  description: "A big Void hit that always Corrupts.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 1.8, max: 2.9 },
+      damageType: "void",
+      ailmentChances: [{ ailment: "corruption", chance: 1 }],
+    },
+  ],
+};
+
+/** Gloom Weaver: a curse that makes every ailment hurt more. */
+export const HEX: SkillDefinition = {
+  id: "hex",
+  name: "Hex",
+  type: "curse",
+  heatCost: 40,
+  tags: ["void", "curse"],
+  description: "You take 30 % more damage over time for 8 s.",
+  hits: [],
+  effects: [{ kind: "curse", dotDamageTaken: 0.3, duration: 8 }],
+};
+
+/** Voidborn Maw: feeds the Corruption on you. */
+export const CONSUME: SkillDefinition = {
+  id: "consume",
+  name: "Consume",
+  type: "spell",
+  heatCost: 50,
+  tags: ["void", "over-time", "any"],
+  description: "Your Corruption grows by 4 ticks at once.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 0.8, max: 1.2 },
+      damageType: "void",
+      ailmentChances: [{ ailment: "corruption", chance: 1 }],
+    },
+  ],
+  effects: [{ kind: "advanceCorruption", ticks: 4 }],
+};
+
+/** Voidborn Maw's telegraph: the rift snaps shut. */
+export const RIFT_SNAP: SkillDefinition = {
+  id: "rift-snap",
+  name: "Rift Snap",
+  type: "attack",
+  heatCost: 0,
+  tags: ["void", "direct", "melee"],
+  description: "An announced bite for 350 % Weapon Damage.",
+  hits: [{ kind: "weapon", multiplier: 3.5 }],
+};
+
+// Act 7 (Emberfall) and The Ashen Harvester.
+
+/** The Harvester's rotation: a sweep of grey fire. */
+export const SOUL_REAP: SkillDefinition = {
+  id: "soul-reap",
+  name: "Soul Reap",
+  type: "spell",
+  heatCost: 50,
+  tags: ["void", "over-time", "any"],
+  description: "A Void hit that Poisons and Corrupts.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 1.6, max: 2.4 },
+      damageType: "void",
+      ailmentChances: [
+        { ailment: "poison", chance: 1 },
+        { ailment: "corruption", chance: 0.5 },
+      ],
+    },
+  ],
+};
+
+/** Phase 1 telegraph: Gorrak's Slam, echoed. */
+export const HARVEST_SWING: SkillDefinition = {
+  id: "harvest-swing",
+  name: "Harvest Swing",
+  type: "attack",
+  heatCost: 0,
+  tags: ["physical", "direct", "melee"],
+  description: "An announced sweep for 400 % Weapon Damage.",
+  hits: [{ kind: "weapon", multiplier: 4 }],
+};
+
+/** Phase 2 telegraph: the Tyrant's Eruption and the Warden's cold. */
+export const ASHFALL: SkillDefinition = {
+  id: "ashfall",
+  name: "Ashfall",
+  type: "spell",
+  heatCost: 0,
+  tags: ["fire", "direct", "any"],
+  description: "An announced rain of burning ash that Burns and Chills.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 5.5, max: 7.5 },
+      damageType: "fire",
+      ailmentChances: [
+        { ailment: "burn", chance: 1 },
+        { ailment: "chill", chance: 1 },
+      ],
+    },
+  ],
+};
+
+/** Phase 3 telegraph: the Herald's storm and the Maw's hunger. */
+export const LAST_HARVEST: SkillDefinition = {
+  id: "last-harvest",
+  name: "The Last Harvest",
+  type: "spell",
+  heatCost: 0,
+  tags: ["void", "direct", "any"],
+  description: "An announced storm of void lightning that Shocks and Corrupts.",
+  hits: [
+    {
+      kind: "spell",
+      damage: { min: 6.5, max: 8.5 },
+      damageType: "void",
+      ailmentChances: [
+        { ailment: "shock", chance: 1 },
+        { ailment: "corruption", chance: 1 },
+      ],
+    },
+  ],
 };
