@@ -1,8 +1,23 @@
-import { POC_GAME_DATA, SKILL_TREE } from "@emberheir/content";
+import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
+  AILMENT_SOURCE,
+  BATTLE_PLAN_LADDER,
+  type BattlePlanState,
+  type BattlePlanUnlocks,
+  CAPSTONES,
   type GameState,
   PROGRESSION,
+  REACTION_CONDITIONS,
+  REACTION_COOLDOWN,
+  SLOT_CONDITIONS,
+  SLOT_MODIFIERS,
   type SkillNode,
+  type SlotModifier,
+  battlePlanUnlocks,
+  damageShare,
+  modifierAllowed,
+  reactionConditionAllowed,
+  unlockPrestige,
   deriveStats,
   estimateRotation,
   heatPerSecond,
@@ -12,6 +27,7 @@ import {
   learnNodes,
   nodeMaxRanks,
   nodeRanks,
+  prestigeBranchNodes,
   spentInTree,
   triggerThreshold,
 } from "@emberheir/sim";
@@ -24,8 +40,10 @@ import type { GameApi } from "../useGame";
 
 const SCALE = 76;
 const PAD = 64;
-const xs = SKILL_TREE.nodes.map((n) => n.x);
-const ys = SKILL_TREE.nodes.map((n) => n.y);
+/** The base tree; Prestige branch nodes have their own panel. */
+const BASE_NODES = SKILL_TREE.nodes.filter((n) => !n.prestigeBranch);
+const xs = BASE_NODES.map((n) => n.x);
+const ys = BASE_NODES.map((n) => n.y);
 const MIN_X = Math.min(...xs);
 const MIN_Y = Math.min(...ys);
 const WIDTH = (Math.max(...xs) - MIN_X) * SCALE + PAD * 2;
@@ -37,12 +55,14 @@ const BRANCHES = [
   { id: "core", name: "Core", color: "#c9a063" },
   { id: "might", name: "Might", color: "#c9c2b8" },
   { id: "arcana", name: "Arcana", color: "#5b8cff" },
+  { id: "rupture", name: "Rupture", color: "#d0505c" },
+  { id: "affliction", name: "Affliction", color: "#a35cff" },
 ] as const;
 const branchColor = (b: string) => BRANCHES.find((x) => x.id === b)?.color ?? "#b3a288";
 
 /** Branch names placed beyond the end of each branch. */
 const BRANCH_LABELS = BRANCHES.map((branch) => {
-  const nodes = SKILL_TREE.nodes.filter((n) => n.branch === branch.id);
+  const nodes = BASE_NODES.filter((n) => n.branch === branch.id);
   const avg = (f: (n: SkillNode) => number) =>
     nodes.reduce((sum, n) => sum + f(n), 0) / Math.max(1, nodes.length);
   return {
@@ -59,31 +79,23 @@ const KIND_LABEL: Record<SkillNode["kind"], string> = {
   keystone: "Keystone",
 };
 
-/** The Battle Plan ladder (skills-v1.md): one upgrade per Prestige. */
-const PLAN_UPGRADES = [
-  "Rotation Slot 2",
-  "Trigger Threshold",
-  "Rotation Slot 3",
-  "Reaction Slot 1",
-  "Slot Modifiers",
-  "Rotation Slot 4",
-  "Reaction Slot 2",
-  "Rotation Conditions",
-  "2nd Slot Modifier",
-  "Capstone",
-];
-const ROTATION_UNLOCK = [0, 1, 3, 6];
-const REACTION_UNLOCK = [4, 7];
+/** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
+const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
+  Array.from({ length: max }, (_, i) => unlockPrestige(upgrade, i + 1)).filter(
+    (p): p is number => p !== undefined,
+  );
+const ROTATION_UNLOCK = unlocksOf("rotationSlot", 4);
+const REACTION_UNLOCK = unlocksOf("reactionSlot", 2);
 
 function NodeShape(props: {
   node: SkillNode;
   className: string;
   onClick: () => void;
   ranks: number;
+  x: number;
+  y: number;
 }) {
-  const { node } = props;
-  const x = px(node);
-  const y = py(node);
+  const { node, x, y } = props;
   const common = {
     className: props.className,
     onClick: props.onClick,
@@ -125,28 +137,120 @@ function NodeShape(props: {
   );
 }
 
+const PB_X = 76;
+const PB_Y = 52;
+const PB_PAD = 26;
+/** Room below the last row for rank labels. */
+const PB_BOTTOM = 40;
+/** Mini trees are drawn at tree scale and shown smaller. */
+const PB_SHOWN = 0.64;
+
+/** The Prestige branches as small chains: unlocked ones learnable, the rest dimmed. */
+function PrestigeBranches(props: {
+  branches: readonly string[];
+  nodeClass: (node: SkillNode) => string;
+  ranks: (id: string) => number;
+  onSelect: (id: string) => void;
+}) {
+  const all = SKILL_TREE.prestigeBranches ?? [];
+  const sorted = [
+    ...all.filter((b) => props.branches.includes(b.id)),
+    ...all.filter((b) => !props.branches.includes(b.id)),
+  ];
+  return (
+    <div className="prestige-branches" aria-label="Prestige Branches">
+      {sorted.map((b) => {
+        const open = props.branches.includes(b.id);
+        const nodes = prestigeBranchNodes(SKILL_TREE, b.id);
+        const anchor = SKILL_TREE.nodes.find((n) => n.id === b.anchor);
+        const width = 5 * PB_X + PB_PAD * 2;
+        const height = 2 * PB_Y + PB_PAD + PB_BOTTOM;
+        const x = (n: SkillNode) => n.x * PB_X + PB_PAD;
+        const y = (n: SkillNode) => n.y * PB_Y + PB_PAD;
+        return (
+          <section
+            key={b.id}
+            className={`pb-card panel-card ${open ? "open" : "closed"}`}
+            style={{ "--branch": branchColor(b.branch) } as React.CSSProperties}
+            data-testid={`branch-${b.id}`}
+          >
+            <div className="pb-head">
+              <span className="title-font pb-name">{b.name}</span>
+              <span className="sub small">{b.theme}</span>
+              <span className="eyebrow">
+                {open ? `from ${anchor?.name ?? b.anchor}` : "Choose at a Prestige"}
+              </span>
+            </div>
+            <svg
+              className="skill-tree pb-tree"
+              width={width * PB_SHOWN}
+              height={height * PB_SHOWN}
+              viewBox={`0 0 ${width} ${height}`}
+            >
+              {nodes.flatMap((node) =>
+                node.links.map((link) => {
+                  const other = nodes.find((n) => n.id === link);
+                  if (!other) return null;
+                  const on = props.ranks(node.id) > 0 && props.ranks(other.id) > 0;
+                  return (
+                    <line
+                      key={`${node.id}-${link}`}
+                      className={on ? "link on" : "link"}
+                      x1={x(node)}
+                      y1={y(node)}
+                      x2={x(other)}
+                      y2={y(other)}
+                    />
+                  );
+                }),
+              )}
+              {nodes.map((node) => (
+                <NodeShape
+                  key={node.id}
+                  node={node}
+                  x={x(node)}
+                  y={y(node)}
+                  className={props.nodeClass(node)}
+                  ranks={props.ranks(node.id)}
+                  onClick={() => props.onSelect(node.id)}
+                />
+              ))}
+            </svg>
+            {!open && <Icon name="lock" size={18} />}
+          </section>
+        );
+      })}
+    </div>
+  );
+}
+
 function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolean }) {
   const { state, game, viewOnly } = props;
   const [pending, setPending] = useState<string[]>([]);
   const [selectedId, setSelectedId] = useState(SKILL_TREE.startNodeId);
+  const [view, setView] = useState<"base" | "prestige">("base");
 
   // Learned + pending, as the tree would look after Confirm.
   const budget = {
     skillPoints: state.hero.unspentSkillPoints,
     harvesterEmber: state.wallet.harvesterEmber,
   };
-  const preview = learnNodes(SKILL_TREE, state.hero.learned, pending, budget);
+  const branches = state.legacy.branches;
+  const preview = learnNodes(SKILL_TREE, state.hero.learned, pending, budget, branches);
   const selected = SKILL_TREE.nodes.find((n) => n.id === selectedId) ?? SKILL_TREE.nodes[0];
   const reason = selected
-    ? learnBlockReason(SKILL_TREE, preview.learned, selected.id, preview.budget)
+    ? learnBlockReason(SKILL_TREE, preview.learned, selected.id, preview.budget, branches)
     : undefined;
 
   const nodeClass = (node: SkillNode) => {
     const ranks = nodeRanks(SKILL_TREE, preview.learned, node.id);
-    const learnable = !learnBlockReason(SKILL_TREE, preview.learned, node.id, {
-      skillPoints: 1,
-      harvesterEmber: 1,
-    });
+    const learnable = !learnBlockReason(
+      SKILL_TREE,
+      preview.learned,
+      node.id,
+      { skillPoints: 1, harvesterEmber: 1 },
+      branches,
+    );
     return [
       "node",
       `kind-${node.kind}`,
@@ -159,69 +263,102 @@ function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolea
   return (
     <div className="tree-layout">
       <div className="tree-canvas">
-        <svg
-          className="skill-tree"
-          width={WIDTH}
-          height={HEIGHT}
-          viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
-          role="group"
-          aria-label="Skill Tree"
-        >
-          <defs>
-            <radialGradient id="tree-glow" cx="0.5" cy="0.5" r="0.5">
-              <stop offset="0" stopColor="#ff8a3a" stopOpacity="0.22" />
-              <stop offset="1" stopColor="#ff8a3a" stopOpacity="0" />
-            </radialGradient>
-          </defs>
-          {SKILL_TREE.nodes[0] && (
-            <circle
-              cx={px(SKILL_TREE.nodes[0])}
-              cy={py(SKILL_TREE.nodes[0])}
-              r={220}
-              fill="url(#tree-glow)"
-            />
-          )}
-          {SKILL_TREE.nodes.flatMap((node) =>
-            node.links.map((link) => {
-              const other = SKILL_TREE.nodes.find((n) => n.id === link);
-              if (!other) return null;
-              const on =
-                nodeRanks(SKILL_TREE, preview.learned, node.id) > 0 &&
-                nodeRanks(SKILL_TREE, preview.learned, other.id) > 0;
-              return (
-                <line
-                  key={`${node.id}-${link}`}
-                  className={on ? "link on" : "link"}
-                  x1={px(node)}
-                  y1={py(node)}
-                  x2={px(other)}
-                  y2={py(other)}
-                />
-              );
-            }),
-          )}
-          {SKILL_TREE.nodes.map((node) => (
-            <NodeShape
-              key={node.id}
-              node={node}
-              className={nodeClass(node)}
-              ranks={nodeRanks(SKILL_TREE, preview.learned, node.id)}
-              onClick={() => setSelectedId(node.id)}
-            />
-          ))}
-          {BRANCH_LABELS.map((b) => (
-            <text
-              key={b.name}
-              className="branch-label"
-              x={b.x}
-              y={b.y}
-              textAnchor="middle"
-              fill={b.color}
+        {(SKILL_TREE.prestigeBranches?.length ?? 0) > 0 && (
+          <div className="tree-views tabs" role="tablist">
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "base"}
+              className={`tab title-font ${view === "base" ? "on" : ""}`}
+              onClick={() => setView("base")}
             >
-              {b.name.toUpperCase()}
-            </text>
-          ))}
-        </svg>
+              Base Tree
+            </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={view === "prestige"}
+              className={`tab title-font ${view === "prestige" ? "on" : ""}`}
+              onClick={() => setView("prestige")}
+            >
+              Prestige Branches · {state.legacy.branches.length}
+            </button>
+          </div>
+        )}
+        {view === "prestige" ? (
+          <PrestigeBranches
+            branches={state.legacy.branches}
+            nodeClass={nodeClass}
+            ranks={(id) => nodeRanks(SKILL_TREE, preview.learned, id)}
+            onSelect={setSelectedId}
+          />
+        ) : (
+          <svg
+            className="skill-tree"
+            width={WIDTH}
+            height={HEIGHT}
+            viewBox={`0 0 ${WIDTH} ${HEIGHT}`}
+            role="group"
+            aria-label="Skill Tree"
+          >
+            <defs>
+              <radialGradient id="tree-glow" cx="0.5" cy="0.5" r="0.5">
+                <stop offset="0" stopColor="#ff8a3a" stopOpacity="0.22" />
+                <stop offset="1" stopColor="#ff8a3a" stopOpacity="0" />
+              </radialGradient>
+            </defs>
+            {SKILL_TREE.nodes[0] && (
+              <circle
+                cx={px(SKILL_TREE.nodes[0])}
+                cy={py(SKILL_TREE.nodes[0])}
+                r={220}
+                fill="url(#tree-glow)"
+              />
+            )}
+            {BASE_NODES.flatMap((node) =>
+              node.links.map((link) => {
+                const other = BASE_NODES.find((n) => n.id === link);
+                if (!other) return null;
+                const on =
+                  nodeRanks(SKILL_TREE, preview.learned, node.id) > 0 &&
+                  nodeRanks(SKILL_TREE, preview.learned, other.id) > 0;
+                return (
+                  <line
+                    key={`${node.id}-${link}`}
+                    className={on ? "link on" : "link"}
+                    x1={px(node)}
+                    y1={py(node)}
+                    x2={px(other)}
+                    y2={py(other)}
+                  />
+                );
+              }),
+            )}
+            {BASE_NODES.map((node) => (
+              <NodeShape
+                key={node.id}
+                node={node}
+                x={px(node)}
+                y={py(node)}
+                className={nodeClass(node)}
+                ranks={nodeRanks(SKILL_TREE, preview.learned, node.id)}
+                onClick={() => setSelectedId(node.id)}
+              />
+            ))}
+            {BRANCH_LABELS.map((b) => (
+              <text
+                key={b.name}
+                className="branch-label"
+                x={b.x}
+                y={b.y}
+                textAnchor="middle"
+                fill={b.color}
+              >
+                {b.name.toUpperCase()}
+              </text>
+            ))}
+          </svg>
+        )}
         <div className="tree-legend">
           <span>
             <i className="lg minor" /> Minor
@@ -256,7 +393,12 @@ function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolea
             }}
           >
             <div className="section-row">
-              <span className="eyebrow">{selected.branch.toUpperCase()}</span>
+              <span className="eyebrow">
+                {(
+                  SKILL_TREE.prestigeBranches?.find((b) => b.id === selected.prestigeBranch)
+                    ?.name ?? selected.branch
+                ).toUpperCase()}
+              </span>
               <span className="eyebrow">
                 {KIND_LABEL[selected.kind]}
                 {nodeMaxRanks(selected) > 1
@@ -293,7 +435,7 @@ function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolea
         <section className="panel-card branch-progress">
           <span className="title-font section-title">Your branches</span>
           {BRANCHES.map((b) => {
-            const nodes = SKILL_TREE.nodes.filter((n) => n.branch === b.id);
+            const nodes = BASE_NODES.filter((n) => n.branch === b.id);
             const learned = nodes.filter((n) => nodeRanks(SKILL_TREE, preview.learned, n.id) > 0);
             return (
               <div key={b.id} className="branch-row">
@@ -370,12 +512,84 @@ function Flames(props: { wait: number }) {
   );
 }
 
+/** A small labelled dropdown for the Battle Plan cards. */
+function PlanSelect(props: {
+  label: string;
+  value: string;
+  options: readonly { readonly id: string; readonly name: string }[];
+  onChange: (id: string) => void;
+}) {
+  return (
+    <label className="plan-select">
+      <span className="eyebrow">{props.label}</span>
+      <select
+        aria-label={props.label}
+        value={props.value}
+        onChange={(e) => props.onChange(e.target.value)}
+      >
+        {props.options.map((o) => (
+          <option key={o.id} value={o.id}>
+            {o.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
+}
+
+const NO_MODIFIER = { id: "", name: "—" };
+
+/** Modifier dropdowns of one slot (one per unlocked Modifier). */
+function ModifierSelects(props: {
+  count: number;
+  unlocks: BattlePlanUnlocks;
+  value: readonly SlotModifier[];
+  onChange: (mods: SlotModifier[]) => void;
+}) {
+  return (
+    <>
+      {Array.from({ length: props.count }, (_, m) => (
+        <PlanSelect
+          key={m}
+          label={props.count > 1 ? `Modifier ${m + 1}` : "Modifier"}
+          value={props.value[m] ?? ""}
+          options={[NO_MODIFIER, ...SLOT_MODIFIERS].filter(
+            (o) =>
+              o.id === "" ||
+              o.id === props.value[m] ||
+              (modifierAllowed(o.id as SlotModifier, props.unlocks) &&
+                !props.value.includes(o.id as SlotModifier)),
+          )}
+          onChange={(id) => {
+            const next = [...props.value];
+            next[m] = id as SlotModifier;
+            props.onChange(next.filter(Boolean));
+          }}
+        />
+      ))}
+    </>
+  );
+}
+
+/** Damage share of one slot in the last fight ("Plan-Feedback ohne Text"). */
+export function ShareBar(props: { share: number; label?: string }) {
+  const pct = Math.round(props.share * 100);
+  return (
+    <span className="share-bar" title={`${props.label ?? "Damage"} last fight: ${pct} %`}>
+      <span className="share-track">
+        <span className="share-fill" style={{ width: `${pct}%` }} />
+      </span>
+      <span className="mono small">{pct}%</span>
+    </span>
+  );
+}
+
 function BattlePlanTab(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const [slot, setSlot] = useState(0);
-  const { setup } = heroSetup(state, POC_GAME_DATA);
+  const { setup } = heroSetup(state, GAME_DATA);
   const stats = deriveStats(setup);
-  const known = knownSkills(state, POC_GAME_DATA, setup.weapon);
+  const known = knownSkills(state, GAME_DATA, setup.weapon);
   const rate = heatPerSecond(setup, stats);
   const slots = setup.rotation.map((r) => ({
     name: r.skill.name,
@@ -385,11 +599,26 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
   }));
   const chain = estimateRotation(slots, rate, stats.startingHeat);
   const prestige = state.legacy.prestige;
+  const unlocks = battlePlanUnlocks(prestige);
+  const plan = state.hero.plan;
+  const setPlan = (patch: Partial<BattlePlanState>) =>
+    game.dispatch({ type: "setBattlePlan", plan: { ...plan, ...patch } });
+  const at = <T,>(list: readonly T[], i: number, value: T, empty: T): T[] => {
+    const next = Array.from({ length: Math.max(list.length, i + 1) }, (_, j) => list[j] ?? empty);
+    next[i] = value;
+    return next;
+  };
 
   const current = (i: number) => {
     const id = state.hero.rotation[i] ?? null;
     return id === null ? known.find((k) => k.startSkill) : known.find((k) => k.skill.id === id);
   };
+  const skillOptions = [
+    { id: "", name: "—" },
+    ...known.map((k) => ({ id: k.skill.id, name: k.skill.name })),
+  ];
+  const capstoneCost = plan.capstone ? PROGRESSION.capstoneChangeGold : 0;
+  const report = state.run?.rewards?.report;
 
   return (
     <div className="plan-layout">
@@ -402,35 +631,77 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             {ROTATION_UNLOCK.map((p, i) => {
               const unlocked = i < state.progress.rotationSlots;
               const k = unlocked ? current(i) : undefined;
+              if (!unlocked || !k) {
+                return (
+                  <div key={i} className="plan-slot panel-card locked">
+                    <span className="eyebrow">SLOT {i + 1}</span>
+                    <Icon name="lock" size={22} />
+                    <span className="sub">Unlocks at Prestige {p}</span>
+                  </div>
+                );
+              }
+              const cost = k.skill.heatCost;
+              const thresholds = [
+                { id: "", name: `${cost} (cost)` },
+                ...Array.from({ length: Math.floor((100 - cost) / 10) }, (_, n) => {
+                  const v = Math.ceil((cost + 1) / 10) * 10 + n * 10;
+                  return { id: String(v), name: String(v) };
+                }).filter((o) => Number(o.id) <= 100),
+              ];
               return (
-                <button
+                <div
                   key={i}
-                  type="button"
-                  className={`plan-slot panel-card ${unlocked ? "" : "locked"} ${slot === i && unlocked ? "on" : ""}`}
-                  disabled={!unlocked}
-                  aria-label={`Rotation Slot ${i + 1}`}
-                  onClick={() => setSlot(i)}
+                  className={`plan-slot panel-card ${slot === i ? "on" : ""}`}
+                  data-testid={`rotation-slot-${i}`}
                 >
-                  <span className="eyebrow">SLOT {i + 1}</span>
-                  {unlocked && k ? (
-                    <>
-                      <span className="plan-skill">
-                        <span className="skill-chip" style={{ background: skillTint(k.skill.id) }}>
-                          <Icon name={skillIcon(k.skill.id)} size={24} color="#fff6e4" />
-                        </span>
-                        <span className="title-font">{k.skill.name}</span>
+                  <button
+                    type="button"
+                    className="plan-slot-head"
+                    aria-label={`Rotation Slot ${i + 1}`}
+                    aria-pressed={slot === i}
+                    onClick={() => setSlot(i)}
+                  >
+                    <span className="eyebrow">SLOT {i + 1}</span>
+                    <span className="plan-skill">
+                      <span className="skill-chip" style={{ background: skillTint(k.skill.id) }}>
+                        <Icon name={skillIcon(k.skill.id)} size={24} color="#fff6e4" />
                       </span>
-                      <span className="sub small">
-                        Lv {k.level} · {k.skill.heatCost} Heat{k.startSkill ? " · Start Skill" : ""}
-                      </span>
-                    </>
-                  ) : (
-                    <>
-                      <Icon name="lock" size={22} />
-                      <span className="sub">Unlocks at Prestige {p}</span>
-                    </>
+                      <span className="title-font">{k.skill.name}</span>
+                    </span>
+                    <span className="sub small">
+                      Lv {k.level} · {cost} Heat{k.startSkill ? " · Start Skill" : ""}
+                    </span>
+                  </button>
+                  {report && <ShareBar share={damageShare(report, k.skill.name)} />}
+                  {unlocks.thresholds && (
+                    <PlanSelect
+                      label="Fires at Heat"
+                      value={plan.thresholds[i] != null ? String(plan.thresholds[i]) : ""}
+                      options={thresholds}
+                      onChange={(id) =>
+                        setPlan({
+                          thresholds: at(plan.thresholds, i, id ? Number(id) : null, null),
+                        })
+                      }
+                    />
                   )}
-                </button>
+                  <ModifierSelects
+                    count={unlocks.modifiers}
+                    unlocks={unlocks}
+                    value={plan.modifiers[i] ?? []}
+                    onChange={(mods) => setPlan({ modifiers: at(plan.modifiers, i, mods, []) })}
+                  />
+                  {unlocks.conditions && (
+                    <PlanSelect
+                      label="Only if"
+                      value={plan.conditions[i] ?? ""}
+                      options={[{ id: "", name: "Always" }, ...SLOT_CONDITIONS]}
+                      onChange={(id) =>
+                        setPlan({ conditions: at(plan.conditions, i, id || null, null) })
+                      }
+                    />
+                  )}
+                </div>
               );
             })}
           </div>
@@ -440,18 +711,110 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             <span className="title-font section-title">Reactions</span>
           </div>
           <div className="plan-slots reactions">
-            {REACTION_UNLOCK.map((p) => (
-              <div key={p} className="plan-slot panel-card locked">
-                <Icon name="lock" size={20} />
-                <span className="sub">Unlocks at Prestige {p}</span>
+            {REACTION_UNLOCK.map((p, i) => {
+              if (i >= unlocks.reactionSlots) {
+                return (
+                  <div key={p} className="plan-slot panel-card locked">
+                    <Icon name="lock" size={20} />
+                    <span className="sub">Unlocks at Prestige {p}</span>
+                  </div>
+                );
+              }
+              const r = plan.reactions[i] ?? null;
+              const skill = known.find((k) => k.skill.id === r?.skillId);
+              return (
+                <div key={p} className="plan-slot panel-card" data-testid={`reaction-slot-${i}`}>
+                  <span className="eyebrow">REACTION {i + 1}</span>
+                  {skill ? (
+                    <span className="plan-skill">
+                      <span
+                        className="skill-chip"
+                        style={{ background: skillTint(skill.skill.id) }}
+                      >
+                        <Icon name={skillIcon(skill.skill.id)} size={24} color="#fff6e4" />
+                      </span>
+                      <span className="title-font">{skill.skill.name}</span>
+                    </span>
+                  ) : (
+                    <span className="sub">Empty</span>
+                  )}
+                  {report && skill && (
+                    <span className="sub small mono" title="Fired last fight">
+                      ×{report.reactions.find((x) => x.skill === skill.skill.name)?.casts ?? 0}
+                    </span>
+                  )}
+                  <PlanSelect
+                    label="Skill"
+                    value={r?.skillId ?? ""}
+                    options={skillOptions}
+                    onChange={(id) =>
+                      setPlan({
+                        reactions: at(
+                          plan.reactions,
+                          i,
+                          id ? { skillId: id, conditionId: r?.conditionId ?? "life-50" } : null,
+                          null,
+                        ),
+                      })
+                    }
+                  />
+                  {r && (
+                    <PlanSelect
+                      label="When"
+                      value={r.conditionId}
+                      options={REACTION_CONDITIONS.filter(
+                        (c) => c.id === r.conditionId || reactionConditionAllowed(c.id, unlocks),
+                      )}
+                      onChange={(id) =>
+                        setPlan({
+                          reactions: at(plan.reactions, i, { ...r, conditionId: id }, null),
+                        })
+                      }
+                    />
+                  )}
+                  <ModifierSelects
+                    count={unlocks.modifiers}
+                    unlocks={unlocks}
+                    value={plan.reactionModifiers[i] ?? []}
+                    onChange={(mods) =>
+                      setPlan({ reactionModifiers: at(plan.reactionModifiers, i, mods, []) })
+                    }
+                  />
+                </div>
+              );
+            })}
+            {unlocks.openingMove ? (
+              <div className="plan-slot panel-card" data-testid="opening-move">
+                <span className="eyebrow">OPENING MOVE</span>
+                <PlanSelect
+                  label="Skill"
+                  value={plan.openingMove ?? ""}
+                  options={skillOptions}
+                  onChange={(id) => setPlan({ openingMove: id || null })}
+                />
+                <span className="sub small">Free at fight start</span>
               </div>
-            ))}
+            ) : null}
+            {unlocks.reactionSlots > 0 && (
+              <span className="sub small reaction-note">{REACTION_COOLDOWN} s cooldown</span>
+            )}
           </div>
         </section>
         <section className="chain panel-card" aria-label="One rotation">
           <div className="section-row">
             <span className="title-font section-title">One rotation</span>
             <span className="sub">≈ {rate.toFixed(1)} Heat/s</span>
+            {report && (
+              <span className="chain-report">
+                <span className="sub small">{setup.weapon.defaultAttack}</span>
+                <ShareBar
+                  share={damageShare(report, setup.weapon.defaultAttack)}
+                  label={setup.weapon.defaultAttack}
+                />
+                <span className="sub small">{AILMENT_SOURCE}</span>
+                <ShareBar share={damageShare(report, AILMENT_SOURCE)} label={AILMENT_SOURCE} />
+              </span>
+            )}
           </div>
           <div className="chain-row">
             {chain.length === 0 && (
@@ -521,16 +884,50 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             })}
           </ul>
         </section>
-        <section className="panel-card ladder">
-          <span className="title-font section-title">Battle Plan upgrades</span>
-          <ol>
-            {PLAN_UPGRADES.map((u, i) => (
-              <li key={u} className={i < prestige ? "done" : i === prestige ? "next" : ""}>
-                <span className="mono">P{i + 1}</span> {u}
-              </li>
-            ))}
-          </ol>
-        </section>
+        {unlocks.capstone ? (
+          <section className="panel-card capstones" aria-label="Capstone">
+            <div className="section-row">
+              <span className="title-font section-title">Capstone</span>
+              {capstoneCost > 0 && <span className="sub small">Switch · {capstoneCost} Gold</span>}
+            </div>
+            <ul>
+              {CAPSTONES.map((c) => {
+                const on = plan.capstone?.id === c.id;
+                const echoSlot = c.id === "echo" ? slot : (plan.capstone?.slot ?? 0);
+                const blocked = !on && plan.capstone !== null && state.wallet.gold < capstoneCost;
+                return (
+                  <li key={c.id}>
+                    <button
+                      type="button"
+                      className={`capstone ${on ? "on" : ""}`}
+                      aria-pressed={on}
+                      disabled={blocked || (on && c.id !== "echo")}
+                      title={c.text}
+                      onClick={() => setPlan({ capstone: { id: c.id, slot: echoSlot } })}
+                    >
+                      <span className="title-font">
+                        {c.name}
+                        {c.id === "echo" && on ? ` · Slot ${(plan.capstone?.slot ?? 0) + 1}` : ""}
+                      </span>
+                      <span className="sub small">{c.text}</span>
+                    </button>
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        ) : (
+          <section className="panel-card ladder">
+            <span className="title-font section-title">Battle Plan upgrades</span>
+            <ol>
+              {BATTLE_PLAN_LADDER.map((u, i) => (
+                <li key={u.name} className={i < prestige ? "done" : i === prestige ? "next" : ""}>
+                  <span className="mono">P{i + 1}</span> {u.name}
+                </li>
+              ))}
+            </ol>
+          </section>
+        )}
       </aside>
     </div>
   );
@@ -543,13 +940,18 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
 export function KaelenView(props: {
   state: GameState;
   game: GameApi;
+  /** The Skill Tree is view-only (during a run). */
   viewOnly: boolean;
+  /** The Battle Plan can be changed (Camp and between stages, not mid-fight). */
+  planEditable?: boolean;
+  initialTab?: "tree" | "plan";
   onClose: () => void;
 }) {
   const { state, game, viewOnly } = props;
-  const [tab, setTab] = useState<"tree" | "plan">("tree");
+  const planEditable = props.planEditable ?? !viewOnly;
+  const [tab, setTab] = useState<"tree" | "plan">(props.initialTab ?? "tree");
   const [respec, setRespec] = useState(false);
-  const spent = spentInTree(POC_GAME_DATA, state.hero.learned);
+  const spent = spentInTree(GAME_DATA, state.hero.learned);
   const canRespec =
     !viewOnly && spent.skillPoints > 0 && state.wallet.gold >= PROGRESSION.respecGold;
 
@@ -576,7 +978,7 @@ export function KaelenView(props: {
             >
               Skill Tree
             </button>
-            {!viewOnly && (
+            {planEditable && (
               <button
                 type="button"
                 role="tab"
@@ -645,7 +1047,7 @@ export function KaelenView(props: {
             <Icon name="close" size={20} />
           </button>
         </header>
-        {tab === "tree" || viewOnly ? (
+        {tab === "tree" || !planEditable ? (
           <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />
         ) : (
           <BattlePlanTab state={state} game={game} />

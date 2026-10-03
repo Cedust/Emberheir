@@ -59,8 +59,10 @@ npm test                             # unit tests (Vitest)
 npm run balance -- --runs 1000 --seed 42   # all PoC weapons vs. all Act 1 enemies
 npm run balance -- --weapon sword --skills power-strike,flurry --enemy ashen-brute --level 3
 npm run balance -- --gear all --level 3     # compare no gear vs. Normal/Magic/Rare/Epic gear
-npm run balance -- --act 1 --runs 200      # autopilot plays Act 1: deaths, level at boss, fight length
-npm run balance -- --act 1 --generations 2 # ...then prestiges after Gorrak and plays Act 1 again
+npm run balance -- --act 1 --runs 200      # autopilot plays run 1 (Act 1): deaths, level at boss, fight length
+npm run balance -- --act 2 --runs 200      # ...then prestiges and plays run 2 (Act 1 + Rotwood)
+npm run balance -- --act 2 --generations 3 # ...and a third run (acts open one per prestige)
+npm run balance -- --act 7 --generations 7 --runs 12 --weapon staff  # all seven runs up to the Harvester
 npm run format                       # Prettier
 ```
 

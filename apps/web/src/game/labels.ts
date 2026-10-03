@@ -1,10 +1,12 @@
-import type {
-  CraftBlockReason,
-  EquipBlockReason,
-  MoveBlockReason,
-  LearnBlockReason,
-  SpoilsCard,
-  UnequipBlockReason,
+import { GAME_DATA } from "@emberheir/content";
+import {
+  type CraftBlockReason,
+  type EquipBlockReason,
+  type MoveBlockReason,
+  type LearnBlockReason,
+  type SpoilsCard,
+  type UnequipBlockReason,
+  harvestAct,
 } from "@emberheir/sim";
 
 export const EQUIP_BLOCK_TEXT: Record<EquipBlockReason, string> = {
@@ -27,6 +29,7 @@ export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
   notConnected: "Learn a connected node first",
   noSkillPoints: "No Skill Points left",
   noEmber: "Needs Harvester's Ember",
+  branchLocked: "Unlock this branch at a Prestige",
 };
 
 export const MOVE_BLOCK_TEXT: Record<MoveBlockReason, string> = {
@@ -53,6 +56,23 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   reforgeStones: "Not enough Reforge Stones",
   ascensionShards: "Needs an Ascension Shard (bosses, sometimes Elites)",
   essence: "Not enough Essence",
+  runesmith: "Eldrin joins after your first trip into the Rotwood",
+  notNormal: "Only Normal items take Sockets and Runes",
+  maxSockets: "No more Sockets fit this base",
+  hasRunes: "Runes are already socketed",
+  noSocket: "No free Socket",
+  fixed: "This item never changes",
+  unknownRune: "Choose a Rune",
+  maxRank: "Already the highest Rune",
+  sold: "Sold",
+  noStock: "Not in stock",
+  noRoom: "No room in the inventory",
+  runes: "Not enough Runes",
+  unknownPart: "Learn both parts first: salvage items with that trigger",
+  kindled: "Only one kindled trigger per item",
+  notTrigger: "Choose a trigger to replace",
+  noTriggerPlace: "Normal items have no trigger place",
+  kindling: "Needs Kindling (Elite and boss Spoils)",
 };
 
 export function spoilsLabel(card: SpoilsCard, essenceName: string): string {
@@ -63,6 +83,8 @@ export function spoilsLabel(card: SpoilsCard, essenceName: string): string {
       return `${card.amount} Reforge Stones`;
     case "essence":
       return `${card.amount} ${essenceName}`;
+    case "kindling":
+      return `${card.amount} Kindling`;
   }
 }
 
@@ -74,5 +96,12 @@ export function spoilsHint(card: SpoilsCard): string {
       return "Reroll all affixes of an item at the Mystic.";
     case "essence":
       return "Imbue: set one stat affix at the Mystic.";
+    case "kindling":
+      return "Kindle: build a trigger from the Codex at the Mystic.";
   }
+}
+
+/** Short name of the boss whose fall brings The Harvest in a run (the newest act's boss). */
+export function harvestBoss(prestige: number): string {
+  return harvestAct(GAME_DATA, prestige).boss.name.split(",")[0] ?? "";
 }

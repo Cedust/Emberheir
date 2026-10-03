@@ -1,12 +1,15 @@
 import { useEffect, useState } from "react";
 import { CombatDebug } from "../combat/CombatDebug";
+import { ItemArtDefs } from "../ui/ItemArt";
+import { ItemHoverLayer } from "../ui/ItemTooltip";
 import { Stage } from "../ui/Stage";
 import { useSettings } from "../ui/settings";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
+import { TriggerCodex } from "./camp/TriggerCodex";
 import { IntermissionView } from "./IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
-import { NoticeScreen } from "./NoticeScreen";
+import { EndingScreen, NoticeScreen } from "./NoticeScreen";
 import { InheritanceView, PrestigeView } from "./PrestigeView";
 import { TitleScreen } from "./TitleScreen";
 import { BattleView } from "./battle/BattleView";
@@ -17,10 +20,10 @@ import { type PersonaId, PersonaView } from "./camp/PersonaView";
 import { StashView } from "./camp/StashView";
 import { useGame } from "./useGame";
 
-type Overlay = "character" | "tree" | "menu" | "compendium" | null;
+type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "codex" | null;
 type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | null;
 
-/** The playable PoC: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
+/** The game: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
 export function GameApp() {
   const game = useGame();
   const settings = useSettings();
@@ -31,7 +34,6 @@ export function GameApp() {
   const { state } = game;
   const run = state?.run ?? null;
   const inFight = run?.phase === "fight";
-  const trainer = state?.progress.trainerUnlocked ?? false;
 
   const toggle = (o: Exclude<Overlay, null>) => setOverlay((cur) => (cur === o ? null : o));
 
@@ -48,14 +50,14 @@ export function GameApp() {
         else setOverlay("menu");
       } else if (key === "c" && overlay !== "menu") {
         setOverlay((cur) => (cur === "character" ? null : "character"));
-      } else if (key === "t" && overlay !== "menu" && trainer) {
-        if (run) setOverlay((cur) => (cur === "tree" ? null : "tree"));
+      } else if (key === "t" && overlay !== "menu") {
+        if (run) setOverlay((cur) => (cur === "tree" || cur === "plan" ? null : "tree"));
         else setCampScreen((cur) => (cur === "kaelen" ? null : "kaelen"));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state, lab, overlay, run, campScreen, trainer]);
+  }, [state, lab, overlay, run, campScreen]);
 
   if (lab) {
     return (
@@ -76,12 +78,23 @@ export function GameApp() {
       case "compendium":
         setOverlay("compendium");
         break;
+      case "codex":
+        setOverlay("codex");
+        break;
       case "forge":
         setPersona("thoric");
         setCampScreen("persona");
         break;
       case "altar":
         setPersona("liora");
+        setCampScreen("persona");
+        break;
+      case "shop":
+        setPersona("marisha");
+        setCampScreen("persona");
+        break;
+      case "runes":
+        setPersona("eldrin");
         setCampScreen("persona");
         break;
       default:
@@ -111,6 +124,16 @@ export function GameApp() {
         }}
       />
     );
+  } else if (state.notice?.kind === "ending") {
+    screen = (
+      <EndingScreen
+        state={state}
+        onDismiss={() => {
+          setCampScreen(null);
+          game.dispatch({ type: "dismissNotice" });
+        }}
+      />
+    );
   } else if (state.notice) {
     screen = (
       <NoticeScreen
@@ -135,7 +158,7 @@ export function GameApp() {
       );
     } else if (campScreen === "stash") {
       screen = <StashView state={state} game={game} onClose={close} />;
-    } else if (campScreen === "kaelen" && trainer) {
+    } else if (campScreen === "kaelen") {
       screen = <KaelenView state={state} game={game} viewOnly={false} onClose={close} />;
     } else if (campScreen === "legacy") {
       screen = <LegacyView state={state} onClose={close} />;
@@ -166,6 +189,7 @@ export function GameApp() {
         game={game}
         onCharacter={() => toggle("character")}
         onTree={() => toggle("tree")}
+        onPlan={() => toggle("plan")}
         onMenu={() => setOverlay("menu")}
       />
     );
@@ -173,40 +197,54 @@ export function GameApp() {
 
   return (
     <Stage>
-      {screen}
-      {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
-        <CharacterOverlay
-          state={state}
-          game={game}
-          inFight={inFight}
-          onClose={() => setOverlay(null)}
-        />
-      )}
-      {state && overlay === "tree" && trainer && (
-        <KaelenView state={state} game={game} viewOnly onClose={() => setOverlay(null)} />
-      )}
-      {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
-      {state && overlay === "menu" && (
-        <MenuOverlay
-          settings={settings}
-          inFight={inFight}
-          onResume={() => setOverlay(null)}
-          onCompendium={() => setOverlay("compendium")}
-          onQuit={() => {
-            setOverlay(null);
-            setCampScreen(null);
-            game.quit();
-          }}
-        />
-      )}
-      {game.error && (
-        <div className="toast" role="alert">
-          {game.error}
-          <button type="button" className="btn" onClick={game.clearError}>
-            OK
-          </button>
-        </div>
-      )}
+      <ItemArtDefs />
+      <ItemHoverLayer state={state}>
+        {screen}
+        {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
+          <CharacterOverlay
+            state={state}
+            game={game}
+            inFight={inFight}
+            onClose={() => setOverlay(null)}
+          />
+        )}
+        {state && (overlay === "tree" || overlay === "plan") && (
+          <KaelenView
+            key={overlay}
+            state={state}
+            game={game}
+            viewOnly
+            planEditable={!inFight}
+            initialTab={overlay === "plan" ? "plan" : "tree"}
+            onClose={() => setOverlay(null)}
+          />
+        )}
+        {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
+        {state && overlay === "codex" && (
+          <TriggerCodex state={state} game={game} onClose={() => setOverlay(null)} />
+        )}
+        {state && overlay === "menu" && (
+          <MenuOverlay
+            settings={settings}
+            inFight={inFight}
+            onResume={() => setOverlay(null)}
+            onCompendium={() => setOverlay("compendium")}
+            onQuit={() => {
+              setOverlay(null);
+              setCampScreen(null);
+              game.quit();
+            }}
+          />
+        )}
+        {game.error && (
+          <div className="toast" role="alert">
+            {game.error}
+            <button type="button" className="btn" onClick={game.clearError}>
+              OK
+            </button>
+          </div>
+        )}
+      </ItemHoverLayer>
     </Stage>
   );
 }

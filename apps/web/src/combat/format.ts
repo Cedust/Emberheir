@@ -21,7 +21,17 @@ const AILMENT_NAMES: Record<AilmentType, string> = {
   burn: "Burn",
   chill: "Chill",
   shock: "Shock",
+  bleed: "Bleed",
+  poison: "Poison",
+  corruption: "Corruption",
 };
+
+const VIA = {
+  reaction: "Reaction",
+  reverb: "Reverb",
+  echo: "Echo",
+  opening: "Opening Move",
+} as const;
 
 export function formatTime(seconds: number): string {
   return `${seconds.toFixed(2)}s`;
@@ -36,7 +46,7 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         time,
         side: event.side,
         tone: "skill",
-        text: `${names[event.side]} uses ${event.skill} (−${event.heatCost} Heat)`,
+        text: `${names[event.side]} uses ${event.skill} (${event.via ? `${VIA[event.via]}, ` : ""}−${event.heatCost} Heat)`,
       };
     case "hit": {
       const target = names[event.side === "hero" ? "enemy" : "hero"];
@@ -60,7 +70,7 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         time,
         side: event.side,
         tone: event.ailment,
-        text: `${names[event.side]} suffers ${AILMENT_NAMES[event.ailment]}`,
+        text: `${names[event.side]} suffers ${AILMENT_NAMES[event.ailment]}${event.stacks && event.stacks > 1 ? ` (${event.stacks} stacks)` : ""}`,
       };
     case "ailmentExpired":
       return {
@@ -123,14 +133,27 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         tone: "telegraph",
         text: `${names[event.side]} winds up ${event.skill}! (${event.windup}s)`,
       };
+    case "stun":
+      return {
+        time,
+        side: event.side,
+        tone: "telegraph",
+        text: `${names[event.side]} is stunned (${event.seconds.toFixed(1)}s)`,
+      };
     case "death":
       return { time, side: event.side, tone: "end", text: `${names[event.side]} falls` };
+    case "flee":
+      return { time, side: event.side, tone: "end", text: `${names[event.side]} escapes` };
     case "fightEnd":
       return {
         time,
         side: null,
         tone: "end",
-        text: event.winner ? `${names[event.winner]} wins` : "Time is up: draw",
+        text: event.winner
+          ? `${names[event.winner]} wins`
+          : event.fled
+            ? "No winner"
+            : "Time is up: draw",
       };
   }
 }

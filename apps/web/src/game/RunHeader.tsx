@@ -1,14 +1,17 @@
 import type { ActData } from "@emberheir/sim";
 import { Icon } from "../ui/Icon";
+import { actTitle, finaleFoe, inFinale } from "./finale";
 
 /** Act progress as a bar (battle-view-v1.md): Camp, 15 stages, Spoils stages and the Boss. */
 export function ActProgress(props: { act: ActData; stage: number; cleared: boolean }) {
   const { act, stage } = props;
-  const stages = act.monsterLevels.length;
+  const stages = act.stages;
   const width = 760;
   const left0 = 36;
   const span = width - left0 - 20;
   const done = props.cleared ? stage : stage - 1;
+  // The Last Ember: every stage is a boss, each dot names its echo.
+  const finale = inFinale(act);
   return (
     <div
       className="act-progress"
@@ -27,7 +30,7 @@ export function ActProgress(props: { act: ActData; stage: number; cleared: boole
       {Array.from({ length: stages }, (_, i) => {
         const n = i + 1;
         const cur = n === stage;
-        const boss = n === stages;
+        const boss = n === stages || finale;
         const spoils = act.spoilsStages.includes(n);
         const size = cur ? 30 : boss ? 26 : spoils ? 16 : 12;
         const cls = [
@@ -41,7 +44,15 @@ export function ActProgress(props: { act: ActData; stage: number; cleared: boole
           <div
             key={n}
             className={cls}
-            title={boss ? `Stage ${n} · Boss` : spoils ? `Stage ${n} · Spoils` : `Stage ${n}`}
+            title={
+              finale
+                ? `Stage ${n} · ${finaleFoe(n)}`
+                : boss
+                  ? `Stage ${n} · Boss`
+                  : spoils
+                    ? `Stage ${n} · Spoils`
+                    : `Stage ${n}`
+            }
             style={{
               left: left0 + (i / (stages - 1)) * span - size / 2,
               top: 20 - size / 2,
@@ -64,7 +75,6 @@ export function RunHeader(props: {
   sub: string;
   cleared: boolean;
   attributePoints: number;
-  treeUnlocked: boolean;
   skillPoints: number;
   onCharacter: () => void;
   onTree: () => void;
@@ -73,9 +83,7 @@ export function RunHeader(props: {
   return (
     <header className="run-header bar-top">
       <div className="run-title">
-        <span className="title-font">
-          Act {props.act.number} · {props.act.name}
-        </span>
+        <span className="title-font">{actTitle(props.act)}</span>
         <span className="sub">{props.sub}</span>
       </div>
       <ActProgress act={props.act} stage={props.stage} cleared={props.cleared} />
@@ -94,19 +102,12 @@ export function RunHeader(props: {
         type="button"
         className="hud-button"
         onClick={props.onTree}
-        disabled={!props.treeUnlocked}
-        title={
-          props.treeUnlocked
-            ? "Skill Tree (view only)"
-            : "Kaelen teaches the Skill Tree after Gorrak"
-        }
+        title="Skill Tree and Battle Plan"
       >
         <Icon name="tree" size={18} />
         <span>Skill Tree</span>
         <kbd>T</kbd>
-        {props.treeUnlocked && props.skillPoints > 0 && (
-          <span className="badge">{props.skillPoints}</span>
-        )}
+        {props.skillPoints > 0 && <span className="badge">{props.skillPoints}</span>}
       </button>
       <button
         type="button"

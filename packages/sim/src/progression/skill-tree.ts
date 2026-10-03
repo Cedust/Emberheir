@@ -1,4 +1,5 @@
-import type { CombatRules, SkillDefinition, StatBonuses } from "../combat/types";
+import { mergeRules } from "../combat/rules";
+import type { CombatRules, SkillDefinition, StatBonuses, TriggerSpec } from "../combat/types";
 import { sumBonuses } from "../combat/stats";
 
 /** Skill Tree data (docs/design/skill-tree-v1.md). PoC: Core + Might + Arcana. */
@@ -28,12 +29,31 @@ export interface SkillNode {
   readonly skill?: SkillDefinition;
   /** Keystones: the rule they change. They cost Harvester's Ember, not Skill Points. */
   readonly keystone?: CombatRules;
+  /** Trigger effects the node gives (Prestige branches); they do not stack with ranks. */
+  readonly triggers?: readonly TriggerSpec[];
+  /** Prestige branch the node belongs to; learnable once the branch is unlocked. */
+  readonly prestigeBranch?: string;
+}
+
+/**
+ * A Prestige branch (skill-tree-v1.md section 3): one is unlocked per Prestige. Its nodes hang off
+ * `anchor`, a node of the base branch it deepens.
+ */
+export interface PrestigeBranchDefinition {
+  readonly id: string;
+  readonly name: string;
+  /** Base branch it deepens (colour, grouping). */
+  readonly branch: SkillTreeBranch;
+  readonly anchor: string;
+  /** One line about its theme. */
+  readonly theme: string;
 }
 
 export interface SkillTreeDefinition {
   readonly nodes: readonly SkillNode[];
   /** Learned for free at the start. */
   readonly startNodeId: string;
+  readonly prestigeBranches?: readonly PrestigeBranchDefinition[];
 }
 
 /** Ranks per node id. */
@@ -72,7 +92,9 @@ export type LearnBlockReason =
   | "notConnected"
   | "noSkillPoints"
   /** Keystones cost Harvester's Ember (none in the first run). */
-  | "noEmber";
+  | "noEmber"
+  /** The node's Prestige branch is not unlocked yet. */
+  | "branchLocked";
 
 /** Why the next rank of a node cannot be learned, or undefined if it can. */
 export function learnBlockReason(
@@ -80,10 +102,12 @@ export function learnBlockReason(
   learned: LearnedNodes,
   id: string,
   budget: LearnBudget,
+  branches: readonly string[] = [],
 ): LearnBlockReason | undefined {
   const node = getNode(tree, id);
   const ranks = nodeRanks(tree, learned, id);
   if (ranks >= nodeMaxRanks(node)) return "maxed";
+  if (node.prestigeBranch && !branches.includes(node.prestigeBranch)) return "branchLocked";
   const connected = ranks > 0 || neighbours(tree, id).some((n) => nodeRanks(tree, learned, n) > 0);
   if (!connected) return "notConnected";
   if (node.kind === "keystone") return budget.harvesterEmber >= 1 ? undefined : "noEmber";
@@ -103,11 +127,12 @@ export function learnNodes(
   learned: LearnedNodes,
   ids: readonly string[],
   budget: LearnBudget,
+  branches: readonly string[] = [],
 ): { readonly learned: LearnedNodes; readonly budget: LearnBudget } {
   let current: Record<string, number> = { ...learned };
   let left = budget;
   for (const id of ids) {
-    const reason = learnBlockReason(tree, current, id, left);
+    const reason = learnBlockReason(tree, current, id, left, branches);
     if (reason) throw new Error(`Cannot learn "${id}": ${reason}`);
     const cost = learnCost(getNode(tree, id));
     current = { ...current, [id]: nodeRanks(tree, current, id) + 1 };
@@ -140,6 +165,22 @@ export function treeBonuses(
   return sumBonuses(...sets);
 }
 
+/** Trigger effects from learned nodes for a weapon range. */
+export function treeTriggers(
+  tree: SkillTreeDefinition,
+  learned: LearnedNodes,
+  weaponRange: "melee" | "ranged",
+): TriggerSpec[] {
+  return learnedList(tree, learned).flatMap(({ node }) =>
+    node.triggers && (!node.weaponRange || node.weaponRange === weaponRange) ? node.triggers : [],
+  );
+}
+
+/** The nodes of a Prestige branch. */
+export function prestigeBranchNodes(tree: SkillTreeDefinition, branchId: string): SkillNode[] {
+  return tree.nodes.filter((n) => n.prestigeBranch === branchId);
+}
+
 /** Keystones the hero has learned. */
 export function learnedKeystones(tree: SkillTreeDefinition, learned: LearnedNodes): SkillNode[] {
   return learnedList(tree, learned)
@@ -159,16 +200,5 @@ export function treeSkills(
 
 /** Rules of all learned Keystones combined. */
 export function keystoneRules(tree: SkillTreeDefinition, learned: LearnedNodes): CombatRules {
-  let damageTaken = 0;
-  let skillCostMultiplier = 1;
-  let defaultAttackDamage = 1;
-  let noHeatDecay = false;
-  for (const node of learnedKeystones(tree, learned)) {
-    const k = node.keystone ?? {};
-    damageTaken += k.damageTaken ?? 0;
-    skillCostMultiplier *= k.skillCostMultiplier ?? 1;
-    defaultAttackDamage *= k.defaultAttackDamage ?? 1;
-    noHeatDecay ||= k.noHeatDecay ?? false;
-  }
-  return { damageTaken, skillCostMultiplier, defaultAttackDamage, noHeatDecay };
+  return mergeRules(...learnedKeystones(tree, learned).map((node) => node.keystone));
 }

@@ -1,11 +1,14 @@
 import {
   ACT1_ENEMIES,
+  ACT2_ENEMIES,
+  ACT2,
+  ACT1,
   GAME_TITLE,
-  POC_GAME_DATA,
+  GAME_DATA,
   HERO_SKILLS,
   HERO_WEAPONS,
   createHeroSetup,
-  rollPocGear,
+  rollGear,
 } from "@emberheir/content";
 import { Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
@@ -14,50 +17,65 @@ import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
 
-if (args.act > 0) {
+if (args.act > 0 || args.finale > 0) {
   runActMode();
   process.exit(0);
 }
 
-/** `--act 1`: plays whole acts with an autopilot (loot, flask, deaths) per starter weapon. */
+/**
+ * `--act 2`: plays the run from Act 1 up to that act with an autopilot (loot, flask, deaths),
+ * per starter weapon (`--weapon axe` also plays a weapon that only drops).
+ */
 function runActMode(): void {
-  const act = POC_GAME_DATA.acts.find((a) => a.number === args.act);
-  if (!act) throw new Error(`Act ${args.act} is not in the PoC`);
+  if (args.finale) args.act = Math.max(args.act, 7);
+  const last = GAME_DATA.acts.find((a) => a.number === args.act);
+  if (!last) throw new Error(`Act ${args.act} is not playable yet`);
   const runs = Math.min(args.runs, 500);
+  // Run n has acts 1..n, so reaching act N takes N runs (prestige-acts-v1.md).
+  const generations = args.finale ? 10 : Math.max(args.generations, last.number);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
-    `act=${act.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${args.generations}`,
+    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations}`,
   );
   console.log("");
   const rows = [];
-  for (const starterWeapon of POC_GAME_DATA.starterWeapons) {
-    if (args.weapon !== "all" && args.weapon !== starterWeapon) continue;
-    const runsByGeneration = Array.from({ length: runs }, (_, i) =>
-      playGenerations(POC_GAME_DATA, {
+  const weapons = args.weapon === "all" ? GAME_DATA.starterWeapons : [args.weapon];
+  for (const starterWeapon of weapons) {
+    const all = Array.from({ length: runs }, (_, i) =>
+      playGenerations(GAME_DATA, {
         seed: args.seed + i,
         starterWeapon,
-        actId: act.id,
+        upToAct: last.number,
         maxAttempts: args.attempts,
-        generations: args.generations,
+        generations,
+        finale: args.finale > 0,
       }),
-    );
-    for (let g = 1; g <= args.generations; g++) {
-      const reports = runsByGeneration.flatMap((r) => r.filter((x) => x.generation === g));
-      const s = summarizeActRuns(reports);
-      rows.push({
-        weapon: starterWeapon,
-        gen: g,
-        runs: reports.length,
-        "cleared %": (s.clearRate * 100).toFixed(0),
-        "deaths before clear": s.avgDeaths.toFixed(1),
-        "1st fight lost %": (s.firstFightLossRate * 100).toFixed(1),
-        "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
-        "level at boss": s.avgLevelAtBoss.toFixed(1),
-        "avg fight s": s.avgFightSeconds.toFixed(1),
-        "p90 fight s": s.p90FightSeconds.toFixed(1),
-        "boss fight s": s.avgBossSeconds.toFixed(1),
-        "elites / run": s.avgElites.toFixed(1),
-      });
+    ).flat();
+    const finale = GAME_DATA.finale;
+    for (let g = 1; g <= generations + 1; g++) {
+      const acts = g > generations ? (finale ? [finale] : []) : GAME_DATA.acts;
+      for (const act of acts.filter((a) => g > generations || a.number <= last.number)) {
+        const reports = all.filter((x) => x.generation === g && x.act === act.number);
+        if (!reports.length) continue;
+        const s = summarizeActRuns(reports);
+        rows.push({
+          weapon: starterWeapon,
+          gen: g,
+          act: act.number,
+          runs: reports.length,
+          "cleared %": (s.clearRate * 100).toFixed(0),
+          "deaths before clear": s.avgDeaths.toFixed(1),
+          "1st fight lost %": (s.firstFightLossRate * 100).toFixed(1),
+          "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
+          "level at boss": s.avgLevelAtBoss.toFixed(1),
+          "avg fight s": s.avgFightSeconds.toFixed(1),
+          "p90 fight s": s.p90FightSeconds.toFixed(1),
+          "boss fight s": s.avgBossSeconds.toFixed(1),
+          "elites / run": s.avgElites.toFixed(1),
+          "thief caught %": s.avgThieves ? (s.thiefCatchRate * 100).toFixed(0) : "-",
+          "top killer": s.topKiller,
+        });
+      }
     }
   }
   console.table(rows);
@@ -72,7 +90,7 @@ const pick = <T extends { id: string }>(list: readonly T[], id: string, what: st
 };
 
 const weapons = pick(HERO_WEAPONS, args.weapon, "weapon");
-const enemies = pick(ACT1_ENEMIES, args.enemy, "enemy");
+const enemies = pick([...ACT1_ENEMIES, ACT1.boss, ...ACT2_ENEMIES, ACT2.boss], args.enemy, "enemy");
 const skills = args.skills.flatMap((id) => pick(HERO_SKILLS, id, "skill"));
 const gearModes: Exclude<GearMode, "all">[] =
   args.gear === "all" ? GEAR_MODES.filter((g) => g !== "all" && g !== "mixed") : [args.gear];
@@ -98,7 +116,7 @@ for (const weapon of weapons) {
         ...(gear === "none"
           ? {}
           : {
-              equipment: rollPocGear(
+              equipment: rollGear(
                 { weaponBaseId: weapon.id, rarity: gear, itemLevel },
                 new Rng(args.seed + run + GEAR_SEED_OFFSET),
               ),

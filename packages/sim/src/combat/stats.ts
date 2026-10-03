@@ -14,7 +14,13 @@ export interface DerivedStats {
   readonly evasion: number;
   readonly blockChance: number;
   readonly blockValue: number;
+  /** All Resistance (from Intelligence and gear) before the element's own Resistance. */
   readonly resistance: number;
+  /** Final Resistance per element: All Resistance + the element's own, capped. */
+  readonly fireResistance: number;
+  readonly coldResistance: number;
+  readonly lightningResistance: number;
+  readonly voidResistance: number;
   readonly heatGain: number;
   readonly startingHeat: number;
   readonly ailmentDuration: number;
@@ -26,6 +32,9 @@ export interface DerivedStats {
   readonly burnChance: number;
   readonly chillChance: number;
   readonly shockChance: number;
+  readonly corruptionChance: number;
+  readonly bleedChance: number;
+  readonly poisonChance: number;
 }
 
 export function heroBaseLife(level: number): number {
@@ -46,6 +55,10 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     blockChance: 0,
     blockValue: 0,
     allResistance: 0,
+    fireResistance: 0,
+    coldResistance: 0,
+    lightningResistance: 0,
+    voidResistance: 0,
     heatGain: 0,
     startingHeat: 0,
     ailmentDuration: 0,
@@ -57,6 +70,9 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     burnChance: 0,
     chillChance: 0,
     shockChance: 0,
+    corruptionChance: 0,
+    bleedChance: 0,
+    poisonChance: 0,
   };
   for (const set of sets) {
     if (!set) continue;
@@ -77,6 +93,8 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
   const a: Attributes = setup.attributes;
   const b = sumBonuses(setup.weapon.implicit, setup.bonuses);
   const baseLife = setup.baseLife ?? heroBaseLife(setup.level);
+  const allResistance = a.intelligence * COMBAT.allResistancePerIntelligence + b.allResistance;
+  const resist = (own: number) => clamp(allResistance + own, 0, COMBAT.maxResistance);
 
   return {
     maxLife: Math.round(baseLife + a.vitality * COMBAT.lifePerVitality + b.life),
@@ -84,7 +102,8 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     physicalDamage: a.strength * COMBAT.physicalDamagePerStrength + b.physicalDamage,
     elementalDamage: a.intelligence * COMBAT.elementalDamagePerIntelligence + b.elementalDamage,
     critChance: clamp(
-      COMBAT.baseCritChance + a.dexterity * COMBAT.critChancePerDexterity + b.critChance,
+      (COMBAT.baseCritChance + a.dexterity * COMBAT.critChancePerDexterity + b.critChance) *
+        (setup.rules?.critChanceMultiplier ?? 1),
       0,
       1,
     ),
@@ -95,11 +114,11 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     evasion: clamp(a.agility * COMBAT.evasionPerAgility + b.evasion, 0, COMBAT.maxEvasion),
     blockChance: clamp(b.blockChance, 0, COMBAT.maxBlockChance),
     blockValue: b.blockValue,
-    resistance: clamp(
-      a.intelligence * COMBAT.allResistancePerIntelligence + b.allResistance,
-      0,
-      COMBAT.maxResistance,
-    ),
+    resistance: clamp(allResistance, 0, COMBAT.maxResistance),
+    fireResistance: resist(b.fireResistance),
+    coldResistance: resist(b.coldResistance),
+    lightningResistance: resist(b.lightningResistance),
+    voidResistance: resist(b.voidResistance),
     heatGain: a.wisdom * COMBAT.heatGainPerWisdom + b.heatGain,
     startingHeat: clamp(b.startingHeat, 0, COMBAT.maxHeat),
     ailmentDuration: a.wisdom * COMBAT.ailmentDurationPerWisdom + b.ailmentDuration,
@@ -111,5 +130,8 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     burnChance: clamp(b.burnChance, 0, 1),
     chillChance: clamp(b.chillChance, 0, 1),
     shockChance: clamp(b.shockChance, 0, 1),
+    corruptionChance: clamp(b.corruptionChance, 0, 1),
+    bleedChance: clamp(b.bleedChance, 0, 1),
+    poisonChance: clamp(b.poisonChance, 0, 1),
   };
 }

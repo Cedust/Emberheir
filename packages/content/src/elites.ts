@@ -44,3 +44,99 @@ export const ELITE_MODIFIERS: readonly EliteModifier[] = [
     ],
   },
 ];
+
+/**
+ * Boss abilities (roadmap M10): an act boss learns one more per Prestige after the run its act
+ * opened in, so old bosses keep up with the Heir. Each act starts at a different place in the list.
+ */
+export const BOSS_ABILITIES: readonly EliteModifier[] = [
+  {
+    id: "boss-hardened",
+    name: "Hardened",
+    description: "+15 % All Resistance, +10 % Tenacity.",
+    bonuses: { allResistance: 0.15, tenacity: 0.1 },
+  },
+  {
+    id: "boss-frenzied",
+    name: "Frenzied",
+    description: "+25 % Attack Speed.",
+    bonuses: { attackSpeed: 0.25 },
+  },
+  {
+    id: "boss-ashen-shell",
+    name: "Ashen Shell",
+    description: "Starts the fight with Barrier worth 15 % of its Life.",
+    triggers: [
+      {
+        id: "boss-ashen-shell",
+        name: "Ashen Shell",
+        condition: { kind: "fightStart" },
+        effect: { kind: "barrier", fraction: 0.15 },
+      },
+    ],
+  },
+  {
+    id: "boss-leeching",
+    name: "Leeching",
+    description: "Heals for 10 % of the damage it deals.",
+    bonuses: { lifesteal: 0.1 },
+  },
+  {
+    id: "boss-ember-brand",
+    name: "Ember Brand",
+    description: "Every 8 s it Burns you.",
+    triggers: [
+      {
+        id: "boss-ember-brand",
+        name: "Ember Brand",
+        condition: { kind: "everySeconds", seconds: 8 },
+        effect: { kind: "ailment", ailment: "burn" },
+      },
+    ],
+  },
+  {
+    id: "boss-unstoppable",
+    name: "Unstoppable",
+    description: "+40 % Tenacity: Stuns and ailments wear off fast.",
+    bonuses: { tenacity: 0.4 },
+  },
+  {
+    id: "boss-second-wind",
+    name: "Second Wind",
+    description: "Once, below 40 % Life: heals 15 % of its Life.",
+    triggers: [
+      {
+        id: "boss-second-wind",
+        name: "Second Wind",
+        condition: { kind: "lifeBelow", threshold: 0.4 },
+        oncePerFight: true,
+        effect: { kind: "heal", fraction: 0.15 },
+      },
+    ],
+  },
+  {
+    id: "boss-retribution",
+    name: "Retribution",
+    description: "Every 6th hit it takes is sent back (at most 5 % of your Life).",
+    triggers: [
+      {
+        id: "boss-retribution",
+        name: "Retribution",
+        condition: { kind: "everyNthHitTaken", n: 6 },
+        effect: { kind: "reflect", fraction: 0.5, cap: 0.05, damageType: "physical" },
+      },
+    ],
+  },
+  {
+    id: "boss-cruel",
+    name: "Cruel",
+    description: "+10 % Crit Chance.",
+    bonuses: { critChance: 0.1 },
+  },
+  {
+    id: "boss-kindled",
+    name: "Kindled",
+    description: "+30 % Heat Gain: it uses its skills more often.",
+    bonuses: { heatGain: 0.3 },
+  },
+];

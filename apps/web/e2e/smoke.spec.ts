@@ -34,7 +34,7 @@ test("rolled gear shows item tooltips and goes into the fight", async ({ page })
   await page.goto("/");
   await page.getByRole("button", { name: "Combat Lab" }).click();
   const cards = page.getByTestId("item-card");
-  await expect(cards).toHaveCount(5);
+  await expect(cards).toHaveCount(10);
   await expect(cards.first()).toContainText("Main Hand");
   const firstName = await cards.first().locator(".item-name").textContent();
 
@@ -78,6 +78,17 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // The rewards follow on their own after the banner.
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(3);
+
+  // Between stages the Battle Plan shows its damage share and can be changed.
+  const plan = page.getByRole("region", { name: "Battle Plan" });
+  await expect(plan).toContainText("%");
+  await plan.getByRole("button", { name: "Edit Battle Plan" }).click();
+  await expect(page.getByRole("tab", { name: "Battle Plan" })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await expect(page.getByTestId("rotation-slot-0")).toBeVisible();
+  await page.keyboard.press("Escape");
   await page.getByTestId("item-card").first().getByRole("button", { name: "Take" }).click();
   await expect(page.getByTestId("done-card")).toContainText("Taken:");
 
@@ -87,9 +98,14 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await page.keyboard.press("c");
   const character = page.getByRole("dialog", { name: "Character" });
   await expect(character).toBeVisible();
+  const taken = character.getByRole("group", { name: "Inventory grid" }).getByTestId("grid-item");
+  await expect(taken).toHaveCount(1);
+  // Hovering an item shows its Diablo-style tooltip; the paperdoll has all 10 slots.
+  await taken.hover();
+  await expect(page.getByTestId("item-tooltip")).toBeVisible();
   await expect(
-    character.getByRole("group", { name: "Inventory grid" }).getByTestId("grid-item"),
-  ).toHaveCount(1);
+    character.getByRole("button", { name: /^(Helm|Gloves|Boots|Belt|Ring):/ }),
+  ).toHaveCount(6);
   await character.getByRole("button", { name: "Close" }).click();
 
   await page.getByRole("button", { name: "Retreat to Camp" }).click();

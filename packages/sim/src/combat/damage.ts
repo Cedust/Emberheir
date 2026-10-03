@@ -1,7 +1,7 @@
 import type { Rng } from "../rng";
 import { COMBAT } from "./constants";
 import type { DerivedStats } from "./stats";
-import type { DamageType } from "./types";
+import type { DamageType, Element } from "./types";
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
@@ -21,6 +21,20 @@ export function resistanceReduction(resistance: number, penetration = 0): number
   return clamp(Math.min(resistance, COMBAT.maxResistance) - penetration, 0, COMBAT.maxResistance);
 }
 
+/** The defender's final Resistance against one element. */
+export function elementResistance(stats: DerivedStats, element: Element): number {
+  switch (element) {
+    case "fire":
+      return stats.fireResistance;
+    case "cold":
+      return stats.coldResistance;
+    case "lightning":
+      return stats.lightningResistance;
+    case "void":
+      return stats.voidResistance;
+  }
+}
+
 /** Damage % that applies to a damage type (Physical Damage % or Elemental Damage %). */
 export function increasedDamage(stats: DerivedStats, type: DamageType): number {
   return type === "physical" ? stats.physicalDamage : stats.elementalDamage;
@@ -37,7 +51,7 @@ export function mitigate(
   const reduction =
     type === "physical"
       ? armorReduction(defender.armor, attackerLevel, attacker.physicalPenetration)
-      : resistanceReduction(defender.resistance, attacker.elementalPenetration);
+      : resistanceReduction(elementResistance(defender, type), attacker.elementalPenetration);
   return amount * (1 - reduction);
 }
 

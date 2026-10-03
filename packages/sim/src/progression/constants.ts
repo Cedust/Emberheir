@@ -1,4 +1,5 @@
 import type { ItemSlot, Rarity } from "../items/types";
+import type { EnemyRank } from "./leveling";
 
 /**
  * Tuning numbers for progression and rewards. Starting values for the balance CLI
@@ -6,22 +7,21 @@ import type { ItemSlot, Rarity } from "../items/types";
  * section 2 and 3, loot-rewards-v1.md, town-crafting-v1.md.
  */
 /**
- * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 200. Steep early: a
- * first clear of Act 1 lands around level 5–6 of 20. Past level 20 every level needs a little more
- * than the one before; later acts will tune this.
+ * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 200. Each run spreads
+ * its Level Band over all its stages (prestige-acts-v1.md section 4), one fight per stage, so a
+ * level costs about `xpKillsPerLevel` normal kills of the same Monster Level. The hero keeps pace
+ * with the monsters, and the XP penalty for being above them stops it from running ahead.
  */
-function buildXpTable(): readonly number[] {
-  const table = [
-    80, 140, 220, 320, 450, 620, 830, 1100, 1450, 1900, 2400, 3000, 3700, 4500, 5400, 6400, 7500,
-    8700, 10000,
-  ];
-  let step = 1300;
-  while (table.length < 199) {
-    step += 50;
-    table.push((table[table.length - 1] ?? 0) + step);
-  }
+function buildXpTable(base: number, perLevel: number, killsPerLevel: number): readonly number[] {
+  const table: number[] = [];
+  for (let level = 1; level < 200; level++)
+    table.push(Math.round(killsPerLevel * (base + perLevel * (level - 1))));
   return table;
 }
+
+const XP_BASE = 20;
+const XP_PER_MONSTER_LEVEL = 10;
+const XP_KILLS_PER_LEVEL = 0.8;
 
 export const PROGRESSION = {
   /**
@@ -33,10 +33,10 @@ export const PROGRESSION = {
   levelCapPerPrestige: 20,
   attributePointsPerLevel: 2,
   skillPointsPerLevel: 1,
-  xpToNextLevel: buildXpTable(),
+  xpToNextLevel: buildXpTable(XP_BASE, XP_PER_MONSTER_LEVEL, XP_KILLS_PER_LEVEL),
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
-  xpBase: 20,
-  xpPerMonsterLevel: 10,
+  xpBase: XP_BASE,
+  xpPerMonsterLevel: XP_PER_MONSTER_LEVEL,
   /** Enemies below the hero's level give 10 % less XP per level, at least 10 %. */
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
@@ -50,6 +50,34 @@ export const PROGRESSION = {
   /** Reward multipliers for Elites and Bosses (XP, Gold, Dust). */
   eliteRewardMultiplier: { xp: 3, gold: 2, dust: 2 },
   bossRewardMultiplier: { xp: 6, gold: 5, dust: 4 },
+  /** Chance that one card of the item pick is Legendary, by enemy rank. */
+  legendaryChance: { normal: 0, elite: 0.04, boss: 0.25 } satisfies Record<EnemyRank, number>,
+  /** Share of those Legendary cards that become a Unique (if one fits). */
+  uniqueShare: 0.35,
+  /** Boss Hoard: cards after a boss and how many of them the hero takes. */
+  bossHoardCards: 6,
+  bossHoardPicks: 2,
+  /**
+   * Ember Thief (Teil 3 C): a rare enemy on normal stages from this act on. It runs away after a
+   * while; caught, it drops a small Hoard with one card at least Rare.
+   */
+  thiefFromAct: 2,
+  thiefChance: 0.03,
+  thiefFleeSeconds: 15,
+  thiefCards: 4,
+  thiefPicks: 2,
+  /** Chance per boss kill that one Hoard card is a trophy from the boss's own list. */
+  bossTrophyChance: 0.1,
+  /** The top Rune ranks only drop from Elites and Bosses, this much rarer on top of the falloff. */
+  highRuneRanks: 2,
+  highRuneFactor: 0.3,
+  /** Expected Runes per win by rank (fractions are chances, 1.5 = one plus 50 % a second). */
+  runeDrops: { normal: 0.06, elite: 0.5, boss: 1.5 } satisfies Record<EnemyRank, number>,
+  /** Rune ranks that drop: base + per Act Tier (Act 1 → up to rank 3, Act 2 → 5). */
+  runeRankBase: 1,
+  runeRanksPerActTier: 2,
+  /** Each Rune rank drops this much less often than the one below it. */
+  runeRankFalloff: 0.5,
   /** Guaranteed Reforge Stones (min, max). */
   eliteReforgeStones: [2, 3],
   bossReforgeStones: [4, 6],
@@ -62,6 +90,22 @@ export const PROGRESSION = {
 
   /** Cards in the item pick after every win. */
   itemChoices: 3,
+  /**
+   * Item pick: each card picks an item slot by these weights (three different slots while
+   * possible), then a random base of that slot. So adding bases to a slot never makes weapons
+   * rarer. Rings fill two equipment slots and show up a bit more often.
+   */
+  lootSlotWeights: {
+    mainHand: 1.2,
+    offHand: 1,
+    helm: 1,
+    body: 1,
+    gloves: 1,
+    boots: 1,
+    belt: 1,
+    amulet: 1,
+    ring: 1.5,
+  } satisfies Record<ItemSlot, number>,
   /** Rarity weights of the item pick; Elites roll at least Rare, Bosses at least Epic. */
   rarityWeights: { normal: 40, magic: 35, rare: 20, epic: 5, legendary: 0 } satisfies Record<
     Rarity,
@@ -94,7 +138,7 @@ export const PROGRESSION = {
   eliteLifeMultiplier: 1.4,
   eliteDamageMultiplier: 1.15,
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
-  monsterLevelsPerEliteModifier: 10,
+  monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
   /** Spoils pick amounts (loot-rewards-v1.md section 4). */
@@ -106,27 +150,51 @@ export const PROGRESSION = {
   flaskMaxCharges: 5,
   flaskHeal: 0.35,
 
-  /** Rotation Slots before the first prestige. */
-  startRotationSlots: 1,
-
   /**
-   * Prestige light (poc-umsetzungsplan-v1.md, M5): every Prestige gives one more Seal (Save
-   * Token), Rotation Slot 2 (the first Battle Plan upgrade), one Harvester's Ember and a fixed
-   * amount of Salvage Dust that replaces the burned stash (town-crafting-v1.md).
+   * Every Prestige gives one more Seal (Save Token), one Battle Plan upgrade (battle-plan.ts),
+   * a Prestige branch, one Harvester's Ember and a fixed amount of Salvage Dust that replaces the
+   * burned stash (town-crafting-v1.md).
    */
   prestigeDustPerLevel: 150,
   prestigeHarvesterEmber: 1,
-  /** Rotation Slots after the first Prestige. More Battle Plan upgrades come after the PoC. */
-  prestigeRotationSlots: 2,
   /**
-   * Monster Levels of every act go up by this much per Prestige. Act 1 stays easy for a hero
-   * who keeps level and Seals but loses the rest of the gear (game-design-document-v1.md 3).
+   * A run's level band starts this far below the previous Level Cap (prestige-acts-v1.md 4): a
+   * hero who keeps level and Seals but loses the rest of the gear regears on the first stages.
    */
-  monsterLevelsPerPrestige: 2,
+  levelBandStartBelowCap: 15,
+  /** ...and 5 more per Prestige after the first, because the hero regears from further behind. */
+  levelBandStartBelowCapPerPrestige: 5,
+  /**
+   * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
+   * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
+   * first, so a run's newest act stays the hardest.
+   */
+  runPressure: { life: 0.8, damage: 0.35 },
+  /**
+   * Act bosses have this much more Life than their content value, so a boss fight lasts about
+   * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.
+   */
+  bossLife: 1.5,
+  /**
+   * The Last Ember (M11): the Prestige after which the world no longer burns. The finale's foes
+   * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
+   * instead of the Run Pressure).
+   */
+  finalPrestige: 10,
+  finale: { life: 2, damage: 1.4 },
+  /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
+  finaleEchoAbilities: 5,
+  /** Fusion Boons are this much likelier in the finale's Stolen Fire. */
+  finaleFusionWeight: 1,
+  /** Share of the Run Pressure on Life and damage that the Harvester takes. */
+  harvesterPressure: { life: 0.7, damage: 0.2 },
 
   /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossAscensionShards: 1,
   eliteAscensionShardChance: 0.1,
+
+  /** Switching to another Battle Plan Capstone at Kaelen. */
+  capstoneChangeGold: 200,
 
   /** Skill Tree respec at Kaelen. */
   respecGold: 50,
@@ -168,4 +236,39 @@ export const CRAFTING = {
   imbueEssences: 1,
   /** Distill: Salvage Dust into one Reforge Stone at Liora. */
   distillDust: 60,
+  /** Add Socket at Thoric: Gold plus Dust × the new Socket count. */
+  addSocketGold: 25,
+  addSocketDust: 15,
+  /** Eldrin: Socket a Rune / combine three into the next rank, Gold × rank. */
+  socketRuneGoldPerRank: 8,
+  combineRunesGoldPerRank: 15,
+  combineRunesCount: 3,
+  /** Marisha: offers in stock, prices. */
+  merchantOffers: 6,
+  basePriceFlat: 20,
+  basePricePerSocket: 15,
+  gambleFlat: 60,
+  gamblePerItemLevel: 12,
+  gambleRarityWeights: { normal: 0, magic: 55, rare: 30, epic: 12, legendary: 3 } satisfies Record<
+    Rarity,
+    number
+  >,
+} as const;
+
+/** Trigger Codex (docs/design/trigger-codex-v1.md). Starting values for the balance CLI. */
+export const CODEX = {
+  /** Trigger affixes whose Condition or Effect has its home in the fight drop this much more. */
+  homeWeight: 4,
+  /** The Quarry part (marked at Old Nan) drops this much more on top. */
+  quarryWeight: 3,
+  /** After this many Elite or boss item picks without the Quarry part, the next one has it. */
+  quarryPity: 5,
+  /** Kindled triggers roll at most this share of the range; only drops reach 100 %. */
+  kindleMaxQuality: 0.7,
+  /** Kindle at Liora: Dust × the kindled tier plus Kindling. */
+  kindleDustPerTier: 30,
+  kindleKindling: 1,
+  /** Kindling in the Spoils pick of Elites and bosses. */
+  eliteKindling: 1,
+  bossKindling: 2,
 } as const;

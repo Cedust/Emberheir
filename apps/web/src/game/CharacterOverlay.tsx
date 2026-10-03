@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   ATTRIBUTES,
   type Attribute,
@@ -33,6 +33,7 @@ import {
 } from "../ui/items";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
+import { Paperdoll, dollBox } from "../ui/Paperdoll";
 
 const ATTRIBUTE_INFO: Record<Attribute, { name: string; effects: string }> = {
   strength: { name: "Strength", effects: "Physical Damage · Armor" },
@@ -51,16 +52,6 @@ const ZERO: Record<Attribute, number> = {
   wisdom: 0,
   vitality: 0,
 };
-
-/** Paperdoll layout of the PoC slots (Character mock, 400×500 box). */
-export const DOLL: Partial<Record<EquipmentSlot, { x: number; y: number; w: number; h: number }>> =
-  {
-    amulet: { x: 262, y: 30, w: 60, h: 60 },
-    body: { x: 145, y: 110, w: 110, h: 150 },
-    mainHand: { x: 20, y: 200, w: 90, h: 160 },
-    offHand: { x: 290, y: 200, w: 90, h: 160 },
-    ring1: { x: 170, y: 300, w: 60, h: 60 },
-  };
 
 const TABS = ["Offense", "Defense", "Heat"] as const;
 type Tab = (typeof TABS)[number];
@@ -96,7 +87,7 @@ export function CharacterOverlay(props: {
       ) as unknown as Attributes,
     },
   };
-  const { setup, gear } = heroSetup(preview, POC_GAME_DATA);
+  const { setup, gear } = heroSetup(preview, GAME_DATA);
   const stats = deriveStats(setup);
   const dps = estimateDps(setup, stats);
 
@@ -138,7 +129,10 @@ export function CharacterOverlay(props: {
       { label: "Armor", value: fmt(stats.armor) },
       { label: "Evasion", value: pct(stats.evasion) },
       { label: "Block", value: pct(stats.blockChance) },
-      { label: "All Resistance", value: pct(stats.resistance) },
+      { label: "Fire Resistance", value: pct(stats.fireResistance) },
+      { label: "Cold Resistance", value: pct(stats.coldResistance) },
+      { label: "Lightning Resistance", value: pct(stats.lightningResistance) },
+      { label: "Void Resistance", value: pct(stats.voidResistance) },
       { label: "Tenacity", value: pct(stats.tenacity) },
       { label: "Lifesteal", value: pct(stats.lifesteal) },
     ],
@@ -157,7 +151,7 @@ export function CharacterOverlay(props: {
 
   let footer = null;
   if (sel && invItem) {
-    const reason = equipBlockReason(state, POC_GAME_DATA, invItem, "inventory");
+    const reason = equipBlockReason(state, GAME_DATA, invItem, "inventory");
     footer = (
       <div className="detail-buttons">
         <button
@@ -191,7 +185,7 @@ export function CharacterOverlay(props: {
       </div>
     );
   } else if (sel && equippedSlot) {
-    const reason = unequipBlockReason(state, POC_GAME_DATA, equippedSlot);
+    const reason = unequipBlockReason(state, GAME_DATA, equippedSlot);
     const inactive = gear.inactive.find((i) => i.slot === equippedSlot);
     footer = (
       <div className="detail-buttons">
@@ -245,14 +239,9 @@ export function CharacterOverlay(props: {
         <div className="character-columns">
           <section className="doll-column" aria-label="Equipment">
             <span className="title-font section-title">Equipment</span>
-            <div className="paperdoll">
-              <svg className="silhouette" viewBox="0 0 400 420" aria-hidden="true">
-                <circle cx="200" cy="60" r="38" />
-                <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
-              </svg>
-              {POC_GAME_DATA.equipmentSlots.map((slot) => {
-                const pos = DOLL[slot];
-                if (!pos) return null;
+            <Paperdoll>
+              {GAME_DATA.equipmentSlots.map((slot) => {
+                const pos = dollBox(slot);
                 const it = state.hero.equipment[slot];
                 const inactive = gear.inactive.some((i) => i.slot === slot);
                 const sealed = state.legacy.seals.includes(slot);
@@ -279,7 +268,7 @@ export function CharacterOverlay(props: {
                   </div>
                 );
               })}
-            </div>
+            </Paperdoll>
           </section>
 
           <section className="attr-column" aria-label="Attributes">

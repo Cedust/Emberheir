@@ -1,10 +1,21 @@
 import { describe, expect, it } from "vitest";
 import { statAffixValue } from "../items/affixes";
-import { rollItem } from "../items/generate";
+import { rollItem, rollUnique } from "../items/generate";
 import type { Item } from "../items/types";
 import { Rng } from "../rng";
 import { CRAFTING } from "./constants";
-import { affixRollRange, craftBlockReason, craftCost, upgradedItem } from "./crafting";
+import {
+  type CraftRequest,
+  affixRollRange,
+  basePrice,
+  craftBlockReason,
+  craftCost,
+  gambleItem,
+  gamblePrice,
+  merchantItemLevel,
+  merchantStock,
+  upgradedItem,
+} from "./crafting";
 import { type GameAction, type GameState, applyAction, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
@@ -203,5 +214,128 @@ describe("crafting", () => {
       expect(value).toBeGreaterThanOrEqual(range.min);
       expect(value).toBeLessThanOrEqual(range.max);
     }
+  });
+});
+
+describe("Sockets, Runes and Marisha", () => {
+  const AXE: Item = {
+    id: "axe-1",
+    baseId: "test-axe",
+    name: "Test Axe",
+    rarity: "normal",
+    itemLevel: 5,
+    tier: 1,
+    affixes: [],
+  };
+  /** Eldrin present, Runes in the pouch, the axe in the inventory. */
+  function runeCamp(runes: Record<string, number> = { ash: 4, thorn: 1 }): GameState {
+    const s = camp({ runes });
+    return {
+      ...s,
+      progress: { ...s.progress, runesmithUnlocked: true },
+      inventory: [...s.inventory, { item: AXE, x: 2, y: 0 }],
+    };
+  }
+  const axe = (s: GameState) => s.inventory.find((p) => p.item.id === AXE.id)?.item;
+  const craftIt = (s: GameState, request: CraftRequest) => act(s, { type: "craft", request });
+
+  it("Add Socket: Normal items up to the base's maximum, only before the first Rune", () => {
+    let s = craftIt(runeCamp(), { kind: "addSocket", itemId: AXE.id });
+    s = craftIt(s, { kind: "addSocket", itemId: AXE.id });
+    expect(axe(s)?.sockets).toBe(2);
+    expect(s.wallet.dust).toBe(1000 - CRAFTING.addSocketDust * 3);
+    expect(craftBlockReason(s, data, { kind: "addSocket", itemId: AXE.id })).toBe("maxSockets");
+    expect(craftBlockReason(s, data, { kind: "addSocket", itemId: RING.id })).toBe("notNormal");
+  });
+
+  it("Socket Rune fills Sockets in order and forges a Runeword into the Codex", () => {
+    let s = runeCamp();
+    s = {
+      ...s,
+      inventory: s.inventory.map((p) =>
+        p.item.id === AXE.id ? { ...p, item: { ...AXE, sockets: 2 } } : p,
+      ),
+    };
+    expect(
+      craftBlockReason({ ...s, progress: { ...s.progress, runesmithUnlocked: false } }, data, {
+        kind: "socketRune",
+        itemId: AXE.id,
+        runeId: "ash",
+      }),
+    ).toBe("runesmith");
+    s = craftIt(s, { kind: "socketRune", itemId: AXE.id, runeId: "ash" });
+    expect(axe(s)?.runes).toEqual(["ash"]);
+    expect(s.wallet.runes).toEqual({ ash: 3, thorn: 1 });
+    s = craftIt(s, { kind: "socketRune", itemId: AXE.id, runeId: "thorn" });
+    expect(axe(s)?.name).toBe("Splinter");
+    expect(s.wallet.runes).toEqual({ ash: 3 });
+    expect(s.legacy.runewords).toEqual(["splinter"]);
+    expect(craftBlockReason(s, data, { kind: "socketRune", itemId: AXE.id, runeId: "ash" })).toBe(
+      "noSocket",
+    );
+    // A Reforge keeps Sockets, Runes and the Runeword name.
+    expect(craftBlockReason(s, data, { kind: "reforge", itemId: AXE.id })).toBe("noAffixes");
+  });
+
+  it("Combine Runes: three of a kind make one of the next rank", () => {
+    const s = craftIt(runeCamp(), { kind: "combineRunes", runeId: "ash" });
+    expect(s.wallet.runes).toEqual({ ash: 1, thorn: 1, moss: 1 });
+    expect(s.legacy.runesFound).toContain("moss");
+    expect(s.wallet.gold).toBe(1000 - CRAFTING.combineRunesGoldPerRank);
+    expect(craftBlockReason(s, data, { kind: "combineRunes", runeId: "ash" })).toBe("runes");
+    expect(
+      craftBlockReason(runeCamp({ thorn: 3 }), data, { kind: "combineRunes", runeId: "thorn" }),
+    ).toBe("maxRank");
+  });
+
+  it("Marisha sells Normal bases with full Sockets, once each, and restocks after fights", () => {
+    const s0 = runeCamp();
+    const stock = merchantStock(s0, data);
+    expect(stock.length).toBeGreaterThan(0);
+    expect(stock.every((i) => i.rarity === "normal" && i.sockets === 2)).toBe(true);
+    expect(merchantStock(s0, data)).toEqual(stock);
+    const s = craftIt(s0, { kind: "buyBase", index: 0 });
+    expect(s.inventory.some((p) => p.item.id === stock[0]?.id)).toBe(true);
+    expect(s.wallet.gold).toBe(1000 - basePrice(stock[0] as Item));
+    expect(craftBlockReason(s, data, { kind: "buyBase", index: 0 })).toBe("sold");
+    const later = { ...s, stats: { ...s.stats, fights: s.stats.fights + 1 } };
+    expect(craftBlockReason(later, data, { kind: "buyBase", index: 0 })).toBeUndefined();
+  });
+
+  it("Gamble: a random item for the chosen slot into the inventory", () => {
+    const s = craftIt(runeCamp(), { kind: "gamble", slot: "ring" });
+    expect(s.inventory).toHaveLength(3);
+    const item = s.inventory[2]?.item;
+    expect(item?.baseId).toBe("test-ring");
+    expect(item?.rarity).not.toBe("normal");
+    expect(s.wallet.gold).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
+    // Over many gambles some come out Legendary, some even Unique.
+    const rarities = new Set<string>();
+    for (let seed = 0; seed < 400; seed++) {
+      rarities.add(gambleItem(s, data, "ring", new Rng(seed)).rarity);
+    }
+    expect(rarities.has("legendary")).toBe(true);
+  });
+
+  it("Uniques never change: no Reforge, Temper or Imbue", () => {
+    const unique = rollUnique(data.items, "band", 5, new Rng(1));
+    const s = { ...camp(), inventory: [{ item: unique, x: 0, y: 0 }] };
+    expect(craftBlockReason(s, data, { kind: "reforge", itemId: unique.id })).toBe("fixed");
+    expect(craftBlockReason(s, data, { kind: "temper", itemId: unique.id, affixIndex: 0 })).toBe(
+      "fixed",
+    );
+  });
+
+  it("Reforge keeps the Legendary Power", () => {
+    const legendary = rollItem(
+      data.items,
+      { baseId: "test-ring", itemLevel: 5, rarity: "legendary" },
+      new Rng(2),
+    );
+    const s = craftIt(
+      { ...camp(), inventory: [{ item: legendary, x: 0, y: 0 }] },
+      { kind: "reforge", itemId: legendary.id },
+    );
+    expect(s.inventory[0]?.item.powerId).toBe("echo");
   });
 });

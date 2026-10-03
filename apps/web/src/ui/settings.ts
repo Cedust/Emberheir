@@ -1,13 +1,15 @@
 import { useCallback, useEffect, useState } from "react";
 import { storageKey } from "../storage";
+import { setSoundEnabled } from "./sound";
 
 /** Player settings (Settings mock): stored per browser, not in the save game. */
 export interface Settings {
   readonly theme: "system" | "light" | "dark";
   readonly damageNumbers: boolean;
+  readonly sound: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { theme: "system", damageNumbers: true };
+export const DEFAULT_SETTINGS: Settings = { theme: "system", damageNumbers: true, sound: true };
 
 const KEY = storageKey("settings");
 
@@ -24,7 +26,7 @@ function load(): Settings {
 
 /** Drops settings that no longer exist (e.g. the removed auto-drink) from old saves. */
 function pick(s: Settings): Settings {
-  return { theme: s.theme, damageNumbers: s.damageNumbers };
+  return { theme: s.theme, damageNumbers: s.damageNumbers, sound: s.sound };
 }
 
 function applyTheme(theme: Settings["theme"]) {
@@ -36,6 +38,7 @@ function applyTheme(theme: Settings["theme"]) {
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(load);
   useEffect(() => applyTheme(settings.theme), [settings.theme]);
+  useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };

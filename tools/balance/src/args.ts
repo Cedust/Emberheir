@@ -19,6 +19,8 @@ export interface BalanceArgs {
   attempts: number;
   /** Act mode: generations to play; each one after the first starts with a Prestige. */
   generations: number;
+  /** Act mode: 1 = play all ten runs, the final Prestige and The Last Ember. */
+  finale: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -36,6 +38,7 @@ const DEFAULTS: BalanceArgs = {
   act: 0,
   attempts: 30,
   generations: 1,
+  finale: 0,
 };
 
 const NUMBER_FLAGS = {
@@ -46,6 +49,7 @@ const NUMBER_FLAGS = {
   "--act": "act",
   "--attempts": "attempts",
   "--generations": "generations",
+  "--finale": "finale",
 } as const;
 const STRING_FLAGS = { "--weapon": "weapon", "--enemy": "enemy" } as const;
 

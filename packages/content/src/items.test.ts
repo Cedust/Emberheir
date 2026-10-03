@@ -1,35 +1,62 @@
+import { TRIGGER_CONDITIONS, TRIGGER_EFFECTS } from "./codex";
 import { describe, expect, it } from "vitest";
 import {
+  EQUIPMENT_SLOTS,
+  ITEM_SLOTS,
   Rng,
   affixPool,
+  basesForSlot,
+  bossTrophies,
   createEnemySetup,
   describeItem,
+  powersForSlot,
   resolveEquipment,
   runFight,
   type Rarity,
 } from "@emberheir/sim";
+import { ACTS } from "./acts";
 import { ACT1_ENEMIES } from "./enemies";
+import { BOSS_TROPHIES, RUNES, RUNEWORDS, UNIQUES } from "./legendary";
 import { STARTING_ATTRIBUTES, createHeroSetup } from "./heroes";
 import {
   AFFIXES,
   ITEM_BASES,
   ITEM_CATALOG,
-  POC_EQUIPMENT_SLOTS,
   STAT_AFFIXES,
   TRIGGER_AFFIXES,
-  rollPocGear,
+  rollGear,
 } from "./items";
 import { HERO_WEAPONS } from "./weapons";
 
 describe("item content", () => {
-  it("has about 20 stat and 8 trigger affixes for the PoC", () => {
-    expect(STAT_AFFIXES.length).toBeGreaterThanOrEqual(20);
+  it("has at least 30 stat and 8 trigger affixes", () => {
+    expect(STAT_AFFIXES.length).toBeGreaterThanOrEqual(30);
     expect(TRIGGER_AFFIXES.length).toBeGreaterThanOrEqual(8);
-    expect(AFFIXES.length).toBe(ITEM_CATALOG.affixes.size);
+    // Plus one never-dropping affix per Trigger Codex pair (Kindle).
+    expect(AFFIXES.length + TRIGGER_CONDITIONS.length * TRIGGER_EFFECTS.length).toBe(
+      ITEM_CATALOG.affixes.size,
+    );
     expect(ITEM_BASES.length).toBe(ITEM_CATALOG.bases.size);
   });
 
-  it("every hero weapon has a base item, and every PoC base can roll stat and trigger affixes", () => {
+  it("every Codex part can be learned from a trigger affix that drops", () => {
+    const taught = TRIGGER_AFFIXES.flatMap((a) => (a.parts ? [a.parts] : []));
+    expect(taught).toHaveLength(TRIGGER_AFFIXES.length);
+    for (const c of TRIGGER_CONDITIONS) {
+      expect(
+        taught.some((p) => p.condition === c.id),
+        c.id,
+      ).toBe(true);
+    }
+    for (const e of TRIGGER_EFFECTS) {
+      expect(
+        taught.some((p) => p.effect === e.id),
+        e.id,
+      ).toBe(true);
+    }
+  });
+
+  it("every hero weapon has a base item, and every base can roll stat and trigger affixes", () => {
     for (const weapon of HERO_WEAPONS) {
       expect(
         ITEM_BASES.some((b) => b.weapon?.id === weapon.id),
@@ -42,23 +69,75 @@ describe("item content", () => {
     }
   });
 
+  it("every item slot has bases, armor slots a light, a heavy and a caster one", () => {
+    for (const slot of ITEM_SLOTS) {
+      expect(basesForSlot(ITEM_CATALOG, slot).length, slot).toBeGreaterThan(0);
+    }
+    for (const slot of ["helm", "body", "gloves", "boots"] as const) {
+      const needs = basesForSlot(ITEM_CATALOG, slot).map((b) =>
+        Object.keys(b.requirements ?? {}).join(),
+      );
+      expect(needs.sort(), slot).toEqual(["agility", "intelligence", "strength"]);
+    }
+  });
+
   it("affix ranges are sane", () => {
     for (const affix of AFFIXES) {
       expect(affix.value.min, affix.id).toBeGreaterThan(0);
       expect(affix.value.max, affix.id).toBeGreaterThanOrEqual(affix.value.min);
-      expect(affix.slots.length, affix.id).toBeGreaterThan(0);
+      // Weight 0 = granted only by Legendary Powers, never rolled.
+      if (affix.weight > 0) expect(affix.slots.length, affix.id).toBeGreaterThan(0);
     }
   });
 
-  it("rolls a full PoC gear set with a fitting off hand", () => {
+  it("every Runeword fits some base, every slot has a Legendary Power", () => {
+    for (const word of RUNEWORDS) {
+      const fits = ITEM_BASES.some(
+        (b) => word.slots.includes(b.slot) && (b.maxSockets ?? 0) >= word.runes.length,
+      );
+      expect(fits, word.id).toBe(true);
+      expect(new Set(RUNES.map((r) => r.rank)).size).toBe(RUNES.length);
+    }
+    for (const slot of new Set(ITEM_BASES.map((b) => b.slot))) {
+      expect(powersForSlot(ITEM_CATALOG, slot).length, slot).toBeGreaterThan(0);
+    }
+    expect(ITEM_CATALOG.uniques.size).toBe(UNIQUES.length + BOSS_TROPHIES.length);
+  });
+
+  it("every boss trophy has a real base, affixes, a power for its slot and a boss", () => {
+    const acts = new Set(ACTS.map((a) => a.id));
+    for (const u of [...ITEM_CATALOG.uniques.values()]) {
+      const base = ITEM_CATALOG.bases.get(u.baseId);
+      expect(base, u.id).toBeDefined();
+      for (const a of u.affixes) expect(ITEM_CATALOG.affixes.has(a.affixId), a.affixId).toBe(true);
+      const power = u.powerId ? ITEM_CATALOG.powers.get(u.powerId) : undefined;
+      if (u.powerId) expect(power?.slots, u.id).toContain(base?.slot);
+      if (power?.trigger) expect(ITEM_CATALOG.affixes.has(power.trigger.affixId)).toBe(true);
+      if (u.bossOf) expect(acts.has(u.bossOf), u.id).toBe(true);
+    }
+    for (const act of ACTS) {
+      expect(bossTrophies(ITEM_CATALOG, act.id).length, act.id).toBeGreaterThanOrEqual(2);
+    }
+    for (const slot of new Set(ITEM_BASES.map((b) => b.slot))) {
+      expect(powersForSlot(ITEM_CATALOG, slot).every((p) => !p.uniqueOnly)).toBe(true);
+    }
+  });
+
+  it("rolls a full 10-slot gear set with a fitting off hand", () => {
     for (let seed = 1; seed <= 30; seed++) {
       for (const weapon of HERO_WEAPONS) {
-        const gear = rollPocGear(
+        const gear = rollGear(
           { weaponBaseId: weapon.id, rarity: "mixed", itemLevel: 3 },
           new Rng(seed),
         );
-        expect(Object.keys(gear).sort()).toEqual([...POC_EQUIPMENT_SLOTS].sort());
-        const strongHero = { ...STARTING_ATTRIBUTES, strength: 30, agility: 30, intelligence: 30 };
+        expect(Object.keys(gear).sort()).toEqual([...EQUIPMENT_SLOTS].sort());
+        const strongHero = {
+          ...STARTING_ATTRIBUTES,
+          strength: 30,
+          dexterity: 30,
+          agility: 30,
+          intelligence: 30,
+        };
         const resolved = resolveEquipment(gear, ITEM_CATALOG, strongHero);
         expect(resolved.inactive).toEqual([]);
         expect(resolved.weapon?.id).toBe(weapon.id);
@@ -77,7 +156,7 @@ describe("item content", () => {
         for (const enemy of ACT1_ENEMIES) {
           for (let seed = 1; seed <= 20; seed++) {
             const equipment = rarity
-              ? rollPocGear({ weaponBaseId: weapon.id, rarity, itemLevel: 3 }, new Rng(seed))
+              ? rollGear({ weaponBaseId: weapon.id, rarity, itemLevel: 3 }, new Rng(seed))
               : {};
             const hero = createHeroSetup({ weapon, equipment, level: 3 });
             const result = runFight(hero, createEnemySetup(enemy, 3), seed);

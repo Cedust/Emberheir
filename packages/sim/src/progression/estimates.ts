@@ -10,13 +10,38 @@ import { type GameData, type GameState, heroSetup, targetSlot } from "./game";
  * estimates only ("Estimate vs. a target without defenses").
  */
 
-/** Default Attack damage per second: average weapon hit × attack speed × damage % × crits. */
+/**
+ * Default Attack damage per second: average weapon hit × attack speed × damage % × crits, plus
+ * the damage-over-time ailments those hits cause (Burn and Bleed refresh, so at most one runs at
+ * a time; Poison stacks).
+ */
 export function estimateDps(setup: CombatantSetup, stats: DerivedStats = deriveStats(setup)) {
   const { weapon } = setup;
   const average = (weapon.damage.min + weapon.damage.max) / 2;
   const bonus = weapon.damageType === "physical" ? stats.physicalDamage : stats.elementalDamage;
   const crit = 1 + stats.critChance * (COMBAT.critMultiplier - 1);
-  return average * (1 + bonus) * crit * stats.attackSpeed;
+  const hit = average * (1 + bonus) * crit;
+  const aps = stats.attackSpeed;
+  const chance = (ailment: "burn" | "bleed" | "poison") =>
+    Math.min(
+      1,
+      (weapon.ailmentChances?.find((c) => c.ailment === ailment)?.chance ?? 0) +
+        stats[`${ailment}Chance`] +
+        (ailment === "bleed" && setup.rules?.critsApplyBleed ? stats.critChance : 0),
+    );
+  const duration = (base: number) => base * (1 + stats.ailmentDuration);
+  const refreshing = (ailment: "burn" | "bleed", perSecond: number, base: number) =>
+    Math.min(1, chance(ailment) * aps * duration(base)) * hit * perSecond;
+  const dots =
+    refreshing("burn", COMBAT.burnDamagePerSecond, COMBAT.burnDurationSeconds) +
+    refreshing("bleed", COMBAT.bleedDamagePerSecond, COMBAT.bleedDurationSeconds) +
+    Math.min(
+      COMBAT.poisonMaxStacks,
+      chance("poison") * aps * duration(COMBAT.poisonDurationSeconds),
+    ) *
+      hit *
+      COMBAT.poisonDamagePerSecond;
+  return hit * aps + dots;
 }
 
 /** Heat per second from own Default Attacks (Warming: per second), without hits taken. */
@@ -93,11 +118,19 @@ const COMPARED: readonly (keyof DerivedStats)[] = [
   "evasion",
   "blockChance",
   "resistance",
+  "fireResistance",
+  "coldResistance",
+  "lightningResistance",
+  "voidResistance",
   "heatGain",
   "startingHeat",
   "tenacity",
   "lifesteal",
   "triggerChance",
+  "corruptionChance",
+  "bleedChance",
+  "poisonChance",
+  "ailmentDuration",
 ];
 
 /** What changes if the hero equips `item` (it goes to the slot Equip would use). */

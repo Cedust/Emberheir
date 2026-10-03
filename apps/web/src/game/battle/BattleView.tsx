@@ -1,4 +1,4 @@
-import { ITEM_CATALOG, POC_GAME_DATA } from "@emberheir/content";
+import { ACTS, ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
   Fight,
@@ -8,8 +8,10 @@ import {
   type RunState,
   currentFight,
   eliteModifiersOf,
+  encounterEnemy,
   getAct,
   getBase,
+  isFinaleAct,
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../ui/Icon";
@@ -18,6 +20,7 @@ import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { ArenaScene, type EnemyLook, type HeroLook } from "./ArenaScene";
+import { BoonBar } from "../Boons";
 import { Plaque, type PlaqueInfo } from "./Plaque";
 import { skillIcon, skillTint } from "./skills";
 
@@ -34,29 +37,53 @@ const ARCHETYPE_TEXT: Record<string, string> = {
   brute: "Brute",
   skirmisher: "Skirmisher",
   caster: "Caster",
+  afflicter: "Afflicter",
+  warden: "Warden",
+  thornback: "Thornback",
 };
+
+/** The Last Ember burns in the dark. */
+const FINALE_GRADIENT = ["#5a1d08", "#080404"] as const;
+
+/** The arena sky in the act's colors (ui-look-v1.md: arena tinted per Act; an echo brings its own). */
+function arenaStyle(run: RunState): React.CSSProperties | undefined {
+  const g =
+    ACTS.find((a) => a.id === (run.encounter?.echo ?? run.actId))?.arenaGradient ??
+    (isFinaleAct(GAME_DATA, run.actId) ? FINALE_GRADIENT : undefined);
+  return g ? { background: `linear-gradient(180deg, ${g[0]} 0%, ${g[1]} 100%)` } : undefined;
+}
 
 function useLooks(state: GameState, run: RunState) {
   const encounter = run.encounter;
-  const act = getAct(POC_GAME_DATA, run.actId);
-  const enemyDef =
-    encounter &&
-    (act.boss.id === encounter.enemyId
-      ? act.boss
-      : act.enemies.find((e) => e.id === encounter.enemyId));
+  const act = getAct(GAME_DATA, run.actId);
+  const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
+  const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
   const mainHand = state.hero.equipment.mainHand;
   const offHand = state.hero.equipment.offHand;
   const weapon = mainHand ? getBase(ITEM_CATALOG, mainHand.baseId) : undefined;
   const off = offHand ? getBase(ITEM_CATALOG, offHand.baseId) : undefined;
+  const kind = weapon?.weapon?.id;
   const heroLook: HeroLook = {
-    weapon: weapon?.weapon?.range === "ranged" ? "wand" : "sword",
+    weapon:
+      kind === "axe" ||
+      kind === "dagger" ||
+      kind === "bow" ||
+      kind === "crossbow" ||
+      kind === "mace" ||
+      kind === "staff"
+        ? kind
+        : weapon?.weapon?.range === "ranged"
+          ? "wand"
+          : "sword",
     offHand: off ? (off.fitsWeaponRange === "ranged" ? "focus" : "shield") : null,
   };
-  const mods = encounter ? eliteModifiersOf(encounter, POC_GAME_DATA).map((m) => m.name) : [];
+  const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
   const enemyLook: EnemyLook = {
     archetype: enemyDef?.archetype ?? "brute",
     boss: encounter?.boss ?? false,
     elite: mods.length > 0,
+    act: (echo ?? act).number,
+    ...(encounter?.thief ? { thief: true } : {}),
   };
   const heroInfo: PlaqueInfo = {
     name: "Heir of the Ember",
@@ -64,8 +91,8 @@ function useLooks(state: GameState, run: RunState) {
     icon: "user",
   };
   const enemyInfo: PlaqueInfo = {
-    name: enemyDef?.name ?? "Enemy",
-    sub: `${encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
+    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : (enemyDef?.name ?? "Enemy"),
+    sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
     icon: encounter?.boss ? "boss" : ((enemyDef?.archetype ?? "brute") as "brute"),
     ...(encounter?.boss ? { tag: "BOSS" as const } : mods.length ? { tag: "ELITE" as const } : {}),
     mods,
@@ -92,12 +119,13 @@ export function BattleView(props: {
   const looks = useLooks(state, run);
   // GameApp remounts this view for every encounter (key = fight seed).
   const [fight] = useState(() => {
-    const setups = currentFight(state, POC_GAME_DATA);
+    const setups = currentFight(state, GAME_DATA);
     return new Fight(setups.hero, setups.enemy, setups.seed);
   });
   const [snapshot, setSnapshot] = useState<FightSnapshot>(() => fight.snapshot());
   const [flash, setFlash] = useState<{ slot: number; n: number } | null>(null);
   const [speed, setSpeed] = useState<number>(1);
+  const [boonFlash, setBoonFlash] = useState<ReadonlySet<string>>(() => new Set());
   const sceneRef = useRef<ArenaScene | null>(null);
   const stage = useStageSize();
   const arenaW = stage.w;
@@ -137,12 +165,14 @@ export function BattleView(props: {
     if (sceneRef.current) sceneRef.current.showNumbers = settings.damageNumbers;
   }, [settings.damageNumbers]);
 
-  // The fight loop.
+  // The fight loop. A boss on its last breath falls in slow motion (Teil 3 D).
+  const bossFight = run.encounter?.boss === true;
+  const slowRef = useRef(1);
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
     const loop = (now: number) => {
-      const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current;
+      const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current * slowRef.current;
       last = now;
       if (!pausedRef.current) {
         const before = fight.events.length;
@@ -157,22 +187,39 @@ export function BattleView(props: {
       sceneRef.current?.onSnapshot(snap);
       const used = [...fresh].reverse().find((e) => e.type === "skill" && e.side === "hero");
       if (used?.type === "skill") {
-        const slot = snap.hero.rotation.findIndex((r) => r.name === used.skill);
-        if (slot >= 0) setFlash((f) => ({ slot, n: (f?.n ?? 0) + 1 }));
+        const reaction = used.via === "reaction";
+        const list = reaction ? snap.hero.reactions : snap.hero.rotation;
+        const index = list.findIndex((r) => r.name === used.skill);
+        const slot = reaction ? 10 + index : index;
+        if (index >= 0) setFlash((f) => ({ slot, n: (f?.n ?? 0) + 1 }));
       }
+      const fired = fresh.flatMap((e) =>
+        e.type === "trigger" && e.side === "hero" ? [e.name] : [],
+      );
+      if (fired.length) setBoonFlash(new Set(fired));
+      if (bossFight) slowRef.current = snap.enemy.life / snap.enemy.maxLife < 0.08 ? 0.35 : 1;
       setSnapshot(snap);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
-  }, [fight]);
+  }, [fight, bossFight]);
+
+  useEffect(() => {
+    if (!boonFlash.size) return;
+    const timer = window.setTimeout(() => setBoonFlash(new Set()), 450);
+    return () => window.clearTimeout(timer);
+  }, [boonFlash]);
 
   // When the fight is over, show the banner briefly, then let the sim resolve it.
   const over = snapshot.over;
   useEffect(() => {
     if (!over) return;
-    const timer = window.setTimeout(() => game.dispatch({ type: "resolveFight" }), 1600);
+    const timer = window.setTimeout(
+      () => game.dispatch({ type: "resolveFight" }),
+      bossFight && snapshot.winner === "hero" ? 2400 : 1600,
+    );
     return () => window.clearTimeout(timer);
-  }, [over, game]);
+  }, [over, game, bossFight, snapshot.winner]);
 
   const skip = () => {
     const before = fight.events.length;
@@ -188,13 +235,18 @@ export function BattleView(props: {
       ? "VICTORY"
       : snapshot.winner === "enemy"
         ? "DEFEAT"
-        : "DRAW"
+        : snapshot.fled === "enemy"
+          ? "ESCAPED"
+          : "DRAW"
+    : null;
+  const thiefLeft = run.encounter?.thief
+    ? Math.max(0, Math.ceil(PROGRESSION.thiefFleeSeconds - snapshot.time))
     : null;
   const flaskMax = Math.max(PROGRESSION.flaskStartCharges, state.flaskCharges);
-  const stages = looks.act.monsterLevels.length;
+  const stages = looks.act.stages;
 
   return (
-    <section className="screen battle" aria-label="Battle">
+    <section className="screen battle" aria-label="Battle" style={arenaStyle(run)}>
       <div className="arena-host" ref={hostRef} />
       <RunHeader
         act={looks.act}
@@ -202,7 +254,6 @@ export function BattleView(props: {
         sub={`Stage ${run.stage} / ${stages}`}
         cleared={false}
         attributePoints={state.hero.unspentAttributePoints}
-        treeUnlocked={state.progress.trainerUnlocked}
         skillPoints={state.hero.unspentSkillPoints}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
@@ -210,13 +261,26 @@ export function BattleView(props: {
       />
 
       <div className="plaques">
-        <Plaque fighter={hero} info={looks.heroInfo} />
+        <div className="hero-column">
+          <Plaque fighter={hero} info={looks.heroInfo} />
+          <BoonBar state={state} flash={boonFlash} className="battle-boons" />
+        </div>
         <div className="vs-medallion" aria-hidden="true">
           <div className="vs-inner title-font">VS</div>
         </div>
         <div className="enemy-column">
           <Plaque fighter={enemy} info={looks.enemyInfo} mirrored />
           <div className="enemy-skills">
+            {thiefLeft !== null && !over && (
+              <div
+                className={`thief-timer${thiefLeft <= 5 ? " hurry" : ""}`}
+                role="timer"
+                data-testid="thief-timer"
+              >
+                <Icon name="retreat" size={18} color="#ffd84a" />
+                <span>Flees in {thiefLeft}s</span>
+              </div>
+            )}
             {enemy.telegraph && (
               <div className="telegraph-warning" role="alert">
                 <Icon name="warning" size={18} color="#ffb13b" />
@@ -239,7 +303,10 @@ export function BattleView(props: {
       </div>
 
       {result && (
-        <div className={`fight-banner ${result.toLowerCase()}`} data-testid="fight-result">
+        <div
+          className={`fight-banner ${result.toLowerCase()}${bossFight && snapshot.winner === "hero" ? " boss-kill" : ""}`}
+          data-testid="fight-result"
+        >
           {result}
         </div>
       )}
@@ -292,6 +359,27 @@ export function BattleView(props: {
               </div>
             );
           })}
+          {hero.reactions.length > 0 && <span className="skillbar-divider" aria-hidden="true" />}
+          {hero.reactions.map((slot, i) => (
+            <div
+              key={`r-${slot.skillId}`}
+              className="skill-slot-wrap reaction"
+              title={`Reaction: ${slot.name} · ${slot.heatCost} Heat`}
+            >
+              <div
+                className={`skill-slot reaction ${slot.cooldownLeft > 0 ? "cooling" : ""} ${flash?.slot === 10 + i ? `fired-${flash.n % 2}` : ""}`}
+                style={{ background: skillTint(slot.skillId) }}
+                data-testid="reaction-slot"
+              >
+                <Icon name={skillIcon(slot.skillId)} size={26} color="#fff6e4" />
+                <span className="pos mono">R{i + 1}</span>
+                {slot.cooldownLeft > 0 && (
+                  <span className="cooldown mono">{Math.ceil(slot.cooldownLeft)}</span>
+                )}
+              </div>
+              <span className="skill-caption">{slot.name}</span>
+            </div>
+          ))}
         </div>
 
         <div className="footer-right">
