@@ -14,6 +14,11 @@ import {
   neighbours,
   newGame,
   runFight,
+  type SlotModifier,
+  battlePlanUnlocks,
+  heroSetup,
+  knownSkills,
+  openBranches,
   sealsAvailable,
   targetSlot,
 } from "@emberheir/sim";
@@ -31,6 +36,8 @@ export interface ActRunReport {
   readonly cleared: boolean;
   /** Deaths before the boss fell. */
   readonly deaths: number;
+  /** Enemy id of every death, in order. */
+  readonly deathEnemies: readonly string[];
   readonly fights: number;
   readonly levelAtBoss: number;
   readonly fightSeconds: readonly number[];
@@ -49,6 +56,8 @@ const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   "fire-wand": ["intelligence", "wisdom", "vitality"],
   axe: ["strength", "vitality", "wisdom"],
   dagger: ["dexterity", "agility", "vitality"],
+  mace: ["strength", "vitality", "agility"],
+  staff: ["intelligence", "wisdom", "vitality"],
 };
 
 const rarityRank = (item: Item) => RARITIES.indexOf(item.rarity);
@@ -103,23 +112,53 @@ function spendPoints(state: GameState, data: GameData, weaponId: string): GameSt
   return s;
 }
 
-/** Skill Tree goals per starter weapon: a second skill for Rotation Slot 2, then notables. */
-const TREE_PLAN: Record<string, { readonly nodes: readonly string[]; readonly slot2: string }> = {
+/**
+ * Build plan per starter weapon: Skill Tree goals, Rotation skills (slot 1 is the Start Skill),
+ * Prestige branches by preference, a Reaction skill once one is unlocked.
+ */
+interface BuildPlan {
+  readonly nodes: readonly string[];
+  readonly rotation: readonly string[];
+  readonly branches: readonly string[];
+  readonly reaction?: { readonly skillId: string; readonly conditionId: string };
+}
+
+const TREE_PLAN: Record<string, BuildPlan> = {
   sword: {
     nodes: ["might-flurry", "might-brutal-force", "might-killer-instinct", "might-power-strike"],
-    slot2: "flurry",
+    rotation: ["flurry", "feint", "execute"],
+    branches: ["duelist", "warden", "tactician", "butcher"],
+    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+  },
+  mace: {
+    nodes: ["might-brutal-force", "might-flurry", "might-killer-instinct", "might-execute"],
+    rotation: ["flurry", "execute", "feint"],
+    branches: ["warden", "duelist", "tactician", "butcher"],
+    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   "fire-wand": {
     nodes: ["arcana-chain-lightning", "arcana-kindled-mind", "arcana-storm-weaver"],
-    slot2: "chain-lightning",
+    rotation: ["chain-lightning", "thunderstrike", "meteor"],
+    branches: ["stormcaller", "frostbinder", "tactician", "warden"],
+    reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
+  },
+  staff: {
+    nodes: ["affliction-corrupt", "affliction-void-lord", "affliction-soul-harvest"],
+    rotation: ["corrupt", "void-rift", "soul-harvest"],
+    branches: ["void-lord", "frostbinder", "tactician", "warden"],
+    reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
   },
   axe: {
     nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
-    slot2: "rend",
+    rotation: ["rend", "cleave", "lacerate"],
+    branches: ["butcher", "warden", "duelist", "tactician"],
+    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   dagger: {
     nodes: ["rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
-    slot2: "toxic-burst",
+    rotation: ["toxic-burst", "plague-cloud", "venom-coat"],
+    branches: ["venomancer", "tactician", "warden", "duelist"],
+    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
 };
 
@@ -151,27 +190,70 @@ function pathTo(data: GameData, learned: LearnedNodes, target: string): string[]
   return [];
 }
 
-/** Kaelen: spends Skill Points along the weapon's plan and fills Rotation Slot 2. */
+/** Learns one node after the other along the shortest path; stops when points run out. */
+function learnTowards(s: GameState, data: GameData, target: string): GameState {
+  for (const id of pathTo(data, s.hero.learned, target)) {
+    if (s.hero.unspentSkillPoints <= 0) break;
+    try {
+      s = applyAction(s, data, { type: "learnNodes", nodeIds: [id] });
+    } catch {
+      break;
+    }
+  }
+  return s;
+}
+
+/**
+ * Kaelen: spends Skill Points on the plan's nodes, then the unlocked Prestige branches, then the
+ * rest of the tree (no Keystones). Fills the Rotation, a Reaction and the Slot Modifiers.
+ */
 function spendSkillPoints(state: GameState, data: GameData, weaponId: string): GameState {
   const plan = TREE_PLAN[weaponId];
   if (!plan || !state.progress.trainerUnlocked || state.run) return state;
   let s = state;
-  for (const target of plan.nodes) {
-    for (const id of pathTo(data, s.hero.learned, target)) {
-      if (s.hero.unspentSkillPoints <= 0) break;
-      try {
-        s = applyAction(s, data, { type: "learnNodes", nodeIds: [id] });
-      } catch {
-        break;
-      }
+  for (const target of plan.nodes) s = learnTowards(s, data, target);
+  const branchNodes = s.legacy.branches.flatMap((b) =>
+    data.skillTree.nodes.filter((n) => n.prestigeBranch === b && n.kind !== "keystone"),
+  );
+  const rest = data.skillTree.nodes.filter((n) => !n.prestigeBranch && n.kind !== "keystone");
+  for (const node of [...branchNodes, ...rest]) {
+    while (s.hero.unspentSkillPoints > 0 && (s.hero.learned[node.id] ?? 0) < (node.maxRanks ?? 1)) {
+      const before = s;
+      s = learnTowards(s, data, node.id);
+      if (s === before) break;
     }
   }
-  if (s.progress.rotationSlots > 1) {
-    try {
-      s = applyAction(s, data, { type: "setRotationSkill", slot: 1, skillId: plan.slot2 });
-    } catch {
-      // Skill not learned yet.
+  const weapon = heroSetup(s, data).setup.weapon;
+  const known = new Set(knownSkills(s, data, weapon).map((k) => k.skill.id));
+  const rotation = plan.rotation.filter((id) => known.has(id));
+  for (let slot = 1; slot < s.progress.rotationSlots; slot++) {
+    const skillId = rotation[slot - 1];
+    if (skillId && s.hero.rotation[slot] !== skillId) {
+      s = applyAction(s, data, { type: "setRotationSkill", slot, skillId });
     }
+  }
+  const unlocks = battlePlanUnlocks(s.legacy.prestige);
+  const mods = (first: SlotModifier): SlotModifier[] =>
+    (["reverb", first] as SlotModifier[]).slice(2 - unlocks.modifiers);
+  const reaction =
+    unlocks.reactionSlots > 0 && plan.reaction && known.has(plan.reaction.skillId)
+      ? plan.reaction
+      : null;
+  try {
+    s = applyAction(s, data, {
+      type: "setBattlePlan",
+      plan: {
+        ...s.hero.plan,
+        modifiers: Array.from({ length: s.progress.rotationSlots }, (_, i) =>
+          mods(i === 0 ? "thrifty" : "empowered"),
+        ),
+        reactions: reaction ? [reaction] : [],
+        reactionModifiers: reaction ? [mods("thrifty")] : [],
+        capstone: unlocks.capstone ? (s.hero.plan.capstone ?? { id: "crescendo", slot: 0 }) : null,
+      },
+    });
+  } catch {
+    // Keep the old plan.
   }
   return s;
 }
@@ -186,7 +268,14 @@ function autopilotPrestige(state: GameState, data: GameData): GameState {
       return (ib ? score(ib) : 0) - (ia ? score(ia) : 0);
     });
   const sealed = slots.slice(0, sealsAvailable(state, data));
-  const s = applyAction(state, data, { type: "prestige", sealedSlots: sealed });
+  const open = openBranches(state, data).map((b) => b.id);
+  const weaponId = state.hero.equipment.mainHand?.baseId ?? "";
+  const preferred = TREE_PLAN[weaponId]?.branches.find((b) => open.includes(b)) ?? open[0];
+  const s = applyAction(state, data, {
+    type: "prestige",
+    sealedSlots: sealed,
+    ...(preferred ? { branchId: preferred } : {}),
+  });
   return applyAction(s, data, { type: "dismissNotice" });
 }
 
@@ -223,6 +312,7 @@ export function playGenerations(
       let levelAtBoss = 0;
       let elites = 0;
       const deathStages: number[] = [];
+      const deathEnemies: string[] = [];
       let bossDeaths = 0;
       let firstFightLost = false;
       let cleared = false;
@@ -251,6 +341,7 @@ export function playGenerations(
           if (!s.run && s.notice?.kind === "death") {
             if (first) firstFightLost = true;
             deathStages.push(stage);
+            if (encounter) deathEnemies.push(encounter.enemyId);
             if (encounter?.boss) bossDeaths++;
           }
           if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
@@ -263,6 +354,7 @@ export function playGenerations(
         act: act.number,
         cleared,
         deaths: s.stats.deaths - before.deaths,
+        deathEnemies,
         fights: s.stats.fights - before.fights,
         levelAtBoss,
         fightSeconds,
@@ -314,6 +406,8 @@ export interface ActSummary {
   readonly avgElites: number;
   /** Share of deaths that happened at the boss. */
   readonly bossDeathShare: number;
+  /** The enemy that killed the hero most often, e.g. "storm-caller (42 %)". */
+  readonly topKiller: string;
 }
 
 const avg = (values: readonly number[]) =>
@@ -341,5 +435,14 @@ export function summarizeActRuns(reports: readonly ActRunReport[]): ActSummary {
         1,
         reports.reduce((n, r) => n + r.deathStages.length, 0),
       ),
+    topKiller: topKiller(reports.flatMap((r) => r.deathEnemies)),
   };
+}
+
+function topKiller(ids: readonly string[]): string {
+  if (!ids.length) return "-";
+  const counts = new Map<string, number>();
+  for (const id of ids) counts.set(id, (counts.get(id) ?? 0) + 1);
+  const [id, n] = [...counts].sort((a, b) => b[1] - a[1])[0] ?? ["-", 0];
+  return `${id} (${Math.round((n / ids.length) * 100)} %)`;
 }
