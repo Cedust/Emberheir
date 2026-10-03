@@ -793,6 +793,28 @@ describe("Battle Plan", () => {
     expect(names.slice(0, 3)).toEqual(["Guard", "Skill A", "Skill B"]);
   });
 
+  it("a trigger can answer the enemy's wind-up (Ice Shell)", () => {
+    const fight = new Fight(
+      setup({
+        triggers: [
+          {
+            id: "ice-shell",
+            name: "Ice Shell",
+            condition: { kind: "enemyWindup" },
+            effect: { kind: "barrier", fraction: 0.1 },
+          },
+        ],
+      }),
+      dummy({ telegraphs: [{ skill: SKILL_A, interval: 1, windup: 2 }] }),
+      1,
+    );
+    fight.advance(1.2);
+    expect(ofType(fight.events, "trigger")).toEqual([
+      expect.objectContaining({ side: "hero", name: "Ice Shell" }),
+    ]);
+    expect(ofType(fight.events, "barrier")).toHaveLength(1);
+  });
+
   it("the Opening Move is cast for free right when the fight starts", () => {
     const fight = new Fight(setup({ openingMove: { skill: GUARD } }), dummy(), 1);
     fight.advance(0.01);

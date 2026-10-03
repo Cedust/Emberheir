@@ -35,6 +35,7 @@ import {
   walletEntries,
 } from "../ui/items";
 import { RunHeader } from "./RunHeader";
+import { BoonBar, ShrineCards } from "./Boons";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
@@ -112,6 +113,7 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
           "Level cap reached"
         )}
       </div>
+      <BoonBar state={state} />
       <div className="life-head">
         <span className="title-font">Life</span>
         <span className="mono">
@@ -623,6 +625,9 @@ function DoneCard(props: { run: RunState }) {
       : rewards.spoils.length
         ? ""
         : "No spoils this stage";
+    const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
+    const boonName = boon && GAME_DATA.boons?.find((b) => b.id === boon.id)?.name;
+    if (boonName) sub += `${sub ? " · " : ""}Boon: ${boonName}`;
     if (rewards.salvagedDust > 0)
       sub += `${sub ? " · " : ""}+${rewards.salvagedDust} Dust from salvage`;
   }
@@ -658,11 +663,20 @@ export function IntermissionView(props: {
       ? "items"
       : rewards.spoils.length > 0 && rewards.spoilsPick === null
         ? "spoils"
-        : "done";
+        : rewards.boonOffer?.length && rewards.boonPick == null
+          ? "shrine"
+          : "done";
   const done = step === "ready" || step === "done";
   const nextStage = run.phase === "rewards" ? run.stage + 1 : run.stage;
   const boss = run.encounter?.boss === true && run.phase === "rewards";
-  const title = step === "spoils" ? "SPOILS" : step === "ready" ? "READY" : "VICTORY";
+  const title =
+    step === "spoils"
+      ? "SPOILS"
+      : step === "shrine"
+        ? "EMBER SHRINE"
+        : step === "ready"
+          ? "READY"
+          : "VICTORY";
   const subtitle =
     step === "items"
       ? rewards && rewards.items.length > 3
@@ -670,9 +684,11 @@ export function IntermissionView(props: {
         : "Choose 1 of 3 items"
       : step === "spoils"
         ? `${rewards?.rank === "boss" ? "Boss defeated" : rewards?.rank === "elite" ? "Elite defeated" : `Stage ${run.stage}`} · choose 1 of 3 spoils`
-        : boss
-          ? `${act.name} cleared`
-          : `Ready for Stage ${nextStage}`;
+        : step === "shrine"
+          ? "Steal 1 of 3 sparks"
+          : boss
+            ? `${act.name} cleared`
+            : `Ready for Stage ${nextStage}`;
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
@@ -729,6 +745,7 @@ export function IntermissionView(props: {
             />
           )}
           {step === "spoils" && <SpoilsCards run={run} game={game} />}
+          {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
           {done && <DoneCard run={run} />}
           {step === "items" && (
             <div className="inventory-line">
@@ -791,7 +808,7 @@ export function IntermissionView(props: {
             disabled={!done}
             title={
               done
-                ? "Back to Camp. Gear and levels stay; the act starts over."
+                ? "Back to Camp. Gear and levels stay, this act's Boons burn."
                 : "Pick your rewards first"
             }
             onClick={() => game.dispatch({ type: "retreat" })}

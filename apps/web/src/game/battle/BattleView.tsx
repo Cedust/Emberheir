@@ -18,6 +18,7 @@ import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { ArenaScene, type EnemyLook, type HeroLook } from "./ArenaScene";
+import { BoonBar } from "../Boons";
 import { Plaque, type PlaqueInfo } from "./Plaque";
 import { skillIcon, skillTint } from "./skills";
 
@@ -119,6 +120,7 @@ export function BattleView(props: {
   const [snapshot, setSnapshot] = useState<FightSnapshot>(() => fight.snapshot());
   const [flash, setFlash] = useState<{ slot: number; n: number } | null>(null);
   const [speed, setSpeed] = useState<number>(1);
+  const [boonFlash, setBoonFlash] = useState<ReadonlySet<string>>(() => new Set());
   const sceneRef = useRef<ArenaScene | null>(null);
   const stage = useStageSize();
   const arenaW = stage.w;
@@ -186,12 +188,22 @@ export function BattleView(props: {
         const slot = reaction ? 10 + index : index;
         if (index >= 0) setFlash((f) => ({ slot, n: (f?.n ?? 0) + 1 }));
       }
+      const fired = fresh.flatMap((e) =>
+        e.type === "trigger" && e.side === "hero" ? [e.name] : [],
+      );
+      if (fired.length) setBoonFlash(new Set(fired));
       if (bossFight) slowRef.current = snap.enemy.life / snap.enemy.maxLife < 0.08 ? 0.35 : 1;
       setSnapshot(snap);
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
   }, [fight, bossFight]);
+
+  useEffect(() => {
+    if (!boonFlash.size) return;
+    const timer = window.setTimeout(() => setBoonFlash(new Set()), 450);
+    return () => window.clearTimeout(timer);
+  }, [boonFlash]);
 
   // When the fight is over, show the banner briefly, then let the sim resolve it.
   const over = snapshot.over;
@@ -239,7 +251,10 @@ export function BattleView(props: {
       />
 
       <div className="plaques">
-        <Plaque fighter={hero} info={looks.heroInfo} />
+        <div className="hero-column">
+          <Plaque fighter={hero} info={looks.heroInfo} />
+          <BoonBar state={state} flash={boonFlash} className="battle-boons" />
+        </div>
         <div className="vs-medallion" aria-hidden="true">
           <div className="vs-inner title-font">VS</div>
         </div>

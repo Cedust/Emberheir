@@ -1,3 +1,4 @@
+import { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 import { type ActData, EQUIPMENT_SLOTS, type GameData } from "@emberheir/sim";
 import { STAGES_PER_ACT } from "./acts";
 import { BOSS_ABILITIES, ELITE_MODIFIERS } from "./elites";
@@ -33,6 +34,7 @@ export const ACT1: ActData = {
   stages: STAGES_PER_ACT,
   enemies: ACT1_ENEMIES,
   boss: GORRAK,
+  boonFamily: "ash",
   spoilsStages: [5, 10],
   essence: { id: "ash-essence", name: "Ash Essence", affixId: "all-resistance" },
 };
@@ -45,6 +47,7 @@ export const ACT2: ActData = {
   stages: STAGES_PER_ACT,
   enemies: ACT2_ENEMIES,
   boss: MOTHER_OF_ROT,
+  boonFamily: "rot",
   runesmith: true,
   spoilsStages: [5, 10],
   essence: { id: "rot-essence", name: "Rot Essence", affixId: "tenacity" },
@@ -62,6 +65,7 @@ export const ACT3: ActData = {
   stages: STAGES_PER_ACT,
   enemies: ACT3_ENEMIES,
   boss: CINDER_TYRANT,
+  boonFamily: "cinder",
   spoilsStages: [5, 10],
   essence: { id: "cinder-essence", name: "Cinder Essence", affixId: "fire-resistance" },
   favoredAffixes: { "fire-resistance": 4, "burn-chance": 1.5 },
@@ -75,6 +79,7 @@ export const ACT4: ActData = {
   stages: STAGES_PER_ACT,
   enemies: ACT4_ENEMIES,
   boss: RIME_WARDEN,
+  boonFamily: "rime",
   spoilsStages: [5, 10],
   essence: { id: "frost-essence", name: "Frost Essence", affixId: "cold-resistance" },
   favoredAffixes: { "cold-resistance": 4, "heat-gain": 1.5 },
@@ -88,6 +93,7 @@ export const ACT5: ActData = {
   stages: STAGES_PER_ACT,
   enemies: ACT5_ENEMIES,
   boss: STORM_HERALD,
+  boonFamily: "storm",
   spoilsStages: [5, 10],
   essence: { id: "storm-essence", name: "Storm Essence", affixId: "lightning-resistance" },
   favoredAffixes: { "lightning-resistance": 4, tenacity: 1.5 },
@@ -101,6 +107,7 @@ export const ACT6: ActData = {
   stages: STAGES_PER_ACT,
   enemies: ACT6_ENEMIES,
   boss: VOIDBORN_MAW,
+  boonFamily: "void",
   spoilsStages: [5, 10],
   essence: { id: "void-essence", name: "Void Essence", affixId: "void-resistance" },
   favoredAffixes: { "void-resistance": 4, "corruption-chance": 1.5 },
@@ -134,4 +141,6 @@ export const GAME_DATA: GameData = {
   eliteModifiers: ELITE_MODIFIERS,
   bossAbilities: BOSS_ABILITIES,
   startingAttributes: STARTING_ATTRIBUTES,
+  boons: BOONS_CONTENT,
+  boonFamilies: BOON_FAMILIES,
 };

@@ -12,3 +12,4 @@ export { STARTING_ATTRIBUTES, createHeroSetup, resolveHeroGear, type HeroLoadout
 
 export const GAME_TITLE = "Emberheir";
 export { PRESTIGE_BRANCHES } from "./prestige-branches";
+export { BOON_FAMILIES, BOONS_CONTENT } from "./boons";

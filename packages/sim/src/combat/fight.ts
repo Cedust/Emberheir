@@ -568,6 +568,8 @@ export class Fight {
       f.telegraphTimers[i] = 0;
       f.windup = { index: i, remaining: spec.windup };
       this.react(this.fighters[other(f.side)], "enemyWindup");
+      this.fireTriggers(this.fighters[other(f.side)], "enemyWindup");
+      if (this.result) return;
       this.emit({
         t: this.time,
         type: "telegraph",

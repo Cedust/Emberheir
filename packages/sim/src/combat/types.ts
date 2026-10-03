@@ -101,7 +101,9 @@ export type TriggerCondition =
   /** Own life dropped below the fraction. Re-arms once life is back above it. */
   | { readonly kind: "lifeBelow"; readonly threshold: number }
   /** Every Nth hit taken that was not evaded (Storm Herald's reflect). */
-  | { readonly kind: "everyNthHitTaken"; readonly n: number };
+  | { readonly kind: "everyNthHitTaken"; readonly n: number }
+  /** The opponent starts winding up a telegraphed Heavy Attack (Ice Shell). */
+  | { readonly kind: "enemyWindup" };
 
 export type TriggerEffect =
   /** Extra hit for X × Weapon Damage. Can be evaded like an attack. */

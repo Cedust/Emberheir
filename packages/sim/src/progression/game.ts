@@ -13,6 +13,8 @@ import type {
   WeaponDefinition,
 } from "../combat/types";
 import { COMBAT } from "../combat/constants";
+import { mergeRules } from "../combat/rules";
+import { sumBonuses } from "../combat/stats";
 import { ATTRIBUTES } from "../combat/types";
 import { type ResolvedEquipment, itemSlotFor, missingRequirements } from "../items/equipment";
 import {
@@ -50,6 +52,16 @@ import {
   slotCondition,
   slotModifiers,
 } from "./battle-plan";
+import {
+  type BoonDefinition,
+  type BoonFamilyDefinition,
+  type BoonPick,
+  type BoonsState,
+  EMPTY_BOONS,
+  activeBoons,
+  boonEffects,
+  rollBoonOffer,
+} from "./boons";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type CodexPartKind,
@@ -113,6 +125,8 @@ export interface ActData {
    * drops the answer to its own question more often.
    */
   readonly favoredAffixes?: Readonly<Record<string, number>>;
+  /** The Stolen Fire Boon family of this act's Warden (open from this act on). */
+  readonly boonFamily?: string;
 }
 
 /** Everything content-related the game loop needs. Built once in `@emberheir/content`. */
@@ -134,6 +148,9 @@ export interface GameData {
    * starting at a different place in the list for each act.
    */
   readonly bossAbilities?: readonly EliteModifier[];
+  /** Stolen Fire Boons (Spielspaß Teil 1); no Shrines without them. */
+  readonly boons?: readonly BoonDefinition[];
+  readonly boonFamilies?: readonly BoonFamilyDefinition[];
   readonly startingAttributes: Attributes;
 }
 
@@ -221,6 +238,9 @@ export interface Rewards {
   readonly spoilsPick: number | null;
   /** What the Battle Plan did in this fight (missing in older saves). */
   readonly report?: FightReport;
+  /** Ember Shrine: 1 of these Boons (after Stage 5 and 10, Elites and Bosses). */
+  readonly boonOffer?: readonly BoonPick[];
+  readonly boonPick?: number | null;
 }
 
 export type RunPhase = "intermission" | "fight" | "rewards";
@@ -355,6 +375,8 @@ export interface GameState {
   readonly legacy: LegacyState;
   /** Set between the final boss and the Prestige. Blocks the Camp until it is done. */
   readonly pendingPrestige: PendingPrestige | null;
+  /** Stolen Fire Boons of this run; they burn at the Prestige. */
+  readonly boons: BoonsState;
 }
 
 export class GameActionError extends Error {}
@@ -444,6 +466,7 @@ export function newGame(
       trophies: [],
     },
     pendingPrestige: null,
+    boons: EMPTY_BOONS,
   };
 }
 
@@ -711,12 +734,28 @@ function heroCapstone(
   return slot >= 0 ? { kind: "echo", slot } : undefined;
 }
 
+/** The Stolen Fire Boons in effect (rank and grade resolved). */
+export function heroBoons(state: GameState, data: GameData) {
+  return activeBoons(state.boons, data.boons ?? []);
+}
+
+/** Boon families open in an act: Hearth and every Warden family up to this act. */
+export function openBoonFamilies(data: GameData, actNumber: number): string[] {
+  const tied = new Set(data.acts.flatMap((a) => (a.boonFamily ? [a.boonFamily] : [])));
+  return (data.boonFamilies ?? [])
+    .map((f) => f.id)
+    .filter(
+      (id) => !tied.has(id) || data.acts.some((a) => a.boonFamily === id && a.number <= actNumber),
+    );
+}
+
 /** The hero's fight setup from the current state. */
 export function heroSetup(
   state: GameState,
   data: GameData,
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
   const { hero } = state;
+  const boons = boonEffects(heroBoons(state, data));
   return buildHeroSetup(
     {
       level: hero.level,
@@ -727,9 +766,15 @@ export function heroSetup(
       reactions: (weapon) => heroReactions(state, data, weapon),
       capstone: (weapon) => heroCapstone(state, data, weapon),
       openingMove: (weapon) => heroOpeningMove(state, data, weapon),
-      bonuses: (weapon) => treeBonuses(data.skillTree, hero.learned, weapon.range),
-      triggers: (weapon) => treeTriggers(data.skillTree, hero.learned, weapon.range),
-      rules: keystoneRules(data.skillTree, hero.learned),
+      bonuses: (weapon) =>
+        sumBonuses(treeBonuses(data.skillTree, hero.learned, weapon.range), boons.bonuses),
+      triggers: (weapon) => [
+        ...treeTriggers(data.skillTree, hero.learned, weapon.range),
+        ...boons.triggers,
+      ],
+      rules: boons.rules
+        ? mergeRules(keystoneRules(data.skillTree, hero.learned), boons.rules)
+        : keystoneRules(data.skillTree, hero.learned),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
     data.items,
@@ -881,6 +926,7 @@ export type GameAction =
   | { readonly type: "pickItem"; readonly index: number; readonly mode: "equip" | "take" }
   | { readonly type: "salvageAll" }
   | { readonly type: "pickSpoils"; readonly index: number }
+  | { readonly type: "pickBoon"; readonly index: number }
   /** After the rewards: on to the next stage (or back to Camp after the boss). */
   | { readonly type: "continue" }
   | { readonly type: "useFlask" }
@@ -926,6 +972,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return pickItem(state, data, action.index, action.mode);
     case "salvageAll":
       return salvageAll(state);
+    case "pickBoon":
+      return pickBoon(state, action.index);
     case "pickSpoils":
       return pickSpoils(state, action.index);
     case "continue":
@@ -1036,10 +1084,14 @@ function startStage(state: GameState, data: GameData): GameState {
 /** Back to the Camp: flask refilled, life full, act progress gone, Supply Wagon repaired. */
 function toCamp(state: GameState, data: GameData, notice: Notice | null): GameState {
   const fromRunesmithAct = state.run ? getAct(data, state.run.actId).runesmith === true : false;
+  // Boons of the current act burn on death and Retreat; a cleared act keeps them.
+  const lost = notice?.kind === "death" || notice?.kind === "retreat";
+  const { kept, fresh } = state.boons;
   return {
     ...state,
     run: null,
     notice,
+    boons: { kept: lost ? kept : [...kept, ...fresh], fresh: [] },
     flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
     progress: {
       ...state.progress,
@@ -1131,6 +1183,27 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ]
       : [];
 
+  // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10, Elites and Bosses of an act this run
+  // has not cleared yet; Revisit Act and the harvest boss give none.
+  const shrine =
+    (data.boons?.length ?? 0) > 0 &&
+    !state.progress.actsCleared.includes(act.id) &&
+    !(rank === "boss" && isHarvestAct(data, act.id, state.legacy.prestige)) &&
+    (rank !== "normal" || act.spoilsStages.includes(run.stage));
+  const boonOffer = shrine
+    ? rollBoonOffer(
+        data.boons ?? [],
+        data.boonFamilies ?? [],
+        {
+          open: openBoonFamilies(data, act.number),
+          active: heroBoons(state, data),
+          damageType: hero.weapon.damageType,
+          reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
+        },
+        rng,
+      )
+    : [];
+
   return {
     ...next,
     stats: {
@@ -1178,6 +1251,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         report: fightReport(result.events),
         items,
         ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
+        ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
         ...(newTrophies.length ? { newTrophies } : {}),
         itemPick: null,
         salvagedDust: 0,
@@ -1454,6 +1528,19 @@ function salvageAll(state: GameState): GameState {
   return finishItemPick(state, run, rewards, { kind: "salvageAll" });
 }
 
+/** Takes one Boon of the Shrine; it counts as this act's until the boss falls. */
+function pickBoon(state: GameState, index: number): GameState {
+  const { run, rewards } = requireRewards(state);
+  if (!rewards.boonOffer?.length) return fail("No Shrine here");
+  if (rewards.boonPick != null) return fail("Boon already taken");
+  const pick = rewards.boonOffer[index] ?? fail("No such Boon");
+  return {
+    ...state,
+    boons: { ...state.boons, fresh: [...state.boons.fresh, pick] },
+    run: { ...run, rewards: { ...rewards, boonPick: index } },
+  };
+}
+
 function pickSpoils(state: GameState, index: number): GameState {
   const { run, rewards } = requireRewards(state);
   if (rewards.spoilsPick !== null) return fail("Spoils already picked");
@@ -1481,7 +1568,11 @@ function pickSpoils(state: GameState, index: number): GameState {
 
 /** True once the item pick (and the spoils pick, if any) is done. */
 export function rewardsDone(rewards: Rewards): boolean {
-  return rewards.itemPick !== null && (rewards.spoils.length === 0 || rewards.spoilsPick !== null);
+  return (
+    rewards.itemPick !== null &&
+    (rewards.spoils.length === 0 || rewards.spoilsPick !== null) &&
+    (!rewards.boonOffer?.length || rewards.boonPick != null)
+  );
 }
 
 function continueRun(state: GameState, data: GameData): GameState {
@@ -1923,6 +2014,8 @@ function doPrestige(
       ],
     },
     pendingPrestige: null,
+    // The Boons burn with the rest of the run.
+    boons: EMPTY_BOONS,
     notice: {
       kind: "prestige",
       actId: pending.actId,
@@ -2051,6 +2144,7 @@ function migrateV6(state: Partial<GameState>): Partial<GameState> {
     ...state,
     version: 7,
     ...(state.legacy ? { legacy: { ...state.legacy, trophies: [...new Set(carried)] } } : {}),
+    boons: EMPTY_BOONS,
     ...(state.progress
       ? {
           progress: {

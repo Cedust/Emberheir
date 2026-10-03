@@ -5,6 +5,7 @@ export * from "./skill-tree";
 export * from "./elites";
 export * from "./hero";
 export * from "./battle-plan";
+export * from "./boons";
 export * from "./game";
 export * from "./crafting";
 export * from "./codex";

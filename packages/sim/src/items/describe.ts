@@ -141,6 +141,8 @@ export function describeCondition(condition: TriggerCondition): string {
       return `Life below ${formatPercent(condition.threshold)} %`;
     case "everyNthHitTaken":
       return `Every ${ordinal(condition.n)} Hit Taken`;
+    case "enemyWindup":
+      return "When the enemy winds up";
   }
 }
 

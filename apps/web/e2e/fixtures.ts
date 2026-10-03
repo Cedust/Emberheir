@@ -151,3 +151,50 @@ export function saveBossHoard(): string {
   };
   return serializeGame(state);
 }
+
+/** A save at the Ember Shrine after Stage 5 of the first run, items and spoils already taken. */
+export function saveShrine(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const act = GAME_DATA.acts[0];
+  if (!act) throw new Error("No Ashen Fields");
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 4 },
+    boons: { kept: [], fresh: [{ id: "brutality", grade: "spark" }] },
+    run: {
+      actId: act.id,
+      stage: 5,
+      lifeFraction: 0.8,
+      phase: "rewards",
+      encounter: {
+        enemyId: act.enemies[0]?.id ?? "",
+        level: 3,
+        boss: false,
+        eliteModifiers: [],
+        seed: 5,
+      },
+      rewards: {
+        rank: "normal",
+        xp: 40,
+        gold: 12,
+        dust: 4,
+        reforgeStones: 0,
+        ascensionShards: 0,
+        runes: [],
+        levelsGained: 0,
+        items: [],
+        itemPick: { kind: "salvageAll" },
+        salvagedDust: 0,
+        spoils: [],
+        spoilsPick: null,
+        boonOffer: [
+          { id: "crushing-blow", grade: "spark" },
+          { id: "banked-coals", grade: "flame" },
+          { id: "brutality", grade: "spark" },
+        ],
+        boonPick: null,
+      },
+    },
+  };
+  return serializeGame(state);
+}

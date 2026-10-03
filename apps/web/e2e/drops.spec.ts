@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveBossHoard, seedSave } from "./fixtures";
+import { saveBossHoard, saveShrine, seedSave } from "./fixtures";
 
 test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Trophy Wall", async ({
   page,
@@ -34,5 +34,29 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   await page.getByRole("tab", { name: /Trophy Wall/ }).click();
   await expect(page.getByTestId("trophy-thornsong")).toBeEnabled();
   await expect(page.getByTestId("trophy-tyrants-crown")).toBeDisabled();
+  expect(errors).toEqual([]);
+});
+
+test("Ember Shrine: steal one of three Boons, it shows under the hero in the next fight", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveShrine());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  const hall = page.getByRole("region", { name: "Intermission" });
+  await expect(hall).toContainText("EMBER SHRINE");
+  await expect(page.getByTestId("shrine").locator(".boon-card")).toHaveCount(3);
+  // Brutality is held already: taking it again raises it to rank II.
+  await expect(page.getByTestId("boon-brutality")).toContainText("+15 % Physical Damage");
+  await expect(page.getByRole("button", { name: /NEXT STAGE/ })).toBeDisabled();
+  await page.getByTestId("boon-crushing-blow").click();
+  await expect(page.getByTestId("done-card")).toContainText("Boon: Crushing Blow");
+  await page.getByRole("button", { name: /NEXT STAGE/ }).click();
+  await expect(
+    page.getByRole("region", { name: "Battle" }).getByTestId("boon-bar").locator(".boon-chip"),
+  ).toHaveCount(2);
   expect(errors).toEqual([]);
 });

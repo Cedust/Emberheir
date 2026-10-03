@@ -1,4 +1,7 @@
 import {
+  BOON_GRADES,
+  type BoonPick,
+  heroBoons,
   type Attributes,
   type GameData,
   type GameState,
@@ -64,6 +67,24 @@ const rarityRank = (item: Item) => RARITIES.indexOf(item.rarity);
 /** Crude item score: rarity first, then Item Level. */
 const score = (item: Item) => rarityRank(item) * 10 + item.itemLevel;
 
+/** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */
+function bestBoon(state: GameState, data: GameData, offer: readonly BoonPick[]): number {
+  const damageType = heroSetup(state, data).setup.weapon.damageType;
+  const owned = new Set(heroBoons(state, data).map((b) => b.def.id));
+  const value = (pick: BoonPick) => {
+    const def = data.boons?.find((b) => b.id === pick.id);
+    const family = data.boonFamilies?.find((f) => f.id === def?.family);
+    const fits =
+      !family || family.damageTypes.length === 0 || family.damageTypes.includes(damageType);
+    return (fits ? 10 : 0) + (owned.has(pick.id) ? 3 : 0) + BOON_GRADES.indexOf(pick.grade);
+  };
+  let best = 0;
+  offer.forEach((pick, i) => {
+    if (value(pick) > value(offer[best] ?? pick)) best = i;
+  });
+  return best;
+}
+
 function autopilotRewards(state: GameState, data: GameData): GameState {
   let s = state;
   const rewards = s.run?.rewards;
@@ -102,6 +123,9 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
     const pick = s.flaskCharges < PROGRESSION.flaskStartCharges ? flask : stones;
     s = applyAction(s, data, { type: "pickSpoils", index: Math.max(0, pick) });
   }
+  const offer = s.run?.rewards?.boonOffer;
+  if (offer?.length)
+    s = applyAction(s, data, { type: "pickBoon", index: bestBoon(s, data, offer) });
   return applyAction(s, data, { type: "continue" });
 }
 
