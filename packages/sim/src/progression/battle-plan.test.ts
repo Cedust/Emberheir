@@ -22,7 +22,7 @@ const act = (state: GameState, ...actions: GameAction[]) =>
 
 /** A hero after `prestige` Prestiges with the Rotation Slots it gives and Bash learned. */
 function hero(prestige: number): GameState {
-  const s = newGame(data, { seed: 1, starterWeapon: "test-sword" });
+  const s = newGame(data, { seed: 1, classId: "test-fighter" });
   const unlocked: GameState = {
     ...s,
     hero: { ...s.hero, unspentSkillPoints: 3 },

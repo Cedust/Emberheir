@@ -1,49 +1,30 @@
 import { GAME_DATA } from "@emberheir/content";
-import {
-  type GameAction,
-  type GameState,
-  applyAction,
-  deserializeGame,
-  newGame,
-  serializeGame,
-} from "@emberheir/sim";
+import { type GameAction, type GameState, applyAction, newGame } from "@emberheir/sim";
 import { useCallback, useRef, useState } from "react";
-import { storageKey } from "../storage";
+import { loadSlot, saveSlot } from "./saves";
 
-export const SAVE_KEY = storageKey("save");
-
-/** Reads the save game; broken or outdated saves are ignored. */
-export function loadSave(): GameState | null {
-  try {
-    const json = localStorage.getItem(SAVE_KEY);
-    return json ? deserializeGame(json, GAME_DATA) : null;
-  } catch {
-    return null;
-  }
-}
-
-function writeSave(state: GameState | null): void {
-  try {
-    if (state) localStorage.setItem(SAVE_KEY, serializeGame(state));
-    else localStorage.removeItem(SAVE_KEY);
-  } catch {
-    // Private windows can block storage; the game still runs, it just is not saved.
-  }
+/** What the class select hands over for a new character. */
+export interface NewCharacter {
+  readonly slot: number;
+  readonly classId: string;
+  readonly weapon: string;
+  readonly name: string;
 }
 
 /**
  * The game state for the UI. Every action goes through `applyAction` from the sim and the
- * result is saved right away (the save game is small).
+ * result is saved right away into the character's slot (the save game is small).
  */
 export function useGame() {
   const [state, setState] = useState<GameState | null>(null);
   const [error, setError] = useState<string | null>(null);
   const ref = useRef<GameState | null>(null);
+  const slotRef = useRef(0);
 
   const replace = useCallback((next: GameState | null) => {
     ref.current = next;
     setState(next);
-    writeSave(next);
+    if (next) saveSlot(slotRef.current, next);
   }, []);
 
   const dispatch = useCallback(
@@ -76,17 +57,30 @@ export function useGame() {
   );
 
   const start = useCallback(
-    (starterWeapon: string) => {
+    (character: NewCharacter) => {
       const seed = Math.floor(Math.random() * 0x7fffffff);
-      replace(newGame(GAME_DATA, { seed, starterWeapon }));
+      slotRef.current = character.slot;
+      replace(
+        newGame(GAME_DATA, {
+          seed,
+          classId: character.classId,
+          weapon: character.weapon,
+          name: character.name,
+        }),
+      );
     },
     [replace],
   );
 
-  const resume = useCallback(() => {
-    const saved = loadSave();
-    if (saved) replace(saved);
-  }, [replace]);
+  const resume = useCallback(
+    (slot: number) => {
+      const saved = loadSlot(slot);
+      if (!saved) return;
+      slotRef.current = slot;
+      replace(saved);
+    },
+    [replace],
+  );
 
   /** Back to the title screen; the save game stays. */
   const quit = useCallback(() => {

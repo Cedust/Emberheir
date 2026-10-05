@@ -100,7 +100,10 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
   const resist = (own: number) => clamp(allResistance + own, 0, COMBAT.maxResistance);
 
   return {
-    maxLife: Math.round(baseLife + a.vitality * COMBAT.lifePerVitality + b.life),
+    maxLife: Math.round(
+      (baseLife + a.vitality * COMBAT.lifePerVitality + b.life) *
+        (setup.rules?.lifeMultiplier ?? 1),
+    ),
     armor: a.strength * COMBAT.armorPerStrength + b.armor,
     physicalDamage: a.strength * COMBAT.physicalDamagePerStrength + b.physicalDamage,
     elementalDamage: a.intelligence * COMBAT.elementalDamagePerIntelligence + b.elementalDamage,

@@ -147,6 +147,31 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   maxSockets: 2,
 };
 
+/** Blood Talisman (klassen-v2.md): the Reaver's off hand, for Bleed and Poison up close. */
+export const BLOOD_TALISMAN: ItemBaseDefinition = {
+  id: "blood-talisman",
+  name: "Blood Talisman",
+  slot: "offHand",
+  fitsWeaponRange: "melee",
+  implicit: { bleedChance: 0.05, poisonChance: 0.05 },
+  requirements: { dexterity: 6 },
+  affixWeights: { ailment: 1.5, physical: 1.2, block: 0 },
+  maxSockets: 2,
+};
+
+/** Grimoire (klassen-v2.md): the Warlock's off hand, for curses that linger. */
+export const GRIMOIRE: ItemBaseDefinition = {
+  id: "grimoire",
+  name: "Grimoire",
+  slot: "offHand",
+  fitsWeaponRange: "ranged",
+  fitsWeapons: ["fire-wand", "staff"],
+  implicit: { ailmentDuration: 0.1, burnChance: 0.03, corruptionChance: 0.03 },
+  requirements: { wisdom: 6 },
+  affixWeights: { ailment: 1.5, elemental: 1.2, block: 0, physical: 0.5 },
+  maxSockets: 2,
+};
+
 /** Quiver (item-system-v1.md): the off hand of Bows and Crossbows. */
 export const QUIVER: ItemBaseDefinition = {
   id: "quiver",
@@ -344,6 +369,8 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   ROUND_SHIELD,
   EMBER_FOCUS,
   QUIVER,
+  BLOOD_TALISMAN,
+  GRIMOIRE,
   LEATHER_JERKIN,
   CHAIN_MAIL,
   SILK_ROBE,

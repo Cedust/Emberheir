@@ -14,6 +14,7 @@ import {
   formatPercent,
   heatPerSecond,
   heroSetup,
+  heroTitle,
   itemSlotFor,
   speedValue,
   unequipBlockReason,
@@ -22,6 +23,7 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
+import { ClassEmblem } from "./ClassEmblem";
 import {
   ItemDetail,
   ItemGrid,
@@ -234,7 +236,10 @@ export function CharacterOverlay(props: {
         <header className="overlay-header">
           <div className="run-title">
             <span className="title-font big">CHARACTER</span>
-            <span className="sub">Heir of the Ember · Level {state.hero.level}</span>
+            <span className="sub hero-title-line">
+              <ClassEmblem classId={state.hero.classId} size={16} />
+              {state.hero.name} · {heroTitle(state, GAME_DATA)} · Level {state.hero.level}
+            </span>
           </div>
           <div className="xp-bar" title={xpText}>
             <div

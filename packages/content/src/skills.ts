@@ -364,9 +364,104 @@ export const RALLY: SkillDefinition = {
   ],
 };
 
+// Weapon Innates (klassen-v2.md section 3): each weapon type brings its own skill.
+
+/** Mace Innate: a heavy blow that stuns. */
+export const SKULL_CRACK: SkillDefinition = {
+  id: "skull-crack",
+  name: "Skull Crack",
+  type: "attack",
+  heatCost: 30,
+  tags: ["physical", "direct", "any"],
+  description: "180 % Weapon Damage. Stuns for 0.5 s.",
+  hits: [{ kind: "weapon", multiplier: 1.8 }],
+  effects: [{ kind: "stun", seconds: 0.5 }],
+};
+
+/** Bow Innate: a barbed arrow that leaves a bleeding or poisoned wound. */
+export const BARBED_ARROW: SkillDefinition = {
+  id: "barbed-arrow",
+  name: "Barbed Arrow",
+  type: "attack",
+  heatCost: 25,
+  tags: ["physical", "over-time", "any"],
+  description: "100 % Weapon Damage. 50 % chance to Bleed, 50 % chance to Poison.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 1,
+      ailmentChances: [
+        { ailment: "bleed", chance: 0.5 },
+        { ailment: "poison", chance: 0.5 },
+      ],
+    },
+  ],
+};
+
+/** Crossbow Innate: one heavy bolt through the armor. */
+export const HEAVY_BOLT: SkillDefinition = {
+  id: "heavy-bolt",
+  name: "Heavy Bolt",
+  type: "attack",
+  heatCost: 30,
+  tags: ["physical", "direct", "any"],
+  description: "240 % Weapon Damage that ignores 30 % Armor.",
+  hits: [{ kind: "weapon", multiplier: 2.4, penetration: 0.3 }],
+};
+
+// Skill Tree skills that took the place of the Innates (klassen-v2.md section 3).
+
+/** Might: a crushing hit that Sunders. */
+export const CRUSHING_BLOW: SkillDefinition = {
+  id: "crushing-blow",
+  name: "Crushing Blow",
+  type: "attack",
+  heatCost: 30,
+  tags: ["physical", "direct", "any"],
+  description: "170 % Weapon Damage. Sunders: the enemy's Armor counts 30 % less for 6 s.",
+  hits: [{ kind: "weapon", multiplier: 1.7 }],
+  effects: [{ kind: "sunder", armor: 0.3, duration: 6 }],
+};
+
+/** Rupture: the Bleed counterpart of Venom Coat. */
+export const SERRATED_EDGE: SkillDefinition = {
+  id: "serrated-edge",
+  name: "Serrated Edge",
+  type: "buff",
+  heatCost: 40,
+  tags: ["physical", "over-time", "any"],
+  description: "For 8 s, every hit Bleeds.",
+  hits: [],
+  effects: [{ kind: "buff", stat: "bleedChance", amount: 1, duration: 8 }],
+};
+
+/** Rupture: two quick poisoned cuts. */
+export const ENVENOM: SkillDefinition = {
+  id: "envenom",
+  name: "Envenom",
+  type: "attack",
+  heatCost: 30,
+  tags: ["physical", "over-time", "any"],
+  description: "2 quick hits for 50 % Weapon Damage each. Both Poison.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 0.5,
+      count: 2,
+      ailmentChances: [{ ailment: "poison", chance: 1 }],
+    },
+  ],
+};
+
 /** Skills the hero can put into the Battle Plan. */
 export const HERO_SKILLS: readonly SkillDefinition[] = [
   POWER_STRIKE,
+  SKULL_CRACK,
+  BARBED_ARROW,
+  HEAVY_BOLT,
+  CRUSHING_BLOW,
+  SERRATED_EDGE,
+  ENVENOM,
   FLURRY,
   EXECUTE,
   FIREBOLT,
@@ -393,8 +488,7 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   RALLY,
 ];
 
-/** Every weapon brings one Start Skill that is equipped automatically. */
-/** Staff start skill: a slow Void bolt that Corrupts. */
+/** Staff Innate: a slow Void bolt that Corrupts. */
 export const VOID_BOLT: SkillDefinition = {
   id: "void-bolt",
   name: "Void Bolt",
@@ -412,14 +506,18 @@ export const VOID_BOLT: SkillDefinition = {
   ],
 };
 
+/**
+ * Weapon Innates (klassen-v2.md): every weapon type brings one skill. It is not in the Skill
+ * Tree; a Rotation Slot left on the Innate follows the weapon in hand.
+ */
 export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   sword: POWER_STRIKE,
   "fire-wand": FIREBOLT,
   axe: LACERATE,
   dagger: VENOM_COAT,
-  bow: LACERATE,
-  crossbow: POWER_STRIKE,
-  mace: POWER_STRIKE,
+  bow: BARBED_ARROW,
+  crossbow: HEAVY_BOLT,
+  mace: SKULL_CRACK,
   staff: VOID_BOLT,
 };
 

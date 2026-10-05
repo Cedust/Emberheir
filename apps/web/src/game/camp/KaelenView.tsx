@@ -218,7 +218,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       <span className="title-font">{k.skill.name}</span>
                     </span>
                     <span className="sub small">
-                      Lv {k.level} · {cost} Heat{k.startSkill ? " · Start Skill" : ""}
+                      Lv {k.level} · {cost} Heat{k.startSkill ? " · Innate" : ""}
                     </span>
                   </button>
                   {report && <ShareBar share={damageShare(report, k.skill.name)} />}

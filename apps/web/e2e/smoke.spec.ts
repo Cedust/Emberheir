@@ -62,7 +62,7 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // ?dev shows the Skip button in fights.
   await page.goto("/?dev");
   await page.getByRole("button", { name: "New Game" }).click();
-  await page.getByRole("button", { name: /^Sword/ }).click();
+  await page.getByRole("button", { name: "Begin" }).click();
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
 
   await page.getByRole("button", { name: /SET OUT/ }).click();
@@ -98,6 +98,7 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await page.keyboard.press("c");
   const character = page.getByRole("dialog", { name: "Character" });
   await expect(character).toBeVisible();
+  await expect(character).toContainText("Warrior");
   const taken = character.getByRole("group", { name: "Inventory grid" }).getByTestId("grid-item");
   await expect(taken).toHaveCount(1);
   // Hovering an item shows its Diablo-style tooltip; the paperdoll has all 10 slots.

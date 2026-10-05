@@ -55,7 +55,7 @@ const data: GameData = {
 };
 
 const pending = (): GameState => {
-  const s = newGame(data, { seed: 2, starterWeapon: "test-sword" });
+  const s = newGame(data, { seed: 2, classId: "test-fighter" });
   return {
     ...s,
     hero: { ...s.hero, unspentSkillPoints: 2 },

@@ -74,6 +74,7 @@ import {
   quarryAffixIds,
   quarryFound,
 } from "./codex";
+import { type HeroClass, classTitle, getClass } from "./classes";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
 import {
@@ -111,7 +112,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -147,9 +148,11 @@ export interface GameData {
   readonly lootBases: readonly string[];
   /** Equipment slots in use (PoC: 5). */
   readonly equipmentSlots: readonly EquipmentSlot[];
-  /** Weapon base ids a new game can start with. */
-  readonly starterWeapons: readonly string[];
-  /** Start Skill per weapon id. */
+  /** Classes a new character can pick (klassen-v2.md). */
+  readonly classes: readonly HeroClass[];
+  /** Title epithet per Prestige branch for branches outside the class's own ("of the Storm"). */
+  readonly branchEpithets: Readonly<Record<string, string>>;
+  /** Innate skill per weapon id: it comes with the weapon, not from the Skill Tree. */
   readonly startSkills: Readonly<Record<string, SkillDefinition>>;
   readonly skillTree: SkillTreeDefinition;
   readonly acts: readonly ActData[];
@@ -189,6 +192,10 @@ export interface Wallet {
 }
 
 export interface HeroState {
+  /** The character's name (Character Select). */
+  readonly name: string;
+  /** The class; fixed for the character (klassen-v2.md). */
+  readonly classId: string;
   readonly level: number;
   /** XP towards the next level. */
   readonly xp: number;
@@ -315,6 +322,8 @@ export interface LevelBand {
 /** One finished generation in the Legacy chronicle. */
 export interface ChronicleEntry {
   readonly generation: number;
+  /** The title the generation carried (missing in older saves). */
+  readonly title?: string;
   readonly level: number;
   readonly deaths: number;
   readonly enemyName: string;
@@ -417,31 +426,41 @@ export function nextRng(state: GameState): [Rng, GameState] {
 
 // --- new game --------------------------------------------------------------------------------
 
-export function newGame(
-  data: GameData,
-  options: { readonly seed: number; readonly starterWeapon: string },
-): GameState {
-  if (!data.starterWeapons.includes(options.starterWeapon)) {
-    fail(`"${options.starterWeapon}" is not a starter weapon`);
+export interface NewGameOptions {
+  readonly seed: number;
+  readonly classId: string;
+  /** One of the class's start weapons; default its first. */
+  readonly weapon?: string;
+  readonly name?: string;
+}
+
+export function newGame(data: GameData, options: NewGameOptions): GameState {
+  const heroClass = data.classes.find((c) => c.id === options.classId);
+  if (!heroClass) return fail(`Unknown class "${options.classId}"`);
+  const weaponId = options.weapon ?? heroClass.weapons[0] ?? fail("Class without a weapon");
+  if (!heroClass.weapons.includes(weaponId)) {
+    fail(`"${weaponId}" is not a start weapon of the ${heroClass.name}`);
   }
   const seed = options.seed >>> 0;
-  const weapon = rollItem(
-    data.items,
-    { baseId: options.starterWeapon, itemLevel: 1, rarity: "normal" },
-    new Rng(mixSeed(seed, 0xfffff)),
-  );
+  const rng = new Rng(mixSeed(seed, 0xfffff));
+  const weapon = rollItem(data.items, { baseId: weaponId, itemLevel: 1, rarity: "normal" }, rng);
+  const offHand = heroClass.offHand
+    ? rollItem(data.items, { baseId: heroClass.offHand, itemLevel: 1, rarity: "normal" }, rng)
+    : undefined;
   return {
     version: SAVE_VERSION,
     seed,
     nonce: 0,
     hero: {
+      name: options.name?.trim() || heroClass.name,
+      classId: heroClass.id,
       level: 1,
       xp: 0,
-      attributes: data.startingAttributes,
+      attributes: heroClass.startingAttributes,
       unspentAttributePoints: 0,
       unspentSkillPoints: PROGRESSION.startSkillPoints,
       learned: {},
-      equipment: { mainHand: weapon },
+      equipment: offHand ? { mainHand: weapon, offHand } : { mainHand: weapon },
       rotation: [null],
       plan: EMPTY_PLAN,
     },
@@ -761,6 +780,16 @@ export function openBoonFamilies(data: GameData, actNumber: number): string[] {
     );
 }
 
+/** The character's class. */
+export function heroClassOf(state: GameState, data: GameData): HeroClass {
+  return getClass(data.classes, state.hero.classId);
+}
+
+/** The character's title: class name, then the main Prestige branch decides (klassen-v2.md). */
+export function heroTitle(state: GameState, data: GameData): string {
+  return classTitle(heroClassOf(state, data), state.legacy.branches, data.branchEpithets);
+}
+
 /** The hero's fight setup from the current state. */
 export function heroSetup(
   state: GameState,
@@ -769,6 +798,7 @@ export function heroSetup(
   const { hero } = state;
   const boons = boonEffects(heroBoons(state, data));
   const resonance = resonanceEffects(data.skillTree, hero.learned, state.legacy.branches);
+  const trait = heroClassOf(state, data).trait;
   return buildHeroSetup(
     {
       level: hero.level,
@@ -784,12 +814,18 @@ export function heroSetup(
           treeBonuses(data.skillTree, hero.learned, weapon.range),
           resonance.bonuses,
           boons.bonuses,
+          trait.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
         ...boons.triggers,
       ],
-      rules: mergeRules(keystoneRules(data.skillTree, hero.learned), resonance.rules, boons.rules),
+      rules: mergeRules(
+        keystoneRules(data.skillTree, hero.learned),
+        resonance.rules,
+        boons.rules,
+        trait.rules,
+      ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
     data.items,
@@ -2218,6 +2254,7 @@ function doPrestige(state: GameState, data: GameData, branchId: string | undefin
     ...state.legacy.chronicle,
     {
       generation: prestige,
+      title: heroTitle(state, data),
       level: state.hero.level,
       deaths: state.stats.deaths - state.legacy.chronicle.reduce((n, c) => n + c.deaths, 0),
       enemyName: pending.enemyName,
@@ -2286,6 +2323,7 @@ export function deserializeGame(json: string, data?: GameData): GameState {
   if (state.version === 5) state = migrateV5(state);
   if (state.version === 6) state = migrateV6(state);
   if (state.version === 7) state = migrateV7(state, data);
+  if (state.version === 8) state = migrateV8(state, data);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -2420,7 +2458,7 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
           legacy: {
             ...(rest as LegacyState),
             chronicle: legacy.chronicle.map(
-              ({ generation, level, deaths, enemyName }): ChronicleEntry => ({
+              ({ generation, level, deaths, enemyName }: ChronicleEntry): ChronicleEntry => ({
                 generation,
                 level,
                 deaths,
@@ -2456,5 +2494,24 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
           },
         }
       : {}),
+  };
+}
+
+/**
+ * v8 → v9 (klassen-v2.md): every character has a class and a name. The class follows the weapon
+ * in hand (Sword → Warrior, Fire Wand → Sorcerer); attributes stay as they are.
+ */
+function migrateV8(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
+  const hero = state.hero as (Omit<HeroState, "name" | "classId"> & Partial<HeroState>) | undefined;
+  if (!hero) return { ...state, version: 9 };
+  const weapon = hero.equipment.mainHand?.baseId;
+  const classes = data?.classes ?? [];
+  const heroClass =
+    classes.find((c) => weapon !== undefined && c.weapons.includes(weapon)) ?? classes[0];
+  const classId = hero.classId ?? heroClass?.id ?? "warrior";
+  return {
+    ...state,
+    version: 9,
+    hero: { ...hero, classId, name: hero.name ?? heroClass?.name ?? "Heir" },
   };
 }

@@ -54,7 +54,7 @@ const [LOW_LIFE, ON_CRIT] = TEST_CONDITIONS as [
 const [HEAL, BURN] = TEST_EFFECTS as [(typeof TEST_EFFECTS)[0], (typeof TEST_EFFECTS)[0]];
 
 function camp(items: Item[], kindling = 2): GameState {
-  const s = newGame(data, { seed: 4, starterWeapon: "test-sword" });
+  const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
     ...s,
     progress: { ...s.progress, trainerUnlocked: true },

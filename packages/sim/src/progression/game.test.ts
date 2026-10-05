@@ -37,7 +37,7 @@ import { Rng } from "../rng";
 import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
-const start = (seed = 1) => newGame(data, { seed, starterWeapon: "test-sword" });
+const start = (seed = 1) => newGame(data, { seed, classId: "test-fighter" });
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
 /** A later run: Prestige `prestige` opens that many more acts. */
@@ -400,7 +400,9 @@ describe("game loop", () => {
       stashBurned: false,
     });
     expect(s.legacy.prestige).toBe(1);
-    expect(s.legacy.chronicle).toEqual([{ generation: 1, level, deaths: 0, enemyName: "Boss" }]);
+    expect(s.legacy.chronicle).toEqual([
+      { generation: 1, title: "Fighter", level, deaths: 0, enemyName: "Boss" },
+    ]);
     expect(levelCap(s.legacy.prestige)).toBe(15);
 
     // The new run's level band starts at the old Level Cap.
@@ -695,7 +697,7 @@ describe("Runes in the run", () => {
 describe("Ember Thief", () => {
   const THIEF = { ...WEAK_ENEMY, id: "ember-thief", name: "Ember Thief" };
   const atStage = (data: GameData, seed: number): GameState => {
-    const s = newGame(data, { seed, starterWeapon: "test-sword" });
+    const s = newGame(data, { seed, classId: "test-fighter" });
     return {
       ...s,
       run: {

@@ -10,8 +10,9 @@ import { Weather, type View } from "./weather";
  */
 
 export interface HeroLook {
+  readonly heroClass: "warrior" | "reaver" | "hunter" | "sorcerer" | "warlock";
   readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow" | "mace" | "staff";
-  readonly offHand: "shield" | "focus" | null;
+  readonly offHand: "shield" | "focus" | "quiver" | "talisman" | "grimoire" | null;
 }
 
 export interface EnemyLook {
@@ -77,6 +78,8 @@ const SKILL_FX: Record<string, Delivery> = {
   Corrupt: "orb",
   "Soul Harvest": "nova",
   "Piercing Shot": "arrow",
+  "Barbed Arrow": "arrow",
+  "Heavy Bolt": "arrow",
   "Plague Cloud": "nova",
   Thunderstrike: "bolt",
   "Frost Nova": "nova",
@@ -109,6 +112,18 @@ const FALL = Math.PI / 2;
 
 /** Particles that hang around a fighter while an ailment is on them. */
 const AILMENT_FX: Record<string, Omit<Burst, "x" | "y" | "count">> = {
+  sunder: {
+    kind: "bit",
+    color: [0x8a8f96, 0x5e5750],
+    angle: [FALL - 0.4, FALL + 0.4],
+    speed: [30, 80],
+    gravity: 400,
+    life: [0.4, 0.8],
+    size: [5, 9],
+    spin: 5,
+    spreadX: 60,
+    spreadY: 100,
+  },
   burn: {
     color: [0xff6a2b, 0xffb13b],
     angle: [RISE - 0.3, RISE + 0.3],
@@ -243,11 +258,13 @@ export class ArenaScene {
 
   /**
    * Host size in stage pixels and device pixels per stage pixel. The drawing stays centered
-   * and sits on the bottom edge; the canvas renders at the screen's real pixel density.
+   * and sits on the bottom edge; the canvas renders at the screen's real pixel density. `scale`
+   * shrinks the whole arena (class select preview).
    */
-  layout(w: number, h: number, resolution: number): void {
+  layout(w: number, h: number, resolution: number, scale = 1): void {
     this.size = { w, h, resolution };
-    this.world.position.set((w - W) / 2, h - H);
+    this.world.scale.set(scale);
+    this.world.position.set((w - W * scale) / 2, h - H * scale);
     this.app?.renderer.resize(w, h, resolution);
   }
 
@@ -385,11 +402,14 @@ export class ArenaScene {
         }
         case "buff": {
           const c = this.center(e.side);
+          // Coatings show their ailment's color (Serrated Edge, Venom Coat).
+          const coat =
+            e.stat === "bleedChance" ? 0xe0314b : e.stat === "poisonChance" ? 0xb5d82c : null;
           this.fx?.burst({
             x: c.x,
             y: GROUND_Y - 20,
             count: 16,
-            color: [0xffd84a, 0xffb13b],
+            color: coat ? [coat, lighten(coat)] : [0xffd84a, 0xffb13b],
             spreadX: 80,
             angle: [RISE - 0.1, RISE + 0.1],
             speed: [220, 380],
@@ -450,7 +470,9 @@ export class ArenaScene {
       const list = snapshot[side].ailments;
       const first = list[0];
       this.tint[side] = first ? (AILMENT_TINT[first.type] ?? 0xffffff) : 0xffffff;
-      this.ailments[side] = list.map((a) => a.type);
+      // Sunder: armor flakes keep falling while it lasts.
+      const sunder = snapshot[side].curses.some((c) => c.armor) ? ["sunder"] : [];
+      this.ailments[side] = [...list.map((a) => a.type), ...sunder];
       if (snapshot[side].life <= 0) this.ailments[side] = [];
     }
   }
@@ -475,9 +497,10 @@ export class ArenaScene {
 
   /** The visible arena in world pixels. */
   private view(): View {
-    const left = -this.world.x;
-    const top = -this.world.y;
-    return { left, right: left + this.size.w, top, ground: GROUND_Y };
+    const scale = this.world.scale.x;
+    const left = -this.world.x / scale;
+    const top = -this.world.y / scale;
+    return { left, right: left + this.size.w / scale, top, ground: GROUND_Y };
   }
 
   private wait(seconds: number, run: () => void): void {
@@ -527,6 +550,72 @@ export class ArenaScene {
       drag: 0.4,
     });
     if (big) this.shake(0.2);
+  }
+
+  /** Signature looks of the weapon Innates and their Skill Tree stand-ins (klassen-v2.md). */
+  private signature(source: string, at: { x: number; y: number }, away: number): void {
+    const fx = this.fx;
+    if (!fx) return;
+    switch (source) {
+      case "Crushing Blow":
+        // Armor plates crack off: Sunder.
+        fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 22,
+          kind: "bit",
+          color: [0x8a8f96, 0xc9c2b8, 0x5e5750],
+          spreadY: 40,
+          angle: [away - 1.1, away + 1.1],
+          speed: [160, 420],
+          gravity: 900,
+          life: [0.5, 0.9],
+          size: [8, 16],
+          spin: 8,
+        });
+        fx.ring(at.x, at.y, 0xc9c2b8, 30, 140, 0.35, 6, 1);
+        this.shake(0.25);
+        break;
+      case "Skull Crack":
+        fx.ring(at.x, at.y - 120, 0xffe14d, 20, 120, 0.4, 7, 1);
+        fx.ring(at.x, GROUND_Y - 4, 0xc9c2b8, 40, 200, 0.5, 8);
+        this.shake(0.4);
+        this.hitStop(0.08);
+        break;
+      case "Heavy Bolt":
+        // The bolt punches through and out the back.
+        fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 18,
+          color: [0xffffff, 0xffe9a8],
+          angle: [away - 0.12, away + 0.12],
+          speed: [700, 1100],
+          life: [0.15, 0.3],
+          size: [6, 10],
+          stretch: 1.2,
+        });
+        fx.ring(at.x, at.y, 0xffffff, 10, 90, 0.25, 5, 1);
+        this.shake(0.3);
+        break;
+      case "Barbed Arrow":
+      case "Envenom":
+        fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 12,
+          kind: "bit",
+          color: source === "Envenom" ? [0xb5d82c, 0x6a8a1a] : [0xe0314b, 0xb5d82c],
+          angle: [away - 0.8, away + 0.8],
+          speed: [120, 300],
+          gravity: 600,
+          life: [0.4, 0.8],
+          size: [5, 9],
+        });
+        break;
+      default:
+        break;
+    }
   }
 
   private delivery(side: Side, source: string, damageType: string): Delivery {
@@ -630,6 +719,7 @@ export class ArenaScene {
         drag: 0.1,
       });
     }
+    this.signature(e.source, at, away);
     if (e.blocked)
       fx.ring(at.x + (target === "hero" ? -56 : 56), at.y, 0xffe9a8, 20, 80, 0.25, 6, 1);
     if (big) {
@@ -895,41 +985,155 @@ function drawGround(): Container {
   return c;
 }
 
-/** The Heir: fixed body, only weapon and off hand change (ui-views-v1.md). Origin = feet. */
+/** Colors per class (klassen-v2.md section 9): body, chest piece, headgear. */
+const CLASS_LOOKS: Record<HeroLook["heroClass"], { body: number; chest: number; head: number }> = {
+  warrior: { body: 0x8a2f1c, chest: 0x9aa0a6, head: 0x8a8f96 },
+  reaver: { body: 0x4a3426, chest: 0x8a1c24, head: 0x2e2119 },
+  hunter: { body: 0x3f5a2e, chest: 0x7a5a34, head: 0x34492a },
+  sorcerer: { body: 0x2d4a8a, chest: 0xe8c07a, head: 0xe8c07a },
+  warlock: { body: 0x4b2a66, chest: 0x6a6460, head: 0x5a5450 },
+};
+
+/**
+ * The Heir: one body per class, weapon and off hand change (klassen-v2.md section 9).
+ * Origin = feet. Placeholder art until the painted characters exist.
+ */
 function drawHero(look: HeroLook): Container {
   const c = new Container();
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
+  const colors = CLASS_LOOKS[look.heroClass];
+  // Off hand and back gear sit behind the body.
+  if (look.offHand === "quiver" || look.heroClass === "hunter") {
+    c.addChild(
+      new Graphics().roundRect(-78, -330, 30, 120, 8).fill(0x7a5a34).stroke(line),
+      new Graphics()
+        .poly([-74, -330, -70, -360, -66, -330])
+        .poly([-62, -330, -58, -366, -54, -330])
+        .fill(0xe8e2d6)
+        .stroke({ color: INK, width: 2 }),
+    );
+  }
   if (look.offHand === "shield") {
     c.addChild(new Graphics().ellipse(-56, -240, 38, 50).fill(0x6b5a3e).stroke(line));
     c.addChild(new Graphics().ellipse(-56, -240, 20, 28).fill(0xc9a063).stroke(line));
   } else if (look.offHand === "focus") {
     c.addChild(new Graphics().circle(-62, -250, 22).fill(0x5b8cff).stroke(line));
+  } else if (look.offHand === "talisman") {
+    c.addChild(
+      new Graphics().moveTo(-60, -300).lineTo(-60, -262).stroke({ color: INK, width: 2 }),
+      new Graphics().poly([-60, -262, -46, -244, -60, -222, -74, -244]).fill(0xc8202f).stroke(line),
+    );
+  } else if (look.offHand === "grimoire") {
+    c.addChild(
+      new Graphics().roundRect(-92, -272, 52, 62, 6).fill(0x3a1f4a).stroke(line),
+      new Graphics().circle(-66, -241, 10).fill(0xa35cff).stroke({ color: INK, width: 2 }),
+    );
   }
-  c.addChild(
-    new Graphics()
+  // Robes reach the ground and flare; armor and leather stop at the knees.
+  const robe = look.heroClass === "sorcerer" || look.heroClass === "warlock";
+  const body = new Graphics();
+  if (robe) {
+    body
+      .moveTo(-84, -150)
+      .bezierCurveTo(-70, -260, -50, -320, 0, -320)
+      .bezierCurveTo(50, -320, 70, -260, 84, -150);
+    if (look.heroClass === "warlock") {
+      // A tattered hem.
+      for (let x = 84; x > -84; x -= 24) body.lineTo(x - 12, -164).lineTo(x - 24, -150);
+    }
+    body.closePath();
+  } else {
+    body
       .moveTo(-70, -150)
       .bezierCurveTo(-74, -260, -50, -320, 0, -320)
       .bezierCurveTo(50, -320, 74, -260, 70, -150)
-      .closePath()
-      .fill(0xa8401a)
-      .stroke(line),
-    new Graphics()
-      .moveTo(-30, -150)
-      .lineTo(-22, -240)
-      .lineTo(22, -240)
-      .lineTo(30, -150)
-      .fill(0xe8c07a)
-      .stroke(line),
-    new Graphics().circle(0, -364, 40).fill(0xf0c9a0).stroke(line),
-    new Graphics()
-      .moveTo(-40, -372)
-      .bezierCurveTo(-34, -400, 34, -400, 40, -372)
-      .lineTo(40, -364)
-      .bezierCurveTo(30, -384, -30, -384, -40, -364)
-      .closePath()
-      .fill(0xe8c07a)
-      .stroke(line),
-  );
+      .closePath();
+  }
+  c.addChild(body.fill(colors.body).stroke(line));
+  if (look.heroClass === "reaver") {
+    // A blood-red sash across the chest.
+    c.addChild(
+      new Graphics()
+        .poly([-50, -300, -30, -310, 52, -186, 32, -176])
+        .fill(colors.chest)
+        .stroke(line),
+    );
+  } else if (robe) {
+    c.addChild(
+      new Graphics().rect(-8, -300, 16, 150).fill(colors.chest).stroke(line),
+      new Graphics()
+        .circle(-40, -200, 4)
+        .circle(40, -220, 4)
+        .circle(-30, -260, 3)
+        .fill({ color: look.heroClass === "sorcerer" ? 0xff8a3a : 0xa35cff, alpha: 0.9 }),
+    );
+  } else {
+    c.addChild(
+      new Graphics()
+        .moveTo(-30, -150)
+        .lineTo(-22, -240)
+        .lineTo(22, -240)
+        .lineTo(30, -150)
+        .fill(colors.chest)
+        .stroke(line),
+    );
+  }
+  c.addChild(new Graphics().circle(0, -364, 40).fill(0xf0c9a0).stroke(line));
+  const head = new Graphics();
+  switch (look.heroClass) {
+    case "warrior":
+      // Half helm with a nose guard.
+      head
+        .moveTo(-44, -360)
+        .bezierCurveTo(-44, -414, 44, -414, 44, -360)
+        .lineTo(-44, -360)
+        .closePath()
+        .fill(colors.head)
+        .stroke(line);
+      head.rect(-4, -362, 8, 22).fill(colors.head).stroke({ color: INK, width: 2 });
+      break;
+    case "reaver":
+    case "hunter":
+      // A hood that frames the face.
+      head
+        .moveTo(-48, -330)
+        .bezierCurveTo(-60, -400, -20, -420, 0, -420)
+        .bezierCurveTo(20, -420, 60, -400, 48, -330)
+        .bezierCurveTo(40, -380, -40, -380, -48, -330)
+        .closePath()
+        .fill(colors.head)
+        .stroke(line);
+      break;
+    case "sorcerer":
+      // Hair and a high gold collar.
+      head
+        .moveTo(-40, -372)
+        .bezierCurveTo(-34, -400, 34, -400, 40, -372)
+        .lineTo(40, -364)
+        .bezierCurveTo(30, -384, -30, -384, -40, -364)
+        .closePath()
+        .fill(0x3a2a1e)
+        .stroke(line);
+      head
+        .moveTo(-52, -310)
+        .quadraticCurveTo(-62, -350, -44, -372)
+        .moveTo(52, -310)
+        .quadraticCurveTo(62, -350, 44, -372)
+        .stroke({ color: colors.head, width: 7, cap: "round" });
+      break;
+    case "warlock":
+      // A pointed, sagging hood.
+      head
+        .moveTo(-50, -330)
+        .bezierCurveTo(-60, -390, -30, -420, 10, -446)
+        .bezierCurveTo(30, -410, 60, -390, 50, -330)
+        .bezierCurveTo(40, -380, -40, -380, -50, -330)
+        .closePath()
+        .fill(colors.head)
+        .stroke(line);
+      break;
+  }
+  c.addChild(head);
   if (look.weapon === "sword") {
     c.addChild(
       new Graphics()

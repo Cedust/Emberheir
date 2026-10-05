@@ -50,7 +50,9 @@ async function newGame(page: Page) {
   await page.goto("/?dev");
   expect(await layoutProblems(page), "title").toEqual([]);
   await page.getByRole("button", { name: "New Game" }).click();
-  await page.getByRole("button", { name: /^Sword/ }).click();
+  await expect(page.getByRole("button", { name: "Begin" })).toBeVisible();
+  expect(await layoutProblems(page), "class select").toEqual([]);
+  await page.getByRole("button", { name: "Begin" }).click();
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
 }
 

@@ -42,7 +42,7 @@ const data: GameData = {
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
 const atPrestige = (prestige: number, d: GameData = data): GameState => {
-  const s = newGame(d, { seed: 3, starterWeapon: "test-sword" });
+  const s = newGame(d, { seed: 3, classId: "test-fighter" });
   return { ...s, legacy: { ...s.legacy, prestige } };
 };
 

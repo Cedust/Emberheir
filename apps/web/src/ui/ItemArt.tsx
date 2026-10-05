@@ -284,6 +284,39 @@ const ART: Readonly<Record<string, Art>> = {
       </>
     ),
   },
+  "blood-talisman": {
+    w: 64,
+    h: 64,
+    draw: () => (
+      <>
+        <Glow cx={32} cy={38} r={20} color="ia-glow-garnet" />
+        <L d="M14 6Q32 22 50 6" color="#7f512a" w={1.8} />
+        <P d={circle(18, 12, 3.2)} fill="url(#ia-bone)" w={1} />
+        <P d={circle(46, 12, 3.2)} fill="url(#ia-bone)" w={1} />
+        <P d="M28 18H36V24H28Z" fill="url(#ia-darkgold)" w={1.1} />
+        <P d="M32 24L46 40L32 58L18 40Z" fill="url(#ia-garnet)" w={1.8} />
+        <L d="M32 24V58M18 40H46" color="#5a0c14" w={0.9} op={0.6} />
+        <L d="M24 36Q27 31 31 29" color={SHINE} w={1.6} op={0.8} />
+      </>
+    ),
+  },
+  grimoire: {
+    w: 64,
+    h: 64,
+    draw: () => (
+      <>
+        <P d="M10 8H52Q56 8 56 12V56H14Q10 56 10 52Z" fill="url(#ia-darkleather)" w={1.8} />
+        <P d="M14 56Q10 56 10 52V48Q10 52 14 52H56V56Z" fill="url(#ia-silk)" w={1.2} />
+        <L d="M16 8V52" w={1.2} op={0.7} />
+        <P d="M46 8H56V18Z" fill="url(#ia-gold)" w={1} />
+        <P d="M46 52L56 42V52Z" fill="url(#ia-gold)" w={1} />
+        <Glow cx={35} cy={30} r={14} color="ia-glow-sapphire" />
+        <P d={circle(35, 30, 8)} fill="url(#ia-amethyst)" w={1.4} />
+        <L d="M35 18V22M35 38V42M23 30H27M43 30H47" color="#e8c07a" w={1.2} />
+        <L d="M31 27Q33 24 36 24" color={SHINE} w={1.3} op={0.8} />
+      </>
+    ),
+  },
   "leather-jerkin": {
     w: 64,
     h: 96,

@@ -11,6 +11,7 @@ import {
   encounterEnemy,
   getAct,
   getBase,
+  heroTitle,
   isFinaleAct,
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
@@ -19,7 +20,8 @@ import { useStageSize } from "../../ui/Stage";
 import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
-import { ArenaScene, type EnemyLook, type HeroLook } from "./ArenaScene";
+import { heroLookOf } from "../heroLook";
+import { ArenaScene, type EnemyLook } from "./ArenaScene";
 import { BoonBar } from "../Boons";
 import { Plaque, type PlaqueInfo } from "./Plaque";
 import { skillIcon, skillTint } from "./skills";
@@ -59,24 +61,8 @@ function useLooks(state: GameState, run: RunState) {
   const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
   const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
   const mainHand = state.hero.equipment.mainHand;
-  const offHand = state.hero.equipment.offHand;
   const weapon = mainHand ? getBase(ITEM_CATALOG, mainHand.baseId) : undefined;
-  const off = offHand ? getBase(ITEM_CATALOG, offHand.baseId) : undefined;
-  const kind = weapon?.weapon?.id;
-  const heroLook: HeroLook = {
-    weapon:
-      kind === "axe" ||
-      kind === "dagger" ||
-      kind === "bow" ||
-      kind === "crossbow" ||
-      kind === "mace" ||
-      kind === "staff"
-        ? kind
-        : weapon?.weapon?.range === "ranged"
-          ? "wand"
-          : "sword",
-    offHand: off ? (off.fitsWeaponRange === "ranged" ? "focus" : "shield") : null,
-  };
+  const heroLook = heroLookOf(state.hero.classId, state.hero.equipment);
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
   const enemyLook: EnemyLook = {
     archetype: enemyDef?.archetype ?? "brute",
@@ -87,7 +73,7 @@ function useLooks(state: GameState, run: RunState) {
     ...(encounter?.thief ? { thief: true } : {}),
   };
   const heroInfo: PlaqueInfo = {
-    name: "Heir of the Ember",
+    name: `${state.hero.name} · ${heroTitle(state, GAME_DATA)}`,
     sub: `${weapon?.name ?? "Unarmed"} · ${weapon?.weapon ? HEAT_TEXT[weapon.weapon.heatBehavior] : ""}`,
     icon: "user",
   };
