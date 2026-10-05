@@ -22,7 +22,6 @@ import {
   heroSetup,
   knownSkills,
   openBranches,
-  sealsAvailable,
   targetSlot,
 } from "@emberheir/sim";
 
@@ -292,22 +291,13 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
   return s;
 }
 
-/** Seals the slots with the best items (rarity, then Item Level), the weapon on ties. */
+/** Prestiges with the first open branch the weapon's tree plan prefers. All items stay. */
 function autopilotPrestige(state: GameState, data: GameData): GameState {
-  const slots = data.equipmentSlots
-    .filter((slot) => state.hero.equipment[slot])
-    .sort((a, b) => {
-      const ia = state.hero.equipment[a];
-      const ib = state.hero.equipment[b];
-      return (ib ? score(ib) : 0) - (ia ? score(ia) : 0);
-    });
-  const sealed = slots.slice(0, sealsAvailable(state, data));
   const open = openBranches(state, data).map((b) => b.id);
   const weaponId = state.hero.equipment.mainHand?.baseId ?? "";
   const preferred = TREE_PLAN[weaponId]?.branches.find((b) => open.includes(b)) ?? open[0];
   const s = applyAction(state, data, {
     type: "prestige",
-    sealedSlots: sealed,
     ...(preferred ? { branchId: preferred } : {}),
   });
   return applyAction(s, data, { type: "dismissNotice" });

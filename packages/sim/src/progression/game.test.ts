@@ -20,10 +20,9 @@ import {
   heroRotation,
   heroSetup,
   itemPickWeights,
-  levelCap,
+  lootGate,
   moveBlockReason,
   prestigeRewards,
-  sealsAvailable,
   newGame,
   SAVE_VERSION,
   spentInTree,
@@ -33,6 +32,7 @@ import {
   maxRuneRank,
   rollRuneDrops,
 } from "./game";
+import { levelCap } from "./leveling";
 import { Rng } from "../rng";
 import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
@@ -123,7 +123,10 @@ describe("game loop", () => {
     });
     s = act(s, { type: "resolveFight" });
     expect(s.run?.rewards?.reforgeStones).toBeGreaterThanOrEqual(PROGRESSION.bossReforgeStones[0]);
-    expect(s.run?.rewards?.items.every((i) => i.rarity === "epic")).toBe(true);
+    // Run 2: the Boss Hoard is at least Rare.
+    expect(
+      s.run?.rewards?.items.every((i) => i.rarity === "rare" || i.rarity === "epic"),
+    ).toBe(true);
     // Bosses and Elites offer Kindling instead of Reforge Stones.
     expect(s.run?.rewards?.spoils[1]).toEqual({ kind: "kindling", amount: CODEX.bossKindling });
     s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 1 });
@@ -192,7 +195,9 @@ describe("game loop", () => {
     expect(s.hero.level).toBe(2);
     expect(s.run?.rewards?.levelsGained).toBe(1);
     expect(s.hero.unspentAttributePoints).toBe(PROGRESSION.attributePointsPerLevel);
-    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.skillPointsPerLevel);
+    expect(s.hero.unspentSkillPoints).toBe(
+      PROGRESSION.startSkillPoints + PROGRESSION.skillPointsPerLevel,
+    );
     s = act(s, { type: "allocateAttributes", points: { strength: 1, vitality: 1 } });
     expect(s.hero.attributes.strength).toBe(7);
     expect(s.hero.unspentAttributePoints).toBe(0);
@@ -236,31 +241,35 @@ describe("game loop", () => {
     expect(() => act(s, { type: "unequip", slot: "mainHand" })).toThrow(/mainHand/);
   });
 
-  it("Pity raises Rare and Epic weights; Elites and Bosses have a rarity floor", () => {
-    const base = itemPickWeights("normal", 0);
-    const pity = itemPickWeights("normal", 2);
+  it("Pity raises the top weights; Elites and Bosses have a rarity floor", () => {
+    const base = itemPickWeights("normal", 0, 4);
+    const pity = itemPickWeights("normal", 2, 4);
     expect(pity.epic).toBeGreaterThan(base.epic);
     expect(pity.normal).toBe(base.normal);
-    expect(itemPickWeights("elite", 0)).toMatchObject({ normal: 0, magic: 0 });
-    expect(itemPickWeights("boss", 0)).toMatchObject({ normal: 0, magic: 0, rare: 0 });
+    expect(itemPickWeights("elite", 0, 4)).toMatchObject({ normal: 0, magic: 0 });
+    expect(itemPickWeights("boss", 0, 4)).toMatchObject({ normal: 0, magic: 0, rare: 0 });
   });
 
-  it("the Act Tier caps the rarity of the item pick", () => {
-    // Act 1: Normal and Magic from normal enemies, Rare from Elites, Epic from the boss.
-    expect(itemPickWeights("normal", 0, 1)).toMatchObject({ rare: 0, epic: 0 });
-    expect(itemPickWeights("normal", 0, 1).magic).toBeGreaterThan(0);
-    expect(itemPickWeights("elite", 0, 1)).toMatchObject({ normal: 0, magic: 0, epic: 0 });
-    expect(itemPickWeights("elite", 0, 1).rare).toBeGreaterThan(0);
+  it("the run's loot gate opens rarity over the whole game", () => {
+    // Run 1: Normal and Magic from normal enemies, Rare from Elites and the boss, never Epic.
+    expect(itemPickWeights("normal", 0, 0)).toMatchObject({ rare: 0, epic: 0 });
+    expect(itemPickWeights("normal", 0, 0).magic).toBeGreaterThan(0);
+    expect(itemPickWeights("elite", 0, 0)).toMatchObject({ normal: 0, epic: 0 });
+    expect(itemPickWeights("elite", 0, 0).rare).toBeGreaterThan(0);
+    expect(itemPickWeights("boss", 0, 0)).toMatchObject({ normal: 0, epic: 0 });
+    // Run 2: Rare from normal enemies (seldom), Epic only now and then from the boss.
+    expect(itemPickWeights("normal", 0, 1)).toMatchObject({ epic: 0 });
+    expect(itemPickWeights("normal", 0, 1).rare).toBeLessThan(PROGRESSION.rarityWeights.rare);
     expect(itemPickWeights("boss", 0, 1).epic).toBeGreaterThan(0);
-    // Act Tier 2 (Act 2, or Act 1 after a Prestige) unlocks Rare, Act Tier 3 Epic.
-    expect(itemPickWeights("normal", 0, 2)).toMatchObject({ epic: 0 });
-    expect(itemPickWeights("normal", 0, 2).rare).toBeGreaterThan(0);
+    // Run 4: Epic from normal enemies; later runs keep the last gate.
     expect(itemPickWeights("normal", 0, 3).epic).toBeGreaterThan(0);
+    expect(lootGate(20)).toBe(lootGate(PROGRESSION.lootGates.length - 1));
+    expect(lootGate(0).legendary).toEqual({ normal: 0, elite: 0, boss: 0 });
     // Pity lifts the highest allowed rarity, never a locked one.
-    expect(itemPickWeights("normal", 2, 1).magic).toBeGreaterThan(
-      itemPickWeights("normal", 0, 1).magic,
+    expect(itemPickWeights("normal", 2, 0).magic).toBeGreaterThan(
+      itemPickWeights("normal", 0, 0).magic,
     );
-    expect(itemPickWeights("normal", 2, 1)).toMatchObject({ rare: 0, epic: 0 });
+    expect(itemPickWeights("normal", 2, 0)).toMatchObject({ rare: 0, epic: 0 });
   });
 
   it("bosses drop an Ascension Shard", () => {
@@ -317,14 +326,16 @@ describe("game loop", () => {
     expect(() => act(s, { type: "respecTree" })).toThrow(/Nothing/);
   });
 
-  it("the boss of the newest act starts the Prestige: Seals keep their items, the rest burns", () => {
+  it("the boss of the newest act starts the Prestige: the world burns, all items stay", () => {
     // The first run has only the first act; its boss brings The Harvest.
     let s = act(start(), { type: "setOut", actId: "test-act" });
     for (let i = 0; i < 2; i++) s = clearStage(s);
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     const loot = s.run?.rewards?.items ?? fail();
-    // The Boss Hoard: 2 of 6 cards.
+    // The Boss Hoard: 2 of 6 cards, one of them at least Rare in run 1.
     expect(loot).toHaveLength(PROGRESSION.bossHoardCards);
+    expect(loot.some((item) => item.rarity === "rare")).toBe(true);
+    expect(loot.some((item) => item.rarity === "epic")).toBe(false);
     s = act(s, { type: "pickItem", index: 0, mode: "take" });
     expect(s.run?.rewards?.itemPick).toBeNull();
     expect(() => act(s, { type: "pickItem", index: 0, mode: "take" })).toThrow(/taken/);
@@ -334,82 +345,51 @@ describe("game loop", () => {
     expect(s.notice).toBeNull();
     expect(s.pendingPrestige).toMatchObject({ actId: "test-act", enemyName: "Boss" });
     expect(() => act(s, { type: "setOut", actId: "test-act" })).toThrow(/harvest/);
-    expect(sealsAvailable(s, data)).toBe(1);
 
-    // An equipped Ring to seal; the inventory holds the picked item.
-    const ring = { ...(loot[0] ?? fail()), id: "sealed-ring", baseId: "test-ring" };
-    s = { ...s, hero: { ...s.hero, equipment: { ...s.hero.equipment, ring1: ring } } };
-    const oldWeapon = s.hero.equipment.mainHand ?? fail();
-    const { level, attributes, learned } = s.hero;
-    expect(s.inventory).toHaveLength(1);
-    expect(() => act(s, { type: "prestige", sealedSlots: ["ring1", "mainHand"] })).toThrow(/Seals/);
-    expect(() => act(s, { type: "prestige", sealedSlots: ["helm"] })).toThrow(/slot/);
-
-    s = act(s, { type: "prestige", sealedSlots: ["ring1"] });
+    s = { ...s, stash: [{ item: { ...(loot[1] ?? fail()), id: "stashed" }, x: 0, y: 0 }] };
+    const { level, attributes, learned, equipment } = s.hero;
+    const { inventory, stash, wallet } = s;
+    expect(inventory).toHaveLength(1);
+    s = act(s, { type: "prestige" });
     expect(s.pendingPrestige).toBeNull();
     expect(s.notice).toMatchObject({ kind: "prestige", enemyName: "Boss" });
-    expect(s.hero.equipment.ring1?.id).toBe("sealed-ring");
-    // The unsealed weapon burned; the Heir picks up a plain one of the same kind.
-    expect(s.hero.equipment.mainHand).toMatchObject({ baseId: oldWeapon.baseId, rarity: "normal" });
-    expect(s.hero.equipment.mainHand?.id).not.toBe(oldWeapon.id);
-    expect(s.hero).toMatchObject({ level, attributes, learned });
-    expect(s.inventory).toEqual([]);
-    expect(s.stash).toEqual([]);
+    expect(s.hero).toMatchObject({ level, attributes, learned, equipment });
+    expect(s.inventory).toEqual(inventory);
+    expect(s.stash).toEqual(stash);
     expect(s.wallet).toEqual({
-      gold: 0,
-      dust: PROGRESSION.prestigeDustPerLevel,
-      reforgeStones: 0,
-      essences: {},
-      harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
-      ascensionShards: 0,
-      runes: {},
-      kindling: 0,
+      ...wallet,
+      harvesterEmber: wallet.harvesterEmber + PROGRESSION.prestigeHarvesterEmber,
     });
     expect(s.progress).toMatchObject({
       actsCleared: [],
       trainerUnlocked: true,
       rotationSlots: 2,
-      stashBurned: true,
+      stashBurned: false,
     });
-    expect(s.legacy).toMatchObject({ prestige: 1, seals: ["ring1"] });
-    expect(s.legacy.chronicle).toEqual([
-      { generation: 1, sealed: ["ring1"], level, deaths: 0, enemyName: "Boss" },
-    ]);
-    expect(sealsAvailable(s, data)).toBe(2);
-    expect(levelCap(s.legacy.prestige)).toBe(
-      PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
-    );
+    expect(s.legacy.prestige).toBe(1);
+    expect(s.legacy.chronicle).toEqual([{ generation: 1, level, deaths: 0, enemyName: "Boss" }]);
+    expect(levelCap(s.legacy.prestige)).toBe(15);
 
-    // The Supply Wagon is burned until the first return to Camp.
+    // The new run's level band starts at the old Level Cap.
     s = act(s, { type: "dismissNotice" });
-    expect(moveBlockReason(s, data, "x", "stash")).toBe("burned");
+    expect(moveBlockReason(s, data, "stashed", "inventory")).toBeUndefined();
     s = act(s, { type: "setOut", actId: "test-act" }, { type: "startStage" });
-    // The new run's level band starts 10 below the old Level Cap.
-    expect(s.run?.encounter?.level).toBe(PROGRESSION.levelCap - PROGRESSION.levelBandStartBelowCap);
+    expect(s.run?.encounter?.level).toBe(levelCap(0));
     expect(actUnlocked(s, data, "deadly-act")).toBe(false);
-    s = act(s, { type: "retreat" });
-    expect(s.progress.stashBurned).toBe(false);
   });
 
   it("Prestige rewards grow with the Prestige level", () => {
     expect(prestigeRewards(data, 1)).toEqual({
       prestige: 1,
-      seals: 1,
       rotationSlots: 2,
       planUpgrade: "Rotation Slot 2 · Reaction Slot 1",
       harvesterEmber: 1,
-      dust: PROGRESSION.prestigeDustPerLevel,
-      levelCap: PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige,
+      levelCap: 15,
       acts: 2,
-      levelBand: {
-        start: PROGRESSION.levelCap - PROGRESSION.levelBandStartBelowCap,
-        end: PROGRESSION.levelCap * 2,
-      },
+      levelBand: { start: 5, end: 15 },
     });
     // Never more acts than the game has.
     expect(prestigeRewards(data, 9).acts).toBe(3);
-    // Never more Seals than slots.
-    expect(prestigeRewards(data, 9).seals).toBe(data.equipmentSlots.length);
   });
 
   it("migrates M4 save games (version 2)", () => {
@@ -471,16 +451,16 @@ describe("the road through the acts", () => {
   });
 
   it("the level band rises evenly over all stages of the run", () => {
-    expect(levelBand(0)).toEqual({ start: 1, end: 20 });
-    expect(levelBand(1)).toEqual({ start: 5, end: 40 });
-    expect(levelBand(3)).toEqual({ start: 35, end: 80 });
-    // Run 1: one act of 3 stages, 1 → 20.
-    expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 11, 20]);
-    // Run 2: two acts, 6 stages from 5 to 40; the second act carries on where the first ends.
+    expect(levelBand(0)).toEqual({ start: 1, end: 5 });
+    expect(levelBand(1)).toEqual({ start: 5, end: 15 });
+    expect(levelBand(3)).toEqual({ start: 30, end: 50 });
+    // Run 1: one act of 3 stages, 1 → 5.
+    expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 3, 5]);
+    // Run 2: two acts, 6 stages from 5 to 15; the second act carries on where the first ends.
     const second = data.acts[1] ?? fail();
     expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(5);
-    expect(stageMonsterLevel(data, second, 1, 1)).toBe(26);
-    expect(stageMonsterLevel(data, second, 3, 1)).toBe(40);
+    expect(stageMonsterLevel(data, second, 1, 1)).toBe(11);
+    expect(stageMonsterLevel(data, second, 3, 1)).toBe(15);
   });
 
   it("Run Pressure grows along a run with more than one act and toughens its monsters", () => {
@@ -535,7 +515,12 @@ describe("Boss trophies and the Trophy Wall", () => {
     let hits = 0;
     let bosses = 0;
     for (let seed = 1; seed <= 80; seed++) {
-      let s = act(start(seed), { type: "setOut", actId: "test-act" });
+      // Boss trophies drop from run 3 on.
+      const fresh = start(seed);
+      let s = act(
+        { ...fresh, legacy: { ...fresh.legacy, prestige: 2 } },
+        { type: "setOut", actId: "test-act" },
+      );
       for (let i = 0; i < 2; i++) s = clearStage(s);
       s = act(s, { type: "startStage" }, { type: "resolveFight" });
       const rewards = s.run?.rewards;

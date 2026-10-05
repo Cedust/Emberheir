@@ -100,18 +100,17 @@ describe("The Last Ember", () => {
     expect(s.legacy.finaleWon).toBeUndefined();
   });
 
-  it("the final Prestige burns nothing and seals every slot; no harvest after it", () => {
+  it("the final Prestige keeps everything; no harvest after it", () => {
     const base = atPrestige(PROGRESSION.finalPrestige - 1);
     const s0: GameState = {
       ...base,
       pendingPrestige: { actId: "final-act", stage: 3, enemyName: "Boss" },
       wallet: { ...base.wallet, gold: 500 },
     };
-    const s = act(s0, { type: "prestige", sealedSlots: [] });
+    const s = act(s0, { type: "prestige" });
     expect(s.legacy.prestige).toBe(PROGRESSION.finalPrestige);
     expect(s.hero.equipment).toEqual(s0.hero.equipment);
     expect(s.wallet.gold).toBe(500);
-    expect(s.legacy.seals).toEqual([...data.equipmentSlots]);
     expect(s.notice?.kind).toBe("prestige");
 
     // Beating the run's last boss again only clears the act.

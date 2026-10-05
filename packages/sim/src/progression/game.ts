@@ -62,7 +62,7 @@ import {
   boonEffects,
   rollBoonOffer,
 } from "./boons";
-import { CODEX, PROGRESSION } from "./constants";
+import { CODEX, type LootGate, PROGRESSION } from "./constants";
 import {
   type CodexPartKind,
   type CodexState,
@@ -78,7 +78,7 @@ import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCoun
 import { buildHeroSetup } from "./hero";
 import { INVENTORY_SIZE, type PlacedItem, STASH_SIZE, addToGrid, packGrid } from "./inventory";
 import { type CraftRequest, craft } from "./crafting";
-import { type EnemyRank, autoRewards, gainXp, xpForKill } from "./leveling";
+import { type EnemyRank, autoRewards, gainXp, levelCap, xpForKill } from "./leveling";
 import {
   type LearnedNodes,
   type PrestigeBranchDefinition,
@@ -100,7 +100,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 7;
+export const SAVE_VERSION = 8;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -284,14 +284,10 @@ export interface Notice {
 export interface PrestigeRewards {
   /** Prestige level after it: 1 after the first final boss. */
   readonly prestige: number;
-  /** Seals (Save Tokens) in total. */
-  readonly seals: number;
   readonly rotationSlots: number;
   /** The Battle Plan upgrade this Prestige unlocks (`BATTLE_PLAN_LADDER`). */
   readonly planUpgrade: string | null;
   readonly harvesterEmber: number;
-  /** Fixed Salvage Dust instead of the burned stash. */
-  readonly dust: number;
   readonly levelCap: number;
   /** Acts the next run has (one more per Prestige, up to all of them). */
   readonly acts: number;
@@ -308,7 +304,6 @@ export interface LevelBand {
 /** One finished generation in the Legacy chronicle. */
 export interface ChronicleEntry {
   readonly generation: number;
-  readonly sealed: readonly EquipmentSlot[];
   readonly level: number;
   readonly deaths: number;
   readonly enemyName: string;
@@ -318,8 +313,6 @@ export interface ChronicleEntry {
 export interface LegacyState {
   /** Prestiges done so far. Generation = prestige + 1. */
   readonly prestige: number;
-  /** Sealed slots: their items survive the next Prestige. Prefilled when the next one comes. */
-  readonly seals: readonly EquipmentSlot[];
   readonly chronicle: readonly ChronicleEntry[];
   /** Runeword Codex: Runewords forged at least once. Permanent. */
   readonly runewords: readonly string[];
@@ -439,7 +432,7 @@ export function newGame(
       xp: 0,
       attributes: data.startingAttributes,
       unspentAttributePoints: 0,
-      unspentSkillPoints: 0,
+      unspentSkillPoints: PROGRESSION.startSkillPoints,
       learned: {},
       equipment: { mainHand: weapon },
       rotation: [null],
@@ -472,7 +465,6 @@ export function newGame(
     stats: { fights: 0, wins: 0, deaths: 0, retreats: 0, bossKills: 0 },
     legacy: {
       prestige: 0,
-      seals: [],
       chronicle: [],
       runewords: [],
       runesFound: [],
@@ -556,28 +548,12 @@ export function isHarvestAct(data: GameData, actId: string, prestige: number): b
   return getAct(data, actId).number >= harvestAct(data, prestige).number;
 }
 
-/** Level Cap at a Prestige level: 20, then +20 per Prestige; the final Prestige adds none. */
-export function levelCap(prestige: number): number {
-  const steps = Math.min(prestige, PROGRESSION.finalPrestige - 1);
-  return PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige * steps;
-}
-
 /**
- * The run's level band (prestige-acts-v1.md section 4): it starts 10 below the previous Level
- * Cap, so the first stages are a gentle regear window, and ends at the new cap with the harvest
- * boss.
+ * The run's level band (prestige-acts-v1.md section 4): it starts at the previous Level Cap, where
+ * the hero left off with all of its gear, and ends at the new cap with the harvest boss.
  */
 export function levelBand(prestige: number): LevelBand {
-  const start =
-    prestige === 0
-      ? 1
-      : Math.max(
-          1,
-          levelCap(prestige - 1) -
-            PROGRESSION.levelBandStartBelowCap -
-            PROGRESSION.levelBandStartBelowCapPerPrestige * (prestige - 1),
-        );
-  return { start, end: levelCap(prestige) };
+  return { start: prestige === 0 ? 1 : levelCap(prestige - 1), end: levelCap(prestige) };
 }
 
 /** How far into its run a stage is: 0 on the run's first stage, 1 on its last. */
@@ -626,11 +602,9 @@ export function stagePressure(
 export function prestigeRewards(data: GameData, prestige: number): PrestigeRewards {
   return {
     prestige,
-    seals: Math.min(prestige, data.equipmentSlots.length),
     rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
     planUpgrade: BATTLE_PLAN_LADDER[prestige - 1]?.name ?? null,
     harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
-    dust: PROGRESSION.prestigeDustPerLevel * prestige,
     levelCap: levelCap(prestige),
     acts: actsInRun(data, prestige).length,
     levelBand: levelBand(prestige),
@@ -1005,10 +979,9 @@ export type GameAction =
   | { readonly type: "setRotationSkill"; readonly slot: number; readonly skillId: string | null }
   /** Kaelen: Thresholds, Modifiers, Conditions, Reaction Slots, Capstone. */
   | { readonly type: "setBattlePlan"; readonly plan: BattlePlanState }
-  /** After the final boss: seal slots, burn the rest, start the next generation. */
+  /** After the final boss: start the next generation. All items stay. */
   | {
       readonly type: "prestige";
-      readonly sealedSlots: readonly EquipmentSlot[];
       /** Prestige branch to unlock; required while branches are left. */
       readonly branchId?: string;
     }
@@ -1064,7 +1037,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "setBattlePlan":
       return setBattlePlan(state, data, action.plan);
     case "prestige":
-      return doPrestige(state, data, action.sealedSlots, action.branchId);
+      return doPrestige(state, data, action.branchId);
     case "dismissNotice":
       return { ...state, notice: null };
   }
@@ -1273,7 +1246,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
     caught ? encounter : { ...encounter, thief: false },
     rank,
     state.progress.deathsInAct,
-    act.number + state.legacy.prestige,
+    state.legacy.prestige,
     rng,
     actAffixFactor(act, codexAffixFactor(data.items, fight, quarry)),
     forceQuarry,
@@ -1453,42 +1426,38 @@ function resolveFinaleFight(
   };
 }
 
-/** Highest rarity normal enemies drop at an Act Tier (act number + Prestige). */
-export function maxRarityForActTier(actTier: number): Rarity {
-  return PROGRESSION.maxRarityByActTier[actTier - 1] ?? PROGRESSION.maxRarityLate;
+/** What a run can drop (`PROGRESSION.lootGates`), by Prestige level. */
+export function lootGate(prestige: number): LootGate {
+  const gates = PROGRESSION.lootGates;
+  return gates[Math.min(prestige, gates.length - 1)] ?? fail("No loot gates");
 }
 
 /**
- * Rarity weights of the item pick. The Act Tier caps the rarity (Elites may reach Rare, the boss
- * always drops Epic), Elites and Bosses set a floor, and Pity raises the two highest allowed
- * rarities.
+ * Rarity weights of the item pick. The run's loot gate sets a window per enemy rank, and Pity
+ * raises the two highest allowed rarities.
  */
 export function itemPickWeights(
   rank: EnemyRank,
   deathsInAct: number,
-  actTier: number = Number.POSITIVE_INFINITY,
+  prestige: number,
 ): Readonly<Record<Rarity, number>> {
   const idx = (r: Rarity) => RARITIES.indexOf(r);
-  const floor =
-    rank === "boss"
-      ? PROGRESSION.bossMinRarity
-      : rank === "elite"
-        ? PROGRESSION.eliteMinRarity
-        : "normal";
-  const actMax = maxRarityForActTier(actTier);
-  const max = idx(floor) > idx(actMax) ? floor : actMax;
+  const window = lootGate(prestige)[rank];
   const pity = 1 + PROGRESSION.pityPerDeath * Math.min(deathsInAct, PROGRESSION.pityMaxDeaths);
   const weights = { ...PROGRESSION.rarityWeights } as Record<Rarity, number>;
   for (const r of RARITIES) {
-    if (idx(r) < idx(floor) || idx(r) > idx(max)) weights[r] = 0;
+    if (idx(r) < idx(window.floor) || idx(r) > idx(window.max)) weights[r] = 0;
   }
-  // Pity lifts the top two allowed rarities that can drop at all (Legendary is not in the PoC).
+  if (window.topWeight !== undefined && idx(window.max) > idx(window.floor)) {
+    weights[window.max] *= window.topWeight;
+  }
+  // Pity lifts the top two allowed rarities that can drop at all.
   const allowed = RARITIES.filter((r) => weights[r] > 0);
   for (const r of allowed.slice(-2)) {
-    if (idx(r) > idx(floor) || allowed.length === 1) weights[r] *= pity;
+    if (idx(r) > idx(window.floor) || allowed.length === 1) weights[r] *= pity;
   }
   // Make sure the floor always leaves something to roll.
-  if (RARITIES.every((r) => weights[r] === 0)) weights[floor] = 1;
+  if (RARITIES.every((r) => weights[r] === 0)) weights[window.floor] = 1;
   return weights;
 }
 
@@ -1498,7 +1467,7 @@ function rollItemChoices(
   encounter: Encounter,
   rank: EnemyRank,
   deathsInAct: number,
-  actTier: number,
+  prestige: number,
   rng: Rng,
   affixFactor?: (affix: AffixDefinition) => number,
   forceTrigger?: readonly string[],
@@ -1511,7 +1480,11 @@ function rollItemChoices(
         : PROGRESSION.itemChoices;
   // A caught Ember Thief always drops one card that is at least Rare.
   const rareCard = encounter.thief ? rng.int(0, count - 1) : -1;
-  const weights = itemPickWeights(rank, deathsInAct, actTier);
+  const gate = lootGate(prestige);
+  const weights = itemPickWeights(rank, deathsInAct, prestige);
+  // The run's window may promise one card of at least a rarity (the boss of run 1: a Rare).
+  const sure = gate[rank].sure;
+  const sureCard = sure ? rng.int(0, count - 1) : -1;
   const bySlot = new Map<ItemSlot, string[]>();
   for (const baseId of data.lootBases) {
     const slot = getBase(data.items, baseId).slot;
@@ -1520,10 +1493,10 @@ function rollItemChoices(
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
   // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
-  const legendaryCard = rng.chance(PROGRESSION.legendaryChance[rank]) ? rng.int(0, count - 1) : -1;
+  const legendaryCard = rng.chance(gate.legendary[rank]) ? rng.int(0, count - 1) : -1;
   // A boss may drop one of its own trophies (Teil 3 "Boss-Trophäen").
   const trophies =
-    rank === "boss" && encounter.boss
+    rank === "boss" && encounter.boss && gate.trophies
       ? bossTrophies(data.items, actId).filter((u) => u.minItemLevel <= encounter.level)
       : [];
   const trophy =
@@ -1564,10 +1537,10 @@ function rollItemChoices(
     const baseId = basePool[rng.int(0, basePool.length - 1)];
     if (!baseId) break;
     const rolled = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
-    const rarity =
-      (forced.length || i === rareCard) && RARITIES.indexOf(rolled) < RARITIES.indexOf("rare")
-        ? "rare"
-        : rolled;
+    const atLeast = (r: Rarity, min: Rarity) =>
+      RARITIES.indexOf(r) < RARITIES.indexOf(min) ? min : r;
+    let rarity = (forced.length || i === rareCard) ? atLeast(rolled, "rare") : rolled;
+    if (sure && i === sureCard) rarity = atLeast(rarity, sure);
     items.push(
       rollItem(
         data.items,
@@ -2136,40 +2109,22 @@ export function openBranches(state: GameState, data: GameData): PrestigeBranchDe
   );
 }
 
-/** Seals the coming Prestige allows (one more than the Prestiges done so far). */
-export function sealsAvailable(state: GameState, data: GameData): number {
-  return prestigeRewards(data, state.legacy.prestige + 1).seals;
-}
-
 /**
- * Prestige light (M5): sealed slots keep their items, everything else burns (gear, inventory,
- * stash, currencies except Harvester's Ember). Level, points, Skill Tree, Battle Plan and Ember
- * stay. A hero without a sealed weapon picks up a plain one of the same kind.
+ * Prestige (Playtest 2): the world burns, the Heir's gear does not. Level, points, items, stash,
+ * currencies, Skill Tree, Battle Plan and Ember all stay; act progress, the run and its Boons end.
  */
-function doPrestige(
-  state: GameState,
-  data: GameData,
-  sealedSlots: readonly EquipmentSlot[],
-  branchId: string | undefined,
-): GameState {
+function doPrestige(state: GameState, data: GameData, branchId: string | undefined): GameState {
   const pending = state.pendingPrestige ?? fail("No Prestige pending");
   const open = openBranches(state, data);
   if (branchId === undefined ? open.length > 0 : !open.some((b) => b.id === branchId)) {
     return fail("Choose an open Prestige branch");
   }
-  const sealed = [...new Set(sealedSlots)];
-  if (sealed.length !== sealedSlots.length) return fail("A slot can only be sealed once");
-  if (sealed.some((slot) => !data.equipmentSlots.includes(slot))) return fail("No such slot");
-  if (sealed.length > sealsAvailable(state, data)) return fail("Not enough Seals");
-
-  const [rng, next] = nextRng(state);
   const prestige = state.legacy.prestige + 1;
   const rewards = prestigeRewards(data, prestige);
   const chronicle = [
     ...state.legacy.chronicle,
     {
       generation: prestige,
-      sealed,
       level: state.hero.level,
       deaths: state.stats.deaths - state.legacy.chronicle.reduce((n, c) => n + c.deaths, 0),
       enemyName: pending.enemyName,
@@ -2181,70 +2136,32 @@ function doPrestige(
     stage: pending.stage,
     enemyName: pending.enemyName,
   };
-  if (prestige >= PROGRESSION.finalPrestige) {
-    // The final Prestige (prestige-counting): every slot is sealed and nothing burns. The Heir
-    // keeps everything and can follow the last flame into The Last Ember.
-    return {
-      ...next,
-      wallet: {
-        ...state.wallet,
-        harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
-      },
-      progress: {
-        ...state.progress,
-        rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
-      },
-      legacy: {
-        ...state.legacy,
-        prestige,
-        seals: [...data.equipmentSlots],
-        branches: branchId ? [...state.legacy.branches, branchId] : state.legacy.branches,
-        chronicle,
-      },
-      pendingPrestige: null,
-      boons: EMPTY_BOONS,
-      notice,
-    };
-  }
-  const equipment: Partial<Record<EquipmentSlot, Item>> = {};
-  for (const slot of sealed) {
-    const item = state.hero.equipment[slot];
-    if (item) equipment[slot] = item;
-  }
-  if (!equipment.mainHand) {
-    const old = state.hero.equipment.mainHand;
-    const baseId = old?.baseId ?? data.starterWeapons[0] ?? fail("No starter weapon");
-    equipment.mainHand = rollItem(data.items, { baseId, itemLevel: 1, rarity: "normal" }, rng);
-  }
+  const final = prestige >= PROGRESSION.finalPrestige;
   return {
-    ...next,
-    hero: { ...state.hero, equipment },
+    ...state,
     wallet: {
-      gold: 0,
-      dust: rewards.dust,
-      reforgeStones: 0,
-      essences: {},
+      ...state.wallet,
       harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
-      ascensionShards: 0,
-      runes: {},
-      kindling: 0,
     },
-    inventory: [],
-    stash: [],
-    flaskCharges: PROGRESSION.flaskStartCharges,
-    progress: {
-      actsCleared: [],
-      deathsInAct: 0,
-      trainerUnlocked: true,
-      rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
-      stashBurned: true,
-      runesmithUnlocked: state.progress.runesmithUnlocked,
-    },
+    flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
+    // The final Prestige (prestige-counting) keeps the cleared world for The Last Ember.
+    progress: final
+      ? {
+          ...state.progress,
+          rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
+        }
+      : {
+          ...state.progress,
+          actsCleared: [],
+          deathsInAct: 0,
+          trainerUnlocked: true,
+          rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
+          stashBurned: false,
+        },
     run: null,
     legacy: {
       ...state.legacy,
       prestige,
-      seals: sealed,
       branches: branchId ? [...state.legacy.branches, branchId] : state.legacy.branches,
       chronicle,
     },
@@ -2261,8 +2178,11 @@ export function serializeGame(state: GameState): string {
   return JSON.stringify(state);
 }
 
-/** Reads a save game. Throws if it is broken or from an incompatible version. */
-export function deserializeGame(json: string): GameState {
+/**
+ * Reads a save game. Throws if it is broken or from an incompatible version. `data` lets older
+ * saves refund points when a rule change took levels away (v7 → v8).
+ */
+export function deserializeGame(json: string, data?: GameData): GameState {
   const parsed: unknown = JSON.parse(json);
   if (typeof parsed !== "object" || parsed === null) throw new Error("Save game is not an object");
   let state = parsed as Partial<GameState>;
@@ -2272,6 +2192,7 @@ export function deserializeGame(json: string): GameState {
   if (state.version === 4) state = migrateV4(state);
   if (state.version === 5) state = migrateV5(state);
   if (state.version === 6) state = migrateV6(state);
+  if (state.version === 7) state = migrateV7(state, data);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -2309,7 +2230,6 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
     version: 3,
     legacy: {
       prestige: 0,
-      seals: [],
       chronicle: [],
       runewords: [],
       runesFound: [],
@@ -2383,6 +2303,59 @@ function migrateV6(state: Partial<GameState>): Partial<GameState> {
               state.progress.rotationSlots,
               battlePlanUnlocks(prestige).rotationSlots,
             ),
+          },
+        }
+      : {}),
+  };
+}
+
+/**
+ * v7 → v8 (Playtest 2): no more Seals, all items stay, and the Level Cap counts 5 levels per act
+ * played. A hero above the new cap drops to it and gets every point back to spend again.
+ */
+function migrateV7(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
+  const legacy = state.legacy as (LegacyState & { seals?: unknown }) | undefined;
+  const { seals: _seals, ...rest } = legacy ?? ({} as LegacyState & { seals?: unknown });
+  const migrated: Partial<GameState> = {
+    ...state,
+    version: 8,
+    ...(legacy
+      ? {
+          legacy: {
+            ...rest,
+            chronicle: rest.chronicle.map(
+              ({ generation, level, deaths, enemyName }): ChronicleEntry => ({
+                generation,
+                level,
+                deaths,
+                enemyName,
+              }),
+            ),
+          },
+        }
+      : {}),
+    ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
+  };
+  const hero = state.hero;
+  const cap = levelCap(legacy?.prestige ?? 0);
+  if (!hero || !data || hero.level <= cap) return migrated;
+  return {
+    ...migrated,
+    hero: {
+      ...hero,
+      level: cap,
+      xp: 0,
+      attributes: data.startingAttributes,
+      unspentAttributePoints: (cap - 1) * PROGRESSION.attributePointsPerLevel,
+      learned: {},
+      unspentSkillPoints: PROGRESSION.startSkillPoints + (cap - 1) * PROGRESSION.skillPointsPerLevel,
+      rotation: hero.rotation.map(() => null),
+    },
+    ...(state.wallet
+      ? {
+          wallet: {
+            ...state.wallet,
+            harvesterEmber: (legacy?.prestige ?? 0) * PROGRESSION.prestigeHarvesterEmber,
           },
         }
       : {}),

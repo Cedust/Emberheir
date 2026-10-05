@@ -67,11 +67,11 @@ describe("Prestige branches", () => {
   it("are chosen at the Prestige and stay", () => {
     const s = pending();
     expect(openBranches(s, data).map((b) => b.id)).toEqual(["guard", "other"]);
-    expect(() => applyAction(s, data, { type: "prestige", sealedSlots: [] })).toThrow(/branch/);
+    expect(() => applyAction(s, data, { type: "prestige" })).toThrow(/branch/);
     expect(() =>
-      applyAction(s, data, { type: "prestige", sealedSlots: [], branchId: "nope" }),
+      applyAction(s, data, { type: "prestige", branchId: "nope" }),
     ).toThrow(/branch/);
-    const after = applyAction(s, data, { type: "prestige", sealedSlots: [], branchId: "guard" });
+    const after = applyAction(s, data, { type: "prestige", branchId: "guard" });
     expect(after.legacy.branches).toEqual(["guard"]);
     expect(openBranches(after, data).map((b) => b.id)).toEqual(["other"]);
   });

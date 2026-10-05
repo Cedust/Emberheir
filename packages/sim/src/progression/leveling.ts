@@ -1,7 +1,19 @@
 import { PROGRESSION } from "./constants";
 
+/**
+ * Level Cap at a Prestige level (Playtest 2): `levelsPerAct` for every act played in all runs so
+ * far. Run n has n acts up to the full world, so the caps are 5, 15, 30, 50, 75, 105, 140, then
+ * +35 per Ascension run. The final Prestige adds none.
+ */
+export function levelCap(prestige: number): number {
+  const runs = Math.min(prestige, PROGRESSION.finalPrestige - 1) + 1;
+  let acts = 0;
+  for (let run = 1; run <= runs; run++) acts += Math.min(run, PROGRESSION.actsPerFullRun);
+  return PROGRESSION.levelsPerAct * acts;
+}
+
 /** XP needed to go from `level` to the next one; Infinity at the Level Cap. */
-export function xpToNextLevel(level: number, cap: number = PROGRESSION.levelCap): number {
+export function xpToNextLevel(level: number, cap: number = levelCap(0)): number {
   if (level >= cap) return Infinity;
   return PROGRESSION.xpToNextLevel[level - 1] ?? Infinity;
 }
@@ -52,7 +64,7 @@ export function gainXp(
   level: number,
   xp: number,
   amount: number,
-  cap: number = PROGRESSION.levelCap,
+  cap: number = levelCap(0),
 ): { readonly level: number; readonly xp: number; readonly levelsGained: number } {
   let newLevel = level;
   let total = xp + amount;

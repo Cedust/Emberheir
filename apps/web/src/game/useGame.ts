@@ -16,7 +16,7 @@ export const SAVE_KEY = storageKey("save");
 export function loadSave(): GameState | null {
   try {
     const json = localStorage.getItem(SAVE_KEY);
-    return json ? deserializeGame(json) : null;
+    return json ? deserializeGame(json, GAME_DATA) : null;
   } catch {
     return null;
   }

@@ -1,16 +1,28 @@
 import { describe, expect, it } from "vitest";
 import { PROGRESSION } from "./constants";
-import { autoRewards, gainXp, xpForKill, xpLevelFactor, xpToNextLevel } from "./leveling";
+import {
+  autoRewards,
+  gainXp,
+  levelCap,
+  xpForKill,
+  xpLevelFactor,
+  xpToNextLevel,
+} from "./leveling";
 
 describe("leveling", () => {
   it("follows the XP table and stops at the Level Cap", () => {
     expect(xpToNextLevel(1)).toBe(PROGRESSION.xpToNextLevel[0]);
-    expect(xpToNextLevel(PROGRESSION.levelCap)).toBe(Infinity);
+    expect(xpToNextLevel(levelCap(0))).toBe(Infinity);
+  });
+
+  it("grows the Level Cap by 5 for every act played", () => {
+    const caps = Array.from({ length: 11 }, (_, p) => levelCap(p));
+    expect(caps).toEqual([5, 15, 30, 50, 75, 105, 140, 175, 210, 245, 245]);
   });
 
   it("has XP for every level up to the last Level Cap", () => {
-    expect(PROGRESSION.xpToNextLevel).toHaveLength(
-      PROGRESSION.levelCap + 9 * PROGRESSION.levelCapPerPrestige - 1,
+    expect(PROGRESSION.xpToNextLevel.length).toBeGreaterThanOrEqual(
+      levelCap(PROGRESSION.finalPrestige) - 1,
     );
     for (let i = 1; i < PROGRESSION.xpToNextLevel.length; i++) {
       expect(PROGRESSION.xpToNextLevel[i]).toBeGreaterThan(PROGRESSION.xpToNextLevel[i - 1] ?? 0);
@@ -24,7 +36,7 @@ describe("leveling", () => {
   });
 
   it("caps the level and drops XP at the cap", () => {
-    const cap = PROGRESSION.levelCap;
+    const cap = levelCap(0);
     expect(gainXp(cap - 1, 0, 1_000_000)).toEqual({ level: cap, xp: 0, levelsGained: 1 });
   });
 
