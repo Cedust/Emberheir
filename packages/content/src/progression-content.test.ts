@@ -104,7 +104,7 @@ describe("Act 2", () => {
     expect(stagesInAct(ACT2)).toBe(15);
     expect(actsInRun(GAME_DATA, 0).map((a) => a.id)).toEqual(["ashen-fields"]);
     expect(actsInRun(GAME_DATA, 1).map((a) => a.id)).toEqual(["ashen-fields", "rotwood"]);
-    expect(stageMonsterLevel(GAME_DATA, ACT2, 1, 1)).toBeGreaterThan(
+    expect(stageMonsterLevel(GAME_DATA, ACT2, 1, 1)).toBeGreaterThanOrEqual(
       stageMonsterLevel(GAME_DATA, ACT1, 15, 1),
     );
     expect(stageMonsterLevel(GAME_DATA, ACT2, 15, 1)).toBe(levelCap(1));

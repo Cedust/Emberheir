@@ -67,11 +67,9 @@ describe("Prestige branches", () => {
   it("are chosen at the Prestige and stay", () => {
     const s = pending();
     expect(openBranches(s, data).map((b) => b.id)).toEqual(["guard", "other"]);
-    expect(() => applyAction(s, data, { type: "prestige", sealedSlots: [] })).toThrow(/branch/);
-    expect(() =>
-      applyAction(s, data, { type: "prestige", sealedSlots: [], branchId: "nope" }),
-    ).toThrow(/branch/);
-    const after = applyAction(s, data, { type: "prestige", sealedSlots: [], branchId: "guard" });
+    expect(() => applyAction(s, data, { type: "prestige" })).toThrow(/branch/);
+    expect(() => applyAction(s, data, { type: "prestige", branchId: "nope" })).toThrow(/branch/);
+    const after = applyAction(s, data, { type: "prestige", branchId: "guard" });
     expect(after.legacy.branches).toEqual(["guard"]);
     expect(openBranches(after, data).map((b) => b.id)).toEqual(["other"]);
   });
@@ -91,11 +89,12 @@ describe("Prestige branches", () => {
 });
 
 describe("boss abilities", () => {
-  it("a boss gains one per Prestige after its act opened, from its own start in the list", () => {
+  it("a boss gains one per Prestige from the second run after its act opened", () => {
     expect(bossAbilities(data, TEST_ACT, 0)).toEqual([]);
-    expect(bossAbilities(data, TEST_ACT, 2).map((m) => m.id)).toEqual(["one", "two"]);
-    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 1)).toEqual([]);
-    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 3).map((m) => m.id)).toEqual([
+    expect(bossAbilities(data, TEST_ACT, 1)).toEqual([]);
+    expect(bossAbilities(data, TEST_ACT, 3).map((m) => m.id)).toEqual(["one", "two"]);
+    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 2)).toEqual([]);
+    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 4).map((m) => m.id)).toEqual([
       "two",
       "three",
     ]);

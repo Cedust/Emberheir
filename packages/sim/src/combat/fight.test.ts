@@ -42,6 +42,15 @@ describe("Fight", () => {
     expect(result.duration).toBeCloseTo(COMBAT.maxFightSeconds, 5);
   });
 
+  it("plays in real time when advanced in frame-sized steps", () => {
+    // One call per rendered frame, shorter than a tick: 10 s at 60 and at 144 frames per second.
+    for (const fps of [60, 144]) {
+      const fight = new Fight(dummy(), dummy(), 1);
+      for (let frame = 0; frame < 10 * fps; frame++) fight.advance(1 / fps);
+      expect(fight.time).toBeCloseTo(10, 1);
+    }
+  });
+
   it("starts with the given life fraction", () => {
     const fight = new Fight(setup({ lifeFraction: 0.4 }), dummy(), 1);
     expect(fight.snapshot().hero.life).toBe(40);

@@ -6,6 +6,9 @@ import type { WeaponDefinition } from "@emberheir/sim";
  *
  * Playtest 1: fights read too busy, so every weapon attacks a third slower (hero and enemies)
  * and hits harder by the same factor. DPS and fight length stay the same.
+ *
+ * Playtest 2 (after the real-time fix): Timo chose a wider spread per weapon, Sword 0.8 as Speed
+ * 100, from the Dagger at 1.1 down to the Crossbow at 0.5. Heat per Hit keeps 12 Heat/s.
  */
 export const SWORD: WeaponDefinition = {
   id: "sword",
@@ -40,7 +43,7 @@ export const FIRE_WAND: WeaponDefinition = {
   damage: { min: 10, max: 16 },
   damageType: "fire",
   // Playtest 1: still felt too busy at 1.0 (Warming also fires Firebolt often), so 0.7.
-  attacksPerSecond: 0.7,
+  attacksPerSecond: 0.75,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",
@@ -54,10 +57,10 @@ export const AXE: WeaponDefinition = {
   defaultAttack: "Hack",
   damage: { min: 12, max: 21 },
   damageType: "physical",
-  attacksPerSecond: 0.65,
+  attacksPerSecond: 0.7,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 0.65 attacks/s.
-  heatPerHit: 18,
+  // 12 Heat/s ÷ 0.7 attacks/s.
+  heatPerHit: 17,
   range: "melee",
   implicit: { physicalDamage: 0.1 },
   ailmentChances: [{ ailment: "bleed", chance: 0.25 }],
@@ -68,12 +71,12 @@ export const DAGGER: WeaponDefinition = {
   id: "dagger",
   name: "Dagger",
   defaultAttack: "Stab",
-  damage: { min: 8, max: 12 },
+  damage: { min: 11, max: 17 },
   damageType: "physical",
-  attacksPerSecond: 1.25,
+  attacksPerSecond: 1.1,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 1.25 attacks/s.
-  heatPerHit: 10,
+  // 12 Heat/s ÷ 1.1 attacks/s.
+  heatPerHit: 11,
   range: "melee",
   implicit: { critChance: 0.05 },
   ailmentChances: [{ ailment: "poison", chance: 0.2 }],
@@ -89,10 +92,10 @@ export const BOW: WeaponDefinition = {
   defaultAttack: "Shoot",
   damage: { min: 8, max: 14 },
   damageType: "physical",
-  attacksPerSecond: 1,
+  attacksPerSecond: 0.9,
   heatBehavior: "steady",
-  // 12 Heat/s ÷ 1.0 attacks/s.
-  heatPerHit: 12,
+  // 12 Heat/s ÷ 0.9 attacks/s.
+  heatPerHit: 13,
   range: "ranged",
   implicit: { bleedChance: 0.04, poisonChance: 0.04 },
   ailmentChances: [
@@ -108,10 +111,10 @@ export const CROSSBOW: WeaponDefinition = {
   defaultAttack: "Bolt",
   damage: { min: 21, max: 32 },
   damageType: "physical",
-  attacksPerSecond: 0.45,
+  attacksPerSecond: 0.5,
   heatBehavior: "steady",
-  // 12 Heat/s ÷ 0.45 attacks/s.
-  heatPerHit: 27,
+  // 12 Heat/s ÷ 0.5 attacks/s.
+  heatPerHit: 24,
   range: "ranged",
   implicit: { physicalPenetration: 0.2 },
 };
@@ -126,10 +129,10 @@ export const MACE: WeaponDefinition = {
   defaultAttack: "Smash",
   damage: { min: 14, max: 23 },
   damageType: "physical",
-  attacksPerSecond: 0.6,
+  attacksPerSecond: 0.65,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 0.6 attacks/s.
-  heatPerHit: 20,
+  // 12 Heat/s ÷ 0.65 attacks/s.
+  heatPerHit: 18,
   range: "melee",
   implicit: { physicalPenetration: 0.1 },
   triggers: [
@@ -152,7 +155,7 @@ export const STAFF: WeaponDefinition = {
   defaultAttack: "Channel",
   damage: { min: 12, max: 20 },
   damageType: "void",
-  attacksPerSecond: 0.55,
+  attacksPerSecond: 0.6,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",

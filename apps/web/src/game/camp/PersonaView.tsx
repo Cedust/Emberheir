@@ -24,7 +24,6 @@ import {
   describeBonuses,
   getBase,
   matchRuneword,
-  merchantStock,
   runeGroup,
   type ItemSlot,
   describeStat,
@@ -49,7 +48,7 @@ import {
   walletEntries,
 } from "../../ui/items";
 import { runeName } from "../../ui/RuneArt";
-import { GamblePanel, MerchantStock, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
+import { GamblePanel, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
 import { CRAFT_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
@@ -70,7 +69,6 @@ type ActionKind =
   | "rune"
   | "combine"
   | "codex"
-  | "buy"
   | "gamble";
 
 interface PersonaDef {
@@ -127,14 +125,13 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
   },
   marisha: {
     name: "Marisha",
-    role: "Merchant",
+    role: "Black Market",
     initial: "M",
     portrait: "#5a4218",
     accent: "#e0c27a",
     quote: "Gamble? Of course. The house always wins. I am the house.",
     actions: [
-      { k: "buy", name: "Base Items", desc: "Normal items with full Sockets." },
-      { k: "gamble", name: "Gamble", desc: "A random item for a slot. Maybe Legendary." },
+      { k: "gamble", name: "Gamble", desc: "A random item for a slot. Better odds than loot." },
     ],
   },
 };
@@ -159,7 +156,6 @@ const ACTION_HINT: Record<ActionKind, string> = {
   rune: "Choose an item with a free Socket, then a Rune.",
   combine: "Choose a Rune you have three of.",
   codex: "A Runeword shows itself once you have found all of its Runes.",
-  buy: "New stock whenever you come back from the road.",
   gamble: "Choose a slot.",
   salvage: "Choose an item from your inventory.",
   reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
@@ -252,10 +248,9 @@ export function PersonaView(props: {
     thoric: "upgrade",
     liora: "reforge",
     eldrin: "rune",
-    marisha: "buy",
+    marisha: "gamble",
   });
   const [runeId, setRuneId] = useState<string | null>(null);
-  const [offer, setOffer] = useState<number | null>(null);
   const [slot, setSlot] = useState<ItemSlot | null>(null);
   const [gambled, setGambled] = useState<Item | null>(null);
   const kind = kinds[props.persona];
@@ -302,7 +297,6 @@ export function PersonaView(props: {
   else if (item && kind === "rune" && runeId) {
     request = { kind: "socketRune", itemId: item.id, runeId };
   } else if (kind === "combine" && runeId) request = { kind: "combineRunes", runeId };
-  else if (kind === "buy" && offer !== null) request = { kind: "buyBase", index: offer };
   else if (kind === "gamble" && slot) request = { kind: "gamble", slot };
   else if (item && (kind === "upgrade" || kind === "reforge")) request = { kind, itemId: item.id };
   else if (item && kind === "temper" && affixIndex !== null) {
@@ -325,11 +319,7 @@ export function PersonaView(props: {
     block = null;
   } else if (
     !request &&
-    (kind === "rune" ||
-      kind === "combine" ||
-      kind === "buy" ||
-      kind === "gamble" ||
-      kind === "socket")
+    (kind === "rune" || kind === "combine" || kind === "gamble" || kind === "socket")
   ) {
     block =
       kind === "rune"
@@ -338,11 +328,9 @@ export function PersonaView(props: {
           : "Choose a Rune"
         : kind === "combine"
           ? "Choose a Rune"
-          : kind === "buy"
-            ? "Choose an item"
-            : kind === "gamble"
-              ? "Choose a slot"
-              : "Choose an item";
+          : kind === "gamble"
+            ? "Choose a slot"
+            : "Choose an item";
   } else if (kind === "kindle" && !request) {
     block = !item
       ? "Choose an item"
@@ -421,10 +409,6 @@ export function PersonaView(props: {
         if ((after.wallet.runes[request.runeId] ?? 0) < 3) setRuneId(null);
         break;
       }
-      case "buyBase":
-        setLast(`Bought ${merchantStock(state, GAME_DATA)[request.index]?.name ?? "an item"}`);
-        setOffer(null);
-        break;
       case "gamble": {
         const fresh = after.inventory.find(
           (p) => !state.inventory.some((q) => q.item.id === p.item.id),
@@ -555,8 +539,6 @@ export function PersonaView(props: {
 
           {kind === "combine" || kind === "codex" ? (
             <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
-          ) : kind === "buy" ? (
-            <MerchantStock state={state} selected={offer} onSelect={setOffer} />
           ) : kind === "gamble" ? (
             <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
           ) : !itemCenter ? null : kind === "distill" ? (
@@ -688,7 +670,7 @@ export function PersonaView(props: {
                 </span>
               </div>
               <button type="button" className="btn big primary" disabled={!!block} onClick={run}>
-                {kind === "buy" ? "Buy" : actionName}
+                {actionName}
               </button>
             </div>
           )}

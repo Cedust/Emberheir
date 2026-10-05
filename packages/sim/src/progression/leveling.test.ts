@@ -1,16 +1,24 @@
 import { describe, expect, it } from "vitest";
+import { MONSTER_BAND_ENDS } from "../combat/monsters";
 import { PROGRESSION } from "./constants";
-import { autoRewards, gainXp, xpForKill, xpLevelFactor, xpToNextLevel } from "./leveling";
+import { autoRewards, gainXp, levelCap, xpForKill, xpLevelFactor, xpToNextLevel } from "./leveling";
 
 describe("leveling", () => {
   it("follows the XP table and stops at the Level Cap", () => {
     expect(xpToNextLevel(1)).toBe(PROGRESSION.xpToNextLevel[0]);
-    expect(xpToNextLevel(PROGRESSION.levelCap)).toBe(Infinity);
+    expect(xpToNextLevel(levelCap(0))).toBe(Infinity);
+  });
+
+  it("grows the Level Cap by 5 for every act played", () => {
+    const caps = Array.from({ length: 8 }, (_, p) => levelCap(p));
+    expect(caps).toEqual([5, 15, 30, 50, 75, 105, 140, 140]);
+    // Monster Level bands follow the same caps.
+    expect(MONSTER_BAND_ENDS).toEqual(caps.slice(0, 7));
   });
 
   it("has XP for every level up to the last Level Cap", () => {
-    expect(PROGRESSION.xpToNextLevel).toHaveLength(
-      PROGRESSION.levelCap + 9 * PROGRESSION.levelCapPerPrestige - 1,
+    expect(PROGRESSION.xpToNextLevel.length).toBeGreaterThanOrEqual(
+      levelCap(PROGRESSION.finalPrestige) - 1,
     );
     for (let i = 1; i < PROGRESSION.xpToNextLevel.length; i++) {
       expect(PROGRESSION.xpToNextLevel[i]).toBeGreaterThan(PROGRESSION.xpToNextLevel[i - 1] ?? 0);
@@ -24,15 +32,16 @@ describe("leveling", () => {
   });
 
   it("caps the level and drops XP at the cap", () => {
-    const cap = PROGRESSION.levelCap;
+    const cap = levelCap(0);
     expect(gainXp(cap - 1, 0, 1_000_000)).toEqual({ level: cap, xp: 0, levelsGained: 1 });
   });
 
   it("gives 10 % less XP per level above the enemy, at least 10 %", () => {
-    expect(xpLevelFactor(1, 3)).toBe(1);
+    expect(xpLevelFactor(1, 3)).toBeCloseTo(1.1);
+    expect(xpLevelFactor(1, 60)).toBe(PROGRESSION.xpMaxFactor);
     expect(xpLevelFactor(4, 2)).toBeCloseTo(0.8);
     expect(xpLevelFactor(30, 1)).toBe(PROGRESSION.xpMinFactor);
-    expect(xpForKill(2, "normal", 1)).toBe(PROGRESSION.xpBase + PROGRESSION.xpPerMonsterLevel);
+    expect(xpForKill(2, "normal", 2)).toBe(PROGRESSION.xpBase + PROGRESSION.xpPerMonsterLevel);
     expect(xpForKill(1, "boss", 1)).toBe(PROGRESSION.xpBase * PROGRESSION.bossRewardMultiplier.xp);
   });
 

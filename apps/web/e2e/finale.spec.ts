@@ -12,11 +12,11 @@ test("Final Prestige: nothing burns, the Inheritance points to The Last Ember", 
 
   await expect(page.getByRole("region", { name: "Victory" })).toContainText("nothing burns");
   await page.getByRole("button", { name: "Keep Everything" }).click();
-  // The last branch, then straight to the Inheritance: no Seal step.
+  // The last branch, then straight to the Inheritance.
   await page.getByRole("button", { name: /^Take / }).click();
   const heir = page.getByRole("region", { name: "Inheritance" });
   await expect(heir).toContainText("THE LAST EMBER");
-  await expect(heir).toContainText("Nothing burns any more");
+  await expect(heir).toContainText("Everything you own is yours to keep");
   await heir.getByRole("button", { name: "Wake at the Hearthfire" }).click();
   await expect(page.getByRole("button", { name: /THE LAST EMBER/ })).toBeVisible();
   expect(errors).toEqual([]);

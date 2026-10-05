@@ -5,14 +5,11 @@ import {
   type Item,
   type ItemSlot,
   SLOT_NAMES,
-  basePrice,
   describeBonuses,
   gamblePrice,
   getBase,
   merchantItemLevel,
   merchantSlots,
-  merchantStock,
-  soldOut,
 } from "@emberheir/sim";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemTile, fmt } from "../../ui/items";
@@ -149,40 +146,6 @@ export function RuneBoard(props: {
               {known ? describeBonuses(w.bonuses).slice(0, 3).join(" · ") : ""}
             </span>
             {forged.has(w.id) && <span className="codex-forged title-font">Forged</span>}
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-/** Marisha's bases with full Sockets. */
-export function MerchantStock(props: {
-  state: GameState;
-  selected: number | null;
-  onSelect: (index: number) => void;
-}) {
-  const stock = merchantStock(props.state, GAME_DATA);
-  const sold = soldOut(props.state);
-  return (
-    <div className="merchant-stock" role="radiogroup" aria-label="Stock">
-      {stock.map((item, i) => {
-        const gone = sold.includes(i);
-        return (
-          <div
-            key={item.id}
-            className={`offer panel-card ${props.selected === i ? "on" : ""} ${gone ? "sold" : ""}`}
-          >
-            <ItemTile
-              item={item}
-              label={SLOT_NAMES[getBase(ITEM_CATALOG, item.baseId).slot]}
-              size={76}
-              equipped={false}
-              selected={props.selected === i}
-              {...(gone ? {} : { onSelect: () => props.onSelect(i) })}
-            />
-            <span className="title-font small">{item.name}</span>
-            <span className="mono strong">{gone ? "Sold" : `${fmt(basePrice(item))} Gold`}</span>
           </div>
         );
       })}

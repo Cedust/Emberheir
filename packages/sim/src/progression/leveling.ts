@@ -1,14 +1,30 @@
 import { PROGRESSION } from "./constants";
 
+/**
+ * Level Cap at a Prestige level (Playtest 2): `levelsPerAct` for every act played in all runs so
+ * far. Run n has n acts, so the caps are 5, 15, 30, 50, 75, 105 and 140 in run 7. The final
+ * Prestige adds none.
+ */
+export function levelCap(prestige: number): number {
+  const runs = Math.min(prestige, PROGRESSION.finalPrestige - 1) + 1;
+  let acts = 0;
+  for (let run = 1; run <= runs; run++) acts += Math.min(run, PROGRESSION.actsPerFullRun);
+  return PROGRESSION.levelsPerAct * acts;
+}
+
 /** XP needed to go from `level` to the next one; Infinity at the Level Cap. */
-export function xpToNextLevel(level: number, cap: number = PROGRESSION.levelCap): number {
+export function xpToNextLevel(level: number, cap: number = levelCap(0)): number {
   if (level >= cap) return Infinity;
   return PROGRESSION.xpToNextLevel[level - 1] ?? Infinity;
 }
 
-/** −10 % XP per level the hero is above the enemy, at least 10 %. */
+/**
+ * −10 % XP per level the hero is above the enemy, at least 10 %; +5 % per level the enemy is
+ * above the hero, at most double, so a hero behind the Monster Level catches up.
+ */
 export function xpLevelFactor(heroLevel: number, monsterLevel: number): number {
-  const gap = Math.max(0, heroLevel - monsterLevel);
+  const gap = heroLevel - monsterLevel;
+  if (gap < 0) return Math.min(PROGRESSION.xpMaxFactor, 1 - PROGRESSION.xpBonusPerLevel * gap);
   return Math.max(PROGRESSION.xpMinFactor, 1 - PROGRESSION.xpPenaltyPerLevel * gap);
 }
 
@@ -52,7 +68,7 @@ export function gainXp(
   level: number,
   xp: number,
   amount: number,
-  cap: number = PROGRESSION.levelCap,
+  cap: number = levelCap(0),
 ): { readonly level: number; readonly xp: number; readonly levelsGained: number } {
   let newLevel = level;
   let total = xp + amount;

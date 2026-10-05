@@ -7,13 +7,12 @@ import { CRAFTING } from "./constants";
 import {
   type CraftRequest,
   affixRollRange,
-  basePrice,
   craftBlockReason,
   craftCost,
   gambleItem,
+  gambleRarityWeights,
   gamblePrice,
   merchantItemLevel,
-  merchantStock,
   upgradedItem,
 } from "./crafting";
 import { type GameAction, type GameState, applyAction, newGame } from "./game";
@@ -288,20 +287,6 @@ describe("Sockets, Runes and Marisha", () => {
     ).toBe("maxRank");
   });
 
-  it("Marisha sells Normal bases with full Sockets, once each, and restocks after fights", () => {
-    const s0 = runeCamp();
-    const stock = merchantStock(s0, data);
-    expect(stock.length).toBeGreaterThan(0);
-    expect(stock.every((i) => i.rarity === "normal" && i.sockets === 2)).toBe(true);
-    expect(merchantStock(s0, data)).toEqual(stock);
-    const s = craftIt(s0, { kind: "buyBase", index: 0 });
-    expect(s.inventory.some((p) => p.item.id === stock[0]?.id)).toBe(true);
-    expect(s.wallet.gold).toBe(1000 - basePrice(stock[0] as Item));
-    expect(craftBlockReason(s, data, { kind: "buyBase", index: 0 })).toBe("sold");
-    const later = { ...s, stats: { ...s.stats, fights: s.stats.fights + 1 } };
-    expect(craftBlockReason(later, data, { kind: "buyBase", index: 0 })).toBeUndefined();
-  });
-
   it("Gamble: a random item for the chosen slot into the inventory", () => {
     const s = craftIt(runeCamp(), { kind: "gamble", slot: "ring" });
     expect(s.inventory).toHaveLength(3);
@@ -309,10 +294,18 @@ describe("Sockets, Runes and Marisha", () => {
     expect(item?.baseId).toBe("test-ring");
     expect(item?.rarity).not.toBe("normal");
     expect(s.wallet.gold).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
-    // Over many gambles some come out Legendary, some even Unique.
+    // Run 1: Marisha gives at most Rare, one step above what its enemies drop.
+    const early = new Set<string>();
+    for (let seed = 0; seed < 200; seed++) {
+      early.add(gambleItem(s, data, "ring", new Rng(seed)).rarity);
+    }
+    expect([...early].sort()).toEqual(["magic", "rare"]);
+    expect(gambleRarityWeights(0)).toMatchObject({ epic: 0, legendary: 0 });
+    // From run 5 on, some gambles come out Legendary.
+    const late = { ...s, legacy: { ...s.legacy, prestige: 4 } };
     const rarities = new Set<string>();
     for (let seed = 0; seed < 400; seed++) {
-      rarities.add(gambleItem(s, data, "ring", new Rng(seed)).rarity);
+      rarities.add(gambleItem(late, data, "ring", new Rng(seed)).rarity);
     }
     expect(rarities.has("legendary")).toBe(true);
   });

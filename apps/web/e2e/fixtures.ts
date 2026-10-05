@@ -10,20 +10,20 @@ import {
   serializeGame,
 } from "@emberheir/sim";
 
-/** A save right after Gorrak fell in the first run (the harvest boss): an Epic Body Armor to seal. */
+/** A save right after Gorrak fell in the first run (the harvest boss), in a Rare Body Armor. */
 export function saveAfterHarvestBoss(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const rng = new Rng(7);
   const armor = rollItem(
     GAME_DATA.items,
-    { baseId: "chain-mail", itemLevel: 4, rarity: "epic" },
+    { baseId: "chain-mail", itemLevel: 4, rarity: "rare" },
     rng,
   );
   const state: GameState = {
     ...base,
     hero: {
       ...base.hero,
-      level: 10,
+      level: 5,
       attributes: { ...base.hero.attributes, strength: 12, vitality: 9 },
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
@@ -51,7 +51,7 @@ export function saveAfterAct1(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 24, unspentSkillPoints: 5 },
+    hero: { ...base.hero, level: 15, unspentSkillPoints: 5 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     legacy: { ...base.legacy, prestige: 1 },
   };
@@ -63,7 +63,7 @@ export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 24 },
+    hero: { ...base.hero, level: 15 },
     wallet: { ...base.wallet, gold: 400, runes: { ash: 3 } },
     progress: {
       ...base.progress,
@@ -228,13 +228,13 @@ export function saveThiefFight(): string {
   return serializeGame(state);
 }
 
-/** The tenth run: every act cleared, nine branches taken. */
+/** The seventh run: every act cleared, six branches taken. */
 function lateGame(prestige: number): GameState {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const branches = (SKILL_TREE.prestigeBranches ?? []).map((b) => b.id).slice(0, prestige);
   return {
     ...base,
-    hero: { ...base.hero, level: 200 },
+    hero: { ...base.hero, level: 140 },
     progress: {
       ...base.progress,
       actsCleared: GAME_DATA.acts.map((a) => a.id),
@@ -246,9 +246,9 @@ function lateGame(prestige: number): GameState {
   };
 }
 
-/** The Ashen Harvester fell in the tenth run: the final Prestige waits. */
+/** The Ashen Harvester fell in the seventh run: the final Prestige waits. */
 export function saveBeforeFinalPrestige(): string {
-  const state = lateGame(9);
+  const state = lateGame(6);
   return serializeGame({
     ...state,
     pendingPrestige: { actId: "emberfall", stage: 15, enemyName: "The Ashen Harvester" },
@@ -257,12 +257,12 @@ export function saveBeforeFinalPrestige(): string {
 
 /** After the final Prestige: the Camp with The Last Ember open. */
 export function saveFinaleCamp(): string {
-  return serializeGame(lateGame(10));
+  return serializeGame(lateGame(7));
 }
 
 /** The Harvester's Core is out: the ending. */
 export function saveEnding(): string {
-  const state = lateGame(10);
+  const state = lateGame(7);
   return serializeGame({
     ...state,
     legacy: { ...state.legacy, finaleAttempts: 3, finaleWon: true },

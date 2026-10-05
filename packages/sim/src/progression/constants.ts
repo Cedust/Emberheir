@@ -7,32 +7,117 @@ import type { EnemyRank } from "./leveling";
  * section 2 and 3, loot-rewards-v1.md, town-crafting-v1.md.
  */
 /**
- * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 200. Each run spreads
+ * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 250. Each run spreads
  * its Level Band over all its stages (prestige-acts-v1.md section 4), one fight per stage, so a
  * level costs about `xpKillsPerLevel` normal kills of the same Monster Level. The hero keeps pace
  * with the monsters, and the XP penalty for being above them stops it from running ahead.
  */
 function buildXpTable(base: number, perLevel: number, killsPerLevel: number): readonly number[] {
   const table: number[] = [];
-  for (let level = 1; level < 200; level++)
+  for (let level = 1; level < 250; level++)
     table.push(Math.round(killsPerLevel * (base + perLevel * (level - 1))));
   return table;
 }
 
 const XP_BASE = 20;
 const XP_PER_MONSTER_LEVEL = 10;
-const XP_KILLS_PER_LEVEL = 0.8;
+const XP_KILLS_PER_LEVEL = 8;
+
+/** A rarity window of the item pick for one enemy rank. */
+export interface RarityRange {
+  readonly floor: Rarity;
+  readonly max: Rarity;
+  /** Weight factor of the top rarity, below 1 when it should stay a rare moment. */
+  readonly topWeight?: number;
+  /** One card of the pick is at least this rarity. */
+  readonly sure?: Rarity;
+}
+
+/**
+ * What a run can drop (Playtest 2): items stay through Prestige, so rarity opens up over the whole
+ * game instead of within one run. A Rare in run 1 is an event, Epic comes from run 3's bosses.
+ */
+export interface LootGate {
+  readonly normal: RarityRange;
+  readonly elite: RarityRange;
+  readonly boss: RarityRange;
+  /** Chance that one card of the pick is Legendary (or Unique), by enemy rank. */
+  readonly legendary: Readonly<Record<EnemyRank, number>>;
+  /** Bosses may drop their trophy Uniques. */
+  readonly trophies: boolean;
+  /** Highest rarity Marisha's gambling can give. */
+  readonly gambleMax: Rarity;
+}
+
+const LOOT_GATES: readonly LootGate[] = [
+  // Run 1: the boss always gives one Rare.
+  {
+    normal: { floor: "normal", max: "magic" },
+    elite: { floor: "magic", max: "rare" },
+    boss: { floor: "magic", max: "rare", sure: "rare" },
+    legendary: { normal: 0, elite: 0, boss: 0 },
+    trophies: false,
+    gambleMax: "rare",
+  },
+  // Run 2: Rare becomes common, still no Epic (Playtest 2: Epics in runs 1 and 2 were too much).
+  {
+    normal: { floor: "normal", max: "rare", topWeight: 0.3 },
+    elite: { floor: "rare", max: "rare" },
+    boss: { floor: "rare", max: "rare" },
+    legendary: { normal: 0, elite: 0, boss: 0 },
+    trophies: false,
+    gambleMax: "rare",
+  },
+  // Run 3: the first Epics, from bosses only.
+  {
+    normal: { floor: "normal", max: "rare" },
+    elite: { floor: "rare", max: "rare" },
+    boss: { floor: "rare", max: "epic", topWeight: 0.3 },
+    legendary: { normal: 0, elite: 0, boss: 0 },
+    trophies: false,
+    gambleMax: "epic",
+  },
+  // Run 4
+  {
+    normal: { floor: "normal", max: "rare" },
+    elite: { floor: "rare", max: "epic", topWeight: 0.3 },
+    boss: { floor: "rare", max: "epic", sure: "epic" },
+    legendary: { normal: 0, elite: 0, boss: 0.25 },
+    trophies: true,
+    gambleMax: "epic",
+  },
+  // Run 5
+  {
+    normal: { floor: "normal", max: "epic", topWeight: 0.3 },
+    elite: { floor: "rare", max: "epic" },
+    boss: { floor: "epic", max: "epic" },
+    legendary: { normal: 0, elite: 0.04, boss: 0.25 },
+    trophies: true,
+    gambleMax: "legendary",
+  },
+  // Run 6 and later
+  {
+    normal: { floor: "normal", max: "epic" },
+    elite: { floor: "rare", max: "epic" },
+    boss: { floor: "epic", max: "epic" },
+    legendary: { normal: 0, elite: 0.04, boss: 0.25 },
+    trophies: true,
+    gambleMax: "legendary",
+  },
+];
 
 export const PROGRESSION = {
   /**
-   * Level Cap of the first run... Playtest 1: a cap of 10 was half reached after Act 1, so the
-   * cap doubled and each level gives fewer Attribute Points.
+   * Playtest 2: the Level Cap grows by this much for every act a run has, counted over all runs
+   * so far. Run 1 (one act) ends at 5, run 2 (two more acts) at 15, run 3 at 30, run 7 at 140.
    */
-  levelCap: 20,
-  /** ...and +20 per Prestige (level 200 in the tenth run). */
-  levelCapPerPrestige: 20,
+  levelsPerAct: 5,
+  /** Acts of a full world (run 7). */
+  actsPerFullRun: 7,
   attributePointsPerLevel: 2,
   skillPointsPerLevel: 1,
+  /** Run 1 has only four level-ups, so a new Heir starts with a few Skill Points. */
+  startSkillPoints: 3,
   xpToNextLevel: buildXpTable(XP_BASE, XP_PER_MONSTER_LEVEL, XP_KILLS_PER_LEVEL),
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: XP_BASE,
@@ -40,6 +125,9 @@ export const PROGRESSION = {
   /** Enemies below the hero's level give 10 % less XP per level, at least 10 %. */
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
+  /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
+  xpBonusPerLevel: 0.05,
+  xpMaxFactor: 2,
 
   goldBase: 4,
   goldPerMonsterLevel: 2,
@@ -50,8 +138,6 @@ export const PROGRESSION = {
   /** Reward multipliers for Elites and Bosses (XP, Gold, Dust). */
   eliteRewardMultiplier: { xp: 3, gold: 2, dust: 2 },
   bossRewardMultiplier: { xp: 6, gold: 5, dust: 4 },
-  /** Chance that one card of the item pick is Legendary, by enemy rank. */
-  legendaryChance: { normal: 0, elite: 0.04, boss: 0.25 } satisfies Record<EnemyRank, number>,
   /** Share of those Legendary cards that become a Unique (if one fits). */
   uniqueShare: 0.35,
   /** Boss Hoard: cards after a boss and how many of them the hero takes. */
@@ -106,22 +192,13 @@ export const PROGRESSION = {
     amulet: 1,
     ring: 1.5,
   } satisfies Record<ItemSlot, number>,
-  /** Rarity weights of the item pick; Elites roll at least Rare, Bosses at least Epic. */
+  /** Rarity weights of the item pick, inside the run's window (`lootGates`). */
   rarityWeights: { normal: 40, magic: 35, rare: 20, epic: 5, legendary: 0 } satisfies Record<
     Rarity,
     number
   >,
-  eliteMinRarity: "rare" as Rarity,
-  bossMinRarity: "epic" as Rarity,
-  /**
-   * Highest rarity normal enemies drop, by Act Tier (act number + Prestige, index 0 = Act Tier 1).
-   * Playtest 1: all slots were Epic within Act 1. Now Act 1 drops Normal and Magic, Rare comes
-   * from Elites and Epic from the boss; Rare drops freely from Act Tier 2, Epic from Act Tier 3.
-   * Elites never roll above Rare before Epic is unlocked.
-   */
-  maxRarityByActTier: ["magic", "rare"] as readonly Rarity[],
-  /** Rarity for Act Tiers past the list. */
-  maxRarityLate: "epic" as Rarity,
+  /** Rarity windows and Legendary chances by run (index 0 = run 1); the last one stays. */
+  lootGates: LOOT_GATES,
   /** Pity: every death in the current act raises the two highest allowed weights by this much... */
   pityPerDeath: 0.25,
   /** ...for at most this many deaths. Resets when the act boss falls. */
@@ -151,19 +228,10 @@ export const PROGRESSION = {
   flaskHeal: 0.35,
 
   /**
-   * Every Prestige gives one more Seal (Save Token), one Battle Plan upgrade (battle-plan.ts),
-   * a Prestige branch, one Harvester's Ember and a fixed amount of Salvage Dust that replaces the
-   * burned stash (town-crafting-v1.md).
+   * Every Prestige gives one Battle Plan upgrade (battle-plan.ts), a Prestige branch and one
+   * Harvester's Ember. Since Playtest 2 all items stay, so there are no Seals and no Dust bonus.
    */
-  prestigeDustPerLevel: 150,
   prestigeHarvesterEmber: 1,
-  /**
-   * A run's level band starts this far below the previous Level Cap (prestige-acts-v1.md 4): a
-   * hero who keeps level and Seals but loses the rest of the gear regears on the first stages.
-   */
-  levelBandStartBelowCap: 15,
-  /** ...and 5 more per Prestige after the first, because the hero regears from further behind. */
-  levelBandStartBelowCapPerPrestige: 5,
   /**
    * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
    * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
@@ -176,11 +244,12 @@ export const PROGRESSION = {
    */
   bossLife: 1.5,
   /**
-   * The Last Ember (M11): the Prestige after which the world no longer burns. The finale's foes
+   * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
+   * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
    * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
    * instead of the Run Pressure).
    */
-  finalPrestige: 10,
+  finalPrestige: 7,
   finale: { life: 2, damage: 1.4 },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
@@ -243,10 +312,7 @@ export const CRAFTING = {
   socketRuneGoldPerRank: 8,
   combineRunesGoldPerRank: 15,
   combineRunesCount: 3,
-  /** Marisha: offers in stock, prices. */
-  merchantOffers: 6,
-  basePriceFlat: 20,
-  basePricePerSocket: 15,
+  /** Marisha (Black Market): gamble prices and odds, capped by the run's loot gate. */
   gambleFlat: 60,
   gamblePerItemLevel: 12,
   gambleRarityWeights: { normal: 0, magic: 55, rare: 30, epic: 12, legendary: 3 } satisfies Record<

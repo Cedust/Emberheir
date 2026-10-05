@@ -42,6 +42,7 @@ const DAMAGE_COLORS: Record<string, number> = {
   heal: 0x4fe08a,
   barrier: 0xe8e2d6,
   miss: 0xd8d0c4,
+  trigger: 0xf0b44c,
 };
 
 const AILMENT_TINT: Record<string, number> = {
@@ -402,10 +403,17 @@ export class ArenaScene {
         case "trigger": {
           const c = this.center(e.side);
           this.fx?.ring(c.x, c.y, 0xffd84a, 30, 120, 0.3, 5, 1);
+          // An extra attack (Riposte, "strike back" affixes) names itself, so its number does
+          // not read as a faster attack speed.
+          const next = events[i + 1];
+          if (next?.type === "hit" && next.side === e.side) {
+            this.float(e.side, e.name, DAMAGE_COLORS.trigger ?? 0xffffff, false, 0.7);
+          }
           break;
         }
         case "evade": {
-          const evader = other(e.side);
+          // `side` is the fighter who evaded.
+          const evader = e.side;
           this.figure(evader).dodge = 1;
           this.fx?.burst({
             x: this.center(evader).x,

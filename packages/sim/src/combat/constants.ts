@@ -19,7 +19,8 @@ export const COMBAT = {
   baseCritChance: 0.05,
   critChancePerDexterity: 0.002,
   triggerChancePerDexterity: 0.005,
-  attackSpeedPerAgility: 0.01,
+  /** Playtest 2: halved, so Attack Speed grows slowly over the game. */
+  attackSpeedPerAgility: 0.005,
   evasionPerAgility: 0.004,
   elementalDamagePerIntelligence: 0.01,
   allResistancePerIntelligence: 0.002,

@@ -32,16 +32,31 @@ export interface EnemyDefinition {
   readonly boss?: boolean;
 }
 
-/** Monster Levels per band: every band the per-level growth below gets steeper. */
-export const MONSTER_LEVELS_PER_BAND = 20;
-/** Growth per Monster Level in the first band (levels 1–20), and how much steeper each band is. */
-const MONSTER_GROWTH = { life: 0.15, damage: 0.08, perBand: 2.5 };
+/**
+ * Monster Level bands: one per run, ending at that run's Level Cap (5 levels per act played:
+ * 5, 15, 30, ... 140, see `levelCap` in progression). Every band grows steeper than the one
+ * before, because the hero's gear, tree and Battle Plan grow faster than linear too.
+ */
+export const MONSTER_BAND_ENDS: readonly number[] = (() => {
+  const ends: number[] = [];
+  let acts = 0;
+  for (let run = 1; run <= 7; run++) {
+    acts += Math.min(run, 7);
+    ends.push(5 * acts);
+  }
+  return ends;
+})();
+/**
+ * Growth per Monster Level in the first band, and how much steeper each band is: the step of
+ * band b is 1 + perBand × b + perBandSquared × b². Later runs keep all their gear and get
+ * steeper monsters for it.
+ */
+const MONSTER_GROWTH = { life: 0.15, damage: 0.08, perBand: 1, perBandSquared: 0.25 };
 
 /**
  * The Monster Level alone sets a monster's power (docs/design/gegner-bosse-v1.md section 7).
- * One curve for life and one for damage. Each level adds a fixed step, and the step grows every
- * 20 levels (one run's Level Band), because the hero's gear, tree and Battle Plan grow faster than
- * linear too. Starting values for the balance CLI.
+ * One curve for life and one for damage, made of a straight piece per band. Starting values for
+ * the balance CLI.
  */
 export function monsterLevelScaling(level: number): {
   readonly life: number;
@@ -49,7 +64,9 @@ export function monsterLevelScaling(level: number): {
 } {
   let weight = 0;
   for (let l = 2; l <= level; l++) {
-    weight += 1 + MONSTER_GROWTH.perBand * Math.floor((l - 2) / MONSTER_LEVELS_PER_BAND);
+    const band = MONSTER_BAND_ENDS.findIndex((end) => l <= end);
+    const b = band < 0 ? MONSTER_BAND_ENDS.length : band;
+    weight += 1 + MONSTER_GROWTH.perBand * b + MONSTER_GROWTH.perBandSquared * b * b;
   }
   return { life: 1 + MONSTER_GROWTH.life * weight, damage: 1 + MONSTER_GROWTH.damage * weight };
 }
