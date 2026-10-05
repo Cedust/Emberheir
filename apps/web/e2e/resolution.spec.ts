@@ -1,5 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
-import { saveAfterGorrak, seedSave } from "./fixtures";
+import { saveAfterHarvestBoss, seedSave } from "./fixtures";
 
 /**
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
@@ -77,6 +77,12 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: "Open Stash" }).click();
     await check("stash");
     await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Marisha, Merchant" }).click();
+    await page.getByRole("button", { name: "Open Shop" }).click();
+    await check("shop");
+    await page.getByRole("button", { name: /^Gamble/ }).click();
+    await check("gamble");
+    await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: /SET OUT/ }).click();
     await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
@@ -117,7 +123,7 @@ for (const screen of SCREENS) {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
-    await seedSave(page, saveAfterGorrak());
+    await seedSave(page, saveAfterHarvestBoss());
     await page.goto("/");
     await page.getByRole("button", { name: /Continue/ }).click();
     const check = async (view: string) =>
@@ -126,6 +132,9 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "Victory" })).toBeVisible();
     await check("victory");
     await page.getByRole("button", { name: "Hold On to What Matters" }).click();
+    await expect(page.getByRole("region", { name: "Bloodline" })).toBeVisible();
+    await check("bloodline");
+    await page.getByRole("button", { name: /^Take / }).click();
     await check("seal");
     await page.getByRole("button", { name: /^Body Armor:/ }).click();
     await page.getByRole("button", { name: "Seal This Slot" }).click();

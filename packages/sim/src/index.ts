@@ -4,6 +4,7 @@ export { COMBAT } from "./combat/constants";
 export { deriveStats, heroBaseLife, sumBonuses, type DerivedStats } from "./combat/stats";
 export {
   armorReduction,
+  elementResistance,
   resistanceReduction,
   resolveHit,
   type HitInput,
@@ -20,6 +21,7 @@ export {
   type FighterSnapshot,
   type RotationSlotSnapshot,
 } from "./combat/fight";
+export { AILMENT_SOURCE, damageShare, fightReport, type FightReport } from "./combat/report";
 export {
   createEnemySetup,
   monsterLevelScaling,
@@ -45,19 +47,35 @@ export {
 } from "./items/affixes";
 export {
   basesForSlot,
+  affixPosition,
   createItemCatalog,
   getBase,
   pickWeighted,
+  powersForSlot,
   rollItem,
   rollRarity,
+  rollSockets,
+  rollUnique,
+  uniquesFor,
+  bossTrophies,
   type RollItemOptions,
 } from "./items/generate";
+export { activeRuneword, freeSockets, matchRuneword, runeBonuses, runeGroup } from "./items/runes";
+export {
+  codexPartsOf,
+  kindledAffix,
+  kindledAffixId,
+  kindledAffixes,
+  rollTier,
+} from "./items/codex";
+export { mergeRules } from "./combat/rules";
 export {
   addedDamageRange,
   itemModifiers,
   itemSlotFor,
   itemWeapon,
   missingRequirements,
+  offHandFits,
   requirementsFor,
   resolveEquipment,
   scaledBaseStats,
@@ -84,4 +102,4 @@ export {
 export * from "./progression/index";
 
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
-export const SIM_VERSION = "0.5.0";
+export const SIM_VERSION = "0.12.0";

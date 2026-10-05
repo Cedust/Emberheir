@@ -14,6 +14,14 @@ describe("monsters", () => {
     expect(l5.damage).toBeGreaterThan(monsterLevelScaling(4).damage);
   });
 
+  it("each 20-level band grows faster than the one before", () => {
+    const step = (level: number) =>
+      monsterLevelScaling(level + 1).life - monsterLevelScaling(level).life;
+    expect(step(5)).toBeCloseTo(step(15));
+    expect(step(25)).toBeGreaterThan(step(15));
+    expect(step(45)).toBeGreaterThan(step(25));
+  });
+
   it("builds a fight setup with its skills as rotation", () => {
     const enemy = {
       id: "e",

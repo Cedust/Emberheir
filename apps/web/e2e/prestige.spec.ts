@@ -1,15 +1,24 @@
 import { expect, test } from "@playwright/test";
-import { saveAfterGorrak, seedSave } from "./fixtures";
+import { saveAfterHarvestBoss, seedSave } from "./fixtures";
 
-test("Gorrak's fall: seal a slot, let it burn, wake as the next generation", async ({ page }) => {
+test("The harvest boss falls: seal a slot, let it burn, wake as the next generation", async ({
+  page,
+}) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await seedSave(page, saveAfterGorrak());
+  await seedSave(page, saveAfterHarvestBoss());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
   await expect(page.getByRole("region", { name: "Victory" })).toContainText("GORRAK FALLS");
   await page.getByRole("button", { name: "Hold On to What Matters" }).click();
+
+  // A new Prestige branch for the Skill Tree.
+  const bloodline = page.getByRole("region", { name: "Bloodline" });
+  await expect(bloodline.getByRole("button", { pressed: true })).toHaveCount(1);
+  await expect(bloodline.locator(".branch-pick")).toHaveCount(10);
+  await bloodline.getByRole("button", { name: /Warden/ }).click();
+  await page.getByRole("button", { name: "Take Warden" }).click();
 
   const seal = page.getByRole("region", { name: "The Harvest Begins" });
   await expect(seal).toBeVisible();
@@ -23,6 +32,9 @@ test("Gorrak's fall: seal a slot, let it burn, wake as the next generation", asy
   const heir = page.getByRole("region", { name: "Inheritance" });
   await expect(heir).toContainText("GENERATION 2");
   await expect(heir).toContainText("Rotation Slot 2");
+  await expect(heir).toContainText("Warden");
+  await expect(heir).toContainText("NEW ACT");
+  await expect(heir).toContainText("Rotwood");
   await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
 
   // A reload keeps the new generation.
@@ -38,13 +50,16 @@ test("Gorrak's fall: seal a slot, let it burn, wake as the next generation", asy
   await expect(legacy).toContainText("Sealed the Body Armor.");
   await page.keyboard.press("Escape");
 
-  // The Supply Wagon burned; Rotation Slot 2 is open at Kaelen.
+  // The Supply Wagon burned; Rotation Slot 2 and Reaction Slot 1 are open at Kaelen.
   await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
   await page.getByRole("button", { name: "Open Stash" }).click();
   await expect(page.getByRole("note")).toContainText("Burned in the harvest");
   await page.keyboard.press("Escape");
   await page.keyboard.press("t");
+  await page.getByRole("tab", { name: /Prestige Branches · 1/ }).click();
+  await expect(page.getByTestId("branch-warden")).toContainText("from Iron Will");
   await page.getByRole("tab", { name: "Battle Plan" }).click();
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
+  await expect(page.getByTestId("reaction-slot-0")).toBeVisible();
   expect(errors).toEqual([]);
 });

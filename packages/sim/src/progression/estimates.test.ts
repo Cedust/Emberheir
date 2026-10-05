@@ -18,6 +18,18 @@ describe("estimates", () => {
     expect(heatPerSecond(setup, faster)).toBeCloseTo(heatPerSecond(setup, stats) * 2);
   });
 
+  it("DPS counts the DoTs the hits cause", () => {
+    const { setup } = heroSetup(start(), data);
+    const stats = deriveStats(setup);
+    const plain = estimateDps(setup, stats);
+    // Bleed: one at a time, half the hit per second.
+    const bleeding = estimateDps(setup, { ...stats, bleedChance: 1 });
+    expect(bleeding).toBeGreaterThan(plain);
+    expect(bleeding - plain).toBeLessThanOrEqual((plain / stats.attackSpeed) * 0.5 + 1e-9);
+    // Poison stacks, so more hits keep adding.
+    expect(estimateDps(setup, { ...stats, poisonChance: 1 })).toBeGreaterThan(plain);
+  });
+
   it("one rotation: cheap skills fire back to back, expensive ones wait", () => {
     // 10 Heat/s: a 20 cost skill waits 2 s; with threshold 60 the second fires right after.
     const steps = estimateRotation(

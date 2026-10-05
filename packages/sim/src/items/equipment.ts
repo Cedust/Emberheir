@@ -1,15 +1,19 @@
+import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import {
   ATTRIBUTES,
   type Attribute,
   type Attributes,
+  type CombatRules,
   type StatBonuses,
   type TriggerSpec,
   type WeaponDefinition,
 } from "../combat/types";
 import { isPercentStat, resolveTrigger, statAffixValue, tierGrowth } from "./affixes";
+import { rollTier } from "./codex";
 import { ITEMS } from "./constants";
 import { getBase } from "./generate";
+import { activeRuneword, runeBonuses } from "./runes";
 import {
   EQUIPMENT_SLOTS,
   type AffixStat,
@@ -75,6 +79,7 @@ export function itemWeapon(item: Item, catalog: ItemCatalog): WeaponDefinition |
   const { min, max } = addedDamageRange(added);
   return {
     ...base.weapon,
+    spellPower: growth,
     damage: {
       min: Math.round(base.weapon.damage.min * growth) + min,
       max: Math.round(base.weapon.damage.max * growth) + max,
@@ -91,6 +96,8 @@ export interface ItemModifiers {
   readonly attributes: Partial<Attributes>;
   readonly bonuses: StatBonuses;
   readonly triggers: readonly TriggerSpec[];
+  /** Rules from a Legendary Power or a Runeword. */
+  readonly rules?: CombatRules;
 }
 
 /**
@@ -103,11 +110,22 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
   const bonuses: Partial<Record<keyof StatBonuses, number>> = {};
   const triggers: TriggerSpec[] = [];
 
-  for (const roll of item.affixes) {
+  const word = activeRuneword(item, catalog);
+  const power = item.powerId ? catalog.powers.get(item.powerId) : undefined;
+  const rolls = [
+    ...item.affixes,
+    ...(word?.triggers ?? []),
+    ...(power?.trigger ? [power.trigger] : []),
+  ];
+  for (const a of ATTRIBUTES) {
+    if (word?.attributes?.[a]) attributes[a] = word.attributes[a];
+  }
+
+  for (const roll of rolls) {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) continue;
     if (affix.kind === "trigger") {
-      triggers.push(resolveTrigger(affix, item.tier, roll.quality));
+      triggers.push(resolveTrigger(affix, rollTier(item, roll), roll.quality));
       continue;
     }
     if (affix.stat === "addedWeaponDamage") continue;
@@ -116,18 +134,32 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
     else bonuses[affix.stat] = (bonuses[affix.stat] ?? 0) + value;
   }
 
+  const rules = word?.rules || power?.rules ? mergeRules(word?.rules, power?.rules) : undefined;
   return {
     attributes,
     bonuses: sumBonuses(
       scaledBaseStats(base, item.tier),
       base.weapon ? undefined : base.implicit,
       bonuses,
+      runeBonuses(item, catalog),
+      word?.bonuses,
+      power?.bonuses,
     ),
     triggers,
+    ...(rules ? { rules } : {}),
   };
 }
 
 /** Item slot an equipment slot takes. */
+/** Whether an off hand works with a weapon: by weapon type if it names some, else by range. */
+export function offHandFits(
+  base: ItemBaseDefinition,
+  weapon: WeaponDefinition | undefined,
+): boolean {
+  if (base.fitsWeapons) return weapon !== undefined && base.fitsWeapons.includes(weapon.id);
+  return !base.fitsWeaponRange || weapon?.range === base.fitsWeaponRange;
+}
+
 export function itemSlotFor(slot: EquipmentSlot): ItemSlot {
   return slot === "ring1" || slot === "ring2" ? "ring" : slot;
 }
@@ -145,6 +177,8 @@ export interface ResolvedEquipment {
   readonly attributes: Attributes;
   readonly bonuses: StatBonuses;
   readonly triggers: readonly TriggerSpec[];
+  /** Rules from Legendary Powers and Runewords. */
+  readonly rules?: CombatRules;
   /** Equipped items that give nothing right now, and why. */
   readonly inactive: readonly {
     readonly slot: EquipmentSlot;
@@ -174,6 +208,7 @@ export function resolveEquipment(
   };
   const bonusSets: StatBonuses[] = [];
   const triggers: TriggerSpec[] = [];
+  const ruleSets: CombatRules[] = [];
   const inactive: { slot: EquipmentSlot; item: Item; reason: InactiveReason }[] = [];
   let weapon: WeaponDefinition | undefined;
 
@@ -182,8 +217,7 @@ export function resolveEquipment(
     if (base.slot !== itemSlotFor(slot)) return { kind: "wrongSlot" };
     const missing = missingRequirements(item, catalog, heroAttributes);
     if (missing.length) return { kind: "requirements", missing };
-    const range = (weapon ?? fallbackWeapon)?.range;
-    if (slot === "offHand" && base.fitsWeaponRange && range !== base.fitsWeaponRange) {
+    if (slot === "offHand" && !offHandFits(base, weapon ?? fallbackWeapon)) {
       return { kind: "offHandMismatch" };
     }
     return undefined;
@@ -204,6 +238,7 @@ export function resolveEquipment(
     for (const a of ATTRIBUTES) attributes[a] += mods.attributes[a] ?? 0;
     bonusSets.push(mods.bonuses);
     triggers.push(...mods.triggers);
+    if (mods.rules) ruleSets.push(mods.rules);
   }
 
   return {
@@ -211,6 +246,7 @@ export function resolveEquipment(
     attributes,
     bonuses: sumBonuses(...bonusSets),
     triggers,
+    ...(ruleSets.length ? { rules: mergeRules(...ruleSets) } : {}),
     inactive,
   };
 }

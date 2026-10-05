@@ -18,8 +18,9 @@ export const ELEMENTS = ["fire", "cold", "lightning", "void"] as const;
 export type Element = (typeof ELEMENTS)[number];
 export type DamageType = "physical" | Element;
 
-/** Ailments implemented so far (PoC: Burn, Chill, Shock). */
-export type AilmentType = "burn" | "chill" | "shock";
+/** Ailments: Burn, Chill, Shock, Corruption (elemental) and Bleed, Poison (physical). */
+export type AilmentType = "burn" | "chill" | "shock" | "corruption" | "bleed" | "poison";
+export const AILMENT_TYPES = ["burn", "chill", "shock", "corruption", "bleed", "poison"] as const;
 
 /** How a weapon fills the Heat bar, see docs/design/waffen-v1.md section 4. */
 export type HeatBehavior = "cooling" | "steady" | "warming";
@@ -54,6 +55,11 @@ export interface StatBonuses {
   readonly blockChance?: number;
   readonly blockValue?: number;
   readonly allResistance?: number;
+  /** Resistance against one element, added to All Resistance (same cap). */
+  readonly fireResistance?: number;
+  readonly coldResistance?: number;
+  readonly lightningResistance?: number;
+  readonly voidResistance?: number;
   readonly heatGain?: number;
   readonly startingHeat?: number;
   readonly ailmentDuration?: number;
@@ -67,6 +73,9 @@ export interface StatBonuses {
   readonly burnChance?: number;
   readonly chillChance?: number;
   readonly shockChance?: number;
+  readonly corruptionChance?: number;
+  readonly bleedChance?: number;
+  readonly poisonChance?: number;
 }
 
 /** Stats a timed buff may raise. Life is excluded so buffs never change max life mid-fight. */
@@ -90,7 +99,11 @@ export type TriggerCondition =
   | { readonly kind: "onEvade" }
   | { readonly kind: "onBlock" }
   /** Own life dropped below the fraction. Re-arms once life is back above it. */
-  | { readonly kind: "lifeBelow"; readonly threshold: number };
+  | { readonly kind: "lifeBelow"; readonly threshold: number }
+  /** Every Nth hit taken that was not evaded (Storm Herald's reflect). */
+  | { readonly kind: "everyNthHitTaken"; readonly n: number }
+  /** The opponent starts winding up a telegraphed Heavy Attack (Ice Shell). */
+  | { readonly kind: "enemyWindup" };
 
 export type TriggerEffect =
   /** Extra hit for X × Weapon Damage. Can be evaded like an attack. */
@@ -118,7 +131,19 @@ export type TriggerEffect =
       readonly maxStacks?: number;
     }
   /** An immediate extra Default Attack (e.g. the Sword's Riposte). */
-  | { readonly kind: "extraAttack" };
+  | { readonly kind: "extraAttack" }
+  /** The enemy cannot act for a moment: no attacks, skills or wind-ups (the Mace's Smash). */
+  | { readonly kind: "stun"; readonly seconds: number }
+  /**
+   * Sends a fraction of the hit that fired the trigger back to the attacker, at most `cap` of the
+   * attacker's max life, so big hits are punished without one-shotting.
+   */
+  | {
+      readonly kind: "reflect";
+      readonly fraction: number;
+      readonly cap: number;
+      readonly damageType: DamageType;
+    };
 
 /** A concrete trigger with final numbers: Condition → Chance → Effect → Internal Cooldown. */
 export interface TriggerSpec {
@@ -132,6 +157,8 @@ export interface TriggerSpec {
   readonly cooldown?: number;
   /** Fires at most once per fight. */
   readonly oncePerFight?: boolean;
+  /** Boss phases: only active while own life is below this fraction. */
+  readonly belowLife?: number;
   readonly effect: TriggerEffect;
 }
 
@@ -151,6 +178,11 @@ export interface WeaponDefinition {
   readonly ailmentChances?: readonly AilmentChance[];
   /** Innate triggers of the weapon type, e.g. the Sword's Riposte. */
   readonly triggers?: readonly TriggerSpec[];
+  /**
+   * Spells cast with this weapon deal this much more base damage. Hero weapons get their Item
+   * Tier growth, so spells keep pace with weapon damage. Default 1.
+   */
+  readonly spellPower?: number;
 }
 
 export type SkillType = "attack" | "spell" | "buff" | "curse";
@@ -167,6 +199,8 @@ export type SkillHit =
       readonly ailmentChances?: readonly AilmentChance[];
       /** Execute: multiply damage when the target is below this life fraction. */
       readonly lowLifeBonus?: { readonly threshold: number; readonly multiplier: number };
+      /** Ailments from this hit act as if the hit was this much stronger. Default 1. */
+      readonly ailmentPower?: number;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -177,7 +211,35 @@ export type SkillHit =
       /** Each further hit deals this fraction of the previous one (Chain Lightning). */
       readonly falloff?: number;
       readonly ailmentChances?: readonly AilmentChance[];
+      /** Ailments from this hit act as if the hit was this much stronger (Immolate). Default 1. */
+      readonly ailmentPower?: number;
     };
+
+/** What a skill does besides its hits. Effects follow the hits, in order. */
+export type SkillEffect =
+  /** Buff skills: raises a stat of the caster for a while (refreshes when cast again). */
+  | {
+      readonly kind: "buff";
+      readonly stat: BuffStat;
+      readonly amount: number;
+      readonly duration: number;
+    }
+  /** Rend: ends the target's Bleed and deals its remaining damage × multiplier at once. */
+  | { readonly kind: "consumeBleed"; readonly multiplier: number }
+  /** Toxic Burst: multiplies the target's Poison stacks (up to the cap). */
+  | { readonly kind: "multiplyPoison"; readonly factor: number }
+  /** Heals the caster by a fraction of max life (Burn halves it). */
+  | { readonly kind: "heal"; readonly fraction: number }
+  /** Gives the caster Barrier: a fraction of max life, +Skill Level like spell damage. */
+  | { readonly kind: "barrier"; readonly fraction: number }
+  /** Stuns the target (Tenacity shortens it). */
+  | { readonly kind: "stun"; readonly seconds: number }
+  /** Corrupt: the target's Corruption grows by this many ticks at once. */
+  | { readonly kind: "advanceCorruption"; readonly ticks: number }
+  /** Curse (Wither): the target takes `amount` more damage over time for a while. */
+  | { readonly kind: "curse"; readonly dotDamageTaken: number; readonly duration: number }
+  /** Soul Harvest: deals `seconds` worth of all DoTs on the target at once; they keep running. */
+  | { readonly kind: "detonateDots"; readonly seconds: number };
 
 export interface SkillDefinition {
   readonly id: string;
@@ -187,7 +249,23 @@ export interface SkillDefinition {
   readonly tags: readonly string[];
   readonly description: string;
   readonly hits: readonly SkillHit[];
+  readonly effects?: readonly SkillEffect[];
 }
+
+/**
+ * Slot Modifiers (skills-v1.md section 6): one per slot from the 5th Prestige, two from the 9th.
+ * - `thrifty`: −15 % Heat Cost.
+ * - `empowered`: +1 Skill Level.
+ * - `reverb`: 20 % chance to repeat the skill at once for free.
+ * - `overcharge`: Heat above the Cost is spent too and adds as much % effect (up to +50 %).
+ */
+export type SlotModifier = "thrifty" | "empowered" | "reverb" | "overcharge";
+
+/** "Skip if…" for Rotation Slots (8th Prestige): the slot only fires while this holds. */
+export type SlotCondition =
+  | { readonly kind: "enemyHas"; readonly ailment: AilmentType }
+  | { readonly kind: "enemyBelow"; readonly fraction: number }
+  | { readonly kind: "lifeBelow"; readonly fraction: number };
 
 /** One Rotation Slot of the Battle Plan. */
 export interface RotationSlot {
@@ -196,7 +274,49 @@ export interface RotationSlot {
   readonly threshold?: number;
   /** Skill Level (node ranks + item bonuses). Default 1. */
   readonly level?: number;
+  readonly modifiers?: readonly SlotModifier[];
+  /** The slot is passed over while the condition does not hold. */
+  readonly condition?: SlotCondition;
 }
+
+/**
+ * When a Reaction Slot fires (skills-v1.md section 6). Thresholds fire once on crossing and
+ * re-arm once the value is back above; events fire whenever they happen.
+ */
+export type ReactionCondition =
+  | { readonly kind: "fightStart" }
+  | { readonly kind: "lifeBelow"; readonly fraction: number }
+  | { readonly kind: "enemyWindup" }
+  | { readonly kind: "enemyBelow"; readonly fraction: number }
+  | { readonly kind: "ailmented" }
+  /** The opponent regains Life (Lifesteal, heals). */
+  | { readonly kind: "enemyHeals" }
+  /** Own Barrier is used up by a hit. */
+  | { readonly kind: "barrierBreaks" }
+  /** The opponent carries at least `count` ailment stacks (each Poison stack counts). */
+  | { readonly kind: "enemyStacks"; readonly count: number };
+
+/**
+ * A Reaction Slot: outside the Rotation, fires when its condition is met. It pays Heat from the
+ * same bar and goes before the next Rotation skill; the Rotation pointer stays where it is.
+ */
+export interface ReactionSlot {
+  readonly skill: SkillDefinition;
+  readonly level?: number;
+  readonly condition: ReactionCondition;
+  /** Seconds before the slot can fire again. */
+  readonly cooldown: number;
+  readonly modifiers?: readonly SlotModifier[];
+}
+
+/** Battle Plan Capstones (skills-v1.md section 6): one of six at the 10th Prestige. */
+export type Capstone =
+  | { readonly kind: "echo"; readonly slot: number }
+  | { readonly kind: "crescendo" }
+  | { readonly kind: "vigil" }
+  | { readonly kind: "ignition" }
+  | { readonly kind: "lingeringFlame" }
+  | { readonly kind: "emberWard" };
 
 /**
  * A telegraphed Heavy Attack (docs/design/gegner-bosse-v1.md section 5): every `interval`
@@ -207,6 +327,8 @@ export interface TelegraphSpec {
   readonly skill: SkillDefinition;
   readonly interval: number;
   readonly windup: number;
+  /** Boss phases: only winds up while own life is below this fraction. */
+  readonly belowLife?: number;
 }
 
 /** Rule changes, e.g. from Keystones. They change rules, not just numbers. */
@@ -219,6 +341,18 @@ export interface CombatRules {
   readonly defaultAttackDamage?: number;
   /** "Heat no longer cools down": Cooling weapons keep their Heat without landing hits. */
   readonly noHeatDecay?: boolean;
+  /** Blood Price: every Crit inflicts Bleed. */
+  readonly critsApplyBleed?: boolean;
+  /** Multiplies the final Crit Chance (Blood Price halves it). */
+  readonly critChanceMultiplier?: number;
+  /** Legendary Powers: inflicting `from` also inflicts `to` ("Your Burn also Shocks"). */
+  readonly ailmentEcho?: readonly { readonly from: AilmentType; readonly to: AilmentType }[];
+  /** Hits deal `bonus` more damage to an enemy below `below` of its max life. */
+  readonly execute?: { readonly below: number; readonly bonus: number };
+  /** Heals this fraction of the damage your ailments deal over time. */
+  readonly dotLifesteal?: number;
+  /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
+  readonly dotDamage?: number;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */
@@ -241,4 +375,11 @@ export interface CombatantSetup {
   /** Telegraphed Heavy Attacks (bosses). */
   readonly telegraphs?: readonly TelegraphSpec[];
   readonly rules?: CombatRules;
+  /** Reaction Slots of the Battle Plan. */
+  readonly reactions?: readonly ReactionSlot[];
+  readonly capstone?: Capstone;
+  /** Runs away after this many seconds of fight time (the Ember Thief). */
+  readonly fleeAfter?: number;
+  /** Opening Move: cast for free right when the fight starts. */
+  readonly openingMove?: { readonly skill: SkillDefinition; readonly level?: number };
 }

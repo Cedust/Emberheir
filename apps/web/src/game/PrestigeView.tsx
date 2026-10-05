@@ -1,22 +1,37 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
   PROGRESSION,
   SLOT_NAMES,
   itemSlotFor,
+  actsInRun,
+  openBranches,
+  prestigeBranchNodes,
   prestigeRewards,
   sealsAvailable,
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ItemDetail, ItemTile, fmt } from "../ui/items";
-import { DOLL } from "./CharacterOverlay";
 import type { GameApi } from "./useGame";
+import { Paperdoll, dollBox } from "../ui/Paperdoll";
 
-type Step = "victory" | "seal";
+/** The boss's last words when its fall starts the harvest. */
+const LAST_WORDS: Record<string, string> = {
+  "ashen-fields": "Hrrk... the Harvester... will want... its field back...",
+  rotwood: "Rot... returns... The Harvester... always... reaps...",
+  "ember-wastes": "The fire... was never... mine...",
+  "frost-peaks": "Cold... keeps... nothing... from it...",
+  "storm-spires": "The storm... was only... its breath...",
+  "void-rift": "Even nothing... gets... harvested...",
+  emberfall: "You cannot keep... the ember... Heir... It always... grows back...",
+};
+
+type Step = "victory" | "branch" | "seal";
 const STEPS = [
   { id: "victory", name: "Victory" },
+  { id: "branch", name: "Bloodline" },
   { id: "seal", name: "Seal" },
   { id: "heir", name: "Inheritance" },
 ] as const;
@@ -32,6 +47,14 @@ function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
     </ol>
   );
 }
+
+const BRANCH_COLORS: Record<string, string> = {
+  core: "#c9a063",
+  might: "#c9c2b8",
+  arcana: "#5b8cff",
+  rupture: "#d0505c",
+  affliction: "#a35cff",
+};
 
 const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
 
@@ -53,8 +76,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const pending = state.pendingPrestige;
   const [step, setStep] = useState<Step>("victory");
-  const seals = sealsAvailable(state, POC_GAME_DATA);
-  const slots = POC_GAME_DATA.equipmentSlots;
+  const seals = sealsAvailable(state, GAME_DATA);
+  const slots = GAME_DATA.equipmentSlots;
   // Last time's Seals are placed again; they can be moved.
   const [sealed, setSealed] = useState<EquipmentSlot[]>(() =>
     state.legacy.seals.filter((s) => state.hero.equipment[s]).slice(0, seals),
@@ -62,7 +85,14 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const [selected, setSelected] = useState<EquipmentSlot>(
     () => slots.find((s) => state.hero.equipment[s]) ?? "mainHand",
   );
+  const open = openBranches(state, GAME_DATA);
+  const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
   if (!pending) return null;
+  // The final Prestige keeps everything: no Seal step, nothing burns.
+  const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
+  const finish = () =>
+    game.dispatch({ type: "prestige", sealedSlots: [], ...(branch ? { branchId: branch } : {}) });
+  const afterBranch = () => (final ? finish() : setStep("seal"));
 
   if (step === "victory") {
     return (
@@ -79,14 +109,75 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             {(pending.enemyName.split(",")[0] ?? "").toUpperCase()} FALLS
           </h2>
           <p className="victory-quote">
-            &ldquo;Hrrk... the Harvester... will want... its field back...&rdquo;
+            &ldquo;{LAST_WORDS[pending.actId] ?? "...the Harvester... will come for you..."}&rdquo;
           </p>
           <p className="victory-sub">
-            In the PoC, Gorrak stands in for the Ashen Harvester: his fall starts the harvest, a
-            light Prestige.
+            {final
+              ? "The Harvester breaks apart, but its ember does not scatter. It flees into one last flame, and this time nothing burns."
+              : pending.actId === "emberfall"
+                ? "The Harvester breaks apart. Its ember scatters over the world, and everything burns down to grow again."
+                : "The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap what grew."}
           </p>
-          <button type="button" className="btn big primary" onClick={() => setStep("seal")}>
-            Hold On to What Matters
+          <button
+            type="button"
+            className="btn big primary"
+            onClick={() => (open.length ? setStep("branch") : afterBranch())}
+          >
+            {final ? "Keep Everything" : "Hold On to What Matters"}
+          </button>
+        </div>
+      </section>
+    );
+  }
+
+  if (step === "branch") {
+    return (
+      <section className="screen prestige prestige-branch" aria-label="Bloodline">
+        <Crumbs step="branch" />
+        <header className="seal-head">
+          <h2 className="title-font">THE BLOODLINE GROWS</h2>
+          <p className="sub">Choose a new branch for the Skill Tree. It stays forever.</p>
+        </header>
+        <div className="branch-picks">
+          {open.map((b) => {
+            const nodes = prestigeBranchNodes(SKILL_TREE, b.id);
+            const skill = nodes.find((n) => n.skill)?.skill;
+            const keystone = nodes.find((n) => n.kind === "keystone");
+            const on = b.id === branch;
+            return (
+              <button
+                key={b.id}
+                type="button"
+                className={`branch-pick panel-card ${on ? "on" : ""}`}
+                aria-pressed={on}
+                style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
+                onClick={() => setBranch(b.id)}
+              >
+                <span className="eyebrow">{b.branch.toUpperCase()}</span>
+                <span className="title-font branch-pick-name">{b.name}</span>
+                <span className="sub">{b.theme}</span>
+                {skill && (
+                  <span className="small">
+                    Skill · <b>{skill.name}</b>
+                  </span>
+                )}
+                {keystone && (
+                  <span className="small">
+                    Keystone · <b>{keystone.name}</b>
+                  </span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+        <div className="branch-footer">
+          <button
+            type="button"
+            className="btn big primary"
+            disabled={!branch}
+            onClick={afterBranch}
+          >
+            Take {open.find((b) => b.id === branch)?.name ?? "it"}
           </button>
         </div>
       </section>
@@ -142,14 +233,9 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
               ? `${plural(free, "Seal")} left to place`
               : "All Seals placed. Click a sealed slot to move its Seal."}
           </span>
-          <div className="paperdoll">
-            <svg className="silhouette" viewBox="0 0 400 420" aria-hidden="true">
-              <circle cx="200" cy="60" r="38" />
-              <path d="M120 400 C120 220 150 120 200 120 C250 120 280 220 280 400 Z" />
-            </svg>
+          <Paperdoll>
             {slots.map((slot) => {
-              const pos = DOLL[slot];
-              if (!pos) return null;
+              const pos = dollBox(slot);
               const it = state.hero.equipment[slot];
               const on = sealed.includes(slot);
               return (
@@ -175,7 +261,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                 </div>
               );
             })}
-          </div>
+          </Paperdoll>
         </section>
         <section className="seal-side">
           {sel ? (
@@ -230,7 +316,13 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             <button
               type="button"
               className="btn big primary"
-              onClick={() => game.dispatch({ type: "prestige", sealedSlots: sealed })}
+              onClick={() =>
+                game.dispatch({
+                  type: "prestige",
+                  sealedSlots: sealed,
+                  ...(branch ? { branchId: branch } : {}),
+                })
+              }
             >
               Let It Burn
             </button>
@@ -245,22 +337,36 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
 export function InheritanceView(props: { state: GameState; onWake: () => void }) {
   const { state } = props;
   const prestige = state.legacy.prestige;
-  const r = prestigeRewards(POC_GAME_DATA, prestige);
-  const act = POC_GAME_DATA.acts[0];
-  const levels = act ? act.monsterLevels.map((l) => l + r.monsterLevelBonus) : [];
+  const r = prestigeRewards(GAME_DATA, prestige);
+  const acts = actsInRun(GAME_DATA, prestige);
+  const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
+  const newBranch = SKILL_TREE.prestigeBranches?.find((b) => b.id === state.legacy.branches.at(-1));
+  const final = prestige >= PROGRESSION.finalPrestige;
   const rewards = [
     {
       kind: "LEGACY SEAL",
       name: `${r.seals} / 10 Seals`,
-      desc: "Sealed slots keep their item through every harvest.",
+      desc: final
+        ? "Every slot is sealed. Nothing burns any more."
+        : "Sealed slots keep their item through every harvest.",
       tone: "seal",
     },
-    ...(prestige === 1
+    ...(r.planUpgrade
       ? [
           {
             kind: "BATTLE PLAN",
-            name: `Rotation Slot ${r.rotationSlots}`,
-            desc: "Two skills in your rotation. Set them up at Kaelen.",
+            name: r.planUpgrade,
+            desc: "Set it up at Kaelen.",
+            tone: "accent",
+          },
+        ]
+      : []),
+    ...(newBranch
+      ? [
+          {
+            kind: "PRESTIGE BRANCH",
+            name: newBranch.name,
+            desc: newBranch.theme,
             tone: "accent",
           },
         ]
@@ -271,22 +377,36 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       desc: "Unlocks one Keystone in the Skill Tree.",
       tone: "ember",
     },
+    ...(final
+      ? []
+      : [
+          {
+            kind: "SALVAGE DUST",
+            name: `+${fmt(r.dust)} Dust`,
+            desc: "A fresh start for crafting, whatever burned.",
+            tone: "dust",
+          },
+        ]),
+    ...(final
+      ? []
+      : [
+          {
+            kind: "LEVEL CAP",
+            name: `${r.levelCap - PROGRESSION.levelCapPerPrestige} → ${r.levelCap}`,
+            desc: `${PROGRESSION.levelCapPerPrestige} more levels to earn this run.`,
+            tone: "good",
+          },
+        ]),
     {
-      kind: "SALVAGE DUST",
-      name: `+${fmt(r.dust)} Dust`,
-      desc: "A fresh start for crafting, whatever burned.",
-      tone: "dust",
-    },
-    {
-      kind: "LEVEL CAP",
-      name: `${r.levelCap - PROGRESSION.levelCapPerPrestige} → ${r.levelCap}`,
-      desc: `${PROGRESSION.levelCapPerPrestige} more levels to earn this run.`,
-      tone: "good",
-    },
-    {
-      kind: "WORLD",
-      name: `Monster Level ${Math.min(...levels)}–${Math.max(...levels)}`,
-      desc: "The Ashen Fields grow stronger, and so does their loot.",
+      kind: final ? "THE LAST EMBER" : newAct ? "NEW ACT" : "WORLD",
+      name: final
+        ? "The last flame"
+        : newAct
+          ? `Act ${newAct.number} · ${newAct.name}`
+          : `${acts.length} Acts`,
+      desc: final
+        ? "Six Warden echoes, then the Harvester's Core. Enter it from the Camp."
+        : `Monster Level ${r.levelBand.start}–${r.levelBand.end}. The road leads further.`,
       tone: "epic",
     },
   ];
@@ -303,16 +423,29 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
             </div>
           </div>
           <div className="heir-nan-lines">
-            <p>
-              It&apos;s down. And there it goes, the whole field, up in smoke. Don&apos;t worry,
-              dear, it&apos;ll grow back. It always does.
-            </p>
-            <p>Hold on to what matters. The fire can&apos;t take what you&apos;ve sealed.</p>
-            <p>Another harvest, another Heir. Sit down, child. The fire&apos;s warm.</p>
+            {final ? (
+              <>
+                <p>Down again. But look, dear: the field is still there. Nothing caught.</p>
+                <p>
+                  One flame got away. Small, mean and very hot. Everything you own is yours to keep
+                  now, so go and put it out.
+                </p>
+              </>
+            ) : (
+              <>
+                <p>
+                  It&apos;s down. And there it goes, the whole field, up in smoke. Don&apos;t worry,
+                  dear, it&apos;ll grow back. It always does.
+                </p>
+                <p>Hold on to what matters. The fire can&apos;t take what you&apos;ve sealed.</p>
+                <p>Another harvest, another Heir. Sit down, child. The fire&apos;s warm.</p>
+              </>
+            )}
           </div>
           <span className="sub small heir-note">
-            End of the PoC loop: you wake in the Camp before Act 1 and start again at Stage 1. Act 2
-            is not in the PoC. The Supply Wagon burned and gets patched on your first return.
+            {final
+              ? "You wake in the Camp with everything you had. The Last Ember waits by the road."
+              : "You wake in the Camp before Act 1 and start again at Stage 1. The Supply Wagon burned and gets patched on your first return."}
           </span>
         </aside>
         <main className="heir-main">

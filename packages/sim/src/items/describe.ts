@@ -1,4 +1,5 @@
 import { COMBAT } from "../combat/constants";
+import { sumBonuses } from "../combat/stats";
 import { ATTRIBUTES, type Attribute, type Attributes, type DamageType } from "../combat/types";
 import type {
   BuffStat,
@@ -10,6 +11,8 @@ import type {
 import { isPercentStat, resolveTrigger, statAffixValue } from "./affixes";
 import { addedDamageRange, itemWeapon, requirementsFor, scaledBaseStats } from "./equipment";
 import { getBase } from "./generate";
+import { activeRuneword, runeBonuses } from "./runes";
+import { rollTier } from "./codex";
 import type { AffixStat, Item, ItemCatalog, ItemSlot, Rarity } from "./types";
 
 /** English display names. All game terms stay English in code, data and UI. */
@@ -31,6 +34,10 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   blockChance: "Block Chance",
   blockValue: "Block Value",
   allResistance: "All Resistance",
+  fireResistance: "Fire Resistance",
+  coldResistance: "Cold Resistance",
+  lightningResistance: "Lightning Resistance",
+  voidResistance: "Void Resistance",
   heatGain: "Heat Gain",
   startingHeat: "Starting Heat",
   ailmentDuration: "Ailment Duration",
@@ -42,6 +49,9 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   burnChance: "Chance to Burn",
   chillChance: "Chance to Chill",
   shockChance: "Chance to Shock",
+  corruptionChance: "Chance to Corrupt",
+  bleedChance: "Chance to Bleed",
+  poisonChance: "Chance to Poison",
   addedWeaponDamage: "Weapon Damage",
 };
 
@@ -129,6 +139,10 @@ export function describeCondition(condition: TriggerCondition): string {
       return "On Block";
     case "lifeBelow":
       return `Life below ${formatPercent(condition.threshold)} %`;
+    case "everyNthHitTaken":
+      return `Every ${ordinal(condition.n)} Hit Taken`;
+    case "enemyWindup":
+      return "When the enemy winds up";
   }
 }
 
@@ -157,6 +171,10 @@ export function describeEffect(effect: TriggerEffect): string {
     }
     case "extraAttack":
       return "strike back with a Default Attack";
+    case "stun":
+      return `stun the enemy for ${effect.seconds} s`;
+    case "reflect":
+      return `reflect ${formatPercent(effect.fraction)} % of the hit as ${DAMAGE_TYPE_NAMES[effect.damageType]} Damage`;
   }
 }
 
@@ -187,7 +205,19 @@ export interface ItemTooltip {
   /** Weapon damage, attack speed, Armor, Block ... */
   readonly baseLines: readonly string[];
   readonly implicitLines: readonly string[];
-  readonly affixLines: readonly { readonly text: string; readonly kind: "stat" | "trigger" }[];
+  readonly affixLines: readonly {
+    readonly text: string;
+    readonly kind: "stat" | "trigger" | "kindled";
+  }[];
+  /** "unique" and "runeword" items show their own label and color. */
+  readonly special?: "unique" | "runeword";
+  /** Legendary Power: name and rule text. */
+  readonly power?: { readonly name: string; readonly text: string };
+  /** Sockets with the socketed Runes in order (Normal items only). */
+  readonly sockets?: { readonly total: number; readonly runes: readonly string[] };
+  /** Runeword recipe shown under the name, e.g. "Ash · Ember". */
+  readonly runewordRecipe?: string;
+  readonly flavor?: string;
   readonly requirements: readonly {
     readonly attribute: Attribute;
     readonly name: string;
@@ -233,14 +263,22 @@ export function describeItem(
     ...(weapon?.triggers ?? []).map(describeTrigger),
   ];
 
-  const affixLines = item.affixes.flatMap((roll): { text: string; kind: "stat" | "trigger" }[] => {
+  const word = activeRuneword(item, catalog);
+  const power = item.powerId ? catalog.powers.get(item.powerId) : undefined;
+  const unique = item.uniqueId ? catalog.uniques.get(item.uniqueId) : undefined;
+  const runeName = (id: string) => catalog.runes.get(id)?.name ?? id;
+  const affixLines = [
+    ...item.affixes,
+    ...(word?.triggers ?? []),
+    ...(power?.trigger ? [power.trigger] : []),
+  ].flatMap((roll): { text: string; kind: "stat" | "trigger" | "kindled" }[] => {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) return [];
     if (affix.kind === "trigger") {
       return [
         {
-          text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
-          kind: "trigger" as const,
+          text: describeTrigger(resolveTrigger(affix, rollTier(item, roll), roll.quality)),
+          kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
         },
       ];
     }
@@ -251,6 +289,17 @@ export function describeItem(
       },
     ];
   });
+  // Runeword and Rune bonuses read like affixes.
+  const extra = sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses);
+  const wordAttributes = ATTRIBUTES.flatMap((a) =>
+    word?.attributes?.[a] ? [describeStat(a, word.attributes[a])] : [],
+  );
+  affixLines.push(
+    ...[...wordAttributes, ...describeBonuses(extra)].map((text) => ({
+      text,
+      kind: "stat" as const,
+    })),
+  );
   // Stat affixes first, triggers last (like the tooltip mock).
   affixLines.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "stat" ? -1 : 1));
 
@@ -268,10 +317,18 @@ export function describeItem(
     ];
   });
 
+  const special = unique ? "unique" : word ? "runeword" : undefined;
   return {
     name: item.name,
     rarity: item.rarity,
-    rarityName: RARITY_NAMES[item.rarity],
+    rarityName: unique ? "Unique" : word ? "Runeword" : RARITY_NAMES[item.rarity],
+    ...(special ? { special } : {}),
+    ...(power ? { power: { name: power.name, text: power.description } } : {}),
+    ...(item.sockets
+      ? { sockets: { total: item.sockets, runes: (item.runes ?? []).map(runeName) } }
+      : {}),
+    ...(word ? { runewordRecipe: word.runes.map(runeName).join(" · ") } : {}),
+    ...(unique?.flavor ? { flavor: unique.flavor } : {}),
     baseName: base.name,
     slotName: SLOT_NAMES[base.slot],
     tier: item.tier,

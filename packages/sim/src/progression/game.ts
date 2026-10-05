@@ -1,26 +1,79 @@
 import { type FightResult, runFight } from "../combat/fight";
 import { type EnemyDefinition, createEnemySetup } from "../combat/monsters";
+import { type FightReport, fightReport } from "../combat/report";
 import type {
   Attribute,
   Attributes,
+  Capstone,
   CombatantSetup,
+  ReactionSlot,
   RotationSlot,
   SkillDefinition,
+  SlotModifier,
   WeaponDefinition,
 } from "../combat/types";
+import { COMBAT } from "../combat/constants";
+import { mergeRules } from "../combat/rules";
+import { sumBonuses } from "../combat/stats";
 import { ATTRIBUTES } from "../combat/types";
 import { type ResolvedEquipment, itemSlotFor, missingRequirements } from "../items/equipment";
-import { getBase, pickWeighted, rollItem, rollRarity } from "../items/generate";
 import {
+  getBase,
+  pickWeighted,
+  rollItem,
+  rollRarity,
+  bossTrophies,
+  rollUnique,
+  uniquesFor,
+} from "../items/generate";
+import {
+  type AffixDefinition,
   type Equipment,
   type EquipmentSlot,
   type Item,
   type ItemCatalog,
+  type ItemSlot,
   RARITIES,
   type Rarity,
 } from "../items/types";
 import { Rng } from "../rng";
-import { PROGRESSION } from "./constants";
+import {
+  BATTLE_PLAN_LADDER,
+  type BattlePlanState,
+  CAPSTONES,
+  EMPTY_PLAN,
+  REACTION_COOLDOWN,
+  SLOT_MODIFIERS,
+  battlePlanUnlocks,
+  capstoneSpec,
+  modifierAllowed,
+  reactionCondition,
+  reactionConditionAllowed,
+  slotCondition,
+  slotModifiers,
+} from "./battle-plan";
+import {
+  type BoonDefinition,
+  type BoonFamilyDefinition,
+  type BoonPick,
+  type BoonsState,
+  EMPTY_BOONS,
+  activeBoons,
+  boonEffects,
+  rollBoonOffer,
+} from "./boons";
+import { CODEX, PROGRESSION } from "./constants";
+import {
+  type CodexPartKind,
+  type CodexState,
+  EMPTY_CODEX,
+  type QuarryMark,
+  codexAffixFactor,
+  codexMastery,
+  learnFromItem,
+  quarryAffixIds,
+  quarryFound,
+} from "./codex";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
 import { INVENTORY_SIZE, type PlacedItem, STASH_SIZE, addToGrid, packGrid } from "./inventory";
@@ -28,11 +81,13 @@ import { type CraftRequest, craft } from "./crafting";
 import { type EnemyRank, autoRewards, gainXp, xpForKill } from "./leveling";
 import {
   type LearnedNodes,
+  type PrestigeBranchDefinition,
   type SkillTreeDefinition,
   keystoneRules,
   learnNodes,
   treeBonuses,
   treeSkills,
+  treeTriggers,
 } from "./skill-tree";
 
 /**
@@ -45,21 +100,33 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 7;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
   readonly id: string;
   readonly number: number;
   readonly name: string;
-  /** Monster Level per stage (index 0 = stage 1). The last stage is the boss stage. */
-  readonly monsterLevels: readonly number[];
+  /**
+   * Stages in the act; the last one is the boss stage. Monster Levels come from the run's level
+   * band (`stageMonsterLevel`), not from the act.
+   */
+  readonly stages: number;
   readonly enemies: readonly EnemyDefinition[];
   readonly boss: EnemyDefinition;
+  /** Eldrin (Runesmith) waits in this act; he joins after the first trip into it. */
+  readonly runesmith?: boolean;
   /** Stages with a fixed Spoils pick (5 and 10). */
   readonly spoilsStages: readonly number[];
   /** The act's Essence (Imbue currency) and the stat affix it imbues. */
   readonly essence: { readonly id: string; readonly name: string; readonly affixId: string };
+  /**
+   * Act loot (gegner-bosse-v1.md section 9): affix weight multipliers by affix id, so each act
+   * drops the answer to its own question more often.
+   */
+  readonly favoredAffixes?: Readonly<Record<string, number>>;
+  /** The Stolen Fire Boon family of this act's Warden (open from this act on). */
+  readonly boonFamily?: string;
 }
 
 /** Everything content-related the game loop needs. Built once in `@emberheir/content`. */
@@ -76,6 +143,21 @@ export interface GameData {
   readonly skillTree: SkillTreeDefinition;
   readonly acts: readonly ActData[];
   readonly eliteModifiers: readonly EliteModifier[];
+  /**
+   * Boss abilities (roadmap M10): a boss gains one per Prestige after the run its act opened in,
+   * starting at a different place in the list for each act.
+   */
+  readonly bossAbilities?: readonly EliteModifier[];
+  /** Stolen Fire Boons (Spielspaß Teil 1); no Shrines without them. */
+  readonly boons?: readonly BoonDefinition[];
+  readonly boonFamilies?: readonly BoonFamilyDefinition[];
+  /** The Ember Thief (runs away after `PROGRESSION.thiefFleeSeconds`); none without it. */
+  readonly thief?: EnemyDefinition;
+  /**
+   * The Last Ember (M11): a short gauntlet after the final Prestige. Its act holds one stage per
+   * Warden echo plus the last one, the Harvester's Core (`boss`). Not on the road.
+   */
+  readonly finale?: ActData;
   readonly startingAttributes: Attributes;
 }
 
@@ -89,6 +171,10 @@ export interface Wallet {
   readonly harvesterEmber: number;
   /** Upgrade (+1 Item Tier) at the Blacksmith. Bosses, sometimes Elites. */
   readonly ascensionShards: number;
+  /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
+  readonly runes: Readonly<Record<string, number>>;
+  /** Pays for Kindle at Liora; Elites and bosses give it in the Spoils pick. */
+  readonly kindling: number;
 }
 
 export interface HeroState {
@@ -106,6 +192,8 @@ export interface HeroState {
    * does not know (any more) are skipped.
    */
   readonly rotation: readonly (string | null)[];
+  /** Thresholds, Modifiers, Reaction Slots and the Capstone (see `battlePlanUnlocks`). */
+  readonly plan: BattlePlanState;
 }
 
 export interface Encounter {
@@ -114,14 +202,21 @@ export interface Encounter {
   readonly boss: boolean;
   /** Elite modifier ids; empty for normal enemies. */
   readonly eliteModifiers: readonly string[];
+  /** Run Pressure on Life and damage (see `stagePressure`); missing means none. */
+  readonly pressure?: { readonly life: number; readonly damage: number };
   /** Fight seed: the same encounter always plays out the same. */
   readonly seed: number;
+  /** The Ember Thief instead of the stage's enemy. */
+  readonly thief?: boolean;
+  /** The Last Ember: the echo of this act's boss. */
+  readonly echo?: string;
 }
 
 export type SpoilsCard =
   | { readonly kind: "flaskCharge"; readonly amount: number }
   | { readonly kind: "reforgeStones"; readonly amount: number }
-  | { readonly kind: "essence"; readonly essenceId: string; readonly amount: number };
+  | { readonly kind: "essence"; readonly essenceId: string; readonly amount: number }
+  | { readonly kind: "kindling"; readonly amount: number };
 
 export type ItemPick =
   { readonly kind: "equip" | "take"; readonly index: number } | { readonly kind: "salvageAll" };
@@ -134,15 +229,31 @@ export interface Rewards {
   readonly dust: number;
   readonly reforgeStones: number;
   readonly ascensionShards: number;
+  /** Runes that dropped (straight into the pouch). */
+  readonly runes: readonly string[];
   readonly levelsGained: number;
-  /** Item pick: 1 of these. */
+  /** Item pick: `picks` (default 1) of these. */
   readonly items: readonly Item[];
+  /** Boss Hoard: how many cards the hero takes (missing = 1). */
+  readonly picks?: number;
+  /** The Ember Thief was caught (small Hoard) or got away (normal loot). */
+  readonly thief?: "caught" | "escaped";
+  /** Cards already taken while more picks are left. */
+  readonly taken?: readonly { readonly index: number; readonly kind: "equip" | "take" }[];
+  /** Set once the item pick is over. */
   readonly itemPick: ItemPick | null;
+  /** Uniques seen for the first time (they go up on the Trophy Wall). */
+  readonly newTrophies?: readonly string[];
   /** Dust from auto-salvaging the items that were not picked. */
   readonly salvagedDust: number;
   /** Spoils pick, empty if this fight has none. */
   readonly spoils: readonly SpoilsCard[];
   readonly spoilsPick: number | null;
+  /** What the Battle Plan did in this fight (missing in older saves). */
+  readonly report?: FightReport;
+  /** Ember Shrine: 1 of these Boons (after Stage 5 and 10, Elites and Bosses). */
+  readonly boonOffer?: readonly BoonPick[];
+  readonly boonPick?: number | null;
 }
 
 export type RunPhase = "intermission" | "fight" | "rewards";
@@ -163,7 +274,7 @@ export interface RunState {
 /** Shown once in the Camp after a run ends. */
 export interface Notice {
   /** "prestige" is the Inheritance screen after the final boss of the run. */
-  readonly kind: "death" | "retreat" | "actCleared" | "prestige";
+  readonly kind: "death" | "retreat" | "actCleared" | "prestige" | "ending";
   readonly actId: string;
   readonly stage: number;
   readonly enemyName?: string;
@@ -176,12 +287,22 @@ export interface PrestigeRewards {
   /** Seals (Save Tokens) in total. */
   readonly seals: number;
   readonly rotationSlots: number;
+  /** The Battle Plan upgrade this Prestige unlocks (`BATTLE_PLAN_LADDER`). */
+  readonly planUpgrade: string | null;
   readonly harvesterEmber: number;
   /** Fixed Salvage Dust instead of the burned stash. */
   readonly dust: number;
   readonly levelCap: number;
-  /** Monster Levels added to every stage. */
-  readonly monsterLevelBonus: number;
+  /** Acts the next run has (one more per Prestige, up to all of them). */
+  readonly acts: number;
+  /** Monster Levels of the next run: first stage and the harvest boss. */
+  readonly levelBand: LevelBand;
+}
+
+/** Monster Levels of a run: they rise evenly over all its stages from `start` to `end`. */
+export interface LevelBand {
+  readonly start: number;
+  readonly end: number;
 }
 
 /** One finished generation in the Legacy chronicle. */
@@ -200,6 +321,27 @@ export interface LegacyState {
   /** Sealed slots: their items survive the next Prestige. Prefilled when the next one comes. */
   readonly seals: readonly EquipmentSlot[];
   readonly chronicle: readonly ChronicleEntry[];
+  /** Runeword Codex: Runewords forged at least once. Permanent. */
+  readonly runewords: readonly string[];
+  /** Runes ever found. A Runeword shows its recipe once all its Runes were found. */
+  readonly runesFound: readonly string[];
+  /** Trigger Codex: Conditions and Effects learned from salvaged triggers. Permanent. */
+  readonly codex: CodexState;
+  /** The Codex part marked at Old Nan, if any. */
+  readonly quarry: QuarryMark | null;
+  /** Prestige branches of the Skill Tree, one chosen per Prestige. Permanent. */
+  readonly branches: readonly string[];
+  /** Trophy Wall: Uniques ever found. Permanent like the Runeword Codex. */
+  readonly trophies: readonly string[];
+  /** The Last Ember: attempts so far and whether the last flame is home. */
+  readonly finaleAttempts?: number;
+  readonly finaleWon?: boolean;
+}
+
+/** Marisha restocks whenever the hero comes back from a fight (`key` = fights so far). */
+export interface MerchantState {
+  readonly key: number;
+  readonly sold: readonly number[];
 }
 
 /** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */
@@ -237,7 +379,11 @@ export interface GameState {
     readonly rotationSlots: number;
     /** The Supply Wagon burned at the Prestige; it is repaired on the first return to Camp. */
     readonly stashBurned: boolean;
+    /** Eldrin (Runesmith) joined the caravan. Stays through every Prestige. */
+    readonly runesmithUnlocked: boolean;
   };
+  /** Marisha's stock: which offers of the current stock are sold. */
+  readonly merchant: MerchantState;
   /** `null` = in the Camp. */
   readonly run: RunState | null;
   readonly notice: Notice | null;
@@ -245,6 +391,8 @@ export interface GameState {
   readonly legacy: LegacyState;
   /** Set between the final boss and the Prestige. Blocks the Camp until it is done. */
   readonly pendingPrestige: PendingPrestige | null;
+  /** Stolen Fire Boons of this run; they burn at the Prestige. */
+  readonly boons: BoonsState;
 }
 
 export class GameActionError extends Error {}
@@ -295,6 +443,7 @@ export function newGame(
       learned: {},
       equipment: { mainHand: weapon },
       rotation: [null],
+      plan: EMPTY_PLAN,
     },
     wallet: {
       gold: 0,
@@ -303,6 +452,8 @@ export function newGame(
       essences: {},
       harvesterEmber: 0,
       ascensionShards: 0,
+      runes: {},
+      kindling: 0,
     },
     inventory: [],
     stash: [],
@@ -311,41 +462,164 @@ export function newGame(
       actsCleared: [],
       deathsInAct: 0,
       trainerUnlocked: false,
-      rotationSlots: PROGRESSION.startRotationSlots,
+      rotationSlots: battlePlanUnlocks(0).rotationSlots,
       stashBurned: false,
+      runesmithUnlocked: false,
     },
+    merchant: { key: 0, sold: [] },
     run: null,
     notice: null,
     stats: { fights: 0, wins: 0, deaths: 0, retreats: 0, bossKills: 0 },
-    legacy: { prestige: 0, seals: [], chronicle: [] },
+    legacy: {
+      prestige: 0,
+      seals: [],
+      chronicle: [],
+      runewords: [],
+      runesFound: [],
+      codex: EMPTY_CODEX,
+      quarry: null,
+      branches: [],
+      trophies: [],
+    },
     pendingPrestige: null,
+    boons: EMPTY_BOONS,
   };
 }
 
 // --- reading the state -----------------------------------------------------------------------
 
 export function getAct(data: GameData, actId: string): ActData {
-  const act = data.acts.find((a) => a.id === actId);
+  const act =
+    data.acts.find((a) => a.id === actId) ?? (data.finale?.id === actId ? data.finale : undefined);
   if (!act) throw new GameActionError(`Unknown act "${actId}"`);
   return act;
 }
 
-export const stagesInAct = (act: ActData) => act.monsterLevels.length;
+export const stagesInAct = (act: ActData) => act.stages;
 
-/** The last act of the run: its boss is the final boss and leads to the Prestige. */
-export function isFinalAct(data: GameData, actId: string): boolean {
-  const last = Math.max(...data.acts.map((a) => a.number));
-  return getAct(data, actId).number === last;
+/** True for the act of The Last Ember. */
+export const isFinaleAct = (data: GameData, actId: string) => data.finale?.id === actId;
+
+/** The Last Ember opens with the final Prestige. */
+export const finaleOpen = (state: GameState, data: GameData) =>
+  data.finale !== undefined && state.legacy.prestige >= PROGRESSION.finalPrestige;
+
+/** The Warden echoes of the finale in order: every act boss but the Harvester. */
+export function finaleEchoes(data: GameData): readonly ActData[] {
+  return [...data.acts]
+    .filter((a) => a.boss.archetype !== "harvester")
+    .sort((a, b) => a.number - b.number);
 }
 
-/** Level Cap at a Prestige level: 20, then +20 per Prestige. */
+/** Acts in their order through the run. */
+export function actsInOrder(data: GameData): ActData[] {
+  return [...data.acts].sort((a, b) => a.number - b.number);
+}
+
+/**
+ * The acts of a run (prestige-acts-v1.md): run n has acts 1..n, so every Prestige opens one more
+ * act until the whole world is open.
+ */
+export function actsInRun(data: GameData, prestige: number): ActData[] {
+  return actsInOrder(data).slice(0, Math.max(1, prestige + 1));
+}
+
+/** The newest act of the run: its boss brings The Harvest (the Prestige). */
+export function harvestAct(data: GameData, prestige: number): ActData {
+  const acts = actsInRun(data, prestige);
+  return acts[acts.length - 1] ?? fail("No acts");
+}
+
+/**
+ * Whether the hero may set out into an act: it must belong to this run, and the act before it
+ * must have fallen in this generation. Cleared acts can be revisited to farm.
+ */
+export function actUnlocked(state: GameState, data: GameData, actId: string): boolean {
+  const acts = actsInRun(data, state.legacy.prestige);
+  const index = acts.findIndex((a) => a.id === actId);
+  if (index < 0) return false;
+  const before = acts[index - 1];
+  return !before || state.progress.actsCleared.includes(before.id);
+}
+
+/** The act the journey continues with: the first unlocked act that has not fallen yet. */
+export function nextAct(state: GameState, data: GameData): ActData {
+  const acts = actsInRun(data, state.legacy.prestige);
+  const open = acts.find(
+    (a) => !state.progress.actsCleared.includes(a.id) && actUnlocked(state, data, a.id),
+  );
+  return open ?? acts[acts.length - 1] ?? fail("No acts");
+}
+
+/** Whether the boss of this act brings The Harvest in the given run (the newest act or later). */
+export function isHarvestAct(data: GameData, actId: string, prestige: number): boolean {
+  return getAct(data, actId).number >= harvestAct(data, prestige).number;
+}
+
+/** Level Cap at a Prestige level: 20, then +20 per Prestige; the final Prestige adds none. */
 export function levelCap(prestige: number): number {
-  return PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige * prestige;
+  const steps = Math.min(prestige, PROGRESSION.finalPrestige - 1);
+  return PROGRESSION.levelCap + PROGRESSION.levelCapPerPrestige * steps;
 }
 
-/** Monster Level of a stage; every Prestige raises it. */
-export function stageMonsterLevel(act: ActData, stage: number, prestige: number): number {
-  return (act.monsterLevels[stage - 1] ?? 1) + PROGRESSION.monsterLevelsPerPrestige * prestige;
+/**
+ * The run's level band (prestige-acts-v1.md section 4): it starts 10 below the previous Level
+ * Cap, so the first stages are a gentle regear window, and ends at the new cap with the harvest
+ * boss.
+ */
+export function levelBand(prestige: number): LevelBand {
+  const start =
+    prestige === 0
+      ? 1
+      : Math.max(
+          1,
+          levelCap(prestige - 1) -
+            PROGRESSION.levelBandStartBelowCap -
+            PROGRESSION.levelBandStartBelowCapPerPrestige * (prestige - 1),
+        );
+  return { start, end: levelCap(prestige) };
+}
+
+/** How far into its run a stage is: 0 on the run's first stage, 1 on its last. */
+function runProgress(data: GameData, act: ActData, stage: number, prestige: number): number {
+  const acts = actsInRun(data, prestige);
+  const total = acts.reduce((n, a) => n + a.stages, 0);
+  let index = 0;
+  for (const a of acts) {
+    if (a.id === act.id) break;
+    index += a.stages;
+  }
+  // Acts past the run (old saves) count as its last stage.
+  index = Math.min(total - 1, index + stage - 1);
+  return index / Math.max(1, total - 1);
+}
+
+/** Monster Level of a stage: the run's band, spread evenly over all stages of its acts. */
+export function stageMonsterLevel(
+  data: GameData,
+  act: ActData,
+  stage: number,
+  prestige: number,
+): number {
+  const { start, end } = levelBand(prestige);
+  return Math.round(start + (end - start) * runProgress(data, act, stage, prestige));
+}
+
+/**
+ * Run Pressure of a stage (PROGRESSION.runPressure): 1 in a one-act run and on a run's first
+ * stage, rising to 1 + pressure × (acts − 1) on its last.
+ */
+export function stagePressure(
+  data: GameData,
+  act: ActData,
+  stage: number,
+  prestige: number,
+): { readonly life: number; readonly damage: number } {
+  const steps = (actsInRun(data, prestige).length - 1) * runProgress(data, act, stage, prestige);
+  return {
+    life: 1 + PROGRESSION.runPressure.life * steps,
+    damage: 1 + PROGRESSION.runPressure.damage * steps,
+  };
 }
 
 /** What the Prestige at `prestige` (1 = the first one) gives. */
@@ -353,11 +627,13 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
   return {
     prestige,
     seals: Math.min(prestige, data.equipmentSlots.length),
-    rotationSlots: Math.max(PROGRESSION.startRotationSlots, PROGRESSION.prestigeRotationSlots),
+    rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
+    planUpgrade: BATTLE_PLAN_LADDER[prestige - 1]?.name ?? null,
     harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
     dust: PROGRESSION.prestigeDustPerLevel * prestige,
     levelCap: levelCap(prestige),
-    monsterLevelBonus: PROGRESSION.monsterLevelsPerPrestige * prestige,
+    acts: actsInRun(data, prestige).length,
+    levelBand: levelBand(prestige),
   };
 }
 
@@ -393,23 +669,116 @@ export function knownSkills(
   return result;
 }
 
-/** The Rotation Slots the hero fights with. */
+/** The Rotation Slots the hero fights with, with the unlocked Battle Plan choices. */
 export function heroRotation(
   state: GameState,
   data: GameData,
   weapon: WeaponDefinition,
 ): RotationSlot[] {
+  return heroRotationSlots(state, data, weapon).map((s) => s.slot);
+}
+
+/** Like `heroRotation`, but each slot remembers its Battle Plan index (Echo, Modifiers). */
+function heroRotationSlots(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): { readonly slot: RotationSlot; readonly index: number }[] {
   const known = knownSkills(state, data, weapon);
   const start = known.find((k) => k.startSkill);
-  const slots: RotationSlot[] = [];
-  for (const id of state.hero.rotation.slice(0, state.progress.rotationSlots)) {
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
+  const { plan } = state.hero;
+  const slots: { slot: RotationSlot; index: number }[] = [];
+  state.hero.rotation.slice(0, state.progress.rotationSlots).forEach((id, index) => {
     const entry = id === null ? start : known.find((k) => k.skill.id === id);
-    if (entry && !slots.some((s) => s.skill.id === entry.skill.id)) {
-      slots.push({ skill: entry.skill, level: entry.level });
-    }
+    if (!entry || slots.some((s) => s.slot.skill.id === entry.skill.id)) return;
+    const threshold = unlocks.thresholds ? plan.thresholds[index] : null;
+    const modifiers = slotModifiers(plan.modifiers, index, unlocks);
+    const condition = unlocks.conditions ? slotCondition(plan.conditions[index]) : undefined;
+    slots.push({
+      index,
+      slot: {
+        skill: entry.skill,
+        level: entry.level,
+        ...(threshold != null ? { threshold } : {}),
+        ...(modifiers.length ? { modifiers } : {}),
+        ...(condition ? { condition } : {}),
+      },
+    });
+  });
+  if (slots.length === 0 && start) {
+    slots.push({ index: 0, slot: { skill: start.skill, level: start.level } });
   }
-  if (slots.length === 0 && start) slots.push({ skill: start.skill, level: start.level });
   return slots;
+}
+
+/** The hero's Reaction Slots (Battle Plan, from the 4th Prestige on). */
+export function heroReactions(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): ReactionSlot[] {
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
+  const known = knownSkills(state, data, weapon);
+  const { plan } = state.hero;
+  const result: ReactionSlot[] = [];
+  plan.reactions.slice(0, unlocks.reactionSlots).forEach((r, index) => {
+    if (!r) return;
+    const entry = known.find((k) => k.skill.id === r.skillId);
+    const condition = reactionConditionAllowed(r.conditionId, unlocks)
+      ? reactionCondition(r.conditionId)
+      : undefined;
+    if (!entry || !condition) return;
+    const modifiers = slotModifiers(plan.reactionModifiers, index, unlocks);
+    result.push({
+      skill: entry.skill,
+      level: entry.level,
+      condition,
+      cooldown: REACTION_COOLDOWN,
+      ...(modifiers.length ? { modifiers } : {}),
+    });
+  });
+  return result;
+}
+
+/** The Opening Move (Battle Plan, 8th Prestige): a known skill cast for free at fight start. */
+function heroOpeningMove(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): CombatantSetup["openingMove"] {
+  const id = state.hero.plan.openingMove;
+  if (!id || !battlePlanUnlocks(state.legacy.prestige).openingMove) return undefined;
+  const entry = knownSkills(state, data, weapon).find((k) => k.skill.id === id);
+  return entry ? { skill: entry.skill, level: entry.level } : undefined;
+}
+
+/** The Capstone the hero fights with; Echo points at the slot's index in the fight rotation. */
+function heroCapstone(
+  state: GameState,
+  data: GameData,
+  weapon: WeaponDefinition,
+): Capstone | undefined {
+  if (!battlePlanUnlocks(state.legacy.prestige).capstone) return undefined;
+  const spec = capstoneSpec(state.hero.plan);
+  if (spec?.kind !== "echo") return spec;
+  const slot = heroRotationSlots(state, data, weapon).findIndex((s) => s.index === spec.slot);
+  return slot >= 0 ? { kind: "echo", slot } : undefined;
+}
+
+/** The Stolen Fire Boons in effect (rank and grade resolved). */
+export function heroBoons(state: GameState, data: GameData) {
+  return activeBoons(state.boons, data.boons ?? []);
+}
+
+/** Boon families open in an act: Hearth and every Warden family up to this act. */
+export function openBoonFamilies(data: GameData, actNumber: number): string[] {
+  const tied = new Set(data.acts.flatMap((a) => (a.boonFamily ? [a.boonFamily] : [])));
+  return (data.boonFamilies ?? [])
+    .map((f) => f.id)
+    .filter(
+      (id) => !tied.has(id) || data.acts.some((a) => a.boonFamily === id && a.number <= actNumber),
+    );
 }
 
 /** The hero's fight setup from the current state. */
@@ -418,6 +787,7 @@ export function heroSetup(
   data: GameData,
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
   const { hero } = state;
+  const boons = boonEffects(heroBoons(state, data));
   return buildHeroSetup(
     {
       level: hero.level,
@@ -425,12 +795,33 @@ export function heroSetup(
       equipment: hero.equipment,
       fallbackWeapon: fallbackWeapon(state, data),
       rotation: (weapon) => heroRotation(state, data, weapon),
-      bonuses: (weapon) => treeBonuses(data.skillTree, hero.learned, weapon.range),
-      rules: keystoneRules(data.skillTree, hero.learned),
+      reactions: (weapon) => heroReactions(state, data, weapon),
+      capstone: (weapon) => heroCapstone(state, data, weapon),
+      openingMove: (weapon) => heroOpeningMove(state, data, weapon),
+      bonuses: (weapon) =>
+        sumBonuses(treeBonuses(data.skillTree, hero.learned, weapon.range), boons.bonuses),
+      triggers: (weapon) => [
+        ...treeTriggers(data.skillTree, hero.learned, weapon.range),
+        ...boons.triggers,
+      ],
+      rules: boons.rules
+        ? mergeRules(keystoneRules(data.skillTree, hero.learned), boons.rules)
+        : keystoneRules(data.skillTree, hero.learned),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
     data.items,
   );
+}
+
+/** The enemy of an encounter: the act's enemy or boss, or the Ember Thief. */
+export function encounterEnemy(
+  encounter: Encounter,
+  act: ActData,
+  data: GameData,
+): EnemyDefinition {
+  if (encounter.thief) return data.thief ?? fail("No Ember Thief in this game");
+  if (encounter.echo) return findEnemy(getAct(data, encounter.echo), encounter.enemyId);
+  return findEnemy(act, encounter.enemyId);
 }
 
 function findEnemy(act: ActData, id: string): EnemyDefinition {
@@ -439,23 +830,53 @@ function findEnemy(act: ActData, id: string): EnemyDefinition {
   return enemy;
 }
 
+/**
+ * The abilities an act boss has in a run: one more per Prestige after its act opened. The
+ * Harvester has none: its three phases already grow with the run.
+ */
+export function bossAbilities(data: GameData, act: ActData, prestige: number): EliteModifier[] {
+  const list = data.bossAbilities ?? [];
+  if (act.boss.archetype === "harvester") return [];
+  const count = Math.min(list.length, Math.max(0, prestige - (act.number - 1)));
+  return Array.from({ length: count }, (_, i) => list[(act.number - 1 + i) % list.length]).filter(
+    (m): m is EliteModifier => m !== undefined,
+  );
+}
+
 export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteModifier[] {
   return encounter.eliteModifiers.flatMap((id) => {
-    const mod = data.eliteModifiers.find((m) => m.id === id);
+    const mod =
+      data.eliteModifiers.find((m) => m.id === id) ?? data.bossAbilities?.find((m) => m.id === id);
     return mod ? [mod] : [];
   });
 }
 
 /** The enemy's fight setup for an encounter (Elites included). */
 export function enemySetup(encounter: Encounter, actId: string, data: GameData): CombatantSetup {
-  const enemy = findEnemy(getAct(data, actId), encounter.enemyId);
-  const setup = createEnemySetup(enemy, encounter.level);
+  const enemy = encounterEnemy(encounter, getAct(data, actId), data);
+  const created = createEnemySetup(enemy, encounter.level);
+  const base = encounter.thief
+    ? { ...created, fleeAfter: PROGRESSION.thiefFleeSeconds }
+    : encounter.boss && enemy.archetype !== "harvester"
+      ? { ...created, baseLife: (created.baseLife ?? 0) * PROGRESSION.bossLife }
+      : created;
+  const p = encounter.pressure;
+  // The Harvester takes only part of the Run Pressure: it is already the run's peak.
+  const share = enemy.archetype === "harvester" ? PROGRESSION.harvesterPressure : undefined;
+  const scaled = (x: number, k: number | undefined) => (k === undefined ? x : 1 + (x - 1) * k);
+  const setup = p
+    ? {
+        ...base,
+        baseLife: (base.baseLife ?? 0) * scaled(p.life, share?.life),
+        damageMultiplier: (base.damageMultiplier ?? 1) * scaled(p.damage, share?.damage),
+      }
+    : base;
   const mods = eliteModifiersOf(encounter, data);
   return mods.length ? applyEliteModifiers(setup, mods) : setup;
 }
 
 export function encounterName(encounter: Encounter, actId: string, data: GameData): string {
-  return findEnemy(getAct(data, actId), encounter.enemyId).name;
+  return encounterEnemy(encounter, getAct(data, actId), data).name;
 }
 
 export function encounterRank(encounter: Encounter): EnemyRank {
@@ -551,6 +972,8 @@ export function unequipBlockReason(
 export type GameAction =
   /** Leave the Camp and start an act at stage 1. */
   | { readonly type: "setOut"; readonly actId: string }
+  /** The Last Ember: from the Camp into the finale's gauntlet. */
+  | { readonly type: "enterFinale" }
   /** From the intermission into the next fight. */
   | { readonly type: "startStage" }
   /** Resolve the current fight (the UI calls this when its replay ends). */
@@ -560,13 +983,17 @@ export type GameAction =
   | { readonly type: "pickItem"; readonly index: number; readonly mode: "equip" | "take" }
   | { readonly type: "salvageAll" }
   | { readonly type: "pickSpoils"; readonly index: number }
+  | { readonly type: "pickBoon"; readonly index: number }
   /** After the rewards: on to the next stage (or back to Camp after the boss). */
   | { readonly type: "continue" }
   | { readonly type: "useFlask" }
   | { readonly type: "allocateAttributes"; readonly points: Partial<Attributes> }
   | { readonly type: "equip"; readonly itemId: string }
   | { readonly type: "unequip"; readonly slot: EquipmentSlot }
+  /** Salvage an inventory item; its trigger parts go into the Trigger Codex. */
   | { readonly type: "salvage"; readonly itemId: string }
+  /** Old Nan (Camp only): mark a known Codex part to hunt, or clear the mark. */
+  | { readonly type: "setQuarry"; readonly part: { kind: CodexPartKind; id: string } | null }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
   | { readonly type: "respecTree" }
@@ -576,8 +1003,15 @@ export type GameAction =
   /** Thoric and Liora (Camp only). */
   | { readonly type: "craft"; readonly request: CraftRequest }
   | { readonly type: "setRotationSkill"; readonly slot: number; readonly skillId: string | null }
+  /** Kaelen: Thresholds, Modifiers, Conditions, Reaction Slots, Capstone. */
+  | { readonly type: "setBattlePlan"; readonly plan: BattlePlanState }
   /** After the final boss: seal slots, burn the rest, start the next generation. */
-  | { readonly type: "prestige"; readonly sealedSlots: readonly EquipmentSlot[] }
+  | {
+      readonly type: "prestige";
+      readonly sealedSlots: readonly EquipmentSlot[];
+      /** Prestige branch to unlock; required while branches are left. */
+      readonly branchId?: string;
+    }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -585,6 +1019,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
   switch (action.type) {
     case "setOut":
       return setOut(state, data, action.actId);
+    case "enterFinale":
+      return enterFinale(state, data);
     case "startStage":
       return startStage(state, data);
     case "resolveFight":
@@ -595,6 +1031,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return pickItem(state, data, action.index, action.mode);
     case "salvageAll":
       return salvageAll(state);
+    case "pickBoon":
+      return pickBoon(state, action.index);
     case "pickSpoils":
       return pickSpoils(state, action.index);
     case "continue":
@@ -608,7 +1046,9 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "unequip":
       return unequip(state, data, action.slot);
     case "salvage":
-      return salvage(state, action.itemId);
+      return salvage(state, data, action.itemId);
+    case "setQuarry":
+      return setQuarry(state, action.part);
     case "learnNodes":
       return learn(state, data, action.nodeIds);
     case "respecTree":
@@ -621,8 +1061,10 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return craft(state, data, action.request);
     case "setRotationSkill":
       return setRotationSkill(state, data, action.slot, action.skillId);
+    case "setBattlePlan":
+      return setBattlePlan(state, data, action.plan);
     case "prestige":
-      return doPrestige(state, data, action.sealedSlots);
+      return doPrestige(state, data, action.sealedSlots, action.branchId);
     case "dismissNotice":
       return { ...state, notice: null };
   }
@@ -643,6 +1085,7 @@ export function requireCamp(state: GameState): void {
 function setOut(state: GameState, data: GameData, actId: string): GameState {
   requireCamp(state);
   getAct(data, actId);
+  if (!actUnlocked(state, data, actId)) fail("The road there is still closed");
   return {
     ...state,
     notice: null,
@@ -657,25 +1100,80 @@ function setOut(state: GameState, data: GameData, actId: string): GameState {
   };
 }
 
+function enterFinale(state: GameState, data: GameData): GameState {
+  requireCamp(state);
+  if (!finaleOpen(state, data) || !data.finale) return fail("The last flame is not in reach yet");
+  return {
+    ...state,
+    notice: null,
+    boons: EMPTY_BOONS,
+    flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
+    legacy: { ...state.legacy, finaleAttempts: (state.legacy.finaleAttempts ?? 0) + 1 },
+    run: {
+      actId: data.finale.id,
+      stage: 1,
+      lifeFraction: 1,
+      phase: "intermission",
+      encounter: null,
+      rewards: null,
+    },
+  };
+}
+
+/** The finale's foe at a stage: a Warden echo (one boss ability more per stage), then the Core. */
+function finaleEncounter(data: GameData, stage: number, rng: Rng): Encounter {
+  const finale = data.finale ?? fail("No finale in this game");
+  const last = harvestAct(data, PROGRESSION.finalPrestige - 1);
+  const level = stageMonsterLevel(data, last, last.stages, PROGRESSION.finalPrestige - 1);
+  const pressure = PROGRESSION.finale;
+  const echo = finaleEchoes(data)[stage - 1];
+  const seed = rng.int(0, 0x7fffffff);
+  if (!echo || stage >= finale.stages) {
+    return { enemyId: finale.boss.id, level, boss: true, eliteModifiers: [], pressure, seed };
+  }
+  return {
+    enemyId: echo.boss.id,
+    level,
+    boss: true,
+    eliteModifiers: bossAbilities(data, echo, PROGRESSION.finalPrestige)
+      .slice(0, Math.min(stage, PROGRESSION.finaleEchoAbilities))
+      .map((m) => m.id),
+    pressure,
+    seed,
+    echo: echo.id,
+  };
+}
+
 function startStage(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission");
   const act = getAct(data, run.actId);
   const [rng, next] = nextRng(state);
-  const level = stageMonsterLevel(act, run.stage, state.legacy.prestige);
+  if (isFinaleAct(data, act.id)) {
+    const encounter = finaleEncounter(data, run.stage, rng);
+    return { ...next, run: { ...run, phase: "fight", encounter } };
+  }
+  const level = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
+  const p = stagePressure(data, act, run.stage, state.legacy.prestige);
+  const pressure = p.life > 1 ? { pressure: p } : {};
   let encounter: Encounter;
   if (run.stage >= stagesInAct(act)) {
     encounter = {
       enemyId: act.boss.id,
       level,
       boss: true,
-      eliteModifiers: [],
+      eliteModifiers: bossAbilities(data, act, state.legacy.prestige).map((m) => m.id),
+      ...pressure,
       seed: rng.int(0, 0x7fffffff),
     };
   } else {
     const enemy = act.enemies[rng.int(0, act.enemies.length - 1)];
     if (!enemy) return fail(`Act ${act.id} has no enemies`);
     const mods: string[] = [];
-    if (rng.chance(eliteChance(act.number, run.stage))) {
+    const thief =
+      data.thief !== undefined &&
+      act.number >= PROGRESSION.thiefFromAct &&
+      rng.chance(PROGRESSION.thiefChance);
+    if (!thief && rng.chance(eliteChance(act.number, run.stage))) {
       const pool = [...data.eliteModifiers];
       for (let i = 0; i < eliteModifierCount(level) && pool.length; i++) {
         const [mod] = pool.splice(rng.int(0, pool.length - 1), 1);
@@ -683,24 +1181,35 @@ function startStage(state: GameState, data: GameData): GameState {
       }
     }
     encounter = {
-      enemyId: enemy.id,
+      enemyId: thief && data.thief ? data.thief.id : enemy.id,
       level,
       boss: false,
       eliteModifiers: mods,
+      ...pressure,
       seed: rng.int(0, 0x7fffffff),
+      ...(thief ? { thief: true } : {}),
     };
   }
   return { ...next, run: { ...run, phase: "fight", encounter } };
 }
 
 /** Back to the Camp: flask refilled, life full, act progress gone, Supply Wagon repaired. */
-function toCamp(state: GameState, notice: Notice | null): GameState {
+function toCamp(state: GameState, data: GameData, notice: Notice | null): GameState {
+  const fromRunesmithAct = state.run ? getAct(data, state.run.actId).runesmith === true : false;
+  // Boons of the current act burn on death and Retreat; a cleared act keeps them.
+  const lost = notice?.kind === "death" || notice?.kind === "retreat";
+  const { kept, fresh } = state.boons;
   return {
     ...state,
     run: null,
     notice,
+    boons: { kept: lost ? kept : [...kept, ...fresh], fresh: [] },
     flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
-    progress: { ...state.progress, stashBurned: false },
+    progress: {
+      ...state.progress,
+      stashBurned: false,
+      runesmithUnlocked: state.progress.runesmithUnlocked || fromRunesmithAct,
+    },
   };
 }
 
@@ -711,8 +1220,13 @@ function resolveFight(state: GameState, data: GameData): GameState {
   const result: FightResult = runFight(hero, enemy, seed);
   const stats = { ...state.stats, fights: state.stats.fights + 1 };
   const enemyName = encounterName(encounter, run.actId, data);
+  if (isFinaleAct(data, run.actId))
+    return resolveFinaleFight(state, data, result, stats, enemyName);
 
-  if (result.winner !== "hero") {
+  // The Ember Thief got away: the stage still counts, with the normal loot.
+  const escaped = encounter.thief === true && result.fled === "enemy";
+  const caught = encounter.thief === true && result.winner === "hero";
+  if (result.winner !== "hero" && !escaped) {
     // A draw at the time limit counts as a defeat: the act has to be tried again.
     return toCamp(
       {
@@ -720,6 +1234,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         stats: { ...stats, deaths: stats.deaths + 1 },
         progress: { ...state.progress, deathsInAct: state.progress.deathsInAct + 1 },
       },
+      data,
       { kind: "death", actId: run.actId, stage: run.stage, enemyName },
     );
   }
@@ -742,22 +1257,69 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
+  const quarry = state.legacy.quarry;
+  const fight = {
+    archetype: encounter.boss ? "boss" : encounterEnemy(encounter, act, data).archetype,
+    actId: act.id,
+    boss: encounter.boss,
+  };
+  const forceQuarry =
+    quarry !== null && rank !== "normal" && quarry.misses + 1 >= CODEX.quarryPity
+      ? quarryAffixIds(data.items, quarry)
+      : undefined;
   const items = rollItemChoices(
     data,
-    encounter,
+    act.id,
+    caught ? encounter : { ...encounter, thief: false },
     rank,
     state.progress.deathsInAct,
     act.number + state.legacy.prestige,
     rng,
+    actAffixFactor(act, codexAffixFactor(data.items, fight, quarry)),
+    forceQuarry,
   );
+  const nextQuarry: QuarryMark | null =
+    quarry && rank !== "normal"
+      ? { ...quarry, misses: quarryFound(items, data.items, quarry) ? 0 : quarry.misses + 1 }
+      : quarry;
+  const runes = rollRuneDrops(data, rank, act.number + state.legacy.prestige, rng);
+  const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
+  const newTrophies = [...new Set(found)].filter((id) => !state.legacy.trophies.includes(id));
   const spoils: SpoilsCard[] =
     rank !== "normal" || act.spoilsStages.includes(run.stage)
       ? [
           { kind: "flaskCharge", amount: PROGRESSION.spoils.flaskCharges },
-          { kind: "reforgeStones", amount: PROGRESSION.spoils.reforgeStones },
+          // Elites and bosses already drop Reforge Stones; their Spoils offer Kindling instead.
+          rank === "normal"
+            ? { kind: "reforgeStones", amount: PROGRESSION.spoils.reforgeStones }
+            : {
+                kind: "kindling",
+                amount: rank === "boss" ? CODEX.bossKindling : CODEX.eliteKindling,
+              },
           { kind: "essence", essenceId: act.essence.id, amount: PROGRESSION.spoils.essences },
         ]
       : [];
+
+  // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10, Elites and Bosses of an act this run
+  // has not cleared yet; Revisit Act and the harvest boss give none.
+  const shrine =
+    (data.boons?.length ?? 0) > 0 &&
+    !state.progress.actsCleared.includes(act.id) &&
+    !(rank === "boss" && isHarvestAct(data, act.id, state.legacy.prestige)) &&
+    (rank !== "normal" || act.spoilsStages.includes(run.stage));
+  const boonOffer = shrine
+    ? rollBoonOffer(
+        data.boons ?? [],
+        data.boonFamilies ?? [],
+        {
+          open: openBoonFamilies(data, act.number),
+          active: heroBoons(state, data),
+          damageType: hero.weapon.damageType,
+          reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
+        },
+        rng,
+      )
+    : [];
 
   return {
     ...next,
@@ -782,6 +1344,13 @@ function resolveFight(state: GameState, data: GameData): GameState {
       dust: state.wallet.dust + auto.dust,
       reforgeStones: state.wallet.reforgeStones + stones,
       ascensionShards: state.wallet.ascensionShards + shards,
+      runes: addRunes(state.wallet.runes, runes),
+    },
+    legacy: {
+      ...state.legacy,
+      runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
+      quarry: nextQuarry,
+      trophies: [...state.legacy.trophies, ...newTrophies],
     },
     run: {
       ...run,
@@ -794,12 +1363,91 @@ function resolveFight(state: GameState, data: GameData): GameState {
         dust: auto.dust,
         reforgeStones: stones,
         ascensionShards: shards,
+        runes,
         levelsGained: leveled.levelsGained,
+        report: fightReport(result.events),
         items,
+        ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
+        ...(caught ? { picks: PROGRESSION.thiefPicks, thief: "caught" as const } : {}),
+        ...(escaped ? { thief: "escaped" as const } : {}),
+        ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
+        ...(newTrophies.length ? { newTrophies } : {}),
         itemPick: null,
         salvagedDust: 0,
         spoils,
         spoilsPick: null,
+      },
+    },
+  };
+}
+
+/**
+ * A fight of The Last Ember: no loot, no XP. A win offers Stolen Fire from every family (Fusions
+ * likelier); the last win brings the flame home. A death ends the attempt.
+ */
+function resolveFinaleFight(
+  state: GameState,
+  data: GameData,
+  result: FightResult,
+  stats: GameStats,
+  enemyName: string,
+): GameState {
+  const run = requireRun(state, "fight");
+  const finale = getAct(data, run.actId);
+  if (result.winner !== "hero") {
+    return toCamp({ ...state, stats: { ...stats, deaths: stats.deaths + 1 } }, data, {
+      kind: "death",
+      actId: run.actId,
+      stage: run.stage,
+      enemyName,
+    });
+  }
+  const won = { ...stats, wins: stats.wins + 1, bossKills: stats.bossKills + 1 };
+  if (run.stage >= finale.stages) {
+    const home = toCamp({ ...state, stats: won }, data, {
+      kind: "ending",
+      actId: run.actId,
+      stage: run.stage,
+      enemyName,
+    });
+    return { ...home, boons: EMPTY_BOONS, legacy: { ...home.legacy, finaleWon: true } };
+  }
+  const [rng, next] = nextRng(state);
+  const boonOffer = rollBoonOffer(
+    data.boons ?? [],
+    data.boonFamilies ?? [],
+    {
+      open: (data.boonFamilies ?? []).map((f) => f.id),
+      active: heroBoons(state, data),
+      damageType: heroSetup(state, data).setup.weapon.damageType,
+      reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
+      fusionWeight: PROGRESSION.finaleFusionWeight,
+    },
+    rng,
+  );
+  return {
+    ...next,
+    stats: won,
+    run: {
+      ...run,
+      phase: "rewards",
+      lifeFraction: result.final.hero.life / result.final.hero.maxLife,
+      rewards: {
+        rank: "boss",
+        xp: 0,
+        gold: 0,
+        dust: 0,
+        reforgeStones: 0,
+        ascensionShards: 0,
+        runes: [],
+        levelsGained: 0,
+        report: fightReport(result.events),
+        items: [],
+        itemPick: { kind: "salvageAll" },
+        salvagedDust: 0,
+        spoils: [],
+        spoilsPick: null,
+        ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
       },
     },
   };
@@ -846,25 +1494,90 @@ export function itemPickWeights(
 
 function rollItemChoices(
   data: GameData,
+  actId: string,
   encounter: Encounter,
   rank: EnemyRank,
   deathsInAct: number,
   actTier: number,
   rng: Rng,
+  affixFactor?: (affix: AffixDefinition) => number,
+  forceTrigger?: readonly string[],
 ): Item[] {
+  const count =
+    rank === "boss"
+      ? PROGRESSION.bossHoardCards
+      : encounter.thief
+        ? PROGRESSION.thiefCards
+        : PROGRESSION.itemChoices;
+  // A caught Ember Thief always drops one card that is at least Rare.
+  const rareCard = encounter.thief ? rng.int(0, count - 1) : -1;
   const weights = itemPickWeights(rank, deathsInAct, actTier);
-  const bases = [...data.lootBases];
+  const bySlot = new Map<ItemSlot, string[]>();
+  for (const baseId of data.lootBases) {
+    const slot = getBase(data.items, baseId).slot;
+    bySlot.set(slot, [...(bySlot.get(slot) ?? []), baseId]);
+  }
+  const slots = [...bySlot.keys()];
   const items: Item[] = [];
-  for (let i = 0; i < PROGRESSION.itemChoices; i++) {
-    // Different bases while possible, so the three cards differ.
-    const pool = bases.length ? bases : [...data.lootBases];
-    const baseId = pickWeighted(pool, () => 1, rng);
+  // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
+  const legendaryCard = rng.chance(PROGRESSION.legendaryChance[rank]) ? rng.int(0, count - 1) : -1;
+  // A boss may drop one of its own trophies (Teil 3 "Boss-Trophäen").
+  const trophies =
+    rank === "boss" && encounter.boss
+      ? bossTrophies(data.items, actId).filter((u) => u.minItemLevel <= encounter.level)
+      : [];
+  const trophy =
+    trophies.length && rng.chance(PROGRESSION.bossTrophyChance)
+      ? trophies[rng.int(0, trophies.length - 1)]
+      : undefined;
+  const trophyCard = trophy ? rng.int(0, count - 1) : -1;
+  for (let i = 0; i < count; i++) {
+    if (trophy && i === trophyCard) {
+      items.push(rollUnique(data.items, trophy.id, encounter.level, rng));
+      const slot = getBase(data.items, trophy.baseId).slot;
+      if (slots.includes(slot)) slots.splice(slots.indexOf(slot), 1);
+      continue;
+    }
+    // Different slots while possible, so the three cards differ.
+    const pool = slots.length ? slots : [...bySlot.keys()];
+    const slot = pickWeighted(pool, (s) => PROGRESSION.lootSlotWeights[s], rng);
+    if (!slot) break;
+    slots.splice(slots.indexOf(slot), 1);
+    const bases = bySlot.get(slot) ?? [];
+    if (i === legendaryCard) {
+      const uniques = uniquesFor(data.items, encounter.level, bases);
+      const unique =
+        uniques.length > 0 && rng.chance(PROGRESSION.uniqueShare)
+          ? uniques[rng.int(0, uniques.length - 1)]
+          : undefined;
+      if (unique) {
+        items.push(rollUnique(data.items, unique.id, encounter.level, rng));
+        continue;
+      }
+    }
+    // Quarry Pity: the first card carries the marked part (on a base that can have it).
+    const forced =
+      i === 0 && forceTrigger?.length
+        ? bases.filter((id) => fitsAnyAffix(data.items, id, forceTrigger))
+        : [];
+    const basePool = forced.length ? forced : bases;
+    const baseId = basePool[rng.int(0, basePool.length - 1)];
     if (!baseId) break;
-    bases.splice(bases.indexOf(baseId), 1);
+    const rolled = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
+    const rarity =
+      (forced.length || i === rareCard) && RARITIES.indexOf(rolled) < RARITIES.indexOf("rare")
+        ? "rare"
+        : rolled;
     items.push(
       rollItem(
         data.items,
-        { baseId, itemLevel: encounter.level, rarity: rollRarity(rng, weights) },
+        {
+          baseId,
+          itemLevel: encounter.level,
+          rarity,
+          ...(affixFactor ? { affixFactor } : {}),
+          ...(forced.length && forceTrigger ? { forceTrigger } : {}),
+        },
         rng,
       ),
     );
@@ -872,15 +1585,72 @@ function rollItemChoices(
   return items;
 }
 
+/** Adds Runes to the pouch. */
+/** Act loot (favored affixes, e.g. Fire Resistance in the Ember Wastes) on top of the Codex. */
+function actAffixFactor(
+  act: ActData,
+  codex: (affix: AffixDefinition) => number,
+): (affix: AffixDefinition) => number {
+  const favored = act.favoredAffixes ?? {};
+  return (affix) => codex(affix) * (favored[affix.id] ?? 1);
+}
+
+function fitsAnyAffix(catalog: ItemCatalog, baseId: string, affixIds: readonly string[]): boolean {
+  const slot = getBase(catalog, baseId).slot;
+  return affixIds.some((id) => catalog.affixes.get(id)?.slots.includes(slot));
+}
+
+export function addRunes(
+  pouch: Readonly<Record<string, number>>,
+  runes: readonly string[],
+): Record<string, number> {
+  const next = { ...pouch };
+  for (const id of runes) next[id] = (next[id] ?? 0) + 1;
+  return next;
+}
+
+/** Highest Rune rank that drops at an Act Tier (act number + Prestige). */
+export function maxRuneRank(actTier: number): number {
+  return PROGRESSION.runeRankBase + PROGRESSION.runeRanksPerActTier * actTier;
+}
+
+/** Runes a win drops: by chance per rank, lower Rune ranks far more often (like D2). */
+export function rollRuneDrops(
+  data: GameData,
+  rank: EnemyRank,
+  actTier: number,
+  rng: Rng,
+): string[] {
+  const max = maxRuneRank(actTier);
+  // The top ranks are the Ber and Jah of Emberheir: only Elites and Bosses, and rarely.
+  const topRank = Math.max(...[...data.items.runes.values()].map((r) => r.rank));
+  const high = (r: { rank: number }) => r.rank > topRank - PROGRESSION.highRuneRanks;
+  const pool = [...data.items.runes.values()].filter(
+    (r) => r.rank <= max && (rank !== "normal" || !high(r)),
+  );
+  const drops: string[] = [];
+  const count = PROGRESSION.runeDrops[rank];
+  const weight = (r: { rank: number }) =>
+    PROGRESSION.runeRankFalloff ** (r.rank - 1) * (high(r) ? PROGRESSION.highRuneFactor : 1);
+  for (let i = 0; i < Math.ceil(count); i++) {
+    if (!rng.chance(Math.min(1, count - i))) continue;
+    const rune = pickWeighted(pool, weight, rng);
+    if (rune) drops.push(rune.id);
+  }
+  return drops;
+}
+
 function retreat(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission", "fight", "rewards");
   // Rewards are picked first, so no loot gets lost on the way back.
   if (run.rewards && !rewardsDone(run.rewards)) return fail("Pick your rewards first");
   const enemyName = run.encounter ? encounterName(run.encounter, run.actId, data) : undefined;
-  return toCamp(
-    { ...state, stats: { ...state.stats, retreats: state.stats.retreats + 1 } },
-    { kind: "retreat", actId: run.actId, stage: run.stage, ...(enemyName ? { enemyName } : {}) },
-  );
+  return toCamp({ ...state, stats: { ...state.stats, retreats: state.stats.retreats + 1 } }, data, {
+    kind: "retreat",
+    actId: run.actId,
+    stage: run.stage,
+    ...(enemyName ? { enemyName } : {}),
+  });
 }
 
 function requireRewards(state: GameState): { run: RunState; rewards: Rewards } {
@@ -913,6 +1683,8 @@ function pickItem(
 ): GameState {
   const { run, rewards } = requireRewards(state);
   if (rewards.itemPick) return fail("Item already picked");
+  const taken = rewards.taken ?? [];
+  if (taken.some((t) => t.index === index)) return fail("Item already taken");
   const item = rewards.items[index] ?? fail("No such item");
   let next: GameState;
   if (mode === "equip") {
@@ -923,30 +1695,49 @@ function pickItem(
     const inventory = addToGrid(state.inventory, item, data.items) ?? fail("No room");
     next = { ...state, inventory };
   }
-  const salvaged = rewards.items
-    .filter((_, i) => i !== index)
-    .reduce((sum, it) => sum + salvageValue(it), 0);
-  return {
-    ...next,
-    wallet: { ...next.wallet, dust: next.wallet.dust + salvaged },
-    run: {
-      ...run,
-      rewards: { ...rewards, itemPick: { kind: mode, index }, salvagedDust: salvaged },
-    },
-  };
+  const nowTaken = [...taken, { index, kind: mode }];
+  // Boss Hoard: more picks left, the rest waits.
+  if (nowTaken.length < (rewards.picks ?? 1)) {
+    return { ...next, run: { ...run, rewards: { ...rewards, taken: nowTaken } } };
+  }
+  return finishItemPick(next, run, { ...rewards, taken: nowTaken }, { kind: mode, index });
 }
 
-function salvageAll(state: GameState): GameState {
-  const { run, rewards } = requireRewards(state);
-  if (rewards.itemPick) return fail("Item already picked");
-  const salvaged = rewards.items.reduce((sum, it) => sum + salvageValue(it), 0);
+/** Ends the item pick: every card not taken is salvaged. */
+function finishItemPick(
+  state: GameState,
+  run: RunState,
+  rewards: Rewards,
+  pick: ItemPick,
+): GameState {
+  const taken = new Set((rewards.taken ?? []).map((t) => t.index));
+  const salvaged = rewards.items
+    .filter((_, i) => !taken.has(i))
+    .reduce((sum, it) => sum + salvageValue(it), 0);
   return {
     ...state,
     wallet: { ...state.wallet, dust: state.wallet.dust + salvaged },
-    run: {
-      ...run,
-      rewards: { ...rewards, itemPick: { kind: "salvageAll" }, salvagedDust: salvaged },
-    },
+    run: { ...run, rewards: { ...rewards, itemPick: pick, salvagedDust: salvaged } },
+  };
+}
+
+/** Salvages every card that was not taken (all of them before the first pick). */
+function salvageAll(state: GameState): GameState {
+  const { run, rewards } = requireRewards(state);
+  if (rewards.itemPick) return fail("Item already picked");
+  return finishItemPick(state, run, rewards, { kind: "salvageAll" });
+}
+
+/** Takes one Boon of the Shrine; it counts as this act's until the boss falls. */
+function pickBoon(state: GameState, index: number): GameState {
+  const { run, rewards } = requireRewards(state);
+  if (!rewards.boonOffer?.length) return fail("No Shrine here");
+  if (rewards.boonPick != null) return fail("Boon already taken");
+  const pick = rewards.boonOffer[index] ?? fail("No such Boon");
+  return {
+    ...state,
+    boons: { ...state.boons, fresh: [...state.boons.fresh, pick] },
+    run: { ...run, rewards: { ...rewards, boonPick: index } },
   };
 }
 
@@ -965,6 +1756,8 @@ function pickSpoils(state: GameState, index: number): GameState {
       ...state,
       wallet: { ...state.wallet, reforgeStones: state.wallet.reforgeStones + card.amount },
     };
+  } else if (card.kind === "kindling") {
+    next = { ...state, wallet: { ...state.wallet, kindling: state.wallet.kindling + card.amount } };
   } else {
     const essences = { ...state.wallet.essences };
     essences[card.essenceId] = (essences[card.essenceId] ?? 0) + card.amount;
@@ -975,18 +1768,26 @@ function pickSpoils(state: GameState, index: number): GameState {
 
 /** True once the item pick (and the spoils pick, if any) is done. */
 export function rewardsDone(rewards: Rewards): boolean {
-  return rewards.itemPick !== null && (rewards.spoils.length === 0 || rewards.spoilsPick !== null);
+  return (
+    rewards.itemPick !== null &&
+    (rewards.spoils.length === 0 || rewards.spoilsPick !== null) &&
+    (!rewards.boonOffer?.length || rewards.boonPick != null)
+  );
 }
 
 function continueRun(state: GameState, data: GameData): GameState {
   const { run, rewards } = requireRewards(state);
   if (!rewardsDone(rewards)) return fail("Pick your rewards first");
   const encounter = run.encounter ?? fail("No encounter");
-  if (encounter.boss) {
+  if (encounter.boss && !isFinaleAct(data, run.actId)) {
     const cleared = state.progress.actsCleared.includes(run.actId)
       ? state.progress.actsCleared
       : [...state.progress.actsCleared, run.actId];
     const enemyName = encounterName(encounter, run.actId, data);
+    // After the final Prestige the world no longer burns: no more harvests.
+    const harvest =
+      isHarvestAct(data, run.actId, state.legacy.prestige) &&
+      state.legacy.prestige < PROGRESSION.finalPrestige;
     const after = toCamp(
       {
         ...state,
@@ -997,12 +1798,11 @@ function continueRun(state: GameState, data: GameData): GameState {
           trainerUnlocked: true,
         },
       },
-      isFinalAct(data, run.actId)
-        ? null
-        : { kind: "actCleared", actId: run.actId, stage: run.stage, enemyName },
+      data,
+      harvest ? null : { kind: "actCleared", actId: run.actId, stage: run.stage, enemyName },
     );
-    // The final boss of the run: the Prestige flow starts (Victory → Seal → Inheritance).
-    return isFinalAct(data, run.actId)
+    // The boss of the newest act: The Harvest and the Prestige flow start.
+    return harvest
       ? { ...after, pendingPrestige: { actId: run.actId, stage: run.stage, enemyName } }
       : after;
   }
@@ -1122,29 +1922,51 @@ function unequip(state: GameState, data: GameData, slot: EquipmentSlot): GameSta
   return { ...state, inventory, hero: { ...state.hero, equipment } };
 }
 
-function salvage(state: GameState, itemId: string): GameState {
+function salvage(state: GameState, data: GameData, itemId: string): GameState {
   if (state.run?.phase === "fight") return fail("Not during a fight");
   const placed = findInInventory(state, itemId);
+  const { codex } = learnFromItem(state.legacy.codex, placed.item, data.items);
   return {
     ...state,
     inventory: state.inventory.filter((p) => p !== placed),
     wallet: { ...state.wallet, dust: state.wallet.dust + salvageValue(placed.item) },
+    legacy: codex === state.legacy.codex ? state.legacy : { ...state.legacy, codex },
   };
 }
 
+function setQuarry(
+  state: GameState,
+  part: { readonly kind: CodexPartKind; readonly id: string } | null,
+): GameState {
+  requireCamp(state);
+  if (part && codexMastery(state.legacy.codex, part.kind, part.id) === 0) {
+    return fail("Only known Codex parts can be the Quarry");
+  }
+  return { ...state, legacy: { ...state.legacy, quarry: part ? { ...part, misses: 0 } : null } };
+}
+
+/** Kaelen travels with the caravan from the first Camp on; the Skill Tree is Camp-only. */
 export function requireTrainer(state: GameState): void {
   requireCamp(state);
-  if (!state.progress.trainerUnlocked) fail("Kaelen joins the Camp after the act boss");
+}
+
+/** The Battle Plan can be changed in the Camp and between stages, never mid-fight. */
+function requirePlanEdit(state: GameState): void {
+  if (state.pendingPrestige) fail("The harvest comes first");
+  if (state.run?.phase === "fight") fail("Not during a fight");
 }
 
 function learn(state: GameState, data: GameData, nodeIds: readonly string[]): GameState {
   requireTrainer(state);
   let result: ReturnType<typeof learnNodes>;
   try {
-    result = learnNodes(data.skillTree, state.hero.learned, nodeIds, {
-      skillPoints: state.hero.unspentSkillPoints,
-      harvesterEmber: state.wallet.harvesterEmber,
-    });
+    result = learnNodes(
+      data.skillTree,
+      state.hero.learned,
+      nodeIds,
+      { skillPoints: state.hero.unspentSkillPoints, harvesterEmber: state.wallet.harvesterEmber },
+      state.legacy.branches,
+    );
   } catch (e) {
     return fail(e instanceof Error ? e.message : String(e));
   }
@@ -1203,7 +2025,7 @@ function setRotationSkill(
   slot: number,
   skillId: string | null,
 ): GameState {
-  requireTrainer(state);
+  requirePlanEdit(state);
   if (!Number.isInteger(slot) || slot < 0 || slot >= state.progress.rotationSlots) {
     return fail("No such Rotation Slot");
   }
@@ -1221,7 +2043,98 @@ function setRotationSkill(
   return { ...state, hero: { ...state.hero, rotation: filled } };
 }
 
+/** Checks a Battle Plan against the unlocks; changing a chosen Capstone costs Gold. */
+function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState): GameState {
+  requirePlanEdit(state);
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
+  const slots = state.progress.rotationSlots;
+  const fit = <T>(list: readonly T[], length: number, empty: T): T[] =>
+    Array.from({ length }, (_, i) => list[i] ?? empty);
+
+  const thresholds = fit(plan.thresholds, slots, null);
+  if (thresholds.some((t) => t !== null && (!unlocks.thresholds || !validThreshold(t)))) {
+    return fail("Invalid Trigger Threshold");
+  }
+  const checkModifiers = (list: readonly (readonly SlotModifier[])[], length: number) => {
+    const fitted = fit(list, length, [] as readonly SlotModifier[]);
+    for (const mods of fitted) {
+      if (mods.length > unlocks.modifiers || new Set(mods).size !== mods.length) {
+        fail("Too many Slot Modifiers");
+      }
+      if (mods.some((m) => !SLOT_MODIFIERS.some((d) => d.id === m))) fail("Unknown Slot Modifier");
+      if (mods.some((m) => !modifierAllowed(m, unlocks))) fail("Slot Modifier locked");
+    }
+    return fitted;
+  };
+  const modifiers = checkModifiers(plan.modifiers, slots);
+  const conditions = fit(plan.conditions, slots, null);
+  if (conditions.some((c) => c !== null && (!unlocks.conditions || !slotCondition(c)))) {
+    return fail("Invalid Rotation Condition");
+  }
+  const weapon = heroSetup(state, data).setup.weapon;
+  const known = knownSkills(state, data, weapon);
+  const reactions = fit(plan.reactions, unlocks.reactionSlots, null);
+  if (plan.reactions.slice(unlocks.reactionSlots).some((r) => r))
+    return fail("Reaction Slot locked");
+  for (const r of reactions) {
+    if (!r) continue;
+    if (!known.some((k) => k.skill.id === r.skillId)) return fail("Unknown skill");
+    if (!reactionCondition(r.conditionId)) return fail("Unknown Reaction condition");
+    if (!reactionConditionAllowed(r.conditionId, unlocks)) return fail("Reaction condition locked");
+  }
+  const reactionModifiers = checkModifiers(plan.reactionModifiers, unlocks.reactionSlots);
+  const openingMove = plan.openingMove ?? null;
+  if (openingMove !== null) {
+    if (!unlocks.openingMove) return fail("Opening Move locked");
+    if (!known.some((k) => k.skill.id === openingMove)) return fail("Unknown skill");
+  }
+
+  const capstone = plan.capstone;
+  let gold = state.wallet.gold;
+  if (capstone) {
+    if (!unlocks.capstone) return fail("Capstone locked");
+    if (!CAPSTONES.some((c) => c.id === capstone.id)) return fail("Unknown Capstone");
+    if (!Number.isInteger(capstone.slot) || capstone.slot < 0 || capstone.slot >= slots) {
+      return fail("No such Rotation Slot");
+    }
+    const old = state.hero.plan.capstone;
+    if (old && old.id !== capstone.id) {
+      if (gold < PROGRESSION.capstoneChangeGold) return fail("Not enough Gold");
+      gold -= PROGRESSION.capstoneChangeGold;
+    }
+  } else if (state.hero.plan.capstone) {
+    return fail("A Capstone cannot be removed");
+  }
+  return {
+    ...state,
+    hero: {
+      ...state.hero,
+      plan: {
+        thresholds,
+        modifiers,
+        conditions,
+        reactions,
+        reactionModifiers,
+        capstone: capstone ? { id: capstone.id, slot: capstone.slot } : null,
+        openingMove,
+      },
+    },
+    wallet: { ...state.wallet, gold },
+  };
+}
+
+function validThreshold(t: number): boolean {
+  return Number.isFinite(t) && t >= 0 && t <= COMBAT.maxHeat;
+}
+
 // --- prestige --------------------------------------------------------------------------------
+
+/** Prestige branches the coming Prestige can unlock. */
+export function openBranches(state: GameState, data: GameData): PrestigeBranchDefinition[] {
+  return (data.skillTree.prestigeBranches ?? []).filter(
+    (b) => !state.legacy.branches.includes(b.id),
+  );
+}
 
 /** Seals the coming Prestige allows (one more than the Prestiges done so far). */
 export function sealsAvailable(state: GameState, data: GameData): number {
@@ -1237,8 +2150,13 @@ function doPrestige(
   state: GameState,
   data: GameData,
   sealedSlots: readonly EquipmentSlot[],
+  branchId: string | undefined,
 ): GameState {
   const pending = state.pendingPrestige ?? fail("No Prestige pending");
+  const open = openBranches(state, data);
+  if (branchId === undefined ? open.length > 0 : !open.some((b) => b.id === branchId)) {
+    return fail("Choose an open Prestige branch");
+  }
   const sealed = [...new Set(sealedSlots)];
   if (sealed.length !== sealedSlots.length) return fail("A slot can only be sealed once");
   if (sealed.some((slot) => !data.equipmentSlots.includes(slot))) return fail("No such slot");
@@ -1247,6 +2165,47 @@ function doPrestige(
   const [rng, next] = nextRng(state);
   const prestige = state.legacy.prestige + 1;
   const rewards = prestigeRewards(data, prestige);
+  const chronicle = [
+    ...state.legacy.chronicle,
+    {
+      generation: prestige,
+      sealed,
+      level: state.hero.level,
+      deaths: state.stats.deaths - state.legacy.chronicle.reduce((n, c) => n + c.deaths, 0),
+      enemyName: pending.enemyName,
+    },
+  ];
+  const notice: Notice = {
+    kind: "prestige",
+    actId: pending.actId,
+    stage: pending.stage,
+    enemyName: pending.enemyName,
+  };
+  if (prestige >= PROGRESSION.finalPrestige) {
+    // The final Prestige (prestige-counting): every slot is sealed and nothing burns. The Heir
+    // keeps everything and can follow the last flame into The Last Ember.
+    return {
+      ...next,
+      wallet: {
+        ...state.wallet,
+        harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
+      },
+      progress: {
+        ...state.progress,
+        rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
+      },
+      legacy: {
+        ...state.legacy,
+        prestige,
+        seals: [...data.equipmentSlots],
+        branches: branchId ? [...state.legacy.branches, branchId] : state.legacy.branches,
+        chronicle,
+      },
+      pendingPrestige: null,
+      boons: EMPTY_BOONS,
+      notice,
+    };
+  }
   const equipment: Partial<Record<EquipmentSlot, Item>> = {};
   for (const slot of sealed) {
     const item = state.hero.equipment[slot];
@@ -1267,6 +2226,8 @@ function doPrestige(
       essences: {},
       harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
       ascensionShards: 0,
+      runes: {},
+      kindling: 0,
     },
     inventory: [],
     stash: [],
@@ -1277,29 +2238,20 @@ function doPrestige(
       trainerUnlocked: true,
       rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
       stashBurned: true,
+      runesmithUnlocked: state.progress.runesmithUnlocked,
     },
     run: null,
     legacy: {
+      ...state.legacy,
       prestige,
       seals: sealed,
-      chronicle: [
-        ...state.legacy.chronicle,
-        {
-          generation: prestige,
-          sealed,
-          level: state.hero.level,
-          deaths: state.stats.deaths - state.legacy.chronicle.reduce((n, c) => n + c.deaths, 0),
-          enemyName: pending.enemyName,
-        },
-      ],
+      branches: branchId ? [...state.legacy.branches, branchId] : state.legacy.branches,
+      chronicle,
     },
     pendingPrestige: null,
-    notice: {
-      kind: "prestige",
-      actId: pending.actId,
-      stage: pending.stage,
-      enemyName: pending.enemyName,
-    },
+    // The Boons burn with the rest of the run.
+    boons: EMPTY_BOONS,
+    notice,
   };
 }
 
@@ -1316,6 +2268,10 @@ export function deserializeGame(json: string): GameState {
   let state = parsed as Partial<GameState>;
   if (state.version === 1) state = migrateV1(state);
   if (state.version === 2) state = migrateV2(state);
+  if (state.version === 3) state = migrateV3(state);
+  if (state.version === 4) state = migrateV4(state);
+  if (state.version === 5) state = migrateV5(state);
+  if (state.version === 6) state = migrateV6(state);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -1351,8 +2307,84 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
   return {
     ...state,
     version: 3,
-    legacy: { prestige: 0, seals: [], chronicle: [] },
+    legacy: {
+      prestige: 0,
+      seals: [],
+      chronicle: [],
+      runewords: [],
+      runesFound: [],
+      codex: EMPTY_CODEX,
+      quarry: null,
+      branches: [],
+      trophies: [],
+    },
     pendingPrestige: null,
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
+  };
+}
+
+/** v3 (M5–M7) → v4 (M8): Runes, Runeword Codex, Eldrin and Marisha's stock are new. */
+function migrateV3(state: Partial<GameState>): Partial<GameState> {
+  const rewards = state.run?.rewards;
+  return {
+    ...state,
+    version: 4,
+    merchant: { key: 0, sold: [] },
+    ...(state.wallet ? { wallet: { ...state.wallet, runes: {} } } : {}),
+    ...(state.progress ? { progress: { ...state.progress, runesmithUnlocked: false } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, runewords: [], runesFound: [] } } : {}),
+    ...(state.run
+      ? { run: { ...state.run, rewards: rewards ? { ...rewards, runes: [] } : null } }
+      : {}),
+  };
+}
+
+/** v4 (M8) → v5 (prestige rework): Trigger Codex, Quarry and Kindling are new. */
+function migrateV4(state: Partial<GameState>): Partial<GameState> {
+  return {
+    ...state,
+    version: 5,
+    ...(state.wallet ? { wallet: { ...state.wallet, kindling: 0 } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, codex: EMPTY_CODEX, quarry: null } } : {}),
+  };
+}
+
+/** v5 → v6 (M10): Battle Plan choices beyond the Rotation, Prestige branches. */
+function migrateV5(state: Partial<GameState>): Partial<GameState> {
+  return {
+    ...state,
+    version: 6,
+    ...(state.hero ? { hero: { ...state.hero, plan: EMPTY_PLAN } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, branches: [] } } : {}),
+  };
+}
+
+/**
+ * v6 → v7 (Spielspaß plan): the faster Battle Plan ladder grants its slots to older heroes; the
+ * Trophy Wall starts with the Uniques the hero carries.
+ */
+function migrateV6(state: Partial<GameState>): Partial<GameState> {
+  const prestige = state.legacy?.prestige ?? 0;
+  const carried = [
+    ...Object.values(state.hero?.equipment ?? {}),
+    ...(state.inventory ?? []).map((p) => p.item),
+    ...(state.stash ?? []).map((p) => p.item),
+  ].flatMap((item) => (item?.uniqueId ? [item.uniqueId] : []));
+  return {
+    ...state,
+    version: 7,
+    ...(state.legacy ? { legacy: { ...state.legacy, trophies: [...new Set(carried)] } } : {}),
+    boons: EMPTY_BOONS,
+    ...(state.progress
+      ? {
+          progress: {
+            ...state.progress,
+            rotationSlots: Math.max(
+              state.progress.rotationSlots,
+              battlePlanUnlocks(prestige).rotationSlots,
+            ),
+          },
+        }
+      : {}),
   };
 }

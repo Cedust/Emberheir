@@ -40,6 +40,23 @@ export function SettingsPanel(props: { api: SettingsApi }) {
           ))}
         </div>
       </div>
+      <div className="setting-row">
+        <span>Sound</span>
+        <div className="segmented" role="radiogroup" aria-label="Sound">
+          {[true, false].map((v) => (
+            <button
+              key={String(v)}
+              type="button"
+              role="radio"
+              aria-checked={settings.sound === v}
+              className={settings.sound === v ? "on" : ""}
+              onClick={() => update({ sound: v })}
+            >
+              {v ? "On" : "Off"}
+            </button>
+          ))}
+        </div>
+      </div>
       <FullscreenRow />
     </div>
   );

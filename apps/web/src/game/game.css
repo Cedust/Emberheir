@@ -23,6 +23,7 @@
   --r-rare: #a86f00;
   --r-epic: #7a3fcf;
   --r-legendary: #b84a00;
+  --r-unique: #8a6a1c;
 }
 
 @media (prefers-color-scheme: dark) {
@@ -47,6 +48,7 @@
     --r-rare: #ffd84a;
     --r-epic: #c48cff;
     --r-legendary: #ff9d45;
+    --r-unique: #e0c27a;
   }
 }
 
@@ -70,6 +72,7 @@
   --r-rare: #ffd84a;
   --r-epic: #c48cff;
   --r-legendary: #ff9d45;
+  --r-unique: #e0c27a;
 }
 
 /* --- stage ---------------------------------------------------------------------------------- */
@@ -385,7 +388,8 @@
 }
 
 .stage .run-header .run-title {
-  width: 190px;
+  width: 240px;
+  white-space: nowrap;
 }
 
 .stage .act-progress {
@@ -741,6 +745,49 @@
   background: var(--dmg-lightning);
 }
 
+.stage .status-chip.ailment-bleed {
+  border-color: var(--dmg-bleed);
+}
+
+.stage .status-chip.ailment-bleed .swatch {
+  background: var(--dmg-bleed);
+}
+
+.stage .status-chip.ailment-poison {
+  border-color: var(--dmg-poison);
+}
+
+.stage .status-chip.ailment-poison .swatch {
+  background: var(--dmg-poison);
+}
+
+.stage .status-chip.ailment-corruption {
+  border-color: var(--dmg-void);
+}
+
+.stage .status-chip.ailment-corruption .swatch {
+  background: var(--dmg-void);
+}
+
+.stage .status-chip.stun {
+  border-color: var(--dmg-lightning);
+}
+
+.stage .status-chip.stun .swatch {
+  background: var(--dmg-lightning);
+  border-radius: 50%;
+}
+
+.stage .status-chip.curse {
+  border-color: var(--dmg-void);
+  border-style: dashed;
+}
+
+.stage .status-chip.curse .swatch {
+  background: var(--dmg-void);
+  transform: rotate(45deg);
+}
+
 .stage .status-chip.buff {
   border-color: var(--heal);
 }
@@ -1016,6 +1063,31 @@
   }
 }
 
+.stage .skillbar-divider {
+  align-self: stretch;
+  width: 2px;
+  margin: 6px 4px 22px;
+  background: var(--edge);
+}
+
+.stage .skill-slot.reaction {
+  width: 56px;
+  height: 56px;
+  border-style: dashed;
+}
+
+.stage .skill-slot.reaction.cooling > svg {
+  opacity: 0.35;
+}
+
+.stage .skill-slot .cooldown {
+  position: absolute;
+  font-size: 18px;
+  font-weight: 800;
+  color: #fff6e4;
+  text-shadow: 0 1px 2px #000;
+}
+
 .stage .skill-caption {
   font-size: 13px;
   white-space: nowrap;
@@ -1052,4 +1124,77 @@
 .stage .dev-tools button.active {
   border-style: solid;
   border-color: var(--accent);
+}
+
+/* A fallen boss: a burst of embers behind the banner before the Hoard drops. */
+.stage .fight-banner.boss-kill::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 900px;
+  height: 900px;
+  margin: -450px 0 0 -450px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgb(255 190 90 / 0.55),
+    rgb(255 120 40 / 0.18) 40%,
+    transparent 70%
+  );
+  z-index: -1;
+  animation: boss-burst 1.8s ease-out forwards;
+}
+
+@keyframes boss-burst {
+  from {
+    transform: scale(0.1);
+    opacity: 1;
+  }
+  to {
+    transform: scale(1.2);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .fight-banner.boss-kill::before {
+    animation: none;
+    opacity: 0.4;
+  }
+}
+
+.stage .hero-column {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .battle-boons {
+  align-self: flex-start;
+  padding: 3px 10px;
+  border-radius: 6px;
+  background: rgb(20 16 12 / 0.55);
+}
+
+.stage .thief-timer {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  background: #2e2610;
+  border: 2px solid #ffd84a;
+  color: #fff1bf;
+  font-size: 14px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+}
+
+.stage .thief-timer.hurry {
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.stage .fight-banner.escaped {
+  color: #ffd84a;
 }

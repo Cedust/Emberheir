@@ -20,7 +20,7 @@ describe("Elites", () => {
   it("get more modifiers with higher Monster Levels, at most 3", () => {
     expect(eliteModifierCount(1)).toBe(1);
     expect(eliteModifierCount(3)).toBe(1);
-    expect(eliteModifierCount(11)).toBe(2);
+    expect(eliteModifierCount(26)).toBe(2);
     expect(eliteModifierCount(99)).toBe(3);
   });
 

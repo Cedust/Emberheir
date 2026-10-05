@@ -27,6 +27,12 @@
   --rtext: var(--r-legendary);
 }
 
+.stage .special-unique,
+.stage .special-runeword {
+  --frame: var(--rarity-runeword);
+  --rtext: var(--r-unique);
+}
+
 .stage .rarity-text {
   color: var(--rtext, var(--text));
 }
@@ -73,6 +79,56 @@
   font-weight: 800;
 }
 
+.stage .item-detail-head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.stage .item-detail-title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stage .item-detail-art {
+  --glow: transparent;
+  position: relative;
+  flex-shrink: 0;
+  width: 64px;
+  height: 64px;
+  border-radius: 6px;
+  border: 2px solid var(--frame, var(--slot-edge));
+  background: radial-gradient(ellipse at 50% 55%, var(--glow) 0%, transparent 70%), var(--slot-bg);
+  box-shadow: var(--slot-inset);
+}
+
+.stage .item-detail-art.rarity-magic {
+  --glow: rgb(91 140 255 / 0.35);
+}
+
+.stage .item-detail-art.rarity-rare {
+  --glow: rgb(255 216 74 / 0.32);
+}
+
+.stage .item-detail-art.rarity-epic {
+  --glow: rgb(179 107 255 / 0.42);
+}
+
+.stage .equipped-detail .item-detail-art {
+  width: 48px;
+  height: 48px;
+}
+
+.stage .item-detail-art .item-art {
+  position: absolute;
+  inset: 6px;
+  width: calc(100% - 12px);
+  height: calc(100% - 12px);
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+}
+
 .stage .item-detail-name {
   font-family: var(--font-title);
   font-size: 22px;
@@ -111,9 +167,15 @@
   font-size: 15px;
 }
 
-.stage .line-trigger {
+.stage .line-trigger,
+.stage .line-kindled {
   color: var(--trigger-text);
   font-weight: 700;
+}
+
+.stage .line-kindled::before {
+  content: "✦ ";
+  color: #e0782a;
 }
 
 .stage .line-implicit {
@@ -165,34 +227,121 @@
 
 /* --- tiles and grids ------------------------------------------------------------------------ */
 
-.stage .item-tile {
+.stage .item-tile,
+.stage .grid-item {
+  --glow: transparent;
   position: relative;
   padding: 0;
-  border-radius: 6px;
-  border: 2px solid var(--frame, var(--edge));
-  background: var(--bg);
+  border: 2px solid var(--frame, var(--slot-edge));
+  background: radial-gradient(ellipse at 50% 55%, var(--glow) 0%, transparent 70%), var(--slot-bg);
+  box-shadow: var(--slot-inset);
   display: flex;
-  flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 2px;
   cursor: pointer;
+  transition:
+    filter 0.12s,
+    box-shadow 0.12s;
+}
+
+.stage .item-tile {
+  border-radius: 6px;
+}
+
+.stage .item-tile:not(:disabled):hover,
+.stage .grid-item:hover {
+  filter: brightness(1.15);
+}
+
+.stage .item-tile .item-art,
+.stage .grid-item .item-art {
+  position: absolute;
+  inset: 7%;
+  width: 86%;
+  height: 86%;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+  pointer-events: none;
+}
+
+.stage .rarity-magic.item-tile,
+.stage .rarity-magic.grid-item {
+  --glow: rgb(91 140 255 / 0.3);
+}
+
+.stage .rarity-rare.item-tile,
+.stage .rarity-rare.grid-item {
+  --glow: rgb(255 216 74 / 0.28);
+}
+
+.stage .rarity-epic.item-tile,
+.stage .rarity-epic.grid-item {
+  --glow: rgb(179 107 255 / 0.38);
+}
+
+.stage .rarity-legendary.item-tile,
+.stage .rarity-legendary.grid-item {
+  --glow: rgb(255 138 31 / 0.42);
+}
+
+.stage .special-unique.item-tile,
+.stage .special-unique.grid-item,
+.stage .special-runeword.item-tile,
+.stage .special-runeword.grid-item {
+  --glow: rgb(201 160 99 / 0.45);
+}
+
+/* Sockets: small holes along the bottom of a tile, glowing with their Runes. */
+.stage .socket-dots {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 4px;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+  pointer-events: none;
+}
+
+.stage .socket-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #0c0a08;
+  border: 1px solid #5a4a3a;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.9);
+}
+
+.stage .socket-dot.filled {
+  border-color: #1a1410;
+}
+
+.stage .line-power {
+  color: var(--r-legendary);
+  font-style: italic;
+  font-weight: 700;
 }
 
 .stage .item-tile.empty {
   border-style: dashed;
+  border-color: var(--slot-edge);
   cursor: default;
 }
 
-.stage .item-tile.selected {
+.stage .item-tile.selected,
+.stage .grid-item.selected {
   box-shadow:
     0 0 0 2px var(--accent),
-    0 0 14px rgb(255 138 58 / 0.5);
+    0 0 14px rgb(255 138 58 / 0.55),
+    var(--slot-inset);
 }
 
 .stage .item-tile.inactive {
-  opacity: 0.55;
   border-style: dashed;
+}
+
+.stage .item-tile.inactive .item-art {
+  opacity: 0.45;
+  filter: grayscale(0.8) sepia(0.6) hue-rotate(-30deg);
 }
 
 .stage .item-tile-tier {
@@ -201,43 +350,250 @@
   bottom: 2px;
   font-family: var(--font-mono);
   font-size: 10px;
-  color: var(--text-sub);
+  color: #b3a288;
+  text-shadow: 0 1px 1px #000;
 }
 
 .stage .item-tile-label {
+  font-family: var(--font-title);
   font-size: 10px;
-  color: var(--text-sub);
+  letter-spacing: 0.5px;
+  color: #8a7a64;
+  text-align: center;
+  padding: 0 4px;
 }
 
 .stage .item-grid {
   position: relative;
   flex-shrink: 0;
-  background-color: var(--bg);
+  background-color: var(--slot-bg);
   background-image:
-    linear-gradient(var(--grid-line) 1px, transparent 1px),
-    linear-gradient(90deg, var(--grid-line) 1px, transparent 1px);
+    linear-gradient(var(--slot-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--slot-line) 1px, transparent 1px);
   border: 2px solid var(--edge);
   border-radius: 4px;
+  box-shadow: var(--slot-inset);
   box-sizing: content-box;
 }
 
 .stage .grid-item {
   position: absolute;
   margin: 2px;
-  padding: 0;
   border-radius: 4px;
-  border: 2px solid var(--frame);
-  background: var(--panel);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
 }
 
-.stage .grid-item.selected {
+/* --- item tooltips (Diablo style) ----------------------------------------------------------- */
+
+.stage .item-hover-layer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+.stage .item-tooltip-row {
+  position: absolute;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.stage .item-tooltip {
+  --tip-name: #e8e2d6;
+  box-sizing: border-box;
+  width: 300px;
+  padding: 12px 16px 10px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  text-align: center;
+  background: #0e0b08;
+  border: 1px solid #5a4430;
+  outline: 1px solid rgb(0 0 0 / 0.8);
+  border-radius: 3px;
   box-shadow:
-    0 0 0 2px var(--accent),
-    0 0 12px rgb(255 138 58 / 0.6);
+    0 10px 30px rgb(0 0 0 / 0.6),
+    inset 0 0 24px rgb(0 0 0 / 0.6);
+  color: #d6ccbb;
+  font-family: var(--font-text);
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.stage .item-tooltip.tip-magic {
+  --tip-name: #6f9bff;
+  border-color: #3b5aa8;
+}
+
+.stage .item-tooltip.tip-rare {
+  --tip-name: #ffd84a;
+  border-color: #8a7420;
+}
+
+.stage .item-tooltip.tip-epic {
+  --tip-name: #c18aff;
+  border-color: #6a3fa8;
+  box-shadow:
+    0 0 22px rgb(179 107 255 / 0.3),
+    0 10px 30px rgb(0 0 0 / 0.6),
+    inset 0 0 24px rgb(0 0 0 / 0.6);
+}
+
+.stage .item-tooltip.tip-legendary {
+  --tip-name: #ff9a3a;
+  border-color: #a8561a;
+}
+
+.stage .item-tooltip.tip-unique,
+.stage .item-tooltip.tip-runeword {
+  --tip-name: #e0c27a;
+  border-color: #8a6a2c;
+  box-shadow:
+    0 0 22px rgb(201 160 99 / 0.28),
+    0 10px 30px rgb(0 0 0 / 0.6),
+    inset 0 0 24px rgb(0 0 0 / 0.6);
+}
+
+.stage .tip-recipe {
+  font-family: var(--font-title);
+  font-size: 14px;
+  letter-spacing: 1px;
+  color: #c9a063;
+}
+
+.stage .tip-power {
+  margin-top: 4px;
+  color: #ff9a3a;
+  font-style: italic;
+}
+
+.stage .tip-power b {
+  font-family: var(--font-title);
+  font-style: normal;
+  display: block;
+}
+
+.stage .tip-sockets {
+  display: flex;
+  gap: 6px;
+  margin-top: 6px;
+  align-items: center;
+}
+
+.stage .tip-socket {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #050403;
+  border: 1px solid #4a3a2c;
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.95);
+}
+
+.stage .tip-flavor {
+  margin-top: 6px;
+  font-size: 13px;
+  font-style: italic;
+  color: #c9a063;
+  opacity: 0.85;
+}
+
+.stage .tip-tag {
+  align-self: stretch;
+  margin: -12px -16px 6px;
+  padding: 4px 0;
+  background: rgb(255 255 255 / 0.06);
+  border-bottom: 1px solid #3a2c20;
+  font-family: var(--font-title);
+  font-size: 11px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: #9a8a72;
+}
+
+.stage .tip-name {
+  font-family: var(--font-title);
+  font-size: 19px;
+  font-weight: 700;
+  color: var(--tip-name);
+  text-shadow: 0 0 10px rgb(0 0 0 / 0.9);
+}
+
+.stage .tip-base {
+  font-family: var(--font-title);
+  font-size: 15px;
+  color: var(--tip-name);
+  opacity: 0.85;
+}
+
+.stage .tip-kind {
+  font-size: 13px;
+  color: #8f8170;
+}
+
+.stage .tip-rule {
+  align-self: stretch;
+  height: 1px;
+  margin: 6px 12px;
+  background: linear-gradient(90deg, transparent, #6a4a2c, transparent);
+}
+
+.stage .tip-basic {
+  color: #ece4d4;
+}
+
+.stage .tip-implicit {
+  color: #b9ad98;
+  font-style: italic;
+}
+
+.stage .tip-stat {
+  color: #7fa6ff;
+}
+
+.stage .tip-trigger,
+.stage .tip-kindled {
+  color: #ffb070;
+  font-weight: 700;
+}
+
+.stage .tip-kindled::before {
+  content: "✦ ";
+  color: #ff7a2a;
+}
+
+.stage .tip-req {
+  font-size: 13px;
+  color: #a89a84;
+}
+
+.stage .tip-req.unmet {
+  color: #ff5a5a;
+  font-weight: 700;
+}
+
+.stage .tip-ilvl {
+  margin-top: 6px;
+  font-family: var(--font-mono);
+  font-size: 11px;
+  color: #6f6455;
+}
+
+.stage .tip-verdict {
+  align-self: stretch;
+  margin: 8px -16px -10px;
+  padding: 6px 10px;
+  border-top: 1px solid #3a2c20;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stage .tip-verdict.better {
+  color: #4fd88a;
+}
+
+.stage .tip-verdict.worse {
+  color: #ff7a5a;
 }
 
 .stage .equipped-row {
@@ -659,6 +1015,53 @@
   color: #b3a288;
 }
 
+/* The ending: a warm dawn instead of ash. */
+.stage .notice-ending {
+  background: radial-gradient(circle at 50% 60%, #6a3212 0%, #2a160c 45%, #0b0806 100%);
+}
+
+.stage .ending-glow {
+  position: absolute;
+  left: 50%;
+  top: 58%;
+  width: 900px;
+  height: 900px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: radial-gradient(circle, rgb(255 177 59 / 0.28) 0%, rgb(255 138 31 / 0) 60%);
+  animation: ending-breathe 6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+@keyframes ending-breathe {
+  50% {
+    opacity: 0.55;
+    transform: translate(-50%, -50%) scale(1.06);
+  }
+}
+
+.stage .notice-ending .notice-content {
+  width: 1000px;
+}
+
+.stage .notice-ending .notice-title {
+  color: #ffd27a;
+  font-size: 64px;
+  white-space: nowrap;
+  text-shadow: 0 0 30px rgb(255 138 31 / 0.55);
+}
+
+.stage .ending-eyebrow {
+  color: #ff8a3a;
+  letter-spacing: 6px;
+}
+
+.stage .ending-credits {
+  font-size: 14px;
+  letter-spacing: 2px;
+  color: #b3a288;
+}
+
 .stage .notice-screen .btn.primary {
   background: #ff8a3a;
   color: #1c1a18;
@@ -730,8 +1133,24 @@
   background: #6b5a3e;
 }
 
+.stage .w-essence.e-rot-essence .dot {
+  background: #6a8a2a;
+}
+
+.stage .w-runes .dot {
+  background: #8fd06a;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
 .stage .w-flask .dot {
   background: #e5484d;
+}
+
+.stage .w-kindling .dot {
+  background: #e0782a;
+  border-radius: 50% 50% 50% 0;
+  transform: rotate(-45deg);
 }
 
 .stage .camp-stage {
@@ -1086,10 +1505,124 @@
   right: calc(var(--safe-x) + 28px);
   bottom: 28px;
   display: flex;
+  align-items: flex-end;
+  gap: 14px;
+  z-index: 6;
+}
+
+.stage .finale-button {
+  background: linear-gradient(180deg, #5a1d08, #1a0a04);
+  color: #ffd27a;
+  border-color: #ff8a1f;
+  box-shadow: 0 0 18px rgb(255 138 31 / 0.45);
+}
+
+.stage .set-out-go {
+  display: flex;
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
-  z-index: 6;
+}
+
+/* The road: one card per act, painted in the act's arena colors. */
+.stage .road {
+  display: flex;
+  gap: 10px;
+}
+
+.stage .road-act {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 232px;
+  height: 64px;
+  padding: 0 14px 0 0;
+  overflow: hidden;
+  border: 2px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: var(--card-shadow);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* Many acts: only the chosen one shows its name, the others shrink to their number. */
+.stage .road.compact .road-act:not(.on) {
+  width: 52px;
+  padding: 0;
+}
+
+.stage .road.compact .road-act:not(.on) .road-text {
+  display: none;
+}
+
+.stage .road.compact .road-act:not(.on) .road-num {
+  flex-basis: 100%;
+}
+
+.stage .road.compact .road-act:not(.on) .road-mark {
+  top: 3px;
+  right: 3px;
+  color: #f3e6c8;
+}
+
+.stage .road.compact .road-act.on {
+  width: 260px;
+}
+
+.stage .road-act:hover:not(:disabled) {
+  border-color: var(--accent);
+}
+
+.stage .road-act.on {
+  border-color: var(--accent);
+  box-shadow:
+    0 0 0 1px var(--accent),
+    0 0 18px rgb(255 138 58 / 0.45);
+}
+
+.stage .road-act.locked {
+  cursor: default;
+  opacity: 0.6;
+  filter: grayscale(0.7);
+}
+
+.stage .road-num {
+  display: grid;
+  place-items: center;
+  flex: 0 0 48px;
+  align-self: stretch;
+  background: linear-gradient(180deg, var(--act-top), var(--act-bottom));
+  color: #f3e6c8;
+  font-size: 24px;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+}
+
+.stage .road-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stage .road-name {
+  font-size: 16px;
+  white-space: nowrap;
+}
+
+.stage .road-text .sub {
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage .road-mark {
+  position: absolute;
+  top: 6px;
+  right: 8px;
+  color: var(--accent);
 }
 
 .stage .hint-light {
@@ -1306,9 +1839,24 @@
   font-weight: 700;
 }
 
-.stage .essence-chip.empty {
+.stage button.essence-chip {
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.stage .essence-chip:not(.on) {
   border-color: var(--edge);
+}
+
+.stage .essence-chip.empty {
   color: var(--text-sub);
+}
+
+.stage .essence-chip.on.empty {
+  border-color: var(--accent);
 }
 
 .stage .distill {
@@ -1647,10 +2195,71 @@
 
 .stage .tree-canvas {
   position: relative;
+  min-height: 0;
+  overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
   background: radial-gradient(circle at 50% 70%, rgb(255 138 58 / 0.1), transparent 60%);
+}
+
+.stage .tree-canvas > .skill-tree {
+  max-width: 100%;
+  max-height: 100%;
+}
+
+.stage .tree-views {
+  position: absolute;
+  top: 12px;
+  left: 20px;
+  z-index: 1;
+}
+
+.stage .prestige-branches {
+  align-self: stretch;
+  flex-grow: 1;
+  padding: 62px 20px 44px;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-rows: min-content;
+  gap: 10px 14px;
+  align-content: start;
+}
+
+.stage .pb-card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 10px 4px 14px;
+  border-left: 4px solid var(--branch);
+}
+
+.stage .pb-card.closed {
+  opacity: 0.5;
+}
+
+.stage .pb-card.closed > .icon {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+}
+
+.stage .pb-head {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  line-height: 1.2;
+}
+
+.stage .pb-name {
+  font-size: 17px;
+  color: var(--branch);
+}
+
+.stage .pb-tree .node-ranks {
+  font-size: 10px;
 }
 
 .stage .skill-tree .link {
@@ -1803,7 +2412,7 @@
 
 .stage .branch-row {
   display: grid;
-  grid-template-columns: 70px minmax(0, 1fr) 44px;
+  grid-template-columns: 96px minmax(0, 1fr) 44px;
   align-items: center;
   gap: 10px;
 }
@@ -1864,7 +2473,7 @@
 }
 
 .stage .plan-slots.reactions {
-  grid-template-columns: repeat(2, 220px);
+  grid-template-columns: repeat(2, 260px) auto;
 }
 
 .stage .plan-slot {
@@ -1875,6 +2484,84 @@
   gap: 6px;
   text-align: left;
   cursor: pointer;
+}
+
+.stage .plan-slot-head {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .plan-select {
+  display: grid;
+  grid-template-columns: 92px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+}
+
+.stage .plan-select .eyebrow {
+  font-size: 10px;
+}
+
+.stage .plan-select select {
+  min-width: 0;
+  padding: 3px 6px;
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+}
+
+.stage .plan-slots.reactions .reaction-note {
+  align-self: end;
+}
+
+.stage .capstones {
+  padding: 14px 16px;
+}
+
+.stage .capstones ul {
+  list-style: none;
+  margin: 8px 0 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+
+.stage .capstone {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .capstone.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 8px rgb(255 138 58 / 0.35);
+}
+
+.stage .capstone:disabled:not(.on) {
+  opacity: 0.5;
+  cursor: default;
 }
 
 .stage .plan-slot.on {
@@ -1946,6 +2633,7 @@
 }
 
 .stage .plan-side {
+  min-height: 0;
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -1956,6 +2644,14 @@
 
 .stage .known {
   padding: 14px 16px;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .known .known-skills {
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .stage .known-skills {
@@ -2244,6 +2940,116 @@
   font-size: 24px;
 }
 
+/* --- Trigger Codex ------------------------------------------------------------------------ */
+
+.stage .trigger-codex {
+  width: 1180px;
+  height: 720px;
+}
+
+.stage .codex-body {
+  flex-grow: 1;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  padding: 16px 24px;
+  min-height: 0;
+}
+
+.stage .codex-column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.stage .codex-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.stage .codex-part {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  min-height: 64px;
+  padding: 8px 10px;
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  cursor: pointer;
+  text-align: left;
+}
+
+.stage .codex-part.known .codex-name {
+  font-weight: 700;
+  color: var(--rarity-epic);
+}
+
+.stage .codex-part.unknown {
+  border-style: dashed;
+  opacity: 0.7;
+}
+
+.stage .codex-part.unknown .codex-name {
+  letter-spacing: 3px;
+  color: var(--text-sub);
+}
+
+.stage .codex-part.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.stage .codex-part.quarry {
+  border-color: #e0782a;
+}
+
+.stage .codex-part > svg {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  color: #e0782a;
+}
+
+.stage .codex-meta {
+  font-size: 12px;
+}
+
+.stage .codex-foot {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-height: 64px;
+  padding: 12px 24px;
+  border-top: 2px solid var(--edge);
+}
+
+.stage .kindle-parts {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .kindle-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage .kindle-row .strong {
+  width: 84px;
+}
+
+.stage .after-line.kindled,
+.stage .affix-line.kindled {
+  color: #e0782a;
+}
+
 /* --- title ---------------------------------------------------------------------------------- */
 
 .stage .title-screen {
@@ -2456,17 +3262,20 @@
 }
 
 .stage .prestige-seal,
+.stage .prestige-branch,
 .stage .prestige-heir {
   background: linear-gradient(180deg, #e8b48a 0%, #d9c6a0 45%);
 }
 
 :root[data-theme="dark"] .stage .prestige-seal,
+:root[data-theme="dark"] .stage .prestige-branch,
 :root[data-theme="dark"] .stage .prestige-heir {
   background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stage .prestige-seal,
+  :root:not([data-theme="light"]) .stage .prestige-branch,
   :root:not([data-theme="light"]) .stage .prestige-heir {
     background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
   }
@@ -2485,6 +3294,49 @@
 
 .stage .seal-head p {
   margin: 0;
+}
+
+.stage .branch-picks {
+  flex-grow: 1;
+  width: 1400px;
+  padding: 28px 0;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-content: center;
+  gap: 14px;
+}
+
+.stage .branch-picks > .branch-pick {
+  width: 262px;
+}
+
+.stage .branch-pick {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 14px 16px;
+  border-top: 4px solid var(--branch);
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .branch-pick.on {
+  border-color: var(--accent);
+  border-top-color: var(--branch);
+  box-shadow: 0 0 14px rgb(255 138 58 / 0.45);
+}
+
+.stage .branch-pick-name {
+  font-size: 21px;
+  color: var(--branch);
+}
+
+.stage .branch-footer {
+  padding-bottom: 40px;
 }
 
 .stage .seal-body {
@@ -2802,4 +3654,1048 @@
 
 .stage .intermission-footer {
   padding-inline: calc(var(--safe-x) + 24px);
+}
+
+.stage .ring-art {
+  position: relative;
+  width: 44px;
+  height: 44px;
+}
+
+.stage .ring-art .item-art {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+}
+
+/* --- Runes, Eldrin and Marisha (M8) ---------------------------------------------------------- */
+
+.stage .rune-stone.dim {
+  opacity: 0.35;
+  filter: grayscale(1);
+}
+
+.stage .socket-row {
+  display: flex;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+.stage .socket-hole {
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: radial-gradient(circle at 50% 40%, #0a0806 55%, #2a2018);
+  border: 2px solid #4a3a2c;
+  box-shadow: inset 0 3px 6px rgb(0 0 0 / 0.95);
+}
+
+.stage .socket-hole.new {
+  border-color: var(--accent);
+  box-shadow:
+    inset 0 3px 6px rgb(0 0 0 / 0.95),
+    0 0 12px rgb(255 138 58 / 0.6);
+}
+
+.stage .runeword-line {
+  color: var(--r-unique);
+  font-family: var(--font-title);
+  font-weight: 700;
+}
+
+.stage .rune-pouch {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.stage .rune-chip,
+.stage .rune-cell,
+.stage .gamble-slot {
+  --rune: var(--accent);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 12px 6px 6px;
+  border-radius: 6px;
+  border: 1px solid var(--edge);
+  background: var(--slot-bg);
+  /* Slot backgrounds stay dark in both themes, so the text stays light. */
+  color: var(--rarity-normal);
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.stage .rune-chip .sub,
+.stage .rune-cell .sub,
+.stage .gamble-slot .sub {
+  color: color-mix(in srgb, var(--rarity-normal) 65%, transparent);
+}
+
+.stage .rune-chip.on,
+.stage .rune-cell.on,
+.stage .gamble-slot.on {
+  border-color: var(--rune);
+  box-shadow:
+    0 0 0 1px var(--rune),
+    0 0 14px color-mix(in srgb, var(--rune) 45%, transparent);
+}
+
+.stage .rune-board {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stage .rune-cell {
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 8px;
+  text-align: center;
+}
+
+.stage .rune-cell:disabled {
+  cursor: default;
+}
+
+.stage .rune-cell.unknown {
+  opacity: 0.6;
+}
+
+.stage .rune-cell .ok {
+  color: var(--good);
+  font-weight: 700;
+}
+
+.stage .rune-bonus {
+  font-size: 12px;
+  line-height: 1.2;
+}
+
+.stage .codex {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: hidden;
+}
+
+.stage .codex-row {
+  display: grid;
+  grid-template-columns: 170px auto 1fr auto;
+  align-items: center;
+  gap: 14px;
+  padding: 6px 12px;
+}
+
+.stage .codex-row.known .codex-name .title-font {
+  color: var(--r-unique);
+}
+
+.stage .codex-row.unknown {
+  opacity: 0.7;
+}
+
+.stage .codex-row.forged {
+  border-color: var(--rarity-runeword);
+}
+
+.stage .codex-name {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .codex-runes {
+  display: flex;
+  gap: 8px;
+}
+
+.stage .codex-rune {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 44px;
+}
+
+.stage .codex-forged {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--r-unique);
+}
+
+.stage .merchant-stock {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stage .offer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  padding: 12px;
+  text-align: center;
+}
+
+.stage .offer.on {
+  border-color: var(--accent);
+}
+
+.stage .offer.sold {
+  opacity: 0.4;
+}
+
+.stage .offer .item-tile {
+  position: relative;
+}
+
+.stage .gamble {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+}
+
+.stage .gamble-slots {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 10px;
+  align-self: stretch;
+}
+
+.stage .gamble-slot {
+  flex-direction: column;
+  padding: 10px 6px;
+}
+
+.stage .gamble-art {
+  position: relative;
+  width: 58px;
+  height: 58px;
+}
+
+.stage .gamble-art .item-art {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  filter: brightness(0) drop-shadow(0 0 1px #a08a6a);
+  opacity: 0.6;
+}
+
+.stage .gamble-q {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: 28px;
+  color: var(--r-unique);
+  text-shadow: 0 0 8px rgb(0 0 0 / 0.9);
+}
+
+.stage .gamble-last {
+  display: flex;
+  justify-content: center;
+}
+
+.stage .gamble-last .item-tile {
+  position: relative;
+}
+
+.stage .rune-drops {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin: -4px 0 8px;
+}
+
+.stage .rune-drop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  animation: rune-drop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both;
+}
+
+@keyframes rune-drop {
+  from {
+    opacity: 0;
+    transform: translateY(-18px) scale(0.6);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .rune-drop {
+    animation: none;
+  }
+}
+
+/* Battle Plan feedback: damage share of a slot in the last fight. */
+.stage .share-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 90px;
+}
+
+.stage .share-track {
+  flex: 1;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--edge);
+  overflow: hidden;
+}
+
+.stage .share-fill {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+}
+
+.stage .chain-report {
+  margin-left: auto;
+  display: grid;
+  grid-template-columns: auto 110px auto 110px;
+  align-items: center;
+  gap: 4px 8px;
+}
+
+.stage .plan-card {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .plan-card ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .plan-card li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.stage .plan-card li.reaction .skill-chip {
+  border-style: dashed;
+}
+
+.stage .plan-card li .mono {
+  justify-self: end;
+}
+
+.stage .plan-card .skill-chip {
+  width: 28px;
+  height: 28px;
+  border-width: 1.5px;
+}
+
+.stage .plan-card-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* --- Drop moments (Spielspaß Teil 3): face-down cards, glow, pillar of light ---------------- */
+
+.stage .card-back {
+  flex-grow: 1;
+  min-height: 380px;
+  border: 2px solid var(--edge);
+  border-radius: 8px;
+  background:
+    repeating-linear-gradient(45deg, transparent 0 10px, rgb(0 0 0 / 6%) 10px 20px),
+    radial-gradient(
+      circle at 50% 45%,
+      color-mix(in srgb, var(--accent) 22%, var(--panel)),
+      var(--panel) 70%
+    );
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.stage .card-back:hover {
+  border-color: var(--accent);
+}
+
+/* The rarity shimmers through the back before the card turns. */
+.stage .card-back.rarity-rare,
+.stage .card-back.rarity-epic,
+.stage .card-back.rarity-legendary {
+  border-color: color-mix(in srgb, var(--frame) 70%, var(--edge));
+  box-shadow: 0 0 18px color-mix(in srgb, var(--frame) 40%, transparent);
+}
+
+.stage .card-back.rarity-legendary::after {
+  content: "";
+  position: absolute;
+  inset: -40%;
+  background: linear-gradient(
+    100deg,
+    transparent 40%,
+    color-mix(in srgb, var(--frame) 45%, transparent) 50%,
+    transparent 60%
+  );
+  animation: back-shimmer 1.6s linear infinite;
+}
+
+@keyframes back-shimmer {
+  from {
+    transform: translateX(-40%);
+  }
+  to {
+    transform: translateX(40%);
+  }
+}
+
+.stage .card-back-sigil {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.8;
+}
+
+.stage .loot-card-wrap.revealed {
+  position: relative;
+  animation: card-flip 0.32s ease-out both;
+}
+
+@keyframes card-flip {
+  from {
+    transform: perspective(900px) rotateY(85deg);
+    opacity: 0.4;
+  }
+}
+
+.stage .loot-card-wrap.revealed .rarity-rare,
+.stage .loot-card-wrap.revealed .rarity-epic {
+  animation: card-glow 1.1s ease-out;
+}
+
+@keyframes card-glow {
+  0% {
+    box-shadow: 0 0 0 transparent;
+  }
+  35% {
+    box-shadow: 0 0 34px color-mix(in srgb, var(--frame) 70%, transparent);
+  }
+}
+
+.stage .loot-card-wrap.pillar {
+  animation:
+    card-flip 0.32s ease-out both,
+    card-tremble 0.5s 0.3s ease-in-out;
+}
+
+@keyframes card-tremble {
+  20%,
+  60% {
+    transform: translateX(-3px) rotate(-0.6deg);
+  }
+  40%,
+  80% {
+    transform: translateX(3px) rotate(0.6deg);
+  }
+}
+
+.stage .light-pillar {
+  position: absolute;
+  left: 50%;
+  top: -60px;
+  bottom: -30px;
+  width: 120px;
+  transform: translateX(-50%);
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    color-mix(in srgb, var(--rarity-legendary) 55%, transparent) 30%,
+    color-mix(in srgb, var(--rarity-legendary) 30%, transparent) 80%,
+    transparent
+  );
+  filter: blur(14px);
+  pointer-events: none;
+  animation: pillar 1.6s ease-out forwards;
+  z-index: 0;
+}
+
+.stage .loot-card-wrap.pillar .loot-card {
+  position: relative;
+  z-index: 1;
+  box-shadow: 0 0 30px color-mix(in srgb, var(--frame) 55%, transparent);
+}
+
+@keyframes pillar {
+  0% {
+    opacity: 0;
+    transform: translateX(-50%) scaleY(0.2);
+  }
+  25% {
+    opacity: 1;
+    transform: translateX(-50%) scaleY(1.05);
+  }
+  100% {
+    opacity: 0.35;
+    transform: translateX(-50%) scaleY(1);
+  }
+}
+
+.stage .loot-card-wrap.taken .loot-card {
+  opacity: 0.55;
+}
+
+.stage .taken-stamp {
+  margin: 0 auto;
+  padding: 4px 14px;
+  border: 2px solid var(--accent);
+  border-radius: 4px;
+  color: var(--accent);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  transform: rotate(-4deg);
+}
+
+/* Boss Hoard: six card faces, take two; the chosen one in full next to them. */
+.stage .hoard-layout {
+  position: relative;
+  display: grid;
+  grid-template-columns: auto 300px;
+  gap: 22px;
+  margin-top: 8px;
+  align-items: start;
+}
+
+.stage .hoard-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 172px);
+  grid-auto-rows: 226px;
+  gap: 12px;
+}
+
+.stage .hoard-back {
+  display: flex;
+}
+
+.stage .hoard-back .card-back {
+  min-height: 0;
+}
+
+.stage .hoard-back .card-back-sigil {
+  width: 70px;
+  height: 70px;
+}
+
+.stage .hoard-face {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px 10px;
+  border: 2px solid var(--frame, var(--edge));
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  animation: card-flip 0.32s ease-out both;
+}
+
+.stage .hoard-face.rarity-rare,
+.stage .hoard-face.rarity-epic {
+  animation:
+    card-flip 0.32s ease-out both,
+    card-glow 1.1s ease-out;
+}
+
+.stage .hoard-face.pillar {
+  animation:
+    card-flip 0.32s ease-out both,
+    card-tremble 0.5s 0.3s ease-in-out;
+  box-shadow: 0 0 22px color-mix(in srgb, var(--frame) 50%, transparent);
+}
+
+.stage .hoard-face.on {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stage .hoard-face.taken > :not(.taken-stamp) {
+  opacity: 0.45;
+}
+
+.stage .hoard-face .taken-stamp {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  margin: 0;
+  background: var(--panel);
+  transform: translate(-50%, -50%) rotate(-8deg);
+}
+
+.stage .hoard-art {
+  position: relative;
+  z-index: 1;
+  width: 92px;
+  height: 92px;
+}
+
+.stage .hoard-name {
+  position: relative;
+  z-index: 1;
+  font-size: 16px;
+  line-height: 1.15;
+}
+
+.stage .hoard-detail .loot-card {
+  min-height: 0;
+}
+
+.stage .hoard-wait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 300px;
+  font-size: 28px;
+}
+
+.stage .rune-drop {
+  position: relative;
+}
+
+.stage .rune-glyph-glow {
+  position: absolute;
+  left: -6px;
+  top: 50%;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  transform: translateY(-50%);
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--accent) 50%, transparent),
+    transparent 70%
+  );
+  animation: glyph-glow 1.4s ease-out both;
+  pointer-events: none;
+}
+
+.stage .rune-drop.high .rune-glyph-glow {
+  width: 90px;
+  height: 90px;
+  left: -25px;
+  background: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--rarity-legendary) 80%, transparent),
+    transparent 70%
+  );
+  animation: glyph-glow 2.2s ease-out infinite;
+}
+
+.stage .rune-drop.high .title-font {
+  color: var(--r-legendary);
+}
+
+@keyframes glyph-glow {
+  0% {
+    opacity: 0;
+    transform: translateY(-50%) scale(0.3);
+  }
+  30% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.25;
+    transform: translateY(-50%) scale(1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .loot-card-wrap.revealed,
+  .stage .loot-card-wrap.pillar,
+  .stage .hoard-face,
+  .stage .light-pillar,
+  .stage .card-back.rarity-legendary::after,
+  .stage .rune-glyph-glow {
+    animation: none;
+  }
+}
+
+/* --- Trophy Wall (Spielspaß Teil 3 B) ------------------------------------------------------- */
+
+.stage .trophy-layout {
+  flex-grow: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 380px;
+  gap: 32px;
+  padding: 24px calc(var(--safe-x) + 36px);
+}
+
+.stage .trophy-wall {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.stage .trophy-row {
+  display: grid;
+  grid-template-columns: 190px minmax(0, 1fr);
+  align-items: center;
+  gap: 14px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.stage .trophy-boss {
+  font-size: 18px;
+}
+
+.stage .trophy-items {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.stage .trophy {
+  width: 74px;
+  height: 74px;
+  padding: 6px;
+  border: 2px dashed var(--edge);
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 6%, transparent);
+  cursor: default;
+}
+
+.stage .trophy .trophy-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: brightness(0) opacity(0.28);
+}
+
+.stage .trophy.found {
+  border: 2px solid var(--rarity-runeword);
+  background: var(--panel);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--rarity-runeword) 35%, transparent);
+  cursor: pointer;
+}
+
+.stage .trophy.found .trophy-art {
+  filter: none;
+}
+
+.stage .trophy.on {
+  outline: 3px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stage .trophy-side {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.stage .trophy-side .panel-card {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .trophy-name {
+  font-size: 24px;
+}
+
+.stage .trophy-power {
+  margin: 6px 0 0;
+}
+
+.stage .trophy-count .big {
+  font-size: 34px;
+}
+
+/* A Unique seen for the first time flies up to the Trophy Wall. */
+.stage .loot-cards {
+  position: relative;
+}
+
+.stage .trophy-toast {
+  position: absolute;
+  left: 50%;
+  top: 34%;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 10px 22px;
+  border: 2px solid var(--rarity-runeword);
+  border-radius: 8px;
+  background: var(--panel);
+  box-shadow: 0 0 28px color-mix(in srgb, var(--rarity-runeword) 50%, transparent);
+  pointer-events: none;
+  animation: trophy-toast 3.2s ease-in-out forwards;
+}
+
+.stage .trophy-toast-art {
+  width: 54px;
+  height: 54px;
+}
+
+@keyframes trophy-toast {
+  0% {
+    opacity: 0;
+    transform: translate(-50%, 30px) scale(0.8);
+  }
+  15%,
+  70% {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+  100% {
+    opacity: 0;
+    transform: translate(-50%, -60px) scale(0.5);
+  }
+}
+
+.stage .hoard-art .item-art,
+.stage .trophy-art .item-art,
+.stage .trophy-toast-art .item-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+}
+
+/* Ember Shrine (Stolen Fire Boons) */
+.stage .boon-cards {
+  display: grid;
+  grid-template-columns: repeat(3, 270px);
+  gap: 22px;
+  margin-top: 14px;
+}
+
+.stage .boon-card {
+  position: relative;
+  padding: 18px 18px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  text-align: center;
+  cursor: pointer;
+  min-height: 300px;
+  border: 2px solid var(--boon);
+  background:
+    radial-gradient(
+      circle at 50% 30%,
+      color-mix(in srgb, var(--boon) 28%, transparent),
+      transparent 62%
+    ),
+    var(--panel);
+  animation: boon-rise 0.45s ease-out both;
+}
+
+.stage .boon-card:nth-child(2) {
+  animation-delay: 0.08s;
+}
+
+.stage .boon-card:nth-child(3) {
+  animation-delay: 0.16s;
+}
+
+.stage .boon-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 0 22px color-mix(in srgb, var(--boon) 60%, transparent);
+}
+
+.stage .boon-card.fusion {
+  border-image: linear-gradient(135deg, var(--boon), var(--boon2)) 1;
+}
+
+.stage .boon-card.grade-flame {
+  box-shadow: 0 0 14px color-mix(in srgb, var(--boon) 55%, transparent);
+}
+
+.stage .boon-card.grade-blaze {
+  box-shadow:
+    0 0 26px color-mix(in srgb, var(--boon) 80%, transparent),
+    0 0 4px #fff3c4 inset;
+  animation:
+    boon-rise 0.45s ease-out both,
+    boon-blaze 1.6s ease-in-out 0.45s infinite alternate;
+}
+
+.stage .boon-family {
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  font-size: 13px;
+  color: color-mix(in srgb, var(--boon) 60%, var(--text));
+}
+
+.stage .boon-family em {
+  font-style: normal;
+}
+
+.stage .boon-sigil {
+  width: 76px;
+  height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--boon);
+  border: 3px solid var(--text);
+  transform: rotate(45deg);
+  margin: 10px 0 12px;
+}
+
+.stage .boon-sigil > svg {
+  transform: rotate(-45deg);
+}
+
+.stage .boon-card strong {
+  font-size: 21px;
+}
+
+.stage .boon-text {
+  font-size: 17px;
+  line-height: 1.3;
+  flex-grow: 1;
+}
+
+.stage .boon-foot {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+}
+
+.stage .boon-pips {
+  display: flex;
+  gap: 5px;
+}
+
+.stage .boon-pips span {
+  width: 11px;
+  height: 11px;
+  transform: rotate(45deg);
+  border: 1.5px solid var(--text);
+  opacity: 0.45;
+}
+
+.stage .boon-pips span.on {
+  background: var(--boon);
+  opacity: 1;
+}
+
+.stage .boon-pips span.new {
+  animation: boon-pip 0.9s ease-in-out infinite alternate;
+}
+
+.stage .boon-replaces {
+  position: absolute;
+  bottom: -22px;
+  left: 0;
+  right: 0;
+  font-size: 13px;
+}
+
+.stage .boon-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+  margin-bottom: 4px;
+}
+
+.stage .boon-sigil.small {
+  position: relative;
+  width: 22px;
+  height: 22px;
+  margin: 3px;
+  border-width: 1.5px;
+  transition:
+    box-shadow 0.15s,
+    filter 0.15s;
+}
+
+.stage .boon-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 1px;
+}
+
+.stage .boon-chip i {
+  font-style: normal;
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--boon);
+}
+
+.stage .boon-sigil.small.fresh {
+  outline: 1.5px dashed var(--boon);
+  outline-offset: 2px;
+}
+
+.stage .boon-sigil.small.flash {
+  filter: brightness(1.6);
+  box-shadow: 0 0 14px 4px var(--boon);
+}
+
+@keyframes boon-rise {
+  from {
+    opacity: 0;
+    transform: translateY(18px);
+  }
+}
+
+@keyframes boon-blaze {
+  to {
+    box-shadow:
+      0 0 40px color-mix(in srgb, var(--boon) 95%, transparent),
+      0 0 10px #fff3c4 inset;
+  }
+}
+
+@keyframes boon-pip {
+  to {
+    box-shadow: 0 0 8px var(--boon);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .boon-card,
+  .stage .boon-card.grade-blaze,
+  .stage .boon-pips span.new {
+    animation: none;
+  }
+}
+
+.stage .hoard-cards.two {
+  grid-template-columns: repeat(2, 172px);
 }

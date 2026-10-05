@@ -1,4 +1,4 @@
-import { POC_GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -22,6 +22,10 @@ import {
 } from "../../ui/items";
 import { EQUIP_BLOCK_TEXT, MOVE_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
+import { Paperdoll, dollBox } from "../../ui/Paperdoll";
+
+/** Scale of the paperdoll next to the inventory. */
+const SIDE_DOLL = 0.85;
 
 type Where = "equipped" | "inventory" | "stash";
 
@@ -52,7 +56,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
   const pick = (from: "inventory" | "stash") => (itemId: string, e?: MouseEvent) => {
     if (e?.ctrlKey || e?.metaKey) {
       const to = from === "inventory" ? "stash" : "inventory";
-      if (!moveBlockReason(state, POC_GAME_DATA, itemId, to)) move(itemId, to);
+      if (!moveBlockReason(state, GAME_DATA, itemId, to)) move(itemId, to);
       return;
     }
     setSelected(itemId);
@@ -66,7 +70,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
   }[] = [];
   if (sel) {
     if (sel.where === "inventory") {
-      const r = moveBlockReason(state, POC_GAME_DATA, sel.item.id, "stash");
+      const r = moveBlockReason(state, GAME_DATA, sel.item.id, "stash");
       buttons.push({
         label: "Move to Stash",
         block: r ? MOVE_BLOCK_TEXT[r] : undefined,
@@ -75,7 +79,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     }
     if (sel.where === "stash") {
-      const r = moveBlockReason(state, POC_GAME_DATA, sel.item.id, "inventory");
+      const r = moveBlockReason(state, GAME_DATA, sel.item.id, "inventory");
       buttons.push({
         label: "Move to Inventory",
         block: r ? MOVE_BLOCK_TEXT[r] : undefined,
@@ -84,7 +88,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     }
     if (sel.where !== "equipped") {
-      const r = equipBlockReason(state, POC_GAME_DATA, sel.item, sel.where);
+      const r = equipBlockReason(state, GAME_DATA, sel.item, sel.where);
       buttons.push({
         label: "Equip",
         block: r ? EQUIP_BLOCK_TEXT[r] : undefined,
@@ -92,7 +96,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     } else if (sel.slot) {
       const slot = sel.slot;
-      const r = unequipBlockReason(state, POC_GAME_DATA, slot);
+      const r = unequipBlockReason(state, GAME_DATA, slot);
       buttons.push({
         label: "Unequip",
         block: r ? UNEQUIP_BLOCK_TEXT[r] : undefined,
@@ -130,21 +134,24 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       <div className="stash-body">
         <aside className="stash-left">
           <span className="title-font section-title">Equipped</span>
-          <div className="equipped-row">
-            {POC_GAME_DATA.equipmentSlots.map((slot) => {
+          <Paperdoll scale={SIDE_DOLL} className="side">
+            {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
+              const pos = dollBox(slot, SIDE_DOLL);
               return (
-                <ItemTile
-                  key={slot}
-                  item={it}
-                  label={SLOT_NAMES[itemSlotFor(slot)]}
-                  size={62}
-                  selected={!!it && it.id === selected}
-                  {...(it ? { onSelect: () => setSelected(it.id) } : {})}
-                />
+                <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
+                  <ItemTile
+                    item={it}
+                    label={SLOT_NAMES[itemSlotFor(slot)]}
+                    width={pos.w}
+                    height={pos.h}
+                    selected={!!it && it.id === selected}
+                    {...(it ? { onSelect: () => setSelected(it.id) } : {})}
+                  />
+                </div>
               );
             })}
-          </div>
+          </Paperdoll>
           <div className="section-row">
             <span className="title-font section-title">Inventory</span>
             <span className="mono sub">{state.inventory.length} items</span>

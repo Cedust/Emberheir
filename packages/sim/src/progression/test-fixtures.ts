@@ -2,6 +2,7 @@ import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES } from "../combat/test-fixture
 import type { EnemyDefinition } from "../combat/monsters";
 import type { SkillDefinition } from "../combat/types";
 import { TEST_CATALOG } from "../items/test-fixtures";
+import type { BoonDefinition, BoonFamilyDefinition } from "./boons";
 import type { ActData, GameData } from "./game";
 import type { SkillTreeDefinition } from "./skill-tree";
 
@@ -32,7 +33,7 @@ export const TEST_ACT: ActData = {
   id: "test-act",
   number: 1,
   name: "Test Act",
-  monsterLevels: [1, 1, 2],
+  stages: 3,
   enemies: [WEAK_ENEMY],
   boss: TEST_BOSS,
   spoilsStages: [2],
@@ -44,6 +45,7 @@ export const DEADLY_ACT: ActData = {
   id: "deadly-act",
   number: 2,
   enemies: [DEADLY_ENEMY],
+  runesmith: true,
 };
 
 /** The last act of the test run: its boss starts the Prestige. */
@@ -129,4 +131,85 @@ export const TEST_GAME_DATA: GameData = {
     { id: "fast", name: "Fast", description: "", bonuses: { attackSpeed: 0.5 } },
   ],
   startingAttributes: { ...ZERO_ATTRIBUTES, strength: 6, vitality: 6 },
+};
+
+export const TEST_BOON_FAMILIES: readonly BoonFamilyDefinition[] = [
+  { id: "hearth", name: "Hearth", damageTypes: [], color: "#c9a063" },
+  { id: "ash", name: "Ash", warden: "Boss", damageTypes: ["physical"], color: "#9a8f80" },
+  { id: "cinder", name: "Cinder", warden: "Killer", damageTypes: ["fire"], color: "#e0502a" },
+];
+
+export const TEST_BOONS: readonly BoonDefinition[] = [
+  {
+    id: "banked-coals",
+    name: "Banked Coals",
+    family: "hearth",
+    slot: "heat",
+    text: "Start every fight with # Heat",
+    value: 30,
+    bonuses: { startingHeat: 30 },
+  },
+  {
+    id: "grit",
+    name: "Grit",
+    family: "ash",
+    slot: "passive",
+    text: "+# Armor",
+    value: 10,
+    bonuses: { armor: 10 },
+  },
+  {
+    id: "crushing-blow",
+    name: "Crushing Blow",
+    family: "ash",
+    slot: "strike",
+    text: "Every 4th attack strikes for # % weapon damage",
+    value: 100,
+    trigger: {
+      name: "Crushing Blow",
+      condition: { kind: "everyNthAttack", n: 4 },
+      effect: { kind: "weaponHit", multiplier: 1 },
+    },
+  },
+  {
+    id: "kindled-strikes",
+    name: "Kindled Strikes",
+    family: "cinder",
+    slot: "strike",
+    text: "+# % Chance to Burn",
+    value: 20,
+    bonuses: { burnChance: 0.2 },
+  },
+  {
+    id: "second-wind",
+    name: "Second Wind",
+    family: "hearth",
+    slot: "reaction",
+    text: "Below 35 % Life: heal # % Life once",
+    value: 15,
+    trigger: {
+      name: "Second Wind",
+      condition: { kind: "lifeBelow", threshold: 0.35 },
+      oncePerFight: true,
+      effect: { kind: "heal", fraction: 0.15 },
+    },
+  },
+  {
+    id: "iron-hearth",
+    name: "Iron Hearth",
+    family: "ash",
+    slot: "passive",
+    text: "Skills cost # % less Heat",
+    value: 10,
+    rules: { skillCostMultiplier: 0.9 },
+    fusion: ["ash", "hearth"],
+  },
+];
+
+/** Test data with Shrines: Ash opens in the first act, Cinder in the second. */
+export const TEST_BOON_DATA: GameData = {
+  ...TEST_GAME_DATA,
+  acts: [{ ...TEST_ACT, boonFamily: "ash" }, { ...DEADLY_ACT, boonFamily: "cinder" }, FINAL_ACT],
+  boons: TEST_BOONS,
+  boonFamilies: TEST_BOON_FAMILIES,
 };

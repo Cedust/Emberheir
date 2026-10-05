@@ -19,6 +19,18 @@ const ENTRIES: { title: string; text: string }[] = [
     text: "After each win you pick 1 of 3 items: Equip it or Take it into the inventory. The others turn into Salvage Dust. Stages 5 and 10 and Elites add a Spoils pick. Rarities: Normal, Magic, Rare, Epic, Legendary.",
   },
   {
+    title: "Stolen Fire Boons",
+    text: "After Stages 5 and 10, Elites and the boss, the Ember Shrine offers 1 of 3 Boons. Taking the same Boon again raises its rank (up to III). Strike, Skill, Reaction and Heat Boons hold one each; a new one replaces the old. Every Warden adds its family once its act opens, and Fusion Boons need two families. Boons from the current act burn when you fall or retreat; all burn at Prestige.",
+  },
+  {
+    title: "Boss Hoard and the Ember Thief",
+    text: "A boss drops a Hoard: 6 cards, take 2. Every Warden has its own trophies, the Trophy Wall in the Camp shows which you found. From Act 2 on, an Ember Thief sometimes shows up. Kill it before it runs off and its sack holds 4 cards, take 2, one at least Rare.",
+  },
+  {
+    title: "The Last Ember",
+    text: "After the tenth Prestige nothing burns any more: every slot is sealed. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
+  },
+  {
     title: "Elites and Bosses",
     text: "Elites carry modifiers and drop better loot, sometimes an Ascension Shard. The boss of each Act telegraphs its heavy attack: watch for 'Charging'. Bosses always drop an Ascension Shard.",
   },
@@ -29,6 +41,10 @@ const ENTRIES: { title: string; text: string }[] = [
   {
     title: "Liora, the Mystic",
     text: "Reforge rerolls all affixes for a Reforge Stone. Temper rerolls one affix value, Imbue replaces one affix with an Essence. After Temper or Imbue only that affix can change again until you Reforge. Trigger Affixes cannot be tempered or imbued. Distill turns Dust into a Reforge Stone. There is no Undo.",
+  },
+  {
+    title: "Trigger Codex",
+    text: "Salvage an item with a trigger at Thoric and the Codex learns its Condition and its Effect, at the item's Tier (Mastery). Liora's Kindle puts any learned Condition and Effect together as a trigger, for Kindling from Elite and boss Spoils. Old Nan can mark a part as your Quarry: it drops more often, and for sure after a few Elites.",
   },
   {
     title: "Attributes",

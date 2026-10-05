@@ -2,7 +2,14 @@ import type { FighterSnapshot } from "@emberheir/sim";
 import { Icon, type IconName } from "../../ui/Icon";
 import { fmt } from "../../ui/items";
 
-const AILMENT_NAMES: Record<string, string> = { burn: "Burn", chill: "Chill", shock: "Shock" };
+const AILMENT_NAMES: Record<string, string> = {
+  burn: "Burn",
+  chill: "Chill",
+  shock: "Shock",
+  bleed: "Bleed",
+  poison: "Poison",
+  corruption: "Corruption",
+};
 
 export interface PlaqueInfo {
   readonly name: string;
@@ -89,7 +96,24 @@ export function Plaque(props: { fighter: FighterSnapshot; info: PlaqueInfo; mirr
           >
             <span className="swatch" />
             <b>{AILMENT_NAMES[a.type]}</b>
-            <span className="mono sub">{a.remaining.toFixed(1)}s</span>
+            <span className="mono sub">
+              {a.stacks && a.stacks > 1 ? `×${a.stacks} ` : ""}
+              {a.remaining.toFixed(1)}s
+            </span>
+          </span>
+        ))}
+        {f.stunned > 0 && (
+          <span className="status-chip stun" title="Stunned">
+            <span className="swatch" />
+            <b>Stunned</b>
+            <span className="mono sub">{f.stunned.toFixed(1)}s</span>
+          </span>
+        )}
+        {f.curses.map((c) => (
+          <span key={c.name} className="status-chip curse" title={c.name}>
+            <span className="swatch" />
+            <b>{c.name}</b>
+            <span className="mono sub">{c.remaining.toFixed(1)}s</span>
           </span>
         ))}
         {f.buffs.map((b) => (

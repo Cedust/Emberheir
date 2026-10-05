@@ -4,11 +4,12 @@ import {
   itemModifiers,
   itemWeapon,
   missingRequirements,
+  offHandFits,
   requirementsFor,
   resolveEquipment,
   scaledBaseStats,
 } from "./equipment";
-import { TEST_CATALOG, TEST_SHIELD } from "./test-fixtures";
+import { TEST_AXE, TEST_CATALOG, TEST_SHIELD, TEST_WAND } from "./test-fixtures";
 import type { Item } from "./types";
 
 const STRONG = { ...ZERO_ATTRIBUTES, strength: 20 };
@@ -40,6 +41,8 @@ describe("equipment stats", () => {
     const sword = item("test-sword", [{ affixId: "added", quality: 1 }], 2);
     // TEST_WEAPON 10–10 × 2 (T2) + added 6 × 2 = 12 → +6–12.
     expect(itemWeapon(sword, TEST_CATALOG)?.damage).toEqual({ min: 26, max: 32 });
+    // Spells grow with the tier like weapon damage.
+    expect(itemWeapon(sword, TEST_CATALOG)?.spellPower).toBe(2);
     expect(itemWeapon(item("test-shield"), TEST_CATALOG)).toBeUndefined();
   });
 
@@ -85,5 +88,16 @@ describe("equipment stats", () => {
 
     const wrong = resolveEquipment({ amulet: item("test-ring") }, TEST_CATALOG, STRONG);
     expect(wrong.inactive.map((i) => i.reason.kind)).toEqual(["wrongSlot"]);
+  });
+});
+
+describe("offHandFits", () => {
+  it("checks the weapon type when the off hand names some, else the range", () => {
+    const quiver = { ...TEST_SHIELD, fitsWeapons: ["test-axe"] };
+    expect(offHandFits(quiver, TEST_AXE.weapon)).toBe(true);
+    expect(offHandFits(quiver, TEST_WAND.weapon)).toBe(false);
+    expect(offHandFits(quiver, undefined)).toBe(false);
+    expect(offHandFits(TEST_SHIELD, TEST_AXE.weapon)).toBe(true);
+    expect(offHandFits(TEST_SHIELD, TEST_WAND.weapon)).toBe(false);
   });
 });
