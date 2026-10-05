@@ -21,7 +21,7 @@ function buildXpTable(base: number, perLevel: number, killsPerLevel: number): re
 
 const XP_BASE = 20;
 const XP_PER_MONSTER_LEVEL = 10;
-const XP_KILLS_PER_LEVEL = 0.8;
+const XP_KILLS_PER_LEVEL = 8;
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
@@ -117,6 +117,9 @@ export const PROGRESSION = {
   /** Enemies below the hero's level give 10 % less XP per level, at least 10 %. */
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
+  /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
+  xpBonusPerLevel: 0.05,
+  xpMaxFactor: 2,
 
   goldBase: 4,
   goldPerMonsterLevel: 2,

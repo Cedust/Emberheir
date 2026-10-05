@@ -797,13 +797,15 @@ function findEnemy(act: ActData, id: string): EnemyDefinition {
 }
 
 /**
- * The abilities an act boss has in a run: one more per Prestige after its act opened. The
- * Harvester has none: its three phases already grow with the run.
+ * The abilities an act boss has in a run: one more per Prestige, from the second run after its
+ * act opened (Playtest 2: the first boss of a run is where a hero who left off below the Level
+ * Cap catches up, one ability more was a wall). The Harvester has none: its three phases already
+ * grow with the run.
  */
 export function bossAbilities(data: GameData, act: ActData, prestige: number): EliteModifier[] {
   const list = data.bossAbilities ?? [];
   if (act.boss.archetype === "harvester") return [];
-  const count = Math.min(list.length, Math.max(0, prestige - (act.number - 1)));
+  const count = Math.min(list.length, Math.max(0, prestige - act.number));
   return Array.from({ length: count }, (_, i) => list[(act.number - 1 + i) % list.length]).filter(
     (m): m is EliteModifier => m !== undefined,
   );

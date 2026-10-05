@@ -89,11 +89,12 @@ describe("Prestige branches", () => {
 });
 
 describe("boss abilities", () => {
-  it("a boss gains one per Prestige after its act opened, from its own start in the list", () => {
+  it("a boss gains one per Prestige from the second run after its act opened", () => {
     expect(bossAbilities(data, TEST_ACT, 0)).toEqual([]);
-    expect(bossAbilities(data, TEST_ACT, 2).map((m) => m.id)).toEqual(["one", "two"]);
-    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 1)).toEqual([]);
-    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 3).map((m) => m.id)).toEqual([
+    expect(bossAbilities(data, TEST_ACT, 1)).toEqual([]);
+    expect(bossAbilities(data, TEST_ACT, 3).map((m) => m.id)).toEqual(["one", "two"]);
+    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 2)).toEqual([]);
+    expect(bossAbilities(data, { ...TEST_ACT, number: 2 }, 4).map((m) => m.id)).toEqual([
       "two",
       "three",
     ]);
