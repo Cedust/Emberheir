@@ -79,8 +79,7 @@ for (const screen of SCREENS) {
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Marisha, Black Market" }).click();
     await page.getByRole("button", { name: "Open Shop" }).click();
-    await check("shop");
-    await page.getByRole("button", { name: /^Gamble/ }).click();
+    // Marisha only gambles: the Black Market opens on it.
     await check("gamble");
     await page.keyboard.press("Escape");
 
