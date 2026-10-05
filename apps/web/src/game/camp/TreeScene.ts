@@ -116,6 +116,9 @@ export class TreeScene {
   private goal = { x: 0, y: 0, zoom: 0.8 };
   private velocity = { x: 0, y: 0 };
   private drag: { x: number; y: number; moved: number; t: number } | null = null;
+  /** Fingers on the canvas; two of them pinch-zoom. */
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: { dist: number; x: number; y: number } | null = null;
   /** How far the last drag moved: a drag that ends on a node is not a click. */
   private dragged = 0;
   private lastTap = { id: "", t: 0 };
@@ -168,8 +171,8 @@ export class TreeScene {
     app.stage.hitArea = new Rectangle(0, 0, this.size.w, this.size.h);
     app.stage.on("pointerdown", (e) => this.dragStart(e));
     app.stage.on("globalpointermove", (e) => this.dragMove(e));
-    app.stage.on("pointerup", () => this.dragEnd());
-    app.stage.on("pointerupoutside", () => this.dragEnd());
+    app.stage.on("pointerup", (e) => this.dragEnd(e));
+    app.stage.on("pointerupoutside", (e) => this.dragEnd(e));
     app.stage.on("wheel", (e) => this.wheel(e));
     // The page must not scroll while the wheel zooms the tree.
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
@@ -249,12 +252,42 @@ export class TreeScene {
   }
 
   private dragStart(e: FederatedPointerEvent): void {
+    this.touches.set(e.pointerId, { x: e.global.x, y: e.global.y });
+    if (this.touches.size >= 2) {
+      this.pinch = this.pinchOf();
+      this.drag = null;
+      this.dragged = 99;
+      this.velocity = { x: 0, y: 0 };
+      return;
+    }
     this.drag = { x: e.global.x, y: e.global.y, moved: 0, t: performance.now() };
     this.dragged = 0;
     this.velocity = { x: 0, y: 0 };
   }
 
+  private pinchOf(): { dist: number; x: number; y: number } {
+    const [a, b] = [...this.touches.values()];
+    if (!a || !b) return { dist: 1, x: 0, y: 0 };
+    return {
+      dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+    };
+  }
+
   private dragMove(e: FederatedPointerEvent): void {
+    if (this.touches.has(e.pointerId))
+      this.touches.set(e.pointerId, { x: e.global.x, y: e.global.y });
+    if (this.pinch && this.touches.size >= 2) {
+      // Two fingers: zoom around their middle and pan with it.
+      const next = this.pinchOf();
+      this.goal.x += next.x - this.pinch.x;
+      this.goal.y += next.y - this.pinch.y;
+      this.zoomAround(next.x, next.y, next.dist / this.pinch.dist);
+      this.cam = { ...this.goal };
+      this.pinch = next;
+      return;
+    }
     if (!this.drag) return;
     const dx = e.global.x - this.drag.x;
     const dy = e.global.y - this.drag.y;
@@ -273,7 +306,14 @@ export class TreeScene {
     this.velocity = { x: dx / dt, y: dy / dt };
   }
 
-  private dragEnd(): void {
+  private dragEnd(e: FederatedPointerEvent): void {
+    this.touches.delete(e.pointerId);
+    if (this.pinch) {
+      // Lifting one finger of a pinch neither taps nor flings.
+      if (this.touches.size < 2) this.pinch = null;
+      this.drag = null;
+      return;
+    }
     this.dragged = this.drag?.moved ?? 0;
     if (this.drag && performance.now() - this.drag.t > 80) this.velocity = { x: 0, y: 0 };
     this.drag = null;
@@ -282,6 +322,7 @@ export class TreeScene {
   private applyCamera(): void {
     this.world.position.set(this.cam.x, this.cam.y);
     this.world.scale.set(this.cam.zoom);
+    if (this.app) this.app.canvas.dataset.zoom = this.goal.zoom.toFixed(2);
     // Branch names keep a readable size when the tree is zoomed out.
     const labelScale = Math.max(1, 0.85 / this.cam.zoom);
     for (const t of this.labels.values()) t.scale.set(labelScale);

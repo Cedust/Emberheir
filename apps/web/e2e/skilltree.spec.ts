@@ -55,3 +55,43 @@ test("The Bloodline step deepens an owned branch", async ({ page }) => {
   await page.getByRole("button", { name: "Deepen Warden" }).click();
   await expect(page.getByRole("region", { name: "Inheritance" })).toContainText("Warden II");
 });
+
+test("The Skill Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {
+  await seedSave(page, saveDeepTree());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("t");
+  const canvas = page.getByTestId("skill-tree-canvas").locator("canvas");
+  await expect(canvas).toBeVisible();
+  const zoom = async () => Number(await canvas.getAttribute("data-zoom"));
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("no canvas");
+  const cx = box.x + box.width / 2;
+  const cy = box.y + box.height / 2;
+
+  const start = await zoom();
+  await page.mouse.move(cx, cy);
+  await page.mouse.wheel(0, -400);
+  await expect.poll(zoom).toBeGreaterThan(start);
+
+  // Two fingers move apart: zoom in; together: zoom out.
+  const cdp = await page.context().newCDPSession(page);
+  const pinch = async (from: number, to: number) => {
+    const points = (d: number) => [
+      { x: cx - d, y: cy, id: 1 },
+      { x: cx + d, y: cy, id: 2 },
+    ];
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: points(from) });
+    for (let i = 1; i <= 8; i++) {
+      const d = from + ((to - from) * i) / 8;
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: points(d) });
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  };
+  const beforePinch = await zoom();
+  await pinch(40, 160);
+  await expect.poll(zoom).toBeGreaterThan(beforePinch * 1.5);
+  const zoomedIn = await zoom();
+  await pinch(160, 40);
+  await expect.poll(zoom).toBeLessThan(zoomedIn / 1.5);
+});
