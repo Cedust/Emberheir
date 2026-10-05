@@ -83,6 +83,7 @@ function useLooks(state: GameState, run: RunState) {
     boss: encounter?.boss ?? false,
     elite: mods.length > 0,
     act: (echo ?? act).number,
+    ranged: enemyDef?.weapon.range === "ranged",
     ...(encounter?.thief ? { thief: true } : {}),
   };
   const heroInfo: PlaqueInfo = {
@@ -99,6 +100,9 @@ function useLooks(state: GameState, run: RunState) {
   };
   return { act, heroLook, enemyLook, heroInfo, enemyInfo };
 }
+
+const reducedMotion = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
 /**
  * The Battle view (Battle v3 mock): plaques with VS medallion, the PixiJS arena, the skill bar,
@@ -140,6 +144,7 @@ export function BattleView(props: {
   }, [props.paused]);
   useEffect(() => {
     speedRef.current = speed;
+    if (sceneRef.current) sceneRef.current.speed = speed;
   }, [speed]);
 
   // Mount the PixiJS arena once per fight.
@@ -148,6 +153,7 @@ export function BattleView(props: {
     if (!host) return;
     const scene = new ArenaScene();
     scene.showNumbers = settings.damageNumbers;
+    scene.motion = settings.screenShake && !reducedMotion();
     scene.layout(arenaW, arenaH, arenaRes);
     sceneRef.current = scene;
     void scene.mount(host, looks.heroLook, looks.enemyLook);
@@ -164,6 +170,9 @@ export function BattleView(props: {
   useEffect(() => {
     if (sceneRef.current) sceneRef.current.showNumbers = settings.damageNumbers;
   }, [settings.damageNumbers]);
+  useEffect(() => {
+    if (sceneRef.current) sceneRef.current.motion = settings.screenShake && !reducedMotion();
+  }, [settings.screenShake]);
 
   // The fight loop. A boss on its last breath falls in slow motion (Teil 3 D).
   const bossFight = run.encounter?.boss === true;
@@ -174,7 +183,8 @@ export function BattleView(props: {
     const loop = (now: number) => {
       const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current * slowRef.current;
       last = now;
-      if (!pausedRef.current) {
+      // A hit-stop holds the fight for a few frames; the lost time is simply skipped.
+      if (!pausedRef.current && !sceneRef.current?.frozen) {
         const before = fight.events.length;
         fight.advance(dt);
         publish(fight.events.slice(before));

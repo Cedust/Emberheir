@@ -1,5 +1,7 @@
 import type { CombatEvent, FightSnapshot, Side } from "@emberheir/sim";
 import { Application, Container, Graphics, Text } from "pixi.js";
+import { Fx, type Burst } from "./fx";
+import { Weather, type View } from "./weather";
 
 /**
  * The PixiJS arena (battle-view-v1.md section 2): ground, two placeholder figures, floating
@@ -20,6 +22,8 @@ export interface EnemyLook {
   readonly act: number;
   /** The Ember Thief carries a glowing sack of loot on its back. */
   readonly thief?: boolean;
+  /** Ranged enemies shoot or cast across the arena instead of striking up close. */
+  readonly ranged?: boolean;
 }
 
 /** Original damage-type colors (ui-look-v1.md): the arena uses them in both modes. */
@@ -59,6 +63,120 @@ const HERO_X = 400;
 const ENEMY_X = 1040;
 const INK = 0x2a1f17;
 
+/** How a hit travels: melee slashes, arrows, glowing orbs, lightning, meteors or a burst on the target. */
+type Delivery = "slash" | "arrow" | "orb" | "bolt" | "fall" | "nova";
+
+/** Skills with their own look; everything else follows the attacker's weapon. */
+const SKILL_FX: Record<string, Delivery> = {
+  Firebolt: "orb",
+  "Ice Lance": "orb",
+  "Chain Lightning": "bolt",
+  Meteor: "fall",
+  "Toxic Burst": "nova",
+  Immolate: "nova",
+  Corrupt: "orb",
+  "Soul Harvest": "nova",
+  "Piercing Shot": "arrow",
+  "Plague Cloud": "nova",
+  Thunderstrike: "bolt",
+  "Frost Nova": "nova",
+  Inferno: "nova",
+  "Void Rift": "nova",
+  "Void Bolt": "orb",
+  "Cinder Spit": "orb",
+  "Blight Spit": "orb",
+  "Rot Spray": "orb",
+  Fireball: "orb",
+  Eruption: "fall",
+  "Ice Bolt": "orb",
+  Avalanche: "fall",
+  "Forked Bolt": "bolt",
+  Thunderclap: "nova",
+  "Void Lance": "orb",
+  Hex: "orb",
+  Consume: "nova",
+  "Rift Snap": "nova",
+  "Soul Reap": "nova",
+  Ashfall: "fall",
+  "The Last Harvest": "nova",
+  "Flame Dash": "slash",
+  "Arc Dash": "slash",
+  Pounce: "slash",
+};
+
+const RISE = -Math.PI / 2;
+const FALL = Math.PI / 2;
+
+/** Particles that hang around a fighter while an ailment is on them. */
+const AILMENT_FX: Record<string, Omit<Burst, "x" | "y" | "count">> = {
+  burn: {
+    color: [0xff6a2b, 0xffb13b],
+    angle: [RISE - 0.3, RISE + 0.3],
+    speed: [60, 130],
+    life: [0.4, 0.8],
+    size: [19, 35],
+    spreadX: 50,
+    spreadY: 90,
+    wobble: 8,
+  },
+  chill: {
+    kind: "bit",
+    color: [0x9fe0ff, 0xffffff],
+    angle: [FALL - 0.6, FALL + 0.6],
+    speed: [20, 50],
+    life: [0.8, 1.4],
+    size: [10, 16],
+    endSize: 0.6,
+    spin: 3,
+    spreadX: 60,
+    spreadY: 120,
+  },
+  shock: {
+    color: 0xffe14d,
+    speed: [250, 450],
+    life: [0.08, 0.16],
+    size: [8, 13],
+    stretch: 0.8,
+    spreadX: 50,
+    spreadY: 110,
+  },
+  bleed: {
+    kind: "bit",
+    color: [0xe0314b, 0xa01830],
+    angle: [FALL - 0.3, FALL + 0.3],
+    speed: [20, 60],
+    gravity: 500,
+    life: [0.5, 0.8],
+    size: [10, 14],
+    endSize: 0.7,
+    spreadX: 40,
+    spreadY: 70,
+  },
+  poison: {
+    color: [0xb5d82c, 0xd8f06a],
+    angle: [RISE - 0.4, RISE + 0.4],
+    speed: [20, 50],
+    life: [0.8, 1.3],
+    size: [13, 22],
+    wobble: 10,
+    spreadX: 55,
+    spreadY: 110,
+  },
+  corruption: {
+    color: [0xa35cff, 0x6a3ad8],
+    angle: [RISE - 0.6, RISE + 0.6],
+    speed: [15, 40],
+    life: [0.8, 1.4],
+    size: [19, 35],
+    endSize: 0.05,
+    spreadX: 60,
+    spreadY: 120,
+  },
+};
+
+/** A Skip resolves the rest of the fight at once: then only the outcome is shown. */
+const FLOOD = 40;
+
 interface Floater {
   readonly text: Text;
   readonly vx: number;
@@ -72,12 +190,27 @@ interface Figure {
   readonly root: Container;
   readonly body: Container;
   readonly side: Side;
+  readonly stars: Graphics;
+  /** Animation timers, 1 → 0. */
   lunge: number;
   flash: number;
+  knock: number;
+  recoil: number;
+  dodge: number;
+  /** Seconds of Stun left. */
+  stun: number;
 }
+
+interface Later {
+  at: number;
+  readonly run: () => void;
+}
+
+type HitEvent = Extract<CombatEvent, { type: "hit" }>;
 
 export class ArenaScene {
   private app: Application | null = null;
+  private readonly camera = new Container();
   private readonly world = new Container();
   private size = { w: W, h: H, resolution: 1 };
   private destroyed = false;
@@ -85,12 +218,28 @@ export class ArenaScene {
   private enemy: Figure | null = null;
   private telegraph: Graphics | null = null;
   private aura: Graphics | null = null;
+  private fx: Fx | null = null;
+  private weather: Weather | null = null;
   private floaters: Floater[] = [];
+  private later: Later[] = [];
   private clock = 0;
   private telegraphOn = false;
   private tint: Record<Side, number> = { hero: 0xffffff, enemy: 0xffffff };
+  private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
+  private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
+  private ranged: Record<Side, boolean> = { hero: false, enemy: false };
+  /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
+  private heavy: { skill: string; until: number } | null = null;
+  private trauma = 0;
+  private zoom = 1;
+  private freeze = 0;
+  private freezeCooldown = 0;
   showNumbers = true;
   paused = false;
+  /** Screen shake and camera zoom (Settings; off with reduced motion). */
+  motion = true;
+  /** Fight speed; hit-stops only play at normal speed. */
+  speed = 1;
 
   /**
    * Host size in stage pixels and device pixels per stage pixel. The drawing stays centered
@@ -100,6 +249,11 @@ export class ArenaScene {
     this.size = { w, h, resolution };
     this.world.position.set((w - W) / 2, h - H);
     this.app?.renderer.resize(w, h, resolution);
+  }
+
+  /** True during a hit-stop: the fight loop holds the sim for that moment. */
+  get frozen(): boolean {
+    return this.freeze > 0;
   }
 
   async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<void> {
@@ -124,9 +278,15 @@ export class ArenaScene {
     this.app = app;
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
-    app.stage.addChild(this.world);
+    app.stage.addChild(this.camera);
+    this.camera.addChild(this.world);
 
-    this.world.addChild(drawGround());
+    const fx = new Fx(app.renderer);
+    this.fx = fx;
+    this.weather = new Weather(enemy.act);
+    this.ranged = { hero: RANGED_WEAPONS.has(hero.weapon), enemy: enemy.ranged ?? false };
+
+    this.world.addChild(drawGround(), fx.back);
     this.aura = new Graphics();
     if (enemy.elite || enemy.boss) {
       this.aura
@@ -142,13 +302,20 @@ export class ArenaScene {
 
     this.hero = makeFigure("hero", drawHero(hero), HERO_X);
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
-    this.world.addChild(this.hero.root, this.enemy.root);
+    this.world.addChild(this.hero.root, this.enemy.root, fx.front);
+
+    // The weather is already falling when the fight opens.
+    for (let i = 0; i < 80; i++) {
+      this.weather.update(fx, this.view(), 0.1);
+      fx.update(0.1);
+    }
 
     app.ticker.add((ticker) => this.tick(ticker.deltaMS / 1000));
   }
 
   destroy(): void {
     this.destroyed = true;
+    this.fx?.destroy();
     this.app?.destroy(true, { children: true });
     this.app = null;
   }
@@ -156,32 +323,56 @@ export class ArenaScene {
   /** New fight events since the last call. */
   onEvents(events: readonly CombatEvent[]): void {
     if (!this.app) return;
+    if (events.length > FLOOD) {
+      for (const e of events) if (e.type === "death") this.die(e.side);
+      return;
+    }
+    // Multi-hit skills (Flurry) land one after another instead of all in one frame.
+    const order = new Map<string, number>();
     events.forEach((e, i) => {
       switch (e.type) {
+        case "skill":
+          this.cast(e.side, e.skill, e.heatCost, events.slice(i + 1));
+          break;
+        case "telegraph":
+          this.heavy = { skill: e.skill, until: this.clock + e.windup + 1 };
+          break;
         case "hit": {
-          this.figure(e.side).lunge = 1;
-          const target = this.figure(other(e.side));
-          target.flash = 1;
-          if (this.showNumbers) {
-            const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}`;
-            this.float(
-              other(e.side),
-              e.blocked ? `${text} ⛨` : text,
-              DAMAGE_COLORS[e.damageType] ?? 0xffffff,
-              e.crit,
-            );
-          }
+          const key = `${e.side}:${e.source}`;
+          const n = order.get(key) ?? 0;
+          order.set(key, n + 1);
+          this.hit(e, n * 0.08);
           break;
         }
         case "dot":
           if (this.showNumbers)
             this.float(e.side, String(e.damage), DAMAGE_COLORS[e.ailment] ?? 0xffffff, false, 0.75);
+          this.ailmentPuff(e.side, e.ailment, 3);
           break;
-        case "heal":
+        case "ailment":
+          this.ailmentPuff(e.side, e.ailment, 14);
+          break;
+        case "heal": {
+          const c = this.center(e.side);
+          this.fx?.burst({
+            x: c.x,
+            y: GROUND_Y - 40,
+            count: 18,
+            color: [0x4fe08a, 0xa8ffc8],
+            spreadX: 70,
+            angle: [RISE - 0.2, RISE + 0.2],
+            speed: [90, 200],
+            life: [0.6, 1.1],
+            size: [10, 18],
+            drag: 0.3,
+          });
           if (this.showNumbers)
             this.float(e.side, `+${e.amount}`, DAMAGE_COLORS.heal ?? 0x4fe08a, false);
           break;
-        case "barrier":
+        }
+        case "barrier": {
+          const c = this.center(e.side);
+          this.fx?.ring(c.x, c.y, 0xe8f4ff, 60, 190, 0.5, 7, 1);
           if (this.showNumbers)
             this.float(
               e.side,
@@ -191,7 +382,27 @@ export class ArenaScene {
               0.8,
             );
           break;
+        }
+        case "buff": {
+          const c = this.center(e.side);
+          this.fx?.burst({
+            x: c.x,
+            y: GROUND_Y - 20,
+            count: 16,
+            color: [0xffd84a, 0xffb13b],
+            spreadX: 80,
+            angle: [RISE - 0.1, RISE + 0.1],
+            speed: [220, 380],
+            life: [0.4, 0.7],
+            size: [6, 10],
+            stretch: 0.6,
+            drag: 0.2,
+          });
+          break;
+        }
         case "trigger": {
+          const c = this.center(e.side);
+          this.fx?.ring(c.x, c.y, 0xffd84a, 30, 120, 0.3, 5, 1);
           // An extra attack (Riposte, "strike back" affixes) names itself, so its number does
           // not read as a faster attack speed.
           const next = events[i + 1];
@@ -200,12 +411,31 @@ export class ArenaScene {
           }
           break;
         }
-        case "evade":
+        case "evade": {
           // `side` is the fighter who evaded.
-          this.float(e.side, "Evade", DAMAGE_COLORS.miss ?? 0xffffff, false, 0.8);
+          const evader = e.side;
+          this.figure(evader).dodge = 1;
+          this.fx?.burst({
+            x: this.center(evader).x,
+            y: GROUND_Y - 6,
+            count: 10,
+            kind: "bit",
+            color: [0x8a7552, 0x6b5a3e],
+            spreadX: 50,
+            angle: [Math.PI + 0.2, Math.PI * 2 - 0.2],
+            speed: [40, 120],
+            gravity: 300,
+            life: [0.3, 0.6],
+            size: [5, 9],
+          });
+          this.float(evader, "Evade", DAMAGE_COLORS.miss ?? 0xffffff, false, 0.8);
+          break;
+        }
+        case "stun":
+          this.figure(e.side).stun = e.seconds;
           break;
         case "death":
-          this.figure(e.side).root.alpha = 0.35;
+          this.die(e.side);
           break;
         default:
           break;
@@ -217,8 +447,11 @@ export class ArenaScene {
   onSnapshot(snapshot: FightSnapshot): void {
     this.telegraphOn = snapshot.enemy.telegraph !== null;
     for (const side of ["hero", "enemy"] as const) {
-      const first = snapshot[side].ailments[0];
+      const list = snapshot[side].ailments;
+      const first = list[0];
       this.tint[side] = first ? (AILMENT_TINT[first.type] ?? 0xffffff) : 0xffffff;
+      this.ailments[side] = list.map((a) => a.type);
+      if (snapshot[side].life <= 0) this.ailments[side] = [];
     }
   }
 
@@ -226,6 +459,235 @@ export class ArenaScene {
     const f = side === "hero" ? this.hero : this.enemy;
     if (!f) throw new Error("Arena not ready");
     return f;
+  }
+
+  /** Chest height of a fighter, where hits land. */
+  private center(side: Side): { x: number; y: number } {
+    return { x: side === "hero" ? HERO_X : ENEMY_X, y: GROUND_Y - 250 };
+  }
+
+  /** Where projectiles leave: the bow, wand or casting hand. */
+  private hand(side: Side): { x: number; y: number } {
+    return side === "hero"
+      ? { x: HERO_X + 140, y: GROUND_Y - 350 }
+      : { x: ENEMY_X - 130, y: GROUND_Y - 300 };
+  }
+
+  /** The visible arena in world pixels. */
+  private view(): View {
+    const left = -this.world.x;
+    const top = -this.world.y;
+    return { left, right: left + this.size.w, top, ground: GROUND_Y };
+  }
+
+  private wait(seconds: number, run: () => void): void {
+    if (seconds <= 0) run();
+    else this.later.push({ at: this.clock + seconds, run });
+  }
+
+  private shake(amount: number): void {
+    this.trauma = Math.min(1, this.trauma + amount);
+  }
+
+  private hitStop(seconds: number): void {
+    if (this.speed !== 1 || this.freezeCooldown > 0) return;
+    this.freeze = Math.max(this.freeze, seconds);
+    this.freezeCooldown = 0.35;
+  }
+
+  private cast(side: Side, skill: string, heatCost: number, rest: readonly CombatEvent[]): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const next = rest.find(
+      (e) =>
+        (e.type === "hit" && e.side === side && e.source === skill) ||
+        ((e.type === "heal" || e.type === "barrier" || e.type === "buff") && e.side === side),
+    );
+    const color =
+      next?.type === "hit" && next.damageType !== "physical"
+        ? (DAMAGE_COLORS[next.damageType] ?? 0xffb13b)
+        : next?.type === "heal"
+          ? 0x4fe08a
+          : next?.type === "barrier"
+            ? 0xe8f4ff
+            : 0xffb13b;
+    const big = heatCost >= 60;
+    const x = this.center(side).x;
+    fx.ring(x, GROUND_Y - 4, color, 40, big ? 230 : 150, big ? 0.55 : 0.4, big ? 9 : 5);
+    fx.burst({
+      x,
+      y: GROUND_Y - 20,
+      count: big ? 26 : 12,
+      color: [color, lighten(color)],
+      spreadX: big ? 110 : 70,
+      angle: [RISE - 0.25, RISE + 0.25],
+      speed: [80, big ? 280 : 200],
+      life: [0.4, 0.9],
+      size: [8, 14],
+      drag: 0.4,
+    });
+    if (big) this.shake(0.2);
+  }
+
+  private delivery(side: Side, source: string, damageType: string): Delivery {
+    const named = SKILL_FX[source];
+    if (named) return named;
+    if (!this.ranged[side]) return "slash";
+    if (damageType === "physical") return "arrow";
+    return damageType === "lightning" ? "bolt" : "orb";
+  }
+
+  private hit(e: HitEvent, delay: number): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const target = other(e.side);
+    const color = DAMAGE_COLORS[e.damageType] ?? 0xffffff;
+    const heavy =
+      e.side === "enemy" &&
+      this.heavy !== null &&
+      this.heavy.skill === e.source &&
+      this.clock <= this.heavy.until;
+    const how = this.delivery(e.side, e.source, e.damageType);
+    const land = () => this.impact(e, how, heavy);
+    const attacker = this.figure(e.side);
+    const from = this.hand(e.side);
+    const to = this.center(target);
+    this.wait(delay, () => {
+      switch (how) {
+        case "slash":
+          attacker.lunge = 1;
+          this.wait(0.08, land);
+          break;
+        case "arrow":
+        case "orb":
+          attacker.recoil = 1;
+          fx.projectile(how, from, to, color, land);
+          break;
+        case "bolt":
+          attacker.recoil = 1;
+          fx.bolt(from.x, from.y, to.x, to.y, color);
+          land();
+          break;
+        case "fall": {
+          const top = this.view().top;
+          const dir = target === "enemy" ? -1 : 1;
+          fx.projectile("fall", { x: to.x + dir * 180, y: top - 40 }, to, color, land);
+          break;
+        }
+        case "nova":
+          attacker.recoil = 1;
+          fx.ring(to.x, GROUND_Y - 4, color, 30, 260, 0.45, 10);
+          land();
+          break;
+      }
+    });
+  }
+
+  private impact(e: HitEvent, how: Delivery, heavy: boolean): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const target = other(e.side);
+    const victim = this.figure(target);
+    const color = DAMAGE_COLORS[e.damageType] ?? 0xffffff;
+    const big = e.crit || heavy;
+    const at = this.center(target);
+    victim.flash = 1;
+    victim.knock = Math.max(victim.knock, big ? 1 : 0.35);
+    // Sparks fly away from the attacker.
+    const away = target === "enemy" ? 0 : Math.PI;
+    if (how === "slash") {
+      const edge = e.damageType === "physical" ? 0xffb13b : color;
+      fx.slash(at.x, at.y, e.side === "hero" ? 1 : -1, edge, big);
+    }
+    fx.burst({
+      x: at.x,
+      y: at.y,
+      count: big ? 34 : 14,
+      color:
+        e.blocked || e.damageType === "physical"
+          ? [0xffe9a8, 0xffffff, 0xffb13b]
+          : [color, lighten(color), 0xffffff],
+      spreadY: 30,
+      angle: [away - 0.9, away + 0.9],
+      speed: [240, big ? 760 : 480],
+      life: [0.18, 0.45],
+      size: [9, 15],
+      stretch: 0.5,
+      drag: 0.05,
+      gravity: 700,
+    });
+    if (how === "nova" || how === "fall") {
+      fx.burst({
+        x: at.x,
+        y: GROUND_Y - 30,
+        count: 20,
+        color: [color, lighten(color)],
+        spreadX: 90,
+        angle: [RISE - 0.35, RISE + 0.35],
+        speed: [150, 360],
+        life: [0.3, 0.6],
+        size: [12, 22],
+        drag: 0.1,
+      });
+    }
+    if (e.blocked)
+      fx.ring(at.x + (target === "hero" ? -56 : 56), at.y, 0xffe9a8, 20, 80, 0.25, 6, 1);
+    if (big) {
+      fx.ring(at.x, at.y, 0xffffff, 30, heavy ? 220 : 160, 0.3, 8, 1);
+      this.shake(heavy ? 0.7 : 0.35);
+      this.hitStop(heavy ? 0.12 : 0.06);
+    } else {
+      this.shake(0.06);
+    }
+    if (this.showNumbers) {
+      const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}`;
+      this.float(target, e.blocked ? `${text} ⛨` : text, color, e.crit);
+    }
+  }
+
+  private ailmentPuff(side: Side, ailment: string, count: number): void {
+    const style = AILMENT_FX[ailment];
+    if (!style || !this.fx) return;
+    const c = this.center(side);
+    this.fx.burst({ ...style, x: c.x, y: c.y + 20, count });
+  }
+
+  private die(side: Side): void {
+    const f = this.figure(side);
+    if (f.root.alpha < 1) return;
+    f.root.alpha = 0.35;
+    f.knock = 1.6;
+    f.stun = 0;
+    const c = this.center(side);
+    this.fx?.burst({
+      x: c.x,
+      y: c.y + 40,
+      count: 60,
+      kind: "bit",
+      color: [0x2a1f17, 0x5e5750, 0x8a8178],
+      spreadX: 80,
+      spreadY: 150,
+      angle: [RISE - 0.8, RISE + 0.8],
+      speed: [30, 140],
+      life: [0.8, 1.8],
+      size: [6, 12],
+      spin: 4,
+      drag: 0.5,
+    });
+    this.fx?.burst({
+      x: c.x,
+      y: c.y + 40,
+      count: 40,
+      color: [0xff8a1f, 0xffb13b, 0xff6a2b],
+      spreadX: 80,
+      spreadY: 150,
+      angle: [RISE - 0.5, RISE + 0.5],
+      speed: [40, 180],
+      life: [0.6, 1.6],
+      size: [8, 14],
+      wobble: 12,
+    });
+    this.shake(0.4);
   }
 
   private float(side: Side, label: string, color: number, crit: boolean, scale = 1): void {
@@ -259,23 +721,75 @@ export class ArenaScene {
     });
   }
 
+  /** Shake and zoom live on the camera; the world stays laid out by `layout`. */
+  private moveCamera(dt: number): void {
+    this.trauma = Math.max(0, this.trauma - dt * 1.8);
+    const zoomTo = this.telegraphOn && this.motion ? 1.06 : 1;
+    this.zoom += (zoomTo - this.zoom) * Math.min(1, dt * 4);
+    const fx = this.world.x + ENEMY_X - 200;
+    const fy = this.world.y + GROUND_Y - 260;
+    const s = this.motion ? this.trauma * this.trauma : 0;
+    const t = this.clock * 40;
+    this.camera.pivot.set(fx, fy);
+    this.camera.position.set(fx + Math.sin(t * 1.3) * 22 * s, fy + Math.sin(t * 1.7 + 1) * 16 * s);
+    this.camera.rotation = Math.sin(t * 0.9 + 2) * 0.012 * s;
+    this.camera.scale.set(this.zoom);
+  }
+
   private tick(dt: number): void {
     if (this.paused) return;
+    this.freezeCooldown = Math.max(0, this.freezeCooldown - dt);
+    if (this.freeze > 0) {
+      // Hit-stop: everything holds still except the shake.
+      this.freeze = Math.max(0, this.freeze - dt);
+      this.clock += dt;
+      this.moveCamera(dt);
+      this.clock -= dt;
+      return;
+    }
     this.clock += dt;
+    const due = this.later.filter((l) => l.at <= this.clock);
+    this.later = this.later.filter((l) => l.at > this.clock);
+    for (const l of due) l.run();
     for (const f of [this.hero, this.enemy]) {
       if (!f) continue;
       const dir = f.side === "hero" ? 1 : -1;
       f.lunge = Math.max(0, f.lunge - dt * 5);
       f.flash = Math.max(0, f.flash - dt * 6);
-      f.body.x = dir * 26 * Math.sin(f.lunge * Math.PI);
+      f.knock = Math.max(0, f.knock - dt * 5);
+      f.recoil = Math.max(0, f.recoil - dt * 6);
+      f.dodge = Math.max(0, f.dodge - dt * 4);
+      f.stun = Math.max(0, f.stun - dt);
+      f.body.x =
+        dir * 26 * Math.sin(f.lunge * Math.PI) -
+        dir * 30 * f.knock -
+        dir * 14 * Math.sin(f.recoil * Math.PI) -
+        dir * 60 * Math.sin(f.dodge * Math.PI);
       f.body.y = Math.sin(this.clock * 2.2 + (f.side === "hero" ? 0 : 1.3)) * 3;
+      f.body.rotation = -dir * 0.06 * Math.min(1, f.knock);
       const base = this.tint[f.side];
       f.body.tint = f.flash > 0.5 ? 0xff7777 : base;
+      f.stars.visible = f.stun > 0;
+      if (f.stun > 0) drawStars(f.stars, this.clock, f.side === "hero" ? -440 : -470);
     }
     if (this.telegraph) {
       const target = this.telegraphOn ? 0.55 + 0.35 * Math.sin(this.clock * 9) : 0;
       this.telegraph.alpha += (target - this.telegraph.alpha) * Math.min(1, dt * 12);
     }
+    // Ailment particles while an ailment lasts (about 12 per second each).
+    for (const side of ["hero", "enemy"] as const) {
+      const list = this.ailments[side];
+      if (!list.length) continue;
+      const due2 = this.ailmentCarry[side] + 12 * dt;
+      const n = Math.floor(due2);
+      this.ailmentCarry[side] = due2 - n;
+      for (let i = 0; i < n; i++) for (const a of list) this.ailmentPuff(side, a, 1);
+    }
+    if (this.fx) {
+      this.weather?.update(this.fx, this.view(), dt);
+      this.fx.update(dt);
+    }
+    this.moveCamera(dt);
     this.floaters = this.floaters.filter((f) => {
       f.age += dt;
       f.text.x += f.vx * dt;
@@ -293,6 +807,30 @@ export class ArenaScene {
   }
 }
 
+const RANGED_WEAPONS = new Set<HeroLook["weapon"]>(["wand", "staff", "bow", "crossbow"]);
+
+/** Three little stars circling a stunned fighter's head. */
+function drawStars(g: Graphics, clock: number, y: number): void {
+  g.clear();
+  for (let i = 0; i < 3; i++) {
+    const a = clock * 4 + (i * Math.PI * 2) / 3;
+    const x = Math.cos(a) * 46;
+    const yy = y + Math.sin(a) * 12;
+    const r = 9;
+    const pts: number[] = [];
+    for (let k = 0; k < 10; k++) {
+      const rr = k % 2 ? r * 0.45 : r;
+      const ang = -Math.PI / 2 + (k * Math.PI) / 5;
+      pts.push(x + Math.cos(ang) * rr, yy + Math.sin(ang) * rr);
+    }
+    g.poly(pts)
+      .fill({ color: 0xffe14d, alpha: Math.sin(a) > -0.3 ? 1 : 0.5 })
+      .stroke({
+        color: 0x2a1f17,
+        width: 2,
+      });
+  }
+}
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 
 /** Deterministic jitter in -0.5..0.5 (no Math.random needed for looks). */
@@ -315,8 +853,10 @@ function makeFigure(side: Side, body: Container, x: number): Figure {
   const shadow = new Graphics()
     .ellipse(0, 0, side === "hero" ? 150 : 190, 18)
     .fill({ color: 0x1c1a18, alpha: 0.35 });
-  root.addChild(shadow, body);
-  return { root, body, side, lunge: 0, flash: 0 };
+  const stars = new Graphics();
+  stars.visible = false;
+  root.addChild(shadow, body, stars);
+  return { root, body, side, stars, lunge: 0, flash: 0, knock: 0, recoil: 0, dodge: 0, stun: 0 };
 }
 
 function drawGround(): Container {

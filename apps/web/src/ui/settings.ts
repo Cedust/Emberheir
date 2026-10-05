@@ -7,9 +7,16 @@ export interface Settings {
   readonly theme: "system" | "light" | "dark";
   readonly damageNumbers: boolean;
   readonly sound: boolean;
+  /** Screen shake and camera zoom in fights. */
+  readonly screenShake: boolean;
 }
 
-export const DEFAULT_SETTINGS: Settings = { theme: "system", damageNumbers: true, sound: true };
+export const DEFAULT_SETTINGS: Settings = {
+  theme: "system",
+  damageNumbers: true,
+  sound: true,
+  screenShake: true,
+};
 
 const KEY = storageKey("settings");
 
@@ -26,7 +33,12 @@ function load(): Settings {
 
 /** Drops settings that no longer exist (e.g. the removed auto-drink) from old saves. */
 function pick(s: Settings): Settings {
-  return { theme: s.theme, damageNumbers: s.damageNumbers, sound: s.sound };
+  return {
+    theme: s.theme,
+    damageNumbers: s.damageNumbers,
+    sound: s.sound,
+    screenShake: s.screenShake,
+  };
 }
 
 function applyTheme(theme: Settings["theme"]) {
