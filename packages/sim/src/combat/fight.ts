@@ -383,6 +383,8 @@ export class Fight {
   private readonly fighters: Record<Side, Fighter>;
   private readonly log: CombatEvent[] = [];
   private ticks = 0;
+  /** Fight time asked for by `advance` so far; ticks run until `time` catches up with it. */
+  private requested = 0;
   private result: { winner: Side | null; fled: Side | null } | undefined;
 
   constructor(hero: CombatantSetup, enemy: CombatantSetup, seed: number) {
@@ -469,11 +471,15 @@ export class Fight {
     return this.log.slice(start);
   }
 
-  /** Runs ticks until `seconds` of fight time have passed or the fight is over. */
+  /**
+   * Runs ticks until `seconds` more of fight time have passed or the fight is over. The requested
+   * time adds up across calls, so many short calls (one per rendered frame) play in real time: a
+   * call shorter than a tick runs no tick or one, never one per call.
+   */
   advance(seconds: number): readonly CombatEvent[] {
     const start = this.log.length;
-    const target = this.time + seconds;
-    while (!this.result && this.time + 1e-9 < target) this.step();
+    this.requested = Math.max(this.requested, this.time - COMBAT.tickSeconds) + seconds;
+    while (!this.result && this.time + 1e-9 < this.requested) this.step();
     return this.log.slice(start);
   }
 
