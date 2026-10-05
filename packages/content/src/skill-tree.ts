@@ -778,8 +778,81 @@ const AFFLICTION: readonly SkillNode[] = [
   },
 ];
 
+/**
+ * Resonance (skilltree-v2.md): tiers of Prestige branches on the same base branch add up. At 2 a
+ * theme bonus, at 4 the base Keystone's drawback is halved, at 6 its upside grows.
+ */
+const RESONANCE: NonNullable<SkillTreeDefinition["resonance"]> = {
+  might: [
+    { at: 2, description: "+10 % Physical Damage.", bonuses: { physicalDamage: 0.1 } },
+    {
+      at: 4,
+      description: "Glass Focus: you take 10 % instead of 20 % more damage.",
+      rules: { damageTaken: -0.1 },
+      requires: "might-glass-focus",
+    },
+    {
+      at: 6,
+      description: "Glass Focus: +10 % Heat Gain.",
+      bonuses: { heatGain: 0.1 },
+      requires: "might-glass-focus",
+    },
+  ],
+  arcana: [
+    { at: 2, description: "+10 % Elemental Damage.", bonuses: { elementalDamage: 0.1 } },
+    {
+      at: 4,
+      description: "Arcane Conduit: your Default Attack deals 25 % instead of 50 % less damage.",
+      rules: { defaultAttackDamage: 1.5 },
+      requires: "arcana-conduit",
+    },
+    {
+      at: 6,
+      description: "Arcane Conduit: Skills cost 40 % instead of 30 % less Heat.",
+      rules: { skillCostMultiplier: 6 / 7 },
+      requires: "arcana-conduit",
+    },
+  ],
+  rupture: [
+    { at: 2, description: "+15 % Ailment Duration.", bonuses: { ailmentDuration: 0.15 } },
+    {
+      at: 4,
+      description: "Blood Price: your Crit Chance drops by a quarter instead of half.",
+      rules: { critChanceMultiplier: 1.5 },
+      requires: "rupture-blood-price",
+    },
+    {
+      at: 6,
+      description: "Blood Price: your ailments deal 20 % more damage.",
+      rules: { dotDamage: 1.2 },
+      requires: "rupture-blood-price",
+    },
+  ],
+  affliction: [
+    { at: 2, description: "+15 % Ailment Duration.", bonuses: { ailmentDuration: 0.15 } },
+    {
+      at: 4,
+      description: "Slow Death: your Default Attack deals 15 % instead of 30 % less damage.",
+      rules: { defaultAttackDamage: 0.85 / 0.7 },
+      requires: "affliction-slow-death",
+    },
+    {
+      at: 6,
+      description: "Slow Death: your ailments deal 75 % instead of 50 % more damage.",
+      rules: { dotDamage: 1.75 / 1.5 },
+      requires: "affliction-slow-death",
+    },
+  ],
+  core: [
+    { at: 2, description: "+40 Life.", bonuses: { life: 40 } },
+    { at: 4, description: "Start every fight with +10 Heat.", bonuses: { startingHeat: 10 } },
+    { at: 6, description: "You take 10 % less damage.", rules: { damageTaken: -0.1 } },
+  ],
+};
+
 export const SKILL_TREE: SkillTreeDefinition = {
   nodes: [...CORE, ...MIGHT, ...ARCANA, ...RUPTURE, ...AFFLICTION, ...PRESTIGE_BRANCH_NODES],
   startNodeId: "core-heart",
   prestigeBranches: PRESTIGE_BRANCHES,
+  resonance: RESONANCE,
 };

@@ -116,8 +116,8 @@ export const PROGRESSION = {
   actsPerFullRun: 7,
   attributePointsPerLevel: 2,
   skillPointsPerLevel: 1,
-  /** Run 1 has only four level-ups, so a new Heir starts with a few Skill Points. */
-  startSkillPoints: 3,
+  /** One Skill Point for Level 1, like every other level: 140 in total at the last Level Cap. */
+  startSkillPoints: 1,
   xpToNextLevel: buildXpTable(XP_BASE, XP_PER_MONSTER_LEVEL, XP_KILLS_PER_LEVEL),
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: XP_BASE,
