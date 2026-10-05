@@ -38,6 +38,7 @@ const DAMAGE_COLORS: Record<string, number> = {
   heal: 0x4fe08a,
   barrier: 0xe8e2d6,
   miss: 0xd8d0c4,
+  trigger: 0xf0b44c,
 };
 
 const AILMENT_TINT: Record<string, number> = {
@@ -155,7 +156,7 @@ export class ArenaScene {
   /** New fight events since the last call. */
   onEvents(events: readonly CombatEvent[]): void {
     if (!this.app) return;
-    for (const e of events) {
+    events.forEach((e, i) => {
       switch (e.type) {
         case "hit": {
           this.figure(e.side).lunge = 1;
@@ -190,14 +191,18 @@ export class ArenaScene {
               0.8,
             );
           break;
+        case "trigger": {
+          // An extra attack (Riposte, "strike back" affixes) names itself, so its number does
+          // not read as a faster attack speed.
+          const next = events[i + 1];
+          if (next?.type === "hit" && next.side === e.side) {
+            this.float(e.side, e.name, DAMAGE_COLORS.trigger ?? 0xffffff, false, 0.7);
+          }
+          break;
+        }
         case "evade":
-          this.float(
-            e.side === "hero" ? "enemy" : "hero",
-            "Evade",
-            DAMAGE_COLORS.miss ?? 0xffffff,
-            false,
-            0.8,
-          );
+          // `side` is the fighter who evaded.
+          this.float(e.side, "Evade", DAMAGE_COLORS.miss ?? 0xffffff, false, 0.8);
           break;
         case "death":
           this.figure(e.side).root.alpha = 0.35;
@@ -205,7 +210,7 @@ export class ArenaScene {
         default:
           break;
       }
-    }
+    });
   }
 
   /** Current state: telegraph wind-up and ailment tints. */
