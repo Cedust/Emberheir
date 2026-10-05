@@ -21,6 +21,7 @@ import {
   battlePlanUnlocks,
   heroSetup,
   knownSkills,
+  nodeMaxRanks,
   openBranches,
   targetSlot,
 } from "@emberheir/sim";
@@ -256,12 +257,15 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
   if (!plan || state.run) return state;
   let s = state;
   for (const target of plan.nodes) s = learnTowards(s, data, target);
-  const branchNodes = s.legacy.branches.flatMap((b) =>
+  const branchNodes = [...new Set(s.legacy.branches)].flatMap((b) =>
     data.skillTree.nodes.filter((n) => n.prestigeBranch === b && n.kind !== "keystone"),
   );
   const rest = data.skillTree.nodes.filter((n) => !n.prestigeBranch && n.kind !== "keystone");
   for (const node of [...branchNodes, ...rest]) {
-    while (s.hero.unspentSkillPoints > 0 && (s.hero.learned[node.id] ?? 0) < (node.maxRanks ?? 1)) {
+    while (
+      s.hero.unspentSkillPoints > 0 &&
+      (s.hero.learned[node.id] ?? 0) < nodeMaxRanks(node, s.legacy.branches)
+    ) {
       const before = s;
       s = learnTowards(s, data, node.id);
       if (s === before) break;
@@ -305,11 +309,18 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
   return s;
 }
 
-/** Prestiges with the first open branch the weapon's tree plan prefers. All items stay. */
+/**
+ * Prestiges with the first new branch the weapon's tree plan prefers; once all of them are owned,
+ * deepens them in plan order. All items stay.
+ */
 function autopilotPrestige(state: GameState, data: GameData): GameState {
   const open = openBranches(state, data).map((b) => b.id);
   const weaponId = state.hero.equipment.mainHand?.baseId ?? "";
-  const preferred = TREE_PLAN[weaponId]?.branches.find((b) => open.includes(b)) ?? open[0];
+  const plan = TREE_PLAN[weaponId]?.branches ?? [];
+  const preferred =
+    plan.find((b) => open.includes(b) && !state.legacy.branches.includes(b)) ??
+    plan.find((b) => open.includes(b)) ??
+    open[0];
   const s = applyAction(state, data, {
     type: "prestige",
     ...(preferred ? { branchId: preferred } : {}),

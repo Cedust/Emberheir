@@ -60,9 +60,28 @@ describe("Skill Tree", () => {
     expect(branches).toHaveLength(10);
     for (const b of branches) {
       const inBranch = nodes.filter((n) => n.prestigeBranch === b.id);
-      expect(inBranch, b.id).toHaveLength(10);
+      // Tier I has ten nodes, tiers II and III add three nodes and a stronger Keystone each.
+      expect(
+        inBranch.filter((n) => (n.tier ?? 1) === 1),
+        b.id,
+      ).toHaveLength(10);
+      expect(
+        inBranch.filter((n) => n.tier === 2),
+        b.id,
+      ).toHaveLength(4);
+      expect(
+        inBranch.filter((n) => n.tier === 3),
+        b.id,
+      ).toHaveLength(4);
       expect(inBranch.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(1);
-      expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(1);
+      expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(3);
+      // Every upgrade replaces a node of the same branch.
+      for (const n of inBranch.filter((x) => x.replaces)) {
+        expect(
+          inBranch.some((x) => x.id === n.replaces),
+          n.id,
+        ).toBe(true);
+      }
       // It hangs off a base node of its own branch.
       const anchor = base.find((n) => n.id === b.anchor);
       expect(anchor?.branch, b.id).toBe(b.branch);
