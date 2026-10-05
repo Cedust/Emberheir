@@ -10,7 +10,7 @@ import {
   createHeroSetup,
   rollGear,
 } from "@emberheir/content";
-import { Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
+import { PROGRESSION, Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
 import { playGenerations, summarizeActRuns } from "./act";
 import { simulateMatchup } from "./simulate";
@@ -32,7 +32,7 @@ function runActMode(): void {
   if (!last) throw new Error(`Act ${args.act} is not playable yet`);
   const runs = Math.min(args.runs, 500);
   // Run n has acts 1..n, so reaching act N takes N runs (prestige-acts-v1.md).
-  const generations = args.finale ? 10 : Math.max(args.generations, last.number);
+  const generations = args.finale ? PROGRESSION.finalPrestige : Math.max(args.generations, last.number);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
     `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations}`,
