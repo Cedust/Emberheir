@@ -257,12 +257,16 @@ describe("game loop", () => {
     expect(itemPickWeights("elite", 0, 0)).toMatchObject({ normal: 0, epic: 0 });
     expect(itemPickWeights("elite", 0, 0).rare).toBeGreaterThan(0);
     expect(itemPickWeights("boss", 0, 0)).toMatchObject({ normal: 0, epic: 0 });
-    // Run 2: Rare from normal enemies (seldom), Epic only now and then from the boss.
+    // Run 2: Rare from normal enemies (seldom), still no Epic, not even from the boss.
     expect(itemPickWeights("normal", 0, 1)).toMatchObject({ epic: 0 });
     expect(itemPickWeights("normal", 0, 1).rare).toBeLessThan(PROGRESSION.rarityWeights.rare);
-    expect(itemPickWeights("boss", 0, 1).epic).toBeGreaterThan(0);
-    // Run 4: Epic from normal enemies; later runs keep the last gate.
-    expect(itemPickWeights("normal", 0, 3).epic).toBeGreaterThan(0);
+    expect(itemPickWeights("boss", 0, 1)).toMatchObject({ epic: 0 });
+    // Run 3: the first Epics, only now and then from the boss.
+    expect(itemPickWeights("elite", 0, 2)).toMatchObject({ epic: 0 });
+    expect(itemPickWeights("boss", 0, 2).epic).toBeGreaterThan(0);
+    // Run 5: Epic from normal enemies; later runs keep the last gate.
+    expect(itemPickWeights("normal", 0, 3)).toMatchObject({ epic: 0 });
+    expect(itemPickWeights("normal", 0, 4).epic).toBeGreaterThan(0);
     expect(lootGate(20)).toBe(lootGate(PROGRESSION.lootGates.length - 1));
     expect(lootGate(0).legendary).toEqual({ normal: 0, elite: 0, boss: 0 });
     // Pity lifts the highest allowed rarity, never a locked one.
@@ -552,10 +556,21 @@ describe("Boss trophies and the Trophy Wall", () => {
     let hits = 0;
     let bosses = 0;
     for (let seed = 1; seed <= 80; seed++) {
-      // Boss trophies drop from run 3 on.
+      // Boss trophies drop from run 4 on; a strong Heir survives its monster levels.
       const fresh = start(seed);
+      const a = fresh.hero.attributes;
+      const strong = {
+        ...a,
+        strength: a.strength + 60,
+        vitality: a.vitality + 120,
+        dexterity: a.dexterity + 30,
+      };
       let s = act(
-        { ...fresh, legacy: { ...fresh.legacy, prestige: 2 } },
+        {
+          ...fresh,
+          hero: { ...fresh.hero, level: 45, attributes: strong },
+          legacy: { ...fresh.legacy, prestige: 3 },
+        },
         { type: "setOut", actId: "test-act" },
       );
       for (let i = 0; i < 2; i++) s = clearStage(s);

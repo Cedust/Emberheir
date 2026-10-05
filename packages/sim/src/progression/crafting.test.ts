@@ -301,8 +301,8 @@ describe("Sockets, Runes and Marisha", () => {
     }
     expect([...early].sort()).toEqual(["magic", "rare"]);
     expect(gambleRarityWeights(0)).toMatchObject({ epic: 0, legendary: 0 });
-    // From run 4 on, some gambles come out Legendary.
-    const late = { ...s, legacy: { ...s.legacy, prestige: 3 } };
+    // From run 5 on, some gambles come out Legendary.
+    const late = { ...s, legacy: { ...s.legacy, prestige: 4 } };
     const rarities = new Set<string>();
     for (let seed = 0; seed < 400; seed++) {
       rarities.add(gambleItem(late, data, "ring", new Rng(seed)).rarity);

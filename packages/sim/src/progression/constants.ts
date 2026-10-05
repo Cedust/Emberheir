@@ -35,7 +35,7 @@ export interface RarityRange {
 
 /**
  * What a run can drop (Playtest 2): items stay through Prestige, so rarity opens up over the whole
- * game instead of within one run. A Rare in run 1 is an event, Epic comes in run 3.
+ * game instead of within one run. A Rare in run 1 is an event, Epic comes from run 3's bosses.
  */
 export interface LootGate {
   readonly normal: RarityRange;
@@ -50,7 +50,7 @@ export interface LootGate {
 }
 
 const LOOT_GATES: readonly LootGate[] = [
-  // Run 1
+  // Run 1: the boss always gives one Rare.
   {
     normal: { floor: "normal", max: "magic" },
     elite: { floor: "magic", max: "rare" },
@@ -59,16 +59,25 @@ const LOOT_GATES: readonly LootGate[] = [
     trophies: false,
     gambleMax: "rare",
   },
-  // Run 2
+  // Run 2: Rare becomes common, still no Epic (Playtest 2: Epics in runs 1 and 2 were too much).
   {
     normal: { floor: "normal", max: "rare", topWeight: 0.3 },
+    elite: { floor: "rare", max: "rare" },
+    boss: { floor: "rare", max: "rare" },
+    legendary: { normal: 0, elite: 0, boss: 0 },
+    trophies: false,
+    gambleMax: "rare",
+  },
+  // Run 3: the first Epics, from bosses only.
+  {
+    normal: { floor: "normal", max: "rare" },
     elite: { floor: "rare", max: "rare" },
     boss: { floor: "rare", max: "epic", topWeight: 0.3 },
     legendary: { normal: 0, elite: 0, boss: 0 },
     trophies: false,
     gambleMax: "epic",
   },
-  // Run 3
+  // Run 4
   {
     normal: { floor: "normal", max: "rare" },
     elite: { floor: "rare", max: "epic", topWeight: 0.3 },
@@ -77,7 +86,7 @@ const LOOT_GATES: readonly LootGate[] = [
     trophies: true,
     gambleMax: "epic",
   },
-  // Run 4
+  // Run 5
   {
     normal: { floor: "normal", max: "epic", topWeight: 0.3 },
     elite: { floor: "rare", max: "epic" },
@@ -86,7 +95,7 @@ const LOOT_GATES: readonly LootGate[] = [
     trophies: true,
     gambleMax: "legendary",
   },
-  // Run 5 and later
+  // Run 6 and later
   {
     normal: { floor: "normal", max: "epic" },
     elite: { floor: "rare", max: "epic" },
