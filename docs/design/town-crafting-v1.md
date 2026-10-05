@@ -56,7 +56,7 @@ Bewusst wenige, jede mit klarer Aufgabe:
 |---|---|---|---|
 | **Upgrade** | Blacksmith | +1 Tier, Roll-Qualität bleibt ✅ | Ascension Shard + Gold |
 | **Add Socket** | Blacksmith | +1 Socket bis zum Maximum der Base (nur Normal) | Dust + Gold |
-| **Salvage** | Blacksmith | Item → Salvage Dust | – |
+| **Salvage** | Blacksmith | Item → Salvage Dust. ✅ **Nur beim Blacksmith** (Timo, 05.10.2026); im Inventar gibt es nur **Discard** (wegwerfen, gibt nichts). Auto-Salvage der nicht gewählten Loot-Karten bleibt. | – |
 | **Reforge** | Mystic | alle zufälligen Affixe neu würfeln (inkl. Trigger). Bleibt: Base, Tier, Rarity, Sockets, Legendary Power. Hebt den Affix-Lock auf | Reforge Stone |
 | **Temper** | Mystic | Wert **eines** Affixes neu würfeln (im Bereich) | Dust + Gold |
 | **Imbue** | Mystic | **ein** Affix durch einen gewählten Typ ersetzen | passende Essence |
@@ -92,7 +92,7 @@ Ein Camp mit Blacksmith (Upgrade, Salvage) und Mystic (Reroll, Imbue). Nur Gold,
 - **Inventar:** Grid wie in Diablo 2 (z. B. 10 × 4), Items belegen je nach Typ unterschiedlich viele Felder (Ring 1 × 1, Schwert 1 × 3, Body Armor 2 × 3).
 - **Stash:** nur im Camp, größer (z. B. 10 × 10), feste Größe, keine zusätzlichen Tabs ✅.
 - Währungen und Runes belegen **keinen** Platz (eigene Leiste bzw. Rune-Beutel).
-- **Loot-Auswahl bei vollem Inventar** ✅ (30.09.2026, Thread "UI Views"): Jede Karte hat zwei Optionen: **Equip** (das alte Item geht ins Inventar) und **Take** (ins Inventar). **Equip macht das alte Item nie zu Dust** (Timo). Passt das neue bzw. das alte Item nicht ins Grid, ist der Button gesperrt ("No room", pro Karte geprüft, da D2-Grid). Dann öffnet **Open Inventory** das Inventar, dort kann man Items zu Dust zerlegen und Platz schaffen. Wer keins will, nimmt **Salvage All** 💡.
+- **Loot-Auswahl bei vollem Inventar** ✅ (30.09.2026, Thread "UI Views"): Jede Karte hat zwei Optionen: **Equip** (das alte Item geht ins Inventar) und **Take** (ins Inventar). **Equip macht das alte Item nie zu Dust** (Timo). Passt das neue bzw. das alte Item nicht ins Grid, ist der Button gesperrt ("No room", pro Karte geprüft, da D2-Grid). Dann öffnet **Open Inventory** das Inventar, dort kann man Items wegwerfen (**Discard**, gibt nichts) und Platz schaffen. Wer keins will, nimmt **Salvage All** 💡.
 - **Tod:** Inventar und Stash bleiben.
 - **Prestige:** Inventar **und Stash** werden geleert. Sonst könnte man Items im Stash parken und die Save Tokens umgehen.
 - ✅ **Ausgleich:** Pro Prestige gibt es eine feste Menge Salvage Dust, unabhängig vom Stash-Inhalt (sonst würde man den Stash vorher vollstopfen). Die Menge steigt mit der Prestige-Stufe.

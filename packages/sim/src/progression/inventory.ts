@@ -9,6 +9,12 @@ export interface PlacedItem {
   readonly y: number;
 }
 
+/** A grid cell (drop target). */
+export interface GridPosition {
+  readonly x: number;
+  readonly y: number;
+}
+
 export interface GridSize {
   readonly w: number;
   readonly h: number;
@@ -76,6 +82,29 @@ export function addToGrid(
 ): PlacedItem[] | undefined {
   const spot = findSpace(placed, item, catalog, grid);
   return spot ? [...placed, { item, ...spot }] : undefined;
+}
+
+/**
+ * Puts an item at a given position (drag & drop). The item itself may already be in the grid:
+ * it moves. Returns undefined if it does not fit there.
+ */
+export function placeAt(
+  placed: readonly PlacedItem[],
+  item: Item,
+  x: number,
+  y: number,
+  catalog: ItemCatalog,
+  grid: GridSize = INVENTORY_SIZE,
+): PlacedItem[] | undefined {
+  const size = itemSize(item, catalog);
+  if (!Number.isInteger(x) || !Number.isInteger(y)) return undefined;
+  if (x < 0 || y < 0 || x + size.w > grid.w || y + size.h > grid.h) return undefined;
+  const rest = placed.filter((p) => p.item.id !== item.id);
+  const cells = occupied(rest, catalog, grid);
+  for (let dx = 0; dx < size.w; dx++) {
+    for (let dy = 0; dy < size.h; dy++) if (cells[(y + dy) * grid.w + x + dx]) return undefined;
+  }
+  return [...rest, { item, x, y }];
 }
 
 /** Number of cells in use, e.g. for "23 / 40". */

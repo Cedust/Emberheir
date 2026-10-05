@@ -15,7 +15,6 @@ import {
   heatPerSecond,
   heroSetup,
   itemSlotFor,
-  salvageValue,
   speedValue,
   unequipBlockReason,
   levelCap,
@@ -27,10 +26,13 @@ import {
   ItemDetail,
   ItemGrid,
   ItemTile,
+  RingSwitch,
   compareWithEquipped,
   fmt,
   walletEntries,
 } from "../ui/items";
+import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
+import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
@@ -38,8 +40,8 @@ import { Paperdoll, dollBox } from "../ui/Paperdoll";
 const ATTRIBUTE_INFO: Record<Attribute, { name: string; effects: string }> = {
   strength: { name: "Strength", effects: "Physical Damage · Armor" },
   dexterity: { name: "Dexterity", effects: "Crit Chance · Trigger Chance" },
-  agility: { name: "Agility", effects: "Attack Speed · Evasion" },
   intelligence: { name: "Intelligence", effects: "Elemental Damage · All Resistance" },
+  agility: { name: "Agility", effects: "Attack Speed · Evasion" },
   wisdom: { name: "Wisdom", effects: "Heat Gain · Ailment Duration" },
   vitality: { name: "Vitality", effects: "Life · Tenacity" },
 };
@@ -47,8 +49,8 @@ const ATTRIBUTE_INFO: Record<Attribute, { name: string; effects: string }> = {
 const ZERO: Record<Attribute, number> = {
   strength: 0,
   dexterity: 0,
-  agility: 0,
   intelligence: 0,
+  agility: 0,
   wisdom: 0,
   vitality: 0,
 };
@@ -74,6 +76,9 @@ export function CharacterOverlay(props: {
   const [pending, setPending] = useState<Record<Attribute, number>>(ZERO);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Offense");
+  const [discarding, setDiscarding] = useState<string | null>(null);
+  useRingSlot();
+  const drops = itemDrops(state, game);
   const spent = ATTRIBUTES.reduce((n, a) => n + pending[a], 0);
   const left = state.hero.unspentAttributePoints - spent;
 
@@ -138,6 +143,12 @@ export function CharacterOverlay(props: {
     ],
     Heat: [
       { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },
+      ...(setup.weapon.heatBehavior === "warming"
+        ? []
+        : [{ label: "Heat per Hit", value: fmt(setup.weapon.heatPerHit) }]),
+      ...(setup.weapon.heatBehavior === "cooling"
+        ? [{ label: "Heat from Hits Taken", value: pct(stats.heatFromHitsTaken) }]
+        : []),
       { label: "Heat per second (estimate)", value: heatPerSecond(setup, stats).toFixed(1) },
       { label: "Heat Gain", value: `+${pct(stats.heatGain)}` },
       { label: "Starting Heat", value: fmt(stats.startingHeat) },
@@ -151,16 +162,20 @@ export function CharacterOverlay(props: {
 
   let footer = null;
   if (sel && invItem) {
-    const reason = equipBlockReason(state, GAME_DATA, invItem, "inventory");
+    const ring = preferredSlotFor(invItem);
+    const reason = equipBlockReason(state, GAME_DATA, invItem, "inventory", ring);
+    const confirmDiscard = discarding === invItem.id;
     footer = (
       <div className="detail-buttons">
+        <RingSwitch state={state} item={invItem} />
         <button
           type="button"
           className="btn primary"
           disabled={reason !== undefined}
           title={reason ? EQUIP_BLOCK_TEXT[reason] : undefined}
           onClick={() => {
-            game.dispatch({ type: "equip", itemId: invItem.id });
+            game.dispatch({ type: "equip", itemId: invItem.id, ...(ring ? { slot: ring } : {}) });
+            resetRingSlot();
             setSelected(null);
           }}
         >
@@ -168,14 +183,21 @@ export function CharacterOverlay(props: {
         </button>
         <button
           type="button"
-          className="btn"
+          className={`btn ${confirmDiscard ? "danger" : ""}`}
           disabled={inFight}
+          title="Throw it away. Thoric salvages for Dust in the Camp."
           onClick={() => {
-            game.dispatch({ type: "salvage", itemId: invItem.id });
+            if (!confirmDiscard) {
+              setDiscarding(invItem.id);
+              return;
+            }
+            game.dispatch({ type: "discard", itemId: invItem.id });
+            setDiscarding(null);
             setSelected(null);
           }}
         >
-          Salvage · +{salvageValue(invItem)} Dust
+          <Icon name="trash" size={16} />
+          {confirmDiscard ? "Really discard?" : "Discard"}
         </button>
         {inFight ? (
           <span className="block warn">Between stages only</span>
@@ -253,6 +275,10 @@ export function CharacterOverlay(props: {
                       height={pos.h}
                       selected={!!it && it.id === selected}
                       inactive={inactive}
+                      aimed={
+                        !!invItem && slot.startsWith("ring") && aimedSlot(state, invItem) === slot
+                      }
+                      {...(inFight ? {} : { drag: drops.slot(slot) })}
                       {...(it ? { onSelect: () => setSelected(it.id) } : {})}
                     />
                   </div>
@@ -347,8 +373,12 @@ export function CharacterOverlay(props: {
               size={{ w: PROGRESSION.inventoryWidth, h: PROGRESSION.inventoryHeight }}
               cell={44}
               selected={selected}
-              onSelect={(id) => setSelected(id)}
+              onSelect={(id) => {
+                setSelected(id);
+                setDiscarding(null);
+              }}
               label="Inventory grid"
+              drop={inFight ? undefined : drops.grid("inventory")}
             />
             {sel ? (
               <ItemDetail
@@ -360,9 +390,7 @@ export function CharacterOverlay(props: {
                 className="character-detail"
               />
             ) : (
-              <div className="empty-pick panel-card sub">
-                Select an item to equip or salvage it.
-              </div>
+              <div className="empty-pick panel-card sub">Select an item.</div>
             )}
             <div className="wallet-row small-wallet">
               {walletEntries(state).map((w) => (

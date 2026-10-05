@@ -19,8 +19,8 @@ import type { AffixStat, Item, ItemCatalog, ItemSlot, Rarity } from "./types";
 export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   strength: "Strength",
   dexterity: "Dexterity",
-  agility: "Agility",
   intelligence: "Intelligence",
+  agility: "Agility",
   wisdom: "Wisdom",
   vitality: "Vitality",
   life: "Life",
@@ -40,6 +40,7 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   voidResistance: "Void Resistance",
   heatGain: "Heat Gain",
   startingHeat: "Starting Heat",
+  heatFromHitsTaken: "Heat from Hits Taken",
   ailmentDuration: "Ailment Duration",
   tenacity: "Tenacity",
   lifesteal: "Lifesteal",

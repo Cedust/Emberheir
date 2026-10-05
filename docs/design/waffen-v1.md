@@ -59,11 +59,13 @@ Alle Zahlen sind Startwerte für die Balance-CLI.
 
 | Verhalten | Waffen | Laden | Eigenheit |
 |---|---|---|---|
-| **Cooling** | Melee | schnell, durch eigene Hits und erlittene Treffer | verfällt, wenn du 1,5 s nicht triffst (Evade des Gegners, Stun, Chill) |
+| **Cooling** | Melee | durch eigene Hits; erlittene Treffer nur mit **Heat from Hits Taken** aus dem Skill Tree ✅ | kühlt ständig ab, **1 Heat pro Sekunde**, ohne Wartezeit ✅ (Timo, 05.10.2026) |
 | **Steady** | Bow, Crossbow | durch eigene Hits (nicht durch erlittene Treffer) | verfällt nie, keine Sonderregel. Der neutrale Standard |
 | **Warming** | Wand, Staff | pro Sekunde, unabhängig von Attack Speed | gleichmäßig und berechenbar |
 
 Im Schnitt laden alle drei gleich schnell, sie unterscheiden sich im Rhythmus. Die Leiste geht für alle von 0 bis 100.
+
+**Heat from Hits Taken ist kein Default mehr** ✅ (Timo, 05.10.2026): Der Held bekommt durch Treffer des Gegners erst Heat, wenn er es skillt. Might-Cluster ab Kindling (Core), nur mit Melee-Waffe: **Battle Scars** (Notable, schaltet es frei: 100 %), **Grudge** (+50 %), **Unbroken** (Notable, +50 %, +10 Armor). Zusammen 200 %, also bis 20 Heat pro Treffer: ein eigener Build für Tanks. Gegner behalten die Regel.
 
 **Heat per Hit** ✅: kein Implicit, sondern ein fester **Grundwert des Waffentyps** (steht im Tooltip wie Damage und Attacks per Second). Er wird so gesetzt, dass jede Waffe bei ihrem Basis-Tempo gleich viel Heat pro Sekunde lädt:
 
@@ -76,12 +78,12 @@ Im Schnitt laden alle drei gleich schnell, sie unterscheiden sich im Rhythmus. D
 | Mace | 0,8 | 15 |
 | Crossbow | 0,6 | 20 |
 
-**Heat from Hits Taken** ✅ (nur Cooling): globale Spielregel, kein Waffenwert. **1 Heat pro 1 % Max Life Schaden**, höchstens 10 pro Treffer. Geblockte und ausgewichene Treffer geben nichts (dafür gibt es Trigger wie "On Block: +15 Heat"). So zählt, wie hart man getroffen wird, nicht wie oft: Ein schneller, schwacher Gegner füttert die Leiste nicht übermäßig. Später veränderbar über Nodes und Affixe, z. B. "+50 % Heat from Hits Taken" (Warden, Duelist).
+**Heat from Hits Taken** ✅ (nur Cooling, beim Held nur über den Skill Tree, siehe oben): kein Waffenwert. **1 Heat pro 1 % Max Life Schaden**, höchstens 10 pro Treffer. Geblockte und ausgewichene Treffer geben nichts (dafür gibt es Trigger wie "On Block: +15 Heat"). So zählt, wie hart man getroffen wird, nicht wie oft: Ein schneller, schwacher Gegner füttert die Leiste nicht übermäßig. Später veränderbar über Nodes und Affixe, z. B. "+50 % Heat from Hits Taken" (Warden, Duelist).
 
 Wer Attack Speed über den Basiswert hinaus erhöht, lädt schneller, weil der Wert pro Hit gleich bleibt. Warming (Wand, Staff) lädt einfach 12 pro Sekunde. Werte sind Startwerte für die Balance-CLI.
 
 **Trigger Threshold nutzt jeder Build ✅.** Der Unterschied liegt darin, wie sicher das Sparen ist:
-- **Cooling:** Sparen ist riskant. Ein Stun oder eine Evade-Serie frisst die angesparte Leiste.
+- **Cooling:** Sparen kostet: die Leiste kühlt ständig um 1 Heat pro Sekunde ab.
 - **Steady:** Sparen ist sicher. Dafür lädt die Leiste nicht durch erlittene Treffer, also etwas langsamer als bei Melee unter Druck.
 - **Warming:** Sparen ist planbar, aber ohne Extra-Bonus.
 

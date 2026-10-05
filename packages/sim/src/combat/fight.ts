@@ -240,7 +240,6 @@ interface Fighter {
   attackProgress: number;
   nextSlot: number;
   ailments: AilmentStates;
-  secondsSinceLastHit: number;
   /** Default Attacks so far (for "Every Nth Attack"). Extra attacks from triggers do not count. */
   attackCount: number;
   readonly triggers: TriggerState[];
@@ -327,7 +326,6 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     attackProgress: 0,
     nextSlot: 0,
     ailments: {},
-    secondsSinceLastHit: 0,
     attackCount: 0,
     triggers: triggers.map(createTriggerState),
     buffs: [],
@@ -541,13 +539,11 @@ export class Fight {
       this.emit({ t: this.time, type: "ailmentExpired", side: f.side, ailment });
     }
 
-    f.secondsSinceLastHit += dt;
     const behavior = f.setup.weapon.heatBehavior;
     f.heat = stepHeat(
       f.setup.rules?.noHeatDecay && behavior === "cooling" ? "steady" : behavior,
       f.heat,
       dt,
-      f.secondsSinceLastHit,
       this.heatMultiplier(f),
     );
 
@@ -1035,7 +1031,6 @@ export class Fight {
       return false;
     }
 
-    attacker.secondsSinceLastHit = 0;
     this.emit({
       t: this.time,
       type: "hit",
@@ -1054,7 +1049,7 @@ export class Fight {
           defender.setup.weapon.heatBehavior,
           outcome.damage,
           defender.stats.maxLife,
-        ),
+        ) * defender.stats.heatFromHitsTaken,
         this.heatMultiplier(defender),
       );
     }

@@ -113,7 +113,7 @@ describe("Fight", () => {
       expect(fight.snapshot().hero.heat).toBeCloseTo(2 * COMBAT.warmingHeatPerSecond, 5);
     });
 
-    it("Cooling gains Heat from hits taken and loses it without own hits", () => {
+    it("Cooling gains Heat from hits taken (enemies by default) and keeps cooling down", () => {
       const cooling: WeaponDefinition = {
         ...TEST_WEAPON,
         heatBehavior: "cooling",
@@ -121,11 +121,30 @@ describe("Fight", () => {
       };
       const fight = new Fight(setup({ weapon: cooling }), setup({ bonuses: NO_CRIT }), 1);
       fight.advance(1.1);
-      // Took a 10 damage hit = 10 % of max life = 10 Heat.
-      expect(fight.snapshot().hero.heat).toBeCloseTo(10, 5);
-      // Decay starts after the grace time and outpaces the next 10 Heat hit taken at 2 s.
-      fight.advance(1.8);
-      expect(fight.snapshot().hero.heat).toBeLessThan(10);
+      // Took a 10 damage hit at 1 s = 10 % of max life = 10 Heat, minus 1 Heat/s cooling since.
+      expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.1, 5);
+      fight.advance(0.8);
+      expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.9, 5);
+    });
+
+    it("Heat from Hits Taken scales it; at 0 enemy hits give no Heat", () => {
+      const cooling: WeaponDefinition = {
+        ...TEST_WEAPON,
+        heatBehavior: "cooling",
+        attacksPerSecond: 0,
+      };
+      const heat = (bonus: number) => {
+        const hero = setup({
+          weapon: cooling,
+          baseHeatFromHitsTaken: 0,
+          bonuses: { heatFromHitsTaken: bonus },
+        });
+        const fight = new Fight(hero, setup({ bonuses: NO_CRIT }), 1);
+        fight.advance(1.01);
+        return fight.snapshot().hero.heat;
+      };
+      expect(heat(0)).toBe(0);
+      expect(heat(1.5)).toBeCloseTo(15, 0);
     });
   });
 

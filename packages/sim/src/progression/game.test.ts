@@ -231,14 +231,43 @@ describe("game loop", () => {
     expect(s.hero.equipment.mainHand?.id).toBe(rewards.items[index]?.id);
     expect(s.inventory.map((p) => p.item.id)).toEqual([oldWeapon?.id]);
 
-    // Swap back from the inventory, then salvage the other sword.
+    // Swap back from the inventory. Salvage is Thoric's (Camp only); on the road you can only
+    // throw the other sword away, for nothing.
     s = act(s, { type: "equip", itemId: oldWeapon?.id ?? "" });
     expect(s.hero.equipment.mainHand?.id).toBe(oldWeapon?.id);
+    const other = rewards.items[index]?.id ?? "";
+    expect(() => act(s, { type: "salvage", itemId: other })).toThrow(/Camp/);
     const dust = s.wallet.dust;
-    s = act(s, { type: "salvage", itemId: rewards.items[index]?.id ?? "" });
+    const discarded = act(s, { type: "discard", itemId: other });
+    expect(discarded.inventory).toHaveLength(0);
+    expect(discarded.wallet).toEqual(s.wallet);
+    expect(() => act(s, { type: "unequip", slot: "mainHand" })).toThrow(/mainHand/);
+
+    s = act(s, { type: "retreat" });
+    expect(s.run).toBeNull();
+    s = act(s, { type: "salvage", itemId: other });
     expect(s.inventory).toHaveLength(0);
     expect(s.wallet.dust).toBeGreaterThan(dust);
-    expect(() => act(s, { type: "unequip", slot: "mainHand" })).toThrow(/mainHand/);
+  });
+
+  it("drag & drop moves items inside the inventory and onto a chosen slot", () => {
+    let s = act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+    s = act(s, { type: "resolveFight" });
+    const rewards = s.run?.rewards ?? fail();
+    const index = rewards.items.findIndex((i) => i.baseId === "test-sword");
+    const oldWeapon = s.hero.equipment.mainHand ?? fail();
+    s = act(s, { type: "pickItem", index, mode: "equip" });
+    expect(s.inventory[0]).toMatchObject({ x: 0, y: 0 });
+    s = act(s, { type: "placeItem", itemId: oldWeapon.id, at: { x: 3, y: 1 } });
+    expect(s.inventory[0]).toMatchObject({ x: 3, y: 1 });
+    expect(() => act(s, { type: "placeItem", itemId: oldWeapon.id, at: { x: 99, y: 0 } })).toThrow(
+      /room/,
+    );
+    // An item never fits a slot of another kind.
+    expect(equipBlockReason(s, data, oldWeapon, "inventory", "ring1")).toBe("noSlot");
+    expect(() => act(s, { type: "equip", itemId: oldWeapon.id, slot: "ring1" })).toThrow();
+    s = act(s, { type: "equip", itemId: oldWeapon.id, slot: "mainHand" });
+    expect(s.hero.equipment.mainHand?.id).toBe(oldWeapon.id);
   });
 
   it("Pity raises the top weights; Elites and Bosses have a rarity floor", () => {

@@ -44,14 +44,20 @@ export function estimateDps(setup: CombatantSetup, stats: DerivedStats = deriveS
   return hit * aps + dots;
 }
 
-/** Heat per second from own Default Attacks (Warming: per second), without hits taken. */
+/**
+ * Heat per second from own Default Attacks (Warming: per second) minus Cooling, without hits
+ * taken.
+ */
 export function heatPerSecond(setup: CombatantSetup, stats: DerivedStats = deriveStats(setup)) {
   const behavior: HeatBehavior = setup.weapon.heatBehavior;
   const raw =
     behavior === "warming"
       ? COMBAT.warmingHeatPerSecond
       : setup.weapon.heatPerHit * stats.attackSpeed;
-  return raw * (1 + stats.heatGain);
+  const gain = raw * (1 + stats.heatGain);
+  return behavior === "cooling" && !setup.rules?.noHeatDecay
+    ? Math.max(0, gain - COMBAT.coolingDecayPerSecond)
+    : gain;
 }
 
 /** One step of "One rotation": a skill fires after waiting `wait` seconds for Heat. */
@@ -134,8 +140,13 @@ const COMPARED: readonly (keyof DerivedStats)[] = [
 ];
 
 /** What changes if the hero equips `item` (it goes to the slot Equip would use). */
-export function compareItem(state: GameState, data: GameData, item: Item): ItemComparison {
-  const slot = targetSlot(item, data, state.hero.equipment);
+export function compareItem(
+  state: GameState,
+  data: GameData,
+  item: Item,
+  preferred?: EquipmentSlot,
+): ItemComparison {
+  const slot = targetSlot(item, data, state.hero.equipment, preferred);
   const replaces = slot ? state.hero.equipment[slot] : undefined;
   const before = heroSetup(state, data).setup;
   const after = slot
