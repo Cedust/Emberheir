@@ -83,8 +83,11 @@ import {
   type LearnedNodes,
   type PrestigeBranchDefinition,
   type SkillTreeDefinition,
+  MAX_BRANCH_TIER,
+  branchTier,
   keystoneRules,
   learnNodes,
+  resonanceEffects,
   treeBonuses,
   treeSkills,
   treeTriggers,
@@ -322,7 +325,10 @@ export interface LegacyState {
   readonly codex: CodexState;
   /** The Codex part marked at Old Nan, if any. */
   readonly quarry: QuarryMark | null;
-  /** Prestige branches of the Skill Tree, one chosen per Prestige. Permanent. */
+  /**
+   * Prestige branch picks of the Skill Tree, one per Prestige. Permanent. A branch picked again
+   * is deepened, so it appears once per tier (`branchTier`).
+   */
   readonly branches: readonly string[];
   /** Trophy Wall: Uniques ever found. Permanent like the Runeword Codex. */
   readonly trophies: readonly string[];
@@ -754,6 +760,7 @@ export function heroSetup(
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
   const { hero } = state;
   const boons = boonEffects(heroBoons(state, data));
+  const resonance = resonanceEffects(data.skillTree, hero.learned, state.legacy.branches);
   return buildHeroSetup(
     {
       level: hero.level,
@@ -765,14 +772,16 @@ export function heroSetup(
       capstone: (weapon) => heroCapstone(state, data, weapon),
       openingMove: (weapon) => heroOpeningMove(state, data, weapon),
       bonuses: (weapon) =>
-        sumBonuses(treeBonuses(data.skillTree, hero.learned, weapon.range), boons.bonuses),
+        sumBonuses(
+          treeBonuses(data.skillTree, hero.learned, weapon.range),
+          resonance.bonuses,
+          boons.bonuses,
+        ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
         ...boons.triggers,
       ],
-      rules: boons.rules
-        ? mergeRules(keystoneRules(data.skillTree, hero.learned), boons.rules)
-        : keystoneRules(data.skillTree, hero.learned),
+      rules: mergeRules(keystoneRules(data.skillTree, hero.learned), resonance.rules, boons.rules),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
     data.items,
@@ -2096,10 +2105,13 @@ function validThreshold(t: number): boolean {
 
 // --- prestige --------------------------------------------------------------------------------
 
-/** Prestige branches the coming Prestige can unlock. */
+/**
+ * Prestige branches the coming Prestige can pick (skilltree-v2.md): new ones, and owned ones that
+ * can be deepened one tier.
+ */
 export function openBranches(state: GameState, data: GameData): PrestigeBranchDefinition[] {
   return (data.skillTree.prestigeBranches ?? []).filter(
-    (b) => !state.legacy.branches.includes(b.id),
+    (b) => branchTier(state.legacy.branches, b.id) < MAX_BRANCH_TIER,
   );
 }
 
