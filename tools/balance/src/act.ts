@@ -63,6 +63,8 @@ const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   dagger: ["dexterity", "agility", "vitality"],
   mace: ["strength", "vitality", "agility"],
   staff: ["intelligence", "wisdom", "vitality"],
+  bow: ["dexterity", "agility", "vitality"],
+  crossbow: ["strength", "dexterity", "vitality"],
 };
 
 const rarityRank = (item: Item) => RARITIES.indexOf(item.rarity);
@@ -182,6 +184,18 @@ const TREE_PLAN: Record<string, BuildPlan> = {
     nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
     rotation: ["rend", "cleave", "lacerate"],
     branches: ["butcher", "warden", "duelist", "tactician"],
+    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+  },
+  bow: {
+    nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
+    rotation: ["rend", "lacerate", "cleave"],
+    branches: ["marksman", "butcher", "tactician", "warden"],
+    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+  },
+  crossbow: {
+    nodes: ["might-brutal-force", "might-flurry", "might-killer-instinct", "might-power-strike"],
+    rotation: ["piercing-shot", "flurry", "execute"],
+    branches: ["marksman", "duelist", "tactician", "warden"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   dagger: {

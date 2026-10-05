@@ -71,7 +71,7 @@ export const DAGGER: WeaponDefinition = {
   id: "dagger",
   name: "Dagger",
   defaultAttack: "Stab",
-  damage: { min: 8, max: 12 },
+  damage: { min: 11, max: 17 },
   damageType: "physical",
   attacksPerSecond: 1.1,
   heatBehavior: "cooling",
