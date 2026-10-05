@@ -4,7 +4,7 @@ import { Icon } from "../ui/Icon";
 const ENTRIES: { title: string; text: string }[] = [
   {
     title: "Heat",
-    text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat comes from hits taken and fades all the time; the Skill Tree's Heat per Hit lets your own hits build it), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
+    text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat fades all the time; the Skill Tree can make enemy hits build it too), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
   },
   {
     title: "Life and the Ember Flask",

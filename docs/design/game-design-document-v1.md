@@ -158,13 +158,13 @@ Die Skill-Ressource heißt **Heat** ✅ (vorher Momentum). Die drei Verhalten he
 
 | Verhalten | Waffen | Laden | Eigenheit |
 |---|---|---|---|
-| **Cooling** | Melee | erlittene Treffer; eigene Hits nur mit Heat per Hit aus dem Skill Tree | kühlt ständig ab, 1 Heat/s ✅ (05.10.2026) |
+| **Cooling** | Melee | eigene Hits; erlittene Treffer nur über den Skill Tree | kühlt ständig ab, 1 Heat/s ✅ (05.10.2026) |
 | **Steady** | Bow, Crossbow | nur eigene Hits | verfällt nie, neutraler Standard |
 | **Warming** | Wand, Staff | pro Sekunde, unabhängig von Attack Speed | gleichmäßig |
 
 - Leiste 0–100 für alle. Keystones können das Verhalten später umstellen.
-- **Heat per Hit** ist ein Grundwert des Waffentyps (kein Implicit): Ziel-Rate (z. B. 12/s) ÷ Basis-Attacks per Second. So laden alle Waffen im Grundtempo gleich schnell. ✅ Melee bekommt ihn nur über den Skill Tree (Might: Battle Rhythm, Cadence, Relentless), siehe `waffen-v1.md`.
-- **Heat from Hits Taken** (nur Cooling): globale Regel, 1 Heat pro 1 % Max Life Schaden, max. 10 pro Treffer. Block und Evade geben nichts.
+- **Heat per Hit** ist ein Grundwert des Waffentyps (kein Implicit): Ziel-Rate (z. B. 12/s) ÷ Basis-Attacks per Second. So laden alle Waffen im Grundtempo gleich schnell.
+- **Heat from Hits Taken** (nur Cooling; beim Held nur über Might-Nodes Battle Scars, Grudge, Unbroken ✅ 05.10.2026): 1 Heat pro 1 % Max Life Schaden, max. 10 pro Treffer. Block und Evade geben nichts.
 - **Keine Cast Time.** Attack Speed beschleunigt die Default Attack jeder Waffe, auch bei Castern. Warming-Heat hängt aber nicht davon ab.
 - **Sunder** ✅ (Debuff, senkt stapelnd die Armor des Gegners) ist etwas anderes als **Physical Penetration** (Stat des Angreifers, ignoriert Armor pro Treffer).
 

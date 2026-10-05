@@ -7,32 +7,28 @@ import { buildHeroSetup } from "./hero";
 const ATTRIBUTES = {
   strength: 0,
   dexterity: 0,
-  agility: 0,
   intelligence: 0,
+  agility: 0,
   wisdom: 0,
   vitality: 0,
 };
 
-const build = (heatBehavior: "cooling" | "steady", heatPerHit = 0) =>
+const build = (heatFromHitsTaken = 0) =>
   buildHeroSetup(
     {
       level: 1,
       attributes: ATTRIBUTES,
       equipment: {},
-      fallbackWeapon: { ...TEST_WEAPON, heatBehavior },
+      fallbackWeapon: { ...TEST_WEAPON, heatBehavior: "cooling" },
       rotation: () => [],
-      bonuses: () => ({ heatPerHit }),
+      bonuses: () => ({ heatFromHitsTaken }),
     },
     TEST_CATALOG,
   ).setup;
 
 describe("buildHeroSetup", () => {
-  it("Cooling weapons start without Heat per Hit, the Skill Tree adds it", () => {
-    expect(deriveStats(build("cooling")).heatPerHit).toBe(0);
-    expect(deriveStats(build("cooling", 0.6)).heatPerHit).toBeCloseTo(0.6);
-  });
-
-  it("Steady weapons keep their full Heat per Hit", () => {
-    expect(deriveStats(build("steady")).heatPerHit).toBe(1);
+  it("the hero gets Heat from Hits Taken only from the Skill Tree", () => {
+    expect(deriveStats(build()).heatFromHitsTaken).toBe(0);
+    expect(deriveStats(build(1.5)).heatFromHitsTaken).toBeCloseTo(1.5);
   });
 });

@@ -53,7 +53,7 @@ export function heatPerSecond(setup: CombatantSetup, stats: DerivedStats = deriv
   const raw =
     behavior === "warming"
       ? COMBAT.warmingHeatPerSecond
-      : setup.weapon.heatPerHit * stats.heatPerHit * stats.attackSpeed;
+      : setup.weapon.heatPerHit * stats.attackSpeed;
   const gain = raw * (1 + stats.heatGain);
   return behavior === "cooling" && !setup.rules?.noHeatDecay
     ? Math.max(0, gain - COMBAT.coolingDecayPerSecond)

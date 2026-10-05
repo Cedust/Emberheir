@@ -45,7 +45,7 @@ Details und die 8 Archetypen: `klassen-varianten.md`.
 - Skills laufen in einer festen, vom Spieler gesetzten **Rotation** ✅. Sobald genug Heat für den nächsten Skill da ist, wird er gewirkt.
 - Passive Skills kosten nichts.
 - ✅ Verhalten je Waffe: **Cooling** (Melee), **Steady** (Bow, Crossbow), **Warming** (Wand, Staff). Details in `waffen-v1.md`.
-- ✅ **Heat per Hit** (Stat, %, 05.10.2026): Anteil am Heat per Hit der Waffe. Melee startet bei 0 % und holt es über den Skill Tree (Battle Rhythm, Cadence, Relentless); Bow und Crossbow haben 100 %. Cooling kühlt ständig um 1 Heat pro Sekunde ab.
+- ✅ **Heat from Hits Taken** (Stat, %, 05.10.2026): Anteil an der Heat aus erlittenen Treffern (Cooling). Der Held startet bei 0 % und holt es über den Skill Tree (Battle Scars, Grudge, Unbroken). Cooling kühlt ständig um 1 Heat pro Sekunde ab.
 
 ---
 

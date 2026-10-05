@@ -63,8 +63,8 @@ export interface StatBonuses {
   readonly voidResistance?: number;
   readonly heatGain?: number;
   readonly startingHeat?: number;
-  /** Share of the weapon's Heat per Hit that landed Default Attacks give (0.2 = +20 %). */
-  readonly heatPerHit?: number;
+  /** Cooling: share of the Heat from hits taken (0.5 = +50 %). */
+  readonly heatFromHitsTaken?: number;
   readonly ailmentDuration?: number;
   readonly tenacity?: number;
   readonly lifesteal?: number;
@@ -174,10 +174,7 @@ export interface WeaponDefinition {
   readonly damageType: DamageType;
   readonly attacksPerSecond: number;
   readonly heatBehavior: HeatBehavior;
-  /**
-   * Heat per landed Default Attack (Cooling / Steady). Ignored for Warming. The hero's Cooling
-   * weapons only get it through Heat per Hit from the Skill Tree.
-   */
+  /** Heat per landed Default Attack (Cooling / Steady). Ignored for Warming. */
   readonly heatPerHit: number;
   readonly range: "melee" | "ranged";
   readonly implicit: StatBonuses;
@@ -382,10 +379,10 @@ export interface CombatantSetup {
   readonly telegraphs?: readonly TelegraphSpec[];
   readonly rules?: CombatRules;
   /**
-   * Share of the weapon's Heat per Hit before bonuses. Default 1 (enemies, bows); the hero's
-   * Cooling weapons start at 0 and raise it in the Skill Tree.
+   * Share of the Heat from hits taken before bonuses (Cooling). Default 1 (enemies); the hero
+   * starts at 0 and raises it in the Skill Tree.
    */
-  readonly baseHeatPerHit?: number;
+  readonly baseHeatFromHitsTaken?: number;
   /** Reaction Slots of the Battle Plan. */
   readonly reactions?: readonly ReactionSlot[];
   readonly capstone?: Capstone;

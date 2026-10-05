@@ -159,7 +159,7 @@ interface BuildPlan {
 const TREE_PLAN: Record<string, BuildPlan> = {
   sword: {
     nodes: [
-      "might-relentless",
+      "might-unbroken",
       "might-flurry",
       "might-brutal-force",
       "might-killer-instinct",
@@ -171,7 +171,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
   },
   mace: {
     nodes: [
-      "might-relentless",
+      "might-unbroken",
       "might-brutal-force",
       "might-flurry",
       "might-killer-instinct",
@@ -195,7 +195,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
   },
   axe: {
     nodes: [
-      "might-relentless",
+      "might-unbroken",
       "rupture-butcher",
       "rupture-lacerate",
       "rupture-rend",
@@ -218,7 +218,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   dagger: {
-    nodes: ["might-relentless", "rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
+    nodes: ["might-unbroken", "rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
     rotation: ["toxic-burst", "plague-cloud", "venom-coat"],
     branches: ["venomancer", "tactician", "warden", "duelist"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },

@@ -795,7 +795,7 @@ export class Fight {
     if (landed) {
       f.heat = addHeat(
         f.heat,
-        heatFromOwnHit(weapon.heatBehavior, weapon.heatPerHit * f.stats.heatPerHit),
+        heatFromOwnHit(weapon.heatBehavior, weapon.heatPerHit),
         this.heatMultiplier(f),
       );
     }
@@ -1049,7 +1049,7 @@ export class Fight {
           defender.setup.weapon.heatBehavior,
           outcome.damage,
           defender.stats.maxLife,
-        ),
+        ) * defender.stats.heatFromHitsTaken,
         this.heatMultiplier(defender),
       );
     }

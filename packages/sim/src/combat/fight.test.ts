@@ -113,7 +113,7 @@ describe("Fight", () => {
       expect(fight.snapshot().hero.heat).toBeCloseTo(2 * COMBAT.warmingHeatPerSecond, 5);
     });
 
-    it("Cooling gains Heat from hits taken and loses it without own hits", () => {
+    it("Cooling gains Heat from hits taken (enemies by default) and keeps cooling down", () => {
       const cooling: WeaponDefinition = {
         ...TEST_WEAPON,
         heatBehavior: "cooling",
@@ -127,19 +127,24 @@ describe("Fight", () => {
       expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.9, 5);
     });
 
-    it("Cooling hits give Heat only with Heat per Hit", () => {
-      const cooling: WeaponDefinition = { ...TEST_WEAPON, heatBehavior: "cooling" };
-      const without = new Fight(setup({ weapon: cooling, baseHeatPerHit: 0 }), dummy(), 1);
-      without.advance(1.01);
-      expect(without.snapshot().hero.heat).toBe(0);
-      const half = new Fight(
-        setup({ weapon: cooling, baseHeatPerHit: 0, bonuses: { heatPerHit: 0.5 } }),
-        dummy(),
-        1,
-      );
-      half.advance(1.01);
-      // 50 % of the weapon's 10 Heat per Hit, minus 1 Heat/s cooling.
-      expect(half.snapshot().hero.heat).toBeCloseTo(5, 0);
+    it("Heat from Hits Taken scales it; at 0 enemy hits give no Heat", () => {
+      const cooling: WeaponDefinition = {
+        ...TEST_WEAPON,
+        heatBehavior: "cooling",
+        attacksPerSecond: 0,
+      };
+      const heat = (bonus: number) => {
+        const hero = setup({
+          weapon: cooling,
+          baseHeatFromHitsTaken: 0,
+          bonuses: { heatFromHitsTaken: bonus },
+        });
+        const fight = new Fight(hero, setup({ bonuses: NO_CRIT }), 1);
+        fight.advance(1.01);
+        return fight.snapshot().hero.heat;
+      };
+      expect(heat(0)).toBe(0);
+      expect(heat(1.5)).toBeCloseTo(15, 0);
     });
   });
 

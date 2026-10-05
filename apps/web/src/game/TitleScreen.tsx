@@ -10,11 +10,7 @@ import { loadSave } from "./useGame";
 const STARTER_TEXT: Record<string, { icon: "sword" | "wand"; lines: string[] }> = {
   sword: {
     icon: "sword",
-    lines: [
-      "Melee · Cooling Heat",
-      "Getting hit builds Heat. It fades.",
-      "Start Skill: Power Strike",
-    ],
+    lines: ["Melee · Cooling Heat", "Hit often or the Heat fades.", "Start Skill: Power Strike"],
   },
   "fire-wand": {
     icon: "wand",

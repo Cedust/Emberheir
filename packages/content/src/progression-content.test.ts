@@ -41,15 +41,14 @@ describe("Skill Tree", () => {
     }
   });
 
-  it("Melee hits build Heat only through Heat per Hit nodes", () => {
-    const heatPerHit = base.filter((n) => (n.bonuses?.heatPerHit ?? 0) > 0);
-    expect(heatPerHit.map((n) => n.id)).toEqual([
-      "might-battle-rhythm",
-      "might-cadence",
-      "might-relentless",
+  it("enemy hits build Heat only through the Heat from Hits Taken nodes", () => {
+    const nodes = base.filter((n) => (n.bonuses?.heatFromHitsTaken ?? 0) > 0);
+    expect(nodes.map((n) => n.id)).toEqual([
+      "might-battle-scars",
+      "might-grudge",
+      "might-unbroken",
     ]);
-    expect(heatPerHit.every((n) => n.weaponRange === "melee")).toBe(true);
-    expect(heatPerHit.reduce((sum, n) => sum + (n.bonuses?.heatPerHit ?? 0), 0)).toBeCloseTo(1);
+    expect(nodes.every((n) => n.weaponRange === "melee")).toBe(true);
   });
 
   it("every node can be reached from the start node", () => {

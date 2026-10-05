@@ -145,7 +145,10 @@ export function CharacterOverlay(props: {
       { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },
       ...(setup.weapon.heatBehavior === "warming"
         ? []
-        : [{ label: "Heat per Hit", value: fmt(setup.weapon.heatPerHit * stats.heatPerHit) }]),
+        : [{ label: "Heat per Hit", value: fmt(setup.weapon.heatPerHit) }]),
+      ...(setup.weapon.heatBehavior === "cooling"
+        ? [{ label: "Heat from Hits Taken", value: pct(stats.heatFromHitsTaken) }]
+        : []),
       { label: "Heat per second (estimate)", value: heatPerSecond(setup, stats).toFixed(1) },
       { label: "Heat Gain", value: `+${pct(stats.heatGain)}` },
       { label: "Starting Heat", value: fmt(stats.startingHeat) },

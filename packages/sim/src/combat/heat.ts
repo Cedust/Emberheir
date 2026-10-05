@@ -3,7 +3,7 @@ import type { HeatBehavior } from "./types";
 
 /**
  * Heat rules per weapon behavior (docs/design/waffen-v1.md section 4):
- * - Cooling (melee): hits taken (own hits only with Heat per Hit), always cools down.
+ * - Cooling (melee): own hits (+ hits taken with the Skill Tree), always cools down.
  * - Steady (bow, crossbow): own hits only, never decays.
  * - Warming (wand, staff): fixed gain per second, independent of Attack Speed.
  */

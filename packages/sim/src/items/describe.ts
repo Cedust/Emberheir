@@ -40,7 +40,7 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   voidResistance: "Void Resistance",
   heatGain: "Heat Gain",
   startingHeat: "Starting Heat",
-  heatPerHit: "Heat per Hit",
+  heatFromHitsTaken: "Heat from Hits Taken",
   ailmentDuration: "Ailment Duration",
   tenacity: "Tenacity",
   lifesteal: "Lifesteal",
