@@ -66,6 +66,8 @@ export function buildHeroSetup(
     ...(capstone ? { capstone } : {}),
     ...(openingMove ? { openingMove } : {}),
     bonuses: sumBonuses(gear.bonuses, options.bonuses?.(weapon)),
+    // Melee hits build Heat only through Heat per Hit from the Skill Tree (Timo, Playtest 2).
+    ...(weapon.heatBehavior === "cooling" ? { baseHeatPerHit: 0 } : {}),
     ...(triggers.length ? { triggers } : {}),
     ...(options.rules || gear.rules ? { rules: mergeRules(options.rules, gear.rules) } : {}),
     ...(options.lifeFraction !== undefined ? { lifeFraction: options.lifeFraction } : {}),

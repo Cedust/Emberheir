@@ -13,10 +13,12 @@ Leitgedanke: Jeder Stat bringt direkt Stärke **oder** füttert einen Trigger. K
 |---|---|---|
 | **Strength** | Physical Damage %, Armor | Kraft |
 | **Dexterity** | Crit Chance, Trigger Chance | Präzision / Technik |
-| **Agility** | Attack Speed, Evasion | Tempo |
 | **Intelligence** | Elemental Damage %, All Resistance (klein, Resistances kommen vor allem über Items) | Magische Kraft |
+| **Agility** | Attack Speed, Evasion | Tempo |
 | **Wisdom** | Heat Gain, Ailment Duration | Magische Kontrolle |
 | **Vitality** | Life, Tenacity | Überleben |
+
+Reihenfolge überall im Spiel ✅ (Timo, 05.10.2026): Strength, Dexterity, Intelligence, dann Agility, Wisdom, Vitality.
 
 Verworfen: Luck, Constitution, Charisma. Was ein Level-Up bringt: siehe GDD Abschnitt "Level" ✅ (Attributpunkte, 1 Skillpunkt, Base Life; Level bleibt beim Prestige).
 
@@ -32,7 +34,7 @@ Verworfen: Luck, Constitution, Charisma. Was ein Level-Up bringt: siehe GDD Absc
 
 Details und die 8 Archetypen: `klassen-varianten.md`.
 
-💡 Range-Mechanik im 1v1: Ranged greift sofort an, Melee muss erst die Distanz schließen (1–2 s), trifft dafür härter.
+✅ Range im 1v1: keine eigene Kampfregel (Timo, 05.10.2026, siehe `melee-ranged-v1.md`). Melee und Ranged unterscheiden sich über Heat-Verhalten, Off Hand, Default Attack und Tree-Nodes.
 
 ---
 
@@ -43,6 +45,7 @@ Details und die 8 Archetypen: `klassen-varianten.md`.
 - Skills laufen in einer festen, vom Spieler gesetzten **Rotation** ✅. Sobald genug Heat für den nächsten Skill da ist, wird er gewirkt.
 - Passive Skills kosten nichts.
 - ✅ Verhalten je Waffe: **Cooling** (Melee), **Steady** (Bow, Crossbow), **Warming** (Wand, Staff). Details in `waffen-v1.md`.
+- ✅ **Heat per Hit** (Stat, %, 05.10.2026): Anteil am Heat per Hit der Waffe. Melee startet bei 0 % und holt es über den Skill Tree (Battle Rhythm, Cadence, Relentless); Bow und Crossbow haben 100 %. Cooling kühlt ständig um 1 Heat pro Sekunde ab.
 
 ---
 

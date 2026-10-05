@@ -3,11 +3,12 @@
  * types in `@emberheir/content`; the simulation only ever reads them.
  */
 
+/** Display order everywhere (Timo, after Playtest 2): Strength, Dexterity, Intelligence first. */
 export const ATTRIBUTES = [
   "strength",
   "dexterity",
-  "agility",
   "intelligence",
+  "agility",
   "wisdom",
   "vitality",
 ] as const;
@@ -62,6 +63,8 @@ export interface StatBonuses {
   readonly voidResistance?: number;
   readonly heatGain?: number;
   readonly startingHeat?: number;
+  /** Share of the weapon's Heat per Hit that landed Default Attacks give (0.2 = +20 %). */
+  readonly heatPerHit?: number;
   readonly ailmentDuration?: number;
   readonly tenacity?: number;
   readonly lifesteal?: number;
@@ -171,7 +174,10 @@ export interface WeaponDefinition {
   readonly damageType: DamageType;
   readonly attacksPerSecond: number;
   readonly heatBehavior: HeatBehavior;
-  /** Heat per landed Default Attack (Cooling / Steady). Ignored for Warming. */
+  /**
+   * Heat per landed Default Attack (Cooling / Steady). Ignored for Warming. The hero's Cooling
+   * weapons only get it through Heat per Hit from the Skill Tree.
+   */
   readonly heatPerHit: number;
   readonly range: "melee" | "ranged";
   readonly implicit: StatBonuses;
@@ -375,6 +381,11 @@ export interface CombatantSetup {
   /** Telegraphed Heavy Attacks (bosses). */
   readonly telegraphs?: readonly TelegraphSpec[];
   readonly rules?: CombatRules;
+  /**
+   * Share of the weapon's Heat per Hit before bonuses. Default 1 (enemies, bows); the hero's
+   * Cooling weapons start at 0 and raise it in the Skill Tree.
+   */
+  readonly baseHeatPerHit?: number;
   /** Reaction Slots of the Battle Plan. */
   readonly reactions?: readonly ReactionSlot[];
   readonly capstone?: Capstone;

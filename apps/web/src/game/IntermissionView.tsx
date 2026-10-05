@@ -29,11 +29,13 @@ import { Icon, type IconName } from "../ui/Icon";
 import {
   ItemDetail,
   ItemTile,
+  RingSwitch,
   compareWithEquipped,
   fmt,
   rarityClass,
   walletEntries,
 } from "../ui/items";
+import { preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
 import { finaleFoe, inFinale } from "./finale";
 import { RunHeader } from "./RunHeader";
 import { BoonBar, ShrineCards } from "./Boons";
@@ -346,6 +348,7 @@ function PickButtons(props: {
   taken: boolean;
 }) {
   const { state, game, item, index } = props;
+  useRingSlot();
   if (props.taken) {
     return (
       <div className="card-buttons">
@@ -353,10 +356,12 @@ function PickButtons(props: {
       </div>
     );
   }
-  const equipReason = equipBlockReason(state, GAME_DATA, item, "pick");
+  const ring = preferredSlotFor(item);
+  const equipReason = equipBlockReason(state, GAME_DATA, item, "pick", ring);
   const takeReason = takeBlockReason(state, GAME_DATA, item);
   return (
     <div className="card-buttons">
+      <RingSwitch state={state} item={item} />
       <button
         type="button"
         className="btn primary"
@@ -366,7 +371,15 @@ function PickButtons(props: {
             ? EQUIP_BLOCK_TEXT[equipReason]
             : "Swap in, the old item goes to the inventory"
         }
-        onClick={() => game.dispatch({ type: "pickItem", index, mode: "equip" })}
+        onClick={() => {
+          game.dispatch({
+            type: "pickItem",
+            index,
+            mode: "equip",
+            ...(ring ? { slot: ring } : {}),
+          });
+          resetRingSlot();
+        }}
       >
         {equipReason === "noRoom" ? "No room" : "Equip"}
       </button>

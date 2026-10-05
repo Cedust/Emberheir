@@ -121,11 +121,25 @@ describe("Fight", () => {
       };
       const fight = new Fight(setup({ weapon: cooling }), setup({ bonuses: NO_CRIT }), 1);
       fight.advance(1.1);
-      // Took a 10 damage hit = 10 % of max life = 10 Heat.
-      expect(fight.snapshot().hero.heat).toBeCloseTo(10, 5);
-      // Decay starts after the grace time and outpaces the next 10 Heat hit taken at 2 s.
-      fight.advance(1.8);
-      expect(fight.snapshot().hero.heat).toBeLessThan(10);
+      // Took a 10 damage hit at 1 s = 10 % of max life = 10 Heat, minus 1 Heat/s cooling since.
+      expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.1, 5);
+      fight.advance(0.8);
+      expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.9, 5);
+    });
+
+    it("Cooling hits give Heat only with Heat per Hit", () => {
+      const cooling: WeaponDefinition = { ...TEST_WEAPON, heatBehavior: "cooling" };
+      const without = new Fight(setup({ weapon: cooling, baseHeatPerHit: 0 }), dummy(), 1);
+      without.advance(1.01);
+      expect(without.snapshot().hero.heat).toBe(0);
+      const half = new Fight(
+        setup({ weapon: cooling, baseHeatPerHit: 0, bonuses: { heatPerHit: 0.5 } }),
+        dummy(),
+        1,
+      );
+      half.advance(1.01);
+      // 50 % of the weapon's 10 Heat per Hit, minus 1 Heat/s cooling.
+      expect(half.snapshot().hero.heat).toBeCloseTo(5, 0);
     });
   });
 

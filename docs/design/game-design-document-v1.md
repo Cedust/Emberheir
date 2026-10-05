@@ -77,8 +77,8 @@ Ein Held kämpft automatisch, der Spieler kämpft nie selbst. **Alle Entscheidun
 |---|---|
 | **Strength** | Physical Damage %, Armor |
 | **Dexterity** | Crit Chance, Trigger Chance |
-| **Agility** | Attack Speed, Evasion |
 | **Intelligence** | Elemental Damage %, All Resistance (klein) |
+| **Agility** | Attack Speed, Evasion |
 | **Wisdom** | Heat Gain, Ailment Duration |
 | **Vitality** | Life, Tenacity |
 
@@ -138,7 +138,7 @@ Keine feste Klasse. Der Build ergibt sich aus drei Achsen:
 | **Delivery** | Direct / Over Time | Skills, Trigger-Affixe |
 
 Daraus entstehen 8 Archetypen (Warrior, Reaver, Marksman, Hunter, Spellblade, Hexblade, Sorcerer, Warlock).
-💡 Range im 1v1: Ranged greift sofort an, Melee muss erst die Distanz schließen und trifft dafür härter.
+✅ Range im 1v1: keine eigene Kampfregel (Timo, 05.10.2026). Melee und Ranged unterscheiden sich über Heat-Verhalten, Off Hand, Default Attack und Tree-Nodes.
 
 Details: `klassen-varianten.md`
 
@@ -158,12 +158,12 @@ Die Skill-Ressource heißt **Heat** ✅ (vorher Momentum). Die drei Verhalten he
 
 | Verhalten | Waffen | Laden | Eigenheit |
 |---|---|---|---|
-| **Cooling** | Melee | eigene Hits + erlittene Treffer | verfällt, wenn man 1,5 s nicht trifft |
+| **Cooling** | Melee | erlittene Treffer; eigene Hits nur mit Heat per Hit aus dem Skill Tree | kühlt ständig ab, 1 Heat/s ✅ (05.10.2026) |
 | **Steady** | Bow, Crossbow | nur eigene Hits | verfällt nie, neutraler Standard |
 | **Warming** | Wand, Staff | pro Sekunde, unabhängig von Attack Speed | gleichmäßig |
 
 - Leiste 0–100 für alle. Keystones können das Verhalten später umstellen.
-- **Heat per Hit** ist ein Grundwert des Waffentyps (kein Implicit): Ziel-Rate (z. B. 12/s) ÷ Basis-Attacks per Second. So laden alle Waffen im Grundtempo gleich schnell.
+- **Heat per Hit** ist ein Grundwert des Waffentyps (kein Implicit): Ziel-Rate (z. B. 12/s) ÷ Basis-Attacks per Second. So laden alle Waffen im Grundtempo gleich schnell. ✅ Melee bekommt ihn nur über den Skill Tree (Might: Battle Rhythm, Cadence, Relentless), siehe `waffen-v1.md`.
 - **Heat from Hits Taken** (nur Cooling): globale Regel, 1 Heat pro 1 % Max Life Schaden, max. 10 pro Treffer. Block und Evade geben nichts.
 - **Keine Cast Time.** Attack Speed beschleunigt die Default Attack jeder Waffe, auch bei Castern. Warming-Heat hängt aber nicht davon ab.
 - **Sunder** ✅ (Debuff, senkt stapelnd die Armor des Gegners) ist etwas anderes als **Physical Penetration** (Stat des Angreifers, ignoriert Armor pro Treffer).
@@ -195,6 +195,7 @@ Runes geben einzeln kleine Boni. Die richtige Reihenfolge in einem Normal-Item m
 
 ### Inventar & Stash
 - Inventar als Grid wie in Diablo 2, Stash im Camp mit fester Größe (keine zusätzlichen Tabs).
+- ✅ Drag & Drop (05.10.2026): Items im Inventar, Stash und auf die Equipment-Slots ziehen. Bei Ringen wählt ein Shortcut-Button (Ring 1 / Ring 2) den anderen Slot für Vergleich und Equip. Salvage nur beim Blacksmith, im Inventar nur **Discard** (gibt nichts).
 - Loot-Karten: **Equip**, **Take** ✅. Die nicht gewählten werden automatisch zu Dust. Wer keins will: **Salvage All** 💡. Die Auswahl blockiert nie.
 - Beim Prestige werden Inventar und Stash geleert. Dafür gibt es eine feste Menge Salvage Dust, und der Stash ist bis zur ersten Rückkehr ins Camp gesperrt.
 

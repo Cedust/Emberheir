@@ -22,7 +22,7 @@ describe("Skill Tree", () => {
   const base = nodes.filter((n) => !n.prestigeBranch);
 
   it("has all five branches with unique ids and valid links", () => {
-    expect(base.length).toBe(62);
+    expect(base.length).toBe(65);
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
@@ -39,6 +39,17 @@ describe("Skill Tree", () => {
       expect(skills).toBeLessThanOrEqual(4);
       expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(1);
     }
+  });
+
+  it("Melee hits build Heat only through Heat per Hit nodes", () => {
+    const heatPerHit = base.filter((n) => (n.bonuses?.heatPerHit ?? 0) > 0);
+    expect(heatPerHit.map((n) => n.id)).toEqual([
+      "might-battle-rhythm",
+      "might-cadence",
+      "might-relentless",
+    ]);
+    expect(heatPerHit.every((n) => n.weaponRange === "melee")).toBe(true);
+    expect(heatPerHit.reduce((sum, n) => sum + (n.bonuses?.heatPerHit ?? 0), 0)).toBeCloseTo(1);
   });
 
   it("every node can be reached from the start node", () => {

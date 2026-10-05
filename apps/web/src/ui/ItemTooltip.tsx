@@ -1,5 +1,5 @@
-import { GAME_DATA, ITEM_CATALOG } from "@emberheir/content";
-import { type GameState, type Item, describeItem, getBase, targetSlot } from "@emberheir/sim";
+import { ITEM_CATALOG } from "@emberheir/content";
+import { type GameState, type Item, describeItem, getBase } from "@emberheir/sim";
 import {
   type ReactNode,
   createContext,
@@ -12,6 +12,7 @@ import {
 } from "react";
 import { compareWithEquipped } from "./items";
 import { RuneStone } from "./RuneArt";
+import { aimedSlot, useRingSlot } from "./ringSlot";
 import { useStageSize } from "./Stage";
 
 /**
@@ -102,9 +103,10 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
   }, [hover, stage.w, stage.h]);
 
   const state = props.state;
+  useRingSlot();
   let worn: Item | undefined;
   if (hover && state && !hover.equipped) {
-    const slot = targetSlot(hover.item, GAME_DATA, state.hero.equipment);
+    const slot = aimedSlot(state, hover.item);
     const current = slot ? state.hero.equipment[slot] : undefined;
     if (current && current.id !== hover.item.id) worn = current;
   }

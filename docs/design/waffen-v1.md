@@ -59,11 +59,13 @@ Alle Zahlen sind Startwerte für die Balance-CLI.
 
 | Verhalten | Waffen | Laden | Eigenheit |
 |---|---|---|---|
-| **Cooling** | Melee | schnell, durch eigene Hits und erlittene Treffer | verfällt, wenn du 1,5 s nicht triffst (Evade des Gegners, Stun, Chill) |
+| **Cooling** | Melee | durch erlittene Treffer; eigene Hits nur mit **Heat per Hit** aus dem Skill Tree ✅ | kühlt ständig ab, **1 Heat pro Sekunde**, ohne Wartezeit ✅ (Timo, 05.10.2026) |
 | **Steady** | Bow, Crossbow | durch eigene Hits (nicht durch erlittene Treffer) | verfällt nie, keine Sonderregel. Der neutrale Standard |
 | **Warming** | Wand, Staff | pro Sekunde, unabhängig von Attack Speed | gleichmäßig und berechenbar |
 
 Im Schnitt laden alle drei gleich schnell, sie unterscheiden sich im Rhythmus. Die Leiste geht für alle von 0 bis 100.
+
+**Heat per Hit bei Melee** ✅ (Timo, 05.10.2026): Melee-Waffen laden durch eigene Hits **nicht mehr von selbst**. Heat per Hit ist eine Skill-Tree-Option mit eigenem Build: Might-Cluster ab Kindling (Core) mit **Battle Rhythm** (Notable, +60 % Heat per Hit), **Cadence** (+20 %) und **Relentless** (Notable, +20 % Heat per Hit, +5 % Attack Speed), jeweils nur mit Melee-Waffe. Zusammen 100 % = der alte Grundwert. Ohne diese Nodes lebt Cooling von erlittenen Treffern. Steady (Bow, Crossbow) behält 100 % Heat per Hit. Gegner behalten ihr Heat per Hit.
 
 **Heat per Hit** ✅: kein Implicit, sondern ein fester **Grundwert des Waffentyps** (steht im Tooltip wie Damage und Attacks per Second). Er wird so gesetzt, dass jede Waffe bei ihrem Basis-Tempo gleich viel Heat pro Sekunde lädt:
 
@@ -81,7 +83,7 @@ Im Schnitt laden alle drei gleich schnell, sie unterscheiden sich im Rhythmus. D
 Wer Attack Speed über den Basiswert hinaus erhöht, lädt schneller, weil der Wert pro Hit gleich bleibt. Warming (Wand, Staff) lädt einfach 12 pro Sekunde. Werte sind Startwerte für die Balance-CLI.
 
 **Trigger Threshold nutzt jeder Build ✅.** Der Unterschied liegt darin, wie sicher das Sparen ist:
-- **Cooling:** Sparen ist riskant. Ein Stun oder eine Evade-Serie frisst die angesparte Leiste.
+- **Cooling:** Sparen kostet: die Leiste kühlt ständig um 1 Heat pro Sekunde ab.
 - **Steady:** Sparen ist sicher. Dafür lädt die Leiste nicht durch erlittene Treffer, also etwas langsamer als bei Melee unter Druck.
 - **Warming:** Sparen ist planbar, aber ohne Extra-Bonus.
 

@@ -3,7 +3,7 @@ import type { HeatBehavior } from "./types";
 
 /**
  * Heat rules per weapon behavior (docs/design/waffen-v1.md section 4):
- * - Cooling (melee): own hits + hits taken, decays after 2 s without a landed hit.
+ * - Cooling (melee): hits taken (own hits only with Heat per Hit), always cools down.
  * - Steady (bow, crossbow): own hits only, never decays.
  * - Warming (wand, staff): fixed gain per second, independent of Attack Speed.
  */
@@ -32,21 +32,15 @@ export function heatFromHitTaken(behavior: HeatBehavior, damage: number, maxLife
   return Math.min(COMBAT.maxHeatFromHitTaken, percent * COMBAT.heatPerPercentLifeTaken);
 }
 
-/**
- * Heat change over time: Warming gains per second, Cooling decays once the grace period without
- * a landed hit has passed. Returns the new Heat value.
- */
+/** Heat change over time: Warming gains per second, Cooling cools down all the time. */
 export function stepHeat(
   behavior: HeatBehavior,
   heat: number,
   dt: number,
-  secondsSinceLastHit: number,
   multiplier: number,
 ): number {
   if (behavior === "warming") return addHeat(heat, COMBAT.warmingHeatPerSecond * dt, multiplier);
-  if (behavior === "cooling" && secondsSinceLastHit > COMBAT.coolingGraceSeconds) {
-    return Math.max(0, heat - COMBAT.coolingDecayPerSecond * dt);
-  }
+  if (behavior === "cooling") return Math.max(0, heat - COMBAT.coolingDecayPerSecond * dt);
   return heat;
 }
 

@@ -23,6 +23,8 @@ export interface DerivedStats {
   readonly voidResistance: number;
   readonly heatGain: number;
   readonly startingHeat: number;
+  /** Share of the weapon's Heat per Hit that landed Default Attacks give. */
+  readonly heatPerHit: number;
   readonly ailmentDuration: number;
   readonly tenacity: number;
   readonly lifesteal: number;
@@ -61,6 +63,7 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     voidResistance: 0,
     heatGain: 0,
     startingHeat: 0,
+    heatPerHit: 0,
     ailmentDuration: 0,
     tenacity: 0,
     lifesteal: 0,
@@ -121,6 +124,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     voidResistance: resist(b.voidResistance),
     heatGain: a.wisdom * COMBAT.heatGainPerWisdom + b.heatGain,
     startingHeat: clamp(b.startingHeat, 0, COMBAT.maxHeat),
+    heatPerHit: Math.max(0, (setup.baseHeatPerHit ?? 1) + b.heatPerHit),
     ailmentDuration: a.wisdom * COMBAT.ailmentDurationPerWisdom + b.ailmentDuration,
     tenacity: clamp(a.vitality * COMBAT.tenacityPerVitality + b.tenacity, 0, COMBAT.maxTenacity),
     lifesteal: b.lifesteal,
