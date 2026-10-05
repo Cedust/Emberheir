@@ -15,13 +15,13 @@ describe("monsters", () => {
   });
 
   it("each run's band grows faster per level than the one before", () => {
-    expect(MONSTER_BAND_ENDS).toEqual([5, 15, 30, 50, 75, 105, 140, 175, 210, 245]);
+    expect(MONSTER_BAND_ENDS).toEqual([5, 15, 30, 50, 75, 105, 140]);
     const step = (level: number) =>
       monsterLevelScaling(level + 1).life - monsterLevelScaling(level).life;
     expect(step(2)).toBeCloseTo(step(4));
     expect(step(10)).toBeGreaterThan(step(4));
     expect(step(20)).toBeGreaterThan(step(10));
-    expect(monsterLevelScaling(260).life).toBeGreaterThan(monsterLevelScaling(245).life);
+    expect(monsterLevelScaling(150).life).toBeGreaterThan(monsterLevelScaling(140).life);
   });
 
   it("builds a fight setup with its skills as rotation", () => {

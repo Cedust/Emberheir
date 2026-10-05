@@ -10,10 +10,10 @@ describe("leveling", () => {
   });
 
   it("grows the Level Cap by 5 for every act played", () => {
-    const caps = Array.from({ length: 11 }, (_, p) => levelCap(p));
-    expect(caps).toEqual([5, 15, 30, 50, 75, 105, 140, 175, 210, 245, 245]);
+    const caps = Array.from({ length: 8 }, (_, p) => levelCap(p));
+    expect(caps).toEqual([5, 15, 30, 50, 75, 105, 140, 140]);
     // Monster Level bands follow the same caps.
-    expect(MONSTER_BAND_ENDS).toEqual(caps.slice(0, 10));
+    expect(MONSTER_BAND_ENDS).toEqual(caps.slice(0, 7));
   });
 
   it("has XP for every level up to the last Level Cap", () => {

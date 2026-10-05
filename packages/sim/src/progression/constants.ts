@@ -109,11 +109,10 @@ const LOOT_GATES: readonly LootGate[] = [
 export const PROGRESSION = {
   /**
    * Playtest 2: the Level Cap grows by this much for every act a run has, counted over all runs
-   * so far. Run 1 (one act) ends at 5, run 2 (two more acts) at 15, run 3 at 30, run 7 at 140,
-   * and the three Ascension runs add 35 each (245).
+   * so far. Run 1 (one act) ends at 5, run 2 (two more acts) at 15, run 3 at 30, run 7 at 140.
    */
   levelsPerAct: 5,
-  /** Acts of a full world (runs 7 to 10). */
+  /** Acts of a full world (run 7). */
   actsPerFullRun: 7,
   attributePointsPerLevel: 2,
   skillPointsPerLevel: 1,
@@ -245,11 +244,12 @@ export const PROGRESSION = {
    */
   bossLife: 1.5,
   /**
-   * The Last Ember (M11): the Prestige after which the world no longer burns. The finale's foes
+   * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
+   * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
    * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
    * instead of the Run Pressure).
    */
-  finalPrestige: 10,
+  finalPrestige: 7,
   finale: { life: 2, damage: 1.4 },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,

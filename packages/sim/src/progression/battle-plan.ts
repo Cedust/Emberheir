@@ -37,8 +37,8 @@ export type BattlePlanUpgrade =
 
 /**
  * The ladder of upgrades: entry n comes with the n-th Prestige. The first run is a tutorial with
- * one Rotation Slot (`BATTLE_PLAN_START`); Prestiges 1 and 4 bring two building blocks each, so all
- * slots stand by Prestige 5 and later Prestiges add depth. Everything else (unlocks, the Kaelen
+ * one Rotation Slot (`BATTLE_PLAN_START`); seven Prestiges bring the rest (Playtest 2: no more
+ * Ascension runs), so most bring two building blocks and the Capstone comes with the last. Everything else (unlocks, the Kaelen
  * view, the Inheritance cards) is derived from these two tables.
  */
 export const BATTLE_PLAN_START: readonly BattlePlanUpgrade[] = ["rotationSlot"];
@@ -49,13 +49,10 @@ export const BATTLE_PLAN_LADDER: readonly {
 }[] = [
   { upgrades: ["rotationSlot", "reactionSlot"], name: "Rotation Slot 2 · Reaction Slot 1" },
   { upgrades: ["rotationSlot", "thresholds"], name: "Rotation Slot 3 · Trigger Threshold" },
-  { upgrades: ["modifier"], name: "Slot Modifiers" },
+  { upgrades: ["modifier", "conditions"], name: "Slot Modifiers · Rotation Conditions" },
   { upgrades: ["reactionSlot", "reactionConditions"], name: "Reaction Slot 2 · New Reactions" },
-  { upgrades: ["rotationSlot"], name: "Rotation Slot 4" },
-  { upgrades: ["conditions"], name: "Rotation Conditions" },
-  { upgrades: ["modifier"], name: "2nd Slot Modifier" },
-  { upgrades: ["openingMove"], name: "Opening Move" },
-  { upgrades: ["rareModifiers"], name: "Rare Modifiers" },
+  { upgrades: ["rotationSlot", "modifier"], name: "Rotation Slot 4 · 2nd Slot Modifier" },
+  { upgrades: ["openingMove", "rareModifiers"], name: "Opening Move · Rare Modifiers" },
   { upgrades: ["capstone"], name: "Capstone" },
 ];
 

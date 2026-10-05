@@ -32,7 +32,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "The Last Ember",
-    text: "After the tenth Prestige the world no longer burns. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
+    text: "After the seventh Prestige, when all seven Acts have fallen, the world no longer burns. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
   },
   {
     title: "Elites and Bosses",

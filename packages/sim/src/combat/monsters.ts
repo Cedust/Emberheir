@@ -34,13 +34,13 @@ export interface EnemyDefinition {
 
 /**
  * Monster Level bands: one per run, ending at that run's Level Cap (5 levels per act played:
- * 5, 15, 30, ... 245, see `levelCap` in progression). Every band grows steeper than the one
+ * 5, 15, 30, ... 140, see `levelCap` in progression). Every band grows steeper than the one
  * before, because the hero's gear, tree and Battle Plan grow faster than linear too.
  */
 export const MONSTER_BAND_ENDS: readonly number[] = (() => {
   const ends: number[] = [];
   let acts = 0;
-  for (let run = 1; run <= 10; run++) {
+  for (let run = 1; run <= 7; run++) {
     acts += Math.min(run, 7);
     ends.push(5 * acts);
   }

@@ -2,8 +2,8 @@ import { PROGRESSION } from "./constants";
 
 /**
  * Level Cap at a Prestige level (Playtest 2): `levelsPerAct` for every act played in all runs so
- * far. Run n has n acts up to the full world, so the caps are 5, 15, 30, 50, 75, 105, 140, then
- * +35 per Ascension run. The final Prestige adds none.
+ * far. Run n has n acts, so the caps are 5, 15, 30, 50, 75, 105 and 140 in run 7. The final
+ * Prestige adds none.
  */
 export function levelCap(prestige: number): number {
   const runs = Math.min(prestige, PROGRESSION.finalPrestige - 1) + 1;
