@@ -7,7 +7,7 @@ import type {
 } from "@emberheir/sim";
 
 /**
- * Stolen Fire Boons (docs/design/spielspass-umsetzung.md): one family per Warden, Hearth is always
+ * Stolen Fire Boons (docs/design/archiv/spielspass-umsetzung.md): one family per Warden, Hearth is always
  * open. Values are rank I at Spark grade; rank and grade scale them (see `BOONS` in the sim).
  * Percent stats are fractions (0.1 = 10 %), `value` is the number on the card.
  */

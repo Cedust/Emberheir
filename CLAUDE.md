@@ -6,17 +6,16 @@ by Claude agents; the project owner (Timo) does not program. Talk to Timo in Ger
 
 ## Where things are
 
-| Path               | What                                                                                 |
-| ------------------ | ------------------------------------------------------------------------------------ |
-| `docs/design/`     | Game design. Start with `game-design-document-v1.md` and `poc-umsetzungsplan-v1.md`. |
-| `packages/sim`     | Pure game logic: combat, items, progression. Deterministic, seeded RNG.              |
-| `packages/content` | Declarative content: items, affixes, skills, enemies, acts.                          |
-| `apps/web`         | React + Vite UI (PixiJS combat scene from M4 on).                                    |
-| `tools/balance`    | CLI that simulates many fights and reports win rates / durations.                    |
+| Path               | What                                                                                    |
+| ------------------ | --------------------------------------------------------------------------------------- |
+| `docs/design/`     | Game design. Start with `game-design-document-v1.md`; finished plans live in `archiv/`. |
+| `packages/sim`     | Pure game logic: combat, items, progression. Deterministic, seeded RNG.                 |
+| `packages/content` | Declarative content: items, affixes, skills, enemies, acts.                             |
+| `apps/web`         | React + Vite UI (PixiJS combat scene from M4 on).                                       |
+| `tools/balance`    | CLI that simulates many fights and reports win rates / durations.                       |
 
 The design docs in `docs/design/` are a snapshot. The live versions are in the project's shared
 folder (`/mnt/project-files/design/`); copy changes over when a milestone depends on them.
-When `stat-liste-v1.md` and `stat-liste-v2.md` disagree, v2 wins.
 
 ## Architecture rules
 
