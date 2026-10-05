@@ -19,7 +19,8 @@ export const COMBAT = {
   baseCritChance: 0.05,
   critChancePerDexterity: 0.002,
   triggerChancePerDexterity: 0.005,
-  attackSpeedPerAgility: 0.01,
+  /** Playtest 2: halved, Attack Speed grew too fast over the game. */
+  attackSpeedPerAgility: 0.005,
   evasionPerAgility: 0.004,
   elementalDamagePerIntelligence: 0.01,
   allResistancePerIntelligence: 0.002,
@@ -40,11 +41,12 @@ export const COMBAT = {
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
-  warmingHeatPerSecond: 12,
+  /** Playtest 2: three quarters of 12, like the slower weapons. */
+  warmingHeatPerSecond: 9,
   /** Cooling: Heat starts to decay after this long without landing a hit... */
-  coolingGraceSeconds: 2,
+  coolingGraceSeconds: 3,
   /** ...and then drains at this rate. */
-  coolingDecayPerSecond: 20,
+  coolingDecayPerSecond: 15,
   /** Cooling: Heat per 1 % of max life lost to a hit, capped per hit. */
   heatPerPercentLifeTaken: 1,
   maxHeatFromHitTaken: 10,

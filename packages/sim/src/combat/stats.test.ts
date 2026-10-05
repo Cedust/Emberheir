@@ -20,7 +20,7 @@ describe("deriveStats", () => {
     expect(one("strength")).toMatchObject({ physicalDamage: 0.1, armor: 10 });
     expect(one("dexterity").critChance).toBeCloseTo(0.07);
     expect(one("dexterity").triggerChance).toBeCloseTo(0.05);
-    expect(one("agility").attackSpeed).toBeCloseTo(1.1);
+    expect(one("agility").attackSpeed).toBeCloseTo(1.05);
     expect(one("agility").evasion).toBeCloseTo(0.04);
     expect(one("intelligence").elementalDamage).toBeCloseTo(0.1);
     expect(one("intelligence").resistance).toBeCloseTo(0.02);

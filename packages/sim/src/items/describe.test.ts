@@ -13,10 +13,10 @@ describe("item text", () => {
   });
 
   it("shows Attack Speed as a Speed value, the Sword is 100", () => {
-    expect(speedValue(0.8)).toBe(100);
-    expect(speedValue(1)).toBe(125);
-    expect(speedValue(0.8 * 1.1)).toBe(110);
-    expect(speedValue(0.4)).toBe(50);
+    expect(speedValue(0.6)).toBe(100);
+    expect(speedValue(0.75)).toBe(125);
+    expect(speedValue(0.6 * 1.1)).toBe(110);
+    expect(speedValue(0.3)).toBe(50);
   });
 
   it("formats triggers as Condition: Chance → Effect (limit)", () => {
