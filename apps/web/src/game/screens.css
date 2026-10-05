@@ -382,6 +382,71 @@
   border-radius: 4px;
 }
 
+/* Drag & drop: where the item would land, and slots that take it. */
+.stage .grid-item[draggable="true"],
+.stage .item-tile[draggable="true"] {
+  cursor: grab;
+}
+
+.stage .grid-drop {
+  position: absolute;
+  pointer-events: none;
+  border-radius: 4px;
+  box-sizing: border-box;
+  border: 2px solid var(--heal);
+  background: rgb(79 224 138 / 0.18);
+}
+
+.stage .grid-drop.no {
+  border-color: var(--life);
+  background: rgb(229 72 77 / 0.18);
+}
+
+.stage .item-tile.drop-ok {
+  box-shadow:
+    0 0 0 2px var(--heal),
+    0 0 14px rgb(79 224 138 / 0.5),
+    var(--slot-inset);
+}
+
+.stage .item-tile.drop-no {
+  box-shadow:
+    0 0 0 2px var(--life),
+    var(--slot-inset);
+}
+
+/* The Ring slot that compare and Equip aim at. */
+.stage .item-tile.aimed {
+  box-shadow:
+    0 0 0 2px var(--accent-2),
+    0 0 12px rgb(232 192 122 / 0.5),
+    var(--slot-inset);
+}
+
+.stage .ring-switch {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 8px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--text-sub);
+  font-family: var(--font-title);
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.stage .ring-switch span.on {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+.stage .btn.danger {
+  border-color: var(--life);
+  color: var(--life);
+}
+
 /* --- item tooltips (Diablo style) ----------------------------------------------------------- */
 
 .stage .item-hover-layer {

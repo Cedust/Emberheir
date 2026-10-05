@@ -311,3 +311,20 @@ export function saveDeepTree(): string {
   };
   return serializeGame(state);
 }
+
+/** A Camp save with two Rings and a Sword in the inventory and both Ring slots empty. */
+export function saveWithRings(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const rng = new Rng(11);
+  const roll = (baseId: string) =>
+    rollItem(GAME_DATA.items, { baseId, itemLevel: 3, rarity: "magic" }, rng);
+  const state: GameState = {
+    ...base,
+    inventory: [
+      { item: { ...roll("iron-ring"), id: "ring-a" }, x: 0, y: 0 },
+      { item: { ...roll("garnet-ring"), id: "ring-b" }, x: 1, y: 0 },
+      { item: { ...roll("sword"), id: "spare-sword" }, x: 2, y: 0 },
+    ],
+  };
+  return serializeGame(state);
+}

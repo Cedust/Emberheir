@@ -3,11 +3,12 @@
  * types in `@emberheir/content`; the simulation only ever reads them.
  */
 
+/** Display order everywhere (Timo, after Playtest 2): Strength, Dexterity, Intelligence first. */
 export const ATTRIBUTES = [
   "strength",
   "dexterity",
-  "agility",
   "intelligence",
+  "agility",
   "wisdom",
   "vitality",
 ] as const;
@@ -62,6 +63,8 @@ export interface StatBonuses {
   readonly voidResistance?: number;
   readonly heatGain?: number;
   readonly startingHeat?: number;
+  /** Cooling: share of the Heat from hits taken (0.5 = +50 %). */
+  readonly heatFromHitsTaken?: number;
   readonly ailmentDuration?: number;
   readonly tenacity?: number;
   readonly lifesteal?: number;
@@ -375,6 +378,11 @@ export interface CombatantSetup {
   /** Telegraphed Heavy Attacks (bosses). */
   readonly telegraphs?: readonly TelegraphSpec[];
   readonly rules?: CombatRules;
+  /**
+   * Share of the Heat from hits taken before bonuses (Cooling). Default 1 (enemies); the hero
+   * starts at 0 and raises it in the Skill Tree.
+   */
+  readonly baseHeatFromHitsTaken?: number;
   /** Reaction Slots of the Battle Plan. */
   readonly reactions?: readonly ReactionSlot[];
   readonly capstone?: Capstone;

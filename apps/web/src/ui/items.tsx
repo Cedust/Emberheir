@@ -15,13 +15,23 @@ import {
   getBase,
   itemSize,
   missingRequirements,
+  slotsFor,
   speedValue,
 } from "@emberheir/sim";
-import type { MouseEvent as ReactMouseEvent, ReactNode } from "react";
-import type { IconName } from "./Icon";
+import { type MouseEvent as ReactMouseEvent, type ReactNode, useState } from "react";
+import {
+  type DragSource,
+  type GridDrop,
+  type SlotDrop,
+  dragging,
+  endDrag,
+  startDrag,
+} from "./dragItems";
+import { Icon, type IconName } from "./Icon";
 import { ItemArt } from "./ItemArt";
 import { useItemHover } from "./ItemTooltip";
 import { SocketDots } from "./RuneArt";
+import { aimedSlot, preferredSlotFor, switchSlot, useRingSlot } from "./ringSlot";
 
 /** Icon per item (placeholder art: one Lucide-style icon per slot). */
 export function itemIcon(item: Item): IconName {
@@ -163,12 +173,42 @@ export function compareSummary(cmp: ItemComparison): { text: string; better: boo
   return { text: prefix + parts.join(" · "), better: score >= 0 || !cmp.replaces };
 }
 
+/** Compare with the item in the slot it would go to (the Ring shortcut picks the Ring). */
 export function compareWithEquipped(state: GameState, item: Item) {
   // Gear with unmet requirements does nothing, so a stat comparison would read "same".
   const missing = missingRequirements(item, ITEM_CATALOG, state.hero.attributes);
   if (missing.length > 0)
     return { text: "Inactive until you meet its requirements", better: false };
-  return compareSummary(compareItem(state, GAME_DATA, item));
+  return compareSummary(compareItem(state, GAME_DATA, item, preferredSlotFor(item)));
+}
+
+/**
+ * The other-Ring shortcut: Ring 1 | Ring 2. Compare and Equip aim at the lit one. Renders
+ * nothing for items with a single slot.
+ */
+export function RingSwitch(props: { state: GameState; item: Item }) {
+  useRingSlot();
+  const { state, item } = props;
+  const slots = slotsFor(item, GAME_DATA);
+  if (slots.length < 2) return null;
+  const aimed = aimedSlot(state, item);
+  return (
+    <button
+      type="button"
+      className="ring-switch"
+      title="Other Ring slot"
+      aria-label={`Aim at the other Ring slot (now ${aimed === "ring2" ? "Ring 2" : "Ring 1"})`}
+      data-testid="ring-switch"
+      onClick={() => switchSlot(state, item)}
+    >
+      <Icon name="cycle" size={14} />
+      {slots.map((s, i) => (
+        <span key={s} className={s === aimed ? "on" : ""}>
+          Ring {i + 1}
+        </span>
+      ))}
+    </button>
+  );
 }
 
 /** Item card: slot, rarity, name, base, affix lines and an optional compare line. */
@@ -248,22 +288,58 @@ export function ItemTile(props: {
   inactive?: boolean;
   /** The tile shows a worn item (its tooltip then has nothing to compare with). */
   equipped?: boolean;
+  /** Drag & drop: the slot's item can be dragged away (`source`) and items dropped on it. */
+  drag?: { readonly source?: DragSource | undefined; readonly drop: SlotDrop };
+  /** The Ring shortcut aims here. */
+  aimed?: boolean;
 }) {
   const { item } = props;
   const w = props.width ?? props.size ?? 68;
   const h = props.height ?? props.size ?? 68;
   const { active, ...hover } = useItemHover(item, props.equipped ?? true);
+  const [over, setOver] = useState<"ok" | "no" | null>(null);
   const base = item ? getBase(ITEM_CATALOG, item.baseId) : undefined;
+  const drag = props.drag;
+  const dragProps = drag
+    ? {
+        draggable: !!drag.source,
+        onDragStart: (e: React.DragEvent) => {
+          if (!drag.source) return;
+          hover.onMouseLeave?.();
+          startDrag(drag.source, e);
+        },
+        onDragEnd: () => {
+          endDrag();
+          setOver(null);
+        },
+        onDragOver: (e: React.DragEvent) => {
+          const source = dragging();
+          if (!source || source.itemId === item?.id) return;
+          const ok = drag.drop.canDrop(source);
+          if (ok) e.preventDefault();
+          setOver(ok ? "ok" : "no");
+        },
+        onDragLeave: () => setOver(null),
+        onDrop: (e: React.DragEvent) => {
+          e.preventDefault();
+          const source = dragging();
+          setOver(null);
+          endDrag();
+          if (source && drag.drop.canDrop(source)) drag.drop.onDrop(source);
+        },
+      }
+    : {};
   return (
     <button
       type="button"
-      className={`item-tile ${item ? rarityClass(item) : "empty"}${props.selected ? " selected" : ""}${props.inactive ? " inactive" : ""}`}
+      className={`item-tile ${item ? rarityClass(item) : "empty"}${props.selected ? " selected" : ""}${props.inactive ? " inactive" : ""}${over ? ` drop-${over}` : ""}${props.aimed ? " aimed" : ""}`}
       style={{ width: w, height: h }}
       aria-label={item ? `${props.label}: ${item.name}` : `${props.label}: empty`}
       title={active ? undefined : item ? `${props.label}: ${item.name}` : props.label}
       onClick={props.onSelect}
-      disabled={!props.onSelect}
+      disabled={!props.onSelect && !drag}
       {...hover}
+      {...dragProps}
     >
       {item && base ? (
         <ItemArt baseId={item.baseId} slot={base.slot} />
@@ -281,11 +357,29 @@ function GridItem(props: {
   cell: number;
   selected: boolean;
   onSelect: (itemId: string, event?: ReactMouseEvent) => void;
+  grid?: "inventory" | "stash" | undefined;
 }) {
-  const { placed: p, cell } = props;
+  const { placed: p, cell, grid } = props;
   const base = getBase(ITEM_CATALOG, p.item.baseId);
   const s = itemSize(p.item, ITEM_CATALOG);
   const { active, ...hover } = useItemHover(p.item);
+  const dragProps = grid
+    ? {
+        draggable: true,
+        onDragStart: (e: React.DragEvent<HTMLButtonElement>) => {
+          hover.onMouseLeave?.();
+          const r = e.currentTarget.getBoundingClientRect();
+          const cw = r.width / s.w || 1;
+          const ch = r.height / s.h || 1;
+          const offset = {
+            x: Math.min(s.w - 1, Math.max(0, Math.floor((e.clientX - r.left) / cw))),
+            y: Math.min(s.h - 1, Math.max(0, Math.floor((e.clientY - r.top) / ch))),
+          };
+          startDrag({ kind: "grid", grid, itemId: p.item.id, offset, size: s }, e);
+        },
+        onDragEnd: endDrag,
+      }
+    : {};
   return (
     <button
       type="button"
@@ -301,6 +395,7 @@ function GridItem(props: {
       title={active ? undefined : p.item.name}
       onClick={(e) => props.onSelect(p.item.id, e)}
       {...hover}
+      {...dragProps}
     >
       <ItemArt baseId={p.item.baseId} slot={base.slot} />
       <SocketDots sockets={p.item.sockets ?? 0} runes={p.item.runes ?? []} />
@@ -308,7 +403,7 @@ function GridItem(props: {
   );
 }
 
-/** D2-style grid: items take several cells; click selects. */
+/** D2-style grid: items take several cells; click selects, drag & drop moves (with `drop`). */
 export function ItemGrid(props: {
   placed: readonly PlacedItem[];
   size: GridSize;
@@ -317,8 +412,54 @@ export function ItemGrid(props: {
   onSelect: (itemId: string, event?: ReactMouseEvent) => void;
   label: string;
   burned?: boolean;
+  drop?: GridDrop | undefined;
 }) {
-  const { cell } = props;
+  const { cell, drop } = props;
+  const [preview, setPreview] = useState<{
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    ok: boolean;
+  } | null>(null);
+
+  /** The grid cell the dragged item's top left would land on. */
+  const cellAt = (e: React.DragEvent<HTMLDivElement>, source: DragSource) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    const px = r.width / (props.size.w * cell) || 1;
+    const offset = source.kind === "grid" ? source.offset : { x: 0, y: 0 };
+    return {
+      x: Math.floor((e.clientX - r.left) / (cell * px)) - offset.x,
+      y: Math.floor((e.clientY - r.top) / (cell * px)) - offset.y,
+    };
+  };
+
+  const dropProps = drop
+    ? {
+        onDragOver: (e: React.DragEvent<HTMLDivElement>) => {
+          const source = dragging();
+          if (!source) return;
+          const at = cellAt(e, source);
+          const ok = drop.canDrop(source, at);
+          if (ok) e.preventDefault();
+          if (preview?.x !== at.x || preview?.y !== at.y || preview?.ok !== ok)
+            setPreview({ ...at, ...source.size, ok });
+        },
+        onDragLeave: (e: React.DragEvent<HTMLDivElement>) => {
+          if (!e.currentTarget.contains(e.relatedTarget as Node | null)) setPreview(null);
+        },
+        onDrop: (e: React.DragEvent<HTMLDivElement>) => {
+          e.preventDefault();
+          setPreview(null);
+          const source = dragging();
+          endDrag();
+          if (!source) return;
+          const at = cellAt(e, source);
+          if (drop.canDrop(source, at)) drop.onDrop(source, at);
+        },
+      }
+    : {};
+
   return (
     <div
       className={`item-grid${props.burned ? " burned" : ""}`}
@@ -329,6 +470,7 @@ export function ItemGrid(props: {
         height: props.size.h * cell,
         backgroundSize: `${cell}px ${cell}px`,
       }}
+      {...dropProps}
     >
       {props.placed.map((p) => (
         <GridItem
@@ -337,8 +479,21 @@ export function ItemGrid(props: {
           cell={cell}
           selected={props.selected === p.item.id}
           onSelect={props.onSelect}
+          grid={drop?.grid}
         />
       ))}
+      {preview && (
+        <div
+          className={`grid-drop ${preview.ok ? "ok" : "no"}`}
+          aria-hidden="true"
+          style={{
+            left: Math.max(0, preview.x) * cell,
+            top: Math.max(0, preview.y) * cell,
+            width: preview.w * cell,
+            height: preview.h * cell,
+          }}
+        />
+      )}
     </div>
   );
 }

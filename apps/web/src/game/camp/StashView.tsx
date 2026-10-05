@@ -16,10 +16,13 @@ import {
   ItemDetail,
   ItemGrid,
   ItemTile,
+  RingSwitch,
   compareWithEquipped,
   fmt,
   walletEntries,
 } from "../../ui/items";
+import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
+import { itemDrops } from "../itemDrops";
 import { EQUIP_BLOCK_TEXT, MOVE_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
@@ -48,6 +51,8 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
   const { state, game } = props;
   const [selected, setSelected] = useState<string | null>(null);
   const sel = locate(state, selected);
+  useRingSlot();
+  const drops = itemDrops(state, game);
 
   const move = (itemId: string, to: "inventory" | "stash") =>
     game.dispatch({ type: "moveItem", itemId, to });
@@ -88,11 +93,15 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
       });
     }
     if (sel.where !== "equipped") {
-      const r = equipBlockReason(state, GAME_DATA, sel.item, sel.where);
+      const ring = preferredSlotFor(sel.item);
+      const r = equipBlockReason(state, GAME_DATA, sel.item, sel.where, ring);
       buttons.push({
         label: "Equip",
         block: r ? EQUIP_BLOCK_TEXT[r] : undefined,
-        run: () => game.dispatch({ type: "equip", itemId: sel.item.id }),
+        run: () => {
+          game.dispatch({ type: "equip", itemId: sel.item.id, ...(ring ? { slot: ring } : {}) });
+          resetRingSlot();
+        },
       });
     } else if (sel.slot) {
       const slot = sel.slot;
@@ -146,6 +155,13 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
                     width={pos.w}
                     height={pos.h}
                     selected={!!it && it.id === selected}
+                    aimed={
+                      !!sel &&
+                      sel.where !== "equipped" &&
+                      slot.startsWith("ring") &&
+                      aimedSlot(state, sel.item) === slot
+                    }
+                    drag={drops.slot(slot)}
                     {...(it ? { onSelect: () => setSelected(it.id) } : {})}
                   />
                 </div>
@@ -163,6 +179,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
             selected={selected}
             onSelect={pick("inventory")}
             label="Inventory"
+            drop={drops.grid("inventory")}
           />
         </aside>
         <main className="stash-center">
@@ -178,6 +195,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
             onSelect={pick("stash")}
             label="Stash"
             burned={state.progress.stashBurned}
+            drop={drops.grid("stash")}
           />
           {state.progress.stashBurned && (
             <div className="burned-note panel-card" role="note">
@@ -208,6 +226,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
               compare={sel.where === "equipped" ? undefined : compareWithEquipped(state, sel.item)}
               footer={
                 <div className="detail-buttons">
+                  {sel.where !== "equipped" && <RingSwitch state={state} item={sel.item} />}
                   {buttons.map((b) => (
                     <button
                       key={b.label}

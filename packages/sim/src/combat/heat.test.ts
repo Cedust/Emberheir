@@ -35,21 +35,19 @@ describe("Heat", () => {
   });
 
   it("Warming gains 12 per second", () => {
-    expect(stepHeat("warming", 0, 1, 0, 1)).toBe(COMBAT.warmingHeatPerSecond);
-    expect(stepHeat("warming", 0, 1, 0, 1.5)).toBe(COMBAT.warmingHeatPerSecond * 1.5);
+    expect(stepHeat("warming", 0, 1, 1)).toBe(COMBAT.warmingHeatPerSecond);
+    expect(stepHeat("warming", 0, 1, 1.5)).toBe(COMBAT.warmingHeatPerSecond * 1.5);
   });
 
-  it("Cooling decays only after the grace time without a landed hit", () => {
-    const grace = COMBAT.coolingGraceSeconds;
-    expect(stepHeat("cooling", 50, 0.05, grace, 1)).toBe(50);
-    expect(stepHeat("cooling", 50, 0.05, grace + 0.05, 1)).toBeCloseTo(
-      50 - COMBAT.coolingDecayPerSecond * 0.05,
-    );
-    expect(stepHeat("cooling", 0.1, 1, 5, 1)).toBe(0);
+  it("Cooling cools down all the time, 1 Heat per second", () => {
+    expect(COMBAT.coolingDecayPerSecond).toBe(1);
+    expect(stepHeat("cooling", 50, 0.05, 1)).toBeCloseTo(50 - 0.05);
+    expect(stepHeat("cooling", 50, 2, 1)).toBeCloseTo(48);
+    expect(stepHeat("cooling", 0.1, 1, 1)).toBe(0);
   });
 
   it("Steady never decays", () => {
-    expect(stepHeat("steady", 50, 1, 100, 1)).toBe(50);
+    expect(stepHeat("steady", 50, 1, 1)).toBe(50);
   });
 });
 

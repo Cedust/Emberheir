@@ -118,9 +118,10 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
         ? applyAction(s, data, { type: "pickItem", index: best, mode: "equip" })
         : applyAction(s, data, { type: "salvageAll" });
   }
-  // Old items are never needed again by the autopilot.
-  for (const placed of s.inventory) {
-    s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
+  // Old items are never needed again by the autopilot: Thoric salvages them in the Camp, so on
+  // the road they wait in the inventory (thrown away only to make room).
+  for (const placed of s.inventory.slice(0, Math.max(0, s.inventory.length - 4))) {
+    s = applyAction(s, data, { type: "discard", itemId: placed.item.id });
   }
   if (rewards.spoils.length) {
     const flask = rewards.spoils.findIndex((c) => c.kind === "flaskCharge");
@@ -158,13 +159,25 @@ interface BuildPlan {
 
 const TREE_PLAN: Record<string, BuildPlan> = {
   sword: {
-    nodes: ["might-flurry", "might-brutal-force", "might-killer-instinct", "might-power-strike"],
+    nodes: [
+      "might-unbroken",
+      "might-flurry",
+      "might-brutal-force",
+      "might-killer-instinct",
+      "might-power-strike",
+    ],
     rotation: ["flurry", "feint", "execute"],
     branches: ["duelist", "warden", "tactician", "butcher"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   mace: {
-    nodes: ["might-brutal-force", "might-flurry", "might-killer-instinct", "might-execute"],
+    nodes: [
+      "might-unbroken",
+      "might-brutal-force",
+      "might-flurry",
+      "might-killer-instinct",
+      "might-execute",
+    ],
     rotation: ["flurry", "execute", "feint"],
     branches: ["warden", "duelist", "tactician", "butcher"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
@@ -182,7 +195,13 @@ const TREE_PLAN: Record<string, BuildPlan> = {
     reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
   },
   axe: {
-    nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
+    nodes: [
+      "might-unbroken",
+      "rupture-butcher",
+      "rupture-lacerate",
+      "rupture-rend",
+      "rupture-thick-blood",
+    ],
     rotation: ["rend", "cleave", "lacerate"],
     branches: ["butcher", "warden", "duelist", "tactician"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
@@ -200,7 +219,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   dagger: {
-    nodes: ["rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
+    nodes: ["might-unbroken", "rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
     rotation: ["toxic-burst", "plague-cloud", "venom-coat"],
     branches: ["venomancer", "tactician", "warden", "duelist"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
@@ -370,6 +389,9 @@ export function playGenerations(
       let firstFightLost = false;
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
+        for (const placed of s.inventory) {
+          s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
+        }
         s = spendSkillPoints(s, data, options.starterWeapon);
         s = applyAction(s, data, { type: "setOut", actId: act.id });
         while (s.run) {

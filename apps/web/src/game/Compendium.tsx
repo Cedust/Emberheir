@@ -4,7 +4,7 @@ import { Icon } from "../ui/Icon";
 const ENTRIES: { title: string; text: string }[] = [
   {
     title: "Heat",
-    text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat fades when you stop hitting), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
+    text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat fades all the time; the Skill Tree can make enemy hits build it too), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
   },
   {
     title: "Life and the Ember Flask",
@@ -56,7 +56,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Attributes",
-    text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Agility: Attack Speed, Evasion. Intelligence: Elemental Damage, All Resistance. Wisdom: Heat Gain, Ailment Duration. Vitality: Life, Tenacity. Crit Damage is always 150%.",
+    text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Intelligence: Elemental Damage, All Resistance. Agility: Attack Speed, Evasion. Wisdom: Heat Gain, Ailment Duration. Vitality: Life, Tenacity. Crit Damage is always 150%.",
   },
 ];
 

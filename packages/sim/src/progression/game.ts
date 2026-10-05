@@ -76,7 +76,15 @@ import {
 } from "./codex";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
-import { INVENTORY_SIZE, type PlacedItem, STASH_SIZE, addToGrid, packGrid } from "./inventory";
+import {
+  type GridPosition,
+  INVENTORY_SIZE,
+  type PlacedItem,
+  STASH_SIZE,
+  addToGrid,
+  packGrid,
+  placeAt,
+} from "./inventory";
 import { type CraftRequest, craft } from "./crafting";
 import { type EnemyRank, autoRewards, gainXp, levelCap, xpForKill } from "./leveling";
 import {
@@ -882,15 +890,26 @@ export function salvageValue(item: Item): number {
   return PROGRESSION.salvageDust[item.rarity] * Math.max(1, item.tier);
 }
 
-/** Equipment slot an item goes to (Rings fill the first free Ring slot). */
+/**
+ * Equipment slot an item goes to. Rings fill the first free Ring slot unless the player picked
+ * one (`preferred`, the other-Ring shortcut or drag & drop).
+ */
 export function targetSlot(
   item: Item,
   data: GameData,
   equipment: Equipment,
+  preferred?: EquipmentSlot,
 ): EquipmentSlot | undefined {
   const itemSlot = getBase(data.items, item.baseId).slot;
   const slots = data.equipmentSlots.filter((s) => itemSlotFor(s) === itemSlot);
+  if (preferred && slots.includes(preferred)) return preferred;
   return slots.find((s) => !equipment[s]) ?? slots[0];
+}
+
+/** Equipment slots an item fits (both Ring slots for a Ring). */
+export function slotsFor(item: Item, data: GameData): EquipmentSlot[] {
+  const itemSlot = getBase(data.items, item.baseId).slot;
+  return data.equipmentSlots.filter((s) => itemSlotFor(s) === itemSlot);
 }
 
 export type EquipBlockReason = "fight" | "camp" | "requirements" | "noSlot" | "noRoom";
@@ -904,10 +923,12 @@ export function equipBlockReason(
   data: GameData,
   item: Item,
   from: "inventory" | "stash" | "pick",
+  preferred?: EquipmentSlot,
 ): EquipBlockReason | undefined {
   if (state.run?.phase === "fight") return "fight";
   if (from === "stash" && state.run) return "camp";
-  const slot = targetSlot(item, data, state.hero.equipment);
+  if (preferred && !slotsFor(item, data).includes(preferred)) return "noSlot";
+  const slot = targetSlot(item, data, state.hero.equipment, preferred);
   if (!slot) return "noSlot";
   if (missingRequirements(item, data.items, state.hero.attributes).length) return "requirements";
   const old = state.hero.equipment[slot];
@@ -957,7 +978,13 @@ export type GameAction =
   | { readonly type: "resolveFight" }
   /** Back to Camp mid-act (works like a death, but costs no Pity). */
   | { readonly type: "retreat" }
-  | { readonly type: "pickItem"; readonly index: number; readonly mode: "equip" | "take" }
+  | {
+      readonly type: "pickItem";
+      readonly index: number;
+      readonly mode: "equip" | "take";
+      /** Equip into this slot (the other Ring). */
+      readonly slot?: EquipmentSlot;
+    }
   | { readonly type: "salvageAll" }
   | { readonly type: "pickSpoils"; readonly index: number }
   | { readonly type: "pickBoon"; readonly index: number }
@@ -965,17 +992,28 @@ export type GameAction =
   | { readonly type: "continue" }
   | { readonly type: "useFlask" }
   | { readonly type: "allocateAttributes"; readonly points: Partial<Attributes> }
-  | { readonly type: "equip"; readonly itemId: string }
-  | { readonly type: "unequip"; readonly slot: EquipmentSlot }
-  /** Salvage an inventory item; its trigger parts go into the Trigger Codex. */
+  /** From inventory or (Camp) stash; `slot` picks the Ring slot or a drop target. */
+  | { readonly type: "equip"; readonly itemId: string; readonly slot?: EquipmentSlot }
+  /** Back into the inventory, at `at` when dropped on a cell. */
+  | { readonly type: "unequip"; readonly slot: EquipmentSlot; readonly at?: GridPosition }
+  /** Thoric (Camp only): salvage an inventory item; its trigger parts go into the Codex. */
   | { readonly type: "salvage"; readonly itemId: string }
+  /** Throw an inventory item away. Gives nothing. */
+  | { readonly type: "discard"; readonly itemId: string }
+  /** Drag & drop inside the inventory or the stash. */
+  | { readonly type: "placeItem"; readonly itemId: string; readonly at: GridPosition }
   /** Old Nan (Camp only): mark a known Codex part to hunt, or clear the mark. */
   | { readonly type: "setQuarry"; readonly part: { kind: CodexPartKind; id: string } | null }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
   | { readonly type: "respecTree" }
   /** Supply Wagon (Camp only): move an item between inventory and stash. */
-  | { readonly type: "moveItem"; readonly itemId: string; readonly to: "inventory" | "stash" }
+  | {
+      readonly type: "moveItem";
+      readonly itemId: string;
+      readonly to: "inventory" | "stash";
+      readonly at?: GridPosition;
+    }
   | { readonly type: "sortStash" }
   /** Thoric and Liora (Camp only). */
   | { readonly type: "craft"; readonly request: CraftRequest }
@@ -1004,7 +1042,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "retreat":
       return retreat(state, data);
     case "pickItem":
-      return pickItem(state, data, action.index, action.mode);
+      return pickItem(state, data, action.index, action.mode, action.slot);
     case "salvageAll":
       return salvageAll(state);
     case "pickBoon":
@@ -1018,11 +1056,15 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "allocateAttributes":
       return allocateAttributes(state, action.points);
     case "equip":
-      return equipFromInventory(state, data, action.itemId);
+      return equipFromInventory(state, data, action.itemId, action.slot);
     case "unequip":
-      return unequip(state, data, action.slot);
+      return unequip(state, data, action.slot, action.at);
     case "salvage":
       return salvage(state, data, action.itemId);
+    case "discard":
+      return discard(state, action.itemId);
+    case "placeItem":
+      return placeItem(state, data, action.itemId, action.at);
     case "setQuarry":
       return setQuarry(state, action.part);
     case "learnNodes":
@@ -1030,7 +1072,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "respecTree":
       return respecTree(state, data);
     case "moveItem":
-      return moveItem(state, data, action.itemId, action.to);
+      return moveItem(state, data, action.itemId, action.to, action.at);
     case "sortStash":
       return sortStash(state, data);
     case "craft":
@@ -1640,8 +1682,10 @@ function equipItem(
   data: GameData,
   item: Item,
   inventory: readonly PlacedItem[],
+  preferred?: EquipmentSlot,
 ): GameState {
-  const slot = targetSlot(item, data, state.hero.equipment) ?? fail("No slot for this item");
+  const slot =
+    targetSlot(item, data, state.hero.equipment, preferred) ?? fail("No slot for this item");
   const old = state.hero.equipment[slot];
   const newInventory = old ? (addToGrid(inventory, old, data.items) ?? fail("No room")) : inventory;
   return {
@@ -1656,6 +1700,7 @@ function pickItem(
   data: GameData,
   index: number,
   mode: "equip" | "take",
+  slot?: EquipmentSlot,
 ): GameState {
   const { run, rewards } = requireRewards(state);
   if (rewards.itemPick) return fail("Item already picked");
@@ -1664,9 +1709,9 @@ function pickItem(
   const item = rewards.items[index] ?? fail("No such item");
   let next: GameState;
   if (mode === "equip") {
-    const reason = equipBlockReason(state, data, item, "pick");
+    const reason = equipBlockReason(state, data, item, "pick", slot);
     if (reason) return fail(`Cannot equip: ${reason}`);
-    next = equipItem(state, data, item, state.inventory);
+    next = equipItem(state, data, item, state.inventory, slot);
   } else {
     const inventory = addToGrid(state.inventory, item, data.items) ?? fail("No room");
     next = { ...state, inventory };
@@ -1825,12 +1870,19 @@ function findInInventory(state: GameState, itemId: string): PlacedItem {
 }
 
 /** Equips from the inventory or (in the Camp) the stash; the old item goes back there. */
-function equipFromInventory(state: GameState, data: GameData, itemId: string): GameState {
+function equipFromInventory(
+  state: GameState,
+  data: GameData,
+  itemId: string,
+  preferred?: EquipmentSlot,
+): GameState {
   const fromStash = state.stash.find((p) => p.item.id === itemId);
   const placed = fromStash ?? findInInventory(state, itemId);
-  const reason = equipBlockReason(state, data, placed.item, fromStash ? "stash" : "inventory");
+  const from = fromStash ? "stash" : "inventory";
+  const reason = equipBlockReason(state, data, placed.item, from, preferred);
   if (reason) return fail(`Cannot equip: ${reason}`);
-  const slot = targetSlot(placed.item, data, state.hero.equipment) ?? fail("No slot for this item");
+  const slot =
+    targetSlot(placed.item, data, state.hero.equipment, preferred) ?? fail("No slot for this item");
   const old = state.hero.equipment[slot];
   const source = (fromStash ? state.stash : state.inventory).filter((p) => p !== placed);
   const size = fromStash ? STASH_SIZE : INVENTORY_SIZE;
@@ -1866,6 +1918,7 @@ function moveItem(
   data: GameData,
   itemId: string,
   to: "inventory" | "stash",
+  at?: GridPosition,
 ): GameState {
   requireCamp(state);
   if (to === "stash" && state.progress.stashBurned) return fail("The Supply Wagon burned down");
@@ -1875,7 +1928,10 @@ function moveItem(
     fail(`Item not in the ${to === "stash" ? "inventory" : "stash"}`);
   const target = to === "stash" ? state.stash : state.inventory;
   const size = to === "stash" ? STASH_SIZE : INVENTORY_SIZE;
-  const moved = addToGrid(target, placed.item, data.items, size) ?? fail("No room");
+  const moved =
+    (at
+      ? placeAt(target, placed.item, at.x, at.y, data.items, size)
+      : addToGrid(target, placed.item, data.items, size)) ?? fail("No room");
   const rest = source.filter((p) => p !== placed);
   return to === "stash"
     ? { ...state, inventory: rest, stash: moved }
@@ -1887,19 +1943,28 @@ function sortStash(state: GameState, data: GameData): GameState {
   return { ...state, stash: packGrid(state.stash, data.items, STASH_SIZE) };
 }
 
-function unequip(state: GameState, data: GameData, slot: EquipmentSlot): GameState {
+function unequip(
+  state: GameState,
+  data: GameData,
+  slot: EquipmentSlot,
+  at?: GridPosition,
+): GameState {
   const reason = unequipBlockReason(state, data, slot);
   if (reason) return fail(`Cannot unequip: ${reason}`);
   const item = state.hero.equipment[slot] ?? fail("Slot is empty");
-  const inventory = addToGrid(state.inventory, item, data.items) ?? fail("No room");
+  const inventory =
+    (at
+      ? placeAt(state.inventory, item, at.x, at.y, data.items)
+      : addToGrid(state.inventory, item, data.items)) ?? fail("No room");
   const equipment: Equipment = Object.fromEntries(
     Object.entries(state.hero.equipment).filter(([s]) => s !== slot),
   );
   return { ...state, inventory, hero: { ...state.hero, equipment } };
 }
 
+/** Salvage is Thoric's work, so only in the Camp (Timo, after Playtest 2). */
 function salvage(state: GameState, data: GameData, itemId: string): GameState {
-  if (state.run?.phase === "fight") return fail("Not during a fight");
+  requireCamp(state);
   const placed = findInInventory(state, itemId);
   const { codex } = learnFromItem(state.legacy.codex, placed.item, data.items);
   return {
@@ -1908,6 +1973,28 @@ function salvage(state: GameState, data: GameData, itemId: string): GameState {
     wallet: { ...state.wallet, dust: state.wallet.dust + salvageValue(placed.item) },
     legacy: codex === state.legacy.codex ? state.legacy : { ...state.legacy, codex },
   };
+}
+
+/** Throws an inventory item away for nothing (to make room on the road). */
+function discard(state: GameState, itemId: string): GameState {
+  if (state.run?.phase === "fight") return fail("Not during a fight");
+  const placed = findInInventory(state, itemId);
+  return { ...state, inventory: state.inventory.filter((p) => p !== placed) };
+}
+
+/** Drag & drop inside a grid: the item moves to `at` if it fits there. */
+function placeItem(state: GameState, data: GameData, itemId: string, at: GridPosition): GameState {
+  if (state.run?.phase === "fight") return fail("Not during a fight");
+  const inStash = state.stash.some((p) => p.item.id === itemId);
+  if (inStash) {
+    requireCamp(state);
+    const placed = state.stash.find((p) => p.item.id === itemId) ?? fail("No such item");
+    const stash = placeAt(state.stash, placed.item, at.x, at.y, data.items, STASH_SIZE);
+    return stash ? { ...state, stash } : fail("No room there");
+  }
+  const placed = findInInventory(state, itemId);
+  const inventory = placeAt(state.inventory, placed.item, at.x, at.y, data.items);
+  return inventory ? { ...state, inventory } : fail("No room there");
 }
 
 function setQuarry(

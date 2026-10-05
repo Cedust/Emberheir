@@ -66,6 +66,8 @@ export function buildHeroSetup(
     ...(capstone ? { capstone } : {}),
     ...(openingMove ? { openingMove } : {}),
     bonuses: sumBonuses(gear.bonuses, options.bonuses?.(weapon)),
+    // Heat from enemy hits comes only from the Skill Tree (Timo, after Playtest 2).
+    baseHeatFromHitsTaken: 0,
     ...(triggers.length ? { triggers } : {}),
     ...(options.rules || gear.rules ? { rules: mergeRules(options.rules, gear.rules) } : {}),
     ...(options.lifeFraction !== undefined ? { lifeFraction: options.lifeFraction } : {}),
