@@ -19,6 +19,10 @@ const ENTRIES: { title: string; text: string }[] = [
     text: "After each win you pick 1 of 3 items: Equip it or Take it into the inventory. The others turn into Salvage Dust. Stages 5 and 10 and Elites add a Spoils pick. Rarities: Normal, Magic, Rare, Epic, Legendary.",
   },
   {
+    title: "Harvest and Prestige",
+    text: "When the newest Act's boss falls, the Harvester burns the world. The caravan saves everything you carry: gear, Inventory, Stash, Gold and Dust. You start again at Act 1 with one more Act, a higher Level Cap (5 more per Act), a new Skill Tree branch and a Battle Plan upgrade. Better rarities open up from run to run.",
+  },
+  {
     title: "Stolen Fire Boons",
     text: "After Stages 5 and 10, Elites and the boss, the Ember Shrine offers 1 of 3 Boons. Taking the same Boon again raises its rank (up to III). Strike, Skill, Reaction and Heat Boons hold one each; a new one replaces the old. Every Warden adds its family once its act opens, and Fusion Boons need two families. Boons from the current act burn when you fall or retreat; all burn at Prestige.",
   },
@@ -28,7 +32,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "The Last Ember",
-    text: "After the tenth Prestige nothing burns any more: every slot is sealed. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
+    text: "After the tenth Prestige the world no longer burns. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
   },
   {
     title: "Elites and Bosses",
@@ -41,6 +45,10 @@ const ENTRIES: { title: string; text: string }[] = [
   {
     title: "Liora, the Mystic",
     text: "Reforge rerolls all affixes for a Reforge Stone. Temper rerolls one affix value, Imbue replaces one affix with an Essence. After Temper or Imbue only that affix can change again until you Reforge. Trigger Affixes cannot be tempered or imbued. Distill turns Dust into a Reforge Stone. There is no Undo.",
+  },
+  {
+    title: "Marisha, the Black Market",
+    text: "Pick a slot and pay Gold for a random item. Marisha's odds are better than loot: she can give one rarity more than the current run drops.",
   },
   {
     title: "Trigger Codex",

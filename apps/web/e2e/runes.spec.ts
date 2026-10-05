@@ -1,20 +1,21 @@
 import { expect, test } from "@playwright/test";
 import { saveWithRunes, seedSave } from "./fixtures";
 
-test("Marisha sells a socketed base, Eldrin turns three Ash into Moss", async ({ page }) => {
+test("Marisha gambles a ring, Eldrin turns three Ash into Moss", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveWithRunes());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
-  await page.getByRole("button", { name: "Marisha, Merchant" }).click();
+  await page.getByRole("button", { name: "Marisha, Black Market" }).click();
   await page.getByRole("button", { name: "Open Shop" }).click();
-  const stock = page.getByRole("radiogroup", { name: "Stock" });
-  await expect(stock.locator(".offer")).toHaveCount(6);
-  await stock.locator(".offer").first().locator("button").first().click();
-  await page.getByRole("button", { name: "Buy", exact: true }).click();
-  await expect(stock.locator(".offer").first()).toContainText("Sold");
+  await page
+    .getByRole("radiogroup", { name: "Gamble slot" })
+    .getByRole("radio", { name: "Ring" })
+    .click();
+  await page.locator(".cost-bar").getByRole("button", { name: "Gamble" }).click();
+  await expect(page.locator(".gamble-last")).toBeVisible();
 
   await page.getByRole("tab", { name: /Eldrin · Runesmith/ }).click();
   await page

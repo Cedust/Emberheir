@@ -132,7 +132,7 @@ function personas(state: GameState, road: ActData): Persona[] {
     {
       id: "marisha",
       name: "Marisha",
-      role: "Merchant",
+      role: "Black Market",
       x: 470,
       y: 520,
       icon: "coins",
@@ -140,7 +140,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       figure: { fs: 0.95 },
       quote:
         "“Buy now! Everything comes back stronger after the apocalypse. Especially my prices.”",
-      actions: [{ name: "Base Items" }, { name: "Gamble" }],
+      actions: [{ name: "Gamble" }],
       cta: "Open Shop",
       target: "shop",
     },

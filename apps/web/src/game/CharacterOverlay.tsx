@@ -244,13 +244,8 @@ export function CharacterOverlay(props: {
                 const pos = dollBox(slot);
                 const it = state.hero.equipment[slot];
                 const inactive = gear.inactive.some((i) => i.slot === slot);
-                const sealed = state.legacy.seals.includes(slot);
                 return (
-                  <div
-                    key={slot}
-                    className={`doll-slot${sealed ? " sealed" : ""}`}
-                    style={{ left: pos.x, top: pos.y }}
-                  >
+                  <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
                     <ItemTile
                       item={it}
                       label={SLOT_NAMES[itemSlotFor(slot)]}
@@ -260,11 +255,6 @@ export function CharacterOverlay(props: {
                       inactive={inactive}
                       {...(it ? { onSelect: () => setSelected(it.id) } : {})}
                     />
-                    {sealed && (
-                      <span className="seal-mark" title="Sealed: survives the next harvest">
-                        ◆
-                      </span>
-                    )}
                   </div>
                 );
               })}

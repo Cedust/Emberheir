@@ -9,8 +9,10 @@ import type {
   Item,
   ItemCatalog,
   ItemSlot,
+  Rarity,
   RuneDefinition,
 } from "../items/types";
+import { RARITIES } from "../items/types";
 import { Rng } from "../rng";
 import { CODEX, CRAFTING, PROGRESSION } from "./constants";
 import { codexMastery, kindleTier, kindledIndex } from "./codex";
@@ -20,6 +22,7 @@ import {
   type GameState,
   addRunes,
   fail,
+  lootGate,
   nextAct,
   nextRng,
   requireCamp,
@@ -53,9 +56,7 @@ export type CraftRequest =
   | { readonly kind: "socketRune"; readonly itemId: string; readonly runeId: string }
   /** Eldrin: three Runes of one kind into one Rune of the next rank. */
   | { readonly kind: "combineRunes"; readonly runeId: string }
-  /** Marisha: buy one of the Normal bases in stock. */
-  | { readonly kind: "buyBase"; readonly index: number }
-  /** Marisha: a random item for a slot, maybe even Legendary. */
+  /** Marisha (Black Market): a random item for a slot, with better rarity odds than loot. */
   | { readonly kind: "gamble"; readonly slot: ItemSlot }
   /**
    * Liora: a Trigger Codex Condition + Effect as a trigger on the item. Replaces the trigger at
@@ -192,10 +193,6 @@ export function craftCost(
         gold: CRAFTING.combineRunesGoldPerRank * runeRank(request.runeId),
         runes: { [request.runeId]: CRAFTING.combineRunesCount },
       };
-    case "buyBase": {
-      const offer = state && data ? merchantStock(state, data)[request.index] : undefined;
-      return { ...NO_COST, gold: offer ? basePrice(offer) : 0 };
-    }
     case "gamble":
       return { ...NO_COST, gold: state && data ? gamblePrice(merchantItemLevel(state, data)) : 0 };
     case "upgrade":
@@ -304,13 +301,6 @@ export function craftBlockReason(
     if (!rune) return "unknownRune";
     if (!nextRune(data, rune.rank)) return "maxRank";
     return costBlockReason(state, craftCost(request, undefined, data));
-  }
-  if (request.kind === "buyBase") {
-    const offer = merchantStock(state, data)[request.index];
-    if (!offer) return "noStock";
-    if (soldOut(state).includes(request.index)) return "sold";
-    if (!addToGrid(state.inventory, offer, data.items)) return "noRoom";
-    return costBlockReason(state, craftCost(request, undefined, data, state));
   }
   if (request.kind === "gamble") {
     if (!merchantSlots(data).includes(request.slot)) return "noStock";
@@ -450,15 +440,6 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         ...paid.legacy,
         runesFound: [...new Set([...paid.legacy.runesFound, next.id])],
       },
-    };
-  }
-  if (request.kind === "buyBase") {
-    const offer = merchantStock(state, data)[request.index] ?? fail("Not in stock");
-    const paid = pay(state, craftCost(request, undefined, data, state));
-    return {
-      ...paid,
-      inventory: addToGrid(paid.inventory, offer, data.items) ?? fail("No room"),
-      merchant: { key: merchantKey(state), sold: [...soldOut(state), request.index] },
     };
   }
   if (request.kind === "gamble") {
@@ -607,15 +588,7 @@ export function nextRune(data: GameData, rank: number): RuneDefinition | undefin
   return [...data.items.runes.values()].find((r) => r.rank === rank + 1);
 }
 
-// --- Marisha (Merchant) ------------------------------------------------------------------------
-
-/** The stock changes whenever the hero comes back from fighting. */
-const merchantKey = (state: GameState) => state.stats.fights + 1000 * state.legacy.prestige;
-
-/** Offers already sold from the current stock. */
-export function soldOut(state: GameState): readonly number[] {
-  return state.merchant.key === merchantKey(state) ? state.merchant.sold : [];
-}
+// --- Marisha (Black Market) --------------------------------------------------------------------
 
 /** Item Level of Marisha's goods: the boss level of the act ahead. */
 export function merchantItemLevel(state: GameState, data: GameData): number {
@@ -626,29 +599,6 @@ export function merchantItemLevel(state: GameState, data: GameData): number {
 /** Item slots Marisha gambles on: every slot the loot can show. */
 export function merchantSlots(data: GameData): ItemSlot[] {
   return [...new Set(data.lootBases.map((id) => getBase(data.items, id).slot))];
-}
-
-/**
- * Marisha's stock: Normal bases with the most Sockets they can have (Runeword bases), rolled
- * from the save's seed, so reloading does not change it.
- */
-export function merchantStock(state: GameState, data: GameData): Item[] {
-  const rng = new Rng((state.seed ^ Math.imul(merchantKey(state) + 7, 0x2c1b3c6d)) >>> 0);
-  const socketable = data.lootBases.filter((id) => (getBase(data.items, id).maxSockets ?? 0) > 0);
-  const level = merchantItemLevel(state, data);
-  const stock: Item[] = [];
-  const left = [...socketable];
-  for (let i = 0; i < CRAFTING.merchantOffers && left.length; i++) {
-    const baseId = left.splice(rng.int(0, left.length - 1), 1)[0] ?? "";
-    const base = getBase(data.items, baseId);
-    const item = rollItem(data.items, { baseId, itemLevel: level, rarity: "normal" }, rng);
-    stock.push({ ...item, sockets: base.maxSockets ?? 0 });
-  }
-  return stock;
-}
-
-export function basePrice(item: Item): number {
-  return CRAFTING.basePriceFlat + CRAFTING.basePricePerSocket * (item.sockets ?? 0) * item.tier;
 }
 
 export function gamblePrice(itemLevel: number): number {
@@ -665,11 +615,19 @@ function hasRoomFor(state: GameState, data: GameData, slot: ItemSlot): boolean {
     });
 }
 
+/** Marisha's rarity odds in a run: one step above what its enemies drop (`gambleMax`). */
+export function gambleRarityWeights(prestige: number): Readonly<Record<Rarity, number>> {
+  const max = RARITIES.indexOf(lootGate(prestige).gambleMax);
+  const weights = { ...CRAFTING.gambleRarityWeights } as Record<Rarity, number>;
+  for (const r of RARITIES) if (RARITIES.indexOf(r) > max) weights[r] = 0;
+  return weights;
+}
+
 /** A gambled item: random base of the slot, rarity by Marisha's odds, Uniques possible. */
 export function gambleItem(state: GameState, data: GameData, slot: ItemSlot, rng: Rng): Item {
   const level = merchantItemLevel(state, data);
   const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
-  const rarity = rollRarity(rng, CRAFTING.gambleRarityWeights);
+  const rarity = rollRarity(rng, gambleRarityWeights(state.legacy.prestige));
   if (rarity === "legendary") {
     const uniques = uniquesFor(data.items, level, bases);
     if (uniques.length && rng.chance(PROGRESSION.uniqueShare)) {

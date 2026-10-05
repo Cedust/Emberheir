@@ -77,7 +77,7 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: "Open Stash" }).click();
     await check("stash");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Marisha, Merchant" }).click();
+    await page.getByRole("button", { name: "Marisha, Black Market" }).click();
     await page.getByRole("button", { name: "Open Shop" }).click();
     await check("shop");
     await page.getByRole("button", { name: /^Gamble/ }).click();
@@ -131,14 +131,10 @@ for (const screen of SCREENS) {
 
     await expect(page.getByRole("region", { name: "Victory" })).toBeVisible();
     await check("victory");
-    await page.getByRole("button", { name: "Hold On to What Matters" }).click();
+    await page.getByRole("button", { name: "Pack the Caravan" }).click();
     await expect(page.getByRole("region", { name: "Bloodline" })).toBeVisible();
     await check("bloodline");
     await page.getByRole("button", { name: /^Take / }).click();
-    await check("seal");
-    await page.getByRole("button", { name: /^Body Armor:/ }).click();
-    await page.getByRole("button", { name: "Seal This Slot" }).click();
-    await page.getByRole("button", { name: "Let It Burn" }).click();
     await expect(page.getByRole("region", { name: "Inheritance" })).toBeVisible();
     await check("inheritance");
     await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();

@@ -10,20 +10,20 @@ import {
   serializeGame,
 } from "@emberheir/sim";
 
-/** A save right after Gorrak fell in the first run (the harvest boss): an Epic Body Armor to seal. */
+/** A save right after Gorrak fell in the first run (the harvest boss), in a Rare Body Armor. */
 export function saveAfterHarvestBoss(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const rng = new Rng(7);
   const armor = rollItem(
     GAME_DATA.items,
-    { baseId: "chain-mail", itemLevel: 4, rarity: "epic" },
+    { baseId: "chain-mail", itemLevel: 4, rarity: "rare" },
     rng,
   );
   const state: GameState = {
     ...base,
     hero: {
       ...base.hero,
-      level: 10,
+      level: 5,
       attributes: { ...base.hero.attributes, strength: 12, vitality: 9 },
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
@@ -51,7 +51,7 @@ export function saveAfterAct1(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 24, unspentSkillPoints: 5 },
+    hero: { ...base.hero, level: 15, unspentSkillPoints: 5 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     legacy: { ...base.legacy, prestige: 1 },
   };
@@ -63,7 +63,7 @@ export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
   const state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 24 },
+    hero: { ...base.hero, level: 15 },
     wallet: { ...base.wallet, gold: 400, runes: { ash: 3 } },
     progress: {
       ...base.progress,

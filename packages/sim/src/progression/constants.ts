@@ -300,10 +300,7 @@ export const CRAFTING = {
   socketRuneGoldPerRank: 8,
   combineRunesGoldPerRank: 15,
   combineRunesCount: 3,
-  /** Marisha: offers in stock, prices. */
-  merchantOffers: 6,
-  basePriceFlat: 20,
-  basePricePerSocket: 15,
+  /** Marisha (Black Market): gamble prices and odds, capped by the run's loot gate. */
   gambleFlat: 60,
   gamblePerItemLevel: 12,
   gambleRarityWeights: { normal: 0, magic: 55, rare: 30, epic: 12, legendary: 3 } satisfies Record<

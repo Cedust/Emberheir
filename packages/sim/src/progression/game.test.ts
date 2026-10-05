@@ -124,9 +124,9 @@ describe("game loop", () => {
     s = act(s, { type: "resolveFight" });
     expect(s.run?.rewards?.reforgeStones).toBeGreaterThanOrEqual(PROGRESSION.bossReforgeStones[0]);
     // Run 2: the Boss Hoard is at least Rare.
-    expect(
-      s.run?.rewards?.items.every((i) => i.rarity === "rare" || i.rarity === "epic"),
-    ).toBe(true);
+    expect(s.run?.rewards?.items.every((i) => i.rarity === "rare" || i.rarity === "epic")).toBe(
+      true,
+    );
     // Bosses and Elites offer Kindling instead of Reforge Stones.
     expect(s.run?.rewards?.spoils[1]).toEqual({ kind: "kindling", amount: CODEX.bossKindling });
     s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 1 });
@@ -418,6 +418,43 @@ describe("game loop", () => {
     expect(migrated.stash).toEqual([]);
     expect(migrated.wallet.ascensionShards).toBe(0);
     expect(migrated.run).toEqual(s.run);
+  });
+
+  it("migrates Seal-era save games (version 7): no Seals, points back above the new cap", () => {
+    const s = start(3);
+    const v7 = {
+      ...s,
+      version: 7,
+      hero: { ...s.hero, level: 30, learned: { a: 1 }, unspentAttributePoints: 1 },
+      wallet: { ...s.wallet, harvesterEmber: 0 },
+      merchant: { key: 0, sold: [] },
+      legacy: {
+        ...s.legacy,
+        prestige: 1,
+        seals: ["ring1"],
+        chronicle: [{ generation: 1, sealed: ["ring1"], level: 20, deaths: 2, enemyName: "Boss" }],
+      },
+    };
+    const migrated = deserializeGame(JSON.stringify(v7), data);
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(migrated.legacy).not.toHaveProperty("seals");
+    expect(migrated).not.toHaveProperty("merchant");
+    expect(migrated.legacy.chronicle).toEqual([
+      { generation: 1, level: 20, deaths: 2, enemyName: "Boss" },
+    ]);
+    // Run 2's cap is 15: every point comes back to spend again.
+    expect(migrated.hero).toMatchObject({
+      level: 15,
+      xp: 0,
+      attributes: data.startingAttributes,
+      unspentAttributePoints: 14 * PROGRESSION.attributePointsPerLevel,
+      unspentSkillPoints: PROGRESSION.startSkillPoints + 14 * PROGRESSION.skillPointsPerLevel,
+      learned: {},
+    });
+    expect(migrated.wallet.harvesterEmber).toBe(1);
+    // A hero below the cap keeps its points.
+    const low = deserializeGame(JSON.stringify({ ...v7, hero: s.hero }), data);
+    expect(low.hero).toEqual(s.hero);
   });
 
   it("save games round-trip and reject other versions", () => {

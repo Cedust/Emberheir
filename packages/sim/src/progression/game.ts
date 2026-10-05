@@ -331,12 +331,6 @@ export interface LegacyState {
   readonly finaleWon?: boolean;
 }
 
-/** Marisha restocks whenever the hero comes back from a fight (`key` = fights so far). */
-export interface MerchantState {
-  readonly key: number;
-  readonly sold: readonly number[];
-}
-
 /** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */
 export interface PendingPrestige {
   readonly actId: string;
@@ -376,7 +370,6 @@ export interface GameState {
     readonly runesmithUnlocked: boolean;
   };
   /** Marisha's stock: which offers of the current stock are sold. */
-  readonly merchant: MerchantState;
   /** `null` = in the Camp. */
   readonly run: RunState | null;
   readonly notice: Notice | null;
@@ -459,7 +452,6 @@ export function newGame(
       stashBurned: false,
       runesmithUnlocked: false,
     },
-    merchant: { key: 0, sold: [] },
     run: null,
     notice: null,
     stats: { fights: 0, wins: 0, deaths: 0, retreats: 0, bossKills: 0 },
@@ -1539,7 +1531,7 @@ function rollItemChoices(
     const rolled = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
     const atLeast = (r: Rarity, min: Rarity) =>
       RARITIES.indexOf(r) < RARITIES.indexOf(min) ? min : r;
-    let rarity = (forced.length || i === rareCard) ? atLeast(rolled, "rare") : rolled;
+    let rarity = forced.length || i === rareCard ? atLeast(rolled, "rare") : rolled;
     if (sure && i === sureCard) rarity = atLeast(rarity, sure);
     items.push(
       rollItem(
@@ -2249,7 +2241,6 @@ function migrateV3(state: Partial<GameState>): Partial<GameState> {
   return {
     ...state,
     version: 4,
-    merchant: { key: 0, sold: [] },
     ...(state.wallet ? { wallet: { ...state.wallet, runes: {} } } : {}),
     ...(state.progress ? { progress: { ...state.progress, runesmithUnlocked: false } } : {}),
     ...(state.legacy ? { legacy: { ...state.legacy, runewords: [], runesFound: [] } } : {}),
@@ -2314,16 +2305,20 @@ function migrateV6(state: Partial<GameState>): Partial<GameState> {
  * played. A hero above the new cap drops to it and gets every point back to spend again.
  */
 function migrateV7(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
-  const legacy = state.legacy as (LegacyState & { seals?: unknown }) | undefined;
-  const { seals: _seals, ...rest } = legacy ?? ({} as LegacyState & { seals?: unknown });
+  const legacy = state.legacy;
+  // Seals are gone, and so is Marisha's stock of Normal bases (she only gambles now).
+  const rest: Partial<LegacyState> & { seals?: unknown } = { ...legacy };
+  delete rest.seals;
+  const kept: Partial<GameState> & { merchant?: unknown } = { ...state };
+  delete kept.merchant;
   const migrated: Partial<GameState> = {
-    ...state,
+    ...kept,
     version: 8,
     ...(legacy
       ? {
           legacy: {
-            ...rest,
-            chronicle: rest.chronicle.map(
+            ...(rest as LegacyState),
+            chronicle: legacy.chronicle.map(
               ({ generation, level, deaths, enemyName }): ChronicleEntry => ({
                 generation,
                 level,
@@ -2348,7 +2343,8 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
       attributes: data.startingAttributes,
       unspentAttributePoints: (cap - 1) * PROGRESSION.attributePointsPerLevel,
       learned: {},
-      unspentSkillPoints: PROGRESSION.startSkillPoints + (cap - 1) * PROGRESSION.skillPointsPerLevel,
+      unspentSkillPoints:
+        PROGRESSION.startSkillPoints + (cap - 1) * PROGRESSION.skillPointsPerLevel,
       rotation: hero.rotation.map(() => null),
     },
     ...(state.wallet

@@ -1,13 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { PROGRESSION } from "./constants";
-import {
-  autoRewards,
-  gainXp,
-  levelCap,
-  xpForKill,
-  xpLevelFactor,
-  xpToNextLevel,
-} from "./leveling";
+import { autoRewards, gainXp, levelCap, xpForKill, xpLevelFactor, xpToNextLevel } from "./leveling";
 
 describe("leveling", () => {
   it("follows the XP table and stops at the Level Cap", () => {
