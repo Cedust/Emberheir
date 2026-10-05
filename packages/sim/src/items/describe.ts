@@ -229,9 +229,9 @@ export interface ItemTooltip {
 
 /**
  * Attack Speed as an abstract Speed value instead of attacks per second (playtest 1):
- * 0.6 attacks per second, the Sword's speed, is Speed 100. +10 % Attack Speed makes it 110.
+ * 0.8 attacks per second, the Sword's speed, is Speed 100. +10 % Attack Speed makes it 110.
  */
-export const SPEED_BASE_ATTACKS_PER_SECOND = 0.6;
+export const SPEED_BASE_ATTACKS_PER_SECOND = 0.8;
 
 export function speedValue(attacksPerSecond: number): number {
   return Math.round((attacksPerSecond / SPEED_BASE_ATTACKS_PER_SECOND) * 100);

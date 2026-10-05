@@ -119,17 +119,12 @@ describe("Fight", () => {
         heatBehavior: "cooling",
         attacksPerSecond: 0,
       };
-      const slow: WeaponDefinition = { ...TEST_WEAPON, attacksPerSecond: 0.4 };
-      const fight = new Fight(
-        setup({ weapon: cooling }),
-        setup({ weapon: slow, bonuses: NO_CRIT }),
-        1,
-      );
-      fight.advance(2.6);
+      const fight = new Fight(setup({ weapon: cooling }), setup({ bonuses: NO_CRIT }), 1);
+      fight.advance(1.1);
       // Took a 10 damage hit = 10 % of max life = 10 Heat.
       expect(fight.snapshot().hero.heat).toBeCloseTo(10, 5);
-      // Decay starts after the grace time (3 s), before the next hit taken at 5 s.
-      fight.advance(2.2);
+      // Decay starts after the grace time and outpaces the next 10 Heat hit taken at 2 s.
+      fight.advance(1.8);
       expect(fight.snapshot().hero.heat).toBeLessThan(10);
     });
   });
