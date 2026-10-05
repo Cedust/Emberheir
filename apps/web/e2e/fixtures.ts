@@ -3,6 +3,8 @@ import type { Page } from "@playwright/test";
 import {
   type GameState,
   type Item,
+  learnBlockReason,
+  learnNodes,
   newGame,
   rollItem,
   rollUnique,
@@ -273,4 +275,39 @@ export function saveEnding(): string {
       enemyName: "The Harvester's Core",
     },
   });
+}
+
+/**
+ * A Camp save in the sixth run with a deep Skill Tree: Duelist up to tier III, Warden and
+ * Tactician at tier I, Might and Core mostly learned (skilltree-v2.md).
+ */
+export function saveDeepTree(): string {
+  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const branches = ["duelist", "warden", "duelist", "tactician", "duelist"];
+  const wanted = SKILL_TREE.nodes.filter(
+    (n) =>
+      (n.branch === "core" || n.branch === "might" || n.prestigeBranch === "duelist") &&
+      !(n.prestigeBranch && n.prestigeBranch !== "duelist"),
+  );
+  let learned: Record<string, number> = {};
+  let budget = { skillPoints: 58, harvesterEmber: 3 };
+  for (let pass = 0; pass < 12; pass++) {
+    for (const node of wanted) {
+      if (node.id.endsWith("t3b") || node.id.endsWith("t2n")) continue;
+      if (!learnBlockReason(SKILL_TREE, learned, node.id, budget, branches)) {
+        const r = learnNodes(SKILL_TREE, learned, [node.id], budget, branches);
+        learned = { ...r.learned };
+        budget = { ...r.budget };
+      }
+    }
+  }
+  learned = { ...learned, "pb-warden-entry": 2, "pb-warden-a1": 1 };
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 75, learned, unspentSkillPoints: 6 },
+    wallet: { ...base.wallet, harvesterEmber: 1 },
+    progress: { ...base.progress, actsCleared: [], trainerUnlocked: true, rotationSlots: 4 },
+    legacy: { ...base.legacy, prestige: 5, branches },
+  };
+  return serializeGame(state);
 }

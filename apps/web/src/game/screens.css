@@ -2203,129 +2203,6 @@
   background: radial-gradient(circle at 50% 70%, rgb(255 138 58 / 0.1), transparent 60%);
 }
 
-.stage .tree-canvas > .skill-tree {
-  max-width: 100%;
-  max-height: 100%;
-}
-
-.stage .tree-views {
-  position: absolute;
-  top: 12px;
-  left: 20px;
-  z-index: 1;
-}
-
-.stage .prestige-branches {
-  align-self: stretch;
-  flex-grow: 1;
-  padding: 62px 20px 44px;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: min-content;
-  gap: 10px 14px;
-  align-content: start;
-}
-
-.stage .pb-card {
-  position: relative;
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: 8px;
-  padding: 4px 10px 4px 14px;
-  border-left: 4px solid var(--branch);
-}
-
-.stage .pb-card.closed {
-  opacity: 0.5;
-}
-
-.stage .pb-card.closed > .icon {
-  position: absolute;
-  top: 8px;
-  right: 10px;
-}
-
-.stage .pb-head {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  line-height: 1.2;
-}
-
-.stage .pb-name {
-  font-size: 17px;
-  color: var(--branch);
-}
-
-.stage .pb-tree .node-ranks {
-  font-size: 10px;
-}
-
-.stage .skill-tree .link {
-  stroke: var(--edge);
-  stroke-width: 3;
-}
-
-.stage .skill-tree .link.on {
-  stroke: var(--accent);
-  stroke-width: 4;
-}
-
-.stage .skill-tree .node {
-  fill: var(--bg);
-  stroke: var(--branch, var(--edge));
-  stroke-width: 3;
-  cursor: pointer;
-}
-
-.stage .skill-tree .node.locked {
-  opacity: 0.55;
-  stroke-dasharray: 4 3;
-}
-
-.stage .skill-tree .node.learnable {
-  stroke-width: 3.5;
-}
-
-.stage .skill-tree .node.learned {
-  fill: var(--accent);
-  stroke: var(--ink);
-}
-
-.stage .skill-tree .node.pending {
-  fill: #4fe08a;
-  stroke: var(--ink);
-}
-
-.stage .skill-tree .node.kind-keystone {
-  stroke: #ffb13b;
-}
-
-.stage .skill-tree .node.selected {
-  filter: drop-shadow(0 0 6px #ffb13b);
-  stroke-width: 4;
-}
-
-.stage .skill-tree .node:focus {
-  outline: none;
-}
-
-.stage .node-ranks {
-  font-family: var(--font-mono);
-  font-size: 12px;
-  font-weight: 700;
-  fill: var(--text-sub);
-}
-
-.stage .branch-label {
-  font-family: var(--font-title);
-  font-size: 18px;
-  font-weight: 900;
-  letter-spacing: 3px;
-  opacity: 0.85;
-}
-
 .stage .tree-legend {
   position: absolute;
   left: 20px;
@@ -2351,29 +2228,6 @@
   background: var(--bg);
 }
 
-.stage .lg.notable {
-  width: 18px;
-  height: 18px;
-}
-
-.stage .lg.skill {
-  border-radius: 2px;
-  transform: rotate(45deg);
-}
-
-.stage .lg.keystone {
-  border-radius: 3px;
-  border-color: #ffb13b;
-}
-
-.stage .lg.learned {
-  background: var(--accent);
-}
-
-.stage .lg.pending {
-  background: #4fe08a;
-}
-
 .stage .tree-side {
   padding: 20px;
   display: flex;
@@ -2381,6 +2235,162 @@
   gap: 14px;
   border-left: 2px solid var(--edge);
   background: var(--side);
+}
+
+/* The Skill Tree canvas stays dark in both modes: the rarity colours need a dark ground. */
+.stage .tree-pixi {
+  background:
+    radial-gradient(circle at 50% 50%, rgb(255 138 58 / 0.14), transparent 55%),
+    radial-gradient(circle at 50% 50%, #1f1915, #0e0b09 85%);
+  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.7);
+}
+
+.stage .tree-host {
+  position: absolute;
+  inset: 0;
+  touch-action: none;
+  cursor: grab;
+}
+
+.stage .tree-host:active {
+  cursor: grabbing;
+}
+
+.stage .tree-fallback {
+  position: relative;
+  color: #ecdfc4;
+}
+
+.stage .tree-controls {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  display: flex;
+  gap: 6px;
+}
+
+.stage .tree-controls .icon-btn {
+  min-width: 36px;
+  font-weight: 700;
+}
+
+.stage .tree-pixi .tree-legend {
+  color: #b9ab92;
+  pointer-events: none;
+}
+
+.stage .tree-tip {
+  position: absolute;
+  z-index: 2;
+  width: 260px;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  transform: translate(24px, -50%);
+  pointer-events: none;
+}
+
+.stage .lg.st-unavailable {
+  border-color: #4f4842;
+  background: #17120e;
+}
+
+.stage .lg.st-available {
+  border-color: var(--rarity-normal);
+  background: #17120e;
+}
+
+.stage .lg.st-t1 {
+  border-color: var(--rarity-magic);
+  background: rgb(91 140 255 / 0.4);
+}
+
+.stage .lg.st-t2 {
+  border-color: var(--rarity-rare);
+  background: rgb(255 216 74 / 0.4);
+}
+
+.stage .lg.st-t3 {
+  border-color: var(--rarity-epic);
+  background: rgb(179 107 255 / 0.4);
+}
+
+.stage .lg.st-keystone {
+  border-radius: 3px;
+  border-color: var(--rarity-legendary);
+  background: rgb(255 138 31 / 0.45);
+}
+
+.stage .lg.st-pending {
+  border-color: #4fe08a;
+  background: rgb(79 224 138 / 0.4);
+}
+
+.stage .resonance {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .resonance-row {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .resonance-pips {
+  display: flex;
+  gap: 4px;
+}
+
+.stage .resonance-pips i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid var(--edge);
+}
+
+.stage .resonance-pips i.on {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+
+.stage .resonance-steps {
+  display: flex;
+  gap: 4px;
+}
+
+.stage .resonance-step {
+  min-width: 22px;
+  padding: 1px 4px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  text-align: center;
+  font-family: var(--font-mono);
+  font-size: 12px;
+  color: var(--text-sub);
+}
+
+.stage .resonance-step.idle {
+  border-style: dashed;
+}
+
+.stage .resonance-step.on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--bg);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .stage .node-detail {
@@ -2403,37 +2413,10 @@
   font-size: 14px;
 }
 
-.stage .branch-progress {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stage .branch-row {
-  display: grid;
-  grid-template-columns: 96px minmax(0, 1fr) 44px;
-  align-items: center;
-  gap: 10px;
-}
-
 .stage .branch-name {
   font-family: var(--font-title);
   font-weight: 700;
   font-size: 14px;
-}
-
-.stage .branch-bar {
-  position: relative;
-  height: 8px;
-  border-radius: 4px;
-  background: var(--track);
-  overflow: hidden;
-}
-
-.stage .branch-bar .fill {
-  position: absolute;
-  inset: 0 auto 0 0;
 }
 
 .stage .pending-bar {
@@ -3330,6 +3313,23 @@
 .stage .branch-pick-name {
   font-size: 21px;
   color: var(--branch);
+}
+
+/* Deepening an owned branch: the tier's rarity colour (II Rare, III Epic). */
+.stage .branch-pick.deepen.tier-2 {
+  border-top-color: var(--rarity-rare);
+}
+
+.stage .branch-pick.deepen.tier-3 {
+  border-top-color: var(--rarity-epic);
+}
+
+.stage .branch-pick.deepen .eyebrow {
+  color: var(--rarity-text-rare);
+}
+
+.stage .branch-pick.deepen.tier-3 .eyebrow {
+  color: var(--rarity-text-epic);
 }
 
 .stage .branch-footer {

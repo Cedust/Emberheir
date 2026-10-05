@@ -3,6 +3,7 @@ import {
   type GameState,
   PROGRESSION,
   actsInRun,
+  branchTier,
   levelCap,
   openBranches,
   prestigeBranchNodes,
@@ -42,6 +43,8 @@ function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
   );
 }
 
+const ROMAN = ["", "I", "II", "III"];
+
 const BRANCH_COLORS: Record<string, string> = {
   core: "#c9a063",
   might: "#c9c2b8",
@@ -68,7 +71,11 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const pending = state.pendingPrestige;
   const [step, setStep] = useState<Step>("victory");
-  const open = openBranches(state, GAME_DATA);
+  // Branches to deepen first, then new ones.
+  const owned = (id: string) => state.legacy.branches.includes(id);
+  const open = openBranches(state, GAME_DATA).sort(
+    (a, b) => Number(owned(b.id)) - Number(owned(a.id)),
+  );
   const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
   if (!pending) return null;
   const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
@@ -116,29 +123,43 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
         <Crumbs step="branch" />
         <header className="seal-head">
           <h2 className="title-font">THE BLOODLINE GROWS</h2>
-          <p className="sub">Choose a new branch for the Skill Tree. It stays forever.</p>
+          <p className="sub">Grow a new branch, or deepen one you have. It stays forever.</p>
         </header>
         <div className="branch-picks">
           {open.map((b) => {
-            const nodes = prestigeBranchNodes(SKILL_TREE, b.id);
+            const tier = branchTier(state.legacy.branches, b.id) + 1;
+            const nodes = prestigeBranchNodes(SKILL_TREE, b.id).filter(
+              (n) => (n.tier ?? 1) === tier,
+            );
             const skill = nodes.find((n) => n.skill)?.skill;
             const keystone = nodes.find((n) => n.kind === "keystone");
+            const notable = nodes.find((n) => n.kind === "notable");
             const on = b.id === branch;
             return (
               <button
                 key={b.id}
                 type="button"
-                className={`branch-pick panel-card ${on ? "on" : ""}`}
+                className={`branch-pick panel-card ${on ? "on" : ""} ${tier > 1 ? `deepen tier-${tier}` : ""}`}
                 aria-pressed={on}
                 style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
                 onClick={() => setBranch(b.id)}
               >
-                <span className="eyebrow">{b.branch.toUpperCase()}</span>
-                <span className="title-font branch-pick-name">{b.name}</span>
+                <span className="eyebrow">
+                  {tier > 1 ? `DEEPEN · TIER ${ROMAN[tier]}` : b.branch.toUpperCase()}
+                </span>
+                <span className="title-font branch-pick-name">
+                  {b.name}
+                  {tier > 1 ? ` ${ROMAN[tier]}` : ""}
+                </span>
                 <span className="sub">{b.theme}</span>
                 {skill && (
                   <span className="small">
                     Skill · <b>{skill.name}</b>
+                  </span>
+                )}
+                {tier > 1 && notable && (
+                  <span className="small">
+                    Notable · <b>{notable.name}</b>
                   </span>
                 )}
                 {keystone && (
@@ -152,7 +173,8 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
         </div>
         <div className="branch-footer">
           <button type="button" className="btn big primary" disabled={!branch} onClick={finish}>
-            Take {open.find((b) => b.id === branch)?.name ?? "it"}
+            {branch && state.legacy.branches.includes(branch) ? "Deepen" : "Take"}{" "}
+            {open.find((b) => b.id === branch)?.name ?? "it"}
           </button>
         </div>
       </section>
@@ -170,6 +192,7 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
   const acts = actsInRun(GAME_DATA, prestige);
   const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
   const newBranch = SKILL_TREE.prestigeBranches?.find((b) => b.id === state.legacy.branches.at(-1));
+  const newTier = newBranch ? branchTier(state.legacy.branches, newBranch.id) : 0;
   const final = prestige >= PROGRESSION.finalPrestige;
   const rewards = [
     ...(r.planUpgrade
@@ -186,7 +209,7 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       ? [
           {
             kind: "PRESTIGE BRANCH",
-            name: newBranch.name,
+            name: `${newBranch.name}${newTier > 1 ? ` ${ROMAN[newTier]}` : ""}`,
             desc: newBranch.theme,
             tone: "accent",
           },
