@@ -7,7 +7,10 @@ import {
   Graphics,
   Mesh,
   MeshGeometry,
+  RenderTexture,
+  type Renderer,
   Shader,
+  Sprite,
   UniformGroup,
 } from "pixi.js";
 import { Fx } from "../fx";
@@ -36,7 +39,10 @@ const approach = (from: number, to: number, rate: number, dt: number) =>
 
 /** One liquid gauge: its shader uniforms and the eased values that drive them. */
 class Gauge {
-  readonly mesh: Mesh<MeshGeometry, Shader>;
+  /** The gauge on screen: the shader renders into a texture of bounded size (cheap at 4K). */
+  readonly view: Sprite;
+  private readonly mesh: Mesh<MeshGeometry, Shader>;
+  private readonly target: RenderTexture;
   private readonly u: UniformGroup;
   /** Targets from the latest snapshot. */
   fill = 1;
@@ -53,6 +59,7 @@ class Gauge {
   glow = 0;
 
   constructor(
+    private readonly renderer: Renderer,
     kind: "orb" | "bar",
     w: number,
     h: number,
@@ -87,6 +94,13 @@ class Gauge {
       resources: { gauge: this.u },
     });
     this.mesh = new Mesh({ geometry, shader });
+    this.target = RenderTexture.create({
+      width: w,
+      height: h,
+      resolution: Math.min(1.5, renderer.resolution),
+      antialias: false,
+    });
+    this.view = new Sprite(this.target);
   }
 
   /** Feeds the new target; drops slosh the liquid and leave a pale trail behind. */
@@ -137,6 +151,12 @@ class Gauge {
     u.uThreshold = this.threshold;
     u.uReady = s.ready;
     u.uStun = s.stun;
+    this.renderer.render({ container: this.mesh, target: this.target, clear: true });
+  }
+
+  destroy(): void {
+    this.mesh.destroy();
+    this.target.destroy(true);
   }
 
   /** Current liquid level as shown (0..1). */
@@ -186,8 +206,8 @@ class Orb {
     this.glow.blendMode = "add";
     this.glow.alpha = 0;
 
-    this.gauge = new Gauge("orb", R * 2, R * 2, colors);
-    this.gauge.mesh.position.set(-R, -R);
+    this.gauge = new Gauge(app.renderer, "orb", R * 2, R * 2, colors);
+    this.gauge.view.position.set(-R, -R);
 
     // Particles live behind the glass: masked to the globe.
     this.fx = new Fx(app.renderer);
@@ -196,7 +216,12 @@ class Orb {
     inner.addChild(this.fx.back, this.fx.front, mask);
     inner.mask = mask;
 
-    this.root.addChild(shadow, this.glow, this.gauge.mesh, inner, drawFrame(R, gem));
+    // Static parts render once into a texture: the blur and the frame are not redrawn per frame.
+    const frame = drawFrame(R, gem);
+    const cache = { resolution: app.renderer.resolution, antialias: true };
+    shadow.cacheAsTexture(cache);
+    frame.cacheAsTexture(cache);
+    this.root.addChild(shadow, this.glow, this.gauge.view, inner, frame);
   }
 
   update(time: number, dt: number, hot: number): void {
@@ -363,7 +388,7 @@ export class HudScene {
     this.app = app;
     this.life = new Orb(app, "life");
     this.heat = new Orb(app, "heat");
-    this.enemy = new Gauge("bar", 600, 24, ENEMY_COLORS, boss);
+    this.enemy = new Gauge(app.renderer, "bar", 600, 24, ENEMY_COLORS, boss);
     this.root.addChild(this.enemyPlate, this.bar, this.life.root, this.heat.root);
     layer.addChild(this.root);
     this.place();
@@ -376,6 +401,9 @@ export class HudScene {
     this.app?.ticker?.remove(this.onTick);
     this.life?.fx.destroy();
     this.heat?.fx.destroy();
+    this.life?.gauge.destroy();
+    this.heat?.gauge.destroy();
+    this.enemy?.destroy();
     this.root.destroy({ children: true });
     this.app = null;
   }
@@ -474,6 +502,9 @@ export class HudScene {
         .fill(0xd9a55a);
     }
     this.bar.addChild(fade, g);
+    const cache = { resolution: this.app?.renderer.resolution ?? 1, antialias: true };
+    this.bar.cacheAsTexture(cache);
+    this.bar.updateCacheTexture();
 
     // The enemy plate: dark glass panel with a bronze rim, behind the DOM enemy frame.
     this.enemyPlate.removeChildren().forEach((c) => c.destroy());
@@ -491,8 +522,8 @@ export class HudScene {
       .stroke({ color: 0xb98a4a, width: 2 });
     this.enemyPlate.addChild(plate, tube);
     if (this.enemy) {
-      this.enemy.mesh.position.set(E.x, E.y);
-      this.enemyPlate.addChild(this.enemy.mesh);
+      this.enemy.view.position.set(E.x, E.y);
+      this.enemyPlate.addChild(this.enemy.view);
     }
   }
 

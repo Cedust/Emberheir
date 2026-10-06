@@ -207,13 +207,7 @@ export function Rhythm(props: {
           {i === 0 && <Icon name={firstIcon} size={12} color="#fff6e4" />}
         </span>
       ))}
-      <span
-        className="rhythm-now"
-        style={{
-          boxShadow: `0 0 ${8 + 16 * flare}px ${2 + 6 * flare}px rgb(255 210 122 / ${0.5 + 0.5 * flare})`,
-          transform: `scaleY(${1 + 0.7 * flare})`,
-        }}
-      />
+      <span className="rhythm-now" style={{ transform: `scaleY(${1 + 0.7 * flare})` }} />
     </div>
   );
 }

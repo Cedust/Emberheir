@@ -1023,11 +1023,12 @@ export class Fight {
     }
   }
 
-  /** Stuns a fighter; Tenacity shortens it (at most by 75 %). */
+  /** Stuns a fighter (Tenacity shortens it, at most by 75 %) and breaks its swing: back to 0. */
   private stun(target: Fighter, seconds: number): void {
     const time = seconds * (1 - Math.min(0.75, target.stats.tenacity));
     if (time <= 0) return;
     target.stunned = Math.max(target.stunned, time);
+    target.attackProgress = 0;
     this.emit({ t: this.time, type: "stun", side: target.side, seconds: time });
   }
 

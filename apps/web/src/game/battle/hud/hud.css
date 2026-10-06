@@ -234,6 +234,7 @@
   width: 4px;
   border-radius: 2px;
   background: #fff1d0;
+  box-shadow: 0 0 10px 3px rgb(255 210 122 / 0.7);
 }
 
 .stage .rhythm.stunned .rhythm-beat {
@@ -586,7 +587,6 @@
   mask:
     linear-gradient(#000 0 0) content-box exclude,
     linear-gradient(#000 0 0);
-  filter: drop-shadow(0 0 5px #ff8a2a);
   pointer-events: none;
 }
 

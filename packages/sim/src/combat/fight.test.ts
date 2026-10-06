@@ -765,6 +765,11 @@ describe("M10 building blocks", () => {
       ofType(events, "hit").filter((e) => e.side === "enemy" && e.t <= 10).length;
     expect(ofType(stunning.events, "stun").length).toBeGreaterThan(0);
     expect(enemyAttacks(stunning.events)).toBeLessThan(enemyAttacks(plain.events));
+    // A stun breaks the swing: the enemy starts its next attack from 0.
+    const stun = ofType(stunning.events, "stun")[0];
+    const probe = new Fight(setup({ weapon: mace, baseLife: 100_000 }), enemy, 1);
+    probe.advance((stun?.t ?? 0) + 0.001);
+    expect(probe.snapshot().enemy.attackProgress).toBe(0);
   });
 
   it("skills can give Barrier (scaled by Skill Level) and stun (Iron Bastion, Frost Nova)", () => {
