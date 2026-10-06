@@ -215,6 +215,16 @@ export interface FighterSnapshot {
     readonly remaining: number;
     readonly windup: number;
   } | null;
+  /** 0..1 progress of the swing: the next action (skill or Default Attack) fires at 1. */
+  readonly attackProgress: number;
+  /** Swings per second right now (Attack Speed with Chill); 0 while stunned or winding up. */
+  readonly attackRate: number;
+  /** The next telegraphed Heavy Attack: starts winding up in `in` seconds (not while one winds up). */
+  readonly nextHeavy: {
+    readonly skill: string;
+    readonly in: number;
+    readonly windup: number;
+  } | null;
 }
 
 export interface FightSnapshot {
@@ -1013,11 +1023,12 @@ export class Fight {
     }
   }
 
-  /** Stuns a fighter; Tenacity shortens it (at most by 75 %). */
+  /** Stuns a fighter (Tenacity shortens it, at most by 75 %) and breaks its swing: back to 0. */
   private stun(target: Fighter, seconds: number): void {
     const time = seconds * (1 - Math.min(0.75, target.stats.tenacity));
     if (time <= 0) return;
     target.stunned = Math.max(target.stunned, time);
+    target.attackProgress = 0;
     this.emit({ t: this.time, type: "stun", side: target.side, seconds: time });
   }
 
@@ -1411,7 +1422,22 @@ export class Fight {
             windup: f.setup.telegraphs?.[f.windup.index]?.windup ?? 0,
           }
         : null,
+      attackProgress: f.attackProgress,
+      attackRate: f.windup || f.stunned > 1e-9 ? 0 : f.stats.attackSpeed * chillFactor(f.ailments),
+      nextHeavy: this.nextHeavy(f),
     };
+  }
+
+  /** The telegraph that winds up next, if one is waiting for its interval (its phase is on). */
+  private nextHeavy(f: Fighter): FighterSnapshot["nextHeavy"] {
+    if (f.windup) return null;
+    let best: FighterSnapshot["nextHeavy"] = null;
+    (f.setup.telegraphs ?? []).forEach((spec, i) => {
+      if (!this.phaseActive(f, spec.belowLife)) return;
+      const left = Math.max(0, spec.interval - (f.telegraphTimers[i] ?? 0));
+      if (!best || left < best.in) best = { skill: spec.skill.name, in: left, windup: spec.windup };
+    });
+    return best;
   }
 }
 

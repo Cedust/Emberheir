@@ -23,12 +23,19 @@ import type { GameApi } from "../useGame";
 import { heroLookOf } from "../heroLook";
 import { ArenaScene, type EnemyLook } from "./ArenaScene";
 import { BoonBar } from "../Boons";
-import { Plaque, type PlaqueInfo } from "./Plaque";
-import { skillIcon, skillTint } from "./skills";
+import type { IconName } from "../../ui/Icon";
+import { HudScene } from "./hud/HudScene";
+import { EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
+import { BAR_H } from "./hud/layout";
+import "./hud/hud.css";
 
-/** Arena area between the run header and the skill footer, in stage pixels. */
-const ARENA_TOP = 60;
-const FOOTER_H = 132;
+interface PlaqueInfo {
+  readonly name: string;
+  readonly sub: string;
+  readonly icon: IconName;
+  readonly tag?: "ELITE" | "BOSS";
+  readonly mods?: readonly string[];
+}
 
 /** `?dev` in the URL shows fight speed and Skip for testing (not part of the game design). */
 export const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
@@ -84,15 +91,20 @@ function useLooks(state: GameState, run: RunState) {
     ...(encounter?.boss ? { tag: "BOSS" as const } : mods.length ? { tag: "ELITE" as const } : {}),
     mods,
   };
-  return { act, heroLook, enemyLook, heroInfo, enemyInfo };
+  const enemyAttackIcon: IconName = enemyLook.ranged
+    ? enemyDef?.archetype === "caster"
+      ? "bolt"
+      : "bow"
+    : "strike";
+  return { act, heroLook, enemyLook, heroInfo, enemyInfo, enemyAttackIcon };
 }
 
 const reducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
 /**
- * The Battle view (Battle v3 mock): plaques with VS medallion, the PixiJS arena, the skill bar,
- * flask and Retreat. The fight plays in real time and pauses while an overlay is open; the sim
+ * The Battle view: the PixiJS arena, the enemy frame at the top and the Diablo-style bottom bar
+ * (Life and Heat orbs, skill bar with the Default Attack's rhythm, flasks, statuses, Boons). The fight plays in real time and pauses while an overlay is open; the sim
  * resolves the same fight (same setups and seed) when it ends.
  */
 export function BattleView(props: {
@@ -118,15 +130,18 @@ export function BattleView(props: {
   const [boonFlash, setBoonFlash] = useState<ReadonlySet<string>>(() => new Set());
   const sceneRef = useRef<ArenaScene | null>(null);
   const stage = useStageSize();
+  // The arena canvas covers the whole stage: the world stands on the bar, the HUD sits on top.
   const arenaW = stage.w;
-  const arenaH = stage.h - ARENA_TOP - FOOTER_H;
+  const arenaH = stage.h;
   const arenaRes = Math.min(4, (window.devicePixelRatio || 1) * stage.scale);
   const hostRef = useRef<HTMLDivElement | null>(null);
+  const hudRef = useRef<HudScene | null>(null);
   const pausedRef = useRef(props.paused);
   const speedRef = useRef(speed);
   useEffect(() => {
     pausedRef.current = props.paused;
     if (sceneRef.current) sceneRef.current.paused = props.paused;
+    if (hudRef.current) hudRef.current.paused = props.paused;
   }, [props.paused]);
   useEffect(() => {
     speedRef.current = speed;
@@ -140,25 +155,31 @@ export function BattleView(props: {
     const scene = new ArenaScene();
     scene.showNumbers = settings.damageNumbers;
     scene.motion = settings.screenShake && !reducedMotion();
-    scene.layout(arenaW, arenaH, arenaRes);
+    scene.layout(arenaW, arenaH, arenaRes, 1, BAR_H);
     sceneRef.current = scene;
-    void scene.mount(host, looks.heroLook, looks.enemyLook);
+    const hud = new HudScene();
+    hud.layout(arenaW, arenaH);
+    hud.onSnapshot(fight.snapshot(), true);
+    hudRef.current = hud;
+    void scene.mount(host, looks.heroLook, looks.enemyLook).then((app) => {
+      if (app) hud.attach(app, scene.overlay, run.encounter?.boss === true);
+    });
     return () => {
+      hud.destroy();
       scene.destroy();
       sceneRef.current = null;
+      hudRef.current = null;
     };
     // The looks are fixed for one encounter.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
   useEffect(() => {
-    sceneRef.current?.layout(arenaW, arenaH, arenaRes);
+    sceneRef.current?.layout(arenaW, arenaH, arenaRes, 1, BAR_H);
   }, [arenaW, arenaH, arenaRes]);
+
   useEffect(() => {
-    if (sceneRef.current) sceneRef.current.showNumbers = settings.damageNumbers;
-  }, [settings.damageNumbers]);
-  useEffect(() => {
-    if (sceneRef.current) sceneRef.current.motion = settings.screenShake && !reducedMotion();
-  }, [settings.screenShake]);
+    hudRef.current?.layout(stage.w, stage.h);
+  }, [stage.w, stage.h]);
 
   // The fight loop. A boss on its last breath falls in slow motion (Teil 3 D).
   const bossFight = run.encounter?.boss === true;
@@ -181,6 +202,7 @@ export function BattleView(props: {
       const snap = fight.snapshot();
       sceneRef.current?.onEvents(fresh);
       sceneRef.current?.onSnapshot(snap);
+      hudRef.current?.onSnapshot(snap);
       const used = [...fresh].reverse().find((e) => e.type === "skill" && e.side === "hero");
       if (used?.type === "skill") {
         const reaction = used.via === "reaction";
@@ -221,6 +243,7 @@ export function BattleView(props: {
     const before = fight.events.length;
     fight.runToEnd();
     sceneRef.current?.onEvents(fight.events.slice(before));
+    hudRef.current?.onSnapshot(fight.snapshot(), true);
     setSnapshot(fight.snapshot());
   };
 
@@ -256,47 +279,16 @@ export function BattleView(props: {
         onMenu={props.onMenu}
       />
 
-      <div className="plaques">
-        <div className="hero-column">
-          <Plaque fighter={hero} info={looks.heroInfo} />
-          <BoonBar state={state} flash={boonFlash} className="battle-boons" />
-        </div>
-        <div className="vs-medallion" aria-hidden="true">
-          <div className="vs-inner title-font">VS</div>
-        </div>
-        <div className="enemy-column">
-          <Plaque fighter={enemy} info={looks.enemyInfo} mirrored />
-          <div className="enemy-skills">
-            {thiefLeft !== null && !over && (
-              <div
-                className={`thief-timer${thiefLeft <= 5 ? " hurry" : ""}`}
-                role="timer"
-                data-testid="thief-timer"
-              >
-                <Icon name="retreat" size={18} color="#ffd84a" />
-                <span>Flees in {thiefLeft}s</span>
-              </div>
-            )}
-            {enemy.telegraph && (
-              <div className="telegraph-warning" role="alert">
-                <Icon name="warning" size={18} color="#ffb13b" />
-                <span>Charging {enemy.telegraph.skill}</span>
-              </div>
-            )}
-            {enemy.rotation.map((slot, i) => (
-              <div
-                key={slot.skillId}
-                className={`enemy-slot ${i === enemy.nextSlot ? "next" : ""}`}
-                title={`${slot.name} · ${slot.heatCost} Heat`}
-                style={{ background: skillTint(slot.skillId) }}
-              >
-                <Icon name={skillIcon(slot.skillId)} size={24} color="#fff6e4" />
-                <span className="corner mono">{slot.heatCost}</span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <EnemyFrame
+        enemy={enemy}
+        name={looks.enemyInfo.name}
+        sub={looks.enemyInfo.sub}
+        icon={looks.enemyInfo.icon}
+        {...(looks.enemyInfo.tag ? { tag: looks.enemyInfo.tag } : {})}
+        mods={looks.enemyInfo.mods ?? []}
+        attackIcon={looks.enemyAttackIcon}
+        thiefLeft={over ? null : thiefLeft}
+      />
 
       {result && (
         <div
@@ -312,101 +304,49 @@ export function BattleView(props: {
         </div>
       )}
 
-      <footer className="battle-footer bar-bottom">
-        <div className="flask" title="Ember Flask: usable between stages">
-          <div className="flask-pips">
-            {Array.from({ length: flaskMax }, (_, i) => (
-              <span key={i} className={`flask-pip ${i < state.flaskCharges ? "full" : ""}`} />
-            ))}
-          </div>
-          <div className="flask-text">
-            <span className="title-font">
-              Ember Flask {state.flaskCharges}/{flaskMax}
-            </span>
-            <span className="sub">Between stages</span>
-          </div>
-        </div>
-
-        <div className="skillbar" aria-label="Battle Plan">
-          {hero.rotation.map((slot, i) => {
-            const next = i === hero.nextSlot;
-            const fill = next ? Math.min(100, (hero.heat / slot.threshold) * 100) : 0;
-            return (
-              <div
-                key={slot.skillId}
-                className="skill-slot-wrap"
-                title={`${slot.name} · ${slot.heatCost} Heat`}
-              >
-                <div
-                  className={`skill-slot ${next ? "next" : ""} ${flash?.slot === i ? `fired-${flash.n % 2}` : ""}`}
-                  style={{ background: skillTint(slot.skillId) }}
-                  data-testid="skill-slot"
-                >
-                  <div className="heat-fill" style={{ height: `${fill}%` }} />
-                  <Icon name={skillIcon(slot.skillId)} size={34} color="#fff6e4" />
-                  <span className="pos mono">{i + 1}</span>
-                  <span className="corner mono">
-                    {next ? `${Math.floor(hero.heat)}/${slot.threshold}` : slot.heatCost}
-                  </span>
-                </div>
-                <span className={`skill-caption ${next ? "next" : ""}`}>
-                  {next ? `Next: ${slot.name}` : slot.name}
-                </span>
-              </div>
-            );
-          })}
-          {hero.reactions.length > 0 && <span className="skillbar-divider" aria-hidden="true" />}
-          {hero.reactions.map((slot, i) => (
-            <div
-              key={`r-${slot.skillId}`}
-              className="skill-slot-wrap reaction"
-              title={`Reaction: ${slot.name} · ${slot.heatCost} Heat`}
-            >
-              <div
-                className={`skill-slot reaction ${slot.cooldownLeft > 0 ? "cooling" : ""} ${flash?.slot === 10 + i ? `fired-${flash.n % 2}` : ""}`}
-                style={{ background: skillTint(slot.skillId) }}
-                data-testid="reaction-slot"
-              >
-                <Icon name={skillIcon(slot.skillId)} size={26} color="#fff6e4" />
-                <span className="pos mono">R{i + 1}</span>
-                {slot.cooldownLeft > 0 && (
-                  <span className="cooldown mono">{Math.ceil(slot.cooldownLeft)}</span>
-                )}
-              </div>
-              <span className="skill-caption">{slot.name}</span>
-            </div>
-          ))}
-        </div>
-
-        <div className="footer-right">
-          {DEV_MODE && !result && (
-            <div className="dev-tools">
-              {DEV_SPEEDS.map((s) => (
-                <button
-                  key={s}
-                  type="button"
-                  className={speed === s ? "active" : ""}
-                  onClick={() => setSpeed(s)}
-                >
-                  {s}×
+      <HeroBar
+        hero={hero}
+        heroTitle={looks.heroInfo.name}
+        weaponIcon={WEAPON_ICON[looks.heroLook.weapon] ?? "strike"}
+        flaskCharges={state.flaskCharges}
+        flaskMax={flaskMax}
+        flash={flash}
+        stageW={stage.w}
+        stageH={stage.h}
+        boons={<BoonBar state={state} flash={boonFlash} className="battle-boons" />}
+        right={
+          <>
+            {DEV_MODE && !result && (
+              <div className="dev-tools">
+                {DEV_SPEEDS.map((s) => (
+                  <button
+                    key={s}
+                    type="button"
+                    className={speed === s ? "active" : ""}
+                    onClick={() => setSpeed(s)}
+                  >
+                    {s}×
+                  </button>
+                ))}
+                <button type="button" onClick={skip}>
+                  Skip fight
                 </button>
-              ))}
-              <button type="button" onClick={skip}>
-                Skip fight
-              </button>
-            </div>
-          )}
-          <button
-            type="button"
-            className="btn"
-            disabled={over}
-            onClick={() => game.dispatch({ type: "retreat" })}
-          >
-            <Icon name="retreat" size={18} />
-            Retreat to Camp
-          </button>
-        </div>
-      </footer>
+              </div>
+            )}
+            <button
+              type="button"
+              className="btn hud-retreat"
+              disabled={over}
+              aria-label="Retreat to Camp"
+              title="Retreat to Camp"
+              onClick={() => game.dispatch({ type: "retreat" })}
+            >
+              <Icon name="retreat" size={18} />
+              Retreat
+            </button>
+          </>
+        }
+      />
     </section>
   );
 }
