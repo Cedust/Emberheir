@@ -261,10 +261,10 @@ export class ArenaScene {
    * and sits on the bottom edge; the canvas renders at the screen's real pixel density. `scale`
    * shrinks the whole arena (class select preview).
    */
-  layout(w: number, h: number, resolution: number, scale = 1): void {
+  layout(w: number, h: number, resolution: number, scale = 1, bottom = 0): void {
     this.size = { w, h, resolution };
     this.world.scale.set(scale);
-    this.world.position.set((w - W * scale) / 2, h - H * scale);
+    this.world.position.set((w - W * scale) / 2, h - bottom - H * scale);
     this.app?.renderer.resize(w, h, resolution);
   }
 
@@ -273,7 +273,11 @@ export class ArenaScene {
     return this.freeze > 0;
   }
 
-  async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<void> {
+  /** Screen-fixed layer above the arena (the battle HUD): no camera shake or zoom. */
+  readonly overlay = new Container();
+
+  /** Resolves with the Pixi app, or null without WebGL or when destroyed meanwhile. */
+  async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<Application | null> {
     const app = new Application();
     try {
       await app.init({
@@ -286,16 +290,16 @@ export class ArenaScene {
       });
     } catch {
       // No WebGL: the fight still runs, only the arena art is missing.
-      return;
+      return null;
     }
     if (this.destroyed) {
       app.destroy(true, { children: true });
-      return;
+      return null;
     }
     this.app = app;
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
-    app.stage.addChild(this.camera);
+    app.stage.addChild(this.camera, this.overlay);
     this.camera.addChild(this.world);
 
     const fx = new Fx(app.renderer);
@@ -328,6 +332,7 @@ export class ArenaScene {
     }
 
     app.ticker.add((ticker) => this.tick(ticker.deltaMS / 1000));
+    return app;
   }
 
   destroy(): void {

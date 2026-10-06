@@ -318,6 +318,22 @@ describe("Fight", () => {
       fight.advance(12);
       expect(ofType(fight.events, "telegraph").map((e) => e.t)).toEqual([4, 9.5]);
     });
+
+    it("tells the attack rhythm and when the next Heavy Attack winds up", () => {
+      const fight = new Fight(dummy(), boss(), 1);
+      fight.advance(1);
+      const before = fight.snapshot().enemy;
+      expect(before.nextHeavy).toMatchObject({ skill: "Slam", windup: 1.5 });
+      expect(before.nextHeavy?.in).toBeCloseTo(3, 1);
+      expect(before.attackRate).toBeGreaterThan(0);
+      expect(before.attackProgress).toBeGreaterThanOrEqual(0);
+      expect(before.attackProgress).toBeLessThan(1);
+      fight.advance(3.1);
+      // While winding up the swing pauses and no further Heavy Attack is announced.
+      const winding = fight.snapshot().enemy;
+      expect(winding.attackRate).toBe(0);
+      expect(winding.nextHeavy).toBeNull();
+    });
   });
 
   describe("rules (Keystones)", () => {

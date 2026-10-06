@@ -1,0 +1,671 @@
+/* Diablo-style battle HUD (DOM half). Geometry mirrors hud/layout.ts: BAR_H 104, ORB_R 84. */
+
+.stage .battle .arena-host {
+  top: 0;
+  bottom: 0;
+}
+
+/* --- enemy frame ------------------------------------------------------------------------- */
+
+.stage .hud-enemy {
+  position: absolute;
+  left: 50%;
+  height: 124px;
+  z-index: 5;
+  border-radius: 10px;
+  color: #f3e6c8;
+}
+
+.stage .hud-enemy.elite {
+  box-shadow: 0 0 22px rgb(255 216 74 / 0.35);
+}
+
+.stage .hud-enemy.boss {
+  box-shadow:
+    0 0 28px rgb(255 138 31 / 0.5),
+    0 0 0 1px rgb(255 138 31 / 0.6);
+}
+
+.stage .hud-enemy-head {
+  position: absolute;
+  left: 20px;
+  right: 20px;
+  top: 8px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage .hud-enemy-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 21px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 6px #000;
+}
+
+.stage .hud-enemy-kind {
+  font-size: 13px;
+  font-style: italic;
+  color: #b3a288;
+  white-space: nowrap;
+}
+
+.stage .hud-enemy-level {
+  font-size: 15px;
+  color: #e8c07a;
+}
+
+.stage .hud-enemy .rank-tag {
+  font-size: 11px;
+  padding: 1px 7px;
+}
+
+.stage .hud-enemy-life {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  text-shadow:
+    0 1px 2px #000,
+    0 0 6px #000;
+}
+
+.stage .hud-enemy.charging .hud-enemy-life {
+  animation: heavy-glow 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes heavy-glow {
+  from {
+    box-shadow: 0 0 6px 2px rgb(255 106 43 / 0.5);
+  }
+  to {
+    box-shadow: 0 0 20px 6px rgb(255 106 43 / 0.95);
+  }
+}
+
+.stage .hud-enemy-heat {
+  position: absolute;
+  left: 20px;
+  top: 72px;
+  width: 600px;
+  height: 7px;
+  border-radius: 4px;
+  background: #1a120a;
+  box-shadow: 0 0 0 1px #6a4a2c;
+  overflow: hidden;
+}
+
+.stage .hud-enemy-heat .fill {
+  height: 100%;
+  background: var(--heat-gradient);
+  box-shadow: 0 0 8px #ff8a2a;
+}
+
+.stage .hud-enemy-heat.charging .fill {
+  animation: pulse 0.5s ease-in-out infinite alternate;
+}
+
+.stage .hud-enemy-rhythm {
+  position: absolute;
+  left: 20px;
+  top: 88px;
+  width: 600px;
+  height: 26px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.stage .hud-enemy-skills {
+  display: flex;
+  gap: 6px;
+}
+
+.stage .hud-enemy-skills .enemy-slot {
+  width: 28px;
+  height: 28px;
+  border-radius: 4px;
+  border: 1.5px solid #140c06;
+}
+
+.stage .hud-enemy-below {
+  position: absolute;
+  top: 132px;
+  left: -60px;
+  right: -60px;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.stage .hud-enemy-below .mod-chip {
+  background: #2a180a;
+  color: #ffd84a;
+  border-color: #ffd84a;
+}
+
+.stage .hud-enemy-below .thief-timer {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* --- attack rhythm --------------------------------------------------------------------------- */
+
+.stage .rhythm {
+  position: relative;
+  height: 22px;
+  flex: none;
+}
+
+.stage .rhythm-groove {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 4px;
+  margin-top: -2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, rgb(255 177 59 / 0.7), rgb(255 177 59 / 0.06));
+}
+
+.stage .rhythm.enemy .rhythm-groove {
+  background: linear-gradient(90deg, rgb(229 72 77 / 0.8), rgb(229 72 77 / 0.06));
+}
+
+.stage .rhythm-beat {
+  position: absolute;
+  top: 50%;
+  width: 10px;
+  height: 10px;
+  margin: -5px 0 0 -5px;
+  transform: rotate(45deg);
+  background: #e8c07a;
+  border: 1.5px solid #2a180a;
+  box-shadow: 0 0 6px rgb(255 177 59 / 0.7);
+}
+
+.stage .rhythm.enemy .rhythm-beat {
+  background: #ff7a6a;
+  box-shadow: 0 0 6px rgb(229 72 77 / 0.8);
+}
+
+.stage .rhythm-beat.first,
+.stage .rhythm.enemy .rhythm-beat.first {
+  width: 22px;
+  height: 22px;
+  margin: -11px 0 0 -11px;
+  transform: none;
+  border-radius: 50%;
+  border: 2px solid #ffb13b;
+  background: #4a3826;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage .rhythm.enemy .rhythm-beat.first {
+  border-color: #ff5a4a;
+  background: #4a1410;
+}
+
+.stage .rhythm-beat.first.skill {
+  background: #a8401a;
+  border-color: #ffd27a;
+  box-shadow: 0 0 12px #ff8a2a;
+}
+
+.stage .rhythm-now {
+  position: absolute;
+  left: -2px;
+  top: -2px;
+  bottom: -2px;
+  width: 4px;
+  border-radius: 2px;
+  background: #fff1d0;
+}
+
+.stage .rhythm.stunned .rhythm-beat {
+  filter: grayscale(1) brightness(0.75);
+}
+
+.stage .rhythm.stunned .rhythm-now {
+  background: #9a9aa6;
+}
+
+.stage .rhythm-hold {
+  position: absolute;
+  left: 0;
+  top: 3px;
+  bottom: 3px;
+  border-radius: 3px;
+  display: flex;
+  align-items: center;
+  padding-left: 4px;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.stage .rhythm-hold.stun {
+  background: repeating-linear-gradient(
+    135deg,
+    rgb(210 210 220 / 0.6) 0 5px,
+    rgb(60 60 70 / 0.6) 5px 10px
+  );
+}
+
+.stage .rhythm-hold.heavy {
+  background: linear-gradient(90deg, #ffb13b, #ff5a1f 40%, #a8401a);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.5px;
+  text-shadow: 0 1px 2px #000;
+  animation: pulse 0.45s ease-in-out infinite alternate;
+}
+
+.stage .rhythm-heavy {
+  position: absolute;
+  top: 1px;
+  bottom: 1px;
+  border-radius: 3px;
+  border: 1px solid #ffb13b;
+  background: repeating-linear-gradient(
+    135deg,
+    rgb(255 106 43 / 0.8) 0 6px,
+    rgb(110 28 8 / 0.8) 6px 12px
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* --- hero bar -------------------------------------------------------------------------------- */
+
+.stage .hud-hero {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.stage .hud-hero > * {
+  pointer-events: auto;
+}
+
+.stage .orb-readout {
+  position: absolute;
+  width: 168px;
+  height: 168px;
+  border-radius: 50%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  text-shadow:
+    0 2px 4px #000,
+    0 0 10px #000;
+  line-height: 1.1;
+}
+
+.stage .orb-num {
+  font-size: 28px;
+  font-weight: 900;
+}
+
+.stage .orb-max {
+  font-size: 12px;
+  opacity: 0.85;
+}
+
+.stage .orb-shield {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 700;
+  color: #d4f1ff;
+  text-shadow:
+    0 0 8px #6fd3ff,
+    0 1px 2px #000;
+}
+
+.stage .orb-level {
+  position: absolute;
+  right: -6px;
+  bottom: 2px;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 700;
+  color: #ffe0a0;
+  background: radial-gradient(circle at 40% 35%, #8a5a26, #2a180a);
+  border: 2px solid #d9a55a;
+  box-shadow: 0 2px 6px #000;
+}
+
+.stage .orb-readout.heat.ready .orb-num {
+  color: #ffefc0;
+  text-shadow:
+    0 0 12px #ff8a2a,
+    0 2px 4px #000;
+}
+
+.stage .hud-status {
+  display: flex;
+  gap: 5px;
+}
+
+.stage .hud-status.hero {
+  position: absolute;
+  bottom: 120px;
+}
+
+.stage .hud-status-icon {
+  position: relative;
+  width: 34px;
+  height: 34px;
+  border-radius: 5px;
+  border: 2px solid #e8c07a;
+  background: #4a3410;
+  box-shadow:
+    inset 0 0 8px rgb(0 0 0 / 0.7),
+    0 2px 4px rgb(0 0 0 / 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stage .hud-status-icon > b {
+  position: absolute;
+  right: 1px;
+  top: -2px;
+  font-size: 11px;
+  color: #fff;
+  text-shadow: 0 1px 2px #000;
+}
+
+.stage .hud-status-icon > i {
+  position: absolute;
+  bottom: -15px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-style: normal;
+  font-size: 10px;
+  color: #f3e6c8;
+  text-shadow: 0 1px 2px #000;
+}
+
+.stage .hud-status-icon.fading {
+  animation: status-fade 0.3s ease-in-out infinite alternate;
+}
+
+@keyframes status-fade {
+  to {
+    opacity: 0.45;
+  }
+}
+
+.stage .hud-status-icon.curse {
+  border-color: #a35cff;
+  background: #2e1448;
+}
+
+.stage .hud-status-icon.stun {
+  border-color: #d8d0c4;
+  background: #3a3a40;
+}
+
+.stage .hud-status-icon.ailment-burn {
+  border-color: #ff6a2b;
+  background: #5a1e08;
+}
+
+.stage .hud-status-icon.ailment-chill {
+  border-color: #6fd3ff;
+  background: #123a4e;
+}
+
+.stage .hud-status-icon.ailment-shock {
+  border-color: #ffe14d;
+  background: #4a420c;
+}
+
+.stage .hud-status-icon.ailment-bleed {
+  border-color: #e0314b;
+  background: #4a0c16;
+}
+
+.stage .hud-status-icon.ailment-poison {
+  border-color: #b5d82c;
+  background: #2e3a08;
+}
+
+.stage .hud-status-icon.ailment-corruption {
+  border-color: #a35cff;
+  background: #2a1048;
+}
+
+.stage .hud-boons-wrap {
+  position: absolute;
+  bottom: 122px;
+}
+
+.stage .hud-flasks {
+  position: absolute;
+  bottom: 30px;
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+}
+
+.stage .hud-flask {
+  position: relative;
+  width: 22px;
+  height: 36px;
+  border-radius: 7px 7px 11px 11px;
+  border: 2px solid #d9a55a;
+  background: rgb(0 0 0 / 0.55);
+  overflow: hidden;
+  box-shadow: 0 2px 4px #000;
+}
+
+.stage .hud-flask::before {
+  content: "";
+  position: absolute;
+  left: 5px;
+  right: 5px;
+  top: 0;
+  height: 6px;
+  background: #8a5a26;
+  z-index: 1;
+}
+
+.stage .hud-flask .liquid {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 0;
+}
+
+.stage .hud-flask.full .liquid {
+  height: 76%;
+  background: linear-gradient(180deg, #ffb13b, #c9322a);
+  box-shadow:
+    inset 0 3px 3px rgb(255 255 255 / 0.4),
+    0 0 10px #ff6a2b;
+}
+
+.stage .hud-flask-count {
+  margin-left: 4px;
+  font-size: 13px;
+  color: #e8c07a;
+  text-shadow: 0 1px 2px #000;
+}
+
+.stage .hud-center {
+  position: absolute;
+  left: 50%;
+  bottom: 0;
+  height: 126px;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .hud-center .skillbar {
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.stage .hud-center .skill-slot {
+  width: 62px;
+  height: 62px;
+  overflow: visible;
+  border: 2px solid #140c06;
+  box-shadow:
+    inset 0 0 12px rgb(0 0 0 / 0.65),
+    0 0 0 2px #8a5a26;
+}
+
+.stage .hud-center .skill-slot .heat-fill {
+  border-radius: 0 0 4px 4px;
+}
+
+.stage .hud-center .skill-slot.attack {
+  background: radial-gradient(circle at 50% 40%, #6b5a3e, #2a1f17);
+}
+
+.stage .hud-center .skill-slot.next {
+  border-color: #ffb13b;
+}
+
+.stage .hud-center .skill-slot.ready {
+  animation: slot-ready 0.5s ease-in-out infinite alternate;
+}
+
+@keyframes slot-ready {
+  to {
+    box-shadow:
+      inset 0 0 12px rgb(0 0 0 / 0.4),
+      0 0 0 2px #ffd27a,
+      0 0 18px 4px rgb(255 138 42 / 0.8);
+  }
+}
+
+/* The swing ring: closes clockwise; the action fires when it is full. */
+.stage .hud-center .skill-slot.swing::after {
+  content: "";
+  position: absolute;
+  inset: -9px;
+  border-radius: 12px;
+  padding: 5px;
+  background: conic-gradient(#fff1c4, #ffb13b var(--swing, 0deg), rgb(20 12 6 / 0.85) 0);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box,
+    linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  filter: drop-shadow(0 0 5px #ff8a2a);
+  pointer-events: none;
+}
+
+.stage .hud-center .skill-slot.stunned {
+  filter: grayscale(0.85) brightness(0.65);
+  animation: stun-jolt 0.3s ease-out;
+}
+
+.stage .hud-center .skill-slot.swing.stunned::after {
+  background: conic-gradient(#b8b8c4 var(--swing, 0deg), rgb(120 120 130 / 0.2) 0);
+  filter: none;
+}
+
+@keyframes stun-jolt {
+  20% {
+    transform: translateX(-4px) rotate(-4deg);
+  }
+  50% {
+    transform: translateX(4px) rotate(3deg);
+  }
+}
+
+.stage .hud-center .stun-mark {
+  position: absolute;
+  font-size: 15px;
+  font-weight: 800;
+  color: #fff;
+  text-shadow: 0 1px 3px #000;
+}
+
+.stage .hud-center .skill-slot.reaction {
+  width: 50px;
+  height: 50px;
+  margin-top: 6px;
+}
+
+.stage .hud-center .skill-slot.reaction.pending {
+  animation: slot-ready 0.35s ease-in-out infinite alternate;
+}
+
+.stage .hud-center .skillbar-divider {
+  margin: 4px 2px 18px;
+  background: #8a5a26;
+}
+
+.stage .hud-center .skill-caption {
+  font-size: 12px;
+  color: #cbbca0;
+  text-shadow: 0 1px 2px #000;
+}
+
+.stage .hud-center .skill-caption.next {
+  color: #ffe9c0;
+}
+
+.stage .hud-right {
+  position: absolute;
+  bottom: 30px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .hud-center .skill-slot.ready,
+  .stage .hud-center .skill-slot.stunned,
+  .stage .rhythm-hold.heavy,
+  .stage .hud-enemy.charging .hud-enemy-life {
+    animation: none;
+  }
+}
+
+.stage .rhythm-heavy.later {
+  left: auto;
+  right: -4px;
+  width: auto;
+  padding: 0 5px;
+  gap: 3px;
+  color: #ffd9bf;
+  font-size: 11px;
+  font-weight: 800;
+}
