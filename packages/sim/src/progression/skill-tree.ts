@@ -58,25 +58,11 @@ export interface PrestigeBranchDefinition {
   readonly theme: string;
 }
 
-/**
- * One Resonance step (skilltree-v2.md): with `at` or more tiers of Prestige branches on the same
- * base branch, the hero gets these bonuses and rules. `requires` limits it to a learned node
- * (the base branch's Keystone).
- */
-export interface ResonanceStep {
-  readonly at: number;
-  readonly description: string;
-  readonly bonuses?: StatBonuses;
-  readonly rules?: CombatRules;
-  readonly requires?: string;
-}
-
 export interface SkillTreeDefinition {
   readonly nodes: readonly SkillNode[];
   /** Learned for free at the start. */
   readonly startNodeId: string;
   readonly prestigeBranches?: readonly PrestigeBranchDefinition[];
-  readonly resonance?: Partial<Record<SkillTreeBranch, readonly ResonanceStep[]>>;
 }
 
 /** Highest Prestige branch tier: a branch can be taken once and deepened twice. */
@@ -253,51 +239,4 @@ export function keystoneRules(tree: SkillTreeDefinition, learned: LearnedNodes):
   return mergeRules(
     ...activeList(tree, learned).flatMap(({ node }) => [node.keystone, node.rules]),
   );
-}
-
-/** Tiers of Prestige branches per base branch: what Resonance counts. */
-export function resonanceCounts(
-  tree: SkillTreeDefinition,
-  branches: readonly string[],
-): Partial<Record<SkillTreeBranch, number>> {
-  const counts: Partial<Record<SkillTreeBranch, number>> = {};
-  for (const id of branches) {
-    const def = tree.prestigeBranches?.find((b) => b.id === id);
-    if (def) counts[def.branch] = (counts[def.branch] ?? 0) + 1;
-  }
-  return counts;
-}
-
-/** Resonance steps the hero has reached, with the base branch they belong to. */
-export function activeResonance(
-  tree: SkillTreeDefinition,
-  learned: LearnedNodes,
-  branches: readonly string[],
-): { readonly branch: SkillTreeBranch; readonly step: ResonanceStep }[] {
-  const counts = resonanceCounts(tree, branches);
-  const result: { branch: SkillTreeBranch; step: ResonanceStep }[] = [];
-  for (const [branch, steps] of Object.entries(tree.resonance ?? {}) as [
-    SkillTreeBranch,
-    readonly ResonanceStep[],
-  ][]) {
-    for (const step of steps) {
-      if ((counts[branch] ?? 0) < step.at) continue;
-      if (step.requires && nodeRanks(tree, learned, step.requires) === 0) continue;
-      result.push({ branch, step });
-    }
-  }
-  return result;
-}
-
-/** Bonuses and rules of the reached Resonance steps. */
-export function resonanceEffects(
-  tree: SkillTreeDefinition,
-  learned: LearnedNodes,
-  branches: readonly string[],
-): { readonly bonuses: Required<StatBonuses>; readonly rules: CombatRules } {
-  const steps = activeResonance(tree, learned, branches).map((r) => r.step);
-  return {
-    bonuses: sumBonuses(...steps.map((s) => s.bonuses ?? {})),
-    rules: mergeRules(...steps.map((s) => s.rules)),
-  };
 }

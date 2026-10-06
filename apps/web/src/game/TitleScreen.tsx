@@ -1,32 +1,65 @@
-import { GAME_TITLE, ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
-import { SIM_VERSION, getBase } from "@emberheir/sim";
+import { GAME_DATA, GAME_TITLE } from "@emberheir/content";
+import { type GameState, SIM_VERSION, getAct, heroTitle } from "@emberheir/sim";
 import { useState } from "react";
 import { PREVIEW_PR } from "../storage";
 import { Icon } from "../ui/Icon";
 import type { SettingsApi } from "../ui/settings";
+import { ClassEmblem } from "./ClassEmblem";
+import { ClassSelect } from "./ClassSelect";
 import { SettingsPanel } from "./MenuOverlay";
-import { loadSave } from "./useGame";
+import { loadLastSlot, loadSlots, saveSlot } from "./saves";
+import type { NewCharacter } from "./useGame";
 
-const STARTER_TEXT: Record<string, { icon: "sword" | "wand"; lines: string[] }> = {
-  sword: {
-    icon: "sword",
-    lines: ["Melee · Cooling Heat", "Hit often or the Heat fades.", "Start Skill: Power Strike"],
-  },
-  "fire-wand": {
-    icon: "wand",
-    lines: ["Ranged · Warming Heat", "Heat fills by itself over time.", "Start Skill: Firebolt"],
-  },
-};
+/** One line about where a character stands. */
+function whereText(save: GameState): string {
+  const act = save.run ? getAct(GAME_DATA, save.run.actId) : undefined;
+  return `Generation ${save.legacy.prestige + 1} · Level ${save.hero.level} · ${
+    act && save.run ? `${act.name}, Stage ${save.run.stage}` : "In the Camp"
+  }`;
+}
 
 export function TitleScreen(props: {
   settings: SettingsApi;
-  onContinue: () => void;
-  onNewGame: (starterWeapon: string) => void;
+  onContinue: (slot: number) => void;
+  onNewGame: (character: NewCharacter) => void;
   onLab: () => void;
 }) {
-  const save = loadSave();
-  const [page, setPage] = useState<"main" | "new" | "settings">("main");
+  const [slots, setSlots] = useState(loadSlots);
+  const last = loadLastSlot();
+  const lastSave = last !== null ? slots[last] : null;
+  const free = slots.findIndex((s) => s === null);
+  const [page, setPage] = useState<"main" | "characters" | "new" | "settings">("main");
+  const [newSlot, setNewSlot] = useState(Math.max(0, free));
+  const [selected, setSelected] = useState(
+    last ??
+      Math.max(
+        0,
+        slots.findIndex((s) => s !== null),
+      ),
+  );
+  const [deleting, setDeleting] = useState("");
+  const [confirmDelete, setConfirmDelete] = useState(false);
   const buildDate = new Date(__BUILD_TIME__).toLocaleDateString("en-GB");
+  const hasCharacters = slots.some((s) => s !== null);
+  const createIn = (slot: number) => {
+    setNewSlot(slot);
+    setPage("new");
+  };
+  const selectedSave = slots[selected] ?? null;
+
+  if (page === "new") {
+    return (
+      <section className="screen title-screen class-screen" aria-label="New Heir">
+        <ClassSelect
+          slot={newSlot}
+          settings={props.settings.settings}
+          onBegin={props.onNewGame}
+          onBack={() => setPage(hasCharacters ? "characters" : "main")}
+        />
+      </section>
+    );
+  }
+
   return (
     <section className="screen title-screen" aria-label="Main menu">
       <div className="title-glow" aria-hidden="true" />
@@ -40,19 +73,27 @@ export function TitleScreen(props: {
 
         {page === "main" && (
           <div className="menu-buttons">
-            {save && (
-              <button type="button" className="btn big primary" onClick={props.onContinue}>
+            {lastSave && last !== null && (
+              <button
+                type="button"
+                className="btn big primary"
+                onClick={() => props.onContinue(last)}
+              >
                 Continue
                 <small>
-                  Generation {save.legacy.prestige + 1} · Level {save.hero.level} ·{" "}
-                  {save.run ? `Act 1, Stage ${save.run.stage}` : "In the Camp"}
+                  {lastSave.hero.name} · {heroTitle(lastSave, GAME_DATA)} · {whereText(lastSave)}
                 </small>
+              </button>
+            )}
+            {hasCharacters && (
+              <button type="button" className="btn big" onClick={() => setPage("characters")}>
+                Characters
               </button>
             )}
             <button
               type="button"
-              className={`btn big ${save ? "" : "primary"}`}
-              onClick={() => setPage("new")}
+              className={`btn big ${lastSave ? "" : "primary"}`}
+              onClick={() => (free >= 0 ? createIn(free) : setPage("characters"))}
             >
               New Game
             </button>
@@ -65,34 +106,95 @@ export function TitleScreen(props: {
           </div>
         )}
 
-        {page === "new" && (
-          <div className="starter-pick">
-            <h2 className="title-font">Choose your first weapon</h2>
-            {save && <p className="warning">Starting a new game replaces your save.</p>}
-            <div className="starter-cards">
-              {GAME_DATA.starterWeapons.map((id) => {
-                const info = STARTER_TEXT[id];
-                return (
+        {page === "characters" && (
+          <div className="character-select">
+            <div className="slot-grid" role="listbox" aria-label="Characters">
+              {slots.map((save, i) =>
+                save ? (
                   <button
-                    key={id}
+                    key={i}
                     type="button"
-                    className="starter-card panel-card"
-                    onClick={() => props.onNewGame(id)}
+                    role="option"
+                    aria-selected={i === selected}
+                    className={`slot-card panel-card ${i === selected ? "on" : ""}`}
+                    onClick={() => {
+                      setSelected(i);
+                      setConfirmDelete(false);
+                    }}
+                    onDoubleClick={() => props.onContinue(i)}
                   >
-                    <Icon name={info?.icon ?? "sword"} size={48} color="var(--accent)" />
-                    <strong className="title-font">{getBase(ITEM_CATALOG, id).name}</strong>
-                    {info?.lines.map((l) => (
-                      <span key={l} className="sub">
-                        {l}
-                      </span>
-                    ))}
+                    <ClassEmblem classId={save.hero.classId} size={40} />
+                    <span className="slot-text">
+                      <strong className="title-font">{save.hero.name}</strong>
+                      <span className="accent">{heroTitle(save, GAME_DATA)}</span>
+                      <span className="sub small">{whereText(save)}</span>
+                    </span>
                   </button>
-                );
-              })}
+                ) : (
+                  <button
+                    key={i}
+                    type="button"
+                    className="slot-card panel-card empty"
+                    onClick={() => createIn(i)}
+                  >
+                    <Icon name="user" size={36} color="var(--text-sub)" />
+                    <span className="title-font">New Heir</span>
+                  </button>
+                ),
+              )}
             </div>
-            <button type="button" className="btn" onClick={() => setPage("main")}>
-              Back
-            </button>
+            {confirmDelete && selectedSave ? (
+              <div className="delete-confirm panel-card" role="alertdialog" aria-label="Delete">
+                <span>
+                  Type <strong>{selectedSave.hero.name}</strong> to delete this Heir for good.
+                </span>
+                <input
+                  aria-label="Name to delete"
+                  value={deleting}
+                  onChange={(e) => setDeleting(e.target.value)}
+                />
+                <button type="button" className="btn" onClick={() => setConfirmDelete(false)}>
+                  Keep
+                </button>
+                <button
+                  type="button"
+                  className="btn danger"
+                  disabled={deleting.trim() !== selectedSave.hero.name}
+                  onClick={() => {
+                    saveSlot(selected, null);
+                    const next = loadSlots();
+                    setSlots(next);
+                    setConfirmDelete(false);
+                    setDeleting("");
+                    if (!next.some((s) => s !== null)) setPage("main");
+                  }}
+                >
+                  Delete
+                </button>
+              </div>
+            ) : (
+              <div className="slot-buttons">
+                <button type="button" className="btn" onClick={() => setPage("main")}>
+                  Back
+                </button>
+                <button
+                  type="button"
+                  className="btn"
+                  disabled={!selectedSave}
+                  onClick={() => setConfirmDelete(true)}
+                >
+                  Delete
+                </button>
+                <button
+                  type="button"
+                  className="btn big primary"
+                  disabled={!selectedSave}
+                  onClick={() => props.onContinue(selected)}
+                >
+                  Play
+                </button>
+              </div>
+            )}
           </div>
         )}
 

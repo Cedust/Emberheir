@@ -23,8 +23,6 @@ test("The Skill Tree grows with the Prestige branches and their tiers", async ({
   await expect(detail).toContainText("DUELIST II");
   await expect(detail).toContainText("Replaces Riposte");
 
-  // Five tiers on Core and Might branches: Resonance 3 and 3.
-  await expect(page.getByRole("region", { name: "Resonance" })).toContainText("Might");
   if (process.env.SHOTS) {
     await page.getByRole("button", { name: "Fit" }).click();
     await page.waitForTimeout(1200);
@@ -45,9 +43,9 @@ test("The Bloodline step deepens an owned branch", async ({ page }) => {
   await page.getByRole("button", { name: "Pack the Caravan" }).click();
 
   const bloodline = page.getByRole("region", { name: "Bloodline" });
-  // Ten choices: Warden II first, then the nine branches not taken yet.
-  await expect(bloodline.locator(".branch-pick")).toHaveCount(10);
-  const deepen = bloodline.locator(".branch-pick").first();
+  // The Warrior's four paths in class order, Warden as its tier II.
+  await expect(bloodline.locator(".branch-pick")).toHaveCount(4);
+  const deepen = bloodline.locator(".branch-pick").nth(2);
   await expect(deepen).toContainText("DEEPEN · TIER II");
   await expect(deepen).toContainText("Greater Juggernaut");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bloodline.png` });

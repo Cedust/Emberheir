@@ -14,7 +14,7 @@ import {
 
 /** A save right after Gorrak fell in the first run (the harvest boss), in a Rare Body Armor. */
 export function saveAfterHarvestBoss(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const rng = new Rng(7);
   const armor = rollItem(
     GAME_DATA.items,
@@ -50,7 +50,7 @@ export async function seedSave(page: Page, json: string): Promise<void> {
 
 /** A Camp save in the second run: Gorrak fell, the road to the Rotwood is open. */
 export function saveAfterAct1(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15, unspentSkillPoints: 5 },
@@ -62,7 +62,7 @@ export function saveAfterAct1(): string {
 
 /** A Camp save after the first trip into the Rotwood: Eldrin has joined, three Ash Runes in the pouch. */
 export function saveWithRunes(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15 },
@@ -80,7 +80,7 @@ export function saveWithRunes(): string {
 
 /** A Camp save with a learned Trigger Codex, Kindling and a Magic ring without a trigger. */
 export function saveWithCodex(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const ring: Item = {
     id: "codex-ring",
     baseId: "iron-ring",
@@ -107,7 +107,7 @@ export function saveWithCodex(): string {
 
 /** The Rotwood's boss just fell in run 3: a Boss Hoard of six cards, one of them a new trophy. */
 export function saveBossHoard(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const rng = new Rng(3);
   const act = GAME_DATA.acts[1];
   if (!act) throw new Error("No Rotwood");
@@ -156,7 +156,7 @@ export function saveBossHoard(): string {
 
 /** A save at the Ember Shrine after Stage 5 of the first run, items and spoils already taken. */
 export function saveShrine(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const act = GAME_DATA.acts[0];
   if (!act) throw new Error("No Ashen Fields");
   const state: GameState = {
@@ -203,7 +203,7 @@ export function saveShrine(): string {
 
 /** A save in a fight against the Ember Thief in the Rotwood (second run). */
 export function saveThiefFight(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const act = GAME_DATA.acts[1];
   if (!act || !GAME_DATA.thief) throw new Error("No Rotwood or Thief");
   const state: GameState = {
@@ -232,7 +232,7 @@ export function saveThiefFight(): string {
 
 /** The seventh run: every act cleared, six branches taken. */
 function lateGame(prestige: number): GameState {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const branches = (SKILL_TREE.prestigeBranches ?? []).map((b) => b.id).slice(0, prestige);
   return {
     ...base,
@@ -282,7 +282,7 @@ export function saveEnding(): string {
  * Tactician at tier I, Might and Core mostly learned (skilltree-v2.md).
  */
 export function saveDeepTree(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const branches = ["duelist", "warden", "duelist", "tactician", "duelist"];
   const wanted = SKILL_TREE.nodes.filter(
     (n) =>
@@ -314,7 +314,7 @@ export function saveDeepTree(): string {
 
 /** A Camp save with two Rings and a Sword in the inventory and both Ring slots empty. */
 export function saveWithRings(): string {
-  const base = newGame(GAME_DATA, { seed: 42, starterWeapon: "sword" });
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const rng = new Rng(11);
   const roll = (baseId: string) =>
     rollItem(GAME_DATA.items, { baseId, itemLevel: 3, rarity: "magic" }, rng);

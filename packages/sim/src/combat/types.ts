@@ -204,6 +204,8 @@ export type SkillHit =
       readonly lowLifeBonus?: { readonly threshold: number; readonly multiplier: number };
       /** Ailments from this hit act as if the hit was this much stronger. Default 1. */
       readonly ailmentPower?: number;
+      /** Ignores this share of the target's Armor, on top of Physical Penetration (Heavy Bolt). */
+      readonly penetration?: number;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -237,6 +239,8 @@ export type SkillEffect =
   | { readonly kind: "barrier"; readonly fraction: number }
   /** Stuns the target (Tenacity shortens it). */
   | { readonly kind: "stun"; readonly seconds: number }
+  /** Sunder: the target's Armor counts `armor` less against the caster's hits for a while. */
+  | { readonly kind: "sunder"; readonly armor: number; readonly duration: number }
   /** Corrupt: the target's Corruption grows by this many ticks at once. */
   | { readonly kind: "advanceCorruption"; readonly ticks: number }
   /** Curse (Wither): the target takes `amount` more damage over time for a while. */
@@ -356,6 +360,10 @@ export interface CombatRules {
   readonly dotLifesteal?: number;
   /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
   readonly dotDamage?: number;
+  /** Multiplies the damage over time of single ailments (Reaver: Bleed and Poison). */
+  readonly ailmentDamage?: Readonly<Partial<Record<AilmentType, number>>>;
+  /** Multiplies max life (Warrior: Iron Blood). */
+  readonly lifeMultiplier?: number;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */

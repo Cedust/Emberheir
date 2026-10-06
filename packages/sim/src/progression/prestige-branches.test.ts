@@ -11,7 +11,7 @@ import {
   openBranches,
 } from "./game";
 import type { SkillNode } from "./skill-tree";
-import { TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
+import { TEST_ACT, TEST_CLASSES, TEST_GAME_DATA } from "./test-fixtures";
 
 const BRANCH_NODE: SkillNode = {
   id: "pb-guard",
@@ -43,11 +43,16 @@ const ABILITY = (id: string): EliteModifier => ({
 
 const data: GameData = {
   ...TEST_GAME_DATA,
+  // The Fighter can grow Guard and Other; Elsewhere belongs to no class here.
+  classes: TEST_CLASSES.map((c) =>
+    c.id === "test-fighter" ? { ...c, branches: ["guard", "other"] } : c,
+  ),
   skillTree: {
     ...TEST_GAME_DATA.skillTree,
     nodes: [...TEST_GAME_DATA.skillTree.nodes, BRANCH_NODE],
     prestigeBranches: [
       { id: "guard", name: "Guard", branch: "core", anchor: "start", theme: "" },
+      { id: "elsewhere", name: "Elsewhere", branch: "arcana", anchor: "a", theme: "" },
       { id: "other", name: "Other", branch: "might", anchor: "a", theme: "" },
     ],
   },
@@ -55,7 +60,7 @@ const data: GameData = {
 };
 
 const pending = (): GameState => {
-  const s = newGame(data, { seed: 2, starterWeapon: "test-sword" });
+  const s = newGame(data, { seed: 2, classId: "test-fighter" });
   return {
     ...s,
     hero: { ...s.hero, unspentSkillPoints: 2 },
@@ -78,6 +83,17 @@ describe("Prestige branches", () => {
     expect(() => applyAction(deep, data, { type: "prestige", branchId: "guard" })).toThrow(
       /branch/,
     );
+  });
+
+  it("only the class's own branches are offered, in the class's order", () => {
+    const s = pending();
+    expect(() => applyAction(s, data, { type: "prestige", branchId: "elsewhere" })).toThrow(
+      /branch/,
+    );
+    const caster = { ...s, hero: { ...s.hero, classId: "test-caster" } };
+    expect(openBranches(caster, data)).toEqual([]);
+    // With no branch left to take, the Prestige needs none.
+    expect(applyAction(caster, data, { type: "prestige" }).legacy.branches).toEqual([]);
   });
 
   it("their nodes are locked until the branch is unlocked, then give bonuses and triggers", () => {
@@ -125,12 +141,6 @@ describe("Prestige branch tiers", () => {
     skillTree: {
       ...data.skillTree,
       nodes: [...data.skillTree.nodes, t2, upgrade],
-      resonance: {
-        core: [
-          { at: 2, description: "", bonuses: { armor: 100 } },
-          { at: 3, description: "", rules: { damageTaken: -0.2 }, requires: "pb-guard-wall" },
-        ],
-      },
     },
   };
   const camp = (branches: string[], points = 9): GameState => {
@@ -161,8 +171,7 @@ describe("Prestige branch tiers", () => {
       { type: "learnNodes", nodeIds: ["pb-guard", "pb-guard-t2"] },
     );
     expect(two.hero.learned["pb-guard"]).toBe(2);
-    // Two tiers of Core branches also reach Resonance 2 (+100 Armor).
-    expect(heroSetup(two, tiered).setup.bonuses?.armor).toBe(7 * 2 + 3 + 100);
+    expect(heroSetup(two, tiered).setup.bonuses?.armor).toBe(7 * 2 + 3);
   });
 
   it("an upgrade replaces the triggers of the node it upgrades and brings its own rules", () => {
@@ -174,21 +183,8 @@ describe("Prestige branch tiers", () => {
     expect(setup.triggers?.map((t) => t.id)).toContain("guard-wall");
     expect(setup.triggers?.map((t) => t.id)).not.toContain("guard-shell");
     // Bonuses of the replaced node stay.
-    expect(setup.bonuses?.armor).toBe(7 + 3 + 100);
+    expect(setup.bonuses?.armor).toBe(7 + 3);
     expect(setup.rules?.damageTaken).toBeCloseTo(-0.1);
-  });
-
-  it("Resonance counts the tiers of every branch on the same base branch", () => {
-    expect(heroSetup(camp(["guard"]), tiered).setup.bonuses?.armor ?? 0).toBe(0);
-    expect(heroSetup(camp(["guard", "guard"]), tiered).setup.bonuses?.armor).toBe(100);
-    // The third step needs its node learned.
-    const three = camp(["guard", "guard", "guard"]);
-    expect(heroSetup(three, tiered).setup.rules?.damageTaken ?? 0).toBe(0);
-    const learned = applyAction(three, tiered, {
-      type: "learnNodes",
-      nodeIds: ["pb-guard", "pb-guard-t2", "pb-guard-wall"],
-    });
-    expect(heroSetup(learned, tiered).setup.rules?.damageTaken).toBeCloseTo(-0.3);
   });
 });
 

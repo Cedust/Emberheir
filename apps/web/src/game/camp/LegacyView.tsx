@@ -1,7 +1,9 @@
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
   SLOT_NAMES,
+  heroTitle,
   itemSlotFor,
   levelCap,
 } from "@emberheir/sim";
@@ -195,6 +197,8 @@ export function LegacyView(props: {
                 <div key={c.generation} className="chronicle-row">
                   <span className="mono">Gen {c.generation}</span>
                   <span>
+                    {c.title ? <strong className="accent">{c.title}</strong> : null}
+                    {c.title ? " · " : ""}
                     {c.enemyName.split(",")[0]} fell at Level {c.level} after {c.deaths} death
                     {c.deaths === 1 ? "" : "s"}.
                   </span>
@@ -202,7 +206,10 @@ export function LegacyView(props: {
               ))}
               <div className="chronicle-row">
                 <span className="mono accent">Gen {generation}</span>
-                <span>Now · the Heir walks the Ashen Fields.</span>
+                <span>
+                  <strong className="accent">{heroTitle(state, GAME_DATA)}</strong> · Now ·{" "}
+                  {state.hero.name} walks the Ashen Fields.
+                </span>
               </div>
             </section>
           </aside>

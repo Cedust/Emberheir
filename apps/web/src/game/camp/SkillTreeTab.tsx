@@ -3,13 +3,11 @@ import {
   type GameState,
   type SkillNode,
   type SkillTreeBranch,
-  activeResonance,
   branchTier,
   learnBlockReason,
   learnNodes,
   nodeMaxRanks,
   nodeRanks,
-  resonanceCounts,
 } from "@emberheir/sim";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
@@ -17,7 +15,7 @@ import { LEARN_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { type TreeLabel, type TreeNodeView, TreeScene, type TreeView } from "./TreeScene";
 
-/** Base branches with their colour (labels, Resonance). */
+/** Base branches with their colour (labels). */
 const BRANCHES: readonly { id: SkillTreeBranch; name: string; color: number }[] = [
   { id: "core", name: "Core", color: 0xc9a063 },
   { id: "might", name: "Might", color: 0xc9c2b8 },
@@ -25,7 +23,6 @@ const BRANCHES: readonly { id: SkillTreeBranch; name: string; color: number }[] 
   { id: "rupture", name: "Rupture", color: 0xd0505c },
   { id: "affliction", name: "Affliction", color: 0xa35cff },
 ];
-const hex = (c: number) => `#${c.toString(16).padStart(6, "0")}`;
 
 const KIND_LABEL: Record<SkillNode["kind"], string> = {
   minor: "Minor",
@@ -194,10 +191,6 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   });
 
   const hovered = hover ? SKILL_TREE.nodes.find((n) => n.id === hover.id) : undefined;
-  const counts = resonanceCounts(SKILL_TREE, branches);
-  const reached = new Set(
-    activeResonance(SKILL_TREE, preview.learned, branches).map((r) => r.step),
-  );
   const selectedTier = selected ? (selected.tier ?? 1) : 1;
 
   return (
@@ -346,36 +339,6 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
             )}
           </section>
         )}
-        <section className="panel-card resonance" aria-label="Resonance">
-          <span className="title-font section-title">Resonance</span>
-          {BRANCHES.filter((b) => SKILL_TREE.resonance?.[b.id]).map((b) => {
-            const steps = SKILL_TREE.resonance?.[b.id] ?? [];
-            const count = counts[b.id] ?? 0;
-            return (
-              <div key={b.id} className="resonance-row">
-                <span className="branch-name" style={{ color: hex(b.color) }}>
-                  {b.name}
-                </span>
-                <span className="resonance-pips" aria-label={`${count} tiers`}>
-                  {Array.from({ length: 6 }, (_, i) => (
-                    <i key={i} className={i < count ? "on" : ""} />
-                  ))}
-                </span>
-                <span className="resonance-steps">
-                  {steps.map((step) => (
-                    <span
-                      key={step.at}
-                      className={`resonance-step ${reached.has(step) ? "on" : count >= step.at ? "idle" : ""}`}
-                      title={step.description}
-                    >
-                      {step.at}
-                    </span>
-                  ))}
-                </span>
-              </div>
-            );
-          })}
-        </section>
         {!viewOnly && (
           <section className="pending-bar panel-card">
             <span className={pending.length ? "strong" : "sub"}>

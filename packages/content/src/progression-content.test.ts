@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   actsInRun,
   createEnemySetup,
+  heroSetup,
   levelCap,
   neighbours,
   newGame,
@@ -10,6 +11,7 @@ import {
   stagesInAct,
   type SkillTreeBranch,
 } from "@emberheir/sim";
+import { BRANCH_EPITHETS, CLASSES } from "./classes";
 import { ELITE_MODIFIERS } from "./elites";
 import { ACT1, ACT2, GAME_DATA } from "./game";
 import { createHeroSetup } from "./heroes";
@@ -120,11 +122,33 @@ describe("Act 1", () => {
     expect(result.events.some((e) => e.type === "telegraph")).toBe(true);
   });
 
-  it("a new game works with every starter weapon", () => {
-    for (const starterWeapon of GAME_DATA.starterWeapons) {
-      const state = newGame(GAME_DATA, { seed: 1, starterWeapon });
-      expect(state.hero.equipment.mainHand?.baseId).toBe(starterWeapon);
+  it("a new game works with every class and start weapon, gear usable from the start", () => {
+    for (const heroClass of GAME_DATA.classes) {
+      for (const weapon of heroClass.weapons) {
+        const state = newGame(GAME_DATA, { seed: 1, classId: heroClass.id, weapon });
+        expect(state.hero.equipment.mainHand?.baseId).toBe(weapon);
+        expect(state.hero.equipment.offHand?.baseId).toBe(heroClass.offHand);
+        const { gear } = heroSetup(state, GAME_DATA);
+        expect(gear.inactive, `${heroClass.id} with ${weapon}`).toEqual([]);
+      }
     }
+  });
+
+  it("classes: start attributes add up to 36, four branches with Tactician, titles", () => {
+    const branches = new Set((SKILL_TREE.prestigeBranches ?? []).map((b) => b.id));
+    for (const c of CLASSES) {
+      expect(
+        Object.values(c.startingAttributes).reduce((a, b) => a + b, 0),
+        c.id,
+      ).toBe(36);
+      expect(c.branches, c.id).toHaveLength(4);
+      expect(c.branches.at(-1), c.id).toBe("tactician");
+      for (const b of c.branches) {
+        expect(branches.has(b), b).toBe(true);
+        expect(c.titles[b], `${c.id} ${b}`).toBeTruthy();
+      }
+    }
+    for (const b of branches) expect(BRANCH_EPITHETS[b], b).toBeTruthy();
   });
 });
 

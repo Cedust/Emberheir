@@ -4,6 +4,9 @@ import {
   PROGRESSION,
   actsInRun,
   branchTier,
+  classTitle,
+  heroClassOf,
+  heroTitle,
   levelCap,
   openBranches,
   prestigeBranchNodes,
@@ -71,11 +74,12 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const pending = state.pendingPrestige;
   const [step, setStep] = useState<Step>("victory");
-  // Branches to deepen first, then new ones.
-  const owned = (id: string) => state.legacy.branches.includes(id);
-  const open = openBranches(state, GAME_DATA).sort(
-    (a, b) => Number(owned(b.id)) - Number(owned(a.id)),
-  );
+  // Only the class's own branches grow (klassen-v2.md section 8), in the class's order.
+  const heroClass = heroClassOf(state, GAME_DATA);
+  const open = openBranches(state, GAME_DATA);
+  const title = heroTitle(state, GAME_DATA);
+  const titleWith = (id: string) =>
+    classTitle(heroClass, [...state.legacy.branches, id], GAME_DATA.branchEpithets);
   const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
   if (!pending) return null;
   const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
@@ -166,6 +170,9 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                   <span className="small">
                     Keystone · <b>{keystone.name}</b>
                   </span>
+                )}
+                {titleWith(b.id) !== title && (
+                  <span className="title-change title-font">→ {titleWith(b.id)}</span>
                 )}
               </button>
             );

@@ -6,7 +6,7 @@ import { heroSetup, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
-const start = () => newGame(data, { seed: 2, starterWeapon: "test-sword" });
+const start = () => newGame(data, { seed: 2, classId: "test-fighter" });
 
 describe("estimates", () => {
   it("DPS and Heat per second follow the derived stats", () => {

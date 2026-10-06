@@ -197,10 +197,12 @@ export interface FighterSnapshot {
     readonly stacks: number;
     readonly remaining: number;
   }[];
-  /** Curses on this fighter (Wither). */
+  /** Curses on this fighter (Wither) and Sunder. */
   readonly curses: readonly {
     readonly name: string;
     readonly dotDamageTaken: number;
+    /** Sunder: share of Armor that no longer counts. */
+    readonly armor?: number;
     readonly remaining: number;
   }[];
   /** Current stats including active buffs. */
@@ -244,7 +246,14 @@ interface Fighter {
   attackCount: number;
   readonly triggers: TriggerState[];
   buffs: BuffState[];
-  curses: { id: string; name: string; dotDamageTaken: number; remaining: number }[];
+  curses: {
+    id: string;
+    name: string;
+    dotDamageTaken: number;
+    /** Sunder: share of Armor that no longer counts. */
+    armor?: number;
+    remaining: number;
+  }[];
   /** Seconds since the last telegraph ended, per telegraph. */
   telegraphTimers: number[];
   /** The telegraph winding up right now. */
@@ -288,6 +297,8 @@ interface HitOptions {
   readonly ailmentChances: readonly AilmentChance[];
   /** Ailments act as if the hit was this much stronger. Default 1. */
   readonly ailmentPower?: number;
+  /** Extra share of Armor this hit ignores (Heavy Bolt). */
+  readonly penetration?: number;
   /** Hits caused by triggers do not fire further triggers. */
   readonly fromTrigger: boolean;
 }
@@ -524,7 +535,9 @@ export class Fight {
     const { states, ticks, expired } = stepAilments(f.ailments, dt);
     f.ailments = states;
     for (const tick of ticks) {
-      const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f)));
+      const byAilment =
+        this.fighters[other(f.side)].setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
+      const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f) * byAilment));
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);
       if (this.result) return;
@@ -845,6 +858,7 @@ export class Fight {
             multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
             ailmentChances: hit.ailmentChances ?? [],
             ailmentPower: hit.ailmentPower ?? 1,
+            ...(hit.penetration ? { penetration: hit.penetration } : {}),
             fromTrigger: false,
           });
           landed = ok || landed;
@@ -949,6 +963,18 @@ export class Fight {
       case "stun":
         this.stun(target, effect.seconds);
         return;
+      case "sunder":
+        target.curses = [
+          ...target.curses.filter((c) => c.id !== skill.id),
+          {
+            id: skill.id,
+            name: "Sunder",
+            dotDamageTaken: 0,
+            armor: effect.armor,
+            remaining: effect.duration,
+          },
+        ];
+        return;
       case "advanceCorruption":
         target.ailments = advanceCorruption(target.ailments, effect.ticks);
         return;
@@ -1007,12 +1033,21 @@ export class Fight {
   /** Resolves one hit from `attacker` on the other fighter. Returns true if it landed. */
   private hit(attacker: Fighter, h: HitOptions): boolean {
     const defender = this.fighters[other(attacker.side)];
+    // Sunder on the defender and the hit's own penetration add to Physical Penetration.
+    const sundered = defender.curses.reduce((sum, c) => sum + (c.armor ?? 0), 0);
+    const penetration = (h.penetration ?? 0) + sundered;
     const outcome = resolveHit(
       {
         baseDamage: h.baseDamage,
         type: h.type,
         evadable: h.evadable,
-        attacker: attacker.stats,
+        attacker:
+          penetration > 0
+            ? {
+                ...attacker.stats,
+                physicalPenetration: attacker.stats.physicalPenetration + penetration,
+              }
+            : attacker.stats,
         attackerLevel: attacker.setup.level,
         multiplier:
           h.multiplier *
@@ -1357,6 +1392,7 @@ export class Fight {
       curses: f.curses.map((c) => ({
         name: c.name,
         dotDamageTaken: c.dotDamageTaken,
+        ...(c.armor ? { armor: c.armor } : {}),
         remaining: c.remaining,
       })),
       buffs: f.buffs.map((b) => ({

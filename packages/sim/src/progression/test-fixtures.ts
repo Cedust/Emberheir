@@ -3,6 +3,7 @@ import type { EnemyDefinition } from "../combat/monsters";
 import type { SkillDefinition } from "../combat/types";
 import { TEST_CATALOG } from "../items/test-fixtures";
 import type { BoonDefinition, BoonFamilyDefinition } from "./boons";
+import type { HeroClass } from "./classes";
 import type { ActData, GameData } from "./game";
 import type { SkillTreeDefinition } from "./skill-tree";
 
@@ -118,11 +119,38 @@ export const TEST_TREE: SkillTreeDefinition = {
   ],
 };
 
+const TEST_ATTRIBUTES = { ...ZERO_ATTRIBUTES, strength: 6, vitality: 6 };
+
+/** A melee class with the test sword and a caster with the test wand; no off hands. */
+export const TEST_CLASSES: readonly HeroClass[] = [
+  {
+    id: "test-fighter",
+    name: "Fighter",
+    weapons: ["test-sword"],
+    startingAttributes: TEST_ATTRIBUTES,
+    trait: { name: "Tough", description: "" },
+    branches: ["test-branch"],
+    titles: { "test-branch": "Champion" },
+    text: "",
+  },
+  {
+    id: "test-caster",
+    name: "Caster",
+    weapons: ["test-wand"],
+    startingAttributes: TEST_ATTRIBUTES,
+    trait: { name: "Spark", description: "" },
+    branches: [],
+    titles: {},
+    text: "",
+  },
+];
+
 export const TEST_GAME_DATA: GameData = {
   items: TEST_CATALOG,
   lootBases: ["test-sword", "test-shield", "test-ring"],
   equipmentSlots: ["mainHand", "offHand", "ring1"],
-  starterWeapons: ["test-sword", "test-wand"],
+  classes: TEST_CLASSES,
+  branchEpithets: { "test-branch": "of Tests", "other-branch": "of Others" },
   startSkills: { "test-blade": SWORD_SKILL },
   skillTree: TEST_TREE,
   acts: [TEST_ACT, DEADLY_ACT, FINAL_ACT],
@@ -130,7 +158,7 @@ export const TEST_GAME_DATA: GameData = {
     { id: "tough", name: "Tough", description: "", bonuses: { armor: 5 } },
     { id: "fast", name: "Fast", description: "", bonuses: { attackSpeed: 0.5 } },
   ],
-  startingAttributes: { ...ZERO_ATTRIBUTES, strength: 6, vitality: 6 },
+  startingAttributes: TEST_ATTRIBUTES,
 };
 
 export const TEST_BOON_FAMILIES: readonly BoonFamilyDefinition[] = [

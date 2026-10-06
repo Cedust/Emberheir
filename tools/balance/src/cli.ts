@@ -41,7 +41,10 @@ function runActMode(): void {
   );
   console.log("");
   const rows = [];
-  const weapons = args.weapon === "all" ? GAME_DATA.starterWeapons : [args.weapon];
+  const classes =
+    args.class === "all" ? GAME_DATA.classes : GAME_DATA.classes.filter((c) => c.id === args.class);
+  if (!classes.length) throw new Error(`Unknown class "${args.class}"`);
+  const weapons = args.weapon === "all" ? classes.flatMap((c) => c.weapons) : [args.weapon];
   for (const starterWeapon of weapons) {
     const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(GAME_DATA, {

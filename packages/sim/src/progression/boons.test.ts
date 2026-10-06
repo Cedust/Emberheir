@@ -25,7 +25,7 @@ import { TEST_BOONS, TEST_BOON_DATA, TEST_BOON_FAMILIES } from "./test-fixtures"
 const data = TEST_BOON_DATA;
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
-const start = (seed = 1) => newGame(data, { seed, starterWeapon: "test-sword" });
+const start = (seed = 1) => newGame(data, { seed, classId: "test-fighter" });
 const spark = (id: string) => ({ id, grade: "spark" as const });
 
 /** Wins a stage and takes every pick (first card, first Boon). */

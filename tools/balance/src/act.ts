@@ -147,7 +147,7 @@ function spendPoints(state: GameState, data: GameData, weaponId: string): GameSt
 }
 
 /**
- * Build plan per starter weapon: Skill Tree goals, Rotation skills (slot 1 is the Start Skill),
+ * Build plan per start weapon: Skill Tree goals, Rotation skills (slot 1 is the weapon's Innate),
  * Prestige branches by preference, a Reaction skill once one is unlocked.
  */
 interface BuildPlan {
@@ -191,7 +191,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
   staff: {
     nodes: ["affliction-corrupt", "affliction-void-lord", "affliction-soul-harvest"],
     rotation: ["corrupt", "void-rift", "soul-harvest"],
-    branches: ["void-lord", "frostbinder", "tactician", "warden"],
+    branches: ["void-lord", "pyromancer", "tactician", "warden"],
     reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
   },
   axe: {
@@ -203,25 +203,25 @@ const TREE_PLAN: Record<string, BuildPlan> = {
       "rupture-thick-blood",
     ],
     rotation: ["rend", "cleave", "lacerate"],
-    branches: ["butcher", "warden", "duelist", "tactician"],
+    branches: ["butcher", "duelist", "venomancer", "tactician"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   bow: {
     nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
-    rotation: ["rend", "lacerate", "cleave"],
-    branches: ["marksman", "butcher", "tactician", "warden"],
+    rotation: ["rend", "serrated-edge", "cleave"],
+    branches: ["marksman", "venomancer", "tactician", "warden"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   crossbow: {
     nodes: ["might-brutal-force", "might-flurry", "might-killer-instinct", "might-power-strike"],
     rotation: ["piercing-shot", "flurry", "execute"],
-    branches: ["marksman", "duelist", "tactician", "warden"],
+    branches: ["marksman", "venomancer", "tactician", "warden"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   dagger: {
     nodes: ["might-unbroken", "rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
-    rotation: ["toxic-burst", "plague-cloud", "venom-coat"],
-    branches: ["venomancer", "tactician", "warden", "duelist"],
+    rotation: ["toxic-burst", "plague-cloud", "envenom"],
+    branches: ["venomancer", "tactician", "duelist", "butcher"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
 };
@@ -365,11 +365,14 @@ export function playGenerations(
     readonly finale?: boolean;
   },
 ): ActRunReport[] {
-  // Weapons that only drop (Axe, Dagger) can be tested as if the hero started with them.
-  const start = data.starterWeapons.includes(options.starterWeapon)
-    ? data
-    : { ...data, starterWeapons: [...data.starterWeapons, options.starterWeapon] };
-  let s = newGame(start, { seed: options.seed, starterWeapon: options.starterWeapon });
+  // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
+  const heroClass = data.classes.find((c) => c.weapons.includes(options.starterWeapon));
+  if (!heroClass) throw new Error(`No class starts with "${options.starterWeapon}"`);
+  let s = newGame(data, {
+    seed: options.seed,
+    classId: heroClass.id,
+    weapon: options.starterWeapon,
+  });
   const reports: ActRunReport[] = [];
   for (let generation = 1; generation <= options.generations; generation++) {
     let allCleared = true;

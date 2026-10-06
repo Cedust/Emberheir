@@ -612,6 +612,74 @@ describe("Affliction effects", () => {
     expect(ofType(fight.events, "skill")).toHaveLength(1);
   });
 
+  it("a hit's penetration ignores that share of the target's Armor (Heavy Bolt)", () => {
+    const armored = dummy({ bonuses: { armor: 500 } });
+    const bolt = (penetration?: number) =>
+      skill(undefined, [
+        { kind: "weapon", multiplier: 2, ...(penetration ? { penetration } : {}) },
+      ]);
+    const hitBy = (s: SkillDefinition) => {
+      const fight = new Fight(setup({ bonuses: NO_CRIT, rotation: [{ skill: s }] }), armored, 1);
+      fight.advance(2.05);
+      return ofType(fight.events, "hit").find((h) => h.source === "X")?.damage ?? 0;
+    };
+    expect(hitBy(bolt())).toBeLessThan(20);
+    expect(hitBy(bolt(1))).toBe(20);
+  });
+
+  it("Sunder makes the target's Armor count less for a while (Crushing Blow)", () => {
+    const crush = skill(
+      [{ kind: "sunder", armor: 1, duration: 3 }],
+      [{ kind: "weapon", multiplier: 1 }],
+    );
+    const hero = setup({ bonuses: NO_CRIT, rotation: [{ skill: crush }] });
+    const fight = new Fight(hero, dummy({ bonuses: { armor: 500 } }), 1);
+    // The skill lands at 2 s against full Armor, the next Default Attack at 3 s against none.
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit").at(-1)?.damage).toBeLessThan(10);
+    expect(fight.snapshot().enemy.curses).toMatchObject([{ name: "Sunder", armor: 1 }]);
+    fight.advance(1);
+    expect(ofType(fight.events, "hit").at(-1)).toMatchObject({ source: "Poke", damage: 10 });
+  });
+
+  it("Sunder runs out after its duration", () => {
+    const crush = skill(
+      [{ kind: "sunder", armor: 1, duration: 0.5 }],
+      [{ kind: "weapon", multiplier: 1 }],
+    );
+    const fight = new Fight(setup({ bonuses: NO_CRIT, rotation: [{ skill: crush }] }), dummy(), 1);
+    fight.advance(2.05);
+    expect(fight.snapshot().enemy.curses).toHaveLength(1);
+    fight.advance(0.6);
+    expect(fight.snapshot().enemy.curses).toHaveLength(0);
+  });
+
+  it("ailment damage rules raise single ailments only (Reaver: Bloodletter)", () => {
+    const hero = setup({
+      weapon: bleeding,
+      bonuses: NO_CRIT,
+      rules: { ailmentDamage: { bleed: 2 } },
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.5);
+    const dots = ofType(fight.events, "dot");
+    expect(dots.length).toBeGreaterThan(0);
+    expect(dots.every((d) => d.damage === 10)).toBe(true);
+    const poisoned = setup({
+      weapon: bleeding,
+      bonuses: NO_CRIT,
+      rules: { ailmentDamage: { poison: 2 } },
+    });
+    const plain = new Fight(poisoned, dummy(), 1);
+    plain.advance(2.5);
+    expect(ofType(plain.events, "dot").every((d) => d.damage === 5)).toBe(true);
+  });
+
+  it("the life multiplier rule raises max life (Warrior: Iron Blood)", () => {
+    const fight = new Fight(setup({ rules: { lifeMultiplier: 1.1 } }), dummy(), 1);
+    expect(fight.snapshot().hero.maxLife).toBe(110);
+  });
+
   it("Soul Harvest deals seconds of all DoTs at once", () => {
     const harvest = skill([{ kind: "detonateDots", seconds: 4 }]);
     const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: harvest }] });

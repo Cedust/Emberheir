@@ -24,6 +24,7 @@ import { STARTING_ATTRIBUTES } from "./heroes";
 import { ITEM_BASES, ITEM_CATALOG } from "./items";
 import { SKILL_TREE } from "./skill-tree";
 import { START_SKILLS } from "./skills";
+import { BRANCH_EPITHETS, CLASSES } from "./classes";
 
 /**
  * Act 1 (game-design-document-v1.md section 11): 15 stages, Gorrak at the end, Spoils after stage
@@ -151,7 +152,8 @@ export const GAME_DATA: GameData = {
   items: ITEM_CATALOG,
   lootBases: ITEM_BASES.map((b) => b.id),
   equipmentSlots: EQUIPMENT_SLOTS,
-  starterWeapons: ["sword", "fire-wand"],
+  classes: CLASSES,
+  branchEpithets: BRANCH_EPITHETS,
   startSkills: START_SKILLS,
   skillTree: SKILL_TREE,
   acts: [ACT1, ACT2, ACT3, ACT4, ACT5, ACT6, ACT7],

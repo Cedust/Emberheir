@@ -16,7 +16,8 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   // A new Prestige branch for the Skill Tree.
   const bloodline = page.getByRole("region", { name: "Bloodline" });
   await expect(bloodline.getByRole("button", { pressed: true })).toHaveCount(1);
-  await expect(bloodline.locator(".branch-pick")).toHaveCount(10);
+  // Only the Warrior's four paths grow: Duelist, Butcher, Warden, Tactician.
+  await expect(bloodline.locator(".branch-pick")).toHaveCount(4);
   await bloodline.getByRole("button", { name: /Warden/ }).click();
   await page.getByRole("button", { name: "Take Warden" }).click();
 
@@ -38,8 +39,8 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
   await page.getByRole("button", { name: "Open Legacy" }).click();
   const legacy = page.getByRole("region", { name: "Legacy" });
-  // Sword and Body Armor came through the fire.
-  await expect(legacy).toContainText("2 / 10 Heirlooms");
+  // Sword, Round Shield and Body Armor came through the fire.
+  await expect(legacy).toContainText("3 / 10 Heirlooms");
   await expect(legacy).toContainText("Gorrak fell at Level 5");
   await page.keyboard.press("Escape");
 

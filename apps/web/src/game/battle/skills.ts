@@ -55,6 +55,12 @@ const SKILL_ICONS: Record<string, IconName> = {
   "void-rift": "void",
   "iron-bastion": "shield",
   rally: "cycle",
+  "skull-crack": "slam",
+  "barbed-arrow": "bow",
+  "heavy-bolt": "crossbow",
+  "crushing-blow": "hammer",
+  "serrated-edge": "claw",
+  envenom: "venom",
 };
 
 export function skillIcon(skillId: string): IconName {
@@ -88,6 +94,12 @@ const SKILL_TINTS: Record<string, string> = {
   "void-rift": "#4a1f7a",
   "iron-bastion": "#5a5a6a",
   rally: "#8a5a1a",
+  "skull-crack": "#7a6a3a",
+  "barbed-arrow": "#7a2a2c",
+  "heavy-bolt": "#5a5a6a",
+  "crushing-blow": "#5e5750",
+  "serrated-edge": "#8a1f2c",
+  envenom: "#4f6a12",
 };
 
 export function skillTint(skillId: string): string {

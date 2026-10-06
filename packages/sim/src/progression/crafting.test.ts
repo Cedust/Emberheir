@@ -39,7 +39,7 @@ const RING: Item = {
 
 /** Camp, Liora present, a full wallet and the ring in the inventory. */
 function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
-  const s = newGame(data, { seed: 4, starterWeapon: "test-sword" });
+  const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
     ...s,
     progress: { ...s.progress, trainerUnlocked: true },
