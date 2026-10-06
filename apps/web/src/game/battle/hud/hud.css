@@ -476,41 +476,13 @@
 }
 
 .stage .hud-flask {
-  position: relative;
-  width: 22px;
-  height: 36px;
-  border-radius: 7px 7px 11px 11px;
-  border: 2px solid #d9a55a;
-  background: rgb(0 0 0 / 0.55);
-  overflow: hidden;
-  box-shadow: 0 2px 4px #000;
+  width: 30px;
+  height: 42px;
+  filter: drop-shadow(0 2px 3px #000);
 }
 
-.stage .hud-flask::before {
-  content: "";
-  position: absolute;
-  left: 5px;
-  right: 5px;
-  top: 0;
-  height: 6px;
-  background: #8a5a26;
-  z-index: 1;
-}
-
-.stage .hud-flask .liquid {
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 0;
-}
-
-.stage .hud-flask.full .liquid {
-  height: 76%;
-  background: linear-gradient(180deg, #ffb13b, #c9322a);
-  box-shadow:
-    inset 0 3px 3px rgb(255 255 255 / 0.4),
-    0 0 10px #ff6a2b;
+.stage .hud-flask.full {
+  filter: drop-shadow(0 2px 3px #000) drop-shadow(0 0 6px rgb(229 72 77 / 0.6));
 }
 
 .stage .hud-flask-count {
