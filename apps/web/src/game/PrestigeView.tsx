@@ -14,7 +14,6 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
-import { ClassEmblem } from "./ClassEmblem";
 import type { GameApi } from "./useGame";
 
 /** The boss's last words when its fall starts the harvest. */
@@ -75,15 +74,9 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const pending = state.pendingPrestige;
   const [step, setStep] = useState<Step>("victory");
-  // The class's recommended branches first (klassen-v2.md), then branches to deepen, then new ones.
+  // Only the class's own branches grow (klassen-v2.md section 8), in the class's order.
   const heroClass = heroClassOf(state, GAME_DATA);
-  const recommended = (id: string) => heroClass.recommendedBranches.includes(id);
-  const owned = (id: string) => state.legacy.branches.includes(id);
-  const open = openBranches(state, GAME_DATA).sort(
-    (a, b) =>
-      Number(recommended(b.id)) - Number(recommended(a.id)) ||
-      Number(owned(b.id)) - Number(owned(a.id)),
-  );
+  const open = openBranches(state, GAME_DATA);
   const title = heroTitle(state, GAME_DATA);
   const titleWith = (id: string) =>
     classTitle(heroClass, [...state.legacy.branches, id], GAME_DATA.branchEpithets);
@@ -156,11 +149,6 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                 onClick={() => setBranch(b.id)}
               >
                 <span className="eyebrow">
-                  {recommended(b.id) && (
-                    <span className="recommended" title={`Suits the ${heroClass.name}`}>
-                      <ClassEmblem classId={heroClass.id} size={14} color="currentColor" />
-                    </span>
-                  )}
                   {tier > 1 ? `DEEPEN · TIER ${ROMAN[tier]}` : b.branch.toUpperCase()}
                 </span>
                 <span className="title-font branch-pick-name">

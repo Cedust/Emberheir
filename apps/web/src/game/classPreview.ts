@@ -53,7 +53,7 @@ export function startPreview(classId: string, weapon: string): ClassPreview {
 /** The Glimpse: a finished build on the class's first recommended path. */
 export function glimpseState(classId: string, weapon: string): GameState {
   const heroClass = GAME_DATA.classes.find((c) => c.id === classId);
-  const branchId = heroClass?.recommendedBranches[0];
+  const branchId = heroClass?.branches[0];
   const tree = GAME_DATA.skillTree;
   const branch = tree.prestigeBranches?.find((b) => b.id === branchId);
   const base = newGame(GAME_DATA, { seed: 11, classId, weapon });

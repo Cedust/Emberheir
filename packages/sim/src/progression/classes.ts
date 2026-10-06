@@ -3,8 +3,8 @@ import type { Attributes, CombatRules, StatBonuses } from "../combat/types";
 /**
  * Classes (docs/design/klassen-v2.md): a starting point and an identity, not a cage. The class
  * picks the start weapon and off hand, the start attributes, a small Class Trait, the look and
- * the recommended Prestige branches. Every item, branch and weapon stays open to every class.
- * The class is fixed for the character.
+ * the Prestige branches it can grow. Every item and weapon stays open to every class. The class
+ * is fixed for the character.
  */
 export interface HeroClass {
   readonly id: string;
@@ -20,9 +20,9 @@ export interface HeroClass {
     readonly bonuses?: StatBonuses;
     readonly rules?: CombatRules;
   };
-  /** Three Prestige branches that suit the class (marked in the Bloodline step). */
-  readonly recommendedBranches: readonly string[];
-  /** Own title per recommended branch ("Blademaster"). */
+  /** The Prestige branches the class can take, its own ones first (klassen-v2.md section 8). */
+  readonly branches: readonly string[];
+  /** Own title per class branch ("Blademaster"). */
   readonly titles: Readonly<Record<string, string>>;
   /** Shown next to the preview in the class select: what the class fights with. */
   readonly text: string;
@@ -51,8 +51,8 @@ export function mainBranch(branches: readonly string[]): string | undefined {
 
 /**
  * The hero's title (klassen-v2.md section 7): the class name until the first Prestige, then the
- * main branch decides. A recommended branch gives the class its own title, any other one adds an
- * epithet ("Warrior of the Storm").
+ * main branch decides. A class branch gives the class its own title; a branch from before the
+ * class paths (an old save) adds an epithet ("Warrior of the Storm").
  */
 export function classTitle(
   heroClass: HeroClass,

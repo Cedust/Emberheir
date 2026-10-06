@@ -96,7 +96,6 @@ import {
   branchTier,
   keystoneRules,
   learnNodes,
-  resonanceEffects,
   treeBonuses,
   treeSkills,
   treeTriggers,
@@ -797,7 +796,6 @@ export function heroSetup(
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
   const { hero } = state;
   const boons = boonEffects(heroBoons(state, data));
-  const resonance = resonanceEffects(data.skillTree, hero.learned, state.legacy.branches);
   const trait = heroClassOf(state, data).trait;
   return buildHeroSetup(
     {
@@ -812,7 +810,6 @@ export function heroSetup(
       bonuses: (weapon) =>
         sumBonuses(
           treeBonuses(data.skillTree, hero.learned, weapon.range),
-          resonance.bonuses,
           boons.bonuses,
           trait.bonuses,
         ),
@@ -820,12 +817,7 @@ export function heroSetup(
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
         ...boons.triggers,
       ],
-      rules: mergeRules(
-        keystoneRules(data.skillTree, hero.learned),
-        resonance.rules,
-        boons.rules,
-        trait.rules,
-      ),
+      rules: mergeRules(keystoneRules(data.skillTree, hero.learned), boons.rules, trait.rules),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
     data.items,
@@ -2229,13 +2221,15 @@ function validThreshold(t: number): boolean {
 // --- prestige --------------------------------------------------------------------------------
 
 /**
- * Prestige branches the coming Prestige can pick (skilltree-v2.md): new ones, and owned ones that
- * can be deepened one tier.
+ * Prestige branches the coming Prestige can pick (skilltree-v2.md): the class's branches
+ * (klassen-v2.md), new ones and owned ones that can be deepened one tier, in the class's order.
  */
 export function openBranches(state: GameState, data: GameData): PrestigeBranchDefinition[] {
-  return (data.skillTree.prestigeBranches ?? []).filter(
-    (b) => branchTier(state.legacy.branches, b.id) < MAX_BRANCH_TIER,
-  );
+  const all = data.skillTree.prestigeBranches ?? [];
+  return heroClassOf(state, data)
+    .branches.map((id) => all.find((b) => b.id === id))
+    .filter((b): b is PrestigeBranchDefinition => b !== undefined)
+    .filter((b) => branchTier(state.legacy.branches, b.id) < MAX_BRANCH_TIER);
 }
 
 /**

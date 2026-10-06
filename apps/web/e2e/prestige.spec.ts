@@ -16,7 +16,8 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   // A new Prestige branch for the Skill Tree.
   const bloodline = page.getByRole("region", { name: "Bloodline" });
   await expect(bloodline.getByRole("button", { pressed: true })).toHaveCount(1);
-  await expect(bloodline.locator(".branch-pick")).toHaveCount(10);
+  // Only the Warrior's four paths grow: Duelist, Butcher, Warden, Tactician.
+  await expect(bloodline.locator(".branch-pick")).toHaveCount(4);
   await bloodline.getByRole("button", { name: /Warden/ }).click();
   await page.getByRole("button", { name: "Take Warden" }).click();
 

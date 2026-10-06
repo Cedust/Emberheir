@@ -159,8 +159,8 @@ export function ClassSelect(props: {
             })}
           </div>
 
-          <div className="class-paths" aria-label="Recommended paths">
-            {heroClass.recommendedBranches.map((id) => (
+          <div className="class-paths" aria-label="Paths">
+            {heroClass.branches.map((id) => (
               <span
                 key={id}
                 className="path-chip"

@@ -191,7 +191,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
   staff: {
     nodes: ["affliction-corrupt", "affliction-void-lord", "affliction-soul-harvest"],
     rotation: ["corrupt", "void-rift", "soul-harvest"],
-    branches: ["void-lord", "frostbinder", "tactician", "warden"],
+    branches: ["void-lord", "pyromancer", "tactician", "warden"],
     reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
   },
   axe: {
@@ -203,7 +203,7 @@ const TREE_PLAN: Record<string, BuildPlan> = {
       "rupture-thick-blood",
     ],
     rotation: ["rend", "cleave", "lacerate"],
-    branches: ["butcher", "warden", "duelist", "tactician"],
+    branches: ["butcher", "duelist", "venomancer", "tactician"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   bow: {
@@ -215,13 +215,13 @@ const TREE_PLAN: Record<string, BuildPlan> = {
   crossbow: {
     nodes: ["might-brutal-force", "might-flurry", "might-killer-instinct", "might-power-strike"],
     rotation: ["piercing-shot", "flurry", "execute"],
-    branches: ["marksman", "duelist", "tactician", "warden"],
+    branches: ["marksman", "venomancer", "tactician", "warden"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
   dagger: {
     nodes: ["might-unbroken", "rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
     rotation: ["toxic-burst", "plague-cloud", "envenom"],
-    branches: ["venomancer", "tactician", "warden", "duelist"],
+    branches: ["venomancer", "tactician", "duelist", "butcher"],
     reaction: { skillId: "iron-bastion", conditionId: "life-50" },
   },
 };

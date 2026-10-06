@@ -1,4 +1,4 @@
-# Skill Tree v2: Vertiefen, Resonanz, wachsender Baum (Konzept, 2026-10-05)
+# Skill Tree v2: Vertiefen, wachsender Baum (Konzept, 2026-10-05)
 
 Ersetzt den Prestige-Teil von `skill-tree-v1.md` und die separate Ansicht „Prestige Branches“ bei Kaelen.
 Herleitung: `notes/build-archetypen.md`, `notes/prestige-fokus-optionen.md` (im Projektordner). Zahlen sind Startwerte für die Balance-CLI.
@@ -18,25 +18,8 @@ Herleitung: `notes/build-archetypen.md`, `notes/prestige-fokus-optionen.md` (im 
 (5 Minor +1 Rang, 3 neue Nodes = 5) + 1 Ember; Stufe III ca. 12 (7 Minor +1 Rang, 3 neue Nodes = 5) + 1 Ember.
 Ein Ast auf III kostet 38 Punkte, drei Äste auf I kosten 48: Fokus ist etwas günstiger, die Differenz geht in den Basis-Baum.
 
-**Resonanz:** ein einzelner Ast schafft höchstens 3; 4 und 6 belohnen, beide Prestige-Äste eines Basis-Asts zu vertiefen. Gezählt werden alle Stufen der Prestige-Äste, die am selben Basis-Ast hängen
-(Might: Duelist, Marksman · Rupture: Butcher, Venomancer · Arcana: Stormcaller, Frostbinder ·
-Affliction: Pyromancer, Void Lord · Core: Warden, Tactician).
-
-| Resonanz | Wirkung |
-| --- | --- |
-| 2 | Themen-Bonus des Basis-Asts (Tabelle unten) |
-| 4 | Nachteil des Basis-Keystones halbiert |
-| 6 | Vorteil des Basis-Keystones +50 % (bzw. Zusatzeffekt) |
-
-| Basis-Ast | Resonanz 2 | Resonanz 4 | Resonanz 6 |
-| --- | --- | --- | --- |
-| Might | +10 % Physical Damage | Glass Focus: +10 % statt +20 % Damage Taken | Glass Focus: zusätzlich +10 % Heat Gain |
-| Arcana | +10 % Elemental Damage | Arcane Conduit: Default Attack −25 % statt −50 % | Arcane Conduit: Skills −40 % statt −30 % Heat |
-| Rupture | +15 % Ailment Duration | Blood Price: Crit Chance ×0,75 statt ×0,5 | Blood Price: Crit-Bleeds ×1,5 |
-| Affliction | +15 % Ailment Duration | Slow Death: Default Attack −15 % statt −30 % | Slow Death: Ailments +75 % statt +50 % |
-| Core | +10 % Life | +10 Starting Heat | −10 % Damage Taken |
-
-Max. 7 Stufen gesamt, also z. B. Butcher I–III + Venomancer I–III = Rupture-Resonanz 6, plus ein freier Pick.
+**Resonanz:** gestrichen (Timo 2026-10-06). Seit den Klassen (`klassen-v2.md` Abschnitt 8) wählt jede Klasse nur aus ihren
+4 Klassenpfaden; ein Set-Bonus für zwei Äste am selben Basis-Ast wäre damit automatisch und keine Entscheidung mehr.
 
 ## 2. Inhalt der Vertiefungen (Stufe II / III)
 
@@ -55,7 +38,7 @@ Format: Minor · Notable · Minor · Keystone-Stufe. Nutzt nur vorhandene Bauste
 | **Warden** | Bastion (+3 % Block/Rang) · **Shield Wall** (Block: Barrier 5 % max Life, Cooldown 2 s) · Reinforced (+20 Armor/Rang) · Greater Juggernaut: −20 % Damage Taken | Stoneheart (+20 Life/Rang) · **Vengeance** (ersetzt Retaliation: 50 %, Grenze 5 %) · Rampart (+3 % Block/Rang) · Supreme Juggernaut: −25 % Damage Taken |
 | **Tactician** | Foresight (+5 Starting Heat/Rang) · **Second Wind** (einmal pro Kampf unter 40 % Life: +40 Heat) · Cadence (+5 % Heat Gain/Rang) · Greater Grand Strategy: Skills −25 % Heat | Precision (+3 % Trigger Chance/Rang) · **Masterplan** (ersetzt Refund: 40 % Chance) · Quickstep (+4 % Attack Speed/Rang) · Supreme Grand Strategy: Skills −30 % Heat |
 
-Alles mit vorhandenen Sim-Bausteinen; neu in der Sim sind nur Ast-Stufen, `replaces` (eine Node ersetzt Trigger/Regeln einer anderen), Regeln auf normalen Nodes und Resonanz (mit Unit-Tests).
+Alles mit vorhandenen Sim-Bausteinen; neu in der Sim sind nur Ast-Stufen, `replaces` (eine Node ersetzt Trigger/Regeln einer anderen), Regeln auf normalen Nodes (mit Unit-Tests).
 
 ## 3. UI: neuer Skilltree (PixiJS)
 
@@ -99,11 +82,10 @@ Light/Dark Mode nutzen die dunkleren Raritäts-Textfarben aus `ui-look-v1.md`, R
 - `SkillNode` bekommt `tier`, `replaces` und `rules`; Prestige-Äste definieren Stufe II/III im selben `BranchSpec` (`t2`, `t3`) und einen Winkel, unter dem sie aus dem Baum wachsen.
 - `legacy.branches` bleibt die Liste der Prestige-Wahlen; ein vertiefter Ast steht einmal pro Stufe drin (`branchTier`). Keine Save-Migration nötig.
 - Keystone-Stufen sind eigene Nodes (`pb-<id>-keystone-2/3`), die den vorherigen Keystone ersetzen (nur die höchste gilt).
-- Resonanz wird aus `branchTiers` berechnet und als Combat Rules / Stat-Bonus gemerged.
 - Layout: Prestige-Äste starten auf einem Ring außerhalb des Basis-Baums (Radius 8,2), Stufe II/III weiter außen.
 - Die Baum-Fläche bleibt in beiden Modi dunkel, weil die hellen Raritätsfarben nur auf dunklem Grund funktionieren.
 
 ## 5. Offene Punkte
 
-- Balance der Greater/Supreme-Keystones und Resonanz-Werte (Balance-CLI `--act 7 --generations 7`).
+- Balance der Greater/Supreme-Keystones (Balance-CLI `--act 7 --generations 7`).
 - Ob Respec beim Trainer auch Vertiefungen umverteilen darf (Vorschlag: nein, Stufen sind permanent; Punkte darin ja).

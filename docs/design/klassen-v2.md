@@ -140,8 +140,8 @@ Ersetzt „Choose your first weapon“.
 - Darunter die gewählte Klasse groß:
   - **Live-Vorschau in PixiJS** (links): Die Klasse kämpft in einer Schleife gegen einen Act-1-Gegner, mit echter Sim und echten
     Arena-Effekten (fester Seed). Klick auf eine Start-Waffe wechselt die Vorschau.
-  - **„Glimpse“-Umschalter**: derselbe Kampf mit einem fertigen späten Build des ersten empfohlenen Pfads (z. B. Warrior als Blademaster).
-  - **Klassentext** (rechts, 2–3 Sätze, Abschnitt 2), darunter Trait als eine Zeile und die 3 empfohlenen Pfade als Icons
+  - **„Glimpse“-Umschalter**: derselbe Kampf mit einem fertigen späten Build des ersten eigenen Pfads (z. B. Warrior als Blademaster).
+  - **Klassentext** (rechts, 2–3 Sätze, Abschnitt 2), darunter Trait als eine Zeile und die 4 Klassenpfade als Icons
     (Hover zeigt den Titel, den man damit bekommt).
   - Namensfeld und Button **Begin**.
 
@@ -154,15 +154,15 @@ Der Glimpse-Build ist ein fester Datensatz in `content` (Level, Items, Baum, Bat
 **Regel:**
 1. Vor dem ersten Prestige heißt man wie die Klasse: *Warrior*.
 2. Danach bestimmt der **Haupt-Ast** den Titel: der Prestige-Ast mit den meisten Stufen. Bei Gleichstand bleibt der bisherige Titel.
-3. Ist der Haupt-Ast einer der 3 empfohlenen Pfade, gibt es einen **eigenen Titel**, sonst den Klassennamen mit einem **Beinamen**: *Warrior of the Storm*.
+3. Jeder der 4 Klassenpfade gibt einen **eigenen Titel**. Nur alte Spielstände, die vor den Klassenpfaden einen fremden Ast genommen haben, bekommen den Klassennamen mit einem **Beinamen**: *Warrior of the Storm*.
 
-| Klasse | Pfad → Titel | | |
-| --- | --- | --- | --- |
-| Warrior | Duelist → **Blademaster** | Warden → **Ironclad** | Tactician → **Warlord** |
-| Reaver | Butcher → **Ravager** | Venomancer → **Viper** | Duelist → **Cutthroat** |
-| Hunter | Marksman → **Deadeye** | Venomancer → **Stalker** | Tactician → **Ranger** |
-| Sorcerer | Stormcaller → **Tempest** | Frostbinder → **Rimeweaver** | Tactician → **Archmage** |
-| Warlock | Pyromancer → **Ashcaller** | Void Lord → **Nightbinder** | Venomancer → **Plaguelord** |
+| Klasse | Pfad → Titel | | | |
+| --- | --- | --- | --- | --- |
+| Warrior | Duelist → **Blademaster** | Butcher → **Headsman** | Warden → **Ironclad** | Tactician → **Warlord** |
+| Reaver | Butcher → **Ravager** | Venomancer → **Viper** | Duelist → **Cutthroat** | Tactician → **Shadowblade** |
+| Hunter | Marksman → **Deadeye** | Venomancer → **Stalker** | Warden → **Sentinel** | Tactician → **Ranger** |
+| Sorcerer | Stormcaller → **Tempest** | Frostbinder → **Rimeweaver** | Warden → **Battlemage** | Tactician → **Archmage** |
+| Warlock | Pyromancer → **Ashcaller** | Void Lord → **Nightbinder** | Warden → **Gravewarden** | Tactician → **Hexmaster** |
 
 **Beinamen:** Duelist *of the Blade* · Marksman *of the Hunt* · Butcher *of Blood* · Venomancer *of Venom* · Stormcaller *of the Storm* ·
 Frostbinder *of Frost* · Pyromancer *of Flame* · Void Lord *of the Void* · Warden *of Iron* · Tactician *of Command*.
@@ -173,10 +173,24 @@ Glut-Effekt am Emblem (respektiert `prefers-reduced-motion`).
 
 ---
 
-## 8. Prestige: Pfad-Empfehlungen ✅
+## 8. Prestige: Klassenpfade ✅ (Timo 2026-10-06)
 
-Im Bloodline-Schritt tragen die 3 empfohlenen Äste (und ihr Vertiefen) das Klassen-Emblem und stehen vorne. Kein Text, nur das Zeichen.
-Alle anderen Äste bleiben frei wählbar.
+Weil die Klasse fest ist, wächst jede Klasse nur auf ihren **4 Klassenpfaden**: 2 eigene thematische Äste plus die beiden
+Core-Äste **Warden** (Verteidigung) und **Tactician** (Heat, Rotation), die zu jeder Klasse passen. Ausnahme: Der Reaver
+nimmt Duelist statt Warden (Dolch-Crits, kein Schild; Timo 2026-10-06). Der Bloodline-Schritt zeigt nur
+diese 4 (neu nehmen oder vertiefen). 4 Äste × 3 Stufen = 12 Plätze für 7 Picks, die Build-Wahl bleibt echt.
+
+| Klasse | Eigene Äste | Core |
+| --- | --- | --- |
+| Warrior | Duelist, Butcher | Warden, Tactician |
+| Reaver | Butcher, Venomancer, Duelist | Tactician |
+| Hunter | Marksman, Venomancer | Warden, Tactician |
+| Sorcerer | Stormcaller, Frostbinder | Warden, Tactician |
+| Warlock | Pyromancer, Void Lord | Warden, Tactician |
+
+**Resonanz entfällt** (`skilltree-v2.md`): Mit festen Klassenpfaden wäre sie ein automatischer Bonus ohne Entscheidung.
+Ausrüstung bleibt frei: ein Warrior darf einen Wand tragen, hat aber keinen Pfad dafür. Wer einen anderen Build will, legt einen
+neuen Charakter an. Alte Spielstände behalten bereits genommene fremde Äste, können sie aber nicht weiter vertiefen.
 
 ---
 
@@ -198,7 +212,7 @@ Optional später: Aura nach Haupt-Ast in der Arena.
 
 ## 10. Daten und Save 💡
 
-- `content`: `CLASSES` mit `id`, `name`, `weapons`, `offHand`, `startingAttributes`, `trait`, `recommendedBranches`, `titles`, `text`,
+- `content`: `CLASSES` mit `id`, `name`, `weapons`, `offHand`, `startingAttributes`, `trait`, `branches`, `titles`, `text`,
   `glimpse`; `BRANCH_EPITHETS`; neue Innates (Skull Crack, Barbed Arrow, Heavy Bolt) als `innateSkill` am Waffentyp, Ersatz-Skills im Baum (Crushing Blow, Serrated Edge, Envenom; Ice Lance aktiviert), Off Hands (Blood Talisman, Grimoire).
   `starterWeapons` entfällt.
 - `sim`: `newGame(data, { seed, classId, starterWeapon, name })`, `hero.classId` im Save, Trait als Stat-Modifier, `heroTitle(state)`

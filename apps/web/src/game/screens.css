@@ -2392,63 +2392,6 @@
   background: rgb(79 224 138 / 0.4);
 }
 
-.stage .resonance {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-}
-
-.stage .resonance-row {
-  display: grid;
-  grid-template-columns: 90px 1fr auto;
-  align-items: center;
-  gap: 8px;
-}
-
-.stage .resonance-pips {
-  display: flex;
-  gap: 4px;
-}
-
-.stage .resonance-pips i {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid var(--edge);
-}
-
-.stage .resonance-pips i.on {
-  background: var(--accent);
-  border-color: var(--accent);
-}
-
-.stage .resonance-steps {
-  display: flex;
-  gap: 4px;
-}
-
-.stage .resonance-step {
-  min-width: 22px;
-  padding: 1px 4px;
-  border: 1px solid var(--edge);
-  border-radius: 4px;
-  text-align: center;
-  font-family: var(--font-mono);
-  font-size: 12px;
-  color: var(--text-sub);
-}
-
-.stage .resonance-step.idle {
-  border-style: dashed;
-}
-
-.stage .resonance-step.on {
-  background: var(--accent);
-  border-color: var(--accent);
-  color: var(--bg);
-}
-
 .sr-only {
   position: absolute;
   width: 1px;
@@ -4840,13 +4783,6 @@
 
 .stage .hoard-cards.two {
   grid-template-columns: repeat(2, 172px);
-}
-
-.stage .branch-pick .recommended {
-  display: inline-flex;
-  vertical-align: -2px;
-  margin-right: 6px;
-  color: var(--accent);
 }
 
 .stage .branch-pick .title-change {
