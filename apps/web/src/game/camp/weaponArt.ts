@@ -629,10 +629,46 @@ function mace(L: number, P: Palette, look: WeaponLook): Build {
   };
 }
 
+/** Points of a quadratic curve from a over control c to b (without a). */
+function quad(
+  a: readonly number[],
+  c: readonly number[],
+  b: readonly number[],
+  steps = 10,
+): number[] {
+  const pts: number[] = [];
+  for (let i = 1; i <= steps; i++) {
+    const t = i / steps;
+    const u = 1 - t;
+    pts.push(
+      u * u * (a[0] ?? 0) + 2 * u * t * (c[0] ?? 0) + t * t * (b[0] ?? 0),
+      u * u * (a[1] ?? 0) + 2 * u * t * (c[1] ?? 0) + t * t * (b[1] ?? 0),
+    );
+  }
+  return pts;
+}
+
+/**
+ * A crescent axe bit on side s (+1 below the haft, −1 above): it flares from the eye with
+ * hollow cheeks into a wide, curved edge, like a forged double axe.
+ */
+function crescentBit(hx: number, s: 1 | -1, reach: number, half: number): number[] {
+  const eye = [hx + 24, s * 14];
+  const tipBack = [hx - half, s * reach * 0.86];
+  const tipFront = [hx + half, s * reach * 0.86];
+  return [
+    hx - 24,
+    s * 14,
+    ...quad([hx - 24, s * 14], [hx - 10, s * reach * 0.55], tipBack),
+    ...quad(tipBack, [hx, s * reach * 1.18], tipFront, 16),
+    ...quad(tipFront, [hx + 10, s * reach * 0.55], eye),
+  ];
+}
+
 function axe(L: number, P: Palette, look: WeaponLook): Build {
   const ks = look.keystone;
   const hx = L * 0.78;
-  const blade = [
+  const standard = [
     hx - 30,
     10,
     hx + 34,
@@ -648,41 +684,56 @@ function axe(L: number, P: Palette, look: WeaponLook): Build {
     hx - 6,
     70,
   ];
+  // Gore: a bearded axe, the lower blade hooks back along the haft to catch and tear.
+  const bearded = [
+    hx - 30,
+    10,
+    hx + 34,
+    10,
+    ...quad([hx + 34, 10], [hx + 70, 40], [hx + 84, 120]),
+    ...quad([hx + 84, 120], [hx + 70, 168], [hx - 10, 184]),
+    hx - 64,
+    186,
+    hx - 52,
+    170,
+    ...quad([hx - 52, 170], [hx - 16, 150], [hx - 12, 80]),
+  ];
   const scale = (pts: readonly number[], f: number, cx: number, cy: number) =>
     pts.map((v, i) => (i % 2 === 0 ? cx + (v - cx) * f : cy + (v - cy) * f));
+  // Executioner: one broad headsman's blade instead of the normal bit.
+  const blade =
+    ks === "gore" ? bearded : ks === "executioner" ? scale(standard, 1.4, hx, 10) : standard;
+  const double = ks === "rampage";
   const behind: Part[] = [];
   const front: Part[] = [];
-  if (ks === "executioner") {
-    behind.push({ poly: scale(blade, 1.4, hx, 10), fill: grad(P.steel), edge: true });
-  } else if (ks === "rampage") {
-    // A second bit on the back: a double axe.
-    behind.push({
-      poly: blade.map((v, i) => (i % 2 === 1 ? -v : v)),
-      fill: grad(P.steel),
-      edge: true,
-    });
-  } else if (ks === "bloodbath") {
+  if (ks === "bloodbath") {
     const edgeLine = [hx + 62, 40, hx + 74, 72, hx + 85, 102, hx + 96, 132];
     for (const t of teeth(edgeLine, 1, 14, -1))
       behind.push({ poly: t, fill: grad(P.steel), edge: true });
-  } else if (ks === "gore") {
-    front.push({
-      poly: [hx - 20, 128, hx - 70, 176, hx - 82, 160, hx - 46, 132, hx - 10, 96],
-      fill: grad(P.steel),
-      edge: true,
-    });
   }
+  const bits: Part[] = double
+    ? [1, -1].map((side) => ({
+        poly: crescentBit(hx, side as 1 | -1, 150, 66),
+        fill: grad(P.steel),
+        edge: true,
+      }))
+    : [{ poly: blade, fill: grad(P.steel), edge: true }];
   return {
     parts: [
-      { poly: [0, -12, L * 0.93, -10, L * 0.93, 10, 0, 12], fill: grad(P.wood) },
+      {
+        poly: double
+          ? [0, -12, hx + 36, -11, hx + 36, 11, 0, 12]
+          : [0, -12, L * 0.93, -10, L * 0.93, 10, 0, 12],
+        fill: grad(P.wood),
+      },
       ...behind,
-      { poly: blade, fill: grad(P.steel), edge: true },
+      ...bits,
       {
         poly: [hx - 36, -18, hx + 38, -18, hx + 34, 22, hx - 32, 22],
         fill: grad(P.iron),
         rim: [hx - 36, -18, hx + 38, -18],
       },
-      ...(ks === "rampage"
+      ...(double || ks === "gore"
         ? []
         : [
             {
@@ -691,7 +742,9 @@ function axe(L: number, P: Palette, look: WeaponLook): Build {
               edge: true,
             },
           ]),
-      { poly: [L * 0.93, -10, L, 0, L * 0.93, 10], fill: grad(P.steel), edge: true },
+      ...(double
+        ? []
+        : [{ poly: [L * 0.93, -10, L, 0, L * 0.93, 10], fill: grad(P.steel), edge: true }]),
       ...front,
     ],
     details: (g) => {
@@ -700,19 +753,29 @@ function axe(L: number, P: Palette, look: WeaponLook): Build {
       // Grain of the haft, the bevel of the blade.
       g.moveTo(L * 0.3, -3).bezierCurveTo(L * 0.45, -6, L * 0.6, 2, hx - 40, -2);
       g.stroke({ color: 0x1a1008, width: 1.5, alpha: 0.6 });
-      g.moveTo(hx + 54, 44)
-        .lineTo(hx + 84, 128)
-        .stroke({ color: 0xffffff, width: 3, alpha: 0.45 });
-      g.moveTo(hx - 10, 76).bezierCurveTo(hx + 10, 100, hx + 40, 110, hx + 70, 120);
-      g.stroke({ color: 0x1a1d22, width: 2, alpha: 0.5 });
-      if (ks === "bloodbath") {
-        for (const [x, y, r] of [
-          [hx + 30, 100, 9],
-          [hx + 52, 126, 6],
-          [hx + 10, 120, 5],
-        ] as const) {
-          g.circle(x, y, r).fill({ color: 0x8a1010, alpha: 0.7 });
+      if (double) {
+        // Bright bevels along both curved edges, dark forge skin on the cheeks.
+        for (const side of [1, -1]) {
+          g.moveTo(hx - 58, side * 122)
+            .quadraticCurveTo(hx, side * 168, hx + 58, side * 122)
+            .stroke({ color: 0xffffff, width: 3, alpha: 0.5 });
+          g.moveTo(hx - 20, side * 30)
+            .quadraticCurveTo(hx, side * 80, hx + 20, side * 30)
+            .stroke({ color: 0x1a1d22, width: 2, alpha: 0.4 });
         }
+      } else if (ks === "gore") {
+        g.moveTo(hx + 70, 50)
+          .quadraticCurveTo(hx + 82, 120, hx + 60, 160)
+          .stroke({ color: 0xffffff, width: 3, alpha: 0.45 });
+        g.moveTo(hx - 4, 60)
+          .quadraticCurveTo(hx - 6, 130, hx - 44, 168)
+          .stroke({ color: 0x1a1d22, width: 2, alpha: 0.5 });
+      } else {
+        g.moveTo(hx + 54, 44)
+          .lineTo(hx + 84, 128)
+          .stroke({ color: 0xffffff, width: 3, alpha: 0.45 });
+        g.moveTo(hx - 10, 76).bezierCurveTo(hx + 10, 100, hx + 40, 110, hx + 70, 120);
+        g.stroke({ color: 0x1a1d22, width: 2, alpha: 0.5 });
       }
       band(g, P.fit, 26 + L * 0.22, 13, 12);
       g.circle(hx, 2, 7).fill(grad(P.fit));
