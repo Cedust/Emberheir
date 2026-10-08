@@ -11,6 +11,7 @@ import {
   heroSetup,
   heroTitle,
   type Item,
+  applyAction,
   itemSlotFor,
   missingRequirements,
   newGame,
@@ -44,7 +45,7 @@ export function startPreview(classId: string, weapon: string): ClassPreview {
   return {
     hero: heroSetup(state, GAME_DATA).setup,
     enemy: createEnemySetup(enemy, 1),
-    heroLook: heroLookOf(classId, state.hero.equipment),
+    heroLook: heroLookOf(classId, state.hero.weaponId, state.hero.equipment),
     enemyLook: { archetype: enemy.archetype, boss: false, elite: false, act: 1 },
     title: GAME_DATA.classes.find((c) => c.id === classId)?.name ?? "",
   };
@@ -72,7 +73,7 @@ export function glimpseState(classId: string, weapon: string): GameState {
       v * 3,
     ]),
   ) as unknown as Attributes;
-  const gear = glimpseGear(base, attributes, weapon, heroClass?.offHand);
+  const gear = glimpseGear(base, attributes, heroClass?.offHand);
   const branches = branchId ? [branchId, branchId] : [];
   const draft: GameState = {
     ...base,
@@ -94,27 +95,48 @@ export function glimpseState(classId: string, weapon: string): GameState {
     .map((n) => n.skill?.id ?? "")
     .filter((id) => id && id !== setup.rotation[0]?.skill.id)
     .slice(0, 3);
-  return { ...draft, hero: { ...draft.hero, rotation: [null, ...skills] } };
+  return glimpseMastery({ ...draft, hero: { ...draft.hero, rotation: [null, ...skills] } });
+}
+
+/** Weapon Mastery of the Glimpse (Rank 10): Refine, then the weapon's first path. */
+function glimpseMastery(state: GameState): GameState {
+  const tree = GAME_DATA.weaponMastery[state.hero.weaponId];
+  const firstPath = tree?.paths[0]?.id;
+  const order = [
+    "precision",
+    "precision",
+    "precision",
+    "steady-hand",
+    "steady-hand",
+    "steady-hand",
+    ...(tree?.nodes.filter((n) => n.path === firstPath).map((n) => n.id) ?? []),
+  ];
+  let s = state;
+  for (const nodeId of order) {
+    try {
+      s = applyAction(s, GAME_DATA, { type: "learnMastery", nodeId });
+    } catch {
+      break;
+    }
+  }
+  return s;
 }
 
 /** Rare gear on every slot that the Glimpse attributes can wear. */
 function glimpseGear(
   base: GameState,
   attributes: Attributes,
-  weapon: string,
   offHand: string | undefined,
 ): Equipment {
   const rng = new Rng(23);
   const equipment: Record<string, Item> = {};
   for (const slot of GAME_DATA.equipmentSlots) {
     const candidates =
-      slot === "mainHand"
-        ? [weapon]
-        : slot === "offHand"
-          ? offHand
-            ? [offHand]
-            : []
-          : basesForSlot(GAME_DATA.items, itemSlotFor(slot)).map((b) => b.id);
+      slot === "offHand"
+        ? offHand
+          ? [offHand]
+          : []
+        : basesForSlot(GAME_DATA.items, itemSlotFor(slot)).map((b) => b.id);
     for (const baseId of candidates) {
       const item = rollItem(
         GAME_DATA.items,
@@ -136,7 +158,7 @@ export function glimpsePreview(classId: string, weapon: string): ClassPreview {
   return {
     hero: heroSetup(state, GAME_DATA).setup,
     enemy: createEnemySetup(enemy, GLIMPSE_LEVEL - 4),
-    heroLook: heroLookOf(classId, state.hero.equipment),
+    heroLook: heroLookOf(classId, state.hero.weaponId, state.hero.equipment),
     enemyLook: { archetype: enemy.archetype, boss: true, elite: false, act: 2 },
     title: heroTitle(state, GAME_DATA),
   };

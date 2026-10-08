@@ -234,10 +234,10 @@ const FIG_W = 96;
 const FIG_H = 168;
 
 function heirGear(state: GameState): HeirGear {
-  const { mainHand, offHand } = state.hero.equipment;
+  const { offHand } = state.hero.equipment;
   const off = offHand?.baseId === "round-shield" ? "shield" : offHand ? "focus" : undefined;
   return {
-    weapon: mainHand?.baseId === "fire-wand" ? "wand" : "sword",
+    weapon: state.hero.weaponId === "fire-wand" ? "wand" : "sword",
     ...(off ? { offHand: off } : {}),
   };
 }

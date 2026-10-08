@@ -22,6 +22,7 @@ import {
   heatPerSecond,
   heroSetup,
   knownSkills,
+  masteryPointsLeft,
   spentInTree,
   triggerThreshold,
 } from "@emberheir/sim";
@@ -30,6 +31,7 @@ import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
+import { MasteryTab } from "./MasteryTab";
 import { SkillTreeTab } from "./SkillTreeTab";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
@@ -493,12 +495,12 @@ export function KaelenView(props: {
   viewOnly: boolean;
   /** The Battle Plan can be changed (Camp and between stages, not mid-fight). */
   planEditable?: boolean;
-  initialTab?: "tree" | "plan";
+  initialTab?: "tree" | "plan" | "mastery";
   onClose: () => void;
 }) {
   const { state, game, viewOnly } = props;
   const planEditable = props.planEditable ?? !viewOnly;
-  const [tab, setTab] = useState<"tree" | "plan">(props.initialTab ?? "tree");
+  const [tab, setTab] = useState<"tree" | "plan" | "mastery">(props.initialTab ?? "tree");
   const [respec, setRespec] = useState(false);
   const spent = spentInTree(GAME_DATA, state.hero.learned);
   const canRespec =
@@ -527,6 +529,15 @@ export function KaelenView(props: {
             >
               Skill Tree
             </button>
+            <button
+              type="button"
+              role="tab"
+              aria-selected={tab === "mastery"}
+              className={`tab title-font ${tab === "mastery" ? "on" : ""}`}
+              onClick={() => setTab("mastery")}
+            >
+              Weapon Mastery
+            </button>
             {planEditable && (
               <button
                 type="button"
@@ -546,6 +557,10 @@ export function KaelenView(props: {
               <span className="sub">Skill Points</span>
             </span>
             <span>
+              <b className="mono">{masteryPointsLeft(state, GAME_DATA)}</b>{" "}
+              <span className="sub">Mastery Points</span>
+            </span>
+            <span>
               <b className="mono">{state.wallet.harvesterEmber}</b>{" "}
               <span className="sub">Harvester&apos;s Ember</span>
             </span>
@@ -554,6 +569,7 @@ export function KaelenView(props: {
             </span>
           </div>
           {!viewOnly &&
+            tab !== "mastery" &&
             (respec ? (
               <span className="respec-confirm">
                 <span className="sub small">Forget all nodes?</span>
@@ -596,7 +612,9 @@ export function KaelenView(props: {
             <Icon name="close" size={20} />
           </button>
         </header>
-        {tab === "tree" || !planEditable ? (
+        {tab === "mastery" ? (
+          <MasteryTab state={state} game={game} viewOnly={viewOnly} />
+        ) : tab === "tree" || !planEditable ? (
           <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />
         ) : (
           <BattlePlanTab state={state} game={game} />

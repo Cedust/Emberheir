@@ -38,6 +38,7 @@ import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
+import { WeaponSlot } from "./WeaponSlot";
 
 const ATTRIBUTE_INFO: Record<Attribute, { name: string; effects: string }> = {
   strength: { name: "Strength", effects: "Physical Damage · Armor" },
@@ -61,7 +62,12 @@ const TABS = ["Offense", "Defense", "Heat"] as const;
 type Tab = (typeof TABS)[number];
 
 const pct = (v: number) => `${formatPercent(v)} %`;
-const HEAT_TEXT = { cooling: "Cooling", steady: "Steady", warming: "Warming" };
+const HEAT_TEXT = {
+  cooling: "Cooling",
+  steady: "Steady",
+  warming: "Warming",
+  smoldering: "Smoldering",
+};
 
 /**
  * Character (Character mock): paperdoll, attributes with pending points (Confirm / Undo),
@@ -267,6 +273,7 @@ export function CharacterOverlay(props: {
           <section className="doll-column" aria-label="Equipment">
             <span className="title-font section-title">Equipment</span>
             <Paperdoll>
+              <WeaponSlot state={state} />
               {GAME_DATA.equipmentSlots.map((slot) => {
                 const pos = dollBox(slot);
                 const it = state.hero.equipment[slot];

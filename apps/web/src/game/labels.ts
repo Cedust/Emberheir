@@ -19,7 +19,6 @@ export const EQUIP_BLOCK_TEXT: Record<EquipBlockReason, string> = {
 
 export const UNEQUIP_BLOCK_TEXT: Record<UnequipBlockReason, string> = {
   fight: "Not during a fight",
-  mainHand: "Swap weapons instead",
   noRoom: "No room",
   empty: "Empty",
 };

@@ -18,9 +18,17 @@ const CLASSES = new Set<HeroLook["heroClass"]>([
   "warlock",
 ]);
 
-/** How the Heir looks in the arena: the class's body, the weapon and off hand in hand. */
-export function heroLookOf(classId: string, equipment: Equipment): HeroLook {
-  const main = equipment.mainHand ? getBase(ITEM_CATALOG, equipment.mainHand.baseId) : undefined;
+/**
+ * How the Heir looks in the arena: the class's body, its own weapon and the off hand, and the
+ * colour of the Echo worn on the weapon.
+ */
+export function heroLookOf(
+  classId: string,
+  weaponId: string,
+  equipment: Equipment,
+  echo?: number,
+): HeroLook {
+  const main = getBase(ITEM_CATALOG, weaponId);
   const off = equipment.offHand ? getBase(ITEM_CATALOG, equipment.offHand.baseId) : undefined;
   const kind = main?.weapon?.id as HeroLook["weapon"] | undefined;
   return {
@@ -31,5 +39,6 @@ export function heroLookOf(classId: string, equipment: Equipment): HeroLook {
     offHand: off
       ? (OFF_HANDS[off.id] ?? (off.fitsWeaponRange === "ranged" ? "focus" : "shield"))
       : null,
+    ...(echo !== undefined ? { echo } : {}),
   };
 }

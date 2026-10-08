@@ -1,6 +1,11 @@
 import { type FighterSnapshot, STAT_NAMES, isPercentStat } from "@emberheir/sim";
 
-const HEAT_BEHAVIOR_LABEL = { cooling: "Cooling", steady: "Steady", warming: "Warming" } as const;
+const HEAT_BEHAVIOR_LABEL = {
+  cooling: "Cooling",
+  steady: "Steady",
+  warming: "Warming",
+  smoldering: "Smoldering",
+} as const;
 
 function Bar(props: {
   kind: "life" | "heat";

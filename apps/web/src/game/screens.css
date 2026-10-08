@@ -354,6 +354,21 @@
   text-shadow: 0 1px 1px #000;
 }
 
+.stage .weapon-tile {
+  cursor: default;
+  background:
+    radial-gradient(ellipse at 50% 80%, rgb(255 120 40 / 0.25), transparent 70%), var(--slot-bg);
+}
+
+.stage .weapon-rank {
+  position: absolute;
+  right: 5px;
+  bottom: 3px;
+  font-size: 13px;
+  font-weight: 700;
+  text-shadow: 0 1px 2px #000;
+}
+
 .stage .item-tile-label {
   font-family: var(--font-title);
   font-size: 10px;
@@ -2432,6 +2447,157 @@
   align-items: center;
   gap: 10px;
   padding: 12px 14px;
+}
+
+/* --- Weapon Mastery: the painted weapon over the forge ------------------------------------- */
+
+.stage .mastery-canvas {
+  /* Forge light in the Heat Form's colour, the weapon's heat in its grade's colour. */
+  background:
+    radial-gradient(
+      ellipse 42% 34% at 48% 88%,
+      color-mix(in srgb, var(--forge, #ffb13b) 30%, transparent),
+      transparent 75%
+    ),
+    radial-gradient(
+      ellipse 32% 26% at 46% 58%,
+      color-mix(in srgb, var(--grade, #d0803a) 14%, transparent),
+      transparent 70%
+    ),
+    radial-gradient(circle at 50% 50%, #221a14, #0b0806 88%);
+  transition: background 0.4s;
+}
+
+.stage .mastery-host {
+  cursor: default;
+}
+
+.stage .mastery-host:active {
+  cursor: default;
+}
+
+/* The nameplate: a museum plaque over the weapon. */
+.stage .mastery-plate {
+  position: absolute;
+  top: 16px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 10px 26px 12px;
+  border: 1px solid rgb(201 160 99 / 0.45);
+  border-radius: 4px;
+  background: linear-gradient(180deg, rgb(30 22 16 / 0.92), rgb(16 11 8 / 0.92));
+  box-shadow:
+    0 8px 30px rgb(0 0 0 / 0.6),
+    inset 0 1px 0 rgb(255 220 160 / 0.15);
+  color: #ecdfc4;
+  pointer-events: none;
+  text-align: center;
+}
+
+.stage .mastery-plate h2 {
+  font-size: 26px;
+  letter-spacing: 1px;
+  text-shadow: 0 0 18px rgb(255 140 60 / 0.45);
+}
+
+.stage .mastery-plate .sub {
+  color: #b9ab92;
+}
+
+.stage .rank-gauge {
+  display: flex;
+  gap: 3px;
+  margin-top: 2px;
+}
+
+.stage .rank-gauge i {
+  width: 13px;
+  height: 8px;
+  border-radius: 2px;
+  background: #2a2019;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.6);
+}
+
+.stage .rank-gauge i.on {
+  box-shadow: 0 0 6px currentcolor;
+}
+
+.stage .weapon-stats {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .weapon-stats .stat-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  margin: 0;
+}
+
+.stage .weapon-stats dt {
+  color: var(--text-sub);
+}
+
+.stage .weapon-stats dd {
+  margin: 0;
+  text-align: right;
+  font-weight: 700;
+}
+
+.stage .echo-picker {
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.stage .echo-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow: auto;
+  max-height: 210px;
+}
+
+.stage .echo-row {
+  display: grid;
+  grid-template-columns: 14px 1fr;
+  gap: 2px 10px;
+  align-items: center;
+  padding: 8px 10px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .echo-row > i {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+}
+
+.stage .echo-row > .small {
+  grid-column: 2;
+}
+
+.stage .echo-row.on {
+  border-color: var(--accent);
+  background: rgb(255 138 58 / 0.12);
+}
+
+.stage .echo-name {
+  font-family: var(--font-title);
+  font-weight: 700;
 }
 
 .stage .plan-layout {
@@ -4544,6 +4710,17 @@
   box-shadow: 0 0 28px color-mix(in srgb, var(--rarity-runeword) 50%, transparent);
   pointer-events: none;
   animation: trophy-toast 3.2s ease-in-out forwards;
+}
+
+.stage .echo-toast {
+  top: 16%;
+  animation-duration: 4.5s;
+}
+
+.stage .echo-orb {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
 }
 
 .stage .trophy-toast-art {

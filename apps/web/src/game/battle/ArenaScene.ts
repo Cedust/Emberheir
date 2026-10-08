@@ -13,6 +13,8 @@ export interface HeroLook {
   readonly heroClass: "warrior" | "reaver" | "hunter" | "sorcerer" | "warlock";
   readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow" | "mace" | "staff";
   readonly offHand: "shield" | "focus" | "quiver" | "talisman" | "grimoire" | null;
+  /** Colour of the Echo worn on the weapon: its motes drift around the hero. */
+  readonly echo?: number;
 }
 
 export interface EnemyLook {
@@ -242,6 +244,8 @@ export class ArenaScene {
   private tint: Record<Side, number> = { hero: 0xffffff, enemy: 0xffffff };
   private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
+  private echoColor: number | null = null;
+  private echoCarry = 0;
   private ranged: Record<Side, boolean> = { hero: false, enemy: false };
   /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
   private heavy: { skill: string; until: number } | null = null;
@@ -278,6 +282,7 @@ export class ArenaScene {
 
   /** Resolves with the Pixi app, or null without WebGL or when destroyed meanwhile. */
   async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<Application | null> {
+    this.echoColor = hero.echo ?? null;
     const app = new Application();
     try {
       await app.init({
@@ -685,6 +690,10 @@ export class ArenaScene {
     const color = DAMAGE_COLORS[e.damageType] ?? 0xffffff;
     const big = e.crit || heavy;
     const at = this.center(target);
+    if (e.glancing) {
+      this.glance(e, at, target);
+      return;
+    }
     victim.flash = 1;
     victim.knock = Math.max(victim.knock, big ? 1 : 0.35);
     // Sparks fly away from the attacker.
@@ -738,6 +747,43 @@ export class ArenaScene {
       const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}`;
       this.float(target, e.blocked ? `${text} ⛨` : text, color, e.crit);
     }
+  }
+
+  /** A Glancing Blow: the weapon skids off, dull grey sparks skitter up, a small grey number. */
+  private glance(e: HitEvent, at: { x: number; y: number }, target: Side): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const victim = this.figure(target);
+    victim.knock = Math.max(victim.knock, 0.15);
+    const away = target === "enemy" ? 0 : Math.PI;
+    // Skids upward and back toward the attacker.
+    const up = target === "enemy" ? RISE - 0.5 : RISE + 0.5;
+    fx.burst({
+      x: at.x - (target === "enemy" ? 40 : -40),
+      y: at.y - 30,
+      count: 10,
+      color: [0x8a8178, 0xc9c2b8, 0x5e5750],
+      angle: [up - 0.5, up + 0.5],
+      speed: [180, 380],
+      life: [0.15, 0.32],
+      size: [5, 9],
+      stretch: 0.8,
+      gravity: 900,
+    });
+    fx.burst({
+      x: at.x,
+      y: at.y,
+      count: 4,
+      kind: "bit",
+      color: 0x5e5750,
+      angle: [away - 0.6, away + 0.6],
+      speed: [60, 140],
+      life: [0.3, 0.5],
+      size: [4, 7],
+      gravity: 500,
+    });
+    if (this.showNumbers)
+      this.float(target, e.damage.toLocaleString("en-US"), 0x8a8178, false, 0.75);
   }
 
   private ailmentPuff(side: Side, ailment: string, count: number): void {
@@ -879,6 +925,28 @@ export class ArenaScene {
       const n = Math.floor(due2);
       this.ailmentCarry[side] = due2 - n;
       for (let i = 0; i < n; i++) for (const a of list) this.ailmentPuff(side, a, 1);
+    }
+    // The worn Echo walks with the hero: its motes drift up around them.
+    if (this.fx && this.echoColor !== null && this.hero && this.hero.root.alpha === 1) {
+      this.echoCarry += 7 * dt;
+      const c = this.center("hero");
+      for (; this.echoCarry >= 1; this.echoCarry--) {
+        this.fx.burst({
+          x: c.x,
+          y: c.y + 30,
+          count: 1,
+          color: [this.echoColor, lighten(this.echoColor)],
+          spreadX: 70,
+          spreadY: 120,
+          angle: [RISE - 0.4, RISE + 0.4],
+          speed: [20, 60],
+          life: [0.9, 1.6],
+          size: [8, 16],
+          wobble: 14,
+          alpha: 0.5,
+          layer: "back",
+        });
+      }
     }
     if (this.fx) {
       this.weather?.update(this.fx, this.view(), dt);

@@ -3,6 +3,7 @@ import type { Page } from "@playwright/test";
 import {
   type GameState,
   type Item,
+  applyAction,
   learnBlockReason,
   learnNodes,
   newGame,
@@ -326,5 +327,49 @@ export function saveWithRings(): string {
       { item: { ...roll("sword"), id: "spare-sword" }, x: 2, y: 0 },
     ],
   };
+  return serializeGame(state);
+}
+
+/**
+ * A Camp save in the fifth run with a well refined sword (Rank 13): Riposte walked, Cooling
+ * chosen, three Echoes earned and Ashfall Wrath worn. `extra` lists more Mastery nodes to learn.
+ */
+export function saveMastery(extra: readonly string[] = []): string {
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
+  let state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 50 },
+    wallet: { ...base.wallet, gold: 500 },
+    progress: {
+      ...base.progress,
+      actsCleared: ["ashen-fields", "rotwood", "ember-wastes"],
+      trainerUnlocked: true,
+    },
+    legacy: {
+      ...base.legacy,
+      prestige: 4,
+      echoes: {
+        "ashfall-wrath": { stage: 4, prestige: 3 },
+        "whispering-brood": { stage: 3, prestige: 3 },
+        "crowned-cinder": { stage: 2, prestige: 3 },
+      },
+    },
+  };
+  const learn = [
+    "precision",
+    "precision",
+    "precision",
+    "full-swing",
+    "full-swing",
+    "heat-cooling",
+    "riposte-1",
+    "riposte-2",
+    "riposte-3",
+    "riposte-counterweight",
+    ...extra,
+  ];
+  for (const nodeId of learn)
+    state = applyAction(state, GAME_DATA, { type: "learnMastery", nodeId });
+  state = applyAction(state, GAME_DATA, { type: "setEcho", echoId: "ashfall-wrath" });
   return serializeGame(state);
 }
