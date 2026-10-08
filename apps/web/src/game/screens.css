@@ -2468,14 +2468,6 @@
   transition: background 0.4s;
 }
 
-.stage .mastery-host {
-  cursor: default;
-}
-
-.stage .mastery-host:active {
-  cursor: default;
-}
-
 /* The nameplate: a museum plaque over the weapon. */
 .stage .mastery-plate {
   position: absolute;

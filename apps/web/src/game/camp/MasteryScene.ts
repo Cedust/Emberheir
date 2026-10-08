@@ -4,6 +4,7 @@ import {
   BlurFilter,
   Container,
   type FederatedPointerEvent,
+  type FederatedWheelEvent,
   Graphics,
   Rectangle,
   Text,
@@ -141,15 +142,25 @@ export class MasteryScene {
   private viewKey = "";
   private view: MasteryView | null = null;
   private size = { w: 900, h: 700, resolution: 1 };
-  private base = { x: 0, y: 0, zoom: 1 };
-  private parallax = { x: 0, y: 0, tx: 0, ty: 0 };
+  /** Camera: world offset (stage pixels) and zoom, with targets the camera glides to. */
+  private cam = { x: 0, y: 0, zoom: 1 };
+  private goal = { x: 0, y: 0, zoom: 1 };
+  /** The zoom that shows the whole weapon: zooming out stops a little below it. */
+  private fitZoom = 1;
+  private velocity = { x: 0, y: 0 };
+  private drag: { x: number; y: number; moved: number; t: number } | null = null;
+  /** Fingers on the canvas; two of them pinch-zoom. */
+  private touches = new Map<number, { x: number; y: number }>();
+  private pinch: { dist: number; x: number; y: number } | null = null;
+  /** How far the last drag moved: a drag that ends on a node is not a click. */
+  private dragged = 0;
   private shakeT = 0;
   private flash = 0;
   private lastTap = { id: "", t: 0 };
   private time = 0;
   private sparkT = 0.6;
   private emberT = 0;
-  /** Particles, pulses and the parallax; off for prefers-reduced-motion. */
+  /** Particles, pulses and the gliding camera; off for prefers-reduced-motion. */
   motion = !reducedMotion();
   /** Screen shake on a learn (Settings). */
   shake = true;
@@ -171,7 +182,7 @@ export class MasteryScene {
     this.size = { w, h, resolution };
     this.app?.renderer.resize(w, h, resolution);
     if (this.app?.stage) this.app.stage.hitArea = new Rectangle(0, 0, w, h);
-    this.fit();
+    this.fit(true);
   }
 
   async mount(host: HTMLElement): Promise<boolean> {
@@ -201,13 +212,15 @@ export class MasteryScene {
     app.stage.addChild(this.world);
     app.stage.eventMode = "static";
     app.stage.hitArea = new Rectangle(0, 0, this.size.w, this.size.h);
-    app.stage.on("globalpointermove", (e: FederatedPointerEvent) => {
-      // The weapon leans a little against the pointer.
-      this.parallax.tx = (e.global.x / this.size.w - 0.5) * -14;
-      this.parallax.ty = (e.global.y / this.size.h - 0.5) * -10;
-    });
+    app.stage.on("pointerdown", (e) => this.dragStart(e));
+    app.stage.on("globalpointermove", (e) => this.dragMove(e));
+    app.stage.on("pointerup", (e) => this.dragEnd(e));
+    app.stage.on("pointerupoutside", (e) => this.dragEnd(e));
+    app.stage.on("wheel", (e) => this.wheel(e));
+    // The page must not scroll while the wheel zooms the weapon.
+    app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
     this.rebuild();
-    this.fit();
+    this.fit(true);
     app.ticker.add((t) => this.tick(t.deltaMS / 1000));
     return true;
   }
@@ -264,7 +277,8 @@ export class MasteryScene {
 
   // --- camera --------------------------------------------------------------------------------
 
-  private fit(): void {
+  /** Shows the whole weapon with all its nodes. */
+  fit(instant = false): void {
     const v = this.view;
     if (!v?.nodes.length) return;
     const xs = [...v.nodes.map((n) => n.node.x), v.pommel.x, v.tip.x];
@@ -277,12 +291,115 @@ export class MasteryScene {
     ];
     const h = this.size.h - TOP_INSET;
     const zoom = Math.min(this.size.w / (maxX - minX), h / (maxY - minY), 1.4);
-    this.base = {
+    this.fitZoom = zoom;
+    this.goal = {
       x: this.size.w / 2 - ((minX + maxX) / 2) * zoom,
       y: TOP_INSET + h / 2 - ((minY + maxY) / 2) * zoom,
       zoom,
     };
+    if (instant || !this.motion) this.cam = { ...this.goal };
     this.applyCamera();
+  }
+
+  /** Centers a node. */
+  focus(id: string, zoom = Math.max(this.goal.zoom, this.fitZoom * 1.6)): void {
+    const n = this.view?.nodes.find((v) => v.node.id === id);
+    if (!n) return;
+    const p = this.pos(n.node);
+    const z = clamp(zoom, this.minZoom(), this.maxZoom());
+    this.goal = { x: this.size.w / 2 - p.x * z, y: this.size.h / 2 - p.y * z, zoom: z };
+    if (!this.motion) this.cam = { ...this.goal };
+  }
+
+  zoomBy(factor: number): void {
+    this.zoomAround(this.size.w / 2, this.size.h / 2, factor);
+  }
+
+  private minZoom(): number {
+    return this.fitZoom * 0.7;
+  }
+
+  private maxZoom(): number {
+    return Math.max(2.2, this.fitZoom * 3);
+  }
+
+  private zoomAround(sx: number, sy: number, factor: number): void {
+    const zoom = clamp(this.goal.zoom * factor, this.minZoom(), this.maxZoom());
+    const k = zoom / this.goal.zoom;
+    this.goal = { x: sx - (sx - this.goal.x) * k, y: sy - (sy - this.goal.y) * k, zoom };
+    if (!this.motion) this.cam = { ...this.goal };
+  }
+
+  private wheel(e: FederatedWheelEvent): void {
+    this.zoomAround(e.global.x, e.global.y, Math.exp(-e.deltaY * 0.0015));
+  }
+
+  private dragStart(e: FederatedPointerEvent): void {
+    this.touches.set(e.pointerId, { x: e.global.x, y: e.global.y });
+    if (this.touches.size >= 2) {
+      this.pinch = this.pinchOf();
+      this.drag = null;
+      this.dragged = 99;
+      this.velocity = { x: 0, y: 0 };
+      return;
+    }
+    this.drag = { x: e.global.x, y: e.global.y, moved: 0, t: performance.now() };
+    this.dragged = 0;
+    this.velocity = { x: 0, y: 0 };
+  }
+
+  private pinchOf(): { dist: number; x: number; y: number } {
+    const [a, b] = [...this.touches.values()];
+    if (!a || !b) return { dist: 1, x: 0, y: 0 };
+    return {
+      dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+    };
+  }
+
+  private dragMove(e: FederatedPointerEvent): void {
+    if (this.touches.has(e.pointerId))
+      this.touches.set(e.pointerId, { x: e.global.x, y: e.global.y });
+    if (this.pinch && this.touches.size >= 2) {
+      // Two fingers: zoom around their middle and pan with it.
+      const next = this.pinchOf();
+      this.goal.x += next.x - this.pinch.x;
+      this.goal.y += next.y - this.pinch.y;
+      this.zoomAround(next.x, next.y, next.dist / this.pinch.dist);
+      this.cam = { ...this.goal };
+      this.pinch = next;
+      return;
+    }
+    if (!this.drag) return;
+    const dx = e.global.x - this.drag.x;
+    const dy = e.global.y - this.drag.y;
+    const now = performance.now();
+    const dt = Math.max(1, now - this.drag.t) / 1000;
+    this.drag = {
+      x: e.global.x,
+      y: e.global.y,
+      moved: this.drag.moved + Math.hypot(dx, dy),
+      t: now,
+    };
+    this.goal.x += dx;
+    this.goal.y += dy;
+    this.cam.x += dx;
+    this.cam.y += dy;
+    this.velocity = { x: dx / dt, y: dy / dt };
+  }
+
+  private dragEnd(e: FederatedPointerEvent): void {
+    this.touches.delete(e.pointerId);
+    if (this.pinch) {
+      // Lifting one finger of a pinch neither taps nor flings.
+      if (this.touches.size < 2) this.pinch = null;
+      this.drag = null;
+      return;
+    }
+    this.dragged = this.drag?.moved ?? 0;
+    if (this.drag && performance.now() - this.drag.t > 80) this.velocity = { x: 0, y: 0 };
+    this.drag = null;
   }
 
   private applyCamera(): void {
@@ -293,12 +410,18 @@ export class MasteryScene {
             y: Math.cos(this.time * 70) * 4 * this.shakeT * 4,
           }
         : { x: 0, y: 0 };
-    this.world.position.set(
-      this.base.x + this.parallax.x + shake.x,
-      this.base.y + this.parallax.y + shake.y,
-    );
-    this.world.scale.set(this.base.zoom);
-    if (this.app) this.app.canvas.dataset.zoom = this.base.zoom.toFixed(2);
+    this.world.position.set(this.cam.x + shake.x, this.cam.y + shake.y);
+    this.world.scale.set(this.cam.zoom);
+    if (this.app) {
+      this.app.canvas.dataset.zoom = this.goal.zoom.toFixed(2);
+      this.app.canvas.dataset.pan = `${Math.round(this.goal.x)},${Math.round(this.goal.y)}`;
+    }
+    // Path node names show once the view is close enough to read them.
+    const close = this.cam.zoom >= this.fitZoom * 1.35;
+    for (const s of this.sprites.values()) {
+      const kind = s.view.node.kind;
+      if (kind === "minor" || kind === "refine") s.name.visible = close || s.view.selected;
+    }
   }
 
   // --- drawing -------------------------------------------------------------------------------
@@ -634,6 +757,7 @@ export class MasteryScene {
   }
 
   private tap(id: string): void {
+    if (this.dragged > 6) return;
     const now = performance.now();
     if (this.lastTap.id === id && now - this.lastTap.t < 320) {
       this.lastTap = { id: "", t: 0 };
@@ -814,11 +938,20 @@ export class MasteryScene {
   private tick(dt: number): void {
     this.time += dt;
     const v = this.view;
-    if (this.motion) {
-      const k = 1 - Math.pow(0.02, dt);
-      this.parallax.x += (this.parallax.tx - this.parallax.x) * k;
-      this.parallax.y += (this.parallax.ty - this.parallax.y) * k;
+    if (!this.drag && (this.velocity.x || this.velocity.y)) {
+      // A flick keeps the view gliding for a moment.
+      this.goal.x += this.velocity.x * dt;
+      this.goal.y += this.velocity.y * dt;
+      this.cam.x += this.velocity.x * dt;
+      this.cam.y += this.velocity.y * dt;
+      const keep = Math.pow(0.02, dt);
+      this.velocity = { x: this.velocity.x * keep, y: this.velocity.y * keep };
+      if (Math.hypot(this.velocity.x, this.velocity.y) < 5) this.velocity = { x: 0, y: 0 };
     }
+    const k = this.motion ? 1 - Math.pow(0.0005, dt) : 1;
+    this.cam.x += (this.goal.x - this.cam.x) * k;
+    this.cam.y += (this.goal.y - this.cam.y) * k;
+    this.cam.zoom += (this.goal.zoom - this.cam.zoom) * k;
     this.shakeT = Math.max(0, this.shakeT - dt);
     this.flash = Math.max(0, this.flash - dt * 1.8);
     this.applyCamera();
@@ -987,3 +1120,5 @@ export class MasteryScene {
 }
 
 export const MASTERY_UNIT = U;
+
+const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));

@@ -40,7 +40,7 @@ const KIND_LABEL: Record<MasteryNode["kind"], string> = {
 };
 
 const BLOCK_TEXT: Record<MasteryBlockReason, string> = {
-  maxed: "Fully refined",
+  maxed: "Fully learned",
   noPoints: "No Mastery Points left. Every Weapon Rank gives one",
   notConnected: "Learn the node before it first",
   rankLocked: "Weapon Rank too low",
@@ -272,6 +272,27 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             <span className="small">{hovered.description}</span>
           </div>
         )}
+        <div className="tree-controls">
+          <button
+            type="button"
+            className="btn icon-btn"
+            aria-label="Zoom in"
+            onClick={() => sceneRef.current?.zoomBy(1.25)}
+          >
+            +
+          </button>
+          <button
+            type="button"
+            className="btn icon-btn"
+            aria-label="Zoom out"
+            onClick={() => sceneRef.current?.zoomBy(0.8)}
+          >
+            −
+          </button>
+          <button type="button" className="btn" onClick={() => sceneRef.current?.fit()}>
+            Fit
+          </button>
+        </div>
         <div className="sr-only" role="group" aria-label="Weapon Mastery">
           {nodes.map((n) => (
             <button
@@ -279,7 +300,10 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
               type="button"
               aria-label={n.name}
               aria-pressed={n.id === selected?.id}
-              onClick={() => setSelectedId(n.id)}
+              onClick={() => {
+                setSelectedId(n.id);
+                sceneRef.current?.focus(n.id);
+              }}
             />
           ))}
         </div>
@@ -338,16 +362,18 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                 >
                   {reason === "chosen"
                     ? "Chosen"
-                    : selected.group
-                      ? selected.default || selected.kind === "attunement"
-                        ? "Choose · free"
-                        : masteryRanks(tree, preview, selected.id) === 0 &&
-                            preview.choices[selected.group]
-                          ? "Switch · free"
-                          : "Choose · 1 Point"
-                      : "Learn · 1 Point"}
+                    : reason === "maxed"
+                      ? "Learned"
+                      : selected.group
+                        ? selected.default || selected.kind === "attunement"
+                          ? "Choose · free"
+                          : masteryRanks(tree, preview, selected.id) === 0 &&
+                              preview.choices[selected.group]
+                            ? "Switch · free"
+                            : "Choose · 1 Point"
+                        : "Learn · 1 Point"}
                 </button>
-                {reason && reason !== "chosen" && (
+                {reason && reason !== "chosen" && reason !== "maxed" && (
                   <p className="block warn">
                     {reason === "rankLocked"
                       ? `Opens at Weapon Rank ${selected.group === "heatForm" ? MASTERY.heatFormRank : MASTERY.innateFormRank}`

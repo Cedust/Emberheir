@@ -45,3 +45,54 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
   }
   expect(errors).toEqual([]);
 });
+
+test("Weapon Mastery pans with a drag and zooms with the wheel and a pinch", async ({ page }) => {
+  await seedSave(page, saveMastery());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("t");
+  await page.getByRole("tab", { name: "Weapon Mastery" }).click();
+  const canvas = page.getByTestId("mastery-canvas").locator("canvas");
+  await expect(canvas).toBeVisible();
+  const zoom = async () => Number(await canvas.getAttribute("data-zoom"));
+  const pan = async () => (await canvas.getAttribute("data-pan")) ?? "";
+  const box = await canvas.boundingBox();
+  if (!box) throw new Error("no canvas");
+  // An empty spot near the bottom right edge.
+  const cx = box.x + box.width * 0.9;
+  const cy = box.y + box.height * 0.9;
+
+  // Drag: the view moves with the mouse.
+  const before = await pan();
+  await page.mouse.move(cx, cy);
+  await page.mouse.down();
+  await page.mouse.move(cx - 120, cy - 60, { steps: 6 });
+  await page.mouse.up();
+  await expect.poll(pan).not.toBe(before);
+
+  const start = await zoom();
+  await page.mouse.wheel(0, -400);
+  await expect.poll(zoom).toBeGreaterThan(start);
+
+  await page.getByRole("button", { name: "Fit" }).click();
+  await expect.poll(zoom).toBe(start);
+
+  const cdp = await page.context().newCDPSession(page);
+  const pinch = async (from: number, to: number) => {
+    const points = (d: number) => [
+      { x: cx - 100 - d, y: cy - 60, id: 1 },
+      { x: cx - 100 + d, y: cy - 60, id: 2 },
+    ];
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: points(from) });
+    for (let i = 1; i <= 8; i++) {
+      const d = from + ((to - from) * i) / 8;
+      await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: points(d) });
+    }
+    await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+  };
+  await pinch(30, 90);
+  await expect.poll(zoom).toBeGreaterThan(start * 1.5);
+  const zoomedIn = await zoom();
+  await pinch(90, 30);
+  await expect.poll(zoom).toBeLessThan(zoomedIn / 1.5);
+});
