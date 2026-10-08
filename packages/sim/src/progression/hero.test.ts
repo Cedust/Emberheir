@@ -19,7 +19,7 @@ const build = (heatFromHitsTaken = 0) =>
       level: 1,
       attributes: ATTRIBUTES,
       equipment: {},
-      fallbackWeapon: { ...TEST_WEAPON, heatBehavior: "cooling" },
+      weapon: { ...TEST_WEAPON, heatBehavior: "cooling" },
       rotation: () => [],
       bonuses: () => ({ heatFromHitsTaken }),
     },

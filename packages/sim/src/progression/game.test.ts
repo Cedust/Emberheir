@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { bossTrophies, uniquesFor } from "../items/generate";
+import { bossTrophies, rollItem, uniquesFor } from "../items/generate";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type GameAction,
@@ -38,6 +38,16 @@ import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixture
 
 const data = TEST_GAME_DATA;
 const start = (seed = 1) => newGame(data, { seed, classId: "test-fighter" });
+/** A Normal ring worn in the Ring slot (the hero starts with no gear but the weapon). */
+const OLD_RING = rollItem(
+  data.items,
+  { baseId: "test-ring", itemLevel: 1, rarity: "normal" },
+  new Rng(9),
+);
+const ringed = (state: GameState): GameState => ({
+  ...state,
+  hero: { ...state.hero, equipment: { ...state.hero.equipment, ring1: OLD_RING } },
+});
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
 /** A later run: Prestige `prestige` opens that many more acts. */
@@ -60,10 +70,11 @@ function clearStage(state: GameState): GameState {
 }
 
 describe("game loop", () => {
-  it("starts in the Camp with a Normal starter weapon and the Start Skill", () => {
+  it("starts in the Camp with the class weapon (no item) and its Innate skill", () => {
     const state = start();
     expect(state.run).toBeNull();
-    expect(state.hero.equipment.mainHand).toMatchObject({ baseId: "test-sword", rarity: "normal" });
+    expect(state.hero.weaponId).toBe("test-sword");
+    expect(state.hero.equipment).toEqual({});
     const { setup } = heroSetup(state, data);
     expect(setup.rotation.map((r) => r.skill.id)).toEqual(["sword-skill"]);
     expect(setup.bonuses?.life).toBe(5); // start node
@@ -149,7 +160,6 @@ describe("game loop", () => {
     expect(s.notice).toMatchObject({ kind: "death", stage: 1, enemyName: "Killer" });
     expect(s.progress.deathsInAct).toBe(1);
     expect(s.stats.deaths).toBe(1);
-    expect(s.hero.equipment.mainHand).toBeDefined();
     expect(act(s, { type: "dismissNotice" }).notice).toBeNull();
   });
 
@@ -218,30 +228,30 @@ describe("game loop", () => {
   });
 
   it("equipping puts the old item into the inventory and respects requirements", () => {
-    let s = act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+    let s = act(ringed(start()), { type: "setOut", actId: "test-act" }, { type: "startStage" });
     s = act(s, { type: "resolveFight" });
     const rewards = s.run?.rewards ?? fail();
-    const index = rewards.items.findIndex((i) => i.baseId === "test-sword");
+    const index = rewards.items.findIndex((i) => i.baseId === "test-ring");
     const shield = rewards.items.findIndex((i) => i.baseId === "test-shield");
     expect(index).toBeGreaterThanOrEqual(0);
     // The shield needs 8 Strength, the hero has 6.
     expect(equipBlockReason(s, data, rewards.items[shield] ?? fail(), "pick")).toBe("requirements");
-    const oldWeapon = s.hero.equipment.mainHand;
+    const oldRing = s.hero.equipment.ring1;
     s = act(s, { type: "pickItem", index, mode: "equip" });
-    expect(s.hero.equipment.mainHand?.id).toBe(rewards.items[index]?.id);
-    expect(s.inventory.map((p) => p.item.id)).toEqual([oldWeapon?.id]);
+    expect(s.hero.equipment.ring1?.id).toBe(rewards.items[index]?.id);
+    expect(s.inventory.map((p) => p.item.id)).toEqual([oldRing?.id]);
 
     // Swap back from the inventory. Salvage is Thoric's (Camp only); on the road you can only
-    // throw the other sword away, for nothing.
-    s = act(s, { type: "equip", itemId: oldWeapon?.id ?? "" });
-    expect(s.hero.equipment.mainHand?.id).toBe(oldWeapon?.id);
+    // throw the other ring away, for nothing.
+    s = act(s, { type: "equip", itemId: oldRing?.id ?? "" });
+    expect(s.hero.equipment.ring1?.id).toBe(oldRing?.id);
     const other = rewards.items[index]?.id ?? "";
     expect(() => act(s, { type: "salvage", itemId: other })).toThrow(/Camp/);
     const dust = s.wallet.dust;
     const discarded = act(s, { type: "discard", itemId: other });
     expect(discarded.inventory).toHaveLength(0);
     expect(discarded.wallet).toEqual(s.wallet);
-    expect(() => act(s, { type: "unequip", slot: "mainHand" })).toThrow(/mainHand/);
+    expect(() => act(s, { type: "unequip", slot: "offHand" })).toThrow();
 
     s = act(s, { type: "retreat" });
     expect(s.run).toBeNull();
@@ -251,11 +261,11 @@ describe("game loop", () => {
   });
 
   it("drag & drop moves items inside the inventory and onto a chosen slot", () => {
-    let s = act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+    let s = act(ringed(start()), { type: "setOut", actId: "test-act" }, { type: "startStage" });
     s = act(s, { type: "resolveFight" });
     const rewards = s.run?.rewards ?? fail();
-    const index = rewards.items.findIndex((i) => i.baseId === "test-sword");
-    const oldWeapon = s.hero.equipment.mainHand ?? fail();
+    const index = rewards.items.findIndex((i) => i.baseId === "test-ring");
+    const oldWeapon = s.hero.equipment.ring1 ?? fail();
     s = act(s, { type: "pickItem", index, mode: "equip" });
     expect(s.inventory[0]).toMatchObject({ x: 0, y: 0 });
     s = act(s, { type: "placeItem", itemId: oldWeapon.id, at: { x: 3, y: 1 } });
@@ -264,10 +274,10 @@ describe("game loop", () => {
       /room/,
     );
     // An item never fits a slot of another kind.
-    expect(equipBlockReason(s, data, oldWeapon, "inventory", "ring1")).toBe("noSlot");
-    expect(() => act(s, { type: "equip", itemId: oldWeapon.id, slot: "ring1" })).toThrow();
-    s = act(s, { type: "equip", itemId: oldWeapon.id, slot: "mainHand" });
-    expect(s.hero.equipment.mainHand?.id).toBe(oldWeapon.id);
+    expect(equipBlockReason(s, data, oldWeapon, "inventory", "offHand")).toBe("noSlot");
+    expect(() => act(s, { type: "equip", itemId: oldWeapon.id, slot: "offHand" })).toThrow();
+    s = act(s, { type: "equip", itemId: oldWeapon.id, slot: "ring1" });
+    expect(s.hero.equipment.ring1?.id).toBe(oldWeapon.id);
   });
 
   it("Pity raises the top weights; Elites and Bosses have a rarity floor", () => {
@@ -314,10 +324,10 @@ describe("game loop", () => {
   });
 
   it("the Supply Wagon stores items in the Camp, and Equip swaps back into the stash", () => {
-    let s = act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+    let s = act(ringed(start()), { type: "setOut", actId: "test-act" }, { type: "startStage" });
     s = act(s, { type: "resolveFight" });
     const items = s.run?.rewards?.items ?? fail();
-    const index = items.findIndex((i) => i.baseId === "test-sword");
+    const index = items.findIndex((i) => i.baseId === "test-ring");
     s = act(s, { type: "pickItem", index, mode: "take" }, { type: "retreat" });
     const loot = items[index] ?? fail();
     expect(moveBlockReason(s, data, loot.id, "stash")).toBeUndefined();
@@ -325,9 +335,9 @@ describe("game loop", () => {
     expect(s.inventory).toHaveLength(0);
     expect(s.stash.map((p) => p.item.id)).toEqual([loot.id]);
 
-    const old = s.hero.equipment.mainHand ?? fail();
+    const old = s.hero.equipment.ring1 ?? fail();
     s = act(s, { type: "equip", itemId: loot.id });
-    expect(s.hero.equipment.mainHand?.id).toBe(loot.id);
+    expect(s.hero.equipment.ring1?.id).toBe(loot.id);
     expect(s.stash.map((p) => p.item.id)).toEqual([old.id]);
     s = act(s, { type: "sortStash" }, { type: "moveItem", itemId: old.id, to: "inventory" });
     expect(s.inventory.map((p) => p.item.id)).toEqual([old.id]);
@@ -627,7 +637,7 @@ describe("Boss trophies and the Trophy Wall", () => {
 
   it("v6 save games start the Trophy Wall with the Uniques the hero carries", () => {
     const s = start();
-    const ring = { ...(s.hero.equipment.mainHand ?? fail()), id: "u", uniqueId: "band" };
+    const ring = { ...OLD_RING, id: "u", uniqueId: "band" };
     const v6 = {
       ...s,
       version: 6,

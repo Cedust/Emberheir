@@ -9,7 +9,7 @@ import {
   resolveEquipment,
   scaledBaseStats,
 } from "./equipment";
-import { TEST_AXE, TEST_CATALOG, TEST_SHIELD, TEST_WAND } from "./test-fixtures";
+import { TEST_AXE, TEST_CATALOG, TEST_SHIELD, TEST_SWORD, TEST_WAND } from "./test-fixtures";
 import type { Item } from "./types";
 
 const STRONG = { ...ZERO_ATTRIBUTES, strength: 20 };
@@ -60,29 +60,27 @@ describe("equipment stats", () => {
 
   it("sums all active items; unmet requirements and wrong off hands give nothing", () => {
     const equipment = {
-      mainHand: item("test-sword"),
       offHand: item("test-shield"),
       ring1: item("test-ring", [{ affixId: "life", quality: 1 }]),
       ring2: item("test-ring", [{ affixId: "life", quality: 0 }]),
     };
-    const strong = resolveEquipment(equipment, TEST_CATALOG, STRONG);
-    expect(strong.weapon?.id).toBe("test-blade");
+    const sword = TEST_SWORD.weapon;
+    const strong = resolveEquipment(equipment, TEST_CATALOG, STRONG, sword);
     expect(strong.bonuses.life).toBe(30);
     expect(strong.bonuses.armor).toBe(10);
     expect(strong.bonuses.critChance).toBeCloseTo(0.02);
     expect(strong.inactive).toEqual([]);
 
-    const weak = resolveEquipment(equipment, TEST_CATALOG, ZERO_ATTRIBUTES);
-    expect(weak.weapon).toBeUndefined();
+    const weak = resolveEquipment(equipment, TEST_CATALOG, ZERO_ATTRIBUTES, sword);
     expect(weak.inactive.map((i) => [i.slot, i.reason.kind])).toEqual([
-      ["mainHand", "requirements"],
       ["offHand", "requirements"],
     ]);
 
     const wand = resolveEquipment(
-      { mainHand: item("test-wand"), offHand: item("test-shield") },
+      { offHand: item("test-shield") },
       TEST_CATALOG,
       STRONG,
+      TEST_WAND.weapon,
     );
     expect(wand.inactive.map((i) => i.reason.kind)).toEqual(["offHandMismatch"]);
 

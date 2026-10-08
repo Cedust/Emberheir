@@ -78,6 +78,20 @@ import { type HeroClass, classTitle, getClass } from "./classes";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
 import {
+  EMPTY_MASTERY,
+  type EchoDefinition,
+  type EchoesState,
+  MASTERY,
+  type MasteryBuild,
+  type MasteryState,
+  type WeaponMasteryTree,
+  buildMasteryWeapon,
+  learnMastery,
+  pointsSpent,
+  weaponRank,
+  weaponTitle,
+} from "./weapon-mastery";
+import {
   type GridPosition,
   INVENTORY_SIZE,
   type PlacedItem,
@@ -111,7 +125,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -153,6 +167,10 @@ export interface GameData {
   readonly branchEpithets: Readonly<Record<string, string>>;
   /** Innate skill per weapon id: it comes with the weapon, not from the Skill Tree. */
   readonly startSkills: Readonly<Record<string, SkillDefinition>>;
+  /** Weapon Mastery tree per weapon id (waffe-als-system-v1.md). */
+  readonly weaponMastery: Readonly<Record<string, WeaponMasteryTree>>;
+  /** Echoes the act bosses leave on the weapon. */
+  readonly echoes: readonly EchoDefinition[];
   readonly skillTree: SkillTreeDefinition;
   readonly acts: readonly ActData[];
   readonly eliteModifiers: readonly EliteModifier[];
@@ -203,9 +221,13 @@ export interface HeroState {
   readonly unspentAttributePoints: number;
   readonly unspentSkillPoints: number;
   readonly learned: LearnedNodes;
+  /** The weapon chosen with the class; it never changes (Weapon Mastery). */
+  readonly weaponId: string;
+  /** Weapon Mastery at Kaelen: learned nodes, Forms, Keystone and the worn Echo. */
+  readonly mastery: MasteryState;
   readonly equipment: Equipment;
   /**
-   * Skill id per Rotation Slot. `null` = the Start Skill of the weapon in hand. Skills the hero
+   * Skill id per Rotation Slot. `null` = the weapon's Innate skill. Skills the hero
    * does not know (any more) are skipped.
    */
   readonly rotation: readonly (string | null)[];
@@ -261,6 +283,8 @@ export interface Rewards {
   readonly itemPick: ItemPick | null;
   /** Uniques seen for the first time (they go up on the Trophy Wall). */
   readonly newTrophies?: readonly string[];
+  /** A boss left its Echo on the weapon, or made it one stage stronger. */
+  readonly echo?: { readonly id: string; readonly stage: number };
   /** Dust from auto-salvaging the items that were not picked. */
   readonly salvagedDust: number;
   /** Spoils pick, empty if this fight has none. */
@@ -348,6 +372,8 @@ export interface LegacyState {
   readonly branches: readonly string[];
   /** Trophy Wall: Uniques ever found. Permanent like the Runeword Codex. */
   readonly trophies: readonly string[];
+  /** Echoes earned from act bosses: their stage rises once per run (Weapon Mastery). */
+  readonly echoes: EchoesState;
   /** The Last Ember: attempts so far and whether the last flame is home. */
   readonly finaleAttempts?: number;
   readonly finaleWon?: boolean;
@@ -428,7 +454,7 @@ export function nextRng(state: GameState): [Rng, GameState] {
 export interface NewGameOptions {
   readonly seed: number;
   readonly classId: string;
-  /** One of the class's start weapons; default its first. */
+  /** One of the class's weapons; default its first. Fixed for the character. */
   readonly weapon?: string;
   readonly name?: string;
 }
@@ -442,7 +468,6 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
   }
   const seed = options.seed >>> 0;
   const rng = new Rng(mixSeed(seed, 0xfffff));
-  const weapon = rollItem(data.items, { baseId: weaponId, itemLevel: 1, rarity: "normal" }, rng);
   const offHand = heroClass.offHand
     ? rollItem(data.items, { baseId: heroClass.offHand, itemLevel: 1, rarity: "normal" }, rng)
     : undefined;
@@ -459,7 +484,9 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       unspentAttributePoints: 0,
       unspentSkillPoints: PROGRESSION.startSkillPoints,
       learned: {},
-      equipment: offHand ? { mainHand: weapon, offHand } : { mainHand: weapon },
+      weaponId,
+      mastery: EMPTY_MASTERY,
+      equipment: offHand ? { offHand } : {},
       rotation: [null],
       plan: EMPTY_PLAN,
     },
@@ -496,6 +523,7 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       quarry: null,
       branches: [],
       trophies: [],
+      echoes: {},
     },
     pendingPrestige: null,
     boons: EMPTY_BOONS,
@@ -635,10 +663,61 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
   };
 }
 
-/** The weapon a main-hand item gives when its requirements are not met: none. Fallback. */
-function fallbackWeapon(state: GameState, data: GameData): WeaponDefinition | undefined {
-  const item = state.hero.equipment.mainHand;
-  return item ? getBase(data.items, item.baseId).weapon : undefined;
+// --- Weapon Mastery --------------------------------------------------------------------------
+
+/** The weapon type's base values (damage, speed, Innate) from the item catalog. */
+export function weaponBase(data: GameData, weaponId: string): WeaponDefinition {
+  return getBase(data.items, weaponId).weapon ?? fail(`"${weaponId}" is not a weapon`);
+}
+
+export function masteryTree(data: GameData, weaponId: string): WeaponMasteryTree {
+  return data.weaponMastery[weaponId] ?? fail(`No Weapon Mastery for "${weaponId}"`);
+}
+
+/** The hero's Weapon Rank: it follows the level (one Mastery point per Rank). */
+export const heroWeaponRank = (state: GameState) => weaponRank(state.hero.level);
+
+/** The worn Echo and its stage, if any. */
+export function wornEcho(
+  state: GameState,
+  data: GameData,
+): { readonly def: EchoDefinition; readonly stage: number } | undefined {
+  const id = state.hero.mastery.echo;
+  const def = id ? data.echoes.find((e) => e.id === id) : undefined;
+  const stage = id ? (state.legacy.echoes[id]?.stage ?? 0) : 0;
+  return def && stage > 0 ? { def, stage } : undefined;
+}
+
+/** The hero's weapon as Weapon Mastery builds it (Rank, nodes, Forms, Keystone, Echo). */
+export function heroWeapon(state: GameState, data: GameData): MasteryBuild {
+  const { weaponId, mastery } = state.hero;
+  const base = weaponBase(data, weaponId);
+  return buildMasteryWeapon(
+    base,
+    masteryTree(data, weaponId),
+    mastery,
+    heroWeaponRank(state),
+    data.startSkills[base.id],
+    wornEcho(state, data),
+  );
+}
+
+/** The weapon's name: grade + Keystone form + "of" Echo ("Tempered Parrying Blade of ..."). */
+export function heroWeaponName(state: GameState, data: GameData): string {
+  const { weaponId, mastery } = state.hero;
+  return weaponTitle(
+    weaponBase(data, weaponId),
+    masteryTree(data, weaponId),
+    mastery,
+    heroWeaponRank(state),
+    wornEcho(state, data)?.def,
+  );
+}
+
+/** Weapon Mastery points not spent yet. */
+export function masteryPointsLeft(state: GameState, data: GameData): number {
+  const tree = masteryTree(data, state.hero.weaponId);
+  return Math.max(0, heroWeaponRank(state) - pointsSpent(tree, state.hero.mastery));
 }
 
 export interface KnownSkill {
@@ -654,15 +733,20 @@ export function knownSkills(
   data: GameData,
   weapon: WeaponDefinition,
 ): KnownSkill[] {
-  const start = data.startSkills[weapon.id];
+  // The Innate after Innate Form and Attunement; tree ranks still count for the weapon's own.
+  const own = data.startSkills[weapon.id];
+  const start = heroWeapon(state, data).innate ?? own;
   const fromTree = treeSkills(data.skillTree, state.hero.learned);
   const result: KnownSkill[] = [];
   if (start) {
-    const ranks = fromTree.find((t) => t.skill.id === start.id)?.ranks ?? 0;
+    const ranks =
+      fromTree.find((t) => t.skill.id === start.id || t.skill.id === own?.id)?.ranks ?? 0;
     result.push({ skill: start, level: 1 + ranks, startSkill: true });
   }
   for (const { skill, ranks } of fromTree) {
-    if (skill.id !== start?.id) result.push({ skill, level: ranks, startSkill: false });
+    if (skill.id !== start?.id && skill.id !== own?.id) {
+      result.push({ skill, level: ranks, startSkill: false });
+    }
   }
   return result;
 }
@@ -797,12 +881,14 @@ export function heroSetup(
   const { hero } = state;
   const boons = boonEffects(heroBoons(state, data));
   const trait = heroClassOf(state, data).trait;
+  const mastery = heroWeapon(state, data);
   return buildHeroSetup(
     {
       level: hero.level,
       attributes: hero.attributes,
       equipment: hero.equipment,
-      fallbackWeapon: fallbackWeapon(state, data),
+      weapon: mastery.weapon,
+      weaponRules: mastery.weaponRules,
       rotation: (weapon) => heroRotation(state, data, weapon),
       reactions: (weapon) => heroReactions(state, data, weapon),
       capstone: (weapon) => heroCapstone(state, data, weapon),
@@ -812,12 +898,19 @@ export function heroSetup(
           treeBonuses(data.skillTree, hero.learned, weapon.range),
           boons.bonuses,
           trait.bonuses,
+          mastery.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
         ...boons.triggers,
+        ...mastery.triggers,
       ],
-      rules: mergeRules(keystoneRules(data.skillTree, hero.learned), boons.rules, trait.rules),
+      rules: mergeRules(
+        keystoneRules(data.skillTree, hero.learned),
+        boons.rules,
+        trait.rules,
+        mastery.rules,
+      ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
     },
     data.items,
@@ -978,7 +1071,7 @@ export function takeBlockReason(
   return addToGrid(state.inventory, item, data.items) ? undefined : "noRoom";
 }
 
-export type UnequipBlockReason = "fight" | "mainHand" | "noRoom" | "empty";
+export type UnequipBlockReason = "fight" | "noRoom" | "empty";
 
 export function unequipBlockReason(
   state: GameState,
@@ -988,8 +1081,6 @@ export function unequipBlockReason(
   if (state.run?.phase === "fight") return "fight";
   const item = state.hero.equipment[slot];
   if (!item) return "empty";
-  // The hero always needs a weapon: swap it instead.
-  if (slot === "mainHand") return "mainHand";
   return addToGrid(state.inventory, item, data.items) ? undefined : "noRoom";
 }
 
@@ -1035,6 +1126,12 @@ export type GameAction =
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
   | { readonly type: "respecTree" }
+  /** Kaelen, Weapon Mastery: learn a node or pick it in its group (Heat Form, Keystone ...). */
+  | { readonly type: "learnMastery"; readonly nodeId: string }
+  /** Kaelen: forget the Weapon Mastery for Gold. The worn Echo stays. */
+  | { readonly type: "respecMastery" }
+  /** Kaelen: wear an earned Echo on the weapon (or none). */
+  | { readonly type: "setEcho"; readonly echoId: string | null }
   /** Supply Wagon (Camp only): move an item between inventory and stash. */
   | {
       readonly type: "moveItem";
@@ -1099,6 +1196,12 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return learn(state, data, action.nodeIds);
     case "respecTree":
       return respecTree(state, data);
+    case "learnMastery":
+      return learnMasteryNode(state, data, action.nodeId);
+    case "respecMastery":
+      return respecMastery(state, data);
+    case "setEcho":
+      return setEcho(state, data, action.echoId);
     case "moveItem":
       return moveItem(state, data, action.itemId, action.to, action.at);
     case "sortStash":
@@ -1353,6 +1456,16 @@ function resolveFight(state: GameState, data: GameData): GameState {
     !state.progress.actsCleared.includes(act.id) &&
     !(rank === "boss" && isHarvestAct(data, act.id, state.legacy.prestige)) &&
     (rank !== "normal" || act.spoilsStages.includes(run.stage));
+  // The act boss leaves its Echo, one stage stronger once per run (Weapon Mastery).
+  const echoDef = rank === "boss" ? data.echoes.find((e) => e.actId === act.id) : undefined;
+  const echoBefore = echoDef ? state.legacy.echoes[echoDef.id] : undefined;
+  const echo =
+    echoDef && (!echoBefore || echoBefore.prestige !== state.legacy.prestige)
+      ? {
+          id: echoDef.id,
+          stage: Math.min(MASTERY.maxEchoStage, (echoBefore?.stage ?? 0) + 1),
+        }
+      : undefined;
   const boonOffer = shrine
     ? rollBoonOffer(
         data.boons ?? [],
@@ -1376,6 +1489,10 @@ function resolveFight(state: GameState, data: GameData): GameState {
     },
     hero: {
       ...state.hero,
+      // The first Echo goes straight onto the weapon.
+      ...(echo && !state.hero.mastery.echo
+        ? { mastery: { ...state.hero.mastery, echo: echo.id } }
+        : {}),
       level: leveled.level,
       xp: leveled.xp,
       unspentAttributePoints:
@@ -1397,6 +1514,14 @@ function resolveFight(state: GameState, data: GameData): GameState {
       runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
       quarry: nextQuarry,
       trophies: [...state.legacy.trophies, ...newTrophies],
+      ...(echo
+        ? {
+            echoes: {
+              ...state.legacy.echoes,
+              [echo.id]: { stage: echo.stage, prestige: state.legacy.prestige },
+            },
+          }
+        : {}),
     },
     run: {
       ...run,
@@ -1418,6 +1543,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ...(escaped ? { thief: "escaped" as const } : {}),
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
         ...(newTrophies.length ? { newTrophies } : {}),
+        ...(echo ? { echo } : {}),
         itemPick: null,
         salvagedDust: 0,
         spoils,
@@ -2110,6 +2236,42 @@ function respecTree(state: GameState, data: GameData): GameState {
   };
 }
 
+function learnMasteryNode(state: GameState, data: GameData, nodeId: string): GameState {
+  requireTrainer(state);
+  const tree = masteryTree(data, state.hero.weaponId);
+  let mastery: MasteryState;
+  try {
+    mastery = learnMastery(tree, state.hero.mastery, nodeId, heroWeaponRank(state));
+  } catch (e) {
+    return fail(e instanceof Error ? e.message : String(e));
+  }
+  return { ...state, hero: { ...state.hero, mastery } };
+}
+
+function respecMastery(state: GameState, data: GameData): GameState {
+  requireTrainer(state);
+  const { mastery } = state.hero;
+  const tree = masteryTree(data, state.hero.weaponId);
+  if (pointsSpent(tree, mastery) === 0 && Object.keys(mastery.choices).length === 0) {
+    return fail("Nothing to respec");
+  }
+  if (state.wallet.gold < MASTERY.respecGold) return fail("Not enough Gold");
+  return {
+    ...state,
+    hero: { ...state.hero, mastery: { ...EMPTY_MASTERY, echo: mastery.echo } },
+    wallet: { ...state.wallet, gold: state.wallet.gold - MASTERY.respecGold },
+  };
+}
+
+function setEcho(state: GameState, data: GameData, echoId: string | null): GameState {
+  requireTrainer(state);
+  if (echoId !== null) {
+    if (!data.echoes.some((e) => e.id === echoId)) return fail(`Unknown Echo "${echoId}"`);
+    if (!(state.legacy.echoes[echoId]?.stage ?? 0)) return fail("This Echo is not earned yet");
+  }
+  return { ...state, hero: { ...state.hero, mastery: { ...state.hero.mastery, echo: echoId } } };
+}
+
 function setRotationSkill(
   state: GameState,
   data: GameData,
@@ -2318,6 +2480,7 @@ export function deserializeGame(json: string, data?: GameData): GameState {
   if (state.version === 6) state = migrateV6(state);
   if (state.version === 7) state = migrateV7(state, data);
   if (state.version === 8) state = migrateV8(state, data);
+  if (state.version === 9) state = migrateV9(state, data);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -2362,6 +2525,7 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
       quarry: null,
       branches: [],
       trophies: [],
+      echoes: {},
     },
     pendingPrestige: null,
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
@@ -2498,7 +2662,7 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
 function migrateV8(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
   const hero = state.hero as (Omit<HeroState, "name" | "classId"> & Partial<HeroState>) | undefined;
   if (!hero) return { ...state, version: 9 };
-  const weapon = hero.equipment.mainHand?.baseId;
+  const weapon = (hero.equipment as LegacyEquipment).mainHand?.baseId;
   const classes = data?.classes ?? [];
   const heroClass =
     classes.find((c) => weapon !== undefined && c.weapons.includes(weapon)) ?? classes[0];
@@ -2507,5 +2671,85 @@ function migrateV8(state: Partial<GameState>, data: GameData | undefined): Parti
     ...state,
     version: 9,
     hero: { ...hero, classId, name: hero.name ?? heroClass?.name ?? "Heir" },
+  };
+}
+
+/** Equipment of saves before v10, which still had a Main Hand. */
+type LegacyEquipment = Equipment & { readonly mainHand?: Item };
+
+/**
+ * v9 → v10 (Weapon Mastery, waffe-als-system-v1.md): the weapon is the hero's own and never
+ * drops. The hero keeps the weapon type in hand (or the class's first); weapon items turn into
+ * Salvage Dust. Echoes are granted for the bosses beaten so far: one stage per run since the
+ * act opened, so an older hero does not start from nothing.
+ */
+function migrateV9(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
+  const hero = state.hero as
+    (Omit<HeroState, "weaponId" | "mastery"> & Partial<HeroState>) | undefined;
+  if (!hero) return { ...state, version: 10 };
+  const isWeapon = (item: Item) =>
+    data ? getBase(data.items, item.baseId).weapon !== undefined : item.baseId === "";
+  const { mainHand, ...equipment } = hero.equipment as LegacyEquipment;
+  const heroClass = data?.classes.find((c) => c.id === hero.classId);
+  const weaponId =
+    hero.weaponId ??
+    (mainHand && (!heroClass || heroClass.weapons.includes(mainHand.baseId))
+      ? mainHand.baseId
+      : (heroClass?.weapons[0] ?? mainHand?.baseId ?? "sword"));
+  let dust = mainHand ? salvageValue(mainHand) : 0;
+  const keep = (grid: readonly PlacedItem[] | undefined) =>
+    (grid ?? []).filter((p) => {
+      if (!isWeapon(p.item)) return true;
+      dust += salvageValue(p.item);
+      return false;
+    });
+  const inventory = keep(state.inventory);
+  const stash = keep(state.stash);
+  const prestige = state.legacy?.prestige ?? 0;
+  const cleared = state.progress?.actsCleared ?? [];
+  const echoes: Record<string, { stage: number; prestige: number }> = {};
+  for (const echo of data?.echoes ?? []) {
+    const act = data?.acts.find((a) => a.id === echo.actId);
+    if (!act) continue;
+    // Runs since the act opened, each with a boss kill, plus this run's if it fell already.
+    const stage = Math.min(
+      MASTERY.maxEchoStage,
+      Math.max(0, prestige - act.number + 1) + (cleared.includes(act.id) ? 1 : 0),
+    );
+    if (stage > 0) {
+      echoes[echo.id] = { stage, prestige: cleared.includes(act.id) ? prestige : prestige - 1 };
+    }
+  }
+  const run = state.run;
+  const rewards = run?.rewards;
+  let migratedRewards = rewards;
+  if (rewards && data) {
+    // Weapon cards in an open item pick: dropped, the taken ones re-counted.
+    const index = new Map<number, number>();
+    const items = rewards.items.filter((item, i) => {
+      if (isWeapon(item)) return false;
+      index.set(i, index.size);
+      return true;
+    });
+    const taken = rewards.taken?.flatMap((t) => {
+      const i = index.get(t.index);
+      return i === undefined ? [] : [{ ...t, index: i }];
+    });
+    migratedRewards = {
+      ...rewards,
+      items,
+      ...(taken ? { taken } : {}),
+      ...(rewards.picks !== undefined ? { picks: Math.min(rewards.picks, items.length) } : {}),
+    };
+  }
+  return {
+    ...state,
+    version: 10,
+    hero: { ...hero, weaponId, mastery: hero.mastery ?? EMPTY_MASTERY, equipment },
+    inventory,
+    stash,
+    ...(state.wallet ? { wallet: { ...state.wallet, dust: state.wallet.dust + dust } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, echoes: state.legacy.echoes ?? echoes } } : {}),
+    ...(run && migratedRewards ? { run: { ...run, rewards: migratedRewards } } : {}),
   };
 }

@@ -118,7 +118,11 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       setup.weapon.attacksPerSecond *
       (1 + a.agility * COMBAT.attackSpeedPerAgility + b.attackSpeed),
     evasion: clamp(a.agility * COMBAT.evasionPerAgility + b.evasion, 0, COMBAT.maxEvasion),
-    blockChance: clamp(b.blockChance, 0, COMBAT.maxBlockChance),
+    blockChance: clamp(
+      b.blockChance * (setup.weaponRules?.blockMultiplier ?? 1),
+      0,
+      COMBAT.maxBlockChance,
+    ),
     blockValue: b.blockValue,
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance),

@@ -37,7 +37,19 @@ const RING: Item = {
   ],
 };
 
-/** Camp, Liora present, a full wallet and the ring in the inventory. */
+/** A Normal shield (8 Strength at T1) and a Normal sword (5 Strength). */
+const SHIELD = rollItem(
+  data.items,
+  { baseId: "test-shield", itemLevel: 1, rarity: "normal" },
+  new Rng(1),
+);
+const SWORD = rollItem(
+  data.items,
+  { baseId: "test-sword", itemLevel: 1, rarity: "normal" },
+  new Rng(2),
+);
+
+/** Camp, Liora present, a full wallet, the shield worn and the ring in the inventory. */
 function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
   const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
@@ -52,6 +64,7 @@ function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
       essences: { "test-essence": 2 },
       ...overrides,
     },
+    hero: { ...s.hero, equipment: { offHand: SHIELD } },
     inventory: [{ item: RING, x: 0, y: 0 }],
   };
 }
@@ -73,17 +86,17 @@ describe("crafting", () => {
     expect(
       craftBlockReason(camp({ ascensionShards: 0 }), data, { kind: "upgrade", itemId: RING.id }),
     ).toBe("ascensionShards");
-    // The starter sword needs 5 Strength at T1 and more at T2; the hero has 6.
+    // The shield needs 8 Strength at T1 and more at T2; the hero has 6.
     const s = camp();
-    const sword = s.hero.equipment.mainHand?.id ?? "";
-    expect(craftBlockReason(s, data, { kind: "upgrade", itemId: sword })).toBe("requirements");
+    const shield = SHIELD.id;
+    expect(craftBlockReason(s, data, { kind: "upgrade", itemId: shield })).toBe("requirements");
     const strong = {
       ...s,
       hero: { ...s.hero, attributes: { ...s.hero.attributes, strength: 99 } },
     };
     expect(
-      act(strong, { type: "craft", request: { kind: "upgrade", itemId: sword } }).hero.equipment
-        .mainHand?.tier,
+      act(strong, { type: "craft", request: { kind: "upgrade", itemId: shield } }).hero.equipment
+        .offHand?.tier,
     ).toBe(2);
   });
 
@@ -138,9 +151,8 @@ describe("crafting", () => {
     expect(ring(next)).toMatchObject({ lockedAffix: 1 });
     expect(next.wallet.essences["test-essence"]).toBe(1);
     // Life does not roll on Main Hands.
-    const sword = s.hero.equipment.mainHand;
-    const magicSword: Item = { ...(sword as Item), affixes: [{ affixId: "crit", quality: 0.5 }] };
-    const withSword = { ...s, hero: { ...s.hero, equipment: { mainHand: magicSword } } };
+    const magicSword: Item = { ...SWORD, affixes: [{ affixId: "crit", quality: 0.5 }] };
+    const withSword = { ...s, inventory: [...s.inventory, { item: magicSword, x: 4, y: 0 }] };
     expect(
       craftBlockReason(withSword, data, {
         kind: "imbue",
@@ -166,9 +178,9 @@ describe("crafting", () => {
 
   it("Normal items have no affixes to reroll", () => {
     const s = camp();
-    const sword = s.hero.equipment.mainHand?.id ?? "";
-    expect(craftBlockReason(s, data, { kind: "reforge", itemId: sword })).toBe("noAffixes");
-    expect(craftBlockReason(s, data, { kind: "temper", itemId: sword, affixIndex: 0 })).toBe(
+    const shield = SHIELD.id;
+    expect(craftBlockReason(s, data, { kind: "reforge", itemId: shield })).toBe("noAffixes");
+    expect(craftBlockReason(s, data, { kind: "temper", itemId: shield, affixIndex: 0 })).toBe(
       "noAffixes",
     );
   });

@@ -29,6 +29,8 @@ export const COMBAT = {
 
   /** Crit Damage is fixed and cannot be raised (anti power creep). */
   critMultiplier: 1.5,
+  /** Weapon Mastery: a Glancing Blow deals this share of a clean hit (Timo, 2026-10-08). */
+  glancingDamage: 0.5,
 
   // Caps.
   maxEvasion: 0.5,

@@ -14,6 +14,7 @@ import {
   multiplyPoison,
   poisonStacks,
   remainingBleedDamage,
+  remainingPoisonDamage,
   stepAilments,
 } from "./ailments";
 import { COMBAT } from "./constants";
@@ -55,6 +56,7 @@ import type {
   Side,
   SkillDefinition,
   SkillEffect,
+  MasteryCondition,
   SlotCondition,
   SlotModifier,
   TriggerCondition,
@@ -83,6 +85,8 @@ export type CombatEvent =
       readonly damageType: DamageType;
       readonly crit: boolean;
       readonly blocked: boolean;
+      /** Weapon Mastery: the hit did not land cleanly (Glancing Blow). */
+      readonly glancing?: boolean;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {
@@ -203,6 +207,8 @@ export interface FighterSnapshot {
     readonly dotDamageTaken: number;
     /** Sunder: share of Armor that no longer counts. */
     readonly armor?: number;
+    /** Stacking Sunder (Weapon Mastery): current stacks. */
+    readonly stacks?: number;
     readonly remaining: number;
   }[];
   /** Current stats including active buffs. */
@@ -262,6 +268,8 @@ interface Fighter {
     dotDamageTaken: number;
     /** Sunder: share of Armor that no longer counts. */
     armor?: number;
+    /** Stacking Sunder (Weapon Mastery). */
+    stacks?: number;
     remaining: number;
   }[];
   /** Seconds since the last telegraph ended, per telegraph. */
@@ -277,7 +285,38 @@ interface Fighter {
   heatSpent: number;
   /** Full passes through the Rotation so far (Ignition makes the first one free). */
   rotationPasses: number;
+  // Weapon Mastery state (WeaponRules).
+  /** The next own hit is clean and a Crit (Read the Blow, Shadowstep). */
+  nextCrit: boolean;
+  /** Assassinate: the opening hit has been used. */
+  openerUsed: boolean;
+  /** Flowing Blade: the last hit was clean, so Heat does not decay. */
+  flowing: boolean;
+  /** Rampage: extra hit damage gathered this fight. */
+  rampage: number;
+  /** Toxic Bloom: seconds before Poison takes hold again. */
+  poisonLockout: number;
+  /** Fight time of the last hit taken (Steady Aim). */
+  lastHitTakenAt: number;
+  /** Fight time of the last own skill (Patient Draw). */
+  lastSkillAt: number;
+  /** Hunter's Mark: the target is marked. */
+  marked: boolean;
 }
+
+/** How one hit ended: evaded (or absorbed before it landed), a Glancing Blow or a clean hit. */
+type HitResult = "miss" | "glancing" | "clean";
+
+/** Sunder stacks without a Sunder rule of their own (Riposte, Bone Breaker). */
+const DEFAULT_SUNDER = { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 } as const;
+const SUNDER_ID = "mastery-sunder";
+const STREAK_ID = "mastery-streak";
+/** Prism: the Default Attack cycles these elements with their ailments. */
+const PRISM = [
+  { type: "fire", ailment: "burn" },
+  { type: "cold", ailment: "chill" },
+  { type: "lightning", ailment: "shock" },
+] as const;
 
 interface ReactionState {
   readonly spec: ReactionSlot;
@@ -311,6 +350,16 @@ interface HitOptions {
   readonly penetration?: number;
   /** Hits caused by triggers do not fire further triggers. */
   readonly fromTrigger: boolean;
+  /** Weapon Mastery: the hit rolls Precision (own Default Attacks, skills, extra attacks). */
+  readonly precisionApplies?: boolean;
+  /** Never a Glancing Blow. */
+  readonly precise?: boolean;
+  /** Clean and a Crit for sure (Deadeye, Headsplitter). */
+  readonly forceCrit?: boolean;
+  /** Where the damage roll landed in the Damage Range, 0..1 (Headsplitter). */
+  readonly rollFraction?: number;
+  /** An extra attack from a trigger (Riposte): may add Sunder. */
+  readonly extraAttack?: boolean;
 }
 
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
@@ -363,6 +412,14 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     })),
     heatSpent: 0,
     rotationPasses: 0,
+    nextCrit: false,
+    openerUsed: false,
+    flowing: true,
+    rampage: 0,
+    poisonLockout: 0,
+    lastHitTakenAt: 0,
+    lastSkillAt: 0,
+    marked: false,
   };
 }
 
@@ -464,7 +521,7 @@ export class Fight {
     for (const side of ["hero", "enemy"] as const) {
       const f = this.fighters[side];
       if (f.windup || f.stunned > 1e-9) continue;
-      const rate = f.stats.attackSpeed * chillFactor(f.ailments);
+      const rate = this.attackRate(f);
       f.attackProgress += dt * rate;
       if (f.attackProgress >= 1) {
         f.attackProgress -= 1;
@@ -530,7 +587,14 @@ export class Fight {
   }
 
   private heatMultiplier(f: Fighter): number {
-    return heatGainMultiplier(f.stats.heatGain, chillFactor(f.ailments));
+    const opponent = this.fighters[other(f.side)];
+    const rules = opponent.setup.weaponRules;
+    if (rules?.stunnedNoHeat && f.stunned > 1e-9) return 0;
+    let extra = 0;
+    for (const e of rules?.enemyHeatGain ?? []) {
+      if (!e.condition || this.conditionHolds(opponent, e.condition)) extra += e.amount;
+    }
+    return heatGainMultiplier(f.stats.heatGain, chillFactor(f.ailments)) * Math.max(0, 1 + extra);
   }
 
   /** Multiplier on damage over time dealt to `f`: damage taken, curses and the source's rules. */
@@ -554,7 +618,13 @@ export class Fight {
       const source = this.fighters[other(f.side)];
       const leech = source.setup.rules?.dotLifesteal ?? 0;
       if (leech > 0) this.heal(source, damage * leech);
+      const wr = source.setup.weaponRules;
+      if (wr?.heatPerDotTick?.ailment === tick.ailment) {
+        source.heat = addHeat(source.heat, wr.heatPerDotTick.amount, this.heatMultiplier(source));
+      }
+      if (wr?.rampage?.ailment === tick.ailment) source.rampage += wr.rampage.perTick;
     }
+    f.poisonLockout = Math.max(0, f.poisonLockout - dt);
     f.curses = f.curses
       .map((c) => ({ ...c, remaining: c.remaining - dt }))
       .filter((c) => c.remaining > 1e-9);
@@ -563,8 +633,9 @@ export class Fight {
     }
 
     const behavior = f.setup.weapon.heatBehavior;
+    const holds = (f.setup.rules?.noHeatDecay || (f.setup.weaponRules?.flow && f.flowing)) ?? false;
     f.heat = stepHeat(
-      f.setup.rules?.noHeatDecay && behavior === "cooling" ? "steady" : behavior,
+      holds && behavior === "cooling" ? "steady" : behavior,
       f.heat,
       dt,
       this.heatMultiplier(f),
@@ -653,7 +724,8 @@ export class Fight {
     }
     const index = f.nextSlot;
     const free = f.setup.capstone?.kind === "ignition" && f.rotationPasses === 0;
-    const cost = slot && !free ? this.slotCost(f, slot.skill, slot.modifiers) : 0;
+    const cost =
+      slot && !free ? this.overflowCost(f, this.slotCost(f, slot.skill, slot.modifiers)) : 0;
     const threshold = slot ? triggerThreshold(cost, free ? 0 : slot.threshold) : 0;
     if (slot && f.heat >= threshold) {
       const overcharge = slot.modifiers?.includes("overcharge") ? Math.max(0, f.heat - cost) : 0;
@@ -678,10 +750,25 @@ export class Fight {
     this.defaultAttack(f);
   }
 
+  /** Swings per second: Attack Speed, Chill and Weapon Mastery's conditional Attack Speed. */
+  private attackRate(f: Fighter): number {
+    let extra = 0;
+    for (const e of f.setup.weaponRules?.conditionalAttackSpeed ?? []) {
+      if (this.conditionHolds(f, e.condition)) extra += e.amount;
+    }
+    return f.stats.attackSpeed * (1 + extra) * chillFactor(f.ailments);
+  }
+
   private advanceRotation(f: Fighter): void {
     const length = Math.max(1, f.setup.rotation.length);
     f.nextSlot = (f.nextSlot + 1) % length;
     if (f.nextSlot === 0) f.rotationPasses++;
+  }
+
+  /** Overflow (Weapon Mastery): skills cost less while Heat is high. */
+  private overflowCost(f: Fighter, cost: number): number {
+    const overflow = f.setup.weaponRules?.overflow;
+    return overflow && f.heat >= overflow.above ? Math.round(cost * (1 - overflow.discount)) : cost;
   }
 
   /** Heat Cost of a slot: rules (Keystones) and the Thrifty modifier. */
@@ -703,9 +790,15 @@ export class Fight {
     return slot.condition ? this.conditionHolds(f, slot.condition) : true;
   }
 
-  private conditionHolds(f: Fighter, condition: SlotCondition): boolean {
+  private conditionHolds(f: Fighter, condition: SlotCondition | MasteryCondition): boolean {
     const target = this.fighters[other(f.side)];
     switch (condition.kind) {
+      case "enemyStunned":
+        return target.stunned > 1e-9;
+      case "enemySundered": {
+        const max = (f.setup.weaponRules?.sunder ?? DEFAULT_SUNDER).maxStacks;
+        return (target.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0) >= max;
+      }
       case "enemyHas":
         return condition.ailment === "poison"
           ? poisonStacks(target.ailments) > 0
@@ -805,15 +898,29 @@ export class Fight {
   /** A Default Attack. Extra attacks from triggers (`fromTrigger`) fire no further triggers. */
   private defaultAttack(f: Fighter, fromTrigger = false): void {
     const weapon = f.setup.weapon;
-    const landed = this.hit(f, {
+    const wr = f.setup.weaponRules;
+    const fraction = this.rng.next();
+    const nth = wr?.everyNthCrit;
+    const prism = wr?.prism ? PRISM[f.attackCount % PRISM.length] : undefined;
+    const ailmentChances: AilmentChance[] = wr?.noDefaultAilments
+      ? []
+      : [...(weapon.ailmentChances ?? [])];
+    if (prism) ailmentChances.push({ ailment: prism.ailment, chance: 0.25 });
+    const result = this.hit(f, {
       source: weapon.defaultAttack,
-      baseDamage: this.roll(weapon.damage),
-      type: weapon.damageType,
+      baseDamage: weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min),
+      type: prism?.type ?? weapon.damageType,
       evadable: true,
       multiplier: f.setup.rules?.defaultAttackDamage ?? 1,
-      ailmentChances: weapon.ailmentChances ?? [],
+      ailmentChances,
       fromTrigger,
+      precisionApplies: true,
+      rollFraction: fraction,
+      ...(fromTrigger ? { extraAttack: true } : {}),
+      ...(fromTrigger && wr?.extraAttacksPrecise ? { precise: true } : {}),
+      ...(!fromTrigger && nth && (f.attackCount + 1) % nth === 0 ? { forceCrit: true } : {}),
     });
+    const landed = result !== "miss";
     if (this.result) return;
     if (landed) {
       f.heat = addHeat(
@@ -849,10 +956,12 @@ export class Fight {
       ...(via ? { via } : {}),
     });
     f.heatSpent += heatCost;
+    f.lastSkillAt = this.time;
     this.fireTriggers(f, "onSkillUse");
     if (this.result) return;
     const target = this.fighters[other(f.side)];
     let landed = false;
+    let clean = false;
     for (const hit of skill.hits) {
       const count = hit.count ?? 1;
       for (let i = 0; i < count && !this.result; i++) {
@@ -860,22 +969,25 @@ export class Fight {
           const lowLife =
             hit.lowLifeBonus && target.life / target.stats.maxLife < hit.lowLifeBonus.threshold;
           const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
-          const ok = this.hit(f, {
+          const result = this.hit(f, {
             source: skill.name,
             baseDamage: this.roll(f.setup.weapon.damage) * hit.multiplier * levelScale * power,
-            type: f.setup.weapon.damageType,
+            type: hit.damageType ?? f.setup.weapon.damageType,
             evadable: true,
             multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
             ailmentChances: hit.ailmentChances ?? [],
             ailmentPower: hit.ailmentPower ?? 1,
             ...(hit.penetration ? { penetration: hit.penetration } : {}),
             fromTrigger: false,
+            precisionApplies: true,
+            ...(hit.precise ? { precise: true } : {}),
           });
-          landed = ok || landed;
+          landed = result !== "miss" || landed;
+          clean = result === "clean" || clean;
         } else {
           const levelScale =
             (1 + COMBAT.spellDamagePerSkillLevel * (level - 1)) * (f.setup.weapon.spellPower ?? 1);
-          const ok = this.hit(f, {
+          const result = this.hit(f, {
             source: skill.name,
             baseDamage: this.roll(hit.damage) * levelScale * (hit.falloff ?? 1) ** i * power,
             type: hit.damageType,
@@ -884,13 +996,20 @@ export class Fight {
             ailmentChances: hit.ailmentChances ?? [],
             ailmentPower: hit.ailmentPower ?? 1,
             fromTrigger: false,
+            precisionApplies: true,
+            ...(hit.precise ? { precise: true } : {}),
           });
-          landed = ok || landed;
+          landed = result !== "miss" || landed;
+          clean = result === "clean" || clean;
         }
       }
     }
     for (const effect of skill.effects ?? []) {
       if (this.result) return;
+      if (effect.kind === "refundHeat") {
+        if (clean && heatCost > 0) f.heat = addHeat(f.heat, heatCost * effect.fraction, 1);
+        continue;
+      }
       this.applySkillEffect(f, target, skill, effect, level);
     }
     const capstone = f.setup.capstone?.kind;
@@ -988,6 +1107,11 @@ export class Fight {
       case "advanceCorruption":
         target.ailments = advanceCorruption(target.ailments, effect.ticks);
         return;
+      case "sunderStacks":
+        this.addSunder(f, target, effect.stacks);
+        return;
+      case "refundHeat":
+        return;
       case "curse":
         target.curses = [
           ...target.curses.filter((c) => c.id !== skill.id),
@@ -1025,7 +1149,11 @@ export class Fight {
 
   /** Stuns a fighter (Tenacity shortens it, at most by 75 %) and breaks its swing: back to 0. */
   private stun(target: Fighter, seconds: number): void {
-    const time = seconds * (1 - Math.min(0.75, target.stats.tenacity));
+    const source = this.fighters[other(target.side)];
+    const time =
+      seconds *
+      (source.setup.weaponRules?.stunDuration ?? 1) *
+      (1 - Math.min(0.75, target.stats.tenacity));
     if (time <= 0) return;
     target.stunned = Math.max(target.stunned, time);
     target.attackProgress = 0;
@@ -1041,12 +1169,33 @@ export class Fight {
     }
   }
 
-  /** Resolves one hit from `attacker` on the other fighter. Returns true if it landed. */
-  private hit(attacker: Fighter, h: HitOptions): boolean {
+  /** Resolves one hit from `attacker` on the other fighter. */
+  private hit(attacker: Fighter, h: HitOptions): HitResult {
     const defender = this.fighters[other(attacker.side)];
-    // Sunder on the defender and the hit's own penetration add to Physical Penetration.
+    const wr = attacker.setup.weaponRules;
+    // Sunder on the defender, Festering and the hit's own penetration add to Physical Penetration.
     const sundered = defender.curses.reduce((sum, c) => sum + (c.armor ?? 0), 0);
-    const penetration = (h.penetration ?? 0) + sundered;
+    const shred = (wr?.poisonArmorShred ?? 0) * poisonStacks(defender.ailments);
+    const penetration = (h.penetration ?? 0) + sundered + shred;
+
+    // Weapon Mastery: Precision and the clean Crits some rules promise.
+    const weaponPrecision = attacker.setup.weapon.precision;
+    const rolls = h.precisionApplies === true && weaponPrecision !== undefined;
+    const opener = rolls && wr?.openerDamage !== undefined && !attacker.openerUsed;
+    const topRoll =
+      wr?.topRollCrits !== undefined &&
+      h.rollFraction !== undefined &&
+      h.rollFraction >= wr.topRollCrits;
+    const forceCrit = rolls && (h.forceCrit === true || attacker.nextCrit || opener || topRoll);
+    if (forceCrit) attacker.nextCrit = false;
+    if (opener) attacker.openerUsed = true;
+    let precision: number | undefined;
+    if (rolls && !h.precise) {
+      const aim = wr?.steadyAim;
+      const steady = aim && this.time - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
+      precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady));
+    }
+
     const outcome = resolveHit(
       {
         baseDamage: h.baseDamage,
@@ -1064,66 +1213,86 @@ export class Fight {
           h.multiplier *
           (attacker.setup.damageMultiplier ?? 1) *
           executeFactor(attacker.setup.rules, defender) *
-          crescendoFactor(attacker),
+          crescendoFactor(attacker) *
+          this.masteryDamageFactor(attacker, defender) *
+          (opener ? 1 + (wr?.openerDamage ?? 0) : 1),
         defender: defender.stats,
         defenderDamageTaken: this.damageTaken(defender),
+        ...(precision !== undefined ? { precision } : {}),
+        ...(wr?.glancingDamage !== undefined ? { glancingDamage: wr.glancingDamage } : {}),
+        ...(forceCrit ? { forceCrit: true } : {}),
+        ...(wr?.critPenetration ? { critPenetration: wr.critPenetration } : {}),
       },
       this.rng,
     );
 
     if (outcome.kind === "evaded") {
       this.emit({ t: this.time, type: "evade", side: defender.side, source: h.source });
+      if (defender.setup.weaponRules?.critAfter?.includes("evade")) defender.nextCrit = true;
       if (!h.fromTrigger) this.fireTriggers(defender, "onEvade");
-      return false;
+      return "miss";
     }
 
+    const { glancing } = outcome;
+    // Hunter's Mark: until the first clean hit, Glancing Blows deal nothing.
+    const damage = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
     this.emit({
       t: this.time,
       type: "hit",
       side: attacker.side,
       source: h.source,
-      damage: outcome.damage,
+      damage,
       damageType: h.type,
       crit: outcome.crit,
       blocked: outcome.blocked,
+      ...(glancing ? { glancing: true } : {}),
     });
+    defender.lastHitTakenAt = this.time;
+    if (outcome.blocked && defender.setup.weaponRules?.critAfter?.includes("block")) {
+      defender.nextCrit = true;
+    }
 
     if (!outcome.blocked) {
       defender.heat = addHeat(
         defender.heat,
-        heatFromHitTaken(
-          defender.setup.weapon.heatBehavior,
-          outcome.damage,
-          defender.stats.maxLife,
-        ) * defender.stats.heatFromHitsTaken,
+        heatFromHitTaken(defender.setup.weapon.heatBehavior, damage, defender.stats.maxLife) *
+          defender.stats.heatFromHitsTaken,
         this.heatMultiplier(defender),
       );
     }
-    this.damage(defender, outcome.damage);
-    if (this.result) return true;
+    this.damage(defender, damage);
+    if (this.result) return glancing ? "glancing" : "clean";
 
-    if (attacker.stats.lifesteal > 0 && outcome.damage > 0) {
-      this.heal(attacker, outcome.damage * attacker.stats.lifesteal);
+    if (attacker.stats.lifesteal > 0 && damage > 0) {
+      this.heal(attacker, damage * attacker.stats.lifesteal);
     }
 
-    for (const { ailment, chance } of withStatAilmentChances(h.ailmentChances, attacker.stats)) {
-      if (!this.rng.chance(chance)) continue;
-      this.inflict(attacker, defender, ailment, outcome.damage * (h.ailmentPower ?? 1));
-    }
-    if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
-      this.inflict(attacker, defender, "bleed", outcome.damage);
+    if (glancing) {
+      this.glance(attacker);
+    } else {
+      if (rolls) this.cleanHit(attacker, defender, h);
+      for (const { ailment, chance } of withStatAilmentChances(h.ailmentChances, attacker.stats)) {
+        if (!this.rng.chance(chance)) continue;
+        this.inflict(attacker, defender, ailment, damage * (h.ailmentPower ?? 1));
+      }
+      if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
+        this.inflict(attacker, defender, "bleed", damage);
+      }
+      if (outcome.crit && wr) this.critMastery(attacker, defender, damage);
     }
 
-    if (h.fromTrigger) return true;
+    const result: HitResult = glancing ? "glancing" : "clean";
+    if (h.fromTrigger) return result;
 
-    const context = { damage: outcome.damage };
-    this.fireTriggers(attacker, "onHit", context);
+    const context = { damage };
+    // A Glancing Blow fires no on-hit triggers of the attacker.
+    if (!glancing) this.fireTriggers(attacker, "onHit", context);
     if (outcome.crit) this.fireTriggers(attacker, "onCrit", context);
     this.fireTriggers(defender, "whenHit", context);
     defender.hitsTaken++;
     this.fireTriggers(defender, "everyNthHitTaken", context);
     if (outcome.blocked) this.fireTriggers(defender, "onBlock", context);
-    if (this.result) return true;
+    if (this.result) return result;
 
     if (defender.stats.thorns > 0) {
       const thorns = Math.max(1, Math.round(defender.stats.thorns));
@@ -1139,7 +1308,128 @@ export class Fight {
       });
       this.damage(attacker, thorns);
     }
-    return true;
+    return result;
+  }
+
+  /** Weapon Mastery multipliers on own hit damage. */
+  private masteryDamageFactor(attacker: Fighter, defender: Fighter): number {
+    const wr = attacker.setup.weaponRules;
+    if (!wr) return 1;
+    let extra = attacker.rampage;
+    for (const e of wr.conditionalDamage ?? []) {
+      if (this.conditionHolds(attacker, e.condition)) extra += e.amount;
+    }
+    if (wr.patience) {
+      extra += Math.min(
+        wr.patience.max,
+        wr.patience.perSecond * (this.time - attacker.lastSkillAt),
+      );
+    }
+    if (wr.mark && attacker.marked) extra += wr.mark.bonus;
+    if (wr.damagePerAilment) {
+      const running = AILMENT_TYPES.filter((a) =>
+        a === "poison" ? poisonStacks(defender.ailments) > 0 : defender.ailments[a] !== undefined,
+      ).length;
+      extra += wr.damagePerAilment * running;
+    }
+    return (wr.damageDealt ?? 1) * (1 + extra);
+  }
+
+  /** A Glancing Blow: Heat from Loaded Spring or Flowing Blade, the streak ends. */
+  private glance(f: Fighter): void {
+    const wr = f.setup.weaponRules;
+    f.flowing = false;
+    if (wr?.glancingHeat) {
+      const before = f.heat;
+      f.heat = Math.min(COMBAT.maxHeat, Math.max(0, f.heat + wr.glancingHeat));
+      if (f.heat > before) {
+        this.emit({ t: this.time, type: "heatGain", side: f.side, amount: f.heat - before });
+      }
+    }
+    if (wr?.streak && f.buffs.some((b) => b.id === STREAK_ID)) {
+      f.buffs = f.buffs.filter((b) => b.id !== STREAK_ID);
+      this.refreshStats(f);
+    }
+  }
+
+  /** A clean weapon hit: streak, mark, Sunder and refreshed ailments. */
+  private cleanHit(attacker: Fighter, defender: Fighter, h: HitOptions): void {
+    const wr = attacker.setup.weaponRules;
+    attacker.flowing = true;
+    if (!wr) return;
+    if (wr.mark) attacker.marked = true;
+    if (wr.streak) {
+      this.applyEffect(
+        attacker,
+        STREAK_ID,
+        "Unbroken Flow",
+        {
+          kind: "buff",
+          stat: wr.streak.stat,
+          amount: wr.streak.amount,
+          duration: 999,
+          maxStacks: wr.streak.max,
+        },
+        {},
+        true,
+      );
+    }
+    const sunder = wr.sunder;
+    let stacks = sunder && sunder.chance > 0 && this.rng.chance(sunder.chance) ? 1 : 0;
+    if (h.extraAttack && wr.extraAttackSunder) stacks += 1;
+    if (stacks > 0) this.addSunder(attacker, defender, stacks);
+    for (const ailment of wr.refreshOnHit ?? []) {
+      if (ailment === "poison") continue;
+      const state = defender.ailments[ailment];
+      if (!state) continue;
+      const duration = this.ownAilmentDuration(attacker, defender, ailment);
+      defender.ailments = {
+        ...defender.ailments,
+        [ailment]: { ...state, remaining: Math.max(state.remaining, duration) },
+      };
+    }
+  }
+
+  /** Crits with Weapon Mastery: Deep Cuts and Twist the Blade. */
+  private critMastery(attacker: Fighter, defender: Fighter, damage: number): void {
+    const wr = attacker.setup.weaponRules;
+    const bleed = defender.ailments.bleed;
+    if (wr?.critBleedMultiplier && bleed) {
+      defender.ailments = {
+        ...defender.ailments,
+        bleed: { ...bleed, damagePerSecond: bleed.damagePerSecond * wr.critBleedMultiplier },
+      };
+    }
+    for (let i = 0; i < (wr?.critPoisonStacks ?? 0); i++) {
+      this.inflict(attacker, defender, "poison", damage);
+    }
+  }
+
+  /** Adds stacks of the attacker's stacking Sunder to the defender. */
+  private addSunder(attacker: Fighter, defender: Fighter, stacks: number): void {
+    const rule = attacker.setup.weaponRules?.sunder ?? DEFAULT_SUNDER;
+    const before = defender.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0;
+    const now = Math.min(rule.maxStacks, before + stacks);
+    defender.curses = [
+      ...defender.curses.filter((c) => c.id !== SUNDER_ID),
+      {
+        id: SUNDER_ID,
+        name: "Sunder",
+        dotDamageTaken: 0,
+        armor: now * rule.perStack,
+        stacks: now,
+        remaining: rule.duration,
+      },
+    ];
+  }
+
+  /** Duration of an ailment the attacker inflicts. */
+  private ownAilmentDuration(attacker: Fighter, defender: Fighter, ailment: AilmentType): number {
+    const by = attacker.setup.weaponRules?.ailmentDurationBy?.[ailment] ?? 0;
+    return (
+      ailmentDuration(ailment, attacker.stats.ailmentDuration, defender.stats.tenacity) *
+      Math.max(0, 1 + by)
+    );
   }
 
   private inflict(
@@ -1154,13 +1444,22 @@ export class Fight {
         if (e.from === ailment) this.inflict(attacker, defender, e.to, hitDamage, false);
       }
     }
-    const duration = ailmentDuration(
+    if (ailment === "poison" && defender.poisonLockout > 1e-9) return;
+    const duration = this.ownAilmentDuration(attacker, defender, ailment);
+    const wr = attacker.setup.weaponRules;
+    defender.ailments = applyAilment(
+      defender.ailments,
       ailment,
-      attacker.stats.ailmentDuration,
-      defender.stats.tenacity,
+      duration,
+      hitDamage,
+      COMBAT.poisonMaxStacks + (wr?.poisonMaxStacks ?? 0),
     );
-    defender.ailments = applyAilment(defender.ailments, ailment, duration, hitDamage);
     if (duration <= 0) return;
+    const burst = wr?.poisonBurst;
+    if (ailment === "poison" && burst && poisonStacks(defender.ailments) >= burst.stacks) {
+      this.poisonBurst(attacker, defender, burst.multiplier, burst.lockout);
+      return;
+    }
     this.react(defender, "ailmented");
     this.checkReactionThresholds();
     this.emit({
@@ -1170,6 +1469,26 @@ export class Fight {
       ailment,
       ...(ailment === "poison" ? { stacks: poisonStacks(defender.ailments) } : {}),
     });
+  }
+
+  /** Toxic Bloom: every Poison stack bursts for its remaining damage at once. */
+  private poisonBurst(attacker: Fighter, defender: Fighter, multiplier: number, lockout: number) {
+    const rest = remainingPoisonDamage(defender.ailments);
+    defender.ailments = clearAilment(defender.ailments, "poison");
+    defender.poisonLockout = lockout;
+    this.emit({ t: this.time, type: "ailmentExpired", side: defender.side, ailment: "poison" });
+    const damage = Math.max(1, Math.round(rest * multiplier * this.dotFactor(defender)));
+    this.emit({
+      t: this.time,
+      type: "hit",
+      side: attacker.side,
+      source: "Toxic Bloom",
+      damage,
+      damageType: "physical",
+      crit: false,
+      blocked: false,
+    });
+    this.damage(defender, damage);
   }
 
   // --- triggers ----------------------------------------------------------------------------
@@ -1211,6 +1530,8 @@ export class Fight {
     name: string,
     effect: TriggerEffect,
     context: TriggerContext,
+    /** Weapon Mastery's streak buff changes on every hit and stays out of the log. */
+    silent = false,
   ): void {
     const target = this.fighters[other(f.side)];
     switch (effect.kind) {
@@ -1223,6 +1544,7 @@ export class Fight {
           multiplier: 1,
           ailmentChances: [],
           fromTrigger: true,
+          precisionApplies: true,
         });
         return;
       case "spellHit":
@@ -1260,6 +1582,7 @@ export class Fight {
           effect.maxStacks ?? 1,
         );
         this.refreshStats(f);
+        if (silent) return;
         const stacks = f.buffs.find((b) => b.id === id)?.stacks ?? 1;
         this.emit({
           t: this.time,
@@ -1404,6 +1727,7 @@ export class Fight {
         name: c.name,
         dotDamageTaken: c.dotDamageTaken,
         ...(c.armor ? { armor: c.armor } : {}),
+        ...(c.stacks ? { stacks: c.stacks } : {}),
         remaining: c.remaining,
       })),
       buffs: f.buffs.map((b) => ({
@@ -1423,7 +1747,7 @@ export class Fight {
           }
         : null,
       attackProgress: f.attackProgress,
-      attackRate: f.windup || f.stunned > 1e-9 ? 0 : f.stats.attackSpeed * chillFactor(f.ailments),
+      attackRate: f.windup || f.stunned > 1e-9 ? 0 : this.attackRate(f),
       nextHeavy: this.nextHeavy(f),
     };
   }

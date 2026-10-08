@@ -16,7 +16,10 @@ import type { AilmentType } from "../combat/types";
 export const RARITIES = ["normal", "magic", "rare", "epic", "legendary"] as const;
 export type Rarity = (typeof RARITIES)[number];
 
-/** What kind of item a base is. Two Rings share the item slot "ring". */
+/**
+ * What kind of item a base is. Two Rings share the item slot "ring". Main-hand items no longer
+ * drop (Weapon Mastery); old ones only remain as a slot of legacy bases.
+ */
 export const ITEM_SLOTS = [
   "mainHand",
   "offHand",
@@ -27,12 +30,15 @@ export const ITEM_SLOTS = [
   "belt",
   "amulet",
   "ring",
+  "charm",
 ] as const;
 export type ItemSlot = (typeof ITEM_SLOTS)[number];
 
-/** The 10 equipment slots of the hero (= 10 Save Tokens). */
+/**
+ * The 10 equipment slots of the hero. The weapon is no item any more (Weapon Mastery); the Charm
+ * took its place (waffe-als-system-v1.md section 8).
+ */
 export const EQUIPMENT_SLOTS = [
-  "mainHand",
   "offHand",
   "helm",
   "body",
@@ -42,6 +48,7 @@ export const EQUIPMENT_SLOTS = [
   "amulet",
   "ring1",
   "ring2",
+  "charm",
 ] as const;
 export type EquipmentSlot = (typeof EQUIPMENT_SLOTS)[number];
 

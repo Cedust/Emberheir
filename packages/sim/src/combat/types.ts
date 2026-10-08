@@ -23,8 +23,11 @@ export type DamageType = "physical" | Element;
 export type AilmentType = "burn" | "chill" | "shock" | "corruption" | "bleed" | "poison";
 export const AILMENT_TYPES = ["burn", "chill", "shock", "corruption", "bleed", "poison"] as const;
 
-/** How a weapon fills the Heat bar, see docs/design/waffen-v1.md section 4. */
-export type HeatBehavior = "cooling" | "steady" | "warming";
+/**
+ * How a weapon fills the Heat bar, see docs/design/waffen-v1.md section 4. Smoldering is the
+ * Weapon Mastery Heat Form that charges from hits taken (waffe-als-system-v1.md section 3).
+ */
+export type HeatBehavior = "cooling" | "steady" | "warming" | "smoldering";
 
 export type Side = "hero" | "enemy";
 
@@ -186,6 +189,11 @@ export interface WeaponDefinition {
    * Tier growth, so spells keep pace with weapon damage. Default 1.
    */
   readonly spellPower?: number;
+  /**
+   * Weapon Mastery: chance that a hit lands cleanly (0..1). The rest are Glancing Blows: less
+   * damage, no Crit, no ailments, no on-hit triggers. Default 1 (enemies never glance).
+   */
+  readonly precision?: number;
 }
 
 export type SkillType = "attack" | "spell" | "buff" | "curse";
@@ -206,6 +214,10 @@ export type SkillHit =
       readonly ailmentPower?: number;
       /** Ignores this share of the target's Armor, on top of Physical Penetration (Heavy Bolt). */
       readonly penetration?: number;
+      /** Deals this damage type instead of the weapon's (Explosive Bolt, Thunder Crack). */
+      readonly damageType?: DamageType;
+      /** Never a Glancing Blow (Seeking Bolt). */
+      readonly precise?: boolean;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -218,6 +230,8 @@ export type SkillHit =
       readonly ailmentChances?: readonly AilmentChance[];
       /** Ailments from this hit act as if the hit was this much stronger (Immolate). Default 1. */
       readonly ailmentPower?: number;
+      /** Never a Glancing Blow (Seeking Bolt). */
+      readonly precise?: boolean;
     };
 
 /** What a skill does besides its hits. Effects follow the hits, in order. */
@@ -246,7 +260,11 @@ export type SkillEffect =
   /** Curse (Wither): the target takes `amount` more damage over time for a while. */
   | { readonly kind: "curse"; readonly dotDamageTaken: number; readonly duration: number }
   /** Soul Harvest: deals `seconds` worth of all DoTs on the target at once; they keep running. */
-  | { readonly kind: "detonateDots"; readonly seconds: number };
+  | { readonly kind: "detonateDots"; readonly seconds: number }
+  /** Weapon Mastery Sunder: adds stacks of the caster's stacking Sunder (Bone Breaker). */
+  | { readonly kind: "sunderStacks"; readonly stacks: number }
+  /** Gives back this share of the paid Heat if a hit of the skill landed cleanly (Rising Strike). */
+  | { readonly kind: "refundHeat"; readonly fraction: number };
 
 export interface SkillDefinition {
   readonly id: string;
@@ -354,8 +372,11 @@ export interface CombatRules {
   readonly critChanceMultiplier?: number;
   /** Legendary Powers: inflicting `from` also inflicts `to` ("Your Burn also Shocks"). */
   readonly ailmentEcho?: readonly { readonly from: AilmentType; readonly to: AilmentType }[];
-  /** Hits deal `bonus` more damage to an enemy below `below` of its max life. */
-  readonly execute?: { readonly below: number; readonly bonus: number };
+  /**
+   * Hits deal `bonus` more damage to an enemy below `below` of its max life (and `above` less
+   * while it is above: Final Verdict).
+   */
+  readonly execute?: { readonly below: number; readonly bonus: number; readonly above?: number };
   /** Heals this fraction of the damage your ailments deal over time. */
   readonly dotLifesteal?: number;
   /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
@@ -364,6 +385,112 @@ export interface CombatRules {
   readonly ailmentDamage?: Readonly<Partial<Record<AilmentType, number>>>;
   /** Multiplies max life (Warrior: Iron Blood). */
   readonly lifeMultiplier?: number;
+}
+
+/** A state of the fight a Weapon Mastery bonus can depend on. */
+export type MasteryCondition =
+  | SlotCondition
+  | { readonly kind: "enemyStunned" }
+  /** The enemy carries the caster's Sunder at its maximum stacks. */
+  | { readonly kind: "enemySundered" };
+
+/** Stacking Sunder from Weapon Mastery: each stack ignores `perStack` of the target's Armor. */
+export interface SunderRule {
+  /** Chance per clean weapon hit to add a stack (0 = only from other sources). */
+  readonly chance: number;
+  readonly perStack: number;
+  readonly maxStacks: number;
+  /** Seconds the stacks last without a new one. */
+  readonly duration: number;
+}
+
+/**
+ * Weapon Mastery mechanics (weapon-mastery-baeume-v1.md): how the hero's own weapon behaves.
+ * Built and merged by the Weapon Mastery tree in `progression`; the fight only reads them.
+ */
+export interface WeaponRules {
+  /** Damage of a Glancing Blow as a share of a clean hit. Default 0.5. */
+  readonly glancingDamage?: number;
+  /** Heat gained (or, negative, lost) on every Glancing Blow (Loaded Spring, Flowing Blade). */
+  readonly glancingHeat?: number;
+  /** Extra attacks (Riposte, Double Stab) always land cleanly. */
+  readonly extraAttacksPrecise?: boolean;
+  /** Extra attacks add a Sunder stack. */
+  readonly extraAttackSunder?: boolean;
+  readonly sunder?: SunderRule;
+  /** After these defences the next own hit is clean and a Crit (Read the Blow, Shadowstep). */
+  readonly critAfter?: readonly ("evade" | "block")[];
+  /** Every clean hit in a row adds a stack of this buff; a Glancing Blow ends the streak. */
+  readonly streak?: { readonly stat: BuffStat; readonly amount: number; readonly max: number };
+  /** Cooling and Steady Heat do not decay while the last hit was clean (Flowing Blade). */
+  readonly flow?: boolean;
+  /** More hit damage while the condition holds (fractions add up). */
+  readonly conditionalDamage?: readonly {
+    readonly condition: MasteryCondition;
+    readonly amount: number;
+  }[];
+  /** More Attack Speed while the condition holds. */
+  readonly conditionalAttackSpeed?: readonly {
+    readonly condition: MasteryCondition;
+    readonly amount: number;
+  }[];
+  /** Crits multiply the target's running Bleed (Deep Cuts). */
+  readonly critBleedMultiplier?: number;
+  /** Multiplies the duration of own stuns. */
+  readonly stunDuration?: number;
+  /** A stunned enemy gains no Heat. */
+  readonly stunnedNoHeat?: boolean;
+  /** Multiplies the own Block Chance. */
+  readonly blockMultiplier?: number;
+  /** Multiplies all own hit damage (not damage over time). */
+  readonly damageDealt?: number;
+  /** Heat per damage tick of an own ailment (Bloodrush). */
+  readonly heatPerDotTick?: { readonly ailment: AilmentType; readonly amount: number };
+  /** Hits that roll at least this share of the Damage Range always crit (Headsplitter). */
+  readonly topRollCrits?: number;
+  /** Clean hits refresh these running ailments on the target (Bloodbath). */
+  readonly refreshOnHit?: readonly AilmentType[];
+  /** Every damage tick of the ailment adds `perTick` hit damage for the rest of the fight. */
+  readonly rampage?: { readonly ailment: AilmentType; readonly perTick: number };
+  /** Extra Poison stacks above the cap. */
+  readonly poisonMaxStacks?: number;
+  /** Longer (or shorter) own ailments by type, on top of Ailment Duration. */
+  readonly ailmentDurationBy?: Readonly<Partial<Record<AilmentType, number>>>;
+  /** Crits add this many Poison stacks (Twist the Blade). */
+  readonly critPoisonStacks?: number;
+  /** The first clean hit of a fight crits and deals this much more damage (Assassinate). */
+  readonly openerDamage?: number;
+  /** At `stacks` Poison stacks all of them burst for `multiplier` × their rest (Toxic Bloom). */
+  readonly poisonBurst?: {
+    readonly stacks: number;
+    readonly multiplier: number;
+    readonly lockout: number;
+  };
+  /** Every Poison stack on the target ignores this share of its Armor (Festering). */
+  readonly poisonArmorShred?: number;
+  /** Extra Precision while not hit for `seconds` (Steady Aim). */
+  readonly steadyAim?: { readonly seconds: number; readonly precision: number };
+  /** Hits deal `perSecond` more damage per second since the last own skill (Patient Draw). */
+  readonly patience?: { readonly perSecond: number; readonly max: number };
+  /** The first clean hit marks the target: `bonus` more damage for the fight; until then Glancing Blows deal nothing. */
+  readonly mark?: { readonly bonus: number };
+  /** Crits ignore this share of the target's Armor (Killshot). */
+  readonly critPenetration?: number;
+  /** Every Nth Default Attack is clean and a Crit (Deadeye). */
+  readonly everyNthCrit?: number;
+  /** The enemy gains this much more (negative: less) Heat while the condition holds. */
+  readonly enemyHeatGain?: readonly {
+    readonly amount: number;
+    readonly condition?: MasteryCondition;
+  }[];
+  /** The Default Attack cycles Fire, Cold and Lightning and carries their ailments (Prism). */
+  readonly prism?: boolean;
+  /** Skills cost `discount` less while Heat is at least `above` (Overflow). */
+  readonly overflow?: { readonly above: number; readonly discount: number };
+  /** Every ailment on the target adds this much hit damage (Eclipse). */
+  readonly damagePerAilment?: number;
+  /** The Default Attack inflicts no ailments of its own (Eclipse). */
+  readonly noDefaultAilments?: boolean;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */
@@ -398,4 +525,6 @@ export interface CombatantSetup {
   readonly fleeAfter?: number;
   /** Opening Move: cast for free right when the fight starts. */
   readonly openingMove?: { readonly skill: SkillDefinition; readonly level?: number };
+  /** Weapon Mastery mechanics of the hero's weapon. */
+  readonly weaponRules?: WeaponRules;
 }

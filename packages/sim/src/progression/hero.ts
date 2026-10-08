@@ -12,6 +12,7 @@ import {
   type StatBonuses,
   type TriggerSpec,
   type WeaponDefinition,
+  type WeaponRules,
 } from "../combat/types";
 import { type ResolvedEquipment, resolveEquipment } from "../items/equipment";
 import type { Equipment, ItemCatalog } from "../items/types";
@@ -21,8 +22,10 @@ export interface HeroBuildOptions {
   /** The hero's own attributes (start values + spent points), without gear. */
   readonly attributes: Attributes;
   readonly equipment: Equipment;
-  /** Weapon when no active main-hand item is equipped. */
-  readonly fallbackWeapon?: WeaponDefinition | undefined;
+  /** The hero's own weapon (Weapon Mastery); gear never brings one. */
+  readonly weapon: WeaponDefinition;
+  /** Weapon Mastery rules (Glancing Blows, Sunder, Keystones ...). */
+  readonly weaponRules?: WeaponRules;
   /** Rotation Slots for the weapon in use (Start Skills depend on the weapon). */
   readonly rotation: (weapon: WeaponDefinition) => readonly RotationSlot[];
   readonly reactions?: (weapon: WeaponDefinition) => readonly ReactionSlot[];
@@ -41,14 +44,8 @@ export function buildHeroSetup(
   options: HeroBuildOptions,
   catalog: ItemCatalog,
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
-  const gear = resolveEquipment(
-    options.equipment,
-    catalog,
-    options.attributes,
-    options.fallbackWeapon,
-  );
-  const weapon = gear.weapon ?? options.fallbackWeapon;
-  if (!weapon) throw new Error("The hero needs a weapon or an active main-hand item");
+  const gear = resolveEquipment(options.equipment, catalog, options.attributes, options.weapon);
+  const { weapon } = options;
   const attributes = Object.fromEntries(
     ATTRIBUTES.map((a) => [a, options.attributes[a] + gear.attributes[a]]),
   ) as Record<Attribute, number>;
@@ -70,6 +67,9 @@ export function buildHeroSetup(
     baseHeatFromHitsTaken: 0,
     ...(triggers.length ? { triggers } : {}),
     ...(options.rules || gear.rules ? { rules: mergeRules(options.rules, gear.rules) } : {}),
+    ...(options.weaponRules && Object.keys(options.weaponRules).length
+      ? { weaponRules: options.weaponRules }
+      : {}),
     ...(options.lifeFraction !== undefined ? { lifeFraction: options.lifeFraction } : {}),
   };
   return { setup, gear };
