@@ -177,10 +177,10 @@ export function weaponGrade(rank: number): string {
   return grade;
 }
 
-/** Weapon Damage growth at a Rank: like the Item Tier of the matching hero level. */
+/** Weapon Damage growth at a Rank: a bit flatter than the old item tiers (balance CLI, 2026-10-08). */
 export function rankGrowth(rank: number): number {
   const level = MASTERY.rankLevels[Math.min(rank, MAX_WEAPON_RANK)] ?? 1;
-  return 1 + (level - 1) / 10;
+  return 1 + (level - 1) / 16;
 }
 
 export function masteryNode(tree: WeaponMasteryTree, id: string): MasteryNode {
