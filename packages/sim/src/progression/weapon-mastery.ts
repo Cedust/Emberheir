@@ -9,6 +9,7 @@ import type {
   HeatBehavior,
   SkillDefinition,
   StatBonuses,
+  SunderRule,
   TriggerSpec,
   WeaponDefinition,
   WeaponRules,
@@ -107,7 +108,8 @@ export interface EchoDefinition {
   readonly color: number;
   /** Rules text at a stage (1..7). */
   readonly description: (stage: number) => string;
-  readonly effect: (stage: number) => MasteryEffect;
+  /** What the Echo does at a stage; `weaponDamage` scales its strikes with the weapon. */
+  readonly effect: (stage: number, weaponDamage: number) => MasteryEffect;
 }
 
 /** The hero's Weapon Mastery: learned ranks and the chosen node per exclusive group. */
@@ -306,13 +308,14 @@ function activeEffects(
   tree: WeaponMasteryTree,
   state: MasteryState,
   echo: { readonly def: EchoDefinition; readonly stage: number } | undefined,
+  weaponDamage: number,
 ): MasteryEffect[] {
   const effects: MasteryEffect[] = [];
   for (const node of tree.nodes) {
     const ranks = masteryRanks(tree, state, node.id);
     for (let i = 0; i < ranks; i++) effects.push(node.effect);
   }
-  if (echo) effects.push(echo.def.effect(echo.stage));
+  if (echo) effects.push(echo.def.effect(echo.stage, weaponDamage));
   return effects;
 }
 
@@ -341,7 +344,9 @@ export function buildMasteryWeapon(
   innate: SkillDefinition | undefined,
   echo?: { readonly def: EchoDefinition; readonly stage: number },
 ): MasteryBuild {
-  const effects = activeEffects(tree, state, echo);
+  const growth = rankGrowth(rank);
+  const weaponDamage = ((base.damage.min + base.damage.max) / 2) * growth * MASTERY.damageFactor;
+  const effects = activeEffects(tree, state, echo, weaponDamage);
   let precision = tree.precision;
   let rangeMin = tree.rangeMin;
   let rangeMax = tree.rangeMax;
@@ -383,8 +388,6 @@ export function buildMasteryWeapon(
   // Focused Will and Anvil: no Glancing Blows at all.
   if (merged.noGlancing) precision = 1;
 
-  const growth = rankGrowth(rank);
-  const weaponDamage = ((base.damage.min + base.damage.max) / 2) * growth * MASTERY.damageFactor;
   const damageType = attunement?.damageType ?? base.damageType;
   const baseAilments = (base.ailmentChances ?? []).map((c) =>
     attunement && isElementalAilment(c.ailment) ? { ...c, ailment: attunement.ailment } : c,
@@ -414,8 +417,21 @@ export function buildMasteryWeapon(
         }
       : {}),
   };
-  const fightRules: MasteryWeaponRules = { ...merged };
-  delete (fightRules as { noGlancing?: boolean }).noGlancing;
+  const fightRules: WeaponRules = {
+    ...Object.fromEntries(
+      Object.entries(merged).filter(([k]) => k !== "noGlancing" && k !== "sunder"),
+    ),
+    ...(merged.sunder
+      ? {
+          sunder: {
+            chance: COMBAT.sunder.chance + (merged.sunder.chance ?? 0),
+            maxStacks: COMBAT.sunder.maxStacks + (merged.sunder.maxStacks ?? 0),
+            perStack: Math.max(COMBAT.sunder.perStack, merged.sunder.perStack ?? 0),
+            duration: Math.max(COMBAT.sunder.duration, merged.sunder.duration ?? 0),
+          },
+        }
+      : {}),
+  };
   return {
     weapon,
     bonuses: sumBonuses(...bonuses),
@@ -477,8 +493,14 @@ export function attuneSkill(
   };
 }
 
-/** WeaponRules plus the build-time flag "no Glancing Blows". */
-export type MasteryWeaponRules = WeaponRules & { readonly noGlancing?: boolean };
+/**
+ * WeaponRules as nodes give them: Sunder in parts (they add up onto `COMBAT.sunder`), plus the
+ * build-time flag "no Glancing Blows".
+ */
+export type MasteryWeaponRules = Omit<WeaponRules, "sunder"> & {
+  readonly sunder?: Partial<SunderRule>;
+  readonly noGlancing?: boolean;
+};
 
 /** Combines Weapon Mastery rules: numbers add (multipliers multiply), lists join, flags switch on. */
 export function mergeWeaponRules(...sources: readonly MasteryWeaponRules[]): MasteryWeaponRules {
@@ -508,6 +530,16 @@ export function mergeWeaponRules(...sources: readonly MasteryWeaponRules[]): Mas
           : ((prev as number | undefined) ?? 0) + value;
       } else if (typeof value === "boolean") {
         out[key] = (prev as boolean | undefined) || value;
+      } else if (key === "sunder") {
+        // Sunder adds up: more chance and stacks, the longest duration, the strongest stack.
+        const a = (prev as Partial<SunderRule> | undefined) ?? {};
+        const b = value as Partial<SunderRule>;
+        out[key] = {
+          chance: (a.chance ?? 0) + (b.chance ?? 0),
+          maxStacks: (a.maxStacks ?? 0) + (b.maxStacks ?? 0),
+          perStack: Math.max(a.perStack ?? 0, b.perStack ?? 0),
+          duration: Math.max(a.duration ?? 0, b.duration ?? 0),
+        };
       } else if (key === "ailmentDurationBy") {
         const merged: Record<string, number> = { ...((prev as Record<string, number>) ?? {}) };
         for (const [a, v] of Object.entries(value as Record<string, number>)) {

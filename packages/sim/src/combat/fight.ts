@@ -308,7 +308,6 @@ interface Fighter {
 type HitResult = "miss" | "glancing" | "clean";
 
 /** Sunder stacks without a Sunder rule of their own (Riposte, Bone Breaker). */
-const DEFAULT_SUNDER = { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 } as const;
 const SUNDER_ID = "mastery-sunder";
 const STREAK_ID = "mastery-streak";
 /** Prism: the Default Attack cycles these elements with their ailments. */
@@ -796,7 +795,7 @@ export class Fight {
       case "enemyStunned":
         return target.stunned > 1e-9;
       case "enemySundered": {
-        const max = (f.setup.weaponRules?.sunder ?? DEFAULT_SUNDER).maxStacks;
+        const max = (f.setup.weaponRules?.sunder ?? COMBAT.sunder).maxStacks;
         return (target.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0) >= max;
       }
       case "enemyHas":
@@ -1407,7 +1406,7 @@ export class Fight {
 
   /** Adds stacks of the attacker's stacking Sunder to the defender. */
   private addSunder(attacker: Fighter, defender: Fighter, stacks: number): void {
-    const rule = attacker.setup.weaponRules?.sunder ?? DEFAULT_SUNDER;
+    const rule = attacker.setup.weaponRules?.sunder ?? COMBAT.sunder;
     const before = defender.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0;
     const now = Math.min(rule.maxStacks, before + stacks);
     defender.curses = [

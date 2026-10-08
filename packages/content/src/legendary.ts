@@ -70,14 +70,14 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     id: "kindling",
     name: "Kindling",
     runes: ["ash", "moss"],
-    slots: ["mainHand"],
+    slots: ["offHand", "helm"],
     bonuses: { physicalDamage: 0.25, lifesteal: 0.03, life: 20 },
   },
   {
     id: "splinter",
     name: "Splinter",
     runes: ["thorn", "ash", "thorn"],
-    slots: ["mainHand"],
+    slots: ["offHand", "helm"],
     bonuses: { physicalDamage: 0.3, bleedChance: 0.25, attackSpeed: 0.1 },
     triggers: [{ affixId: "crushing-blow", quality: 1 }],
   },
@@ -85,7 +85,7 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     id: "rotheart",
     name: "Rotheart",
     runes: ["venom", "moss"],
-    slots: ["mainHand"],
+    slots: ["offHand", "helm"],
     bonuses: { poisonChance: 0.35, ailmentDuration: 0.2 },
     rules: { dotLifesteal: 0.15 },
   },
@@ -93,7 +93,7 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     id: "hearthfire",
     name: "Hearthfire",
     runes: ["ember", "ash", "ember"],
-    slots: ["mainHand"],
+    slots: ["offHand", "helm"],
     bonuses: { elementalDamage: 0.35, burnChance: 0.25, heatGain: 0.1 },
     triggers: [{ affixId: "flame-pulse", quality: 1 }],
   },
@@ -298,28 +298,28 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     id: "blood-echo",
     name: "Blood Echo",
     description: "Your Bleed also Poisons.",
-    slots: ["mainHand", "gloves"],
+    slots: ["gloves"],
     rules: { ailmentEcho: [{ from: "bleed", to: "poison" }] },
   },
   {
     id: "wildfire",
     name: "Wildfire",
     description: "Your Burn also Shocks.",
-    slots: ["mainHand", "offHand", "amulet"],
+    slots: ["offHand", "amulet"],
     rules: { ailmentEcho: [{ from: "burn", to: "shock" }] },
   },
   {
     id: "frostbrand",
     name: "Frostbrand",
     description: "Your Shock also Chills.",
-    slots: ["mainHand", "gloves"],
+    slots: ["gloves"],
     rules: { ailmentEcho: [{ from: "shock", to: "chill" }] },
   },
   {
     id: "executioner",
     name: "Executioner",
     description: "+40 % damage to enemies below 30 % Life.",
-    slots: ["mainHand", "gloves", "ring"],
+    slots: ["gloves", "ring"],
     rules: { execute: { below: 0.3, bonus: 0.4 } },
   },
   {
@@ -347,7 +347,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     id: "heavy-hand",
     name: "Heavy Hand",
     description: "Your Default Attack deals 30 % more damage.",
-    slots: ["mainHand", "gloves"],
+    slots: ["gloves"],
     rules: { defaultAttackDamage: 1.3 },
   },
   {
@@ -408,7 +408,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     uniqueOnly: true,
     name: "Thorn Flurry",
     description: "Every 3rd attack strikes again.",
-    slots: ["mainHand"],
+    slots: ["gloves"],
     trigger: { affixId: "thorn-flurry", quality: 1 },
   },
   {
@@ -441,7 +441,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     uniqueOnly: true,
     name: "Avalanche",
     description: "Every 10th attack is an Avalanche for 300 % weapon damage.",
-    slots: ["mainHand"],
+    slots: ["gloves"],
     bonuses: { chillChance: 0.15 },
     trigger: { affixId: "avalanche", quality: 1 },
   },
@@ -491,7 +491,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     uniqueOnly: true,
     name: "Stolen Fire",
     description: "Skills cost 25 % less Heat; your ailments deal 20 % more damage.",
-    slots: ["mainHand"],
+    slots: ["amulet"],
     rules: { skillCostMultiplier: 0.75, dotDamage: 1.2 },
   },
 ];
@@ -519,7 +519,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
   {
     id: "cinderwick",
     name: "Cinderwick",
-    baseId: "fire-wand",
+    baseId: "ember-focus",
     affixes: [
       { affixId: "elemental-damage", quality: q(0.6) },
       { affixId: "burn-chance", quality: q(0.7) },
@@ -544,16 +544,16 @@ export const UNIQUES: readonly UniqueDefinition[] = [
   },
   {
     id: "heirloom-blade",
-    name: "The Heirloom Blade",
-    baseId: "sword",
+    name: "The Heirloom Grips",
+    baseId: "gauntlets",
     affixes: [
       { affixId: "physical-damage", quality: q(0.6) },
-      { affixId: "added-weapon-damage", quality: q(0.6) },
+      { affixId: "attack-speed", quality: q(0.6) },
       { affixId: "crit-chance", quality: q(0.5) },
     ],
     powerId: "executioner",
     minItemLevel: 3,
-    flavor: "Every Heir before you swung it. Most of them missed.",
+    flavor: "Every Heir before you wore them. Most of them still missed.",
   },
   {
     id: "ashwalkers",
@@ -571,7 +571,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
   {
     id: "rotfang",
     name: "Rotfang",
-    baseId: "dagger",
+    baseId: "leather-gloves",
     affixes: [
       { affixId: "poison-chance", quality: q(0.7) },
       { affixId: "crit-chance", quality: q(0.6) },
@@ -641,7 +641,7 @@ export const BOSS_TROPHIES: readonly UniqueDefinition[] = [
   trophy(
     "thornsong",
     "Thornsong",
-    "dagger",
+    "leather-gloves",
     "rotwood",
     "thorn-flurry",
     [
@@ -692,12 +692,12 @@ export const BOSS_TROPHIES: readonly UniqueDefinition[] = [
   ),
   trophy(
     "avalanche-bow",
-    "Avalanche Bow",
-    "bow",
+    "Avalanche Grips",
+    "gauntlets",
     "frost-peaks",
     "avalanche",
     [
-      ["added-weapon-damage", 0.7],
+      ["physical-damage", 0.7],
       ["chill-chance", 0.6],
       ["dexterity", 0.6],
     ],
@@ -771,7 +771,7 @@ export const BOSS_TROPHIES: readonly UniqueDefinition[] = [
   trophy(
     "the-stolen-flame",
     "The Stolen Flame",
-    "staff",
+    "ember-pendant",
     "emberfall",
     "stolen-fire",
     [

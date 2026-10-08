@@ -22,9 +22,9 @@ export const STARTING_ATTRIBUTES: Attributes = {
 };
 
 export interface HeroLoadout {
-  /** Weapon when no (active) main-hand item is equipped. */
-  readonly weapon?: WeaponDefinition;
-  /** Equipped items. An active main-hand item replaces `weapon`. */
+  /** The hero's weapon (built by Weapon Mastery, or a raw weapon type). */
+  readonly weapon: WeaponDefinition;
+  /** Equipped items. */
   readonly equipment?: Equipment;
   /** Rotation Slots in order. Defaults to the weapon's Start Skill. */
   readonly skills?: readonly SkillDefinition[];
@@ -52,7 +52,7 @@ export function createHeroSetup(loadout: HeroLoadout): CombatantSetup {
       level: loadout.level ?? 1,
       attributes: loadout.attributes ?? STARTING_ATTRIBUTES,
       equipment: loadout.equipment ?? {},
-      fallbackWeapon: loadout.weapon,
+      weapon: loadout.weapon,
       rotation: (weapon) => {
         const startSkill = START_SKILLS[weapon.id];
         const skills = loadout.skills ?? (startSkill ? [startSkill] : []);

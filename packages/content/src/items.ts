@@ -357,6 +357,34 @@ export const GARNET_RING: ItemBaseDefinition = {
   implicit: { life: 6 },
 };
 
+/**
+ * Charms (waffe-als-system-v1.md, 10th slot): trigger affixes only, one per Magic, two per Rare,
+ * three per Epic. The base leans the roll towards a kind of trigger.
+ */
+export const WAR_CHARM: ItemBaseDefinition = {
+  id: "war-charm",
+  name: "War Charm",
+  slot: "charm",
+  implicit: { triggerChance: 0.03 },
+  affixWeights: { offense: 1.6 },
+};
+
+export const WARD_CHARM: ItemBaseDefinition = {
+  id: "ward-charm",
+  name: "Ward Charm",
+  slot: "charm",
+  implicit: { triggerChance: 0.03 },
+  affixWeights: { defense: 1.6, life: 1.3 },
+};
+
+export const EMBER_CHARM: ItemBaseDefinition = {
+  id: "ember-charm",
+  name: "Ember Charm",
+  slot: "charm",
+  implicit: { triggerChance: 0.03 },
+  affixWeights: { heat: 1.6, elemental: 1.3 },
+};
+
 export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   SWORD_BASE,
   FIRE_WAND_BASE,
@@ -389,13 +417,16 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   EMBER_PENDANT,
   IRON_RING,
   GARNET_RING,
+  WAR_CHARM,
+  WARD_CHARM,
+  EMBER_CHARM,
 ];
 
 // --- Stat affixes ----------------------------------------------------------------------------
 
 const ARMOR_SLOTS: readonly ItemSlot[] = ["helm", "body", "gloves", "boots", "belt"];
 const JEWELRY: readonly ItemSlot[] = ["amulet", "ring"];
-const ALL_SLOTS: readonly ItemSlot[] = ["mainHand", "offHand", ...ARMOR_SLOTS, ...JEWELRY];
+const ALL_SLOTS: readonly ItemSlot[] = ["offHand", ...ARMOR_SLOTS, ...JEWELRY];
 
 const stat = (affix: Omit<StatAffixDefinition, "kind" | "weight"> & { weight?: number }) =>
   ({ kind: "stat", weight: 10, ...affix }) satisfies StatAffixDefinition;
@@ -446,7 +477,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "physical-damage",
     stat: "physicalDamage",
     prefix: "Brutal",
-    slots: ["mainHand", "gloves", ...JEWELRY],
+    slots: ["gloves", ...JEWELRY],
     tags: ["physical", "offense"],
     value: { min: 0.08, max: 0.2 },
     perTier: 0.15,
@@ -455,7 +486,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "elemental-damage",
     stat: "elementalDamage",
     prefix: "Arcane",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["elemental", "offense"],
     value: { min: 0.08, max: 0.2 },
     perTier: 0.15,
@@ -464,9 +495,10 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "added-weapon-damage",
     stat: "addedWeaponDamage",
     prefix: "Jagged",
-    slots: ["mainHand"],
+    // Weapons are Weapon Mastery now: kept only so older items still read.
+    slots: [],
     tags: ["offense"],
-    weight: 14,
+    weight: 0,
     value: { min: 3, max: 7 },
     perTier: 1,
   }),
@@ -474,7 +506,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "attack-speed",
     stat: "attackSpeed",
     suffix: "of Haste",
-    slots: ["mainHand", "gloves", ...JEWELRY],
+    slots: ["gloves", ...JEWELRY],
     tags: ["speed", "offense"],
     value: { min: 0.04, max: 0.1 },
     perTier: 0.1,
@@ -483,7 +515,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "crit-chance",
     stat: "critChance",
     suffix: "of Precision",
-    slots: ["mainHand", "helm", "gloves", ...JEWELRY],
+    slots: ["helm", "gloves", ...JEWELRY],
     tags: ["crit", "offense"],
     value: { min: 0.01, max: 0.04 },
     perTier: 0.1,
@@ -538,7 +570,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "physical-penetration",
     stat: "physicalPenetration",
     prefix: "Piercing",
-    slots: ["mainHand", "gloves", "amulet"],
+    slots: ["gloves", "amulet"],
     tags: ["physical", "offense"],
     weight: 6,
     value: { min: 0.04, max: 0.1 },
@@ -548,7 +580,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "elemental-penetration",
     stat: "elementalPenetration",
     prefix: "Eldritch",
-    slots: ["mainHand", "offHand", "amulet"],
+    slots: ["offHand", "amulet"],
     tags: ["elemental", "offense"],
     weight: 6,
     value: { min: 0.04, max: 0.1 },
@@ -558,7 +590,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "heat-gain",
     stat: "heatGain",
     prefix: "Kindled",
-    slots: ["mainHand", "offHand", "helm", ...JEWELRY],
+    slots: ["offHand", "helm", ...JEWELRY],
     tags: ["heat"],
     value: { min: 0.05, max: 0.12 },
     perTier: 0.1,
@@ -576,7 +608,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "ailment-duration",
     stat: "ailmentDuration",
     suffix: "of Lingering",
-    slots: ["mainHand", "offHand", "gloves", "amulet"],
+    slots: ["offHand", "gloves", "amulet"],
     tags: ["ailment"],
     value: { min: 0.08, max: 0.2 },
     perTier: 0.15,
@@ -594,7 +626,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "lifesteal",
     stat: "lifesteal",
     suffix: "of the Leech",
-    slots: ["mainHand", "gloves", ...JEWELRY],
+    slots: ["gloves", ...JEWELRY],
     tags: ["life", "offense"],
     weight: 6,
     value: { min: 0.01, max: 0.03 },
@@ -623,7 +655,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "burn-chance",
     stat: "burnChance",
     prefix: "Smoldering",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["ailment", "elemental"],
     weight: 6,
     value: { min: 0.04, max: 0.1 },
@@ -633,7 +665,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "chill-chance",
     stat: "chillChance",
     prefix: "Chilling",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["ailment", "elemental"],
     weight: 6,
     value: { min: 0.04, max: 0.1 },
@@ -643,7 +675,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "bleed-chance",
     stat: "bleedChance",
     prefix: "Serrated",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["ailment", "physical"],
     weight: 6,
     value: { min: 0.04, max: 0.1 },
@@ -653,7 +685,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "poison-chance",
     stat: "poisonChance",
     prefix: "Venomous",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["ailment", "physical"],
     weight: 6,
     value: { min: 0.05, max: 0.12 },
@@ -663,7 +695,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "shock-chance",
     stat: "shockChance",
     prefix: "Static",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["ailment", "elemental"],
     weight: 6,
     value: { min: 0.04, max: 0.1 },
@@ -673,7 +705,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "corruption-chance",
     stat: "corruptionChance",
     prefix: "Blighted",
-    slots: ["mainHand", "offHand", "gloves", ...JEWELRY],
+    slots: ["offHand", "gloves", ...JEWELRY],
     tags: ["ailment", "elemental"],
     weight: 5,
     value: { min: 0.04, max: 0.1 },
@@ -683,14 +715,20 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
 
 // --- Trigger affixes -------------------------------------------------------------------------
 
+/** Trigger affixes also roll on Charms (the 10th slot holds trigger affixes only). */
 const trigger = (affix: Omit<TriggerAffixDefinition, "kind" | "weight"> & { weight?: number }) =>
-  ({ kind: "trigger", weight: 10, ...affix }) satisfies TriggerAffixDefinition;
+  ({
+    kind: "trigger",
+    weight: 10,
+    ...affix,
+    slots: [...affix.slots, "charm"],
+  }) satisfies TriggerAffixDefinition;
 
 export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   trigger({
     id: "crushing-blow",
     name: "Crushing Blow",
-    slots: ["mainHand", "gloves", "ring"],
+    slots: ["gloves", "ring"],
     tags: ["offense", "physical"],
     condition: { kind: "everyNthAttack", n: 4 },
     effect: { kind: "weaponHit" },
@@ -702,7 +740,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   trigger({
     id: "searing-crit",
     name: "Searing Crit",
-    slots: ["mainHand", "gloves", ...JEWELRY],
+    slots: ["gloves", ...JEWELRY],
     tags: ["crit", "elemental", "ailment"],
     condition: { kind: "onCrit" },
     effect: { kind: "ailment", ailment: "burn" },
@@ -781,7 +819,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   trigger({
     id: "flame-pulse",
     name: "Flame Pulse",
-    slots: ["mainHand", "offHand", ...JEWELRY],
+    slots: ["offHand", ...JEWELRY],
     tags: ["elemental", "offense"],
     condition: { kind: "everySeconds", seconds: 6 },
     effect: {
@@ -798,7 +836,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   trigger({
     id: "battle-focus",
     name: "Battle Focus",
-    slots: ["mainHand", "gloves", ...JEWELRY],
+    slots: ["gloves", ...JEWELRY],
     tags: ["crit", "offense"],
     condition: { kind: "onSkillUse" },
     effect: { kind: "buff", stat: "critChance", duration: 4, maxStacks: 3 },
@@ -861,7 +899,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   trigger({
     id: "rending-strikes",
     name: "Rending Strikes",
-    slots: ["mainHand", "gloves", "ring"],
+    slots: ["gloves", "ring"],
     tags: ["offense", "physical", "ailment"],
     condition: { kind: "onHit" },
     effect: { kind: "ailment", ailment: "bleed" },
@@ -874,7 +912,7 @@ export const TRIGGER_AFFIXES: readonly TriggerAffixDefinition[] = [
   trigger({
     id: "venom-sting",
     name: "Venom Sting",
-    slots: ["mainHand", "gloves", ...JEWELRY],
+    slots: ["gloves", ...JEWELRY],
     tags: ["crit", "physical", "ailment"],
     condition: { kind: "onCrit" },
     effect: { kind: "ailment", ailment: "poison" },
@@ -939,7 +977,7 @@ export const ITEM_CATALOG = createItemCatalog({
 // --- Gear sets ------------------------------------------------------------------------------
 
 export interface GearRollOptions {
-  /** Base id of the main-hand weapon, e.g. "sword". */
+  /** The hero's weapon type, e.g. "sword": decides which off hands and armor fit. */
   readonly weaponBaseId: string;
   /** One rarity for all items, or "mixed" for a random rarity per item. */
   readonly rarity: Rarity | "mixed";
@@ -958,8 +996,8 @@ function suitsWeapon(base: ItemBaseDefinition, weapon: WeaponDefinition): boolea
 }
 
 /**
- * Rolls a full gear set for all 10 slots: the chosen weapon plus a random fitting base in every
- * other slot. Used by the balance CLI and the debug page.
+ * Rolls a full gear set for the 10 equipment slots (the weapon is the hero's own): a random
+ * fitting base in every slot. Used by the balance CLI and the debug page.
  */
 export function rollGear(options: GearRollOptions, rng: Rng): Equipment {
   const weapon = getBase(ITEM_CATALOG, options.weaponBaseId).weapon;
@@ -976,9 +1014,7 @@ export function rollGear(options: GearRollOptions, rng: Rng): Equipment {
   const roll = (baseId: string) =>
     rollItem(ITEM_CATALOG, { baseId, itemLevel: options.itemLevel, rarity: rarity() }, rng);
 
-  const gear: Partial<Record<EquipmentSlot, Item>> = { mainHand: roll(options.weaponBaseId) };
-  for (const slot of EQUIPMENT_SLOTS) {
-    if (slot !== "mainHand") gear[slot] = roll(randomBase(itemSlotFor(slot)));
-  }
+  const gear: Partial<Record<EquipmentSlot, Item>> = {};
+  for (const slot of EQUIPMENT_SLOTS) gear[slot] = roll(randomBase(itemSlotFor(slot)));
   return gear;
 }

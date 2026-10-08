@@ -186,7 +186,7 @@ describe("Weapon Mastery in the game", () => {
     expect(s.legacy.echoes["test-echo"]).toEqual({ stage: 1, prestige: 0 });
     expect(s.hero.mastery.echo).toBe("test-echo");
     expect(heroWeaponName(s, data)).toBe("Crude Test Blade of Test Echo");
-    expect(heroWeapon(s, data).bonuses.life).toBe(TEST_ECHO.effect(1).bonuses?.life);
+    expect(heroWeapon(s, data).bonuses.life).toBe(TEST_ECHO.effect(1, 0).bonuses?.life);
   });
 
   it("only earned Echoes can be worn", () => {

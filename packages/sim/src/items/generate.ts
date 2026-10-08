@@ -179,10 +179,15 @@ export interface RollItemOptions {
 export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rng): Item {
   const base = getBase(catalog, options.baseId);
   const itemLevel = Math.max(1, Math.floor(options.itemLevel));
-  const counts = ITEMS.affixCounts[options.rarity];
-  const statCount = rng.int(counts.stat[0], counts.stat[1]);
-  const rolledTriggers =
-    rng.int(counts.trigger[0], counts.trigger[1]) + (rng.chance(counts.extraTriggerChance) ? 1 : 0);
+  const charm = base.slot === "charm";
+  // A Charm is never Normal: without a trigger it would do nothing.
+  const rarity = charm && options.rarity === "normal" ? "magic" : options.rarity;
+  const counts = ITEMS.affixCounts[rarity];
+  const statCount = charm ? 0 : rng.int(counts.stat[0], counts.stat[1]);
+  const rolledTriggers = charm
+    ? ITEMS.charmTriggers[rarity]
+    : rng.int(counts.trigger[0], counts.trigger[1]) +
+      (rng.chance(counts.extraTriggerChance) ? 1 : 0);
   const forced = options.forceTrigger;
   const triggerCount = forced ? Math.max(1, rolledTriggers) : rolledTriggers;
 
@@ -190,7 +195,7 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
   const chosen: AffixDefinition[] = [];
   // Magic items carry one prefix and one suffix at most, like in D2.
   const allowed = (affix: AffixDefinition, picked: readonly AffixDefinition[]) =>
-    options.rarity !== "magic" ||
+    rarity !== "magic" ||
     [...chosen, ...picked].every((c) => affixPosition(c) !== affixPosition(affix));
   const factor = options.affixFactor;
   const triggerPool = affixPool(all, base.slot, "trigger");
@@ -211,19 +216,19 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
   );
   const rolls: AffixRoll[] = chosen.map((a) => ({
     affixId: a.id,
-    quality: Number(rollQuality(itemLevel, options.rarity, rng).toFixed(4)),
+    quality: Number(rollQuality(itemLevel, rarity, rng).toFixed(4)),
   }));
   const power =
-    options.rarity === "legendary"
+    rarity === "legendary"
       ? pickWeighted(powersForSlot(catalog, base.slot), () => 1, rng)
       : undefined;
-  const sockets = options.rarity === "normal" ? rollSockets(base, rng) : 0;
+  const sockets = rarity === "normal" ? rollSockets(base, rng) : 0;
 
   return {
     id: rng.int(0, 0x7fffffff).toString(36).padStart(6, "0"),
     baseId: base.id,
-    name: itemName(catalog, base, options.rarity, chosen, rng),
-    rarity: options.rarity,
+    name: itemName(catalog, base, rarity, chosen, rng),
+    rarity: rarity,
     itemLevel,
     tier: tierForItemLevel(itemLevel),
     affixes: rolls,

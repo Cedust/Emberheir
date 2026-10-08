@@ -33,6 +33,12 @@ export const ITEMS = {
     { stat: [number, number]; trigger: [number, number]; extraTriggerChance: number }
   >,
 
+  /** Charms carry trigger affixes only: this many by rarity (a Normal Charm rolls as Magic). */
+  charmTriggers: { normal: 1, magic: 1, rare: 2, epic: 3, legendary: 2 } satisfies Record<
+    Rarity,
+    number
+  >,
+
   /** Chance that a dropped Normal item of a socketable base has Sockets. */
   socketChance: 0.6,
 
