@@ -18,7 +18,7 @@ export interface HeroLook {
   readonly weaponId: string;
   /** Its build: grade metal, path runes, Keystone shape. */
   readonly weaponLook: WeaponLook;
-  /** Colour of the Echo worn on the weapon: its motes drift around the hero. */
+  /** Colour of the Echo worn on the weapon: its aura wraps the weapon, its motes the hero. */
   readonly echo?: number;
 }
 
@@ -251,6 +251,7 @@ export class ArenaScene {
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
+  private echoAura: Container | null = null;
   /** Exalted weapons shed golden sparks from this point of the hero figure. */
   private exaltedTip: Container | null = null;
   private exaltedCarry = 0;
@@ -335,6 +336,7 @@ export class ArenaScene {
     this.world.addChild(this.telegraph);
 
     this.hero = makeFigure("hero", drawHero(hero), HERO_X);
+    this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
     this.exaltedTip =
       hero.weaponLook.grade >= 4
         ? (this.hero.body.getChildByLabel("weapon-tip", true) ?? null)
@@ -959,7 +961,10 @@ export class ArenaScene {
         });
       }
     }
-    // The worn Echo walks with the hero: its motes drift up around them.
+    // The worn Echo walks with the hero: its aura breathes, its motes drift up around them.
+    if (this.echoAura && this.motion) {
+      this.echoAura.alpha = 0.5 + 0.15 * Math.sin(this.clock * 1.4);
+    }
     if (this.fx && this.echoColor !== null && this.hero && this.hero.root.alpha === 1) {
       this.echoCarry += 7 * dt;
       const c = this.center("hero");
@@ -1121,6 +1126,26 @@ const GRADE_LIGHT = [0x8a6a50, 0xd0803a, 0xff7a2a, 0xffc04a, 0xfff0c8];
 const GRADE_LIGHT_ALPHA = [0, 0.15, 0.3, 0.5, 0.8];
 
 /**
+ * Blurred light baked into a texture once, additive. The texture gets room for the blur:
+ * clipped at the shapes' own bounds, the blur would smear into a hard-edged box.
+ */
+function bakedGlow(children: readonly Container[], blur: number): Container {
+  const inner = new Container();
+  inner.addChild(...children);
+  inner.filters = [new BlurFilter({ strength: blur, quality: 2 })];
+  const b = inner.getLocalBounds();
+  const pad = blur * 4;
+  const room = new Graphics()
+    .rect(b.minX - pad, b.minY - pad, b.width + pad * 2, b.height + pad * 2)
+    .fill({ color: 0x000000, alpha: 0.001 });
+  const wrap = new Container();
+  wrap.addChild(room, inner);
+  wrap.blendMode = "add";
+  wrap.cacheAsTexture(true);
+  return wrap;
+}
+
+/**
  * The painted weapon of Weapon Mastery in the hero's hand, in the build's look: grade metal,
  * glowing path runes and the Keystone's shape. Its light is baked once into a texture.
  */
@@ -1135,18 +1160,24 @@ function heldWeapon(look: HeroLook): Container {
   holder.rotation = Math.atan2(y1 - y0, x1 - x0);
   holder.scale.set(Math.hypot(x1 - x0, y1 - y0) / length);
   const grade = Math.max(0, Math.min(4, look.weaponLook.grade));
-  const light = new Container();
   art.edge.tint = GRADE_LIGHT[grade] ?? 0xffffff;
   art.edge.alpha = GRADE_LIGHT_ALPHA[grade] ?? 0;
-  light.addChild(art.edge, art.runeGlow);
-  light.filters = [new BlurFilter({ strength: 6, quality: 2 })];
-  light.blendMode = "add";
+  const light = bakedGlow([art.edge, art.runeGlow], 6);
   // A dark outline keeps the painted weapon readable on the bright arena.
   const outline = art.silhouette();
   outline.tint = INK;
   outline.scale.set(1.02);
-  holder.addChild(outline, art.body, light);
-  light.cacheAsTexture(true);
+  holder.addChild(outline);
+  if (look.echo !== undefined) {
+    // The worn Echo wraps the weapon in its colour; the scene lets it breathe.
+    const shape = art.silhouette();
+    shape.tint = look.echo;
+    const aura = bakedGlow([shape], 14);
+    aura.label = "weapon-echo";
+    aura.alpha = 0.55;
+    holder.addChild(aura);
+  }
+  holder.addChild(art.body, light);
   const tip = new Container({ label: "weapon-tip" });
   tip.position.set(length * 0.8, 0);
   holder.addChild(tip);

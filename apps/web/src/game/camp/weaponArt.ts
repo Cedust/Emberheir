@@ -217,7 +217,8 @@ interface Part {
   /** Counts for the edge glow. */
   readonly edge?: boolean;
   readonly rim?: readonly number[];
-  readonly alpha?: number;
+  /** Light, not matter (a corona): no outline, no shadow. */
+  readonly soft?: boolean;
 }
 
 /** Where a weapon carries its runes: three stretches along a centre line, one per path. */
@@ -273,6 +274,8 @@ interface Build {
   readonly details: (g: Graphics) => void;
   readonly anchorY: (t: number) => number;
   readonly track: RuneTrack;
+  /** Extra light for the blurred, additive rune layer (a corona, a glowing crack). */
+  readonly light?: (g: Graphics) => void;
 }
 
 function assemble(build: Build, look: WeaponLook): WeaponArt {
@@ -280,18 +283,15 @@ function assemble(build: Build, look: WeaponLook): WeaponArt {
   const body = new Container();
   const paint = new Graphics();
   for (const p of parts) {
-    if (p.alpha !== undefined && typeof p.fill === "number") {
-      // Ghost parts (Shadowstep): no outline, see-through.
-      paint.poly([...p.poly]).fill({ color: p.fill, alpha: p.alpha });
-      continue;
-    }
     paint.poly([...p.poly]).fill(p.fill);
+    if (p.soft) continue;
     paint.poly([...p.poly]).stroke({ color: 0x0b0705, width: 2.5, alpha: 0.9 });
     if (p.rim) rim(paint, p.rim, look.grade >= 3 ? 0.55 : 0.35);
   }
   build.details(paint);
   const runeGlow = new Graphics();
   carveRunes(paint, runeGlow, build.track, look);
+  build.light?.(runeGlow);
   body.addChild(paint);
   const edge = new Graphics();
   for (const p of parts) {
@@ -299,7 +299,7 @@ function assemble(build: Build, look: WeaponLook): WeaponArt {
   }
   const silhouette = () => {
     const s = new Graphics();
-    for (const p of parts) s.poly([...p.poly]).fill(0xffffff);
+    for (const p of parts) if (!p.soft) s.poly([...p.poly]).fill(0xffffff);
     return s;
   };
   return { body, edge, runeGlow, silhouette, anchorY: build.anchorY };
@@ -444,6 +444,25 @@ function sword(L: number, P: Palette, look: WeaponLook): Build {
   };
 }
 
+/** Venom drops on Toxic Bloom: where along the weapon, and how far they hang. */
+const TOXIC_DROPS = [
+  [0.56, 14],
+  [0.68, 22],
+  [0.79, 12],
+] as const;
+
+/** A drop hanging from (x, y), `len` long. */
+function drop(g: Graphics, x: number, y: number, len: number): void {
+  const r = 4.5;
+  g.moveTo(x - 1.5, y - 1)
+    .bezierCurveTo(x - 1.5, y + len * 0.5, x - r, y + len - r, x - r, y + len)
+    .arc(x, y + len, r, Math.PI, 0, true)
+    .bezierCurveTo(x + r, y + len - r, x + 1.5, y + len * 0.5, x + 1.5, y - 1)
+    .closePath()
+    .fill(0x6ad04a);
+  g.circle(x - 1.2, y + len - 0.8, 1.2).fill({ color: 0xeaffd8, alpha: 0.9 });
+}
+
 function dagger(L: number, P: Palette, look: WeaponLook): Build {
   const ks = look.keystone;
   // Leaf blade, a little curved.
@@ -462,6 +481,18 @@ function dagger(L: number, P: Palette, look: WeaponLook): Build {
     const t = (x - L * 0.38) / (L * 0.62);
     return t > 0 ? -Math.sin(t * Math.PI) * 10 : 0;
   };
+  const lowerAt = (x: number) => {
+    for (let i = 0; i + 3 < lower.length; i += 2) {
+      const x0 = lower[i] ?? 0;
+      const x1 = lower[i + 2] ?? 0;
+      if (x >= x0 && x <= x1)
+        return (
+          (lower[i + 1] ?? 0) +
+          (((lower[i + 3] ?? 0) - (lower[i + 1] ?? 0)) * (x - x0)) / (x1 - x0 || 1)
+        );
+    }
+    return 0;
+  };
   const behind: Part[] = [];
   const front: Part[] = [];
   if (ks === "thousand-cuts") {
@@ -472,8 +503,27 @@ function dagger(L: number, P: Palette, look: WeaponLook): Build {
   } else if (ks === "assassinate") {
     behind.push({ poly: [L * 0.9, -6, L * 1.16, 0, L * 0.9, 6], fill: grad(P.steel), edge: true });
   } else if (ks === "shadowstep") {
-    // A shadow twin of the blade, a step behind.
-    behind.push({ poly: shift(blade, -L * 0.08, -34), fill: 0x3a2a5a, alpha: 0.45 });
+    // Afterimages of the blade, a step behind, fading into smoke toward the hilt.
+    for (const [k, a] of [
+      [2, "66"],
+      [1, "aa"],
+    ] as const) {
+      behind.push({
+        poly: shift(blade, -L * 0.06 * k, -40 * k),
+        fill: new FillGradient({
+          type: "linear",
+          start: { x: 0, y: 0 },
+          end: { x: 1, y: 0 },
+          colorStops: [
+            { offset: 0, color: "#2a1f4000" },
+            { offset: 0.5, color: `#3a2a5a${a}` },
+            { offset: 1, color: `#6a58a0${a}` },
+          ],
+          textureSpace: "local",
+        }),
+        soft: true,
+      });
+    }
   }
   return {
     parts: [
@@ -513,15 +563,24 @@ function dagger(L: number, P: Palette, look: WeaponLook): Build {
       g.circle(18, 0, 17).stroke({ color: 0x0b0705, width: 2.5 });
       gem(g, 18, 0, 7, ks === "toxic-bloom" ? 0x6ad04a : P.gem);
       if (ks === "toxic-bloom") {
-        // Venom bulbs on the guard and a green channel down the blade.
-        gem(g, L * 0.355, -56, 11, 0x6ad04a);
-        gem(g, L * 0.395, 54, 11, 0x6ad04a);
+        // A venom channel down the blade, and drops gathering on its lower edge.
         g.moveTo(L * 0.4, 2).bezierCurveTo(L * 0.55, -6, L * 0.75, -6, L * 0.9, -3);
-        g.stroke({ color: 0x6ad04a, width: 3, alpha: 0.85 });
-        for (const x of [0.6, 0.72, 0.84])
-          g.circle(L * x, 14, 3).fill({ color: 0x8af06a, alpha: 0.9 });
+        g.stroke({ color: 0x1c3a12, width: 6, alpha: 0.9, cap: "round" });
+        g.moveTo(L * 0.4, 2).bezierCurveTo(L * 0.55, -6, L * 0.75, -6, L * 0.9, -3);
+        g.stroke({ color: 0x8af06a, width: 2.5, alpha: 0.95, cap: "round" });
+        for (const [t, len] of TOXIC_DROPS) drop(g, L * t, lowerAt(L * t), len);
       }
     },
+    ...(ks === "toxic-bloom"
+      ? {
+          light: (g: Graphics) => {
+            g.moveTo(L * 0.4, 2).bezierCurveTo(L * 0.55, -6, L * 0.75, -6, L * 0.9, -3);
+            g.stroke({ color: 0x6ad04a, width: 8, alpha: 0.8, cap: "round" });
+            for (const [t, len] of TOXIC_DROPS)
+              g.circle(L * t, lowerAt(L * t) + len, 5).fill({ color: 0x8af06a, alpha: 0.8 });
+          },
+        }
+      : {}),
     anchorY: (t) => (t > 0.38 ? -Math.sin(((t - 0.38) / 0.62) * Math.PI) * 10 : 0),
     track: {
       spans: [
@@ -827,13 +886,28 @@ function bow(L: number, P: Palette, look: WeaponLook): Build {
       });
     }
   } else if (ks === "wild-shot") {
-    // Blades along the back of the limbs.
-    for (const t of [0.14, 0.26, 0.74, 0.86]) {
-      const x = t * L;
-      const y = center(t) - (5 + 9 * (1 - Math.abs(2 * t - 1)));
-      const dir = t < 0.5 ? -1 : 1;
+    // Curved blades forged onto the back of both limbs, sweeping toward the tips.
+    const back = (t: number) => center(t) - (5 + 9 * (1 - Math.abs(2 * t - 1)));
+    for (const [t0, t1] of [
+      [0.36, 0.1],
+      [0.64, 0.9],
+    ] as const) {
+      const inner: number[] = [];
+      const outer: number[] = [];
+      for (let i = 0; i <= 12; i++) {
+        const t = t0 + ((t1 - t0) * i) / 12;
+        const k = i / 12;
+        inner.push(t * L, back(t) + 3);
+        // Walked back from the tip, so the outline closes.
+        const tb = t1 - ((t1 - t0) * i) / 12;
+        const kb = 1 - k;
+        outer.push(tb * L, back(tb) - 24 * Math.sin(Math.PI * Math.pow(kb, 1.5)) - 6 * kb);
+      }
+      // Ends in a hooked point past the limb.
+      const tipX = (t1 + (t1 - t0) * 0.1) * L;
+      const tipY = back(t1) - 20;
       behind.push({
-        poly: [x - 12, y + 4, x + dir * 16, y - 34, x + 12, y + 4],
+        poly: [...inner, tipX, tipY, ...outer],
         fill: grad(P.steel),
         edge: true,
       });
@@ -854,17 +928,42 @@ function bow(L: number, P: Palette, look: WeaponLook): Build {
       wrap(g, L * 0.44, L * 0.56, 15);
       for (const x of [0, L]) gem(g, x, tip, 7, P.gem);
       // Arrows on the string, ready: three for a Rain of Arrows.
-      const arrows = ks === "rain-of-arrows" ? [-0.12, 0, 0.12] : [0];
+      const arrows = ks === "rain-of-arrows" ? [-0.3, 0.3, 0] : [0];
       for (const a of arrows) {
-        const hx = L * 0.5 + Math.sin(a) * 120;
-        const hy = gy - 60 - Math.abs(a) * -20;
+        const len = tip - gy + 70;
+        const hx = L * 0.5 + Math.sin(a) * len;
+        const hy = tip - Math.cos(a) * len;
+        const dx = Math.sin(a);
+        const dy = -Math.cos(a);
         g.moveTo(L * 0.5, tip)
           .lineTo(hx, hy)
-          .stroke({ color: 0x8a6a40, width: 4 });
-        g.poly([hx, hy - 18, hx - 9, hy + 2, hx + 9, hy + 2]).fill(grad(P.steel));
+          .stroke({ color: 0x0b0705, width: 6 });
+        g.moveTo(L * 0.5, tip)
+          .lineTo(hx, hy)
+          .stroke({ color: 0x8a6a40, width: 3.5 });
+        // Broadhead.
+        g.poly([
+          hx + dx * 20,
+          hy + dy * 20,
+          hx - dy * 9,
+          hy + dx * 9,
+          hx + dy * 9,
+          hy - dx * 9,
+        ]).fill(grad(P.steel));
+        // Fletching at the nock.
+        for (const sd of [-1, 1]) {
+          const fx = L * 0.5 + dx * 8;
+          const fy = tip + dy * 8;
+          g.poly([
+            fx,
+            fy,
+            fx + dx * 26 - dy * sd * 9,
+            fy + dy * 26 + dx * sd * 9,
+            fx + dx * 30,
+            fy + dy * 30,
+          ]).fill(0xc8423a);
+        }
       }
-      g.poly([L * 0.5, tip - 4, L * 0.5 - 10, tip + 18, L * 0.5, tip + 10, L * 0.5 + 10, tip + 18]);
-      g.fill(0xc8423a);
       if (ks === "hunters-mark") {
         // A sight ring and the red mark on the grip.
         g.circle(L * 0.5, gy - 36, 15).stroke({ color: 0x0b0705, width: 5 });
@@ -969,9 +1068,33 @@ function crossbow(L: number, P: Palette, look: WeaponLook): Build {
         g.stroke({ color: 0x0b0705, width: 3 });
         g.circle(L * 0.14, 40, 8).fill(grad(P.fit));
       } else if (ks === "harpoon") {
-        // The rope runs back to the stock.
-        g.moveTo(L * 0.6, 6).bezierCurveTo(L * 0.5, 60, L * 0.3, 70, L * 0.2, 30);
-        g.stroke({ color: 0xc8a878, width: 3 });
+        // A braided rope runs from the bolt back to a coil under the stock.
+        const rope = (gg: Graphics) =>
+          gg.moveTo(L * 0.6, 8).bezierCurveTo(L * 0.52, 58, L * 0.36, 66, L * 0.26, 40);
+        rope(g).stroke({ color: 0x2a1a0c, width: 7, cap: "round" });
+        rope(g).stroke({ color: 0xc8a878, width: 4, cap: "round" });
+        for (let k = 0; k < 14; k++) {
+          // Braid ticks along the curve.
+          const t = (k + 0.5) / 14;
+          const u = 1 - t;
+          const x =
+            u * u * u * L * 0.6 +
+            3 * u * u * t * L * 0.52 +
+            3 * u * t * t * L * 0.36 +
+            t * t * t * L * 0.26;
+          const y = u * u * u * 8 + 3 * u * u * t * 58 + 3 * u * t * t * 66 + t * t * t * 40;
+          g.moveTo(x - 2, y - 2)
+            .lineTo(x + 2, y + 2)
+            .stroke({ color: 0x6a4a28, width: 1.5 });
+        }
+        for (const [dx, r] of [
+          [0, 18],
+          [3, 13],
+          [6, 8],
+        ] as const) {
+          g.ellipse(L * 0.26 + dx, 40, r, r * 0.55).stroke({ color: 0x2a1a0c, width: 6 });
+          g.ellipse(L * 0.26 + dx, 40, r, r * 0.55).stroke({ color: 0xc8a878, width: 3 });
+        }
       }
     },
     anchorY: () => 0,
@@ -1072,6 +1195,96 @@ function wand(L: number, P: Palette, look: WeaponLook): Build {
   };
 }
 
+/** A flame tongue from radius r0 at angle a around (cx, 0), `len` long, bent sideways. */
+function flame(cx: number, a: number, r0: number, len: number, w: number, bend: number): number[] {
+  const left: number[] = [];
+  const right: number[] = [];
+  const [dx, dy] = [Math.cos(a), Math.sin(a)];
+  for (let i = 0; i <= 10; i++) {
+    const u = i / 10;
+    const along = r0 + len * u;
+    const side = bend * u * u;
+    const half = w * Math.pow(1 - u, 0.9) * (1 + 0.35 * Math.sin(u * Math.PI));
+    const x = cx + dx * along - dy * side;
+    const y = dy * along + dx * side;
+    left.push(x - dy * half, y + dx * half);
+    right.unshift(x + dy * half, y - dx * half);
+  }
+  return [...left, ...right];
+}
+
+/** A crescent: the outer circle (cx, R) minus a circle shifted right by `shift` with radius r. */
+function crescent(cx: number, R: number, shift: number, r: number): number[] {
+  // Where both circles meet: x from the centre of the outer one.
+  const mx = (R * R - r * r + shift * shift) / (2 * shift);
+  const my = Math.sqrt(Math.max(0, R * R - mx * mx));
+  const outer = Math.atan2(my, mx);
+  const inner = Math.atan2(my, mx - shift);
+  return [
+    ...arc(cx, 0, R, R, outer, Math.PI * 2 - outer, 40),
+    ...arc(cx + shift, 0, r, r, Math.PI * 2 - inner, inner, 40),
+  ];
+}
+
+function moonFill(): FillGradient {
+  return new FillGradient({
+    type: "radial",
+    center: { x: 0.25, y: 0.4 },
+    innerRadius: 0,
+    outerCenter: { x: 0.5, y: 0.5 },
+    outerRadius: 0.6,
+    colorStops: [
+      { offset: 0, color: "#f4f8ff" },
+      { offset: 0.45, color: "#c2cee2" },
+      { offset: 0.8, color: "#6e7c98" },
+      { offset: 1, color: "#2a3346" },
+    ],
+    textureSpace: "local",
+  });
+}
+
+/** The black sun: dark to the rim, where the hidden light burns through. */
+function corona(color: number): FillGradient {
+  return new FillGradient({
+    type: "radial",
+    center: { x: 0.5, y: 0.5 },
+    innerRadius: 0,
+    outerCenter: { x: 0.5, y: 0.5 },
+    outerRadius: 0.5,
+    colorStops: [
+      { offset: 0, color: "#000000" },
+      { offset: 0.68, color: "#06040a" },
+      { offset: 0.8, color: hex(color) },
+      { offset: 1, color: `${hex(color)}00` },
+    ],
+    textureSpace: "local",
+  });
+}
+
+/** A four-pointed twinkle. */
+function star(g: Graphics, x: number, y: number, r: number): void {
+  const q = r * 0.22;
+  g.poly([
+    x,
+    y - r,
+    x + q,
+    y - q,
+    x + r,
+    y,
+    x + q,
+    y + q,
+    x,
+    y + r,
+    x - q,
+    y + q,
+    x - r,
+    y,
+    x - q,
+    y - q,
+  ]).fill(0xf4f8ff);
+  g.circle(x, y, r * 0.9).fill({ color: 0xbfd4ff, alpha: 0.18 });
+}
+
 function staff(L: number, P: Palette, look: WeaponLook): Build {
   const ks = look.keystone;
   const accent = look.accent;
@@ -1084,27 +1297,19 @@ function staff(L: number, P: Palette, look: WeaponLook): Build {
   const ox = L * 0.92;
   const behind: Part[] = [];
   if (ks === "endless-night") {
-    // A crescent moon behind the orb.
-    const outer = arc(ox + 4, 0, 70, 70, -2.3, 2.3, 28);
-    const inner = arc(ox + 26, 0, 56, 56, 2.0, -2.0, 28);
-    behind.push({
-      poly: [...outer, ...inner],
-      fill: grad(["#20242c", "#9aa6b8", "#e8eef8", "#7a8698", "#1a1e26"]),
-      edge: true,
-    });
+    // A pale crescent moon cradles the orb, its horns reaching past it toward the tip.
+    behind.push({ poly: crescent(ox - 8, 70, 20, 58), fill: moonFill(), edge: true });
   } else if (ks === "pyre") {
+    // A crown of flame tongues licking out of the orb, each bent like a gust took it.
     for (let k = 0; k < 9; k++) {
-      const a = (k / 9) * Math.PI * 2;
-      const x = ox + Math.cos(a) * 34;
-      const y = Math.sin(a) * 34;
-      const tx = ox + Math.cos(a) * 74;
-      const ty = Math.sin(a) * 74;
-      const nx = -Math.sin(a) * 12;
-      const ny = Math.cos(a) * 12;
+      const a = (k / 9) * Math.PI * 2 + 0.2;
+      const len = k % 2 === 0 ? 48 : 36;
+      const bend = (k % 3 === 0 ? -1 : 1) * 12;
+      behind.push({ poly: flame(ox, a, 32, len, 13, bend), fill: 0xd8401a, edge: true });
       behind.push({
-        poly: [x + nx, y + ny, tx, ty, x - nx, y - ny],
-        fill: grad(["#401004", "#ff5a1a", "#ffd27a", "#ff7a2a", "#401004"]),
-        edge: true,
+        poly: flame(ox, a, 32, len * 0.62, 7, bend * 0.6),
+        fill: 0xffc65a,
+        soft: true,
       });
     }
   } else if (ks === "siphon") {
@@ -1128,7 +1333,8 @@ function staff(L: number, P: Palette, look: WeaponLook): Build {
       });
     }
   } else if (ks === "eclipse") {
-    behind.push({ poly: arc(ox, 0, 52, 52), fill: 0x0c0810, edge: true });
+    // The orb has swallowed its light: a black sun whose corona burns in the element's colour.
+    behind.push({ poly: arc(ox, 0, 54, 54, 0, Math.PI * 2, 48), fill: corona(accent), soft: true });
   }
   return {
     parts: [...behind, { poly: shaft.poly, fill: grad(P.wood), rim: shaft.upper }],
@@ -1151,9 +1357,22 @@ function staff(L: number, P: Palette, look: WeaponLook): Build {
       }
       gem(g, ox, 0, 36, ks === "eclipse" ? 0x1a1020 : accent);
       if (ks === "eclipse") {
-        // Only a ring of light is left around the dark orb.
-        g.circle(ox, 0, 44).stroke({ color: accent, width: 3, alpha: 0.9 });
-        g.circle(ox, 0, 50).stroke({ color: 0xffffff, width: 1, alpha: 0.5 });
+        // Only a thin ring of light is left around the dark orb, brightest where it breaks out.
+        g.circle(ox, 0, 38).stroke({ color: accent, width: 4, alpha: 0.85 });
+        g.circle(ox, 0, 38).stroke({ color: 0xffffff, width: 1.2, alpha: 0.7 });
+        g.circle(ox + Math.cos(-0.8) * 38, Math.sin(-0.8) * 38, 4).fill(0xffffff);
+        g.circle(ox + Math.cos(-0.8) * 38, Math.sin(-0.8) * 38, 8).fill({
+          color: 0xffffff,
+          alpha: 0.35,
+        });
+      } else if (ks === "endless-night") {
+        // Stars caught in the night around the moon.
+        for (const [sx, sy, r] of [
+          [ox + 70, -58, 7],
+          [ox + 52, 70, 5],
+          [ox - 30, -72, 4],
+        ] as const)
+          star(g, sx, sy, r);
       } else if (ks === "siphon") {
         for (const s of [-1, 1]) {
           g.moveTo(L * 0.66, s * 86).bezierCurveTo(
@@ -1170,6 +1389,41 @@ function staff(L: number, P: Palette, look: WeaponLook): Build {
       g.circle(10, 0, 14).fill(grad(P.fit));
     },
     anchorY: (t) => (t < 0.84 ? Math.sin((t / 0.84) * 7) * 5 : 0),
+    ...(ks === "pyre"
+      ? {
+          light: (g: Graphics) => {
+            for (let k = 0; k < 9; k++) {
+              const a = (k / 9) * Math.PI * 2 + 0.2;
+              g.poly(flame(ox, a, 32, k % 2 === 0 ? 40 : 30, 8, 0)).fill({
+                color: 0xff8a2a,
+                alpha: 0.7,
+              });
+            }
+          },
+        }
+      : {}),
+    ...(ks === "eclipse"
+      ? {
+          light: (g: Graphics) => {
+            // Corona flares, soft from the blur of the light layer.
+            for (let k = 0; k < 14; k++) {
+              const a = (k / 14) * Math.PI * 2 + 0.2;
+              const long = [86, 64, 76, 58][k % 4] ?? 70;
+              const bend = 0.18 * Math.sin(k * 2.3);
+              g.moveTo(ox + Math.cos(a) * 42, Math.sin(a) * 42)
+                .quadraticCurveTo(
+                  ox + Math.cos(a + bend * 0.5) * (long * 0.75),
+                  Math.sin(a + bend * 0.5) * (long * 0.75),
+                  ox + Math.cos(a + bend) * long,
+                  Math.sin(a + bend) * long,
+                )
+                .stroke({ color: accent, width: k % 2 === 0 ? 5 : 3, alpha: 0.75, cap: "round" });
+            }
+            g.circle(ox, 0, 42).stroke({ color: accent, width: 9, alpha: 0.9 });
+            g.circle(ox, 0, 40).stroke({ color: 0xffffff, width: 2, alpha: 0.6 });
+          },
+        }
+      : {}),
     track: {
       spans: [
         [L * 0.04, L * 0.22],

@@ -19,7 +19,7 @@ import { ELEMENT_COLOR } from "../weaponLook";
  * weapon lies diagonally over the forge. Refine hotspots sit on its parts, the three paths grow
  * out of it as engraved filigree that lights up, the Heat Forms burn in the forge below, the
  * Innate Forms are rune seals beside the blade, the Keystones are gem sockets around the pommel.
- * The weapon glows hotter with every grade; a worn Echo walks beside it as a ghost. Looks only:
+ * The weapon glows hotter with every grade; a worn Echo wraps it in its aura. Looks only:
  * learning goes through the React side and the sim.
  */
 
@@ -131,7 +131,8 @@ export class MasteryScene {
   private fx: Fx | null = null;
   private art: WeaponArt | null = null;
   private artKey = "";
-  private ghost: Container | null = null;
+  private echoAura: Container | null = null;
+  private echoRing: Container | null = null;
   private edgeGlow: Container | null = null;
   private sprites = new Map<string, NodeSprite>();
   private labels: Text[] = [];
@@ -497,7 +498,13 @@ export class MasteryScene {
       const baked = (child: Graphics | Container, blur: number): Container => {
         child.filters = [new BlurFilter({ strength: blur, quality: 3 })];
         const wrap = new Container();
-        wrap.addChild(child);
+        // Room for the blur: a cached texture clipped at the shape's bounds smears its edge.
+        const b = child.getLocalBounds();
+        const pad = blur * 4;
+        const room = new Graphics()
+          .rect(b.minX - pad, b.minY - pad, b.width + pad * 2, b.height + pad * 2)
+          .fill({ color: 0x000000, alpha: 0.001 });
+        wrap.addChild(room, child);
         wrap.cacheAsTexture(true);
         return wrap;
       };
@@ -507,16 +514,27 @@ export class MasteryScene {
       const shadow = baked(silhouette, 10);
       shadow.alpha = 0.6;
       shadow.position.set(10, 22);
-      // The worn Echo: a ghost of the weapon in its colour, drifting beside it.
-      this.ghost = null;
+      // The worn Echo: an aura of its colour around the whole weapon, and every few seconds
+      // the weapon's outline rings out of it like an echo.
+      this.echoAura = null;
+      this.echoRing = null;
       if (v.echoColor !== null) {
-        const ghostShape = art.silhouette();
-        ghostShape.tint = v.echoColor;
-        const ghost = baked(ghostShape, 6);
-        ghost.blendMode = "add";
-        ghost.alpha = 0.4;
-        this.ghost = ghost;
-        holder.addChild(ghost);
+        const auraShape = art.silhouette();
+        auraShape.tint = v.echoColor;
+        const aura = baked(auraShape, 14);
+        aura.blendMode = "add";
+        const ringShape = art.silhouette();
+        ringShape.tint = v.echoColor;
+        const ring = new Container();
+        const mid = length / ART_SCALE / 2;
+        ring.pivot.set(mid, 0);
+        ring.position.set(mid, 0);
+        ring.addChild(baked(ringShape, 5));
+        ring.blendMode = "add";
+        ring.alpha = 0;
+        this.echoAura = aura;
+        this.echoRing = ring;
+        holder.addChild(aura, ring);
       }
       art.edge.tint = (GRADE_GLOW[v.grade] ?? GRADE_GLOW[0])?.color ?? EMBER;
       const glow = baked(art.edge, 7);
@@ -1023,10 +1041,13 @@ export class MasteryScene {
     if (this.runeLight) {
       this.runeLight.alpha = this.motion ? 0.7 + 0.3 * Math.sin(this.time * 2.1) : 0.85;
     }
-    if (this.ghost) {
-      const t = this.motion ? this.time : 0;
-      this.ghost.position.set(Math.sin(t * 0.7) * 12 - 8, -20 + Math.cos(t * 0.9) * 7);
-      this.ghost.alpha = 0.32 + (this.motion ? 0.12 * Math.sin(t * 1.3) : 0);
+    if (this.echoAura) {
+      this.echoAura.alpha = this.motion ? 0.42 + 0.14 * Math.sin(this.time * 1.4) : 0.45;
+    }
+    if (this.echoRing) {
+      const p = this.motion ? (this.time % 3.2) / 3.2 : 1;
+      this.echoRing.scale.set(1 + p * 0.06, 1 + p * 0.9);
+      this.echoRing.alpha = 0.55 * (1 - p) * (1 - p);
     }
 
     const pulse = this.motion ? 0.75 + 0.25 * Math.sin(this.time * 3.4) : 1;
