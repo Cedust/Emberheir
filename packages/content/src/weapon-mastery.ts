@@ -31,12 +31,15 @@ import {
 // --- layout ----------------------------------------------------------------------------------
 
 /** Pommel and tip of the weapon in layout units. */
-const POMMEL = { x: -4.2, y: 3 };
-const TIP = { x: 4.2, y: -3 };
+const POMMEL = { x: -4.8, y: 2.5 };
+const TIP = { x: 4.8, y: -2.5 };
 const AXIS = { x: TIP.x - POMMEL.x, y: TIP.y - POMMEL.y };
 const LENGTH = Math.hypot(AXIS.x, AXIS.y);
 /** Unit normal of the weapon, pointing down-right (away from the upper paths). */
 const NORMAL = { x: -AXIS.y / LENGTH, y: AXIS.x / LENGTH };
+
+/** Where the weapon lies in the Weapon Mastery view (the UI draws it between these points). */
+export const MASTERY_LAYOUT = { pommel: POMMEL, tip: TIP } as const;
 
 const round = (v: number) => Math.round(v * 100) / 100;
 
@@ -50,14 +53,14 @@ function along(t: number, off = 0): { x: number; y: number } {
 
 /** Path starts and their outward direction (unit vectors bend a little along the way). */
 const PATH_LAYOUT = [
-  { start: along(0.3, -1.25), dir: { x: -0.45, y: -0.89 }, bend: -1 },
-  { start: along(0.55, 1.25), dir: { x: 0.83, y: 0.56 }, bend: 1 },
-  { start: along(0.8, -1.25), dir: { x: 0.2, y: -0.98 }, bend: 1 },
+  { start: along(0.3, -1.25), dir: { x: -0.7, y: -0.71 }, bend: -1 },
+  { start: along(0.55, 1.35), dir: { x: 0.93, y: 0.36 }, bend: 1 },
+  { start: along(0.8, -1.25), dir: { x: 0.82, y: -0.57 }, bend: 1 },
 ] as const;
 
 function pathPosition(path: number, index: number): { x: number; y: number } {
   const { start, dir, bend } = PATH_LAYOUT[path] ?? PATH_LAYOUT[0];
-  const step = 0.92;
+  const step = 0.84;
   const k = index * step;
   // A gentle S-curve sideways to the direction, like a vine of engraving.
   const side = Math.sin(index * 0.75) * 0.45 * bend;
@@ -219,7 +222,7 @@ function attunementPosition(i: number): { x: number; y: number } {
 function buildTree(spec: TreeSpec): WeaponMasteryTree {
   const nodes: MasteryNode[] = [];
   for (const { t, ...node } of REFINE) nodes.push({ ...node, ...along(t) });
-  for (const { i, ...node } of HEAT_FORMS) nodes.push({ ...node, x: -1.8 + i * 1.2, y: 4.3 });
+  for (const { i, ...node } of HEAT_FORMS) nodes.push({ ...node, x: -1.8 + i * 1.2, y: 3.7 });
   spec.innateForms.forEach((form, i) => {
     nodes.push({
       id: form.id,
@@ -228,8 +231,8 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
       kind: "innateForm",
       group: "innateForm",
       effect: { ...form.effect, innate: form.skill },
-      // Three rune seals along the blade, beside the fuller.
-      ...along(0.56 + i * 0.09, 0.85),
+      // Three rune seals above the blade, between the roots of the first and third path.
+      ...along(0.47 + i * 0.1, -1),
     });
   });
   spec.keystones.forEach((k, i) => {
