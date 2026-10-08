@@ -191,6 +191,7 @@ export const PROGRESSION = {
     belt: 1,
     amulet: 1,
     ring: 1.5,
+    charm: 1,
   } satisfies Record<ItemSlot, number>,
   /** Rarity weights of the item pick, inside the run's window (`lootGates`). */
   rarityWeights: { normal: 40, magic: 35, rare: 20, epic: 5, legendary: 0 } satisfies Record<
@@ -285,6 +286,7 @@ export const PROGRESSION = {
     belt: { w: 2, h: 1 },
     amulet: { w: 1, h: 1 },
     ring: { w: 1, h: 1 },
+    charm: { w: 1, h: 1 },
   } satisfies Record<ItemSlot, { w: number; h: number }>,
 } as const;
 

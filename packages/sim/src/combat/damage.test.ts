@@ -53,6 +53,7 @@ describe("resolveHit", () => {
       damage: 100,
       crit: false,
       blocked: false,
+      glancing: false,
     });
   });
 
@@ -97,10 +98,22 @@ describe("resolveHit", () => {
     // Block chance is capped at 75 %, so look for a blocked hit.
     const r = rng();
     const results = Array.from({ length: 20 }, () => resolveHit(input({ defender }), r));
-    expect(results).toContainEqual({ kind: "hit", damage: 70, crit: false, blocked: true });
+    expect(results).toContainEqual({
+      kind: "hit",
+      damage: 70,
+      crit: false,
+      blocked: true,
+      glancing: false,
+    });
     const wall = stats({ blockChance: 1, blockValue: 500 });
     const walled = Array.from({ length: 20 }, () => resolveHit(input({ defender: wall }), r));
-    expect(walled).toContainEqual({ kind: "hit", damage: 0, crit: false, blocked: true });
+    expect(walled).toContainEqual({
+      kind: "hit",
+      damage: 0,
+      crit: false,
+      blocked: true,
+      glancing: false,
+    });
   });
 
   it("adds Shock's damage taken bonus and the extra multiplier", () => {
@@ -111,5 +124,36 @@ describe("resolveHit", () => {
 
   it("always deals at least 1 on an unblocked hit", () => {
     expect(resolveHit(input({ baseDamage: 0.1 }), rng())).toMatchObject({ damage: 1 });
+  });
+
+  it("turns a failed Precision roll into a Glancing Blow: half damage, never a Crit", () => {
+    const attacker = stats({ critChance: 1 });
+    expect(resolveHit(input({ attacker, precision: 0 }), rng())).toMatchObject({
+      damage: 50,
+      crit: false,
+      glancing: true,
+    });
+    expect(resolveHit(input({ precision: 0, glancingDamage: 0.3 }), rng())).toMatchObject({
+      damage: 30,
+    });
+    expect(resolveHit(input({ precision: 1 }), rng())).toMatchObject({ glancing: false });
+  });
+
+  it("lands a forced Crit cleanly whatever the Precision", () => {
+    const attacker = stats({ critChance: 0 });
+    expect(resolveHit(input({ attacker, precision: 0, forceCrit: true }), rng())).toMatchObject({
+      damage: 150,
+      crit: true,
+      glancing: false,
+    });
+  });
+
+  it("lets Crits ignore extra Armor with Crit Penetration", () => {
+    const attacker = stats({ critChance: 1 });
+    const defender = stats({ armor: 40 });
+    const plain = resolveHit(input({ attacker, defender }), rng());
+    const pierced = resolveHit(input({ attacker, defender, critPenetration: 1 }), rng());
+    expect(plain).toMatchObject({ damage: 75 });
+    expect(pierced).toMatchObject({ damage: 150 });
   });
 });

@@ -6,6 +6,7 @@ import type { HeatBehavior } from "./types";
  * - Cooling (melee): own hits (+ hits taken with the Skill Tree), always cools down.
  * - Steady (bow, crossbow): own hits only, never decays.
  * - Warming (wand, staff): fixed gain per second, independent of Attack Speed.
+ * - Smoldering (Weapon Mastery Heat Form): mostly from hits taken, never decays.
  */
 
 /** Multiplier on every Heat gain: (1 + Heat Gain) × Chill factor. */
@@ -23,11 +24,11 @@ export function heatFromOwnHit(behavior: HeatBehavior, heatPerHit: number): numb
 }
 
 /**
- * Heat from taking a hit (Cooling only): 1 per 1 % of max life lost, at most 10 per hit.
+ * Heat from taking a hit (Cooling and Smoldering): 1 per 1 % of max life lost, at most 10 per hit.
  * Blocked and evaded hits give nothing; the caller only passes unblocked hits.
  */
 export function heatFromHitTaken(behavior: HeatBehavior, damage: number, maxLife: number): number {
-  if (behavior !== "cooling" || maxLife <= 0) return 0;
+  if ((behavior !== "cooling" && behavior !== "smoldering") || maxLife <= 0) return 0;
   const percent = (damage / maxLife) * 100;
   return Math.min(COMBAT.maxHeatFromHitTaken, percent * COMBAT.heatPerPercentLifeTaken);
 }

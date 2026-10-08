@@ -23,7 +23,7 @@ const RING: { slot: EquipmentSlot; icon: IconName }[] = [
   { slot: "ring2", icon: "ring" },
   { slot: "ring1", icon: "ring" },
   { slot: "offHand", icon: "shield" },
-  { slot: "mainHand", icon: "sword" },
+  { slot: "charm", icon: "amulet" },
 ];
 
 const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
@@ -41,7 +41,7 @@ export function LegacyView(props: {
   const { legacy } = state;
   const [tab, setTab] = useState<"heirlooms" | "trophies">(props.initialTab ?? "heirlooms");
   const generation = legacy.prestige + 1;
-  const [sel, setSel] = useState<EquipmentSlot>("mainHand");
+  const [sel, setSel] = useState<EquipmentSlot>("body");
   const heirloom = (slot: EquipmentSlot) => state.hero.equipment[slot];
   const worn = RING.filter((r) => heirloom(r.slot)).length;
   const carried = worn + state.inventory.length + state.stash.length;

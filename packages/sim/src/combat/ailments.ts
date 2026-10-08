@@ -87,6 +87,8 @@ export function applyAilment(
   type: AilmentType,
   duration: number,
   hitDamage: number,
+  /** Poison stacks kept at most (Virulence raises it). */
+  maxPoisonStacks: number = COMBAT.poisonMaxStacks,
 ): AilmentStates {
   if (duration <= 0) return states;
   if (type === "burn" || type === "bleed" || type === "corruption") {
@@ -108,10 +110,15 @@ export function applyAilment(
       damagePerSecond: hitDamage * COMBAT.poisonDamagePerSecond,
       remaining: duration,
     };
-    const stacks = [...(states.poison?.stacks ?? []), stack].slice(-COMBAT.poisonMaxStacks);
+    const stacks = [...(states.poison?.stacks ?? []), stack].slice(-maxPoisonStacks);
     return { ...states, poison: { stacks, nextTickIn: states.poison?.nextTickIn ?? 1 } };
   }
   return { ...states, [type]: { remaining: duration } };
+}
+
+/** Damage all Poison stacks would still deal if they ran out (Toxic Bloom). */
+export function remainingPoisonDamage(states: AilmentStates): number {
+  return (states.poison?.stacks ?? []).reduce((sum, p) => sum + p.damagePerSecond * p.remaining, 0);
 }
 
 /** Number of Poison stacks. */

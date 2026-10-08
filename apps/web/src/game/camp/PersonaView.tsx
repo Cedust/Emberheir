@@ -52,6 +52,7 @@ import { GamblePanel, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
 import { CRAFT_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
+import { WeaponSlot } from "../WeaponSlot";
 
 /** Scale of the paperdoll next to the inventory. */
 const SIDE_DOLL = 0.85;
@@ -255,7 +256,7 @@ export function PersonaView(props: {
   const [gambled, setGambled] = useState<Item | null>(null);
   const kind = kinds[props.persona];
   const [itemId, setItemId] = useState<string | null>(
-    () => state.hero.equipment.mainHand?.id ?? null,
+    () => state.hero.equipment.offHand?.id ?? state.hero.equipment.body?.id ?? null,
   );
   const [affixIndex, setAffixIndex] = useState<number | null>(null);
   // Every act brings its own Essence; those of acts the road has reached can be imbued.
@@ -679,6 +680,7 @@ export function PersonaView(props: {
         <aside className="persona-right">
           <span className="title-font section-title">Equipped</span>
           <Paperdoll scale={SIDE_DOLL} className="side">
+            <WeaponSlot state={state} scale={SIDE_DOLL} />
             {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
               const pos = dollBox(slot, SIDE_DOLL);

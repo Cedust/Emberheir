@@ -58,6 +58,9 @@ async function newGame(page: Page) {
 
 for (const screen of SCREENS) {
   test(`${screen.name}: every main view fits without scrolling`, async ({ page }) => {
+    // 4K renders four times the pixels of 1080p in CI's software renderer: the battle runs at a
+    // few frames per second there, so this walk through every view needs more time.
+    test.slow(screen.height > 1440);
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
@@ -92,7 +95,8 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
     await check("battle");
     await page.getByRole("button", { name: "Skip fight" }).click();
-    await expect(page.getByTestId("item-card")).toHaveCount(3);
+    // The cards turn over one after another on timers, which lag behind on a slow renderer.
+    await expect(page.getByTestId("item-card")).toHaveCount(3, { timeout: 15_000 });
     await check("rewards");
     expect(errors).toEqual([]);
   });

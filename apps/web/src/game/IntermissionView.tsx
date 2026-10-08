@@ -1,4 +1,4 @@
-import { GAME_DATA } from "@emberheir/content";
+import { GAME_DATA, echoStageName } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameAction,
@@ -42,6 +42,7 @@ import { BoonBar, ShrineCards } from "./Boons";
 import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
+import { WeaponSlot } from "./WeaponSlot";
 import { RuneStone, runeName } from "../ui/RuneArt";
 import { ItemArt } from "../ui/ItemArt";
 import { type DropSound, playSound } from "../ui/sound";
@@ -426,6 +427,26 @@ function TrophyToast(props: { item: Item }) {
   );
 }
 
+/** The act boss left its Echo (Weapon Mastery): it is worn on the weapon at once. */
+function EchoToast(props: { echo: { readonly id: string; readonly stage: number } }) {
+  const def = GAME_DATA.echoes.find((e) => e.id === props.echo.id);
+  if (!def) return null;
+  const color = `#${def.color.toString(16).padStart(6, "0")}`;
+  return (
+    <div
+      className="trophy-toast echo-toast"
+      role="status"
+      style={{ borderColor: color, boxShadow: `0 0 32px ${color}` }}
+    >
+      <span className="echo-orb" style={{ background: color, boxShadow: `0 0 18px ${color}` }} />
+      <span className="eyebrow">{props.echo.stage > 1 ? "ECHO GROWS" : "NEW ECHO"}</span>
+      <span className="title-font">
+        {def.name} {echoStageName(props.echo.stage)}
+      </span>
+    </div>
+  );
+}
+
 function ItemCards(props: {
   state: GameState;
   run: RunState;
@@ -452,6 +473,7 @@ function ItemCards(props: {
     return (
       <div className="hoard-layout">
         {trophy && <TrophyToast item={trophy} />}
+        {rewards.echo && <EchoToast echo={rewards.echo} />}
         <div className={`hoard-cards${items.length <= 4 ? " two" : ""}`}>
           {items.map((item, i) =>
             shown[i] ? (
@@ -564,6 +586,7 @@ function EquippedPanel(props: {
     <aside className="intermission-right" aria-label="Equipped">
       <span className="eyebrow">Equipped</span>
       <Paperdoll scale={MINI_DOLL} className="mini">
+        <WeaponSlot state={state} scale={MINI_DOLL} />
         {GAME_DATA.equipmentSlots.map((slot) => {
           const pos = dollBox(slot, MINI_DOLL);
           return (

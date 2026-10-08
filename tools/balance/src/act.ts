@@ -21,6 +21,7 @@ import {
   battlePlanUnlocks,
   heroSetup,
   knownSkills,
+  masteryPointsLeft,
   nodeMaxRanks,
   openBranches,
   targetSlot,
@@ -99,12 +100,8 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
     const taken = new Set((s.run.rewards.taken ?? []).map((t) => t.index));
     let best = -1;
     let bestGain = 0;
-    const weaponId = s.hero.equipment.mainHand?.baseId;
     rewards.items.forEach((item, i) => {
       if (taken.has(i) || equipBlockReason(s, data, item, "pick")) return;
-      // The autopilot sticks to its weapon type, like a player who planned the build.
-      const base = data.items.bases.get(item.baseId);
-      if (base?.weapon && item.baseId !== weaponId) return;
       const slot = targetSlot(item, data, s.hero.equipment);
       const current = slot ? s.hero.equipment[slot] : undefined;
       const gain = score(item) - (current ? score(current) : -1);
@@ -226,6 +223,127 @@ const TREE_PLAN: Record<string, BuildPlan> = {
   },
 };
 
+/**
+ * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone
+ * and the paths in order. Refine is spread between them.
+ */
+interface MasteryPlan {
+  readonly heat?: string;
+  readonly innate: string;
+  readonly keystone: string;
+  readonly paths: readonly string[];
+}
+
+const MASTERY_PLAN: Record<string, MasteryPlan> = {
+  sword: {
+    heat: "heat-cooling",
+    innate: "rising-strike",
+    keystone: "final-verdict",
+    paths: ["edge", "tempo", "riposte"],
+  },
+  mace: {
+    heat: "heat-cooling",
+    innate: "bone-breaker",
+    keystone: "siege",
+    paths: ["crush", "quake", "bulwark"],
+  },
+  axe: {
+    heat: "heat-cooling",
+    innate: "gutting-lacerate",
+    keystone: "rampage",
+    paths: ["butcher", "frenzy", "cleave"],
+  },
+  dagger: {
+    heat: "heat-cooling",
+    innate: "virulent-coat",
+    keystone: "toxic-bloom",
+    paths: ["venom", "assassin", "flurry"],
+  },
+  bow: { innate: "hooked-arrow", keystone: "hunters-mark", paths: ["barbs", "volley", "toxin"] },
+  crossbow: {
+    innate: "ballista-bolt",
+    keystone: "siege-engine",
+    paths: ["payload", "pierce", "reload"],
+  },
+  "fire-wand": {
+    heat: "heat-warming",
+    innate: "barrage",
+    keystone: "glass-cannon",
+    paths: ["storm", "pyre", "rime"],
+  },
+  staff: {
+    heat: "heat-warming",
+    innate: "void-lance",
+    keystone: "endless-night",
+    paths: ["hollow", "channel", "smolder"],
+  },
+};
+
+/** The order the autopilot learns Weapon Mastery nodes in (a node id per point). */
+export function masteryOrder(data: GameData, weaponId: string): string[] {
+  const plan = MASTERY_PLAN[weaponId];
+  const tree = data.weaponMastery[weaponId];
+  if (!plan || !tree) return [];
+  const path = (id: string | undefined) =>
+    id ? tree.nodes.filter((n) => n.path === id).map((n) => n.id) : [];
+  return [
+    ...(plan.heat ? [plan.heat] : []),
+    plan.innate,
+    plan.keystone,
+    "precision",
+    "steady-hand",
+    "precision",
+    ...path(plan.paths[0]),
+    "steady-hand",
+    "precision",
+    ...path(plan.paths[1]),
+    "steady-hand",
+    "full-swing",
+    "full-swing",
+    "full-swing",
+    "balance",
+    "balance",
+    ...path(plan.paths[2]),
+  ];
+}
+
+/** Kaelen: learns Weapon Mastery along the plan and wears the strongest Echo. */
+function spendMastery(state: GameState, data: GameData): GameState {
+  let s = state;
+  const order = masteryOrder(data, s.hero.weaponId);
+  for (let guard = 0; guard < 64 && masteryPointsLeft(s, data) > 0; guard++) {
+    let learned = false;
+    const counts = new Map<string, number>();
+    for (const id of order) {
+      const want = (counts.get(id) ?? 0) + 1;
+      counts.set(id, want);
+      const tree = data.weaponMastery[s.hero.weaponId];
+      if (!tree) break;
+      const node = tree.nodes.find((n) => n.id === id);
+      const have = node?.group
+        ? s.hero.mastery.choices[node.group] === id
+          ? 1
+          : 0
+        : (s.hero.mastery.learned[id] ?? 0);
+      if (have >= want) continue;
+      try {
+        s = applyAction(s, data, { type: "learnMastery", nodeId: id });
+        learned = true;
+        break;
+      } catch {
+        // Not yet (Rank, Keystone ring): try the next step.
+      }
+    }
+    if (!learned) break;
+  }
+  const echoes = Object.entries(s.legacy.echoes).sort((a, b) => b[1].stage - a[1].stage);
+  const best = echoes[0]?.[0];
+  if (best && s.hero.mastery.echo !== best) {
+    s = applyAction(s, data, { type: "setEcho", echoId: best });
+  }
+  return s;
+}
+
 /** Shortest list of nodes to learn so that `target` gets a rank (breadth-first search). */
 function pathTo(data: GameData, learned: LearnedNodes, target: string): string[] {
   const tree = data.skillTree;
@@ -274,7 +392,7 @@ function learnTowards(s: GameState, data: GameData, target: string): GameState {
 function spendSkillPoints(state: GameState, data: GameData, weaponId: string): GameState {
   const plan = TREE_PLAN[weaponId];
   if (!plan || state.run) return state;
-  let s = state;
+  let s = spendMastery(state, data);
   for (const target of plan.nodes) s = learnTowards(s, data, target);
   const branchNodes = [...new Set(s.legacy.branches)].flatMap((b) =>
     data.skillTree.nodes.filter((n) => n.prestigeBranch === b && n.kind !== "keystone"),
@@ -334,7 +452,7 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
  */
 function autopilotPrestige(state: GameState, data: GameData): GameState {
   const open = openBranches(state, data).map((b) => b.id);
-  const weaponId = state.hero.equipment.mainHand?.baseId ?? "";
+  const weaponId = state.hero.weaponId;
   const plan = TREE_PLAN[weaponId]?.branches ?? [];
   const preferred =
     plan.find((b) => open.includes(b) && !state.legacy.branches.includes(b)) ??

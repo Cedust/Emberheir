@@ -1,6 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { type HeroClass, classTitle, mainBranch } from "./classes";
-import { deserializeGame, heroSetup, heroTitle, newGame, serializeGame } from "./game";
+import { rollItem } from "../items/generate";
+import { Rng } from "../rng";
+import {
+  SAVE_VERSION,
+  deserializeGame,
+  heroSetup,
+  heroTitle,
+  newGame,
+  serializeGame,
+} from "./game";
 import { TEST_CLASSES, TEST_GAME_DATA as data } from "./test-fixtures";
 
 const [fighter, caster] = TEST_CLASSES as [HeroClass, HeroClass];
@@ -10,7 +19,8 @@ describe("classes", () => {
   it("a new character gets the class, its start weapon, attributes and name", () => {
     const s = newGame(data, { seed: 1, classId: "test-caster", name: "  Mira " });
     expect(s.hero).toMatchObject({ classId: "test-caster", name: "Mira" });
-    expect(s.hero.equipment.mainHand?.baseId).toBe("test-wand");
+    expect(s.hero.weaponId).toBe("test-wand");
+    expect(s.hero.equipment).toEqual({});
     expect(s.hero.attributes).toEqual(caster.startingAttributes);
     expect(newGame(data, { seed: 1, classId: "test-fighter" }).hero.name).toBe("Fighter");
   });
@@ -78,8 +88,20 @@ describe("classes", () => {
     old.version = 8;
     delete old.hero.classId;
     delete old.hero.name;
+    delete old.hero.weaponId;
+    delete old.hero.mastery;
+    const wand = rollItem(
+      data.items,
+      { baseId: "test-wand", itemLevel: 1, rarity: "normal" },
+      new Rng(1),
+    );
+    old.hero.equipment = { mainHand: wand };
     const loaded = deserializeGame(JSON.stringify(old), data);
-    expect(loaded.version).toBe(9);
-    expect(loaded.hero).toMatchObject({ classId: "test-caster", name: "Caster" });
+    expect(loaded.version).toBe(SAVE_VERSION);
+    expect(loaded.hero).toMatchObject({
+      classId: "test-caster",
+      name: "Caster",
+      weaponId: "test-wand",
+    });
   });
 });

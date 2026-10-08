@@ -126,7 +126,7 @@ describe("Act 1", () => {
     for (const heroClass of GAME_DATA.classes) {
       for (const weapon of heroClass.weapons) {
         const state = newGame(GAME_DATA, { seed: 1, classId: heroClass.id, weapon });
-        expect(state.hero.equipment.mainHand?.baseId).toBe(weapon);
+        expect(state.hero.weaponId).toBe(weapon);
         expect(state.hero.equipment.offHand?.baseId).toBe(heroClass.offHand);
         const { gear } = heroSetup(state, GAME_DATA);
         expect(gear.inactive, `${heroClass.id} with ${weapon}`).toEqual([]);

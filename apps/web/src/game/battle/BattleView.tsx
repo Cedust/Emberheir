@@ -1,4 +1,4 @@
-import { ACTS, ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
+import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
   Fight,
@@ -10,7 +10,9 @@ import {
   eliteModifiersOf,
   encounterEnemy,
   getAct,
-  getBase,
+  heroWeapon,
+  heroWeaponName,
+  wornEcho,
   heroTitle,
   isFinaleAct,
 } from "@emberheir/sim";
@@ -21,6 +23,7 @@ import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { heroLookOf } from "../heroLook";
+import { heroWeaponLook } from "../weaponLook";
 import { ArenaScene, type EnemyLook } from "./ArenaScene";
 import { BoonBar } from "../Boons";
 import type { IconName } from "../../ui/Icon";
@@ -41,7 +44,12 @@ interface PlaqueInfo {
 export const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
 const DEV_SPEEDS = [1, 4, 16] as const;
 
-const HEAT_TEXT = { cooling: "Cooling Heat", steady: "Steady Heat", warming: "Warming Heat" };
+const HEAT_TEXT = {
+  cooling: "Cooling Heat",
+  steady: "Steady Heat",
+  warming: "Warming Heat",
+  smoldering: "Smoldering Heat",
+};
 const ARCHETYPE_TEXT: Record<string, string> = {
   brute: "Brute",
   skirmisher: "Skirmisher",
@@ -67,9 +75,14 @@ function useLooks(state: GameState, run: RunState) {
   const act = getAct(GAME_DATA, run.actId);
   const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
   const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
-  const mainHand = state.hero.equipment.mainHand;
-  const weapon = mainHand ? getBase(ITEM_CATALOG, mainHand.baseId) : undefined;
-  const heroLook = heroLookOf(state.hero.classId, state.hero.equipment);
+  const heroLook = heroLookOf(
+    state.hero.classId,
+    state.hero.weaponId,
+    state.hero.equipment,
+    wornEcho(state, GAME_DATA)?.def.color,
+    heroWeaponLook(state),
+  );
+  const weapon = heroWeapon(state, GAME_DATA).weapon;
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
   const enemyLook: EnemyLook = {
     archetype: enemyDef?.archetype ?? "brute",
@@ -81,7 +94,7 @@ function useLooks(state: GameState, run: RunState) {
   };
   const heroInfo: PlaqueInfo = {
     name: `${state.hero.name} · ${heroTitle(state, GAME_DATA)}`,
-    sub: `${weapon?.name ?? "Unarmed"} · ${weapon?.weapon ? HEAT_TEXT[weapon.weapon.heatBehavior] : ""}`,
+    sub: `${heroWeaponName(state, GAME_DATA)} · ${HEAT_TEXT[weapon.heatBehavior]}`,
     icon: "user",
   };
   const enemyInfo: PlaqueInfo = {

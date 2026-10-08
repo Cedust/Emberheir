@@ -63,8 +63,12 @@ describe("item content", () => {
         weapon.id,
       ).toBe(true);
     }
-    for (const base of ITEM_BASES) {
-      expect(affixPool(AFFIXES, base.slot, "stat").length, base.id).toBeGreaterThanOrEqual(5);
+    // Weapon bases only carry the weapon's numbers (Weapon Mastery); they never drop.
+    for (const base of ITEM_BASES.filter((b) => !b.weapon)) {
+      // Charms carry trigger affixes only.
+      if (base.slot !== "charm") {
+        expect(affixPool(AFFIXES, base.slot, "stat").length, base.id).toBeGreaterThanOrEqual(5);
+      }
       expect(affixPool(AFFIXES, base.slot, "trigger").length, base.id).toBeGreaterThanOrEqual(2);
     }
   });
@@ -98,7 +102,8 @@ describe("item content", () => {
       expect(fits, word.id).toBe(true);
       expect(new Set(RUNES.map((r) => r.rank)).size).toBe(RUNES.length);
     }
-    for (const slot of new Set(ITEM_BASES.map((b) => b.slot))) {
+    for (const slot of new Set(ITEM_BASES.filter((b) => !b.weapon).map((b) => b.slot))) {
+      if (slot === "charm") continue;
       expect(powersForSlot(ITEM_CATALOG, slot).length, slot).toBeGreaterThan(0);
     }
     expect(ITEM_CATALOG.uniques.size).toBe(UNIQUES.length + BOSS_TROPHIES.length);
@@ -138,9 +143,8 @@ describe("item content", () => {
           agility: 30,
           intelligence: 30,
         };
-        const resolved = resolveEquipment(gear, ITEM_CATALOG, strongHero);
+        const resolved = resolveEquipment(gear, ITEM_CATALOG, strongHero, weapon);
         expect(resolved.inactive).toEqual([]);
-        expect(resolved.weapon?.id).toBe(weapon.id);
         for (const item of Object.values(gear)) {
           expect(describeItem(item, ITEM_CATALOG).affixLines.length).toBe(item.affixes.length);
         }

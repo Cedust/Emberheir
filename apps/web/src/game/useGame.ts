@@ -1,5 +1,12 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type GameAction, type GameState, applyAction, newGame } from "@emberheir/sim";
+import {
+  type Cheat,
+  type GameAction,
+  type GameState,
+  applyAction,
+  applyCheat,
+  newGame,
+} from "@emberheir/sim";
 import { useCallback, useRef, useState } from "react";
 import { loadSlot, saveSlot } from "./saves";
 
@@ -56,6 +63,21 @@ export function useGame() {
     [replace],
   );
 
+  /** Cheat Mode (PR previews and `?cheat`): changes the save directly. */
+  const cheat = useCallback(
+    (c: Cheat) => {
+      const prev = ref.current;
+      if (!prev) return;
+      try {
+        replace(applyCheat(prev, GAME_DATA, c));
+        setError(null);
+      } catch (e) {
+        setError(e instanceof Error ? e.message : String(e));
+      }
+    },
+    [replace],
+  );
+
   const start = useCallback(
     (character: NewCharacter) => {
       const seed = Math.floor(Math.random() * 0x7fffffff);
@@ -93,6 +115,7 @@ export function useGame() {
     error,
     dispatch,
     dispatchAll,
+    cheat,
     start,
     resume,
     quit,

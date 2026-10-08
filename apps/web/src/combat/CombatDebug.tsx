@@ -6,6 +6,7 @@ import {
   HERO_SKILLS,
   HERO_WEAPONS,
   START_SKILLS,
+  SWORD,
   createHeroSetup,
   resolveHeroGear,
   rollGear,
@@ -77,7 +78,7 @@ export function CombatDebug() {
   );
   const weapon = HERO_WEAPONS.find((w) => w.id === weaponId);
   const resolvedGear = useMemo(
-    () => resolveHeroGear({ equipment, ...(weapon ? { weapon } : {}) }),
+    () => resolveHeroGear({ equipment, weapon: weapon ?? SWORD }),
     [equipment, weapon],
   );
 
@@ -129,7 +130,7 @@ export function CombatDebug() {
         : [];
     });
     const hero = createHeroSetup({
-      weapon,
+      weapon: weapon ?? SWORD,
       equipment,
       level,
       skills: chosen.map((c) => c.skill),

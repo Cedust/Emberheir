@@ -36,7 +36,8 @@ export const SWORD: WeaponDefinition = {
 
 export const FIRE_WAND: WeaponDefinition = {
   id: "fire-wand",
-  name: "Fire Wand",
+  // Attunement picks the element now (Weapon Mastery), so the weapon is just "Wand".
+  name: "Wand",
   defaultAttack: "Spark",
   // M7: +10 %, the Wand died far more often than the Sword. Prestige rework: +15 % for the
   // Level Band up to 20.

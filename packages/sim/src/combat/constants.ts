@@ -29,6 +29,10 @@ export const COMBAT = {
 
   /** Crit Damage is fixed and cannot be raised (anti power creep). */
   critMultiplier: 1.5,
+  /** Weapon Mastery: a Glancing Blow deals this share of a clean hit (Timo, 2026-10-08). */
+  glancingDamage: 0.5,
+  /** Stacking Sunder of Weapon Mastery before nodes: no chance of its own, 5 % Armor per stack. */
+  sunder: { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 },
 
   // Caps.
   maxEvasion: 0.5,

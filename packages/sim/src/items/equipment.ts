@@ -171,8 +171,6 @@ export type InactiveReason =
   | { readonly kind: "offHandMismatch" };
 
 export interface ResolvedEquipment {
-  /** Weapon from the main hand, if an active one is equipped. */
-  readonly weapon?: WeaponDefinition;
   /** Attribute bonuses from gear (added to the hero's own attributes). */
   readonly attributes: Attributes;
   readonly bonuses: StatBonuses;
@@ -195,8 +193,8 @@ export function resolveEquipment(
   equipment: Equipment,
   catalog: ItemCatalog,
   heroAttributes: Attributes,
-  /** Weapon used when the main hand is empty or inactive (decides which off hands fit). */
-  fallbackWeapon?: WeaponDefinition,
+  /** The hero's weapon (Weapon Mastery); decides which off hands fit. */
+  weapon?: WeaponDefinition,
 ): ResolvedEquipment {
   const attributes: Record<Attribute, number> = {
     strength: 0,
@@ -210,22 +208,19 @@ export function resolveEquipment(
   const triggers: TriggerSpec[] = [];
   const ruleSets: CombatRules[] = [];
   const inactive: { slot: EquipmentSlot; item: Item; reason: InactiveReason }[] = [];
-  let weapon: WeaponDefinition | undefined;
 
   const reasonFor = (slot: EquipmentSlot, item: Item): InactiveReason | undefined => {
     const base = getBase(catalog, item.baseId);
     if (base.slot !== itemSlotFor(slot)) return { kind: "wrongSlot" };
     const missing = missingRequirements(item, catalog, heroAttributes);
     if (missing.length) return { kind: "requirements", missing };
-    if (slot === "offHand" && !offHandFits(base, weapon ?? fallbackWeapon)) {
+    if (slot === "offHand" && !offHandFits(base, weapon)) {
       return { kind: "offHandMismatch" };
     }
     return undefined;
   };
 
-  // Main hand first: the off hand checks against its weapon.
-  const slots = ["mainHand", ...EQUIPMENT_SLOTS.filter((s) => s !== "mainHand")] as const;
-  for (const slot of slots) {
+  for (const slot of EQUIPMENT_SLOTS) {
     const item = equipment[slot];
     if (!item) continue;
     const reason = reasonFor(slot, item);
@@ -233,7 +228,6 @@ export function resolveEquipment(
       inactive.push({ slot, item, reason });
       continue;
     }
-    if (slot === "mainHand") weapon = itemWeapon(item, catalog);
     const mods = itemModifiers(item, catalog);
     for (const a of ATTRIBUTES) attributes[a] += mods.attributes[a] ?? 0;
     bonusSets.push(mods.bonuses);
@@ -242,7 +236,6 @@ export function resolveEquipment(
   }
 
   return {
-    ...(weapon ? { weapon } : {}),
     attributes,
     bonuses: sumBonuses(...bonusSets),
     triggers,

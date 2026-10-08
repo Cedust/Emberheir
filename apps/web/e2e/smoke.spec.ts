@@ -35,7 +35,7 @@ test("rolled gear shows item tooltips and goes into the fight", async ({ page })
   await page.getByRole("button", { name: "Combat Lab" }).click();
   const cards = page.getByTestId("item-card");
   await expect(cards).toHaveCount(10);
-  await expect(cards.first()).toContainText("Main Hand");
+  await expect(cards.first()).toContainText("Off Hand");
   const firstName = await cards.first().locator(".item-name").textContent();
 
   await page.getByLabel("Rarity").selectOption("epic");

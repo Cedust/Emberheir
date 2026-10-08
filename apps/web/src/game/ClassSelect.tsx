@@ -28,7 +28,12 @@ const WEAPON_ICONS: Record<string, IconName> = {
   staff: "wand",
 };
 
-const HEAT_NAMES = { cooling: "Cooling Heat", steady: "Steady Heat", warming: "Warming Heat" };
+const HEAT_NAMES = {
+  cooling: "Cooling Heat",
+  steady: "Steady Heat",
+  warming: "Warming Heat",
+  smoldering: "Smoldering Heat",
+};
 
 /** A few names per class for the name field; the player can type their own. */
 const NAMES: Record<string, readonly string[]> = {

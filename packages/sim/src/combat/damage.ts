@@ -68,6 +68,17 @@ export interface HitInput {
   readonly defender: DerivedStats;
   /** Defender's "+X % damage taken" (Shock). */
   readonly defenderDamageTaken: number;
+  /**
+   * Weapon Mastery: chance to land cleanly. A miss is a Glancing Blow: `glancingDamage` of the
+   * damage and never a Crit. Undefined = always clean (no extra roll).
+   */
+  readonly precision?: number;
+  /** Damage share of a Glancing Blow. Default 0.5. */
+  readonly glancingDamage?: number;
+  /** The hit lands cleanly and crits (Read the Blow, Deadeye). */
+  readonly forceCrit?: boolean;
+  /** Crits ignore this extra share of Armor (Killshot). */
+  readonly critPenetration?: number;
 }
 
 export type HitOutcome =
@@ -77,26 +88,46 @@ export type HitOutcome =
       readonly damage: number;
       readonly crit: boolean;
       readonly blocked: boolean;
+      /** Weapon Mastery: the hit did not land cleanly. */
+      readonly glancing: boolean;
     };
 
 /**
- * Resolves one hit: Evasion → Block → Crit → Damage % → Armor/Resistance → Shock.
- * Rolls happen in this fixed order so the same seed always gives the same result.
+ * Resolves one hit: Evasion → Precision → Block → Crit → Damage % → Armor/Resistance → Shock.
+ * Rolls happen in this fixed order so the same seed always gives the same result. The Precision
+ * roll only happens for fighters that have Precision (the hero's Weapon Mastery).
  */
 export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
-  const { attacker, defender } = input;
+  const { defender } = input;
   if (input.evadable && rng.chance(defender.evasion)) return { kind: "evaded" };
 
+  const glancing =
+    !input.forceCrit && input.precision !== undefined && !rng.chance(input.precision);
   const blocked = rng.chance(defender.blockChance);
-  const crit = rng.chance(attacker.critChance);
+  const critRoll = rng.chance(input.attacker.critChance);
+  const crit = !glancing && (input.forceCrit === true || critRoll);
+  const attacker =
+    crit && input.critPenetration
+      ? {
+          ...input.attacker,
+          physicalPenetration: input.attacker.physicalPenetration + input.critPenetration,
+        }
+      : input.attacker;
 
   let damage = input.baseDamage * input.multiplier * (1 + increasedDamage(attacker, input.type));
   if (crit) damage *= COMBAT.critMultiplier;
+  if (glancing) damage *= input.glancingDamage ?? COMBAT.glancingDamage;
   damage = mitigate(damage, input.type, attacker, input.attackerLevel, defender);
   damage *= 1 + input.defenderDamageTaken;
   if (blocked) damage -= defender.blockValue;
 
   // A hit that lands always deals at least 1, a blocked hit can be absorbed completely.
   const minimum = blocked ? 0 : 1;
-  return { kind: "hit", damage: Math.max(minimum, Math.round(damage)), crit, blocked };
+  return {
+    kind: "hit",
+    damage: Math.max(minimum, Math.round(damage)),
+    crit,
+    blocked,
+    glancing,
+  };
 }

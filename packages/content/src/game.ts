@@ -25,6 +25,7 @@ import { ITEM_BASES, ITEM_CATALOG } from "./items";
 import { SKILL_TREE } from "./skill-tree";
 import { START_SKILLS } from "./skills";
 import { BRANCH_EPITHETS, CLASSES } from "./classes";
+import { ECHOES, WEAPON_MASTERY } from "./weapon-mastery";
 
 /**
  * Act 1 (game-design-document-v1.md section 11): 15 stages, Gorrak at the end, Spoils after stage
@@ -150,11 +151,14 @@ export const LAST_EMBER: ActData = {
 /** Everything the game loop in `@emberheir/sim` needs. */
 export const GAME_DATA: GameData = {
   items: ITEM_CATALOG,
-  lootBases: ITEM_BASES.map((b) => b.id),
+  // Weapons never drop: the hero's weapon is Weapon Mastery (waffe-als-system-v1.md).
+  lootBases: ITEM_BASES.filter((b) => !b.weapon).map((b) => b.id),
   equipmentSlots: EQUIPMENT_SLOTS,
   classes: CLASSES,
   branchEpithets: BRANCH_EPITHETS,
   startSkills: START_SKILLS,
+  weaponMastery: WEAPON_MASTERY,
+  echoes: ECHOES,
   skillTree: SKILL_TREE,
   acts: [ACT1, ACT2, ACT3, ACT4, ACT5, ACT6, ACT7],
   eliteModifiers: ELITE_MODIFIERS,

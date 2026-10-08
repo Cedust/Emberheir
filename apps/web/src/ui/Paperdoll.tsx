@@ -13,14 +13,14 @@ export interface DollBox {
 }
 
 /**
- * Where every equipment slot sits, laid out like Diablo 2's character screen: Helm on top with
- * the Amulet beside it, weapon and off hand left and right of the Body Armor, and the bottom row
- * Gloves, Ring, Belt, Ring, Boots.
+ * Where every equipment slot sits, laid out like Diablo 2's character screen: Helm on top between
+ * the Charm and the Amulet, weapon (`WEAPON_BOX`) and off hand left and right of the Body Armor,
+ * and the bottom row Gloves, Ring, Belt, Ring, Boots.
  */
 export const DOLL: Readonly<Record<EquipmentSlot, DollBox>> = {
+  charm: { x: 92, y: 28, w: 52, h: 52 },
   helm: { x: 160, y: 4, w: 80, h: 80 },
   amulet: { x: 256, y: 28, w: 52, h: 52 },
-  mainHand: { x: 14, y: 96, w: 92, h: 160 },
   body: { x: 142, y: 96, w: 116, h: 154 },
   offHand: { x: 294, y: 96, w: 92, h: 160 },
   gloves: { x: 14, y: 268, w: 84, h: 84 },
@@ -29,6 +29,12 @@ export const DOLL: Readonly<Record<EquipmentSlot, DollBox>> = {
   ring2: { x: 242, y: 284, w: 52, h: 52 },
   boots: { x: 302, y: 268, w: 84, h: 84 },
 };
+
+/**
+ * The weapon's place left of the Body Armor. It holds no item: the hero's own weapon (Weapon
+ * Mastery) shows there.
+ */
+export const WEAPON_BOX: DollBox = { x: 14, y: 96, w: 92, h: 160 };
 
 /** A slot's box at a scale. */
 export function dollBox(slot: EquipmentSlot, scale = 1): DollBox {

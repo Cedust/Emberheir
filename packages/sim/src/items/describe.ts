@@ -74,6 +74,7 @@ export const SLOT_NAMES: Readonly<Record<ItemSlot, string>> = {
   belt: "Belt",
   amulet: "Amulet",
   ring: "Ring",
+  charm: "Charm",
 };
 
 const DAMAGE_TYPE_NAMES: Readonly<Record<DamageType, string>> = {

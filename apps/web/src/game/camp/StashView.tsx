@@ -26,6 +26,7 @@ import { itemDrops } from "../itemDrops";
 import { EQUIP_BLOCK_TEXT, MOVE_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
+import { WeaponSlot } from "../WeaponSlot";
 
 /** Scale of the paperdoll next to the inventory. */
 const SIDE_DOLL = 0.85;
@@ -144,6 +145,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
         <aside className="stash-left">
           <span className="title-font section-title">Equipped</span>
           <Paperdoll scale={SIDE_DOLL} className="side">
+            <WeaponSlot state={state} scale={SIDE_DOLL} />
             {GAME_DATA.equipmentSlots.map((slot) => {
               const it = state.hero.equipment[slot];
               const pos = dollBox(slot, SIDE_DOLL);

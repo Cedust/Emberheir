@@ -543,6 +543,48 @@ const ART: Readonly<Record<string, Art>> = {
       </>
     ),
   },
+  // Charms (10th slot): a carved token on a cord, the stone tells the kind of trigger.
+  "war-charm": {
+    w: 32,
+    h: 32,
+    draw: () => (
+      <>
+        <L d="M16 1V7" color="#5a3420" w={1.6} />
+        <P d="M16 6L25 15L16 30L7 15Z" fill="url(#ia-darkleather)" w={1.4} />
+        <Glow cx={16} cy={16} r={8} color="ia-glow-garnet" />
+        <P d="M16 10L20.5 16L16 23L11.5 16Z" fill="url(#ia-garnet)" w={1} />
+        <L d="M14 12.5L15.5 11" color={SHINE} w={1} />
+        <L d="M10 15L8.5 15M22 15L23.5 15" color="#d8b070" w={1} op={0.8} />
+      </>
+    ),
+  },
+  "ward-charm": {
+    w: 32,
+    h: 32,
+    draw: () => (
+      <>
+        <L d="M16 1V7" color="#5a3420" w={1.6} />
+        <P d={circle(16, 18, 11)} fill="url(#ia-bone)" w={1.4} />
+        <Glow cx={16} cy={18} r={7} color="ia-glow-sapphire" />
+        <P d={circle(16, 18, 5)} fill="url(#ia-sapphire)" w={1} />
+        <L d="M8 18Q16 9 24 18Q16 27 8 18" color="#8a7652" w={0.9} op={0.8} />
+        <L d="M13.5 15.5L15 14.5" color={SHINE} w={1} />
+      </>
+    ),
+  },
+  "ember-charm": {
+    w: 32,
+    h: 32,
+    draw: () => (
+      <>
+        <L d="M16 1V6" color="#8a5a12" w={1.4} />
+        <P d="M16 5L26 12V23L16 30L6 23V12Z" fill="url(#ia-darkgold)" w={1.4} />
+        <Glow cx={16} cy={18} r={9} />
+        <P d={circle(16, 18, 5.6)} fill="url(#ia-ember)" w={1} />
+        <L d="M13.6 15.6L15.2 14.6" color={SHINE} w={1} />
+      </>
+    ),
+  },
   "bone-amulet": {
     w: 32,
     h: 32,
@@ -653,6 +695,7 @@ const SLOT_FALLBACK: Readonly<Record<ItemSlot, string>> = {
   belt: "heavy-belt",
   amulet: "bone-amulet",
   ring: "iron-ring",
+  charm: "war-charm",
 };
 
 export function hasItemArt(baseId: string): boolean {

@@ -6,6 +6,7 @@ import type { BoonDefinition, BoonFamilyDefinition } from "./boons";
 import type { HeroClass } from "./classes";
 import type { ActData, GameData } from "./game";
 import type { SkillTreeDefinition } from "./skill-tree";
+import type { EchoDefinition, MasteryNode, WeaponMasteryTree } from "./weapon-mastery";
 
 /** Small game data for unit tests. Not exported from the package. */
 
@@ -119,6 +120,82 @@ export const TEST_TREE: SkillTreeDefinition = {
   ],
 };
 
+const node = (n: Partial<MasteryNode> & Pick<MasteryNode, "id" | "kind">): MasteryNode => ({
+  name: n.id,
+  description: "",
+  effect: {},
+  x: 0,
+  y: 0,
+  ...n,
+});
+
+/**
+ * refine (+5 % Precision, 3 ranks) → p1 (+10 Life) → p2 (notable); Heat Forms (Steady default,
+ * Cooling); one Innate Form; two Keystones.
+ */
+export const TEST_MASTERY: WeaponMasteryTree = {
+  weaponId: "test-sword",
+  precision: 0.7,
+  rangeMin: 0.4,
+  rangeMax: 1.1,
+  paths: [{ id: "edge", name: "Edge", theme: "", color: 0xffffff }],
+  nodes: [
+    node({ id: "refine", kind: "refine", maxRanks: 3, effect: { precision: 0.05 } }),
+    node({ id: "swing", kind: "refine", maxRanks: 3, effect: { rangeMax: 0.1 } }),
+    node({ id: "grip", kind: "refine", maxRanks: 3, effect: { rangeMin: 0.05 } }),
+    node({
+      id: "p1",
+      kind: "minor",
+      path: "edge",
+      requiresRefine: true,
+      effect: { bonuses: { life: 10 } },
+    }),
+    node({
+      id: "p2",
+      kind: "notable",
+      path: "edge",
+      links: ["p1"],
+      effect: { weaponRules: { glancingDamage: 0.25 } },
+    }),
+    node({
+      id: "steady",
+      kind: "heatForm",
+      group: "heatForm",
+      default: true,
+      effect: { heatForm: "steady" },
+    }),
+    node({
+      id: "cooling",
+      kind: "heatForm",
+      group: "heatForm",
+      effect: { heatForm: "cooling", heatPerHit: 1.25 },
+    }),
+    node({
+      id: "form",
+      kind: "innateForm",
+      group: "innateForm",
+      effect: { innate: { ...TEST_SKILL, id: "form-skill", name: "Form" } },
+    }),
+    node({
+      id: "ks1",
+      kind: "keystone",
+      group: "keystone",
+      form: "Test Blade",
+      effect: { weaponRules: { noGlancing: true } },
+    }),
+    node({ id: "ks2", kind: "keystone", group: "keystone", form: "Other Blade", effect: {} }),
+  ],
+};
+
+export const TEST_ECHO: EchoDefinition = {
+  id: "test-echo",
+  name: "Test Echo",
+  actId: "test-act",
+  color: 0xffffff,
+  description: (stage) => `+${stage * 10} Life`,
+  effect: (stage) => ({ bonuses: { life: stage * 10 } }),
+};
+
 const TEST_ATTRIBUTES = { ...ZERO_ATTRIBUTES, strength: 6, vitality: 6 };
 
 /** A melee class with the test sword and a caster with the test wand; no off hands. */
@@ -147,11 +224,16 @@ export const TEST_CLASSES: readonly HeroClass[] = [
 
 export const TEST_GAME_DATA: GameData = {
   items: TEST_CATALOG,
-  lootBases: ["test-sword", "test-shield", "test-ring"],
-  equipmentSlots: ["mainHand", "offHand", "ring1"],
+  lootBases: ["test-shield", "test-ring"],
+  equipmentSlots: ["offHand", "ring1"],
   classes: TEST_CLASSES,
   branchEpithets: { "test-branch": "of Tests", "other-branch": "of Others" },
   startSkills: { "test-blade": SWORD_SKILL },
+  weaponMastery: {
+    "test-sword": TEST_MASTERY,
+    "test-wand": { ...TEST_MASTERY, weaponId: "test-wand" },
+  },
+  echoes: [TEST_ECHO],
   skillTree: TEST_TREE,
   acts: [TEST_ACT, DEADLY_ACT, FINAL_ACT],
   eliteModifiers: [
