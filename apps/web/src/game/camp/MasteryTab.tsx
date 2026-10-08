@@ -109,14 +109,6 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
   const accent =
     ELEMENT_COLOR[attunement?.effect.attunement?.damageType ?? build.weapon.damageType] ?? 0xff6a2a;
 
-  const lockOf = (n: MasteryNode, why: MasteryBlockReason | undefined): string | undefined => {
-    if (why === "rankLocked") {
-      return `R${n.group === "heatForm" ? MASTERY.heatFormRank : MASTERY.innateFormRank}`;
-    }
-    if (why === "keystoneLocked") return `${spent}/${MASTERY.keystonePoints}`;
-    return undefined;
-  };
-
   const view: MasteryView = {
     weaponId,
     paths: tree?.paths ?? [],
@@ -130,7 +122,6 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
       const ranks = tree ? masteryRanks(tree, preview, node.id) : 0;
       const why = reasonOf(node.id);
       const locked = why === "rankLocked" || why === "keystoneLocked";
-      const lock = lockOf(node, why);
       return {
         node,
         state:
@@ -145,7 +136,6 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
         selected: node.id === selected?.id,
         ranks,
         maxRanks: node.maxRanks ?? 1,
-        ...(lock ? { lock } : {}),
       };
     }),
   };

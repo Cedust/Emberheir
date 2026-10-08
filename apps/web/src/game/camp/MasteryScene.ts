@@ -5,6 +5,7 @@ import {
   Container,
   type FederatedPointerEvent,
   type FederatedWheelEvent,
+  FillGradient,
   Graphics,
   Rectangle,
   Text,
@@ -30,8 +31,6 @@ export interface MasteryNodeView {
   readonly selected: boolean;
   readonly ranks: number;
   readonly maxRanks: number;
-  /** Short lock text under a locked node ("R3", "12"). */
-  readonly lock?: string;
 }
 
 export interface MasteryView {
@@ -63,6 +62,8 @@ const KEYSTONE = 0xff8a1f;
 const EMBER = 0xff8a3a;
 const GOLD = 0xffd27a;
 const DIM = 0x4f4842;
+const IRON: readonly string[] = ["#4a4f58", "#2a2d33", "#16171a", "#0c0c0e"];
+const STONE: readonly string[] = ["#6a6058", "#3e3832", "#221e1a"];
 /** The weapon is painted this much thicker than its axis length would give. */
 const ART_SCALE = 1.22;
 /** Stage pixels kept free at the top for the nameplate. */
@@ -114,7 +115,6 @@ interface NodeSprite {
   readonly g: Graphics;
   readonly flame: Graphics;
   readonly name: Text;
-  readonly lock: Text;
   view: MasteryNodeView;
 }
 
@@ -240,7 +240,7 @@ export class MasteryScene {
       view.accent,
       view.echoColor,
       view.pointsLeft,
-      ...view.nodes.map((n) => `${n.state}${n.pending}${n.selected}${n.ranks}${n.lock ?? ""}`),
+      ...view.nodes.map((n) => `${n.state}${n.pending}${n.selected}${n.ranks}`),
     ].join("|");
     if (key === this.viewKey && this.app) return;
     this.viewKey = this.app ? key : "";
@@ -537,18 +537,73 @@ export class MasteryScene {
     const y = (forms[0]?.node.y ?? 4.3) * U;
     const [x0, x1] = [Math.min(...xs, 0) - 70, Math.max(...xs, 0) + 70];
     // The forge light itself is CSS behind the canvas (cheap on weak GPUs), see MasteryTab.
-    // Coal bed with glowing coals.
+    // An iron fire trough on stone feet, a bed of coals whose cracks glow in the Heat Form's
+    // colour, the flames of the forms burning out of it.
     const bed = this.forgeBed.clear();
-    bed.roundRect(x0, y + 12, x1 - x0, 34, 17).fill({ color: 0x120c08 });
-    bed.roundRect(x0, y + 12, x1 - x0, 34, 17).stroke({ color: 0x3a2412, width: 3 });
-    for (let i = 0; i < 26; i++) {
-      const k = (i * 0.618) % 1;
-      const r = 4 + ((i * 7) % 5);
-      bed.circle(x0 + 18 + k * (x1 - x0 - 36), y + 24 + ((i * 5) % 12), r).fill({
-        color: i % 3 === 0 ? color : 0x5a2010,
-        alpha: i % 3 === 0 ? 0.7 : 0.9,
-      });
+    const top = y + 6;
+    const depth = 40;
+    const lip = 14;
+    // Soft shadow on the floor.
+    bed.ellipse((x0 + x1) / 2, top + depth + 10, (x1 - x0) / 2 + 30, 16).fill({
+      color: 0x000000,
+      alpha: 0.45,
+    });
+    // Stone feet.
+    for (const fx of [x0 + 30, x1 - 30]) {
+      bed.roundRect(fx - 16, top + depth - 6, 32, 20, 4).fill(this.gradient(STONE));
+      bed.roundRect(fx - 16, top + depth - 6, 32, 20, 4).stroke({ color: 0x0b0705, width: 2 });
     }
+    // The trough: wider at the rim, iron with a bronze lip and rivets.
+    const body = [x0 - lip, top, x1 + lip, top, x1 - 8, top + depth, x0 + 8, top + depth];
+    bed.poly(body).fill(this.gradient(IRON));
+    bed.poly(body).stroke({ color: 0x0b0705, width: 3 });
+    for (let k = 0; k <= 8; k++) {
+      const rx = x0 + 4 + ((x1 - x0 - 8) * k) / 8;
+      bed.circle(rx, top + depth * 0.55, 2.6).fill(0x8a5a22);
+      bed.circle(rx - 0.8, top + depth * 0.55 - 0.8, 1).fill({ color: 0xffe0a0, alpha: 0.7 });
+    }
+    // Coals heaped above the rim: dark lumps with glowing cracks.
+    const coalTop = top - 10;
+    bed.ellipse((x0 + x1) / 2, top + 2, (x1 - x0) / 2 + lip - 4, 12).fill(0x0e0806);
+    let seed = 7;
+    const rnd = () => {
+      seed = (seed * 16807) % 2147483647;
+      return seed / 2147483647;
+    };
+    for (let k = 0; k < 34; k++) {
+      const cx = x0 - lip + 10 + rnd() * (x1 - x0 + lip * 2 - 20);
+      const cy = coalTop + rnd() * 16;
+      const r = 7 + rnd() * 7;
+      const pts: number[] = [];
+      for (let p = 0; p < 6; p++) {
+        const a = (p / 6) * Math.PI * 2 + rnd() * 0.5;
+        const rr = r * (0.7 + rnd() * 0.4);
+        pts.push(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.7);
+      }
+      const hot = rnd() < 0.45;
+      bed.poly(pts).fill(hot ? 0x3a160c : 0x1a1210);
+      bed.poly(pts).stroke({ color: hot ? color : 0x2a1a12, width: hot ? 1.6 : 1, alpha: 0.9 });
+      if (hot) bed.circle(cx, cy, r * 0.35).fill({ color, alpha: 0.55 });
+    }
+    // Bronze lip in front of the coals.
+    bed
+      .moveTo(x0 - lip, top)
+      .lineTo(x1 + lip, top)
+      .stroke({ color: 0xc9a063, width: 4 });
+    bed
+      .moveTo(x0 - lip, top - 1.5)
+      .lineTo(x1 + lip, top - 1.5)
+      .stroke({ color: 0xfff0c8, width: 1, alpha: 0.4 });
+  }
+
+  private gradient(stops: readonly string[]): FillGradient {
+    return new FillGradient({
+      type: "linear",
+      start: { x: 0, y: 0 },
+      end: { x: 0, y: 1 },
+      colorStops: stops.map((c, k) => ({ offset: k / (stops.length - 1), color: c })),
+      textureSpace: "local",
+    });
   }
 
   /** Path polylines: from the weapon to each node in order. */
@@ -704,6 +759,12 @@ export class MasteryScene {
     }
     const forms = v.nodes.filter((n) => n.node.kind === "heatForm");
     if (forms[0]) add("HEAT FORM", 0, forms[0].node.y * U + 74, EMBER, 15);
+    const seals = v.nodes.filter((n) => n.node.kind === "innateForm");
+    if (seals.length) {
+      // Above the middle seal, a little further out from the weapon.
+      const mid = seals[Math.floor(seals.length / 2)]?.node;
+      if (mid) add("INNATE", mid.x * U - 30, mid.y * U - 58, 0xffd27a, 15);
+    }
     const ks = v.nodes.filter((n) => n.node.kind === "keystone");
     if (ks.length) {
       const x = Math.min(...ks.map((n) => n.node.x)) * U - 20;
@@ -733,19 +794,7 @@ export class MasteryScene {
       resolution: 2 * this.size.resolution,
     });
     name.anchor.set(0.5, 0);
-    const lock = new Text({
-      text: "",
-      style: {
-        fontFamily: "monospace",
-        fontWeight: "700",
-        fontSize: 11,
-        fill: 0xc9a063,
-        stroke: { color: 0x0d0a08, width: 3 },
-      },
-      resolution: 2 * this.size.resolution,
-    });
-    lock.anchor.set(0.5);
-    root.addChild(flame, g, name, lock);
+    root.addChild(flame, g, name);
     root.on("pointertap", () => this.tap(n.node.id));
     root.on("pointerover", () => {
       const p = root.getGlobalPosition();
@@ -753,7 +802,7 @@ export class MasteryScene {
     });
     root.on("pointerout", () => this.callbacks.onHover(null, 0, 0));
     this.nodeLayer.addChild(root);
-    return { root, g, flame, name, lock, view: n };
+    return { root, g, flame, name, view: n };
   }
 
   private tap(id: string): void {
@@ -840,9 +889,10 @@ export class MasteryScene {
       }
       case "heatForm": {
         // A brazier on the coal bed; the chosen Heat Form burns (animated in tick).
-        g.ellipse(0, r * 0.7, r * 1.1, r * 0.4).fill({ color: 0x2a180a });
-        g.ellipse(0, r * 0.7, r * 1.1, r * 0.4).stroke({
-          color: dim ? 0x4a3828 : 0xa8732e,
+        // A glowing ring set into the coals.
+        g.ellipse(0, r * 0.7, r * 0.95, r * 0.34).fill({ color: 0x1a0e08 });
+        g.ellipse(0, r * 0.7, r * 0.95, r * 0.34).stroke({
+          color: dim ? 0x4a3828 : lit ? color : 0xa8732e,
           width: 2.5,
         });
         if (!lit) {
@@ -890,9 +940,6 @@ export class MasteryScene {
     const fontSize = kind === "notable" || kind === "keystone" ? 14 : 12;
     if (s.name.style.fill !== fill) s.name.style.fill = fill;
     if (s.name.style.fontSize !== fontSize) s.name.style.fontSize = fontSize;
-    if (s.lock.text !== (n.lock ?? "")) s.lock.text = n.lock ?? "";
-    s.lock.visible = !!n.lock;
-    s.lock.position.set(0, 0);
     s.root.alpha = dim ? 0.78 : 1;
   }
 

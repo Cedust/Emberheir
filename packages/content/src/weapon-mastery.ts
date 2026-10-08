@@ -55,7 +55,7 @@ function along(t: number, off = 0): { x: number; y: number } {
 const PATH_LAYOUT = [
   { start: along(0.3, -1.25), dir: { x: -0.7, y: -0.71 }, bend: -1 },
   { start: along(0.55, 1.35), dir: { x: 0.93, y: 0.36 }, bend: 1 },
-  { start: along(0.8, -1.25), dir: { x: 0.82, y: -0.57 }, bend: 1 },
+  { start: along(0.8, -1.25), dir: { x: 0.5, y: -0.87 }, bend: 1 },
 ] as const;
 
 function pathPosition(path: number, index: number): { x: number; y: number } {
@@ -214,9 +214,11 @@ function keystonePosition(i: number): { x: number; y: number } {
 }
 
 /** Attunement orbs around the tip. */
-function attunementPosition(i: number): { x: number; y: number } {
-  const angle = ((-80 + i * 45) * Math.PI) / 180;
-  return { x: round(TIP.x + Math.cos(angle) * 1.4), y: round(TIP.y + Math.sin(angle) * 1.4) };
+function attunementPosition(i: number, count: number): { x: number; y: number } {
+  // Three orbs fan out in 45° steps; two take the outer places, so they stay symmetric.
+  const step = count > 1 ? 90 / (count - 1) : 0;
+  const angle = ((-60 + i * step) * Math.PI) / 180;
+  return { x: round(TIP.x + Math.cos(angle) * 1.7), y: round(TIP.y + Math.sin(angle) * 1.7) };
 }
 
 function buildTree(spec: TreeSpec): WeaponMasteryTree {
@@ -232,7 +234,7 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
       group: "innateForm",
       effect: { ...form.effect, innate: form.skill },
       // Three rune seals above the blade, between the roots of the first and third path.
-      ...along(0.47 + i * 0.1, -1),
+      ...along(0.47 + i * 0.1, -1.75),
     });
   });
   spec.keystones.forEach((k, i) => {
@@ -256,7 +258,7 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
       group: "attunement",
       ...(i === 0 ? { default: true } : {}),
       effect: { attunement: { damageType: a.damageType, ailment: a.ailment } },
-      ...attunementPosition(i),
+      ...attunementPosition(i, spec.attunements?.length ?? 1),
     });
   });
   spec.paths.forEach((path, p) => {
@@ -274,7 +276,8 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
         description: n.description,
         kind: notable ? "notable" : "minor",
         path: path.id,
-        ...(previous ? { links: [previous] } : { requiresRefine: true }),
+        // The first node of a path is open from the start.
+        ...(previous ? { links: [previous] } : {}),
         effect: n.effect,
         ...pathPosition(p, index),
       });

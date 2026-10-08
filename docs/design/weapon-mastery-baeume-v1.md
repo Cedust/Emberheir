@@ -339,3 +339,8 @@ Abweichungen von diesem Entwurf: Rank-Leiste und Namensschild sitzen **oben**, L
 | Concussion | 126 % Schaden, 1 s Stun |
 | Barrage | 3 × 45 % |
 | Heirloom Blade / Avalanche Bow | heißen *Heirloom Grips* / *Avalanche Grips* |
+
+**Feedback Timo (2026-10-08, 11:45), umgesetzt:** dritter Pfad zeigt auf „1 Uhr", Innate-Siegel weiter außen mit Label *INNATE*,
+Attunement-Orbs weiter außen (Staff: zwei Orbs auf den äußeren Plätzen, symmetrisch), keine Freischalt-Texte (0/12, R3, R5) mehr,
+die erste Node jedes Pfads ist ohne Voraussetzung lernbar, die Esse ist jetzt ein eiserner Feuertrog mit glühenden Kohlen.
+Timo mag die code-gemalten Waffen: sie bleiben (kein KI-Asset nötig).

@@ -77,6 +77,15 @@ describe("Weapon Mastery tree", () => {
     expect(w.weaponRules.glancingDamage).toBe(0.25);
   });
 
+  it("a path root without links is open from the start", () => {
+    const open = {
+      ...tree,
+      nodes: tree.nodes.map((n) => (n.id === "p1" ? { ...n, requiresRefine: false } : n)),
+    };
+    expect(masteryBlockReason(open, EMPTY_MASTERY, "p1", 1)).toBeUndefined();
+    expect(masteryBlockReason(open, EMPTY_MASTERY, "p2", 1)).toBe("notConnected");
+  });
+
   it("Heat Forms open at Rank 3, Innate Forms at Rank 5; switching is free", () => {
     expect(masteryBlockReason(tree, EMPTY_MASTERY, "cooling", 2)).toBe("rankLocked");
     expect(masteryBlockReason(tree, EMPTY_MASTERY, "steady", 3)).toBe("chosen");

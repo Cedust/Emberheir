@@ -64,8 +64,9 @@ export interface MasteryNode {
   /** Path id (minor and notable nodes). */
   readonly path?: string;
   readonly maxRanks?: number;
-  /** Nodes one of which must be learned first. Path roots need a point in Refine instead. */
+  /** Nodes one of which must be learned first. Nodes without links are open from the start. */
   readonly links?: readonly string[];
+  /** The node needs a point in Refine instead of a linked node. */
   readonly requiresRefine?: boolean;
   /** Exclusive group (Heat Form, Innate Form, Keystone, Attunement). */
   readonly group?: MasteryGroup;
@@ -280,6 +281,8 @@ function connected(tree: WeaponMasteryTree, state: MasteryState, node: MasteryNo
   if (node.requiresRefine) {
     return tree.nodes.some((n) => n.kind === "refine" && (state.learned[n.id] ?? 0) > 0);
   }
+  // Nodes without links (path roots) are open from the start.
+  if (!node.links?.length) return true;
   return (node.links ?? []).some((l) => (state.learned[l] ?? 0) > 0);
 }
 
