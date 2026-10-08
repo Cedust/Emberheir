@@ -292,10 +292,11 @@ export function learnMastery(
   if (reason) throw new Error(`Cannot learn "${id}": ${reason}`);
   const node = masteryNode(tree, id);
   if (node.group) {
-    const choices = { ...state.choices };
-    if (node.default) delete choices[node.group];
-    else choices[node.group] = id;
-    return { ...state, choices };
+    const group = node.group;
+    const choices = Object.fromEntries(
+      Object.entries(state.choices).filter(([g]) => g !== group),
+    ) as Partial<Record<MasteryGroup, string>>;
+    return { ...state, choices: node.default ? choices : { ...choices, [group]: id } };
   }
   return { ...state, learned: { ...state.learned, [id]: (state.learned[id] ?? 0) + 1 } };
 }
@@ -413,7 +414,8 @@ export function buildMasteryWeapon(
         }
       : {}),
   };
-  const { noGlancing: _, ...fightRules } = merged;
+  const fightRules: MasteryWeaponRules = { ...merged };
+  delete (fightRules as { noGlancing?: boolean }).noGlancing;
   return {
     weapon,
     bonuses: sumBonuses(...bonuses),

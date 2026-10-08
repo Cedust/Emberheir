@@ -142,6 +142,7 @@ export const TEST_MASTERY: WeaponMasteryTree = {
   nodes: [
     node({ id: "refine", kind: "refine", maxRanks: 3, effect: { precision: 0.05 } }),
     node({ id: "swing", kind: "refine", maxRanks: 3, effect: { rangeMax: 0.1 } }),
+    node({ id: "grip", kind: "refine", maxRanks: 3, effect: { rangeMin: 0.05 } }),
     node({
       id: "p1",
       kind: "minor",
