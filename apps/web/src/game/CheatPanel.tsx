@@ -78,7 +78,8 @@ function NumberRow(props: {
         onBlur={commit}
         onKeyDown={(e) => {
           if (e.key === "Enter") commit();
-          e.stopPropagation();
+          // Typing must not trigger the game's hotkeys (C, T); Esc and F8 still close the panel.
+          if (e.key !== "Escape" && e.key !== "F8") e.stopPropagation();
         }}
       />
       {props.quick?.map((q) => (

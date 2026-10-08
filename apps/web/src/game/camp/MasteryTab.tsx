@@ -21,9 +21,9 @@ import { useEffect, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
 import { useSettings } from "../../ui/settings";
 import { GRADE_COLOR, gradeIndex as gradeOf } from "../WeaponSlot";
+import { weaponLookOf } from "../weaponLook";
 import type { GameApi } from "../useGame";
 import {
-  ELEMENT_COLOR,
   HEAT_FORM_COLOR,
   type MasteryNodeView,
   MasteryScene,
@@ -100,20 +100,17 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
   const echo = state.hero.mastery.echo
     ? GAME_DATA.echoes.find((e) => e.id === state.hero.mastery.echo)
     : undefined;
-  const attunement = nodes.find(
-    (n) => n.kind === "attunement" && tree && masteryRanks(tree, preview, n.id) > 0,
-  );
   const chosenForm = nodes.find(
     (n) => n.kind === "heatForm" && tree && masteryRanks(tree, preview, n.id) > 0,
   );
-  const accent =
-    ELEMENT_COLOR[attunement?.effect.attunement?.damageType ?? build.weapon.damageType] ?? 0xff6a2a;
+  const look = weaponLookOf(weaponId, preview, rank);
 
   const view: MasteryView = {
     weaponId,
     paths: tree?.paths ?? [],
     grade: gradeIndex,
-    accent,
+    accent: look.accent,
+    look,
     echoColor: echo?.color ?? null,
     pommel: MASTERY_LAYOUT.pommel,
     tip: MASTERY_LAYOUT.tip,

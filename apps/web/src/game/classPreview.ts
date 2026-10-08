@@ -19,6 +19,7 @@ import {
 } from "@emberheir/sim";
 import type { EnemyLook, HeroLook } from "./battle/ArenaScene";
 import { heroLookOf } from "./heroLook";
+import { heroWeaponLook } from "./weaponLook";
 
 /**
  * The class select preview (klassen-v2.md section 6): the class fights an Act 1 enemy with its
@@ -45,7 +46,13 @@ export function startPreview(classId: string, weapon: string): ClassPreview {
   return {
     hero: heroSetup(state, GAME_DATA).setup,
     enemy: createEnemySetup(enemy, 1),
-    heroLook: heroLookOf(classId, state.hero.weaponId, state.hero.equipment),
+    heroLook: heroLookOf(
+      classId,
+      state.hero.weaponId,
+      state.hero.equipment,
+      undefined,
+      heroWeaponLook(state),
+    ),
     enemyLook: { archetype: enemy.archetype, boss: false, elite: false, act: 1 },
     title: GAME_DATA.classes.find((c) => c.id === classId)?.name ?? "",
   };
@@ -158,7 +165,13 @@ export function glimpsePreview(classId: string, weapon: string): ClassPreview {
   return {
     hero: heroSetup(state, GAME_DATA).setup,
     enemy: createEnemySetup(enemy, GLIMPSE_LEVEL - 4),
-    heroLook: heroLookOf(classId, state.hero.weaponId, state.hero.equipment),
+    heroLook: heroLookOf(
+      classId,
+      state.hero.weaponId,
+      state.hero.equipment,
+      undefined,
+      heroWeaponLook(state),
+    ),
     enemyLook: { archetype: enemy.archetype, boss: true, elite: false, act: 2 },
     title: heroTitle(state, GAME_DATA),
   };

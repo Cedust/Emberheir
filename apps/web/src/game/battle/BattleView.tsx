@@ -23,6 +23,7 @@ import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { heroLookOf } from "../heroLook";
+import { heroWeaponLook } from "../weaponLook";
 import { ArenaScene, type EnemyLook } from "./ArenaScene";
 import { BoonBar } from "../Boons";
 import type { IconName } from "../../ui/Icon";
@@ -79,6 +80,7 @@ function useLooks(state: GameState, run: RunState) {
     state.hero.weaponId,
     state.hero.equipment,
     wornEcho(state, GAME_DATA)?.def.color,
+    heroWeaponLook(state),
   );
   const weapon = heroWeapon(state, GAME_DATA).weapon;
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];

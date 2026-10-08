@@ -1,5 +1,6 @@
 import type { CombatEvent, FightSnapshot, Side } from "@emberheir/sim";
-import { Application, Container, Graphics, Text } from "pixi.js";
+import { Application, BlurFilter, Container, Graphics, Text } from "pixi.js";
+import { type WeaponLook, drawWeapon } from "../camp/weaponArt";
 import { Fx, type Burst } from "./fx";
 import { Weather, type View } from "./weather";
 
@@ -13,6 +14,10 @@ export interface HeroLook {
   readonly heroClass: "warrior" | "reaver" | "hunter" | "sorcerer" | "warlock";
   readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow" | "mace" | "staff";
   readonly offHand: "shield" | "focus" | "quiver" | "talisman" | "grimoire" | null;
+  /** The weapon's id (Weapon Mastery): the painted weapon of the Mastery view is in hand. */
+  readonly weaponId: string;
+  /** Its build: grade metal, path runes, Keystone shape. */
+  readonly weaponLook: WeaponLook;
   /** Colour of the Echo worn on the weapon: its motes drift around the hero. */
   readonly echo?: number;
 }
@@ -246,6 +251,9 @@ export class ArenaScene {
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
+  /** Exalted weapons shed golden sparks from this point of the hero figure. */
+  private exaltedTip: Container | null = null;
+  private exaltedCarry = 0;
   private ranged: Record<Side, boolean> = { hero: false, enemy: false };
   /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
   private heavy: { skill: string; until: number } | null = null;
@@ -327,6 +335,10 @@ export class ArenaScene {
     this.world.addChild(this.telegraph);
 
     this.hero = makeFigure("hero", drawHero(hero), HERO_X);
+    this.exaltedTip =
+      hero.weaponLook.grade >= 4
+        ? (this.hero.body.getChildByLabel("weapon-tip", true) ?? null)
+        : null;
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
     this.world.addChild(this.hero.root, this.enemy.root, fx.front);
 
@@ -926,6 +938,27 @@ export class ArenaScene {
       this.ailmentCarry[side] = due2 - n;
       for (let i = 0; i < n; i++) for (const a of list) this.ailmentPuff(side, a, 1);
     }
+    // An Exalted weapon sheds golden sparks.
+    if (this.fx && this.exaltedTip && this.hero && this.hero.root.alpha === 1) {
+      this.exaltedCarry += 9 * dt;
+      const at = this.world.toLocal(this.exaltedTip.getGlobalPosition());
+      for (; this.exaltedCarry >= 1; this.exaltedCarry--) {
+        this.fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 1,
+          color: [0xffe08a, 0xfff6d8],
+          spreadX: 50,
+          spreadY: 60,
+          angle: [RISE - 0.6, RISE + 0.6],
+          speed: [10, 40],
+          life: [0.5, 1.1],
+          size: [4, 9],
+          alpha: 0.8,
+          layer: "front",
+        });
+      }
+    }
     // The worn Echo walks with the hero: its motes drift up around them.
     if (this.fx && this.echoColor !== null && this.hero && this.hero.root.alpha === 1) {
       this.echoCarry += 7 * dt;
@@ -1071,6 +1104,55 @@ const CLASS_LOOKS: Record<HeroLook["heroClass"], { body: number; chest: number; 
  * The Heir: one body per class, weapon and off hand change (klassen-v2.md section 9).
  * Origin = feet. Placeholder art until the painted characters exist.
  */
+/** Where the hero holds each weapon: pommel and tip in figure coordinates (feet at 0/0). */
+const WEAPON_POSES: Record<HeroLook["weapon"], { from: [number, number]; to: [number, number] }> = {
+  sword: { from: [52, -246], to: [172, -360] },
+  axe: { from: [60, -222], to: [146, -372] },
+  dagger: { from: [64, -236], to: [134, -304] },
+  mace: { from: [60, -236], to: [150, -366] },
+  staff: { from: [92, -140], to: [136, -452] },
+  bow: { from: [108, -398], to: [108, -162] },
+  crossbow: { from: [28, -258], to: [190, -272] },
+  wand: { from: [62, -232], to: [142, -350] },
+};
+
+/** Grade colour of the weapon's edge light (Crude .. Exalted). */
+const GRADE_LIGHT = [0x8a6a50, 0xd0803a, 0xff7a2a, 0xffc04a, 0xfff0c8];
+const GRADE_LIGHT_ALPHA = [0, 0.15, 0.3, 0.5, 0.8];
+
+/**
+ * The painted weapon of Weapon Mastery in the hero's hand, in the build's look: grade metal,
+ * glowing path runes and the Keystone's shape. Its light is baked once into a texture.
+ */
+function heldWeapon(look: HeroLook): Container {
+  const pose = WEAPON_POSES[look.weapon];
+  const [x0, y0] = pose.from;
+  const [x1, y1] = pose.to;
+  const length = 520;
+  const art = drawWeapon(look.weaponId, length, look.weaponLook);
+  const holder = new Container();
+  holder.position.set(x0, y0);
+  holder.rotation = Math.atan2(y1 - y0, x1 - x0);
+  holder.scale.set(Math.hypot(x1 - x0, y1 - y0) / length);
+  const grade = Math.max(0, Math.min(4, look.weaponLook.grade));
+  const light = new Container();
+  art.edge.tint = GRADE_LIGHT[grade] ?? 0xffffff;
+  art.edge.alpha = GRADE_LIGHT_ALPHA[grade] ?? 0;
+  light.addChild(art.edge, art.runeGlow);
+  light.filters = [new BlurFilter({ strength: 6, quality: 2 })];
+  light.blendMode = "add";
+  // A dark outline keeps the painted weapon readable on the bright arena.
+  const outline = art.silhouette();
+  outline.tint = INK;
+  outline.scale.set(1.02);
+  holder.addChild(outline, art.body, light);
+  light.cacheAsTexture(true);
+  const tip = new Container({ label: "weapon-tip" });
+  tip.position.set(length * 0.8, 0);
+  holder.addChild(tip);
+  return holder;
+}
+
 function drawHero(look: HeroLook): Container {
   const c = new Container();
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
@@ -1207,114 +1289,7 @@ function drawHero(look: HeroLook): Container {
       break;
   }
   c.addChild(head);
-  if (look.weapon === "sword") {
-    c.addChild(
-      new Graphics()
-        .moveTo(70, -260)
-        .lineTo(160, -348)
-        .stroke({ color: INK, width: 10, cap: "round" }),
-      new Graphics()
-        .moveTo(70, -260)
-        .lineTo(160, -348)
-        .stroke({ color: 0xd8d4cc, width: 5, cap: "round" }),
-      new Graphics()
-        .moveTo(58, -270)
-        .lineTo(82, -246)
-        .stroke({ color: 0x7a5a24, width: 7, cap: "round" }),
-    );
-  } else if (look.weapon === "axe") {
-    c.addChild(
-      new Graphics()
-        .moveTo(66, -232)
-        .lineTo(140, -352)
-        .stroke({ color: 0x7a5a24, width: 9, cap: "round" }),
-      new Graphics()
-        .moveTo(122, -334)
-        .quadraticCurveTo(150, -372, 182, -348)
-        .quadraticCurveTo(170, -318, 150, -300)
-        .closePath()
-        .fill(0xc9c2b8)
-        .stroke(line),
-    );
-  } else if (look.weapon === "dagger") {
-    c.addChild(
-      new Graphics()
-        .moveTo(76, -244)
-        .lineTo(126, -300)
-        .stroke({ color: INK, width: 9, cap: "round" }),
-      new Graphics()
-        .moveTo(76, -244)
-        .lineTo(126, -300)
-        .stroke({ color: 0xd8d4cc, width: 4, cap: "round" }),
-      new Graphics()
-        .moveTo(66, -252)
-        .lineTo(86, -232)
-        .stroke({ color: 0x3f5a2e, width: 7, cap: "round" }),
-    );
-  } else if (look.weapon === "mace") {
-    c.addChild(
-      new Graphics()
-        .moveTo(70, -250)
-        .lineTo(136, -340)
-        .stroke({ color: 0x7a5a24, width: 9, cap: "round" }),
-      new Graphics().circle(142, -350, 22).fill(0x8a8f96).stroke(line),
-      new Graphics().poly([142, -386, 150, -370, 134, -370]).fill(0x8a8f96).stroke(line),
-      new Graphics().poly([178, -350, 162, -342, 162, -358]).fill(0x8a8f96).stroke(line),
-    );
-  } else if (look.weapon === "staff") {
-    c.addChild(
-      new Graphics()
-        .moveTo(90, -150)
-        .lineTo(130, -420)
-        .stroke({ color: 0x5e4a36, width: 9, cap: "round" }),
-      new Graphics().circle(132, -432, 16).fill(0xa35cff).stroke(line),
-      new Graphics().circle(132, -432, 26).stroke({ color: 0xc9a0ff, width: 2, alpha: 0.6 }),
-    );
-  } else if (look.weapon === "bow") {
-    c.addChild(
-      new Graphics()
-        .moveTo(96, -390)
-        .quadraticCurveTo(170, -290, 96, -170)
-        .stroke({ color: INK, width: 10, cap: "round" }),
-      new Graphics()
-        .moveTo(96, -390)
-        .quadraticCurveTo(170, -290, 96, -170)
-        .stroke({ color: 0x9a6a34, width: 5, cap: "round" }),
-      new Graphics().moveTo(96, -390).lineTo(96, -170).stroke({ color: 0xe8e2d6, width: 2 }),
-    );
-  } else if (look.weapon === "crossbow") {
-    c.addChild(
-      new Graphics()
-        .moveTo(40, -262)
-        .lineTo(170, -270)
-        .stroke({ color: INK, width: 14, cap: "round" }),
-      new Graphics()
-        .moveTo(40, -262)
-        .lineTo(170, -270)
-        .stroke({ color: 0x7a5a24, width: 8, cap: "round" }),
-      new Graphics()
-        .moveTo(150, -330)
-        .quadraticCurveTo(186, -270, 150, -208)
-        .stroke({ color: INK, width: 9, cap: "round" }),
-      new Graphics()
-        .moveTo(150, -330)
-        .quadraticCurveTo(186, -270, 150, -208)
-        .stroke({ color: 0xc9c2b8, width: 4, cap: "round" }),
-      new Graphics()
-        .moveTo(150, -330)
-        .lineTo(110, -268)
-        .lineTo(150, -208)
-        .stroke({ color: 0xe8e2d6, width: 2 }),
-    );
-  } else {
-    c.addChild(
-      new Graphics()
-        .moveTo(70, -240)
-        .lineTo(130, -340)
-        .stroke({ color: 0x7a5a24, width: 7, cap: "round" }),
-      new Graphics().circle(134, -346, 12).fill(0xff6a2b).stroke(line),
-    );
-  }
+  c.addChild(heldWeapon(look));
   c.y = 150;
   return c;
 }

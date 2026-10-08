@@ -11,7 +11,8 @@ import {
   Text,
 } from "pixi.js";
 import { Fx } from "../battle/fx";
-import { type WeaponArt, drawWeapon } from "./weaponArt";
+import { type WeaponArt, type WeaponLook, drawWeapon } from "./weaponArt";
+import { ELEMENT_COLOR } from "../weaponLook";
 
 /**
  * Weapon Mastery as a PixiJS scene, the "anatomy" look (waffe-als-system-v1.md): the painted
@@ -41,6 +42,8 @@ export interface MasteryView {
   readonly grade: number;
   /** Colour of the weapon's element (crystal, orb, tip light). */
   readonly accent: number;
+  /** The build on the painted weapon: grade metal, path runes, Keystone shape. */
+  readonly look: WeaponLook;
   readonly echoColor: number | null;
   /** Pommel and tip in layout units. */
   readonly pommel: { readonly x: number; readonly y: number };
@@ -85,13 +88,7 @@ export const HEAT_FORM_COLOR: Record<string, number> = {
   "heat-smoldering": 0xc8402a,
 };
 
-export const ELEMENT_COLOR: Record<string, number> = {
-  fire: 0xff6a2a,
-  cold: 0x8ec8f0,
-  lightning: 0xffe066,
-  void: 0xa070e0,
-  physical: 0xe0b45a,
-};
+export { ELEMENT_COLOR } from "../weaponLook";
 
 const RADIUS: Record<MasteryNode["kind"], number> = {
   refine: 16,
@@ -140,6 +137,7 @@ export class MasteryScene {
   private labels: Text[] = [];
   private labelKey = "";
   private viewKey = "";
+  private runeLight: Container | null = null;
   private view: MasteryView | null = null;
   private size = { w: 900, h: 700, resolution: 1 };
   /** Camera: world offset (stage pixels) and zoom, with targets the camera glides to. */
@@ -238,6 +236,7 @@ export class MasteryScene {
       view.weaponId,
       view.grade,
       view.accent,
+      JSON.stringify(view.look),
       view.echoColor,
       view.pointsLeft,
       ...view.nodes.map((n) => `${n.state}${n.pending}${n.selected}${n.ranks}`),
@@ -481,14 +480,14 @@ export class MasteryScene {
   }
 
   private drawWeapon(v: MasteryView): void {
-    const key = `${v.weaponId}:${v.accent}:${v.echoColor ?? ""}:${v.grade}`;
+    const key = `${v.weaponId}:${v.echoColor ?? ""}:${JSON.stringify(v.look)}`;
     const ax = (v.tip.x - v.pommel.x) * U;
     const ay = (v.tip.y - v.pommel.y) * U;
     const length = Math.hypot(ax, ay);
     if (key !== this.artKey) {
       this.artKey = key;
       this.weaponLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
-      const art = drawWeapon(v.weaponId, length / ART_SCALE, v.accent);
+      const art = drawWeapon(v.weaponId, length / ART_SCALE, v.look);
       this.art = art;
       const holder = new Container();
       holder.position.set(v.pommel.x * U, v.pommel.y * U);
@@ -523,8 +522,12 @@ export class MasteryScene {
       const glow = baked(art.edge, 7);
       glow.blendMode = "add";
       this.edgeGlow = glow;
+      // The runes of the learned paths glow in their colours.
+      const runeBlur = baked(art.runeGlow, 4);
+      runeBlur.blendMode = "add";
+      this.runeLight = runeBlur;
       holder.addChildAt(shadow, 0);
-      holder.addChild(art.body, glow);
+      holder.addChild(art.body, glow, runeBlur);
       this.weaponLayer.addChild(holder);
     }
   }
@@ -1009,6 +1012,9 @@ export class MasteryScene {
     if (this.edgeGlow && grade) {
       const pulse = this.motion ? 0.85 + 0.15 * Math.sin(this.time * 1.7) : 1;
       this.edgeGlow.alpha = Math.min(1, grade.alpha * pulse + this.flash * 0.8);
+    }
+    if (this.runeLight) {
+      this.runeLight.alpha = this.motion ? 0.7 + 0.3 * Math.sin(this.time * 2.1) : 0.85;
     }
     if (this.ghost) {
       const t = this.motion ? this.time : 0;

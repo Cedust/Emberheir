@@ -344,3 +344,16 @@ Abweichungen von diesem Entwurf: Rank-Leiste und Namensschild sitzen **oben**, L
 Attunement-Orbs weiter außen (Staff: zwei Orbs auf den äußeren Plätzen, symmetrisch), keine Freischalt-Texte (0/12, R3, R5) mehr,
 die erste Node jedes Pfads ist ohne Voraussetzung lernbar, die Esse ist jetzt ein eiserner Feuertrog mit glühenden Kohlen.
 Timo mag die code-gemalten Waffen: sie bleiben (kein KI-Asset nötig).
+
+**Feedback Timo (2026-10-08, 12:04), umgesetzt: der Build steht auf der Waffe.**
+- *Grade-Metall:* Crude = narbiges Eisen mit Rost, Honed = Stahl und Bronze, Tempered = blauer Stahl und Silber,
+  Ascendant = heller Stahl und Gold, Exalted = strahlendes Weißgold mit Goldfiligran; Exalted-Waffen sprühen in der Arena Goldfunken.
+- *Runen:* jeder gelernte Pfad-Rang schnitzt eine leuchtende Rune in Pfadfarbe. Klingen tragen sie in der Hohlkehle;
+  Waffen ohne Klinge im Holz (Bow: beide Wurfarme und Griff, Crossbow: Schaft, Wand und Staff: Stab).
+- *Keystone-Form:* jeder der 32 Keystones ändert die Silhouette (z. B. Perfect Parry = Parierhaken, Deep Cuts = Sägerücken,
+  Rampage = Doppelaxt, Anvil = Amboss-Kopf, Harpoon = Widerhaken mit Seil, Endless Night = Mondsichel am Orb).
+- *Arena:* der Held hält dieselbe gemalte Waffe in diesem Look.
+
+**Cheatmode (Timo 2026-10-08):** in jeder PR-Preview und lokal an, sonst mit `?cheat`; F8 oder Menü > Cheats.
+Level und Weapon Rank, Bonus Mastery Points, alle Währungen, Essences und Runes, Items jeder Base/Rarity/Item Level und Uniques,
+Items neu würfeln, nächsten Act oder ganzen Run abschließen (echter Prestige-Flow), Echo-Stufen.
