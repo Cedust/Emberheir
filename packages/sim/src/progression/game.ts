@@ -87,6 +87,7 @@ import {
   type WeaponMasteryTree,
   buildMasteryWeapon,
   learnMastery,
+  pointsAvailable,
   pointsSpent,
   weaponRank,
   weaponTitle,
@@ -717,7 +718,7 @@ export function heroWeaponName(state: GameState, data: GameData): string {
 /** Weapon Mastery points not spent yet. */
 export function masteryPointsLeft(state: GameState, data: GameData): number {
   const tree = masteryTree(data, state.hero.weaponId);
-  return Math.max(0, heroWeaponRank(state) - pointsSpent(tree, state.hero.mastery));
+  return pointsAvailable(tree, state.hero.mastery, heroWeaponRank(state));
 }
 
 export interface KnownSkill {
@@ -2258,7 +2259,14 @@ function respecMastery(state: GameState, data: GameData): GameState {
   if (state.wallet.gold < MASTERY.respecGold) return fail("Not enough Gold");
   return {
     ...state,
-    hero: { ...state.hero, mastery: { ...EMPTY_MASTERY, echo: mastery.echo } },
+    hero: {
+      ...state.hero,
+      mastery: {
+        ...EMPTY_MASTERY,
+        echo: mastery.echo,
+        ...(mastery.bonusPoints ? { bonusPoints: mastery.bonusPoints } : {}),
+      },
+    },
     wallet: { ...state.wallet, gold: state.wallet.gold - MASTERY.respecGold },
   };
 }

@@ -4,6 +4,7 @@ import { ItemArtDefs } from "../ui/ItemArt";
 import { ItemHoverLayer } from "../ui/ItemTooltip";
 import { Stage } from "../ui/Stage";
 import { useSettings } from "../ui/settings";
+import { CHEATS_ENABLED, CheatPanel } from "./CheatPanel";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
 import { TriggerCodex } from "./camp/TriggerCodex";
@@ -20,7 +21,7 @@ import { type PersonaId, PersonaView } from "./camp/PersonaView";
 import { StashView } from "./camp/StashView";
 import { useGame } from "./useGame";
 
-type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "codex" | null;
+type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "codex" | "cheats" | null;
 type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | null;
 
 /** The game: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
@@ -37,11 +38,16 @@ export function GameApp() {
 
   const toggle = (o: Exclude<Overlay, null>) => setOverlay((cur) => (cur === o ? null : o));
 
-  // Hotkeys: C = Character, T = Skill Tree, Esc = close or Menu.
+  // Hotkeys: C = Character, T = Skill Tree, Esc = close or Menu, F8 = Cheats (Cheat Mode).
   useEffect(() => {
     if (!state || lab) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.key === "F8" && CHEATS_ENABLED) {
+        e.preventDefault();
+        setOverlay((cur) => (cur === "cheats" ? null : "cheats"));
+        return;
+      }
       if (state.notice || state.pendingPrestige) return;
       const key = e.key.toLowerCase();
       if (key === "escape") {
@@ -229,12 +235,16 @@ export function GameApp() {
             inFight={inFight}
             onResume={() => setOverlay(null)}
             onCompendium={() => setOverlay("compendium")}
+            onCheats={CHEATS_ENABLED ? () => setOverlay("cheats") : undefined}
             onQuit={() => {
               setOverlay(null);
               setCampScreen(null);
               game.quit();
             }}
           />
+        )}
+        {state && overlay === "cheats" && (
+          <CheatPanel state={state} game={game} onClose={() => setOverlay(null)} />
         )}
         {game.error && (
           <div className="toast" role="alert">

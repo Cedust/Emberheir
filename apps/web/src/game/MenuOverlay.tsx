@@ -120,6 +120,8 @@ export function MenuOverlay(props: {
   inFight: boolean;
   onResume: () => void;
   onCompendium: () => void;
+  /** Cheat Mode only. */
+  onCheats?: (() => void) | undefined;
   onQuit: () => void;
 }) {
   const [page, setPage] = useState<"main" | "settings">("main");
@@ -145,6 +147,11 @@ export function MenuOverlay(props: {
             <button type="button" className="btn big" onClick={props.onCompendium}>
               <Icon name="book" size={18} /> Compendium
             </button>
+            {props.onCheats && (
+              <button type="button" className="btn big" onClick={props.onCheats}>
+                Cheats · F8
+              </button>
+            )}
             <button type="button" className="btn big ghost" onClick={props.onQuit}>
               Quit to Title
             </button>

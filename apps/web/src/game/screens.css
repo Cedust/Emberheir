@@ -4965,3 +4965,153 @@
   align-items: center;
   gap: 6px;
 }
+
+/* --- Cheat Mode (PR previews, ?cheat) -------------------------------------------------------- */
+
+.stage .cheat-panel {
+  width: 1180px;
+  max-height: 800px;
+  border-color: #ffb13b;
+}
+
+.stage .cheat-panel .overlay-header .big {
+  color: #ffb13b;
+}
+
+.stage .cheat-body {
+  padding: 20px;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage .cheat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  align-items: start;
+}
+
+.stage .cheat-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--bg);
+}
+
+.stage .cheat-card > .btn {
+  align-self: flex-start;
+}
+
+.stage .cheat-wide {
+  grid-column: 1 / -1;
+}
+
+.stage .cheat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .cheat-label {
+  flex: 1;
+  min-width: 0;
+  font-size: 15px;
+}
+
+.stage .cheat-input {
+  width: 120px;
+  height: 34px;
+  padding: 0 8px;
+  font-size: 15px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1.5px solid var(--edge);
+  border-radius: 4px;
+}
+
+.stage select.cheat-input {
+  width: 330px;
+}
+
+.stage .cheat-segmented {
+  align-self: flex-start;
+}
+
+.stage .cheat-ranks {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+}
+
+.stage .cheat-rank {
+  height: 32px;
+  font-family: var(--font-mono, monospace);
+  font-size: 14px;
+  color: var(--ink);
+  background: var(--panel);
+  border: 1.5px solid var(--edge);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.stage .cheat-rank.on {
+  background: var(--accent);
+  color: var(--on-accent);
+  border-color: var(--ink);
+}
+
+.stage .cheat-runes {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px 20px;
+}
+
+.stage .cheat-runes .cheat-input {
+  width: 70px;
+}
+
+.stage .cheat-items {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 470px;
+  overflow-y: auto;
+}
+
+.stage .cheat-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--edge);
+}
+
+.stage .cheat-item-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage .cheat-acts {
+  margin: 0;
+  padding-left: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage .cheat-acts .done {
+  text-decoration: line-through;
+  opacity: 0.6;
+}
+
+.stage .cheat-panel .btn.small {
+  min-height: 32px;
+  padding: 0 10px;
+  font-size: 13px;
+}

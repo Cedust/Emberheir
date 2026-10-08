@@ -13,6 +13,7 @@ import {
   learnMastery,
   masteryBlockReason,
   masteryRanks,
+  pointsAvailable,
   pointsSpent,
   weaponGrade,
 } from "@emberheir/sim";
@@ -90,8 +91,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
   const previewState: GameState = { ...state, hero: { ...state.hero, mastery: preview } };
   const build = heroWeapon(previewState, GAME_DATA);
   const name = heroWeaponName(previewState, GAME_DATA);
-  const spent = tree ? pointsSpent(tree, preview) : 0;
-  const left = Math.max(0, rank - spent);
+  const left = tree ? pointsAvailable(tree, preview, rank) : 0;
   const gradeIndex = gradeOf(rank);
   const nodes = tree?.nodes ?? [];
   const selected = nodes.find((n) => n.id === selectedId) ?? nodes[0];

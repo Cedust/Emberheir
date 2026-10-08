@@ -12,3 +12,4 @@ export * from "./crafting";
 export * from "./codex";
 export * from "./estimates";
 export * from "./weapon-mastery";
+export * from "./cheats";

@@ -119,6 +119,8 @@ export interface MasteryState {
   readonly choices: Readonly<Partial<Record<MasteryGroup, string>>>;
   /** The Echo worn on the weapon. */
   readonly echo: string | null;
+  /** Extra points on top of the Weapon Rank (Cheat Mode only). */
+  readonly bonusPoints?: number;
 }
 
 export const EMPTY_MASTERY: MasteryState = { learned: {}, choices: {}, echo: null };
@@ -234,7 +236,7 @@ export function pointsAvailable(
   state: MasteryState,
   rank: number,
 ): number {
-  return Math.max(0, rank - pointsSpent(tree, state));
+  return Math.max(0, rank + (state.bonusPoints ?? 0) - pointsSpent(tree, state));
 }
 
 export type MasteryBlockReason =
