@@ -667,11 +667,13 @@ export class MasteryScene {
         const ny = (q.x - p.x) * 0.25 * side;
         const cx = (p.x + q.x) / 2 + nx;
         const cy = (p.y + q.y) / 2 + ny;
-        g.arc(cx, cy, 6, 0, Math.PI * 1.4).stroke({
-          color: i < lit ? path.color : 0x3a322b,
-          width: 2,
-          alpha: i < lit ? 0.8 : 0.6,
-        });
+        g.moveTo(cx + 6, cy)
+          .arc(cx, cy, 6, 0, Math.PI * 1.4)
+          .stroke({
+            color: i < lit ? path.color : 0x3a322b,
+            width: 2,
+            alpha: i < lit ? 0.8 : 0.6,
+          });
       }
       if (lit > 0) {
         curve(g, points, 0, lit);
@@ -692,8 +694,13 @@ export class MasteryScene {
       const r = Math.hypot((ks[0]?.node.x ?? 0) * U - c.x, (ks[0]?.node.y ?? 0) * U - c.y);
       const open = ks.some((n) => n.state !== "locked");
       const [a0, a1] = [Math.min(...angles) - 0.25, Math.max(...angles) + 0.25];
-      g.arc(c.x, c.y, r, a0, a1).stroke({ color: 0x0c0806, width: 12 });
-      g.arc(c.x, c.y, r, a0, a1).stroke({ color: open ? 0xa8732e : 0x3a2c1e, width: 4 });
+      // Start each arc at its own first point: without the moveTo, Pixi joins the arc to
+      // wherever the pen stopped last (the end of the last path) with a straight line.
+      const start = { x: c.x + Math.cos(a0) * r, y: c.y + Math.sin(a0) * r };
+      g.moveTo(start.x, start.y).arc(c.x, c.y, r, a0, a1).stroke({ color: 0x0c0806, width: 12 });
+      g.moveTo(start.x, start.y)
+        .arc(c.x, c.y, r, a0, a1)
+        .stroke({ color: open ? 0xa8732e : 0x3a2c1e, width: 4 });
       const chosen = ks.find((n) => n.state === "learned" || n.pending);
       if (chosen) {
         const p = this.pos(chosen.node);
