@@ -19,17 +19,19 @@ import {
   THUNDERSTRIKE,
   VOID_RIFT,
 } from "./skills";
+import { describeBonuses } from "./skill-web";
 
 /**
- * Prestige branches (skill-tree-v1.md section 3, skilltree-v2.md): one is picked per Prestige, in
- * the Bloodline step: a new branch, or a deeper tier of an owned one. Each deepens a base branch
- * and grows out of the tree at one of its nodes. Tier I has ten nodes (16 Skill Points + 1
- * Keystone); tiers II and III each add three nodes and lift the Keystone (Greater, Supreme):
+ * Prestige branches (skill-tree-v1.md section 3, skilltree-v2.md, level-v2.md): one is picked
+ * per Prestige, in the Bloodline step: a new branch, or a deeper tier of an owned one. Each grows
+ * out of the web at a Notable of its region. Filling a tier costs 8 / 5 / 6 Skill Points: tier I
+ * has eight nodes and the Keystone, tiers II and III add a few nodes, lift the Keystone (Greater,
+ * Supreme) and give the branch's Skill one more rank:
  *
  *   entry ─ a1 ─ a2 (notable) ─┐       ┌─ a3 (notable) ─ keystone ─ keystone II ─ keystone III
- *       └── b1 ─ skill ────────┴─ mid ─┴─ b3 (notable) ─ b4 ─ t2a ─┬─ t2n (notable)
- *                                                                  └─ t2b ─ t3a ─┬─ t3n (notable)
- *                                                                                └─ t3b
+ *       └── b1 ─ skill ────────┴─ mid ─┴─ b3 (notable) ─ b4 (II) ─ t2a ─┬─ t2n (notable)
+ *                                                                       └─ t2b ─ t3a ─┬─ t3n
+ *                                                                                     └─ t3b
  *
  * The branch runs outwards from the middle of the tree along `angle`. Numbers are starting values.
  */
@@ -108,20 +110,20 @@ const SHAPE: Record<
     readonly links: readonly Slot[];
   }
 > = {
-  entry: { kind: "minor", tier: 1, x: 0, y: 1, ranks: 2, links: ["a1", "b1"] },
-  a1: { kind: "minor", tier: 1, x: 1, y: 0, ranks: 2, links: ["a2"] },
-  b1: { kind: "minor", tier: 1, x: 1, y: 2, ranks: 2, links: ["skill"] },
+  entry: { kind: "minor", tier: 1, x: 0, y: 1, ranks: 1, links: ["a1", "b1"] },
+  a1: { kind: "minor", tier: 1, x: 1, y: 0, ranks: 1, links: ["a2"] },
+  b1: { kind: "minor", tier: 1, x: 1, y: 2, ranks: 1, links: ["skill"] },
   a2: { kind: "notable", tier: 1, x: 2, y: 0, ranks: 1, links: ["mid"] },
-  skill: { kind: "skill", tier: 1, x: 2, y: 2, ranks: 3, links: ["mid"] },
-  mid: { kind: "minor", tier: 1, x: 3, y: 1, ranks: 2, links: ["a3", "b3"] },
+  skill: { kind: "skill", tier: 1, x: 2, y: 2, ranks: 1, links: ["mid"] },
+  mid: { kind: "minor", tier: 1, x: 3, y: 1, ranks: 1, links: ["a3", "b3"] },
   a3: { kind: "notable", tier: 1, x: 4, y: 0, ranks: 1, links: ["keystone"] },
   b3: { kind: "notable", tier: 1, x: 4, y: 2, ranks: 1, links: ["b4"] },
-  b4: { kind: "minor", tier: 1, x: 5, y: 2, ranks: 2, links: ["t2a"] },
+  b4: { kind: "minor", tier: 2, x: 5, y: 2, ranks: 1, links: ["t2a"] },
   keystone: { kind: "keystone", tier: 1, x: 5, y: 0, ranks: 1, links: ["keystone-2"] },
   "keystone-2": { kind: "keystone", tier: 2, x: 6, y: -0.5, ranks: 1, links: ["keystone-3"] },
-  t2a: { kind: "minor", tier: 2, x: 6, y: 2, ranks: 2, links: ["t2n", "t2b"] },
+  t2a: { kind: "minor", tier: 2, x: 6, y: 2, ranks: 1, links: ["t2n", "t2b"] },
   t2n: { kind: "notable", tier: 2, x: 7, y: 1.2, ranks: 1, links: [] },
-  t2b: { kind: "minor", tier: 2, x: 7, y: 2.8, ranks: 2, links: ["t3a"] },
+  t2b: { kind: "minor", tier: 2, x: 7, y: 2.8, ranks: 1, links: ["t3a"] },
   "keystone-3": { kind: "keystone", tier: 3, x: 7, y: -1, ranks: 1, links: [] },
   t3a: { kind: "minor", tier: 3, x: 8, y: 2.2, ranks: 2, links: ["t3n", "t3b"] },
   t3n: { kind: "notable", tier: 3, x: 9, y: 1.4, ranks: 1, links: [] },
@@ -132,7 +134,7 @@ const SLOTS = Object.keys(SHAPE) as Slot[];
 const nodeId = (branch: string, slot: Slot) => `pb-${branch}-${slot}`;
 
 /** Distance of a branch's entry node from the middle of the tree, and the node spacing. */
-const START_RADIUS = 8.2;
+const START_RADIUS = 12.6;
 const STEP = 1.1;
 
 function slotSpec(spec: BranchSpec, slot: Slot): NodeSpec | KeystoneSpec {
@@ -159,6 +161,11 @@ function slotSpec(spec: BranchSpec, slot: Slot): NodeSpec | KeystoneSpec {
       return spec[slot];
   }
 }
+
+const doubled = (bonuses: StatBonuses): StatBonuses =>
+  Object.fromEntries(
+    Object.entries(bonuses).map(([stat, v]) => [stat, Math.round((v as number) * 2 * 1e4) / 1e4]),
+  );
 
 function buildBranch(spec: BranchSpec): SkillNode[] {
   const a = (spec.angle * Math.PI) / 180;
@@ -203,11 +210,15 @@ function buildBranch(spec: BranchSpec): SkillNode[] {
       };
     }
     const plain = node as NodeSpec;
+    // Minor nodes with a single rank give what two ranks gave before (level-v2.md: 8/5/6 points).
+    const single = shape.kind === "minor" && shape.ranks === 1 && plain.bonuses;
+    const bonuses = single ? doubled(plain.bonuses ?? {}) : plain.bonuses;
     return {
       ...base,
       name: plain.name,
-      description: plain.description,
-      ...(plain.bonuses ? { bonuses: plain.bonuses } : {}),
+      description:
+        single && bonuses ? describeBonuses(bonuses, plain.weaponRange) : plain.description,
+      ...(bonuses ? { bonuses } : {}),
       ...(plain.triggers ? { triggers: plain.triggers } : {}),
       ...(plain.weaponRange ? { weaponRange: plain.weaponRange } : {}),
       ...(plain.rules ? { rules: plain.rules } : {}),
@@ -223,7 +234,7 @@ const BRANCHES: readonly BranchSpec[] = [
     branch: "might",
     anchor: "might-brutal-force",
     theme: "Melee Crits and counters on Block.",
-    angle: -160,
+    angle: -148,
     entry: {
       name: "Fencer's Stance",
       description: "While wielding a Melee Weapon: +2 % Crit Chance per rank.",
@@ -357,9 +368,9 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "marksman",
     name: "Marksman",
     branch: "might",
-    anchor: "might-killer-instinct",
+    anchor: "rupture-might-killer-instinct",
     theme: "Ranged attacks, every Nth shot.",
-    angle: -122,
+    angle: 180,
     entry: {
       name: "Steady Aim",
       description: "While wielding a Ranged Weapon: +5 % Attack Speed per rank.",
@@ -482,7 +493,7 @@ const BRANCHES: readonly BranchSpec[] = [
     branch: "rupture",
     anchor: "rupture-butcher",
     theme: "Big Bleeds from big hits.",
-    angle: 160,
+    angle: 150,
     entry: {
       name: "Cleaver",
       description: "+5 % Chance to Bleed per rank.",
@@ -609,7 +620,7 @@ const BRANCHES: readonly BranchSpec[] = [
     branch: "rupture",
     anchor: "rupture-venomancer",
     theme: "Poison stacks that bite back.",
-    angle: 122,
+    angle: 120,
     entry: {
       name: "Toxin",
       description: "+5 % Chance to Poison per rank.",
@@ -735,7 +746,7 @@ const BRANCHES: readonly BranchSpec[] = [
     branch: "arcana",
     anchor: "arcana-storm-weaver",
     theme: "Lightning, Shock and sudden bolts.",
-    angle: -58,
+    angle: -60,
     entry: {
       name: "Static",
       description: "+5 % Chance to Shock per rank.",
@@ -878,9 +889,9 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "frostbinder",
     name: "Frostbinder",
     branch: "arcana",
-    anchor: "arcana-frost",
+    anchor: "arcana-kindled-mind",
     theme: "Chill, control and Barrier.",
-    angle: -22,
+    angle: -30,
     entry: {
       name: "Rime",
       description: "+5 % Chance to Chill per rank.",
@@ -1024,7 +1035,7 @@ const BRANCHES: readonly BranchSpec[] = [
     branch: "affliction",
     anchor: "affliction-pyromancer",
     theme: "Burn and anti-heal.",
-    angle: 22,
+    angle: 30,
     entry: {
       name: "Ember",
       description: "+5 % Chance to Burn per rank.",
@@ -1157,7 +1168,7 @@ const BRANCHES: readonly BranchSpec[] = [
     branch: "affliction",
     anchor: "affliction-void-lord",
     theme: "Corruption for long fights.",
-    angle: 58,
+    angle: 60,
     entry: {
       name: "Gloom",
       description: "+4 % Chance to Corrupt per rank.",
@@ -1282,7 +1293,7 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "warden",
     name: "Warden",
     branch: "core",
-    anchor: "core-iron-will",
+    anchor: "affliction-rupture-iron-will",
     theme: "Block, Barrier and payback.",
     angle: 90,
     entry: {
@@ -1411,7 +1422,7 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "tactician",
     name: "Tactician",
     branch: "core",
-    anchor: "core-spark",
+    anchor: "might-arcana-stoked",
     theme: "Heat and Rotation tricks.",
     angle: -90,
     entry: {

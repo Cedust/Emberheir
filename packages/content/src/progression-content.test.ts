@@ -4,13 +4,11 @@ import {
   createEnemySetup,
   heroSetup,
   bossLevel,
-
   neighbours,
   newGame,
   runFight,
   stageMonsterLevel,
   stagesInAct,
-  type SkillTreeBranch,
 } from "@emberheir/sim";
 import { BRANCH_EPITHETS, CLASSES } from "./classes";
 import { ELITE_MODIFIERS } from "./elites";
@@ -23,25 +21,52 @@ describe("Skill Tree", () => {
   const nodes = SKILL_TREE.nodes;
 
   const base = nodes.filter((n) => !n.prestigeBranch);
+  const regions = new Set(base.map((n) => n.region));
 
-  it("has all five branches with unique ids and valid links", () => {
-    expect(base.length).toBe(65);
+  it("is a web of eight regions with unique ids and valid links", () => {
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
-    expect(new Set(nodes.map((n) => n.branch))).toEqual(
-      new Set(["core", "might", "arcana", "rupture", "affliction"]),
+    expect(regions).toEqual(
+      new Set([
+        "might",
+        "might-arcana",
+        "arcana",
+        "arcana-affliction",
+        "affliction",
+        "affliction-rupture",
+        "rupture",
+        "rupture-might",
+      ]),
     );
   });
 
-  it("has 3–4 Skill nodes and 1 Keystone per branch", () => {
-    for (const branch of ["might", "arcana", "rupture", "affliction"] as SkillTreeBranch[]) {
-      const inBranch = base.filter((n) => n.branch === branch);
-      const skills = inBranch.filter((n) => n.kind === "skill" && n.skill).length;
-      expect(skills).toBeGreaterThanOrEqual(3);
-      expect(skills).toBeLessThanOrEqual(4);
-      expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(1);
+  it("is much bigger than the 100 Skill Points (level-v2.md section 7)", () => {
+    const points = base
+      .filter((n) => n.kind !== "keystone" && !n.classStart)
+      .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0);
+    expect(points).toBeGreaterThanOrEqual(160);
+    expect(base.filter((n) => n.kind === "notable").length).toBeGreaterThanOrEqual(30);
+    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(14);
+    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(12);
+    // No flat Life on the web: Life comes from the level and Vitality.
+    expect(base.filter((n) => n.bonuses?.life)).toEqual([]);
+  });
+
+  it("has eight forks of two Notables each", () => {
+    const forks = new Map<string, number>();
+    for (const n of base) if (n.fork) forks.set(n.fork, (forks.get(n.fork) ?? 0) + 1);
+    expect(forks.size).toBe(8);
+    for (const count of forks.values()) expect(count).toBe(2);
+  });
+
+  it("gives every class its own start node", () => {
+    const starts = SKILL_TREE.classStarts ?? {};
+    for (const c of CLASSES) {
+      const start = base.find((n) => n.id === starts[c.id]);
+      expect(start?.classStart, c.id).toBe(c.id);
     }
+    expect(new Set(Object.values(starts)).size).toBe(CLASSES.length);
   });
 
   it("enemy hits build Heat only through the Heat from Hits Taken nodes", () => {
@@ -54,38 +79,37 @@ describe("Skill Tree", () => {
     expect(nodes.every((n) => n.weaponRange === "melee")).toBe(true);
   });
 
-  it("every node can be reached from the start node", () => {
-    const seen = new Set([SKILL_TREE.startNodeId]);
-    const queue = [SKILL_TREE.startNodeId];
-    while (queue.length) {
-      for (const n of neighbours(SKILL_TREE, queue.shift() ?? "")) {
-        if (!seen.has(n)) {
-          seen.add(n);
-          queue.push(n);
+  it("every node can be reached from every class start", () => {
+    for (const start of Object.values(SKILL_TREE.classStarts ?? {})) {
+      const seen = new Set([start]);
+      const queue = [start];
+      while (queue.length) {
+        for (const n of neighbours(SKILL_TREE, queue.shift() ?? "")) {
+          if (!seen.has(n)) {
+            seen.add(n);
+            queue.push(n);
+          }
         }
       }
+      expect(seen.size, start).toBe(nodes.length);
     }
-    expect(seen.size).toBe(nodes.length);
   });
 
-  it("has ten Prestige branches with one Skill and one Keystone each", () => {
+  it("has ten Prestige branches with one Skill and one Keystone each, 8 / 5 / 6 points", () => {
     const branches = SKILL_TREE.prestigeBranches ?? [];
     expect(branches).toHaveLength(10);
     for (const b of branches) {
       const inBranch = nodes.filter((n) => n.prestigeBranch === b.id);
-      // Tier I has ten nodes, tiers II and III add three nodes and a stronger Keystone each.
-      expect(
-        inBranch.filter((n) => (n.tier ?? 1) === 1),
-        b.id,
-      ).toHaveLength(10);
-      expect(
-        inBranch.filter((n) => n.tier === 2),
-        b.id,
-      ).toHaveLength(4);
-      expect(
-        inBranch.filter((n) => n.tier === 3),
-        b.id,
-      ).toHaveLength(4);
+      const tier = (t: number) => inBranch.filter((n) => (n.tier ?? 1) === t);
+      expect(tier(1), b.id).toHaveLength(9);
+      expect(tier(2), b.id).toHaveLength(5);
+      expect(tier(3), b.id).toHaveLength(4);
+      // Skill Points to fill each tier: its nodes plus one more rank of the branch's Skill.
+      const cost = (t: number) =>
+        tier(t)
+          .filter((n) => n.kind !== "keystone")
+          .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0) + (t > 1 ? 1 : 0);
+      expect([cost(1), cost(2), cost(3)], b.id).toEqual([8, 5, 6]);
       expect(inBranch.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(1);
       expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(3);
       // Every upgrade replaces a node of the same branch.
@@ -95,9 +119,10 @@ describe("Skill Tree", () => {
           n.id,
         ).toBe(true);
       }
-      // It hangs off a base node of its own branch.
+      // It hangs off a Notable of the web in its own branch colour.
       const anchor = base.find((n) => n.id === b.anchor);
       expect(anchor?.branch, b.id).toBe(b.branch);
+      expect(anchor?.kind, b.id).toBe("notable");
       expect(neighbours(SKILL_TREE, b.anchor).some((id) => id.startsWith(`pb-${b.id}-`))).toBe(
         true,
       );

@@ -2,7 +2,7 @@ import { mergeRules } from "../combat/rules";
 import type { CombatRules, SkillDefinition, StatBonuses, TriggerSpec } from "../combat/types";
 import { sumBonuses } from "../combat/stats";
 
-/** Skill Tree data (docs/design/skill-tree-v1.md). PoC: Core + Might + Arcana. */
+/** Skill Tree data (docs/design/skill-tree-v1.md, level-v2.md): a web with class starts. */
 
 export type SkillTreeBranch = "core" | "might" | "arcana" | "rupture" | "affliction";
 /** Regions of the web between the four branches (level-v2.md section 7). */
@@ -96,12 +96,12 @@ export const branchTier = (branches: readonly string[], id: string): number =>
 export type LearnedNodes = Readonly<Record<string, number>>;
 
 /**
- * Ranks a point can be put into. Each deepening of a Prestige branch gives its Minor nodes from
- * lower tiers one more rank.
+ * Ranks a point can be put into. Each deepening of a Prestige branch gives its Skill node one
+ * more rank (level-v2.md: tiers cost 8 / 5 / 6 Skill Points).
  */
 export function nodeMaxRanks(node: SkillNode, branches: readonly string[] = []): number {
   const base = node.maxRanks ?? 1;
-  if (node.kind !== "minor" || !node.prestigeBranch) return base;
+  if (node.kind !== "skill" || !node.prestigeBranch) return base;
   return base + Math.max(0, branchTier(branches, node.prestigeBranch) - (node.tier ?? 1));
 }
 

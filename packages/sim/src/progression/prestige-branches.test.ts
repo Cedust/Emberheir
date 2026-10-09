@@ -136,11 +136,19 @@ describe("Prestige branch tiers", () => {
     ],
     rules: { damageTaken: -0.1 },
   };
+  const skill: SkillNode = {
+    ...BRANCH_NODE,
+    id: "pb-guard-skill",
+    kind: "skill",
+    links: ["pb-guard"],
+    bonuses: {},
+    triggers: [],
+  };
   const tiered: GameData = {
     ...data,
     skillTree: {
       ...data.skillTree,
-      nodes: [...data.skillTree.nodes, t2, upgrade],
+      nodes: [...data.skillTree.nodes, t2, upgrade, skill],
     },
   };
   const camp = (branches: string[], points = 9): GameState => {
@@ -154,24 +162,30 @@ describe("Prestige branch tiers", () => {
     };
   };
 
-  it("deeper tiers open their nodes and give lower Minor nodes one more rank per tier", () => {
+  it("deeper tiers open their nodes and give the branch's Skill one more rank per tier", () => {
     const one = applyAction(camp(["guard"]), tiered, {
       type: "learnNodes",
-      nodeIds: ["pb-guard"],
+      nodeIds: ["pb-guard", "pb-guard-skill"],
     });
     expect(() =>
       applyAction(one, tiered, { type: "learnNodes", nodeIds: ["pb-guard-t2"] }),
     ).toThrow(/branchLocked/);
-    expect(() => applyAction(one, tiered, { type: "learnNodes", nodeIds: ["pb-guard"] })).toThrow(
-      /maxed/,
-    );
+    for (const id of ["pb-guard", "pb-guard-skill"]) {
+      expect(() => applyAction(one, tiered, { type: "learnNodes", nodeIds: [id] })).toThrow(
+        /maxed/,
+      );
+    }
     const two = applyAction(
       { ...one, legacy: { ...one.legacy, branches: ["guard", "guard"] } },
       tiered,
-      { type: "learnNodes", nodeIds: ["pb-guard", "pb-guard-t2"] },
+      { type: "learnNodes", nodeIds: ["pb-guard-skill", "pb-guard-t2"] },
     );
-    expect(two.hero.learned["pb-guard"]).toBe(2);
-    expect(heroSetup(two, tiered).setup.bonuses?.armor).toBe(7 * 2 + 3);
+    expect(two.hero.learned["pb-guard-skill"]).toBe(2);
+    // Minor nodes keep their single rank.
+    expect(() => applyAction(two, tiered, { type: "learnNodes", nodeIds: ["pb-guard"] })).toThrow(
+      /maxed/,
+    );
+    expect(heroSetup(two, tiered).setup.bonuses?.armor).toBe(7 + 3);
   });
 
   it("an upgrade replaces the triggers of the node it upgrades and brings its own rules", () => {
