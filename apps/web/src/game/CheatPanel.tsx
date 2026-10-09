@@ -128,7 +128,11 @@ const RARITY_OPTIONS = RARITIES.map((r) => ({ value: r, name: RARITY_NAMES[r] })
 function HeroTab(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const rank = heroWeaponRank(state);
-  const ranks = MASTERY.rankLevels.map((level, r) => ({ value: r, name: String(r), level }));
+  // Ranks this run allows (level-v2.md: the Rank is capped per run).
+  const cap = MASTERY.rankCaps[Math.min(state.legacy.prestige, MASTERY.rankCaps.length - 1)] ?? 0;
+  const ranks = MASTERY.rankLevels
+    .map((level, r) => ({ value: r, name: String(r), level }))
+    .filter((r) => r.value <= cap);
   return (
     <div className="cheat-grid">
       <section className="cheat-card">

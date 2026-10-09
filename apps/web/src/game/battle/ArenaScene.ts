@@ -1623,8 +1623,7 @@ function drawLevelGlow(gap: number): Graphics | null {
   const [x, color] = hero ? [HERO_X, 0xffd27a] : [ENEMY_X, 0xff4a3a];
   const g = new Graphics();
   for (let i = 5; i > 0; i--) {
-    g.ellipse(x, GROUND_Y + 6, 70 + i * 26, 16 + i * 7).fill({ color, alpha: 0.05 });
+    g.ellipse(x, GROUND_Y + 6, 70 + i * 26, 16 + i * 7).fill({ color, alpha: 0.08 });
   }
-  g.blendMode = "add";
   return g;
 }

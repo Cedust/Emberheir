@@ -59,8 +59,8 @@ function colourTier(node: SkillNode, ranks: number): number {
 }
 
 /**
- * Big names: the four branch regions in the empty heart of the web (the bridges between them
- * carry no name), Prestige branches past their end.
+ * Big names: the four branch regions past the rim of the web (the bridges between them carry no
+ * name), Prestige branches past their end.
  */
 function treeLabels(branches: readonly string[]): TreeLabel[] {
   const labels: TreeLabel[] = BRANCHES.filter((b) => b.id !== "core").map((b) => {
@@ -71,10 +71,10 @@ function treeLabels(branches: readonly string[]): TreeLabel[] {
     return {
       key: b.id,
       text: b.name.toUpperCase(),
-      x: (cx / d) * 1.45,
-      y: (cy / d) * 1.45,
+      x: (cx / d) * 12.3,
+      y: (cy / d) * 12.3,
       color: b.color,
-      size: 15,
+      size: 20,
     };
   });
   for (const def of SKILL_TREE.prestigeBranches ?? []) {
@@ -418,7 +418,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                       : LEARN_BLOCK_TEXT[reason]}
                   </p>
                 )}
-                {committed && pending.length === 0 && (
+                {committed && pending.length === 0 && forgetReason !== "start" && (
                   <>
                     {forget ? (
                       <span className="respec-confirm">
@@ -446,7 +446,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                         Forget · {forgetPrice} Gold
                       </button>
                     )}
-                    {forgetReason && forgetReason !== "start" && (
+                    {forgetReason && (
                       <p className="block sub small">{FORGET_BLOCK_TEXT[forgetReason]}</p>
                     )}
                   </>

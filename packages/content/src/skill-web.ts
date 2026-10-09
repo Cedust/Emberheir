@@ -184,7 +184,7 @@ const REGIONS: readonly RegionSpec[] = [
           {
             reach: [m("Iron Resolve", { tenacity: 0.05 }), m("Bulk", { armor: 15 })],
             keystone: {
-              name: "Juggernaut",
+              name: "Unyielding",
               description: "Your max Life is 30 % higher. You cannot Crit.",
               rules: { lifeMultiplier: 1.3, critChanceMultiplier: 0 },
             },
@@ -258,12 +258,12 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Arcing Blade", { elementalDamage: 0.06 }),
           m("Honed Mind", { physicalDamage: 0.04, elementalDamage: 0.04 }),
-          m("Focus", { heatGain: 0.05 }),
+          m("Concentration", { heatGain: 0.05 }),
         ],
         notable: { name: "Arcane Edge", bonuses: { physicalDamage: 0.12, elementalDamage: 0.12 } },
         keystones: [
           {
-            reach: [m("Rhythm", { attackSpeed: 0.04 })],
+            reach: [m("Cadence", { attackSpeed: 0.04 })],
             keystone: {
               name: "Spellblade",
               description:
@@ -291,7 +291,7 @@ const REGIONS: readonly RegionSpec[] = [
     spokes: [
       {
         nodes: [
-          m("Static", { shockChance: 0.05 }),
+          m("Crackle", { shockChance: 0.05 }),
           s(CHAIN_LIGHTNING),
           m("Intensity", { elementalDamage: 0.06 }),
         ],
@@ -302,7 +302,7 @@ const REGIONS: readonly RegionSpec[] = [
       },
       {
         nodes: [
-          m("Focus", { elementalDamage: 0.06 }),
+          m("Mindfire", { elementalDamage: 0.06 }),
           m("Insight", { allResistance: 0.05 }),
           m("Attunement", { elementalPenetration: 0.03 }),
         ],
@@ -324,9 +324,9 @@ const REGIONS: readonly RegionSpec[] = [
           {
             turn: 6,
             reach: [
-              m("Charge", { shockChance: 0.05 }),
-              m("Rime", { chillChance: 0.05 }),
-              m("Surge", { elementalDamage: 0.06 }),
+              m("Galvanize", { shockChance: 0.05 }),
+              m("Rimecall", { chillChance: 0.05 }),
+              m("Upwelling", { elementalDamage: 0.06 }),
             ],
             keystone: {
               name: "Elemental Overload",
@@ -363,7 +363,7 @@ const REGIONS: readonly RegionSpec[] = [
     spokes: [
       {
         nodes: [
-          m("Cinders", { burnChance: 0.05 }),
+          m("Sparks", { burnChance: 0.05 }),
           m("Fervent Mind", { elementalDamage: 0.06 }),
           m("Lingering Heat", { ailmentDuration: 0.08 }),
         ],
@@ -386,9 +386,12 @@ const REGIONS: readonly RegionSpec[] = [
         notable: { name: "Pyroclasm", bonuses: { elementalDamage: 0.15, burnChance: 0.1 } },
         keystones: [
           {
-            reach: [m("Ashfall", { burnChance: 0.05 }), m("Blaze", { elementalDamage: 0.06 })],
+            reach: [
+              m("Ashfall", { burnChance: 0.05 }),
+              m("Conflagrate", { elementalDamage: 0.06 }),
+            ],
             keystone: {
-              name: "Wildfire",
+              name: "Black Flame",
               description: "Your Burns also Corrupt. Your Default Attack deals 25 % less damage.",
               rules: {
                 ailmentEcho: [{ from: "burn", to: "corruption" }],
@@ -401,13 +404,13 @@ const REGIONS: readonly RegionSpec[] = [
       {
         nodes: [
           m("Ashen Skin", { fireResistance: 0.08, coldResistance: 0.08 }),
-          m("Warding", { allResistance: 0.05 }),
-          m("Dread", { ailmentDuration: 0.08 }),
+          m("Ward Runes", { allResistance: 0.05 }),
+          m("Foreboding", { ailmentDuration: 0.08 }),
         ],
         notable: { name: "Heart of Embers", bonuses: { allResistance: 0.1, tenacity: 0.1 } },
       },
     ],
-    innerTravel: m("Smolder", { burnChance: 0.05 }),
+    innerTravel: m("Kindled Path", { burnChance: 0.05 }),
     middleTravel: m("Black Smoke", { ailmentDuration: 0.05, burnChance: 0.03 }),
   },
   {
@@ -425,7 +428,7 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Kindle", { burnChance: 0.05 }),
           s(IMMOLATE),
-          m("Cinders", { elementalDamage: 0.06 }),
+          m("Ember Ash", { elementalDamage: 0.06 }),
         ],
         notable: { name: "Pyromancer", bonuses: { burnChance: 0.1, elementalDamage: 0.1 } },
       },
@@ -479,7 +482,7 @@ const REGIONS: readonly RegionSpec[] = [
       },
       {
         nodes: [
-          m("Gloom", { corruptionChance: 0.05 }),
+          m("Umbra", { corruptionChance: 0.05 }),
           s(CORRUPT),
           m("Dread", { ailmentDuration: 0.08 }),
         ],
@@ -493,11 +496,11 @@ const REGIONS: readonly RegionSpec[] = [
     id: "affliction-rupture",
     branch: "core",
     angle: 90,
-    hub: m("Bulwark", { armor: 12 }),
+    hub: m("Rampart", { armor: 12 }),
     spokes: [
       {
         nodes: [
-          m("Festering", { poisonChance: 0.05 }),
+          m("Septic", { poisonChance: 0.05 }),
           s(WITHER),
           m("Rot", { ailmentDuration: 0.08 }),
         ],
@@ -526,13 +529,13 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Iron Hide", { armor: 12 }),
           m("Resolve", { tenacity: 0.05 }),
-          m("Warding", { allResistance: 0.05 }),
+          m("Ashguard", { allResistance: 0.05 }),
         ],
         notable: { name: "Iron Will", bonuses: { tenacity: 0.15, armor: 15, allResistance: 0.05 } },
       },
       {
         nodes: [
-          m("Venom", { poisonChance: 0.05 }),
+          m("Toxin", { poisonChance: 0.05 }),
           s(TOXIC_BURST),
           m("Thick Blood", { tenacity: 0.05 }),
         ],
@@ -558,7 +561,7 @@ const REGIONS: readonly RegionSpec[] = [
     spokes: [
       {
         nodes: [
-          m("Venom", { poisonChance: 0.05 }),
+          m("Venom Gland", { poisonChance: 0.05 }),
           s(ENVENOM),
           m("Patience", { ailmentDuration: 0.08 }),
         ],
@@ -572,7 +575,7 @@ const REGIONS: readonly RegionSpec[] = [
         ],
         notable: [
           {
-            name: "Hemorrhage",
+            name: "Exsanguinate",
             description: "Your Bleeds deal 35 % more damage.",
             rules: { ailmentDamage: { bleed: 1.35 } },
           },
@@ -594,7 +597,7 @@ const REGIONS: readonly RegionSpec[] = [
           {
             turn: 6,
             reach: [
-              m("Gash", { bleedChance: 0.05 }),
+              m("Deep Cut", { bleedChance: 0.05 }),
               m("Red Mist", { attackSpeed: 0.04 }),
               m("Blood Rush", { physicalDamage: 0.06 }),
             ],
@@ -635,7 +638,7 @@ const REGIONS: readonly RegionSpec[] = [
     spokes: [
       {
         nodes: [
-          m("Precision", { critChance: 0.015 }),
+          m("Pinpoint", { critChance: 0.015 }),
           s(EXECUTE),
           m("Cold Blood", { physicalPenetration: 0.03 }),
         ],
@@ -659,8 +662,8 @@ const REGIONS: readonly RegionSpec[] = [
       {
         branch: "might",
         nodes: [
-          m("Keen Edge", { critChance: 0.015 }),
-          m("Steady Aim", { physicalDamage: 0.08 }, "ranged"),
+          m("Keenness", { critChance: 0.015 }),
+          m("Draw Weight", { physicalDamage: 0.08 }, "ranged"),
           m("Whetstone", { critChance: 0.015 }),
         ],
         notable: { name: "Killer Instinct", bonuses: { critChance: 0.03, triggerChance: 0.05 } },
@@ -668,7 +671,7 @@ const REGIONS: readonly RegionSpec[] = [
       {
         nodes: [
           m("Swift Shots", { attackSpeed: 0.04 }),
-          m("Lacerate", { bleedChance: 0.05 }),
+          m("Serrations", { bleedChance: 0.05 }),
           m("Sharp Eye", { critChance: 0.015 }),
         ],
         notable: [
@@ -677,7 +680,7 @@ const REGIONS: readonly RegionSpec[] = [
         ],
       },
     ],
-    innerTravel: m("Edge", { physicalDamage: 0.05 }),
+    innerTravel: m("Whetted", { physicalDamage: 0.05 }),
     middleTravel: m("Hunter's Path", { critChance: 0.01, attackSpeed: 0.03 }),
   },
 ];

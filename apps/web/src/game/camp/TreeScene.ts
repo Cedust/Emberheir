@@ -224,8 +224,10 @@ export class TreeScene {
   /** Shows every visible node. */
   fit(instant = false): void {
     if (!this.view.nodes.length) return;
-    const xs = this.view.nodes.map((n) => n.node.x * UNIT);
-    const ys = this.view.nodes.map((n) => n.node.y * UNIT);
+    // Nodes and the region names around them.
+    const points = [...this.view.nodes.map((n) => n.node), ...this.view.labels];
+    const xs = points.map((p) => p.x * UNIT);
+    const ys = points.map((p) => p.y * UNIT);
     const [minX, maxX, minY, maxY] = [
       Math.min(...xs) - 70,
       Math.max(...xs) + 70,
