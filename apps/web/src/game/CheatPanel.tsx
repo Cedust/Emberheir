@@ -138,10 +138,18 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
           value={state.hero.level}
           min={1}
           max={CHEAT_MAX_LEVEL}
-          quick={[1, 5, 20]}
+          quick={[1, 10, 20, 50, 100]}
           onSet={(level) => game.cheat({ kind: "level", level })}
         />
-        <p className="sub small">Lowering the level gives every point back.</p>
+        <p className="sub small">Life and Weapon Damage follow the level.</p>
+        <NumberRow
+          label="Skill Points"
+          value={state.hero.unspentSkillPoints}
+          max={999}
+          quick={[10, 50, 100]}
+          onSet={(amount) => game.cheat({ kind: "skillPoints", amount })}
+        />
+        <p className="sub small">Unspent points. Waymarks and the Harvest give the real ones.</p>
       </section>
       <section className="cheat-card">
         <span className="eyebrow">

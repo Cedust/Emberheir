@@ -223,6 +223,12 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
         ]
       : []),
     {
+      kind: "THE HARVEST",
+      name: `+${r.skillPoints} Skill Points`,
+      desc: "Spend them in the Skill Tree at Kaelen.",
+      tone: "accent",
+    },
+    {
       kind: "HARVESTER'S EMBER",
       name: `+${r.harvesterEmber} Ember`,
       desc: "Unlocks one Keystone in the Skill Tree.",

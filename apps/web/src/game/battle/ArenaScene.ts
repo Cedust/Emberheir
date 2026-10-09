@@ -32,6 +32,8 @@ export interface EnemyLook {
   readonly thief?: boolean;
   /** Ranged enemies shoot or cast across the arena instead of striking up close. */
   readonly ranged?: boolean;
+  /** Enemy level minus hero level (level-v2.md): who has outgrown whom shows on the ground. */
+  readonly levelGap?: number;
 }
 
 /** Original damage-type colors (ui-look-v1.md): the arena uses them in both modes. */
@@ -240,6 +242,8 @@ export class ArenaScene {
   private enemy: Figure | null = null;
   private telegraph: Graphics | null = null;
   private aura: Graphics | null = null;
+  /** Ground light of the stronger side when the levels are far apart. */
+  private levelGlow: Graphics | null = null;
   private fx: Fx | null = null;
   private weather: Weather | null = null;
   private floaters: Floater[] = [];
@@ -329,6 +333,8 @@ export class ArenaScene {
         .stroke({ color: enemy.boss ? 0xff8a1f : 0xffd84a, width: 3, alpha: 0.45 });
     }
     this.world.addChild(this.aura);
+    this.levelGlow = drawLevelGlow(enemy.levelGap ?? 0);
+    if (this.levelGlow) this.world.addChild(this.levelGlow);
     this.telegraph = new Graphics()
       .ellipse(ENEMY_X, GROUND_Y - 130, 200, 170)
       .stroke({ color: 0xff6a2b, width: 5 });
@@ -960,6 +966,9 @@ export class ArenaScene {
           layer: "front",
         });
       }
+    }
+    if (this.levelGlow && this.motion) {
+      this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
     }
     // The worn Echo walks with the hero: its aura breathes, its motes drift up around them.
     if (this.echoAura && this.motion) {
@@ -1602,4 +1611,20 @@ function drawEnemy(look: EnemyLook): Container {
   c.scale.set(scale);
   c.y = 150 * scale;
   return c;
+}
+
+/**
+ * Level gap on the ground: a warm gold light under the hero who has outlevelled a foe by 3 or
+ * more (a wall farmed down, level-v2.md), a red one under an enemy 5 or more levels above.
+ */
+function drawLevelGlow(gap: number): Graphics | null {
+  const hero = gap <= -3;
+  if (!hero && gap < 5) return null;
+  const [x, color] = hero ? [HERO_X, 0xffd27a] : [ENEMY_X, 0xff4a3a];
+  const g = new Graphics();
+  for (let i = 5; i > 0; i--) {
+    g.ellipse(x, GROUND_Y + 6, 70 + i * 26, 16 + i * 7).fill({ color, alpha: 0.05 });
+  }
+  g.blendMode = "add";
+  return g;
 }

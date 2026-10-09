@@ -102,6 +102,11 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
           </span>
         </div>
       </div>
+      {run.rewards?.waymark && (
+        <div className="waymark-moment title-font" role="status">
+          Waymark! +1 Skill Point
+        </div>
+      )}
       {run.rewards && run.rewards.levelsGained > 0 && (
         <div className="level-up title-font" role="status">
           Level up! +{run.rewards.levelsGained * PROGRESSION.attributePointsPerLevel} Attribute
@@ -776,6 +781,7 @@ export function IntermissionView(props: {
         cleared={!!rewards}
         attributePoints={state.hero.unspentAttributePoints}
         skillPoints={state.hero.unspentSkillPoints}
+        waymarks={state.progress.waymarks}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
         onMenu={props.onMenu}

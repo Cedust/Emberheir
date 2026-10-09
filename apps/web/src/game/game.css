@@ -440,6 +440,25 @@
   color: var(--on-accent);
 }
 
+/* Waymarks (level-v2.md): a small rune stone above the stage, lit once reached this run. */
+.stage .act-waymark {
+  position: absolute;
+  top: -3px;
+  width: 10px;
+  height: 10px;
+  transform: rotate(45deg);
+  border: 2px solid var(--edge);
+  background: var(--bg);
+  pointer-events: auto;
+  z-index: 1;
+}
+
+.stage .act-waymark.taken {
+  border-color: var(--heat);
+  background: var(--heat);
+  box-shadow: 0 0 6px rgb(255 138 58 / 0.8);
+}
+
 .stage .act-dot.spoils {
   border-radius: 2px;
   border-color: #c9a063;

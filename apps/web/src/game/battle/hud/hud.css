@@ -61,6 +61,19 @@
   color: #e8c07a;
 }
 
+.stage .hud-enemy-level.lv-hard {
+  color: #ff9a3c;
+}
+
+.stage .hud-enemy-level.lv-deadly {
+  color: #ff5a4a;
+  text-shadow: 0 0 6px rgb(255 90 74 / 0.7);
+}
+
+.stage .hud-enemy-level.lv-trivial {
+  color: #9a8f80;
+}
+
 .stage .hud-enemy .rank-tag {
   font-size: 11px;
   padding: 1px 7px;

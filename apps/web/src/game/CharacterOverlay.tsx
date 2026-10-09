@@ -18,6 +18,7 @@ import {
   itemSlotFor,
   speedValue,
   unequipBlockReason,
+  bossLevel,
   levelCap,
   xpToNextLevel,
 } from "@emberheir/sim";
@@ -116,6 +117,8 @@ export function CharacterOverlay(props: {
 
   const cap = levelCap(state.legacy.prestige);
   const next = xpToNextLevel(state.hero.level, cap);
+  const boss = bossLevel(state.legacy.prestige);
+  const max = PROGRESSION.maxLevel;
   const xpText = Number.isFinite(next)
     ? `${Math.floor((state.hero.xp / next) * 100)}% to Lv ${state.hero.level + 1} · Cap ${cap}`
     : `Level cap ${cap} reached`;
@@ -256,6 +259,17 @@ export function CharacterOverlay(props: {
             />
           </div>
           <span className="sub">{xpText}</span>
+          {/* Level 1-100 (level-v2.md): the run's cap is a notch, the harvest boss a tick. */}
+          <div
+            className="level-track"
+            role="img"
+            aria-label={`Level ${state.hero.level} of ${max}, cap ${cap}, harvest boss ${boss}`}
+            title={`Level ${state.hero.level} of ${max} · Cap ${cap} this run · Harvest boss Lv ${boss}`}
+          >
+            <div className="fill" style={{ width: `${(state.hero.level / max) * 100}%` }} />
+            <i className="boss-tick" style={{ left: `${(boss / max) * 100}%` }} />
+            <i className="cap-notch" style={{ left: `${(cap / max) * 100}%` }} />
+          </div>
           <div className="grow" />
           {inFight && <span className="view-only title-font">FIGHT PAUSED · VIEW ONLY</span>}
           <button

@@ -13,7 +13,8 @@ import { Fx } from "../battle/fx";
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
  * with a camera to drag and zoom. Node colours follow the item rarities: grey = Unavailable,
- * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Looks only:
+ * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Hovering a
+ * node lays its path over the web; a fork's closed side shows as a broken seal. Looks only:
  * learning goes through the React side and the sim.
  */
 
@@ -28,6 +29,8 @@ export interface TreeNodeView {
   readonly maxRanks: number;
   /** Colour tier of a learned node (1-3). */
   readonly tier: number;
+  /** The other side of its fork is learned: a broken seal (level-v2.md). */
+  readonly sealed: boolean;
 }
 
 export interface TreeLabel {
@@ -42,6 +45,8 @@ export interface TreeLabel {
 export interface TreeView {
   readonly nodes: readonly TreeNodeView[];
   readonly labels: readonly TreeLabel[];
+  /** Path preview of the hovered node: a learned node first, then the nodes it would cost. */
+  readonly path?: readonly string[];
 }
 
 export interface TreeCallbacks {
@@ -71,6 +76,7 @@ const UNAVAILABLE = 0x4f4842;
 const PENDING = 0x4fe08a;
 const CORE = 0x17120e;
 const EMBER = 0xff8a3a;
+const PATH = 0xfff1c9;
 
 const RADIUS: Record<SkillNode["kind"], number> = {
   minor: 13,
@@ -104,12 +110,15 @@ export class TreeScene {
   private readonly world = new Container();
   private readonly linkGlow = new Graphics();
   private readonly links = new Graphics();
+  private readonly pathGlow = new Graphics();
+  private readonly pathLine = new Graphics();
   private readonly nodeLayer = new Container();
   private readonly labelLayer = new Container();
   private fx: Fx | null = null;
   private sprites = new Map<string, NodeSprite>();
   private labels = new Map<string, Text>();
   private view: TreeView = { nodes: [], labels: [] };
+  private byId = new Map<string, TreeNodeView>();
   private size = { w: 800, h: 600, resolution: 1 };
   /** Camera: world offset (stage pixels) and zoom, with targets the camera glides to. */
   private cam = { x: 0, y: 0, zoom: 0.8 };
@@ -130,8 +139,16 @@ export class TreeScene {
 
   constructor(private readonly callbacks: TreeCallbacks) {
     // Branch names sit under the nodes so they never hide one.
-    this.world.addChild(this.labelLayer, this.linkGlow, this.links, this.nodeLayer);
+    this.world.addChild(
+      this.labelLayer,
+      this.linkGlow,
+      this.links,
+      this.pathGlow,
+      this.pathLine,
+      this.nodeLayer,
+    );
     this.linkGlow.blendMode = "add";
+    this.pathGlow.blendMode = "add";
   }
 
   layout(w: number, h: number, resolution: number): void {
@@ -347,7 +364,9 @@ export class TreeScene {
   private rebuild(): void {
     if (!this.app) return;
     const byId = new Map(this.view.nodes.map((n) => [n.node.id, n]));
+    this.byId = byId;
     this.drawLinks(byId);
+    this.drawPath(byId);
 
     const seen = new Set<string>();
     for (const n of this.view.nodes) {
@@ -430,6 +449,37 @@ export class TreeScene {
             .stroke({ color: pending ? PENDING : EMBER, width: 14, alpha: 0.16 });
         }
       }
+    }
+  }
+
+  /** The hovered node's path: a bright dashed trail with a soft glow, marching outwards. */
+  private drawPath(byId: Map<string, TreeNodeView>): void {
+    this.pathLine.clear();
+    this.pathGlow.clear();
+    const path = (this.view.path ?? []).map((id) => byId.get(id)).filter((n) => !!n);
+    const dash = 10;
+    const offset = this.motion ? (this.time * 28) % (dash * 2) : 0;
+    for (let i = 1; i < path.length; i++) {
+      const [a, b] = [path[i - 1], path[i]];
+      if (!a || !b) continue;
+      const [x1, y1, x2, y2] = [a.node.x * UNIT, a.node.y * UNIT, b.node.x * UNIT, b.node.y * UNIT];
+      this.pathGlow.moveTo(x1, y1).lineTo(x2, y2).stroke({ color: PATH, width: 16, alpha: 0.14 });
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const [ux, uy] = [(x2 - x1) / len, (y2 - y1) / len];
+      for (let d = offset - dash * 2; d < len; d += dash * 2) {
+        const [s, e] = [Math.max(0, d), Math.min(len, d + dash)];
+        if (e <= s) continue;
+        this.pathLine.moveTo(x1 + ux * s, y1 + uy * s).lineTo(x1 + ux * e, y1 + uy * e);
+      }
+      this.pathLine.stroke({ color: PATH, width: 3, alpha: 0.95 });
+    }
+    for (const n of path.slice(1)) {
+      const r = RADIUS[n.node.kind] + 5;
+      this.pathLine.circle(n.node.x * UNIT, n.node.y * UNIT, r).stroke({
+        color: PATH,
+        width: 2,
+        alpha: 0.9,
+      });
     }
   }
 
@@ -519,6 +569,18 @@ export class TreeScene {
       alpha: n.state === "unavailable" ? 0.75 : 1,
     });
     if (kind === "notable") g.circle(0, 0, r - 6).stroke({ color, width: 2, alpha: 0.8 });
+    if (n.sealed) {
+      // A broken seal: the fork's other side is taken. Two cracks run across the node.
+      g.poly(
+        [-r * 0.75, -r * 0.5, -r * 0.1, -r * 0.05, -r * 0.35, r * 0.2, r * 0.7, r * 0.6],
+        false,
+      ).stroke({ color: 0xb04a3a, width: 3, alpha: 0.95 });
+      g.poly([r * 0.6, -r * 0.7, r * 0.15, -r * 0.15, r * 0.4, r * 0.1], false).stroke({
+        color: 0xb04a3a,
+        width: 2,
+        alpha: 0.9,
+      });
+    }
     if (kind === "skill") {
       g.poly(diamond(r * 0.45)).fill({ color, alpha: lit ? 0.9 : 0.35 });
     }
@@ -556,7 +618,7 @@ export class TreeScene {
     s.rank.text = n.maxRanks > 1 ? `${n.ranks}/${n.maxRanks}` : "";
     if (kind === "keystone") s.rank.position.set(0, r + 15);
     s.name.text = n.node.name;
-    s.root.alpha = n.state === "unavailable" ? 0.85 : 1;
+    s.root.alpha = n.sealed ? 0.55 : n.state === "unavailable" ? 0.85 : 1;
   }
 
   private burstAt(n: TreeNodeView, color: number): void {
@@ -592,6 +654,10 @@ export class TreeScene {
     this.cam.y += (this.goal.y - this.cam.y) * k;
     this.cam.zoom += (this.goal.zoom - this.cam.zoom) * k;
     this.applyCamera();
+
+    if (this.motion && this.view.path?.length) {
+      this.drawPath(this.byId);
+    }
 
     // Available nodes breathe.
     const pulse = this.motion ? 0.82 + 0.18 * Math.sin(this.time * 3.2) : 1;

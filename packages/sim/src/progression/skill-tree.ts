@@ -227,6 +227,51 @@ export function forgetBlockReason(
   return seen.size === rest.size ? undefined : "holdsOthers";
 }
 
+/**
+ * Cheapest way to `target` (level-v2.md: the path preview): the nodes to learn in order, the
+ * target last. Empty if the target is learned already, undefined if no path is open (a fork's
+ * other side, a locked Prestige branch). Keystones are never travelled through.
+ */
+export function learnPath(
+  tree: SkillTreeDefinition,
+  learned: LearnedNodes,
+  target: string,
+  branches: readonly string[] = [],
+): string[] | undefined {
+  if (nodeRanks(tree, learned, target) > 0) return [];
+  const graph = new Map<string, string[]>(tree.nodes.map((n) => [n.id, []]));
+  for (const node of tree.nodes) {
+    for (const l of node.links) {
+      graph.get(node.id)?.push(l);
+      graph.get(l)?.push(node.id);
+    }
+  }
+  const open = (node: SkillNode) =>
+    !forkPartner(tree, learned, node) &&
+    !(node.prestigeBranch && branchTier(branches, node.prestigeBranch) < (node.tier ?? 1)) &&
+    (node.kind !== "keystone" || node.id === target);
+  const from = new Map<string, string | null>();
+  const queue = tree.nodes.filter((n) => nodeRanks(tree, learned, n.id) > 0).map((n) => n.id);
+  for (const id of queue) from.set(id, null);
+  for (let i = 0; i < queue.length; i++) {
+    const id = queue[i] ?? "";
+    if (id !== target && from.get(id) !== null && getNode(tree, id).kind === "keystone") continue;
+    for (const next of graph.get(id) ?? []) {
+      if (from.has(next) || !open(getNode(tree, next))) continue;
+      from.set(next, id);
+      if (next === target) {
+        const path: string[] = [];
+        for (let at: string | null = next; at && from.get(at) !== null; at = from.get(at) ?? null) {
+          path.unshift(at);
+        }
+        return path;
+      }
+      queue.push(next);
+    }
+  }
+  return undefined;
+}
+
 /** What learning one more rank costs. */
 export function learnCost(node: SkillNode): LearnBudget {
   return node.kind === "keystone"

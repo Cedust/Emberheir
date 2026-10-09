@@ -3,6 +3,7 @@ import {
   type CraftBlockReason,
   type EquipBlockReason,
   type MoveBlockReason,
+  type ForgetBlockReason,
   type LearnBlockReason,
   type SpoilsCard,
   type UnequipBlockReason,
@@ -30,6 +31,12 @@ export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
   noEmber: "Needs Harvester's Ember",
   branchLocked: "Unlock this branch at a Prestige",
   forkTaken: "The other path of this fork is learned",
+};
+
+export const FORGET_BLOCK_TEXT: Record<ForgetBlockReason, string> = {
+  notLearned: "Not learned",
+  start: "Your class starts here",
+  holdsOthers: "Other learned nodes hang on this one",
 };
 
 export const MOVE_BLOCK_TEXT: Record<MoveBlockReason, string> = {

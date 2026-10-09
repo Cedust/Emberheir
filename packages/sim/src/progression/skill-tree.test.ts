@@ -5,6 +5,7 @@ import {
   keystoneRules,
   startingNodes,
   learnBlockReason,
+  learnPath,
   learnNodes,
   neighbours,
   nodeRanks,
@@ -98,9 +99,17 @@ describe("Skill Tree", () => {
     expect(learnBlockReason(tree, learned, "x", budget(1))).toBeUndefined();
     const after = learnNodes(tree, learned, ["x"], budget(1)).learned;
     expect(learnBlockReason(tree, after, "y", budget(1))).toBe("forkTaken");
+    expect(learnPath(tree, after, "y")).toBeUndefined();
     expect(forgetBlockReason(tree, after, "x", "s")).toBeUndefined();
     expect(forgetBlockReason(tree, after, "s", "s")).toBe("start");
     // A class's start node only counts as learned for that class.
     expect(nodeRanks(tree, {}, "s")).toBe(0);
+  });
+
+  it("finds the cheapest path to a node, Keystones only as the goal", () => {
+    expect(learnPath(TEST_TREE, {}, "k")).toEqual(["a", "b", "k"]);
+    expect(learnPath(TEST_TREE, {}, "r")).toEqual(["r"]);
+    expect(learnPath(TEST_TREE, { a: 1 }, "b")).toEqual(["b"]);
+    expect(learnPath(TEST_TREE, {}, "start")).toEqual([]);
   });
 });
