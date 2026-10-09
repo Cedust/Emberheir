@@ -12,7 +12,7 @@ import {
 } from "@emberheir/content";
 import { PROGRESSION, Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
-import { playGenerations, summarizeActRuns } from "./act";
+import { BUILDS, playGenerations, summarizeActRuns } from "./act";
 import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
@@ -44,12 +44,24 @@ function runActMode(): void {
   const classes =
     args.class === "all" ? GAME_DATA.classes : GAME_DATA.classes.filter((c) => c.id === args.class);
   if (!classes.length) throw new Error(`Unknown class "${args.class}"`);
-  const weapons = args.weapon === "all" ? classes.flatMap((c) => c.weapons) : [args.weapon];
-  for (const starterWeapon of weapons) {
+  const classIds = new Set(classes.map((c) => c.id));
+  // One autopilot build per start weapon, or the chosen builds (`--build storm`, `--build all`).
+  const plays: { weapon: string; build?: string }[] = args.build
+    ? BUILDS.filter(
+        (b) =>
+          (args.build === "all" ? classIds.has(b.classId) : b.id === args.build) &&
+          (args.weapon === "all" || b.weapon === args.weapon),
+      ).map((b) => ({ weapon: b.weapon, build: b.id }))
+    : (args.weapon === "all" ? classes.flatMap((c) => c.weapons) : [args.weapon]).map((weapon) => ({
+        weapon,
+      }));
+  if (!plays.length) throw new Error(`Unknown build "${args.build}"`);
+  for (const { weapon: starterWeapon, build } of plays) {
     const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(GAME_DATA, {
         seed: args.seed + i,
         starterWeapon,
+        ...(build ? { build } : {}),
         upToAct: last.number,
         maxAttempts: args.attempts,
         generations,
@@ -64,7 +76,7 @@ function runActMode(): void {
         if (!reports.length) continue;
         const s = summarizeActRuns(reports);
         rows.push({
-          weapon: starterWeapon,
+          weapon: build ? `${starterWeapon} (${build})` : starterWeapon,
           gen: g,
           act: act.number,
           runs: reports.length,
