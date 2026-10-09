@@ -4,6 +4,7 @@ export * from "./inventory";
 export * from "./skill-tree";
 export * from "./elites";
 export * from "./hero";
+export * from "./attributes";
 export * from "./battle-plan";
 export * from "./boons";
 export * from "./classes";

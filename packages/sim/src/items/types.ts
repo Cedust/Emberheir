@@ -111,6 +111,8 @@ export interface StatAffixDefinition extends AffixCommon {
    */
   readonly prefix?: string;
   readonly suffix?: string;
+  /** Fixed value on Epic and Legendary items (attributes: +2 instead of +1, attribute-v1.md). */
+  readonly epicValue?: number;
 }
 
 /**

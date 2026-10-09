@@ -1,8 +1,8 @@
 import type { HeroClass } from "@emberheir/sim";
 
 /**
- * The five classes (docs/design/klassen-v2.md). A class picks the start kit, start attributes
- * (sum 36 like the old neutral 6 × 6), a small Class Trait, the look and its four Prestige
+ * The five classes (docs/design/klassen-v2.md). A class picks the start kit, its Class Array of
+ * attributes (attribute-v1.md: 1 each plus 8, sum 14; 6 free points follow), a small Class Trait, the look and its four Prestige
  * branches: two of its own plus the Core branches Warden and Tactician (the Reaver trades Warden
  * for Duelist). Items and weapons stay open to every class.
  */
@@ -13,12 +13,12 @@ export const CLASSES: readonly HeroClass[] = [
     weapons: ["sword", "mace"],
     offHand: "round-shield",
     startingAttributes: {
-      strength: 9,
-      dexterity: 5,
-      agility: 6,
-      intelligence: 4,
-      wisdom: 4,
-      vitality: 8,
+      strength: 4,
+      dexterity: 2,
+      agility: 2,
+      intelligence: 1,
+      wisdom: 1,
+      vitality: 4,
     },
     trait: { name: "Iron Blood", description: "+10 % Life.", rules: { lifeMultiplier: 1.1 } },
     branches: ["duelist", "butcher", "warden", "tactician"],
@@ -36,12 +36,12 @@ export const CLASSES: readonly HeroClass[] = [
     weapons: ["axe", "dagger"],
     offHand: "blood-talisman",
     startingAttributes: {
-      strength: 8,
-      dexterity: 7,
-      agility: 7,
-      intelligence: 4,
-      wisdom: 4,
-      vitality: 6,
+      strength: 3,
+      dexterity: 3,
+      agility: 3,
+      intelligence: 1,
+      wisdom: 1,
+      vitality: 3,
     },
     trait: {
       name: "Bloodletter",
@@ -63,12 +63,12 @@ export const CLASSES: readonly HeroClass[] = [
     weapons: ["bow", "crossbow"],
     offHand: "quiver",
     startingAttributes: {
-      strength: 6,
-      dexterity: 9,
-      agility: 8,
-      intelligence: 4,
-      wisdom: 4,
-      vitality: 5,
+      strength: 2,
+      dexterity: 4,
+      agility: 4,
+      intelligence: 1,
+      wisdom: 1,
+      vitality: 2,
     },
     trait: { name: "Keen Eye", description: "+5 % Crit Chance.", bonuses: { critChance: 0.05 } },
     branches: ["marksman", "venomancer", "warden", "tactician"],
@@ -81,12 +81,12 @@ export const CLASSES: readonly HeroClass[] = [
     weapons: ["fire-wand"],
     offHand: "ember-focus",
     startingAttributes: {
-      strength: 4,
-      dexterity: 5,
-      agility: 6,
-      intelligence: 9,
-      wisdom: 7,
-      vitality: 5,
+      strength: 1,
+      dexterity: 2,
+      agility: 2,
+      intelligence: 4,
+      wisdom: 3,
+      vitality: 2,
     },
     trait: { name: "Spark", description: "+10 Starting Heat.", bonuses: { startingHeat: 10 } },
     branches: ["stormcaller", "frostbinder", "warden", "tactician"],
@@ -104,12 +104,12 @@ export const CLASSES: readonly HeroClass[] = [
     weapons: ["staff"],
     offHand: "grimoire",
     startingAttributes: {
-      strength: 4,
-      dexterity: 5,
-      agility: 5,
-      intelligence: 8,
-      wisdom: 9,
-      vitality: 5,
+      strength: 1,
+      dexterity: 2,
+      agility: 1,
+      intelligence: 3,
+      wisdom: 4,
+      vitality: 3,
     },
     trait: {
       name: "Lingering",

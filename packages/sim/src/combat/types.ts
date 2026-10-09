@@ -1,3 +1,5 @@
+import type { PerkId } from "./perks";
+
 /**
  * Data shapes for the combat core. Content (weapons, skills, enemies) is written against these
  * types in `@emberheir/content`; the simulation only ever reads them.
@@ -527,4 +529,11 @@ export interface CombatantSetup {
   readonly openingMove?: { readonly skill: SkillDefinition; readonly level?: number };
   /** Weapon Mastery mechanics of the hero's weapon. */
   readonly weaponRules?: WeaponRules;
+  /**
+   * How attributes turn into stats. "heir" is the hero's 1–10 scale with big steps per point
+   * (attribute-v1.md); monsters keep the old small steps ("classic", the default).
+   */
+  readonly attributeScale?: "classic" | "heir";
+  /** Attribute Breakpoint Perks (attribute-v1.md section 4). */
+  readonly perks?: readonly PerkId[];
 }

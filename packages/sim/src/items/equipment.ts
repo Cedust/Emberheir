@@ -73,7 +73,7 @@ export function itemWeapon(item: Item, catalog: ItemCatalog): WeaponDefinition |
   for (const roll of item.affixes) {
     const affix = catalog.affixes.get(roll.affixId);
     if (affix?.kind === "stat" && affix.stat === "addedWeaponDamage") {
-      added += statAffixValue(affix, item.tier, roll.quality);
+      added += statAffixValue(affix, item.tier, roll.quality, item.rarity);
     }
   }
   const { min, max } = addedDamageRange(added);
@@ -129,7 +129,7 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
       continue;
     }
     if (affix.stat === "addedWeaponDamage") continue;
-    const value = statAffixValue(affix, item.tier, roll.quality);
+    const value = statAffixValue(affix, item.tier, roll.quality, item.rarity);
     if (isAttribute(affix.stat)) attributes[affix.stat] = (attributes[affix.stat] ?? 0) + value;
     else bonuses[affix.stat] = (bonuses[affix.stat] ?? 0) + value;
   }

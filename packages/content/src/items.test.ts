@@ -12,6 +12,7 @@ import {
   powersForSlot,
   resolveEquipment,
   runFight,
+  statAffixValue,
   type Rarity,
 } from "@emberheir/sim";
 import { ACTS } from "./acts";
@@ -29,6 +30,17 @@ import {
 import { HERO_WEAPONS } from "./weapons";
 
 describe("item content", () => {
+  it("attribute affixes: jewelry only, +1 (Epic and Legendary +2), no growth per tier", () => {
+    const attributes = STAT_AFFIXES.filter((a) => a.tags.includes("attribute"));
+    expect(attributes).toHaveLength(6);
+    for (const a of attributes) {
+      expect([...a.slots].sort(), a.id).toEqual(["amulet", "ring"]);
+      expect(statAffixValue(a, 7, 1, "rare"), a.id).toBe(1);
+      expect(statAffixValue(a, 1, 0, "epic"), a.id).toBe(2);
+      expect(statAffixValue(a, 1, 0, "legendary"), a.id).toBe(2);
+    }
+  });
+
   it("has at least 30 stat and 8 trigger affixes", () => {
     expect(STAT_AFFIXES.length).toBeGreaterThanOrEqual(30);
     expect(TRIGGER_AFFIXES.length).toBeGreaterThanOrEqual(8);
@@ -142,6 +154,7 @@ describe("item content", () => {
           dexterity: 30,
           agility: 30,
           intelligence: 30,
+          wisdom: 30,
         };
         const resolved = resolveEquipment(gear, ITEM_CATALOG, strongHero, weapon);
         expect(resolved.inactive).toEqual([]);

@@ -16,7 +16,7 @@ export const ITEMS = {
   /** Weapon damage and flat base values (Armor, Block Value): × (1 + this × (tier − 1)). */
   baseScalePerTier: 1,
   /** Attribute Requirements grow by this many points per tier above 1. */
-  requirementPerTier: 8,
+  requirementPerTier: 0,
   /** Magic items roll each affix this often and keep the best quality ("higher values"). */
   magicQualityRolls: 2,
 

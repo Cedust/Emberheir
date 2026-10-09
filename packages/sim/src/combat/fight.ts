@@ -18,6 +18,7 @@ import {
   stepAilments,
 } from "./ailments";
 import { COMBAT } from "./constants";
+import { PERK, type PerkId } from "./perks";
 import { resolveHit } from "./damage";
 import {
   addHeat,
@@ -152,7 +153,9 @@ export type CombatEvent =
       readonly fled?: Side;
     }
   /** A fighter with `fleeAfter` ran away; the fight ends without a winner. */
-  | { readonly t: number; readonly type: "flee"; readonly side: Side };
+  | { readonly t: number; readonly type: "flee"; readonly side: Side }
+  /** An Attribute Breakpoint Perk did something (attribute-v1.md section 4). */
+  | { readonly t: number; readonly type: "perk"; readonly side: Side; readonly perk: PerkId };
 
 export interface ReactionSlotSnapshot {
   readonly skillId: string;
@@ -302,6 +305,12 @@ interface Fighter {
   lastSkillAt: number;
   /** Hunter's Mark: the target is marked. */
   marked: boolean;
+  // Attribute Breakpoint Perks.
+  readonly perks: ReadonlySet<PerkId>;
+  /** Titan: fight time from which the next stun is ready. */
+  titanReadyAt: number;
+  /** Once-per-fight Perks already used. */
+  perksUsed: Set<PerkId>;
 }
 
 /** How one hit ended: evaded (or absorbed before it landed), a Glancing Blow or a clean hit. */
@@ -419,8 +428,19 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     lastHitTakenAt: 0,
     lastSkillAt: 0,
     marked: false,
+    perks: new Set(setup.perks ?? []),
+    titanReadyAt: 0,
+    perksUsed: new Set(),
   };
 }
+
+/** Elemental hits and the ailment that belongs to their element (Overload). */
+const ELEMENT_AILMENT: Partial<Record<DamageType, AilmentType>> = {
+  fire: "burn",
+  cold: "chill",
+  lightning: "shock",
+  void: "corruption",
+};
 
 /** Gear ailment chances (Chance to Burn etc.) are added to the hit's own chances. */
 function withStatAilmentChances(
@@ -580,6 +600,17 @@ export class Fight {
     this.log.push(event);
   }
 
+  private perk(f: Fighter, perk: PerkId): void {
+    this.emit({ t: this.time, type: "perk", side: f.side, perk });
+  }
+
+  /** A once-per-fight Perk the fighter has and has not used yet; marks it used. */
+  private usePerk(f: Fighter, perk: PerkId): boolean {
+    if (!f.perks.has(perk) || f.perksUsed.has(perk)) return false;
+    f.perksUsed.add(perk);
+    return true;
+  }
+
   /** "+X % damage taken" from Shock and rules (Keystones). */
   private damageTaken(f: Fighter): number {
     return damageTakenBonus(f.ailments) + (f.setup.rules?.damageTaken ?? 0);
@@ -610,7 +641,8 @@ export class Fight {
     for (const tick of ticks) {
       const byAilment =
         this.fighters[other(f.side)].setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
-      const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f) * byAilment));
+      const hide = f.perks.has("ironHide") ? 1 - PERK.ironHideDotTaken : 1;
+      const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f) * byAilment * hide));
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);
       if (this.result) return;
@@ -905,6 +937,9 @@ export class Fight {
       ? []
       : [...(weapon.ailmentChances ?? [])];
     if (prism) ailmentChances.push({ ailment: prism.ailment, chance: 0.25 });
+    const nthAttack = (n: number) => !fromTrigger && (f.attackCount + 1) % n === 0;
+    const trueShot = f.perks.has("trueShot") && nthAttack(PERK.trueShotEvery);
+    if (trueShot) this.perk(f, "trueShot");
     const result = this.hit(f, {
       source: weapon.defaultAttack,
       baseDamage: weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min),
@@ -917,7 +952,7 @@ export class Fight {
       rollFraction: fraction,
       ...(fromTrigger ? { extraAttack: true } : {}),
       ...(fromTrigger && wr?.extraAttacksPrecise ? { precise: true } : {}),
-      ...(!fromTrigger && nth && (f.attackCount + 1) % nth === 0 ? { forceCrit: true } : {}),
+      ...((nth && nthAttack(nth)) || trueShot ? { forceCrit: true } : {}),
     });
     const landed = result !== "miss";
     if (this.result) return;
@@ -929,8 +964,13 @@ export class Fight {
       );
     }
     if (!fromTrigger) {
+      const twice = f.perks.has("doubleTime") && nthAttack(PERK.doubleTimeEvery);
       f.attackCount++;
       this.fireTriggers(f, "everyNthAttack");
+      if (twice && !this.result) {
+        this.perk(f, "doubleTime");
+        this.defaultAttack(f, true);
+      }
     }
   }
 
@@ -956,6 +996,13 @@ export class Fight {
     });
     f.heatSpent += heatCost;
     f.lastSkillAt = this.time;
+    if (heatCost > 0 && f.perks.has("afterglow")) {
+      f.heat = addHeat(f.heat, heatCost * PERK.afterglowRefund, 1);
+    }
+    if (skill.type === "spell" && this.usePerk(f, "archmage")) {
+      this.perk(f, "archmage");
+      power *= PERK.archmageDamage;
+    }
     this.fireTriggers(f, "onSkillUse");
     if (this.result) return;
     const target = this.fighters[other(f.side)];
@@ -1192,7 +1239,15 @@ export class Fight {
     if (rolls && !h.precise) {
       const aim = wr?.steadyAim;
       const steady = aim && this.time - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
-      precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady));
+      const hand = attacker.perks.has("steadyHand") ? PERK.steadyHandPrecision : 0;
+      precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand));
+    }
+
+    // Light Feet: the first attack of the fight misses.
+    if (h.evadable && !h.fromTrigger && this.usePerk(defender, "lightFeet")) {
+      this.perk(defender, "lightFeet");
+      this.evaded(defender, h);
+      return "miss";
     }
 
     const outcome = resolveHit(
@@ -1226,9 +1281,7 @@ export class Fight {
     );
 
     if (outcome.kind === "evaded") {
-      this.emit({ t: this.time, type: "evade", side: defender.side, source: h.source });
-      if (defender.setup.weaponRules?.critAfter?.includes("evade")) defender.nextCrit = true;
-      if (!h.fromTrigger) this.fireTriggers(defender, "onEvade");
+      this.evaded(defender, h);
       return "miss";
     }
 
@@ -1270,7 +1323,10 @@ export class Fight {
       this.glance(attacker);
     } else {
       if (rolls) this.cleanHit(attacker, defender, h);
-      for (const { ailment, chance } of withStatAilmentChances(h.ailmentChances, attacker.stats)) {
+      for (const { ailment, chance } of withStatAilmentChances(
+        this.overload(attacker, h),
+        attacker.stats,
+      )) {
         if (!this.rng.chance(chance)) continue;
         this.inflict(attacker, defender, ailment, damage * (h.ailmentPower ?? 1));
       }
@@ -1278,14 +1334,29 @@ export class Fight {
         this.inflict(attacker, defender, "bleed", damage);
       }
       if (outcome.crit && wr) this.critMastery(attacker, defender, damage);
+      if (outcome.crit && attacker.perks.has("heavyHand")) {
+        this.perk(attacker, "heavyHand");
+        this.addSunder(attacker, defender, 1);
+      }
+    }
+    if (
+      attacker.perks.has("titan") &&
+      this.time + 1e-9 >= attacker.titanReadyAt &&
+      damage >= defender.stats.maxLife * PERK.titanThreshold
+    ) {
+      attacker.titanReadyAt = this.time + PERK.titanCooldown;
+      this.perk(attacker, "titan");
+      this.stun(defender, PERK.titanStun);
     }
 
     const result: HitResult = glancing ? "glancing" : "clean";
     if (h.fromTrigger) return result;
 
     const context = { damage };
-    // A Glancing Blow fires no on-hit triggers of the attacker.
-    if (!glancing) this.fireTriggers(attacker, "onHit", context);
+    // A Glancing Blow fires no on-hit triggers of the attacker (unless Opportunist).
+    if (!glancing || attacker.perks.has("opportunist")) {
+      this.fireTriggers(attacker, "onHit", context);
+    }
     if (outcome.crit) this.fireTriggers(attacker, "onCrit", context);
     this.fireTriggers(defender, "whenHit", context);
     defender.hitsTaken++;
@@ -1308,6 +1379,29 @@ export class Fight {
       this.damage(attacker, thorns);
     }
     return result;
+  }
+
+  /** An attack missed the defender: Read the Blow, Sidestep and On Evade triggers. */
+  private evaded(defender: Fighter, h: HitOptions): void {
+    this.emit({ t: this.time, type: "evade", side: defender.side, source: h.source });
+    if (defender.setup.weaponRules?.critAfter?.includes("evade")) defender.nextCrit = true;
+    if (defender.perks.has("sidestep")) {
+      defender.heat = addHeat(defender.heat, PERK.sidestepHeat, this.heatMultiplier(defender));
+      this.perk(defender, "sidestep");
+    }
+    if (!h.fromTrigger) this.fireTriggers(defender, "onEvade");
+  }
+
+  /** Overload: elemental hits get a better chance of their element's ailment. */
+  private overload(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
+    const ailment = ELEMENT_AILMENT[h.type];
+    if (!ailment || !attacker.perks.has("overload")) return h.ailmentChances;
+    const own = h.ailmentChances.find((c) => c.ailment === ailment);
+    return own
+      ? h.ailmentChances.map((c) =>
+          c === own ? { ailment, chance: Math.min(1, c.chance + PERK.overloadChance) } : c,
+        )
+      : [...h.ailmentChances, { ailment, chance: PERK.overloadChance }];
   }
 
   /** Weapon Mastery multipliers on own hit damage. */
@@ -1425,10 +1519,12 @@ export class Fight {
   /** Duration of an ailment the attacker inflicts. */
   private ownAilmentDuration(attacker: Fighter, defender: Fighter, ailment: AilmentType): number {
     const by = attacker.setup.weaponRules?.ailmentDurationBy?.[ailment] ?? 0;
-    return (
+    const duration =
       ailmentDuration(ailment, attacker.stats.ailmentDuration, defender.stats.tenacity) *
-      Math.max(0, 1 + by)
-    );
+      Math.max(0, 1 + by);
+    return duration > 0 && attacker.perks.has("clarity")
+      ? duration + PERK.claritySeconds
+      : duration;
   }
 
   private inflict(
@@ -1451,7 +1547,9 @@ export class Fight {
       ailment,
       duration,
       hitDamage,
-      COMBAT.poisonMaxStacks + (wr?.poisonMaxStacks ?? 0),
+      COMBAT.poisonMaxStacks +
+        (wr?.poisonMaxStacks ?? 0) +
+        (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0),
     );
     if (duration <= 0) return;
     const burst = wr?.poisonBurst;
@@ -1656,10 +1754,18 @@ export class Fight {
     f.barrier -= absorbed;
     if (absorbed > 0 && f.barrier <= 0) this.react(f, "barrierBreaks");
     f.life = Math.max(0, f.life - (amount - absorbed));
+    if (f.life === 0 && this.usePerk(f, "undying")) {
+      f.life = 1;
+      this.perk(f, "undying");
+    }
     if (f.life === 0) {
       this.emit({ t: this.time, type: "death", side: f.side });
       this.end(other(f.side));
       return;
+    }
+    if (f.life / f.stats.maxLife < PERK.rallyBelow && this.usePerk(f, "rally")) {
+      this.perk(f, "rally");
+      this.heal(f, f.stats.maxLife * PERK.rallyHeal);
     }
     for (const state of f.triggers) {
       const c = state.spec.condition;

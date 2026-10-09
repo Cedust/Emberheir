@@ -87,7 +87,7 @@ function ShrineCard(props: { pick: BoonPick; active: readonly ActiveBoon[]; onPi
         <Icon name={SLOT_ICON[def.slot]} size={34} color="#fff6e4" />
       </span>
       <strong className="title-font">{def.name}</strong>
-      <span className="boon-text">{boonText(def, boonScale(rank, grade))}</span>
+      <span className="boon-text">{boonText(def, boonScale(rank, grade), rank)}</span>
       <span className="boon-foot sub">
         <span>{SLOT_NAME[def.slot]}</span>
         <Pips rank={rank} old={owned?.rank ?? 0} />
@@ -140,7 +140,7 @@ export function BoonBar(props: {
         <span
           key={b.def.id}
           className="boon-chip"
-          title={`${b.def.name} ${ROMAN[b.rank]} · ${boonText(b.def, b.scale)}`}
+          title={`${b.def.name} ${ROMAN[b.rank]} · ${boonText(b.def, b.scale, b.rank)}`}
           style={{ "--boon": familyOf(b.def.family)?.color ?? "#c9a063" } as React.CSSProperties}
         >
           <span

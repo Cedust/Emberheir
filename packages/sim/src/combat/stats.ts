@@ -1,4 +1,5 @@
 import { COMBAT } from "./constants";
+import { PERK } from "./perks";
 import type { Attributes, CombatantSetup, StatBonuses } from "./types";
 
 /** Final combat stats of a fighter, derived from attributes, weapon and bonuses. */
@@ -88,55 +89,106 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
 
 const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value));
 
+/** What one point of an attribute gives, on the fighter's scale. */
+interface AttributeSteps {
+  readonly physicalDamage: number;
+  readonly armor: number;
+  readonly critChance: number;
+  readonly triggerChance: number;
+  readonly elementalDamage: number;
+  readonly allResistance: number;
+  readonly attackSpeed: number;
+  readonly evasion: number;
+  readonly heatGain: number;
+  readonly ailmentDuration: number;
+  readonly tenacity: number;
+}
+
+const CLASSIC_STEPS: AttributeSteps = {
+  physicalDamage: COMBAT.physicalDamagePerStrength,
+  armor: COMBAT.armorPerStrength,
+  critChance: COMBAT.critChancePerDexterity,
+  triggerChance: COMBAT.triggerChancePerDexterity,
+  elementalDamage: COMBAT.elementalDamagePerIntelligence,
+  allResistance: COMBAT.allResistancePerIntelligence,
+  attackSpeed: COMBAT.attackSpeedPerAgility,
+  evasion: COMBAT.evasionPerAgility,
+  heatGain: COMBAT.heatGainPerWisdom,
+  ailmentDuration: COMBAT.ailmentDurationPerWisdom,
+  tenacity: COMBAT.tenacityPerVitality,
+};
+
+const HEIR_STEPS: AttributeSteps = {
+  physicalDamage: COMBAT.heir.physicalDamagePerStrength,
+  armor: COMBAT.heir.armorPerStrength,
+  critChance: COMBAT.heir.critChancePerDexterity,
+  triggerChance: COMBAT.heir.triggerChancePerDexterity,
+  elementalDamage: COMBAT.heir.elementalDamagePerIntelligence,
+  allResistance: COMBAT.heir.allResistancePerIntelligence,
+  attackSpeed: COMBAT.heir.attackSpeedPerAgility,
+  evasion: COMBAT.heir.evasionPerAgility,
+  heatGain: COMBAT.heir.heatGainPerWisdom,
+  ailmentDuration: COMBAT.heir.ailmentDurationPerWisdom,
+  tenacity: COMBAT.heir.tenacityPerVitality,
+};
+
 /**
  * Turns attributes plus bonuses into combat stats. Each attribute has exactly two effects
- * (docs/design/game-design-document-v1.md section 3).
+ * (docs/design/game-design-document-v1.md section 3). The hero ("heir" scale, attribute-v1.md)
+ * gets big steps per point, Life and Armor as percentages; monsters keep the classic scale.
  */
 export function deriveStats(setup: CombatantSetup): DerivedStats {
   const a: Attributes = setup.attributes;
   const b = sumBonuses(setup.weapon.implicit, setup.bonuses);
+  const heir = setup.attributeScale === "heir";
+  const step = heir ? HEIR_STEPS : CLASSIC_STEPS;
+  const perks = new Set(setup.perks ?? []);
   const baseLife = setup.baseLife ?? heroBaseLife(setup.level);
-  const allResistance = a.intelligence * COMBAT.allResistancePerIntelligence + b.allResistance;
+  const allResistance = a.intelligence * step.allResistance + b.allResistance;
   const resist = (own: number) => clamp(allResistance + own, 0, COMBAT.maxResistance);
+  const life = heir
+    ? (baseLife + b.life) * (1 + a.vitality * COMBAT.heir.lifePerVitality)
+    : baseLife + a.vitality * COMBAT.lifePerVitality + b.life;
+  const armor = heir ? b.armor * (1 + a.strength * step.armor) : a.strength * step.armor + b.armor;
 
   return {
-    maxLife: Math.round(
-      (baseLife + a.vitality * COMBAT.lifePerVitality + b.life) *
-        (setup.rules?.lifeMultiplier ?? 1),
-    ),
-    armor: a.strength * COMBAT.armorPerStrength + b.armor,
-    physicalDamage: a.strength * COMBAT.physicalDamagePerStrength + b.physicalDamage,
-    elementalDamage: a.intelligence * COMBAT.elementalDamagePerIntelligence + b.elementalDamage,
+    maxLife: Math.round(life * (setup.rules?.lifeMultiplier ?? 1)),
+    armor,
+    physicalDamage: a.strength * step.physicalDamage + b.physicalDamage,
+    elementalDamage: a.intelligence * step.elementalDamage + b.elementalDamage,
     critChance: clamp(
-      (COMBAT.baseCritChance + a.dexterity * COMBAT.critChancePerDexterity + b.critChance) *
+      (COMBAT.baseCritChance + a.dexterity * step.critChance + b.critChance) *
         (setup.rules?.critChanceMultiplier ?? 1),
       0,
       1,
     ),
-    triggerChance: a.dexterity * COMBAT.triggerChancePerDexterity + b.triggerChance,
-    attackSpeed:
-      setup.weapon.attacksPerSecond *
-      (1 + a.agility * COMBAT.attackSpeedPerAgility + b.attackSpeed),
-    evasion: clamp(a.agility * COMBAT.evasionPerAgility + b.evasion, 0, COMBAT.maxEvasion),
+    triggerChance: a.dexterity * step.triggerChance + b.triggerChance,
+    attackSpeed: setup.weapon.attacksPerSecond * (1 + a.agility * step.attackSpeed + b.attackSpeed),
+    evasion: clamp(a.agility * step.evasion + b.evasion, 0, COMBAT.maxEvasion),
     blockChance: clamp(
       b.blockChance * (setup.weaponRules?.blockMultiplier ?? 1),
       0,
       COMBAT.maxBlockChance,
     ),
-    blockValue: b.blockValue,
+    blockValue: b.blockValue * (perks.has("bulwark") ? 1 + PERK.bulwarkBlockValue : 1),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance),
     coldResistance: resist(b.coldResistance),
     lightningResistance: resist(b.lightningResistance),
     voidResistance: resist(b.voidResistance),
-    heatGain: a.wisdom * COMBAT.heatGainPerWisdom + b.heatGain,
-    startingHeat: clamp(b.startingHeat, 0, COMBAT.maxHeat),
+    heatGain: a.wisdom * step.heatGain + b.heatGain,
+    startingHeat: clamp(
+      b.startingHeat + (perks.has("focus") ? PERK.focusHeat : 0),
+      0,
+      COMBAT.maxHeat,
+    ),
     heatFromHitsTaken: Math.max(0, (setup.baseHeatFromHitsTaken ?? 1) + b.heatFromHitsTaken),
-    ailmentDuration: a.wisdom * COMBAT.ailmentDurationPerWisdom + b.ailmentDuration,
-    tenacity: clamp(a.vitality * COMBAT.tenacityPerVitality + b.tenacity, 0, COMBAT.maxTenacity),
+    ailmentDuration: a.wisdom * step.ailmentDuration + b.ailmentDuration,
+    tenacity: clamp(a.vitality * step.tenacity + b.tenacity, 0, COMBAT.maxTenacity),
     lifesteal: b.lifesteal,
     physicalPenetration: b.physicalPenetration,
-    elementalPenetration: b.elementalPenetration,
+    elementalPenetration:
+      b.elementalPenetration + (perks.has("attuned") ? PERK.attunedPenetration : 0),
     thorns: b.thorns,
     burnChance: clamp(b.burnChance, 0, 1),
     chillChance: clamp(b.chillChance, 0, 1),
