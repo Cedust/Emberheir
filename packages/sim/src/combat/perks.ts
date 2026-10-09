@@ -5,23 +5,23 @@ import type { Attribute } from "./types";
  * opens a fixed Perk. Only the hero's own points and Blaze Boons count, never gear.
  */
 export const PERK_IDS = [
-  "heavyHand",
-  "bulwark",
+  "armorbreaker",
+  "stoneguard",
   "titan",
-  "steadyHand",
+  "hawkeye",
   "opportunist",
   "trueShot",
   "attuned",
-  "overload",
-  "archmage",
-  "lightFeet",
-  "sidestep",
+  "spillover",
+  "spellfire",
+  "forewarned",
+  "slipstream",
   "doubleTime",
-  "focus",
+  "readyFlame",
   "afterglow",
   "clarity",
-  "rally",
-  "ironHide",
+  "secondBreath",
+  "scarTissue",
   "undying",
 ] as const;
 export type PerkId = (typeof PERK_IDS)[number];
@@ -39,45 +39,45 @@ export const BREAKPOINTS = [4, 7, 10] as const;
 
 /** Numbers of the Perks. Starting values for the balance CLI. */
 export const PERK = {
-  /** Bulwark: more Block Value. */
-  bulwarkBlockValue: 0.25,
+  /** Stoneguard: more Block Value. */
+  stoneguardBlockValue: 0.25,
   /** Titan: a hit of at least this share of the target's max life stuns. */
   titanThreshold: 0.1,
   titanStun: 0.5,
   titanCooldown: 6,
-  steadyHandPrecision: 0.05,
+  hawkeyePrecision: 0.05,
   trueShotEvery: 5,
   attunedPenetration: 0.1,
-  overloadChance: 0.1,
-  archmageDamage: 2,
-  sidestepHeat: 5,
+  spilloverChance: 0.1,
+  spellfireDamage: 2,
+  slipstreamHeat: 5,
   doubleTimeEvery: 4,
-  focusHeat: 10,
+  readyFlameHeat: 10,
   afterglowRefund: 0.1,
   /** Clarity: own ailments last this much longer, Poison holds one stack more. */
   claritySeconds: 1,
   clarityPoisonStacks: 1,
-  rallyBelow: 0.3,
-  rallyHeal: 0.15,
-  ironHideDotTaken: 0.15,
+  secondBreathBelow: 0.3,
+  secondBreathHeal: 0.15,
+  scarTissueDotTaken: 0.15,
 } as const;
 
 const pct = (x: number) => `${Math.round(x * 100)} %`;
 
 export const PERKS: readonly PerkDefinition[] = [
   {
-    id: "heavyHand",
-    name: "Heavy Hand",
+    id: "armorbreaker",
+    name: "Armorbreaker",
     attribute: "strength",
     threshold: 4,
     description: "Crits add a Sunder stack.",
   },
   {
-    id: "bulwark",
-    name: "Bulwark",
+    id: "stoneguard",
+    name: "Stoneguard",
     attribute: "strength",
     threshold: 7,
-    description: `+${pct(PERK.bulwarkBlockValue)} Block Value.`,
+    description: `+${pct(PERK.stoneguardBlockValue)} Block Value.`,
   },
   {
     id: "titan",
@@ -87,11 +87,11 @@ export const PERKS: readonly PerkDefinition[] = [
     description: `Hits for ${pct(PERK.titanThreshold)} of enemy Life stun for ${PERK.titanStun} s (every ${PERK.titanCooldown} s).`,
   },
   {
-    id: "steadyHand",
-    name: "Steady Hand",
+    id: "hawkeye",
+    name: "Hawkeye",
     attribute: "dexterity",
     threshold: 4,
-    description: `+${pct(PERK.steadyHandPrecision)} Precision.`,
+    description: `+${pct(PERK.hawkeyePrecision)} Precision.`,
   },
   {
     id: "opportunist",
@@ -115,32 +115,32 @@ export const PERKS: readonly PerkDefinition[] = [
     description: `+${pct(PERK.attunedPenetration)} Elemental Penetration.`,
   },
   {
-    id: "overload",
-    name: "Overload",
+    id: "spillover",
+    name: "Spillover",
     attribute: "intelligence",
     threshold: 7,
-    description: `Elemental hits: +${pct(PERK.overloadChance)} chance of their ailment.`,
+    description: `Elemental hits: +${pct(PERK.spilloverChance)} chance of their ailment.`,
   },
   {
-    id: "archmage",
-    name: "Archmage",
+    id: "spellfire",
+    name: "Spellfire",
     attribute: "intelligence",
     threshold: 10,
     description: "The first Spell of a fight deals double damage.",
   },
   {
-    id: "lightFeet",
-    name: "Light Feet",
+    id: "forewarned",
+    name: "Forewarned",
     attribute: "agility",
     threshold: 4,
     description: "The first enemy attack of a fight misses.",
   },
   {
-    id: "sidestep",
-    name: "Sidestep",
+    id: "slipstream",
+    name: "Slipstream",
     attribute: "agility",
     threshold: 7,
-    description: `+${PERK.sidestepHeat} Heat on Evade.`,
+    description: `+${PERK.slipstreamHeat} Heat on Evade.`,
   },
   {
     id: "doubleTime",
@@ -150,11 +150,11 @@ export const PERKS: readonly PerkDefinition[] = [
     description: `Every ${PERK.doubleTimeEvery}th attack strikes twice.`,
   },
   {
-    id: "focus",
-    name: "Focus",
+    id: "readyFlame",
+    name: "Ready Flame",
     attribute: "wisdom",
     threshold: 4,
-    description: `+${PERK.focusHeat} Starting Heat.`,
+    description: `+${PERK.readyFlameHeat} Starting Heat.`,
   },
   {
     id: "afterglow",
@@ -171,18 +171,18 @@ export const PERKS: readonly PerkDefinition[] = [
     description: `Your ailments last ${PERK.claritySeconds} s longer, Poison stacks once more.`,
   },
   {
-    id: "rally",
-    name: "Rally",
+    id: "secondBreath",
+    name: "Second Breath",
     attribute: "vitality",
     threshold: 4,
-    description: `Once per fight below ${pct(PERK.rallyBelow)} Life: heal ${pct(PERK.rallyHeal)}.`,
+    description: `Once per fight below ${pct(PERK.secondBreathBelow)} Life: heal ${pct(PERK.secondBreathHeal)}.`,
   },
   {
-    id: "ironHide",
-    name: "Iron Hide",
+    id: "scarTissue",
+    name: "Scar Tissue",
     attribute: "vitality",
     threshold: 7,
-    description: `−${pct(PERK.ironHideDotTaken)} damage from ailments.`,
+    description: `−${pct(PERK.scarTissueDotTaken)} damage from ailments.`,
   },
   {
     id: "undying",

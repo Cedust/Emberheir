@@ -1,5 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
+  type AttributePoints,
   type Cheat,
   type GameAction,
   type GameState,
@@ -16,6 +17,8 @@ export interface NewCharacter {
   readonly classId: string;
   readonly weapon: string;
   readonly name: string;
+  /** The free points of the creation, on top of the Class Array. */
+  readonly attributes?: AttributePoints;
 }
 
 /**
@@ -88,6 +91,7 @@ export function useGame() {
           classId: character.classId,
           weapon: character.weapon,
           name: character.name,
+          ...(character.attributes ? { attributes: character.attributes } : {}),
         }),
       );
     },

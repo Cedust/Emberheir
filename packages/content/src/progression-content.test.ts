@@ -141,7 +141,8 @@ describe("Act 1", () => {
         Object.values(c.startingAttributes).reduce((a, b) => a + b, 0),
         c.id,
       ).toBe(14);
-      for (const v of Object.values(c.startingAttributes)) expect(v, c.id).toBeGreaterThanOrEqual(1);
+      for (const v of Object.values(c.startingAttributes))
+        expect(v, c.id).toBeGreaterThanOrEqual(1);
       expect(c.branches, c.id).toHaveLength(4);
       expect(c.branches.at(-1), c.id).toBe("tactician");
       for (const b of c.branches) {

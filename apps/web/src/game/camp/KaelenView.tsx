@@ -32,6 +32,7 @@ import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { MasteryTab } from "./MasteryTab";
+import { RebirthTab } from "./RebirthTab";
 import { SkillTreeTab } from "./SkillTreeTab";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
@@ -500,7 +501,9 @@ export function KaelenView(props: {
 }) {
   const { state, game, viewOnly } = props;
   const planEditable = props.planEditable ?? !viewOnly;
-  const [tab, setTab] = useState<"tree" | "plan" | "mastery">(props.initialTab ?? "tree");
+  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "rebirth">(
+    props.initialTab ?? "tree",
+  );
   const [respec, setRespec] = useState(false);
   const spent = spentInTree(GAME_DATA, state.hero.learned);
   const canRespec =
@@ -549,6 +552,17 @@ export function KaelenView(props: {
                 Battle Plan
               </button>
             )}
+            {!viewOnly && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === "rebirth"}
+                className={`tab title-font ${tab === "rebirth" ? "on" : ""}`}
+                onClick={() => setTab("rebirth")}
+              >
+                Ashen Rebirth
+              </button>
+            )}
           </div>
           <div className="grow" />
           <div className="wallet-row small-wallet">
@@ -569,7 +583,7 @@ export function KaelenView(props: {
             </span>
           </div>
           {!viewOnly &&
-            tab !== "mastery" &&
+            (tab === "tree" || tab === "plan") &&
             (respec ? (
               <span className="respec-confirm">
                 <span className="sub small">Forget all nodes?</span>
@@ -612,7 +626,9 @@ export function KaelenView(props: {
             <Icon name="close" size={20} />
           </button>
         </header>
-        {tab === "mastery" ? (
+        {tab === "rebirth" && !viewOnly ? (
+          <RebirthTab state={state} game={game} />
+        ) : tab === "mastery" ? (
           <MasteryTab state={state} game={game} viewOnly={viewOnly} />
         ) : tab === "tree" || !planEditable ? (
           <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />

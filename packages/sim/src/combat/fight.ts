@@ -434,7 +434,7 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
   };
 }
 
-/** Elemental hits and the ailment that belongs to their element (Overload). */
+/** Elemental hits and the ailment that belongs to their element (Spillover). */
 const ELEMENT_AILMENT: Partial<Record<DamageType, AilmentType>> = {
   fire: "burn",
   cold: "chill",
@@ -514,6 +514,8 @@ export class Fight {
     const start = this.log.length;
     if (this.ticks === 0) {
       for (const side of ["hero", "enemy"] as const) {
+        if (this.fighters[side].perks.has("readyFlame"))
+          this.perk(this.fighters[side], "readyFlame");
         this.fireTriggers(this.fighters[side], "fightStart");
         if (this.result) return this.log.slice(start);
         this.react(this.fighters[side], "fightStart");
@@ -641,7 +643,7 @@ export class Fight {
     for (const tick of ticks) {
       const byAilment =
         this.fighters[other(f.side)].setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
-      const hide = f.perks.has("ironHide") ? 1 - PERK.ironHideDotTaken : 1;
+      const hide = f.perks.has("scarTissue") ? 1 - PERK.scarTissueDotTaken : 1;
       const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f) * byAilment * hide));
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);
@@ -998,10 +1000,11 @@ export class Fight {
     f.lastSkillAt = this.time;
     if (heatCost > 0 && f.perks.has("afterglow")) {
       f.heat = addHeat(f.heat, heatCost * PERK.afterglowRefund, 1);
+      this.perk(f, "afterglow");
     }
-    if (skill.type === "spell" && this.usePerk(f, "archmage")) {
-      this.perk(f, "archmage");
-      power *= PERK.archmageDamage;
+    if (skill.type === "spell" && this.usePerk(f, "spellfire")) {
+      this.perk(f, "spellfire");
+      power *= PERK.spellfireDamage;
     }
     this.fireTriggers(f, "onSkillUse");
     if (this.result) return;
@@ -1239,13 +1242,13 @@ export class Fight {
     if (rolls && !h.precise) {
       const aim = wr?.steadyAim;
       const steady = aim && this.time - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
-      const hand = attacker.perks.has("steadyHand") ? PERK.steadyHandPrecision : 0;
+      const hand = attacker.perks.has("hawkeye") ? PERK.hawkeyePrecision : 0;
       precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand));
     }
 
-    // Light Feet: the first attack of the fight misses.
-    if (h.evadable && !h.fromTrigger && this.usePerk(defender, "lightFeet")) {
-      this.perk(defender, "lightFeet");
+    // Forewarned: the first attack of the fight misses.
+    if (h.evadable && !h.fromTrigger && this.usePerk(defender, "forewarned")) {
+      this.perk(defender, "forewarned");
       this.evaded(defender, h);
       return "miss";
     }
@@ -1324,7 +1327,7 @@ export class Fight {
     } else {
       if (rolls) this.cleanHit(attacker, defender, h);
       for (const { ailment, chance } of withStatAilmentChances(
-        this.overload(attacker, h),
+        this.spillover(attacker, h),
         attacker.stats,
       )) {
         if (!this.rng.chance(chance)) continue;
@@ -1334,8 +1337,8 @@ export class Fight {
         this.inflict(attacker, defender, "bleed", damage);
       }
       if (outcome.crit && wr) this.critMastery(attacker, defender, damage);
-      if (outcome.crit && attacker.perks.has("heavyHand")) {
-        this.perk(attacker, "heavyHand");
+      if (outcome.crit && attacker.perks.has("armorbreaker")) {
+        this.perk(attacker, "armorbreaker");
         this.addSunder(attacker, defender, 1);
       }
     }
@@ -1355,6 +1358,7 @@ export class Fight {
     const context = { damage };
     // A Glancing Blow fires no on-hit triggers of the attacker (unless Opportunist).
     if (!glancing || attacker.perks.has("opportunist")) {
+      if (glancing) this.perk(attacker, "opportunist");
       this.fireTriggers(attacker, "onHit", context);
     }
     if (outcome.crit) this.fireTriggers(attacker, "onCrit", context);
@@ -1381,27 +1385,27 @@ export class Fight {
     return result;
   }
 
-  /** An attack missed the defender: Read the Blow, Sidestep and On Evade triggers. */
+  /** An attack missed the defender: Read the Blow, Slipstream and On Evade triggers. */
   private evaded(defender: Fighter, h: HitOptions): void {
     this.emit({ t: this.time, type: "evade", side: defender.side, source: h.source });
     if (defender.setup.weaponRules?.critAfter?.includes("evade")) defender.nextCrit = true;
-    if (defender.perks.has("sidestep")) {
-      defender.heat = addHeat(defender.heat, PERK.sidestepHeat, this.heatMultiplier(defender));
-      this.perk(defender, "sidestep");
+    if (defender.perks.has("slipstream")) {
+      defender.heat = addHeat(defender.heat, PERK.slipstreamHeat, this.heatMultiplier(defender));
+      this.perk(defender, "slipstream");
     }
     if (!h.fromTrigger) this.fireTriggers(defender, "onEvade");
   }
 
-  /** Overload: elemental hits get a better chance of their element's ailment. */
-  private overload(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
+  /** Spillover: elemental hits get a better chance of their element's ailment. */
+  private spillover(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
     const ailment = ELEMENT_AILMENT[h.type];
-    if (!ailment || !attacker.perks.has("overload")) return h.ailmentChances;
+    if (!ailment || !attacker.perks.has("spillover")) return h.ailmentChances;
     const own = h.ailmentChances.find((c) => c.ailment === ailment);
     return own
       ? h.ailmentChances.map((c) =>
-          c === own ? { ailment, chance: Math.min(1, c.chance + PERK.overloadChance) } : c,
+          c === own ? { ailment, chance: Math.min(1, c.chance + PERK.spilloverChance) } : c,
         )
-      : [...h.ailmentChances, { ailment, chance: PERK.overloadChance }];
+      : [...h.ailmentChances, { ailment, chance: PERK.spilloverChance }];
   }
 
   /** Weapon Mastery multipliers on own hit damage. */
@@ -1763,9 +1767,9 @@ export class Fight {
       this.end(other(f.side));
       return;
     }
-    if (f.life / f.stats.maxLife < PERK.rallyBelow && this.usePerk(f, "rally")) {
-      this.perk(f, "rally");
-      this.heal(f, f.stats.maxLife * PERK.rallyHeal);
+    if (f.life / f.stats.maxLife < PERK.secondBreathBelow && this.usePerk(f, "secondBreath")) {
+      this.perk(f, "secondBreath");
+      this.heal(f, f.stats.maxLife * PERK.secondBreathHeal);
     }
     for (const state of f.triggers) {
       const c = state.spec.condition;

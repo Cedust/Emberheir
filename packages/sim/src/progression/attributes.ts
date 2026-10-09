@@ -54,7 +54,10 @@ export function combatAttributes(
 ): Attributes {
   const base = breakpointAttributes(own, boon);
   return Object.fromEntries(
-    ATTRIBUTES.map((k) => [k, Math.max(base[k], Math.min(ATTRIBUTE_RULES.itemMax, base[k] + (gear[k] ?? 0)))]),
+    ATTRIBUTES.map((k) => [
+      k,
+      Math.max(base[k], Math.min(ATTRIBUTE_RULES.itemMax, base[k] + (gear[k] ?? 0))),
+    ]),
   ) as Attributes;
 }
 

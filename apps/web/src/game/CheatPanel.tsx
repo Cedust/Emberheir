@@ -44,6 +44,7 @@ const CURRENCIES: { key: WalletCurrency; name: string }[] = [
   { key: "reforgeStones", name: "Reforge Stones" },
   { key: "ascensionShards", name: "Ascension Shards" },
   { key: "harvesterEmber", name: "Harvester's Ember" },
+  { key: "phoenixAsh", name: "Phoenix Ash" },
   { key: "kindling", name: "Kindling" },
 ];
 
@@ -173,6 +174,15 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
           onSet={(amount) => game.cheat({ kind: "masteryPoints", amount })}
         />
         <p className="sub small">On top of the Weapon Rank. A respec keeps them.</p>
+      </section>
+      <section className="cheat-card">
+        <span className="eyebrow">Attributes</span>
+        <NumberRow
+          label="Attribute Points"
+          value={state.hero.unspentAttributePoints}
+          quick={[2, 10]}
+          onSet={(amount) => game.cheat({ kind: "attributePoints", amount })}
+        />
       </section>
       <section className="cheat-card">
         <span className="eyebrow">Camp</span>

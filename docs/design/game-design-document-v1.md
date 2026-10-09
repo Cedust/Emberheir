@@ -85,7 +85,7 @@ Ein Held kämpft automatisch, der Spieler kämpft nie selbst. **Alle Entscheidun
 ### Level ✅ (überarbeitet 30.09.2026, Thread "Level-Progression")
 - **Level, Attribut- und Skillpunkte bleiben beim Prestige erhalten** ✅. Der Heir erbt, was er gelernt hat. Respec jederzeit beim Trainer gegen Gold.
 - **Level Cap:** **20 im ersten Durchgang**, danach **+20 pro Prestige** ✅ (Playtest 1, 02.10.2026; vorher 10/+10) → **Level 200** im 10. Durchgang. Das 10. Prestige hebt das Cap nicht mehr an, im Finale gibt es keine Level-Ups. Der erste Durchgang ist eine leichte, schnelle Einführung.
-- Jedes Level gibt **2 Attributpunkte** (Playtest 1, vorher 3), **1 Skillpunkt** und automatisch etwas **Base Life** ✅.
+- Jedes Level gibt **1 Skillpunkt** und automatisch etwas **Base Life** ✅. **Keine Attributpunkte mehr pro Level** (2026-10-09): Attribute laufen 1–10, Punkte nur bei Charaktererstellung und The Harvest, siehe `attribute-v1.md`.
 - Jeder Durchgang bringt so 10 Skillpunkte, passend zu einem neuen Prestige-Ast mit ca. 10 Nodes. Am Ende ca. 100 Punkte bei ca. 160 Nodes → man muss sich spezialisieren.
 - **Attributpunkte** darf man **zwischen zwei Kämpfen** verteilen ✅ (im PoC testen). **Skillpunkte** nur beim **Trainer** im Camp ✅.
 - **Keystones** kosten **Harvester's Ember** ✅: ein Material, das man dem Ashen Harvester bei jedem Sieg über ihn klaut (1 pro Prestige). Im ersten Durchgang gibt es daher keinen Keystone. Nach 10 Siegen hat man 10, der letzte wird im Finale genutzt.

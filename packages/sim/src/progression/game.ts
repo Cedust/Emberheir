@@ -2540,7 +2540,8 @@ function rebirth(state: GameState, data: GameData, attributes: Attributes): Game
   if ((state.wallet.phoenixAsh ?? 0) < ATTRIBUTE_RULES.rebirthCost) fail("No Phoenix Ash");
   const floor = heroClassOf(state, data).startingAttributes;
   const { hero } = state;
-  const points = sumAttributes(hero.attributes) - sumAttributes(floor) + hero.unspentAttributePoints;
+  const points =
+    sumAttributes(hero.attributes) - sumAttributes(floor) + hero.unspentAttributePoints;
   const problem = attributeProblem(attributes, { floor, current: floor, points });
   if (problem) fail(problem);
   return {
@@ -2864,7 +2865,8 @@ function migrateV9(state: Partial<GameState>, data: GameData | undefined): Parti
 function migrateV10(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
   const prestige = state.legacy?.prestige ?? 0;
   const hero = state.hero;
-  const floor = (hero && data?.classes.find((c) => c.id === hero.classId)?.startingAttributes) ??
+  const floor =
+    (hero && data?.classes.find((c) => c.id === hero.classId)?.startingAttributes) ??
     data?.startingAttributes;
   return {
     ...state,

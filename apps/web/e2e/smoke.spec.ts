@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { createHero } from "./fixtures";
 
 test("start page shows the game title", async ({ page }) => {
   const errors: string[] = [];
@@ -62,7 +63,7 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // ?dev shows the Skip button in fights.
   await page.goto("/?dev");
   await page.getByRole("button", { name: "New Game" }).click();
-  await page.getByRole("button", { name: "Begin" }).click();
+  await createHero(page);
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
 
   await page.getByRole("button", { name: /SET OUT/ }).click();

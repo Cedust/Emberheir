@@ -1,12 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_ATTRIBUTES } from "../combat/test-fixtures";
 import type { Attributes } from "../combat/types";
-import {
-  ATTRIBUTE_RULES,
-  combatAttributes,
-  heroPerks,
-  movedPoints,
-} from "./attributes";
+import { ATTRIBUTE_RULES, combatAttributes, heroPerks, movedPoints } from "./attributes";
 import type { BoonDefinition } from "./boons";
 import {
   type GameAction,
@@ -61,7 +56,9 @@ describe("Attributes v1", () => {
   });
 
   it("The Harvest: two new points and up to two moved (Rekindle), one Phoenix Ash", () => {
-    const s = harvest(act(fresh(), { type: "allocateAttributes", points: { vitality: 4, wisdom: 2 } }));
+    const s = harvest(
+      act(fresh(), { type: "allocateAttributes", points: { vitality: 4, wisdom: 2 } }),
+    );
     const before = s.hero.attributes;
     // Wisdom 2 → 0 (back to the Class Array) moves two points; with the two new ones: Dexterity 4.
     const after = plus(before, { wisdom: -2, dexterity: 4 });
@@ -97,10 +94,13 @@ describe("Attributes v1", () => {
     expect(s.hero.unspentAttributePoints).toBe(0);
     expect(s.wallet.phoenixAsh).toBe(0);
     expect(() =>
-      act({ ...s, wallet: { ...s.wallet, phoenixAsh: 1 } }, {
-        type: "rebirth",
-        attributes: plus(floor(), { dexterity: 7 }),
-      }),
+      act(
+        { ...s, wallet: { ...s.wallet, phoenixAsh: 1 } },
+        {
+          type: "rebirth",
+          attributes: plus(floor(), { dexterity: 7 }),
+        },
+      ),
     ).toThrow(/Not enough/);
   });
 
@@ -110,12 +110,12 @@ describe("Attributes v1", () => {
       strength: ATTRIBUTE_RULES.itemMax,
       agility: 4,
     });
-    expect(heroPerks(own, {})).toEqual(["heavyHand", "bulwark"]);
+    expect(heroPerks(own, {})).toEqual(["armorbreaker", "stoneguard"]);
     expect(heroPerks(own, { strength: 1, agility: 1 })).toEqual([
-      "heavyHand",
-      "bulwark",
+      "armorbreaker",
+      "stoneguard",
       "titan",
-      "lightFeet",
+      "forewarned",
     ]);
     expect(movedPoints(own, { ...own, strength: 7, agility: 5 })).toBe(2);
   });
@@ -140,7 +140,7 @@ describe("Attributes v1", () => {
     const { setup } = heroSetup(s, boonData);
     expect(setup.attributeScale).toBe("heir");
     expect(setup.attributes.strength).toBe(7);
-    expect(setup.perks).toEqual(["heavyHand", "bulwark", "rally"]);
+    expect(setup.perks).toEqual(["armorbreaker", "stoneguard", "secondBreath"]);
   });
 
   it("migrates v10 saves: back to the Class Array, points and Phoenix Ash per Prestige", () => {

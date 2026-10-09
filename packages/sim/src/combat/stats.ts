@@ -170,7 +170,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       0,
       COMBAT.maxBlockChance,
     ),
-    blockValue: b.blockValue * (perks.has("bulwark") ? 1 + PERK.bulwarkBlockValue : 1),
+    blockValue: b.blockValue * (perks.has("stoneguard") ? 1 + PERK.stoneguardBlockValue : 1),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance),
     coldResistance: resist(b.coldResistance),
@@ -178,7 +178,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     voidResistance: resist(b.voidResistance),
     heatGain: a.wisdom * step.heatGain + b.heatGain,
     startingHeat: clamp(
-      b.startingHeat + (perks.has("focus") ? PERK.focusHeat : 0),
+      b.startingHeat + (perks.has("readyFlame") ? PERK.readyFlameHeat : 0),
       0,
       COMBAT.maxHeat,
     ),
