@@ -3,7 +3,8 @@ import {
   actsInRun,
   createEnemySetup,
   heroSetup,
-  levelCap,
+  bossLevel,
+
   neighbours,
   newGame,
   runFight,
@@ -105,10 +106,10 @@ describe("Skill Tree", () => {
 });
 
 describe("Act 1", () => {
-  it("has 15 stages: the first run climbs from Monster Level 1 to Gorrak at the Level Cap", () => {
+  it("has 15 stages: the first run climbs from Monster Level 1 to Gorrak at the boss level", () => {
     expect(stagesInAct(ACT1)).toBe(15);
     expect(stageMonsterLevel(GAME_DATA, ACT1, 1, 0)).toBe(1);
-    expect(stageMonsterLevel(GAME_DATA, ACT1, 15, 0)).toBe(levelCap(0));
+    expect(stageMonsterLevel(GAME_DATA, ACT1, 15, 0)).toBe(bossLevel(0));
     expect(ACT1.boss.telegraphs?.length).toBe(1);
   });
 
@@ -160,7 +161,7 @@ describe("Act 2", () => {
     expect(stageMonsterLevel(GAME_DATA, ACT2, 1, 1)).toBeGreaterThanOrEqual(
       stageMonsterLevel(GAME_DATA, ACT1, 15, 1),
     );
-    expect(stageMonsterLevel(GAME_DATA, ACT2, 15, 1)).toBe(levelCap(1));
+    expect(stageMonsterLevel(GAME_DATA, ACT2, 15, 1)).toBe(bossLevel(1));
   });
 
   it("the Mother of Rot poisons the hero and feeds to heal", () => {

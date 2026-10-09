@@ -5,6 +5,9 @@ import { sumBonuses } from "../combat/stats";
 /** Skill Tree data (docs/design/skill-tree-v1.md). PoC: Core + Might + Arcana. */
 
 export type SkillTreeBranch = "core" | "might" | "arcana" | "rupture" | "affliction";
+/** Regions of the web between the four branches (level-v2.md section 7). */
+export type SkillTreeRegion =
+  SkillTreeBranch | "might-arcana" | "arcana-affliction" | "affliction-rupture" | "rupture-might";
 export type SkillNodeKind = "minor" | "notable" | "skill" | "keystone";
 
 export interface SkillNode {
@@ -42,6 +45,15 @@ export interface SkillNode {
   readonly replaces?: string;
   /** Combat rules of a non-Keystone node ("Hits deal 40 % more damage below 35 % Life"). */
   readonly rules?: CombatRules;
+  /**
+   * Fork (level-v2.md section 7): nodes sharing a fork id exclude each other; once one of them
+   * is learned, the others stay closed until it is forgotten again.
+   */
+  readonly fork?: string;
+  /** Where the node sits in the web, for colour and grouping. Default: its branch. */
+  readonly region?: SkillTreeRegion;
+  /** A class's start node: learned for free by that class (`SkillTreeDefinition.classStarts`). */
+  readonly classStart?: string;
 }
 
 /**
@@ -60,8 +72,13 @@ export interface PrestigeBranchDefinition {
 
 export interface SkillTreeDefinition {
   readonly nodes: readonly SkillNode[];
-  /** Learned for free at the start. */
-  readonly startNodeId: string;
+  /**
+   * Learned for free at the start and always counted as learned (trees without class starts).
+   * With `classStarts`, the class's start node is put into `learned` when the hero is created.
+   */
+  readonly startNodeId?: string;
+  /** Start node per class id: each class starts at its own place in the web (level-v2.md). */
+  readonly classStarts?: Readonly<Record<string, string>>;
   readonly prestigeBranches?: readonly PrestigeBranchDefinition[];
 }
 
@@ -121,7 +138,9 @@ export type LearnBlockReason =
   /** Keystones cost Harvester's Ember (none in the first run). */
   | "noEmber"
   /** The node's Prestige branch is not unlocked yet. */
-  | "branchLocked";
+  | "branchLocked"
+  /** The other side of the node's fork is learned. */
+  | "forkTaken";
 
 /** Why the next rank of a node cannot be learned, or undefined if it can. */
 export function learnBlockReason(
@@ -137,10 +156,75 @@ export function learnBlockReason(
     return "branchLocked";
   }
   if (ranks >= nodeMaxRanks(node, branches)) return "maxed";
+  if (ranks === 0 && forkPartner(tree, learned, node)) return "forkTaken";
   const connected = ranks > 0 || neighbours(tree, id).some((n) => nodeRanks(tree, learned, n) > 0);
   if (!connected) return "notConnected";
   if (node.kind === "keystone") return budget.harvesterEmber >= 1 ? undefined : "noEmber";
   return budget.skillPoints >= 1 ? undefined : "noSkillPoints";
+}
+
+/** The learned node on the other side of a node's fork, if any. */
+export function forkPartner(
+  tree: SkillTreeDefinition,
+  learned: LearnedNodes,
+  node: SkillNode,
+): SkillNode | undefined {
+  if (!node.fork) return undefined;
+  return tree.nodes.find(
+    (n) => n.fork === node.fork && n.id !== node.id && nodeRanks(tree, learned, n.id) > 0,
+  );
+}
+
+/** Start node of a class: its own place in the web, or the tree's shared start. */
+export function classStartNode(tree: SkillTreeDefinition, classId: string): string | undefined {
+  return tree.classStarts?.[classId] ?? tree.startNodeId;
+}
+
+/** Learned nodes of a fresh hero of a class: its start node, if the tree has class starts. */
+export function startingNodes(tree: SkillTreeDefinition, classId: string): LearnedNodes {
+  const start = tree.classStarts?.[classId];
+  return start ? { [start]: 1 } : {};
+}
+
+export type ForgetBlockReason =
+  | "notLearned"
+  /** The class's start node stays. */
+  | "start"
+  /** Other learned nodes hang on this one: forget them first. */
+  | "holdsOthers";
+
+/**
+ * Why one rank of a node cannot be forgotten (single-node respec), or undefined if it can. A
+ * node's last rank can only go if every other learned node still connects to the start.
+ */
+export function forgetBlockReason(
+  tree: SkillTreeDefinition,
+  learned: LearnedNodes,
+  id: string,
+  start: string | undefined,
+): ForgetBlockReason | undefined {
+  const ranks = nodeRanks(tree, learned, id);
+  if (ranks <= 0) return "notLearned";
+  if (id === start || id === tree.startNodeId) return "start";
+  if (ranks > 1) return undefined;
+  const rest = new Set(
+    tree.nodes.filter((n) => n.id !== id && nodeRanks(tree, learned, n.id) > 0).map((n) => n.id),
+  );
+  if (rest.size === 0) return undefined;
+  const roots = [start, tree.startNodeId].filter((r): r is string => !!r && rest.has(r));
+  // A tree without any start: every learned node must still touch another one.
+  const seen = new Set<string>(roots.length ? roots : [...rest].slice(0, 1));
+  const queue = [...seen];
+  while (queue.length) {
+    const next = queue.pop() ?? "";
+    for (const n of neighbours(tree, next)) {
+      if (rest.has(n) && !seen.has(n)) {
+        seen.add(n);
+        queue.push(n);
+      }
+    }
+  }
+  return seen.size === rest.size ? undefined : "holdsOthers";
 }
 
 /** What learning one more rank costs. */

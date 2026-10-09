@@ -23,6 +23,7 @@ import {
   heroSetup,
   knownSkills,
   masteryPointsLeft,
+  respecGold,
   spentInTree,
   triggerThreshold,
 } from "@emberheir/sim";
@@ -502,9 +503,9 @@ export function KaelenView(props: {
   const planEditable = props.planEditable ?? !viewOnly;
   const [tab, setTab] = useState<"tree" | "plan" | "mastery">(props.initialTab ?? "tree");
   const [respec, setRespec] = useState(false);
-  const spent = spentInTree(GAME_DATA, state.hero.learned);
-  const canRespec =
-    !viewOnly && spent.skillPoints > 0 && state.wallet.gold >= PROGRESSION.respecGold;
+  const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
+  const respecPrice = respecGold(state.legacy.prestige);
+  const canRespec = !viewOnly && spent.skillPoints > 0 && state.wallet.gold >= respecPrice;
 
   return (
     <div className={viewOnly ? "overlay" : "screen-wrap"} role="dialog" aria-label="Kaelen">
@@ -599,7 +600,7 @@ export function KaelenView(props: {
                 }
                 onClick={() => setRespec(true)}
               >
-                Respec · {PROGRESSION.respecGold} Gold
+                Respec · {respecPrice} Gold
               </button>
             ))}
           <button

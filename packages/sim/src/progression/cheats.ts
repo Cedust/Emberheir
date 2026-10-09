@@ -10,7 +10,8 @@ import {
   isHarvestAct,
   nextAct,
   nextRng,
-  spentInTree,
+  waymarkKey,
+  waymarkStages,
 } from "./game";
 import { type GridSize, INVENTORY_SIZE, STASH_SIZE, addToGrid } from "./inventory";
 import { EMPTY_MASTERY, MASTERY, weaponRank } from "./weapon-mastery";
@@ -31,6 +32,8 @@ export type Cheat =
   | { readonly kind: "flasks"; readonly amount: number }
   /** Extra Weapon Mastery points on top of the Weapon Rank. */
   | { readonly kind: "masteryPoints"; readonly amount: number }
+  /** Sets the unspent Skill Points. */
+  | { readonly kind: "skillPoints"; readonly amount: number }
   /** A new item (or a Unique) into the inventory, or the stash if `to` says so. */
   | {
       readonly kind: "giveItem";
@@ -54,8 +57,8 @@ export type Cheat =
   /** Kaelen and Eldrin join the caravan. */
   | { readonly kind: "unlockCamp" };
 
-/** Highest level the cheat sets: the last Weapon Rank. */
-export const CHEAT_MAX_LEVEL = MASTERY.rankLevels[MASTERY.rankLevels.length - 1] ?? 140;
+/** Highest level the cheat sets: the max level. */
+export const CHEAT_MAX_LEVEL = PROGRESSION.maxLevel;
 
 const whole = (n: number, min: number, max = Number.MAX_SAFE_INTEGER) =>
   Number.isFinite(n) ? Math.min(max, Math.max(min, Math.floor(n))) : min;
@@ -98,6 +101,11 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
           mastery: { ...state.hero.mastery, bonusPoints: whole(cheat.amount, 0, 999) },
         },
       };
+    case "skillPoints":
+      return {
+        ...state,
+        hero: { ...state.hero, unspentSkillPoints: whole(cheat.amount, 0, 999) },
+      };
     case "giveItem":
       return giveItem(state, data, cheat);
     case "rerollItem":
@@ -138,15 +146,15 @@ function setLevel(state: GameState, data: GameData, level: number): GameState {
         xp: 0,
         unspentAttributePoints:
           hero.unspentAttributePoints + gained * PROGRESSION.attributePointsPerLevel,
-        unspentSkillPoints: hero.unspentSkillPoints + gained * PROGRESSION.skillPointsPerLevel,
       },
     };
   }
-  // Down: every point comes back to spend again, like after a rule change (v7 → v8).
+  // Down: every attribute point comes back to spend again, like after a rule change (v7 → v8).
+  // Skill Points come from Waymarks, not levels, so the Skill Tree stays.
   const start =
     data.classes.find((c) => c.id === hero.classId)?.startingAttributes ?? data.startingAttributes;
-  const spent = spentInTree(data, hero.learned);
-  const rankDrops = weaponRank(level) < weaponRank(hero.level);
+  const p = state.legacy.prestige;
+  const rankDrops = weaponRank(level, p) < weaponRank(hero.level, p);
   return {
     ...state,
     hero: {
@@ -155,10 +163,6 @@ function setLevel(state: GameState, data: GameData, level: number): GameState {
       xp: 0,
       attributes: start,
       unspentAttributePoints: (level - 1) * PROGRESSION.attributePointsPerLevel,
-      learned: {},
-      unspentSkillPoints:
-        PROGRESSION.startSkillPoints + (level - 1) * PROGRESSION.skillPointsPerLevel,
-      rotation: hero.rotation.map(() => null),
       mastery: rankDrops
         ? {
             ...EMPTY_MASTERY,
@@ -166,10 +170,6 @@ function setLevel(state: GameState, data: GameData, level: number): GameState {
             ...(hero.mastery.bonusPoints ? { bonusPoints: hero.mastery.bonusPoints } : {}),
           }
         : hero.mastery,
-    },
-    wallet: {
-      ...state.wallet,
-      harvesterEmber: state.wallet.harvesterEmber + spent.harvesterEmber,
     },
   };
 }
@@ -245,11 +245,17 @@ function clearActs(state: GameState, data: GameData, all: boolean): GameState {
     if (cleared && !harvest) break;
     const echoDef = data.echoes.find((e) => e.actId === act.id);
     const echoBefore = echoDef ? s.legacy.echoes[echoDef.id] : undefined;
+    // The act's Waymarks fall with it, each with its Skill Point.
+    const waymarks = waymarkStages(act)
+      .map((stage) => waymarkKey(act.id, stage))
+      .filter((key) => !s.progress.waymarks.includes(key));
     s = {
       ...s,
       notice: null,
+      hero: { ...s.hero, unspentSkillPoints: s.hero.unspentSkillPoints + waymarks.length },
       progress: {
         ...s.progress,
+        waymarks: [...s.progress.waymarks, ...waymarks],
         actsCleared: cleared ? s.progress.actsCleared : [...s.progress.actsCleared, act.id],
         deathsInAct: 0,
         trainerUnlocked: true,

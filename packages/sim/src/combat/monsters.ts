@@ -1,3 +1,4 @@
+import { COMBAT } from "./constants";
 import type {
   Attributes,
   CombatantSetup,
@@ -33,30 +34,51 @@ export interface EnemyDefinition {
 }
 
 /**
- * Monster Level bands: one per run, ending at that run's Level Cap (5 levels per act played:
- * 5, 15, 30, ... 140, see `levelCap` in progression). Every band grows steeper than the one
- * before, because the hero's gear, tree and Battle Plan grow faster than linear too.
+ * Monster Level bands (level-v2.md section 4): one per run, ending at the Monster Level of that
+ * run's harvest boss: 10, 20, 30, 45, 60, 75 and 90 (the Harvester). The hero's Level Cap is 10
+ * above it (`levelCap` in progression), so a wall can be out-levelled.
  */
-export const MONSTER_BAND_ENDS: readonly number[] = (() => {
-  const ends: number[] = [];
-  let acts = 0;
-  for (let run = 1; run <= 7; run++) {
-    acts += Math.min(run, 7);
-    ends.push(5 * acts);
-  }
-  return ends;
-})();
+export const MONSTER_BAND_ENDS: readonly number[] = [10, 20, 30, 45, 60, 75, 90];
+
 /**
- * Growth per Monster Level in the first band, and how much steeper each band is: the step of
- * band b is 1 + perBand × b + perBandSquared × b². Later runs keep all their gear and get
- * steeper monsters for it.
+ * Growth weight per Monster Level in each band. Every band grows steeper than the one before,
+ * because the hero's gear, tree and Battle Plan grow faster than linear too. The numbers keep
+ * each band's total growth from Playtest 2 (bands 5, 15, 30, ... 140), spread over the new bands.
  */
-const MONSTER_GROWTH = { life: 0.15, damage: 0.08, perBand: 1, perBandSquared: 0.25 };
+const BAND_STEP: readonly number[] = (() => {
+  const oldEnds = [5, 15, 30, 50, 75, 105, 140];
+  return MONSTER_BAND_ENDS.map((end, b) => {
+    const oldLength = (oldEnds[b] ?? 0) - (b === 0 ? 1 : (oldEnds[b - 1] ?? 0));
+    const length = end - (b === 0 ? 1 : (MONSTER_BAND_ENDS[b - 1] ?? 0));
+    return (oldLength * (1 + b + 0.25 * b * b)) / length;
+  });
+})();
+const MONSTER_GROWTH = { life: 0.15, damage: 0.08 };
+
+/** Same kind of growth before the level rework (+12 Life on 100, Weapon Damage + 1/16 per level). */
+const OLD_GROWTH = { life: 0.12, damage: 1 / 16 };
+
+/** The Playtest 2 hero level that a Monster Level stands for (piecewise along the band ends). */
+function oldLevel(level: number): number {
+  const oldEnds = [5, 15, 30, 50, 75, 105, 140];
+  let prevNew = 1;
+  let prevOld = 1;
+  for (let b = 0; b < MONSTER_BAND_ENDS.length; b++) {
+    const end = MONSTER_BAND_ENDS[b] ?? 1;
+    const oldEnd = oldEnds[b] ?? 1;
+    if (level <= end || b === MONSTER_BAND_ENDS.length - 1) {
+      return prevOld + ((level - prevNew) * (oldEnd - prevOld)) / (end - prevNew);
+    }
+    prevNew = end;
+    prevOld = oldEnd;
+  }
+  return level;
+}
 
 /**
  * The Monster Level alone sets a monster's power (docs/design/gegner-bosse-v1.md section 7).
- * One curve for life and one for damage, made of a straight piece per band. Starting values for
- * the balance CLI.
+ * A band curve (a straight piece per band) times the hero's own level growth: Life follows the
+ * hero's Weapon Damage, damage follows the hero's Life. Starting values for the balance CLI.
  */
 export function monsterLevelScaling(level: number): {
   readonly life: number;
@@ -65,10 +87,20 @@ export function monsterLevelScaling(level: number): {
   let weight = 0;
   for (let l = 2; l <= level; l++) {
     const band = MONSTER_BAND_ENDS.findIndex((end) => l <= end);
-    const b = band < 0 ? MONSTER_BAND_ENDS.length : band;
-    weight += 1 + MONSTER_GROWTH.perBand * b + MONSTER_GROWTH.perBandSquared * b * b;
+    const b = band < 0 ? MONSTER_BAND_ENDS.length - 1 : band;
+    weight += BAND_STEP[b] ?? 1;
   }
-  return { life: 1 + MONSTER_GROWTH.life * weight, damage: 1 + MONSTER_GROWTH.damage * weight };
+  // The hero's own level growth (COMBAT.heroLevelGrowth) is matched, so a hero at the Monster
+  // Level keeps the same footing all game and every level above it is a real edge.
+  // Undo the old hero growth the band curve was tuned against and add the new one.
+  const old = oldLevel(level) - 1;
+  const heroLife = (1 + COMBAT.heroLevelGrowth.life) ** (level - 1) / (1 + OLD_GROWTH.life * old);
+  const heroDamage =
+    (1 + COMBAT.heroLevelGrowth.damage) ** (level - 1) / (1 + OLD_GROWTH.damage * old);
+  return {
+    life: (1 + MONSTER_GROWTH.life * weight) * heroDamage,
+    damage: (1 + MONSTER_GROWTH.damage * weight) * heroLife,
+  };
 }
 
 /** Builds the fight setup for an enemy at a given Monster Level. */

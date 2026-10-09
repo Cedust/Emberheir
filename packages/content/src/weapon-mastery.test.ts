@@ -86,7 +86,7 @@ describe("Weapon Mastery content", () => {
 
   it("all paths can be learned in a real game, and the name follows the Keystone and Echo", () => {
     let s = newGame(GAME_DATA, { seed: 2, classId: "warrior" });
-    s = { ...s, hero: { ...s.hero, level: 140 } };
+    s = { ...s, hero: { ...s.hero, level: 100 }, legacy: { ...s.legacy, prestige: 6 } };
     const tree = WEAPON_MASTERY.sword;
     if (!tree) throw new Error("sword");
     const learn = (nodeId: string) => {

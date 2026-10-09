@@ -26,13 +26,16 @@ import {
   newGame,
   SAVE_VERSION,
   spentInTree,
+  earnedSkillPoints,
+  respecGold,
+  forgetGold,
   rewardsDone,
   serializeGame,
   addRunes,
   maxRuneRank,
   rollRuneDrops,
 } from "./game";
-import { levelCap } from "./leveling";
+import { bossLevel, levelCap } from "./leveling";
 import { Rng } from "../rng";
 import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
@@ -193,7 +196,7 @@ describe("game loop", () => {
     expect(currentFight(s, data).hero.lifeFraction).toBe(0.5);
   });
 
-  it("level-ups give Attribute and Skill Points; attributes are spent between fights", () => {
+  it("level-ups give Attribute Points, Waymarks give Skill Points; attributes are spent between fights", () => {
     let s = start();
     s = { ...s, hero: { ...s.hero, xp: (PROGRESSION.xpToNextLevel[0] ?? 0) - 1 } };
     s = act(
@@ -205,9 +208,10 @@ describe("game loop", () => {
     expect(s.hero.level).toBe(2);
     expect(s.run?.rewards?.levelsGained).toBe(1);
     expect(s.hero.unspentAttributePoints).toBe(PROGRESSION.attributePointsPerLevel);
-    expect(s.hero.unspentSkillPoints).toBe(
-      PROGRESSION.startSkillPoints + PROGRESSION.skillPointsPerLevel,
-    );
+    // Stage 1 of the 3-stage test act is a Waymark (a third of the act).
+    expect(s.run?.rewards?.waymark).toBe(true);
+    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints + 1);
+    expect(s.progress.waymarks).toEqual(["test-act:1"]);
     s = act(s, { type: "allocateAttributes", points: { strength: 1, vitality: 1 } });
     expect(s.hero.attributes.strength).toBe(7);
     expect(s.hero.unspentAttributePoints).toBe(0);
@@ -352,7 +356,7 @@ describe("game loop", () => {
     s = {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 4 },
-      wallet: { ...s.wallet, gold: PROGRESSION.respecGold, harvesterEmber: 1 },
+      wallet: { ...s.wallet, gold: respecGold(0), harvesterEmber: 1 },
       progress: { ...s.progress, trainerUnlocked: true },
     };
     s = act(
@@ -367,6 +371,24 @@ describe("game loop", () => {
     expect(s.hero.rotation).toEqual([null]);
     expect(s.wallet).toMatchObject({ gold: 0, harvesterEmber: 1 });
     expect(() => act(s, { type: "respecTree" })).toThrow(/Nothing/);
+  });
+
+  it("Kaelen forgets single nodes for a little Gold, as long as the rest stays connected", () => {
+    let s = start();
+    s = {
+      ...s,
+      hero: { ...s.hero, unspentSkillPoints: 4 },
+      wallet: { ...s.wallet, gold: 3 * forgetGold(0), harvesterEmber: 1 },
+      progress: { ...s.progress, trainerUnlocked: true },
+    };
+    s = act(s, { type: "learnNodes", nodeIds: ["a", "b", "b", "k"] });
+    // "a" holds "b" and "k".
+    expect(() => act(s, { type: "forgetNode", nodeId: "a" })).toThrow(/holdsOthers/);
+    expect(() => act(s, { type: "forgetNode", nodeId: "start" })).toThrow(/start/);
+    s = act(s, { type: "forgetNode", nodeId: "b" }, { type: "forgetNode", nodeId: "k" });
+    expect(s.hero.learned).toEqual({ a: 1, b: 1 });
+    expect(s.hero.unspentSkillPoints).toBe(2);
+    expect(s.wallet).toMatchObject({ gold: forgetGold(0), harvesterEmber: 1 });
   });
 
   it("the boss of the newest act starts the Prestige: the world burns, all items stay", () => {
@@ -390,10 +412,18 @@ describe("game loop", () => {
     expect(() => act(s, { type: "setOut", actId: "test-act" })).toThrow(/harvest/);
 
     s = { ...s, stash: [{ item: { ...(loot[1] ?? fail()), id: "stashed" }, x: 0, y: 0 }] };
-    const { level, attributes, learned, equipment } = s.hero;
+    const { level, attributes, learned, equipment, unspentSkillPoints } = s.hero;
     const { inventory, stash, wallet } = s;
     expect(inventory).toHaveLength(1);
+    // All three stages of the test act were Waymarks.
+    expect(s.progress.waymarks).toHaveLength(3);
     s = act(s, { type: "prestige" });
+    // The Harvest's Skill Points; this run's Waymarks open again.
+    expect(s.hero.unspentSkillPoints).toBe(unspentSkillPoints + PROGRESSION.harvestSkillPoints);
+    expect(s.progress.waymarks).toEqual([]);
+    expect(earnedSkillPoints(s, data)).toBe(
+      PROGRESSION.startSkillPoints + 3 + PROGRESSION.harvestSkillPoints,
+    );
     expect(s.pendingPrestige).toBeNull();
     expect(s.notice).toMatchObject({ kind: "prestige", enemyName: "Boss" });
     expect(s.hero).toMatchObject({ level, attributes, learned, equipment });
@@ -413,13 +443,13 @@ describe("game loop", () => {
     expect(s.legacy.chronicle).toEqual([
       { generation: 1, title: "Fighter", level, deaths: 0, enemyName: "Boss" },
     ]);
-    expect(levelCap(s.legacy.prestige)).toBe(15);
+    expect(levelCap(s.legacy.prestige)).toBe(30);
 
-    // The new run's level band starts at the old Level Cap.
+    // The new run's level band starts at the old boss level.
     s = act(s, { type: "dismissNotice" });
     expect(moveBlockReason(s, data, "stashed", "inventory")).toBeUndefined();
     s = act(s, { type: "setOut", actId: "test-act" }, { type: "startStage" });
-    expect(s.run?.encounter?.level).toBe(levelCap(0));
+    expect(s.run?.encounter?.level).toBe(bossLevel(0));
     expect(actUnlocked(s, data, "deadly-act")).toBe(false);
   });
 
@@ -429,9 +459,10 @@ describe("game loop", () => {
       rotationSlots: 2,
       planUpgrade: "Rotation Slot 2 · Reaction Slot 1",
       harvesterEmber: 1,
-      levelCap: 15,
+      skillPoints: 2,
+      levelCap: 30,
       acts: 2,
-      levelBand: { start: 5, end: 15 },
+      levelBand: { start: 10, end: 20 },
     });
     // Never more acts than the game has.
     expect(prestigeRewards(data, 9).acts).toBe(3);
@@ -487,19 +518,39 @@ describe("game loop", () => {
     expect(migrated.legacy.chronicle).toEqual([
       { generation: 1, level: 20, deaths: 2, enemyName: "Boss" },
     ]);
-    // Run 2's cap is 15: every point comes back to spend again.
+    // Run 2's old cap was 15: every attribute point comes back to spend again. Level 15 of the
+    // old scale is the boss level of run 2 on the new one (v10 → v11).
     expect(migrated.hero).toMatchObject({
-      level: 15,
+      level: 20,
       xp: 0,
       attributes: data.startingAttributes,
       unspentAttributePoints: 14 * PROGRESSION.attributePointsPerLevel,
-      unspentSkillPoints: PROGRESSION.startSkillPoints + 14 * PROGRESSION.skillPointsPerLevel,
       learned: {},
     });
     expect(migrated.wallet.harvesterEmber).toBe(1);
-    // A hero below the cap keeps its points.
+    // A hero below the cap keeps its attributes.
     const low = deserializeGame(JSON.stringify({ ...v7, hero: s.hero }), data);
-    expect(low.hero).toEqual(s.hero);
+    expect(low.hero.attributes).toEqual(s.hero.attributes);
+  });
+
+  it("migrates pre-Waymark save games (version 10): new level scale, tree points from progress", () => {
+    const s = start();
+    const v10 = {
+      ...s,
+      version: 10,
+      hero: { ...s.hero, level: 50, learned: { a: 1, k: 1 }, unspentSkillPoints: 3 },
+      progress: { ...s.progress, actsCleared: ["test-act"], waymarks: undefined },
+      legacy: { ...s.legacy, prestige: 3 },
+      wallet: { ...s.wallet, harvesterEmber: 2 },
+    };
+    const migrated = deserializeGame(JSON.stringify(v10), data);
+    expect(migrated.version).toBe(SAVE_VERSION);
+    // Old level 50 was run 4's cap; now run 4's boss stands at 45.
+    expect(migrated.hero.level).toBe(45);
+    expect(migrated.hero.learned).toEqual({});
+    expect(migrated.progress.waymarks).toEqual(["test-act:1", "test-act:2", "test-act:3"]);
+    expect(migrated.hero.unspentSkillPoints).toBe(earnedSkillPoints(migrated, data));
+    expect(migrated.wallet.harvesterEmber).toBe(3);
   });
 
   it("save games round-trip and reject other versions", () => {
@@ -533,16 +584,16 @@ describe("the road through the acts", () => {
   });
 
   it("the level band rises evenly over all stages of the run", () => {
-    expect(levelBand(0)).toEqual({ start: 1, end: 5 });
-    expect(levelBand(1)).toEqual({ start: 5, end: 15 });
-    expect(levelBand(3)).toEqual({ start: 30, end: 50 });
-    // Run 1: one act of 3 stages, 1 → 5.
-    expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 3, 5]);
-    // Run 2: two acts, 6 stages from 5 to 15; the second act carries on where the first ends.
+    expect(levelBand(0)).toEqual({ start: 1, end: 10 });
+    expect(levelBand(1)).toEqual({ start: 10, end: 20 });
+    expect(levelBand(3)).toEqual({ start: 30, end: 45 });
+    // Run 1: one act of 3 stages, 1 → 10.
+    expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 6, 10]);
+    // Run 2: two acts, 6 stages from 10 to 20; the second act carries on where the first ends.
     const second = data.acts[1] ?? fail();
-    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(5);
-    expect(stageMonsterLevel(data, second, 1, 1)).toBe(11);
-    expect(stageMonsterLevel(data, second, 3, 1)).toBe(15);
+    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(10);
+    expect(stageMonsterLevel(data, second, 1, 1)).toBe(16);
+    expect(stageMonsterLevel(data, second, 3, 1)).toBe(20);
   });
 
   it("Run Pressure grows along a run with more than one act and toughens its monsters", () => {

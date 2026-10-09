@@ -40,7 +40,7 @@ export interface DerivedStats {
 }
 
 export function heroBaseLife(level: number): number {
-  return COMBAT.heroBaseLife + COMBAT.heroLifePerLevel * (level - 1);
+  return COMBAT.heroBaseLife * (1 + COMBAT.heroLevelGrowth.life) ** (level - 1);
 }
 
 /** Adds several bonus sets together. */

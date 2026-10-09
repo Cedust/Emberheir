@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TEST_SKILL, TEST_WEAPON } from "../combat/test-fixtures";
-import { levelCap } from "./leveling";
+import { bossLevel, levelCap } from "./leveling";
 import {
   type GameAction,
   type GameState,
@@ -35,9 +35,11 @@ const build = (state: MasteryState, rank = 0) =>
   buildMasteryWeapon(TEST_WEAPON, tree, state, rank, TEST_SKILL);
 
 describe("Weapon Rank", () => {
-  it("follows the level: the run's Level Cap gives Rank 4/7/10/13/16/18/20", () => {
-    const caps = Array.from({ length: 7 }, (_, p) => weaponRank(levelCap(p)));
-    expect(caps).toEqual([4, 7, 10, 13, 16, 18, 20]);
+  it("follows the level: each run's boss level gives Rank 4/7/10/13/16/18/20, its cap no more", () => {
+    const atBoss = Array.from({ length: 7 }, (_, p) => weaponRank(bossLevel(p)));
+    expect(atBoss).toEqual([4, 7, 10, 13, 16, 18, 20]);
+    const atCap = Array.from({ length: 7 }, (_, p) => weaponRank(levelCap(p), p));
+    expect(atCap).toEqual([4, 7, 10, 13, 16, 18, 20]);
     expect(weaponRank(1)).toBe(0);
   });
 
@@ -162,7 +164,7 @@ describe("Weapon Mastery in the game", () => {
   };
 
   it("learning spends Rank points; the fight setup carries the weapon", () => {
-    let s = camp(3);
+    let s = camp(4);
     expect(masteryPointsLeft(s, data)).toBe(2);
     s = act(s, { type: "learnMastery", nodeId: "refine" }, { type: "learnMastery", nodeId: "p1" });
     expect(masteryPointsLeft(s, data)).toBe(0);

@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 import {
+  type SkillTreeDefinition,
+  forgetBlockReason,
   keystoneRules,
+  startingNodes,
   learnBlockReason,
   learnNodes,
   neighbours,
@@ -49,5 +52,55 @@ describe("Skill Tree", () => {
     const learned = { r: 1 };
     expect(treeBonuses(TEST_TREE, learned, "ranged").elementalDamage).toBe(0.5);
     expect(treeBonuses(TEST_TREE, learned, "melee").elementalDamage).toBe(0);
+  });
+
+  it("forks: learning one side closes the other until it is forgotten", () => {
+    const tree: SkillTreeDefinition = {
+      classStarts: { hero: "s" },
+      nodes: [
+        {
+          id: "s",
+          name: "S",
+          branch: "might",
+          kind: "minor",
+          description: "",
+          links: ["x", "y"],
+          x: 0,
+          y: 0,
+          classStart: "hero",
+        },
+        {
+          id: "x",
+          name: "X",
+          branch: "might",
+          kind: "notable",
+          description: "",
+          links: [],
+          x: 1,
+          y: 0,
+          fork: "f",
+        },
+        {
+          id: "y",
+          name: "Y",
+          branch: "might",
+          kind: "notable",
+          description: "",
+          links: [],
+          x: -1,
+          y: 0,
+          fork: "f",
+        },
+      ],
+    };
+    const learned = startingNodes(tree, "hero");
+    expect(learned).toEqual({ s: 1 });
+    expect(learnBlockReason(tree, learned, "x", budget(1))).toBeUndefined();
+    const after = learnNodes(tree, learned, ["x"], budget(1)).learned;
+    expect(learnBlockReason(tree, after, "y", budget(1))).toBe("forkTaken");
+    expect(forgetBlockReason(tree, after, "x", "s")).toBeUndefined();
+    expect(forgetBlockReason(tree, after, "s", "s")).toBe("start");
+    // A class's start node only counts as learned for that class.
+    expect(nodeRanks(tree, {}, "s")).toBe(0);
   });
 });

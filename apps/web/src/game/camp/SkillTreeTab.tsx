@@ -1,5 +1,6 @@
 import { SKILL_TREE } from "@emberheir/content";
 import {
+  classStartNode,
   type GameState,
   type SkillNode,
   type SkillTreeBranch,
@@ -94,7 +95,8 @@ const reducedMotion = () =>
 export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolean }) {
   const { state, game, viewOnly } = props;
   const [pending, setPending] = useState<string[]>([]);
-  const [selectedId, setSelectedId] = useState(SKILL_TREE.startNodeId);
+  const startId = classStartNode(SKILL_TREE, state.hero.classId) ?? "";
+  const [selectedId, setSelectedId] = useState(startId);
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
   const [failed, setFailed] = useState(false);
   const stage = useStageSize();
@@ -235,7 +237,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
           <button
             type="button"
             className="btn"
-            onClick={() => sceneRef.current?.focus(SKILL_TREE.startNodeId, 1.1)}
+            onClick={() => sceneRef.current?.focus(startId, 1.1)}
           >
             Heart
           </button>

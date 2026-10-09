@@ -1,15 +1,19 @@
+import { MONSTER_BAND_ENDS } from "../combat/monsters";
 import { PROGRESSION } from "./constants";
 
+/** Monster Level of the harvest boss of the run at a Prestige level: 10, 20, 30, 45, 60, 75, 90. */
+export function bossLevel(prestige: number): number {
+  const run = Math.max(0, Math.min(prestige, PROGRESSION.finalPrestige - 1));
+  return MONSTER_BAND_ENDS[run] ?? PROGRESSION.maxLevel - PROGRESSION.levelHeadroom;
+}
+
 /**
- * Level Cap at a Prestige level (Playtest 2): `levelsPerAct` for every act played in all runs so
- * far. Run n has n acts, so the caps are 5, 15, 30, 50, 75, 105 and 140 in run 7. The final
- * Prestige adds none.
+ * Level Cap at a Prestige level (level-v2.md section 4): the run's boss level plus 10, so a wall
+ * can be out-levelled by farming. 20, 30, 40, 55, 70, 85 and 100 in run 7. The final Prestige
+ * adds none.
  */
 export function levelCap(prestige: number): number {
-  const runs = Math.min(prestige, PROGRESSION.finalPrestige - 1) + 1;
-  let acts = 0;
-  for (let run = 1; run <= runs; run++) acts += Math.min(run, PROGRESSION.actsPerFullRun);
-  return PROGRESSION.levelsPerAct * acts;
+  return Math.min(PROGRESSION.maxLevel, bossLevel(prestige) + PROGRESSION.levelHeadroom);
 }
 
 /** XP needed to go from `level` to the next one; Infinity at the Level Cap. */

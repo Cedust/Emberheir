@@ -102,15 +102,18 @@ import {
   placeAt,
 } from "./inventory";
 import { type CraftRequest, craft } from "./crafting";
-import { type EnemyRank, autoRewards, gainXp, levelCap, xpForKill } from "./leveling";
+import { type EnemyRank, autoRewards, bossLevel, gainXp, levelCap, xpForKill } from "./leveling";
 import {
   type LearnedNodes,
   type PrestigeBranchDefinition,
   type SkillTreeDefinition,
   MAX_BRANCH_TIER,
   branchTier,
+  forgetBlockReason,
+  getNode,
   keystoneRules,
   learnNodes,
+  startingNodes,
   treeBonuses,
   treeSkills,
   treeTriggers,
@@ -126,7 +129,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -272,6 +275,8 @@ export interface Rewards {
   /** Runes that dropped (straight into the pouch). */
   readonly runes: readonly string[];
   readonly levelsGained: number;
+  /** The stage was a Waymark reached for the first time this run: +1 Skill Point. */
+  readonly waymark?: boolean;
   /** Item pick: `picks` (default 1) of these. */
   readonly items: readonly Item[];
   /** Boss Hoard: how many cards the hero takes (missing = 1). */
@@ -330,6 +335,8 @@ export interface PrestigeRewards {
   /** The Battle Plan upgrade this Prestige unlocks (`BATTLE_PLAN_LADDER`). */
   readonly planUpgrade: string | null;
   readonly harvesterEmber: number;
+  /** The Harvest's Skill Points (level-v2.md section 7). */
+  readonly skillPoints: number;
   readonly levelCap: number;
   /** Acts the next run has (one more per Prestige, up to all of them). */
   readonly acts: number;
@@ -417,6 +424,11 @@ export interface GameState {
     readonly stashBurned: boolean;
     /** Eldrin (Runesmith) joined the caravan. Stays through every Prestige. */
     readonly runesmithUnlocked: boolean;
+    /**
+     * Waymarks reached in this run (`waymarkKey`): each gave a Skill Point. They open again at
+     * the Prestige, so every run pays its Waymarks anew (level-v2.md section 7).
+     */
+    readonly waymarks: readonly string[];
   };
   /** Marisha's stock: which offers of the current stock are sold. */
   /** `null` = in the Camp. */
@@ -484,7 +496,7 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       attributes: heroClass.startingAttributes,
       unspentAttributePoints: 0,
       unspentSkillPoints: PROGRESSION.startSkillPoints,
-      learned: {},
+      learned: startingNodes(data.skillTree, heroClass.id),
       weaponId,
       mastery: EMPTY_MASTERY,
       equipment: offHand ? { offHand } : {},
@@ -511,6 +523,7 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       rotationSlots: battlePlanUnlocks(0).rotationSlots,
       stashBurned: false,
       runesmithUnlocked: false,
+      waymarks: [],
     },
     run: null,
     notice: null,
@@ -602,11 +615,11 @@ export function isHarvestAct(data: GameData, actId: string, prestige: number): b
 }
 
 /**
- * The run's level band (prestige-acts-v1.md section 4): it starts at the previous Level Cap, where
- * the hero left off with all of its gear, and ends at the new cap with the harvest boss.
+ * The run's level band (prestige-acts-v1.md section 4): it starts at the previous harvest boss's
+ * level, where the hero left off with all of its gear, and ends at the new harvest boss.
  */
 export function levelBand(prestige: number): LevelBand {
-  return { start: prestige === 0 ? 1 : levelCap(prestige - 1), end: levelCap(prestige) };
+  return { start: prestige === 0 ? 1 : bossLevel(prestige - 1), end: bossLevel(prestige) };
 }
 
 /** How far into its run a stage is: 0 on the run's first stage, 1 on its last. */
@@ -635,6 +648,29 @@ export function stageMonsterLevel(
 }
 
 /**
+ * Waymarks of an act (level-v2.md section 7): a third, two thirds and the end of the act (Stages
+ * 5, 10 and 15). The first win on each of them in a run gives a Skill Point.
+ */
+export function waymarkStages(act: ActData): readonly number[] {
+  return [Math.round(act.stages / 3), Math.round((2 * act.stages) / 3), act.stages];
+}
+
+export const waymarkKey = (actId: string, stage: number) => `${actId}:${stage}`;
+
+/**
+ * Skill Points a hero has earned so far: the start, the Waymarks of every finished run (all
+ * acts of a run fall before its Prestige), The Harvest of each Prestige and this run's Waymarks.
+ */
+export function earnedSkillPoints(state: GameState, data: GameData): number {
+  let points = PROGRESSION.startSkillPoints;
+  for (let p = 0; p < state.legacy.prestige; p++) {
+    for (const act of actsInRun(data, p)) points += waymarkStages(act).length;
+    points += PROGRESSION.harvestSkillPoints;
+  }
+  return points + state.progress.waymarks.length;
+}
+
+/**
  * Run Pressure of a stage (PROGRESSION.runPressure): 1 in a one-act run and on a run's first
  * stage, rising to 1 + pressure × (acts − 1) on its last.
  */
@@ -658,6 +694,7 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
     rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
     planUpgrade: BATTLE_PLAN_LADDER[prestige - 1]?.name ?? null,
     harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
+    skillPoints: PROGRESSION.harvestSkillPoints,
     levelCap: levelCap(prestige),
     acts: actsInRun(data, prestige).length,
     levelBand: levelBand(prestige),
@@ -675,8 +712,9 @@ export function masteryTree(data: GameData, weaponId: string): WeaponMasteryTree
   return data.weaponMastery[weaponId] ?? fail(`No Weapon Mastery for "${weaponId}"`);
 }
 
-/** The hero's Weapon Rank: it follows the level (one Mastery point per Rank). */
-export const heroWeaponRank = (state: GameState) => weaponRank(state.hero.level);
+/** The hero's Weapon Rank: it follows the level (one Mastery point per Rank), capped per run. */
+export const heroWeaponRank = (state: GameState) =>
+  weaponRank(state.hero.level, state.legacy.prestige);
 
 /** The worn Echo and its stage, if any. */
 export function wornEcho(
@@ -700,6 +738,7 @@ export function heroWeapon(state: GameState, data: GameData): MasteryBuild {
     heroWeaponRank(state),
     data.startSkills[base.id],
     wornEcho(state, data),
+    state.hero.level,
   );
 }
 
@@ -1127,6 +1166,8 @@ export type GameAction =
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
   | { readonly type: "respecTree" }
+  /** Kaelen: forget one rank of one node for a little Gold (`forgetGold`). */
+  | { readonly type: "forgetNode"; readonly nodeId: string }
   /** Kaelen, Weapon Mastery: learn a node or pick it in its group (Heat Form, Keystone ...). */
   | { readonly type: "learnMastery"; readonly nodeId: string }
   /** Kaelen: forget the Weapon Mastery for Gold. The worn Echo stays. */
@@ -1197,6 +1238,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return learn(state, data, action.nodeIds);
     case "respecTree":
       return respecTree(state, data);
+    case "forgetNode":
+      return forgetNode(state, data, action.nodeId);
     case "learnMastery":
       return learnMasteryNode(state, data, action.nodeId);
     case "respecMastery":
@@ -1407,6 +1450,9 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
+  const waymark =
+    !state.progress.waymarks.includes(waymarkKey(act.id, run.stage)) &&
+    waymarkStages(act).includes(run.stage);
   const quarry = state.legacy.quarry;
   const fight = {
     archetype: encounter.boss ? "boss" : encounterEnemy(encounter, act, data).archetype,
@@ -1499,9 +1545,16 @@ function resolveFight(state: GameState, data: GameData): GameState {
       unspentAttributePoints:
         state.hero.unspentAttributePoints +
         leveled.levelsGained * PROGRESSION.attributePointsPerLevel,
-      unspentSkillPoints:
-        state.hero.unspentSkillPoints + leveled.levelsGained * PROGRESSION.skillPointsPerLevel,
+      unspentSkillPoints: state.hero.unspentSkillPoints + (waymark ? 1 : 0),
     },
+    ...(waymark
+      ? {
+          progress: {
+            ...state.progress,
+            waymarks: [...state.progress.waymarks, waymarkKey(act.id, run.stage)],
+          },
+        }
+      : {}),
     wallet: {
       ...state.wallet,
       gold: state.wallet.gold + auto.gold,
@@ -1537,6 +1590,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ascensionShards: shards,
         runes,
         levelsGained: leveled.levelsGained,
+        ...(waymark ? { waymark: true } : {}),
         report: fightReport(result.events),
         items,
         ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
@@ -2199,15 +2253,20 @@ function learn(state: GameState, data: GameData, nodeIds: readonly string[]): Ga
   };
 }
 
-/** Skill Points and Harvester's Ember spent in the tree (the start node is free). */
+/**
+ * Skill Points and Harvester's Ember spent in the tree. The start node is free: the tree's shared
+ * one, or the class's own (`classId`).
+ */
 export function spentInTree(
   data: GameData,
   learned: LearnedNodes,
+  classId?: string,
 ): { readonly skillPoints: number; readonly harvesterEmber: number } {
   let skillPoints = 0;
   let harvesterEmber = 0;
+  const own = classId ? data.skillTree.classStarts?.[classId] : undefined;
   for (const node of data.skillTree.nodes) {
-    if (node.id === data.skillTree.startNodeId) continue;
+    if (node.id === data.skillTree.startNodeId || node.id === own) continue;
     const ranks = learned[node.id] ?? 0;
     if (node.kind === "keystone") harvesterEmber += ranks;
     else skillPoints += ranks;
@@ -2215,24 +2274,68 @@ export function spentInTree(
   return { skillPoints, harvesterEmber };
 }
 
+/**
+ * Gold for a full Skill Tree respec at Kaelen (level-v2.md section 7): moderate, about the Gold of
+ * a few normal kills at the run's boss level, so it grows with every run.
+ */
+export function respecGold(prestige: number): number {
+  return autoRewards(bossLevel(prestige), "normal").gold * PROGRESSION.respecKills;
+}
+
+/** Gold to forget one rank of one node. */
+export function forgetGold(prestige: number): number {
+  return Math.max(1, Math.round(respecGold(prestige) * PROGRESSION.respecNodeShare));
+}
+
 function respecTree(state: GameState, data: GameData): GameState {
   requireTrainer(state);
-  const spent = spentInTree(data, state.hero.learned);
+  const spent = spentInTree(data, state.hero.learned, state.hero.classId);
   if (spent.skillPoints + spent.harvesterEmber === 0) return fail("Nothing to respec");
-  if (state.wallet.gold < PROGRESSION.respecGold) return fail("Not enough Gold");
+  const price = respecGold(state.legacy.prestige);
+  if (state.wallet.gold < price) return fail("Not enough Gold");
   return {
     ...state,
     hero: {
       ...state.hero,
-      learned: {},
+      learned: startingNodes(data.skillTree, state.hero.classId),
       unspentSkillPoints: state.hero.unspentSkillPoints + spent.skillPoints,
       // Tree skills are gone, so the Battle Plan falls back to the Start Skill.
       rotation: state.hero.rotation.map(() => null),
     },
     wallet: {
       ...state.wallet,
-      gold: state.wallet.gold - PROGRESSION.respecGold,
+      gold: state.wallet.gold - price,
       harvesterEmber: state.wallet.harvesterEmber + spent.harvesterEmber,
+    },
+  };
+}
+
+/** Kaelen: forget one rank of one node for a little Gold (its point or Ember comes back). */
+function forgetNode(state: GameState, data: GameData, nodeId: string): GameState {
+  requireTrainer(state);
+  const tree = data.skillTree;
+  const node = getNode(tree, nodeId);
+  const start = tree.classStarts?.[state.hero.classId];
+  const reason = forgetBlockReason(tree, state.hero.learned, nodeId, start);
+  if (reason) return fail(`Cannot forget "${nodeId}": ${reason}`);
+  const price = forgetGold(state.legacy.prestige);
+  if (state.wallet.gold < price) return fail("Not enough Gold");
+  const ranks = (state.hero.learned[nodeId] ?? 0) - 1;
+  const learned = Object.fromEntries(
+    Object.entries(state.hero.learned).filter(([id]) => id !== nodeId),
+  );
+  const keystone = node.kind === "keystone";
+  return {
+    ...state,
+    hero: {
+      ...state.hero,
+      learned: ranks > 0 ? { ...learned, [nodeId]: ranks } : learned,
+      unspentSkillPoints: state.hero.unspentSkillPoints + (keystone ? 0 : 1),
+    },
+    wallet: {
+      ...state.wallet,
+      gold: state.wallet.gold - price,
+      harvesterEmber: state.wallet.harvesterEmber + (keystone ? 1 : 0),
     },
   };
 }
@@ -2433,6 +2536,10 @@ function doPrestige(state: GameState, data: GameData, branchId: string | undefin
   const final = prestige >= PROGRESSION.finalPrestige;
   return {
     ...state,
+    hero: {
+      ...state.hero,
+      unspentSkillPoints: state.hero.unspentSkillPoints + rewards.skillPoints,
+    },
     wallet: {
       ...state.wallet,
       harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
@@ -2451,6 +2558,7 @@ function doPrestige(state: GameState, data: GameData, branchId: string | undefin
           trainerUnlocked: true,
           rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
           stashBurned: false,
+          waymarks: [],
         },
     run: null,
     legacy: {
@@ -2489,6 +2597,7 @@ export function deserializeGame(json: string, data?: GameData): GameState {
   if (state.version === 7) state = migrateV7(state, data);
   if (state.version === 8) state = migrateV8(state, data);
   if (state.version === 9) state = migrateV9(state, data);
+  if (state.version === 10) state = migrateV10(state, data);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -2637,7 +2746,7 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
     ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
   };
   const hero = state.hero;
-  const cap = levelCap(legacy?.prestige ?? 0);
+  const cap = OLD_LEVEL_CAPS[Math.min(legacy?.prestige ?? 0, OLD_LEVEL_CAPS.length - 1)] ?? 140;
   if (!hero || !data || hero.level <= cap) return migrated;
   return {
     ...migrated,
@@ -2648,8 +2757,8 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
       attributes: data.startingAttributes,
       unspentAttributePoints: (cap - 1) * PROGRESSION.attributePointsPerLevel,
       learned: {},
-      unspentSkillPoints:
-        PROGRESSION.startSkillPoints + (cap - 1) * PROGRESSION.skillPointsPerLevel,
+      // One Skill Point per level back then.
+      unspentSkillPoints: cap,
       rotation: hero.rotation.map(() => null),
     },
     ...(state.wallet
@@ -2759,5 +2868,79 @@ function migrateV9(state: Partial<GameState>, data: GameData | undefined): Parti
     ...(state.wallet ? { wallet: { ...state.wallet, dust: state.wallet.dust + dust } } : {}),
     ...(state.legacy ? { legacy: { ...state.legacy, echoes: state.legacy.echoes ?? echoes } } : {}),
     ...(run && migratedRewards ? { run: { ...run, rewards: migratedRewards } } : {}),
+  };
+}
+
+/** Level Caps per run before the level rework (Playtest 2: 5 per act played). */
+const OLD_LEVEL_CAPS = [5, 15, 30, 50, 75, 105, 140];
+
+/** A level of the old scale (cap 140) on the new one (cap 100), through the runs' boss levels. */
+function rescaleLevel(level: number): number {
+  let prevOld = 1;
+  let prevNew = 1;
+  for (let run = 0; run < OLD_LEVEL_CAPS.length; run++) {
+    const oldEnd = OLD_LEVEL_CAPS[run] ?? 140;
+    const newEnd = bossLevel(run);
+    if (level <= oldEnd) {
+      return Math.round(prevNew + ((level - prevOld) * (newEnd - prevNew)) / (oldEnd - prevOld));
+    }
+    prevOld = oldEnd;
+    prevNew = newEnd;
+  }
+  return prevNew;
+}
+
+/**
+ * v10 → v11 (level-v2.md section 10): Max Level 100 and Skill Points from Waymarks. The level
+ * moves to the new scale; the Skill Tree (a new web) starts over with every point the hero has
+ * earned so far and all Harvester's Ember back; the Weapon Mastery is reset only if its Rank fell.
+ */
+function migrateV10(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
+  const hero = state.hero;
+  const progress = state.progress;
+  const legacy = state.legacy;
+  if (!hero || !progress || !legacy || !data) return { ...state, version: 11 };
+  const prestige = legacy.prestige;
+  const level = Math.min(levelCap(prestige), rescaleLevel(hero.level));
+  // This run's Waymarks: every act it cleared, and the stages behind the hero in the current one.
+  const waymarks: string[] = [];
+  for (const act of data.acts) {
+    const done = progress.actsCleared.includes(act.id)
+      ? act.stages
+      : state.run?.actId === act.id
+        ? state.run.stage - 1
+        : 0;
+    for (const stage of waymarkStages(act))
+      if (stage <= done) waymarks.push(waymarkKey(act.id, stage));
+  }
+  const migrated = {
+    ...state,
+    version: 11,
+    progress: { ...progress, waymarks },
+  } as GameState;
+  const tree = data.weaponMastery[hero.weaponId];
+  const rank = weaponRank(level, prestige);
+  const keepMastery = !tree || pointsAvailable(tree, hero.mastery, rank) >= 0;
+  return {
+    ...migrated,
+    hero: {
+      ...hero,
+      level,
+      xp: 0,
+      learned: startingNodes(data.skillTree, hero.classId),
+      unspentSkillPoints: earnedSkillPoints(migrated, data),
+      rotation: hero.rotation.map(() => null),
+      mastery: keepMastery
+        ? hero.mastery
+        : {
+            ...EMPTY_MASTERY,
+            echo: hero.mastery.echo,
+            ...(hero.mastery.bonusPoints ? { bonusPoints: hero.mastery.bonusPoints } : {}),
+          },
+    },
+    wallet: {
+      ...migrated.wallet,
+      harvesterEmber: prestige * PROGRESSION.prestigeHarvesterEmber,
+    },
   };
 }
