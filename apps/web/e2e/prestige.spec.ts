@@ -27,7 +27,7 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await rekindle.getByRole("button", { name: "Remove Strength" }).click();
   await rekindle.getByRole("button", { name: "Add Agility" }).click();
   await rekindle.getByRole("button", { name: "Add Agility" }).click();
-  await expect(rekindle.getByTestId("perks")).toContainText("Forewarned");
+  await expect(rekindle.getByTestId("perks")).toContainText("Quick Reflexes");
   await expect(rekindle.getByTestId("rekindle-left")).toContainText("1 point left · 1 move left");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/rekindle.png` });
   await page.getByRole("button", { name: "Let It Burn" }).click();

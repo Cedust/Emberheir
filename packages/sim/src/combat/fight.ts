@@ -434,7 +434,7 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
   };
 }
 
-/** Elemental hits and the ailment that belongs to their element (Spillover). */
+/** Elemental hits and the ailment that belongs to their element (Elemental Surge). */
 const ELEMENT_AILMENT: Partial<Record<DamageType, AilmentType>> = {
   fire: "burn",
   cold: "chill",
@@ -1246,9 +1246,9 @@ export class Fight {
       precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand));
     }
 
-    // Forewarned: the first attack of the fight misses.
-    if (h.evadable && !h.fromTrigger && this.usePerk(defender, "forewarned")) {
-      this.perk(defender, "forewarned");
+    // Quick Reflexes: the first attack of the fight misses.
+    if (h.evadable && !h.fromTrigger && this.usePerk(defender, "quickReflexes")) {
+      this.perk(defender, "quickReflexes");
       this.evaded(defender, h);
       return "miss";
     }
@@ -1327,7 +1327,7 @@ export class Fight {
     } else {
       if (rolls) this.cleanHit(attacker, defender, h);
       for (const { ailment, chance } of withStatAilmentChances(
-        this.spillover(attacker, h),
+        this.elementalSurge(attacker, h),
         attacker.stats,
       )) {
         if (!this.rng.chance(chance)) continue;
@@ -1385,27 +1385,27 @@ export class Fight {
     return result;
   }
 
-  /** An attack missed the defender: Read the Blow, Slipstream and On Evade triggers. */
+  /** An attack missed the defender: Read the Blow, Ember Dance and On Evade triggers. */
   private evaded(defender: Fighter, h: HitOptions): void {
     this.emit({ t: this.time, type: "evade", side: defender.side, source: h.source });
     if (defender.setup.weaponRules?.critAfter?.includes("evade")) defender.nextCrit = true;
-    if (defender.perks.has("slipstream")) {
-      defender.heat = addHeat(defender.heat, PERK.slipstreamHeat, this.heatMultiplier(defender));
-      this.perk(defender, "slipstream");
+    if (defender.perks.has("emberDance")) {
+      defender.heat = addHeat(defender.heat, PERK.emberDanceHeat, this.heatMultiplier(defender));
+      this.perk(defender, "emberDance");
     }
     if (!h.fromTrigger) this.fireTriggers(defender, "onEvade");
   }
 
-  /** Spillover: elemental hits get a better chance of their element's ailment. */
-  private spillover(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
+  /** Elemental Surge: elemental hits get a better chance of their element's ailment. */
+  private elementalSurge(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
     const ailment = ELEMENT_AILMENT[h.type];
-    if (!ailment || !attacker.perks.has("spillover")) return h.ailmentChances;
+    if (!ailment || !attacker.perks.has("elementalSurge")) return h.ailmentChances;
     const own = h.ailmentChances.find((c) => c.ailment === ailment);
     return own
       ? h.ailmentChances.map((c) =>
-          c === own ? { ailment, chance: Math.min(1, c.chance + PERK.spilloverChance) } : c,
+          c === own ? { ailment, chance: Math.min(1, c.chance + PERK.elementalSurgeChance) } : c,
         )
-      : [...h.ailmentChances, { ailment, chance: PERK.spilloverChance }];
+      : [...h.ailmentChances, { ailment, chance: PERK.elementalSurgeChance }];
   }
 
   /** Weapon Mastery multipliers on own hit damage. */

@@ -31,8 +31,8 @@ describe("Attribute Breakpoints", () => {
       "scarTissue",
     ]);
     expect(perksFor({ ...ZERO_ATTRIBUTES, agility: 12 })).toEqual([
-      "forewarned",
-      "slipstream",
+      "quickReflexes",
+      "emberDance",
       "doubleTime",
     ]);
   });
@@ -133,12 +133,12 @@ describe("Perks in the fight", () => {
     expect(hits[4]?.glancing).toBeUndefined();
   });
 
-  it("Spillover: elemental hits get a chance of their ailment", () => {
+  it("Elemental Surge: elemental hits get a chance of their ailment", () => {
     const fire = { ...TEST_WEAPON, damageType: "fire" as const };
     const burns = (perks: PerkId[]) =>
       ofType(play(setup({ perks, weapon: fire }), dummy(), 100).events, "ailment").length;
     expect(burns([])).toBe(0);
-    expect(burns(["spillover"])).toBeGreaterThan(3);
+    expect(burns(["elementalSurge"])).toBeGreaterThan(3);
   });
 
   it("Spellfire: the first Spell of a fight deals double damage", () => {
@@ -156,25 +156,25 @@ describe("Perks in the fight", () => {
     expect(spellHits(["spellfire"])).toEqual([40, 20]);
   });
 
-  it("Forewarned: the first enemy attack of a fight misses", () => {
-    const fight = play(dummy({ perks: ["forewarned"] }), setup({ bonuses: NO_CRIT }), 2.05);
+  it("Quick Reflexes: the first enemy attack of a fight misses", () => {
+    const fight = play(dummy({ perks: ["quickReflexes"] }), setup({ bonuses: NO_CRIT }), 2.05);
     const enemyHits = ofType(fight.events, "hit").filter((h) => h.side === "enemy");
     expect(ofType(fight.events, "evade")).toHaveLength(1);
     expect(enemyHits).toHaveLength(1);
-    expect(perkEvents(fight.events, "forewarned")).toHaveLength(1);
+    expect(perkEvents(fight.events, "quickReflexes")).toHaveLength(1);
   });
 
-  it("Slipstream: Heat on Evade", () => {
+  it("Ember Dance: Heat on Evade", () => {
     const hero = dummy({
-      perks: ["slipstream"],
+      perks: ["emberDance"],
       bonuses: { evasion: 1 },
       weapon: { ...TEST_WEAPON, attacksPerSecond: 0, heatBehavior: "steady" },
     });
     const fight = play(hero, setup(), 10.05);
     const evades = ofType(fight.events, "evade").length;
     expect(evades).toBeGreaterThan(0);
-    expect(perkEvents(fight.events, "slipstream")).toHaveLength(evades);
-    expect(fight.snapshot().hero.heat).toBeCloseTo(evades * PERK.slipstreamHeat);
+    expect(perkEvents(fight.events, "emberDance")).toHaveLength(evades);
+    expect(fight.snapshot().hero.heat).toBeCloseTo(evades * PERK.emberDanceHeat);
   });
 
   it("Double Time: every 4th attack strikes twice", () => {
