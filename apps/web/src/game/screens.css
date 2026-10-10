@@ -788,6 +788,36 @@
   font-size: 15px;
 }
 
+.stage .waymark-moment {
+  padding: 6px 10px;
+  border-radius: 4px;
+  border: 1px solid var(--heat);
+  background: linear-gradient(90deg, rgb(255 154 60 / 0.35), rgb(255 210 122 / 0.15));
+  color: var(--text);
+  font-size: 15px;
+  animation: waymark-flare 1.2s ease-out;
+}
+
+@keyframes waymark-flare {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 138 58 / 0.9);
+    transform: scale(0.96);
+  }
+  60% {
+    box-shadow: 0 0 22px 6px rgb(255 138 58 / 0.35);
+    transform: scale(1);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 138 58 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .waymark-moment {
+    animation: none;
+  }
+}
+
 .stage .xp-line {
   font-size: 13px;
 }
@@ -2094,6 +2124,39 @@
   position: absolute;
   inset: 0 auto 0 0;
   background: var(--accent);
+}
+
+.stage .level-track {
+  position: relative;
+  width: 140px;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--track);
+}
+
+.stage .level-track .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  border-radius: 3px;
+  background: var(--accent-2);
+}
+
+.stage .level-track i {
+  position: absolute;
+  top: -4px;
+  width: 2px;
+  height: 14px;
+  margin-left: -1px;
+}
+
+.stage .level-track .cap-notch {
+  background: var(--text);
+}
+
+.stage .level-track .boss-tick {
+  top: -2px;
+  height: 10px;
+  background: var(--life);
 }
 
 .stage .character-columns {

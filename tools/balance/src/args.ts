@@ -5,6 +5,8 @@ export interface BalanceArgs {
   weapon: string;
   /** Act mode: class id (all its start weapons) or "all". */
   class: string;
+  /** Act mode: autopilot build id, "all" (every build of the class) or "" (one per weapon). */
+  build: string;
   /** Rotation skill ids; empty = the weapon's Start Skill. */
   skills: string[];
   /** Enemy id, or "all" for every Act 1 enemy. */
@@ -33,6 +35,7 @@ const DEFAULTS: BalanceArgs = {
   seed: 1,
   weapon: "all",
   class: "all",
+  build: "",
   skills: [],
   enemy: "all",
   level: 1,
@@ -54,7 +57,12 @@ const NUMBER_FLAGS = {
   "--generations": "generations",
   "--finale": "finale",
 } as const;
-const STRING_FLAGS = { "--weapon": "weapon", "--enemy": "enemy", "--class": "class" } as const;
+const STRING_FLAGS = {
+  "--weapon": "weapon",
+  "--enemy": "enemy",
+  "--class": "class",
+  "--build": "build",
+} as const;
 
 /** Parses `--runs 1000 --seed 42 --weapon sword --skills power-strike,flurry` style arguments. */
 export function parseArgs(argv: readonly string[]): BalanceArgs {

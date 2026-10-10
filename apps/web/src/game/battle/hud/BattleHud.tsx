@@ -408,6 +408,24 @@ export interface EnemyFrameProps {
   mods: readonly string[];
   attackIcon: IconName;
   thiefLeft: number | null;
+  heroLevel: number;
+}
+
+/**
+ * Enemy level against the hero's (level-v2.md): red when it is well above, orange above, grey when
+ * the hero has outgrown it. Farming a few levels is how a wall breaks.
+ */
+function levelClass(gap: number): string {
+  if (gap >= 5) return "lv-deadly";
+  if (gap >= 2) return "lv-hard";
+  if (gap <= -5) return "lv-trivial";
+  return "";
+}
+
+function levelHint(gap: number): string {
+  if (gap >= 2) return `${gap} levels above you`;
+  if (gap <= -5) return `${-gap} levels below you`;
+  return "About your level";
 }
 
 /** The enemy at the top center: name, liquid Life (Pixi), Heat, attack rhythm with Heavy Attacks. */
@@ -425,7 +443,12 @@ export function EnemyFrame(props: EnemyFrameProps) {
         {props.tag && <span className={`rank-tag title-font ${tagClass}`}>{props.tag}</span>}
         <span className="hud-enemy-name title-font">{props.name}</span>
         <span className="hud-enemy-kind">{props.sub.split(" · ")[0]}</span>
-        <span className="hud-enemy-level title-font">Lv {e.level}</span>
+        <span
+          className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
+          title={levelHint(e.level - props.heroLevel)}
+        >
+          Lv {e.level}
+        </span>
       </div>
       <div
         className="hud-enemy-life"

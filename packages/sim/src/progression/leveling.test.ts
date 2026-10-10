@@ -1,7 +1,15 @@
 import { describe, expect, it } from "vitest";
 import { MONSTER_BAND_ENDS } from "../combat/monsters";
 import { PROGRESSION } from "./constants";
-import { autoRewards, gainXp, levelCap, xpForKill, xpLevelFactor, xpToNextLevel } from "./leveling";
+import {
+  autoRewards,
+  bossLevel,
+  gainXp,
+  levelCap,
+  xpForKill,
+  xpLevelFactor,
+  xpToNextLevel,
+} from "./leveling";
 
 describe("leveling", () => {
   it("follows the XP table and stops at the Level Cap", () => {
@@ -9,11 +17,12 @@ describe("leveling", () => {
     expect(xpToNextLevel(levelCap(0))).toBe(Infinity);
   });
 
-  it("grows the Level Cap by 5 for every act played", () => {
+  it("puts the Level Cap 10 above each run's boss, up to 100", () => {
     const caps = Array.from({ length: 8 }, (_, p) => levelCap(p));
-    expect(caps).toEqual([5, 15, 30, 50, 75, 105, 140, 140]);
-    // Monster Level bands follow the same caps.
-    expect(MONSTER_BAND_ENDS).toEqual(caps.slice(0, 7));
+    expect(caps).toEqual([20, 30, 40, 55, 70, 85, 100, 100]);
+    // The Monster Level bands end at the bosses.
+    expect(MONSTER_BAND_ENDS).toEqual(caps.slice(0, 7).map((c) => c - 10));
+    expect(bossLevel(6)).toBe(90);
   });
 
   it("has XP for every level up to the last Level Cap", () => {

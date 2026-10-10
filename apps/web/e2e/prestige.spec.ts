@@ -44,7 +44,7 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await expect(heir).toContainText("Warden");
   await expect(heir).toContainText("NEW ACT");
   await expect(heir).toContainText("Rotwood");
-  await expect(heir).toContainText("5 → 15");
+  await expect(heir).toContainText("20 → 30");
   await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
 
   // A reload keeps the new generation.

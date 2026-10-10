@@ -11,15 +11,14 @@ test("Cheat Mode: level, Mastery Points, gold, an item and the next act", async 
   await page.getByRole("button", { name: /Cheats/ }).click();
   const panel = page.getByRole("dialog", { name: "Cheats" });
 
-  // Weapon Rank 13 sets level 50; ten Bonus Mastery Points come on top.
-  await panel
-    .getByRole("radiogroup", { name: "Weapon Rank" })
-    .getByRole("radio", { name: "13" })
-    .click();
-  await expect(panel.getByLabel("Level", { exact: true })).toHaveValue("50");
+  // The second run allows Weapon Rank 7: it sets level 20; ten Bonus Mastery Points come on top.
+  const ranks = panel.getByRole("radiogroup", { name: "Weapon Rank" });
+  await expect(ranks.getByRole("radio")).toHaveCount(8);
+  await ranks.getByRole("radio", { name: "7" }).click();
+  await expect(panel.getByLabel("Level", { exact: true })).toHaveValue("20");
   await panel.getByLabel("Bonus Mastery Points").fill("10");
   await panel.getByLabel("Bonus Mastery Points").press("Enter");
-  await expect(panel).toContainText("23 free");
+  await expect(panel).toContainText("17 free");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/cheats.png` });
 
   await panel.getByRole("tab", { name: "Currency" }).click();

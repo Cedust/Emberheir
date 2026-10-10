@@ -1,6 +1,8 @@
+import { SKILL_TREE, type TreeRegion } from "@emberheir/content";
 import type { SkillNode } from "@emberheir/sim";
 import {
   Application,
+  BlurFilter,
   Container,
   type FederatedPointerEvent,
   type FederatedWheelEvent,
@@ -9,11 +11,16 @@ import {
   Text,
 } from "pixi.js";
 import { Fx } from "../battle/fx";
+import { type AshTreeArt, drawTwigs, paintAshTree } from "./ashTreeArt";
 
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
  * with a camera to drag and zoom. Node colours follow the item rarities: grey = Unavailable,
- * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Looks only:
+ * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Hovering a
+ * node lays its path over the web; a fork's closed side shows as a broken seal. The web grows on
+ * the Ash Tree (`ashTreeArt.ts`): painted bark, limbs up to the crown, roots down into the earth,
+ * and the Ember sigil carved into the trunk, glowing slowly.
+ * Looks only:
  * learning goes through the React side and the sim.
  */
 
@@ -28,6 +35,8 @@ export interface TreeNodeView {
   readonly maxRanks: number;
   /** Colour tier of a learned node (1-3). */
   readonly tier: number;
+  /** The other side of its fork is learned: a broken seal (level-v2.md). */
+  readonly sealed: boolean;
 }
 
 export interface TreeLabel {
@@ -42,6 +51,8 @@ export interface TreeLabel {
 export interface TreeView {
   readonly nodes: readonly TreeNodeView[];
   readonly labels: readonly TreeLabel[];
+  /** Path preview of the hovered node: a learned node first, then the nodes it would cost. */
+  readonly path?: readonly string[];
 }
 
 export interface TreeCallbacks {
@@ -54,7 +65,7 @@ export interface TreeCallbacks {
 
 /** Stage pixels per tree unit at zoom 1. */
 const UNIT = 78;
-const MIN_ZOOM = 0.3;
+const MIN_ZOOM = 0.2;
 const MAX_ZOOM = 2.2;
 /** Names show from this zoom on, rank counters a bit earlier. */
 const NAME_ZOOM = 1.0;
@@ -71,6 +82,7 @@ const UNAVAILABLE = 0x4f4842;
 const PENDING = 0x4fe08a;
 const CORE = 0x17120e;
 const EMBER = 0xff8a3a;
+const PATH = 0xfff1c9;
 
 const RADIUS: Record<SkillNode["kind"], number> = {
   minor: 13,
@@ -102,14 +114,21 @@ export class TreeScene {
   private app: Application | null = null;
   private destroyed = false;
   private readonly world = new Container();
+  /** The Ash Tree behind the web. */
+  private readonly art: AshTreeArt = paintAshTree(UNIT);
+  private readonly sigilLight = new Container();
+  private twigKey = "";
   private readonly linkGlow = new Graphics();
   private readonly links = new Graphics();
+  private readonly pathGlow = new Graphics();
+  private readonly pathLine = new Graphics();
   private readonly nodeLayer = new Container();
   private readonly labelLayer = new Container();
   private fx: Fx | null = null;
   private sprites = new Map<string, NodeSprite>();
   private labels = new Map<string, Text>();
   private view: TreeView = { nodes: [], labels: [] };
+  private byId = new Map<string, TreeNodeView>();
   private size = { w: 800, h: 600, resolution: 1 };
   /** Camera: world offset (stage pixels) and zoom, with targets the camera glides to. */
   private cam = { x: 0, y: 0, zoom: 0.8 };
@@ -130,8 +149,38 @@ export class TreeScene {
 
   constructor(private readonly callbacks: TreeCallbacks) {
     // Branch names sit under the nodes so they never hide one.
-    this.world.addChild(this.labelLayer, this.linkGlow, this.links, this.nodeLayer);
+    this.world.addChild(
+      this.art.earth,
+      this.art.wood,
+      this.art.twigs,
+      this.art.sigil,
+      this.sigilLight,
+      this.labelLayer,
+      this.linkGlow,
+      this.links,
+      this.pathGlow,
+      this.pathLine,
+      this.nodeLayer,
+    );
     this.linkGlow.blendMode = "add";
+    this.pathGlow.blendMode = "add";
+    // The sigil's bloom is blurred once into a texture; the frame only fades it.
+    const bloom = this.art.sigilBloom;
+    bloom.filters = [new BlurFilter({ strength: 10, quality: 3 })];
+    const b = bloom.getLocalBounds();
+    const bloomWrap = new Container();
+    bloomWrap.addChild(
+      new Graphics()
+        .rect(b.minX - 40, b.minY - 40, b.width + 80, b.height + 80)
+        .fill({ color: 0x000000, alpha: 0.001 }),
+      bloom,
+    );
+    bloomWrap.cacheAsTexture(true);
+    this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
+    this.sigilLight.blendMode = "add";
+    // The painted wood never changes: baked once, it costs one quad per frame instead of
+    // hundreds of layered shapes (software GL in CI timed out on it).
+    this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
   }
 
   layout(w: number, h: number, resolution: number): void {
@@ -207,8 +256,10 @@ export class TreeScene {
   /** Shows every visible node. */
   fit(instant = false): void {
     if (!this.view.nodes.length) return;
-    const xs = this.view.nodes.map((n) => n.node.x * UNIT);
-    const ys = this.view.nodes.map((n) => n.node.y * UNIT);
+    // Nodes and the region names around them.
+    const points = [...this.view.nodes.map((n) => n.node), ...this.view.labels];
+    const xs = points.map((p) => p.x * UNIT);
+    const ys = points.map((p) => p.y * UNIT);
     const [minX, maxX, minY, maxY] = [
       Math.min(...xs) - 70,
       Math.max(...xs) + 70,
@@ -347,7 +398,10 @@ export class TreeScene {
   private rebuild(): void {
     if (!this.app) return;
     const byId = new Map(this.view.nodes.map((n) => [n.node.id, n]));
+    this.byId = byId;
+    this.drawTwigs();
     this.drawLinks(byId);
+    this.drawPath(byId);
 
     const seen = new Set<string>();
     for (const n of this.view.nodes) {
@@ -398,6 +452,19 @@ export class TreeScene {
     this.applyCamera();
   }
 
+  /** Twigs under the visible nodes' outward links. */
+  private drawTwigs(): void {
+    const key = this.view.nodes.map((n) => n.node.id).join(",");
+    if (key === this.twigKey) return;
+    this.twigKey = key;
+    drawTwigs(
+      this.art.twigs,
+      UNIT,
+      this.view.nodes.map((n) => n.node),
+      regionOf,
+    );
+  }
+
   private drawLinks(byId: Map<string, TreeNodeView>): void {
     this.links.clear();
     this.linkGlow.clear();
@@ -430,6 +497,37 @@ export class TreeScene {
             .stroke({ color: pending ? PENDING : EMBER, width: 14, alpha: 0.16 });
         }
       }
+    }
+  }
+
+  /** The hovered node's path: a bright dashed trail with a soft glow, marching outwards. */
+  private drawPath(byId: Map<string, TreeNodeView>): void {
+    this.pathLine.clear();
+    this.pathGlow.clear();
+    const path = (this.view.path ?? []).map((id) => byId.get(id)).filter((n) => !!n);
+    const dash = 10;
+    const offset = this.motion ? (this.time * 28) % (dash * 2) : 0;
+    for (let i = 1; i < path.length; i++) {
+      const [a, b] = [path[i - 1], path[i]];
+      if (!a || !b) continue;
+      const [x1, y1, x2, y2] = [a.node.x * UNIT, a.node.y * UNIT, b.node.x * UNIT, b.node.y * UNIT];
+      this.pathGlow.moveTo(x1, y1).lineTo(x2, y2).stroke({ color: PATH, width: 16, alpha: 0.14 });
+      const len = Math.hypot(x2 - x1, y2 - y1);
+      const [ux, uy] = [(x2 - x1) / len, (y2 - y1) / len];
+      for (let d = offset - dash * 2; d < len; d += dash * 2) {
+        const [s, e] = [Math.max(0, d), Math.min(len, d + dash)];
+        if (e <= s) continue;
+        this.pathLine.moveTo(x1 + ux * s, y1 + uy * s).lineTo(x1 + ux * e, y1 + uy * e);
+      }
+      this.pathLine.stroke({ color: PATH, width: 3, alpha: 0.95 });
+    }
+    for (const n of path.slice(1)) {
+      const r = RADIUS[n.node.kind] + 5;
+      this.pathLine.circle(n.node.x * UNIT, n.node.y * UNIT, r).stroke({
+        color: PATH,
+        width: 2,
+        alpha: 0.9,
+      });
     }
   }
 
@@ -519,6 +617,18 @@ export class TreeScene {
       alpha: n.state === "unavailable" ? 0.75 : 1,
     });
     if (kind === "notable") g.circle(0, 0, r - 6).stroke({ color, width: 2, alpha: 0.8 });
+    if (n.sealed) {
+      // A broken seal: the fork's other side is taken. Two cracks run across the node.
+      g.poly(
+        [-r * 0.75, -r * 0.5, -r * 0.1, -r * 0.05, -r * 0.35, r * 0.2, r * 0.7, r * 0.6],
+        false,
+      ).stroke({ color: 0xb04a3a, width: 3, alpha: 0.95 });
+      g.poly([r * 0.6, -r * 0.7, r * 0.15, -r * 0.15, r * 0.4, r * 0.1], false).stroke({
+        color: 0xb04a3a,
+        width: 2,
+        alpha: 0.9,
+      });
+    }
     if (kind === "skill") {
       g.poly(diamond(r * 0.45)).fill({ color, alpha: lit ? 0.9 : 0.35 });
     }
@@ -556,7 +666,7 @@ export class TreeScene {
     s.rank.text = n.maxRanks > 1 ? `${n.ranks}/${n.maxRanks}` : "";
     if (kind === "keystone") s.rank.position.set(0, r + 15);
     s.name.text = n.node.name;
-    s.root.alpha = n.state === "unavailable" ? 0.85 : 1;
+    s.root.alpha = n.sealed ? 0.55 : n.state === "unavailable" ? 0.85 : 1;
   }
 
   private burstAt(n: TreeNodeView, color: number): void {
@@ -592,6 +702,13 @@ export class TreeScene {
     this.cam.y += (this.goal.y - this.cam.y) * k;
     this.cam.zoom += (this.goal.zoom - this.cam.zoom) * k;
     this.applyCamera();
+
+    if (this.motion && this.view.path?.length) {
+      this.drawPath(this.byId);
+    }
+
+    // The carved Ember sigil glows like breathing coals.
+    this.sigilLight.alpha = this.motion ? 0.6 + 0.4 * Math.sin(this.time * 1.6) ** 2 : 0.85;
 
     // Available nodes breathe.
     const pulse = this.motion ? 0.82 + 0.18 * Math.sin(this.time * 3.2) : 1;
@@ -651,3 +768,20 @@ export class TreeScene {
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export const TREE_UNIT = UNIT;
+
+/** Region of a node on the Ash Tree; Prestige branch nodes belong to their anchor's region. */
+const REGION_OF = (() => {
+  const anchors = new Map((SKILL_TREE.prestigeBranches ?? []).map((b) => [b.id, b.anchor]));
+  const base = new Map(SKILL_TREE.nodes.map((n) => [n.id, n.region]));
+  return new Map(
+    SKILL_TREE.nodes.map((n) => {
+      const anchor = n.prestigeBranch ? anchors.get(n.prestigeBranch) : undefined;
+      const region = n.region ?? (anchor ? base.get(anchor) : undefined);
+      return [n.id, region && region !== "core" ? (region as TreeRegion) : undefined];
+    }),
+  );
+})();
+
+function regionOf(n: SkillNode): TreeRegion | undefined {
+  return REGION_OF.get(n.id);
+}

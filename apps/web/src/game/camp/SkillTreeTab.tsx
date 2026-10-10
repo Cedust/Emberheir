@@ -1,17 +1,25 @@
-import { SKILL_TREE } from "@emberheir/content";
+import { SKILL_TREE, TREE_PLACEMENT, type TreeRegion, onTree } from "@emberheir/content";
 import {
+  classStartNode,
   type GameState,
   type SkillNode,
   type SkillTreeBranch,
   branchTier,
+  forgetBlockReason,
+  forgetGold,
+  getNode,
+  forkPartner,
   learnBlockReason,
+  learnCost,
   learnNodes,
+  learnPath,
+  neighbours,
   nodeMaxRanks,
   nodeRanks,
 } from "@emberheir/sim";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
-import { LEARN_BLOCK_TEXT } from "../labels";
+import { FORGET_BLOCK_TEXT, LEARN_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { type TreeLabel, type TreeNodeView, TreeScene, type TreeView } from "./TreeScene";
 
@@ -42,30 +50,24 @@ function visibleNodes(branches: readonly string[]): SkillNode[] {
 
 /**
  * Colour tier of a learned node: its branch tier, raised by the extra ranks a deepening gives
- * to the Minor nodes below it.
+ * to the branch's Skill.
  */
 function colourTier(node: SkillNode, ranks: number): number {
   const own = node.tier ?? 1;
-  if (node.kind !== "minor" || !node.prestigeBranch) return own;
+  if (node.kind !== "skill" || !node.prestigeBranch) return own;
   return Math.min(3, own + Math.max(0, ranks - (node.maxRanks ?? 1)));
 }
 
-/** Big branch names: base branches beside their nodes, Prestige branches past their end. */
+/**
+ * Big names: the four branch regions past the rim of the tree (the bridges between them carry no
+ * name), Prestige branches past their end.
+ */
 function treeLabels(branches: readonly string[]): TreeLabel[] {
-  const labels: TreeLabel[] = BRANCHES.map((b) => {
-    const nodes = SKILL_TREE.nodes.filter((n) => n.branch === b.id && !n.prestigeBranch);
-    const cx = nodes.reduce((s, n) => s + n.x, 0) / nodes.length;
-    const cy = nodes.reduce((s, n) => s + n.y, 0) / nodes.length;
-    return b.id === "core"
-      ? { key: b.id, text: "CORE", x: 0, y: 3.9, color: b.color, size: 20 }
-      : {
-          key: b.id,
-          text: b.name.toUpperCase(),
-          x: cx * 1.55,
-          y: cy * 1.55 + 0.6,
-          color: b.color,
-          size: 22,
-        };
+  const labels: TreeLabel[] = BRANCHES.filter((b) => b.id !== "core").map((b) => {
+    // Out past the region's Keystones, on the tree.
+    const ring = (TREE_PLACEMENT[b.id as TreeRegion].ring * Math.PI) / 180;
+    const at = onTree({ x: Math.cos(ring) * 14, y: Math.sin(ring) * 14 }, b.id as TreeRegion);
+    return { key: b.id, text: b.name.toUpperCase(), ...at, color: b.color, size: 20 };
   });
   for (const def of SKILL_TREE.prestigeBranches ?? []) {
     const tier = branchTier(branches, def.id);
@@ -94,8 +96,10 @@ const reducedMotion = () =>
 export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly: boolean }) {
   const { state, game, viewOnly } = props;
   const [pending, setPending] = useState<string[]>([]);
-  const [selectedId, setSelectedId] = useState(SKILL_TREE.startNodeId);
+  const startId = classStartNode(SKILL_TREE, state.hero.classId) ?? "";
+  const [selectedId, setSelectedId] = useState(startId);
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
+  const [forget, setForget] = useState(false);
   const [failed, setFailed] = useState(false);
   const stage = useStageSize();
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -113,6 +117,42 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   const reason = selected
     ? learnBlockReason(SKILL_TREE, preview.learned, selected.id, preview.budget, branches)
     : undefined;
+  /** Path to a node from the learned web (the preview): the learned node it starts at first. */
+  const pathOf = (id: string): { steps: string[]; from?: string } | undefined => {
+    const steps = learnPath(SKILL_TREE, preview.learned, id, branches);
+    if (!steps?.length) return steps ? { steps } : undefined;
+    const from = neighbours(SKILL_TREE, steps[0] ?? "").find(
+      (n) => nodeRanks(SKILL_TREE, preview.learned, n) > 0,
+    );
+    return { steps, ...(from ? { from } : {}) };
+  };
+  const pathCost = (steps: readonly string[]) =>
+    steps.reduce(
+      (sum, id) => {
+        const cost = learnCost(getNode(SKILL_TREE, id));
+        return {
+          skillPoints: sum.skillPoints + cost.skillPoints,
+          harvesterEmber: sum.harvesterEmber + cost.harvesterEmber,
+        };
+      },
+      { skillPoints: 0, harvesterEmber: 0 },
+    );
+  const hoverPath = hover ? pathOf(hover.id) : undefined;
+  const selectedPath = selected ? pathOf(selected.id) : undefined;
+  const selectedCost = selectedPath ? pathCost(selectedPath.steps) : undefined;
+  const canWalk =
+    !!selectedPath &&
+    selectedPath.steps.length > 1 &&
+    !!selectedCost &&
+    selectedCost.skillPoints <= preview.budget.skillPoints &&
+    selectedCost.harvesterEmber <= preview.budget.harvesterEmber;
+  const start = SKILL_TREE.classStarts?.[state.hero.classId];
+  const committed = selected ? (state.hero.learned[selected.id] ?? 0) > 0 : false;
+  const forgetPrice = forgetGold(state.legacy.prestige);
+  const forgetReason =
+    selected && committed
+      ? forgetBlockReason(SKILL_TREE, state.hero.learned, selected.id, start)
+      : undefined;
 
   const view: TreeView = {
     nodes: nodes.map((node): TreeNodeView => {
@@ -132,9 +172,11 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
         ranks,
         maxRanks: nodeMaxRanks(node, branches),
         tier: colourTier(node, ranks),
+        sealed: ranks === 0 && !!forkPartner(SKILL_TREE, preview.learned, node),
       };
     }),
     labels: treeLabels(branches),
+    ...(hoverPath?.from ? { path: [hoverPath.from, ...hoverPath.steps] } : {}),
   };
 
   // Callbacks of the scene read the latest state through this ref.
@@ -210,6 +252,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
             </span>
             <b className="title-font">{hovered.name}</b>
             <span className="small">{hovered.description}</span>
+            {hoverPath && hoverPath.steps.length > 0 && (
+              <span className="small path-cost">
+                {pointsText(pathCost(hoverPath.steps))}
+                {hoverPath.steps.length > 1 ? ` · ${hoverPath.steps.length} nodes away` : ""}
+              </span>
+            )}
+            {hovered.fork && <span className="small sub">Fork: only one side can be learned.</span>}
           </div>
         )}
         <div className="tree-controls">
@@ -235,9 +284,9 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
           <button
             type="button"
             className="btn"
-            onClick={() => sceneRef.current?.focus(SKILL_TREE.startNodeId, 1.1)}
+            onClick={() => sceneRef.current?.focus(startId, 1.1)}
           >
-            Heart
+            Start
           </button>
         </div>
         <div className="tree-legend">
@@ -324,17 +373,76 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
             {selected.kind === "keystone" && (
               <p className="sub small">Costs 1 Harvester&apos;s Ember.</p>
             )}
+            {selected.fork && (
+              <p className="sub small">
+                Fork: only this or{" "}
+                {
+                  SKILL_TREE.nodes.find((n) => n.fork === selected.fork && n.id !== selected.id)
+                    ?.name
+                }
+                .
+              </p>
+            )}
             {!viewOnly && (
               <>
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={reason !== undefined}
-                  onClick={() => setPending((p) => [...p, selected.id])}
-                >
-                  {selected.kind === "keystone" ? "Learn · 1 Ember" : "Learn · 1 Point"}
-                </button>
-                {reason && <p className="block warn">{LEARN_BLOCK_TEXT[reason]}</p>}
+                {canWalk && selectedPath && selectedCost && reason === "notConnected" ? (
+                  <button
+                    type="button"
+                    className="btn primary"
+                    onClick={() => setPending((p) => [...p, ...selectedPath.steps])}
+                  >
+                    Learn path · {pointsText(selectedCost)}
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    className="btn primary"
+                    disabled={reason !== undefined}
+                    onClick={() => setPending((p) => [...p, selected.id])}
+                  >
+                    {selected.kind === "keystone" ? "Learn · 1 Ember" : "Learn · 1 Point"}
+                  </button>
+                )}
+                {reason && !(canWalk && reason === "notConnected") && (
+                  <p className="block warn">
+                    {reason === "notConnected" && selectedCost
+                      ? `${LEARN_BLOCK_TEXT[reason]} (path: ${pointsText(selectedCost)})`
+                      : LEARN_BLOCK_TEXT[reason]}
+                  </p>
+                )}
+                {committed && pending.length === 0 && forgetReason !== "start" && (
+                  <>
+                    {forget ? (
+                      <span className="respec-confirm">
+                        <button
+                          type="button"
+                          className="btn danger"
+                          onClick={() => {
+                            game.dispatch({ type: "forgetNode", nodeId: selected.id });
+                            setForget(false);
+                          }}
+                        >
+                          Yes, forget
+                        </button>
+                        <button type="button" className="btn" onClick={() => setForget(false)}>
+                          Cancel
+                        </button>
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className="btn"
+                        disabled={forgetReason !== undefined || state.wallet.gold < forgetPrice}
+                        onClick={() => setForget(true)}
+                      >
+                        Forget · {forgetPrice} Gold
+                      </button>
+                    )}
+                    {forgetReason && (
+                      <p className="block sub small">{FORGET_BLOCK_TEXT[forgetReason]}</p>
+                    )}
+                  </>
+                )}
               </>
             )}
           </section>
@@ -370,4 +478,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
       </aside>
     </div>
   );
+}
+
+/** "3 Points", "2 Points + 1 Ember". */
+function pointsText(cost: { skillPoints: number; harvesterEmber: number }): string {
+  const points = `${cost.skillPoints} Point${cost.skillPoints === 1 ? "" : "s"}`;
+  if (!cost.harvesterEmber) return points;
+  return cost.skillPoints
+    ? `${points} + ${cost.harvesterEmber} Ember`
+    : `${cost.harvesterEmber} Ember`;
 }

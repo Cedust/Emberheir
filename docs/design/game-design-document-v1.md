@@ -83,6 +83,10 @@ Ein Held kämpft automatisch, der Spieler kämpft nie selbst. **Alle Entscheidun
 | **Vitality** | Life, Tenacity |
 
 ### Level ✅ (überarbeitet 30.09.2026, Thread "Level-Progression")
+> **Ersetzt durch `level-v2.md` (umgesetzt 09.10.2026):** Max Level 100, Level Cap = Boss-Level des Durchgangs + 10
+> (20/30/40/55/70/85/100), jedes Level gibt +4 % Base Life und +3 % Weapon Damage. Skill Points kommen nicht mehr vom
+> Level, sondern aus Start (2), Waymarks (84) und The Harvest (14), zusammen 100. Die Punkte unten sind Geschichte.
+
 - **Level, Attribut- und Skillpunkte bleiben beim Prestige erhalten** ✅. Der Heir erbt, was er gelernt hat. Respec jederzeit beim Trainer gegen Gold.
 - **Level Cap:** **20 im ersten Durchgang**, danach **+20 pro Prestige** ✅ (Playtest 1, 02.10.2026; vorher 10/+10) → **Level 200** im 10. Durchgang. Das 10. Prestige hebt das Cap nicht mehr an, im Finale gibt es keine Level-Ups. Der erste Durchgang ist eine leichte, schnelle Einführung.
 - Jedes Level gibt **1 Skillpunkt** und automatisch etwas **Base Life** ✅. **Keine Attributpunkte mehr pro Level** (2026-10-09): Attribute laufen 1–10, Punkte nur bei Charaktererstellung und The Harvest, siehe `attribute-v1.md`.
@@ -204,6 +208,10 @@ Details: `item-system-v1.md`, `town-crafting-v1.md`
 ---
 
 ## 7. Skill Tree ✅
+
+> **Ab `level-v2.md` (umgesetzt 09.10.2026):** Der Grundbaum ist ein **Netz** aus acht Regionen (vier Äste und vier
+> Brücken) mit einem Startpunkt pro Klasse, ca. 24 Clustern mit Notables, 8 Gabelungen, 14 Skills und 12 Keystones.
+> Klassenpfade kosten 8 / 5 / 6 Skill Points pro Stufe. Respec: ganzer Baum oder einzelne Nodes gegen Gold.
 
 - Gemeinsamer Tree: **Core** plus vier Grundäste
   - **Might** (Physical Direct), **Rupture** (Bleed/Poison), **Arcana** (Elemental Direct), **Affliction** (Burn/Corruption)

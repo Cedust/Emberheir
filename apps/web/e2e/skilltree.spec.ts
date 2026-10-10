@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveAfterHarvestBoss, saveDeepTree, seedSave } from "./fixtures";
+import { saveAfterHarvestBoss, saveDeepTree, saveWebTree, seedSave } from "./fixtures";
 
 test("The Skill Tree grows with the Prestige branches and their tiers", async ({ page }) => {
   const errors: string[] = [];
@@ -56,6 +56,8 @@ test("The Bloodline step deepens an owned branch", async ({ page }) => {
 });
 
 test("The Skill Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {
+  // Every touch waits for a frame, and the painted Ash Tree renders slowly on CI's software GL.
+  test.slow();
   await seedSave(page, saveDeepTree());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
@@ -93,4 +95,42 @@ test("The Skill Tree zooms with the mouse wheel and a two-finger pinch", async (
   const zoomedIn = await zoom();
   await pinch(160, 40);
   await expect.poll(zoom).toBeLessThan(zoomedIn / 1.5);
+});
+
+test("The web: a path at once, a fork closes its other side, a node is forgotten", async ({
+  page,
+}) => {
+  test.slow();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveWebTree());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("t");
+  const tree = page.getByRole("group", { name: "Skill Tree" });
+  const detail = page.getByRole("region", { name: "Node details" });
+
+  // Colossus sits four nodes out from the Warrior's start: the whole path is learned at once.
+  await tree.getByRole("button", { name: "Colossus" }).press("Enter");
+  await expect(detail).toContainText("Fork: only this or Whirlwind");
+  await detail.getByRole("button", { name: "Learn path · 4 Points" }).click();
+  await expect(page.getByText("4 new nodes pending")).toBeVisible();
+  await page.getByRole("button", { name: "Confirm" }).click();
+
+  // The other side of the fork is sealed.
+  await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
+  await expect(detail).toContainText("The other path of this fork is learned");
+
+  // Colossus is forgotten for Gold: the fork opens again.
+  await tree.getByRole("button", { name: "Colossus" }).press("Enter");
+  await detail.getByRole("button", { name: /Forget · \d+ Gold/ }).click();
+  await detail.getByRole("button", { name: "Yes, forget" }).click();
+  await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
+  await expect(detail.getByRole("button", { name: "Learn · 1 Point" })).toBeEnabled();
+  if (process.env.SHOTS) {
+    await page.getByRole("button", { name: "Fit" }).click();
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${process.env.SHOTS}/tree-web.png` });
+  }
+  expect(errors).toEqual([]);
 });

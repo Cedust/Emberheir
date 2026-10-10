@@ -129,7 +129,11 @@ const RARITY_OPTIONS = RARITIES.map((r) => ({ value: r, name: RARITY_NAMES[r] })
 function HeroTab(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const rank = heroWeaponRank(state);
-  const ranks = MASTERY.rankLevels.map((level, r) => ({ value: r, name: String(r), level }));
+  // Ranks this run allows (level-v2.md: the Rank is capped per run).
+  const cap = MASTERY.rankCaps[Math.min(state.legacy.prestige, MASTERY.rankCaps.length - 1)] ?? 0;
+  const ranks = MASTERY.rankLevels
+    .map((level, r) => ({ value: r, name: String(r), level }))
+    .filter((r) => r.value <= cap);
   return (
     <div className="cheat-grid">
       <section className="cheat-card">
@@ -139,10 +143,18 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
           value={state.hero.level}
           min={1}
           max={CHEAT_MAX_LEVEL}
-          quick={[1, 5, 20]}
+          quick={[1, 10, 20, 50, 100]}
           onSet={(level) => game.cheat({ kind: "level", level })}
         />
-        <p className="sub small">Lowering the level gives every point back.</p>
+        <p className="sub small">Life and Weapon Damage follow the level.</p>
+        <NumberRow
+          label="Skill Points"
+          value={state.hero.unspentSkillPoints}
+          max={999}
+          quick={[10, 50, 100]}
+          onSet={(amount) => game.cheat({ kind: "skillPoints", amount })}
+        />
+        <p className="sub small">Unspent points. Waymarks and the Harvest give the real ones.</p>
       </section>
       <section className="cheat-card">
         <span className="eyebrow">

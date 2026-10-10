@@ -131,8 +131,16 @@ export type EchoesState = Readonly<
 >;
 
 export const MASTERY = {
-  /** Hero level at which each Weapon Rank is reached (index = Rank). Run caps give 4/7/10/13/16/18/20. */
-  rankLevels: [1, 2, 3, 4, 5, 8, 11, 15, 20, 25, 30, 37, 44, 50, 58, 66, 75, 90, 105, 122, 140],
+  /**
+   * Hero level at which each Weapon Rank is reached (index = Rank). The run's boss levels
+   * (10, 20, 30, 45, 60, 75, 90) give Ranks 4, 7, 10, 13, 16, 18 and 20.
+   */
+  rankLevels: [1, 2, 4, 7, 10, 13, 16, 20, 23, 26, 30, 35, 40, 45, 50, 55, 60, 68, 75, 83, 90],
+  /**
+   * Highest Rank per run (index = Prestige): farming past a wall gives Weapon Damage (it follows
+   * the level), but no extra Mastery Points (level-v2.md section 5).
+   */
+  rankCaps: [4, 7, 10, 13, 16, 18, 20],
   /** Weapon Damage factor on the weapon's base damage (balance CLI). */
   damageFactor: 1.15,
   /** Precision and Damage Range caps. */
@@ -160,13 +168,15 @@ export const WEAPON_GRADES = [
 
 export const MAX_WEAPON_RANK = MASTERY.rankLevels.length - 1;
 
-/** Weapon Rank at a hero level. */
-export function weaponRank(level: number): number {
+/** Weapon Rank at a hero level, capped by the run (`MASTERY.rankCaps`) when a Prestige is given. */
+export function weaponRank(level: number, prestige?: number): number {
   let rank = 0;
   MASTERY.rankLevels.forEach((l, r) => {
     if (level >= l) rank = r;
   });
-  return rank;
+  if (prestige === undefined) return rank;
+  const caps = MASTERY.rankCaps;
+  return Math.min(rank, caps[Math.min(prestige, caps.length - 1)] ?? MAX_WEAPON_RANK);
 }
 
 /** Hero level of the next Weapon Rank, or null at the top. */
@@ -180,10 +190,14 @@ export function weaponGrade(rank: number): string {
   return grade;
 }
 
-/** Weapon Damage growth at a Rank: a bit flatter than the old item tiers (balance CLI, 2026-10-08). */
+/** Weapon Damage growth at a hero level (level-v2.md section 5): +3 % per level, compounding. */
+export function levelGrowth(level: number): number {
+  return (1 + COMBAT.heroLevelGrowth.damage) ** (Math.max(1, level) - 1);
+}
+
+/** Weapon Damage growth at the level a Rank is reached. */
 export function rankGrowth(rank: number): number {
-  const level = MASTERY.rankLevels[Math.min(rank, MAX_WEAPON_RANK)] ?? 1;
-  return 1 + (level - 1) / 16;
+  return levelGrowth(MASTERY.rankLevels[Math.min(rank, MAX_WEAPON_RANK)] ?? 1);
 }
 
 export function masteryNode(tree: WeaponMasteryTree, id: string): MasteryNode {
@@ -348,8 +362,10 @@ export function buildMasteryWeapon(
   rank: number,
   innate: SkillDefinition | undefined,
   echo?: { readonly def: EchoDefinition; readonly stage: number },
+  /** Hero level: Weapon Damage follows it. Default: the level the Rank is reached at. */
+  level?: number,
 ): MasteryBuild {
-  const growth = rankGrowth(rank);
+  const growth = level === undefined ? rankGrowth(rank) : levelGrowth(level);
   const weaponDamage = ((base.damage.min + base.damage.max) / 2) * growth * MASTERY.damageFactor;
   const effects = activeEffects(tree, state, echo, weaponDamage);
   let precision = tree.precision;

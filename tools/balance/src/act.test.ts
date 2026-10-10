@@ -1,6 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import { describe, expect, it } from "vitest";
-import { playAct, playGenerations } from "./act";
+import { BUILDS, playAct, playGenerations } from "./act";
 
 describe("act autopilot", () => {
   it("plays Act 1 to the end and reports it", () => {
@@ -30,5 +30,18 @@ describe("act autopilot", () => {
     ]);
     expect(reports[0]?.cleared).toBe(true);
     expect(reports[1]?.fights).toBeGreaterThanOrEqual(15);
+  });
+});
+
+describe("autopilot builds", () => {
+  it("three per class, every goal a node of the tree", () => {
+    const ids = new Set(GAME_DATA.skillTree.nodes.map((n) => n.id));
+    for (const c of GAME_DATA.classes) {
+      const builds = BUILDS.filter((b) => b.classId === c.id);
+      expect(builds, c.id).toHaveLength(3);
+      for (const b of builds) expect(c.weapons, b.id).toContain(b.weapon);
+    }
+    const goals = BUILDS.flatMap((b) => b.nodes.filter((n) => n !== "@branches"));
+    expect(goals.filter((n) => !ids.has(n))).toEqual([]);
   });
 });

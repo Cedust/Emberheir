@@ -75,8 +75,10 @@ describe("deriveStats", () => {
       weapon: TEST_WEAPON,
       rotation: [],
     };
-    expect(deriveStats(noBaseLife).maxLife).toBe(heroBaseLife(3));
-    expect(heroBaseLife(3)).toBe(COMBAT.heroBaseLife + 2 * COMBAT.heroLifePerLevel);
+    expect(deriveStats(noBaseLife).maxLife).toBe(Math.round(heroBaseLife(3)));
+    expect(heroBaseLife(3)).toBeCloseTo(
+      COMBAT.heroBaseLife * (1 + COMBAT.heroLevelGrowth.life) ** 2,
+    );
   });
 });
 

@@ -69,7 +69,7 @@ export function LegacyView(props: {
     {
       kind: "LEVEL CAP",
       value: String(levelCap(legacy.prestige)),
-      desc: `Level ${state.hero.level} now. Every act you open raises it by 5.`,
+      desc: `Level ${state.hero.level} now. Ten levels above the harvest boss, for farming.`,
     },
     {
       kind: "BATTLE PLAN",

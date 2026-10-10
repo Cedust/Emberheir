@@ -9,21 +9,32 @@ const cheat = (state: GameState, ...cheats: Cheat[]) =>
   cheats.reduce((s, c) => applyCheat(s, data, c), state);
 
 describe("Cheat Mode", () => {
-  it("raises the level with its points and the Weapon Rank", () => {
+  it("raises the level with its points and the Weapon Rank (capped by the run)", () => {
     const s = cheat(start(), { kind: "level", level: 20 });
     expect(s.hero.level).toBe(20);
     expect(s.hero.unspentAttributePoints).toBe(start().hero.unspentAttributePoints);
-    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints + 19);
-    expect(masteryPointsLeft(s, data)).toBe(8);
+    // Skill Points come from Waymarks, not levels.
+    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints);
+    expect(masteryPointsLeft(s, data)).toBe(4);
+    const later = { ...s, legacy: { ...s.legacy, prestige: 2 } };
+    expect(masteryPointsLeft(later, data)).toBe(7);
   });
 
-  it("lowers the level and gives the Skill Points back; attributes stay", () => {
+  it("sets Skill Points, and clearing acts pays their Waymarks", () => {
+    let s = cheat(start(), { kind: "skillPoints", amount: 9 });
+    expect(s.hero.unspentSkillPoints).toBe(9);
+    s = cheat(s, { kind: "clearAct" });
+    expect(s.progress.waymarks).toHaveLength(3);
+    expect(s.hero.unspentSkillPoints).toBe(12);
+  });
+
+  it("lowers the level; attributes and Skill Points (from Waymarks) stay", () => {
     let s = cheat(start(), { kind: "level", level: 10 });
     s = applyAction(s, data, { type: "allocateAttributes", points: { strength: 4 } });
     s = cheat(s, { kind: "level", level: 3 });
     expect(s.hero.level).toBe(3);
     expect(s.hero.attributes.strength).toBe(start().hero.attributes.strength + 4);
-    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints + 2);
+    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints);
   });
 
   it("sets the unspent Attribute Points", () => {

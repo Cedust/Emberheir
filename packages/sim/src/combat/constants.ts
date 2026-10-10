@@ -9,7 +9,11 @@ export const COMBAT = {
   maxFightSeconds: 300,
 
   heroBaseLife: 100,
-  heroLifePerLevel: 12,
+  /**
+   * The hero's own growth per level (level-v2.md section 5): Base Life and Weapon Damage grow by
+   * these shares per level, compounding. About +7 % fighting power per level.
+   */
+  heroLevelGrowth: { life: 0.04, damage: 0.03 },
 
   // Attribute effects per point of monsters ("classic" scale, docs/design/stat-liste-v2.md).
   lifePerVitality: 5,

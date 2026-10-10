@@ -1,9 +1,18 @@
-import type { ActData } from "@emberheir/sim";
+import { type ActData, waymarkKey, waymarkStages } from "@emberheir/sim";
 import { Icon } from "../ui/Icon";
 import { actTitle, finaleFoe, inFinale } from "./finale";
 
-/** Act progress as a bar (battle-view-v1.md): Camp, 15 stages, Spoils stages and the Boss. */
-export function ActProgress(props: { act: ActData; stage: number; cleared: boolean }) {
+/**
+ * Act progress as a bar (battle-view-v1.md): Camp, 15 stages, Spoils stages and the Boss. Waymarks
+ * (level-v2.md) stand above their stages: lit once reached this run.
+ */
+export function ActProgress(props: {
+  act: ActData;
+  stage: number;
+  cleared: boolean;
+  /** Waymarks reached this run (`progress.waymarks`). */
+  waymarks?: readonly string[];
+}) {
   const { act, stage } = props;
   const stages = act.stages;
   const width = 760;
@@ -12,6 +21,7 @@ export function ActProgress(props: { act: ActData; stage: number; cleared: boole
   const done = props.cleared ? stage : stage - 1;
   // The Last Ember: every stage is a boss, each dot names its echo.
   const finale = inFinale(act);
+  const marks = finale || !props.waymarks ? [] : waymarkStages(act);
   return (
     <div
       className="act-progress"
@@ -64,6 +74,17 @@ export function ActProgress(props: { act: ActData; stage: number; cleared: boole
           </div>
         );
       })}
+      {marks.map((n) => {
+        const taken = props.waymarks?.includes(waymarkKey(act.id, n)) ?? false;
+        return (
+          <span
+            key={`waymark-${n}`}
+            className={`act-waymark ${taken ? "taken" : ""}`}
+            title={taken ? "Waymark reached · +1 Skill Point" : "Waymark · +1 Skill Point"}
+            style={{ left: left0 + ((n - 1) / (stages - 1)) * span - 5 }}
+          />
+        );
+      })}
     </div>
   );
 }
@@ -76,6 +97,8 @@ export function RunHeader(props: {
   cleared: boolean;
   attributePoints: number;
   skillPoints: number;
+  /** Waymarks reached this run; shows the Waymark stages on the act bar. */
+  waymarks?: readonly string[];
   onCharacter: () => void;
   onTree: () => void;
   onMenu: () => void;
@@ -86,7 +109,12 @@ export function RunHeader(props: {
         <span className="title-font">{actTitle(props.act)}</span>
         <span className="sub">{props.sub}</span>
       </div>
-      <ActProgress act={props.act} stage={props.stage} cleared={props.cleared} />
+      <ActProgress
+        act={props.act}
+        stage={props.stage}
+        cleared={props.cleared}
+        {...(props.waymarks ? { waymarks: props.waymarks } : {})}
+      />
       <div className="grow" />
       <button type="button" className="hud-button" onClick={props.onCharacter}>
         <Icon name="user" size={18} />

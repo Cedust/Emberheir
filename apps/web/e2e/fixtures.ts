@@ -238,7 +238,7 @@ function lateGame(prestige: number): GameState {
   const branches = (SKILL_TREE.prestigeBranches ?? []).map((b) => b.id).slice(0, prestige);
   return {
     ...base,
-    hero: { ...base.hero, level: 140 },
+    hero: { ...base.hero, level: 100 },
     progress: {
       ...base.progress,
       actsCleared: GAME_DATA.acts.map((a) => a.id),
@@ -281,7 +281,7 @@ export function saveEnding(): string {
 
 /**
  * A Camp save in the sixth run with a deep Skill Tree: Duelist up to tier III, Warden and
- * Tactician at tier I, Might and Core mostly learned (skilltree-v2.md).
+ * Tactician at tier I, much of the Might side of the web learned (skilltree-v2.md).
  */
 export function saveDeepTree(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
@@ -291,7 +291,7 @@ export function saveDeepTree(): string {
       (n.branch === "core" || n.branch === "might" || n.prestigeBranch === "duelist") &&
       !(n.prestigeBranch && n.prestigeBranch !== "duelist"),
   );
-  let learned: Record<string, number> = {};
+  let learned: Record<string, number> = { ...base.hero.learned };
   let budget = { skillPoints: 58, harvesterEmber: 3 };
   for (let pass = 0; pass < 12; pass++) {
     for (const node of wanted) {
@@ -303,7 +303,7 @@ export function saveDeepTree(): string {
       }
     }
   }
-  learned = { ...learned, "pb-warden-entry": 2, "pb-warden-a1": 1 };
+  learned = { ...learned, "pb-warden-entry": 1, "pb-warden-a1": 1 };
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 75, learned, unspentSkillPoints: 6 },
@@ -339,7 +339,7 @@ export function saveMastery(extra: readonly string[] = []): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   let state: GameState = {
     ...base,
-    hero: { ...base.hero, level: 50 },
+    hero: { ...base.hero, level: 45 },
     wallet: { ...base.wallet, gold: 500 },
     progress: {
       ...base.progress,
@@ -373,6 +373,17 @@ export function saveMastery(extra: readonly string[] = []): string {
     state = applyAction(state, GAME_DATA, { type: "learnMastery", nodeId });
   state = applyAction(state, GAME_DATA, { type: "setEcho", echoId: "ashfall-wrath" });
   return serializeGame(state);
+}
+
+/** A fresh Warrior at the Camp with Skill Points and Gold: the web from its start (level-v2.md). */
+export function saveWebTree(): string {
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
+  return serializeGame({
+    ...base,
+    hero: { ...base.hero, level: 12, unspentSkillPoints: 8 },
+    wallet: { ...base.wallet, gold: 5000 },
+    progress: { ...base.progress, trainerUnlocked: true },
+  });
 }
 
 /** Class select: the first class, its six free points into Strength and Vitality, Begin. */

@@ -16,7 +16,8 @@ import {
   type LearnedNodes,
   equipBlockReason,
   getNode,
-  neighbours,
+  forkPartner,
+  learnBlockReason,
   newGame,
   runFight,
   type SlotModifier,
@@ -149,84 +150,198 @@ function spendPoints(state: GameState, data: GameData, weaponId: string): GameSt
 }
 
 /**
- * Build plan per start weapon: Skill Tree goals, Rotation skills (slot 1 is the weapon's Innate),
- * Prestige branches by preference, a Reaction skill once one is unlocked.
+ * Autopilot builds (level-v2.md section 7): three clearly different builds per class, each with
+ * its weapon, Skill Tree goals in order ("@branches" = the owned Prestige branches at that point),
+ * Rotation skills (slot 1 is the weapon's Innate), Prestige branches by preference and a Reaction
+ * skill once one is unlocked. Keystones are left out (Harvester's Ember).
  */
-interface BuildPlan {
+export interface BuildPlan {
+  readonly id: string;
+  readonly classId: string;
+  readonly weapon: string;
   readonly nodes: readonly string[];
   readonly rotation: readonly string[];
   readonly branches: readonly string[];
   readonly reaction?: { readonly skillId: string; readonly conditionId: string };
 }
 
-const TREE_PLAN: Record<string, BuildPlan> = {
-  sword: {
-    nodes: [
-      "might-unbroken",
-      "might-flurry",
-      "might-brutal-force",
-      "might-killer-instinct",
-      "might-power-strike",
-    ],
+const GUARD = { skillId: "iron-bastion", conditionId: "life-50" };
+const NOVA = { skillId: "frost-nova", conditionId: "enemy-windup" };
+
+export const BUILDS: readonly BuildPlan[] = [
+  {
+    id: "unbroken",
+    classId: "warrior",
+    weapon: "sword",
+    nodes: ["might-unbroken", "might-brutal-force", "rupture-might-execute", "@branches"],
     rotation: ["flurry", "feint", "execute"],
     branches: ["duelist", "warden", "tactician", "butcher"],
-    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+    reaction: GUARD,
   },
-  mace: {
-    nodes: [
-      "might-unbroken",
-      "might-brutal-force",
-      "might-flurry",
-      "might-killer-instinct",
-      "might-execute",
-    ],
-    rotation: ["flurry", "execute", "feint"],
+  {
+    id: "smasher",
+    classId: "warrior",
+    weapon: "mace",
+    nodes: ["might-brutal-force", "might-colossus", "@branches", "might-arcana-arcane-edge"],
+    rotation: ["crushing-blow", "feint", "flurry"],
     branches: ["warden", "duelist", "tactician", "butcher"],
-    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+    reaction: GUARD,
   },
-  "fire-wand": {
-    nodes: ["arcana-chain-lightning", "arcana-kindled-mind", "arcana-storm-weaver"],
-    rotation: ["chain-lightning", "thunderstrike", "meteor"],
-    branches: ["stormcaller", "frostbinder", "tactician", "warden"],
-    reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
+  {
+    id: "bleeder",
+    classId: "warrior",
+    weapon: "sword",
+    nodes: ["might-brutal-force", "rupture-might-serrations", "rupture-exsanguinate", "@branches"],
+    rotation: ["rend", "cleave", "feint"],
+    branches: ["butcher", "duelist", "tactician", "warden"],
+    reaction: GUARD,
   },
-  staff: {
-    nodes: ["affliction-corrupt", "affliction-void-lord", "affliction-soul-harvest"],
-    rotation: ["corrupt", "void-rift", "soul-harvest"],
-    branches: ["void-lord", "pyromancer", "tactician", "warden"],
-    reaction: { skillId: "frost-nova", conditionId: "enemy-windup" },
-  },
-  axe: {
-    nodes: [
-      "might-unbroken",
-      "rupture-butcher",
-      "rupture-lacerate",
-      "rupture-rend",
-      "rupture-thick-blood",
-    ],
-    rotation: ["rend", "cleave", "lacerate"],
+  {
+    id: "bleed",
+    classId: "reaver",
+    weapon: "axe",
+    nodes: ["rupture-exsanguinate", "rupture-butcher", "@branches", "affliction-rupture-iron-will"],
+    rotation: ["rend", "cleave", "serrated-edge"],
     branches: ["butcher", "duelist", "venomancer", "tactician"],
-    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+    reaction: GUARD,
   },
-  bow: {
-    nodes: ["rupture-butcher", "rupture-lacerate", "rupture-rend", "rupture-thick-blood"],
-    rotation: ["rend", "serrated-edge", "cleave"],
-    branches: ["marksman", "venomancer", "tactician", "warden"],
-    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
-  },
-  crossbow: {
-    nodes: ["might-brutal-force", "might-flurry", "might-killer-instinct", "might-power-strike"],
-    rotation: ["piercing-shot", "flurry", "execute"],
-    branches: ["marksman", "venomancer", "tactician", "warden"],
-    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
-  },
-  dagger: {
-    nodes: ["might-unbroken", "rupture-venomancer", "rupture-venom-coat", "rupture-toxic-burst"],
+  {
+    id: "poison",
+    classId: "reaver",
+    weapon: "dagger",
+    nodes: [
+      "rupture-venomancer",
+      "affliction-rupture-bloodthirst",
+      "@branches",
+      "affliction-rupture-leeching-rot",
+    ],
     rotation: ["toxic-burst", "plague-cloud", "envenom"],
     branches: ["venomancer", "tactician", "duelist", "butcher"],
-    reaction: { skillId: "iron-bastion", conditionId: "life-50" },
+    reaction: GUARD,
   },
-};
+  {
+    id: "assassin",
+    classId: "reaver",
+    weapon: "dagger",
+    nodes: ["rupture-might-killers-eye", "rupture-might-execute", "@branches", "might-whirlwind"],
+    rotation: ["execute", "feint", "flurry"],
+    branches: ["duelist", "venomancer", "tactician", "butcher"],
+    reaction: GUARD,
+  },
+  {
+    id: "marksman",
+    classId: "hunter",
+    weapon: "crossbow",
+    nodes: [
+      "rupture-might-killer-instinct",
+      "rupture-might-execute",
+      "@branches",
+      "rupture-might-killers-eye",
+      "rupture-might-coup-de-grace",
+    ],
+    rotation: ["piercing-shot", "execute"],
+    branches: ["marksman", "venomancer", "tactician", "warden"],
+    reaction: GUARD,
+  },
+  {
+    id: "venom",
+    classId: "hunter",
+    weapon: "bow",
+    nodes: ["rupture-venomancer", "@branches", "affliction-rupture-toxic-burst"],
+    rotation: ["envenom", "toxic-burst", "plague-cloud"],
+    branches: ["venomancer", "marksman", "tactician", "warden"],
+    reaction: GUARD,
+  },
+  {
+    id: "barbs",
+    classId: "hunter",
+    weapon: "bow",
+    nodes: [
+      "rupture-exsanguinate",
+      "rupture-serrated-edge",
+      "@branches",
+      "rupture-might-opportunist",
+    ],
+    rotation: ["rend", "serrated-edge", "piercing-shot"],
+    branches: ["marksman", "venomancer", "warden", "tactician"],
+    reaction: GUARD,
+  },
+  {
+    id: "storm",
+    classId: "sorcerer",
+    weapon: "fire-wand",
+    nodes: ["arcana-tempest", "arcana-storm-weaver", "@branches", "arcana-kindled-mind"],
+    rotation: ["chain-lightning", "thunderstrike", "meteor"],
+    branches: ["stormcaller", "frostbinder", "tactician", "warden"],
+    reaction: NOVA,
+  },
+  {
+    id: "frost",
+    classId: "sorcerer",
+    weapon: "fire-wand",
+    nodes: [
+      "arcana-kindled-mind",
+      "arcana-glacier",
+      "@branches",
+      "arcana-affliction-heart-of-embers",
+    ],
+    rotation: ["ice-lance", "chain-lightning"],
+    branches: ["frostbinder", "stormcaller", "warden", "tactician"],
+    reaction: NOVA,
+  },
+  {
+    id: "fire",
+    classId: "sorcerer",
+    weapon: "fire-wand",
+    nodes: ["arcana-affliction-pyroclasm", "arcana-affliction-firestarter", "@branches"],
+    rotation: ["meteor", "thunderstrike", "ice-lance"],
+    branches: ["stormcaller", "tactician", "frostbinder", "warden"],
+    reaction: NOVA,
+  },
+  {
+    id: "void",
+    classId: "warlock",
+    weapon: "staff",
+    nodes: ["affliction-void-lord", "affliction-hungering-void", "@branches"],
+    rotation: ["corrupt", "void-rift", "soul-harvest"],
+    branches: ["void-lord", "pyromancer", "tactician", "warden"],
+    reaction: NOVA,
+  },
+  {
+    id: "pyre",
+    classId: "warlock",
+    weapon: "staff",
+    nodes: [
+      "affliction-pyromancer",
+      "affliction-cinder-heart",
+      "@branches",
+      "arcana-affliction-firestarter",
+    ],
+    rotation: ["immolate", "inferno", "soul-harvest"],
+    branches: ["pyromancer", "void-lord", "tactician", "warden"],
+    reaction: NOVA,
+  },
+  {
+    id: "rot",
+    classId: "warlock",
+    weapon: "staff",
+    nodes: [
+      "affliction-rupture-leeching-rot",
+      "affliction-rupture-iron-will",
+      "@branches",
+      "affliction-void-lord",
+    ],
+    rotation: ["wither", "corrupt", "void-rift"],
+    branches: ["void-lord", "warden", "pyromancer", "tactician"],
+    reaction: NOVA,
+  },
+];
+
+/** A build by id, or the first build that starts with the weapon. */
+export function findBuild(weaponId: string, buildId?: string): BuildPlan | undefined {
+  if (buildId) return BUILDS.find((b) => b.id === buildId);
+  return BUILDS.find((b) => b.weapon === weaponId);
+}
 
 /**
  * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone
@@ -349,18 +464,40 @@ function spendMastery(state: GameState, data: GameData): GameState {
   return s;
 }
 
+const adjacency = new WeakMap<GameData["skillTree"], Map<string, string[]>>();
+
+/** Neighbours of every node, built once per tree (the web is too big for `neighbours`). */
+function links(tree: GameData["skillTree"]): Map<string, string[]> {
+  let map = adjacency.get(tree);
+  if (!map) {
+    const built = new Map<string, string[]>(tree.nodes.map((n) => [n.id, []]));
+    for (const node of tree.nodes) {
+      for (const l of node.links) {
+        built.get(node.id)?.push(l);
+        built.get(l)?.push(node.id);
+      }
+    }
+    map = built;
+    adjacency.set(tree, map);
+  }
+  return map;
+}
+
 /** Shortest list of nodes to learn so that `target` gets a rank (breadth-first search). */
 function pathTo(data: GameData, learned: LearnedNodes, target: string): string[] {
   const tree = data.skillTree;
   const known = (id: string) => id === tree.startNodeId || (learned[id] ?? 0) > 0;
   if (known(target)) return [target];
+  const graph = links(tree);
   const from = new Map<string, string | null>();
   const queue = tree.nodes.filter((n) => known(n.id)).map((n) => n.id);
   for (const id of queue) from.set(id, null);
   while (queue.length) {
     const id = queue.shift() ?? "";
-    for (const next of neighbours(tree, id)) {
-      if (from.has(next) || getNode(tree, next).kind === "keystone") continue;
+    for (const next of graph.get(id) ?? []) {
+      if (from.has(next)) continue;
+      const node = getNode(tree, next);
+      if (node.kind === "keystone" || forkPartner(tree, learned, node)) continue;
       from.set(next, id);
       if (next === target) {
         const path = [next];
@@ -390,28 +527,63 @@ function learnTowards(s: GameState, data: GameData, target: string): GameState {
   return s;
 }
 
+/** Puts points into a node until it is maxed or the points run out. */
+function fillNode(s: GameState, data: GameData, id: string): GameState {
+  const node = getNode(data.skillTree, id);
+  while (
+    s.hero.unspentSkillPoints > 0 &&
+    (s.hero.learned[id] ?? 0) < nodeMaxRanks(node, s.legacy.branches)
+  ) {
+    const before = s;
+    s = learnTowards(s, data, id);
+    if (s === before) break;
+  }
+  return s;
+}
+
 /**
- * Kaelen: spends Skill Points on the plan's nodes, then the unlocked Prestige branches, then the
- * rest of the tree (no Keystones). Fills the Rotation, a Reaction and the Slot Modifiers.
+ * Kaelen: spends Skill Points on the build's goals in order (the owned Prestige branches where the
+ * plan says "@branches"), then on the nearest open nodes (no Keystones). Fills the Rotation, a
+ * Reaction and the Slot Modifiers.
  */
-function spendSkillPoints(state: GameState, data: GameData, weaponId: string): GameState {
-  const plan = TREE_PLAN[weaponId];
+function spendSkillPoints(
+  state: GameState,
+  data: GameData,
+  plan: BuildPlan | undefined,
+): GameState {
   if (!plan || state.run) return state;
   let s = spendMastery(state, data);
-  for (const target of plan.nodes) s = learnTowards(s, data, target);
-  const branchNodes = [...new Set(s.legacy.branches)].flatMap((b) =>
-    data.skillTree.nodes.filter((n) => n.prestigeBranch === b && n.kind !== "keystone"),
-  );
-  const rest = data.skillTree.nodes.filter((n) => !n.prestigeBranch && n.kind !== "keystone");
-  for (const node of [...branchNodes, ...rest]) {
-    while (
-      s.hero.unspentSkillPoints > 0 &&
-      (s.hero.learned[node.id] ?? 0) < nodeMaxRanks(node, s.legacy.branches)
-    ) {
-      const before = s;
-      s = learnTowards(s, data, node.id);
-      if (s === before) break;
+  const tree = data.skillTree;
+  for (const target of plan.nodes) {
+    if (target !== "@branches") {
+      s = fillNode(s, data, target);
+      continue;
     }
+    const branchNodes = plan.branches
+      .filter((b) => s.legacy.branches.includes(b))
+      .flatMap((b) => tree.nodes.filter((n) => n.prestigeBranch === b && n.kind !== "keystone"));
+    for (const node of branchNodes) s = fillNode(s, data, node.id);
+  }
+  // The rest: the cheapest open neighbour, again and again (Skill nodes and Notables first).
+  const graph = links(tree);
+  const order = { skill: 0, notable: 1, minor: 2, keystone: 3 } as const;
+  while (s.hero.unspentSkillPoints > 0) {
+    const learned = s.hero.learned;
+    const open = tree.nodes.filter(
+      (n) =>
+        n.kind !== "keystone" &&
+        learnBlockReason(
+          tree,
+          learned,
+          n.id,
+          { skillPoints: 1, harvesterEmber: 0 },
+          s.legacy.branches,
+        ) === undefined &&
+        ((learned[n.id] ?? 0) > 0 || (graph.get(n.id) ?? []).some((l) => (learned[l] ?? 0) > 0)),
+    );
+    const next = open.sort((a, b) => order[a.kind] - order[b.kind])[0];
+    if (!next) break;
+    s = applyAction(s, data, { type: "learnNodes", nodeIds: [next.id] });
   }
   const weapon = heroSetup(s, data).setup.weapon;
   const known = new Set(knownSkills(s, data, weapon).map((k) => k.skill.id));
@@ -455,10 +627,13 @@ function spendSkillPoints(state: GameState, data: GameData, weaponId: string): G
  * Prestiges with the first new branch the weapon's tree plan prefers; once all of them are owned,
  * deepens them in plan order. All items stay.
  */
-function autopilotPrestige(state: GameState, data: GameData): GameState {
+function autopilotPrestige(
+  state: GameState,
+  data: GameData,
+  build: BuildPlan | undefined,
+): GameState {
   const open = openBranches(state, data).map((b) => b.id);
-  const weaponId = state.hero.weaponId;
-  const plan = TREE_PLAN[weaponId]?.branches ?? [];
+  const plan = build?.branches ?? [];
   const preferred =
     plan.find((b) => open.includes(b) && !state.legacy.branches.includes(b)) ??
     plan.find((b) => open.includes(b)) ??
@@ -480,6 +655,8 @@ export function playGenerations(
   options: {
     readonly seed: number;
     readonly starterWeapon: string;
+    /** Autopilot build id (`BUILDS`); default: the first build with the weapon. */
+    readonly build?: string;
     /** Last act to play (its number). */
     readonly upToAct: number;
     readonly maxAttempts: number;
@@ -496,6 +673,7 @@ export function playGenerations(
     classId: heroClass.id,
     weapon: options.starterWeapon,
   });
+  const build = findBuild(options.starterWeapon, options.build);
   const reports: ActRunReport[] = [];
   for (let generation = 1; generation <= options.generations; generation++) {
     let allCleared = true;
@@ -518,7 +696,7 @@ export function playGenerations(
         for (const placed of s.inventory) {
           s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
         }
-        s = spendSkillPoints(s, data, options.starterWeapon);
+        s = spendSkillPoints(s, data, build);
         s = applyAction(s, data, { type: "setOut", actId: act.id });
         while (s.run) {
           s = spendPoints(s, data, options.starterWeapon);
@@ -577,10 +755,10 @@ export function playGenerations(
       }
     }
     if (!allCleared || generation === options.generations || !s.pendingPrestige) break;
-    s = autopilotPrestige(s, data);
+    s = autopilotPrestige(s, data, build);
   }
   if (options.finale && data.finale && s.pendingPrestige) {
-    s = autopilotPrestige(s, data);
+    s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
       reports.push(playFinale(s, data, options.generations + 1, options.maxAttempts));
     }

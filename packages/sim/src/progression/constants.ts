@@ -7,21 +7,24 @@ import type { EnemyRank } from "./leveling";
  * section 2 and 3, loot-rewards-v1.md, town-crafting-v1.md.
  */
 /**
- * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 250. Each run spreads
- * its Level Band over all its stages (prestige-acts-v1.md section 4), one fight per stage, so a
- * level costs about `xpKillsPerLevel` normal kills of the same Monster Level. The hero keeps pace
- * with the monsters, and the XP penalty for being above them stops it from running ahead.
+ * XP needed to go from level N to N + 1 (index 0 = level 1 → 2), up to level 100. Each run spreads
+ * its Level Band over all its stages (prestige-acts-v1.md section 4). A level costs
+ * `killsPerLevel(level)` normal kills of the same Monster Level: few early (run 1 climbs 10 levels
+ * in one act), more later (run 7 climbs 15 levels over seven acts). The XP penalty for being above
+ * the monsters makes out-levelling a wall slow, but never impossible (level-v2.md section 6).
  */
-function buildXpTable(base: number, perLevel: number, killsPerLevel: number): readonly number[] {
+function buildXpTable(base: number, perLevel: number): readonly number[] {
   const table: number[] = [];
-  for (let level = 1; level < 250; level++)
-    table.push(Math.round(killsPerLevel * (base + perLevel * (level - 1))));
+  for (let level = 1; level < 100; level++) {
+    table.push(Math.round(XP_KILLS(level) * (base + perLevel * (level - 1))));
+  }
   return table;
 }
 
 const XP_BASE = 20;
 const XP_PER_MONSTER_LEVEL = 10;
-const XP_KILLS_PER_LEVEL = 8;
+/** Normal kills of the same Monster Level per level (balance CLI). */
+const XP_KILLS = (level: number) => 1.6 + 0.07 * (level - 1);
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
@@ -107,17 +110,20 @@ const LOOT_GATES: readonly LootGate[] = [
 ];
 
 export const PROGRESSION = {
-  /**
-   * Playtest 2: the Level Cap grows by this much for every act a run has, counted over all runs
-   * so far. Run 1 (one act) ends at 5, run 2 (two more acts) at 15, run 3 at 30, run 7 at 140.
-   */
-  levelsPerAct: 5,
+  /** Max level (level-v2.md section 4). */
+  maxLevel: 100,
+  /** The Level Cap of a run lies this far above its boss's Monster Level: room to farm past a wall. */
+  levelHeadroom: 10,
   /** Acts of a full world (run 7). */
   actsPerFullRun: 7,
-  skillPointsPerLevel: 1,
-  /** One Skill Point for Level 1, like every other level: 140 in total at the last Level Cap. */
-  startSkillPoints: 1,
-  xpToNextLevel: buildXpTable(XP_BASE, XP_PER_MONSTER_LEVEL, XP_KILLS_PER_LEVEL),
+  /**
+   * Skill Points come from progress, not from levels (level-v2.md section 7): 2 at the start,
+   * 1 per Waymark (3 per act in every run, 84 in all) and `harvestSkillPoints` per Prestige
+   * (14 in all). 100 at the end.
+   */
+  startSkillPoints: 2,
+  harvestSkillPoints: 2,
+  xpToNextLevel: buildXpTable(XP_BASE, XP_PER_MONSTER_LEVEL),
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: XP_BASE,
   xpPerMonsterLevel: XP_PER_MONSTER_LEVEL,
@@ -265,8 +271,12 @@ export const PROGRESSION = {
   /** Switching to another Battle Plan Capstone at Kaelen. */
   capstoneChangeGold: 200,
 
-  /** Skill Tree respec at Kaelen. */
-  respecGold: 50,
+  /**
+   * Skill Tree respec at Kaelen (level-v2.md section 7): moderately priced, about the Gold of this
+   * many normal kills at the run's boss level. One node costs `respecNodeShare` of it.
+   */
+  respecKills: 8,
+  respecNodeShare: 0.1,
 
   /** Inventory grid (D2 style). */
   inventoryWidth: 10,

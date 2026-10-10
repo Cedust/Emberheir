@@ -91,6 +91,7 @@ function useLooks(state: GameState, run: RunState) {
     act: (echo ?? act).number,
     ranged: enemyDef?.weapon.range === "ranged",
     ...(encounter?.thief ? { thief: true } : {}),
+    ...(encounter ? { levelGap: encounter.level - state.hero.level } : {}),
   };
   const heroInfo: PlaqueInfo = {
     name: `${state.hero.name} · ${heroTitle(state, GAME_DATA)}`,
@@ -287,6 +288,7 @@ export function BattleView(props: {
         cleared={false}
         attributePoints={state.hero.unspentAttributePoints}
         skillPoints={state.hero.unspentSkillPoints}
+        waymarks={state.progress.waymarks}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
         onMenu={props.onMenu}
@@ -301,6 +303,7 @@ export function BattleView(props: {
         mods={looks.enemyInfo.mods ?? []}
         attackIcon={looks.enemyAttackIcon}
         thiefLeft={over ? null : thiefLeft}
+        heroLevel={state.hero.level}
       />
 
       {result && (
