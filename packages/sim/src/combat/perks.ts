@@ -21,7 +21,7 @@ export const PERK_IDS = [
   "afterglow",
   "clarity",
   "secondBreath",
-  "scarTissue",
+  "thickSkin",
   "undying",
 ] as const;
 export type PerkId = (typeof PERK_IDS)[number];
@@ -59,7 +59,7 @@ export const PERK = {
   clarityPoisonStacks: 1,
   secondBreathBelow: 0.3,
   secondBreathHeal: 0.15,
-  scarTissueDotTaken: 0.15,
+  thickSkinDotTaken: 0.15,
 } as const;
 
 const pct = (x: number) => `${Math.round(x * 100)} %`;
@@ -178,11 +178,11 @@ export const PERKS: readonly PerkDefinition[] = [
     description: `Once per fight below ${pct(PERK.secondBreathBelow)} Life: heal ${pct(PERK.secondBreathHeal)}.`,
   },
   {
-    id: "scarTissue",
-    name: "Scar Tissue",
+    id: "thickSkin",
+    name: "Thick Skin",
     attribute: "vitality",
     threshold: 7,
-    description: `−${pct(PERK.scarTissueDotTaken)} damage from ailments.`,
+    description: `−${pct(PERK.thickSkinDotTaken)} damage from ailments.`,
   },
   {
     id: "undying",

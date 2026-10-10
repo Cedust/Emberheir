@@ -642,7 +642,7 @@ export class Fight {
     for (const tick of ticks) {
       const byAilment =
         this.fighters[other(f.side)].setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
-      const hide = f.perks.has("scarTissue") ? 1 - PERK.scarTissueDotTaken : 1;
+      const hide = f.perks.has("thickSkin") ? 1 - PERK.thickSkinDotTaken : 1;
       const damage = Math.max(1, Math.round(tick.damage * this.dotFactor(f) * byAilment * hide));
       this.emit({ t: this.time, type: "dot", side: f.side, ailment: tick.ailment, damage });
       this.damage(f, damage);

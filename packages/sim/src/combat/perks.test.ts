@@ -28,7 +28,7 @@ describe("Attribute Breakpoints", () => {
     expect(perksFor({ ...ZERO_ATTRIBUTES, strength: 4, vitality: 7 })).toEqual([
       "armorbreaker",
       "secondBreath",
-      "scarTissue",
+      "thickSkin",
     ]);
     expect(perksFor({ ...ZERO_ATTRIBUTES, agility: 12 })).toEqual([
       "quickReflexes",
@@ -217,7 +217,7 @@ describe("Perks in the fight", () => {
     expect(ofType(result.events, "heal")[0]?.amount).toBe(15);
   });
 
-  it("Scar Tissue: less damage from ailments", () => {
+  it("Thick Skin: less damage from ailments", () => {
     const poisoner = setup({
       weapon: { ...TEST_WEAPON, ailmentChances: [{ ailment: "bleed", chance: 1 }] },
       bonuses: NO_CRIT,
@@ -227,7 +227,7 @@ describe("Perks in the fight", () => {
         (sum, d) => sum + d.damage,
         0,
       );
-    expect(dots(["scarTissue"])).toBeLessThan(dots([]));
+    expect(dots(["thickSkin"])).toBeLessThan(dots([]));
   });
 
   it("Undying: once per fight a deadly blow leaves 1 Life", () => {

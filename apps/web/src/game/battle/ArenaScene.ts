@@ -151,7 +151,7 @@ const PERK_FX: Record<
   afterglow: { color: [0xff8a3a, 0xffd84a], on: "self", look: "rise" },
   clarity: { color: [0xa35cff], on: "foe", look: "ring" },
   secondBreath: { color: [0x4fe08a, 0xffb13b], on: "self", look: "rise", name: true },
-  scarTissue: { color: [0x9a9088], on: "self", look: "ring" },
+  thickSkin: { color: [0x9a9088], on: "self", look: "ring" },
   undying: { color: [0xff4a2a, 0xffd84a], on: "self", look: "star", name: true },
 };
 const FALL = Math.PI / 2;
