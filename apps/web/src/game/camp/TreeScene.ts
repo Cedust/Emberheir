@@ -150,6 +150,7 @@ export class TreeScene {
   constructor(private readonly callbacks: TreeCallbacks) {
     // Branch names sit under the nodes so they never hide one.
     this.world.addChild(
+      this.art.earth,
       this.art.wood,
       this.art.twigs,
       this.art.sigil,
@@ -177,6 +178,9 @@ export class TreeScene {
     bloomWrap.cacheAsTexture(true);
     this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
     this.sigilLight.blendMode = "add";
+    // The painted wood never changes: baked once, it costs one quad per frame instead of
+    // hundreds of layered shapes (software GL in CI timed out on it).
+    this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
   }
 
   layout(w: number, h: number, resolution: number): void {

@@ -47,7 +47,9 @@ function quad(a: Pt, c: Pt, b: Pt, t: number): Pt {
 }
 
 export interface AshTreeArt {
-  /** Earth, cast shadow, trunk, limbs, roots and leaves. */
+  /** The earth under the root collar (wide but cheap, so it is not baked). */
+  readonly earth: Graphics;
+  /** Trunk, limbs and roots: static, so the scene bakes them into a texture. */
   readonly wood: Graphics;
   /** Twigs under the visible nodes' outward links (redrawn when the visible nodes change). */
   readonly twigs: Graphics;
@@ -508,9 +510,10 @@ function drawSigil(sigil: Graphics, glow: Graphics, bloom: Graphics, unit: numbe
 
 /** Paints the tree. Twigs are drawn separately (`drawTwigs`) because they follow the nodes. */
 export function paintAshTree(unit: number): AshTreeArt {
+  const earth = new Graphics();
+  drawEarth(earth, unit);
   const wood = new Graphics();
   const at = { x: 0, y: SIGIL_Y };
-  drawEarth(wood, unit);
   drawRoots(wood, unit);
   drawTrunk(wood, unit, at);
   drawCrownLimbs(wood, unit);
@@ -519,6 +522,7 @@ export function paintAshTree(unit: number): AshTreeArt {
   const sigilBloom = new Graphics();
   drawSigil(sigil, sigilGlow, sigilBloom, unit, at);
   return {
+    earth,
     wood,
     twigs: new Graphics(),
     sigil,
