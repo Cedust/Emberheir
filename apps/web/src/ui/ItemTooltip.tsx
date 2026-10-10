@@ -1,5 +1,12 @@
 import { ITEM_CATALOG } from "@emberheir/content";
-import { type GameState, type Item, describeItem, getBase } from "@emberheir/sim";
+import {
+  type GameState,
+  type Item,
+  type PerkId,
+  describeItem,
+  getBase,
+  getPerk,
+} from "@emberheir/sim";
 import {
   type ReactNode,
   createContext,
@@ -21,8 +28,19 @@ import { useStageSize } from "./Stage";
  * a one-line verdict. Everything is laid out in stage pixels, so it scales like the rest.
  */
 
+/** Where a Breakpoint Perk stands for the hovered attribute row. */
+export type PerkStatus = "active" | "locked" | "gained" | "lost";
+
+interface PerkHover {
+  readonly perk: PerkId;
+  readonly status: PerkStatus;
+  /** The attribute value that counts for the Perk now. */
+  readonly value: number;
+}
+
 interface Hover {
-  readonly item: Item;
+  readonly item?: Item;
+  readonly perk?: PerkHover;
   /** The hovered element in stage pixels. */
   readonly anchor: {
     readonly x: number;
@@ -35,7 +53,10 @@ interface Hover {
 }
 
 interface HoverApi {
-  readonly show: (hover: Omit<Hover, "anchor">, element: Element) => void;
+  readonly show: (
+    hover: Omit<Hover, "anchor" | "equipped"> & { equipped?: boolean },
+    element: Element,
+  ) => void;
   readonly hide: () => void;
 }
 
@@ -54,6 +75,22 @@ export function useItemHover(item: Item | undefined, equipped = false) {
       onBlur: () => api.hide(),
     };
   }, [api, item, equipped]);
+}
+
+/** Mouse and focus handlers that show a Breakpoint Perk's tooltip. */
+export function usePerkHover(perk: PerkHover) {
+  const api = useContext(HoverContext);
+  const { perk: id, status, value } = perk;
+  return useMemo(() => {
+    if (!api) return {};
+    const hover = { perk: { perk: id, status, value } };
+    return {
+      onMouseEnter: (e: React.MouseEvent) => api.show(hover, e.currentTarget),
+      onMouseLeave: () => api.hide(),
+      onFocus: (e: React.FocusEvent) => api.show(hover, e.currentTarget),
+      onBlur: () => api.hide(),
+    };
+  }, [api, id, status, value]);
 }
 
 const GAP = 12;
@@ -76,6 +113,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
       setPos(null);
       setHover({
         ...h,
+        equipped: h.equipped ?? false,
         anchor: {
           x: (r.left - layer.left) / scale,
           y: (r.top - layer.top) / scale,
@@ -105,7 +143,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
   const state = props.state;
   useRingSlot();
   let worn: Item | undefined;
-  if (hover && state && !hover.equipped) {
+  if (hover?.item && state && !hover.equipped) {
     const slot = aimedSlot(state, hover.item);
     const current = slot ? state.hero.equipment[slot] : undefined;
     if (current && current.id !== hover.item.id) worn = current;
@@ -122,18 +160,55 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
             style={pos ? { left: pos.left, top: pos.top } : { left: 0, top: 0, opacity: 0 }}
             data-testid="item-tooltip"
           >
-            <ItemTooltipCard
-              item={hover.item}
-              state={state}
-              verdict={
-                !hover.equipped && state ? compareWithEquipped(state, hover.item) : undefined
-              }
-            />
+            {hover.perk && <PerkTooltipCard {...hover.perk} />}
+            {hover.item && (
+              <ItemTooltipCard
+                item={hover.item}
+                state={state}
+                verdict={
+                  !hover.equipped && state ? compareWithEquipped(state, hover.item) : undefined
+                }
+              />
+            )}
             {worn && <ItemTooltipCard item={worn} state={state} tag="Equipped" />}
           </div>
         )}
       </div>
     </HoverContext.Provider>
+  );
+}
+
+const ATTRIBUTE_NAMES: Record<string, string> = {
+  strength: "Strength",
+  dexterity: "Dexterity",
+  intelligence: "Intelligence",
+  agility: "Agility",
+  wisdom: "Wisdom",
+  vitality: "Vitality",
+};
+
+/** A Breakpoint Perk: its seal, name, the effect in plain words and whether it is lit. */
+function PerkTooltipCard(props: PerkHover) {
+  const perk = getPerk(props.perk);
+  const attribute = ATTRIBUTE_NAMES[perk.attribute] ?? perk.attribute;
+  const status = {
+    active: "Active",
+    gained: "Opens with this change",
+    lost: "Lost with this change",
+    locked: `Needs ${attribute} ${perk.threshold} · you have ${props.value}`,
+  }[props.status];
+  return (
+    <div className={`item-tooltip perk-tooltip perk-${props.status}`} data-testid="perk-tooltip">
+      <span className="perk-tip-seal" aria-hidden="true" />
+      <span className="tip-name">{perk.name}</span>
+      <span className="tip-kind">
+        {attribute} {perk.threshold} · Breakpoint Perk
+      </span>
+      <span className="tip-rule" />
+      <span className="tip-line perk-tip-explain">{perk.explain}</span>
+      <span className="tip-rule" />
+      <span className="perk-tip-status">{status}</span>
+    </div>
   );
 }
 

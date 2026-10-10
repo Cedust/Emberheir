@@ -10,6 +10,7 @@ import {
   addAttributes,
   heroPerks,
 } from "@emberheir/sim";
+import { type PerkStatus, usePerkHover } from "../ui/ItemTooltip";
 
 export const ATTRIBUTE_INFO: Record<Attribute, { name: string; short: string; effects: string }> = {
   strength: { name: "Strength", short: "STR", effects: "Physical Damage · Armor" },
@@ -36,6 +37,26 @@ export const NO_POINTS: Record<Attribute, number> = {
 const perkAt = (a: Attribute, threshold: number) =>
   PERKS.find((p) => p.attribute === a && p.threshold === threshold);
 
+function PerkChip(props: { perk: PerkId; status: PerkStatus; value: number }) {
+  const hover = usePerkHover(props);
+  const perk = PERKS.find((p) => p.id === props.perk);
+  return (
+    <span
+      className={`perk-chip ${props.status === "lost" ? "lost" : ""} ${props.status === "gained" ? "gained" : ""}`}
+      tabIndex={0}
+      {...hover}
+    >
+      {perk?.name}
+    </span>
+  );
+}
+
+/** A Breakpoint seal on the notch row; hovering it explains its Perk. */
+function Seal(props: { className: string; perk: PerkId; status: PerkStatus; value: number }) {
+  const hover = usePerkHover(props);
+  return <span className={props.className} data-testid={`seal-${props.perk}`} {...hover} />;
+}
+
 /**
  * Attribute stones (attribute-v1.md section 9): one row per attribute with ten notches, the
  * Breakpoints 4/7/10 as ember seals that light up with their Perk. Pending points glow, points
@@ -61,6 +82,8 @@ export function AttributeStones(props: {
   const was = new Set(props.before ?? heroPerks(props.base, props.boon ?? {}));
   const lost = [...was].filter((p) => !lit.has(p));
   const gained = [...lit].filter((p) => !was.has(p));
+  const status = (p: PerkId): PerkStatus =>
+    gained.includes(p) ? "gained" : lit.has(p) ? "active" : lost.includes(p) ? "lost" : "locked";
   return (
     <div className="attr-stones">
       <ul className="attributes">
@@ -78,7 +101,7 @@ export function AttributeStones(props: {
                 <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
                 <span className="sub small">{ATTRIBUTE_INFO[a].effects}</span>
               </div>
-              <div className="attr-notches" aria-hidden="true">
+              <div className="attr-notches">
                 {Array.from({ length: ATTRIBUTE_RULES.max }, (_, i) => {
                   const n = i + 1;
                   const seal = (BREAKPOINTS as readonly number[]).includes(n);
@@ -93,12 +116,17 @@ export function AttributeStones(props: {
                           : n <= own + boon
                             ? "boon"
                             : "empty";
-                  return (
-                    <span
+                  const className = `notch ${state} ${seal ? "seal" : ""} ${perk && lit.has(perk.id) ? "lit" : ""}`;
+                  return perk ? (
+                    <Seal
                       key={n}
-                      className={`notch ${state} ${seal ? "seal" : ""} ${perk && lit.has(perk.id) ? "lit" : ""}`}
-                      title={perk ? `${perk.name} (${n}): ${perk.description}` : undefined}
+                      className={className}
+                      perk={perk.id}
+                      status={status(perk.id)}
+                      value={own + boon}
                     />
+                  ) : (
+                    <span key={n} className={className} />
                   );
                 })}
               </div>
@@ -134,13 +162,12 @@ export function AttributeStones(props: {
       </ul>
       <div className="perk-line" data-testid="perks">
         {PERKS.filter((p) => lit.has(p.id) || lost.includes(p.id)).map((p) => (
-          <span
+          <PerkChip
             key={p.id}
-            className={`perk-chip ${lost.includes(p.id) ? "lost" : ""} ${gained.includes(p.id) ? "gained" : ""}`}
-            title={p.description}
-          >
-            {p.name}
-          </span>
+            perk={p.id}
+            status={status(p.id)}
+            value={next[p.attribute] + (props.boon?.[p.attribute] ?? 0)}
+          />
         ))}
       </div>
     </div>

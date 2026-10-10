@@ -33,6 +33,8 @@ export interface PerkDefinition {
   /** Own attribute value that opens the Perk. */
   readonly threshold: number;
   readonly description: string;
+  /** The effect in plain words, for the tooltip. */
+  readonly explain: string;
 }
 
 export const BREAKPOINTS = [4, 7, 10] as const;
@@ -71,6 +73,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "strength",
     threshold: 4,
     description: "Crits add a Sunder stack.",
+    explain: `Every critical hit cracks the enemy's armor a bit more (Sunder), so your next hits land harder.`,
   },
   {
     id: "stoneguard",
@@ -78,6 +81,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "strength",
     threshold: 7,
     description: `+${pct(PERK.stoneguardBlockValue)} Block Value.`,
+    explain: `When you block with a shield, you stop ${pct(PERK.stoneguardBlockValue)} more damage.`,
   },
   {
     id: "titan",
@@ -85,6 +89,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "strength",
     threshold: 10,
     description: `Hits for ${pct(PERK.titanThreshold)} of enemy Life stun for ${PERK.titanStun} s (every ${PERK.titanCooldown} s).`,
+    explain: `A really heavy hit (${pct(PERK.titanThreshold)} of the enemy's Life or more) knocks it out for ${PERK.titanStun} s. Once every ${PERK.titanCooldown} s.`,
   },
   {
     id: "hawkeye",
@@ -92,6 +97,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "dexterity",
     threshold: 4,
     description: `+${pct(PERK.hawkeyePrecision)} Precision.`,
+    explain: `You hit cleanly more often: fewer weak Glancing Blows.`,
   },
   {
     id: "opportunist",
@@ -99,6 +105,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "dexterity",
     threshold: 7,
     description: "Glancing Blows fire On Hit triggers.",
+    explain: `Even your weak Glancing Blows set off your On Hit effects.`,
   },
   {
     id: "trueShot",
@@ -106,6 +113,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "dexterity",
     threshold: 10,
     description: `Every ${PERK.trueShotEvery}th attack is a clean Crit.`,
+    explain: `Every ${PERK.trueShotEvery}th attack is a sure critical hit.`,
   },
   {
     id: "attuned",
@@ -113,6 +121,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "intelligence",
     threshold: 4,
     description: `+${pct(PERK.attunedPenetration)} Elemental Penetration.`,
+    explain: `Your Fire, Cold, Lightning and Void damage ignores ${pct(PERK.attunedPenetration)} of the enemy's resistance.`,
   },
   {
     id: "elementalSurge",
@@ -120,6 +129,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "intelligence",
     threshold: 7,
     description: `Elemental hits: +${pct(PERK.elementalSurgeChance)} chance of their ailment.`,
+    explain: `Fire hits burn, Cold hits chill, Lightning hits shock and Void hits corrupt more often.`,
   },
   {
     id: "spellfire",
@@ -127,6 +137,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "intelligence",
     threshold: 10,
     description: "The first Spell of a fight deals double damage.",
+    explain: `The first spell you cast in every fight deals double damage.`,
   },
   {
     id: "quickReflexes",
@@ -134,6 +145,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "agility",
     threshold: 4,
     description: "The first enemy attack of a fight misses.",
+    explain: `You always dodge the first enemy attack of a fight.`,
   },
   {
     id: "emberDance",
@@ -141,6 +153,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "agility",
     threshold: 7,
     description: `+${PERK.emberDanceHeat} Heat on Evade.`,
+    explain: `Every dodge gives you ${PERK.emberDanceHeat} Heat.`,
   },
   {
     id: "doubleTime",
@@ -148,6 +161,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "agility",
     threshold: 10,
     description: `Every ${PERK.doubleTimeEvery}th attack strikes twice.`,
+    explain: `Every ${PERK.doubleTimeEvery}th attack strikes twice.`,
   },
   {
     id: "innerFire",
@@ -155,6 +169,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "wisdom",
     threshold: 4,
     description: `+${PERK.innerFireHeat} Starting Heat.`,
+    explain: `You start every fight with ${PERK.innerFireHeat} Heat, so your first skill comes sooner.`,
   },
   {
     id: "afterglow",
@@ -162,6 +177,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "wisdom",
     threshold: 7,
     description: `Skills refund ${pct(PERK.afterglowRefund)} of their Heat Cost.`,
+    explain: `Every skill gives back ${pct(PERK.afterglowRefund)} of the Heat it cost.`,
   },
   {
     id: "clarity",
@@ -169,6 +185,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "wisdom",
     threshold: 10,
     description: `Your ailments last ${PERK.claritySeconds} s longer, Poison stacks once more.`,
+    explain: `Your ailments last ${PERK.claritySeconds} s longer, and Poison can stack once more.`,
   },
   {
     id: "secondBreath",
@@ -176,6 +193,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "vitality",
     threshold: 4,
     description: `Once per fight below ${pct(PERK.secondBreathBelow)} Life: heal ${pct(PERK.secondBreathHeal)}.`,
+    explain: `Once per fight, when your Life drops below ${pct(PERK.secondBreathBelow)}, you heal ${pct(PERK.secondBreathHeal)} of it.`,
   },
   {
     id: "thickSkin",
@@ -183,6 +201,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "vitality",
     threshold: 7,
     description: `−${pct(PERK.thickSkinDotTaken)} damage from ailments.`,
+    explain: `Bleed, Poison, Burn and other ailments hurt you ${pct(PERK.thickSkinDotTaken)} less.`,
   },
   {
     id: "undying",
@@ -190,6 +209,7 @@ export const PERKS: readonly PerkDefinition[] = [
     attribute: "vitality",
     threshold: 10,
     description: "Once per fight a deadly blow leaves you at 1 Life.",
+    explain: `Once per fight, a blow that would kill you leaves you at 1 Life instead.`,
   },
 ];
 

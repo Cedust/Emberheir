@@ -28,6 +28,12 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await rekindle.getByRole("button", { name: "Add Agility" }).click();
   await rekindle.getByRole("button", { name: "Add Agility" }).click();
   await expect(rekindle.getByTestId("perks")).toContainText("Quick Reflexes");
+  // Every Perk explains itself in plain words.
+  await rekindle.getByTestId("perks").getByText("Quick Reflexes").hover();
+  await expect(page.getByTestId("perk-tooltip")).toContainText("first enemy attack");
+  await expect(page.getByTestId("perk-tooltip")).toContainText("Opens with this change");
+  await rekindle.getByTestId("seal-titan").hover();
+  await expect(page.getByTestId("perk-tooltip")).toContainText("Needs Strength 10");
   await expect(rekindle.getByTestId("rekindle-left")).toContainText("1 point left · 1 move left");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/rekindle.png` });
   await page.getByRole("button", { name: "Let It Burn" }).click();
