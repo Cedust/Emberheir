@@ -249,8 +249,8 @@ export function affixRollRange(
   // rollQuality picks one of the unlocked stages, so the best roll is the top of the last one.
   const top = unlockedStages(item.itemLevel) / ITEMS.stageUnlockPositions.length;
   return {
-    min: statAffixValue(affix, item.tier, 0),
-    max: statAffixValue(affix, item.tier, top),
+    min: statAffixValue(affix, item.tier, 0, item.rarity),
+    max: statAffixValue(affix, item.tier, top, item.rarity),
   };
 }
 

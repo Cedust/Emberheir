@@ -11,14 +11,14 @@ import {
 import { ITEM_CATALOG } from "./items";
 import { START_SKILLS } from "./skills";
 
-/** Level 1 Heir before any points are spent. */
+/** A neutral Class Array (attribute-v1.md): 1 each plus 8, for heroes without a class. */
 export const STARTING_ATTRIBUTES: Attributes = {
-  strength: 6,
-  dexterity: 6,
-  agility: 6,
-  intelligence: 6,
-  wisdom: 6,
-  vitality: 6,
+  strength: 3,
+  dexterity: 2,
+  agility: 2,
+  intelligence: 2,
+  wisdom: 2,
+  vitality: 3,
 };
 
 export interface HeroLoadout {

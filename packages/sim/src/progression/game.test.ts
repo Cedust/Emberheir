@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bossTrophies, rollItem, uniquesFor } from "../items/generate";
+import { ATTRIBUTE_RULES } from "./attributes";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type GameAction,
@@ -193,7 +194,7 @@ describe("game loop", () => {
     expect(currentFight(s, data).hero.lifeFraction).toBe(0.5);
   });
 
-  it("level-ups give Attribute and Skill Points; attributes are spent between fights", () => {
+  it("level-ups give Skill Points but no Attribute Points; attributes are spent between fights", () => {
     let s = start();
     s = { ...s, hero: { ...s.hero, xp: (PROGRESSION.xpToNextLevel[0] ?? 0) - 1 } };
     s = act(
@@ -204,12 +205,13 @@ describe("game loop", () => {
     );
     expect(s.hero.level).toBe(2);
     expect(s.run?.rewards?.levelsGained).toBe(1);
-    expect(s.hero.unspentAttributePoints).toBe(PROGRESSION.attributePointsPerLevel);
+    // The creation's free points still wait; the level brings none.
+    expect(s.hero.unspentAttributePoints).toBe(ATTRIBUTE_RULES.creationPoints);
     expect(s.hero.unspentSkillPoints).toBe(
       PROGRESSION.startSkillPoints + PROGRESSION.skillPointsPerLevel,
     );
-    s = act(s, { type: "allocateAttributes", points: { strength: 1, vitality: 1 } });
-    expect(s.hero.attributes.strength).toBe(7);
+    s = act(s, { type: "allocateAttributes", points: { strength: 3, vitality: 3 } });
+    expect(s.hero.attributes.strength).toBe(9);
     expect(s.hero.unspentAttributePoints).toBe(0);
     expect(() => act(s, { type: "allocateAttributes", points: { strength: 1 } })).toThrow();
   });
@@ -397,11 +399,14 @@ describe("game loop", () => {
     expect(s.pendingPrestige).toBeNull();
     expect(s.notice).toMatchObject({ kind: "prestige", enemyName: "Boss" });
     expect(s.hero).toMatchObject({ level, attributes, learned, equipment });
+    // The Harvest: two new Attribute Points wait, and a Phoenix Ash.
+    expect(s.hero.unspentAttributePoints).toBe(ATTRIBUTE_RULES.creationPoints + 2);
     expect(s.inventory).toEqual(inventory);
     expect(s.stash).toEqual(stash);
     expect(s.wallet).toEqual({
       ...wallet,
       harvesterEmber: wallet.harvesterEmber + PROGRESSION.prestigeHarvesterEmber,
+      phoenixAsh: 1,
     });
     expect(s.progress).toMatchObject({
       actsCleared: [],
@@ -429,6 +434,9 @@ describe("game loop", () => {
       rotationSlots: 2,
       planUpgrade: "Rotation Slot 2 · Reaction Slot 1",
       harvesterEmber: 1,
+      attributePoints: 2,
+      rekindle: 2,
+      phoenixAsh: 1,
       levelCap: 15,
       acts: 2,
       levelBand: { start: 5, end: 15 },
@@ -487,19 +495,22 @@ describe("game loop", () => {
     expect(migrated.legacy.chronicle).toEqual([
       { generation: 1, level: 20, deaths: 2, enemyName: "Boss" },
     ]);
-    // Run 2's cap is 15: every point comes back to spend again.
+    // Run 2's cap is 15: every point comes back to spend again (attributes: see v10 → v11).
     expect(migrated.hero).toMatchObject({
       level: 15,
       xp: 0,
       attributes: data.startingAttributes,
-      unspentAttributePoints: 14 * PROGRESSION.attributePointsPerLevel,
+      unspentAttributePoints: ATTRIBUTE_RULES.creationPoints + ATTRIBUTE_RULES.harvestPoints,
       unspentSkillPoints: PROGRESSION.startSkillPoints + 14 * PROGRESSION.skillPointsPerLevel,
       learned: {},
     });
     expect(migrated.wallet.harvesterEmber).toBe(1);
-    // A hero below the cap keeps its points.
+    // A hero below the cap keeps its Skill Points.
     const low = deserializeGame(JSON.stringify({ ...v7, hero: s.hero }), data);
-    expect(low.hero).toEqual(s.hero);
+    expect(low.hero).toEqual({
+      ...s.hero,
+      unspentAttributePoints: ATTRIBUTE_RULES.creationPoints + ATTRIBUTE_RULES.harvestPoints,
+    });
   });
 
   it("save games round-trip and reject other versions", () => {

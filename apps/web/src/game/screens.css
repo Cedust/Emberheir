@@ -3751,17 +3751,20 @@
 }
 
 .stage .prestige-branch,
+.stage .prestige-rekindle,
 .stage .prestige-heir {
   background: linear-gradient(180deg, #e8b48a 0%, #d9c6a0 45%);
 }
 
 :root[data-theme="dark"] .stage .prestige-branch,
+:root[data-theme="dark"] .stage .prestige-rekindle,
 :root[data-theme="dark"] .stage .prestige-heir {
   background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stage .prestige-branch,
+  :root:not([data-theme="light"]) .stage .prestige-rekindle,
   :root:not([data-theme="light"]) .stage .prestige-heir {
     background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
   }
@@ -5224,4 +5227,240 @@
   min-height: 32px;
   padding: 0 10px;
   font-size: 13px;
+}
+
+/* Attribute stones (attribute-v1.md): ten notches, ember seals at 4/7/10. */
+.stage .attr-stones {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .attr-stones .attr-text {
+  min-width: 0;
+}
+
+.stage .attr-notches {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  flex-shrink: 0;
+}
+
+.stage .notch {
+  width: 9px;
+  height: 16px;
+  border-radius: 2px;
+  background: var(--track);
+  border: 1px solid var(--edge);
+}
+
+.stage .notch.seal {
+  width: 13px;
+  height: 13px;
+  margin: 0 2px;
+  border-radius: 2px;
+  transform: rotate(45deg);
+}
+
+.stage .notch.own {
+  background: var(--accent-2);
+  border-color: var(--accent-2);
+}
+
+.stage .notch.new {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 6px var(--heat);
+}
+
+.stage .notch.leaving {
+  background: transparent;
+  border: 1px dashed var(--life);
+}
+
+.stage .notch.boon {
+  background: var(--rarity-legendary);
+  border-color: var(--rarity-legendary);
+  opacity: 0.85;
+}
+
+.stage .notch.seal.lit {
+  background: var(--heat);
+  border-color: var(--rarity-legendary);
+  box-shadow:
+    0 0 8px var(--heat),
+    0 0 2px var(--rarity-legendary);
+}
+
+.stage .attr-value .gear {
+  color: var(--text-sub);
+  font-style: normal;
+  font-size: 13px;
+}
+
+.stage .plus.minus {
+  background: var(--panel);
+  color: var(--text);
+}
+
+.stage .perk-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  min-height: 24px;
+}
+
+.stage .perk-chip {
+  font-family: var(--font-title);
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  border: 1px solid var(--rarity-legendary);
+  color: var(--text);
+  background: color-mix(in srgb, var(--heat) 18%, transparent);
+}
+
+.stage .perk-chip.gained {
+  box-shadow: 0 0 8px var(--heat);
+}
+
+.stage .perk-chip.lost {
+  border-color: var(--life);
+  color: var(--life);
+  background: transparent;
+  text-decoration: line-through;
+}
+
+/* Rekindle (Prestige) and Ashen Rebirth (Kaelen). */
+.stage .rekindle-stones,
+.stage .rebirth-stones {
+  width: 760px;
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage .prestige-rekindle .rekindle-stones {
+  margin: 32px auto 0;
+}
+
+.stage .prestige-rekindle .grow-space {
+  flex-grow: 1;
+}
+
+.stage .rekindle-left {
+  text-align: right;
+}
+
+.stage .rebirth-tab {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 32px var(--safe-x, 32px);
+}
+
+.stage .rebirth-head {
+  width: 760px;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.stage .rebirth-head h2 {
+  margin: 0;
+  letter-spacing: 0.08em;
+}
+
+.stage .rebirth-footer {
+  width: 760px;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.stage .rebirth-footer .sub {
+  margin-right: auto;
+}
+
+/* Breakpoint Perk tooltip: the item tooltip's dark plate with an ember seal on top. */
+.stage .perk-tooltip {
+  --tip-name: #ffb13b;
+  width: 280px;
+  padding-top: 26px;
+  border-color: #7a4a1c;
+  position: relative;
+}
+
+.stage .perk-tooltip.perk-locked {
+  --tip-name: #c9b89a;
+  border-color: #5a4430;
+}
+
+.stage .perk-tooltip.perk-lost {
+  --tip-name: #ff7a6a;
+  border-color: #8a2a20;
+}
+
+.stage .perk-tooltip.perk-active,
+.stage .perk-tooltip.perk-gained {
+  box-shadow:
+    0 0 20px rgb(255 138 58 / 0.28),
+    0 10px 30px rgb(0 0 0 / 0.6),
+    inset 0 0 24px rgb(0 0 0 / 0.6);
+}
+
+.stage .perk-tip-seal {
+  position: absolute;
+  top: -9px;
+  left: 50%;
+  width: 18px;
+  height: 18px;
+  transform: translateX(-50%) rotate(45deg);
+  background: #3a2a1c;
+  border: 2px solid #7a5a3a;
+}
+
+.stage .perk-active .perk-tip-seal,
+.stage .perk-gained .perk-tip-seal {
+  background: #ff8a3a;
+  border-color: #ffd84a;
+  box-shadow: 0 0 12px #ff8a3a;
+}
+
+.stage .perk-lost .perk-tip-seal {
+  background: transparent;
+  border: 2px dashed #ff7a6a;
+}
+
+.stage .perk-tip-explain {
+  color: #ece4d4;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.stage .perk-tip-status {
+  font-size: 13px;
+  color: #9a8a72;
+}
+
+.stage .perk-active .perk-tip-status {
+  color: #4fe08a;
+}
+
+.stage .perk-gained .perk-tip-status {
+  color: #ffb13b;
+}
+
+.stage .perk-lost .perk-tip-status {
+  color: #ff7a6a;
+}
+
+.stage .notch.seal,
+.stage .perk-chip {
+  cursor: help;
 }

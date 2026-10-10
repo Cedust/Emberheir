@@ -22,7 +22,10 @@ import { EMPTY_MASTERY, MASTERY, weaponRank } from "./weapon-mastery";
 export type WalletCurrency = Exclude<keyof Wallet, "essences" | "runes">;
 
 export type Cheat =
-  /** Set the hero level (any level up to the last Weapon Rank). Going down resets the points. */
+  /**
+   * Set the hero level (any level up to the last Weapon Rank). Going down resets the Skill
+   * Points; attributes do not follow the level.
+   */
   | { readonly kind: "level"; readonly level: number }
   /** Set a currency to an amount. */
   | { readonly kind: "currency"; readonly currency: WalletCurrency; readonly amount: number }
@@ -31,6 +34,8 @@ export type Cheat =
   | { readonly kind: "flasks"; readonly amount: number }
   /** Extra Weapon Mastery points on top of the Weapon Rank. */
   | { readonly kind: "masteryPoints"; readonly amount: number }
+  /** Set the unspent Attribute Points. */
+  | { readonly kind: "attributePoints"; readonly amount: number }
   /** A new item (or a Unique) into the inventory, or the stash if `to` says so. */
   | {
       readonly kind: "giveItem";
@@ -98,6 +103,11 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
           mastery: { ...state.hero.mastery, bonusPoints: whole(cheat.amount, 0, 999) },
         },
       };
+    case "attributePoints":
+      return {
+        ...state,
+        hero: { ...state.hero, unspentAttributePoints: whole(cheat.amount, 0, 99) },
+      };
     case "giveItem":
       return giveItem(state, data, cheat);
     case "rerollItem":
@@ -136,15 +146,11 @@ function setLevel(state: GameState, data: GameData, level: number): GameState {
         ...hero,
         level,
         xp: 0,
-        unspentAttributePoints:
-          hero.unspentAttributePoints + gained * PROGRESSION.attributePointsPerLevel,
         unspentSkillPoints: hero.unspentSkillPoints + gained * PROGRESSION.skillPointsPerLevel,
       },
     };
   }
-  // Down: every point comes back to spend again, like after a rule change (v7 → v8).
-  const start =
-    data.classes.find((c) => c.id === hero.classId)?.startingAttributes ?? data.startingAttributes;
+  // Down: every Skill Point comes back to spend again, like after a rule change (v7 → v8).
   const spent = spentInTree(data, hero.learned);
   const rankDrops = weaponRank(level) < weaponRank(hero.level);
   return {
@@ -153,8 +159,6 @@ function setLevel(state: GameState, data: GameData, level: number): GameState {
       ...hero,
       level,
       xp: 0,
-      attributes: start,
-      unspentAttributePoints: (level - 1) * PROGRESSION.attributePointsPerLevel,
       learned: {},
       unspentSkillPoints:
         PROGRESSION.startSkillPoints + (level - 1) * PROGRESSION.skillPointsPerLevel,

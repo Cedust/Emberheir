@@ -1,4 +1,6 @@
 import {
+  ATTRIBUTES,
+  ATTRIBUTE_RULES,
   BOON_GRADES,
   type BoonPick,
   heroBoons,
@@ -132,12 +134,15 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
   return applyAction(s, data, { type: "continue" });
 }
 
+/** Spreads the points over the plan's attributes in turn; full ones (10) are passed over. */
 function spendPoints(state: GameState, data: GameData, weaponId: string): GameState {
-  const plan = ATTRIBUTE_PLAN[weaponId] ?? ["vitality"];
+  const plan = [...(ATTRIBUTE_PLAN[weaponId] ?? []), ...ATTRIBUTES];
   let s = state;
   let i = 0;
   while (s.hero.unspentAttributePoints > 0) {
-    const attribute = plan[i++ % plan.length] ?? "vitality";
+    const open = plan.filter((a) => s.hero.attributes[a] < ATTRIBUTE_RULES.max).slice(0, 3);
+    const attribute = open[i++ % Math.max(1, open.length)];
+    if (!attribute) break;
     s = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: 1 } });
   }
   return s;

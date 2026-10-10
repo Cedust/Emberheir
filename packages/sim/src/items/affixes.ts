@@ -95,7 +95,11 @@ export function statAffixValue(
   def: Extract<AffixDefinition, { kind: "stat" }>,
   tier: number,
   quality: number,
+  rarity?: Rarity,
 ): number {
+  if (def.epicValue !== undefined && (rarity === "epic" || rarity === "legendary")) {
+    return def.epicValue;
+  }
   return roundStat(def.stat, rawAffixValue(def, tier, quality));
 }
 

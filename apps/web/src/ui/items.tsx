@@ -518,6 +518,9 @@ export function walletEntries(state: GameState): { name: string; value: number; 
     })),
     ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
     ...(w.kindling > 0 ? [{ key: "kindling", name: "Kindling", value: w.kindling }] : []),
+    ...((w.phoenixAsh ?? 0) > 0
+      ? [{ key: "phoenix-ash", name: "Phoenix Ash", value: w.phoenixAsh }]
+      : []),
   ];
 }
 

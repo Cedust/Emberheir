@@ -1,4 +1,5 @@
 import type {
+  Attribute,
   BoonDefinition,
   BoonFamilyDefinition,
   BoonSlot,
@@ -95,9 +96,13 @@ const HEARTH: readonly BoonDefinition[] = [
   boon("hearth", "passive", "Old Nan's Broth", "+# % Lifesteal", 1.5, {
     bonuses: { lifesteal: 0.015 },
   }),
-  boon("hearth", "passive", "Thick Skin", "+# % All Resistance", 6, {
-    bonuses: { allResistance: 0.06 },
-  }),
+  // Was "Thick Skin" (now a Vitality Perk); the id stays so running saves keep the Boon.
+  {
+    ...boon("hearth", "passive", "Weathered", "+# % All Resistance", 6, {
+      bonuses: { allResistance: 0.06 },
+    }),
+    id: "thick-skin",
+  },
   boon("hearth", "trigger", "Slow Embers", "Every 5 s: heal # % Life", 2, {
     trigger: {
       when: { kind: "everySeconds", seconds: 5 },
@@ -379,6 +384,32 @@ const FUSIONS: readonly BoonDefinition[] = [
   }),
 ];
 
+/**
+ * Stolen attributes (attribute-v1.md section 6): only Blaze Boons raise attributes, +1 per rank.
+ * They count for Breakpoints and burn with the run like every Boon.
+ */
+const stolen = (attribute: Attribute, name: string): BoonDefinition => ({
+  id: name.toLowerCase().replace(/\s+/g, "-"),
+  name,
+  family: "hearth",
+  slot: "passive",
+  text: `+# ${attribute[0]?.toUpperCase()}${attribute.slice(1)}`,
+  value: 1,
+  attributes: { [attribute]: 1 },
+  grade: "blaze",
+  maxRank: 2,
+  weight: 0.5,
+});
+
+const STOLEN: readonly BoonDefinition[] = [
+  stolen("strength", "Stolen Might"),
+  stolen("dexterity", "Stolen Aim"),
+  stolen("intelligence", "Stolen Insight"),
+  stolen("agility", "Stolen Grace"),
+  stolen("wisdom", "Stolen Calm"),
+  stolen("vitality", "Stolen Heart"),
+];
+
 export const BOONS_CONTENT: readonly BoonDefinition[] = [
   ...HEARTH,
   ...ASH,
@@ -388,4 +419,5 @@ export const BOONS_CONTENT: readonly BoonDefinition[] = [
   ...STORM,
   ...VOID,
   ...FUSIONS,
+  ...STOLEN,
 ];

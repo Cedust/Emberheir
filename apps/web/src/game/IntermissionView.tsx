@@ -104,8 +104,8 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
       </div>
       {run.rewards && run.rewards.levelsGained > 0 && (
         <div className="level-up title-font" role="status">
-          Level up! +{run.rewards.levelsGained * PROGRESSION.attributePointsPerLevel} Attribute
-          Points
+          Level up! +{run.rewards.levelsGained * PROGRESSION.skillPointsPerLevel} Skill{" "}
+          {run.rewards.levelsGained * PROGRESSION.skillPointsPerLevel === 1 ? "Point" : "Points"}
         </div>
       )}
       <div className="xp-line sub">

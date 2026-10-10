@@ -43,7 +43,7 @@ export const SWORD_BASE: ItemBaseDefinition = {
   name: "Sword",
   slot: "mainHand",
   weapon: SWORD,
-  requirements: { strength: 5 },
+  requirements: { strength: 3 },
   affixWeights: { physical: 1.5, elemental: 0.5 },
   maxSockets: 3,
 };
@@ -53,7 +53,7 @@ export const FIRE_WAND_BASE: ItemBaseDefinition = {
   name: "Fire Wand",
   slot: "mainHand",
   weapon: FIRE_WAND,
-  requirements: { intelligence: 5 },
+  requirements: { intelligence: 3 },
   affixWeights: { elemental: 1.5, physical: 0.5 },
   size: { w: 1, h: 2 },
   maxSockets: 2,
@@ -64,7 +64,7 @@ export const AXE_BASE: ItemBaseDefinition = {
   name: "Axe",
   slot: "mainHand",
   weapon: AXE,
-  requirements: { strength: 7 },
+  requirements: { strength: 4 },
   affixWeights: { physical: 1.5, ailment: 1.5, elemental: 0.5 },
   maxSockets: 3,
 };
@@ -74,7 +74,7 @@ export const DAGGER_BASE: ItemBaseDefinition = {
   name: "Dagger",
   slot: "mainHand",
   weapon: DAGGER,
-  requirements: { dexterity: 6 },
+  requirements: { dexterity: 3 },
   affixWeights: { crit: 1.5, ailment: 1.5, elemental: 0.5 },
   size: { w: 1, h: 2 },
   maxSockets: 2,
@@ -85,7 +85,7 @@ export const BOW_BASE: ItemBaseDefinition = {
   name: "Bow",
   slot: "mainHand",
   weapon: BOW,
-  requirements: { dexterity: 7 },
+  requirements: { dexterity: 4 },
   affixWeights: { ailment: 1.5, speed: 1.3, elemental: 0.5 },
   size: { w: 2, h: 3 },
   maxSockets: 3,
@@ -96,7 +96,7 @@ export const CROSSBOW_BASE: ItemBaseDefinition = {
   name: "Crossbow",
   slot: "mainHand",
   weapon: CROSSBOW,
-  requirements: { strength: 5, dexterity: 5 },
+  requirements: { strength: 3, dexterity: 3 },
   affixWeights: { physical: 1.5, crit: 1.3, elemental: 0.5 },
   size: { w: 2, h: 3 },
   maxSockets: 3,
@@ -107,7 +107,7 @@ export const MACE_BASE: ItemBaseDefinition = {
   name: "Mace",
   slot: "mainHand",
   weapon: MACE,
-  requirements: { strength: 8 },
+  requirements: { strength: 4 },
   affixWeights: { physical: 1.5, defense: 1.2, elemental: 0.5 },
   maxSockets: 3,
 };
@@ -117,7 +117,7 @@ export const STAFF_BASE: ItemBaseDefinition = {
   name: "Staff",
   slot: "mainHand",
   weapon: STAFF,
-  requirements: { intelligence: 6, wisdom: 4 },
+  requirements: { intelligence: 3, wisdom: 2 },
   affixWeights: { elemental: 1.5, ailment: 1.5, physical: 0.3 },
   size: { w: 1, h: 4 },
   maxSockets: 4,
@@ -129,7 +129,7 @@ export const ROUND_SHIELD: ItemBaseDefinition = {
   slot: "offHand",
   fitsWeaponRange: "melee",
   baseStats: { armor: 4, blockChance: 0.15, blockValue: 2 },
-  requirements: { strength: 6 },
+  requirements: { strength: 3 },
   affixWeights: { defense: 1.5, elemental: 0.5 },
   maxSockets: 3,
 };
@@ -142,7 +142,7 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   // A Focus is for casters; a Bow or Crossbow takes a Quiver.
   fitsWeapons: ["fire-wand", "staff"],
   implicit: { elementalDamage: 0.08, heatGain: 0.05 },
-  requirements: { intelligence: 6 },
+  requirements: { intelligence: 3 },
   affixWeights: { elemental: 1.5, heat: 1.5, block: 0, physical: 0.5 },
   maxSockets: 2,
 };
@@ -154,7 +154,7 @@ export const BLOOD_TALISMAN: ItemBaseDefinition = {
   slot: "offHand",
   fitsWeaponRange: "melee",
   implicit: { bleedChance: 0.05, poisonChance: 0.05 },
-  requirements: { dexterity: 6 },
+  requirements: { dexterity: 3 },
   affixWeights: { ailment: 1.5, physical: 1.2, block: 0 },
   maxSockets: 2,
 };
@@ -167,7 +167,7 @@ export const GRIMOIRE: ItemBaseDefinition = {
   fitsWeaponRange: "ranged",
   fitsWeapons: ["fire-wand", "staff"],
   implicit: { ailmentDuration: 0.1, burnChance: 0.03, corruptionChance: 0.03 },
-  requirements: { wisdom: 6 },
+  requirements: { wisdom: 3 },
   affixWeights: { ailment: 1.5, elemental: 1.2, block: 0, physical: 0.5 },
   maxSockets: 2,
 };
@@ -180,7 +180,7 @@ export const QUIVER: ItemBaseDefinition = {
   fitsWeaponRange: "ranged",
   fitsWeapons: ["bow", "crossbow"],
   implicit: { attackSpeed: 0.05, critChance: 0.02 },
-  requirements: { dexterity: 6 },
+  requirements: { dexterity: 3 },
   affixWeights: { speed: 1.5, crit: 1.5, ailment: 1.2, block: 0 },
   size: { w: 1, h: 3 },
   maxSockets: 2,
@@ -192,7 +192,7 @@ export const LEATHER_JERKIN: ItemBaseDefinition = {
   slot: "body",
   baseStats: { armor: 6 },
   implicit: { evasion: 0.03 },
-  requirements: { agility: 6 },
+  requirements: { agility: 3 },
   affixWeights: { speed: 1.5 },
   maxSockets: 3,
 };
@@ -203,7 +203,7 @@ export const CHAIN_MAIL: ItemBaseDefinition = {
   slot: "body",
   baseStats: { armor: 14 },
   // The heavy armor needs points in Strength first.
-  requirements: { strength: 10 },
+  requirements: { strength: 6 },
   affixWeights: { defense: 1.5 },
   maxSockets: 4,
 };
@@ -214,7 +214,7 @@ export const SILK_ROBE: ItemBaseDefinition = {
   slot: "body",
   baseStats: { armor: 3 },
   implicit: { allResistance: 0.05 },
-  requirements: { intelligence: 6 },
+  requirements: { intelligence: 3 },
   affixWeights: { elemental: 1.5, heat: 1.5 },
   maxSockets: 3,
 };
@@ -225,7 +225,7 @@ export const LEATHER_CAP: ItemBaseDefinition = {
   slot: "helm",
   baseStats: { armor: 3 },
   implicit: { evasion: 0.02 },
-  requirements: { agility: 6 },
+  requirements: { agility: 3 },
   affixWeights: { speed: 1.5 },
   maxSockets: 2,
 };
@@ -235,7 +235,7 @@ export const IRON_HELM: ItemBaseDefinition = {
   name: "Iron Helm",
   slot: "helm",
   baseStats: { armor: 7 },
-  requirements: { strength: 9 },
+  requirements: { strength: 5 },
   affixWeights: { defense: 1.5 },
   maxSockets: 3,
 };
@@ -246,7 +246,7 @@ export const CIRCLET: ItemBaseDefinition = {
   slot: "helm",
   baseStats: { armor: 1 },
   implicit: { heatGain: 0.05 },
-  requirements: { intelligence: 6 },
+  requirements: { intelligence: 3 },
   affixWeights: { elemental: 1.5, heat: 1.5 },
   maxSockets: 2,
 };
@@ -257,7 +257,7 @@ export const LEATHER_GLOVES: ItemBaseDefinition = {
   slot: "gloves",
   baseStats: { armor: 2 },
   implicit: { attackSpeed: 0.03 },
-  requirements: { agility: 6 },
+  requirements: { agility: 3 },
   affixWeights: { speed: 1.5, crit: 1.5 },
 };
 
@@ -266,7 +266,7 @@ export const GAUNTLETS: ItemBaseDefinition = {
   name: "Gauntlets",
   slot: "gloves",
   baseStats: { armor: 5 },
-  requirements: { strength: 9 },
+  requirements: { strength: 5 },
   affixWeights: { physical: 1.5, defense: 1.5 },
 };
 
@@ -276,7 +276,7 @@ export const SILK_WRAPS: ItemBaseDefinition = {
   slot: "gloves",
   baseStats: { armor: 1 },
   implicit: { elementalDamage: 0.04 },
-  requirements: { intelligence: 6 },
+  requirements: { intelligence: 3 },
   affixWeights: { elemental: 1.5, physical: 0.5 },
 };
 
@@ -286,7 +286,7 @@ export const LEATHER_BOOTS: ItemBaseDefinition = {
   slot: "boots",
   baseStats: { armor: 2 },
   implicit: { evasion: 0.02 },
-  requirements: { agility: 6 },
+  requirements: { agility: 3 },
   affixWeights: { speed: 1.5 },
 };
 
@@ -296,7 +296,7 @@ export const GREAVES: ItemBaseDefinition = {
   slot: "boots",
   baseStats: { armor: 5 },
   implicit: { tenacity: 0.04 },
-  requirements: { strength: 9 },
+  requirements: { strength: 5 },
   affixWeights: { defense: 1.5 },
 };
 
@@ -306,7 +306,7 @@ export const SILK_SLIPPERS: ItemBaseDefinition = {
   slot: "boots",
   baseStats: { armor: 1 },
   implicit: { startingHeat: 5 },
-  requirements: { intelligence: 6 },
+  requirements: { intelligence: 3 },
   affixWeights: { heat: 1.5, elemental: 1.5 },
 };
 
@@ -325,7 +325,7 @@ export const HEAVY_BELT: ItemBaseDefinition = {
   slot: "belt",
   baseStats: { armor: 4 },
   implicit: { tenacity: 0.03 },
-  requirements: { strength: 8 },
+  requirements: { strength: 4 },
   affixWeights: { defense: 1.5 },
 };
 
@@ -426,7 +426,6 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
 
 const ARMOR_SLOTS: readonly ItemSlot[] = ["helm", "body", "gloves", "boots", "belt"];
 const JEWELRY: readonly ItemSlot[] = ["amulet", "ring"];
-const ALL_SLOTS: readonly ItemSlot[] = ["offHand", ...ARMOR_SLOTS, ...JEWELRY];
 
 const stat = (affix: Omit<StatAffixDefinition, "kind" | "weight"> & { weight?: number }) =>
   ({ kind: "stat", weight: 10, ...affix }) satisfies StatAffixDefinition;
@@ -440,10 +439,12 @@ const attribute = (
     id,
     stat: id,
     suffix,
-    slots: ALL_SLOTS,
+    // Attributes v1: only on jewelry, +1 (Epic and Legendary +2), no growth per tier.
+    slots: JEWELRY,
     tags: ["attribute", tag],
-    value: { min: 1, max: 4 },
-    perTier: 0.75,
+    value: { min: 1, max: 1 },
+    perTier: 0,
+    epicValue: 2,
   });
 
 export const STAT_AFFIXES: readonly StatAffixDefinition[] = [

@@ -1,6 +1,7 @@
 import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import type {
+  Attribute,
   CombatRules,
   DamageType,
   StatBonuses,
@@ -51,6 +52,17 @@ export interface BoonDefinition {
   readonly trigger?: Omit<TriggerSpec, "id">;
   /** Fusion Boon: only offered once the hero holds Boons of both families. */
   readonly fusion?: readonly [string, string];
+  /**
+   * Attribute points per rank, not scaled by grade (attribute-v1.md section 6: only Blaze Boons
+   * raise attributes). They count for Breakpoints.
+   */
+  readonly attributes?: Partial<Record<Attribute, number>>;
+  /** Always offered at this grade. */
+  readonly grade?: BoonGrade;
+  /** Highest rank of this Boon; default `BOONS.maxRank`. */
+  readonly maxRank?: number;
+  /** Offer weight multiplier; default 1. */
+  readonly weight?: number;
 }
 
 /** One Boon taken from an offer. Taking the same Boon again raises its rank. */
@@ -108,7 +120,7 @@ export function activeBoons(
     if (!def) continue;
     const same = list.find((b) => b.def.id === def.id);
     if (same) {
-      same.rank = Math.min(BOONS.maxRank, same.rank + 1);
+      same.rank = Math.min(def.maxRank ?? BOONS.maxRank, same.rank + 1);
       if (gradeIndex(pick.grade) > gradeIndex(same.grade)) same.grade = pick.grade;
       continue;
     }
@@ -125,8 +137,13 @@ export function boonScale(rank: number, grade: BoonGrade): number {
   return (1 + BOONS.perRank * (rank - 1)) * BOONS.gradeScale[grade];
 }
 
-/** The card text with its number at this scale (a chance never shows above 100). */
-export function boonText(def: BoonDefinition, scale: number): string {
+/**
+ * The card text with its number at this scale (a chance never shows above 100). Attribute Boons
+ * show their points at `rank`.
+ */
+export function boonText(def: BoonDefinition, scale: number, rank = 1): string {
+  // Attributes grow with the rank only.
+  if (def.attributes) return def.text.replace("#", String(def.value * rank));
   const flat = def.trigger?.effect.kind === "ailment" || def.trigger?.effect.kind === "extraAttack";
   const v = flat ? Math.min(100, def.value * scale) : def.value * scale;
   const shown = Math.abs(v) >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
@@ -185,12 +202,17 @@ export function boonEffects(active: readonly ActiveBoon[]): {
   readonly bonuses: StatBonuses;
   readonly rules: CombatRules | undefined;
   readonly triggers: readonly TriggerSpec[];
+  readonly attributes: Partial<Record<Attribute, number>>;
 } {
   let bonuses: StatBonuses = {};
+  const attributes: Partial<Record<Attribute, number>> = {};
   const rules: CombatRules[] = [];
   const triggers: TriggerSpec[] = [];
   for (const b of active) {
     if (b.def.bonuses) bonuses = sumBonuses(bonuses, scaleBonuses(b.def.bonuses, b.scale));
+    for (const [k, v] of Object.entries(b.def.attributes ?? {}) as [Attribute, number][]) {
+      attributes[k] = (attributes[k] ?? 0) + v * b.rank;
+    }
     if (b.def.rules) rules.push(scaleRules(b.def.rules, b.scale));
     const trigger = b.def.trigger;
     if (trigger) {
@@ -205,7 +227,12 @@ export function boonEffects(active: readonly ActiveBoon[]): {
       });
     }
   }
-  return { bonuses, rules: rules.length ? mergeRules(...rules) : undefined, triggers };
+  return {
+    bonuses,
+    rules: rules.length ? mergeRules(...rules) : undefined,
+    triggers,
+    attributes,
+  };
 }
 
 /**
@@ -234,17 +261,18 @@ export function rollBoonOffer(
   );
   const pool = defs.filter((d) => {
     const owned = options.active.find((b) => b.def.id === d.id);
-    if (owned && owned.rank >= BOONS.maxRank) return false;
+    if (owned && owned.rank >= (d.maxRank ?? BOONS.maxRank)) return false;
     if (d.slot === "reaction" && !options.reactionSlot) return false;
     if (d.fusion) return d.fusion.every((f) => held.has(f));
     return options.open.includes(d.family);
   });
   const weight = (d: BoonDefinition) =>
-    d.fusion
+    (d.weight ?? 1) *
+    (d.fusion
       ? (options.fusionWeight ?? BOONS.fusionWeight)
       : preferred.has(d.family)
         ? BOONS.preferredWeight
-        : 1;
+        : 1);
   const offer: BoonPick[] = [];
   const left = [...pool];
   while (offer.length < BOONS.offerSize && left.length) {
@@ -253,7 +281,7 @@ export function rollBoonOffer(
     let index = left.findIndex((d) => (roll -= weight(d)) < 0);
     if (index < 0) index = left.length - 1;
     const [def] = left.splice(index, 1);
-    if (def) offer.push({ id: def.id, grade: rollGrade(rng) });
+    if (def) offer.push({ id: def.id, grade: def.grade ?? rollGrade(rng) });
   }
   return offer;
 }

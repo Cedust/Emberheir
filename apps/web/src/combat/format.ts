@@ -5,6 +5,7 @@ import {
   STAT_NAMES,
   type Side,
   formatPercent,
+  getPerk,
   isPercentStat,
 } from "@emberheir/sim";
 
@@ -92,6 +93,13 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         side: event.side,
         tone: "heal",
         text: `${names[event.side]} heals +${event.amount}`,
+      };
+    case "perk":
+      return {
+        time,
+        side: event.side,
+        tone: "trigger",
+        text: `${names[event.side]}: ${getPerk(event.perk).name}`,
       };
     case "trigger":
       return {

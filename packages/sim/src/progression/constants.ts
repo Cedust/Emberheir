@@ -114,7 +114,6 @@ export const PROGRESSION = {
   levelsPerAct: 5,
   /** Acts of a full world (run 7). */
   actsPerFullRun: 7,
-  attributePointsPerLevel: 2,
   skillPointsPerLevel: 1,
   /** One Skill Point for Level 1, like every other level: 140 in total at the last Level Cap. */
   startSkillPoints: 1,
