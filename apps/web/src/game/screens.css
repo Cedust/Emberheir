@@ -1412,6 +1412,91 @@
   animation: breathe 4s ease-in-out infinite alternate;
 }
 
+/* Idle life of the painted animals: blinks, tails, ears, glowing trinkets (PersonaArt.tsx). */
+.stage .lid {
+  transform-box: fill-box;
+  transform-origin: 50% 0;
+  transform: scaleY(0);
+  animation: blink 5.3s linear infinite;
+}
+
+.stage .sway,
+.stage .twitch {
+  transform-box: view-box;
+}
+
+.stage .sway {
+  animation: sway 3.6s ease-in-out infinite alternate;
+}
+
+.stage .twitch {
+  animation: twitch 6.5s ease-in-out infinite;
+}
+
+.stage .pulse {
+  animation: glimmer 1.8s ease-in-out infinite alternate;
+}
+
+@keyframes glimmer {
+  from {
+    opacity: 0.7;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.stage .bob {
+  transform-box: view-box;
+  animation: bob 2.4s ease-in-out infinite alternate;
+}
+
+@keyframes blink {
+  0%,
+  95% {
+    transform: scaleY(0);
+  }
+  97% {
+    transform: scaleY(1);
+  }
+  99%,
+  100% {
+    transform: scaleY(0);
+  }
+}
+
+@keyframes sway {
+  from {
+    transform: rotate(-3deg);
+  }
+  to {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes twitch {
+  0%,
+  88%,
+  100% {
+    transform: rotate(0deg);
+  }
+  91% {
+    transform: rotate(-9deg);
+  }
+  94% {
+    transform: rotate(3deg);
+  }
+}
+
+@keyframes bob {
+  from {
+    transform: translateY(0);
+  }
+  to {
+    transform: translateY(-1.5px);
+  }
+}
+
 @keyframes flicker {
   from {
     transform: scaleY(1) skewX(0deg);
@@ -1465,7 +1550,12 @@
 @media (prefers-reduced-motion: reduce) {
   .stage .camp-fx *,
   .stage .camp-glow *,
-  .stage .figure-body {
+  .stage .figure-body,
+  .stage .lid,
+  .stage .sway,
+  .stage .twitch,
+  .stage .pulse,
+  .stage .bob {
     animation: none;
   }
 }
@@ -1485,8 +1575,7 @@
 }
 
 /* Opacity goes on the parts: on the button it would trap the name plate under the lighting. */
-.stage .camp-target.locked .figure,
-.stage .camp-target.locked .name-plate {
+.stage .camp-target.locked .figure {
   opacity: 0.6;
 }
 
@@ -1494,8 +1583,7 @@
   cursor: not-allowed;
 }
 
-.stage .camp-target:disabled .figure,
-.stage .camp-target:disabled .name-plate {
+.stage .camp-target:disabled .figure {
   opacity: 0.55;
 }
 
@@ -1507,30 +1595,52 @@
   filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
 }
 
-.stage .name-plate {
-  position: relative;
-  z-index: 5;
+/* Hover tooltip over a persona or object (no permanent name plates: they crowd the scene). */
+.stage .camp-tip {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  z-index: 7;
+  transform: translate(-50%, -100%) translateY(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 12px 5px;
+  border-radius: 4px;
+  background: var(--panel);
+  border: 1.5px solid var(--edge);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.4);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.stage .camp-tip .title-font {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px 4px;
-  border-radius: 3px;
-  background: var(--panel);
-  border: 1.5px solid var(--edge);
-  box-shadow: 0 2px 0 rgb(0 0 0 / 0.35);
-  white-space: nowrap;
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0.5px;
 }
 
-.stage .camp-target.on .name-plate {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--ink);
+.stage .camp-tip .sub {
+  font-size: 12px;
 }
 
-.stage .camp-target:hover .name-plate {
-  border-color: var(--accent);
+.stage .camp-target:hover .camp-tip,
+.stage .camp-target:focus-visible .camp-tip {
+  opacity: 1;
+  transform: translate(-50%, -100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .camp-tip {
+    transition: none;
+  }
 }
 
 .stage .persona-card {
@@ -4004,7 +4114,7 @@
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
 }
 
-/* --- Runes, Eldrin and Marisha (M8) ---------------------------------------------------------- */
+/* --- Runes, Nyssa and Marisha (M8) ---------------------------------------------------------- */
 
 .stage .rune-stone.dim {
   opacity: 0.35;

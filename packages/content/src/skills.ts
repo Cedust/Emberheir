@@ -720,7 +720,7 @@ export const ERUPTION: SkillDefinition = {
 
 // Act 4 (Frost Peaks) enemy skills.
 
-/** Frost Wolf: a leap with chilling teeth. */
+/** Frost Fox: a leap with chilling teeth. */
 export const POUNCE: SkillDefinition = {
   id: "pounce",
   name: "Pounce",

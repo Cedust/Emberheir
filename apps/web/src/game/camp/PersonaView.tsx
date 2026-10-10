@@ -53,11 +53,13 @@ import { CRAFT_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
 import { WeaponSlot } from "../WeaponSlot";
+import { PersonaPortrait } from "./art/PersonaArt";
+import { PaintDefs } from "./art/paint";
 
 /** Scale of the paperdoll next to the inventory. */
 const SIDE_DOLL = 0.85;
 
-export type PersonaId = "thoric" | "liora" | "eldrin" | "marisha";
+export type PersonaId = "thoric" | "liora" | "nyssa" | "marisha";
 type ActionKind =
   | "upgrade"
   | "socket"
@@ -75,7 +77,6 @@ type ActionKind =
 interface PersonaDef {
   readonly name: string;
   readonly role: string;
-  readonly initial: string;
   readonly portrait: string;
   readonly accent: string;
   readonly quote: string;
@@ -86,7 +87,6 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
   thoric: {
     name: "Thoric",
     role: "Blacksmith",
-    initial: "T",
     portrait: "#5a3a24",
     accent: "#c9c2b8",
     quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
@@ -99,7 +99,6 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
   liora: {
     name: "Liora",
     role: "Mystic",
-    initial: "L",
     portrait: "#3a2a5a",
     accent: "#b36bff",
     quote: "Affixes are like moods, dear. I can change one. I cannot change all of them twice.",
@@ -111,10 +110,9 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
       { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
     ],
   },
-  eldrin: {
-    name: "Eldrin",
+  nyssa: {
+    name: "Nyssa",
     role: "Runesmith",
-    initial: "E",
     portrait: "#2e4a26",
     accent: "#8fd06a",
     quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
@@ -127,7 +125,6 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
   marisha: {
     name: "Marisha",
     role: "Black Market",
-    initial: "M",
     portrait: "#5a4218",
     accent: "#e0c27a",
     quote: "Gamble? Of course. The house always wins. I am the house.",
@@ -137,18 +134,18 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
   },
 };
 
-export const PERSONA_ORDER: readonly PersonaId[] = ["thoric", "liora", "eldrin", "marisha"];
+export const PERSONA_ORDER: readonly PersonaId[] = ["thoric", "liora", "nyssa", "marisha"];
 
 /** Whether a persona travels with the caravan yet. */
 export function personaPresent(state: GameState, id: PersonaId): boolean {
   if (id === "liora") return state.progress.trainerUnlocked;
-  if (id === "eldrin") return state.progress.runesmithUnlocked;
+  if (id === "nyssa") return state.progress.runesmithUnlocked;
   return true;
 }
 
 const PERSONA_LOCKED: Partial<Record<PersonaId, string>> = {
   liora: "Liora joins after the act boss falls",
-  eldrin: "Eldrin waits somewhere in the Rotwood",
+  nyssa: "Nyssa waits somewhere in the Rotwood",
 };
 
 const ACTION_HINT: Record<ActionKind, string> = {
@@ -248,7 +245,7 @@ export function PersonaView(props: {
   const [kinds, setKinds] = useState<Record<PersonaId, ActionKind>>({
     thoric: "upgrade",
     liora: "reforge",
-    eldrin: "rune",
+    nyssa: "rune",
     marisha: "gamble",
   });
   const [runeId, setRuneId] = useState<string | null>(null);
@@ -460,6 +457,7 @@ export function PersonaView(props: {
 
   return (
     <section className="screen persona-view" aria-label={`${def.name}, ${def.role}`}>
+      <PaintDefs />
       <header className="persona-header bar-top">
         <span className="title-font eyebrow-big">
           CAMP · {nextAct(state, GAME_DATA).name.toUpperCase()}
@@ -506,7 +504,7 @@ export function PersonaView(props: {
               className="persona-portrait big title-font"
               style={{ background: def.portrait, borderColor: def.accent }}
             >
-              {def.initial}
+              <PersonaPortrait id={props.persona} />
             </div>
             <div className="plaque-names">
               <span className="title-font huge">{def.name}</span>

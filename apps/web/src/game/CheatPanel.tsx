@@ -210,7 +210,7 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
           disabled={state.progress.trainerUnlocked && state.progress.runesmithUnlocked}
           onClick={() => game.cheat({ kind: "unlockCamp" })}
         >
-          Kaelen and Eldrin join
+          Kaelen and Nyssa join
         </button>
       </section>
     </div>

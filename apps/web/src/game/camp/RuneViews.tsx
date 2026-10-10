@@ -15,7 +15,7 @@ import { ItemArt } from "../../ui/ItemArt";
 import { ItemTile, fmt } from "../../ui/items";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 
-/** Eldrin's and Marisha's center panels: Rune pouch, Codex, stock and gamble slots. */
+/** Nyssa's and Marisha's center panels: Rune pouch, Codex, stock and gamble slots. */
 
 /** Sockets of an item, big: empty holes and socketed Rune stones. */
 export function SocketRow(props: {

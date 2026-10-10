@@ -319,7 +319,7 @@ export const CRAFTING = {
   /** Add Socket at Thoric: Gold plus Dust × the new Socket count. */
   addSocketGold: 25,
   addSocketDust: 15,
-  /** Eldrin: Socket a Rune / combine three into the next rank, Gold × rank. */
+  /** Nyssa: Socket a Rune / combine three into the next rank, Gold × rank. */
   socketRuneGoldPerRank: 8,
   combineRunesGoldPerRank: 15,
   combineRunesCount: 3,

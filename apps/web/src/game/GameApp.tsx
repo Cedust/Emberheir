@@ -100,7 +100,7 @@ export function GameApp() {
         setCampScreen("persona");
         break;
       case "runes":
-        setPersona("eldrin");
+        setPersona("nyssa");
         setCampScreen("persona");
         break;
       default:

@@ -33,6 +33,8 @@ import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { MasteryTab } from "./MasteryTab";
+import { PersonaPortrait } from "./art/PersonaArt";
+import { PaintDefs } from "./art/paint";
 import { RebirthTab } from "./RebirthTab";
 import { SkillTreeTab } from "./SkillTreeTab";
 
@@ -515,7 +517,8 @@ export function KaelenView(props: {
       <section className="screen kaelen">
         <header className="kaelen-header bar-top">
           <div className="persona-portrait title-font" style={{ background: "#6a2a20" }}>
-            K
+            <PaintDefs />
+            <PersonaPortrait id="kaelen" />
           </div>
           <div className="run-title">
             <span className="title-font">KAELEN</span>

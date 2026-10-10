@@ -52,9 +52,9 @@ export type CraftRequest =
   | { readonly kind: "distill" }
   /** Thoric: +1 Socket on a Normal item without Runes, up to the base's maximum. */
   | { readonly kind: "addSocket"; readonly itemId: string }
-  /** Eldrin: a Rune from the pouch into the next free Socket. Runes never come out again. */
+  /** Nyssa: a Rune from the pouch into the next free Socket. Runes never come out again. */
   | { readonly kind: "socketRune"; readonly itemId: string; readonly runeId: string }
-  /** Eldrin: three Runes of one kind into one Rune of the next rank. */
+  /** Nyssa: three Runes of one kind into one Rune of the next rank. */
   | { readonly kind: "combineRunes"; readonly runeId: string }
   /** Marisha (Black Market): a random item for a slot, with better rarity odds than loot. */
   | { readonly kind: "gamble"; readonly slot: ItemSlot }
@@ -80,7 +80,7 @@ export const MYSTIC_CRAFTS: readonly CraftKind[] = [
   "distill",
   "kindle",
 ];
-/** Eldrin joins after the first trip into the Rotwood. */
+/** Nyssa joins after the first trip into the Rotwood. */
 export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["socketRune", "combineRunes"];
 
 export interface CraftCost {
@@ -99,7 +99,7 @@ export type CraftBlockReason =
   | "camp"
   /** Liora has not joined the caravan yet. */
   | "mystic"
-  /** Eldrin has not joined the caravan yet. */
+  /** Nyssa has not joined the caravan yet. */
   | "runesmith"
   /** Sockets and Runes are for Normal items only. */
   | "notNormal"

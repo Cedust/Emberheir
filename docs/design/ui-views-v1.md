@@ -37,8 +37,8 @@ Spielsprache bleibt **Englisch** ✅: alle Beschriftungen, Buttons und Texte im 
 | **Liora** (Mystic) | Reforge (Affix-Lock), Temper, Imbue, Distill | 🧪 |
 | **Marisha** (Merchant) | Base Items, Gamble | später |
 | **Kaelen** (Trainer) | Skill Tree, Battle Plan 💡, Respec, Capstone wechseln | 🧪 nach Gorrak |
-| **Eldrin** (Runesmith) | **Socket Runes** ✅, Runes kombinieren, Runeword Codex | später |
-| **Nyssa** (Scout) | Act Preview, Revisit Act, schaltet **Next Enemy** in der Intermission frei ✅ | später |
+| **Nyssa** (Runesmith) | **Socket Runes** ✅, Runes kombinieren, Runeword Codex | später |
+| **Eldrin** (Scout) | Act Preview, Revisit Act, schaltet **Next Enemy** in der Intermission frei ✅ | später |
 | **Supply Wagon** | Stash ✅ (Timos Idee, passt zur Story: "Der Stash ist der Supply Wagon") | 🧪 |
 | **Weg aus dem Camp** | Nächsten Act starten, Button **"Set Out"** ✅ | 🧪 |
 
@@ -69,7 +69,7 @@ Spielsprache bleibt **Englisch** ✅: alle Beschriftungen, Buttons und Texte im 
 - **PoC-Ablauf:** Act 1 bis Boss Gorrak. Der Sieg zählt im PoC als Prestige light (1 Save Token, Rotation Slot 2). Danach Camp mit Kaelen und Liora, Skillpunkte verteilen, wieder ab Stage 1 von Act 1. Act 2 gibt es im PoC nicht.
 - **Old Nan:** Compendium (How to Play) und Ember Flask (Upgrades, Modifier). Keine eigene Alchemist-Persona.
 - **Hearthfire = Legacy-View.**
-- **Eldrin sockelt Runes** (zusätzlich zu Combine Runes und Codex). Runes aus Act 1 (Gorrak) wartet man bis Eldrin nach Act 2.
+- **Nyssa sockelt Runes** (zusätzlich zu Combine Runes und Codex). Runes aus Act 1 (Gorrak) wartet man bis Nyssa nach Act 2.
 - **Heir-Darstellung** 💡 (Claudes Vorschlag): fester Körper, sichtbar wechseln nur Weapon und Off Hand, Rüstung höchstens als Rarity-Schimmer. Gleiche Figur in Battle und Camp.
 
 ## Offene Fragen ❓

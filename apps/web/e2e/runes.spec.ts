@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveWithRunes, seedSave } from "./fixtures";
 
-test("Marisha gambles a ring, Eldrin turns three Ash into Moss", async ({ page }) => {
+test("Marisha gambles a ring, Nyssa turns three Ash into Moss", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveWithRunes());
@@ -17,7 +17,7 @@ test("Marisha gambles a ring, Eldrin turns three Ash into Moss", async ({ page }
   await page.locator(".cost-bar").getByRole("button", { name: "Gamble" }).click();
   await expect(page.locator(".gamble-last")).toBeVisible();
 
-  await page.getByRole("tab", { name: /Eldrin · Runesmith/ }).click();
+  await page.getByRole("tab", { name: /Nyssa · Runesmith/ }).click();
   await page
     .getByRole("button", { name: /Combine Runes/ })
     .first()

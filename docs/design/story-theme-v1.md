@@ -221,19 +221,21 @@ Zeitlose **High Fantasy** mit mittelalterlicher Technik (Schwerter, Bögen, Magi
 
 Grundidee ✅: Jede Persona hat eine kleine Backstory, wie sie zur Karawane gekommen ist. Namen v1 (Old Nan, Greta, Pip …) verworfen, weil zu modern bzw. zu verspielt.
 
-| Persona | Name | Kommt dazu | Backstory (kurz) |
-|---|---|---|---|
-| **Hearthkeeper** | **Old Nan** ✅ (namenlos) | von Beginn an | Die Älteste. Niemand kennt ihren echten Namen mehr, nicht einmal sie selbst. Sie hat das Hearthfire aus dem ersten Brand gerettet und trägt es seitdem. Erinnert sich an jeden Heir. |
-| **Blacksmith** | **Thoric** ✅ | von Beginn an | Seine Schmiedestadt ist in einer früheren Ernte verbrannt. Er hat nur seinen Amboss gerettet, der jetzt auf dem zweiten Wagen steht. |
-| **Merchant** | **Marisha** ✅ | von Beginn an | Handelt seit drei Apokalypsen mit allem und jedem. Niemand weiß, woher sie ihre Ware bekommt. |
-| **Mystic** | **Liora** ✅ | nach Act 1 | Eine Seherin, die Gorrak in seiner Grube gefangen hielt, damit sie ihm die Zukunft vorhersagt. Sie hat seinen Tod nicht kommen sehen. |
-| **Trainer** | **Kaelen** | nach Act 1 | Letzter Ritter eines Ordens, der einst gegen den Ashen King zog. Er hat überlebt, weil er zu spät zur Schlacht kam. |
-| **Runesmith** | **Eldrin** ✅ | nach Act 2 | Ein Gelehrter, der in den Ruinen von Rotwood Runen entziffert hat und dabei fast überwuchert wurde. |
-| **Scout** | **Nyssa** | nach Act 2 | Eine Waldläuferin aus Rotwood. Sie hat die Karawane lange heimlich beobachtet, bevor sie sich anschloss. |
+Fabelwelt ✅ (08.10.2026, Thread "Personas als Tiere"): Alle Figuren sind Waldtiere im Stil von Humblewood. Details zu Heir, Gegnern und Wardens in `fabelwelt-v1.md`.
+
+| Persona | Name | Tier | Charakter | Kommt dazu | Backstory (kurz) |
+|---|---|---|---|---|---|
+| **Hearthkeeper** | **Old Nan** ✅ (namenlos) | alte **Eule** | süß, großmütterlich, verpeilt | von Beginn an | Die Älteste. Niemand kennt ihren echten Namen mehr, nicht einmal sie selbst. Sie hat das Hearthfire aus dem ersten Brand gerettet und wacht seitdem nachts darüber. Erinnert sich an jeden Heir. |
+| **Blacksmith** | **Thoric** ✅ | **Wildschwein** | grummelig, stur, trockener Humor | von Beginn an | Seine Schmiedestadt ist in einer früheren Ernte verbrannt. Er hat nur seinen Amboss gerettet, der jetzt auf dem zweiten Wagen steht. |
+| **Merchant** | **Marisha** ✅ | **Waschbär** | frech, gerissen, "darling" | von Beginn an | Handelt seit drei Apokalypsen mit allem und jedem. Niemand weiß, woher sie ihre Ware bekommt. |
+| **Mystic** | **Liora** ✅ | **Mondhase** | verträumt, etwas naiv | nach Act 1 | Eine Seherin, die Gorrak in seiner Grube gefangen hielt, damit sie ihm die Zukunft vorhersagt. Sie hat seinen Tod nicht kommen sehen. |
+| **Trainer** | **Kaelen** ✅ | **Wolf** | ernst, streng, herzlich, leise melancholisch | nach Act 1 | Letzter Ritter eines Ordens (seines Rudels), der einst gegen den Harvester zog. Er hat überlebt, weil er zu spät zur Schlacht kam. |
+| **Runesmith** | **Nyssa** ✅ (weiblich, Name getauscht) | **Eichhörnchen** | hibbelig, redet zu schnell, hortet Runen wie Nüsse | nach Act 2 | Eine Gelehrte, die in den Ruinen von Rotwood Runen entziffert hat und dabei fast überwuchert wurde. |
+| **Scout** | **Eldrin** ✅ (männlich, Name getauscht) | **Rabe** | wortkarg, cool, fliegt voraus | nach Act 2 | Ein Kundschafter aus Rotwood. Er hat die Karawane lange heimlich aus den Baumkronen beobachtet, bevor er sich anschloss. |
 
 ### Ideen für später 💡
 
-- **Camp-Upgrades** als kosmetische Belohnung (Lichterketten, Flaggen, ein Hund), z. B. pro Prestige.
+- **Camp-Upgrades** als kosmetische Belohnung (Lichterketten, Flaggen, ein Glas Glühwürmchen), z. B. pro Prestige.
 - **Running Gags**, die über Prestiges weiterlaufen (Greta baut jedes Mal das Dach neu, Pip erhöht jedes Mal die Preise).
 - **Lagerfeuer-Gespräche:** eine kurze Szene pro Act zwischen zwei Personas.
 
