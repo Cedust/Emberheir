@@ -1,4 +1,4 @@
-import { SKILL_TREE } from "@emberheir/content";
+import { SKILL_TREE, TREE_PLACEMENT, type TreeRegion, onTree } from "@emberheir/content";
 import {
   classStartNode,
   type GameState,
@@ -59,23 +59,15 @@ function colourTier(node: SkillNode, ranks: number): number {
 }
 
 /**
- * Big names: the four branch regions past the rim of the web (the bridges between them carry no
+ * Big names: the four branch regions past the rim of the tree (the bridges between them carry no
  * name), Prestige branches past their end.
  */
 function treeLabels(branches: readonly string[]): TreeLabel[] {
   const labels: TreeLabel[] = BRANCHES.filter((b) => b.id !== "core").map((b) => {
-    const nodes = SKILL_TREE.nodes.filter((n) => n.region === b.id && !n.prestigeBranch);
-    const cx = nodes.reduce((s, n) => s + n.x, 0) / Math.max(1, nodes.length);
-    const cy = nodes.reduce((s, n) => s + n.y, 0) / Math.max(1, nodes.length);
-    const d = Math.hypot(cx, cy) || 1;
-    return {
-      key: b.id,
-      text: b.name.toUpperCase(),
-      x: (cx / d) * 12.3,
-      y: (cy / d) * 12.3,
-      color: b.color,
-      size: 20,
-    };
+    // Out past the region's Keystones, on the tree.
+    const ring = (TREE_PLACEMENT[b.id as TreeRegion].ring * Math.PI) / 180;
+    const at = onTree({ x: Math.cos(ring) * 14, y: Math.sin(ring) * 14 }, b.id as TreeRegion);
+    return { key: b.id, text: b.name.toUpperCase(), ...at, color: b.color, size: 20 };
   });
   for (const def of SKILL_TREE.prestigeBranches ?? []) {
     const tier = branchTier(branches, def.id);

@@ -182,6 +182,12 @@ und wird nachgebessert.
 **UI:** Der zoombare Pixi-Baum (Skill Tree v2) trägt das Netz. Neu nötig: **Pfad-Vorschau beim Hover** (zeigt den Weg und
 was er kostet) und gesperrte Gabelungs-Partner als zerbrochenes Siegel. Lernen bleibt ein Funkenstoß entlang der Linie.
 
+**Form: der Aschenbaum (Timo 2026-10-10, das Ring-Netz sah aus wie ein Virus).** Die acht Regionen sitzen auf einem
+Baum: Might-Arcana, Might, Arcana, Rupture-Might und Arcana-Affliction bilden die **Krone**, Rupture, Affliction und
+Affliction-Rupture wachsen als **Wurzeln** nach unten. Die Ring-Verbindungen laufen am **Stamm** entlang, in dem ein
+glühendes Ember-Herz sitzt. Prestige-Äste wachsen an ihrer Region weiter. Nur die Lage ändert sich, Wege und Kosten
+bleiben gleich (`packages/content/src/tree-shape.ts`).
+
 ### Leitplanken: groß wie PoE, Spielgefühl wie Diablo ✅ (Timo, 08.10.2026)
 
 Der Baum schafft Möglichkeiten und Entscheidungen. Er hält nicht die Hand, und ein schwacher Baum darf sich auch

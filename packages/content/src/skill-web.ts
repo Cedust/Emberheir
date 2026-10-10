@@ -39,8 +39,8 @@ import {
  *    rupture      │       affliction
  *          affliction-rupture
  *
- * Coordinates are polar around the middle of the tree (0° = right, 90° = down). Numbers are
- * starting values.
+ * Coordinates are polar around the middle of the ring (0° = right, 90° = down); `tree-shape.ts`
+ * then sets each region onto the Ash Tree. Numbers are starting values.
  */
 
 type WeaponRange = "melee" | "ranged";

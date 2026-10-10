@@ -95,6 +95,18 @@ describe("Skill Tree", () => {
     }
   });
 
+  it("grows as the Ash Tree: crown above, roots below, no two nodes on top of each other", () => {
+    const nodes = SKILL_TREE.nodes;
+    for (const [i, a] of nodes.entries()) {
+      for (const b of nodes.slice(i + 1)) {
+        expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id} / ${b.id}`).toBeGreaterThan(0.6);
+      }
+    }
+    const crown = nodes.filter((n) => n.region === "might" || n.region === "arcana");
+    const roots = nodes.filter((n) => n.region === "rupture" || n.region === "affliction");
+    expect(Math.max(...crown.map((n) => n.y))).toBeLessThan(Math.min(...roots.map((n) => n.y)));
+  });
+
   it("has ten Prestige branches with one Skill and one Keystone each, 8 / 5 / 6 points", () => {
     const branches = SKILL_TREE.prestigeBranches ?? [];
     expect(branches).toHaveLength(10);
