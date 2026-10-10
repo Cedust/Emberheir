@@ -178,7 +178,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     voidResistance: resist(b.voidResistance),
     heatGain: a.wisdom * step.heatGain + b.heatGain,
     startingHeat: clamp(
-      b.startingHeat + (perks.has("readyFlame") ? PERK.readyFlameHeat : 0),
+      b.startingHeat + (perks.has("innerFire") ? PERK.innerFireHeat : 0),
       0,
       COMBAT.maxHeat,
     ),

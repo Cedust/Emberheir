@@ -72,7 +72,7 @@ in Fallout). Ein einzelner Punkt kann also der Punkt sein, der einen Perk öffne
 | **Dexterity** | **Hawkeye:** +5 % Precision (weniger Glancing Blows) | **Opportunist:** Glancing Blows können Trigger auslösen | **True Shot:** jeder 5. Angriff ist ein sicherer Crit |
 | **Intelligence** | **Attuned:** +10 % Elemental Penetration | **Elemental Surge:** +10 % Chance auf das Ailment des Elements | **Spellfire:** der erste Spell jedes Kampfes trifft doppelt |
 | **Agility** | **Quick Reflexes:** der erste gegnerische Angriff jedes Kampfes geht ins Leere | **Ember Dance:** On Evade +5 Heat | **Double Time:** jeder 4. Angriff schlägt doppelt zu |
-| **Wisdom** | **Ready Flame:** +10 Starting Heat | **Afterglow:** Skills geben 10 % ihrer Heat Cost zurück | **Clarity:** Ailments halten +1 Stack bzw. laufen +1 s länger |
+| **Wisdom** | **Inner Fire:** +10 Starting Heat | **Afterglow:** Skills geben 10 % ihrer Heat Cost zurück | **Clarity:** Ailments halten +1 Stack bzw. laufen +1 s länger |
 | **Vitality** | **Second Breath:** 1× pro Kampf unter 30 % Life: heilt 15 % Max Life | **Scar Tissue:** −15 % Schaden durch Ailments | **Undying:** 1× pro Kampf überlebt man einen tödlichen Treffer mit 1 Life |
 
 Jeder Perk bekommt einen eigenen Look in der Arena (CLAUDE.md, PixiJS-Regel): z. B. Titan = Schockwelle am Boden,

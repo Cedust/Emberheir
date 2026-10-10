@@ -514,8 +514,7 @@ export class Fight {
     const start = this.log.length;
     if (this.ticks === 0) {
       for (const side of ["hero", "enemy"] as const) {
-        if (this.fighters[side].perks.has("readyFlame"))
-          this.perk(this.fighters[side], "readyFlame");
+        if (this.fighters[side].perks.has("innerFire")) this.perk(this.fighters[side], "innerFire");
         this.fireTriggers(this.fighters[side], "fightStart");
         if (this.result) return this.log.slice(start);
         this.react(this.fighters[side], "fightStart");

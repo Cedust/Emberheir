@@ -147,7 +147,7 @@ const PERK_FX: Record<
   quickReflexes: { color: [0xd8f0c8, 0xa8d8a0], on: "self", look: "wind", name: true },
   emberDance: { color: [0xffb13b, 0xffd84a], on: "self", look: "wind" },
   doubleTime: { color: [0xffd84a, 0xffffff], on: "self", look: "ring", name: true },
-  readyFlame: { color: [0xff8a3a, 0xffb13b], on: "self", look: "rise", name: true },
+  innerFire: { color: [0xff8a3a, 0xffb13b], on: "self", look: "rise", name: true },
   afterglow: { color: [0xff8a3a, 0xffd84a], on: "self", look: "rise" },
   clarity: { color: [0xa35cff], on: "foe", look: "ring" },
   secondBreath: { color: [0x4fe08a, 0xffb13b], on: "self", look: "rise", name: true },

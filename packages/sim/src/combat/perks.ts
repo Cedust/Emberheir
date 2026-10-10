@@ -17,7 +17,7 @@ export const PERK_IDS = [
   "quickReflexes",
   "emberDance",
   "doubleTime",
-  "readyFlame",
+  "innerFire",
   "afterglow",
   "clarity",
   "secondBreath",
@@ -52,7 +52,7 @@ export const PERK = {
   spellfireDamage: 2,
   emberDanceHeat: 5,
   doubleTimeEvery: 4,
-  readyFlameHeat: 10,
+  innerFireHeat: 10,
   afterglowRefund: 0.1,
   /** Clarity: own ailments last this much longer, Poison holds one stack more. */
   claritySeconds: 1,
@@ -150,11 +150,11 @@ export const PERKS: readonly PerkDefinition[] = [
     description: `Every ${PERK.doubleTimeEvery}th attack strikes twice.`,
   },
   {
-    id: "readyFlame",
-    name: "Ready Flame",
+    id: "innerFire",
+    name: "Inner Fire",
     attribute: "wisdom",
     threshold: 4,
-    description: `+${PERK.readyFlameHeat} Starting Heat.`,
+    description: `+${PERK.innerFireHeat} Starting Heat.`,
   },
   {
     id: "afterglow",

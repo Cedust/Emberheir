@@ -59,13 +59,13 @@ describe("the hero's attribute scale", () => {
     expect(classic.maxLife).toBe(150);
   });
 
-  it("stat Perks: Stoneguard, Attuned and Ready Flame", () => {
+  it("stat Perks: Stoneguard, Attuned and Inner Fire", () => {
     const stats = deriveStats(
-      setup({ perks: ["stoneguard", "attuned", "readyFlame"], bonuses: { blockValue: 20 } }),
+      setup({ perks: ["stoneguard", "attuned", "innerFire"], bonuses: { blockValue: 20 } }),
     );
     expect(stats.blockValue).toBeCloseTo(25);
     expect(stats.elementalPenetration).toBeCloseTo(PERK.attunedPenetration);
-    expect(stats.startingHeat).toBe(PERK.readyFlameHeat);
+    expect(stats.startingHeat).toBe(PERK.innerFireHeat);
   });
 });
 
@@ -193,9 +193,9 @@ describe("Perks in the fight", () => {
     const fight = play(hero, dummy(), 1.05);
     expect(fight.snapshot().hero.heat).toBeCloseTo(skill.heatCost * PERK.afterglowRefund);
     expect(perkEvents(fight.events, "afterglow")).toHaveLength(1);
-    // Ready Flame shows itself when the fight opens.
-    const focused = play(setup({ perks: ["readyFlame"] }), dummy(), 0.05);
-    expect(perkEvents(focused.events, "readyFlame")).toHaveLength(1);
+    // Inner Fire shows itself when the fight opens.
+    const focused = play(setup({ perks: ["innerFire"] }), dummy(), 0.05);
+    expect(perkEvents(focused.events, "innerFire")).toHaveLength(1);
   });
 
   it("Clarity: own ailments last longer", () => {
