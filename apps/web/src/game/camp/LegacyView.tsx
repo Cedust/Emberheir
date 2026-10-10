@@ -3,7 +3,9 @@ import {
   type EquipmentSlot,
   type GameState,
   SLOT_NAMES,
+  activeKeystones,
   heroTitle,
+  keystoneLimit,
   itemSlotFor,
   levelCap,
 } from "@emberheir/sim";
@@ -30,23 +32,23 @@ const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
 
 /**
  * The Hearthfire (Legacy mock): the Heir's gear in the ring of 10 slots, what stays, the
- * chronicle. Since Playtest 2 every item survives the harvest, so all worn gear is an Heirloom.
+ * chronicle. Since Playtest 2 every item survives the harvest.
  */
 export function LegacyView(props: {
   state: GameState;
   onClose: () => void;
-  initialTab?: "heirlooms" | "trophies";
+  initialTab?: "gear" | "trophies";
 }) {
   const { state } = props;
   const { legacy } = state;
-  const [tab, setTab] = useState<"heirlooms" | "trophies">(props.initialTab ?? "heirlooms");
+  const [tab, setTab] = useState<"gear" | "trophies">(props.initialTab ?? "gear");
   const generation = legacy.prestige + 1;
   const [sel, setSel] = useState<EquipmentSlot>("body");
-  const heirloom = (slot: EquipmentSlot) => state.hero.equipment[slot];
-  const worn = RING.filter((r) => heirloom(r.slot)).length;
+  const wornIn = (slot: EquipmentSlot) => state.hero.equipment[slot];
+  const worn = RING.filter((r) => wornIn(r.slot)).length;
   const carried = worn + state.inventory.length + state.stash.length;
   const s = state.stats;
-  const selItem = heirloom(sel);
+  const selItem = wornIn(sel);
   const facts = [
     {
       kind: "GENERATION",
@@ -62,9 +64,9 @@ export function LegacyView(props: {
       desc: "Worn, packed and stashed. The caravan saves all of it from the fire.",
     },
     {
-      kind: "HARVESTER'S EMBER",
-      value: String(state.wallet.harvesterEmber),
-      desc: "Free Ember. Pays for Keystones at Kaelen.",
+      kind: "KEYSTONES",
+      value: `${activeKeystones(GAME_DATA.skillTree, state.hero.learned)} / ${keystoneLimit(legacy.prestige)}`,
+      desc: "Active at once. One more place at Prestige 2, 4 and 6.",
     },
     {
       kind: "LEVEL CAP",
@@ -94,11 +96,11 @@ export function LegacyView(props: {
           <button
             type="button"
             role="tab"
-            aria-selected={tab === "heirlooms"}
-            className={`tab title-font ${tab === "heirlooms" ? "on" : ""}`}
-            onClick={() => setTab("heirlooms")}
+            aria-selected={tab === "gear"}
+            className={`tab title-font ${tab === "gear" ? "on" : ""}`}
+            onClick={() => setTab("gear")}
           >
-            Heirlooms
+            Worn Gear
           </button>
           <button
             type="button"
@@ -140,18 +142,16 @@ export function LegacyView(props: {
             <div className="ring-line" />
             {RING.map((r, i) => {
               const a = ((-90 + i * 36) * Math.PI) / 180;
-              const item = heirloom(r.slot);
+              const item = wornIn(r.slot);
               return (
                 <button
                   key={r.slot}
                   type="button"
-                  className={`ring-slot${item ? ` heirloom rarity-${item.rarity}` : ""}${sel === r.slot ? " on" : ""}`}
+                  className={`ring-slot${item ? ` worn rarity-${item.rarity}` : ""}${sel === r.slot ? " on" : ""}`}
                   style={{ left: 360 + Math.cos(a) * 270 - 52, top: 400 + Math.sin(a) * 270 - 52 }}
-                  title={
-                    item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: no Heirloom`
-                  }
+                  title={item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: empty`}
                   aria-label={
-                    item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: no Heirloom`
+                    item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: empty`
                   }
                   onClick={() => setSel(r.slot)}
                 >
@@ -169,7 +169,7 @@ export function LegacyView(props: {
             })}
             <div className="ring-center">
               <Icon name="fire" size={64} color="var(--accent)" />
-              <span className="title-font big">{worn} / 10 Heirlooms</span>
+              <span className="title-font big">{worn} / 10 worn</span>
               <span className="sub">Click a slot for details</span>
             </div>
           </div>
@@ -177,11 +177,11 @@ export function LegacyView(props: {
             {selItem ? (
               <ItemDetail
                 item={selItem}
-                where="HEIRLOOM"
+                where="WORN"
                 className="sealed"
                 footer={
                   <span className="sub small">
-                    Survives every harvest. Thoric can raise its Tier with an Ascension Shard.
+                    Survives every harvest. Thoric can raise its Tier with a Phoenix Feather.
                   </span>
                 }
               />

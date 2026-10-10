@@ -1,4 +1,4 @@
-import { affixPool, rollQuality, statAffixValue, unlockedStages } from "../items/affixes";
+import { rollQuality, statAffixValue, unlockedStages } from "../items/affixes";
 import { ITEMS } from "../items/constants";
 import { missingRequirements } from "../items/equipment";
 import { getBase, rollItem, rollRarity, rollUnique, uniquesFor } from "../items/generate";
@@ -15,7 +15,7 @@ import type {
 import { RARITIES } from "../items/types";
 import { Rng } from "../rng";
 import { CODEX, CRAFTING, PROGRESSION } from "./constants";
-import { codexMastery, kindleTier, kindledIndex } from "./codex";
+import { codexKnows, kindledIndex } from "./codex";
 import { kindledAffixId } from "../items/codex";
 import {
   type GameData,
@@ -31,11 +31,11 @@ import {
 import { addToGrid } from "./inventory";
 
 /**
- * Camp crafting (docs/design/town-crafting-v1.md section 3, Persona mock): Thoric upgrades the
- * Item Tier, Liora rerolls affixes (Reforge, Temper, Imbue) and distills Reforge Stones.
- * Salvage stays the existing `salvage` action. There is no Undo.
+ * Camp crafting (docs/design/town-crafting-v1.md section 3, entschlackung-v1.md): Thoric works
+ * fire and metal (Upgrade, Reforge; Salvage stays the `salvage` action), Liora the fine magic of
+ * affixes (Temper, Kindle), the Runesmith everything about Sockets. There is no Undo.
  *
- * Affix Lock (like the Mystic in Diablo 3): after Temper or Imbue, only that affix can be
+ * Affix Lock (like the Mystic in Diablo 3): after Temper or Kindle, only that affix can be
  * changed again; Reforge clears the lock.
  */
 
@@ -43,14 +43,7 @@ export type CraftRequest =
   | { readonly kind: "upgrade"; readonly itemId: string }
   | { readonly kind: "reforge"; readonly itemId: string }
   | { readonly kind: "temper"; readonly itemId: string; readonly affixIndex: number }
-  | {
-      readonly kind: "imbue";
-      readonly itemId: string;
-      readonly affixIndex: number;
-      readonly essenceId: string;
-    }
-  | { readonly kind: "distill" }
-  /** Thoric: +1 Socket on a Normal item without Runes, up to the base's maximum. */
+  /** Runesmith: +1 Socket on a Normal item without Runes, up to the base's maximum. */
   | { readonly kind: "addSocket"; readonly itemId: string }
   /** Nyssa: a Rune from the pouch into the next free Socket. Runes never come out again. */
   | { readonly kind: "socketRune"; readonly itemId: string; readonly runeId: string }
@@ -72,27 +65,20 @@ export type CraftRequest =
 
 export type CraftKind = CraftRequest["kind"];
 
+/** Thoric travels with the caravan from the start. */
+export const BLACKSMITH_CRAFTS: readonly CraftKind[] = ["upgrade", "reforge"];
 /** Liora joins the caravan with Kaelen, after the first act boss. */
-export const MYSTIC_CRAFTS: readonly CraftKind[] = [
-  "reforge",
-  "temper",
-  "imbue",
-  "distill",
-  "kindle",
-];
+export const MYSTIC_CRAFTS: readonly CraftKind[] = ["temper", "kindle"];
 /** Nyssa joins after the first trip into the Rotwood. */
-export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["socketRune", "combineRunes"];
+export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["addSocket", "socketRune", "combineRunes"];
 
 export interface CraftCost {
-  readonly gold: number;
-  readonly dust: number;
-  readonly reforgeStones: number;
-  readonly ascensionShards: number;
-  /** Essences by id. */
-  readonly essences: Readonly<Record<string, number>>;
+  readonly acorns: number;
+  readonly ash: number;
+  readonly emberCoal: number;
+  readonly phoenixFeathers: number;
   /** Runes by id. */
   readonly runes: Readonly<Record<string, number>>;
-  readonly kindling: number;
 }
 
 export type CraftBlockReason =
@@ -124,14 +110,10 @@ export type CraftBlockReason =
   | "noAffix"
   | "locked"
   | "trigger"
-  | "unknownEssence"
-  | "affixDoesNotFit"
-  | "duplicateAffix"
-  | "gold"
-  | "dust"
-  | "reforgeStones"
-  | "ascensionShards"
-  | "essence"
+  | "acorns"
+  | "ash"
+  | "emberCoal"
+  | "phoenixFeathers"
   /** Kindle: a Codex part that is not learned yet. */
   | "unknownPart"
   /** Kindle: the item already has a kindled trigger (only that one can be rekindled). */
@@ -139,8 +121,7 @@ export type CraftBlockReason =
   /** Kindle: the chosen affix is no trigger. */
   | "notTrigger"
   /** Kindle: a Normal item has no trigger place. */
-  | "noTriggerPlace"
-  | "kindling";
+  | "noTriggerPlace";
 
 /** Where a craftable item is: equipped or in the inventory (the stash is not at the forge). */
 export interface CraftItemLocation {
@@ -157,13 +138,11 @@ export function findCraftItem(state: GameState, itemId: string): CraftItemLocati
 }
 
 const NO_COST: CraftCost = {
-  gold: 0,
-  dust: 0,
-  reforgeStones: 0,
-  ascensionShards: 0,
-  essences: {},
+  acorns: 0,
+  ash: 0,
+  emberCoal: 0,
+  phoenixFeathers: 0,
   runes: {},
-  kindling: 0,
 };
 
 /** What a craft costs. Upgrade gets more expensive with the Tier. */
@@ -178,48 +157,42 @@ export function craftCost(
     case "addSocket":
       return {
         ...NO_COST,
-        gold: CRAFTING.addSocketGold,
-        dust: CRAFTING.addSocketDust * ((item?.sockets ?? 0) + 1),
+        acorns: CRAFTING.addSocketAcorns,
+        ash: CRAFTING.addSocketAsh * ((item?.sockets ?? 0) + 1),
       };
     case "socketRune":
       return {
         ...NO_COST,
-        gold: CRAFTING.socketRuneGoldPerRank * runeRank(request.runeId),
+        acorns: CRAFTING.socketRuneAcornsPerRank * runeRank(request.runeId),
         runes: { [request.runeId]: 1 },
       };
     case "combineRunes":
       return {
         ...NO_COST,
-        gold: CRAFTING.combineRunesGoldPerRank * runeRank(request.runeId),
+        acorns: CRAFTING.combineRunesAcornsPerRank * runeRank(request.runeId),
         runes: { [request.runeId]: CRAFTING.combineRunesCount },
       };
     case "gamble":
-      return { ...NO_COST, gold: state && data ? gamblePrice(merchantItemLevel(state, data)) : 0 };
+      return {
+        ...NO_COST,
+        acorns: state && data ? gamblePrice(merchantItemLevel(state, data)) : 0,
+      };
     case "upgrade":
       return {
         ...NO_COST,
-        gold: CRAFTING.upgradeGoldPerTier * (item?.tier ?? 1),
-        ascensionShards: CRAFTING.upgradeShards,
+        acorns: CRAFTING.upgradeAcornsPerTier * (item?.tier ?? 1),
+        phoenixFeathers: CRAFTING.upgradeFeathers,
       };
     case "reforge":
-      return { ...NO_COST, reforgeStones: CRAFTING.reforgeStones };
+      return { ...NO_COST, emberCoal: CRAFTING.emberCoal };
     case "temper":
-      return { ...NO_COST, dust: CRAFTING.temperDust, gold: CRAFTING.temperGold };
-    case "imbue":
-      return { ...NO_COST, essences: { [request.essenceId]: CRAFTING.imbueEssences } };
-    case "distill":
-      return { ...NO_COST, dust: CRAFTING.distillDust };
-    case "kindle": {
-      const tier =
-        item && state
-          ? kindleTier(state.legacy.codex, request.conditionId, request.effectId, item)
-          : 1;
+      return { ...NO_COST, ash: CRAFTING.temperAsh, acorns: CRAFTING.temperAcorns };
+    case "kindle":
       return {
         ...NO_COST,
-        dust: CODEX.kindleDustPerTier * Math.max(1, tier),
-        kindling: CODEX.kindleKindling,
+        ash: CODEX.kindleAshPerTier * Math.max(1, item?.tier ?? 1),
+        emberCoal: CODEX.kindleEmberCoal,
       };
-    }
   }
 }
 
@@ -228,17 +201,12 @@ export function upgradedItem(item: Item): Item {
   return { ...item, tier: Math.min(ITEMS.maxTier, item.tier + 1) };
 }
 
-/** The Essence of an act by id, with the affix it imbues. */
-export function findEssence(data: GameData, essenceId: string) {
-  return data.acts.map((a) => a.essence).find((e) => e.id === essenceId);
-}
-
 /** Can the affix at this index be changed (not blocked by the Affix Lock)? */
 export function affixUnlocked(item: Item, index: number): boolean {
   return item.lockedAffix === undefined || item.lockedAffix === index;
 }
 
-/** Value range a Temper or Imbue can roll for a stat affix on this item (min and max). */
+/** Value range a Temper can roll for a stat affix on this item (min and max). */
 export function affixRollRange(
   item: Item,
   affixId: string,
@@ -263,24 +231,20 @@ function affixBlockReason(
   const roll = item.affixes[index];
   if (!roll) return "noAffix";
   if (!affixUnlocked(item, index)) return "locked";
-  // Trigger affixes stay loot luck: no Temper, no Imbue.
+  // Trigger affixes stay loot luck (or Kindle): no Temper.
   if (catalog.affixes.get(roll.affixId)?.kind !== "stat") return "trigger";
   return undefined;
 }
 
 function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | undefined {
   const w = state.wallet;
-  if (w.ascensionShards < cost.ascensionShards) return "ascensionShards";
-  if (w.reforgeStones < cost.reforgeStones) return "reforgeStones";
-  if (w.kindling < cost.kindling) return "kindling";
-  for (const [id, n] of Object.entries(cost.essences)) {
-    if ((w.essences[id] ?? 0) < n) return "essence";
-  }
+  if (w.phoenixFeathers < cost.phoenixFeathers) return "phoenixFeathers";
+  if (w.emberCoal < cost.emberCoal) return "emberCoal";
   for (const [id, n] of Object.entries(cost.runes)) {
     if ((w.runes[id] ?? 0) < n) return "runes";
   }
-  if (w.dust < cost.dust) return "dust";
-  if (w.gold < cost.gold) return "gold";
+  if (w.ash < cost.ash) return "ash";
+  if (w.acorns < cost.acorns) return "acorns";
   return undefined;
 }
 
@@ -295,7 +259,6 @@ export function craftBlockReason(
   if (RUNESMITH_CRAFTS.includes(request.kind) && !state.progress.runesmithUnlocked) {
     return "runesmith";
   }
-  if (request.kind === "distill") return costBlockReason(state, craftCost(request));
   if (request.kind === "combineRunes") {
     const rune = data.items.runes.get(request.runeId);
     if (!rune) return "unknownRune";
@@ -345,25 +308,6 @@ export function craftBlockReason(
       if (reason) return reason;
       break;
     }
-    case "imbue": {
-      if (item.uniqueId) return "fixed";
-      const reason = affixBlockReason(item, request.affixIndex, catalog);
-      if (reason) return reason;
-      const essence = findEssence(data, request.essenceId);
-      if (!essence) return "unknownEssence";
-      const affix = catalog.affixes.get(essence.affixId);
-      const slotPool = affixPool(
-        catalog.affixes.values(),
-        getBase(catalog, item.baseId).slot,
-        "stat",
-      );
-      if (!affix || !slotPool.includes(affix)) return "affixDoesNotFit";
-      const elsewhere = item.affixes.some(
-        (r, i) => i !== request.affixIndex && r.affixId === essence.affixId,
-      );
-      if (elsewhere) return "duplicateAffix";
-      break;
-    }
     case "kindle": {
       const reason = kindleBlockReason(state, item, request, catalog);
       if (reason) return reason;
@@ -374,8 +318,6 @@ export function craftBlockReason(
 }
 
 function pay(state: GameState, cost: CraftCost): GameState {
-  const essences = { ...state.wallet.essences };
-  for (const [id, n] of Object.entries(cost.essences)) essences[id] = (essences[id] ?? 0) - n;
   const runes = Object.fromEntries(
     Object.entries(state.wallet.runes)
       .map(([id, n]) => [id, n - (cost.runes[id] ?? 0)] as const)
@@ -385,12 +327,10 @@ function pay(state: GameState, cost: CraftCost): GameState {
     ...state,
     wallet: {
       ...state.wallet,
-      gold: state.wallet.gold - cost.gold,
-      dust: state.wallet.dust - cost.dust,
-      reforgeStones: state.wallet.reforgeStones - cost.reforgeStones,
-      ascensionShards: state.wallet.ascensionShards - cost.ascensionShards,
-      kindling: state.wallet.kindling - cost.kindling,
-      essences,
+      acorns: state.wallet.acorns - cost.acorns,
+      ash: state.wallet.ash - cost.ash,
+      emberCoal: state.wallet.emberCoal - cost.emberCoal,
+      phoenixFeathers: state.wallet.phoenixFeathers - cost.phoenixFeathers,
       runes,
     },
   };
@@ -422,13 +362,6 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
   const reason = craftBlockReason(state, data, request);
   if (reason) return fail(`Cannot ${request.kind}: ${reason}`);
 
-  if (request.kind === "distill") {
-    const paid = pay(state, craftCost(request));
-    return {
-      ...paid,
-      wallet: { ...paid.wallet, reforgeStones: paid.wallet.reforgeStones + 1 },
-    };
-  }
   if (request.kind === "combineRunes") {
     const paid = pay(state, craftCost(request, undefined, data));
     const rank = data.items.runes.get(request.runeId)?.rank ?? fail("Unknown Rune");
@@ -512,26 +445,17 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
     case "kindle": {
       const [rng, next] = nextRng(paid);
       const index = request.affixIndex ?? item.affixes.length;
+      // A kindled trigger grows with the item's tier, like any other affix.
       const roll: AffixRoll = {
         affixId: kindledAffixId(request.conditionId, request.effectId),
         quality: Number((CODEX.kindleMaxQuality * quality(rng)).toFixed(4)),
         kindled: true,
-        tier: kindleTier(state.legacy.codex, request.conditionId, request.effectId, item),
       };
       const affixes =
         index < item.affixes.length
           ? item.affixes.map((r, i) => (i === index ? roll : r))
           : [...item.affixes, roll];
       return replaceItem(next, location, { ...item, affixes, lockedAffix: index });
-    }
-    case "imbue": {
-      const [rng, next] = nextRng(paid);
-      const essence = findEssence(data, request.essenceId) ?? fail("Unknown Essence");
-      return replaceItem(
-        next,
-        location,
-        withAffix(item, request.affixIndex, { affixId: essence.affixId, quality: quality(rng) }),
-      );
     }
   }
 }
@@ -547,8 +471,8 @@ function kindleBlockReason(
   if (item.uniqueId || item.runes?.length) return "fixed";
   const codex = state.legacy.codex;
   if (
-    codexMastery(codex, "condition", request.conditionId) === 0 ||
-    codexMastery(codex, "effect", request.effectId) === 0 ||
+    !codexKnows(codex, "condition", request.conditionId) ||
+    !codexKnows(codex, "effect", request.effectId) ||
     !catalog.affixes.has(kindledAffixId(request.conditionId, request.effectId))
   ) {
     return "unknownPart";

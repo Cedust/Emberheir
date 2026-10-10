@@ -20,7 +20,7 @@ import {
   openBoonFamilies,
   rewardsDone,
 } from "./game";
-import { TEST_BOONS, TEST_BOON_DATA, TEST_BOON_FAMILIES } from "./test-fixtures";
+import { TEST_BOONS, TEST_BOON_DATA, TEST_BOON_FAMILIES, withOldCurrencies } from "./test-fixtures";
 
 const data = TEST_BOON_DATA;
 const act = (state: GameState, ...actions: GameAction[]) =>
@@ -33,7 +33,6 @@ function clearStage(state: GameState): GameState {
   let s = act(state, { type: "startStage" }, { type: "resolveFight" });
   if (!s.run) return s;
   s = act(s, { type: "salvageAll" });
-  if (s.run?.rewards?.spoils.length) s = act(s, { type: "pickSpoils", index: 0 });
   if (s.run?.rewards?.boonOffer?.length) s = act(s, { type: "pickBoon", index: 0 });
   return act(s, { type: "continue" });
 }
@@ -116,13 +115,12 @@ describe("Stolen Fire Boons", () => {
     expect(openBoonFamilies(data, 2)).toEqual(["hearth", "ash", "cinder"]);
   });
 
-  it("the Shrine follows Spoils stages, Elites and the boss; the pick is needed to go on", () => {
+  it("the Shrine follows Shrine stages and Elites, not the boss; the pick is needed to go on", () => {
     let s = act(start(), { type: "setOut", actId: "test-act" });
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run?.rewards?.boonOffer).toBeUndefined();
     s = act(s, { type: "salvageAll" }, { type: "continue" });
     s = act(s, { type: "startStage" }, { type: "resolveFight" }, { type: "salvageAll" });
-    s = act(s, { type: "pickSpoils", index: 0 });
     const offer = s.run?.rewards?.boonOffer ?? [];
     expect(offer.length).toBeGreaterThan(0);
     expect(s.run?.rewards && rewardsDone(s.run.rewards)).toBe(false);
@@ -131,6 +129,10 @@ describe("Stolen Fire Boons", () => {
     expect(() => act(s, { type: "pickBoon", index: 0 })).toThrow(/taken/);
     expect(s.boons.fresh).toEqual([offer[0]]);
     expect(s.run?.rewards && rewardsDone(s.run.rewards)).toBe(true);
+    // The boss's moment belongs to its Hoard and Echo: no Shrine.
+    s = act(s, { type: "continue" }, { type: "startStage" }, { type: "resolveFight" });
+    expect(s.run?.encounter?.boss).toBe(true);
+    expect(s.run?.rewards?.boonOffer).toBeUndefined();
   });
 
   it("death burns the current act's Boons, a cleared act keeps them", () => {
@@ -166,7 +168,7 @@ describe("Stolen Fire Boons", () => {
 
   it("v6 save games start without Boons", () => {
     const s = start();
-    const v6 = { ...s, version: 6, boons: undefined };
+    const v6 = { ...withOldCurrencies(s), version: 6, boons: undefined };
     expect(deserializeGame(JSON.stringify(v6)).boons).toEqual(EMPTY_BOONS);
   });
 });

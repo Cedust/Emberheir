@@ -186,7 +186,12 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
         </aside>
         <main className="stash-center">
           <div className="section-row">
-            <span className="title-font section-title">Stash</span>
+            <span
+              className="title-font section-title"
+              title="The Supply Wagon is shared by all your Heirs."
+            >
+              Stash · shared
+            </span>
             <span className="mono sub">{state.stash.length} items</span>
           </div>
           <ItemGrid
@@ -196,18 +201,8 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
             selected={selected}
             onSelect={pick("stash")}
             label="Stash"
-            burned={state.progress.stashBurned}
             drop={drops.grid("stash")}
           />
-          {state.progress.stashBurned && (
-            <div className="burned-note panel-card" role="note">
-              <Icon name="fire" size={22} color="var(--accent)" />
-              <span>
-                <b>Burned in the harvest.</b> Thoric: &ldquo;I&apos;ll patch it up once you&apos;re
-                back from the field. Until then, nothing goes in.&rdquo;
-              </span>
-            </div>
-          )}
           <div className="section-row">
             <button
               type="button"
@@ -224,6 +219,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
             <ItemDetail
               item={sel.item}
               heroAttributes={state.hero.attributes}
+              heroLevel={state.hero.level}
               where={whereText[sel.where]}
               compare={sel.where === "equipped" ? undefined : compareWithEquipped(state, sel.item)}
               footer={

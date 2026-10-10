@@ -85,8 +85,11 @@ export interface ItemBaseDefinition {
   readonly maxSockets?: number;
 }
 
-/** What a stat affix raises: a stat, an attribute or the weapon's own damage (local). */
-export type AffixStat = keyof StatBonuses | Attribute | "addedWeaponDamage";
+/**
+ * What a stat affix raises: a stat, an attribute, the weapon's own damage (local) or the Ember
+ * Flask's charges (Belts, outside the fight).
+ */
+export type AffixStat = keyof StatBonuses | Attribute | "addedWeaponDamage" | "flaskCharges";
 
 interface AffixCommon {
   readonly id: string;
@@ -202,10 +205,8 @@ export type AffixDefinition = StatAffixDefinition | TriggerAffixDefinition;
 export interface AffixRoll {
   readonly affixId: string;
   readonly quality: number;
-  /** Kindled at the Mystic (one per item). */
+  /** Kindled at the Mystic (one per item); it counts at the item's tier like every affix. */
   readonly kindled?: true;
-  /** Own tier of a kindled trigger (the Codex Mastery); never above the item's tier. */
-  readonly tier?: number;
 }
 
 /** A concrete item. Plain data (ids + numbers), so it can go into a save game as is. */
@@ -219,7 +220,7 @@ export interface Item {
   readonly tier: number;
   readonly affixes: readonly AffixRoll[];
   /**
-   * Affix Lock (Mystic): after Temper or Imbue only this affix index can be changed again,
+   * Affix Lock (Mystic): after Temper only this affix index can be changed again,
    * until a Reforge clears it.
    */
   readonly lockedAffix?: number;
@@ -293,6 +294,8 @@ export interface UniqueDefinition {
   readonly flavor?: string;
   /** Boss trophy: only this act's boss drops it (Teil 3 "Boss-Trophäen"). */
   readonly bossOf?: string;
+  /** The boss's name for the tooltip ("Dropped by Gorrak"). */
+  readonly droppedBy?: string;
 }
 
 /** Everything needed to roll and read items. Built once from content. */

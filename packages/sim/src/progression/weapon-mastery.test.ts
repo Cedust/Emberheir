@@ -158,9 +158,9 @@ describe("Weapon Mastery tree", () => {
 });
 
 describe("Weapon Mastery in the game", () => {
-  const camp = (level: number, gold = 0): GameState => {
+  const camp = (level: number, acorns = 0): GameState => {
     const s = newGame(data, { seed: 1, classId: "test-fighter" });
-    return { ...s, hero: { ...s.hero, level }, wallet: { ...s.wallet, gold } };
+    return { ...s, hero: { ...s.hero, level }, wallet: { ...s.wallet, acorns } };
   };
 
   it("learning spends Rank points; the fight setup carries the weapon", () => {
@@ -174,13 +174,13 @@ describe("Weapon Mastery in the game", () => {
     expect(heroWeaponName(s, data)).toBe("Crude Test Blade");
   });
 
-  it("Respec costs Gold and keeps the Echo", () => {
-    let s = camp(3, MASTERY.respecGold);
+  it("Respec costs Acorns and keeps the Echo", () => {
+    let s = camp(3, MASTERY.respecAcorns);
     s = act(s, { type: "learnMastery", nodeId: "refine" });
     s = { ...s, hero: { ...s.hero, mastery: { ...s.hero.mastery, echo: "test-echo" } } };
     s = act(s, { type: "respecMastery" });
     expect(s.hero.mastery).toEqual({ ...EMPTY_MASTERY, echo: "test-echo" });
-    expect(s.wallet.gold).toBe(0);
+    expect(s.wallet.acorns).toBe(0);
     expect(() => act(s, { type: "respecMastery" })).toThrow();
   });
 
@@ -190,7 +190,6 @@ describe("Weapon Mastery in the game", () => {
       s = act(s, { type: "startStage" }, { type: "resolveFight" });
       if (i === 2) break;
       s = act(s, { type: "salvageAll" });
-      if (s.run?.rewards?.spoils.length) s = act(s, { type: "pickSpoils", index: 0 });
       s = act(s, { type: "continue" });
     }
     expect(s.run?.rewards?.echo).toEqual({ id: "test-echo", stage: 1 });

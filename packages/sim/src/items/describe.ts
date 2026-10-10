@@ -9,10 +9,15 @@ import type {
   TriggerSpec,
 } from "../combat/types";
 import { isPercentStat, resolveTrigger, statAffixValue } from "./affixes";
-import { addedDamageRange, itemWeapon, requirementsFor, scaledBaseStats } from "./equipment";
+import {
+  addedDamageRange,
+  itemWeapon,
+  requiredLevel,
+  requirementsFor,
+  scaledBaseStats,
+} from "./equipment";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
-import { rollTier } from "./codex";
 import type { AffixStat, Item, ItemCatalog, ItemSlot, Rarity } from "./types";
 
 /** English display names. All game terms stay English in code, data and UI. */
@@ -54,6 +59,7 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   bleedChance: "Chance to Bleed",
   poisonChance: "Chance to Poison",
   addedWeaponDamage: "Weapon Damage",
+  flaskCharges: "Flask Charges",
 };
 
 export const RARITY_NAMES: Readonly<Record<Rarity, string>> = {
@@ -220,6 +226,10 @@ export interface ItemTooltip {
   /** Runeword recipe shown under the name, e.g. "Ash · Ember". */
   readonly runewordRecipe?: string;
   readonly flavor?: string;
+  /** Boss trophies: the boss that drops it. */
+  readonly droppedBy?: string;
+  /** Required Level; `met` is undefined when no hero level was given. */
+  readonly requiredLevel: { readonly value: number; readonly met?: boolean };
   readonly requirements: readonly {
     readonly attribute: Attribute;
     readonly name: string;
@@ -244,6 +254,7 @@ export function describeItem(
   item: Item,
   catalog: ItemCatalog,
   heroAttributes?: Attributes,
+  heroLevel?: number,
 ): ItemTooltip {
   const base = getBase(catalog, item.baseId);
   const baseLines: string[] = [];
@@ -279,7 +290,7 @@ export function describeItem(
     if (affix.kind === "trigger") {
       return [
         {
-          text: describeTrigger(resolveTrigger(affix, rollTier(item, roll), roll.quality)),
+          text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
           kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
         },
       ];
@@ -331,6 +342,11 @@ export function describeItem(
       : {}),
     ...(word ? { runewordRecipe: word.runes.map(runeName).join(" · ") } : {}),
     ...(unique?.flavor ? { flavor: unique.flavor } : {}),
+    ...(unique?.droppedBy ? { droppedBy: unique.droppedBy } : {}),
+    requiredLevel: {
+      value: requiredLevel(item),
+      ...(heroLevel !== undefined ? { met: heroLevel >= requiredLevel(item) } : {}),
+    },
     baseName: base.name,
     slotName: SLOT_NAMES[base.slot],
     tier: item.tier,

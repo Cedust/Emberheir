@@ -11,6 +11,7 @@ export * from "./classes";
 export * from "./game";
 export * from "./crafting";
 export * from "./codex";
+export * from "./bounties";
 export * from "./estimates";
 export * from "./weapon-mastery";
 export * from "./cheats";

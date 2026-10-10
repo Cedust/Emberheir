@@ -21,21 +21,20 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await bloodline.getByRole("button", { name: /Warden/ }).click();
   await page.getByRole("button", { name: "Take Warden" }).click();
 
-  // Rekindle: two new points, and up to two may move.
-  const rekindle = page.getByRole("region", { name: "Rekindle" });
-  await expect(rekindle.getByTestId("rekindle-left")).toContainText("2 points left");
-  await rekindle.getByRole("button", { name: "Remove Strength" }).click();
-  await rekindle.getByRole("button", { name: "Add Agility" }).click();
-  await rekindle.getByRole("button", { name: "Add Agility" }).click();
-  await expect(rekindle.getByTestId("perks")).toContainText("Quick Reflexes");
+  // The Harvest: two new Attribute Points.
+  const harvest = page.getByRole("region", { name: "Attributes" });
+  await expect(harvest.getByTestId("harvest-left")).toContainText("2 points left");
+  await harvest.getByRole("button", { name: "Add Agility" }).click();
+  await harvest.getByRole("button", { name: "Add Agility" }).click();
+  await expect(harvest.getByTestId("perks")).toContainText("Quick Reflexes");
   // Every Perk explains itself in plain words.
-  await rekindle.getByTestId("perks").getByText("Quick Reflexes").hover();
+  await harvest.getByTestId("perks").getByText("Quick Reflexes").hover();
   await expect(page.getByTestId("perk-tooltip")).toContainText("first enemy attack");
   await expect(page.getByTestId("perk-tooltip")).toContainText("Opens with this change");
-  await rekindle.getByTestId("seal-titan").hover();
+  await harvest.getByTestId("seal-titan").hover();
   await expect(page.getByTestId("perk-tooltip")).toContainText("Needs Strength 10");
-  await expect(rekindle.getByTestId("rekindle-left")).toContainText("1 point left · 1 move left");
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/rekindle.png` });
+  await expect(harvest.getByTestId("harvest-left")).toContainText("0 points left");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/harvest.png` });
   await page.getByRole("button", { name: "Let It Burn" }).click();
 
   const heir = page.getByRole("region", { name: "Inheritance" });
@@ -57,7 +56,7 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await page.getByRole("button", { name: "Open Legacy" }).click();
   const legacy = page.getByRole("region", { name: "Legacy" });
   // Round Shield and Body Armor came through the fire (the weapon is no item: Weapon Mastery).
-  await expect(legacy).toContainText("2 / 10 Heirlooms");
+  await expect(legacy).toContainText("2 / 10 worn");
   await expect(legacy).toContainText("Gorrak fell at Level 5");
   await page.keyboard.press("Escape");
 
@@ -70,14 +69,15 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
   await expect(page.getByTestId("reaction-slot-0")).toBeVisible();
 
-  // Ashen Rebirth: the Harvest's Phoenix Ash sets every point above the Class Array anew.
-  await page.getByRole("tab", { name: "Ashen Rebirth" }).click();
-  await expect(page.getByTestId("phoenix-ash")).toContainText("1");
-  await page.getByRole("button", { name: "Burn All" }).click();
+  // Kaelen sets every point above the Class Array anew, for Acorns.
+  await page.getByRole("tab", { name: "Attributes" }).click();
+  await expect(page.getByTestId("attribute-respec-price")).toContainText("336 Acorns");
+  await page.getByRole("button", { name: "Reset All" }).click();
   await expect(page.getByText("8 points free")).toBeVisible();
   for (const a of ["Dexterity", "Dexterity", "Intelligence"]) {
     await page.getByRole("button", { name: `Add ${a}` }).click();
   }
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/rebirth.png` });
+  if (process.env.SHOTS)
+    await page.screenshot({ path: `${process.env.SHOTS}/attribute-respec.png` });
   expect(errors).toEqual([]);
 });

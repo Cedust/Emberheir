@@ -37,16 +37,11 @@ const RING: Item = {
   ],
 };
 
-/** A Normal shield (8 Strength at T1) and a Normal sword (5 Strength). */
+/** A Normal shield (8 Strength at T1). */
 const SHIELD = rollItem(
   data.items,
   { baseId: "test-shield", itemLevel: 1, rarity: "normal" },
   new Rng(1),
-);
-const SWORD = rollItem(
-  data.items,
-  { baseId: "test-sword", itemLevel: 1, rarity: "normal" },
-  new Rng(2),
 );
 
 /** Camp, Liora present, a full wallet, the shield worn and the ring in the inventory. */
@@ -57,11 +52,10 @@ function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
     progress: { ...s.progress, trainerUnlocked: true },
     wallet: {
       ...s.wallet,
-      gold: 1000,
-      dust: 1000,
-      reforgeStones: 3,
-      ascensionShards: 2,
-      essences: { "test-essence": 2 },
+      acorns: 1000,
+      ash: 1000,
+      emberCoal: 3,
+      phoenixFeathers: 2,
       ...overrides,
     },
     hero: { ...s.hero, equipment: { offHand: SHIELD } },
@@ -72,20 +66,20 @@ function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
 const ring = (s: GameState) => s.inventory.find((p) => p.item.id === RING.id)?.item;
 
 describe("crafting", () => {
-  it("Upgrade raises the Tier, keeps qualities and costs a Shard plus Gold", () => {
+  it("Upgrade raises the Tier, keeps qualities and costs a Feather plus Acorns", () => {
     const s = act(camp(), { type: "craft", request: { kind: "upgrade", itemId: RING.id } });
     expect(ring(s)).toMatchObject({ tier: 2, affixes: RING.affixes });
-    expect(s.wallet.ascensionShards).toBe(1);
-    expect(s.wallet.gold).toBe(1000 - CRAFTING.upgradeGoldPerTier);
-    expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).gold).toBe(
-      2 * CRAFTING.upgradeGoldPerTier,
+    expect(s.wallet.phoenixFeathers).toBe(1);
+    expect(s.wallet.acorns).toBe(1000 - CRAFTING.upgradeAcornsPerTier);
+    expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).acorns).toBe(
+      2 * CRAFTING.upgradeAcornsPerTier,
     );
   });
 
-  it("Upgrade needs an Ascension Shard and keeps equipped items usable", () => {
+  it("Upgrade needs a Phoenix Feather and keeps equipped items usable", () => {
     expect(
-      craftBlockReason(camp({ ascensionShards: 0 }), data, { kind: "upgrade", itemId: RING.id }),
-    ).toBe("ascensionShards");
+      craftBlockReason(camp({ phoenixFeathers: 0 }), data, { kind: "upgrade", itemId: RING.id }),
+    ).toBe("phoenixFeathers");
     // The shield needs 8 Strength at T1 and more at T2; the hero has 6.
     const s = camp();
     const shield = SHIELD.id;
@@ -109,7 +103,7 @@ describe("crafting", () => {
     expect(tempered?.lockedAffix).toBe(1);
     expect(tempered?.affixes[0]).toEqual(RING.affixes[0]);
     expect(tempered?.affixes[1]?.affixId).toBe("life");
-    expect(s.wallet.dust).toBe(1000 - CRAFTING.temperDust);
+    expect(s.wallet.ash).toBe(1000 - CRAFTING.temperAsh);
     // Locked: only affix 1 can change now.
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
       "locked",
@@ -118,49 +112,11 @@ describe("crafting", () => {
     expect(ring(s)?.lockedAffix).toBe(1);
   });
 
-  it("Trigger affixes cannot be tempered or imbued", () => {
+  it("Trigger affixes cannot be tempered", () => {
     const s = camp();
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 2 })).toBe(
       "trigger",
     );
-    expect(
-      craftBlockReason(s, data, {
-        kind: "imbue",
-        itemId: RING.id,
-        affixIndex: 2,
-        essenceId: "test-essence",
-      }),
-    ).toBe("trigger");
-  });
-
-  it("Imbue replaces one affix with the Essence's affix and locks it", () => {
-    // Test Essence imbues Life; the ring already has Life at index 1.
-    const s = camp();
-    expect(
-      craftBlockReason(s, data, {
-        kind: "imbue",
-        itemId: RING.id,
-        affixIndex: 0,
-        essenceId: "test-essence",
-      }),
-    ).toBe("duplicateAffix");
-    const next = act(s, {
-      type: "craft",
-      request: { kind: "imbue", itemId: RING.id, affixIndex: 1, essenceId: "test-essence" },
-    });
-    expect(ring(next)).toMatchObject({ lockedAffix: 1 });
-    expect(next.wallet.essences["test-essence"]).toBe(1);
-    // Life does not roll on Main Hands.
-    const magicSword: Item = { ...SWORD, affixes: [{ affixId: "crit", quality: 0.5 }] };
-    const withSword = { ...s, inventory: [...s.inventory, { item: magicSword, x: 4, y: 0 }] };
-    expect(
-      craftBlockReason(withSword, data, {
-        kind: "imbue",
-        itemId: magicSword.id,
-        affixIndex: 0,
-        essenceId: "test-essence",
-      }),
-    ).toBe("affixDoesNotFit");
   });
 
   it("Reforge rerolls all affixes, keeps base, tier and rarity, and clears the lock", () => {
@@ -171,7 +127,7 @@ describe("crafting", () => {
     expect(reforged).toMatchObject({ id: RING.id, baseId: "test-ring", rarity: "rare", tier: 3 });
     expect(reforged?.lockedAffix).toBeUndefined();
     expect(reforged?.affixes).not.toEqual(RING.affixes);
-    expect(next.wallet.reforgeStones).toBe(2);
+    expect(next.wallet.emberCoal).toBe(2);
     // Same seed and nonce: same result.
     expect(act(s, { type: "craft", request: { kind: "reforge", itemId: RING.id } })).toEqual(next);
   });
@@ -185,17 +141,13 @@ describe("crafting", () => {
     );
   });
 
-  it("Distill turns Salvage Dust into a Reforge Stone", () => {
-    const s = act(camp(), { type: "craft", request: { kind: "distill" } });
-    expect(s.wallet.reforgeStones).toBe(4);
-    expect(s.wallet.dust).toBe(1000 - CRAFTING.distillDust);
-    expect(craftBlockReason(camp({ dust: 0 }), data, { kind: "distill" })).toBe("dust");
-  });
-
-  it("Liora's crafts wait for her; all crafting is Camp only", () => {
+  it("Liora's crafts wait for her, Thoric's do not; all crafting is Camp only", () => {
     const early = { ...camp(), progress: { ...camp().progress, trainerUnlocked: false } };
-    expect(craftBlockReason(early, data, { kind: "distill" })).toBe("mystic");
+    expect(craftBlockReason(early, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
+      "mystic",
+    );
     expect(craftBlockReason(early, data, { kind: "upgrade", itemId: RING.id })).toBeUndefined();
+    expect(craftBlockReason(early, data, { kind: "reforge", itemId: RING.id })).toBeUndefined();
     const inRun = act(camp(), { type: "setOut", actId: "test-act" });
     expect(craftBlockReason(inRun, data, { kind: "upgrade", itemId: RING.id })).toBe("camp");
     expect(() =>
@@ -254,7 +206,7 @@ describe("Sockets, Runes and Marisha", () => {
     let s = craftIt(runeCamp(), { kind: "addSocket", itemId: AXE.id });
     s = craftIt(s, { kind: "addSocket", itemId: AXE.id });
     expect(axe(s)?.sockets).toBe(2);
-    expect(s.wallet.dust).toBe(1000 - CRAFTING.addSocketDust * 3);
+    expect(s.wallet.ash).toBe(1000 - CRAFTING.addSocketAsh * 3);
     expect(craftBlockReason(s, data, { kind: "addSocket", itemId: AXE.id })).toBe("maxSockets");
     expect(craftBlockReason(s, data, { kind: "addSocket", itemId: RING.id })).toBe("notNormal");
   });
@@ -292,7 +244,7 @@ describe("Sockets, Runes and Marisha", () => {
     const s = craftIt(runeCamp(), { kind: "combineRunes", runeId: "ash" });
     expect(s.wallet.runes).toEqual({ ash: 1, thorn: 1, moss: 1 });
     expect(s.legacy.runesFound).toContain("moss");
-    expect(s.wallet.gold).toBe(1000 - CRAFTING.combineRunesGoldPerRank);
+    expect(s.wallet.acorns).toBe(1000 - CRAFTING.combineRunesAcornsPerRank);
     expect(craftBlockReason(s, data, { kind: "combineRunes", runeId: "ash" })).toBe("runes");
     expect(
       craftBlockReason(runeCamp({ thorn: 3 }), data, { kind: "combineRunes", runeId: "thorn" }),
@@ -305,7 +257,7 @@ describe("Sockets, Runes and Marisha", () => {
     const item = s.inventory[2]?.item;
     expect(item?.baseId).toBe("test-ring");
     expect(item?.rarity).not.toBe("normal");
-    expect(s.wallet.gold).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
+    expect(s.wallet.acorns).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
     // Run 1: Marisha gives at most Rare, one step above what its enemies drop.
     const early = new Set<string>();
     for (let seed = 0; seed < 200; seed++) {
@@ -322,7 +274,7 @@ describe("Sockets, Runes and Marisha", () => {
     expect(rarities.has("legendary")).toBe(true);
   });
 
-  it("Uniques never change: no Reforge, Temper or Imbue", () => {
+  it("Uniques never change: no Reforge or Temper", () => {
     const unique = rollUnique(data.items, "band", 5, new Rng(1));
     const s = { ...camp(), inventory: [{ item: unique, x: 0, y: 0 }] };
     expect(craftBlockReason(s, data, { kind: "reforge", itemId: unique.id })).toBe("fixed");

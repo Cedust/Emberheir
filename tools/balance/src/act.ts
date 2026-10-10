@@ -123,12 +123,6 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
   for (const placed of s.inventory.slice(0, Math.max(0, s.inventory.length - 4))) {
     s = applyAction(s, data, { type: "discard", itemId: placed.item.id });
   }
-  if (rewards.spoils.length) {
-    const flask = rewards.spoils.findIndex((c) => c.kind === "flaskCharge");
-    const stones = rewards.spoils.findIndex((c) => c.kind === "reforgeStones");
-    const pick = s.flaskCharges < PROGRESSION.flaskStartCharges ? flask : stones;
-    s = applyAction(s, data, { type: "pickSpoils", index: Math.max(0, pick) });
-  }
   const offer = s.run?.rewards?.boonOffer;
   if (offer?.length)
     s = applyAction(s, data, { type: "pickBoon", index: bestBoon(s, data, offer) });
@@ -153,7 +147,7 @@ function spendPoints(state: GameState, data: GameData, weaponId: string): GameSt
  * Autopilot builds (level-v2.md section 7): three clearly different builds per class, each with
  * its weapon, Skill Tree goals in order ("@branches" = the owned Prestige branches at that point),
  * Rotation skills (slot 1 is the weapon's Innate), Prestige branches by preference and a Reaction
- * skill once one is unlocked. Keystones are left out (Harvester's Ember).
+ * skill once one is unlocked. Tree Keystones are left out (their pick is a player's call).
  */
 export interface BuildPlan {
   readonly id: string;
@@ -576,7 +570,7 @@ function spendSkillPoints(
           tree,
           learned,
           n.id,
-          { skillPoints: 1, harvesterEmber: 0 },
+          { skillPoints: 1, keystones: 0 },
           s.legacy.branches,
         ) === undefined &&
         ((learned[n.id] ?? 0) > 0 || (graph.get(n.id) ?? []).some((l) => (learned[l] ?? 0) > 0)),

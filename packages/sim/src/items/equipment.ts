@@ -10,7 +10,6 @@ import {
   type WeaponDefinition,
 } from "../combat/types";
 import { isPercentStat, resolveTrigger, statAffixValue, tierGrowth } from "./affixes";
-import { rollTier } from "./codex";
 import { ITEMS } from "./constants";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
@@ -52,6 +51,23 @@ export function missingRequirements(
 }
 
 /** Base values at a tier: flat values grow with the tier, percentages do not. */
+/** Hero level an item needs to be equipped (`ITEMS.requiredLevelGap` below its Item Level). */
+export function requiredLevel(item: Item): number {
+  return Math.max(1, item.itemLevel - ITEMS.requiredLevelGap);
+}
+
+/** Extra Ember Flask charges an item gives (the Belt affix "+1–2 Flask Charges"). */
+export function itemFlaskCharges(item: Item, catalog: ItemCatalog): number {
+  let charges = 0;
+  for (const roll of item.affixes) {
+    const affix = catalog.affixes.get(roll.affixId);
+    if (affix?.kind === "stat" && affix.stat === "flaskCharges") {
+      charges += statAffixValue(affix, item.tier, roll.quality, item.rarity);
+    }
+  }
+  return charges;
+}
+
 export function scaledBaseStats(base: ItemBaseDefinition, tier: number): StatBonuses {
   const growth = tierGrowth(ITEMS.baseScalePerTier, tier);
   const result: Partial<Record<keyof StatBonuses, number>> = {};
@@ -125,10 +141,10 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) continue;
     if (affix.kind === "trigger") {
-      triggers.push(resolveTrigger(affix, rollTier(item, roll), roll.quality));
+      triggers.push(resolveTrigger(affix, item.tier, roll.quality));
       continue;
     }
-    if (affix.stat === "addedWeaponDamage") continue;
+    if (affix.stat === "addedWeaponDamage" || affix.stat === "flaskCharges") continue;
     const value = statAffixValue(affix, item.tier, roll.quality, item.rarity);
     if (isAttribute(affix.stat)) attributes[affix.stat] = (attributes[affix.stat] ?? 0) + value;
     else bonuses[affix.stat] = (bonuses[affix.stat] ?? 0) + value;

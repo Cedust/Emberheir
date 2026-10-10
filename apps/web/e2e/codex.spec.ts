@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveWithCodex, seedSave } from "./fixtures";
 
-test("Old Nan's Trigger Codex marks a Quarry, Liora kindles a trigger onto a ring", async ({
+test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto a ring", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -14,9 +14,8 @@ test("Old Nan's Trigger Codex marks a Quarry, Liora kindles a trigger onto a rin
   await page.getByRole("button", { name: "Trigger Codex" }).click();
   const codex = page.getByRole("dialog", { name: "Trigger Codex" });
   await expect(codex).toContainText("4 / 26");
-  await codex.getByRole("listitem", { name: /^On Crit, Mastery T2/ }).click();
-  await codex.getByRole("button", { name: "Mark as Quarry" }).click();
-  await expect(page.getByTestId("quarry-pity")).toHaveText("0 / 5");
+  await codex.getByRole("listitem", { name: "On Crit" }).click();
+  await expect(codex).toContainText("Liora can kindle it");
   // Unknown parts show where they live.
   await expect(codex.getByRole("listitem", { name: "Unknown, Rotwood" }).first()).toBeVisible();
   await page.keyboard.press("Escape");
@@ -33,8 +32,8 @@ test("Old Nan's Trigger Codex marks a Quarry, Liora kindles a trigger onto a rin
     .getByRole("radiogroup", { name: "Effect" })
     .getByRole("radio", { name: /Stoneskin/ })
     .click();
-  // Tier = lower Mastery (2), capped by the T2 ring.
-  await expect(page.locator(".after-line.kindled")).toContainText("T2");
+  // The kindled trigger counts at the ring's tier.
+  await expect(page.locator(".after-line.kindled")).toContainText("Barrier");
   await page.locator(".cost-bar").getByRole("button", { name: "Kindle" }).click();
   await expect(page.getByRole("status")).toContainText("Kindled");
   await expect(page.getByTestId("craft-now")).toContainText("Barrier");

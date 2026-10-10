@@ -1,6 +1,7 @@
 import { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 import { type ActData, EQUIPMENT_SLOTS, type GameData } from "@emberheir/sim";
 import { STAGES_PER_ACT } from "./acts";
+import { BOUNTIES } from "./bounties";
 import { BOSS_ABILITIES, ELITE_MODIFIERS } from "./elites";
 import {
   ACT1_ENEMIES,
@@ -28,8 +29,8 @@ import { BRANCH_EPITHETS, CLASSES } from "./classes";
 import { ECHOES, WEAPON_MASTERY } from "./weapon-mastery";
 
 /**
- * Act 1 (game-design-document-v1.md section 11): 15 stages, Gorrak at the end, Spoils after stage
- * 5 and 10. Monster Levels come from the run's level band (prestige-acts-v1.md section 4).
+ * Act 1 (game-design-document-v1.md section 11): 15 stages, Gorrak at the end, Ember Shrines
+ * after stage 5 and 10. Monster Levels come from the run's level band (prestige-acts-v1.md section 4).
  */
 export const ACT1: ActData = {
   id: "ashen-fields",
@@ -39,8 +40,7 @@ export const ACT1: ActData = {
   enemies: ACT1_ENEMIES,
   boss: GORRAK,
   boonFamily: "ash",
-  spoilsStages: [5, 10],
-  essence: { id: "ash-essence", name: "Ash Essence", affixId: "all-resistance" },
+  shrineStages: [5, 10],
 };
 
 /** Act 2: Rotwood, Bleed and Poison. Opens with the first Prestige. */
@@ -53,8 +53,7 @@ export const ACT2: ActData = {
   boss: MOTHER_OF_ROT,
   boonFamily: "rot",
   runesmith: true,
-  spoilsStages: [5, 10],
-  essence: { id: "rot-essence", name: "Rot Essence", affixId: "tenacity" },
+  shrineStages: [5, 10],
   favoredAffixes: { tenacity: 3, "poison-chance": 1.5 },
 };
 
@@ -70,8 +69,7 @@ export const ACT3: ActData = {
   enemies: ACT3_ENEMIES,
   boss: CINDER_TYRANT,
   boonFamily: "cinder",
-  spoilsStages: [5, 10],
-  essence: { id: "cinder-essence", name: "Cinder Essence", affixId: "fire-resistance" },
+  shrineStages: [5, 10],
   favoredAffixes: { "fire-resistance": 4, "burn-chance": 1.5 },
 };
 
@@ -84,8 +82,7 @@ export const ACT4: ActData = {
   enemies: ACT4_ENEMIES,
   boss: RIME_WARDEN,
   boonFamily: "rime",
-  spoilsStages: [5, 10],
-  essence: { id: "frost-essence", name: "Frost Essence", affixId: "cold-resistance" },
+  shrineStages: [5, 10],
   favoredAffixes: { "cold-resistance": 4, "heat-gain": 1.5 },
 };
 
@@ -98,8 +95,7 @@ export const ACT5: ActData = {
   enemies: ACT5_ENEMIES,
   boss: STORM_HERALD,
   boonFamily: "storm",
-  spoilsStages: [5, 10],
-  essence: { id: "storm-essence", name: "Storm Essence", affixId: "lightning-resistance" },
+  shrineStages: [5, 10],
   favoredAffixes: { "lightning-resistance": 4, tenacity: 1.5 },
 };
 
@@ -112,8 +108,7 @@ export const ACT6: ActData = {
   enemies: ACT6_ENEMIES,
   boss: VOIDBORN_MAW,
   boonFamily: "void",
-  spoilsStages: [5, 10],
-  essence: { id: "void-essence", name: "Void Essence", affixId: "void-resistance" },
+  shrineStages: [5, 10],
   favoredAffixes: { "void-resistance": 4, "corruption-chance": 1.5 },
 };
 
@@ -128,8 +123,7 @@ export const ACT7: ActData = {
   stages: 10,
   enemies: ACT7_ENEMIES,
   boss: ASHEN_HARVESTER,
-  spoilsStages: [4, 7],
-  essence: { id: "harvest-essence", name: "Harvest Essence", affixId: "all-resistance" },
+  shrineStages: [4, 7],
   favoredAffixes: { "all-resistance": 2, life: 1.5 },
 };
 
@@ -144,8 +138,7 @@ export const LAST_EMBER: ActData = {
   stages: 7,
   enemies: [],
   boss: HARVESTER_CORE,
-  spoilsStages: [],
-  essence: { id: "harvest-essence", name: "Harvest Essence", affixId: "all-resistance" },
+  shrineStages: [],
 };
 
 /** Everything the game loop in `@emberheir/sim` needs. */
@@ -165,6 +158,7 @@ export const GAME_DATA: GameData = {
   bossAbilities: BOSS_ABILITIES,
   startingAttributes: STARTING_ATTRIBUTES,
   boons: BOONS_CONTENT,
+  bounties: BOUNTIES,
   thief: EMBER_THIEF,
   finale: LAST_EMBER,
   boonFamilies: BOON_FAMILIES,

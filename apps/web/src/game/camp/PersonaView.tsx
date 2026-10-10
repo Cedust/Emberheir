@@ -2,21 +2,17 @@ import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
 import {
   CODEX,
   type CodexPartKind,
-  CRAFTING,
   type CraftCost,
   type LearnedPart,
-  codexMastery,
+  codexKnows,
   kindleTargets,
-  kindleTier,
   kindledAffixId,
   learnFromItem,
-  rollTier,
   type CraftRequest,
   type GameState,
   type Item,
   PROGRESSION,
   SLOT_NAMES,
-  actUnlocked,
   affixRollRange,
   applyAction,
   craftBlockReason,
@@ -66,8 +62,6 @@ type ActionKind =
   | "salvage"
   | "reforge"
   | "temper"
-  | "imbue"
-  | "distill"
   | "kindle"
   | "rune"
   | "combine"
@@ -92,8 +86,8 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
     quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
     actions: [
       { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
-      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
-      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Dust." },
+      { k: "reforge", name: "Reforge", desc: "Reroll all affixes. Removes the lock." },
+      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Ash." },
     ],
   },
   liora: {
@@ -103,10 +97,7 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
     accent: "#b36bff",
     quote: "Affixes are like moods, dear. I can change one. I cannot change all of them twice.",
     actions: [
-      { k: "reforge", name: "Reforge", desc: "Reroll all affixes. Removes the lock." },
       { k: "temper", name: "Temper", desc: "Reroll the value of one affix." },
-      { k: "imbue", name: "Imbue", desc: "Replace one affix with an Essence." },
-      { k: "distill", name: "Distill", desc: "Turn Salvage Dust into a Reforge Stone." },
       { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
     ],
   },
@@ -117,6 +108,7 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
     accent: "#8fd06a",
     quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
     actions: [
+      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
       { k: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
       { k: "combine", name: "Combine Runes", desc: "Three of a kind make the next Rune." },
       { k: "codex", name: "Runeword Codex", desc: "Every Runeword you know." },
@@ -158,8 +150,6 @@ const ACTION_HINT: Record<ActionKind, string> = {
   salvage: "Choose an item from your inventory.",
   reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
   temper: "Click the affix to reroll. It stays locked in afterwards.",
-  imbue: "Click the affix to replace, then choose an Essence.",
-  distill: "No item needed.",
   kindle: "Choose an item, then a Condition and an Effect you have learned.",
 };
 
@@ -169,7 +159,7 @@ function affixText(item: Item, index: number): { text: string; trigger: boolean 
   if (!roll || !affix) return { text: "?", trigger: false };
   if (affix.kind === "trigger") {
     return {
-      text: describeTrigger(resolveTrigger(affix, rollTier(item, roll), roll.quality)),
+      text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
       trigger: true,
     };
   }
@@ -196,31 +186,26 @@ function rangeText(item: Item, affixId: string): string {
 
 function costText(cost: CraftCost): string {
   const parts: string[] = [];
-  if (cost.gold) parts.push(`${fmt(cost.gold)} Gold`);
-  if (cost.dust) parts.push(`${fmt(cost.dust)} Dust`);
-  if (cost.reforgeStones) {
-    parts.push(`${cost.reforgeStones} Reforge Stone${cost.reforgeStones > 1 ? "s" : ""}`);
+  if (cost.acorns) parts.push(`${fmt(cost.acorns)} Acorns`);
+  if (cost.ash) parts.push(`${fmt(cost.ash)} Ash`);
+  if (cost.emberCoal) {
+    parts.push(`${cost.emberCoal} Ember Coal`);
   }
-  if (cost.ascensionShards) {
-    parts.push(`${cost.ascensionShards} Ascension Shard${cost.ascensionShards > 1 ? "s" : ""}`);
-  }
-  for (const [id, n] of Object.entries(cost.essences)) {
-    const name = GAME_DATA.acts.find((a) => a.essence.id === id)?.essence.name ?? id;
-    parts.push(`${n} ${name}`);
+  if (cost.phoenixFeathers) {
+    parts.push(`${cost.phoenixFeathers} Phoenix Feather${cost.phoenixFeathers > 1 ? "s" : ""}`);
   }
   for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
-  if (cost.kindling) parts.push(`${cost.kindling} Kindling`);
   return parts.join(" · ") || "Free";
 }
 
-function ItemHead(props: { item: Item; label: string; dashed?: boolean; tier?: number }) {
+function ItemHead(props: { item: Item; label: string; dashed?: boolean }) {
   const { item } = props;
   return (
     <>
       <span className="eyebrow">{props.label}</span>
       <span className="title-font craft-item-name rarity-text">{item.name}</span>
       <span className="rarity-text small strong">
-        {rarityName(item)} · T{props.tier ?? item.tier}
+        {rarityName(item)} · T{item.tier}
       </span>
       <span className="sub">{baseSummary(item)}</span>
       <div className="item-detail-rule" />
@@ -229,7 +214,7 @@ function ItemHead(props: { item: Item; label: string; dashed?: boolean; tier?: n
 }
 
 /**
- * Thoric (Blacksmith) and Liora (Mystic) in one view (Persona mock): actions on the left,
+ * The Camp's crafters in one view (Persona mock): actions on the left,
  * Now → After in the middle with the cost bar, equipped items and inventory on the right.
  * There is no Undo.
  */
@@ -244,8 +229,8 @@ export function PersonaView(props: {
   const def = PERSONAS[props.persona];
   const [kinds, setKinds] = useState<Record<PersonaId, ActionKind>>({
     thoric: "upgrade",
-    liora: "reforge",
-    nyssa: "rune",
+    liora: "temper",
+    nyssa: "socket",
     marisha: "gamble",
   });
   const [runeId, setRuneId] = useState<string | null>(null);
@@ -256,13 +241,6 @@ export function PersonaView(props: {
     () => state.hero.equipment.offHand?.id ?? state.hero.equipment.body?.id ?? null,
   );
   const [affixIndex, setAffixIndex] = useState<number | null>(null);
-  // Every act brings its own Essence; those of acts the road has reached can be imbued.
-  const essences = GAME_DATA.acts
-    .filter(
-      (a) => actUnlocked(state, GAME_DATA, a.id) || (state.wallet.essences[a.essence.id] ?? 0) > 0,
-    )
-    .map((a) => a.essence);
-  const [essenceId, setEssenceId] = useState(() => essences[0]?.id ?? "");
   const [last, setLast] = useState<string | null>(null);
   const [conditionId, setConditionId] = useState<string | null>(null);
   const [effectId, setEffectId] = useState<string | null>(null);
@@ -290,8 +268,7 @@ export function PersonaView(props: {
 
   // --- what the action would do ------------------------------------------------------------
   let request: CraftRequest | null = null;
-  if (kind === "distill") request = { kind: "distill" };
-  else if (item && kind === "socket") request = { kind: "addSocket", itemId: item.id };
+  if (item && kind === "socket") request = { kind: "addSocket", itemId: item.id };
   else if (item && kind === "rune" && runeId) {
     request = { kind: "socketRune", itemId: item.id, runeId };
   } else if (kind === "combine" && runeId) request = { kind: "combineRunes", runeId };
@@ -299,8 +276,6 @@ export function PersonaView(props: {
   else if (item && (kind === "upgrade" || kind === "reforge")) request = { kind, itemId: item.id };
   else if (item && kind === "temper" && affixIndex !== null) {
     request = { kind, itemId: item.id, affixIndex };
-  } else if (item && kind === "imbue" && affixIndex !== null) {
-    request = { kind, itemId: item.id, affixIndex, essenceId };
   } else if (item && kind === "kindle" && conditionId && effectId && kindleIndex !== null) {
     request = {
       kind,
@@ -338,7 +313,7 @@ export function PersonaView(props: {
           ? CRAFT_BLOCK_TEXT.notTrigger
           : "Choose a Condition and an Effect";
   } else if (kind === "salvage") {
-    cost = item ? `Free · +${salvageValue(item)} Dust` : "Free";
+    cost = item ? `Free · +${salvageValue(item)} Ash` : "Free";
     block = !item
       ? "Choose an item"
       : equipped
@@ -348,9 +323,6 @@ export function PersonaView(props: {
     cost = costText(craftCost({ kind: "reforge", itemId: "" }));
     if (kind === "temper")
       cost = costText(craftCost({ kind: "temper", itemId: "", affixIndex: 0 }));
-    if (kind === "imbue") {
-      cost = costText(craftCost({ kind: "imbue", itemId: "", affixIndex: 0, essenceId }));
-    }
     block = !item ? "Choose an item" : "Choose an affix";
   } else {
     cost = costText(craftCost(request, item, GAME_DATA, state));
@@ -358,7 +330,7 @@ export function PersonaView(props: {
     block = reason ? CRAFT_BLOCK_TEXT[reason] : null;
   }
   // Locked-out affixes and triggers say so even before an affix is picked.
-  if (item && (kind === "temper" || kind === "imbue") && item.affixes.length === 0) {
+  if (item && kind === "temper" && item.affixes.length === 0) {
     block = CRAFT_BLOCK_TEXT.noAffixes;
   }
 
@@ -367,7 +339,7 @@ export function PersonaView(props: {
     if (kind === "salvage" && item) {
       const names = learned.map((l) => partName(l.kind, l.id)).join(", ");
       setLast(
-        `Salvaged ${item.name}: +${salvageValue(item)} Dust${names ? ` · Codex: ${names}` : ""}`,
+        `Salvaged ${item.name}: +${salvageValue(item)} Ash${names ? ` · Codex: ${names}` : ""}`,
       );
       game.dispatch({ type: "salvage", itemId: item.id });
       setItemId(null);
@@ -415,9 +387,6 @@ export function PersonaView(props: {
         setLast(fresh ? `Gambled: ${fresh.item.name}` : "Gambled");
         break;
       }
-      case "distill":
-        setLast(`Distilled 1 Reforge Stone (${after.wallet.reforgeStones} now)`);
-        break;
       case "upgrade":
         setLast(`${next?.name ?? "Item"} is now Tier ${next?.tier ?? "?"}`);
         break;
@@ -430,7 +399,6 @@ export function PersonaView(props: {
         break;
       }
       case "temper":
-      case "imbue":
         if (item && next) {
           setLast(
             `${affixText(item, request.affixIndex).text} → ${affixText(next, request.affixIndex).text}`,
@@ -442,18 +410,16 @@ export function PersonaView(props: {
   };
 
   const actionName = def.actions.find((a) => a.k === kind)?.name ?? "";
-  const after = item && kind !== "distill" ? item : undefined;
+  const after = item;
   const itemCenter = [
     "upgrade",
     "socket",
     "salvage",
     "reforge",
     "temper",
-    "imbue",
     "kindle",
     "rune",
   ].includes(kind);
-  const essence = essences.find((e) => e.id === essenceId) ?? essences[0];
 
   return (
     <section className="screen persona-view" aria-label={`${def.name}, ${def.role}`}>
@@ -540,19 +506,7 @@ export function PersonaView(props: {
             <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
           ) : kind === "gamble" ? (
             <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
-          ) : !itemCenter ? null : kind === "distill" ? (
-            <div className="distill panel-card">
-              <div className="distill-side">
-                <span className="mono huge">{CRAFTING.distillDust}</span>
-                <span className="sub">Salvage Dust</span>
-              </div>
-              <span className="arrow">→</span>
-              <div className="distill-side">
-                <span className="mono huge epic-text">1</span>
-                <span className="sub">Reforge Stone</span>
-              </div>
-            </div>
-          ) : item ? (
+          ) : !itemCenter ? null : item ? (
             <div className="now-after">
               <div className={`craft-card panel-card ${rarityClass(item)}`} data-testid="craft-now">
                 <ItemHead item={item} label={`NOW · ${equipped ? "EQUIPPED" : "INVENTORY"}`} />
@@ -564,20 +518,20 @@ export function PersonaView(props: {
                 )}
                 {item.affixes.map((_, i) => {
                   const t = affixText(item, i);
-                  const kindling = kind === "kindle";
-                  const pickable = kind === "temper" || kind === "imbue" || kindling;
+                  const kindleMode = kind === "kindle";
+                  const pickable = kind === "temper" || kindleMode;
                   const lockedOut = item.lockedAffix !== undefined && item.lockedAffix !== i;
-                  const disabled = kindling
+                  const disabled = kindleMode
                     ? !targets.includes(i) || lockedOut
                     : !pickable || lockedOut || t.trigger;
                   return (
                     <button
                       key={i}
                       type="button"
-                      className={`affix-line ${t.trigger ? "trigger" : ""} ${item.affixes[i]?.kindled ? "kindled" : ""} ${(kindling ? kindleIndex === i : affixIndex === i && pickable) ? "on" : ""}`}
+                      className={`affix-line ${t.trigger ? "trigger" : ""} ${item.affixes[i]?.kindled ? "kindled" : ""} ${(kindleMode ? kindleIndex === i : affixIndex === i && pickable) ? "on" : ""}`}
                       disabled={disabled}
                       title={
-                        t.trigger && pickable && !kindling
+                        t.trigger && pickable && !kindleMode
                           ? "Trigger Affixes cannot be changed"
                           : lockedOut && pickable
                             ? "Locked: only the locked-in affix can change"
@@ -597,7 +551,6 @@ export function PersonaView(props: {
                 item={after}
                 kind={kind}
                 affixIndex={kind === "kindle" ? (kindleIndex ?? null) : affixIndex}
-                essenceAffix={essence?.affixId}
                 runeId={runeId}
                 learned={learned}
                 kindle={
@@ -606,7 +559,6 @@ export function PersonaView(props: {
                         conditionId,
                         effectId,
                         index: kindleIndex ?? item.affixes.length,
-                        tier: kindleTier(state.legacy.codex, conditionId, effectId, item),
                       }
                     : undefined
                 }
@@ -626,31 +578,6 @@ export function PersonaView(props: {
               onCondition={setConditionId}
               onEffect={setEffectId}
             />
-          )}
-
-          {kind === "imbue" && essence && (
-            <div className="essence-row" role="radiogroup" aria-label="Essence">
-              <span className="strong">New affix:</span>
-              {essences.map((e) => {
-                const have = state.wallet.essences[e.id] ?? 0;
-                const on = e.id === essence.id;
-                return (
-                  <button
-                    key={e.id}
-                    type="button"
-                    role="radio"
-                    aria-checked={on}
-                    className={`essence-chip ${on ? "on" : ""} ${have > 0 ? "" : "empty"}`}
-                    onClick={() => {
-                      setEssenceId(e.id);
-                      setAffixIndex(null);
-                    }}
-                  >
-                    {e.name}: {item ? rangeText(item, e.affixId) : "?"} · have {have}
-                  </button>
-                );
-              })}
-            </div>
           )}
 
           <div className="grow" />
@@ -718,10 +645,9 @@ function AfterCard(props: {
   item: Item | undefined;
   kind: ActionKind;
   affixIndex: number | null;
-  essenceAffix: string | undefined;
   runeId: string | null;
   learned: readonly LearnedPart[];
-  kindle: { conditionId: string; effectId: string; index: number; tier: number } | undefined;
+  kindle: { conditionId: string; effectId: string; index: number } | undefined;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
@@ -760,14 +686,13 @@ function AfterCard(props: {
     return (
       <div className="craft-card panel-card dashed">
         <span className="eyebrow">AFTER</span>
-        <span className="title-font craft-item-name">Salvage Dust</span>
+        <span className="title-font craft-item-name">Ash</span>
         <span className="sub">The item is gone for good.</span>
         <div className="item-detail-rule" />
-        <span className="after-line new">+{salvageValue(item)} Salvage Dust</span>
+        <span className="after-line new">+{salvageValue(item)} Ash</span>
         {props.learned.map((l) => (
           <span key={`${l.kind}-${l.id}`} className="after-line new kindled">
-            Codex: {partName(l.kind, l.id)} T{l.mastery}
-            {l.isNew ? " · new" : ""}
+            Codex: {partName(l.kind, l.id)} · new
           </span>
         ))}
       </div>
@@ -789,8 +714,7 @@ function AfterCard(props: {
         {k && affix ? (
           <span className="after-line new kindled">
             <span className="locked-in">UP TO</span>{" "}
-            {describeTrigger(resolveTrigger(affix, k.tier, CODEX.kindleMaxQuality))}{" "}
-            <span className="locked-in">T{k.tier}</span>
+            {describeTrigger(resolveTrigger(affix, item.tier, CODEX.kindleMaxQuality))}
           </span>
         ) : (
           <span className="after-line sub">? new trigger</span>
@@ -828,7 +752,7 @@ function AfterCard(props: {
       </div>
     );
   }
-  // Temper and Imbue: only the chosen affix changes.
+  // Temper: only the chosen affix changes.
   return (
     <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
       <ItemHead item={item} label="AFTER" />
@@ -840,10 +764,9 @@ function AfterCard(props: {
             </span>
           );
         }
-        const affixId = kind === "imbue" ? (props.essenceAffix ?? roll.affixId) : roll.affixId;
         return (
           <span key={i} className="after-line new">
-            {rangeText(item, affixId)} <span className="locked-in">LOCKED IN</span>
+            {rangeText(item, roll.affixId)} <span className="locked-in">LOCKED IN</span>
           </span>
         );
       })}
@@ -862,7 +785,7 @@ function partName(kind: CodexPartKind, id: string): string {
   return part?.name ?? id;
 }
 
-/** Kindle: the learned Conditions and Effects with their Mastery. */
+/** Kindle: the learned Conditions and Effects. */
 function KindleParts(props: {
   state: GameState;
   conditionId: string | null;
@@ -879,7 +802,7 @@ function KindleParts(props: {
   ) => {
     const parts = [
       ...(kind === "condition" ? ITEM_CATALOG.conditions : ITEM_CATALOG.effects).values(),
-    ].filter((p) => codexMastery(codex, kind, p.id) > 0);
+    ].filter((p) => codexKnows(codex, kind, p.id));
     return (
       <div className="kindle-row" role="radiogroup" aria-label={label}>
         <span className="strong">{label}</span>
@@ -890,10 +813,10 @@ function KindleParts(props: {
             type="button"
             role="radio"
             aria-checked={selected === p.id}
-            className={`essence-chip ${selected === p.id ? "on" : ""}`}
+            className={`part-chip ${selected === p.id ? "on" : ""}`}
             onClick={() => onPick(p.id)}
           >
-            {p.name} · T{codexMastery(codex, kind, p.id)}
+            {p.name}
           </button>
         ))}
       </div>

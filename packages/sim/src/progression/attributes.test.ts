@@ -7,12 +7,13 @@ import {
   type GameAction,
   type GameState,
   applyAction,
+  attributeRespecAcorns,
   deserializeGame,
   heroSetup,
   newGame,
   SAVE_VERSION,
 } from "./game";
-import { TEST_BOON_DATA, TEST_GAME_DATA as data } from "./test-fixtures";
+import { TEST_BOON_DATA, TEST_GAME_DATA as data, withOldCurrencies } from "./test-fixtures";
 
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -55,22 +56,20 @@ describe("Attributes v1", () => {
     );
   });
 
-  it("The Harvest: two new points and up to two moved (Rekindle), one Phoenix Ash", () => {
+  it("The Harvest: two new points, none moved", () => {
     const s = harvest(
       act(fresh(), { type: "allocateAttributes", points: { vitality: 4, wisdom: 2 } }),
     );
     const before = s.hero.attributes;
-    // Wisdom 2 → 0 (back to the Class Array) moves two points; with the two new ones: Dexterity 4.
-    const after = plus(before, { wisdom: -2, dexterity: 4 });
+    const after = plus(before, { dexterity: 2 });
     const done = act(s, { type: "prestige", attributes: after });
     expect(done.hero.attributes).toEqual(after);
     expect(done.hero.unspentAttributePoints).toBe(0);
-    expect(done.wallet.phoenixAsh).toBe(1);
-    // Three moved points are too many, and nothing goes below the Class Array.
+    // Moving points is Kaelen's respec now, and nothing goes below the Class Array.
     expect(() =>
       act(s, {
         type: "prestige",
-        attributes: plus(before, { wisdom: -2, vitality: -1, dexterity: 5 }),
+        attributes: plus(before, { wisdom: -1, dexterity: 3 }),
       }),
     ).toThrow(/moved/);
     expect(() =>
@@ -84,24 +83,22 @@ describe("Attributes v1", () => {
     expect(later.hero.unspentAttributePoints).toBe(2);
   });
 
-  it("Ashen Rebirth: every point above the Class Array anew for one Phoenix Ash", () => {
+  it("Attribute respec at Kaelen: every point above the Class Array anew, for Acorns", () => {
     let s = act(fresh(), { type: "allocateAttributes", points: { strength: 4, vitality: 2 } });
     const target = plus(floor(), { dexterity: 3, intelligence: 3 });
-    expect(() => act(s, { type: "rebirth", attributes: target })).toThrow(/Phoenix Ash/);
-    s = { ...s, wallet: { ...s.wallet, phoenixAsh: 1 } };
-    s = act(s, { type: "rebirth", attributes: target });
+    const price = attributeRespecAcorns(0);
+    expect(() => act(s, { type: "respecAttributes", attributes: target })).toThrow(/Acorns/);
+    s = { ...s, wallet: { ...s.wallet, acorns: price } };
+    s = act(s, { type: "respecAttributes", attributes: target });
     expect(s.hero.attributes).toEqual(target);
     expect(s.hero.unspentAttributePoints).toBe(0);
-    expect(s.wallet.phoenixAsh).toBe(0);
+    expect(s.wallet.acorns).toBe(0);
     expect(() =>
       act(
-        { ...s, wallet: { ...s.wallet, phoenixAsh: 1 } },
-        {
-          type: "rebirth",
-          attributes: plus(floor(), { dexterity: 7 }),
-        },
+        { ...s, wallet: { ...s.wallet, acorns: price } },
+        { type: "respecAttributes", attributes: plus(floor(), { dexterity: 7 }) },
       ),
-    ).toThrow(/Not enough/);
+    ).toThrow(/Not enough Attribute/);
   });
 
   it("gear lifts attributes up to 12 but never opens a Perk; Blaze Boons do", () => {
@@ -143,19 +140,17 @@ describe("Attributes v1", () => {
     expect(setup.perks).toEqual(["armorbreaker", "stoneguard", "secondBreath"]);
   });
 
-  it("migrates v10 saves: back to the Class Array, points and Phoenix Ash per Prestige", () => {
+  it("migrates v10 saves: back to the Class Array with the points of every Prestige", () => {
     const s = act(fresh(), { type: "allocateAttributes", points: { strength: 4 } });
     const v10 = {
-      ...s,
+      ...withOldCurrencies(s),
       version: 10,
       hero: { ...s.hero, attributes: { ...s.hero.attributes, strength: 80 } },
       legacy: { ...s.legacy, prestige: 3 },
-      wallet: { ...s.wallet, phoenixAsh: undefined },
     };
     const migrated = deserializeGame(JSON.stringify(v10), data);
     expect(migrated.version).toBe(SAVE_VERSION);
     expect(migrated.hero.attributes).toEqual(floor());
     expect(migrated.hero.unspentAttributePoints).toBe(6 + 3 * 2);
-    expect(migrated.wallet.phoenixAsh).toBe(3);
   });
 });

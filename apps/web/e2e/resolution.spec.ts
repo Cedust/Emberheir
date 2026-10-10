@@ -143,8 +143,8 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "Bloodline" })).toBeVisible();
     await check("bloodline");
     await page.getByRole("button", { name: /^Take / }).click();
-    await expect(page.getByRole("region", { name: "Rekindle" })).toBeVisible();
-    await check("rekindle");
+    await expect(page.getByRole("region", { name: "Attributes" })).toBeVisible();
+    await check("harvest");
     await page.getByRole("button", { name: "Let It Burn" }).click();
     await expect(page.getByRole("region", { name: "Inheritance" })).toBeVisible();
     await check("inheritance");

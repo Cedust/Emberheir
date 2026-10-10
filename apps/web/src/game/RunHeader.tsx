@@ -3,7 +3,7 @@ import { Icon } from "../ui/Icon";
 import { actTitle, finaleFoe, inFinale } from "./finale";
 
 /**
- * Act progress as a bar (battle-view-v1.md): Camp, 15 stages, Spoils stages and the Boss. Waymarks
+ * Act progress as a bar (battle-view-v1.md): Camp, 15 stages, Shrine stages and the Boss. Waymarks
  * (level-v2.md) stand above their stages: lit once reached this run.
  */
 export function ActProgress(props: {
@@ -41,14 +41,14 @@ export function ActProgress(props: {
         const n = i + 1;
         const cur = n === stage;
         const boss = n === stages || finale;
-        const spoils = act.spoilsStages.includes(n);
-        const size = cur ? 30 : boss ? 26 : spoils ? 16 : 12;
+        const shrine = act.shrineStages.includes(n);
+        const size = cur ? 30 : boss ? 26 : shrine ? 16 : 12;
         const cls = [
           "act-dot",
           n <= done || cur ? "done" : "",
           cur ? "current" : "",
           boss ? "boss" : "",
-          spoils ? "spoils" : "",
+          shrine ? "shrine" : "",
         ].join(" ");
         return (
           <div
@@ -59,8 +59,8 @@ export function ActProgress(props: {
                 ? `Stage ${n} · ${finaleFoe(n)}`
                 : boss
                   ? `Stage ${n} · Boss`
-                  : spoils
-                    ? `Stage ${n} · Spoils`
+                  : shrine
+                    ? `Stage ${n} · Ember Shrine`
                     : `Stage ${n}`
             }
             style={{

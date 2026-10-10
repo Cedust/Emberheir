@@ -134,15 +134,15 @@ export const PROGRESSION = {
   xpBonusPerLevel: 0.05,
   xpMaxFactor: 2,
 
-  goldBase: 4,
-  goldPerMonsterLevel: 2,
-  /** Salvage Dust every win gives on top of the auto-salvaged loot. */
-  dustBase: 1,
-  dustPerMonsterLevel: 1,
+  acornsBase: 4,
+  acornsPerMonsterLevel: 2,
+  /** Ash every win gives on top of the auto-salvaged loot. */
+  ashBase: 1,
+  ashPerMonsterLevel: 1,
 
-  /** Reward multipliers for Elites and Bosses (XP, Gold, Dust). */
-  eliteRewardMultiplier: { xp: 3, gold: 2, dust: 2 },
-  bossRewardMultiplier: { xp: 6, gold: 5, dust: 4 },
+  /** Reward multipliers for Elites and Bosses (XP, Acorns, Ash). */
+  eliteRewardMultiplier: { xp: 3, acorns: 2, ash: 2 },
+  bossRewardMultiplier: { xp: 6, acorns: 5, ash: 4 },
   /** Share of those Legendary cards that become a Unique (if one fits). */
   uniqueShare: 0.35,
   /** Boss Hoard: cards after a boss and how many of them the hero takes. */
@@ -169,12 +169,14 @@ export const PROGRESSION = {
   runeRanksPerActTier: 2,
   /** Each Rune rank drops this much less often than the one below it. */
   runeRankFalloff: 0.5,
-  /** Guaranteed Reforge Stones (min, max). */
-  eliteReforgeStones: [2, 3],
-  bossReforgeStones: [4, 6],
+  /** Ember Coal drop on their own like Runes: Elites and bosses always (min, max)... */
+  eliteEmberCoal: [2, 3],
+  bossEmberCoal: [4, 6],
+  /** ...normal enemies sometimes. */
+  normalEmberCoalChance: 0.15,
 
-  /** Salvage Dust for one item: by rarity, × Item Tier. */
-  salvageDust: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
+  /** Ash for one item: by rarity, × Item Tier. */
+  salvageAsh: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
     Rarity,
     number
   >,
@@ -224,20 +226,19 @@ export const PROGRESSION = {
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
-  /** Spoils pick amounts (loot-rewards-v1.md section 4). */
-  spoils: { flaskCharges: 1, reforgeStones: 2, essences: 1 },
-
-  /** Ember Flask: heals a fraction of max life between stages, refilled in camp. */
+  /**
+   * Ember Flask: heals a fraction of max life between stages, refilled in camp. It holds this
+   * many charges, plus what the Belt's "Flask Charges" affix adds.
+   */
   flaskStartCharges: 3,
-  /** Spoils can push the flask above its start charges up to this many. */
-  flaskMaxCharges: 5,
   flaskHeal: 0.35,
 
   /**
-   * Every Prestige gives one Battle Plan upgrade (battle-plan.ts), a Prestige branch and one
-   * Harvester's Ember. Since Playtest 2 all items stay, so there are no Seals and no Dust bonus.
+   * Bounties from the Scout: a done bounty pays this many normal kills' worth of Acorns at the act
+   * boss's level, Ember Coal and one item of at least Rare. While "catch the Ember Thief" is
+   * open, the thief shows up this much more often.
    */
-  prestigeHarvesterEmber: 1,
+  bounty: { acornKills: 10, emberCoal: 2, thiefBoost: 5 },
   /**
    * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
    * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
@@ -264,15 +265,15 @@ export const PROGRESSION = {
   /** Share of the Run Pressure on Life and damage that the Harvester takes. */
   harvesterPressure: { life: 0.7, damage: 0.2 },
 
-  /** Ascension Shards (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
-  bossAscensionShards: 1,
-  eliteAscensionShardChance: 0.1,
+  /** Phoenix Feathers (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
+  bossPhoenixFeathers: 1,
+  elitePhoenixFeatherChance: 0.1,
 
   /** Switching to another Battle Plan Capstone at Kaelen. */
-  capstoneChangeGold: 200,
+  capstoneChangeAcorns: 200,
 
   /**
-   * Skill Tree respec at Kaelen (level-v2.md section 7): moderately priced, about the Gold of this
+   * Skill Tree respec at Kaelen (level-v2.md section 7): moderately priced, about the Acorns of this
    * many normal kills at the run's boss level. One node costs `respecNodeShare` of it.
    */
   respecKills: 8,
@@ -301,27 +302,23 @@ export const PROGRESSION = {
 
 /**
  * Camp crafting costs (docs/design/town-crafting-v1.md section 3). Starting values: a full Act 1
- * run brings roughly 100–150 Gold and a few hundred Salvage Dust.
+ * run brings roughly 100–150 Acorns and a few hundred Ash.
  */
 export const CRAFTING = {
-  /** Upgrade (+1 Tier) at Thoric: 1 Ascension Shard + this much Gold × current Tier. */
-  upgradeGoldPerTier: 60,
-  upgradeShards: 1,
+  /** Upgrade (+1 Tier) at Thoric: 1 Phoenix Feather + this much Acorns × current Tier. */
+  upgradeAcornsPerTier: 60,
+  upgradeFeathers: 1,
   /** Temper (reroll one affix value) at Liora. */
-  temperDust: 10,
-  temperGold: 15,
-  /** Reforge (reroll all affixes) at Liora. */
-  reforgeStones: 1,
-  /** Imbue (replace one affix with the Essence's affix) at Liora. */
-  imbueEssences: 1,
-  /** Distill: Salvage Dust into one Reforge Stone at Liora. */
-  distillDust: 60,
-  /** Add Socket at Thoric: Gold plus Dust × the new Socket count. */
-  addSocketGold: 25,
-  addSocketDust: 15,
-  /** Nyssa: Socket a Rune / combine three into the next rank, Gold × rank. */
-  socketRuneGoldPerRank: 8,
-  combineRunesGoldPerRank: 15,
+  temperAsh: 10,
+  temperAcorns: 15,
+  /** Reforge (reroll all affixes) at Thoric. */
+  emberCoal: 1,
+  /** Add Socket at the Runesmith: Acorns plus Ash × the new Socket count. */
+  addSocketAcorns: 25,
+  addSocketAsh: 15,
+  /** Nyssa: Socket a Rune / combine three into the next rank, Acorns × rank. */
+  socketRuneAcornsPerRank: 8,
+  combineRunesAcornsPerRank: 15,
   combineRunesCount: 3,
   /** Marisha (Black Market): gamble prices and odds, capped by the run's loot gate. */
   gambleFlat: 60,
@@ -336,16 +333,9 @@ export const CRAFTING = {
 export const CODEX = {
   /** Trigger affixes whose Condition or Effect has its home in the fight drop this much more. */
   homeWeight: 4,
-  /** The Quarry part (marked at Old Nan) drops this much more on top. */
-  quarryWeight: 3,
-  /** After this many Elite or boss item picks without the Quarry part, the next one has it. */
-  quarryPity: 5,
   /** Kindled triggers roll at most this share of the range; only drops reach 100 %. */
   kindleMaxQuality: 0.7,
-  /** Kindle at Liora: Dust × the kindled tier plus Kindling. */
-  kindleDustPerTier: 30,
-  kindleKindling: 1,
-  /** Kindling in the Spoils pick of Elites and bosses. */
-  eliteKindling: 1,
-  bossKindling: 2,
+  /** Kindle at Liora: Ash × the item's tier plus Ember Coal. */
+  kindleAshPerTier: 30,
+  kindleEmberCoal: 2,
 } as const;

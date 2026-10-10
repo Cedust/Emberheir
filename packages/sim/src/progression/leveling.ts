@@ -34,7 +34,7 @@ export function xpLevelFactor(heroLevel: number, monsterLevel: number): number {
 
 export type EnemyRank = "normal" | "elite" | "boss";
 
-const rankMultiplier = (rank: EnemyRank, key: "xp" | "gold" | "dust") =>
+const rankMultiplier = (rank: EnemyRank, key: "xp" | "acorns" | "ash") =>
   rank === "elite"
     ? PROGRESSION.eliteRewardMultiplier[key]
     : rank === "boss"
@@ -47,20 +47,19 @@ export function xpForKill(monsterLevel: number, rank: EnemyRank, heroLevel: numb
   return Math.round(base * rankMultiplier(rank, "xp") * xpLevelFactor(heroLevel, monsterLevel));
 }
 
-/** Gold and Salvage Dust every win gives automatically. */
+/** Acorns and Ash every win gives automatically. */
 export function autoRewards(
   monsterLevel: number,
   rank: EnemyRank,
-): { readonly gold: number; readonly dust: number } {
+): { readonly acorns: number; readonly ash: number } {
   const steps = monsterLevel - 1;
   return {
-    gold: Math.round(
-      (PROGRESSION.goldBase + PROGRESSION.goldPerMonsterLevel * steps) *
-        rankMultiplier(rank, "gold"),
+    acorns: Math.round(
+      (PROGRESSION.acornsBase + PROGRESSION.acornsPerMonsterLevel * steps) *
+        rankMultiplier(rank, "acorns"),
     ),
-    dust: Math.round(
-      (PROGRESSION.dustBase + PROGRESSION.dustPerMonsterLevel * steps) *
-        rankMultiplier(rank, "dust"),
+    ash: Math.round(
+      (PROGRESSION.ashBase + PROGRESSION.ashPerMonsterLevel * steps) * rankMultiplier(rank, "ash"),
     ),
   };
 }

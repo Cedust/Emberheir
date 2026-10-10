@@ -11,6 +11,7 @@ import {
   classTitle,
   heroClassOf,
   heroTitle,
+  keystoneLimit,
   levelCap,
   openBranches,
   prestigeBranchNodes,
@@ -32,11 +33,11 @@ const LAST_WORDS: Record<string, string> = {
   emberfall: "You cannot keep... the ember... Heir... It always... grows back...",
 };
 
-type Step = "victory" | "branch" | "rekindle";
+type Step = "victory" | "branch" | "attributes";
 const STEPS = [
   { id: "victory", name: "Victory" },
   { id: "branch", name: "Bloodline" },
-  { id: "rekindle", name: "Rekindle" },
+  { id: "attributes", name: "Attributes" },
   { id: "heir", name: "Inheritance" },
 ] as const;
 
@@ -90,7 +91,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const [delta, setDelta] = useState<Record<Attribute, number>>(NO_POINTS);
   if (!pending) return null;
   const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
-  // The Harvest (attribute-v1.md section 6): new points, and a few may move (Rekindle).
+  // The Harvest (attribute-v1.md section 6): new points to set now or later at Kaelen.
   const harvest = prestigeRewards(GAME_DATA, state.legacy.prestige + 1);
   const own = state.hero.attributes;
   const points = state.hero.unspentAttributePoints + harvest.attributePoints;
@@ -98,14 +99,12 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
     floor: heroClass.startingAttributes,
     current: own,
     points,
-    moves: harvest.rekindle,
   };
   const allowed = (a: Attribute, step: number) =>
     attributeProblem(addAttributes(own, { ...delta, [a]: delta[a] + step }), rules) === null;
   const change = (a: Attribute, step: number) => setDelta({ ...delta, [a]: delta[a] + step });
   const changed = ATTRIBUTES.some((a) => delta[a] !== 0);
   const left = points - ATTRIBUTES.reduce((n, a) => n + delta[a], 0);
-  const moved = ATTRIBUTES.reduce((n, a) => n + Math.max(0, -delta[a]), 0);
   const finish = () =>
     game.dispatch({
       type: "prestige",
@@ -140,7 +139,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
           <button
             type="button"
             className="btn big primary"
-            onClick={() => setStep(open.length ? "branch" : "rekindle")}
+            onClick={() => setStep(open.length ? "branch" : "attributes")}
           >
             {final ? "Keep Everything" : "Pack the Caravan"}
           </button>
@@ -211,7 +210,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
             type="button"
             className="btn big primary"
             disabled={!branch}
-            onClick={() => setStep("rekindle")}
+            onClick={() => setStep("attributes")}
           >
             {branch && state.legacy.branches.includes(branch) ? "Deepen" : "Take"}{" "}
             {open.find((b) => b.id === branch)?.name ?? "it"}
@@ -222,27 +221,26 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   }
 
   return (
-    <section className="screen prestige prestige-rekindle" aria-label="Rekindle">
-      <Crumbs step="rekindle" />
+    <section className="screen prestige prestige-attributes" aria-label="Attributes">
+      <Crumbs step="attributes" />
       <header className="seal-head">
         <h2 className="title-font">THE EMBERS SETTLE</h2>
         <p className="sub">
-          +{harvest.attributePoints} Attribute Points · move up to {harvest.rekindle} · +
-          {harvest.phoenixAsh} Phoenix Ash
+          +{harvest.attributePoints} Attribute Points · set them now or later. Kaelen resets them
+          for Acorns.
         </p>
       </header>
-      <div className="rekindle-stones panel-card">
+      <div className="harvest-stones panel-card">
         <AttributeStones
           base={own}
           delta={delta}
           canAdd={(a) => left > 0 && allowed(a, 1)}
-          canRemove={(a) => (delta[a] > 0 ? true : moved < harvest.rekindle && allowed(a, -1))}
+          canRemove={(a) => delta[a] > 0 && allowed(a, -1)}
           onAdd={(a) => change(a, 1)}
           onRemove={(a) => change(a, -1)}
         />
-        <span className="sub small rekindle-left" data-testid="rekindle-left">
-          {left} {left === 1 ? "point" : "points"} left · {harvest.rekindle - moved}{" "}
-          {harvest.rekindle - moved === 1 ? "move" : "moves"} left
+        <span className="sub small harvest-left" data-testid="harvest-left">
+          {left} {left === 1 ? "point" : "points"} left
         </span>
       </div>
       <div className="grow" />
@@ -292,12 +290,16 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       desc: "Spend them in the Skill Tree at Kaelen.",
       tone: "accent",
     },
-    {
-      kind: "HARVESTER'S EMBER",
-      name: `+${r.harvesterEmber} Ember`,
-      desc: "Unlocks one Keystone in the Skill Tree.",
-      tone: "ember",
-    },
+    ...(r.keystones > keystoneLimit(prestige - 1)
+      ? [
+          {
+            kind: "KEYSTONE PLACE",
+            name: `${r.keystones} Keystones at once`,
+            desc: "Another notch in the Ember sigil glows. Learn one more Keystone at Kaelen.",
+            tone: "ember",
+          },
+        ]
+      : []),
     ...(final
       ? []
       : [
@@ -378,7 +380,7 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
               <Icon name="camp" size={22} />
               <span>
                 <b>Kaelen and Liora</b> travel with the caravan: Skill Tree and Battle Plan at
-                Kaelen, Reforge, Temper and Imbue at Liora.
+                Kaelen, Temper and Kindle at Liora.
               </span>
             </div>
           )}

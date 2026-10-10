@@ -1,5 +1,4 @@
 import type {
-  AffixRoll,
   Item,
   ItemCatalog,
   TriggerAffixDefinition,
@@ -59,19 +58,14 @@ export function kindledAffixes(
   return [...conditions].flatMap((c) => all.map((e) => kindledAffix(c, e)));
 }
 
-/** The tier an affix roll counts at: its own (kindled triggers), never above the item's. */
-export function rollTier(item: Item, roll: AffixRoll): number {
-  return Math.min(item.tier, roll.tier ?? item.tier);
-}
-
-/** Codex parts an item teaches when salvaged, with the tier they are learned at. */
+/** Codex parts an item teaches when salvaged. */
 export function codexPartsOf(
   item: Item,
   catalog: ItemCatalog,
-): { readonly condition: string; readonly effect: string; readonly tier: number }[] {
+): { readonly condition: string; readonly effect: string }[] {
   return item.affixes.flatMap((roll) => {
     const affix = catalog.affixes.get(roll.affixId);
     if (affix?.kind !== "trigger" || !affix.parts) return [];
-    return [{ ...affix.parts, tier: rollTier(item, roll) }];
+    return [affix.parts];
   });
 }

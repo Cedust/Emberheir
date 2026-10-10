@@ -22,7 +22,7 @@ const camp = (act: ActData) => (isFinaleAct(GAME_DATA, act.id) ? "Camp" : `Camp 
 const TEXT: Record<NoticeKind, NoticeText> = {
   death: {
     title: "ASHBOUND",
-    sub: "You fell, and the ash gave you back. You keep everything: gear, Gold, Dust and Inventory. Only the way through this Act starts over.",
+    sub: "You fell, and the ash gave you back. You keep everything: gear, Acorns, Ash and Inventory. Only the way through this Act starts over.",
     nan: "The ash spat you back out. It does that. It likes you.",
     facts: (n, act) => [
       { k: "FELL AT", v: where(act, n.stage), tone: "text" },

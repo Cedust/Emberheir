@@ -4,7 +4,7 @@ import type { SkillDefinition } from "../combat/types";
 import { TEST_CATALOG } from "../items/test-fixtures";
 import type { BoonDefinition, BoonFamilyDefinition } from "./boons";
 import type { HeroClass } from "./classes";
-import type { ActData, GameData } from "./game";
+import type { ActData, GameData, Wallet } from "./game";
 import type { SkillTreeDefinition } from "./skill-tree";
 import type { EchoDefinition, MasteryNode, WeaponMasteryTree } from "./weapon-mastery";
 
@@ -38,8 +38,7 @@ export const TEST_ACT: ActData = {
   stages: 3,
   enemies: [WEAK_ENEMY],
   boss: TEST_BOSS,
-  spoilsStages: [2],
-  essence: { id: "test-essence", name: "Test Essence", affixId: "life" },
+  shrineStages: [2],
 };
 
 export const DEADLY_ACT: ActData = {
@@ -323,3 +322,18 @@ export const TEST_BOON_DATA: GameData = {
   boons: TEST_BOONS,
   boonFamilies: TEST_BOON_FAMILIES,
 };
+
+/** A save game as versions before v13 wrote it: the currencies under their old names. */
+export function withOldCurrencies<T extends { wallet: Wallet }>(state: T) {
+  const { acorns, ash, emberCoal, phoenixFeathers, ...rest } = state.wallet;
+  return {
+    ...state,
+    wallet: {
+      ...rest,
+      gold: acorns,
+      dust: ash,
+      reforgeStones: emberCoal,
+      ascensionShards: phoenixFeathers,
+    },
+  };
+}

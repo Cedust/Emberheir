@@ -5,6 +5,26 @@ import type {
   TriggerAffixDefinition,
   UniqueDefinition,
 } from "@emberheir/sim";
+import {
+  CINDER_TYRANT,
+  GORRAK,
+  MOTHER_OF_ROT,
+  RIME_WARDEN,
+  STORM_HERALD,
+  VOIDBORN_MAW,
+  ASHEN_HARVESTER,
+} from "./enemies";
+
+/** The Warden of each act: its trophies say who dropped them. */
+const WARDENS: Readonly<Record<string, string>> = {
+  "ashen-fields": GORRAK.name,
+  rotwood: MOTHER_OF_ROT.name,
+  "ember-wastes": CINDER_TYRANT.name,
+  "frost-peaks": RIME_WARDEN.name,
+  "storm-spires": STORM_HERALD.name,
+  "void-rift": VOIDBORN_MAW.name,
+  emberfall: ASHEN_HARVESTER.name,
+};
 
 /**
  * M8 "Legendär" (docs/design/legendary-runes-v1.md): Runes, Runewords, Legendary Powers and the
@@ -18,7 +38,8 @@ import type {
  * reaches two ranks higher. Weapon bonus first, armor bonus (Off Hand, Helm, Body) second.
  */
 export const RUNES: readonly RuneDefinition[] = [
-  rune("ash", "Ash", 1, { physicalDamage: 0.06 }, { armor: 6 }),
+  // Id "ash" from before the currency of that name; the Rune is called Bark.
+  rune("ash", "Bark", 1, { physicalDamage: 0.06 }, { armor: 6 }),
   rune("moss", "Moss", 2, { lifesteal: 0.015 }, { life: 12 }),
   rune("thorn", "Thorn", 3, { bleedChance: 0.06 }, { thorns: 2 }),
   rune("venom", "Venom", 4, { poisonChance: 0.08 }, { tenacity: 0.06 }),
@@ -515,6 +536,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     minItemLevel: 1,
     flavor: "Still warm. Still angry.",
     bossOf: "ashen-fields",
+    droppedBy: GORRAK.name,
   },
   {
     id: "cinderwick",
@@ -581,6 +603,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     minItemLevel: 5,
     flavor: "Pulled from the Mother of Rot. It was not hers.",
     bossOf: "rotwood",
+    droppedBy: MOTHER_OF_ROT.name,
   },
   {
     id: "barkhide-bulwark",
@@ -801,5 +824,6 @@ function trophy(
     minItemLevel: 1,
     flavor,
     bossOf,
+    ...(WARDENS[bossOf] ? { droppedBy: WARDENS[bossOf] } : {}),
   };
 }

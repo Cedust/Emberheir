@@ -168,8 +168,6 @@ export interface RollItemOptions {
   readonly rarity: Rarity;
   /** Extra weight per affix, e.g. Trigger Codex homes (default 1). */
   readonly affixFactor?: (affix: AffixDefinition) => number;
-  /** The item gets at least one trigger affix, picked from these ids if any fits (Quarry Pity). */
-  readonly forceTrigger?: readonly string[];
 }
 
 /**
@@ -188,8 +186,7 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     ? ITEMS.charmTriggers[rarity]
     : rng.int(counts.trigger[0], counts.trigger[1]) +
       (rng.chance(counts.extraTriggerChance) ? 1 : 0);
-  const forced = options.forceTrigger;
-  const triggerCount = forced ? Math.max(1, rolledTriggers) : rolledTriggers;
+  const triggerCount = rolledTriggers;
 
   const all = [...catalog.affixes.values()];
   const chosen: AffixDefinition[] = [];
@@ -199,21 +196,10 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     [...chosen, ...picked].every((c) => affixPosition(c) !== affixPosition(affix));
   const factor = options.affixFactor;
   const triggerPool = affixPool(all, base.slot, "trigger");
-  const wanted = forced ? triggerPool.filter((a) => forced.includes(a.id)) : [];
-  if (wanted.length) chosen.push(...pickAffixes(wanted, base, 1, rng, () => true, factor));
   chosen.push(
     ...pickAffixes(affixPool(all, base.slot, "stat"), base, statCount, rng, allowed, factor),
   );
-  chosen.push(
-    ...pickAffixes(
-      triggerPool.filter((a) => !chosen.includes(a)),
-      base,
-      triggerCount - (wanted.length ? 1 : 0),
-      rng,
-      allowed,
-      factor,
-    ),
-  );
+  chosen.push(...pickAffixes(triggerPool, base, triggerCount, rng, allowed, factor));
   const rolls: AffixRoll[] = chosen.map((a) => ({
     affixId: a.id,
     quality: Number(rollQuality(itemLevel, rarity, rng).toFixed(4)),

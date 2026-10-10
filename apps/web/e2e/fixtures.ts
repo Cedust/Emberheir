@@ -32,7 +32,7 @@ export function saveAfterHarvestBoss(): string {
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
     },
-    wallet: { ...base.wallet, gold: 240, dust: 380, reforgeStones: 6, ascensionShards: 1 },
+    wallet: { ...base.wallet, acorns: 400, ash: 380, emberCoal: 6, phoenixFeathers: 1 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     stats: { fights: 16, wins: 15, deaths: 1, retreats: 0, bossKills: 1 },
     pendingPrestige: { actId: "ashen-fields", stage: 15, enemyName: "Gorrak, the Pit Brute" },
@@ -62,13 +62,19 @@ export function saveAfterAct1(): string {
   return serializeGame(state);
 }
 
-/** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Ash Runes in the pouch. */
+/** Back in the Camp after Act 2 with a done bounty that Eldrin has not paid yet. */
+export function saveBountyDone(): string {
+  const state = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({ ...state, bountyDone: { id: "elite-hunt", actId: "rotwood" } });
+}
+
+/** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Bark Runes in the pouch. */
 export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15 },
-    wallet: { ...base.wallet, gold: 400, runes: { ash: 3 } },
+    wallet: { ...base.wallet, acorns: 400, runes: { ash: 3 } },
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields"],
@@ -95,13 +101,13 @@ export function saveWithCodex(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 20 },
-    wallet: { ...base.wallet, dust: 400, kindling: 2 },
+    wallet: { ...base.wallet, ash: 400, emberCoal: 4 },
     inventory: [{ item: ring, x: 0, y: 0 }],
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     legacy: {
       ...base.legacy,
       prestige: 1,
-      codex: { conditions: { "on-crit": 2, "when-hit": 1 }, effects: { burn: 2, barrier: 3 } },
+      codex: { conditions: { "on-crit": 1, "when-hit": 1 }, effects: { burn: 1, barrier: 1 } },
     },
   };
   return serializeGame(state);
@@ -137,18 +143,16 @@ export function saveBossHoard(): string {
       rewards: {
         rank: "boss",
         xp: 400,
-        gold: 120,
-        dust: 40,
-        reforgeStones: 4,
-        ascensionShards: 1,
+        acorns: 120,
+        ash: 40,
+        emberCoal: 4,
+        phoenixFeathers: 1,
         runes: ["moss"],
         levelsGained: 0,
         items,
         picks: 2,
         itemPick: null,
-        salvagedDust: 0,
-        spoils: [],
-        spoilsPick: null,
+        salvagedAsh: 0,
         newTrophies: ["thornsong"],
       },
     },
@@ -156,7 +160,7 @@ export function saveBossHoard(): string {
   return serializeGame(state);
 }
 
-/** A save at the Ember Shrine after Stage 5 of the first run, items and spoils already taken. */
+/** A save at the Ember Shrine after Stage 5 of the first run, items already taken. */
 export function saveShrine(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const act = GAME_DATA.acts[0];
@@ -180,17 +184,15 @@ export function saveShrine(): string {
       rewards: {
         rank: "normal",
         xp: 40,
-        gold: 12,
-        dust: 4,
-        reforgeStones: 0,
-        ascensionShards: 0,
+        acorns: 12,
+        ash: 4,
+        emberCoal: 0,
+        phoenixFeathers: 0,
         runes: [],
         levelsGained: 0,
         items: [],
         itemPick: { kind: "salvageAll" },
-        salvagedDust: 0,
-        spoils: [],
-        spoilsPick: null,
+        salvagedAsh: 0,
         boonOffer: [
           { id: "crushing-blow", grade: "spark" },
           { id: "banked-coals", grade: "flame" },
@@ -292,7 +294,8 @@ export function saveDeepTree(): string {
       !(n.prestigeBranch && n.prestigeBranch !== "duelist"),
   );
   let learned: Record<string, number> = { ...base.hero.learned };
-  let budget = { skillPoints: 58, harvesterEmber: 3 };
+  // Keystones cost 3 Skill Points; Prestige 5 has three Keystone places.
+  let budget = { skillPoints: 67, keystones: 3 };
   for (let pass = 0; pass < 12; pass++) {
     for (const node of wanted) {
       if (node.id.endsWith("t3b") || node.id.endsWith("t2n")) continue;
@@ -307,7 +310,6 @@ export function saveDeepTree(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 75, learned, unspentSkillPoints: 6 },
-    wallet: { ...base.wallet, harvesterEmber: 1 },
     progress: { ...base.progress, actsCleared: [], trainerUnlocked: true, rotationSlots: 4 },
     legacy: { ...base.legacy, prestige: 5, branches },
   };
@@ -340,7 +342,7 @@ export function saveMastery(extra: readonly string[] = []): string {
   let state: GameState = {
     ...base,
     hero: { ...base.hero, level: 45 },
-    wallet: { ...base.wallet, gold: 500 },
+    wallet: { ...base.wallet, acorns: 500 },
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields", "rotwood", "ember-wastes"],
@@ -375,13 +377,13 @@ export function saveMastery(extra: readonly string[] = []): string {
   return serializeGame(state);
 }
 
-/** A fresh Warrior at the Camp with Skill Points and Gold: the web from its start (level-v2.md). */
+/** A fresh Warrior at the Camp with Skill Points and Acorns: the web from its start (level-v2.md). */
 export function saveWebTree(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   return serializeGame({
     ...base,
     hero: { ...base.hero, level: 12, unspentSkillPoints: 8 },
-    wallet: { ...base.wallet, gold: 5000 },
+    wallet: { ...base.wallet, acorns: 5000 },
     progress: { ...base.progress, trainerUnlocked: true },
   });
 }

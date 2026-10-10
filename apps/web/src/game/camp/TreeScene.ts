@@ -54,6 +54,11 @@ export interface TreeView {
   readonly labels: readonly TreeLabel[];
   /** Path preview of the hovered node: a learned node first, then the nodes it would cost. */
   readonly path?: readonly string[];
+  /**
+   * Keystone places as notches in the Ember sigil: `active` of `limit` taken, `max` places in
+   * the game (the rest stay dark until a Prestige opens them).
+   */
+  readonly keystones?: { readonly active: number; readonly limit: number; readonly max: number };
 }
 
 export interface TreeCallbacks {
@@ -118,6 +123,10 @@ export class TreeScene {
   /** The Ash Tree behind the web. */
   private readonly art: AshTreeArt = paintAshTree(UNIT);
   private readonly sigilLight = new Container();
+  /** The Keystone places: carved notches in the sigil, glowing once taken. */
+  private readonly keystoneMarks = new Graphics();
+  private readonly keystoneGlow = new Graphics();
+  private keystoneKey = "";
   private twigKey = "";
   private readonly linkGlow = new Graphics();
   private readonly links = new Graphics();
@@ -157,6 +166,8 @@ export class TreeScene {
       this.art.twigs,
       this.art.sigil,
       this.sigilLight,
+      this.keystoneMarks,
+      this.keystoneGlow,
       this.labelLayer,
       this.linkGlow,
       this.links,
@@ -180,6 +191,7 @@ export class TreeScene {
     bloomWrap.cacheAsTexture(true);
     this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
     this.sigilLight.blendMode = "add";
+    this.keystoneGlow.blendMode = "add";
     // The painted wood never changes: baked once, it costs one quad per frame instead of
     // hundreds of layered shapes (software GL in CI timed out on it).
     this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
@@ -245,12 +257,47 @@ export class TreeScene {
     const before = new Map(this.view.nodes.map((n) => [n.node.id, n]));
     this.view = view;
     this.rebuild();
+    this.drawKeystones(view.keystones);
     // A new point lights the node up.
     for (const n of view.nodes) {
       const old = before.get(n.node.id);
       if (!old) continue;
       const gained = n.ranks > old.ranks || (n.pending && !old.pending);
       if (gained) this.burstAt(n, n.pending ? PENDING : this.colorOf(n));
+    }
+  }
+
+  /**
+   * The Keystone places sit in the sigil's four diagonal notches, clockwise from the upper
+   * right: taken ones burn bright, open ones glow faintly, closed ones are only carved.
+   */
+  private drawKeystones(places: TreeView["keystones"]): void {
+    const key = places ? `${places.active}/${places.limit}/${places.max}` : "";
+    if (key === this.keystoneKey) return;
+    this.keystoneKey = key;
+    this.keystoneMarks.clear();
+    this.keystoneGlow.clear();
+    if (!places) return;
+    const at = this.art.sigilAt;
+    const r = 0.79 * UNIT;
+    const size = 0.11 * UNIT;
+    for (let k = 0; k < places.max; k++) {
+      const a = -Math.PI / 4 + (k * Math.PI) / 2;
+      const x = at.x + Math.cos(a) * r;
+      const y = at.y + Math.sin(a) * r;
+      const shape = diamond(size).map((v, i) => v + (i % 2 === 0 ? x : y));
+      const taken = k < places.active;
+      const open = k < places.limit;
+      this.keystoneMarks
+        .poly(shape)
+        .fill({ color: taken ? KEYSTONE : open ? 0x5a1e08 : 0x2a160c, alpha: 1 })
+        .stroke({ color: open ? EMBER : 0x1a0c06, width: 2, alpha: open ? 0.9 : 1 });
+      if (taken) {
+        this.keystoneGlow.circle(x, y, size * 2.2).fill({ color: KEYSTONE, alpha: 0.18 });
+        this.keystoneGlow.poly(shape).fill({ color: 0xffd08a, alpha: 0.55 });
+      } else if (open) {
+        this.keystoneGlow.poly(shape).stroke({ color: EMBER, width: 2, alpha: 0.45 });
+      }
     }
   }
 
@@ -726,6 +773,7 @@ export class TreeScene {
 
     // The carved Ember sigil glows like breathing coals.
     this.sigilLight.alpha = this.motion ? 0.6 + 0.4 * Math.sin(this.time * 1.6) ** 2 : 0.85;
+    this.keystoneGlow.alpha = this.motion ? 0.7 + 0.3 * Math.sin(this.time * 1.6 + 0.8) ** 2 : 1;
 
     // Available nodes breathe.
     const pulse = this.motion ? 0.82 + 0.18 * Math.sin(this.time * 3.2) : 1;

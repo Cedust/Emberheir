@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveWithRunes, seedSave } from "./fixtures";
 
-test("Marisha gambles a ring, Nyssa turns three Ash into Moss", async ({ page }) => {
+test("Marisha gambles a ring, Nyssa turns three Bark into Moss", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveWithRunes());
@@ -23,9 +23,9 @@ test("Marisha gambles a ring, Nyssa turns three Ash into Moss", async ({ page })
     .first()
     .click();
   const runes = page.getByRole("radiogroup", { name: "Runes" });
-  await runes.getByRole("radio", { name: /^Ash/ }).click();
+  await runes.getByRole("radio", { name: /^Bark/ }).click();
   await page.locator(".cost-bar").getByRole("button", { name: "Combine Runes" }).click();
   await expect(runes.getByRole("radio", { name: /^Moss/ })).toContainText("1/3");
-  await expect(runes.getByRole("radio", { name: /^Ash/ })).toContainText("0/3");
+  await expect(runes.getByRole("radio", { name: /^Bark/ })).toContainText("0/3");
   expect(errors).toEqual([]);
 });

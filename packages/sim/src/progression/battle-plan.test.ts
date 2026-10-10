@@ -14,7 +14,7 @@ import {
   heroSetup,
   newGame,
 } from "./game";
-import { TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
+import { TEST_GAME_DATA, TREE_SKILL, withOldCurrencies } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
 const act = (state: GameState, ...actions: GameAction[]) =>
@@ -26,7 +26,7 @@ function hero(prestige: number): GameState {
   const unlocked: GameState = {
     ...s,
     hero: { ...s.hero, unspentSkillPoints: 3 },
-    wallet: { ...s.wallet, gold: 500 },
+    wallet: { ...s.wallet, acorns: 500 },
     progress: {
       ...s.progress,
       trainerUnlocked: true,
@@ -127,7 +127,11 @@ describe("Battle Plan", () => {
 
   it("v6 save games get the Rotation Slots of the faster ladder", () => {
     const s = hero(2);
-    const v6 = { ...s, version: 6, progress: { ...s.progress, rotationSlots: 2 } };
+    const v6 = {
+      ...withOldCurrencies(s),
+      version: 6,
+      progress: { ...s.progress, rotationSlots: 2 },
+    };
     expect(deserializeGame(JSON.stringify(v6)).progress.rotationSlots).toBe(3);
   });
 
@@ -175,21 +179,21 @@ describe("Battle Plan", () => {
     ).toThrow(/skill/);
   });
 
-  it("the first Capstone is free, switching costs Gold, Echo follows its slot", () => {
+  it("the first Capstone is free, switching costs Acorns, Echo follows its slot", () => {
     let s = act(hero(10), { type: "setRotationSkill", slot: 2, skillId: TREE_SKILL.id });
     s = act(s, plan({ capstone: { id: "echo", slot: 2 } }));
-    expect(s.wallet.gold).toBe(500);
+    expect(s.wallet.acorns).toBe(500);
     // Slot 0 and 1 hold the Start Skill once (no duplicates), so slot 2 is the second fight slot.
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "echo", slot: 1 });
     s = act(s, plan({ capstone: { id: "crescendo", slot: 0 } }));
-    expect(s.wallet.gold).toBe(500 - PROGRESSION.capstoneChangeGold);
+    expect(s.wallet.acorns).toBe(500 - PROGRESSION.capstoneChangeAcorns);
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "crescendo" });
     expect(() => act(s, plan({}))).toThrow(/removed/);
   });
 
   it("v5 save games get an empty Battle Plan", () => {
     const s = hero(0);
-    const v5 = { ...s, version: 5, hero: { ...s.hero, plan: undefined } };
+    const v5 = { ...withOldCurrencies(s), version: 5, hero: { ...s.hero, plan: undefined } };
     expect(deserializeGame(JSON.stringify(v5))).toEqual(s);
   });
 });

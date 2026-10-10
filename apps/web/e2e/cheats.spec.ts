@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveAfterAct1, seedSave } from "./fixtures";
 
-test("Cheat Mode: level, Mastery Points, gold, an item and the next act", async ({ page }) => {
+test("Cheat Mode: level, Mastery Points, acorns, an item and the next act", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveAfterAct1());
@@ -23,7 +23,7 @@ test("Cheat Mode: level, Mastery Points, gold, an item and the next act", async 
 
   await panel.getByRole("tab", { name: "Currency" }).click();
   await panel.getByRole("button", { name: "+10,000" }).first().click();
-  await expect(panel.getByLabel("Gold")).not.toHaveValue("0");
+  await expect(panel.getByLabel("Acorns")).not.toHaveValue("0");
 
   await panel.getByRole("tab", { name: "Items" }).click();
   await panel.getByRole("radio", { name: "Legendary" }).click();

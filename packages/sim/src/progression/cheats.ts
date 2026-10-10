@@ -20,7 +20,7 @@ import { EMPTY_MASTERY, MASTERY, weaponRank } from "./weapon-mastery";
  * Cheat Mode (Timo 2026-10-08): testers jump to any point of the game without playing there.
  * Only the UI's cheat panel uses these; the game rules never do.
  */
-export type WalletCurrency = Exclude<keyof Wallet, "essences" | "runes">;
+export type WalletCurrency = Exclude<keyof Wallet, "runes">;
 
 export type Cheat =
   /**
@@ -30,7 +30,6 @@ export type Cheat =
   | { readonly kind: "level"; readonly level: number }
   /** Set a currency to an amount. */
   | { readonly kind: "currency"; readonly currency: WalletCurrency; readonly amount: number }
-  | { readonly kind: "essence"; readonly essenceId: string; readonly amount: number }
   | { readonly kind: "rune"; readonly runeId: string; readonly amount: number }
   | { readonly kind: "flasks"; readonly amount: number }
   /** Extra Weapon Mastery points on top of the Weapon Rank. */
@@ -76,14 +75,6 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
       return {
         ...state,
         wallet: { ...state.wallet, [cheat.currency]: whole(cheat.amount, 0) },
-      };
-    case "essence":
-      return {
-        ...state,
-        wallet: {
-          ...state.wallet,
-          essences: { ...state.wallet.essences, [cheat.essenceId]: whole(cheat.amount, 0) },
-        },
       };
     case "rune": {
       const amount = whole(cheat.amount, 0);

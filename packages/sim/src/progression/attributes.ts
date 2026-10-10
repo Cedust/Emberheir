@@ -14,12 +14,8 @@ export const ATTRIBUTE_RULES = {
   /** Free points at character creation, and the highest value an attribute may get there. */
   creationPoints: 6,
   creationMax: 7,
-  /** The Harvest (every Prestige): new points, points that may move (Rekindle) and Phoenix Ash. */
+  /** The Harvest (every Prestige): new points. Kaelen sets all of them anew for Acorns. */
   harvestPoints: 2,
-  rekindleMoves: 2,
-  harvestPhoenixAsh: 1,
-  /** Ashen Rebirth at Kaelen: a full redistribution for one Phoenix Ash. */
-  rebirthCost: 1,
 } as const;
 
 export type AttributePoints = Partial<Record<Attribute, number>>;
@@ -31,7 +27,7 @@ export function addAttributes(a: Attributes, b: AttributePoints): Attributes {
   return Object.fromEntries(ATTRIBUTES.map((k) => [k, a[k] + (b[k] ?? 0)])) as Attributes;
 }
 
-/** Points that left an attribute between `before` and `after` (Rekindle counts these). */
+/** Points that left an attribute between `before` and `after` (spending never moves points). */
 export function movedPoints(before: Attributes, after: Attributes): number {
   return ATTRIBUTES.reduce((sum, k) => sum + Math.max(0, before[k] - after[k]), 0);
 }
@@ -77,7 +73,7 @@ export function attributeProblem(
     /** Points available on top of `current`. */
     readonly points: number;
     readonly max?: number;
-    /** Points that may leave an attribute (Rekindle); default none. */
+    /** Points that may leave an attribute; default none. */
     readonly moves?: number;
   },
 ): string | null {

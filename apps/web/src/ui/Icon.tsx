@@ -70,6 +70,8 @@ export const ICONS = {
   shell: "M12 3a8 8 0 0 1 8 8v9H4v-9a8 8 0 0 1 8-8z M8 20v-6 M12 20v-9 M16 20v-6",
   wolf: "M4 4l4 5h8l4-5v9a8 8 0 0 1-16 0z M9 13h.01 M15 13h.01 M10 17l2 1 2-1",
   stun: "M12 12a1 1 0 0 1 1 1 2 2 0 0 1-2 2 3 3 0 0 1-3-3 4 4 0 0 1 4-4 5 5 0 0 1 5 5 6 6 0 0 1-6 6 M4 4l1.5 1.5 M20 4l-1.5 1.5 M12 2v2",
+  target:
+    "M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20z M12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z M12 11a1 1 0 1 0 0 2 1 1 0 0 0 0-2z",
 } as const;
 
 export type IconName = keyof typeof ICONS;
