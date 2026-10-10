@@ -19,7 +19,7 @@ const FINALE = {
   name: "The Last Ember",
   stages: 4,
   enemies: [],
-  spoilsStages: [],
+  shrineStages: [],
   boss: { ...TEST_BOSS, id: "core", name: "The Core" },
 };
 // The finale fights at the last run's Monster Level; harmless foes keep the test about the flow.
@@ -125,7 +125,6 @@ describe("The Last Ember", () => {
     );
     r = { ...r, run: { ...(r.run ?? fail("missing")), stage: 3 } };
     r = act(r, { type: "startStage" }, { type: "resolveFight" }, { type: "salvageAll" });
-    if (r.run?.rewards?.spoils.length) r = act(r, { type: "pickSpoils", index: 0 });
     if (r.run?.rewards?.boonOffer?.length) r = act(r, { type: "pickBoon", index: 0 });
     while (r.run?.rewards && !r.run.rewards.itemPick) r = act(r, { type: "salvageAll" });
     r = act(r, { type: "continue" });

@@ -169,9 +169,11 @@ export const PROGRESSION = {
   runeRanksPerActTier: 2,
   /** Each Rune rank drops this much less often than the one below it. */
   runeRankFalloff: 0.5,
-  /** Guaranteed Reforge Stones (min, max). */
+  /** Reforge Stones drop on their own like Runes: Elites and bosses always (min, max)... */
   eliteReforgeStones: [2, 3],
   bossReforgeStones: [4, 6],
+  /** ...normal enemies sometimes. */
+  normalReforgeStoneChance: 0.15,
 
   /** Salvage Dust for one item: by rarity, × Item Tier. */
   salvageDust: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
@@ -224,20 +226,19 @@ export const PROGRESSION = {
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
-  /** Spoils pick amounts (loot-rewards-v1.md section 4). */
-  spoils: { flaskCharges: 1, reforgeStones: 2, essences: 1 },
-
-  /** Ember Flask: heals a fraction of max life between stages, refilled in camp. */
+  /**
+   * Ember Flask: heals a fraction of max life between stages, refilled in camp. It holds this
+   * many charges, plus what the Belt's "Flask Charges" affix adds.
+   */
   flaskStartCharges: 3,
-  /** Spoils can push the flask above its start charges up to this many. */
-  flaskMaxCharges: 5,
   flaskHeal: 0.35,
 
   /**
-   * Every Prestige gives one Battle Plan upgrade (battle-plan.ts), a Prestige branch and one
-   * Harvester's Ember. Since Playtest 2 all items stay, so there are no Seals and no Dust bonus.
+   * Bounties from the Scout: a done bounty pays this many normal kills' worth of Gold at the act
+   * boss's level, Reforge Stones and one item of at least Rare. While "catch the Ember Thief" is
+   * open, the thief shows up this much more often.
    */
-  prestigeHarvesterEmber: 1,
+  bounty: { goldKills: 10, reforgeStones: 2, thiefBoost: 5 },
   /**
    * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
    * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
@@ -310,13 +311,9 @@ export const CRAFTING = {
   /** Temper (reroll one affix value) at Liora. */
   temperDust: 10,
   temperGold: 15,
-  /** Reforge (reroll all affixes) at Liora. */
+  /** Reforge (reroll all affixes) at Thoric. */
   reforgeStones: 1,
-  /** Imbue (replace one affix with the Essence's affix) at Liora. */
-  imbueEssences: 1,
-  /** Distill: Salvage Dust into one Reforge Stone at Liora. */
-  distillDust: 60,
-  /** Add Socket at Thoric: Gold plus Dust × the new Socket count. */
+  /** Add Socket at the Runesmith: Gold plus Dust × the new Socket count. */
   addSocketGold: 25,
   addSocketDust: 15,
   /** Nyssa: Socket a Rune / combine three into the next rank, Gold × rank. */
@@ -336,16 +333,9 @@ export const CRAFTING = {
 export const CODEX = {
   /** Trigger affixes whose Condition or Effect has its home in the fight drop this much more. */
   homeWeight: 4,
-  /** The Quarry part (marked at Old Nan) drops this much more on top. */
-  quarryWeight: 3,
-  /** After this many Elite or boss item picks without the Quarry part, the next one has it. */
-  quarryPity: 5,
   /** Kindled triggers roll at most this share of the range; only drops reach 100 %. */
   kindleMaxQuality: 0.7,
-  /** Kindle at Liora: Dust × the kindled tier plus Kindling. */
+  /** Kindle at Liora: Dust × the item's tier plus Reforge Stones. */
   kindleDustPerTier: 30,
-  kindleKindling: 1,
-  /** Kindling in the Spoils pick of Elites and bosses. */
-  eliteKindling: 1,
-  bossKindling: 2,
+  kindleReforgeStones: 2,
 } as const;

@@ -16,7 +16,13 @@ import { COMBAT } from "../combat/constants";
 import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import { ATTRIBUTES } from "../combat/types";
-import { type ResolvedEquipment, itemSlotFor, missingRequirements } from "../items/equipment";
+import {
+  type ResolvedEquipment,
+  itemFlaskCharges,
+  itemSlotFor,
+  missingRequirements,
+  requiredLevel,
+} from "../items/equipment";
 import {
   getBase,
   pickWeighted,
@@ -62,18 +68,15 @@ import {
   boonEffects,
   rollBoonOffer,
 } from "./boons";
-import { CODEX, type LootGate, PROGRESSION } from "./constants";
+import { type LootGate, PROGRESSION } from "./constants";
+import { type CodexState, EMPTY_CODEX, codexAffixFactor, learnFromItem } from "./codex";
 import {
-  type CodexPartKind,
-  type CodexState,
-  EMPTY_CODEX,
-  type QuarryMark,
-  codexAffixFactor,
-  codexMastery,
-  learnFromItem,
-  quarryAffixIds,
-  quarryFound,
-} from "./codex";
+  type BountyDefinition,
+  type BountyState,
+  bountyAfterFlask,
+  bountyAfterWin,
+  rollBounty,
+} from "./bounties";
 import { type HeroClass, classTitle, getClass } from "./classes";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
@@ -118,7 +121,10 @@ import {
   branchTier,
   forgetBlockReason,
   getNode,
+  keystoneLimit,
   keystoneRules,
+  learnBudget,
+  learnCost,
   learnNodes,
   startingNodes,
   treeBonuses,
@@ -136,7 +142,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -152,10 +158,8 @@ export interface ActData {
   readonly boss: EnemyDefinition;
   /** Nyssa (Runesmith) waits in this act; she joins after the first trip into it. */
   readonly runesmith?: boolean;
-  /** Stages with a fixed Spoils pick (5 and 10). */
-  readonly spoilsStages: readonly number[];
-  /** The act's Essence (Imbue currency) and the stat affix it imbues. */
-  readonly essence: { readonly id: string; readonly name: string; readonly affixId: string };
+  /** Stages with an Ember Shrine (5 and 10); Elites have one too. */
+  readonly shrineStages: readonly number[];
   /**
    * Act loot (gegner-bosse-v1.md section 9): affix weight multipliers by affix id, so each act
    * drops the answer to its own question more often.
@@ -193,6 +197,8 @@ export interface GameData {
   /** Stolen Fire Boons (Spielspaß Teil 1); no Shrines without them. */
   readonly boons?: readonly BoonDefinition[];
   readonly boonFamilies?: readonly BoonFamilyDefinition[];
+  /** The Scout's Bounties; none without them. */
+  readonly bounties?: readonly BountyDefinition[];
   /** The Ember Thief (runs away after `PROGRESSION.thiefFleeSeconds`); none without it. */
   readonly thief?: EnemyDefinition;
   /**
@@ -207,18 +213,10 @@ export interface Wallet {
   readonly gold: number;
   readonly dust: number;
   readonly reforgeStones: number;
-  /** Essences by id. */
-  readonly essences: Readonly<Record<string, number>>;
-  /** Pays for Keystones; one per win over the Ashen Harvester. */
-  readonly harvesterEmber: number;
   /** Upgrade (+1 Item Tier) at the Blacksmith. Bosses, sometimes Elites. */
   readonly ascensionShards: number;
   /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
   readonly runes: Readonly<Record<string, number>>;
-  /** Pays for Kindle at Liora; Elites and bosses give it in the Spoils pick. */
-  readonly kindling: number;
-  /** Pays for Ashen Rebirth at Kaelen (attribute-v1.md); one per Prestige. */
-  readonly phoenixAsh: number;
 }
 
 export interface HeroState {
@@ -264,16 +262,20 @@ export interface Encounter {
   readonly echo?: string;
 }
 
-export type SpoilsCard =
-  | { readonly kind: "flaskCharge"; readonly amount: number }
-  | { readonly kind: "reforgeStones"; readonly amount: number }
-  | { readonly kind: "essence"; readonly essenceId: string; readonly amount: number }
-  | { readonly kind: "kindling"; readonly amount: number };
-
 export type ItemPick =
   { readonly kind: "equip" | "take"; readonly index: number } | { readonly kind: "salvageAll" };
 
-/** Rewards of a won fight (loot-rewards-v1.md): automatic, item pick, maybe spoils pick. */
+/** What a done bounty paid; its item went to the Supply Wagon (or the inventory, or Dust). */
+export interface BountyReward {
+  readonly id: string;
+  readonly enemyId?: string;
+  readonly gold: number;
+  readonly reforgeStones: number;
+  readonly item: Item;
+  readonly to: "stash" | "inventory" | "salvaged";
+}
+
+/** Rewards of a won fight (loot-rewards-v1.md): automatic drops, the item pick, maybe a Boon. */
 export interface Rewards {
   readonly rank: EnemyRank;
   readonly xp: number;
@@ -302,12 +304,11 @@ export interface Rewards {
   readonly echo?: { readonly id: string; readonly stage: number };
   /** Dust from auto-salvaging the items that were not picked. */
   readonly salvagedDust: number;
-  /** Spoils pick, empty if this fight has none. */
-  readonly spoils: readonly SpoilsCard[];
-  readonly spoilsPick: number | null;
+  /** The Scout's bounty was done in this fight. */
+  readonly bounty?: BountyReward;
   /** What the Battle Plan did in this fight (missing in older saves). */
   readonly report?: FightReport;
-  /** Ember Shrine: 1 of these Boons (after Stage 5 and 10, Elites and Bosses). */
+  /** Ember Shrine: 1 of these Boons (after Stage 5 and 10 and Elites). */
   readonly boonOffer?: readonly BoonPick[];
   readonly boonPick?: number | null;
 }
@@ -325,6 +326,8 @@ export interface RunState {
   readonly encounter: Encounter | null;
   /** Set during "rewards". */
   readonly rewards: Rewards | null;
+  /** The Scout's bounty for this trip, if one was handed out. */
+  readonly bounty?: BountyState;
 }
 
 /** Shown once in the Camp after a run ends. */
@@ -343,13 +346,12 @@ export interface PrestigeRewards {
   readonly rotationSlots: number;
   /** The Battle Plan upgrade this Prestige unlocks (`BATTLE_PLAN_LADDER`). */
   readonly planUpgrade: string | null;
-  readonly harvesterEmber: number;
   /** The Harvest's Skill Points (level-v2.md section 7). */
   readonly skillPoints: number;
-  /** The Harvest: new Attribute Points, points that may move (Rekindle) and Phoenix Ash. */
+  /** The Harvest's new Attribute Points. */
   readonly attributePoints: number;
-  readonly rekindle: number;
-  readonly phoenixAsh: number;
+  /** Keystones that can be active at once after it (one more at Prestige 2, 4 and 6). */
+  readonly keystones: number;
   readonly levelCap: number;
   /** Acts the next run has (one more per Prestige, up to all of them). */
   readonly acts: number;
@@ -384,8 +386,6 @@ export interface LegacyState {
   readonly runesFound: readonly string[];
   /** Trigger Codex: Conditions and Effects learned from salvaged triggers. Permanent. */
   readonly codex: CodexState;
-  /** The Codex part marked at Old Nan, if any. */
-  readonly quarry: QuarryMark | null;
   /**
    * Prestige branch picks of the Skill Tree, one per Prestige. Permanent. A branch picked again
    * is deepened, so it appears once per tier (`branchTier`).
@@ -423,7 +423,10 @@ export interface GameState {
   readonly hero: HeroState;
   readonly wallet: Wallet;
   readonly inventory: readonly PlacedItem[];
-  /** Supply Wagon: only reachable in the Camp. */
+  /**
+   * Supply Wagon: only reachable in the Camp. Shared by every character: the UI keeps one stash
+   * for all save slots and puts it into the state it loads.
+   */
   readonly stash: readonly PlacedItem[];
   readonly flaskCharges: number;
   readonly progress: {
@@ -433,8 +436,6 @@ export interface GameState {
     /** Kaelen (Skill Tree, Battle Plan) joins after the first act boss. */
     readonly trainerUnlocked: boolean;
     readonly rotationSlots: number;
-    /** The Supply Wagon burned at the Prestige; it is repaired on the first return to Camp. */
-    readonly stashBurned: boolean;
     /** Nyssa (Runesmith) joined the caravan. Stays through every Prestige. */
     readonly runesmithUnlocked: boolean;
     /**
@@ -536,12 +537,8 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       gold: 0,
       dust: 0,
       reforgeStones: 0,
-      essences: {},
-      harvesterEmber: 0,
       ascensionShards: 0,
       runes: {},
-      kindling: 0,
-      phoenixAsh: 0,
     },
     inventory: [],
     stash: [],
@@ -551,7 +548,6 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       deathsInAct: 0,
       trainerUnlocked: false,
       rotationSlots: battlePlanUnlocks(0).rotationSlots,
-      stashBurned: false,
       runesmithUnlocked: false,
       waymarks: [],
     },
@@ -564,7 +560,6 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       runewords: [],
       runesFound: [],
       codex: EMPTY_CODEX,
-      quarry: null,
       branches: [],
       trophies: [],
       echoes: {},
@@ -723,11 +718,9 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
     prestige,
     rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
     planUpgrade: BATTLE_PLAN_LADDER[prestige - 1]?.name ?? null,
-    harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
     skillPoints: PROGRESSION.harvestSkillPoints,
     attributePoints: ATTRIBUTE_RULES.harvestPoints,
-    rekindle: ATTRIBUTE_RULES.rekindleMoves,
-    phoenixAsh: ATTRIBUTE_RULES.harvestPhoenixAsh,
+    keystones: keystoneLimit(prestige),
     levelCap: levelCap(prestige),
     acts: actsInRun(data, prestige).length,
     levelBand: levelBand(prestige),
@@ -1107,7 +1100,7 @@ export function slotsFor(item: Item, data: GameData): EquipmentSlot[] {
   return data.equipmentSlots.filter((s) => itemSlotFor(s) === itemSlot);
 }
 
-export type EquipBlockReason = "fight" | "camp" | "requirements" | "noSlot" | "noRoom";
+export type EquipBlockReason = "fight" | "camp" | "level" | "requirements" | "noSlot" | "noRoom";
 
 /**
  * Why an item cannot be equipped right now. The old item goes to the inventory and is never
@@ -1125,6 +1118,7 @@ export function equipBlockReason(
   if (preferred && !slotsFor(item, data).includes(preferred)) return "noSlot";
   const slot = targetSlot(item, data, state.hero.equipment, preferred);
   if (!slot) return "noSlot";
+  if (state.hero.level < requiredLevel(item)) return "level";
   if (missingRequirements(item, data.items, state.hero.attributes).length) return "requirements";
   const old = state.hero.equipment[slot];
   if (!old) return undefined;
@@ -1179,7 +1173,6 @@ export type GameAction =
       readonly slot?: EquipmentSlot;
     }
   | { readonly type: "salvageAll" }
-  | { readonly type: "pickSpoils"; readonly index: number }
   | { readonly type: "pickBoon"; readonly index: number }
   /** After the rewards: on to the next stage (or back to Camp after the boss). */
   | { readonly type: "continue" }
@@ -1195,8 +1188,6 @@ export type GameAction =
   | { readonly type: "discard"; readonly itemId: string }
   /** Drag & drop inside the inventory or the stash. */
   | { readonly type: "placeItem"; readonly itemId: string; readonly at: GridPosition }
-  /** Old Nan (Camp only): mark a known Codex part to hunt, or clear the mark. */
-  | { readonly type: "setQuarry"; readonly part: { kind: CodexPartKind; id: string } | null }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
   | { readonly type: "respecTree" }
@@ -1227,13 +1218,13 @@ export type GameAction =
       /** Prestige branch to unlock; required while branches are left. */
       readonly branchId?: string;
       /**
-       * The Harvest (attribute-v1.md): the own attributes afterwards, with the new points spent
-       * and up to `rekindle` points moved. Left out, the new points wait as unspent points.
+       * The Harvest (attribute-v1.md): the own attributes afterwards, with the new points spent.
+       * Left out, the new points wait as unspent points.
        */
       readonly attributes?: Attributes;
     }
-  /** Kaelen (Camp only): Ashen Rebirth, all points anew for one Phoenix Ash. */
-  | { readonly type: "rebirth"; readonly attributes: Attributes }
+  /** Kaelen (Camp only): every Attribute Point anew, for Gold like the trees. */
+  | { readonly type: "respecAttributes"; readonly attributes: Attributes }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -1255,12 +1246,10 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return salvageAll(state);
     case "pickBoon":
       return pickBoon(state, action.index);
-    case "pickSpoils":
-      return pickSpoils(state, action.index);
     case "continue":
       return continueRun(state, data);
     case "useFlask":
-      return useFlask(state);
+      return useFlask(state, data);
     case "allocateAttributes":
       return allocateAttributes(state, action.points);
     case "equip":
@@ -1273,8 +1262,6 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return discard(state, action.itemId);
     case "placeItem":
       return placeItem(state, data, action.itemId, action.at);
-    case "setQuarry":
-      return setQuarry(state, action.part);
     case "learnNodes":
       return learn(state, data, action.nodeIds);
     case "respecTree":
@@ -1299,8 +1286,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return setBattlePlan(state, data, action.plan);
     case "prestige":
       return doPrestige(state, data, action.branchId, action.attributes);
-    case "rebirth":
-      return rebirth(state, data, action.attributes);
+    case "respecAttributes":
+      return respecAttributes(state, data, action.attributes);
     case "dismissNotice":
       return { ...state, notice: null };
   }
@@ -1320,11 +1307,23 @@ export function requireCamp(state: GameState): void {
 
 function setOut(state: GameState, data: GameData, actId: string): GameState {
   requireCamp(state);
-  getAct(data, actId);
+  const act = getAct(data, actId);
   if (!actUnlocked(state, data, actId)) fail("The road there is still closed");
+  // The Scout hands out a bounty for this trip.
+  const [rng, next] = nextRng(state);
+  const bounty = data.bounties?.length
+    ? rollBounty(
+        data.bounties,
+        act.number,
+        act.enemies.map((e) => e.id),
+        rng,
+      )
+    : undefined;
   return {
-    ...state,
+    ...(bounty ? next : state),
     notice: null,
+    // The Flask leaves the Camp full, as much as the worn Belt allows.
+    flaskCharges: flaskCapacity(state, data),
     run: {
       actId,
       stage: 1,
@@ -1332,8 +1331,14 @@ function setOut(state: GameState, data: GameData, actId: string): GameState {
       phase: "intermission",
       encounter: null,
       rewards: null,
+      ...(bounty ? { bounty } : {}),
     },
   };
+}
+
+/** The definition of a bounty by id. */
+export function getBounty(data: GameData, id: string): BountyDefinition {
+  return data.bounties?.find((b) => b.id === id) ?? fail(`Unknown bounty "${id}"`);
 }
 
 function enterFinale(state: GameState, data: GameData): GameState {
@@ -1343,7 +1348,7 @@ function enterFinale(state: GameState, data: GameData): GameState {
     ...state,
     notice: null,
     boons: EMPTY_BOONS,
-    flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
+    flaskCharges: flaskCapacity(state, data),
     legacy: { ...state.legacy, finaleAttempts: (state.legacy.finaleAttempts ?? 0) + 1 },
     run: {
       actId: data.finale.id,
@@ -1405,10 +1410,13 @@ function startStage(state: GameState, data: GameData): GameState {
     const enemy = act.enemies[rng.int(0, act.enemies.length - 1)];
     if (!enemy) return fail(`Act ${act.id} has no enemies`);
     const mods: string[] = [];
+    // An open "catch the Ember Thief" bounty: the Scout saw it nearby.
+    const hunted =
+      run.bounty?.status === "open" && getBounty(data, run.bounty.id).goal.kind === "thief";
     const thief =
       data.thief !== undefined &&
       act.number >= PROGRESSION.thiefFromAct &&
-      rng.chance(PROGRESSION.thiefChance);
+      rng.chance(PROGRESSION.thiefChance * (hunted ? PROGRESSION.bounty.thiefBoost : 1));
     if (!thief && rng.chance(eliteChance(act.number, run.stage))) {
       const pool = [...data.eliteModifiers];
       for (let i = 0; i < eliteModifierCount(level) && pool.length; i++) {
@@ -1429,7 +1437,7 @@ function startStage(state: GameState, data: GameData): GameState {
   return { ...next, run: { ...run, phase: "fight", encounter } };
 }
 
-/** Back to the Camp: flask refilled, life full, act progress gone, Supply Wagon repaired. */
+/** Back to the Camp: flask refilled, life full, act progress and the trip's bounty gone. */
 function toCamp(state: GameState, data: GameData, notice: Notice | null): GameState {
   const fromRunesmithAct = state.run ? getAct(data, state.run.actId).runesmith === true : false;
   // Boons of the current act burn on death and Retreat; a cleared act keeps them.
@@ -1440,10 +1448,9 @@ function toCamp(state: GameState, data: GameData, notice: Notice | null): GameSt
     run: null,
     notice,
     boons: { kept: lost ? kept : [...kept, ...fresh], fresh: [] },
-    flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
+    flaskCharges: flaskCapacity(state, data),
     progress: {
       ...state.progress,
-      stashBurned: false,
       runesmithUnlocked: state.progress.runesmithUnlocked || fromRunesmithAct,
     },
   };
@@ -1485,7 +1492,9 @@ function resolveFight(state: GameState, data: GameData): GameState {
       ? rng.int(...PROGRESSION.bossReforgeStones)
       : rank === "elite"
         ? rng.int(...PROGRESSION.eliteReforgeStones)
-        : 0;
+        : rng.chance(PROGRESSION.normalReforgeStoneChance)
+          ? 1
+          : 0;
   const shards =
     rank === "boss"
       ? PROGRESSION.bossAscensionShards
@@ -1496,16 +1505,11 @@ function resolveFight(state: GameState, data: GameData): GameState {
   const waymark =
     !state.progress.waymarks.includes(waymarkKey(act.id, run.stage)) &&
     waymarkStages(act).includes(run.stage);
-  const quarry = state.legacy.quarry;
   const fight = {
     archetype: encounter.boss ? "boss" : encounterEnemy(encounter, act, data).archetype,
     actId: act.id,
     boss: encounter.boss,
   };
-  const forceQuarry =
-    quarry !== null && rank !== "normal" && quarry.misses + 1 >= CODEX.quarryPity
-      ? quarryAffixIds(data.items, quarry)
-      : undefined;
   const items = rollItemChoices(
     data,
     act.id,
@@ -1514,38 +1518,18 @@ function resolveFight(state: GameState, data: GameData): GameState {
     state.progress.deathsInAct,
     state.legacy.prestige,
     rng,
-    actAffixFactor(act, codexAffixFactor(data.items, fight, quarry)),
-    forceQuarry,
+    actAffixFactor(act, codexAffixFactor(data.items, fight)),
   );
-  const nextQuarry: QuarryMark | null =
-    quarry && rank !== "normal"
-      ? { ...quarry, misses: quarryFound(items, data.items, quarry) ? 0 : quarry.misses + 1 }
-      : quarry;
   const runes = rollRuneDrops(data, rank, act.number + state.legacy.prestige, rng);
   const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
   const newTrophies = [...new Set(found)].filter((id) => !state.legacy.trophies.includes(id));
-  const spoils: SpoilsCard[] =
-    rank !== "normal" || act.spoilsStages.includes(run.stage)
-      ? [
-          { kind: "flaskCharge", amount: PROGRESSION.spoils.flaskCharges },
-          // Elites and bosses already drop Reforge Stones; their Spoils offer Kindling instead.
-          rank === "normal"
-            ? { kind: "reforgeStones", amount: PROGRESSION.spoils.reforgeStones }
-            : {
-                kind: "kindling",
-                amount: rank === "boss" ? CODEX.bossKindling : CODEX.eliteKindling,
-              },
-          { kind: "essence", essenceId: act.essence.id, amount: PROGRESSION.spoils.essences },
-        ]
-      : [];
-
-  // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10, Elites and Bosses of an act this run
-  // has not cleared yet; Revisit Act and the harvest boss give none.
+  // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10 and Elites of an act this run has not
+  // cleared yet. Bosses have none: their moment belongs to the Hoard and the Echo.
   const shrine =
     (data.boons?.length ?? 0) > 0 &&
     !state.progress.actsCleared.includes(act.id) &&
-    !(rank === "boss" && isHarvestAct(data, act.id, state.legacy.prestige)) &&
-    (rank !== "normal" || act.spoilsStages.includes(run.stage));
+    rank !== "boss" &&
+    (rank === "elite" || act.shrineStages.includes(run.stage));
   // The act boss leaves its Echo, one stage stronger once per run (Weapon Mastery).
   const echoDef = rank === "boss" ? data.echoes.find((e) => e.actId === act.id) : undefined;
   const echoBefore = echoDef ? state.legacy.echoes[echoDef.id] : undefined;
@@ -1570,7 +1554,22 @@ function resolveFight(state: GameState, data: GameData): GameState {
       )
     : [];
 
-  return {
+  // The Scout's bounty: a win may finish it; then it pays out at once.
+  const lifeFraction = result.final.hero.life / result.final.hero.maxLife;
+  const bounty = run.bounty
+    ? bountyAfterWin(run.bounty, getBounty(data, run.bounty.id).goal, {
+        rank,
+        enemyId: encounter.enemyId,
+        thiefCaught: caught,
+        lifeFraction,
+      })
+    : undefined;
+  const paid =
+    bounty?.status === "done" && run.bounty?.status === "open"
+      ? bountyReward(state, data, act, bounty, rng)
+      : undefined;
+
+  const won: GameState = {
     ...next,
     stats: {
       ...stats,
@@ -1606,7 +1605,6 @@ function resolveFight(state: GameState, data: GameData): GameState {
     legacy: {
       ...state.legacy,
       runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
-      quarry: nextQuarry,
       trophies: [...state.legacy.trophies, ...newTrophies],
       ...(echo
         ? {
@@ -1620,7 +1618,8 @@ function resolveFight(state: GameState, data: GameData): GameState {
     run: {
       ...run,
       phase: "rewards",
-      lifeFraction: result.final.hero.life / result.final.hero.maxLife,
+      lifeFraction,
+      ...(bounty ? { bounty } : {}),
       rewards: {
         rank,
         xp,
@@ -1641,10 +1640,66 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ...(echo ? { echo } : {}),
         itemPick: null,
         salvagedDust: 0,
-        spoils,
-        spoilsPick: null,
       },
     },
+  };
+  return paid ? payBounty(won, data, paid) : won;
+}
+
+/**
+ * What a done bounty pays: Gold worth `bounty.goldKills` normal kills at the act boss's level,
+ * Reforge Stones and one item of at least Rare (inside the run's Elite window).
+ */
+function bountyReward(
+  state: GameState,
+  data: GameData,
+  act: ActData,
+  bounty: BountyState,
+  rng: Rng,
+): Omit<BountyReward, "to"> {
+  const level = stageMonsterLevel(data, act, act.stages, state.legacy.prestige);
+  const window = lootGate(state.legacy.prestige).elite;
+  const top = RARITIES.indexOf(window.max);
+  const weights = { ...PROGRESSION.rarityWeights } as Record<Rarity, number>;
+  for (const r of RARITIES) {
+    const i = RARITIES.indexOf(r);
+    if (i < RARITIES.indexOf("rare") || i > Math.max(top, RARITIES.indexOf("rare"))) weights[r] = 0;
+  }
+  if (RARITIES.every((r) => weights[r] === 0)) weights.rare = 1;
+  const baseId = data.lootBases[rng.int(0, data.lootBases.length - 1)] ?? fail("No loot bases");
+  const item = rollItem(
+    data.items,
+    { baseId, itemLevel: level, rarity: rollRarity(rng, weights) },
+    rng,
+  );
+  return {
+    id: bounty.id,
+    ...(bounty.enemyId ? { enemyId: bounty.enemyId } : {}),
+    gold: autoRewards(level, "normal").gold * PROGRESSION.bounty.goldKills,
+    reforgeStones: PROGRESSION.bounty.reforgeStones,
+    item,
+  };
+}
+
+/** Pays a bounty into the state: the Scout brings the item to the Supply Wagon. */
+function payBounty(state: GameState, data: GameData, reward: Omit<BountyReward, "to">): GameState {
+  const run = state.run ?? fail("Not in a run");
+  const rewards = run.rewards ?? fail("No rewards");
+  const wallet = {
+    ...state.wallet,
+    gold: state.wallet.gold + reward.gold,
+    reforgeStones: state.wallet.reforgeStones + reward.reforgeStones,
+  };
+  const stash = addToGrid(state.stash, reward.item, data.items, STASH_SIZE);
+  const inventory = stash ? null : addToGrid(state.inventory, reward.item, data.items);
+  const to: BountyReward["to"] = stash ? "stash" : inventory ? "inventory" : "salvaged";
+  return {
+    ...state,
+    ...(stash ? { stash } : {}),
+    ...(inventory ? { inventory } : {}),
+    wallet:
+      to === "salvaged" ? { ...wallet, dust: wallet.dust + salvageValue(reward.item) } : wallet,
+    run: { ...run, rewards: { ...rewards, bounty: { ...reward, to } } },
   };
 }
 
@@ -1712,8 +1767,6 @@ function resolveFinaleFight(
         items: [],
         itemPick: { kind: "salvageAll" },
         salvagedDust: 0,
-        spoils: [],
-        spoilsPick: null,
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
       },
     },
@@ -1764,7 +1817,6 @@ function rollItemChoices(
   prestige: number,
   rng: Rng,
   affixFactor?: (affix: AffixDefinition) => number,
-  forceTrigger?: readonly string[],
 ): Item[] {
   const count =
     rank === "boss"
@@ -1822,18 +1874,12 @@ function rollItemChoices(
         continue;
       }
     }
-    // Quarry Pity: the first card carries the marked part (on a base that can have it).
-    const forced =
-      i === 0 && forceTrigger?.length
-        ? bases.filter((id) => fitsAnyAffix(data.items, id, forceTrigger))
-        : [];
-    const basePool = forced.length ? forced : bases;
-    const baseId = basePool[rng.int(0, basePool.length - 1)];
+    const baseId = bases[rng.int(0, bases.length - 1)];
     if (!baseId) break;
     const rolled = i === legendaryCard ? "legendary" : rollRarity(rng, weights);
     const atLeast = (r: Rarity, min: Rarity) =>
       RARITIES.indexOf(r) < RARITIES.indexOf(min) ? min : r;
-    let rarity = forced.length || i === rareCard ? atLeast(rolled, "rare") : rolled;
+    let rarity = i === rareCard ? atLeast(rolled, "rare") : rolled;
     if (sure && i === sureCard) rarity = atLeast(rarity, sure);
     items.push(
       rollItem(
@@ -1843,7 +1889,6 @@ function rollItemChoices(
           itemLevel: encounter.level,
           rarity,
           ...(affixFactor ? { affixFactor } : {}),
-          ...(forced.length && forceTrigger ? { forceTrigger } : {}),
         },
         rng,
       ),
@@ -1860,11 +1905,6 @@ function actAffixFactor(
 ): (affix: AffixDefinition) => number {
   const favored = act.favoredAffixes ?? {};
   return (affix) => codex(affix) * (favored[affix.id] ?? 1);
-}
-
-function fitsAnyAffix(catalog: ItemCatalog, baseId: string, affixIds: readonly string[]): boolean {
-  const slot = getBase(catalog, baseId).slot;
-  return affixIds.some((id) => catalog.affixes.get(id)?.slots.includes(slot));
 }
 
 export function addRunes(
@@ -2011,38 +2051,9 @@ function pickBoon(state: GameState, index: number): GameState {
   };
 }
 
-function pickSpoils(state: GameState, index: number): GameState {
-  const { run, rewards } = requireRewards(state);
-  if (rewards.spoilsPick !== null) return fail("Spoils already picked");
-  const card = rewards.spoils[index] ?? fail("No such spoils card");
-  let next: GameState;
-  if (card.kind === "flaskCharge") {
-    next = {
-      ...state,
-      flaskCharges: Math.min(PROGRESSION.flaskMaxCharges, state.flaskCharges + card.amount),
-    };
-  } else if (card.kind === "reforgeStones") {
-    next = {
-      ...state,
-      wallet: { ...state.wallet, reforgeStones: state.wallet.reforgeStones + card.amount },
-    };
-  } else if (card.kind === "kindling") {
-    next = { ...state, wallet: { ...state.wallet, kindling: state.wallet.kindling + card.amount } };
-  } else {
-    const essences = { ...state.wallet.essences };
-    essences[card.essenceId] = (essences[card.essenceId] ?? 0) + card.amount;
-    next = { ...state, wallet: { ...state.wallet, essences } };
-  }
-  return { ...next, run: { ...run, rewards: { ...rewards, spoilsPick: index } } };
-}
-
-/** True once the item pick (and the spoils pick, if any) is done. */
+/** True once the item pick (and the Boon, if a Shrine came up) is done. */
 export function rewardsDone(rewards: Rewards): boolean {
-  return (
-    rewards.itemPick !== null &&
-    (rewards.spoils.length === 0 || rewards.spoilsPick !== null) &&
-    (!rewards.boonOffer?.length || rewards.boonPick != null)
-  );
+  return rewards.itemPick !== null && (!rewards.boonOffer?.length || rewards.boonPick != null);
 }
 
 function continueRun(state: GameState, data: GameData): GameState {
@@ -2082,15 +2093,28 @@ function continueRun(state: GameState, data: GameData): GameState {
   };
 }
 
-function useFlask(state: GameState): GameState {
+function useFlask(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission", "rewards");
   if (state.flaskCharges <= 0) return fail("The Ember Flask is empty");
   if (run.lifeFraction >= 1) return fail("Life is already full");
+  const bounty = run.bounty
+    ? bountyAfterFlask(run.bounty, getBounty(data, run.bounty.id).goal)
+    : undefined;
   return {
     ...state,
     flaskCharges: state.flaskCharges - 1,
-    run: { ...run, lifeFraction: Math.min(1, run.lifeFraction + PROGRESSION.flaskHeal) },
+    run: {
+      ...run,
+      lifeFraction: Math.min(1, run.lifeFraction + PROGRESSION.flaskHeal),
+      ...(bounty ? { bounty } : {}),
+    },
   };
+}
+
+/** Charges the Ember Flask holds: its start charges plus the worn Belt's "Flask Charges". */
+export function flaskCapacity(state: GameState, data: GameData): number {
+  const belt = state.hero.equipment.belt;
+  return PROGRESSION.flaskStartCharges + (belt ? itemFlaskCharges(belt, data.items) : 0);
 }
 
 function allocateAttributes(state: GameState, points: Partial<Attributes>): GameState {
@@ -2146,7 +2170,7 @@ function equipFromInventory(
   };
 }
 
-export type MoveBlockReason = "camp" | "burned" | "noRoom";
+export type MoveBlockReason = "camp" | "noRoom";
 
 /** Why an item cannot move between inventory and stash right now. */
 export function moveBlockReason(
@@ -2156,7 +2180,6 @@ export function moveBlockReason(
   to: "inventory" | "stash",
 ): MoveBlockReason | undefined {
   if (state.run) return "camp";
-  if (to === "stash" && state.progress.stashBurned) return "burned";
   const source = to === "stash" ? state.inventory : state.stash;
   const placed = source.find((p) => p.item.id === itemId);
   if (!placed) return undefined;
@@ -2173,7 +2196,6 @@ function moveItem(
   at?: GridPosition,
 ): GameState {
   requireCamp(state);
-  if (to === "stash" && state.progress.stashBurned) return fail("The Supply Wagon burned down");
   const source = to === "stash" ? state.inventory : state.stash;
   const placed =
     source.find((p) => p.item.id === itemId) ??
@@ -2249,17 +2271,6 @@ function placeItem(state: GameState, data: GameData, itemId: string, at: GridPos
   return inventory ? { ...state, inventory } : fail("No room there");
 }
 
-function setQuarry(
-  state: GameState,
-  part: { readonly kind: CodexPartKind; readonly id: string } | null,
-): GameState {
-  requireCamp(state);
-  if (part && codexMastery(state.legacy.codex, part.kind, part.id) === 0) {
-    return fail("Only known Codex parts can be the Quarry");
-  }
-  return { ...state, legacy: { ...state.legacy, quarry: part ? { ...part, misses: 0 } : null } };
-}
-
 /** Kaelen travels with the caravan from the first Camp on; the Skill Tree is Camp-only. */
 export function requireTrainer(state: GameState): void {
   requireCamp(state);
@@ -2279,7 +2290,12 @@ function learn(state: GameState, data: GameData, nodeIds: readonly string[]): Ga
       data.skillTree,
       state.hero.learned,
       nodeIds,
-      { skillPoints: state.hero.unspentSkillPoints, harvesterEmber: state.wallet.harvesterEmber },
+      learnBudget(
+        data.skillTree,
+        state.hero.learned,
+        state.hero.unspentSkillPoints,
+        state.legacy.prestige,
+      ),
       state.legacy.branches,
     );
   } catch (e) {
@@ -2292,29 +2308,21 @@ function learn(state: GameState, data: GameData, nodeIds: readonly string[]): Ga
       learned: result.learned,
       unspentSkillPoints: result.budget.skillPoints,
     },
-    wallet: { ...state.wallet, harvesterEmber: result.budget.harvesterEmber },
   };
 }
 
 /**
- * Skill Points and Harvester's Ember spent in the tree. The start node is free: the tree's shared
- * one, or the class's own (`classId`).
+ * Skill Points spent in the tree. The start node is free: the tree's shared one, or the class's
+ * own (`classId`).
  */
-export function spentInTree(
-  data: GameData,
-  learned: LearnedNodes,
-  classId?: string,
-): { readonly skillPoints: number; readonly harvesterEmber: number } {
+export function spentInTree(data: GameData, learned: LearnedNodes, classId?: string): number {
   let skillPoints = 0;
-  let harvesterEmber = 0;
   const own = classId ? data.skillTree.classStarts?.[classId] : undefined;
   for (const node of data.skillTree.nodes) {
     if (node.id === data.skillTree.startNodeId || node.id === own) continue;
-    const ranks = learned[node.id] ?? 0;
-    if (node.kind === "keystone") harvesterEmber += ranks;
-    else skillPoints += ranks;
+    skillPoints += (learned[node.id] ?? 0) * learnCost(node).skillPoints;
   }
-  return { skillPoints, harvesterEmber };
+  return skillPoints;
 }
 
 /**
@@ -2333,7 +2341,7 @@ export function forgetGold(prestige: number): number {
 function respecTree(state: GameState, data: GameData): GameState {
   requireTrainer(state);
   const spent = spentInTree(data, state.hero.learned, state.hero.classId);
-  if (spent.skillPoints + spent.harvesterEmber === 0) return fail("Nothing to respec");
+  if (spent === 0) return fail("Nothing to respec");
   const price = respecGold(state.legacy.prestige);
   if (state.wallet.gold < price) return fail("Not enough Gold");
   return {
@@ -2341,19 +2349,15 @@ function respecTree(state: GameState, data: GameData): GameState {
     hero: {
       ...state.hero,
       learned: startingNodes(data.skillTree, state.hero.classId),
-      unspentSkillPoints: state.hero.unspentSkillPoints + spent.skillPoints,
+      unspentSkillPoints: state.hero.unspentSkillPoints + spent,
       // Tree skills are gone, so the Battle Plan falls back to the Start Skill.
       rotation: state.hero.rotation.map(() => null),
     },
-    wallet: {
-      ...state.wallet,
-      gold: state.wallet.gold - price,
-      harvesterEmber: state.wallet.harvesterEmber + spent.harvesterEmber,
-    },
+    wallet: { ...state.wallet, gold: state.wallet.gold - price },
   };
 }
 
-/** Kaelen: forget one rank of one node for a little Gold (its point or Ember comes back). */
+/** Kaelen: forget one rank of one node for a little Gold (its points come back). */
 function forgetNode(state: GameState, data: GameData, nodeId: string): GameState {
   requireTrainer(state);
   const tree = data.skillTree;
@@ -2367,19 +2371,14 @@ function forgetNode(state: GameState, data: GameData, nodeId: string): GameState
   const learned = Object.fromEntries(
     Object.entries(state.hero.learned).filter(([id]) => id !== nodeId),
   );
-  const keystone = node.kind === "keystone";
   return {
     ...state,
     hero: {
       ...state.hero,
       learned: ranks > 0 ? { ...learned, [nodeId]: ranks } : learned,
-      unspentSkillPoints: state.hero.unspentSkillPoints + (keystone ? 0 : 1),
+      unspentSkillPoints: state.hero.unspentSkillPoints + learnCost(node).skillPoints,
     },
-    wallet: {
-      ...state.wallet,
-      gold: state.wallet.gold - price,
-      harvesterEmber: state.wallet.harvesterEmber + (keystone ? 1 : 0),
-    },
+    wallet: { ...state.wallet, gold: state.wallet.gold - price },
   };
 }
 
@@ -2582,7 +2581,7 @@ function doPrestige(
     enemyName: pending.enemyName,
   };
   const final = prestige >= PROGRESSION.finalPrestige;
-  // The Harvest: new points, and a few may move (Rekindle).
+  // The Harvest: new points to spend now or later.
   const { hero } = state;
   const points = hero.unspentAttributePoints + rewards.attributePoints;
   const next = attributes ?? hero.attributes;
@@ -2590,7 +2589,6 @@ function doPrestige(
     floor: heroClassOf(state, data).startingAttributes,
     current: hero.attributes,
     points,
-    moves: rewards.rekindle,
   });
   if (problem) fail(problem);
   return {
@@ -2601,12 +2599,7 @@ function doPrestige(
       unspentAttributePoints: points - (sumAttributes(next) - sumAttributes(hero.attributes)),
       unspentSkillPoints: hero.unspentSkillPoints + rewards.skillPoints,
     },
-    wallet: {
-      ...state.wallet,
-      harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
-      phoenixAsh: (state.wallet.phoenixAsh ?? 0) + rewards.phoenixAsh,
-    },
-    flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
+    flaskCharges: flaskCapacity(state, data),
     // The final Prestige (prestige-counting) keeps the cleared world for The Last Ember.
     progress: final
       ? {
@@ -2619,7 +2612,6 @@ function doPrestige(
           deathsInAct: 0,
           trainerUnlocked: true,
           rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
-          stashBurned: false,
           waymarks: [],
         },
     run: null,
@@ -2637,12 +2629,19 @@ function doPrestige(
 }
 
 /**
- * Ashen Rebirth at Kaelen (attribute-v1.md section 7): every point above the Class Array comes
- * back and is set anew, for one Phoenix Ash.
+ * Gold for setting all Attribute Points anew at Kaelen: the same as a full Skill Tree respec, so
+ * every respec follows one rule (entschlackung-v1.md).
  */
-function rebirth(state: GameState, data: GameData, attributes: Attributes): GameState {
+export const attributeRespecGold = (prestige: number) => respecGold(prestige);
+
+/**
+ * Attribute respec at Kaelen: every point above the Class Array comes back and is set anew,
+ * for Gold.
+ */
+function respecAttributes(state: GameState, data: GameData, attributes: Attributes): GameState {
   requireTrainer(state);
-  if ((state.wallet.phoenixAsh ?? 0) < ATTRIBUTE_RULES.rebirthCost) fail("No Phoenix Ash");
+  const price = attributeRespecGold(state.legacy.prestige);
+  if (state.wallet.gold < price) fail("Not enough Gold");
   const floor = heroClassOf(state, data).startingAttributes;
   const { hero } = state;
   const points =
@@ -2656,10 +2655,7 @@ function rebirth(state: GameState, data: GameData, attributes: Attributes): Game
       attributes,
       unspentAttributePoints: points - (sumAttributes(attributes) - sumAttributes(floor)),
     },
-    wallet: {
-      ...state.wallet,
-      phoenixAsh: state.wallet.phoenixAsh - ATTRIBUTE_RULES.rebirthCost,
-    },
+    wallet: { ...state.wallet, gold: state.wallet.gold - price },
   };
 }
 
@@ -2688,6 +2684,7 @@ export function deserializeGame(json: string, data?: GameData): GameState {
   if (state.version === 9) state = migrateV9(state, data);
   if (state.version === 10) state = migrateV10(state, data);
   if (state.version === 11) state = migrateV11(state, data);
+  if (state.version === 12) state = migrateV12(state, data);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -2729,13 +2726,11 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
       runewords: [],
       runesFound: [],
       codex: EMPTY_CODEX,
-      quarry: null,
       branches: [],
       trophies: [],
       echoes: {},
     },
     pendingPrestige: null,
-    ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
   };
 }
 
@@ -2754,13 +2749,12 @@ function migrateV3(state: Partial<GameState>): Partial<GameState> {
   };
 }
 
-/** v4 (M8) → v5 (prestige rework): Trigger Codex, Quarry and Kindling are new. */
+/** v4 (M8) → v5 (prestige rework): the Trigger Codex is new. */
 function migrateV4(state: Partial<GameState>): Partial<GameState> {
   return {
     ...state,
     version: 5,
-    ...(state.wallet ? { wallet: { ...state.wallet, kindling: 0 } } : {}),
-    ...(state.legacy ? { legacy: { ...state.legacy, codex: EMPTY_CODEX, quarry: null } } : {}),
+    ...(state.legacy ? { legacy: { ...state.legacy, codex: EMPTY_CODEX } } : {}),
   };
 }
 
@@ -2833,7 +2827,6 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
           },
         }
       : {}),
-    ...(state.progress ? { progress: { ...state.progress, stashBurned: false } } : {}),
   };
   const hero = state.hero;
   const cap = OLD_LEVEL_CAPS[Math.min(legacy?.prestige ?? 0, OLD_LEVEL_CAPS.length - 1)] ?? 140;
@@ -2852,14 +2845,6 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
       unspentSkillPoints: cap,
       rotation: hero.rotation.map(() => null),
     },
-    ...(state.wallet
-      ? {
-          wallet: {
-            ...state.wallet,
-            harvesterEmber: (legacy?.prestige ?? 0) * PROGRESSION.prestigeHarvesterEmber,
-          },
-        }
-      : {}),
   };
 }
 
@@ -2965,7 +2950,7 @@ function migrateV9(state: Partial<GameState>, data: GameData | undefined): Parti
 /**
  * v10 → v11 (attribute-v1.md): attributes on the 1–10 scale. The hero goes back to the Class
  * Array and gets the creation's free points plus the Harvest's points of every Prestige so far to
- * spend again, and one Phoenix Ash per Prestige. Gear that no longer fits stays equipped but
+ * spend again. Gear that no longer fits stays equipped but
  * inactive until the points are set.
  */
 function migrateV10(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
@@ -2986,9 +2971,6 @@ function migrateV10(state: Partial<GameState>, data: GameData | undefined): Part
               ATTRIBUTE_RULES.creationPoints + prestige * ATTRIBUTE_RULES.harvestPoints,
           },
         }
-      : {}),
-    ...(state.wallet
-      ? { wallet: { ...state.wallet, phoenixAsh: prestige * ATTRIBUTE_RULES.harvestPhoenixAsh } }
       : {}),
   };
 }
@@ -3015,7 +2997,7 @@ function rescaleLevel(level: number): number {
 /**
  * v11 → v12 (level-v2.md section 10): Max Level 100 and Skill Points from Waymarks. The level
  * moves to the new scale; the Skill Tree (a new web) starts over with every point the hero has
- * earned so far and all Harvester's Ember back; the Weapon Mastery is reset only if its Rank fell.
+ * earned so far back; the Weapon Mastery is reset only if its Rank fell.
  */
 function migrateV11(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
   const hero = state.hero;
@@ -3060,9 +3042,51 @@ function migrateV11(state: Partial<GameState>, data: GameData | undefined): Part
             ...(hero.mastery.bonusPoints ? { bonusPoints: hero.mastery.bonusPoints } : {}),
           },
     },
-    wallet: {
-      ...migrated.wallet,
-      harvesterEmber: prestige * PROGRESSION.prestigeHarvesterEmber,
+  };
+}
+
+/** Salvage Dust per Essence left over when Essences went away (v12 → v13). */
+const DUST_PER_ESSENCE = 20;
+
+/**
+ * v12 → v13 (entschlackung-v1.md): no Spoils, Essences, Kindling, Harvester's Ember, Phoenix
+ * Ash, Quarry or burned Supply Wagon any more. Essences turn into Dust and Kindling into Reforge
+ * Stones (Kindle's new price). Keystones now cost Skill Points, so the Skill Tree starts over with
+ * every point the hero has earned.
+ */
+function migrateV12(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
+  const old = (state.wallet ?? {}) as Partial<Wallet> & {
+    readonly essences?: Readonly<Record<string, number>>;
+    readonly kindling?: number;
+  };
+  const essences = Object.values(old.essences ?? {}).reduce((n, v) => n + v, 0);
+  const strip = <T extends object>(obj: T | undefined, keys: readonly string[]) =>
+    obj && (Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k))) as T);
+  const wallet = state.wallet && {
+    gold: old.gold ?? 0,
+    dust: (old.dust ?? 0) + essences * DUST_PER_ESSENCE,
+    reforgeStones: (old.reforgeStones ?? 0) + (old.kindling ?? 0),
+    ascensionShards: old.ascensionShards ?? 0,
+    runes: old.runes ?? {},
+  };
+  const rewards = strip(state.run?.rewards ?? undefined, ["spoils", "spoilsPick"]);
+  const migrated = {
+    ...state,
+    version: 13,
+    ...(wallet ? { wallet } : {}),
+    ...(state.progress ? { progress: strip(state.progress, ["stashBurned"]) } : {}),
+    ...(state.legacy ? { legacy: strip(state.legacy, ["quarry"]) } : {}),
+    ...(state.run ? { run: { ...state.run, rewards: rewards ?? null } } : {}),
+  } as Partial<GameState>;
+  const hero = migrated.hero;
+  if (!hero || !migrated.progress || !migrated.legacy || !data) return migrated;
+  return {
+    ...migrated,
+    hero: {
+      ...hero,
+      learned: startingNodes(data.skillTree, hero.classId),
+      unspentSkillPoints: earnedSkillPoints(migrated as GameState, data),
+      rotation: hero.rotation.map(() => null),
     },
   };
 }

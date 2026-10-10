@@ -71,21 +71,17 @@ export {
   type RollItemOptions,
 } from "./items/generate";
 export { activeRuneword, freeSockets, matchRuneword, runeBonuses, runeGroup } from "./items/runes";
-export {
-  codexPartsOf,
-  kindledAffix,
-  kindledAffixId,
-  kindledAffixes,
-  rollTier,
-} from "./items/codex";
+export { codexPartsOf, kindledAffix, kindledAffixId, kindledAffixes } from "./items/codex";
 export { mergeRules } from "./combat/rules";
 export {
   addedDamageRange,
+  itemFlaskCharges,
   itemModifiers,
   itemSlotFor,
   itemWeapon,
   missingRequirements,
   offHandFits,
+  requiredLevel,
   requirementsFor,
   resolveEquipment,
   scaledBaseStats,

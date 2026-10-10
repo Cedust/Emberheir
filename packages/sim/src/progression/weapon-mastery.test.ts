@@ -190,7 +190,6 @@ describe("Weapon Mastery in the game", () => {
       s = act(s, { type: "startStage" }, { type: "resolveFight" });
       if (i === 2) break;
       s = act(s, { type: "salvageAll" });
-      if (s.run?.rewards?.spoils.length) s = act(s, { type: "pickSpoils", index: 0 });
       s = act(s, { type: "continue" });
     }
     expect(s.run?.rewards?.echo).toEqual({ id: "test-echo", stage: 1 });

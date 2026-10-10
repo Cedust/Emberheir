@@ -52,16 +52,14 @@ describe("Cheat Mode", () => {
     expect(masteryPointsLeft(s, data)).toBe(5);
   });
 
-  it("sets currencies, Essences, Runes and flasks", () => {
+  it("sets currencies, Runes and flasks", () => {
     const s = cheat(
       start(),
-      { kind: "currency", currency: "harvesterEmber", amount: 3 },
-      { kind: "essence", essenceId: "ash", amount: 9 },
+      { kind: "currency", currency: "reforgeStones", amount: 3 },
       { kind: "rune", runeId: "el", amount: 2 },
       { kind: "flasks", amount: 5 },
     );
-    expect(s.wallet.harvesterEmber).toBe(3);
-    expect(s.wallet.essences.ash).toBe(9);
+    expect(s.wallet.reforgeStones).toBe(3);
     expect(s.wallet.runes.el).toBe(2);
     expect(s.legacy.runesFound).toContain("el");
     expect(s.flaskCharges).toBe(5);

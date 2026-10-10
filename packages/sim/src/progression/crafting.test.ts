@@ -37,16 +37,11 @@ const RING: Item = {
   ],
 };
 
-/** A Normal shield (8 Strength at T1) and a Normal sword (5 Strength). */
+/** A Normal shield (8 Strength at T1). */
 const SHIELD = rollItem(
   data.items,
   { baseId: "test-shield", itemLevel: 1, rarity: "normal" },
   new Rng(1),
-);
-const SWORD = rollItem(
-  data.items,
-  { baseId: "test-sword", itemLevel: 1, rarity: "normal" },
-  new Rng(2),
 );
 
 /** Camp, Liora present, a full wallet, the shield worn and the ring in the inventory. */
@@ -61,7 +56,6 @@ function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
       dust: 1000,
       reforgeStones: 3,
       ascensionShards: 2,
-      essences: { "test-essence": 2 },
       ...overrides,
     },
     hero: { ...s.hero, equipment: { offHand: SHIELD } },
@@ -118,49 +112,11 @@ describe("crafting", () => {
     expect(ring(s)?.lockedAffix).toBe(1);
   });
 
-  it("Trigger affixes cannot be tempered or imbued", () => {
+  it("Trigger affixes cannot be tempered", () => {
     const s = camp();
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 2 })).toBe(
       "trigger",
     );
-    expect(
-      craftBlockReason(s, data, {
-        kind: "imbue",
-        itemId: RING.id,
-        affixIndex: 2,
-        essenceId: "test-essence",
-      }),
-    ).toBe("trigger");
-  });
-
-  it("Imbue replaces one affix with the Essence's affix and locks it", () => {
-    // Test Essence imbues Life; the ring already has Life at index 1.
-    const s = camp();
-    expect(
-      craftBlockReason(s, data, {
-        kind: "imbue",
-        itemId: RING.id,
-        affixIndex: 0,
-        essenceId: "test-essence",
-      }),
-    ).toBe("duplicateAffix");
-    const next = act(s, {
-      type: "craft",
-      request: { kind: "imbue", itemId: RING.id, affixIndex: 1, essenceId: "test-essence" },
-    });
-    expect(ring(next)).toMatchObject({ lockedAffix: 1 });
-    expect(next.wallet.essences["test-essence"]).toBe(1);
-    // Life does not roll on Main Hands.
-    const magicSword: Item = { ...SWORD, affixes: [{ affixId: "crit", quality: 0.5 }] };
-    const withSword = { ...s, inventory: [...s.inventory, { item: magicSword, x: 4, y: 0 }] };
-    expect(
-      craftBlockReason(withSword, data, {
-        kind: "imbue",
-        itemId: magicSword.id,
-        affixIndex: 0,
-        essenceId: "test-essence",
-      }),
-    ).toBe("affixDoesNotFit");
   });
 
   it("Reforge rerolls all affixes, keeps base, tier and rarity, and clears the lock", () => {
@@ -185,17 +141,13 @@ describe("crafting", () => {
     );
   });
 
-  it("Distill turns Salvage Dust into a Reforge Stone", () => {
-    const s = act(camp(), { type: "craft", request: { kind: "distill" } });
-    expect(s.wallet.reforgeStones).toBe(4);
-    expect(s.wallet.dust).toBe(1000 - CRAFTING.distillDust);
-    expect(craftBlockReason(camp({ dust: 0 }), data, { kind: "distill" })).toBe("dust");
-  });
-
-  it("Liora's crafts wait for her; all crafting is Camp only", () => {
+  it("Liora's crafts wait for her, Thoric's do not; all crafting is Camp only", () => {
     const early = { ...camp(), progress: { ...camp().progress, trainerUnlocked: false } };
-    expect(craftBlockReason(early, data, { kind: "distill" })).toBe("mystic");
+    expect(craftBlockReason(early, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
+      "mystic",
+    );
     expect(craftBlockReason(early, data, { kind: "upgrade", itemId: RING.id })).toBeUndefined();
+    expect(craftBlockReason(early, data, { kind: "reforge", itemId: RING.id })).toBeUndefined();
     const inRun = act(camp(), { type: "setOut", actId: "test-act" });
     expect(craftBlockReason(inRun, data, { kind: "upgrade", itemId: RING.id })).toBe("camp");
     expect(() =>
@@ -322,7 +274,7 @@ describe("Sockets, Runes and Marisha", () => {
     expect(rarities.has("legendary")).toBe(true);
   });
 
-  it("Uniques never change: no Reforge, Temper or Imbue", () => {
+  it("Uniques never change: no Reforge or Temper", () => {
     const unique = rollUnique(data.items, "band", 5, new Rng(1));
     const s = { ...camp(), inventory: [{ item: unique, x: 0, y: 0 }] };
     expect(craftBlockReason(s, data, { kind: "reforge", itemId: unique.id })).toBe("fixed");

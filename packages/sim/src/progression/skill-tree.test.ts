@@ -2,7 +2,11 @@ import { describe, expect, it } from "vitest";
 import {
   type SkillTreeDefinition,
   forgetBlockReason,
+  KEYSTONE,
+  activeKeystones,
+  keystoneLimit,
   keystoneRules,
+  learnBudget,
   startingNodes,
   learnBlockReason,
   learnPath,
@@ -14,7 +18,7 @@ import {
 } from "./skill-tree";
 import { TEST_TREE, TREE_SKILL } from "./test-fixtures";
 
-const budget = (skillPoints: number, harvesterEmber = 0) => ({ skillPoints, harvesterEmber });
+const budget = (skillPoints: number, keystones = 1) => ({ skillPoints, keystones });
 
 describe("Skill Tree", () => {
   it("links are two-way and the start node is always learned", () => {
@@ -38,15 +42,36 @@ describe("Skill Tree", () => {
     expect(() => learnNodes(TEST_TREE, {}, ["a", "b"], budget(1))).toThrow(/noSkillPoints/);
   });
 
-  it("Keystones cost Harvester's Ember instead of Skill Points", () => {
+  it("Keystones cost 3 Skill Points and take one of the Keystone places", () => {
     const learned = { a: 1, b: 1 };
-    expect(learnBlockReason(TEST_TREE, learned, "k", budget(5, 0))).toBe("noEmber");
-    const result = learnNodes(TEST_TREE, learned, ["k"], budget(0, 1));
+    expect(learnBlockReason(TEST_TREE, learned, "k", budget(2))).toBe("noSkillPoints");
+    expect(learnBlockReason(TEST_TREE, learned, "k", budget(5, 0))).toBe("keystoneLimit");
+    const result = learnNodes(TEST_TREE, learned, ["k"], budget(KEYSTONE.skillPoints));
     expect(result.budget).toEqual(budget(0, 0));
+    expect(activeKeystones(TEST_TREE, result.learned)).toBe(1);
+    expect(learnBudget(TEST_TREE, result.learned, 4, 0)).toEqual(budget(4, 0));
+    expect(learnBudget(TEST_TREE, result.learned, 4, 2)).toEqual(budget(4, 1));
     expect(keystoneRules(TEST_TREE, result.learned)).toMatchObject({
       damageTaken: 0.2,
       noHeatDecay: true,
     });
+  });
+
+  it("the Keystone limit grows at Prestige 2, 4 and 6", () => {
+    expect([0, 1, 2, 3, 4, 5, 6, 9].map(keystoneLimit)).toEqual([1, 1, 2, 2, 3, 3, 4, 4]);
+  });
+
+  it("a Keystone's next tier replaces it without taking another place", () => {
+    const k = TEST_TREE.nodes.find((n) => n.id === "k");
+    if (!k) throw new Error("k");
+    const tree: SkillTreeDefinition = {
+      ...TEST_TREE,
+      nodes: [...TEST_TREE.nodes, { ...k, id: "k2", links: ["k"], x: 4, replaces: "k" }],
+    };
+    const learned = { a: 1, b: 1, k: 1 };
+    expect(learnBlockReason(tree, learned, "k2", budget(3, 0))).toBeUndefined();
+    const result = learnNodes(tree, learned, ["k2"], budget(3, 0));
+    expect(activeKeystones(tree, result.learned)).toBe(1);
   });
 
   it("weapon-range nodes only count with the matching weapon", () => {

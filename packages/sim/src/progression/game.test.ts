@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { bossTrophies, rollItem, uniquesFor } from "../items/generate";
 import { ATTRIBUTE_RULES } from "./attributes";
-import { CODEX, PROGRESSION } from "./constants";
+import { PROGRESSION } from "./constants";
 import {
   type GameAction,
   type GameData,
@@ -36,6 +36,7 @@ import {
   maxRuneRank,
   rollRuneDrops,
 } from "./game";
+import { requiredLevel } from "../items/equipment";
 import { bossLevel, levelCap } from "./leveling";
 import { Rng } from "../rng";
 import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
@@ -65,11 +66,10 @@ const unlocked = (state: GameState): GameState => ({
   progress: { ...state.progress, actsCleared: ["test-act", "deadly-act"] },
 });
 
-/** Plays one stage: fight, take nothing (Salvage All), skip spoils, continue. */
+/** Plays one stage: fight, take nothing (Salvage All), continue. */
 function clearStage(state: GameState): GameState {
   let s = act(state, { type: "startStage" }, { type: "resolveFight" });
   s = act(s, { type: "salvageAll" });
-  if (s.run?.rewards?.spoils.length) s = act(s, { type: "pickSpoils", index: 0 });
   return act(s, { type: "continue" });
 }
 
@@ -111,20 +111,6 @@ describe("game loop", () => {
     expect(s.run).toMatchObject({ stage: 2, phase: "intermission", encounter: null });
   });
 
-  it("offers Spoils at the act's spoils stages", () => {
-    let s = clearStage(act(start(), { type: "setOut", actId: "test-act" }));
-    s = act(s, { type: "startStage" }, { type: "resolveFight" });
-    expect(s.run?.stage).toBe(2);
-    expect(s.run?.rewards?.spoils.map((c) => c.kind)).toEqual([
-      "flaskCharge",
-      "reforgeStones",
-      "essence",
-    ]);
-    s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 2 });
-    expect(s.wallet.essences["test-essence"]).toBe(1);
-    expect(() => act(s, { type: "pickSpoils", index: 1 })).toThrow(/already/);
-  });
-
   it("clears the act after the boss: back to Camp, Kaelen joins, Pity resets", () => {
     // The second run: Act 1's boss is no longer the harvest.
     let s = act(inRun(start(), 1), { type: "setOut", actId: "test-act" });
@@ -142,10 +128,9 @@ describe("game loop", () => {
     expect(s.run?.rewards?.items.every((i) => i.rarity === "rare" || i.rarity === "epic")).toBe(
       true,
     );
-    // Bosses and Elites offer Kindling instead of Reforge Stones.
-    expect(s.run?.rewards?.spoils[1]).toEqual({ kind: "kindling", amount: CODEX.bossKindling });
-    s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 1 });
-    expect(s.wallet.kindling).toBe(CODEX.bossKindling);
+    // Reforge Stones drop straight into the wallet; there is no pick for them.
+    expect(s.wallet.reforgeStones).toBeGreaterThanOrEqual(PROGRESSION.bossReforgeStones[0]);
+    s = act(s, { type: "salvageAll" });
     s = act(s, { type: "continue" });
     expect(s.run).toBeNull();
     expect(s.notice).toMatchObject({ kind: "actCleared", enemyName: "Boss" });
@@ -266,6 +251,26 @@ describe("game loop", () => {
     expect(s.wallet.dust).toBeGreaterThan(dust);
   });
 
+  it("items need their Required Level (Item Level − 5) to be worn", () => {
+    const high = { ...OLD_RING, id: "high", itemLevel: 20 };
+    expect(requiredLevel(high)).toBe(15);
+    expect(requiredLevel(OLD_RING)).toBe(1);
+    const s = { ...start(), stash: [{ item: high, x: 0, y: 0 }] };
+    expect(equipBlockReason(s, data, high, "stash")).toBe("level");
+    const grown = { ...s, hero: { ...s.hero, level: 15 } };
+    expect(equipBlockReason(grown, data, high, "stash")).toBeUndefined();
+  });
+
+  it("normal enemies now and then drop a Reforge Stone", () => {
+    const drops = new Set<number>();
+    for (let seed = 1; seed <= 40; seed++) {
+      const s = act(start(seed), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+      if (s.run?.encounter?.eliteModifiers.length || s.run?.encounter?.thief) continue;
+      drops.add(act(s, { type: "resolveFight" }).run?.rewards?.reforgeStones ?? -1);
+    }
+    expect([...drops].sort()).toEqual([0, 1]);
+  });
+
   it("drag & drop moves items inside the inventory and onto a chosen slot", () => {
     let s = act(ringed(start()), { type: "setOut", actId: "test-act" }, { type: "startStage" });
     s = act(s, { type: "resolveFight" });
@@ -353,12 +358,12 @@ describe("game loop", () => {
     expect(() => act(inRun, { type: "moveItem", itemId: old.id, to: "stash" })).toThrow();
   });
 
-  it("Respec at Kaelen gives back Skill Points and Ember for Gold", () => {
+  it("Respec at Kaelen gives back Skill Points for Gold", () => {
     let s = start();
     s = {
       ...s,
-      hero: { ...s.hero, unspentSkillPoints: 4 },
-      wallet: { ...s.wallet, gold: respecGold(0), harvesterEmber: 1 },
+      hero: { ...s.hero, unspentSkillPoints: 6 },
+      wallet: { ...s.wallet, gold: respecGold(0) },
       progress: { ...s.progress, trainerUnlocked: true },
     };
     s = act(
@@ -366,12 +371,12 @@ describe("game loop", () => {
       { type: "learnNodes", nodeIds: ["a", "b", "b", "k"] },
       { type: "setRotationSkill", slot: 0, skillId: TREE_SKILL.id },
     );
-    expect(spentInTree(data, s.hero.learned)).toEqual({ skillPoints: 3, harvesterEmber: 1 });
+    expect(spentInTree(data, s.hero.learned)).toBe(6);
     s = act(s, { type: "respecTree" });
     expect(s.hero.learned).toEqual({});
-    expect(s.hero.unspentSkillPoints).toBe(4);
+    expect(s.hero.unspentSkillPoints).toBe(6);
     expect(s.hero.rotation).toEqual([null]);
-    expect(s.wallet).toMatchObject({ gold: 0, harvesterEmber: 1 });
+    expect(s.wallet.gold).toBe(0);
     expect(() => act(s, { type: "respecTree" })).toThrow(/Nothing/);
   });
 
@@ -379,8 +384,8 @@ describe("game loop", () => {
     let s = start();
     s = {
       ...s,
-      hero: { ...s.hero, unspentSkillPoints: 4 },
-      wallet: { ...s.wallet, gold: 3 * forgetGold(0), harvesterEmber: 1 },
+      hero: { ...s.hero, unspentSkillPoints: 6 },
+      wallet: { ...s.wallet, gold: 3 * forgetGold(0) },
       progress: { ...s.progress, trainerUnlocked: true },
     };
     s = act(s, { type: "learnNodes", nodeIds: ["a", "b", "b", "k"] });
@@ -389,8 +394,9 @@ describe("game loop", () => {
     expect(() => act(s, { type: "forgetNode", nodeId: "start" })).toThrow(/start/);
     s = act(s, { type: "forgetNode", nodeId: "b" }, { type: "forgetNode", nodeId: "k" });
     expect(s.hero.learned).toEqual({ a: 1, b: 1 });
-    expect(s.hero.unspentSkillPoints).toBe(2);
-    expect(s.wallet).toMatchObject({ gold: forgetGold(0), harvesterEmber: 1 });
+    // The Keystone gives back its 3 Skill Points.
+    expect(s.hero.unspentSkillPoints).toBe(4);
+    expect(s.wallet.gold).toBe(forgetGold(0));
   });
 
   it("the boss of the newest act starts the Prestige: the world burns, all items stay", () => {
@@ -406,8 +412,7 @@ describe("game loop", () => {
     s = act(s, { type: "pickItem", index: 0, mode: "take" });
     expect(s.run?.rewards?.itemPick).toBeNull();
     expect(() => act(s, { type: "pickItem", index: 0, mode: "take" })).toThrow(/taken/);
-    s = act(s, { type: "salvageAll" }, { type: "pickSpoils", index: 0 });
-    s = act(s, { type: "continue" });
+    s = act(s, { type: "salvageAll" }, { type: "continue" });
     expect(s.run).toBeNull();
     expect(s.notice).toBeNull();
     expect(s.pendingPrestige).toMatchObject({ actId: "test-act", enemyName: "Boss" });
@@ -429,20 +434,15 @@ describe("game loop", () => {
     expect(s.pendingPrestige).toBeNull();
     expect(s.notice).toMatchObject({ kind: "prestige", enemyName: "Boss" });
     expect(s.hero).toMatchObject({ level, attributes, learned, equipment });
-    // The Harvest: two new Attribute Points wait, and a Phoenix Ash.
+    // The Harvest: two new Attribute Points wait.
     expect(s.hero.unspentAttributePoints).toBe(ATTRIBUTE_RULES.creationPoints + 2);
     expect(s.inventory).toEqual(inventory);
     expect(s.stash).toEqual(stash);
-    expect(s.wallet).toEqual({
-      ...wallet,
-      harvesterEmber: wallet.harvesterEmber + PROGRESSION.prestigeHarvesterEmber,
-      phoenixAsh: 1,
-    });
+    expect(s.wallet).toEqual(wallet);
     expect(s.progress).toMatchObject({
       actsCleared: [],
       trainerUnlocked: true,
       rotationSlots: 2,
-      stashBurned: false,
     });
     expect(s.legacy.prestige).toBe(1);
     expect(s.legacy.chronicle).toEqual([
@@ -463,11 +463,9 @@ describe("game loop", () => {
       prestige: 1,
       rotationSlots: 2,
       planUpgrade: "Rotation Slot 2 · Reaction Slot 1",
-      harvesterEmber: 1,
       skillPoints: 2,
       attributePoints: 2,
-      rekindle: 2,
-      phoenixAsh: 1,
+      keystones: 1,
       levelCap: 30,
       acts: 2,
       levelBand: { start: 10, end: 20 },
@@ -483,7 +481,6 @@ describe("game loop", () => {
       version: 2,
       legacy: undefined,
       pendingPrestige: undefined,
-      progress: { ...s.progress, stashBurned: undefined },
     };
     const migrated = deserializeGame(JSON.stringify(v2));
     expect(migrated).toEqual(s);
@@ -510,7 +507,6 @@ describe("game loop", () => {
       ...s,
       version: 7,
       hero: { ...s.hero, level: 30, learned: { a: 1 }, unspentAttributePoints: 1 },
-      wallet: { ...s.wallet, harvesterEmber: 0 },
       merchant: { key: 0, sold: [] },
       legacy: {
         ...s.legacy,
@@ -535,7 +531,6 @@ describe("game loop", () => {
       unspentAttributePoints: ATTRIBUTE_RULES.creationPoints + ATTRIBUTE_RULES.harvestPoints,
       learned: {},
     });
-    expect(migrated.wallet.harvesterEmber).toBe(1);
     // A hero below the cap keeps its Class Array attributes.
     const low = deserializeGame(JSON.stringify({ ...v7, hero: s.hero }), data);
     expect(low.hero.attributes).toEqual(s.hero.attributes);
@@ -549,7 +544,6 @@ describe("game loop", () => {
       hero: { ...s.hero, level: 50, learned: { a: 1, k: 1 }, unspentSkillPoints: 3 },
       progress: { ...s.progress, actsCleared: ["test-act"], waymarks: undefined },
       legacy: { ...s.legacy, prestige: 3 },
-      wallet: { ...s.wallet, harvesterEmber: 2 },
     };
     const migrated = deserializeGame(JSON.stringify(v11), data);
     expect(migrated.version).toBe(SAVE_VERSION);
@@ -558,7 +552,45 @@ describe("game loop", () => {
     expect(migrated.hero.learned).toEqual({});
     expect(migrated.progress.waymarks).toEqual(["test-act:1", "test-act:2", "test-act:3"]);
     expect(migrated.hero.unspentSkillPoints).toBe(earnedSkillPoints(migrated, data));
-    expect(migrated.wallet.harvesterEmber).toBe(3);
+  });
+
+  it("migrates pre-cleanup save games (version 12): old currencies fold in, the tree is refunded", () => {
+    const s = start();
+    const v12 = {
+      ...s,
+      version: 12,
+      hero: {
+        ...s.hero,
+        learned: { a: 1, k: 1 },
+        unspentSkillPoints: 0,
+        rotation: [TREE_SKILL.id],
+      },
+      wallet: {
+        ...s.wallet,
+        dust: 10,
+        reforgeStones: 1,
+        essences: { fire: 2, cold: 1 },
+        kindling: 3,
+        harvesterEmber: 2,
+        phoenixAsh: 1,
+      },
+      progress: { ...s.progress, stashBurned: true },
+      legacy: { ...s.legacy, quarry: { affixId: "crit", found: 0 } },
+    };
+    const migrated = deserializeGame(JSON.stringify(v12), data);
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(migrated.wallet).toEqual({
+      gold: s.wallet.gold,
+      dust: 10 + 3 * 20,
+      reforgeStones: 1 + 3,
+      ascensionShards: s.wallet.ascensionShards,
+      runes: s.wallet.runes,
+    });
+    expect(migrated.progress).not.toHaveProperty("stashBurned");
+    expect(migrated.legacy).not.toHaveProperty("quarry");
+    expect(migrated.hero.learned).toEqual({});
+    expect(migrated.hero.rotation).toEqual([null]);
+    expect(migrated.hero.unspentSkillPoints).toBe(earnedSkillPoints(migrated, data));
   });
 
   it("save games round-trip and reject other versions", () => {

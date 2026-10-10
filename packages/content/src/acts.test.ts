@@ -26,7 +26,6 @@ describe("ACTS", () => {
       for (const id of Object.keys(act.favoredAffixes ?? {})) {
         expect(ITEM_CATALOG.affixes.has(id), `${act.id}: ${id}`).toBe(true);
       }
-      expect(ITEM_CATALOG.affixes.has(act.essence.affixId), act.id).toBe(true);
     }
   });
 });

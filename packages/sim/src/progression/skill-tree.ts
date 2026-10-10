@@ -30,7 +30,7 @@ export interface SkillNode {
   readonly weaponRange?: "melee" | "ranged";
   /** Skill nodes: the active skill they unlock; ranks raise its Skill Level. */
   readonly skill?: SkillDefinition;
-  /** Keystones: the rule they change. They cost Harvester's Ember, not Skill Points. */
+  /** Keystones: the rule they change. They cost 3 Skill Points and one Keystone place. */
   readonly keystone?: CombatRules;
   /** Trigger effects the node gives (Prestige branches); they do not stack with ranks. */
   readonly triggers?: readonly TriggerSpec[];
@@ -128,15 +128,53 @@ export function nodeRanks(tree: SkillTreeDefinition, learned: LearnedNodes, id: 
 
 export interface LearnBudget {
   readonly skillPoints: number;
-  readonly harvesterEmber: number;
+  /** Free Keystone places: the Prestige's limit minus the Keystones already active. */
+  readonly keystones: number;
+}
+
+/**
+ * Keystones (entschlackung-v1.md): they cost Skill Points like any node, but only a few can be
+ * active at once. One from the start, one more at Prestige 2, 4 and 6.
+ */
+export const KEYSTONE = {
+  skillPoints: 3,
+  extraAtPrestige: [2, 4, 6],
+} as const;
+
+/** How many Keystones can be active at once after `prestige` Prestiges. */
+export function keystoneLimit(prestige: number): number {
+  return 1 + KEYSTONE.extraAtPrestige.filter((p) => prestige >= p).length;
+}
+
+/** Whether learning this node upgrades a learned Keystone (tier II/III) instead of adding one. */
+function upgradesKeystone(tree: SkillTreeDefinition, learned: LearnedNodes, node: SkillNode) {
+  return node.replaces !== undefined && nodeRanks(tree, learned, node.replaces) > 0;
+}
+
+/** Keystones that count against the limit: learned ones not replaced by their next tier. */
+export function activeKeystones(tree: SkillTreeDefinition, learned: LearnedNodes): number {
+  return activeList(tree, learned).filter(({ node }) => node.kind === "keystone").length;
+}
+
+/** The budget for learning: unspent Skill Points and the free Keystone places. */
+export function learnBudget(
+  tree: SkillTreeDefinition,
+  learned: LearnedNodes,
+  skillPoints: number,
+  prestige: number,
+): LearnBudget {
+  return {
+    skillPoints,
+    keystones: Math.max(0, keystoneLimit(prestige) - activeKeystones(tree, learned)),
+  };
 }
 
 export type LearnBlockReason =
   | "maxed"
   | "notConnected"
   | "noSkillPoints"
-  /** Keystones cost Harvester's Ember (none in the first run). */
-  | "noEmber"
+  /** All Keystone places of this Prestige are taken. */
+  | "keystoneLimit"
   /** The node's Prestige branch is not unlocked yet. */
   | "branchLocked"
   /** The other side of the node's fork is learned. */
@@ -159,8 +197,9 @@ export function learnBlockReason(
   if (ranks === 0 && forkPartner(tree, learned, node)) return "forkTaken";
   const connected = ranks > 0 || neighbours(tree, id).some((n) => nodeRanks(tree, learned, n) > 0);
   if (!connected) return "notConnected";
-  if (node.kind === "keystone") return budget.harvesterEmber >= 1 ? undefined : "noEmber";
-  return budget.skillPoints >= 1 ? undefined : "noSkillPoints";
+  const cost = learnCost(node, tree, learned);
+  if (budget.keystones < cost.keystones) return "keystoneLimit";
+  return budget.skillPoints >= cost.skillPoints ? undefined : "noSkillPoints";
 }
 
 /** The learned node on the other side of a node's fork, if any. */
@@ -272,11 +311,18 @@ export function learnPath(
   return undefined;
 }
 
-/** What learning one more rank costs. */
-export function learnCost(node: SkillNode): LearnBudget {
-  return node.kind === "keystone"
-    ? { skillPoints: 0, harvesterEmber: 1 }
-    : { skillPoints: 1, harvesterEmber: 0 };
+/**
+ * What learning one more rank costs: Keystones take more Skill Points and a Keystone place,
+ * unless they upgrade a learned Keystone (`learned` given).
+ */
+export function learnCost(
+  node: SkillNode,
+  tree?: SkillTreeDefinition,
+  learned?: LearnedNodes,
+): LearnBudget {
+  if (node.kind !== "keystone") return { skillPoints: 1, keystones: 0 };
+  const upgrade = tree && learned ? upgradesKeystone(tree, learned, node) : false;
+  return { skillPoints: KEYSTONE.skillPoints, keystones: upgrade ? 0 : 1 };
 }
 
 /** Learns one rank per id in order. Throws if one of them is not learnable. */
@@ -292,11 +338,11 @@ export function learnNodes(
   for (const id of ids) {
     const reason = learnBlockReason(tree, current, id, left, branches);
     if (reason) throw new Error(`Cannot learn "${id}": ${reason}`);
-    const cost = learnCost(getNode(tree, id));
+    const cost = learnCost(getNode(tree, id), tree, current);
     current = { ...current, [id]: nodeRanks(tree, current, id) + 1 };
     left = {
       skillPoints: left.skillPoints - cost.skillPoints,
-      harvesterEmber: left.harvesterEmber - cost.harvesterEmber,
+      keystones: left.keystones - cost.keystones,
     };
   }
   return { learned: current, budget: left };

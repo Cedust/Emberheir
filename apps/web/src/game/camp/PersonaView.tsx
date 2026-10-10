@@ -10,7 +10,6 @@ import {
   kindleTier,
   kindledAffixId,
   learnFromItem,
-  rollTier,
   type CraftRequest,
   type GameState,
   type Item,
@@ -169,7 +168,7 @@ function affixText(item: Item, index: number): { text: string; trigger: boolean 
   if (!roll || !affix) return { text: "?", trigger: false };
   if (affix.kind === "trigger") {
     return {
-      text: describeTrigger(resolveTrigger(affix, rollTier(item, roll), roll.quality)),
+      text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
       trigger: true,
     };
   }

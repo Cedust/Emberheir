@@ -17,6 +17,11 @@ export const ITEMS = {
   baseScalePerTier: 1,
   /** Attribute Requirements grow by this many points per tier above 1. */
   requirementPerTier: 0,
+  /**
+   * Required Level: an item needs a hero level of its Item Level minus this (at least 1). Items
+   * from the shared stash cannot make a fresh character strong at once.
+   */
+  requiredLevelGap: 5,
   /** Magic items roll each affix this often and keep the best quality ("higher values"). */
   magicQualityRolls: 2,
 

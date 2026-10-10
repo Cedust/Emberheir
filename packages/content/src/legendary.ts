@@ -5,6 +5,26 @@ import type {
   TriggerAffixDefinition,
   UniqueDefinition,
 } from "@emberheir/sim";
+import {
+  CINDER_TYRANT,
+  GORRAK,
+  MOTHER_OF_ROT,
+  RIME_WARDEN,
+  STORM_HERALD,
+  VOIDBORN_MAW,
+  ASHEN_HARVESTER,
+} from "./enemies";
+
+/** The Warden of each act: its trophies say who dropped them. */
+const WARDENS: Readonly<Record<string, string>> = {
+  "ashen-fields": GORRAK.name,
+  rotwood: MOTHER_OF_ROT.name,
+  "ember-wastes": CINDER_TYRANT.name,
+  "frost-peaks": RIME_WARDEN.name,
+  "storm-spires": STORM_HERALD.name,
+  "void-rift": VOIDBORN_MAW.name,
+  emberfall: ASHEN_HARVESTER.name,
+};
 
 /**
  * M8 "Legendär" (docs/design/legendary-runes-v1.md): Runes, Runewords, Legendary Powers and the
@@ -515,6 +535,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     minItemLevel: 1,
     flavor: "Still warm. Still angry.",
     bossOf: "ashen-fields",
+    droppedBy: GORRAK.name,
   },
   {
     id: "cinderwick",
@@ -581,6 +602,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
     minItemLevel: 5,
     flavor: "Pulled from the Mother of Rot. It was not hers.",
     bossOf: "rotwood",
+    droppedBy: MOTHER_OF_ROT.name,
   },
   {
     id: "barkhide-bulwark",
@@ -801,5 +823,6 @@ function trophy(
     minItemLevel: 1,
     flavor,
     bossOf,
+    ...(WARDENS[bossOf] ? { droppedBy: WARDENS[bossOf] } : {}),
   };
 }

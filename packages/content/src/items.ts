@@ -464,6 +464,17 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     value: { min: 8, max: 20 },
     perTier: 1,
   }),
+  // Belts only: the Ember Flask holds more (entschlackung-v1.md: no Flask Charges as drops).
+  stat({
+    id: "flask-charges",
+    stat: "flaskCharges",
+    suffix: "of Plenty",
+    slots: ["belt"],
+    tags: ["life", "defense"],
+    weight: 10,
+    value: { min: 1, max: 2 },
+    perTier: 0,
+  }),
   stat({
     id: "armor",
     stat: "armor",
