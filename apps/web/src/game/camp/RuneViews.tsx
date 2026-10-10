@@ -186,7 +186,7 @@ export function GamblePanel(props: {
         })}
       </div>
       <span className="sub small">
-        {fmt(price)} Gold each · Item Level {merchantItemLevel(props.state, GAME_DATA)}
+        {fmt(price)} Acorns each · Item Level {merchantItemLevel(props.state, GAME_DATA)}
       </span>
       {props.last && (
         <div className="gamble-last">

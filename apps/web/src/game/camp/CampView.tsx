@@ -513,7 +513,7 @@ function BountyNote(props: { bounty: BountyView }) {
     <div className="bounty-note" aria-label="Bounty">
       <span className="eyebrow">BOUNTY · {props.bounty.def.name.toUpperCase()}</span>
       <span>{props.bounty.text}</span>
-      <span className="sub small">Pays Gold, Reforge Stones and a Rare item or better.</span>
+      <span className="sub small">Pays Acorns, Ember Coal and a Rare item or better.</span>
     </div>
   );
 }

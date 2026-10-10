@@ -442,11 +442,11 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
               <button
                 type="button"
                 className="btn"
-                disabled={!hasSpent || state.wallet.gold < MASTERY.respecGold}
+                disabled={!hasSpent || state.wallet.acorns < MASTERY.respecAcorns}
                 title="All Mastery Points come back. The Echo stays."
                 onClick={() => setRespec(true)}
               >
-                Respec · {MASTERY.respecGold} Gold
+                Respec · {MASTERY.respecAcorns} Acorns
               </button>
             )}
           </section>

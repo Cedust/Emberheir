@@ -210,11 +210,11 @@ export interface GameData {
 }
 
 export interface Wallet {
-  readonly gold: number;
-  readonly dust: number;
-  readonly reforgeStones: number;
+  readonly acorns: number;
+  readonly ash: number;
+  readonly emberCoal: number;
   /** Upgrade (+1 Item Tier) at the Blacksmith. Bosses, sometimes Elites. */
-  readonly ascensionShards: number;
+  readonly phoenixFeathers: number;
   /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
   readonly runes: Readonly<Record<string, number>>;
 }
@@ -265,12 +265,12 @@ export interface Encounter {
 export type ItemPick =
   { readonly kind: "equip" | "take"; readonly index: number } | { readonly kind: "salvageAll" };
 
-/** What a done bounty paid; its item went to the Supply Wagon (or the inventory, or Dust). */
+/** What a done bounty paid; its item went to the Supply Wagon (or the inventory, or Ash). */
 export interface BountyReward {
   readonly id: string;
   readonly enemyId?: string;
-  readonly gold: number;
-  readonly reforgeStones: number;
+  readonly acorns: number;
+  readonly emberCoal: number;
   readonly item: Item;
   readonly to: "stash" | "inventory" | "salvaged";
 }
@@ -279,10 +279,10 @@ export interface BountyReward {
 export interface Rewards {
   readonly rank: EnemyRank;
   readonly xp: number;
-  readonly gold: number;
-  readonly dust: number;
-  readonly reforgeStones: number;
-  readonly ascensionShards: number;
+  readonly acorns: number;
+  readonly ash: number;
+  readonly emberCoal: number;
+  readonly phoenixFeathers: number;
   /** Runes that dropped (straight into the pouch). */
   readonly runes: readonly string[];
   readonly levelsGained: number;
@@ -302,8 +302,8 @@ export interface Rewards {
   readonly newTrophies?: readonly string[];
   /** A boss left its Echo on the weapon, or made it one stage stronger. */
   readonly echo?: { readonly id: string; readonly stage: number };
-  /** Dust from auto-salvaging the items that were not picked. */
-  readonly salvagedDust: number;
+  /** Ash from auto-salvaging the items that were not picked. */
+  readonly salvagedAsh: number;
   /** The Scout's bounty was done in this fight. */
   readonly bounty?: BountyReward;
   /** What the Battle Plan did in this fight (missing in older saves). */
@@ -534,10 +534,10 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       plan: EMPTY_PLAN,
     },
     wallet: {
-      gold: 0,
-      dust: 0,
-      reforgeStones: 0,
-      ascensionShards: 0,
+      acorns: 0,
+      ash: 0,
+      emberCoal: 0,
+      phoenixFeathers: 0,
       runes: {},
     },
     inventory: [],
@@ -1073,9 +1073,9 @@ export function currentFight(
   };
 }
 
-/** Salvage Dust an item is worth. */
+/** Ash an item is worth. */
 export function salvageValue(item: Item): number {
-  return PROGRESSION.salvageDust[item.rarity] * Math.max(1, item.tier);
+  return PROGRESSION.salvageAsh[item.rarity] * Math.max(1, item.tier);
 }
 
 /**
@@ -1189,13 +1189,13 @@ export type GameAction =
   /** Drag & drop inside the inventory or the stash. */
   | { readonly type: "placeItem"; readonly itemId: string; readonly at: GridPosition }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
-  /** Kaelen: forget all Skill Tree nodes for Gold (points and Ember come back). */
+  /** Kaelen: forget all Skill Tree nodes for Acorns (points and Ember come back). */
   | { readonly type: "respecTree" }
-  /** Kaelen: forget one rank of one node for a little Gold (`forgetGold`). */
+  /** Kaelen: forget one rank of one node for a few Acorns (`forgetAcorns`). */
   | { readonly type: "forgetNode"; readonly nodeId: string }
   /** Kaelen, Weapon Mastery: learn a node or pick it in its group (Heat Form, Keystone ...). */
   | { readonly type: "learnMastery"; readonly nodeId: string }
-  /** Kaelen: forget the Weapon Mastery for Gold. The worn Echo stays. */
+  /** Kaelen: forget the Weapon Mastery for Acorns. The worn Echo stays. */
   | { readonly type: "respecMastery" }
   /** Kaelen: wear an earned Echo on the weapon (or none). */
   | { readonly type: "setEcho"; readonly echoId: string | null }
@@ -1223,7 +1223,7 @@ export type GameAction =
        */
       readonly attributes?: Attributes;
     }
-  /** Kaelen (Camp only): every Attribute Point anew, for Gold like the trees. */
+  /** Kaelen (Camp only): every Attribute Point anew, for Acorns like the trees. */
   | { readonly type: "respecAttributes"; readonly attributes: Attributes }
   | { readonly type: "dismissNotice" };
 
@@ -1489,16 +1489,16 @@ function resolveFight(state: GameState, data: GameData): GameState {
   const auto = autoRewards(encounter.level, rank);
   const stones =
     rank === "boss"
-      ? rng.int(...PROGRESSION.bossReforgeStones)
+      ? rng.int(...PROGRESSION.bossEmberCoal)
       : rank === "elite"
-        ? rng.int(...PROGRESSION.eliteReforgeStones)
-        : rng.chance(PROGRESSION.normalReforgeStoneChance)
+        ? rng.int(...PROGRESSION.eliteEmberCoal)
+        : rng.chance(PROGRESSION.normalEmberCoalChance)
           ? 1
           : 0;
-  const shards =
+  const feathers =
     rank === "boss"
-      ? PROGRESSION.bossAscensionShards
-      : rank === "elite" && rng.chance(PROGRESSION.eliteAscensionShardChance)
+      ? PROGRESSION.bossPhoenixFeathers
+      : rank === "elite" && rng.chance(PROGRESSION.elitePhoenixFeatherChance)
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
@@ -1596,10 +1596,10 @@ function resolveFight(state: GameState, data: GameData): GameState {
       : {}),
     wallet: {
       ...state.wallet,
-      gold: state.wallet.gold + auto.gold,
-      dust: state.wallet.dust + auto.dust,
-      reforgeStones: state.wallet.reforgeStones + stones,
-      ascensionShards: state.wallet.ascensionShards + shards,
+      acorns: state.wallet.acorns + auto.acorns,
+      ash: state.wallet.ash + auto.ash,
+      emberCoal: state.wallet.emberCoal + stones,
+      phoenixFeathers: state.wallet.phoenixFeathers + feathers,
       runes: addRunes(state.wallet.runes, runes),
     },
     legacy: {
@@ -1623,10 +1623,10 @@ function resolveFight(state: GameState, data: GameData): GameState {
       rewards: {
         rank,
         xp,
-        gold: auto.gold,
-        dust: auto.dust,
-        reforgeStones: stones,
-        ascensionShards: shards,
+        acorns: auto.acorns,
+        ash: auto.ash,
+        emberCoal: stones,
+        phoenixFeathers: feathers,
         runes,
         levelsGained: leveled.levelsGained,
         ...(waymark ? { waymark: true } : {}),
@@ -1639,7 +1639,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ...(newTrophies.length ? { newTrophies } : {}),
         ...(echo ? { echo } : {}),
         itemPick: null,
-        salvagedDust: 0,
+        salvagedAsh: 0,
       },
     },
   };
@@ -1647,8 +1647,8 @@ function resolveFight(state: GameState, data: GameData): GameState {
 }
 
 /**
- * What a done bounty pays: Gold worth `bounty.goldKills` normal kills at the act boss's level,
- * Reforge Stones and one item of at least Rare (inside the run's Elite window).
+ * What a done bounty pays: Acorns worth `bounty.acornKills` normal kills at the act boss's level,
+ * Ember Coal and one item of at least Rare (inside the run's Elite window).
  */
 function bountyReward(
   state: GameState,
@@ -1675,8 +1675,8 @@ function bountyReward(
   return {
     id: bounty.id,
     ...(bounty.enemyId ? { enemyId: bounty.enemyId } : {}),
-    gold: autoRewards(level, "normal").gold * PROGRESSION.bounty.goldKills,
-    reforgeStones: PROGRESSION.bounty.reforgeStones,
+    acorns: autoRewards(level, "normal").acorns * PROGRESSION.bounty.acornKills,
+    emberCoal: PROGRESSION.bounty.emberCoal,
     item,
   };
 }
@@ -1687,8 +1687,8 @@ function payBounty(state: GameState, data: GameData, reward: Omit<BountyReward, 
   const rewards = run.rewards ?? fail("No rewards");
   const wallet = {
     ...state.wallet,
-    gold: state.wallet.gold + reward.gold,
-    reforgeStones: state.wallet.reforgeStones + reward.reforgeStones,
+    acorns: state.wallet.acorns + reward.acorns,
+    emberCoal: state.wallet.emberCoal + reward.emberCoal,
   };
   const stash = addToGrid(state.stash, reward.item, data.items, STASH_SIZE);
   const inventory = stash ? null : addToGrid(state.inventory, reward.item, data.items);
@@ -1697,8 +1697,7 @@ function payBounty(state: GameState, data: GameData, reward: Omit<BountyReward, 
     ...state,
     ...(stash ? { stash } : {}),
     ...(inventory ? { inventory } : {}),
-    wallet:
-      to === "salvaged" ? { ...wallet, dust: wallet.dust + salvageValue(reward.item) } : wallet,
+    wallet: to === "salvaged" ? { ...wallet, ash: wallet.ash + salvageValue(reward.item) } : wallet,
     run: { ...run, rewards: { ...rewards, bounty: { ...reward, to } } },
   };
 }
@@ -1757,16 +1756,16 @@ function resolveFinaleFight(
       rewards: {
         rank: "boss",
         xp: 0,
-        gold: 0,
-        dust: 0,
-        reforgeStones: 0,
-        ascensionShards: 0,
+        acorns: 0,
+        ash: 0,
+        emberCoal: 0,
+        phoenixFeathers: 0,
         runes: [],
         levelsGained: 0,
         report: fightReport(result.events),
         items: [],
         itemPick: { kind: "salvageAll" },
-        salvagedDust: 0,
+        salvagedAsh: 0,
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
       },
     },
@@ -2026,8 +2025,8 @@ function finishItemPick(
     .reduce((sum, it) => sum + salvageValue(it), 0);
   return {
     ...state,
-    wallet: { ...state.wallet, dust: state.wallet.dust + salvaged },
-    run: { ...run, rewards: { ...rewards, itemPick: pick, salvagedDust: salvaged } },
+    wallet: { ...state.wallet, ash: state.wallet.ash + salvaged },
+    run: { ...run, rewards: { ...rewards, itemPick: pick, salvagedAsh: salvaged } },
   };
 }
 
@@ -2244,7 +2243,7 @@ function salvage(state: GameState, data: GameData, itemId: string): GameState {
   return {
     ...state,
     inventory: state.inventory.filter((p) => p !== placed),
-    wallet: { ...state.wallet, dust: state.wallet.dust + salvageValue(placed.item) },
+    wallet: { ...state.wallet, ash: state.wallet.ash + salvageValue(placed.item) },
     legacy: codex === state.legacy.codex ? state.legacy : { ...state.legacy, codex },
   };
 }
@@ -2326,24 +2325,24 @@ export function spentInTree(data: GameData, learned: LearnedNodes, classId?: str
 }
 
 /**
- * Gold for a full Skill Tree respec at Kaelen (level-v2.md section 7): moderate, about the Gold of
+ * Acorns for a full Skill Tree respec at Kaelen (level-v2.md section 7): moderate, about the Acorns of
  * a few normal kills at the run's boss level, so it grows with every run.
  */
-export function respecGold(prestige: number): number {
-  return autoRewards(bossLevel(prestige), "normal").gold * PROGRESSION.respecKills;
+export function respecAcorns(prestige: number): number {
+  return autoRewards(bossLevel(prestige), "normal").acorns * PROGRESSION.respecKills;
 }
 
-/** Gold to forget one rank of one node. */
-export function forgetGold(prestige: number): number {
-  return Math.max(1, Math.round(respecGold(prestige) * PROGRESSION.respecNodeShare));
+/** Acorns to forget one rank of one node. */
+export function forgetAcorns(prestige: number): number {
+  return Math.max(1, Math.round(respecAcorns(prestige) * PROGRESSION.respecNodeShare));
 }
 
 function respecTree(state: GameState, data: GameData): GameState {
   requireTrainer(state);
   const spent = spentInTree(data, state.hero.learned, state.hero.classId);
   if (spent === 0) return fail("Nothing to respec");
-  const price = respecGold(state.legacy.prestige);
-  if (state.wallet.gold < price) return fail("Not enough Gold");
+  const price = respecAcorns(state.legacy.prestige);
+  if (state.wallet.acorns < price) return fail("Not enough Acorns");
   return {
     ...state,
     hero: {
@@ -2353,11 +2352,11 @@ function respecTree(state: GameState, data: GameData): GameState {
       // Tree skills are gone, so the Battle Plan falls back to the Start Skill.
       rotation: state.hero.rotation.map(() => null),
     },
-    wallet: { ...state.wallet, gold: state.wallet.gold - price },
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
   };
 }
 
-/** Kaelen: forget one rank of one node for a little Gold (its points come back). */
+/** Kaelen: forget one rank of one node for a few Acorns (its points come back). */
 function forgetNode(state: GameState, data: GameData, nodeId: string): GameState {
   requireTrainer(state);
   const tree = data.skillTree;
@@ -2365,8 +2364,8 @@ function forgetNode(state: GameState, data: GameData, nodeId: string): GameState
   const start = tree.classStarts?.[state.hero.classId];
   const reason = forgetBlockReason(tree, state.hero.learned, nodeId, start);
   if (reason) return fail(`Cannot forget "${nodeId}": ${reason}`);
-  const price = forgetGold(state.legacy.prestige);
-  if (state.wallet.gold < price) return fail("Not enough Gold");
+  const price = forgetAcorns(state.legacy.prestige);
+  if (state.wallet.acorns < price) return fail("Not enough Acorns");
   const ranks = (state.hero.learned[nodeId] ?? 0) - 1;
   const learned = Object.fromEntries(
     Object.entries(state.hero.learned).filter(([id]) => id !== nodeId),
@@ -2378,7 +2377,7 @@ function forgetNode(state: GameState, data: GameData, nodeId: string): GameState
       learned: ranks > 0 ? { ...learned, [nodeId]: ranks } : learned,
       unspentSkillPoints: state.hero.unspentSkillPoints + learnCost(node).skillPoints,
     },
-    wallet: { ...state.wallet, gold: state.wallet.gold - price },
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
   };
 }
 
@@ -2401,7 +2400,7 @@ function respecMastery(state: GameState, data: GameData): GameState {
   if (pointsSpent(tree, mastery) === 0 && Object.keys(mastery.choices).length === 0) {
     return fail("Nothing to respec");
   }
-  if (state.wallet.gold < MASTERY.respecGold) return fail("Not enough Gold");
+  if (state.wallet.acorns < MASTERY.respecAcorns) return fail("Not enough Acorns");
   return {
     ...state,
     hero: {
@@ -2412,7 +2411,7 @@ function respecMastery(state: GameState, data: GameData): GameState {
         ...(mastery.bonusPoints ? { bonusPoints: mastery.bonusPoints } : {}),
       },
     },
-    wallet: { ...state.wallet, gold: state.wallet.gold - MASTERY.respecGold },
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - MASTERY.respecAcorns },
   };
 }
 
@@ -2449,7 +2448,7 @@ function setRotationSkill(
   return { ...state, hero: { ...state.hero, rotation: filled } };
 }
 
-/** Checks a Battle Plan against the unlocks; changing a chosen Capstone costs Gold. */
+/** Checks a Battle Plan against the unlocks; changing a chosen Capstone costs Acorns. */
 function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState): GameState {
   requirePlanEdit(state);
   const unlocks = battlePlanUnlocks(state.legacy.prestige);
@@ -2496,7 +2495,7 @@ function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState):
   }
 
   const capstone = plan.capstone;
-  let gold = state.wallet.gold;
+  let acorns = state.wallet.acorns;
   if (capstone) {
     if (!unlocks.capstone) return fail("Capstone locked");
     if (!CAPSTONES.some((c) => c.id === capstone.id)) return fail("Unknown Capstone");
@@ -2505,8 +2504,8 @@ function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState):
     }
     const old = state.hero.plan.capstone;
     if (old && old.id !== capstone.id) {
-      if (gold < PROGRESSION.capstoneChangeGold) return fail("Not enough Gold");
-      gold -= PROGRESSION.capstoneChangeGold;
+      if (acorns < PROGRESSION.capstoneChangeAcorns) return fail("Not enough Acorns");
+      acorns -= PROGRESSION.capstoneChangeAcorns;
     }
   } else if (state.hero.plan.capstone) {
     return fail("A Capstone cannot be removed");
@@ -2525,7 +2524,7 @@ function setBattlePlan(state: GameState, data: GameData, plan: BattlePlanState):
         openingMove,
       },
     },
-    wallet: { ...state.wallet, gold },
+    wallet: { ...state.wallet, acorns },
   };
 }
 
@@ -2629,19 +2628,19 @@ function doPrestige(
 }
 
 /**
- * Gold for setting all Attribute Points anew at Kaelen: the same as a full Skill Tree respec, so
+ * Acorns for setting all Attribute Points anew at Kaelen: the same as a full Skill Tree respec, so
  * every respec follows one rule (entschlackung-v1.md).
  */
-export const attributeRespecGold = (prestige: number) => respecGold(prestige);
+export const attributeRespecAcorns = (prestige: number) => respecAcorns(prestige);
 
 /**
  * Attribute respec at Kaelen: every point above the Class Array comes back and is set anew,
- * for Gold.
+ * for Acorns.
  */
 function respecAttributes(state: GameState, data: GameData, attributes: Attributes): GameState {
   requireTrainer(state);
-  const price = attributeRespecGold(state.legacy.prestige);
-  if (state.wallet.gold < price) fail("Not enough Gold");
+  const price = attributeRespecAcorns(state.legacy.prestige);
+  if (state.wallet.acorns < price) fail("Not enough Acorns");
   const floor = heroClassOf(state, data).startingAttributes;
   const { hero } = state;
   const points =
@@ -2655,7 +2654,7 @@ function respecAttributes(state: GameState, data: GameData, attributes: Attribut
       attributes,
       unspentAttributePoints: points - (sumAttributes(attributes) - sumAttributes(floor)),
     },
-    wallet: { ...state.wallet, gold: state.wallet.gold - price },
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
   };
 }
 
@@ -2701,6 +2700,21 @@ export function deserializeGame(json: string, data?: GameData): GameState {
   return state as GameState;
 }
 
+/**
+ * Currency names before v13 (entschlackung-v1.md): Gold, Salvage Dust, Reforge Stones and
+ * Ascension Shards became Acorns, Ash, Ember Coal and Phoenix Feathers. Migrations before v13
+ * work on the old names.
+ */
+interface OldCurrencies {
+  readonly gold?: number;
+  readonly dust?: number;
+  readonly reforgeStones?: number;
+  readonly ascensionShards?: number;
+  readonly salvagedDust?: number;
+}
+const oldCurrencies = (value: object | null | undefined): OldCurrencies =>
+  (value ?? {}) as OldCurrencies;
+
 /** v1 (M3) → v2 (M4): Ascension Shards and the stash are new. */
 function migrateV1(state: Partial<GameState>): Partial<GameState> {
   const rewards = state.run?.rewards;
@@ -2708,9 +2722,16 @@ function migrateV1(state: Partial<GameState>): Partial<GameState> {
     ...state,
     version: 2,
     stash: state.stash ?? [],
-    ...(state.wallet ? { wallet: { ...state.wallet, ascensionShards: 0 } } : {}),
+    ...(state.wallet
+      ? { wallet: { ...state.wallet, ascensionShards: 0 } as object as Wallet }
+      : {}),
     ...(state.run
-      ? { run: { ...state.run, rewards: rewards ? { ...rewards, ascensionShards: 0 } : null } }
+      ? {
+          run: {
+            ...state.run,
+            rewards: rewards ? ({ ...rewards, ascensionShards: 0 } as object as Rewards) : null,
+          },
+        }
       : {}),
   };
 }
@@ -2873,7 +2894,7 @@ type LegacyEquipment = Equipment & { readonly mainHand?: Item };
 /**
  * v9 → v10 (Weapon Mastery, waffe-als-system-v1.md): the weapon is the hero's own and never
  * drops. The hero keeps the weapon type in hand (or the class's first); weapon items turn into
- * Salvage Dust. Echoes are granted for the bosses beaten so far: one stage per run since the
+ * Ash. Echoes are granted for the bosses beaten so far: one stage per run since the
  * act opened, so an older hero does not start from nothing.
  */
 function migrateV9(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
@@ -2941,7 +2962,14 @@ function migrateV9(state: Partial<GameState>, data: GameData | undefined): Parti
     hero: { ...hero, weaponId, mastery: hero.mastery ?? EMPTY_MASTERY, equipment },
     inventory,
     stash,
-    ...(state.wallet ? { wallet: { ...state.wallet, dust: state.wallet.dust + dust } } : {}),
+    ...(state.wallet
+      ? {
+          wallet: {
+            ...state.wallet,
+            dust: (oldCurrencies(state.wallet).dust ?? 0) + dust,
+          } as object as Wallet,
+        }
+      : {}),
     ...(state.legacy ? { legacy: { ...state.legacy, echoes: state.legacy.echoes ?? echoes } } : {}),
     ...(run && migratedRewards ? { run: { ...run, rewards: migratedRewards } } : {}),
   };
@@ -3045,17 +3073,19 @@ function migrateV11(state: Partial<GameState>, data: GameData | undefined): Part
   };
 }
 
-/** Salvage Dust per Essence left over when Essences went away (v12 → v13). */
-const DUST_PER_ESSENCE = 20;
+/** Ash per Essence left over when Essences went away (v12 → v13). */
+const ASH_PER_ESSENCE = 20;
 
 /**
  * v12 → v13 (entschlackung-v1.md): no Spoils, Essences, Kindling, Harvester's Ember, Phoenix
- * Ash, Quarry or burned Supply Wagon any more. Essences turn into Dust and Kindling into Reforge
- * Stones (Kindle's new price). Keystones now cost Skill Points, so the Skill Tree starts over with
- * every point the hero has earned.
+ * Ash, Quarry or burned Supply Wagon any more. The currencies get their lore names (Gold, Dust,
+ * Reforge Stones and Ascension Shards become Acorns, Ash, Ember Coal and Phoenix Feathers).
+ * Essences turn into Ash and Kindling into Ember Coal (Kindle's new price). Keystones now cost
+ * Skill Points, so the Skill Tree starts over with every point the hero has earned.
  */
 function migrateV12(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
-  const old = (state.wallet ?? {}) as Partial<Wallet> & {
+  const old = (state.wallet ?? {}) as OldCurrencies & {
+    readonly runes?: Wallet["runes"];
     readonly essences?: Readonly<Record<string, number>>;
     readonly kindling?: number;
   };
@@ -3063,13 +3093,32 @@ function migrateV12(state: Partial<GameState>, data: GameData | undefined): Part
   const strip = <T extends object>(obj: T | undefined, keys: readonly string[]) =>
     obj && (Object.fromEntries(Object.entries(obj).filter(([k]) => !keys.includes(k))) as T);
   const wallet = state.wallet && {
-    gold: old.gold ?? 0,
-    dust: (old.dust ?? 0) + essences * DUST_PER_ESSENCE,
-    reforgeStones: (old.reforgeStones ?? 0) + (old.kindling ?? 0),
-    ascensionShards: old.ascensionShards ?? 0,
+    acorns: old.gold ?? 0,
+    ash: (old.dust ?? 0) + essences * ASH_PER_ESSENCE,
+    emberCoal: (old.reforgeStones ?? 0) + (old.kindling ?? 0),
+    phoenixFeathers: old.ascensionShards ?? 0,
     runes: old.runes ?? {},
   };
-  const rewards = strip(state.run?.rewards ?? undefined, ["spoils", "spoilsPick"]);
+  const oldRewards = state.run?.rewards;
+  const was = oldCurrencies(oldRewards);
+  const rewards = oldRewards
+    ? ({
+        ...strip(oldRewards, [
+          "spoils",
+          "spoilsPick",
+          "gold",
+          "dust",
+          "reforgeStones",
+          "ascensionShards",
+          "salvagedDust",
+        ]),
+        acorns: was.gold ?? 0,
+        ash: was.dust ?? 0,
+        emberCoal: was.reforgeStones ?? 0,
+        phoenixFeathers: was.ascensionShards ?? 0,
+        salvagedAsh: was.salvagedDust ?? 0,
+      } as Rewards)
+    : undefined;
   const migrated = {
     ...state,
     version: 13,

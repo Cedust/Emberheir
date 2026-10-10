@@ -39,12 +39,12 @@ test("Rings aim at the other slot, items drag & drop, discard gives nothing", as
     .dragTo(dialog.getByRole("button", { name: "Ring: empty" }));
   await expect(dialog.getByRole("button", { name: "Ring: empty" })).toHaveCount(0);
 
-  // Discard asks once more and gives no Dust.
-  const dust = await dialog.locator(".w-dust b").textContent();
+  // Discard asks once more and gives no Ash.
+  const ash = await dialog.locator(".w-ash b").textContent();
   await grid.getByTestId("grid-item").first().click();
   await dialog.getByRole("button", { name: "Discard" }).click();
   await dialog.getByRole("button", { name: "Really discard?" }).click();
   await expect(grid.getByTestId("grid-item")).toHaveCount(0);
-  await expect(dialog.locator(".w-dust b")).toHaveText(dust ?? "");
+  await expect(dialog.locator(".w-ash b")).toHaveText(ash ?? "");
   expect(errors).toEqual([]);
 });

@@ -12,15 +12,15 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Death and Retreat",
-    text: "When you fall or retreat, you wake in the Camp and keep everything: gear, Gold, Dust and Inventory. Only the way through the Act starts over. Each death in an Act makes its loot a little better (Pity) until the boss falls.",
+    text: "When you fall or retreat, you wake in the Camp and keep everything: gear, Acorns, Ash and Inventory. Only the way through the Act starts over. Each death in an Act makes its loot a little better (Pity) until the boss falls.",
   },
   {
     title: "Loot",
-    text: "After each win you pick 1 of 3 items: Equip it or Take it into the inventory. The others turn into Salvage Dust. Reforge Stones, Ascension Shards and Runes drop by themselves. Rarities: Normal, Magic, Rare, Epic, Legendary. Every item needs a level: its Item Level minus 5.",
+    text: "After each win you pick 1 of 3 items: Equip it or Take it into the inventory. The others turn into Ash. Ember Coal, Phoenix Feathers and Runes drop by themselves. Rarities: Normal, Magic, Rare, Epic, Legendary. Every item needs a level: its Item Level minus 5.",
   },
   {
     title: "Harvest and Prestige",
-    text: "When the newest Act's boss falls, the Harvester burns the world. The caravan saves everything you carry: gear, Inventory, Stash, Gold and Dust. You start again at Act 1 with one more Act, a higher Level Cap (5 more per Act), a new Skill Tree branch and a Battle Plan upgrade. Better rarities open up from run to run.",
+    text: "When the newest Act's boss falls, the Harvester burns the world. The caravan saves everything you carry: gear, Inventory, Stash, Acorns and Ash. You start again at Act 1 with one more Act, a higher Level Cap (5 more per Act), a new Skill Tree branch and a Battle Plan upgrade. Better rarities open up from run to run.",
   },
   {
     title: "Stolen Fire Boons",
@@ -36,11 +36,11 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Elites and Bosses",
-    text: "Elites carry modifiers and drop better loot, sometimes an Ascension Shard. The boss of each Act telegraphs its heavy attack: watch for 'Charging'. Bosses always drop an Ascension Shard.",
+    text: "Elites carry modifiers and drop better loot, sometimes a Phoenix Feather. The boss of each Act telegraphs its heavy attack: watch for 'Charging'. Bosses always drop a Phoenix Feather.",
   },
   {
     title: "Thoric, the Blacksmith",
-    text: "Upgrade raises an item's Tier (+1) for Gold and an Ascension Shard; the affix rolls keep their quality, so the values grow. Reforge rerolls all affixes for a Reforge Stone and frees the lock. Salvage breaks inventory items into Dust.",
+    text: "Upgrade raises an item's Tier (+1) for Acorns and a Phoenix Feather; the affix rolls keep their quality, so the values grow. Reforge rerolls all affixes for Ember Coal and frees the lock. Salvage breaks inventory items into Ash.",
   },
   {
     title: "Liora, the Mystic",
@@ -52,11 +52,11 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Eldrin, the Scout",
-    text: "Eldrin knows what waits on the road ahead, and he hands out one Bounty for every trip: slay Elites, hunt an enemy, catch the Ember Thief or beat the boss in style. Done, it pays at once: Gold, Reforge Stones and a Rare item or better for the Supply Wagon. Failed, nothing is lost.",
+    text: "Eldrin knows what waits on the road ahead, and he hands out one Bounty for every trip: slay Elites, hunt an enemy, catch the Ember Thief or beat the boss in style. Done, it pays at once: Acorns, Ember Coal and a Rare item or better for the Supply Wagon. Failed, nothing is lost.",
   },
   {
     title: "Supply Wagon",
-    text: "The Stash is shared by all your Heirs, so a good find helps the next one too. Gold and the other currencies stay with each Heir.",
+    text: "The Stash is shared by all your Heirs, so a good find helps the next one too. Acorns and the other currencies stay with each Heir.",
   },
   {
     title: "Keystones",
@@ -64,11 +64,11 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Marisha, the Black Market",
-    text: "Pick a slot and pay Gold for a random item. Marisha's odds are better than loot: she can give one rarity more than the current run drops.",
+    text: "Pick a slot and pay Acorns for a random item. Marisha's odds are better than loot: she can give one rarity more than the current run drops.",
   },
   {
     title: "Trigger Codex",
-    text: "Salvage an item with a trigger at Thoric and the Codex learns its Condition and its Effect. Liora's Kindle puts any learned Condition and Effect together as a trigger at the item's Tier, for Dust and Reforge Stones.",
+    text: "Salvage an item with a trigger at Thoric and the Codex learns its Condition and its Effect. Liora's Kindle puts any learned Condition and Effect together as a trigger at the item's Tier, for Ash and Ember Coal.",
   },
   {
     title: "Attributes",

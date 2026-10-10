@@ -39,10 +39,10 @@ const TABS: { id: Tab; name: string }[] = [
 ];
 
 const CURRENCIES: { key: WalletCurrency; name: string }[] = [
-  { key: "gold", name: "Gold" },
-  { key: "dust", name: "Dust" },
-  { key: "reforgeStones", name: "Reforge Stones" },
-  { key: "ascensionShards", name: "Ascension Shards" },
+  { key: "acorns", name: "Acorns" },
+  { key: "ash", name: "Ash" },
+  { key: "emberCoal", name: "Ember Coal" },
+  { key: "phoenixFeathers", name: "Phoenix Feathers" },
 ];
 
 /** A number that is set on Enter, on blur or with the button. */
@@ -226,7 +226,7 @@ function CurrencyTab(props: { state: GameState; game: GameApi }) {
             key={c.key}
             label={c.name}
             value={state.wallet[c.key]}
-            quick={c.key === "gold" || c.key === "dust" ? [1000, 10000] : [10, 100]}
+            quick={c.key === "acorns" || c.key === "ash" ? [1000, 10000] : [10, 100]}
             onSet={(amount) => game.cheat({ kind: "currency", currency: c.key, amount })}
           />
         ))}

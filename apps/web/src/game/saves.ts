@@ -74,7 +74,7 @@ function readOwnSlot(kv: KeyValueStore, slot: number): GameState | null {
 
 /**
  * The shared stash. The first time, the stashes of all slots move into it (slot by slot); what no
- * longer fits goes into that character's inventory, or turns into its Salvage Dust.
+ * longer fits goes into that character's inventory, or turns into its Ash.
  */
 export function readSharedStash(kv: KeyValueStore): PlacedItem[] {
   const json = kv.getItem(STASH_KEY);
@@ -99,7 +99,7 @@ export function readSharedStash(kv: KeyValueStore): PlacedItem[] {
       }
       const toBag = addToGrid(inventory, placed.item, GAME_DATA.items, INVENTORY_SIZE);
       if (toBag) inventory = toBag;
-      else wallet = { ...wallet, dust: wallet.dust + salvageValue(placed.item) };
+      else wallet = { ...wallet, ash: wallet.ash + salvageValue(placed.item) };
     }
     kv.setItem(slotKey(slot), serializeGame({ ...state, stash: [], inventory, wallet }));
   }

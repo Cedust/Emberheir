@@ -679,7 +679,7 @@ function BountyPaid(props: { run: RunState }) {
       <div className="bounty-paid-text">
         <strong className="title-font">Bounty done!</strong>
         <span className="sub">
-          +{fmt(paid.gold)} Gold · +{paid.reforgeStones} Reforge Stones ·{" "}
+          +{fmt(paid.acorns)} Acorns · +{paid.emberCoal} Ember Coal ·{" "}
           <span className="rarity-text">{paid.item.name}</span> {where}
         </span>
       </div>
@@ -713,8 +713,8 @@ function DoneCard(props: { run: RunState }) {
     const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
     const boonName = boon && GAME_DATA.boons?.find((b) => b.id === boon.id)?.name;
     if (boonName) sub += `${sub ? " · " : ""}Boon: ${boonName}`;
-    if (rewards.salvagedDust > 0)
-      sub += `${sub ? " · " : ""}+${rewards.salvagedDust} Dust from salvage`;
+    if (rewards.salvagedAsh > 0)
+      sub += `${sub ? " · " : ""}+${rewards.salvagedAsh} Ash from salvage`;
   }
   return (
     <div className="done-card panel-card" data-testid="done-card">
@@ -771,10 +771,10 @@ export function IntermissionView(props: {
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
   const gains: Record<string, number> = rewards
     ? {
-        gold: rewards.gold + (rewards.bounty?.gold ?? 0),
-        dust: rewards.dust + rewards.salvagedDust,
-        reforge: rewards.reforgeStones + (rewards.bounty?.reforgeStones ?? 0),
-        shards: rewards.ascensionShards,
+        acorns: rewards.acorns + (rewards.bounty?.acorns ?? 0),
+        ash: rewards.ash + rewards.salvagedAsh,
+        reforge: rewards.emberCoal + (rewards.bounty?.emberCoal ?? 0),
+        feathers: rewards.phoenixFeathers,
       }
     : {};
 
@@ -804,10 +804,10 @@ export function IntermissionView(props: {
           <p className="screen-sub">{subtitle}</p>
           {rewards && step !== "ready" && !inFinale(act) && (
             <p className="auto-rewards sub" data-testid="auto-rewards">
-              +{fmt(rewards.xp)} XP · +{fmt(rewards.gold)} Gold · +{fmt(rewards.dust)} Dust
-              {rewards.reforgeStones > 0 ? ` · +${rewards.reforgeStones} Reforge Stones` : ""}
-              {rewards.ascensionShards > 0
-                ? ` · +${rewards.ascensionShards} Ascension Shard${rewards.ascensionShards > 1 ? "s" : ""}`
+              +{fmt(rewards.xp)} XP · +{fmt(rewards.acorns)} Acorns · +{fmt(rewards.ash)} Ash
+              {rewards.emberCoal > 0 ? ` · +${rewards.emberCoal} Ember Coal` : ""}
+              {rewards.phoenixFeathers > 0
+                ? ` · +${rewards.phoenixFeathers} Phoenix Feather${rewards.phoenixFeathers > 1 ? "s" : ""}`
                 : ""}
             </p>
           )}
@@ -831,14 +831,14 @@ export function IntermissionView(props: {
               <button
                 type="button"
                 className="btn"
-                title="Unpicked items become Salvage Dust"
+                title="Unpicked items become Ash"
                 onClick={() => game.dispatch({ type: "salvageAll" })}
               >
                 {rewards?.taken?.length ? "Salvage the Rest" : "Salvage All"} · +
                 {(rewards?.items ?? [])
                   .filter((_, i) => !rewards?.taken?.some((t) => t.index === i))
                   .reduce((n, it) => n + salvageValue(it), 0)}{" "}
-                Dust
+                Ash
               </button>
             </div>
           )}

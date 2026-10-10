@@ -227,7 +227,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
         <h2 className="title-font">THE EMBERS SETTLE</h2>
         <p className="sub">
           +{harvest.attributePoints} Attribute Points · set them now or later. Kaelen resets them
-          for Gold.
+          for Acorns.
         </p>
       </header>
       <div className="harvest-stones panel-card">

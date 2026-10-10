@@ -190,7 +190,7 @@ export function CharacterOverlay(props: {
           type="button"
           className={`btn ${confirmDiscard ? "danger" : ""}`}
           disabled={inFight}
-          title="Throw it away. Thoric salvages for Dust in the Camp."
+          title="Throw it away. Thoric salvages for Ash in the Camp."
           onClick={() => {
             if (!confirmDiscard) {
               setDiscarding(invItem.id);

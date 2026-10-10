@@ -73,10 +73,10 @@ export const MYSTIC_CRAFTS: readonly CraftKind[] = ["temper", "kindle"];
 export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["addSocket", "socketRune", "combineRunes"];
 
 export interface CraftCost {
-  readonly gold: number;
-  readonly dust: number;
-  readonly reforgeStones: number;
-  readonly ascensionShards: number;
+  readonly acorns: number;
+  readonly ash: number;
+  readonly emberCoal: number;
+  readonly phoenixFeathers: number;
   /** Runes by id. */
   readonly runes: Readonly<Record<string, number>>;
 }
@@ -110,10 +110,10 @@ export type CraftBlockReason =
   | "noAffix"
   | "locked"
   | "trigger"
-  | "gold"
-  | "dust"
-  | "reforgeStones"
-  | "ascensionShards"
+  | "acorns"
+  | "ash"
+  | "emberCoal"
+  | "phoenixFeathers"
   /** Kindle: a Codex part that is not learned yet. */
   | "unknownPart"
   /** Kindle: the item already has a kindled trigger (only that one can be rekindled). */
@@ -138,10 +138,10 @@ export function findCraftItem(state: GameState, itemId: string): CraftItemLocati
 }
 
 const NO_COST: CraftCost = {
-  gold: 0,
-  dust: 0,
-  reforgeStones: 0,
-  ascensionShards: 0,
+  acorns: 0,
+  ash: 0,
+  emberCoal: 0,
+  phoenixFeathers: 0,
   runes: {},
 };
 
@@ -157,38 +157,41 @@ export function craftCost(
     case "addSocket":
       return {
         ...NO_COST,
-        gold: CRAFTING.addSocketGold,
-        dust: CRAFTING.addSocketDust * ((item?.sockets ?? 0) + 1),
+        acorns: CRAFTING.addSocketAcorns,
+        ash: CRAFTING.addSocketAsh * ((item?.sockets ?? 0) + 1),
       };
     case "socketRune":
       return {
         ...NO_COST,
-        gold: CRAFTING.socketRuneGoldPerRank * runeRank(request.runeId),
+        acorns: CRAFTING.socketRuneAcornsPerRank * runeRank(request.runeId),
         runes: { [request.runeId]: 1 },
       };
     case "combineRunes":
       return {
         ...NO_COST,
-        gold: CRAFTING.combineRunesGoldPerRank * runeRank(request.runeId),
+        acorns: CRAFTING.combineRunesAcornsPerRank * runeRank(request.runeId),
         runes: { [request.runeId]: CRAFTING.combineRunesCount },
       };
     case "gamble":
-      return { ...NO_COST, gold: state && data ? gamblePrice(merchantItemLevel(state, data)) : 0 };
+      return {
+        ...NO_COST,
+        acorns: state && data ? gamblePrice(merchantItemLevel(state, data)) : 0,
+      };
     case "upgrade":
       return {
         ...NO_COST,
-        gold: CRAFTING.upgradeGoldPerTier * (item?.tier ?? 1),
-        ascensionShards: CRAFTING.upgradeShards,
+        acorns: CRAFTING.upgradeAcornsPerTier * (item?.tier ?? 1),
+        phoenixFeathers: CRAFTING.upgradeFeathers,
       };
     case "reforge":
-      return { ...NO_COST, reforgeStones: CRAFTING.reforgeStones };
+      return { ...NO_COST, emberCoal: CRAFTING.emberCoal };
     case "temper":
-      return { ...NO_COST, dust: CRAFTING.temperDust, gold: CRAFTING.temperGold };
+      return { ...NO_COST, ash: CRAFTING.temperAsh, acorns: CRAFTING.temperAcorns };
     case "kindle":
       return {
         ...NO_COST,
-        dust: CODEX.kindleDustPerTier * Math.max(1, item?.tier ?? 1),
-        reforgeStones: CODEX.kindleReforgeStones,
+        ash: CODEX.kindleAshPerTier * Math.max(1, item?.tier ?? 1),
+        emberCoal: CODEX.kindleEmberCoal,
       };
   }
 }
@@ -235,13 +238,13 @@ function affixBlockReason(
 
 function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | undefined {
   const w = state.wallet;
-  if (w.ascensionShards < cost.ascensionShards) return "ascensionShards";
-  if (w.reforgeStones < cost.reforgeStones) return "reforgeStones";
+  if (w.phoenixFeathers < cost.phoenixFeathers) return "phoenixFeathers";
+  if (w.emberCoal < cost.emberCoal) return "emberCoal";
   for (const [id, n] of Object.entries(cost.runes)) {
     if ((w.runes[id] ?? 0) < n) return "runes";
   }
-  if (w.dust < cost.dust) return "dust";
-  if (w.gold < cost.gold) return "gold";
+  if (w.ash < cost.ash) return "ash";
+  if (w.acorns < cost.acorns) return "acorns";
   return undefined;
 }
 
@@ -324,10 +327,10 @@ function pay(state: GameState, cost: CraftCost): GameState {
     ...state,
     wallet: {
       ...state.wallet,
-      gold: state.wallet.gold - cost.gold,
-      dust: state.wallet.dust - cost.dust,
-      reforgeStones: state.wallet.reforgeStones - cost.reforgeStones,
-      ascensionShards: state.wallet.ascensionShards - cost.ascensionShards,
+      acorns: state.wallet.acorns - cost.acorns,
+      ash: state.wallet.ash - cost.ash,
+      emberCoal: state.wallet.emberCoal - cost.emberCoal,
+      phoenixFeathers: state.wallet.phoenixFeathers - cost.phoenixFeathers,
       runes,
     },
   };

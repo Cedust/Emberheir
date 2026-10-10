@@ -57,7 +57,7 @@ export function itemIcon(item: Item): IconName {
   }
 }
 
-/** Rarity classes of an item: Uniques and Runewords get their own gold frame and name. */
+/** Rarity classes of an item: Uniques and Runewords get their own golden frame and name. */
 export function rarityClass(item: Item): string {
   const special = item.uniqueId
     ? " special-unique"
@@ -511,10 +511,10 @@ export function walletEntries(state: GameState): { name: string; value: number; 
   const w = state.wallet;
   const runes = Object.values(w.runes).reduce((a, b) => a + b, 0);
   return [
-    { key: "gold", name: "Gold", value: w.gold },
-    { key: "dust", name: "Dust", value: w.dust },
-    { key: "reforge", name: "Reforge", value: w.reforgeStones },
-    { key: "shards", name: "Shards", value: w.ascensionShards },
+    { key: "acorns", name: "Acorns", value: w.acorns },
+    { key: "ash", name: "Ash", value: w.ash },
+    { key: "reforge", name: "Reforge", value: w.emberCoal },
+    { key: "feathers", name: "Feathers", value: w.phoenixFeathers },
     ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
   ];
 }

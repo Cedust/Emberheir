@@ -121,9 +121,9 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
   await expect(detail).toContainText("The other path of this fork is learned");
 
-  // Colossus is forgotten for Gold: the fork opens again.
+  // Colossus is forgotten for Acorns: the fork opens again.
   await tree.getByRole("button", { name: "Colossus" }).press("Enter");
-  await detail.getByRole("button", { name: /Forget · \d+ Gold/ }).click();
+  await detail.getByRole("button", { name: /Forget · \d+ Acorns/ }).click();
   await detail.getByRole("button", { name: "Yes, forget" }).click();
   await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
   await expect(detail.getByRole("button", { name: "Learn · 1 Point" })).toBeEnabled();

@@ -14,7 +14,7 @@ export const ATTRIBUTE_RULES = {
   /** Free points at character creation, and the highest value an attribute may get there. */
   creationPoints: 6,
   creationMax: 7,
-  /** The Harvest (every Prestige): new points. Kaelen sets all of them anew for Gold. */
+  /** The Harvest (every Prestige): new points. Kaelen sets all of them anew for Acorns. */
   harvestPoints: 2,
 } as const;
 

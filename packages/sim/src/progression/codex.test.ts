@@ -43,12 +43,12 @@ const [LOW_LIFE, ON_CRIT] = TEST_CONDITIONS as [
 ];
 const [HEAL, BURN] = TEST_EFFECTS as [(typeof TEST_EFFECTS)[0], (typeof TEST_EFFECTS)[0]];
 
-function camp(items: Item[], reforgeStones = 4): GameState {
+function camp(items: Item[], emberCoal = 4): GameState {
   const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
     ...s,
     progress: { ...s.progress, trainerUnlocked: true },
-    wallet: { ...s.wallet, dust: 1000, reforgeStones },
+    wallet: { ...s.wallet, ash: 1000, emberCoal },
     inventory: items.map((item, i) => ({ item, x: i * 2, y: 0 })),
   };
 }
@@ -124,8 +124,8 @@ describe("homes", () => {
 });
 
 describe("Kindle", () => {
-  const learned = (items: Item[], reforgeStones?: number) =>
-    act(camp([RING, ...items], reforgeStones), { type: "salvage", itemId: RING.id });
+  const learned = (items: Item[], emberCoal?: number) =>
+    act(camp([RING, ...items], emberCoal), { type: "salvage", itemId: RING.id });
   const kindle = (itemId: string, affixIndex?: number) =>
     ({
       kind: "kindle",
@@ -139,8 +139,8 @@ describe("Kindle", () => {
     const s = learned([PLAIN]);
     expect(kindleTargets(PLAIN, TEST_CATALOG)).toEqual([undefined]);
     expect(craftCost(kindle(PLAIN.id), PLAIN, data, s)).toMatchObject({
-      dust: CODEX.kindleDustPerTier * 2,
-      reforgeStones: CODEX.kindleReforgeStones,
+      ash: CODEX.kindleAshPerTier * 2,
+      emberCoal: CODEX.kindleEmberCoal,
     });
     const next = act(s, { type: "craft", request: kindle(PLAIN.id) });
     const item = find(next, PLAIN.id);
@@ -149,7 +149,7 @@ describe("Kindle", () => {
     expect(roll).not.toHaveProperty("tier");
     expect(roll?.quality).toBeLessThanOrEqual(CODEX.kindleMaxQuality);
     expect(item?.lockedAffix).toBe(1);
-    expect(next.wallet.reforgeStones).toBe(4 - CODEX.kindleReforgeStones);
+    expect(next.wallet.emberCoal).toBe(4 - CODEX.kindleEmberCoal);
     if (!item) throw new Error("no item");
     expect(itemModifiers(item, TEST_CATALOG).triggers[0]).toMatchObject({
       condition: { kind: "onCrit" },
@@ -173,10 +173,10 @@ describe("Kindle", () => {
     );
   });
 
-  it("needs learned parts, Reforge Stones and a trigger place", () => {
+  it("needs learned parts, Ember Coal and a trigger place", () => {
     const fresh = camp([PLAIN]);
     expect(craftBlockReason(fresh, data, kindle(PLAIN.id))).toBe("unknownPart");
-    expect(craftBlockReason(learned([PLAIN], 0), data, kindle(PLAIN.id))).toBe("reforgeStones");
+    expect(craftBlockReason(learned([PLAIN], 0), data, kindle(PLAIN.id))).toBe("emberCoal");
     const normal: Item = { ...PLAIN, id: "n", rarity: "normal", affixes: [] };
     expect(craftBlockReason(learned([normal]), data, kindle(normal.id))).toBe("noTriggerPlace");
   });

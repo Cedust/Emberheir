@@ -54,12 +54,12 @@ describe("leveling", () => {
     expect(xpForKill(1, "boss", 1)).toBe(PROGRESSION.xpBase * PROGRESSION.bossRewardMultiplier.xp);
   });
 
-  it("Elites and Bosses give more Gold and Dust", () => {
+  it("Elites and Bosses give more Acorns and Ash", () => {
     const normal = autoRewards(3, "normal");
     const elite = autoRewards(3, "elite");
     const boss = autoRewards(3, "boss");
-    expect(elite.gold).toBeGreaterThan(normal.gold);
-    expect(boss.gold).toBeGreaterThan(elite.gold);
-    expect(boss.dust).toBeGreaterThan(normal.dust);
+    expect(elite.acorns).toBeGreaterThan(normal.acorns);
+    expect(boss.acorns).toBeGreaterThan(elite.acorns);
+    expect(boss.ash).toBeGreaterThan(normal.ash);
   });
 });

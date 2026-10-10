@@ -70,7 +70,7 @@ describe("Bounties", () => {
     expect(bountyAfterWin(hale, HALE.goal, win("boss", 0.6)).status).toBe("done");
   });
 
-  it("the Scout's bounty pays out at once: Gold, Reforge Stones and a Rare item in the stash", () => {
+  it("the Scout's bounty pays out at once: Acorns, Ember Coal and a Rare item in the stash", () => {
     const data: GameData = { ...TEST_GAME_DATA, bounties: [CULL] };
     const act = (state: GameState, ...actions: GameAction[]) =>
       actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -93,11 +93,13 @@ describe("Bounties", () => {
     expect(s.run?.bounty?.status).toBe("done");
     const paid = s.run?.rewards?.bounty;
     expect(paid?.to).toBe("stash");
-    expect(paid?.reforgeStones).toBe(PROGRESSION.bounty.reforgeStones);
+    expect(paid?.emberCoal).toBe(PROGRESSION.bounty.emberCoal);
     expect(["rare", "epic"]).toContain(paid?.item.rarity);
     expect(s.stash.map((p) => p.item.id)).toEqual([paid?.item.id]);
-    expect(s.wallet.gold).toBe(before.gold + (s.run?.rewards?.gold ?? 0) + (paid?.gold ?? 0));
-    expect(paid?.gold).toBeGreaterThan(0);
+    expect(s.wallet.acorns).toBe(
+      before.acorns + (s.run?.rewards?.acorns ?? 0) + (paid?.acorns ?? 0),
+    );
+    expect(paid?.acorns).toBeGreaterThan(0);
     // Back in the Camp the trip's bounty is gone.
     s = act(s, { type: "salvageAll" }, { type: "continue" }, { type: "retreat" });
     expect(s.run).toBeNull();

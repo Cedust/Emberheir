@@ -47,7 +47,7 @@ describe("Cheat Mode", () => {
     expect(masteryPointsLeft(s, data)).toBe(5);
     s = applyAction(s, data, { type: "learnMastery", nodeId: "refine" });
     expect(masteryPointsLeft(s, data)).toBe(4);
-    s = cheat(s, { kind: "currency", currency: "gold", amount: 500 });
+    s = cheat(s, { kind: "currency", currency: "acorns", amount: 500 });
     s = applyAction(s, data, { type: "respecMastery" });
     expect(masteryPointsLeft(s, data)).toBe(5);
   });
@@ -55,11 +55,11 @@ describe("Cheat Mode", () => {
   it("sets currencies, Runes and flasks", () => {
     const s = cheat(
       start(),
-      { kind: "currency", currency: "reforgeStones", amount: 3 },
+      { kind: "currency", currency: "emberCoal", amount: 3 },
       { kind: "rune", runeId: "el", amount: 2 },
       { kind: "flasks", amount: 5 },
     );
-    expect(s.wallet.reforgeStones).toBe(3);
+    expect(s.wallet.emberCoal).toBe(3);
     expect(s.wallet.runes.el).toBe(2);
     expect(s.legacy.runesFound).toContain("el");
     expect(s.flaskCharges).toBe(5);

@@ -23,7 +23,7 @@ import {
   heroSetup,
   knownSkills,
   masteryPointsLeft,
-  respecGold,
+  respecAcorns,
   spentInTree,
   triggerThreshold,
 } from "@emberheir/sim";
@@ -171,7 +171,7 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     { id: "", name: "—" },
     ...known.map((k) => ({ id: k.skill.id, name: k.skill.name })),
   ];
-  const capstoneCost = plan.capstone ? PROGRESSION.capstoneChangeGold : 0;
+  const capstoneCost = plan.capstone ? PROGRESSION.capstoneChangeAcorns : 0;
   const report = state.run?.rewards?.report;
 
   return (
@@ -442,13 +442,15 @@ function BattlePlanTab(props: { state: GameState; game: GameApi }) {
           <section className="panel-card capstones" aria-label="Capstone">
             <div className="section-row">
               <span className="title-font section-title">Capstone</span>
-              {capstoneCost > 0 && <span className="sub small">Switch · {capstoneCost} Gold</span>}
+              {capstoneCost > 0 && (
+                <span className="sub small">Switch · {capstoneCost} Acorns</span>
+              )}
             </div>
             <ul>
               {CAPSTONES.map((c) => {
                 const on = plan.capstone?.id === c.id;
                 const echoSlot = c.id === "echo" ? slot : (plan.capstone?.slot ?? 0);
-                const blocked = !on && plan.capstone !== null && state.wallet.gold < capstoneCost;
+                const blocked = !on && plan.capstone !== null && state.wallet.acorns < capstoneCost;
                 return (
                   <li key={c.id}>
                     <button
@@ -508,8 +510,8 @@ export function KaelenView(props: {
   );
   const [respec, setRespec] = useState(false);
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
-  const respecPrice = respecGold(state.legacy.prestige);
-  const canRespec = !viewOnly && spent > 0 && state.wallet.gold >= respecPrice;
+  const respecPrice = respecAcorns(state.legacy.prestige);
+  const canRespec = !viewOnly && spent > 0 && state.wallet.acorns >= respecPrice;
 
   return (
     <div className={viewOnly ? "overlay" : "screen-wrap"} role="dialog" aria-label="Kaelen">
@@ -578,7 +580,7 @@ export function KaelenView(props: {
               <span className="sub">Mastery Points</span>
             </span>
             <span>
-              <b className="mono">{fmt(state.wallet.gold)}</b> <span className="sub">Gold</span>
+              <b className="mono">{fmt(state.wallet.acorns)}</b> <span className="sub">Acorns</span>
             </span>
           </div>
           {!viewOnly &&
@@ -612,7 +614,7 @@ export function KaelenView(props: {
                 }
                 onClick={() => setRespec(true)}
               >
-                Respec · {respecPrice} Gold
+                Respec · {respecPrice} Acorns
               </button>
             ))}
           <button

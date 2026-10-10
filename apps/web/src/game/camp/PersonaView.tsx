@@ -87,7 +87,7 @@ const PERSONAS: Record<PersonaId, PersonaDef> = {
     actions: [
       { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
       { k: "reforge", name: "Reforge", desc: "Reroll all affixes. Removes the lock." },
-      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Dust." },
+      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Ash." },
     ],
   },
   liora: {
@@ -186,13 +186,13 @@ function rangeText(item: Item, affixId: string): string {
 
 function costText(cost: CraftCost): string {
   const parts: string[] = [];
-  if (cost.gold) parts.push(`${fmt(cost.gold)} Gold`);
-  if (cost.dust) parts.push(`${fmt(cost.dust)} Dust`);
-  if (cost.reforgeStones) {
-    parts.push(`${cost.reforgeStones} Reforge Stone${cost.reforgeStones > 1 ? "s" : ""}`);
+  if (cost.acorns) parts.push(`${fmt(cost.acorns)} Acorns`);
+  if (cost.ash) parts.push(`${fmt(cost.ash)} Ash`);
+  if (cost.emberCoal) {
+    parts.push(`${cost.emberCoal} Ember Coal`);
   }
-  if (cost.ascensionShards) {
-    parts.push(`${cost.ascensionShards} Ascension Shard${cost.ascensionShards > 1 ? "s" : ""}`);
+  if (cost.phoenixFeathers) {
+    parts.push(`${cost.phoenixFeathers} Phoenix Feather${cost.phoenixFeathers > 1 ? "s" : ""}`);
   }
   for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
   return parts.join(" · ") || "Free";
@@ -313,7 +313,7 @@ export function PersonaView(props: {
           ? CRAFT_BLOCK_TEXT.notTrigger
           : "Choose a Condition and an Effect";
   } else if (kind === "salvage") {
-    cost = item ? `Free · +${salvageValue(item)} Dust` : "Free";
+    cost = item ? `Free · +${salvageValue(item)} Ash` : "Free";
     block = !item
       ? "Choose an item"
       : equipped
@@ -339,7 +339,7 @@ export function PersonaView(props: {
     if (kind === "salvage" && item) {
       const names = learned.map((l) => partName(l.kind, l.id)).join(", ");
       setLast(
-        `Salvaged ${item.name}: +${salvageValue(item)} Dust${names ? ` · Codex: ${names}` : ""}`,
+        `Salvaged ${item.name}: +${salvageValue(item)} Ash${names ? ` · Codex: ${names}` : ""}`,
       );
       game.dispatch({ type: "salvage", itemId: item.id });
       setItemId(null);
@@ -686,10 +686,10 @@ function AfterCard(props: {
     return (
       <div className="craft-card panel-card dashed">
         <span className="eyebrow">AFTER</span>
-        <span className="title-font craft-item-name">Salvage Dust</span>
+        <span className="title-font craft-item-name">Ash</span>
         <span className="sub">The item is gone for good.</span>
         <div className="item-detail-rule" />
-        <span className="after-line new">+{salvageValue(item)} Salvage Dust</span>
+        <span className="after-line new">+{salvageValue(item)} Ash</span>
         {props.learned.map((l) => (
           <span key={`${l.kind}-${l.id}`} className="after-line new kindled">
             Codex: {partName(l.kind, l.id)} · new

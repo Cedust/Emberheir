@@ -698,11 +698,11 @@
   gap: 14px;
 }
 
-.stage .small-wallet .w-reforge b {
+.stage .small-wallet .w-coal b {
   color: var(--r-epic);
 }
 
-.stage .small-wallet .w-shards b {
+.stage .small-wallet .w-feathers b {
   color: #ffb13b;
 }
 
@@ -1196,15 +1196,15 @@
   font-size: 13px;
 }
 
-.stage .w-gold .dot {
+.stage .w-acorns .dot {
   background: #ffd84a;
 }
 
-.stage .w-reforge .dot {
+.stage .w-coal .dot {
   background: #5b8cff;
 }
 
-.stage .w-shards .dot {
+.stage .w-feathers .dot {
   background: #ffb13b;
 }
 
@@ -3950,7 +3950,7 @@
   --tone: #ff5a1f;
 }
 
-.stage .tone-card-dust {
+.stage .tone-card-ash {
   --tone: #c9c2b8;
 }
 

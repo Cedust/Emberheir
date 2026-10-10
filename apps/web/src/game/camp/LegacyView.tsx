@@ -181,7 +181,7 @@ export function LegacyView(props: {
                 className="sealed"
                 footer={
                   <span className="sub small">
-                    Survives every harvest. Thoric can raise its Tier with an Ascension Shard.
+                    Survives every harvest. Thoric can raise its Tier with a Phoenix Feather.
                   </span>
                 }
               />

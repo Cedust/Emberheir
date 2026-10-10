@@ -6,7 +6,7 @@ import {
   type SkillTreeBranch,
   branchTier,
   forgetBlockReason,
-  forgetGold,
+  forgetAcorns,
   getNode,
   forkPartner,
   KEYSTONE,
@@ -156,7 +156,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
     selectedCost.keystones <= preview.budget.keystones;
   const start = SKILL_TREE.classStarts?.[state.hero.classId];
   const committed = selected ? (state.hero.learned[selected.id] ?? 0) > 0 : false;
-  const forgetPrice = forgetGold(state.legacy.prestige);
+  const forgetPrice = forgetAcorns(state.legacy.prestige);
   const forgetReason =
     selected && committed
       ? forgetBlockReason(SKILL_TREE, state.hero.learned, selected.id, start)
@@ -457,10 +457,10 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                       <button
                         type="button"
                         className="btn"
-                        disabled={forgetReason !== undefined || state.wallet.gold < forgetPrice}
+                        disabled={forgetReason !== undefined || state.wallet.acorns < forgetPrice}
                         onClick={() => setForget(true)}
                       >
-                        Forget · {forgetPrice} Gold
+                        Forget · {forgetPrice} Acorns
                       </button>
                     )}
                     {forgetReason && (

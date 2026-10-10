@@ -38,7 +38,8 @@ const WARDENS: Readonly<Record<string, string>> = {
  * reaches two ranks higher. Weapon bonus first, armor bonus (Off Hand, Helm, Body) second.
  */
 export const RUNES: readonly RuneDefinition[] = [
-  rune("ash", "Ash", 1, { physicalDamage: 0.06 }, { armor: 6 }),
+  // Id "ash" from before the currency of that name; the Rune is called Bark.
+  rune("ash", "Bark", 1, { physicalDamage: 0.06 }, { armor: 6 }),
   rune("moss", "Moss", 2, { lifesteal: 0.015 }, { life: 12 }),
   rune("thorn", "Thorn", 3, { bleedChance: 0.06 }, { thorns: 2 }),
   rune("venom", "Venom", 4, { poisonChance: 0.08 }, { tenacity: 0.06 }),

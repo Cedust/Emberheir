@@ -107,12 +107,12 @@ describe("The Last Ember", () => {
     const s0: GameState = {
       ...base,
       pendingPrestige: { actId: "final-act", stage: 3, enemyName: "Boss" },
-      wallet: { ...base.wallet, gold: 500 },
+      wallet: { ...base.wallet, acorns: 500 },
     };
     const s = act(s0, { type: "prestige" });
     expect(s.legacy.prestige).toBe(PROGRESSION.finalPrestige);
     expect(s.hero.equipment).toEqual(s0.hero.equipment);
-    expect(s.wallet.gold).toBe(500);
+    expect(s.wallet.acorns).toBe(500);
     expect(s.notice?.kind).toBe("prestige");
 
     // Beating the run's last boss again only clears the act.

@@ -5,7 +5,7 @@ import {
   type GameState,
   addAttributes,
   attributeProblem,
-  attributeRespecGold,
+  attributeRespecAcorns,
   heroClassOf,
   sumAttributes,
 } from "@emberheir/sim";
@@ -15,7 +15,7 @@ import { AttributeStones, NO_POINTS } from "../AttributeStones";
 import type { GameApi } from "../useGame";
 
 /**
- * Attribute respec at Kaelen (entschlackung-v1.md): for Gold, the same price as a Skill Tree
+ * Attribute respec at Kaelen (entschlackung-v1.md): for Acorns, the same price as a Skill Tree
  * respec, every point above the Class Array comes back and is set anew.
  */
 export function AttributeRespecTab(props: { state: GameState; game: GameApi }) {
@@ -24,8 +24,8 @@ export function AttributeRespecTab(props: { state: GameState; game: GameApi }) {
   const [locking, setLocking] = useState(false);
   const own = state.hero.attributes;
   const floor = heroClassOf(state, GAME_DATA).startingAttributes;
-  const price = attributeRespecGold(state.legacy.prestige);
-  const affordable = state.wallet.gold >= price;
+  const price = attributeRespecAcorns(state.legacy.prestige);
+  const affordable = state.wallet.acorns >= price;
   const points = sumAttributes(own) - sumAttributes(floor) + state.hero.unspentAttributePoints;
   const next = addAttributes(own, delta);
   const left = points - (sumAttributes(next) - sumAttributes(floor));
@@ -52,7 +52,7 @@ export function AttributeRespecTab(props: { state: GameState; game: GameApi }) {
       <div className="attr-respec-head">
         <h2 className="title-font">ATTRIBUTES</h2>
         <span className="sub" data-testid="attribute-respec-price">
-          Set every point above your Class Array anew · <b className="mono">{fmt(price)}</b> Gold
+          Set every point above your Class Array anew · <b className="mono">{fmt(price)}</b> Acorns
         </span>
       </div>
       <div className="panel-card attr-respec-stones">
@@ -89,10 +89,10 @@ export function AttributeRespecTab(props: { state: GameState; game: GameApi }) {
           type="button"
           className={`btn big ${locking ? "danger" : "primary"}`}
           disabled={!changed || left < 0 || !ok(next) || !affordable}
-          title={affordable ? undefined : "Not enough Gold"}
+          title={affordable ? undefined : "Not enough Acorns"}
           onClick={respec}
         >
-          {locking ? "Pay and set them?" : `Respec · ${fmt(price)} Gold`}
+          {locking ? "Pay and set them?" : `Respec · ${fmt(price)} Acorns`}
         </button>
       </div>
     </div>

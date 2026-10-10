@@ -32,7 +32,7 @@ export function saveAfterHarvestBoss(): string {
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
     },
-    wallet: { ...base.wallet, gold: 400, dust: 380, reforgeStones: 6, ascensionShards: 1 },
+    wallet: { ...base.wallet, acorns: 400, ash: 380, emberCoal: 6, phoenixFeathers: 1 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     stats: { fights: 16, wins: 15, deaths: 1, retreats: 0, bossKills: 1 },
     pendingPrestige: { actId: "ashen-fields", stage: 15, enemyName: "Gorrak, the Pit Brute" },
@@ -62,13 +62,13 @@ export function saveAfterAct1(): string {
   return serializeGame(state);
 }
 
-/** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Ash Runes in the pouch. */
+/** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Bark Runes in the pouch. */
 export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15 },
-    wallet: { ...base.wallet, gold: 400, runes: { ash: 3 } },
+    wallet: { ...base.wallet, acorns: 400, runes: { ash: 3 } },
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields"],
@@ -95,7 +95,7 @@ export function saveWithCodex(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 20 },
-    wallet: { ...base.wallet, dust: 400, reforgeStones: 4 },
+    wallet: { ...base.wallet, ash: 400, emberCoal: 4 },
     inventory: [{ item: ring, x: 0, y: 0 }],
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     legacy: {
@@ -137,16 +137,16 @@ export function saveBossHoard(): string {
       rewards: {
         rank: "boss",
         xp: 400,
-        gold: 120,
-        dust: 40,
-        reforgeStones: 4,
-        ascensionShards: 1,
+        acorns: 120,
+        ash: 40,
+        emberCoal: 4,
+        phoenixFeathers: 1,
         runes: ["moss"],
         levelsGained: 0,
         items,
         picks: 2,
         itemPick: null,
-        salvagedDust: 0,
+        salvagedAsh: 0,
         newTrophies: ["thornsong"],
       },
     },
@@ -178,15 +178,15 @@ export function saveShrine(): string {
       rewards: {
         rank: "normal",
         xp: 40,
-        gold: 12,
-        dust: 4,
-        reforgeStones: 0,
-        ascensionShards: 0,
+        acorns: 12,
+        ash: 4,
+        emberCoal: 0,
+        phoenixFeathers: 0,
         runes: [],
         levelsGained: 0,
         items: [],
         itemPick: { kind: "salvageAll" },
-        salvagedDust: 0,
+        salvagedAsh: 0,
         boonOffer: [
           { id: "crushing-blow", grade: "spark" },
           { id: "banked-coals", grade: "flame" },
@@ -336,7 +336,7 @@ export function saveMastery(extra: readonly string[] = []): string {
   let state: GameState = {
     ...base,
     hero: { ...base.hero, level: 45 },
-    wallet: { ...base.wallet, gold: 500 },
+    wallet: { ...base.wallet, acorns: 500 },
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields", "rotwood", "ember-wastes"],
@@ -371,13 +371,13 @@ export function saveMastery(extra: readonly string[] = []): string {
   return serializeGame(state);
 }
 
-/** A fresh Warrior at the Camp with Skill Points and Gold: the web from its start (level-v2.md). */
+/** A fresh Warrior at the Camp with Skill Points and Acorns: the web from its start (level-v2.md). */
 export function saveWebTree(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   return serializeGame({
     ...base,
     hero: { ...base.hero, level: 12, unspentSkillPoints: 8 },
-    wallet: { ...base.wallet, gold: 5000 },
+    wallet: { ...base.wallet, acorns: 5000 },
     progress: { ...base.progress, trainerUnlocked: true },
   });
 }

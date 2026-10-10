@@ -7,13 +7,13 @@ import {
   type GameAction,
   type GameState,
   applyAction,
-  attributeRespecGold,
+  attributeRespecAcorns,
   deserializeGame,
   heroSetup,
   newGame,
   SAVE_VERSION,
 } from "./game";
-import { TEST_BOON_DATA, TEST_GAME_DATA as data } from "./test-fixtures";
+import { TEST_BOON_DATA, TEST_GAME_DATA as data, withOldCurrencies } from "./test-fixtures";
 
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -83,19 +83,19 @@ describe("Attributes v1", () => {
     expect(later.hero.unspentAttributePoints).toBe(2);
   });
 
-  it("Attribute respec at Kaelen: every point above the Class Array anew, for Gold", () => {
+  it("Attribute respec at Kaelen: every point above the Class Array anew, for Acorns", () => {
     let s = act(fresh(), { type: "allocateAttributes", points: { strength: 4, vitality: 2 } });
     const target = plus(floor(), { dexterity: 3, intelligence: 3 });
-    const price = attributeRespecGold(0);
-    expect(() => act(s, { type: "respecAttributes", attributes: target })).toThrow(/Gold/);
-    s = { ...s, wallet: { ...s.wallet, gold: price } };
+    const price = attributeRespecAcorns(0);
+    expect(() => act(s, { type: "respecAttributes", attributes: target })).toThrow(/Acorns/);
+    s = { ...s, wallet: { ...s.wallet, acorns: price } };
     s = act(s, { type: "respecAttributes", attributes: target });
     expect(s.hero.attributes).toEqual(target);
     expect(s.hero.unspentAttributePoints).toBe(0);
-    expect(s.wallet.gold).toBe(0);
+    expect(s.wallet.acorns).toBe(0);
     expect(() =>
       act(
-        { ...s, wallet: { ...s.wallet, gold: price } },
+        { ...s, wallet: { ...s.wallet, acorns: price } },
         { type: "respecAttributes", attributes: plus(floor(), { dexterity: 7 }) },
       ),
     ).toThrow(/Not enough Attribute/);
@@ -140,10 +140,10 @@ describe("Attributes v1", () => {
     expect(setup.perks).toEqual(["armorbreaker", "stoneguard", "secondBreath"]);
   });
 
-  it("migrates v10 saves: back to the Class Array, points and Phoenix Ash per Prestige", () => {
+  it("migrates v10 saves: back to the Class Array with the points of every Prestige", () => {
     const s = act(fresh(), { type: "allocateAttributes", points: { strength: 4 } });
     const v10 = {
-      ...s,
+      ...withOldCurrencies(s),
       version: 10,
       hero: { ...s.hero, attributes: { ...s.hero.attributes, strength: 80 } },
       legacy: { ...s.legacy, prestige: 3 },
