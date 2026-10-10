@@ -21,7 +21,7 @@ export const PORTRAIT: Record<string, string> = {
   marisha: "33 14 50 50",
   liora: "34 12 50 50",
   kaelen: "35 10 54 54",
-  nyssa: "34 16 48 48",
+  nyssa: "30 24 56 56",
   eldrin: "36 16 54 54",
 };
 
@@ -770,9 +770,6 @@ function Nyssa() {
       <F d="M54 158 C53 166 69 167 67 159 Z" fill={furDark} />
       <F d="M38 140 C36 150 38 158 44 160 L51 160 L52 142 Z" fill={fur} tex="fur" />
       <F d="M52 142 L54 160 L64 160 C68 156 68 148 65 140 Z" fill={fur} tex="fur" />
-      {/* A short furry neck tucked into the collar. */}
-      <F d="M40 54 C37 64 37 72 38 80 L66 80 C67 72 66 63 63 54 Z" fill={fur} tex="fur" />
-      <path d="M46 60 C45 68 47 74 52 78 C58 75 60 68 59 60 Z" fill={cream} opacity="0.85" />
       {/* A moss-green tunic and a leather apron full of rune pockets. */}
       <S
         d="M39 78 C33 100 32 128 35 148 L67 148 C70 128 69 100 63 78 C57 73 45 73 39 78 Z"
@@ -785,65 +782,67 @@ function Nyssa() {
       <S d="M46 114 l2 -3 l3 1.4 l-1 3.2 Z" fill="#8fd06a" w={0.8} />
       <S d="M56 112 l2.6 -2.4 l2.4 2.4 l-2 2.6 Z" fill="#e8c07a" w={0.8} />
       <L d="M42 82 L62 104" color="#5e3a20" w={2.6} />
-      <S d="M38 84 C33 92 32 102 35 110 L41 108 C40 100 41 92 44 86 Z" fill={tunic} />
-      <F d={circ(38, 110, 3.8)} fill={fur} />
+      {/* The far arm reaches across to steady the rune. */}
+      <S d="M44 80 C54 88 68 95 82 97 L84 90 C72 88 60 82 52 76 Z" fill={tunic} />
       <S d="M41 72 C49 77 57 77 65 72 L65 80 C56 84 48 84 40 80 Z" fill={cream} w={1.4} />
-      {/* Head: big and round, tufted ears, bright eyes, glasses pushed up. */}
-      <Move kind="twitch" origin="60px 30px" delay={0.8}>
-        <F d="M56 31 C58 22 62 18 65 16 C67 22 65 28 62 33 Z" fill={fur} />
-        <L d="M65 16 l0 -6 M65 16 l3 -5 M65 16 l-2 -5" color={furDark} w={1.4} />
-      </Move>
-      <F
-        d="M37 50 C36 36 45 29 55 29 C65 29 72 36 72 45 C75 47 78 51 77 55 C75 61 69 64 60 65 C48 66 38 61 37 50 Z"
-        fill={fur}
-        tex="fur"
-      />
-      <Move kind="twitch" origin="47px 34px" delay={3.2}>
-        <F d="M43 36 C40 27 42 20 47 17 C50 22 51 29 50 35 Z" fill={fur} />
-        <path
-          d="M45 32 C43.6 27 44.4 22.6 47 20.4 C48.4 24 48.8 28 48.2 32 Z"
-          fill="#e89a8a"
-          opacity="0.8"
+      {/* Head: big and round, sitting right on the collar; tufted ears, bright eyes, glasses pushed up. */}
+      <g transform="translate(0 7)">
+        <Move kind="twitch" origin="60px 30px" delay={0.8}>
+          <F d="M56 31 C58 22 62 18 65 16 C67 22 65 28 62 33 Z" fill={fur} />
+          <L d="M65 16 l0 -6 M65 16 l3 -5 M65 16 l-2 -5" color={furDark} w={1.4} />
+        </Move>
+        <F
+          d="M37 50 C36 36 45 29 55 29 C65 29 72 36 72 45 C75 47 78 51 77 55 C75 61 69 64 60 65 C48 66 38 61 37 50 Z"
+          fill={fur}
+          tex="fur"
         />
-        <L d="M47 17 l-2 -6 M47 17 l1 -7 M47 17 l3.6 -5" color={furDark} w={1.4} />
-      </Move>
-      <path d="M55 55 C61 51 71 51 77 55 C75 62 66 65 58 63 C56 61 55 58 55 55 Z" fill={cream} />
-      <path d="M40 52 C41 58 46 62 52 63 C49 60 48 57 48 54 Z" fill={cream} opacity="0.65" />
-      <Eye x={54.5} y={45} r={3.2} lid={fur} blink={2.8} />
-      <Eye x={66} y={44.4} r={3.8} lid={fur} blink={2.8} />
-      <circle
-        cx="51.5"
-        cy="35.4"
-        r="4.2"
-        fill="#dff4ff"
-        fillOpacity="0.25"
-        stroke="#c9a063"
-        strokeWidth="1.2"
-      />
-      <circle
-        cx="62.4"
-        cy="34.4"
-        r="4.4"
-        fill="#dff4ff"
-        fillOpacity="0.25"
-        stroke="#c9a063"
-        strokeWidth="1.2"
-      />
-      <L d="M55.7 35 q1.2 -1 2.5 -0.6" color="#c9a063" w={1.1} />
-      <path
-        d="M75 52 C76.4 51 78.4 51.4 78.4 53 C78.4 54.6 76.6 55.2 75.6 54.8 C74.6 54.4 74.4 52.8 75 52 Z"
-        fill="#5a2a1a"
-      />
-      <path
-        d="M67 58 q5 5 10 -0.6 q-5 2 -10 0.6 Z"
-        fill="#8a2a2a"
-        stroke={INK}
-        strokeWidth="1.1"
-        strokeLinejoin="round"
-      />
-      <path d="M71 59 h2.6 v2.8 h-2.6 Z" fill="#fff" stroke={INK} strokeWidth="0.6" />
-      <Whiskers x={74} y={56} color="#5a2a1a" len={8} />
-      {blush(66, 53, 3.2)}
+        <Move kind="twitch" origin="47px 34px" delay={3.2}>
+          <F d="M43 36 C40 27 42 20 47 17 C50 22 51 29 50 35 Z" fill={fur} />
+          <path
+            d="M45 32 C43.6 27 44.4 22.6 47 20.4 C48.4 24 48.8 28 48.2 32 Z"
+            fill="#e89a8a"
+            opacity="0.8"
+          />
+          <L d="M47 17 l-2 -6 M47 17 l1 -7 M47 17 l3.6 -5" color={furDark} w={1.4} />
+        </Move>
+        <path d="M55 55 C61 51 71 51 77 55 C75 62 66 65 58 63 C56 61 55 58 55 55 Z" fill={cream} />
+        <path d="M40 52 C41 58 46 62 52 63 C49 60 48 57 48 54 Z" fill={cream} opacity="0.65" />
+        <Eye x={54.5} y={45} r={3.2} lid={fur} blink={2.8} />
+        <Eye x={66} y={44.4} r={3.8} lid={fur} blink={2.8} />
+        <circle
+          cx="51.5"
+          cy="35.4"
+          r="4.2"
+          fill="#dff4ff"
+          fillOpacity="0.25"
+          stroke="#c9a063"
+          strokeWidth="1.2"
+        />
+        <circle
+          cx="62.4"
+          cy="34.4"
+          r="4.4"
+          fill="#dff4ff"
+          fillOpacity="0.25"
+          stroke="#c9a063"
+          strokeWidth="1.2"
+        />
+        <L d="M55.7 35 q1.2 -1 2.5 -0.6" color="#c9a063" w={1.1} />
+        <path
+          d="M75 52 C76.4 51 78.4 51.4 78.4 53 C78.4 54.6 76.6 55.2 75.6 54.8 C74.6 54.4 74.4 52.8 75 52 Z"
+          fill="#5a2a1a"
+        />
+        <path
+          d="M67 58 q5 5 10 -0.6 q-5 2 -10 0.6 Z"
+          fill="#8a2a2a"
+          stroke={INK}
+          strokeWidth="1.1"
+          strokeLinejoin="round"
+        />
+        <path d="M71 59 h2.6 v2.8 h-2.6 Z" fill="#fff" stroke={INK} strokeWidth="0.6" />
+        <Whiskers x={74} y={56} color="#5a2a1a" len={8} />
+        {blush(66, 53, 3.2)}
+      </g>
       {/* Both paws hold up the rune she just found. Isn't it marvellous? */}
       <S d="M58 80 C64 84 70 88 74 90 L71 96 C65 94 60 90 55 86 Z" fill={tunic} />
       <Move kind="pulse">
