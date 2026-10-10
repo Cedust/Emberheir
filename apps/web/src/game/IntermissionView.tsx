@@ -663,25 +663,14 @@ function BountyCard(props: { run: RunState }) {
   );
 }
 
-/** The moment a Bounty is done: what Eldrin pays and where the item went. */
-function BountyPaid(props: { run: RunState }) {
-  const paid = props.run.rewards?.bounty;
-  if (!paid) return null;
-  const where =
-    paid.to === "stash"
-      ? "waits in the Supply Wagon"
-      : paid.to === "inventory"
-        ? "is in your inventory"
-        : "was salvaged, no room left";
+/** The moment a Bounty is done: Eldrin pays it back in the Camp. */
+function BountyDone() {
   return (
-    <div className={`bounty-paid panel-card ${rarityClass(paid.item)}`} role="status">
+    <div className="bounty-paid panel-card" role="status">
       <Icon name="target" size={28} color="var(--accent)" />
       <div className="bounty-paid-text">
         <strong className="title-font">Bounty done!</strong>
-        <span className="sub">
-          +{fmt(paid.acorns)} Acorns · +{paid.emberCoal} Ember Coal ·{" "}
-          <span className="rarity-text">{paid.item.name}</span> {where}
-        </span>
+        <span className="sub">Turn it in at Eldrin in the Camp.</span>
       </div>
     </div>
   );
@@ -771,9 +760,9 @@ export function IntermissionView(props: {
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
   const gains: Record<string, number> = rewards
     ? {
-        acorns: rewards.acorns + (rewards.bounty?.acorns ?? 0),
+        acorns: rewards.acorns,
         ash: rewards.ash + rewards.salvagedAsh,
-        coal: rewards.emberCoal + (rewards.bounty?.emberCoal ?? 0),
+        coal: rewards.emberCoal,
         feathers: rewards.phoenixFeathers,
       }
     : {};
@@ -811,7 +800,7 @@ export function IntermissionView(props: {
                 : ""}
             </p>
           )}
-          {rewards?.bounty && step !== "ready" && <BountyPaid run={run} />}
+          {rewards?.bountyDone && step !== "ready" && <BountyDone />}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
             <RuneDrops key={`runes-${run.encounter?.seed ?? run.stage}`} runes={rewards.runes} />
           )}

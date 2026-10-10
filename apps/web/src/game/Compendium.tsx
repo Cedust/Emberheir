@@ -52,7 +52,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Eldrin, the Scout",
-    text: "Eldrin knows what waits on the road ahead, and he hands out one Bounty for every trip: slay Elites, hunt an enemy, catch the Ember Thief or beat the boss in style. Done, it pays at once: Acorns, Ember Coal and a Rare item or better for the Supply Wagon. Failed, nothing is lost.",
+    text: "Eldrin knows what waits on the road ahead, and he hands out one Bounty for every trip: slay Elites, hunt an enemy, catch the Ember Thief or beat the boss in style. Done, you turn it in at Eldrin back in the Camp: Acorns, Ember Coal and a Rare item or better for your inventory. He hands out the next one only after that. Failed, nothing is lost.",
   },
   {
     title: "Supply Wagon",

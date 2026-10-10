@@ -70,7 +70,7 @@ describe("Bounties", () => {
     expect(bountyAfterWin(hale, HALE.goal, win("boss", 0.6)).status).toBe("done");
   });
 
-  it("the Scout's bounty pays out at once: Acorns, Ember Coal and a Rare item in the stash", () => {
+  it("a done bounty is turned in at the Scout: Acorns, Ember Coal and a Rare item in the inventory", () => {
     const data: GameData = { ...TEST_GAME_DATA, bounties: [CULL] };
     const act = (state: GameState, ...actions: GameAction[]) =>
       actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -86,22 +86,31 @@ describe("Bounties", () => {
     });
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run?.bounty?.progress).toBe(1);
-    expect(s.run?.rewards?.bounty).toBeUndefined();
+    expect(s.run?.rewards?.bountyDone).toBeUndefined();
     s = act(s, { type: "salvageAll" }, { type: "continue" });
-    const before = s.wallet;
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run?.bounty?.status).toBe("done");
-    const paid = s.run?.rewards?.bounty;
-    expect(paid?.to).toBe("stash");
-    expect(paid?.emberCoal).toBe(PROGRESSION.bounty.emberCoal);
-    expect(["rare", "epic"]).toContain(paid?.item.rarity);
-    expect(s.stash.map((p) => p.item.id)).toEqual([paid?.item.id]);
-    expect(s.wallet.acorns).toBe(
-      before.acorns + (s.run?.rewards?.acorns ?? 0) + (paid?.acorns ?? 0),
-    );
-    expect(paid?.acorns).toBeGreaterThan(0);
-    // Back in the Camp the trip's bounty is gone.
+    expect(s.run?.rewards?.bountyDone).toBe(true);
+    expect(() => act(s, { type: "turnInBounty" })).toThrow(/Camp/);
+
+    // Back in the Camp the Scout waits; no new bounty until this one is turned in.
     s = act(s, { type: "salvageAll" }, { type: "continue" }, { type: "retreat" });
-    expect(s.run).toBeNull();
+    expect(s.bountyDone).toEqual({ id: "cull", enemyId: "weakling", actId: "test-act" });
+    expect(act(s, { type: "setOut", actId: "test-act" }).run?.bounty).toBeUndefined();
+
+    const before = s;
+    s = act(s, { type: "turnInBounty" });
+    expect(s.bountyDone).toBeUndefined();
+    expect(s.wallet.emberCoal).toBe(before.wallet.emberCoal + PROGRESSION.bounty.emberCoal);
+    expect(s.wallet.acorns).toBeGreaterThan(before.wallet.acorns);
+    expect(s.inventory).toHaveLength(before.inventory.length + 1);
+    const item = s.inventory.find(
+      (p) => !before.inventory.some((b) => b.item.id === p.item.id),
+    )?.item;
+    expect(["rare", "epic"]).toContain(item?.rarity);
+    expect(s.stash).toEqual(before.stash);
+    expect(() => act(s, { type: "turnInBounty" })).toThrow(/No bounty/);
+    // The next trip gets a new bounty again.
+    expect(act(s, { type: "setOut", actId: "test-act" }).run?.bounty?.status).toBe("open");
   });
 });

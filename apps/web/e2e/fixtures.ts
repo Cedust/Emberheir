@@ -62,6 +62,12 @@ export function saveAfterAct1(): string {
   return serializeGame(state);
 }
 
+/** Back in the Camp after Act 2 with a done bounty that Eldrin has not paid yet. */
+export function saveBountyDone(): string {
+  const state = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({ ...state, bountyDone: { id: "elite-hunt", actId: "rotwood" } });
+}
+
 /** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Bark Runes in the pouch. */
 export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });

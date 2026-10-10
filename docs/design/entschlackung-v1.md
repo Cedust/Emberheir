@@ -99,7 +99,7 @@ Timo: „Bounties sind gut. Acorns, Ash, Ember Coal, Phoenix Feathers und Runes.
 - **Keystones:** 3 Skill Points, Limit 1 (+1 bei Prestige 2/4/6, max. 4), als Kerben im Ember-Sigil. Tier-II/III-Upgrades eines Keystones belegen keinen neuen Platz.
 - **Attribute-Respec** bei Kaelen für Acorns (gleicher Preis wie Baum-Respec). Prestige gibt +2 Attributpunkte ohne Verschieben.
 - **Personas:** Thoric = Upgrade, Reforge, Salvage. Liora = Temper, Kindle. Nyssa = Add Socket, Socket Rune, Combine, Runeword Codex. Eldrin = Act Preview + Bounty. Marisha = Gamble.
-- **Bounties:** Pro Zug ein Auftrag (Elite Hunt, Culling, Thief Chase ab Akt 2, Dry Throat, Hale and Whole). Erfüllt: Acorns (10 normale Kills auf Boss-Level), 2 Ember Coal und ein Item ab Rare, das in den Supply Wagon geht. Die Bounty steht schon im Camp fest (Vorschau = echter Wurf).
+- **Bounties:** Pro Zug ein Auftrag (Elite Hunt, Culling, Thief Chase ab Akt 2, Dry Throat, Hale and Whole). Erfüllt wird sie im Camp bei Eldrin eingereicht (auch nach Tod oder Retreat): Acorns (10 normale Kills auf Boss-Level), 2 Ember Coal und ein Item ab Rare ins Inventar (Timo 2026-10-10). Solange eine erfüllte Bounty nicht eingereicht ist, gibt es keine neue. Die Bounty steht schon im Camp fest (Vorschau = echter Wurf).
 - **Shared Stash:** alle 6 Slots teilen den Supply Wagon. Beim ersten Start werden die alten Stashes zusammengelegt; was nicht passt, geht ins Inventar des Charakters, sonst zu Ash.
 - **Required Level** = Item Level − 5. Boss-Uniques zeigen „Dropped by …“.
 - **Save v13:** Essences → 20 Ash pro Stück, Kindling → Ember Coal, Skill Tree wird zurückerstattet (Keystones kosten jetzt Punkte).

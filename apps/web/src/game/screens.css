@@ -1855,6 +1855,56 @@
   border-radius: 4px;
 }
 
+.stage .bounty-note .bounty-turn-in {
+  align-self: flex-start;
+  margin-top: 6px;
+}
+
+.stage .bounty-note.paid {
+  border-left-color: var(--rarity-legendary);
+}
+
+.stage .bounty-item {
+  cursor: help;
+}
+
+/* Eldrin carries a done bounty: a glowing mark over his head, like a quest giver. */
+.stage .bounty-mark {
+  position: absolute;
+  left: 50%;
+  top: -14px;
+  width: 26px;
+  height: 26px;
+  margin-left: -13px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #1c1208;
+  background: var(--rarity-legendary);
+  box-shadow: 0 0 12px 3px color-mix(in srgb, var(--rarity-legendary) 70%, transparent);
+  animation: bounty-mark-bob 1.6s ease-in-out infinite;
+  pointer-events: none;
+}
+
+/* The name plate takes its place while Eldrin is hovered or picked. */
+.stage .camp-target.on .bounty-mark,
+.stage .camp-target:hover .bounty-mark {
+  opacity: 0;
+}
+
+@keyframes bounty-mark-bob {
+  50% {
+    transform: translateY(-5px);
+    box-shadow: 0 0 18px 6px color-mix(in srgb, var(--rarity-legendary) 80%, transparent);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .bounty-mark {
+    animation: none;
+  }
+}
+
 /* --- persona (Thoric, Liora) ---------------------------------------------------------------- */
 
 .stage .persona-header .eyebrow-big {

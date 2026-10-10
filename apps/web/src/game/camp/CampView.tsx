@@ -2,7 +2,9 @@ import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type ActData,
   type GameState,
+  type Item,
   actUnlocked,
+  applyAction,
   actsInOrder,
   finaleOpen,
   flaskCapacity,
@@ -11,8 +13,9 @@ import {
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { useStageSize } from "../../ui/Stage";
-import { fmt, walletEntries } from "../../ui/items";
-import { type BountyView, bountyPreview } from "../bounty";
+import { useItemHover } from "../../ui/ItemTooltip";
+import { fmt, rarityClass, walletEntries } from "../../ui/items";
+import { type BountyView, bountyPreview, bountyView } from "../bounty";
 import type { GameApi } from "../useGame";
 import { CampBackdrop, CampFx, HEARTH_X, SCENE_W, campLights } from "./art/CampScene";
 import { CampLight } from "./art/CampLight";
@@ -207,7 +210,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#3b5a2c",
       figure: { fs: 0.9 },
       quote: `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`,
-      actions: [{ name: "Act Preview" }, { name: "Bounty" }],
+      actions: [{ name: "Act Preview" }, { name: state.bountyDone ? "Turn In" : "Bounty" }],
       cta: `Set Out · Act ${road.number}`,
     },
     {
@@ -289,6 +292,8 @@ export function CampView(props: {
   const { state, game } = props;
   const [picked, setPicked] = useState("heir");
   const [nanLine, setNanLine] = useState(0);
+  // What Eldrin just paid for a turned-in bounty (shown on his card until another persona is picked).
+  const [paid, setPaid] = useState<TurnInReward | null>(null);
   const size = useStageSize();
   const ox = (size.w - SCENE_W) / 2;
   const [road, setRoad] = useState<string | null>(null);
@@ -303,6 +308,12 @@ export function CampView(props: {
   const cleared = state.progress.actsCleared.includes(act.id);
   const bounty = bountyPreview(state, act.id);
   const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
+  const turnIn = () => {
+    const reward = turnInPreview(state);
+    if (!reward) return;
+    setPaid(reward);
+    game.dispatch({ type: "turnInBounty" });
+  };
   const quote = sel.id === "nan" ? `“${NAN_LINES[nanLine % NAN_LINES.length]}”` : sel.quote;
   const cta = () => {
     if (sel.id === "nan") setNanLine((n) => n + 1);
@@ -366,12 +377,20 @@ export function CampView(props: {
               style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
               aria-label={`${p.name}, ${p.role}`}
               disabled={hardLocked}
-              onClick={() => setPicked(p.id)}
+              onClick={() => {
+                setPicked(p.id);
+                setPaid(null);
+              }}
               onDoubleClick={() => {
                 if (p.target && !p.locked) props.onOpen(p.target);
               }}
             >
               <Figure p={p} on={on} gear={gear} delay={i * 0.7} />
+              {p.id === "eldrin" && state.bountyDone && (
+                <span className="bounty-mark" aria-label="Bounty done" title="Bounty done">
+                  <Icon name="target" size={16} />
+                </span>
+              )}
               <span className="camp-tip" role="tooltip">
                 <span className="title-font">
                   {p.locked && <Icon name="lock" size={12} />}
@@ -401,7 +420,12 @@ export function CampView(props: {
             </div>
           </div>
           <p className="quote">{quote}</p>
-          {sel.id === "eldrin" && bounty && <BountyNote bounty={bounty} />}
+          {sel.id === "eldrin" &&
+            (state.bountyDone || paid ? (
+              <BountyTurnIn state={state} paid={paid} onTurnIn={turnIn} />
+            ) : (
+              bounty && <BountyNote bounty={bounty} />
+            ))}
           <div className="chip-row">
             {sel.actions.map((a) =>
               sel.id === "nan" && (a.name === "Compendium" || a.name === "Trigger Codex") ? (
@@ -487,10 +511,16 @@ export function CampView(props: {
                 THE LAST EMBER
               </button>
             )}
-            {bounty && (
-              <span className="hint-light bounty-hint" title={bounty.def.name}>
-                <Icon name="target" size={14} /> Bounty: {bounty.text}
+            {state.bountyDone ? (
+              <span className="hint-light bounty-hint">
+                <Icon name="target" size={14} /> Bounty done · turn it in at Eldrin
               </span>
+            ) : (
+              bounty && (
+                <span className="hint-light bounty-hint" title={bounty.def.name}>
+                  <Icon name="target" size={14} /> Bounty: {bounty.text}
+                </span>
+              )
             )}
             <span className="hint-light">Flask refilled · wounds healed</span>
             <button
@@ -514,6 +544,82 @@ function BountyNote(props: { bounty: BountyView }) {
       <span className="eyebrow">BOUNTY · {props.bounty.def.name.toUpperCase()}</span>
       <span>{props.bounty.text}</span>
       <span className="sub small">Pays Acorns, Ember Coal and a Rare item or better.</span>
+    </div>
+  );
+}
+
+interface TurnInReward {
+  readonly acorns: number;
+  readonly emberCoal: number;
+  readonly item: Item;
+}
+
+/** What Eldrin pays for the done bounty right now; `null` if he can't (e.g. inventory full). */
+function turnInPreview(state: GameState): TurnInReward | null {
+  try {
+    const after = applyAction(state, GAME_DATA, { type: "turnInBounty" });
+    const item = after.inventory.find(
+      (p) => !state.inventory.some((q) => q.item.id === p.item.id),
+    )?.item;
+    if (!item) return null;
+    return {
+      acorns: after.wallet.acorns - state.wallet.acorns,
+      emberCoal: after.wallet.emberCoal - state.wallet.emberCoal,
+      item,
+    };
+  } catch {
+    return null;
+  }
+}
+
+/** A done bounty at Eldrin: turn it in, then what he paid. */
+function BountyTurnIn(props: {
+  state: GameState;
+  paid: TurnInReward | null;
+  onTurnIn: () => void;
+}) {
+  const { state, paid } = props;
+  const { active, ...hover } = useItemHover(paid?.item);
+  if (paid && !state.bountyDone) {
+    return (
+      <div className="bounty-note paid" aria-label="Bounty" role="status">
+        <span className="eyebrow">BOUNTY PAID</span>
+        <span>
+          +{fmt(paid.acorns)} Acorns · +{paid.emberCoal} Ember Coal
+        </span>
+        <span className={`bounty-item ${rarityClass(paid.item)}`} {...(active ? hover : {})}>
+          <span className="rarity-text">{paid.item.name}</span>
+          <span className="sub small"> · in your inventory</span>
+        </span>
+      </div>
+    );
+  }
+  const done = state.bountyDone;
+  if (!done) return null;
+  const view = bountyView({
+    id: done.id,
+    ...(done.enemyId ? { enemyId: done.enemyId } : {}),
+    progress: 0,
+    status: "done",
+  });
+  const ready = turnInPreview(state) !== null;
+  return (
+    <div className="bounty-note done" aria-label="Bounty">
+      <span className="eyebrow">BOUNTY DONE · {view.def.name.toUpperCase()}</span>
+      <span>{view.text}</span>
+      <span className="sub small">
+        {ready
+          ? "Pays Acorns, Ember Coal and a Rare item or better."
+          : "Make room in your inventory first."}
+      </span>
+      <button
+        type="button"
+        className="btn primary bounty-turn-in"
+        disabled={!ready}
+        onClick={props.onTurnIn}
+      >
+        <Icon name="target" size={14} /> Turn In
+      </button>
     </div>
   );
 }

@@ -265,14 +265,19 @@ export interface Encounter {
 export type ItemPick =
   { readonly kind: "equip" | "take"; readonly index: number } | { readonly kind: "salvageAll" };
 
-/** What a done bounty paid; its item went to the Supply Wagon (or the inventory, or Ash). */
-export interface BountyReward {
+/** A done bounty that waits to be turned in at the Scout. */
+export interface BountyDone {
   readonly id: string;
   readonly enemyId?: string;
+  /** The act it was done in (sets the level of the reward item). */
+  readonly actId: string;
+}
+
+/** What the Scout paid for a turned-in bounty; the item went into the inventory. */
+export interface BountyReward {
   readonly acorns: number;
   readonly emberCoal: number;
   readonly item: Item;
-  readonly to: "stash" | "inventory" | "salvaged";
 }
 
 /** Rewards of a won fight (loot-rewards-v1.md): automatic drops, the item pick, maybe a Boon. */
@@ -304,8 +309,8 @@ export interface Rewards {
   readonly echo?: { readonly id: string; readonly stage: number };
   /** Ash from auto-salvaging the items that were not picked. */
   readonly salvagedAsh: number;
-  /** The Scout's bounty was done in this fight. */
-  readonly bounty?: BountyReward;
+  /** The Scout's bounty was done in this fight (turn it in at the Scout in the Camp). */
+  readonly bountyDone?: boolean;
   /** What the Battle Plan did in this fight (missing in older saves). */
   readonly report?: FightReport;
   /** Ember Shrine: 1 of these Boons (after Stage 5 and 10 and Elites). */
@@ -454,6 +459,8 @@ export interface GameState {
   readonly pendingPrestige: PendingPrestige | null;
   /** Stolen Fire Boons of this run; they burn at the Prestige. */
   readonly boons: BoonsState;
+  /** A done bounty the Scout has not paid yet; no new bounty until it is turned in. */
+  readonly bountyDone?: BountyDone;
 }
 
 export class GameActionError extends Error {}
@@ -1157,6 +1164,8 @@ export function unequipBlockReason(
 export type GameAction =
   /** Leave the Camp and start an act at stage 1. */
   | { readonly type: "setOut"; readonly actId: string }
+  /** Turn in a done bounty at the Scout. */
+  | { readonly type: "turnInBounty" }
   /** The Last Ember: from the Camp into the finale's gauntlet. */
   | { readonly type: "enterFinale" }
   /** From the intermission into the next fight. */
@@ -1232,6 +1241,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
   switch (action.type) {
     case "setOut":
       return setOut(state, data, action.actId);
+    case "turnInBounty":
+      return turnInBounty(state, data);
     case "enterFinale":
       return enterFinale(state, data);
     case "startStage":
@@ -1311,14 +1322,15 @@ function setOut(state: GameState, data: GameData, actId: string): GameState {
   if (!actUnlocked(state, data, actId)) fail("The road there is still closed");
   // The Scout hands out a bounty for this trip.
   const [rng, next] = nextRng(state);
-  const bounty = data.bounties?.length
-    ? rollBounty(
-        data.bounties,
-        act.number,
-        act.enemies.map((e) => e.id),
-        rng,
-      )
-    : undefined;
+  const bounty =
+    data.bounties?.length && !state.bountyDone
+      ? rollBounty(
+          data.bounties,
+          act.number,
+          act.enemies.map((e) => e.id),
+          rng,
+        )
+      : undefined;
   return {
     ...(bounty ? next : state),
     notice: null,
@@ -1443,8 +1455,19 @@ function toCamp(state: GameState, data: GameData, notice: Notice | null): GameSt
   // Boons of the current act burn on death and Retreat; a cleared act keeps them.
   const lost = notice?.kind === "death" || notice?.kind === "retreat";
   const { kept, fresh } = state.boons;
+  // A done bounty stays done, even after a death: the Scout pays it in the Camp.
+  const done = state.run?.bounty?.status === "done" ? state.run.bounty : undefined;
   return {
     ...state,
+    ...(done
+      ? {
+          bountyDone: {
+            id: done.id,
+            ...(done.enemyId ? { enemyId: done.enemyId } : {}),
+            actId: state.run?.actId ?? "",
+          },
+        }
+      : {}),
     run: null,
     notice,
     boons: { kept: lost ? kept : [...kept, ...fresh], fresh: [] },
@@ -1554,7 +1577,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
       )
     : [];
 
-  // The Scout's bounty: a win may finish it; then it pays out at once.
+  // The Scout's bounty: a win may finish it; it is turned in at the Scout in the Camp.
   const lifeFraction = result.final.hero.life / result.final.hero.maxLife;
   const bounty = run.bounty
     ? bountyAfterWin(run.bounty, getBounty(data, run.bounty.id).goal, {
@@ -1564,10 +1587,7 @@ function resolveFight(state: GameState, data: GameData): GameState {
         lifeFraction,
       })
     : undefined;
-  const paid =
-    bounty?.status === "done" && run.bounty?.status === "open"
-      ? bountyReward(state, data, act, bounty, rng)
-      : undefined;
+  const bountyDone = bounty?.status === "done" && run.bounty?.status === "open";
 
   const won: GameState = {
     ...next,
@@ -1638,25 +1658,25 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
         ...(newTrophies.length ? { newTrophies } : {}),
         ...(echo ? { echo } : {}),
+        ...(bountyDone ? { bountyDone: true } : {}),
         itemPick: null,
         salvagedAsh: 0,
       },
     },
   };
-  return paid ? payBounty(won, data, paid) : won;
+  return won;
 }
 
 /**
  * What a done bounty pays: Acorns worth `bounty.acornKills` normal kills at the act boss's level,
  * Ember Coal and one item of at least Rare (inside the run's Elite window).
  */
-function bountyReward(
+export function bountyReward(
   state: GameState,
   data: GameData,
   act: ActData,
-  bounty: BountyState,
   rng: Rng,
-): Omit<BountyReward, "to"> {
+): BountyReward {
   const level = stageMonsterLevel(data, act, act.stages, state.legacy.prestige);
   const window = lootGate(state.legacy.prestige).elite;
   const top = RARITIES.indexOf(window.max);
@@ -1673,32 +1693,29 @@ function bountyReward(
     rng,
   );
   return {
-    id: bounty.id,
-    ...(bounty.enemyId ? { enemyId: bounty.enemyId } : {}),
     acorns: autoRewards(level, "normal").acorns * PROGRESSION.bounty.acornKills,
     emberCoal: PROGRESSION.bounty.emberCoal,
     item,
   };
 }
 
-/** Pays a bounty into the state: the Scout brings the item to the Supply Wagon. */
-function payBounty(state: GameState, data: GameData, reward: Omit<BountyReward, "to">): GameState {
-  const run = state.run ?? fail("Not in a run");
-  const rewards = run.rewards ?? fail("No rewards");
-  const wallet = {
-    ...state.wallet,
-    acorns: state.wallet.acorns + reward.acorns,
-    emberCoal: state.wallet.emberCoal + reward.emberCoal,
-  };
-  const stash = addToGrid(state.stash, reward.item, data.items, STASH_SIZE);
-  const inventory = stash ? null : addToGrid(state.inventory, reward.item, data.items);
-  const to: BountyReward["to"] = stash ? "stash" : inventory ? "inventory" : "salvaged";
+/** The Scout pays a done bounty: Acorns and Ember Coal, the item goes into the inventory. */
+function turnInBounty(state: GameState, data: GameData): GameState {
+  requireCamp(state);
+  const done = state.bountyDone ?? fail("No bounty to turn in");
+  const [rng, next] = nextRng(state);
+  const reward = bountyReward(state, data, getAct(data, done.actId), rng);
+  const inventory = addToGrid(state.inventory, reward.item, data.items) ?? fail("Inventory full");
+  const rest: GameState = { ...next };
+  delete (rest as { bountyDone?: BountyDone }).bountyDone;
   return {
-    ...state,
-    ...(stash ? { stash } : {}),
-    ...(inventory ? { inventory } : {}),
-    wallet: to === "salvaged" ? { ...wallet, ash: wallet.ash + salvageValue(reward.item) } : wallet,
-    run: { ...run, rewards: { ...rewards, bounty: { ...reward, to } } },
+    ...rest,
+    inventory,
+    wallet: {
+      ...state.wallet,
+      acorns: state.wallet.acorns + reward.acorns,
+      emberCoal: state.wallet.emberCoal + reward.emberCoal,
+    },
   };
 }
 

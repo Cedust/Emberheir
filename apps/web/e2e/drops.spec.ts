@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveBossHoard, saveShrine, saveThiefFight, seedSave } from "./fixtures";
+import { saveBossHoard, saveBountyDone, saveShrine, saveThiefFight, seedSave } from "./fixtures";
 
 test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Trophy Wall", async ({
   page,
@@ -70,5 +70,30 @@ test("Ember Thief: a countdown shows how long until it runs off", async ({ page 
   const battle = page.getByRole("region", { name: "Battle" });
   await expect(battle).toContainText("Ember Thief");
   await expect(page.getByTestId("thief-timer")).toContainText(/Flees in \d+s/);
+  expect(errors).toEqual([]);
+});
+
+test("Bounty: a done bounty is turned in at Eldrin, the item goes into the inventory", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveBountyDone());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  await expect(page.getByLabel("Bounty done").first()).toBeVisible();
+  await page.getByRole("button", { name: "Eldrin, Scout" }).click();
+  const note = page.getByLabel("Bounty", { exact: true });
+  await expect(note).toContainText("BOUNTY DONE · ELITE HUNT");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-done.png` });
+  await note.getByRole("button", { name: "Turn In" }).click();
+  await expect(note).toContainText("BOUNTY PAID");
+  await expect(note).toContainText("2 Ember Coal");
+  await expect(note).toContainText("in your inventory");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-paid.png` });
+  // Eldrin hands out a new bounty for the next trip.
+  await expect(page.getByLabel("Bounty done")).toHaveCount(0);
+  await expect(page.locator(".bounty-hint")).toContainText("Bounty:");
   expect(errors).toEqual([]);
 });
