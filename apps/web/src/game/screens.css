@@ -1545,8 +1545,7 @@
 }
 
 /* Opacity goes on the parts: on the button it would trap the name plate under the lighting. */
-.stage .camp-target.locked .figure,
-.stage .camp-target.locked .name-plate {
+.stage .camp-target.locked .figure {
   opacity: 0.6;
 }
 
@@ -1554,8 +1553,7 @@
   cursor: not-allowed;
 }
 
-.stage .camp-target:disabled .figure,
-.stage .camp-target:disabled .name-plate {
+.stage .camp-target:disabled .figure {
   opacity: 0.55;
 }
 
@@ -1567,30 +1565,52 @@
   filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
 }
 
-.stage .name-plate {
-  position: relative;
-  z-index: 5;
+/* Hover tooltip over a persona or object (no permanent name plates: they crowd the scene). */
+.stage .camp-tip {
+  position: absolute;
+  left: 50%;
+  top: -6px;
+  z-index: 7;
+  transform: translate(-50%, -100%) translateY(4px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1px;
+  padding: 4px 12px 5px;
+  border-radius: 4px;
+  background: var(--panel);
+  border: 1.5px solid var(--edge);
+  box-shadow: 0 3px 8px rgb(0 0 0 / 0.4);
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  transition:
+    opacity 0.15s ease,
+    transform 0.15s ease;
+}
+
+.stage .camp-tip .title-font {
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 3px 10px 4px;
-  border-radius: 3px;
-  background: var(--panel);
-  border: 1.5px solid var(--edge);
-  box-shadow: 0 2px 0 rgb(0 0 0 / 0.35);
-  white-space: nowrap;
-  font-size: 14px;
+  font-size: 15px;
   letter-spacing: 0.5px;
 }
 
-.stage .camp-target.on .name-plate {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--ink);
+.stage .camp-tip .sub {
+  font-size: 12px;
 }
 
-.stage .camp-target:hover .name-plate {
-  border-color: var(--accent);
+.stage .camp-target:hover .camp-tip,
+.stage .camp-target:focus-visible .camp-tip {
+  opacity: 1;
+  transform: translate(-50%, -100%);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .camp-tip {
+    transition: none;
+  }
 }
 
 .stage .persona-card {

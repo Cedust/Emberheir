@@ -200,11 +200,12 @@ function personas(state: GameState, road: ActData): Persona[] {
       id: "eldrin",
       name: "Eldrin",
       role: "Scout",
-      x: 1150,
-      y: 600,
+      // Perched on the signpost to the next act: he has seen what's ahead.
+      x: 1300,
+      y: 647,
       icon: "bow",
       cloak: "#3b5a2c",
-      figure: { fs: 1 },
+      figure: { fs: 0.9 },
       quote: trainer
         ? `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`
         : afterBoss,
@@ -357,7 +358,7 @@ export function CampView(props: {
         {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
         {list.map((p, i) => {
           const w = p.object ? p.object.w : 130;
-          const h = p.object ? p.object.h : Math.round(FIG_H * (p.figure?.fs ?? 1)) + 34;
+          const h = p.object ? p.object.h : Math.round(FIG_H * (p.figure?.fs ?? 1));
           const on = picked === p.id;
           const hardLocked = p.locked === "later";
           return (
@@ -374,9 +375,12 @@ export function CampView(props: {
               }}
             >
               <Figure p={p} on={on} gear={gear} delay={i * 0.7} />
-              <span className="name-plate title-font">
-                {p.locked && <Icon name="lock" size={12} />}
-                {p.name}
+              <span className="camp-tip" role="tooltip">
+                <span className="title-font">
+                  {p.locked && <Icon name="lock" size={12} />}
+                  {p.name}
+                </span>
+                <span className="sub">{p.role}</span>
               </span>
             </button>
           );
