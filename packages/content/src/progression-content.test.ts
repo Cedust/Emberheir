@@ -134,13 +134,15 @@ describe("Act 1", () => {
     }
   });
 
-  it("classes: start attributes add up to 36, four branches with Tactician, titles", () => {
+  it("classes: Class Arrays add up to 14 (1 each + 8), four branches with Tactician, titles", () => {
     const branches = new Set((SKILL_TREE.prestigeBranches ?? []).map((b) => b.id));
     for (const c of CLASSES) {
       expect(
         Object.values(c.startingAttributes).reduce((a, b) => a + b, 0),
         c.id,
-      ).toBe(36);
+      ).toBe(14);
+      for (const v of Object.values(c.startingAttributes))
+        expect(v, c.id).toBeGreaterThanOrEqual(1);
       expect(c.branches, c.id).toHaveLength(4);
       expect(c.branches.at(-1), c.id).toBe("tactician");
       for (const b of c.branches) {

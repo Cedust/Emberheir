@@ -3,6 +3,16 @@ export * from "./combat/types";
 export { COMBAT } from "./combat/constants";
 export { deriveStats, heroBaseLife, sumBonuses, type DerivedStats } from "./combat/stats";
 export {
+  BREAKPOINTS,
+  PERK,
+  PERKS,
+  PERK_IDS,
+  getPerk,
+  perksFor,
+  type PerkDefinition,
+  type PerkId,
+} from "./combat/perks";
+export {
   armorReduction,
   elementResistance,
   resistanceReduction,

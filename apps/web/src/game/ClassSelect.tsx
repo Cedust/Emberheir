@@ -1,8 +1,9 @@
 import { GAME_DATA, ITEM_CATALOG, PRESTIGE_BRANCHES } from "@emberheir/content";
-import { getBase } from "@emberheir/sim";
+import { ATTRIBUTE_RULES, type Attribute, getBase, sumAttributes } from "@emberheir/sim";
 import { useMemo, useState } from "react";
 import { Icon, type IconName } from "../ui/Icon";
 import type { Settings } from "../ui/settings";
+import { AttributeStones, NO_POINTS } from "./AttributeStones";
 import { ClassEmblem } from "./ClassEmblem";
 import { PreviewArena } from "./PreviewArena";
 import { glimpsePreview, startPreview } from "./classPreview";
@@ -66,6 +67,10 @@ export function ClassSelect(props: {
   const [glimpse, setGlimpse] = useState(false);
   const [name, setName] = useState(() => suggestName(classId));
   const [nameTouched, setNameTouched] = useState(false);
+  // Second step: the creation's free points (attribute-v1.md section 5).
+  const [step, setStep] = useState<"class" | "attributes">("class");
+  const [free, setFree] = useState<Record<Attribute, number>>(NO_POINTS);
+  const freeLeft = ATTRIBUTE_RULES.creationPoints - sumAttributes(free);
   const preview = useMemo(
     () => (glimpse ? glimpsePreview(classId, weapon) : startPreview(classId, weapon)),
     [classId, weapon, glimpse],
@@ -77,6 +82,7 @@ export function ClassSelect(props: {
     if (!next) return;
     setClassId(id);
     setWeapon(next.weapons[0] ?? "");
+    setFree(NO_POINTS);
     if (!nameTouched) setName(suggestName(id));
   };
 
@@ -130,85 +136,124 @@ export function ClassSelect(props: {
           </div>
         </div>
 
-        <div className="class-info panel-card">
-          <div className="class-name-row">
-            <ClassEmblem classId={classId} size={30} />
-            <span className="title-font class-name">{heroClass.name}</span>
-          </div>
-          <p className="class-text">{heroClass.text}</p>
-          <p className="class-trait">
-            <span className="title-font">{heroClass.trait.name}</span> ·{" "}
-            {heroClass.trait.description}
-          </p>
-
-          <div className="class-weapons" role="radiogroup" aria-label="Weapon">
-            {heroClass.weapons.map((id) => {
-              const base = getBase(ITEM_CATALOG, id);
-              return (
-                <button
-                  key={id}
-                  type="button"
-                  role="radio"
-                  aria-checked={id === weapon}
-                  className={`weapon-pick ${id === weapon ? "on" : ""}`}
-                  onClick={() => setWeapon(id)}
-                >
-                  <Icon name={WEAPON_ICONS[id] ?? "sword"} size={22} />
-                  <span>{base.name}</span>
-                  <small>
-                    {GAME_DATA.startSkills[id]?.name}
-                    {base.weapon ? ` · ${HEAT_NAMES[base.weapon.heatBehavior]}` : ""}
-                  </small>
-                </button>
-              );
-            })}
-          </div>
-
-          <div className="class-paths" aria-label="Paths">
-            {heroClass.branches.map((id) => (
-              <span
-                key={id}
-                className="path-chip"
-                title={`${PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id} → ${heroClass.titles[id] ?? ""}`}
-              >
-                <ClassEmblem classId={classId} size={14} />
-                {PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id}
+        {step === "attributes" ? (
+          <div className="class-info panel-card class-attributes" aria-label="Attributes">
+            <div className="class-name-row">
+              <ClassEmblem classId={classId} size={30} />
+              <span className="title-font class-name">{name.trim() || heroClass.name}</span>
+              <div className="grow" />
+              <span className={`points ${freeLeft > 0 ? "has" : ""}`} data-testid="free-points">
+                {freeLeft} Points
               </span>
-            ))}
-          </div>
-
-          <label className="name-field">
-            <span className="eyebrow">NAME</span>
-            <input
-              value={name}
-              maxLength={18}
-              onChange={(e) => {
-                setName(e.target.value);
-                setNameTouched(true);
-              }}
-            />
-          </label>
-
-          <div className="class-buttons">
-            <button type="button" className="btn" onClick={props.onBack}>
-              Back
-            </button>
-            <button
-              type="button"
-              className="btn big primary"
-              onClick={() =>
-                props.onBegin({
-                  slot: props.slot,
-                  classId,
-                  weapon,
-                  name: name.trim() || heroClass.name,
-                })
+            </div>
+            <AttributeStones
+              base={heroClass.startingAttributes}
+              delta={free}
+              canAdd={(a) =>
+                freeLeft > 0 &&
+                heroClass.startingAttributes[a] + free[a] < ATTRIBUTE_RULES.creationMax
               }
-            >
-              Begin
-            </button>
+              canRemove={(a) => free[a] > 0}
+              onAdd={(a) => setFree((f) => ({ ...f, [a]: f[a] + 1 }))}
+              onRemove={(a) => setFree((f) => ({ ...f, [a]: f[a] - 1 }))}
+            />
+            <div className="grow" />
+            <div className="class-buttons">
+              <button type="button" className="btn" onClick={() => setStep("class")}>
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn big primary"
+                disabled={freeLeft > 0}
+                onClick={() =>
+                  props.onBegin({
+                    slot: props.slot,
+                    classId,
+                    weapon,
+                    name: name.trim() || heroClass.name,
+                    attributes: free,
+                  })
+                }
+              >
+                Begin
+              </button>
+            </div>
           </div>
-        </div>
+        ) : (
+          <div className="class-info panel-card">
+            <div className="class-name-row">
+              <ClassEmblem classId={classId} size={30} />
+              <span className="title-font class-name">{heroClass.name}</span>
+            </div>
+            <p className="class-text">{heroClass.text}</p>
+            <p className="class-trait">
+              <span className="title-font">{heroClass.trait.name}</span> ·{" "}
+              {heroClass.trait.description}
+            </p>
+
+            <div className="class-weapons" role="radiogroup" aria-label="Weapon">
+              {heroClass.weapons.map((id) => {
+                const base = getBase(ITEM_CATALOG, id);
+                return (
+                  <button
+                    key={id}
+                    type="button"
+                    role="radio"
+                    aria-checked={id === weapon}
+                    className={`weapon-pick ${id === weapon ? "on" : ""}`}
+                    onClick={() => setWeapon(id)}
+                  >
+                    <Icon name={WEAPON_ICONS[id] ?? "sword"} size={22} />
+                    <span>{base.name}</span>
+                    <small>
+                      {GAME_DATA.startSkills[id]?.name}
+                      {base.weapon ? ` · ${HEAT_NAMES[base.weapon.heatBehavior]}` : ""}
+                    </small>
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="class-paths" aria-label="Paths">
+              {heroClass.branches.map((id) => (
+                <span
+                  key={id}
+                  className="path-chip"
+                  title={`${PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id} → ${heroClass.titles[id] ?? ""}`}
+                >
+                  <ClassEmblem classId={classId} size={14} />
+                  {PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id}
+                </span>
+              ))}
+            </div>
+
+            <label className="name-field">
+              <span className="eyebrow">NAME</span>
+              <input
+                value={name}
+                maxLength={18}
+                onChange={(e) => {
+                  setName(e.target.value);
+                  setNameTouched(true);
+                }}
+              />
+            </label>
+
+            <div className="class-buttons">
+              <button type="button" className="btn" onClick={props.onBack}>
+                Back
+              </button>
+              <button
+                type="button"
+                className="btn big primary"
+                onClick={() => setStep("attributes")}
+              >
+                Next
+              </button>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

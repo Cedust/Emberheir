@@ -1,8 +1,6 @@
 import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import {
-  ATTRIBUTES,
-  type Attribute,
   type Attributes,
   type Capstone,
   type CombatRules,
@@ -14,6 +12,7 @@ import {
   type WeaponDefinition,
   type WeaponRules,
 } from "../combat/types";
+import { type AttributePoints, combatAttributes, heroPerks } from "./attributes";
 import { type ResolvedEquipment, resolveEquipment } from "../items/equipment";
 import type { Equipment, ItemCatalog } from "../items/types";
 
@@ -21,6 +20,8 @@ export interface HeroBuildOptions {
   readonly level: number;
   /** The hero's own attributes (start values + spent points), without gear. */
   readonly attributes: Attributes;
+  /** Attributes from Blaze Boons: they count for Breakpoints, unlike gear. */
+  readonly boonAttributes?: AttributePoints;
   readonly equipment: Equipment;
   /** The hero's own weapon (Weapon Mastery); gear never brings one. */
   readonly weapon: WeaponDefinition;
@@ -46,9 +47,9 @@ export function buildHeroSetup(
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
   const gear = resolveEquipment(options.equipment, catalog, options.attributes, options.weapon);
   const { weapon } = options;
-  const attributes = Object.fromEntries(
-    ATTRIBUTES.map((a) => [a, options.attributes[a] + gear.attributes[a]]),
-  ) as Record<Attribute, number>;
+  const boon = options.boonAttributes ?? {};
+  const attributes = combatAttributes(options.attributes, boon, gear.attributes);
+  const perks = heroPerks(options.attributes, boon);
   const reactions = options.reactions?.(weapon) ?? [];
   const triggers = [...gear.triggers, ...(options.triggers?.(weapon) ?? [])];
   const capstone = options.capstone?.(weapon);
@@ -57,6 +58,8 @@ export function buildHeroSetup(
     name: "Heir",
     level: options.level,
     attributes,
+    attributeScale: "heir",
+    ...(perks.length ? { perks } : {}),
     weapon,
     rotation: options.rotation(weapon),
     ...(reactions.length ? { reactions } : {}),

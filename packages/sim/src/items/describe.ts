@@ -286,7 +286,7 @@ export function describeItem(
     }
     return [
       {
-        text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality)),
+        text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality, item.rarity)),
         kind: "stat" as const,
       },
     ];

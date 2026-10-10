@@ -78,6 +78,13 @@ import { type HeroClass, classTitle, getClass } from "./classes";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
 import {
+  ATTRIBUTE_RULES,
+  type AttributePoints,
+  addAttributes,
+  attributeProblem,
+  sumAttributes,
+} from "./attributes";
+import {
   EMPTY_MASTERY,
   type EchoDefinition,
   type EchoesState,
@@ -126,7 +133,7 @@ import {
  */
 
 /** Bumped whenever the save game shape changes. Older saves are migrated in `deserializeGame`. */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -207,6 +214,8 @@ export interface Wallet {
   readonly runes: Readonly<Record<string, number>>;
   /** Pays for Kindle at Liora; Elites and bosses give it in the Spoils pick. */
   readonly kindling: number;
+  /** Pays for Ashen Rebirth at Kaelen (attribute-v1.md); one per Prestige. */
+  readonly phoenixAsh: number;
 }
 
 export interface HeroState {
@@ -330,6 +339,10 @@ export interface PrestigeRewards {
   /** The Battle Plan upgrade this Prestige unlocks (`BATTLE_PLAN_LADDER`). */
   readonly planUpgrade: string | null;
   readonly harvesterEmber: number;
+  /** The Harvest: new Attribute Points, points that may move (Rekindle) and Phoenix Ash. */
+  readonly attributePoints: number;
+  readonly rekindle: number;
+  readonly phoenixAsh: number;
   readonly levelCap: number;
   /** Acts the next run has (one more per Prestige, up to all of them). */
   readonly acts: number;
@@ -458,6 +471,11 @@ export interface NewGameOptions {
   /** One of the class's weapons; default its first. Fixed for the character. */
   readonly weapon?: string;
   readonly name?: string;
+  /**
+   * The free points of the creation (attribute-v1.md section 5), on top of the Class Array. Left
+   * out, they wait as unspent points.
+   */
+  readonly attributes?: AttributePoints;
 }
 
 export function newGame(data: GameData, options: NewGameOptions): GameState {
@@ -472,6 +490,17 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
   const offHand = heroClass.offHand
     ? rollItem(data.items, { baseId: heroClass.offHand, itemLevel: 1, rarity: "normal" }, rng)
     : undefined;
+  const floor = heroClass.startingAttributes;
+  const free = options.attributes ?? {};
+  if (ATTRIBUTES.some((k) => (free[k] ?? 0) < 0)) fail("Points must be positive");
+  const attributes = addAttributes(floor, free);
+  const problem = attributeProblem(attributes, {
+    floor,
+    current: floor,
+    points: ATTRIBUTE_RULES.creationPoints,
+    max: ATTRIBUTE_RULES.creationMax,
+  });
+  if (problem) fail(problem);
   return {
     version: SAVE_VERSION,
     seed,
@@ -481,8 +510,8 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       classId: heroClass.id,
       level: 1,
       xp: 0,
-      attributes: heroClass.startingAttributes,
-      unspentAttributePoints: 0,
+      attributes,
+      unspentAttributePoints: ATTRIBUTE_RULES.creationPoints - sumAttributes(free),
       unspentSkillPoints: PROGRESSION.startSkillPoints,
       learned: {},
       weaponId,
@@ -500,6 +529,7 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       ascensionShards: 0,
       runes: {},
       kindling: 0,
+      phoenixAsh: 0,
     },
     inventory: [],
     stash: [],
@@ -658,6 +688,9 @@ export function prestigeRewards(data: GameData, prestige: number): PrestigeRewar
     rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
     planUpgrade: BATTLE_PLAN_LADDER[prestige - 1]?.name ?? null,
     harvesterEmber: PROGRESSION.prestigeHarvesterEmber,
+    attributePoints: ATTRIBUTE_RULES.harvestPoints,
+    rekindle: ATTRIBUTE_RULES.rekindleMoves,
+    phoenixAsh: ATTRIBUTE_RULES.harvestPhoenixAsh,
     levelCap: levelCap(prestige),
     acts: actsInRun(data, prestige).length,
     levelBand: levelBand(prestige),
@@ -887,6 +920,7 @@ export function heroSetup(
     {
       level: hero.level,
       attributes: hero.attributes,
+      boonAttributes: boons.attributes,
       equipment: hero.equipment,
       weapon: mastery.weapon,
       weaponRules: mastery.weaponRules,
@@ -1151,7 +1185,14 @@ export type GameAction =
       readonly type: "prestige";
       /** Prestige branch to unlock; required while branches are left. */
       readonly branchId?: string;
+      /**
+       * The Harvest (attribute-v1.md): the own attributes afterwards, with the new points spent
+       * and up to `rekindle` points moved. Left out, the new points wait as unspent points.
+       */
+      readonly attributes?: Attributes;
     }
+  /** Kaelen (Camp only): Ashen Rebirth, all points anew for one Phoenix Ash. */
+  | { readonly type: "rebirth"; readonly attributes: Attributes }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -1214,7 +1255,9 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "setBattlePlan":
       return setBattlePlan(state, data, action.plan);
     case "prestige":
-      return doPrestige(state, data, action.branchId);
+      return doPrestige(state, data, action.branchId, action.attributes);
+    case "rebirth":
+      return rebirth(state, data, action.attributes);
     case "dismissNotice":
       return { ...state, notice: null };
   }
@@ -1496,9 +1539,6 @@ function resolveFight(state: GameState, data: GameData): GameState {
         : {}),
       level: leveled.level,
       xp: leveled.xp,
-      unspentAttributePoints:
-        state.hero.unspentAttributePoints +
-        leveled.levelsGained * PROGRESSION.attributePointsPerLevel,
       unspentSkillPoints:
         state.hero.unspentSkillPoints + leveled.levelsGained * PROGRESSION.skillPointsPerLevel,
     },
@@ -2008,6 +2048,9 @@ function allocateAttributes(state: GameState, points: Partial<Attributes>): Game
     if (!Number.isInteger(n) || n < 0) return fail("Points must be whole and positive");
     attributes[a] += n;
     total += n;
+    if (n > 0 && attributes[a] > ATTRIBUTE_RULES.max) {
+      return fail(`At most ${ATTRIBUTE_RULES.max} points`);
+    }
   }
   if (total > state.hero.unspentAttributePoints) return fail("Not enough Attribute Points");
   return {
@@ -2406,7 +2449,12 @@ export function openBranches(state: GameState, data: GameData): PrestigeBranchDe
  * Prestige (Playtest 2): the world burns, the Heir's gear does not. Level, points, items, stash,
  * currencies, Skill Tree, Battle Plan and Ember all stay; act progress, the run and its Boons end.
  */
-function doPrestige(state: GameState, data: GameData, branchId: string | undefined): GameState {
+function doPrestige(
+  state: GameState,
+  data: GameData,
+  branchId: string | undefined,
+  attributes: Attributes | undefined,
+): GameState {
   const pending = state.pendingPrestige ?? fail("No Prestige pending");
   const open = openBranches(state, data);
   if (branchId === undefined ? open.length > 0 : !open.some((b) => b.id === branchId)) {
@@ -2431,11 +2479,28 @@ function doPrestige(state: GameState, data: GameData, branchId: string | undefin
     enemyName: pending.enemyName,
   };
   const final = prestige >= PROGRESSION.finalPrestige;
+  // The Harvest: new points, and a few may move (Rekindle).
+  const { hero } = state;
+  const points = hero.unspentAttributePoints + rewards.attributePoints;
+  const next = attributes ?? hero.attributes;
+  const problem = attributeProblem(next, {
+    floor: heroClassOf(state, data).startingAttributes,
+    current: hero.attributes,
+    points,
+    moves: rewards.rekindle,
+  });
+  if (problem) fail(problem);
   return {
     ...state,
+    hero: {
+      ...hero,
+      attributes: next,
+      unspentAttributePoints: points - (sumAttributes(next) - sumAttributes(hero.attributes)),
+    },
     wallet: {
       ...state.wallet,
       harvesterEmber: state.wallet.harvesterEmber + rewards.harvesterEmber,
+      phoenixAsh: (state.wallet.phoenixAsh ?? 0) + rewards.phoenixAsh,
     },
     flaskCharges: Math.max(state.flaskCharges, PROGRESSION.flaskStartCharges),
     // The final Prestige (prestige-counting) keeps the cleared world for The Last Ember.
@@ -2466,6 +2531,33 @@ function doPrestige(state: GameState, data: GameData, branchId: string | undefin
   };
 }
 
+/**
+ * Ashen Rebirth at Kaelen (attribute-v1.md section 7): every point above the Class Array comes
+ * back and is set anew, for one Phoenix Ash.
+ */
+function rebirth(state: GameState, data: GameData, attributes: Attributes): GameState {
+  requireTrainer(state);
+  if ((state.wallet.phoenixAsh ?? 0) < ATTRIBUTE_RULES.rebirthCost) fail("No Phoenix Ash");
+  const floor = heroClassOf(state, data).startingAttributes;
+  const { hero } = state;
+  const points =
+    sumAttributes(hero.attributes) - sumAttributes(floor) + hero.unspentAttributePoints;
+  const problem = attributeProblem(attributes, { floor, current: floor, points });
+  if (problem) fail(problem);
+  return {
+    ...state,
+    hero: {
+      ...hero,
+      attributes,
+      unspentAttributePoints: points - (sumAttributes(attributes) - sumAttributes(floor)),
+    },
+    wallet: {
+      ...state.wallet,
+      phoenixAsh: state.wallet.phoenixAsh - ATTRIBUTE_RULES.rebirthCost,
+    },
+  };
+}
+
 // --- save games ------------------------------------------------------------------------------
 
 export function serializeGame(state: GameState): string {
@@ -2489,6 +2581,7 @@ export function deserializeGame(json: string, data?: GameData): GameState {
   if (state.version === 7) state = migrateV7(state, data);
   if (state.version === 8) state = migrateV8(state, data);
   if (state.version === 9) state = migrateV9(state, data);
+  if (state.version === 10) state = migrateV10(state, data);
   if (state.version !== SAVE_VERSION) {
     throw new Error(`Save game version ${String(state.version)} is not supported`);
   }
@@ -2646,7 +2739,8 @@ function migrateV7(state: Partial<GameState>, data: GameData | undefined): Parti
       level: cap,
       xp: 0,
       attributes: data.startingAttributes,
-      unspentAttributePoints: (cap - 1) * PROGRESSION.attributePointsPerLevel,
+      // v10 → v11 sets the attributes anew anyway.
+      unspentAttributePoints: 0,
       learned: {},
       unspentSkillPoints:
         PROGRESSION.startSkillPoints + (cap - 1) * PROGRESSION.skillPointsPerLevel,
@@ -2759,5 +2853,36 @@ function migrateV9(state: Partial<GameState>, data: GameData | undefined): Parti
     ...(state.wallet ? { wallet: { ...state.wallet, dust: state.wallet.dust + dust } } : {}),
     ...(state.legacy ? { legacy: { ...state.legacy, echoes: state.legacy.echoes ?? echoes } } : {}),
     ...(run && migratedRewards ? { run: { ...run, rewards: migratedRewards } } : {}),
+  };
+}
+
+/**
+ * v10 → v11 (attribute-v1.md): attributes on the 1–10 scale. The hero goes back to the Class
+ * Array and gets the creation's free points plus the Harvest's points of every Prestige so far to
+ * spend again, and one Phoenix Ash per Prestige. Gear that no longer fits stays equipped but
+ * inactive until the points are set.
+ */
+function migrateV10(state: Partial<GameState>, data: GameData | undefined): Partial<GameState> {
+  const prestige = state.legacy?.prestige ?? 0;
+  const hero = state.hero;
+  const floor =
+    (hero && data?.classes.find((c) => c.id === hero.classId)?.startingAttributes) ??
+    data?.startingAttributes;
+  return {
+    ...state,
+    version: 11,
+    ...(hero && floor
+      ? {
+          hero: {
+            ...hero,
+            attributes: floor,
+            unspentAttributePoints:
+              ATTRIBUTE_RULES.creationPoints + prestige * ATTRIBUTE_RULES.harvestPoints,
+          },
+        }
+      : {}),
+    ...(state.wallet
+      ? { wallet: { ...state.wallet, phoenixAsh: prestige * ATTRIBUTE_RULES.harvestPhoenixAsh } }
+      : {}),
   };
 }

@@ -177,7 +177,7 @@ function affixText(item: Item, index: number): { text: string; trigger: boolean 
     };
   }
   return {
-    text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality)),
+    text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality, item.rarity)),
     trigger: false,
   };
 }

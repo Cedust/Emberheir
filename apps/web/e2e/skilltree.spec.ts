@@ -51,6 +51,7 @@ test("The Bloodline step deepens an owned branch", async ({ page }) => {
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bloodline.png` });
   await deepen.click();
   await page.getByRole("button", { name: "Deepen Warden" }).click();
+  await page.getByRole("button", { name: "Let It Burn" }).click();
   await expect(page.getByRole("region", { name: "Inheritance" })).toContainText("Warden II");
 });
 

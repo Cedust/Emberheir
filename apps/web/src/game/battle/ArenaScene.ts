@@ -1,4 +1,10 @@
-import type { CombatEvent, FightSnapshot, Side } from "@emberheir/sim";
+import {
+  type CombatEvent,
+  type FightSnapshot,
+  type PerkId,
+  type Side,
+  getPerk,
+} from "@emberheir/sim";
 import { Application, BlurFilter, Container, Graphics, Text } from "pixi.js";
 import { type WeaponLook, drawWeapon } from "../camp/weaponArt";
 import { Fx, type Burst } from "./fx";
@@ -115,6 +121,39 @@ const SKILL_FX: Record<string, Delivery> = {
 };
 
 const RISE = -Math.PI / 2;
+
+/**
+ * Breakpoint Perks (attribute-v1.md): each one that fires gets its own flash. `on` says whether it
+ * lands on the Perk's owner or on the foe; `name` floats the Perk's name for the rare ones.
+ */
+const PERK_FX: Record<
+  PerkId,
+  {
+    color: readonly number[];
+    on: "self" | "foe";
+    look: "flakes" | "ring" | "rise" | "wind" | "star";
+    name?: boolean;
+  }
+> = {
+  armorbreaker: { color: [0x9a9088, 0x6b625a], on: "foe", look: "flakes" },
+  stoneguard: { color: [0xc9c2b8], on: "self", look: "ring" },
+  titan: { color: [0xffd84a, 0xffb13b], on: "foe", look: "star", name: true },
+  hawkeye: { color: [0xffffff], on: "foe", look: "ring" },
+  opportunist: { color: [0xffd84a, 0xfff2b0], on: "foe", look: "star" },
+  trueShot: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star", name: true },
+  attuned: { color: [0x5b8cff], on: "self", look: "ring" },
+  elementalSurge: { color: [0x8a5bff, 0x5b8cff], on: "foe", look: "star" },
+  spellfire: { color: [0x5b8cff, 0xb8d0ff], on: "self", look: "ring", name: true },
+  quickReflexes: { color: [0xd8f0c8, 0xa8d8a0], on: "self", look: "wind", name: true },
+  emberDance: { color: [0xffb13b, 0xffd84a], on: "self", look: "wind" },
+  doubleTime: { color: [0xffd84a, 0xffffff], on: "self", look: "ring", name: true },
+  innerFire: { color: [0xff8a3a, 0xffb13b], on: "self", look: "rise", name: true },
+  afterglow: { color: [0xff8a3a, 0xffd84a], on: "self", look: "rise" },
+  clarity: { color: [0xa35cff], on: "foe", look: "ring" },
+  secondBreath: { color: [0x4fe08a, 0xffb13b], on: "self", look: "rise", name: true },
+  thickSkin: { color: [0x9a9088], on: "self", look: "ring" },
+  undying: { color: [0xff4a2a, 0xffd84a], on: "self", look: "star", name: true },
+};
 const FALL = Math.PI / 2;
 
 /** Particles that hang around a fighter while an ailment is on them. */
@@ -475,6 +514,9 @@ export class ArenaScene {
           this.float(evader, "Evade", DAMAGE_COLORS.miss ?? 0xffffff, false, 0.8);
           break;
         }
+        case "perk":
+          this.perk(e.side, e.perk);
+          break;
         case "stun":
           this.figure(e.side).stun = e.seconds;
           break;
@@ -530,6 +572,82 @@ export class ArenaScene {
   private wait(seconds: number, run: () => void): void {
     if (seconds <= 0) run();
     else this.later.push({ at: this.clock + seconds, run });
+  }
+
+  private perk(owner: Side, perk: PerkId): void {
+    const look = PERK_FX[perk];
+    const side: Side = look.on === "self" ? owner : owner === "hero" ? "enemy" : "hero";
+    const c = this.center(side);
+    const color = [...look.color];
+    const main = color[0] ?? 0xffffff;
+    switch (look.look) {
+      case "flakes":
+        this.fx?.burst({
+          x: c.x,
+          y: c.y,
+          count: 12,
+          kind: "bit",
+          color,
+          spreadX: 30,
+          spreadY: 40,
+          angle: [Math.PI + 0.3, Math.PI * 2 - 0.3],
+          speed: [60, 180],
+          gravity: 600,
+          life: [0.5, 0.9],
+          size: [5, 9],
+          spin: 8,
+        });
+        break;
+      case "ring":
+        this.fx?.ring(c.x, c.y, main, 40, 150, 0.4, 5, 1);
+        break;
+      case "rise":
+        this.fx?.burst({
+          x: c.x,
+          y: GROUND_Y - 10,
+          count: 22,
+          color,
+          spreadX: 60,
+          angle: [RISE - 0.25, RISE + 0.25],
+          speed: [80, 220],
+          life: [0.6, 1.2],
+          size: [6, 12],
+          drag: 0.4,
+          wobble: 12,
+        });
+        break;
+      case "wind":
+        this.fx?.burst({
+          x: c.x,
+          y: c.y + 30,
+          count: 14,
+          color,
+          spreadY: 60,
+          angle: owner === "hero" ? [Math.PI - 0.1, Math.PI + 0.1] : [-0.1, 0.1],
+          speed: [260, 420],
+          life: [0.25, 0.45],
+          size: [4, 7],
+          stretch: 1.2,
+          drag: 0.1,
+        });
+        break;
+      case "star":
+        this.fx?.ring(c.x, c.y, main, 20, 110, 0.3, 6, 1);
+        this.fx?.burst({
+          x: c.x,
+          y: c.y,
+          count: 18,
+          color,
+          speed: [180, 340],
+          life: [0.25, 0.5],
+          size: [5, 9],
+          stretch: 1,
+          drag: 0.15,
+        });
+        break;
+    }
+    if (perk === "titan" || perk === "undying") this.shake(0.35);
+    if (look.name) this.float(owner, getPerk(perk).name, main, false, 0.8);
   }
 
   private shake(amount: number): void {
