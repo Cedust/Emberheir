@@ -180,8 +180,8 @@ function personas(state: GameState, road: ActData): Persona[] {
       target: "kaelen",
     },
     {
-      id: "eldrin",
-      name: "Eldrin",
+      id: "nyssa",
+      name: "Nyssa",
       role: "Runesmith",
       x: 950,
       y: 520,
@@ -197,8 +197,8 @@ function personas(state: GameState, road: ActData): Persona[] {
       ...(runesmith ? {} : { locked: later }),
     },
     {
-      id: "nyssa",
-      name: "Nyssa",
+      id: "eldrin",
+      name: "Eldrin",
       role: "Scout",
       x: 1150,
       y: 600,
@@ -306,7 +306,7 @@ export function CampView(props: {
   const quote = sel.id === "nan" ? `“${NAN_LINES[nanLine % NAN_LINES.length]}”` : sel.quote;
   const cta = () => {
     if (sel.id === "nan") setNanLine((n) => n + 1);
-    else if (sel.id === "nyssa" && !sel.locked) game.dispatch({ type: "setOut", actId: act.id });
+    else if (sel.id === "eldrin" && !sel.locked) game.dispatch({ type: "setOut", actId: act.id });
     else if (sel.target && !sel.locked) props.onOpen(sel.target);
   };
   return (

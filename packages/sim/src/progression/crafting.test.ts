@@ -238,7 +238,7 @@ describe("Sockets, Runes and Marisha", () => {
     tier: 1,
     affixes: [],
   };
-  /** Eldrin present, Runes in the pouch, the axe in the inventory. */
+  /** Nyssa present, Runes in the pouch, the axe in the inventory. */
   function runeCamp(runes: Record<string, number> = { ash: 4, thorn: 1 }): GameState {
     const s = camp({ runes });
     return {

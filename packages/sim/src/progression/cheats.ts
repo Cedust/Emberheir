@@ -51,7 +51,7 @@ export type Cheat =
   | { readonly kind: "clearAct"; readonly all?: boolean }
   /** Set an Echo's stage (0 forgets it). */
   | { readonly kind: "echo"; readonly echoId: string; readonly stage: number }
-  /** Kaelen and Eldrin join the caravan. */
+  /** Kaelen and Nyssa join the caravan. */
   | { readonly kind: "unlockCamp" };
 
 /** Highest level the cheat sets: the last Weapon Rank. */

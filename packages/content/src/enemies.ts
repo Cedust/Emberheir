@@ -330,9 +330,10 @@ export const CINDER_TYRANT: EnemyDefinition = {
  * Act 4 (Frost Peaks) enemies: Cold and Chill. Chill slows the hero's attacks and Heat, so Cold
  * Resistance, Tenacity and Heat Gain help.
  */
-export const FROST_WOLF: EnemyDefinition = {
+/** Ids of the renamed Fabelwelt enemies stay as they were, so old saves keep working. */
+export const FROST_FOX: EnemyDefinition = {
   id: "frost-wolf",
-  name: "Frost Wolf",
+  name: "Frost Fox",
   archetype: "skirmisher",
   description: "Fast bites that Chill.",
   attributes: { strength: 6, dexterity: 6, agility: 14, intelligence: 0, wisdom: 2, vitality: 6 },
@@ -342,9 +343,9 @@ export const FROST_WOLF: EnemyDefinition = {
   bonuses: { evasion: 0.1, coldResistance: 0.3 },
 };
 
-export const ICE_GOLEM: EnemyDefinition = {
+export const RIME_IBEX: EnemyDefinition = {
   id: "ice-golem",
-  name: "Ice Golem",
+  name: "Rime Ibex",
   archetype: "thornback",
   description: "Jagged ice hurts every hand that strikes it.",
   attributes: { strength: 10, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 12 },
@@ -387,8 +388,8 @@ export const FROST_WARDEN: EnemyDefinition = {
 };
 
 export const ACT4_ENEMIES: readonly EnemyDefinition[] = [
-  FROST_WOLF,
-  ICE_GOLEM,
+  FROST_FOX,
+  RIME_IBEX,
   RIME_WITCH,
   FROST_WARDEN,
 ];
@@ -459,9 +460,9 @@ export const STORM_CALLER: EnemyDefinition = {
   bonuses: { lightningResistance: 0.3 },
 };
 
-export const STATIC_GOLEM: EnemyDefinition = {
+export const STATIC_PORCUPINE: EnemyDefinition = {
   id: "static-golem",
-  name: "Static Golem",
+  name: "Static Porcupine",
   archetype: "thornback",
   description: "Every 5th hit it takes jumps back at you.",
   attributes: { strength: 8, dexterity: 2, agility: 0, intelligence: 4, wisdom: 2, vitality: 12 },
@@ -483,7 +484,7 @@ export const ACT5_ENEMIES: readonly EnemyDefinition[] = [
   STORM_SPRITE,
   THUNDER_BRUTE,
   STORM_CALLER,
-  STATIC_GOLEM,
+  STATIC_PORCUPINE,
 ];
 
 /**

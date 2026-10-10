@@ -683,7 +683,7 @@ describe("Runes in the run", () => {
     expect(addRunes({ ash: 1 }, ["ash", "moss"])).toEqual({ ash: 2, moss: 1 });
   });
 
-  it("Eldrin joins after the first trip into his act, even a deadly one", () => {
+  it("Nyssa joins after the first trip into her act, even a deadly one", () => {
     let s = act(unlocked(start()), { type: "setOut", actId: "deadly-act" });
     expect(s.progress.runesmithUnlocked).toBe(false);
     s = act(s, { type: "startStage" }, { type: "resolveFight" });

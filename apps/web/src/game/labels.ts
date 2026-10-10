@@ -55,7 +55,7 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   reforgeStones: "Not enough Reforge Stones",
   ascensionShards: "Needs an Ascension Shard (bosses, sometimes Elites)",
   essence: "Not enough Essence",
-  runesmith: "Eldrin joins after your first trip into the Rotwood",
+  runesmith: "Nyssa joins after your first trip into the Rotwood",
   notNormal: "Only Normal items take Sockets and Runes",
   maxSockets: "No more Sockets fit this base",
   hasRunes: "Runes are already socketed",

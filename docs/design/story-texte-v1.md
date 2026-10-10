@@ -80,17 +80,17 @@ Jeweils drei bis fünf Zeilen, einmalig beim ersten Beitritt (danach erinnern si
 > **Kaelen:** You fight like someone who taught themselves by the campfire. Admirable. Also painful to watch.
 > **Kaelen:** Come to me from now on. I'll show you paths you never knew you had. And should you stray from the right one, I'll walk you back.
 
-### Nach Act 2: Eldrin (Runesmith)
-*Eldrin steckt bis zur Brust in einer Ranke fest.*
-> **Eldrin:** Don't mind me. I was reading. The wall was reading me back, apparently.
-> **Eldrin:** These ruins are covered in runes, you know. Old ones. Combine three and you get a better one! Isn't that marvellous? Nobody ever thinks it's marvellous.
-> **Eldrin:** If you cut me free, I'll teach you everything. Please cut me free. It's starting to digest.
+### Nach Act 2: Nyssa (Runesmith)
+*Nyssa steckt bis zur Brust in einer Ranke fest.*
+> **Nyssa:** Don't mind me. I was reading. The wall was reading me back, apparently.
+> **Nyssa:** These ruins are covered in runes, you know. Old ones. Combine three and you get a better one! Isn't that marvellous? Nobody ever thinks it's marvellous.
+> **Nyssa:** If you cut me free, I'll teach you everything. Please cut me free. It's starting to digest.
 
-### Nach Act 2: Nyssa (Scout)
-*Nyssa steht plötzlich mitten im Camp.*
-> **Thoric:** How long has she been there?
-> **Nyssa:** Since Rotwood. You people make a lot of noise for a secret caravan.
-> **Nyssa:** I've seen what's ahead. You won't like it. But you'll like it less if you don't know. I'll scout, you fight. Fair?
+### Nach Act 2: Eldrin (Scout)
+*Eldrin steht plötzlich mitten im Camp.*
+> **Thoric:** How long has he been there?
+> **Eldrin:** Since Rotwood. You people make a lot of noise for a secret caravan.
+> **Eldrin:** I've seen what's ahead. You won't like it. But you'll like it less if you don't know. I'll scout, you fight. Fair?
 
 ---
 
@@ -128,13 +128,13 @@ Zufällige Zeilen beim Anklicken im Camp. Pro Persona vier Beispiele, später je
 - "I will be on time for the final battle. I have set three reminders."
 - "Respec is no shame. Staying wrong is."
 
-**Eldrin (Runesmith)**
+**Nyssa (Runesmith)**
 - "Did you know there are runes older than the Harvester? Nobody asks about those."
 - "Three small runes make one bigger rune. It's basically poetry. With rocks."
 - "The Codex remembers every Runeword you find. Unlike some people. Unlike Nan."
 - "Careful with that one. It's ancient, powerful, and slightly sticky."
 
-**Nyssa (Scout)**
+**Eldrin (Scout)**
 - "Next area is worse. It's always worse."
 - "Want to go back to an old camp? Fine. I know the way. I always know the way."
 - "I counted the enemies ahead. Then I stopped counting. Bad sign."

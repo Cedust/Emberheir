@@ -46,7 +46,7 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     nan: "Gorrak is down. Liora finally agrees to see you.",
     facts: (_n, act, next) => [
       { k: "CLEARED", v: act.name, tone: "text" },
-      ...(act.number === 1 ? [{ k: "NEW IN CAMP", v: "Liora · Nyssa", tone: "good" }] : []),
+      ...(act.number === 1 ? [{ k: "NEW IN CAMP", v: "Liora · Eldrin", tone: "good" }] : []),
       {
         k: "ROAD AHEAD",
         v: next ? `Act ${next.number} · ${next.name}` : "Farm or rest",

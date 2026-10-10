@@ -18,7 +18,7 @@ and `PROGRESSION` / `CRAFTING` in `packages/sim/src/progression/constants.ts`.
 - Drops: normal enemies 6 %, Elites 50 %, bosses 1.5 runes on average. Highest rank =
   1 + 2 × Act Tier (Act 1 up to Thorn, Act 2 up to Ember); each rank is half as likely as the
   one below.
-- Eldrin (Runesmith) joins after the first trip into the Rotwood and stays through Prestige.
+- Nyssa (Runesmith) joins after the first trip into the Rotwood and stays through Prestige.
   He sockets runes (8 Gold per rank) and combines three of a kind into the next rank
   (15 Gold per rank).
 - Runes are lost on Prestige like gold; what was found stays in the Codex.
@@ -29,7 +29,7 @@ and `PROGRESSION` / `CRAFTING` in `packages/sim/src/progression/constants.ts`.
   gold name, the recipe's bonuses, triggers and rules on top of the rune bonuses.
 - Ten words: Kindling, Splinter, Rotheart, Hearthfire, Warden, Bulwark, Bramble, Hearth,
   Embersight, Stormward (the last needs high runes and is a later goal).
-- Codex at Eldrin: a word is revealed once all its runes were found, and marked "Forged" once
+- Codex at Nyssa: a word is revealed once all its runes were found, and marked "Forged" once
   made. Permanent through Prestige.
 
 ## Legendary Items and Uniques

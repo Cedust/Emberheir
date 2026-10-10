@@ -140,7 +140,7 @@ export interface ActData {
   readonly stages: number;
   readonly enemies: readonly EnemyDefinition[];
   readonly boss: EnemyDefinition;
-  /** Eldrin (Runesmith) waits in this act; he joins after the first trip into it. */
+  /** Nyssa (Runesmith) waits in this act; she joins after the first trip into it. */
   readonly runesmith?: boolean;
   /** Stages with a fixed Spoils pick (5 and 10). */
   readonly spoilsStages: readonly number[];
@@ -415,7 +415,7 @@ export interface GameState {
     readonly rotationSlots: number;
     /** The Supply Wagon burned at the Prestige; it is repaired on the first return to Camp. */
     readonly stashBurned: boolean;
-    /** Eldrin (Runesmith) joined the caravan. Stays through every Prestige. */
+    /** Nyssa (Runesmith) joined the caravan. Stays through every Prestige. */
     readonly runesmithUnlocked: boolean;
   };
   /** Marisha's stock: which offers of the current stock are sold. */
@@ -2540,7 +2540,7 @@ function migrateV2(state: Partial<GameState>): Partial<GameState> {
   };
 }
 
-/** v3 (M5–M7) → v4 (M8): Runes, Runeword Codex, Eldrin and Marisha's stock are new. */
+/** v3 (M5–M7) → v4 (M8): Runes, Runeword Codex, Nyssa and Marisha's stock are new. */
 function migrateV3(state: Partial<GameState>): Partial<GameState> {
   const rewards = state.run?.rewards;
   return {

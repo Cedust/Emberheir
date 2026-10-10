@@ -61,7 +61,7 @@ export function saveAfterAct1(): string {
   return serializeGame(state);
 }
 
-/** A Camp save after the first trip into the Rotwood: Eldrin has joined, three Ash Runes in the pouch. */
+/** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Ash Runes in the pouch. */
 export function saveWithRunes(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const state: GameState = {
