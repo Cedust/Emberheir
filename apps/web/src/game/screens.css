@@ -4631,6 +4631,14 @@
 
 .stage .hoard-detail .loot-card {
   min-height: 0;
+  /* As tall as the two rows of cards: a long Unique scrolls its lines, the buttons stay. */
+  max-height: 464px;
+}
+
+.stage .hoard-detail .item-detail-lines {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .stage .hoard-wait {

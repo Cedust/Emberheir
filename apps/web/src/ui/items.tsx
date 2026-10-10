@@ -513,7 +513,7 @@ export function walletEntries(state: GameState): { name: string; value: number; 
   return [
     { key: "acorns", name: "Acorns", value: w.acorns },
     { key: "ash", name: "Ash", value: w.ash },
-    { key: "reforge", name: "Reforge", value: w.emberCoal },
+    { key: "coal", name: "Ember Coal", value: w.emberCoal },
     { key: "feathers", name: "Feathers", value: w.phoenixFeathers },
     ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
   ];

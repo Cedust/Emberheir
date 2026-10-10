@@ -773,7 +773,7 @@ export function IntermissionView(props: {
     ? {
         acorns: rewards.acorns + (rewards.bounty?.acorns ?? 0),
         ash: rewards.ash + rewards.salvagedAsh,
-        reforge: rewards.emberCoal + (rewards.bounty?.emberCoal ?? 0),
+        coal: rewards.emberCoal + (rewards.bounty?.emberCoal ?? 0),
         feathers: rewards.phoenixFeathers,
       }
     : {};
@@ -813,7 +813,7 @@ export function IntermissionView(props: {
           )}
           {rewards?.bounty && step !== "ready" && <BountyPaid run={run} />}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
-            <RuneDrops key={run.encounter?.seed ?? run.stage} runes={rewards.runes} />
+            <RuneDrops key={`runes-${run.encounter?.seed ?? run.stage}`} runes={rewards.runes} />
           )}
           {step === "items" && (
             <ItemCards
