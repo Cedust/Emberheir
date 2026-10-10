@@ -89,11 +89,12 @@ export function baseSummary(item: Item): string {
 export function itemLines(
   item: Item,
   heroAttributes?: GameState["hero"]["attributes"],
+  heroLevel?: number,
 ): {
   text: string;
   kind: "stat" | "trigger" | "kindled" | "implicit" | "req" | "unmet" | "power";
 }[] {
-  const tip = describeItem(item, ITEM_CATALOG, heroAttributes);
+  const tip = describeItem(item, ITEM_CATALOG, heroAttributes, heroLevel);
   const lines: {
     text: string;
     kind: "stat" | "trigger" | "kindled" | "implicit" | "req" | "unmet" | "power";
@@ -110,6 +111,13 @@ export function itemLines(
   }
   if (tip.affixLines.length === 0 && item.rarity === "normal" && !tip.sockets) {
     lines.push({ text: "No affixes", kind: "implicit" });
+  }
+  if (tip.droppedBy) lines.push({ text: `Dropped by ${tip.droppedBy}`, kind: "implicit" });
+  if (tip.requiredLevel.value > 1) {
+    lines.push({
+      text: `Requires Level ${tip.requiredLevel.value}`,
+      kind: tip.requiredLevel.met === false ? "unmet" : "req",
+    });
   }
   for (const r of tip.requirements) {
     lines.push({ text: `Requires ${r.value} ${r.name}`, kind: r.met === false ? "unmet" : "req" });
@@ -215,6 +223,7 @@ export function RingSwitch(props: { state: GameState; item: Item }) {
 export function ItemDetail(props: {
   item: Item;
   heroAttributes?: GameState["hero"]["attributes"];
+  heroLevel?: number;
   where?: string;
   compare?: { text: string; better: boolean } | undefined;
   footer?: ReactNode;
@@ -259,7 +268,7 @@ export function ItemDetail(props: {
       </div>
       <div className="item-detail-rule" />
       <ul className="item-detail-lines">
-        {itemLines(item, props.heroAttributes).map((l, i) => (
+        {itemLines(item, props.heroAttributes, props.heroLevel).map((l, i) => (
           <li key={`${i}-${l.text}`} className={`line-${l.kind}`}>
             {l.text}
           </li>
@@ -411,7 +420,6 @@ export function ItemGrid(props: {
   selected: string | null;
   onSelect: (itemId: string, event?: ReactMouseEvent) => void;
   label: string;
-  burned?: boolean;
   drop?: GridDrop | undefined;
 }) {
   const { cell, drop } = props;
@@ -462,7 +470,7 @@ export function ItemGrid(props: {
 
   return (
     <div
-      className={`item-grid${props.burned ? " burned" : ""}`}
+      className="item-grid"
       role="group"
       aria-label={props.label}
       style={{
@@ -502,25 +510,12 @@ export function ItemGrid(props: {
 export function walletEntries(state: GameState): { name: string; value: number; key: string }[] {
   const w = state.wallet;
   const runes = Object.values(w.runes).reduce((a, b) => a + b, 0);
-  // The first act's Essence always shows; later ones once the hero owns some.
-  const essences = GAME_DATA.acts
-    .map((a) => a.essence)
-    .filter((e, i) => i === 0 || (w.essences[e.id] ?? 0) > 0);
   return [
     { key: "gold", name: "Gold", value: w.gold },
     { key: "dust", name: "Dust", value: w.dust },
     { key: "reforge", name: "Reforge", value: w.reforgeStones },
     { key: "shards", name: "Shards", value: w.ascensionShards },
-    ...essences.map((e) => ({
-      key: `essence e-${e.id}`,
-      name: e.name,
-      value: w.essences[e.id] ?? 0,
-    })),
     ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
-    ...(w.kindling > 0 ? [{ key: "kindling", name: "Kindling", value: w.kindling }] : []),
-    ...((w.phoenixAsh ?? 0) > 0
-      ? [{ key: "phoenix-ash", name: "Phoenix Ash", value: w.phoenixAsh }]
-      : []),
   ];
 }
 

@@ -1,14 +1,7 @@
 import { ACTS, ITEM_CATALOG } from "@emberheir/content";
-import {
-  CODEX,
-  type CodexHome,
-  type CodexPartKind,
-  type GameState,
-  codexMastery,
-} from "@emberheir/sim";
+import { type CodexHome, type CodexPartKind, type GameState, codexKnows } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
-import type { GameApi } from "../useGame";
 
 const ARCHETYPE_NAMES: Record<string, string> = {
   brute: "Brutes",
@@ -50,40 +43,34 @@ const EFFECTS: Part[] = [...ITEM_CATALOG.effects.values()].map((e) => ({
 }));
 
 /**
- * Old Nan's Trigger Codex: every Condition and Effect, learned ones with their Mastery, the rest
- * as silhouettes with their home. In the Camp a learned part can be marked as the Quarry.
+ * Old Nan's Trigger Codex: every Condition and Effect, learned ones by name, the rest as
+ * silhouettes with their home. Liora kindles learned pairs at the item's tier.
  */
-export function TriggerCodex(props: { state: GameState; game: GameApi; onClose: () => void }) {
-  const { state, game } = props;
+export function TriggerCodex(props: { state: GameState; onClose: () => void }) {
+  const { state } = props;
   const codex = state.legacy.codex;
-  const quarry = state.legacy.quarry;
   const [picked, setPicked] = useState<Part | null>(null);
-  const known = (p: Part) => codexMastery(codex, p.kind, p.id);
-  const isQuarry = (p: Part) => quarry?.kind === p.kind && quarry.id === p.id;
-  const count = [...CONDITIONS, ...EFFECTS].filter((p) => known(p) > 0).length;
-  const inCamp = !state.run;
+  const known = (p: Part) => codexKnows(codex, p.kind, p.id);
+  const count = [...CONDITIONS, ...EFFECTS].filter(known).length;
 
   const column = (title: string, parts: Part[]) => (
     <div className="codex-column">
       <span className="title-font section-title">{title}</span>
       <div className="codex-grid" role="list" aria-label={title}>
         {parts.map((p) => {
-          const mastery = known(p);
+          const learned = known(p);
           const on = picked?.kind === p.kind && picked.id === p.id;
           return (
             <button
               key={p.id}
               type="button"
               role="listitem"
-              className={`codex-part ${mastery ? "known" : "unknown"} ${on ? "on" : ""} ${isQuarry(p) ? "quarry" : ""}`}
-              aria-label={
-                mastery ? `${p.name}, Mastery T${mastery}` : `Unknown, ${homeHint(p.home)}`
-              }
+              className={`codex-part ${learned ? "known" : "unknown"} ${on ? "on" : ""}`}
+              aria-label={learned ? p.name : `Unknown, ${homeHint(p.home)}`}
               onClick={() => setPicked(p)}
             >
-              <span className="codex-name">{mastery ? p.name : "? ? ?"}</span>
-              <span className="codex-meta sub">{mastery ? `T${mastery}` : homeHint(p.home)}</span>
-              {isQuarry(p) && <Icon name="eye" size={14} />}
+              <span className="codex-name">{learned ? p.name : "? ? ?"}</span>
+              <span className="codex-meta sub">{homeHint(p.home)}</span>
             </button>
           );
         })}
@@ -91,7 +78,7 @@ export function TriggerCodex(props: { state: GameState; game: GameApi; onClose: 
     </div>
   );
 
-  const pickedKnown = picked ? known(picked) : 0;
+  const pickedKnown = picked ? known(picked) : false;
   return (
     <div className="overlay" role="dialog" aria-label="Trigger Codex">
       <div className="overlay-panel trigger-codex">
@@ -103,7 +90,6 @@ export function TriggerCodex(props: { state: GameState; game: GameApi; onClose: 
             </span>
           </div>
           <div className="grow" />
-          <span className="mono small">Kindling {state.wallet.kindling}</span>
           <button type="button" className="icon-button" aria-label="Close" onClick={props.onClose}>
             <Icon name="close" size={20} />
           </button>
@@ -116,27 +102,11 @@ export function TriggerCodex(props: { state: GameState; game: GameApi; onClose: 
           {picked ? (
             <>
               <span className="title-font big">{pickedKnown ? picked.name : "? ? ?"}</span>
-              <span className="sub">{homeHint(picked.home)}</span>
-              {isQuarry(picked) && quarry && (
-                <span className="mono small" data-testid="quarry-pity">
-                  {quarry.misses} / {CODEX.quarryPity}
-                </span>
-              )}
-              <div className="grow" />
-              {pickedKnown > 0 && inCamp && (
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() =>
-                    game.dispatch({
-                      type: "setQuarry",
-                      part: isQuarry(picked) ? null : { kind: picked.kind, id: picked.id },
-                    })
-                  }
-                >
-                  {isQuarry(picked) ? "Drop Quarry" : "Mark as Quarry"}
-                </button>
-              )}
+              <span className="sub">
+                {pickedKnown
+                  ? "Learned · Liora can kindle it"
+                  : `Drops more often: ${homeHint(picked.home)}`}
+              </span>
             </>
           ) : (
             <span className="sub">

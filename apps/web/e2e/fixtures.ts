@@ -32,7 +32,7 @@ export function saveAfterHarvestBoss(): string {
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
     },
-    wallet: { ...base.wallet, gold: 240, dust: 380, reforgeStones: 6, ascensionShards: 1 },
+    wallet: { ...base.wallet, gold: 400, dust: 380, reforgeStones: 6, ascensionShards: 1 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     stats: { fights: 16, wins: 15, deaths: 1, retreats: 0, bossKills: 1 },
     pendingPrestige: { actId: "ashen-fields", stage: 15, enemyName: "Gorrak, the Pit Brute" },
@@ -95,13 +95,13 @@ export function saveWithCodex(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 20 },
-    wallet: { ...base.wallet, dust: 400, kindling: 2 },
+    wallet: { ...base.wallet, dust: 400, reforgeStones: 4 },
     inventory: [{ item: ring, x: 0, y: 0 }],
     progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
     legacy: {
       ...base.legacy,
       prestige: 1,
-      codex: { conditions: { "on-crit": 2, "when-hit": 1 }, effects: { burn: 2, barrier: 3 } },
+      codex: { conditions: { "on-crit": 1, "when-hit": 1 }, effects: { burn: 1, barrier: 1 } },
     },
   };
   return serializeGame(state);
@@ -147,8 +147,6 @@ export function saveBossHoard(): string {
         picks: 2,
         itemPick: null,
         salvagedDust: 0,
-        spoils: [],
-        spoilsPick: null,
         newTrophies: ["thornsong"],
       },
     },
@@ -156,7 +154,7 @@ export function saveBossHoard(): string {
   return serializeGame(state);
 }
 
-/** A save at the Ember Shrine after Stage 5 of the first run, items and spoils already taken. */
+/** A save at the Ember Shrine after Stage 5 of the first run, items already taken. */
 export function saveShrine(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   const act = GAME_DATA.acts[0];
@@ -189,8 +187,6 @@ export function saveShrine(): string {
         items: [],
         itemPick: { kind: "salvageAll" },
         salvagedDust: 0,
-        spoils: [],
-        spoilsPick: null,
         boonOffer: [
           { id: "crushing-blow", grade: "spark" },
           { id: "banked-coals", grade: "flame" },
@@ -292,7 +288,8 @@ export function saveDeepTree(): string {
       !(n.prestigeBranch && n.prestigeBranch !== "duelist"),
   );
   let learned: Record<string, number> = { ...base.hero.learned };
-  let budget = { skillPoints: 58, harvesterEmber: 3 };
+  // Keystones cost 3 Skill Points; Prestige 5 has three Keystone places.
+  let budget = { skillPoints: 67, keystones: 3 };
   for (let pass = 0; pass < 12; pass++) {
     for (const node of wanted) {
       if (node.id.endsWith("t3b") || node.id.endsWith("t2n")) continue;
@@ -307,7 +304,6 @@ export function saveDeepTree(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 75, learned, unspentSkillPoints: 6 },
-    wallet: { ...base.wallet, harvesterEmber: 1 },
     progress: { ...base.progress, actsCleared: [], trainerUnlocked: true, rotationSlots: 4 },
     legacy: { ...base.legacy, prestige: 5, branches },
   };

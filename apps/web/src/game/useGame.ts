@@ -9,7 +9,7 @@ import {
   newGame,
 } from "@emberheir/sim";
 import { useCallback, useRef, useState } from "react";
-import { loadSlot, saveSlot } from "./saves";
+import { loadSlot, saveSlot, sharedStashFor } from "./saves";
 
 /** What the class select hands over for a new character. */
 export interface NewCharacter {
@@ -86,13 +86,15 @@ export function useGame() {
       const seed = Math.floor(Math.random() * 0x7fffffff);
       slotRef.current = character.slot;
       replace(
-        newGame(GAME_DATA, {
-          seed,
-          classId: character.classId,
-          weapon: character.weapon,
-          name: character.name,
-          ...(character.attributes ? { attributes: character.attributes } : {}),
-        }),
+        sharedStashFor(
+          newGame(GAME_DATA, {
+            seed,
+            classId: character.classId,
+            weapon: character.weapon,
+            name: character.name,
+            ...(character.attributes ? { attributes: character.attributes } : {}),
+          }),
+        ),
       );
     },
     [replace],

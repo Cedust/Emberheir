@@ -12,9 +12,9 @@ test("Final Prestige: nothing burns, the Inheritance points to The Last Ember", 
 
   await expect(page.getByRole("region", { name: "Victory" })).toContainText("nothing burns");
   await page.getByRole("button", { name: "Keep Everything" }).click();
-  // The last branch and the last Rekindle, then the Inheritance.
+  // The last branch and the last Harvest points, then the Inheritance.
   await page.getByRole("button", { name: /^(Take|Deepen) / }).click();
-  await expect(page.getByRole("region", { name: "Rekindle" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Attributes" })).toBeVisible();
   await page.getByRole("button", { name: "Keep Everything" }).click();
   const heir = page.getByRole("region", { name: "Inheritance" });
   await expect(heir).toContainText("THE LAST EMBER");

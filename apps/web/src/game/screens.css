@@ -642,6 +642,12 @@
   color: #ff7a2a;
 }
 
+.stage .tip-source {
+  font-size: 13px;
+  font-style: italic;
+  color: #c9a063;
+}
+
 .stage .tip-req {
   font-size: 13px;
   color: #a89a84;
@@ -858,7 +864,7 @@
   font-size: 14px;
 }
 
-.stage .spoils-mark {
+.stage .shrine-mark {
   width: 12px;
   height: 12px;
   border-radius: 2px;
@@ -905,43 +911,6 @@
 .stage .loot-card {
   flex-grow: 1;
   min-height: 380px;
-}
-
-.stage .spoils-cards {
-  display: grid;
-  grid-template-columns: repeat(3, 260px);
-  gap: 22px;
-  margin-top: 14px;
-}
-
-.stage .spoils-card {
-  padding: 24px 18px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  text-align: center;
-  cursor: pointer;
-  min-height: 280px;
-}
-
-.stage .spoils-card:hover {
-  border-color: var(--accent);
-}
-
-.stage .spoils-card strong {
-  font-size: 20px;
-}
-
-.stage .spoils-icon {
-  width: 88px;
-  height: 88px;
-  border-radius: 44px;
-  border: 3px solid var(--ink);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-bottom: 6px;
 }
 
 .stage .done-card {
@@ -1239,14 +1208,6 @@
   background: #ffb13b;
 }
 
-.stage .w-essence .dot {
-  background: #6b5a3e;
-}
-
-.stage .w-essence.e-rot-essence .dot {
-  background: #6a8a2a;
-}
-
 .stage .w-runes .dot {
   background: #8fd06a;
   border-radius: 2px;
@@ -1255,12 +1216,6 @@
 
 .stage .w-flask .dot {
   background: #e5484d;
-}
-
-.stage .w-kindling .dot {
-  background: #e0782a;
-  border-radius: 50% 50% 50% 0;
-  transform: rotate(-45deg);
 }
 
 /* An overlay covers the screen: the camp fire and the animals behind it pause, saving work. */
@@ -1860,6 +1815,46 @@
   text-shadow: 0 1px 2px #000;
 }
 
+.stage .bounty-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--rarity-legendary);
+}
+
+.stage .bounty-card.done {
+  border-color: var(--accent);
+}
+
+.stage .bounty-card.failed {
+  opacity: 0.6;
+}
+
+.stage .bounty-paid {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 16px;
+  border-color: var(--frame, var(--accent));
+}
+
+.stage .bounty-paid-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage .bounty-note {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 4px 0 8px;
+  padding: 8px 10px;
+  border-left: 3px solid var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  border-radius: 4px;
+}
+
 /* --- persona (Thoric, Liora) ---------------------------------------------------------------- */
 
 .stage .persona-header .eyebrow-big {
@@ -1971,8 +1966,7 @@
   align-items: stretch;
 }
 
-.stage .now-after > .arrow,
-.stage .distill .arrow {
+.stage .now-after > .arrow {
   display: flex;
   align-items: center;
   justify-content: center;
@@ -2050,15 +2044,7 @@
   background: rgb(79 224 138 / 0.12);
 }
 
-.stage .essence-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
-  font-size: 14px;
-}
-
-.stage .essence-chip {
+.stage .part-chip {
   min-height: 40px;
   padding: 0 14px;
   border-radius: 20px;
@@ -2068,7 +2054,7 @@
   font-weight: 700;
 }
 
-.stage button.essence-chip {
+.stage button.part-chip {
   background: transparent;
   color: inherit;
   font: inherit;
@@ -2076,36 +2062,8 @@
   cursor: pointer;
 }
 
-.stage .essence-chip:not(.on) {
+.stage .part-chip:not(.on) {
   border-color: var(--edge);
-}
-
-.stage .essence-chip.empty {
-  color: var(--text-sub);
-}
-
-.stage .essence-chip.on.empty {
-  border-color: var(--accent);
-}
-
-.stage .distill {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 30px;
-  padding: 40px;
-}
-
-.stage .distill-side {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-}
-
-.stage .distill .huge {
-  font-size: 34px;
-  font-weight: 700;
 }
 
 .stage .craft-last {
@@ -3335,17 +3293,6 @@
   box-shadow: 0 0 0 2px var(--accent) inset;
 }
 
-.stage .codex-part.quarry {
-  border-color: #e0782a;
-}
-
-.stage .codex-part > svg {
-  position: absolute;
-  top: 6px;
-  right: 6px;
-  color: #e0782a;
-}
-
 .stage .codex-meta {
   font-size: 12px;
 }
@@ -3823,20 +3770,20 @@
 }
 
 .stage .prestige-branch,
-.stage .prestige-rekindle,
+.stage .prestige-attributes,
 .stage .prestige-heir {
   background: linear-gradient(180deg, #e8b48a 0%, #d9c6a0 45%);
 }
 
 :root[data-theme="dark"] .stage .prestige-branch,
-:root[data-theme="dark"] .stage .prestige-rekindle,
+:root[data-theme="dark"] .stage .prestige-attributes,
 :root[data-theme="dark"] .stage .prestige-heir {
   background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) .stage .prestige-branch,
-  :root:not([data-theme="light"]) .stage .prestige-rekindle,
+  :root:not([data-theme="light"]) .stage .prestige-attributes,
   :root:not([data-theme="light"]) .stage .prestige-heir {
     background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
   }
@@ -4027,22 +3974,7 @@
   align-self: flex-end;
 }
 
-/* --- burned stash, legacy facts --------------------------------------------------------------- */
-
-.stage .item-grid.burned {
-  filter: sepia(0.6) brightness(0.6);
-  background-color: #2a120a;
-  border-color: #ff5a1f;
-}
-
-.stage .burned-note {
-  padding: 10px 14px;
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  font-size: 15px;
-  border-left: 5px solid #ff5a1f;
-}
+/* --- legacy facts --------------------------------------------------------------------------- */
 
 .stage .legacy-facts {
   padding: 24px 0 24px 24px;
@@ -4067,19 +3999,19 @@
   box-shadow: 0 0 0 3px var(--text);
 }
 
-.stage .ring-slot.heirloom {
+.stage .ring-slot.worn {
   border: 2px solid #ffb13b;
   box-shadow: 0 0 18px rgb(255 177 59 / 0.45);
   color: var(--text);
 }
 
-.stage .ring-slot.heirloom.on {
+.stage .ring-slot.worn.on {
   box-shadow:
     0 0 18px rgb(255 177 59 / 0.45),
     0 0 0 3px var(--text);
 }
 
-.stage .ring-slot.heirloom .seal {
+.stage .ring-slot.worn .seal {
   opacity: 1;
   color: #ffb13b;
 }
@@ -5404,9 +5336,9 @@
   text-decoration: line-through;
 }
 
-/* Rekindle (Prestige) and Ashen Rebirth (Kaelen). */
-.stage .rekindle-stones,
-.stage .rebirth-stones {
+/* The Harvest's Attribute Points (Prestige) and the attribute respec (Kaelen). */
+.stage .harvest-stones,
+.stage .attr-respec-stones {
   width: 760px;
   padding: 20px 24px;
   display: flex;
@@ -5414,19 +5346,19 @@
   gap: 12px;
 }
 
-.stage .prestige-rekindle .rekindle-stones {
+.stage .prestige-attributes .harvest-stones {
   margin: 32px auto 0;
 }
 
-.stage .prestige-rekindle .grow-space {
+.stage .prestige-attributes .grow-space {
   flex-grow: 1;
 }
 
-.stage .rekindle-left {
+.stage .harvest-left {
   text-align: right;
 }
 
-.stage .rebirth-tab {
+.stage .attr-respec-tab {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
@@ -5435,19 +5367,19 @@
   padding: 32px var(--safe-x, 32px);
 }
 
-.stage .rebirth-head {
+.stage .attr-respec-head {
   width: 760px;
   display: flex;
   align-items: baseline;
   justify-content: space-between;
 }
 
-.stage .rebirth-head h2 {
+.stage .attr-respec-head h2 {
   margin: 0;
   letter-spacing: 0.08em;
 }
 
-.stage .rebirth-footer {
+.stage .attr-respec-footer {
   width: 760px;
   display: flex;
   align-items: center;
@@ -5455,7 +5387,7 @@
   gap: 12px;
 }
 
-.stage .rebirth-footer .sub {
+.stage .attr-respec-footer .sub {
   margin-right: auto;
 }
 

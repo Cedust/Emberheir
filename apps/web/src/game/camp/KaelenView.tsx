@@ -35,7 +35,7 @@ import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
-import { RebirthTab } from "./RebirthTab";
+import { AttributeRespecTab } from "./AttributeRespecTab";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -503,13 +503,13 @@ export function KaelenView(props: {
 }) {
   const { state, game, viewOnly } = props;
   const planEditable = props.planEditable ?? !viewOnly;
-  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "rebirth">(
+  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "attributes">(
     props.initialTab ?? "tree",
   );
   const [respec, setRespec] = useState(false);
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecGold(state.legacy.prestige);
-  const canRespec = !viewOnly && spent.skillPoints > 0 && state.wallet.gold >= respecPrice;
+  const canRespec = !viewOnly && spent > 0 && state.wallet.gold >= respecPrice;
 
   return (
     <div className={viewOnly ? "overlay" : "screen-wrap"} role="dialog" aria-label="Kaelen">
@@ -559,11 +559,11 @@ export function KaelenView(props: {
               <button
                 type="button"
                 role="tab"
-                aria-selected={tab === "rebirth"}
-                className={`tab title-font ${tab === "rebirth" ? "on" : ""}`}
-                onClick={() => setTab("rebirth")}
+                aria-selected={tab === "attributes"}
+                className={`tab title-font ${tab === "attributes" ? "on" : ""}`}
+                onClick={() => setTab("attributes")}
               >
-                Ashen Rebirth
+                Attributes
               </button>
             )}
           </div>
@@ -576,10 +576,6 @@ export function KaelenView(props: {
             <span>
               <b className="mono">{masteryPointsLeft(state, GAME_DATA)}</b>{" "}
               <span className="sub">Mastery Points</span>
-            </span>
-            <span>
-              <b className="mono">{state.wallet.harvesterEmber}</b>{" "}
-              <span className="sub">Harvester&apos;s Ember</span>
             </span>
             <span>
               <b className="mono">{fmt(state.wallet.gold)}</b> <span className="sub">Gold</span>
@@ -610,9 +606,9 @@ export function KaelenView(props: {
                 className="btn"
                 disabled={!canRespec}
                 title={
-                  spent.skillPoints === 0
+                  spent === 0
                     ? "Nothing learned yet"
-                    : "All points and Ember come back. The Battle Plan resets."
+                    : "All Skill Points come back. The Battle Plan resets."
                 }
                 onClick={() => setRespec(true)}
               >
@@ -630,8 +626,8 @@ export function KaelenView(props: {
           </button>
         </header>
         <Suspense fallback={null}>
-          {tab === "rebirth" && !viewOnly ? (
-            <RebirthTab state={state} game={game} />
+          {tab === "attributes" && !viewOnly ? (
+            <AttributeRespecTab state={state} game={game} />
           ) : tab === "mastery" ? (
             <MasteryTab state={state} game={game} viewOnly={viewOnly} />
           ) : tab === "tree" || !planEditable ? (

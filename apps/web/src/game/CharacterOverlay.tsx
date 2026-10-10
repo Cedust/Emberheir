@@ -398,6 +398,7 @@ export function CharacterOverlay(props: {
               <ItemDetail
                 item={sel}
                 heroAttributes={state.hero.attributes}
+                heroLevel={state.hero.level}
                 where={equippedSlot ? "EQUIPPED" : "INVENTORY"}
                 compare={invItem ? compareWithEquipped(state, invItem) : undefined}
                 footer={footer}

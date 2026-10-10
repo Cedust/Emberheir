@@ -9,6 +9,10 @@ import {
   forgetGold,
   getNode,
   forkPartner,
+  KEYSTONE,
+  activeKeystones,
+  keystoneLimit,
+  learnBudget,
   learnBlockReason,
   learnCost,
   learnNodes,
@@ -107,10 +111,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   const sceneRef = useRef<TreeScene | null>(null);
 
   const branches = state.legacy.branches;
-  const budget = {
-    skillPoints: state.hero.unspentSkillPoints,
-    harvesterEmber: state.wallet.harvesterEmber,
-  };
+  const budget = learnBudget(
+    SKILL_TREE,
+    state.hero.learned,
+    state.hero.unspentSkillPoints,
+    state.legacy.prestige,
+  );
+  const keystonePlaces = keystoneLimit(state.legacy.prestige);
   // Learned + pending, as the tree would look after Confirm.
   const preview = learnNodes(SKILL_TREE, state.hero.learned, pending, budget, branches);
   const nodes = useMemo(() => visibleNodes(branches), [branches]);
@@ -130,13 +137,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   const pathCost = (steps: readonly string[]) =>
     steps.reduce(
       (sum, id) => {
-        const cost = learnCost(getNode(SKILL_TREE, id));
+        const cost = learnCost(getNode(SKILL_TREE, id), SKILL_TREE, preview.learned);
         return {
           skillPoints: sum.skillPoints + cost.skillPoints,
-          harvesterEmber: sum.harvesterEmber + cost.harvesterEmber,
+          keystones: sum.keystones + cost.keystones,
         };
       },
-      { skillPoints: 0, harvesterEmber: 0 },
+      { skillPoints: 0, keystones: 0 },
     );
   const hoverPath = hover ? pathOf(hover.id) : undefined;
   const selectedPath = selected ? pathOf(selected.id) : undefined;
@@ -146,7 +153,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
     selectedPath.steps.length > 1 &&
     !!selectedCost &&
     selectedCost.skillPoints <= preview.budget.skillPoints &&
-    selectedCost.harvesterEmber <= preview.budget.harvesterEmber;
+    selectedCost.keystones <= preview.budget.keystones;
   const start = SKILL_TREE.classStarts?.[state.hero.classId];
   const committed = selected ? (state.hero.learned[selected.id] ?? 0) > 0 : false;
   const forgetPrice = forgetGold(state.legacy.prestige);
@@ -162,7 +169,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
         SKILL_TREE,
         preview.learned,
         node.id,
-        { skillPoints: 1, harvesterEmber: 1 },
+        { skillPoints: KEYSTONE.skillPoints, keystones: 1 },
         branches,
       );
       return {
@@ -177,6 +184,11 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
       };
     }),
     labels: treeLabels(branches),
+    keystones: {
+      active: activeKeystones(SKILL_TREE, preview.learned),
+      limit: keystonePlaces,
+      max: keystoneLimit(Number.POSITIVE_INFINITY),
+    },
     ...(hoverPath?.from ? { path: [hoverPath.from, ...hoverPath.steps] } : {}),
   };
 
@@ -309,6 +321,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
           <span>
             <i className="lg st-keystone" /> Keystone
           </span>
+          <span
+            data-testid="keystone-places"
+            title={`Keystones active at once. The notches in the Ember sigil show the places; one more opens at Prestige ${KEYSTONE.extraAtPrestige.join(", ")}.`}
+          >
+            <i className="lg st-keystone" /> Places {activeKeystones(SKILL_TREE, preview.learned)}/
+            {keystonePlaces}
+          </span>
           {!viewOnly && (
             <span>
               <i className="lg st-pending" /> pending
@@ -372,7 +391,10 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
               </p>
             )}
             {selected.kind === "keystone" && (
-              <p className="sub small">Costs 1 Harvester&apos;s Ember.</p>
+              <p className="sub small">
+                Costs {KEYSTONE.skillPoints} Skill Points and one of your Keystone places (
+                {activeKeystones(SKILL_TREE, preview.learned)}/{keystonePlaces} taken).
+              </p>
             )}
             {selected.fork && (
               <p className="sub small">
@@ -401,7 +423,9 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                     disabled={reason !== undefined}
                     onClick={() => setPending((p) => [...p, selected.id])}
                   >
-                    {selected.kind === "keystone" ? "Learn · 1 Ember" : "Learn · 1 Point"}
+                    {selected.kind === "keystone"
+                      ? `Learn · ${KEYSTONE.skillPoints} Points`
+                      : "Learn · 1 Point"}
                   </button>
                 )}
                 {reason && !(canWalk && reason === "notConnected") && (
@@ -481,11 +505,8 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   );
 }
 
-/** "3 Points", "2 Points + 1 Ember". */
-function pointsText(cost: { skillPoints: number; harvesterEmber: number }): string {
+/** "3 Points", "7 Points · Keystone". */
+function pointsText(cost: { skillPoints: number; keystones: number }): string {
   const points = `${cost.skillPoints} Point${cost.skillPoints === 1 ? "" : "s"}`;
-  if (!cost.harvesterEmber) return points;
-  return cost.skillPoints
-    ? `${points} + ${cost.harvesterEmber} Ember`
-    : `${cost.harvesterEmber} Ember`;
+  return cost.keystones ? `${points} · Keystone` : points;
 }

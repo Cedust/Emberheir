@@ -43,9 +43,6 @@ const CURRENCIES: { key: WalletCurrency; name: string }[] = [
   { key: "dust", name: "Dust" },
   { key: "reforgeStones", name: "Reforge Stones" },
   { key: "ascensionShards", name: "Ascension Shards" },
-  { key: "harvesterEmber", name: "Harvester's Ember" },
-  { key: "phoenixAsh", name: "Phoenix Ash" },
-  { key: "kindling", name: "Kindling" },
 ];
 
 /** A number that is set on Enter, on blur or with the button. */
@@ -219,7 +216,6 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
 
 function CurrencyTab(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
-  const essences = GAME_DATA.acts.map((a) => a.essence);
   const runes = [...GAME_DATA.items.runes.values()];
   return (
     <div className="cheat-grid">
@@ -232,18 +228,6 @@ function CurrencyTab(props: { state: GameState; game: GameApi }) {
             value={state.wallet[c.key]}
             quick={c.key === "gold" || c.key === "dust" ? [1000, 10000] : [10, 100]}
             onSet={(amount) => game.cheat({ kind: "currency", currency: c.key, amount })}
-          />
-        ))}
-      </section>
-      <section className="cheat-card">
-        <span className="eyebrow">Essences</span>
-        {essences.map((e) => (
-          <NumberRow
-            key={e.id}
-            label={e.name}
-            value={state.wallet.essences[e.id] ?? 0}
-            quick={[10]}
-            onSet={(amount) => game.cheat({ kind: "essence", essenceId: e.id, amount })}
           />
         ))}
       </section>

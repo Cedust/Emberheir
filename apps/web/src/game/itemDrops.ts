@@ -50,7 +50,6 @@ export function itemDrops(
         }
         if (source.grid !== target) {
           if (state.run) return false;
-          if (target === "stash" && state.progress.stashBurned) return false;
         }
         return fits(item, at);
       },

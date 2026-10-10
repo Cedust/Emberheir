@@ -232,7 +232,7 @@ export function GameApp() {
         )}
         {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
         {state && overlay === "codex" && (
-          <TriggerCodex state={state} game={game} onClose={() => setOverlay(null)} />
+          <TriggerCodex state={state} onClose={() => setOverlay(null)} />
         )}
         {state && overlay === "menu" && (
           <MenuOverlay

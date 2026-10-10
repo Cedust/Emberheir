@@ -220,7 +220,13 @@ export function ItemTooltipCard(props: {
   verdict?: { text: string; better: boolean } | undefined;
 }) {
   const { item } = props;
-  const tip = describeItem(item, ITEM_CATALOG, props.state?.hero.attributes);
+  const tip = describeItem(
+    item,
+    ITEM_CATALOG,
+    props.state?.hero.attributes,
+    props.state?.hero.level,
+  );
+  const needsLevel = tip.requiredLevel.value > 1;
   const base = getBase(ITEM_CATALOG, item.baseId);
   const kind =
     item.rarity === "normal" && !tip.special ? tip.slotName : `${tip.rarityName} ${tip.slotName}`;
@@ -265,7 +271,13 @@ export function ItemTooltipCard(props: {
         </span>
       )}
       {tip.flavor && <span className="tip-flavor">{tip.flavor}</span>}
-      {tip.requirements.length > 0 && <span className="tip-rule" />}
+      {tip.droppedBy && <span className="tip-line tip-source">Dropped by {tip.droppedBy}</span>}
+      {(tip.requirements.length > 0 || needsLevel) && <span className="tip-rule" />}
+      {needsLevel && (
+        <span className={`tip-line tip-req${tip.requiredLevel.met === false ? " unmet" : ""}`}>
+          Requires Level {tip.requiredLevel.value}
+        </span>
+      )}
       {tip.requirements.map((r) => (
         <span key={r.attribute} className={`tip-line tip-req${r.met === false ? " unmet" : ""}`}>
           Requires {r.value} {r.name}

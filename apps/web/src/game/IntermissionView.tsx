@@ -7,12 +7,12 @@ import {
   PROGRESSION,
   SLOT_NAMES,
   type RunState,
-  type SpoilsCard,
   applyAction,
   damageShare,
   deriveStats,
   heroReactions,
   equipBlockReason,
+  flaskCapacity,
   getAct,
   getBase,
   heroSetup,
@@ -25,7 +25,7 @@ import {
   xpToNextLevel,
 } from "@emberheir/sim";
 import { useCallback, useEffect, useState } from "react";
-import { Icon, type IconName } from "../ui/Icon";
+import { Icon } from "../ui/Icon";
 import {
   ItemDetail,
   ItemTile,
@@ -39,7 +39,8 @@ import { preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
 import { finaleFoe, inFinale } from "./finale";
 import { RunHeader } from "./RunHeader";
 import { BoonBar, ShrineCards } from "./Boons";
-import { EQUIP_BLOCK_TEXT, spoilsHint, spoilsLabel } from "./labels";
+import { EQUIP_BLOCK_TEXT } from "./labels";
+import { bountyView } from "./bounty";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 import { WeaponSlot } from "./WeaponSlot";
@@ -48,13 +49,6 @@ import { ItemArt } from "../ui/ItemArt";
 import { type DropSound, playSound } from "../ui/sound";
 import { skillIcon, skillTint } from "./battle/skills";
 import { ShareBar } from "./camp/KaelenView";
-
-const SPOILS_LOOK: Record<SpoilsCard["kind"], { icon: IconName; tint: string }> = {
-  flaskCharge: { icon: "flask", tint: "#c9322a" },
-  reforgeStones: { icon: "stone", tint: "#2d5bd0" },
-  essence: { icon: "drop", tint: "#6b5a3e" },
-  kindling: { icon: "fire", tint: "#e0782a" },
-};
 
 /**
  * NEXT STAGE as one step: finish the rewards, start the fight. The flask is only drunk by
@@ -85,7 +79,7 @@ function HeroCard(props: { state: GameState; run: RunState; game: GameApi }) {
   const lifePct = Math.round(run.lifeFraction * 100);
   const canDrink = state.flaskCharges > 0 && run.lifeFraction < 1;
   const heal = canDrink ? Math.min(PROGRESSION.flaskHeal * 100, 100 - lifePct) : 0;
-  const flaskMax = Math.max(PROGRESSION.flaskStartCharges, state.flaskCharges);
+  const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
   const next = xpToNextLevel(hero.level, levelCap(state.legacy.prestige));
   return (
@@ -240,7 +234,7 @@ function UpNext(props: { run: RunState }) {
       </section>
     );
   }
-  const spoils = act.spoilsStages.find((s) => s >= next);
+  const shrine = act.shrineStages.find((s) => s >= next);
   return (
     <section className="panel-card up-next" aria-label="Up next">
       <span className="eyebrow">Up next</span>
@@ -248,12 +242,12 @@ function UpNext(props: { run: RunState }) {
         <span className="title-font">Stage {next}</span>
         <span className="sub">{act.name}</span>
       </div>
-      {spoils !== undefined && (
+      {shrine !== undefined && (
         <div className="up-row">
-          <span className="spoils-mark" />
-          <span>Spoils</span>
+          <span className="shrine-mark" />
+          <span>Ember Shrine</span>
           <span className="sub">
-            Stage {spoils} · {spoils === next ? "now" : `in ${spoils - next}`}
+            after Stage {shrine} · {shrine === next ? "next" : `in ${shrine - next}`}
           </span>
         </div>
       )}
@@ -514,6 +508,7 @@ function ItemCards(props: {
             <ItemDetail
               item={detail}
               heroAttributes={state.hero.attributes}
+              heroLevel={state.hero.level}
               compare={taken.has(pick) ? undefined : compareWithEquipped(state, detail)}
               className="loot-card"
               testId="item-card"
@@ -558,6 +553,7 @@ function ItemCards(props: {
             <ItemDetail
               item={item}
               heroAttributes={state.hero.attributes}
+              heroLevel={state.hero.level}
               compare={compareWithEquipped(state, item)}
               className="loot-card"
               testId="item-card"
@@ -615,6 +611,7 @@ function EquippedPanel(props: {
         <ItemDetail
           item={equipped}
           heroAttributes={state.hero.attributes}
+          heroLevel={state.hero.level}
           where="EQUIPPED"
           className="equipped-detail"
           testId="equipped-detail"
@@ -635,29 +632,57 @@ function EquippedPanel(props: {
   );
 }
 
-function SpoilsCards(props: { run: RunState; game: GameApi }) {
-  const rewards = props.run.rewards;
-  if (!rewards) return null;
-  const act = getAct(GAME_DATA, props.run.actId);
+/** The Scout's Bounty for this trip and how far it is. */
+function BountyCard(props: { run: RunState }) {
+  const bounty = props.run.bounty;
+  if (!bounty) return null;
+  const view = bountyView(bounty);
+  const counted = view.target > 1 && bounty.status === "open";
   return (
-    <div className="spoils-cards">
-      {rewards.spoils.map((card, i) => {
-        const look = SPOILS_LOOK[card.kind];
-        return (
-          <button
-            key={card.kind}
-            type="button"
-            className="spoils-card panel-card"
-            onClick={() => props.game.dispatch({ type: "pickSpoils", index: i })}
-          >
-            <span className="spoils-icon" style={{ background: look.tint }}>
-              <Icon name={look.icon} size={40} color="#fff6e4" />
-            </span>
-            <strong className="title-font">{spoilsLabel(card, act.essence.name)}</strong>
-            <span className="sub">{spoilsHint(card)}</span>
-          </button>
-        );
-      })}
+    <section
+      className={`panel-card bounty-card ${bounty.status}`}
+      aria-label="Bounty"
+      title="Eldrin's task for this trip. Done, it pays at once."
+    >
+      <div className="section-row">
+        <span className="eyebrow">
+          <Icon name="target" size={12} /> Bounty · {view.def.name}
+        </span>
+        <span className="mono small">
+          {bounty.status === "done"
+            ? "Done"
+            : bounty.status === "failed"
+              ? "Failed"
+              : counted
+                ? `${bounty.progress}/${view.target}`
+                : "Open"}
+        </span>
+      </div>
+      <span className="small">{view.text}</span>
+    </section>
+  );
+}
+
+/** The moment a Bounty is done: what Eldrin pays and where the item went. */
+function BountyPaid(props: { run: RunState }) {
+  const paid = props.run.rewards?.bounty;
+  if (!paid) return null;
+  const where =
+    paid.to === "stash"
+      ? "waits in the Supply Wagon"
+      : paid.to === "inventory"
+        ? "is in your inventory"
+        : "was salvaged, no room left";
+  return (
+    <div className={`bounty-paid panel-card ${rarityClass(paid.item)}`} role="status">
+      <Icon name="target" size={28} color="var(--accent)" />
+      <div className="bounty-paid-text">
+        <strong className="title-font">Bounty done!</strong>
+        <span className="sub">
+          +{fmt(paid.gold)} Gold · +{paid.reforgeStones} Reforge Stones ·{" "}
+          <span className="rarity-text">{paid.item.name}</span> {where}
+        </span>
+      </div>
     </div>
   );
 }
@@ -684,14 +709,7 @@ function DoneCard(props: { run: RunState }) {
       : item
         ? `${pick?.kind === "equip" ? "Equipped" : "Taken"}: ${item.name}`
         : "All items salvaged";
-    const spoil = rewards.spoilsPick !== null ? rewards.spoils[rewards.spoilsPick] : undefined;
-    sub = inFinale(act)
-      ? ""
-      : spoil
-        ? `Spoils: ${spoilsLabel(spoil, act.essence.name)}`
-        : rewards.spoils.length
-          ? ""
-          : "No spoils this stage";
+    sub = "";
     const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
     const boonName = boon && GAME_DATA.boons?.find((b) => b.id === boon.id)?.name;
     if (boonName) sub += `${sub ? " · " : ""}Boon: ${boonName}`;
@@ -708,8 +726,8 @@ function DoneCard(props: { run: RunState }) {
 }
 
 /**
- * Between two stages (Intermission mock): the rewards of the last fight (item pick, then
- * spoils), Life and the Ember Flask, what comes next, and NEXT STAGE.
+ * Between two stages (Intermission mock): the rewards of the last fight (item pick, then a
+ * Shrine's Boon), Life and the Ember Flask, the Scout's Bounty, what comes next, and NEXT STAGE.
  */
 export function IntermissionView(props: {
   state: GameState;
@@ -728,23 +746,14 @@ export function IntermissionView(props: {
     ? "ready"
     : rewards.itemPick === null
       ? "items"
-      : rewards.spoils.length > 0 && rewards.spoilsPick === null
-        ? "spoils"
-        : rewards.boonOffer?.length && rewards.boonPick == null
-          ? "shrine"
-          : "done";
+      : rewards.boonOffer?.length && rewards.boonPick == null
+        ? "shrine"
+        : "done";
   const done = step === "ready" || step === "done";
   const nextStage = run.phase === "rewards" ? run.stage + 1 : run.stage;
   // An act boss ends the run; a finale echo does not.
   const boss = run.encounter?.boss === true && run.phase === "rewards" && !inFinale(act);
-  const title =
-    step === "spoils"
-      ? "SPOILS"
-      : step === "shrine"
-        ? "EMBER SHRINE"
-        : step === "ready"
-          ? "READY"
-          : "VICTORY";
+  const title = step === "shrine" ? "EMBER SHRINE" : step === "ready" ? "READY" : "VICTORY";
   const subtitle =
     step === "items"
       ? rewards && rewards.items.length > 3
@@ -752,21 +761,19 @@ export function IntermissionView(props: {
         : rewards?.thief === "escaped"
           ? "The thief got away · choose 1 of 3 items"
           : "Choose 1 of 3 items"
-      : step === "spoils"
-        ? `${rewards?.rank === "boss" ? "Boss defeated" : rewards?.rank === "elite" ? "Elite defeated" : `Stage ${run.stage}`} · choose 1 of 3 spoils`
-        : step === "shrine"
-          ? "Steal 1 of 3 sparks"
-          : boss
-            ? `${act.name} cleared`
-            : `Ready for Stage ${nextStage}`;
+      : step === "shrine"
+        ? "Steal 1 of 3 sparks"
+        : boss
+          ? `${act.name} cleared`
+          : `Ready for Stage ${nextStage}`;
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
   const gains: Record<string, number> = rewards
     ? {
-        gold: rewards.gold,
+        gold: rewards.gold + (rewards.bounty?.gold ?? 0),
         dust: rewards.dust + rewards.salvagedDust,
-        reforge: rewards.reforgeStones,
+        reforge: rewards.reforgeStones + (rewards.bounty?.reforgeStones ?? 0),
         shards: rewards.ascensionShards,
       }
     : {};
@@ -789,6 +796,7 @@ export function IntermissionView(props: {
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
           <UpNext run={run} />
+          {run.bounty && <BountyCard run={run} />}
           <PlanCard state={state} run={run} onPlan={props.onPlan} />
         </aside>
         <main className="intermission-center">
@@ -803,6 +811,7 @@ export function IntermissionView(props: {
                 : ""}
             </p>
           )}
+          {rewards?.bounty && step !== "ready" && <BountyPaid run={run} />}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
             <RuneDrops key={run.encounter?.seed ?? run.stage} runes={rewards.runes} />
           )}
@@ -815,7 +824,6 @@ export function IntermissionView(props: {
               onFocus={setFocus}
             />
           )}
-          {step === "spoils" && <SpoilsCards run={run} game={game} />}
           {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
           {done && <DoneCard run={run} />}
           {step === "items" && (

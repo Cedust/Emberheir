@@ -2,16 +2,17 @@ import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type ActData,
   type GameState,
-  PROGRESSION,
   actUnlocked,
   actsInOrder,
   finaleOpen,
+  flaskCapacity,
   nextAct,
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { useStageSize } from "../../ui/Stage";
 import { fmt, walletEntries } from "../../ui/items";
+import { type BountyView, bountyPreview } from "../bounty";
 import type { GameApi } from "../useGame";
 import { CampBackdrop, CampFx, HEARTH_X, SCENE_W, campLights } from "./art/CampScene";
 import { CampLight } from "./art/CampLight";
@@ -74,7 +75,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#a8401a",
       object: { w: 150, h: 200 },
       quote: "Whatever rests near the fire survives the burning.",
-      actions: [{ name: "Heirlooms" }, { name: "Trophy Wall" }, { name: "Harvester's Ember" }],
+      actions: [{ name: "Worn Gear" }, { name: "Trophy Wall" }, { name: "Chronicle" }],
       cta: "Open Legacy",
       target: "legacy",
     },
@@ -125,7 +126,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#4a4a4e",
       figure: { fs: 1.1 },
       quote: "“Bring me steel. I’ll bring it back better. Mostly.”",
-      actions: [{ name: "Upgrade" }, { name: "Add Socket" }, { name: "Salvage" }],
+      actions: [{ name: "Upgrade" }, { name: "Reforge" }, { name: "Salvage" }],
       cta: "Open Forge",
       target: "forge",
     },
@@ -154,13 +155,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#2d5bd0",
       figure: { fs: 0.95 },
       quote: trainer ? "“I foresaw you would come. I also foresee you paying.”" : afterBoss,
-      actions: [
-        { name: "Reforge" },
-        { name: "Temper" },
-        { name: "Imbue" },
-        { name: "Distill" },
-        { name: "Kindle" },
-      ],
+      actions: [{ name: "Temper" }, { name: "Kindle" }],
       cta: trainer ? "Open Altar" : "Locked",
       target: "altar",
       ...(trainer ? {} : { locked: "boss" }),
@@ -191,7 +186,12 @@ function personas(state: GameState, road: ActData): Persona[] {
       quote: runesmith
         ? "“Did you know there are runes older than the Harvester? Nobody asks about those.”"
         : later,
-      actions: [{ name: "Socket Runes" }, { name: "Combine Runes" }, { name: "Runeword Codex" }],
+      actions: [
+        { name: "Add Socket" },
+        { name: "Socket Runes" },
+        { name: "Combine Runes" },
+        { name: "Runeword Codex" },
+      ],
       cta: runesmith ? "Open Runes" : "Locked",
       target: "runes",
       ...(runesmith ? {} : { locked: later }),
@@ -206,12 +206,9 @@ function personas(state: GameState, road: ActData): Persona[] {
       icon: "bow",
       cloak: "#3b5a2c",
       figure: { fs: 0.9 },
-      quote: trainer
-        ? `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`
-        : afterBoss,
-      actions: [{ name: "Act Preview" }, { name: "Revisit Act" }],
+      quote: `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`,
+      actions: [{ name: "Act Preview" }, { name: "Bounty" }],
       cta: `Set Out · Act ${road.number}`,
-      ...(trainer ? {} : { locked: afterBoss }),
     },
     {
       id: "wagon",
@@ -222,7 +219,7 @@ function personas(state: GameState, road: ActData): Persona[] {
       icon: "box",
       cloak: "#8a5a32",
       object: { w: 200, h: 200 },
-      quote: "Everything you carry but don’t wear. Fixed size, burns at every Prestige.",
+      quote: "Everything you carry but don’t wear. Fixed size, shared by all your Heirs.",
       actions: [{ name: "Stash" }, { name: "Inventory" }],
       cta: "Open Stash",
       target: "stash",
@@ -304,6 +301,8 @@ export function CampView(props: {
   const sel = list.find((p) => p.id === picked) ?? list[0];
   if (!sel) return null;
   const cleared = state.progress.actsCleared.includes(act.id);
+  const bounty = bountyPreview(state, act.id);
+  const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
   const quote = sel.id === "nan" ? `“${NAN_LINES[nanLine % NAN_LINES.length]}”` : sel.quote;
   const cta = () => {
     if (sel.id === "nan") setNanLine((n) => n + 1);
@@ -340,9 +339,7 @@ export function CampView(props: {
           ))}
           <span className="wallet-chip w-flask" title="Ember Flask">
             <span className="dot" />
-            <b className="mono">
-              {state.flaskCharges}/{PROGRESSION.flaskStartCharges}
-            </b>
+            <b className="mono">{flask}</b>
             <span className="sub">Flask</span>
           </span>
         </div>
@@ -404,6 +401,7 @@ export function CampView(props: {
             </div>
           </div>
           <p className="quote">{quote}</p>
+          {sel.id === "eldrin" && bounty && <BountyNote bounty={bounty} />}
           <div className="chip-row">
             {sel.actions.map((a) =>
               sel.id === "nan" && (a.name === "Compendium" || a.name === "Trigger Codex") ? (
@@ -421,9 +419,7 @@ export function CampView(props: {
                   className={`action-chip ${a.later ? "later" : ""}`}
                   title={a.later ? "Not in this version" : undefined}
                 >
-                  {a.name === "Ember Flask"
-                    ? `Ember Flask ${state.flaskCharges}/${PROGRESSION.flaskStartCharges}`
-                    : a.name}
+                  {a.name === "Ember Flask" ? `Ember Flask ${flask}` : a.name}
                 </span>
               ),
             )}
@@ -491,6 +487,11 @@ export function CampView(props: {
                 THE LAST EMBER
               </button>
             )}
+            {bounty && (
+              <span className="hint-light bounty-hint" title={bounty.def.name}>
+                <Icon name="target" size={14} /> Bounty: {bounty.text}
+              </span>
+            )}
             <span className="hint-light">Flask refilled · wounds healed</span>
             <button
               type="button"
@@ -503,5 +504,16 @@ export function CampView(props: {
         </div>
       </div>
     </section>
+  );
+}
+
+/** Eldrin's Bounty for the chosen road: the task and what it pays. */
+function BountyNote(props: { bounty: BountyView }) {
+  return (
+    <div className="bounty-note" aria-label="Bounty">
+      <span className="eyebrow">BOUNTY · {props.bounty.def.name.toUpperCase()}</span>
+      <span>{props.bounty.text}</span>
+      <span className="sub small">Pays Gold, Reforge Stones and a Rare item or better.</span>
+    </div>
   );
 }

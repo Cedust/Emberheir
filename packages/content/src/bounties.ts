@@ -23,7 +23,7 @@ export const BOUNTIES: readonly BountyDefinition[] = [
   {
     id: "culling",
     name: "Culling",
-    text: "Slay # @.",
+    text: "Slay # × @.",
     goal: { kind: "slay", count: 3 },
   },
   {
