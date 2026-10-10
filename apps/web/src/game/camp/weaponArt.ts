@@ -1,4 +1,5 @@
 import { Container, FillGradient, Graphics } from "pixi.js";
+import { cleanPoly } from "../pixiShapes";
 import { PLAIN_LOOK, type WeaponLook } from "./weaponLookData";
 
 /**
@@ -137,7 +138,7 @@ function wrap(g: Graphics, x0: number, x1: number, w: number, color = 0x0e0805):
 
 /** Rim light along the upper edge of a polygon (points in order). */
 function rim(g: Graphics, pts: readonly number[], alpha = 0.35): void {
-  g.poly([...pts], false).stroke({ color: 0xfff3d6, width: 1.6, alpha });
+  g.poly(cleanPoly(pts, false), false).stroke({ color: 0xfff3d6, width: 1.6, alpha });
 }
 
 /** A metal band around a shaft at x, half width w. */
@@ -273,9 +274,9 @@ function assemble(build: Build, look: WeaponLook): WeaponArt {
   const body = new Container();
   const paint = new Graphics();
   for (const p of parts) {
-    paint.poly([...p.poly]).fill(p.fill);
+    paint.poly(cleanPoly(p.poly)).fill(p.fill);
     if (p.soft) continue;
-    paint.poly([...p.poly]).stroke({ color: 0x0b0705, width: 2.5, alpha: 0.9 });
+    paint.poly(cleanPoly(p.poly)).stroke({ color: 0x0b0705, width: 2.5, alpha: 0.9 });
     if (p.rim) rim(paint, p.rim, look.grade >= 3 ? 0.55 : 0.35);
   }
   build.details(paint);
@@ -285,11 +286,11 @@ function assemble(build: Build, look: WeaponLook): WeaponArt {
   body.addChild(paint);
   const edge = new Graphics();
   for (const p of parts) {
-    if (p.edge) edge.poly([...p.poly]).stroke({ color: 0xffffff, width: 5, join: "round" });
+    if (p.edge) edge.poly(cleanPoly(p.poly)).stroke({ color: 0xffffff, width: 5, join: "round" });
   }
   const silhouette = () => {
     const s = new Graphics();
-    for (const p of parts) if (!p.soft) s.poly([...p.poly]).fill(0xffffff);
+    for (const p of parts) if (!p.soft) s.poly(cleanPoly(p.poly)).fill(0xffffff);
     return s;
   };
   return { body, edge, runeGlow, silhouette, anchorY: build.anchorY };
