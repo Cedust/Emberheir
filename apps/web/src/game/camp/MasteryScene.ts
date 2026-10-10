@@ -13,6 +13,7 @@ import {
 import { Fx } from "../battle/fx";
 import { type WeaponArt, type WeaponLook, drawWeapon } from "./weaponArt";
 import { ELEMENT_COLOR } from "../weaponLook";
+import { FramePacer, wantsAntialias } from "../pixiPacing";
 
 /**
  * Weapon Mastery as a PixiJS scene, the "anatomy" look (waffe-als-system-v1.md): the painted
@@ -129,6 +130,7 @@ export class MasteryScene {
   private readonly nodeLayer = new Container();
   private readonly labelLayer = new Container();
   private fx: Fx | null = null;
+  private pacer: FramePacer | null = null;
   private art: WeaponArt | null = null;
   private artKey = "";
   private echoAura: Container | null = null;
@@ -191,7 +193,7 @@ export class MasteryScene {
         width: this.size.w,
         height: this.size.h,
         backgroundAlpha: 0,
-        antialias: true,
+        antialias: wantsAntialias(this.size.resolution),
         resolution: this.size.resolution,
         autoDensity: true,
       });
@@ -220,6 +222,7 @@ export class MasteryScene {
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
     this.rebuild();
     this.fit(true);
+    this.pacer = new FramePacer(app.ticker);
     app.ticker.add((t) => this.tick(t.deltaMS / 1000));
     return true;
   }
@@ -1010,8 +1013,24 @@ export class MasteryScene {
 
   // --- frame ---------------------------------------------------------------------------------
 
+  /** The camera glides, a drag or pinch is on, or a flick still carries the view. */
+  private moving(): boolean {
+    return (
+      this.drag !== null ||
+      this.touches.size > 0 ||
+      this.velocity.x !== 0 ||
+      this.velocity.y !== 0 ||
+      Math.abs(this.goal.x - this.cam.x) > 0.5 ||
+      Math.abs(this.goal.y - this.cam.y) > 0.5 ||
+      Math.abs(this.goal.zoom - this.cam.zoom) > 0.002 ||
+      this.shakeT > 0 ||
+      this.flash > 0
+    );
+  }
+
   private tick(dt: number): void {
     this.time += dt;
+    this.pacer?.update(dt, this.moving());
     const v = this.view;
     if (!this.drag && (this.velocity.x || this.velocity.y)) {
       // A flick keeps the view gliding for a moment.

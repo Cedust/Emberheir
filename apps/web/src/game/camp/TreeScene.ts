@@ -12,6 +12,7 @@ import {
 } from "pixi.js";
 import { Fx } from "../battle/fx";
 import { type AshTreeArt, drawTwigs, paintAshTree } from "./ashTreeArt";
+import { FramePacer, wantsAntialias } from "../pixiPacing";
 
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
@@ -125,6 +126,7 @@ export class TreeScene {
   private readonly nodeLayer = new Container();
   private readonly labelLayer = new Container();
   private fx: Fx | null = null;
+  private pacer: FramePacer | null = null;
   private sprites = new Map<string, NodeSprite>();
   private labels = new Map<string, Text>();
   private view: TreeView = { nodes: [], labels: [] };
@@ -198,7 +200,7 @@ export class TreeScene {
         width: this.size.w,
         height: this.size.h,
         backgroundAlpha: 0,
-        antialias: true,
+        antialias: wantsAntialias(this.size.resolution),
         resolution: this.size.resolution,
         autoDensity: true,
       });
@@ -227,6 +229,7 @@ export class TreeScene {
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
     this.rebuild();
     this.fit(true);
+    this.pacer = new FramePacer(app.ticker);
     app.ticker.add((t) => this.tick(t.deltaMS / 1000));
     return true;
   }
@@ -685,8 +688,22 @@ export class TreeScene {
 
   // --- frame ---------------------------------------------------------------------------------
 
+  /** The camera glides, a drag or pinch is on, or a flick still carries the view. */
+  private moving(): boolean {
+    return (
+      this.drag !== null ||
+      this.touches.size > 0 ||
+      this.velocity.x !== 0 ||
+      this.velocity.y !== 0 ||
+      Math.abs(this.goal.x - this.cam.x) > 0.5 ||
+      Math.abs(this.goal.y - this.cam.y) > 0.5 ||
+      Math.abs(this.goal.zoom - this.cam.zoom) > 0.002
+    );
+  }
+
   private tick(dt: number): void {
     this.time += dt;
+    this.pacer?.update(dt, this.moving());
     if (!this.drag && (this.velocity.x || this.velocity.y)) {
       // A flick keeps the tree gliding for a moment.
       this.goal.x += this.velocity.x * dt;

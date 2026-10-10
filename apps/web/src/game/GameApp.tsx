@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { CombatDebug } from "../combat/CombatDebug";
 import { ItemArtDefs } from "../ui/ItemArt";
 import { ItemHoverLayer } from "../ui/ItemTooltip";
@@ -13,7 +13,7 @@ import { MenuOverlay } from "./MenuOverlay";
 import { EndingScreen, NoticeScreen } from "./NoticeScreen";
 import { InheritanceView, PrestigeView } from "./PrestigeView";
 import { TitleScreen } from "./TitleScreen";
-import { BattleView } from "./battle/BattleView";
+import { BattleView } from "./lazyViews";
 import { type CampTarget, CampView } from "./camp/CampView";
 import { KaelenView } from "./camp/KaelenView";
 import { LegacyView } from "./camp/LegacyView";
@@ -175,17 +175,19 @@ export function GameApp() {
     }
   } else if (run.phase === "fight") {
     screen = (
-      <BattleView
-        key={run.encounter?.seed}
-        state={state}
-        run={run}
-        game={game}
-        settings={settings.settings}
-        paused={overlay !== null}
-        onCharacter={() => toggle("character")}
-        onTree={() => toggle("tree")}
-        onMenu={() => setOverlay("menu")}
-      />
+      <Suspense fallback={null}>
+        <BattleView
+          key={run.encounter?.seed}
+          state={state}
+          run={run}
+          game={game}
+          settings={settings.settings}
+          paused={overlay !== null}
+          onCharacter={() => toggle("character")}
+          onTree={() => toggle("tree")}
+          onMenu={() => setOverlay("menu")}
+        />
+      </Suspense>
     );
   } else {
     screen = (
@@ -205,7 +207,10 @@ export function GameApp() {
     <Stage>
       <ItemArtDefs />
       <ItemHoverLayer state={state}>
-        {screen}
+        {/* Under an open overlay the screen's idle animations wait (screens.css). */}
+        <div className="screen-host" data-covered={overlay ? "" : undefined}>
+          {screen}
+        </div>
         {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
           <CharacterOverlay
             state={state}

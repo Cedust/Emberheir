@@ -4,6 +4,7 @@ import { useStageSize } from "../ui/Stage";
 import type { Settings } from "../ui/settings";
 import { ArenaScene } from "./battle/ArenaScene";
 import type { ClassPreview } from "./classPreview";
+import { canvasResolution } from "./pixiPacing";
 
 const reducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -22,7 +23,7 @@ export function PreviewArena(props: {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const [round, setRound] = useState(0);
   const stage = useStageSize();
-  const resolution = Math.min(4, (window.devicePixelRatio || 1) * stage.scale);
+  const resolution = canvasResolution(stage.scale);
 
   useEffect(() => {
     const host = hostRef.current;

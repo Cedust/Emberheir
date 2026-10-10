@@ -1,6 +1,7 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { App } from "./App";
+import { preloadViews } from "./game/lazyViews";
 import "@fontsource/alegreya-sans/latin-400.css";
 import "@fontsource/alegreya-sans/latin-400-italic.css";
 import "@fontsource/alegreya-sans/latin-500.css";
@@ -23,3 +24,6 @@ createRoot(root).render(
     <App />
   </StrictMode>,
 );
+
+// PixiJS and the arena load right after the first paint, so the title shows at once.
+window.setTimeout(preloadViews, 0);

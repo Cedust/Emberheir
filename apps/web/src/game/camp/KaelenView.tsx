@@ -27,16 +27,15 @@ import {
   spentInTree,
   triggerThreshold,
 } from "@emberheir/sim";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
-import { MasteryTab } from "./MasteryTab";
+import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
 import { RebirthTab } from "./RebirthTab";
-import { SkillTreeTab } from "./SkillTreeTab";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -630,15 +629,17 @@ export function KaelenView(props: {
             <Icon name="close" size={20} />
           </button>
         </header>
-        {tab === "rebirth" && !viewOnly ? (
-          <RebirthTab state={state} game={game} />
-        ) : tab === "mastery" ? (
-          <MasteryTab state={state} game={game} viewOnly={viewOnly} />
-        ) : tab === "tree" || !planEditable ? (
-          <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />
-        ) : (
-          <BattlePlanTab state={state} game={game} />
-        )}
+        <Suspense fallback={null}>
+          {tab === "rebirth" && !viewOnly ? (
+            <RebirthTab state={state} game={game} />
+          ) : tab === "mastery" ? (
+            <MasteryTab state={state} game={game} viewOnly={viewOnly} />
+          ) : tab === "tree" || !planEditable ? (
+            <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />
+          ) : (
+            <BattlePlanTab state={state} game={game} />
+          )}
+        </Suspense>
       </section>
     </div>
   );

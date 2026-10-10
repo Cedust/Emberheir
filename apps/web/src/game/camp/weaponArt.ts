@@ -1,4 +1,5 @@
 import { Container, FillGradient, Graphics } from "pixi.js";
+import { PLAIN_LOOK, type WeaponLook } from "./weaponLookData";
 
 /**
  * The painted weapons of Weapon Mastery and the arena: every class weapon drawn in code, lying
@@ -10,18 +11,7 @@ import { Container, FillGradient, Graphics } from "pixi.js";
  * the Keystone changes the weapon's shape (a parrying hook, a serrated edge, a second blade).
  */
 
-export interface WeaponLook {
-  /** Weapon grade index 0..4 (Crude, Honed, Tempered, Ascendant, Exalted). */
-  readonly grade: number;
-  /** Colour of the weapon's element (crystal, orb, tip light). */
-  readonly accent: number;
-  /** Learned ranks per path, in the tree's path order, with the path's colour. */
-  readonly runes: readonly { readonly color: number; readonly ranks: number }[];
-  /** The chosen Keystone's id, if any. */
-  readonly keystone: string | null;
-}
-
-export const PLAIN_LOOK: WeaponLook = { grade: 0, accent: 0xff6a2a, runes: [], keystone: null };
+export { PLAIN_LOOK, type WeaponLook };
 
 export interface WeaponArt {
   /** The painted weapon. */
