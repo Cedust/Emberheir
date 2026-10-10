@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { bossTrophies, rollItem, uniquesFor } from "../items/generate";
+import { ATTRIBUTE_RULES } from "./attributes";
 import { CODEX, PROGRESSION } from "./constants";
 import {
   type GameAction,
@@ -196,7 +197,7 @@ describe("game loop", () => {
     expect(currentFight(s, data).hero.lifeFraction).toBe(0.5);
   });
 
-  it("level-ups give Attribute Points, Waymarks give Skill Points; attributes are spent between fights", () => {
+  it("level-ups give no Attribute Points, Waymarks give Skill Points; attributes are spent between fights", () => {
     let s = start();
     s = { ...s, hero: { ...s.hero, xp: (PROGRESSION.xpToNextLevel[0] ?? 0) - 1 } };
     s = act(
@@ -207,13 +208,14 @@ describe("game loop", () => {
     );
     expect(s.hero.level).toBe(2);
     expect(s.run?.rewards?.levelsGained).toBe(1);
-    expect(s.hero.unspentAttributePoints).toBe(PROGRESSION.attributePointsPerLevel);
+    // The creation's free points still wait; the level brings none.
+    expect(s.hero.unspentAttributePoints).toBe(ATTRIBUTE_RULES.creationPoints);
     // Stage 1 of the 3-stage test act is a Waymark (a third of the act).
     expect(s.run?.rewards?.waymark).toBe(true);
     expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints + 1);
     expect(s.progress.waymarks).toEqual(["test-act:1"]);
-    s = act(s, { type: "allocateAttributes", points: { strength: 1, vitality: 1 } });
-    expect(s.hero.attributes.strength).toBe(7);
+    s = act(s, { type: "allocateAttributes", points: { strength: 3, vitality: 3 } });
+    expect(s.hero.attributes.strength).toBe(9);
     expect(s.hero.unspentAttributePoints).toBe(0);
     expect(() => act(s, { type: "allocateAttributes", points: { strength: 1 } })).toThrow();
   });
@@ -427,11 +429,14 @@ describe("game loop", () => {
     expect(s.pendingPrestige).toBeNull();
     expect(s.notice).toMatchObject({ kind: "prestige", enemyName: "Boss" });
     expect(s.hero).toMatchObject({ level, attributes, learned, equipment });
+    // The Harvest: two new Attribute Points wait, and a Phoenix Ash.
+    expect(s.hero.unspentAttributePoints).toBe(ATTRIBUTE_RULES.creationPoints + 2);
     expect(s.inventory).toEqual(inventory);
     expect(s.stash).toEqual(stash);
     expect(s.wallet).toEqual({
       ...wallet,
       harvesterEmber: wallet.harvesterEmber + PROGRESSION.prestigeHarvesterEmber,
+      phoenixAsh: 1,
     });
     expect(s.progress).toMatchObject({
       actsCleared: [],
@@ -460,6 +465,9 @@ describe("game loop", () => {
       planUpgrade: "Rotation Slot 2 · Reaction Slot 1",
       harvesterEmber: 1,
       skillPoints: 2,
+      attributePoints: 2,
+      rekindle: 2,
+      phoenixAsh: 1,
       levelCap: 30,
       acts: 2,
       levelBand: { start: 10, end: 20 },
@@ -518,32 +526,32 @@ describe("game loop", () => {
     expect(migrated.legacy.chronicle).toEqual([
       { generation: 1, level: 20, deaths: 2, enemyName: "Boss" },
     ]);
-    // Run 2's old cap was 15: every attribute point comes back to spend again. Level 15 of the
-    // old scale is the boss level of run 2 on the new one (v10 → v11).
+    // Attributes go back to the Class Array (v10 → v11). Level 15 of the old scale (run 2's cap)
+    // is the boss level of run 2 on the new one (v11 → v12).
     expect(migrated.hero).toMatchObject({
       level: 20,
       xp: 0,
       attributes: data.startingAttributes,
-      unspentAttributePoints: 14 * PROGRESSION.attributePointsPerLevel,
+      unspentAttributePoints: ATTRIBUTE_RULES.creationPoints + ATTRIBUTE_RULES.harvestPoints,
       learned: {},
     });
     expect(migrated.wallet.harvesterEmber).toBe(1);
-    // A hero below the cap keeps its attributes.
+    // A hero below the cap keeps its Class Array attributes.
     const low = deserializeGame(JSON.stringify({ ...v7, hero: s.hero }), data);
     expect(low.hero.attributes).toEqual(s.hero.attributes);
   });
 
-  it("migrates pre-Waymark save games (version 10): new level scale, tree points from progress", () => {
+  it("migrates pre-Waymark save games (version 11): new level scale, tree points from progress", () => {
     const s = start();
-    const v10 = {
+    const v11 = {
       ...s,
-      version: 10,
+      version: 11,
       hero: { ...s.hero, level: 50, learned: { a: 1, k: 1 }, unspentSkillPoints: 3 },
       progress: { ...s.progress, actsCleared: ["test-act"], waymarks: undefined },
       legacy: { ...s.legacy, prestige: 3 },
       wallet: { ...s.wallet, harvesterEmber: 2 },
     };
-    const migrated = deserializeGame(JSON.stringify(v10), data);
+    const migrated = deserializeGame(JSON.stringify(v11), data);
     expect(migrated.version).toBe(SAVE_VERSION);
     // Old level 50 was run 4's cap; now run 4's boss stands at 45.
     expect(migrated.hero.level).toBe(45);

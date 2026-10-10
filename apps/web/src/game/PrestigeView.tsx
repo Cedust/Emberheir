@@ -1,7 +1,11 @@
 import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
+  ATTRIBUTES,
+  type Attribute,
   type GameState,
   PROGRESSION,
+  addAttributes,
+  attributeProblem,
   actsInRun,
   branchTier,
   classTitle,
@@ -14,6 +18,7 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
+import { AttributeStones, NO_POINTS } from "./AttributeStones";
 import type { GameApi } from "./useGame";
 
 /** The boss's last words when its fall starts the harvest. */
@@ -27,10 +32,11 @@ const LAST_WORDS: Record<string, string> = {
   emberfall: "You cannot keep... the ember... Heir... It always... grows back...",
 };
 
-type Step = "victory" | "branch";
+type Step = "victory" | "branch" | "rekindle";
 const STEPS = [
   { id: "victory", name: "Victory" },
   { id: "branch", name: "Bloodline" },
+  { id: "rekindle", name: "Rekindle" },
   { id: "heir", name: "Inheritance" },
 ] as const;
 
@@ -81,9 +87,31 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
   const titleWith = (id: string) =>
     classTitle(heroClass, [...state.legacy.branches, id], GAME_DATA.branchEpithets);
   const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
+  const [delta, setDelta] = useState<Record<Attribute, number>>(NO_POINTS);
   if (!pending) return null;
   const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
-  const finish = () => game.dispatch({ type: "prestige", ...(branch ? { branchId: branch } : {}) });
+  // The Harvest (attribute-v1.md section 6): new points, and a few may move (Rekindle).
+  const harvest = prestigeRewards(GAME_DATA, state.legacy.prestige + 1);
+  const own = state.hero.attributes;
+  const points = state.hero.unspentAttributePoints + harvest.attributePoints;
+  const rules = {
+    floor: heroClass.startingAttributes,
+    current: own,
+    points,
+    moves: harvest.rekindle,
+  };
+  const allowed = (a: Attribute, step: number) =>
+    attributeProblem(addAttributes(own, { ...delta, [a]: delta[a] + step }), rules) === null;
+  const change = (a: Attribute, step: number) => setDelta({ ...delta, [a]: delta[a] + step });
+  const changed = ATTRIBUTES.some((a) => delta[a] !== 0);
+  const left = points - ATTRIBUTES.reduce((n, a) => n + delta[a], 0);
+  const moved = ATTRIBUTES.reduce((n, a) => n + Math.max(0, -delta[a]), 0);
+  const finish = () =>
+    game.dispatch({
+      type: "prestige",
+      ...(branch ? { branchId: branch } : {}),
+      ...(changed ? { attributes: addAttributes(own, delta) } : {}),
+    });
 
   if (step === "victory") {
     return (
@@ -112,7 +140,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
           <button
             type="button"
             className="btn big primary"
-            onClick={() => (open.length ? setStep("branch") : finish())}
+            onClick={() => setStep(open.length ? "branch" : "rekindle")}
           >
             {final ? "Keep Everything" : "Pack the Caravan"}
           </button>
@@ -179,7 +207,12 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
           })}
         </div>
         <div className="branch-footer">
-          <button type="button" className="btn big primary" disabled={!branch} onClick={finish}>
+          <button
+            type="button"
+            className="btn big primary"
+            disabled={!branch}
+            onClick={() => setStep("rekindle")}
+          >
             {branch && state.legacy.branches.includes(branch) ? "Deepen" : "Take"}{" "}
             {open.find((b) => b.id === branch)?.name ?? "it"}
           </button>
@@ -188,7 +221,38 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
     );
   }
 
-  return null;
+  return (
+    <section className="screen prestige prestige-rekindle" aria-label="Rekindle">
+      <Crumbs step="rekindle" />
+      <header className="seal-head">
+        <h2 className="title-font">THE EMBERS SETTLE</h2>
+        <p className="sub">
+          +{harvest.attributePoints} Attribute Points · move up to {harvest.rekindle} · +
+          {harvest.phoenixAsh} Phoenix Ash
+        </p>
+      </header>
+      <div className="rekindle-stones panel-card">
+        <AttributeStones
+          base={own}
+          delta={delta}
+          canAdd={(a) => left > 0 && allowed(a, 1)}
+          canRemove={(a) => (delta[a] > 0 ? true : moved < harvest.rekindle && allowed(a, -1))}
+          onAdd={(a) => change(a, 1)}
+          onRemove={(a) => change(a, -1)}
+        />
+        <span className="sub small rekindle-left" data-testid="rekindle-left">
+          {left} {left === 1 ? "point" : "points"} left · {harvest.rekindle - moved}{" "}
+          {harvest.rekindle - moved === 1 ? "move" : "moves"} left
+        </span>
+      </div>
+      <div className="grow" />
+      <div className="branch-footer">
+        <button type="button" className="btn big primary" onClick={finish}>
+          {final ? "Keep Everything" : "Let It Burn"}
+        </button>
+      </div>
+    </section>
+  );
 }
 
 /** Inheritance (last Prestige step): Old Nan, the rewards, then wake in the Camp. */

@@ -116,7 +116,6 @@ export const PROGRESSION = {
   levelHeadroom: 10,
   /** Acts of a full world (run 7). */
   actsPerFullRun: 7,
-  attributePointsPerLevel: 2,
   /**
    * Skill Points come from progress, not from levels (level-v2.md section 7): 2 at the start,
    * 1 per Waymark (3 per act in every run, 84 in all) and `harvestSkillPoints` per Prestige

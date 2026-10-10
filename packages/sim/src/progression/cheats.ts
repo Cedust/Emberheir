@@ -23,7 +23,10 @@ import { EMPTY_MASTERY, MASTERY, weaponRank } from "./weapon-mastery";
 export type WalletCurrency = Exclude<keyof Wallet, "essences" | "runes">;
 
 export type Cheat =
-  /** Set the hero level (any level up to the last Weapon Rank). Going down resets the points. */
+  /**
+   * Set the hero level (any level up to the last Weapon Rank). Going down resets the Skill
+   * Points; attributes do not follow the level.
+   */
   | { readonly kind: "level"; readonly level: number }
   /** Set a currency to an amount. */
   | { readonly kind: "currency"; readonly currency: WalletCurrency; readonly amount: number }
@@ -34,6 +37,8 @@ export type Cheat =
   | { readonly kind: "masteryPoints"; readonly amount: number }
   /** Sets the unspent Skill Points. */
   | { readonly kind: "skillPoints"; readonly amount: number }
+  /** Set the unspent Attribute Points. */
+  | { readonly kind: "attributePoints"; readonly amount: number }
   /** A new item (or a Unique) into the inventory, or the stash if `to` says so. */
   | {
       readonly kind: "giveItem";
@@ -66,7 +71,7 @@ const whole = (n: number, min: number, max = Number.MAX_SAFE_INTEGER) =>
 export function applyCheat(state: GameState, data: GameData, cheat: Cheat): GameState {
   switch (cheat.kind) {
     case "level":
-      return setLevel(state, data, whole(cheat.level, 1, CHEAT_MAX_LEVEL));
+      return setLevel(state, whole(cheat.level, 1, CHEAT_MAX_LEVEL));
     case "currency":
       return {
         ...state,
@@ -106,6 +111,11 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
         ...state,
         hero: { ...state.hero, unspentSkillPoints: whole(cheat.amount, 0, 999) },
       };
+    case "attributePoints":
+      return {
+        ...state,
+        hero: { ...state.hero, unspentAttributePoints: whole(cheat.amount, 0, 99) },
+      };
     case "giveItem":
       return giveItem(state, data, cheat);
     case "rerollItem":
@@ -134,25 +144,20 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
   }
 }
 
-function setLevel(state: GameState, data: GameData, level: number): GameState {
+function setLevel(state: GameState, level: number): GameState {
   const hero = state.hero;
   if (level >= hero.level) {
-    const gained = level - hero.level;
     return {
       ...state,
       hero: {
         ...hero,
         level,
         xp: 0,
-        unspentAttributePoints:
-          hero.unspentAttributePoints + gained * PROGRESSION.attributePointsPerLevel,
       },
     };
   }
-  // Down: every attribute point comes back to spend again, like after a rule change (v7 → v8).
-  // Skill Points come from Waymarks, not levels, so the Skill Tree stays.
-  const start =
-    data.classes.find((c) => c.id === hero.classId)?.startingAttributes ?? data.startingAttributes;
+  // Down: attributes do not follow the level, and Skill Points come from Waymarks, not levels,
+  // so only the Weapon Rank can drop.
   const p = state.legacy.prestige;
   const rankDrops = weaponRank(level, p) < weaponRank(hero.level, p);
   return {
@@ -161,8 +166,6 @@ function setLevel(state: GameState, data: GameData, level: number): GameState {
       ...hero,
       level,
       xp: 0,
-      attributes: start,
-      unspentAttributePoints: (level - 1) * PROGRESSION.attributePointsPerLevel,
       mastery: rankDrops
         ? {
             ...EMPTY_MASTERY,

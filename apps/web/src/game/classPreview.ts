@@ -74,10 +74,11 @@ export function glimpseState(classId: string, weapon: string): GameState {
     const keystone = node.kind === "keystone";
     if (own && (!keystone || node.prestigeBranch)) learned[node.id] = node.maxRanks ?? 1;
   }
+  // A few Harvests later: the Class Array doubled (at most 10, attribute-v1.md).
   const attributes = Object.fromEntries(
     Object.entries(heroClass?.startingAttributes ?? base.hero.attributes).map(([k, v]) => [
       k,
-      v * 3,
+      Math.min(10, v * 2),
     ]),
   ) as unknown as Attributes;
   const gear = glimpseGear(base, attributes, heroClass?.offHand);

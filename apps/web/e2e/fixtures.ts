@@ -27,7 +27,8 @@ export function saveAfterHarvestBoss(): string {
     hero: {
       ...base.hero,
       level: 5,
-      attributes: { ...base.hero.attributes, strength: 12, vitality: 9 },
+      attributes: { ...base.hero.attributes, strength: 7, vitality: 7 },
+      unspentAttributePoints: 0,
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
     },
@@ -383,4 +384,15 @@ export function saveWebTree(): string {
     wallet: { ...base.wallet, gold: 5000 },
     progress: { ...base.progress, trainerUnlocked: true },
   });
+}
+
+/** Class select: the first class, its six free points into Strength and Vitality, Begin. */
+export async function createHero(page: Page, onAttributes?: () => Promise<void>): Promise<void> {
+  await page.getByRole("button", { name: "Next" }).click();
+  await onAttributes?.();
+  for (let i = 0; i < 3; i++) {
+    await page.getByRole("button", { name: "Add Strength" }).click();
+    await page.getByRole("button", { name: "Add Vitality" }).click();
+  }
+  await page.getByRole("button", { name: "Begin" }).click();
 }

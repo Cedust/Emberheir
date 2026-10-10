@@ -15,7 +15,7 @@ export const COMBAT = {
    */
   heroLevelGrowth: { life: 0.04, damage: 0.03 },
 
-  // Attribute effects, per point (docs/design/stat-liste-v2.md section 1).
+  // Attribute effects per point of monsters ("classic" scale, docs/design/stat-liste-v2.md).
   lifePerVitality: 5,
   tenacityPerVitality: 0.005,
   physicalDamagePerStrength: 0.01,
@@ -30,6 +30,25 @@ export const COMBAT = {
   allResistancePerIntelligence: 0.002,
   heatGainPerWisdom: 0.01,
   ailmentDurationPerWisdom: 0.01,
+
+  /**
+   * The hero's attributes (attribute-v1.md section 3): 1–10 points, each worth a lot. Life and
+   * Armor are percentages so they keep mattering at every level.
+   */
+  heir: {
+    physicalDamagePerStrength: 0.08,
+    armorPerStrength: 0.06,
+    critChancePerDexterity: 0.015,
+    triggerChancePerDexterity: 0.04,
+    elementalDamagePerIntelligence: 0.08,
+    allResistancePerIntelligence: 0.015,
+    attackSpeedPerAgility: 0.03,
+    evasionPerAgility: 0.02,
+    heatGainPerWisdom: 0.06,
+    ailmentDurationPerWisdom: 0.06,
+    lifePerVitality: 0.06,
+    tenacityPerVitality: 0.03,
+  },
 
   /** Crit Damage is fixed and cannot be raised (anti power creep). */
   critMultiplier: 1.5,

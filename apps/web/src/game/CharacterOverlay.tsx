@@ -1,6 +1,7 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
   ATTRIBUTES,
+  ATTRIBUTE_RULES,
   type Attribute,
   type Attributes,
   type EquipmentSlot,
@@ -13,6 +14,8 @@ import {
   estimateDps,
   formatPercent,
   heatPerSecond,
+  boonEffects,
+  heroBoons,
   heroSetup,
   heroTitle,
   itemSlotFor,
@@ -40,24 +43,7 @@ import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 import { WeaponSlot } from "./WeaponSlot";
-
-const ATTRIBUTE_INFO: Record<Attribute, { name: string; effects: string }> = {
-  strength: { name: "Strength", effects: "Physical Damage · Armor" },
-  dexterity: { name: "Dexterity", effects: "Crit Chance · Trigger Chance" },
-  intelligence: { name: "Intelligence", effects: "Elemental Damage · All Resistance" },
-  agility: { name: "Agility", effects: "Attack Speed · Evasion" },
-  wisdom: { name: "Wisdom", effects: "Heat Gain · Ailment Duration" },
-  vitality: { name: "Vitality", effects: "Life · Tenacity" },
-};
-
-const ZERO: Record<Attribute, number> = {
-  strength: 0,
-  dexterity: 0,
-  intelligence: 0,
-  agility: 0,
-  wisdom: 0,
-  vitality: 0,
-};
+import { AttributeStones, NO_POINTS } from "./AttributeStones";
 
 const TABS = ["Offense", "Defense", "Heat"] as const;
 type Tab = (typeof TABS)[number];
@@ -82,7 +68,8 @@ export function CharacterOverlay(props: {
   onClose: () => void;
 }) {
   const { state, game, inFight } = props;
-  const [pending, setPending] = useState<Record<Attribute, number>>(ZERO);
+  const [pending, setPending] = useState<Record<Attribute, number>>(NO_POINTS);
+  const [locking, setLocking] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Offense");
   const [discarding, setDiscarding] = useState<string | null>(null);
@@ -110,10 +97,17 @@ export function CharacterOverlay(props: {
   const invItem = state.inventory.find((p) => p.item.id === selected)?.item;
   const sel: Item | undefined = equippedEntry?.[1] ?? invItem;
 
+  // Points are permanent (attribute-v1.md): Confirm asks once more.
   const confirm = () => {
+    if (!locking) {
+      setLocking(true);
+      return;
+    }
     game.dispatch({ type: "allocateAttributes", points: pending });
-    setPending(ZERO);
+    setPending(NO_POINTS);
+    setLocking(false);
   };
+  const boonAttributes = boonEffects(heroBoons(state, GAME_DATA)).attributes;
 
   const cap = levelCap(state.legacy.prestige);
   const next = xpToNextLevel(state.hero.level, cap);
@@ -320,46 +314,40 @@ export function CharacterOverlay(props: {
                 {left} Attribute Points
               </span>
             </div>
-            <ul className="attributes">
-              {ATTRIBUTES.map((a) => (
-                <li key={a}>
-                  <div className="attr-text">
-                    <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
-                    <span className="sub small">{ATTRIBUTE_INFO[a].effects}</span>
-                  </div>
-                  <span className="attr-value mono">
-                    {state.hero.attributes[a] + pending[a]}
-                    {pending[a] > 0 && <em className="added"> +{pending[a]}</em>}
-                  </span>
-                  {!inFight && (
-                    <button
-                      type="button"
-                      className="plus"
-                      aria-label={`Add ${ATTRIBUTE_INFO[a].name}`}
-                      disabled={left <= 0}
-                      onClick={() => setPending((p) => ({ ...p, [a]: p[a] + 1 }))}
-                    >
-                      +
-                    </button>
-                  )}
-                </li>
-              ))}
-            </ul>
-            {!inFight && (
+            <AttributeStones
+              base={state.hero.attributes}
+              delta={pending}
+              boon={boonAttributes}
+              gear={gear.attributes}
+              {...(inFight || state.hero.unspentAttributePoints === 0
+                ? {}
+                : {
+                    canAdd: (a: Attribute) =>
+                      left > 0 && state.hero.attributes[a] + pending[a] < ATTRIBUTE_RULES.max,
+                    onAdd: (a: Attribute) => {
+                      setPending((p) => ({ ...p, [a]: p[a] + 1 }));
+                      setLocking(false);
+                    },
+                  })}
+            />
+            {!inFight && state.hero.unspentAttributePoints > 0 && (
               <div className="attr-buttons">
                 <button
                   type="button"
-                  className="btn primary"
+                  className={`btn ${locking ? "danger" : "primary"}`}
                   disabled={spent === 0}
                   onClick={confirm}
                 >
-                  Confirm
+                  {locking ? "Lock in for good?" : "Confirm"}
                 </button>
                 <button
                   type="button"
                   className="btn"
                   disabled={spent === 0}
-                  onClick={() => setPending(ZERO)}
+                  onClick={() => {
+                    setPending(NO_POINTS);
+                    setLocking(false);
+                  }}
                 >
                   Undo
                 </button>

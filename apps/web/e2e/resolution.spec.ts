@@ -1,5 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
-import { saveAfterHarvestBoss, seedSave } from "./fixtures";
+import { createHero, saveAfterHarvestBoss, seedSave } from "./fixtures";
 
 /**
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
@@ -50,17 +50,20 @@ async function newGame(page: Page) {
   await page.goto("/?dev");
   expect(await layoutProblems(page), "title").toEqual([]);
   await page.getByRole("button", { name: "New Game" }).click();
-  await expect(page.getByRole("button", { name: "Begin" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Next" })).toBeVisible();
   expect(await layoutProblems(page), "class select").toEqual([]);
-  await page.getByRole("button", { name: "Begin" }).click();
+  await createHero(page, async () =>
+    expect(await layoutProblems(page), "class attributes").toEqual([]),
+  );
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
 }
 
 for (const screen of SCREENS) {
   test(`${screen.name}: every main view fits without scrolling`, async ({ page }) => {
-    // 4K renders four times the pixels of 1080p in CI's software renderer: the battle runs at a
-    // few frames per second there, so this walk through every view needs more time.
-    test.slow(screen.height > 1440);
+    // CI's software renderer keeps the live class preview busy while the six free points are
+    // set, and 4K renders four times the pixels of 1080p (the battle runs at a few frames per
+    // second there): this walk through every view needs more time.
+    test.slow();
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
@@ -140,6 +143,9 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "Bloodline" })).toBeVisible();
     await check("bloodline");
     await page.getByRole("button", { name: /^Take / }).click();
+    await expect(page.getByRole("region", { name: "Rekindle" })).toBeVisible();
+    await check("rekindle");
+    await page.getByRole("button", { name: "Let It Burn" }).click();
     await expect(page.getByRole("region", { name: "Inheritance" })).toBeVisible();
     await check("inheritance");
     await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();

@@ -25,9 +25,10 @@ const item = (baseId: string, affixes: Item["affixes"] = [], tier = 1): Item => 
 });
 
 describe("equipment stats", () => {
-  it("requirements grow with the tier and are checked against the hero's own attributes", () => {
+  it("requirements stay fixed per base and are checked against the hero's own attributes", () => {
     expect(requirementsFor(TEST_SHIELD, 1)).toEqual({ strength: 8 });
-    expect(requirementsFor(TEST_SHIELD, 3)).toEqual({ strength: 24 });
+    // Attributes v1: no growth per tier.
+    expect(requirementsFor(TEST_SHIELD, 3)).toEqual({ strength: 8 });
     const shield = item("test-shield");
     expect(missingRequirements(shield, TEST_CATALOG, ZERO_ATTRIBUTES)).toEqual(["strength"]);
     expect(missingRequirements(shield, TEST_CATALOG, STRONG)).toEqual([]);

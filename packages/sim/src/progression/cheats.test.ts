@@ -12,7 +12,7 @@ describe("Cheat Mode", () => {
   it("raises the level with its points and the Weapon Rank (capped by the run)", () => {
     const s = cheat(start(), { kind: "level", level: 20 });
     expect(s.hero.level).toBe(20);
-    expect(s.hero.unspentAttributePoints).toBe(19 * PROGRESSION.attributePointsPerLevel);
+    expect(s.hero.unspentAttributePoints).toBe(start().hero.unspentAttributePoints);
     // Skill Points come from Waymarks, not levels.
     expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints);
     expect(masteryPointsLeft(s, data)).toBe(4);
@@ -28,13 +28,18 @@ describe("Cheat Mode", () => {
     expect(s.hero.unspentSkillPoints).toBe(12);
   });
 
-  it("lowers the level and gives every point back", () => {
+  it("lowers the level; attributes and Skill Points (from Waymarks) stay", () => {
     let s = cheat(start(), { kind: "level", level: 10 });
     s = applyAction(s, data, { type: "allocateAttributes", points: { strength: 4 } });
     s = cheat(s, { kind: "level", level: 3 });
     expect(s.hero.level).toBe(3);
-    expect(s.hero.attributes).toEqual(start().hero.attributes);
-    expect(s.hero.unspentAttributePoints).toBe(2 * PROGRESSION.attributePointsPerLevel);
+    expect(s.hero.attributes.strength).toBe(start().hero.attributes.strength + 4);
+    expect(s.hero.unspentSkillPoints).toBe(PROGRESSION.startSkillPoints);
+  });
+
+  it("sets the unspent Attribute Points", () => {
+    const s = cheat(start(), { kind: "attributePoints", amount: 9 });
+    expect(s.hero.unspentAttributePoints).toBe(9);
   });
 
   it("adds Mastery points on top of the Weapon Rank, and a respec keeps them", () => {

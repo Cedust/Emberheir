@@ -74,8 +74,8 @@ describe("affix values", () => {
   });
 
   it("resolves trigger affixes: rolled magnitude or rolled chance", () => {
-    const secondWind = resolveTrigger(affix<"trigger">("second-wind"), 1, 1);
-    expect(secondWind).toEqual({
+    const rally = resolveTrigger(affix<"trigger">("second-wind"), 1, 1);
+    expect(rally).toEqual({
       id: "second-wind",
       name: "Second Wind",
       condition: { kind: "lifeBelow", threshold: 0.35 },
