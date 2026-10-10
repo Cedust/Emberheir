@@ -238,7 +238,11 @@ export class Fx {
         [big ? 30 : 20, 0.4, color],
         [big ? 11 : 7, 0.95, 0xffffff],
       ] as const) {
-        g.arc(-r * 0.55, 0, r, a0, a1).stroke({ color: c, width: w * (1 - t * 0.6), alpha });
+        // Each stroke starts at the arc's own first point: without the moveTo, Pixi starts the
+        // second arc at an invalid (NaN) point, which a GPU draws as a line to the top left.
+        g.moveTo(-r * 0.55 + Math.cos(a0) * r, Math.sin(a0) * r)
+          .arc(-r * 0.55, 0, r, a0, a1)
+          .stroke({ color: c, width: w * (1 - t * 0.6), alpha });
       }
       g.alpha = 1 - Math.max(0, t - 0.4) / 0.6;
     });
