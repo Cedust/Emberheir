@@ -47,13 +47,16 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
 });
 
 test("Weapon Mastery pans with a drag and zooms with the wheel and a pinch", async ({ page }) => {
+  // Every touch waits for a frame, and CI's software GL draws the forge slowly (like the Skill
+  // Tree camera tests); the views also load on demand, so the canvas may take a moment.
+  test.slow();
   await seedSave(page, saveMastery());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("t");
   await page.getByRole("tab", { name: "Weapon Mastery" }).click();
   const canvas = page.getByTestId("mastery-canvas").locator("canvas");
-  await expect(canvas).toBeVisible();
+  await expect(canvas).toBeVisible({ timeout: 15_000 });
   const zoom = async () => Number(await canvas.getAttribute("data-zoom"));
   const pan = async () => (await canvas.getAttribute("data-pan")) ?? "";
   const box = await canvas.boundingBox();
