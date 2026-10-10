@@ -96,9 +96,13 @@ const HEARTH: readonly BoonDefinition[] = [
   boon("hearth", "passive", "Old Nan's Broth", "+# % Lifesteal", 1.5, {
     bonuses: { lifesteal: 0.015 },
   }),
-  boon("hearth", "passive", "Thick Skin", "+# % All Resistance", 6, {
-    bonuses: { allResistance: 0.06 },
-  }),
+  // Was "Thick Skin" (now a Vitality Perk); the id stays so running saves keep the Boon.
+  {
+    ...boon("hearth", "passive", "Weathered", "+# % All Resistance", 6, {
+      bonuses: { allResistance: 0.06 },
+    }),
+    id: "thick-skin",
+  },
   boon("hearth", "trigger", "Slow Embers", "Every 5 s: heal # % Life", 2, {
     trigger: {
       when: { kind: "everySeconds", seconds: 5 },
