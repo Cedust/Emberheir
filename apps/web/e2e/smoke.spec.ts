@@ -53,6 +53,9 @@ test("rolled gear shows item tooltips and goes into the fight", async ({ page })
 test("a new game: set out, win a fight, pick loot, and the save survives a reload", async ({
   page,
 }) => {
+  // CI's software renderer keeps the live class preview busy while the free points are set, and
+  // this walk runs a whole fight and a reload on top: it needs more than the default 30s there.
+  test.slow();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
