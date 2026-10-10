@@ -770,6 +770,9 @@ function Nyssa() {
       <F d="M54 158 C53 166 69 167 67 159 Z" fill={furDark} />
       <F d="M38 140 C36 150 38 158 44 160 L51 160 L52 142 Z" fill={fur} tex="fur" />
       <F d="M52 142 L54 160 L64 160 C68 156 68 148 65 140 Z" fill={fur} tex="fur" />
+      {/* A short furry neck tucked into the collar. */}
+      <F d="M40 54 C37 64 37 72 38 80 L66 80 C67 72 66 63 63 54 Z" fill={fur} tex="fur" />
+      <path d="M46 60 C45 68 47 74 52 78 C58 75 60 68 59 60 Z" fill={cream} opacity="0.85" />
       {/* A moss-green tunic and a leather apron full of rune pockets. */}
       <S
         d="M39 78 C33 100 32 128 35 148 L67 148 C70 128 69 100 63 78 C57 73 45 73 39 78 Z"
@@ -784,7 +787,7 @@ function Nyssa() {
       <L d="M42 82 L62 104" color="#5e3a20" w={2.6} />
       <S d="M38 84 C33 92 32 102 35 110 L41 108 C40 100 41 92 44 86 Z" fill={tunic} />
       <F d={circ(38, 110, 3.8)} fill={fur} />
-      <S d="M43 72 C50 77 57 77 63 72 L64 80 C56 84 48 84 41 80 Z" fill={cream} w={1.4} />
+      <S d="M41 72 C49 77 57 77 65 72 L65 80 C56 84 48 84 40 80 Z" fill={cream} w={1.4} />
       {/* Head: big and round, tufted ears, bright eyes, glasses pushed up. */}
       <Move kind="twitch" origin="60px 30px" delay={0.8}>
         <F d="M56 31 C58 22 62 18 65 16 C67 22 65 28 62 33 Z" fill={fur} />
