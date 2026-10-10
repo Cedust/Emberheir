@@ -31,6 +31,7 @@ import { HudScene } from "./hud/HudScene";
 import { EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
 import { BAR_H } from "./hud/layout";
 import "./hud/hud.css";
+import { canvasResolution } from "../pixiPacing";
 
 interface PlaqueInfo {
   readonly name: string;
@@ -147,7 +148,7 @@ export function BattleView(props: {
   // The arena canvas covers the whole stage: the world stands on the bar, the HUD sits on top.
   const arenaW = stage.w;
   const arenaH = stage.h;
-  const arenaRes = Math.min(4, (window.devicePixelRatio || 1) * stage.scale);
+  const arenaRes = canvasResolution(stage.scale);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const hudRef = useRef<HudScene | null>(null);
   const pausedRef = useRef(props.paused);

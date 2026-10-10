@@ -1263,6 +1263,15 @@
   transform: rotate(-45deg);
 }
 
+/* An overlay covers the screen: the camp fire and the animals behind it pause, saving work. */
+.stage .screen-host {
+  display: contents;
+}
+
+.stage .screen-host[data-covered] * {
+  animation-play-state: paused !important;
+}
+
 .stage .camp-stage {
   position: relative;
   flex-grow: 1;

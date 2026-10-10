@@ -6,7 +6,7 @@ import {
   masteryRanks,
   weaponBase,
 } from "@emberheir/sim";
-import type { WeaponLook } from "./camp/weaponArt";
+import type { WeaponLook } from "./camp/weaponLookData";
 import { gradeIndex } from "./WeaponSlot";
 
 export const ELEMENT_COLOR: Record<string, number> = {

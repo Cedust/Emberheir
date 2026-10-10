@@ -29,6 +29,7 @@ import {
   MasteryScene,
   type MasteryView,
 } from "./MasteryScene";
+import { canvasResolution } from "../pixiPacing";
 
 const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   refine: "Refine",
@@ -157,7 +158,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
     ro.observe(host);
     return () => ro.disconnect();
   }, []);
-  const resolution = Math.min(3, (window.devicePixelRatio || 1) * stage.scale);
+  const resolution = canvasResolution(stage.scale);
 
   useEffect(() => {
     const host = hostRef.current;

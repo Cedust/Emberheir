@@ -22,6 +22,7 @@ import { useStageSize } from "../../ui/Stage";
 import { FORGET_BLOCK_TEXT, LEARN_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { type TreeLabel, type TreeNodeView, TreeScene, type TreeView } from "./TreeScene";
+import { canvasResolution } from "../pixiPacing";
 
 /** Base branches with their colour (labels). */
 const BRANCHES: readonly { id: SkillTreeBranch; name: string; color: number }[] = [
@@ -201,7 +202,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
     ro.observe(host);
     return () => ro.disconnect();
   }, []);
-  const resolution = Math.min(3, (window.devicePixelRatio || 1) * stage.scale);
+  const resolution = canvasResolution(stage.scale);
 
   useEffect(() => {
     const host = hostRef.current;

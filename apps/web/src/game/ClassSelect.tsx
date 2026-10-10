@@ -1,11 +1,11 @@
 import { GAME_DATA, ITEM_CATALOG, PRESTIGE_BRANCHES } from "@emberheir/content";
 import { ATTRIBUTE_RULES, type Attribute, getBase, sumAttributes } from "@emberheir/sim";
-import { useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import { Icon, type IconName } from "../ui/Icon";
 import type { Settings } from "../ui/settings";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 import { ClassEmblem } from "./ClassEmblem";
-import { PreviewArena } from "./PreviewArena";
+import { PreviewArena } from "./lazyViews";
 import { glimpsePreview, startPreview } from "./classPreview";
 import type { NewCharacter } from "./useGame";
 
@@ -108,13 +108,17 @@ export function ClassSelect(props: {
 
       <div className="class-detail">
         <div className="class-preview panel-card">
-          <PreviewArena
-            key={`${classId}-${weapon}-${glimpse}`}
-            preview={preview}
-            width={900}
-            height={520}
-            settings={props.settings}
-          />
+          <Suspense
+            fallback={<div className="preview-arena" style={{ width: 900, height: 520 }} />}
+          >
+            <PreviewArena
+              key={`${classId}-${weapon}-${glimpse}`}
+              preview={preview}
+              width={900}
+              height={520}
+              settings={props.settings}
+            />
+          </Suspense>
           <div className="preview-tags">
             <button
               type="button"

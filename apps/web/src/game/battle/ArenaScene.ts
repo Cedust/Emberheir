@@ -9,6 +9,7 @@ import { Application, BlurFilter, Container, Graphics, Text } from "pixi.js";
 import { type WeaponLook, drawWeapon } from "../camp/weaponArt";
 import { Fx, type Burst } from "./fx";
 import { Weather, type View } from "./weather";
+import { MAX_FPS, PAUSED_FPS, wantsAntialias } from "../pixiPacing";
 
 /**
  * The PixiJS arena (battle-view-v1.md section 2): ground, two placeholder figures, floating
@@ -341,7 +342,7 @@ export class ArenaScene {
         width: this.size.w,
         height: this.size.h,
         backgroundAlpha: 0,
-        antialias: true,
+        antialias: wantsAntialias(this.size.resolution),
         resolution: this.size.resolution,
         autoDensity: true,
       });
@@ -1016,6 +1017,8 @@ export class ArenaScene {
   }
 
   private tick(dt: number): void {
+    // Under an overlay the arena holds still: a few frames a second keep the picture.
+    if (this.app) this.app.ticker.maxFPS = this.paused ? PAUSED_FPS : MAX_FPS;
     if (this.paused) return;
     this.freezeCooldown = Math.max(0, this.freezeCooldown - dt);
     if (this.freeze > 0) {

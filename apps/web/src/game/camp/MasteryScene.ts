@@ -13,6 +13,8 @@ import {
 import { Fx } from "../battle/fx";
 import { type WeaponArt, type WeaponLook, drawWeapon } from "./weaponArt";
 import { ELEMENT_COLOR } from "../weaponLook";
+import { FramePacer, wantsAntialias } from "../pixiPacing";
+import { arcPath } from "../pixiShapes";
 
 /**
  * Weapon Mastery as a PixiJS scene, the "anatomy" look (waffe-als-system-v1.md): the painted
@@ -129,6 +131,7 @@ export class MasteryScene {
   private readonly nodeLayer = new Container();
   private readonly labelLayer = new Container();
   private fx: Fx | null = null;
+  private pacer: FramePacer | null = null;
   private art: WeaponArt | null = null;
   private artKey = "";
   private echoAura: Container | null = null;
@@ -191,7 +194,7 @@ export class MasteryScene {
         width: this.size.w,
         height: this.size.h,
         backgroundAlpha: 0,
-        antialias: true,
+        antialias: wantsAntialias(this.size.resolution),
         resolution: this.size.resolution,
         autoDensity: true,
       });
@@ -220,6 +223,7 @@ export class MasteryScene {
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
     this.rebuild();
     this.fit(true);
+    this.pacer = new FramePacer(app.ticker);
     app.ticker.add((t) => this.tick(t.deltaMS / 1000));
     return true;
   }
@@ -685,13 +689,11 @@ export class MasteryScene {
         const ny = (q.x - p.x) * 0.25 * side;
         const cx = (p.x + q.x) / 2 + nx;
         const cy = (p.y + q.y) / 2 + ny;
-        g.moveTo(cx + 6, cy)
-          .arc(cx, cy, 6, 0, Math.PI * 1.4)
-          .stroke({
-            color: i < lit ? path.color : 0x3a322b,
-            width: 2,
-            alpha: i < lit ? 0.8 : 0.6,
-          });
+        arcPath(g, cx, cy, 6, 0, Math.PI * 1.4).stroke({
+          color: i < lit ? path.color : 0x3a322b,
+          width: 2,
+          alpha: i < lit ? 0.8 : 0.6,
+        });
       }
       if (lit > 0) {
         curve(g, points, 0, lit);
@@ -712,13 +714,9 @@ export class MasteryScene {
       const r = Math.hypot((ks[0]?.node.x ?? 0) * U - c.x, (ks[0]?.node.y ?? 0) * U - c.y);
       const open = ks.some((n) => n.state !== "locked");
       const [a0, a1] = [Math.min(...angles) - 0.25, Math.max(...angles) + 0.25];
-      // Start each arc at its own first point: without the moveTo, Pixi joins the arc to
-      // wherever the pen stopped last (the end of the last path) with a straight line.
-      const start = { x: c.x + Math.cos(a0) * r, y: c.y + Math.sin(a0) * r };
-      g.moveTo(start.x, start.y).arc(c.x, c.y, r, a0, a1).stroke({ color: 0x0c0806, width: 12 });
-      g.moveTo(start.x, start.y)
-        .arc(c.x, c.y, r, a0, a1)
-        .stroke({ color: open ? 0xa8732e : 0x3a2c1e, width: 4 });
+      // arcPath, not Pixi's arc: that one leaves invalid points a GPU draws as stray lines.
+      arcPath(g, c.x, c.y, r, a0, a1).stroke({ color: 0x0c0806, width: 12 });
+      arcPath(g, c.x, c.y, r, a0, a1).stroke({ color: open ? 0xa8732e : 0x3a2c1e, width: 4 });
       const chosen = ks.find((n) => n.state === "learned" || n.pending);
       if (chosen) {
         const p = this.pos(chosen.node);
@@ -1010,8 +1008,24 @@ export class MasteryScene {
 
   // --- frame ---------------------------------------------------------------------------------
 
+  /** The camera glides, a drag or pinch is on, or a flick still carries the view. */
+  private moving(): boolean {
+    return (
+      this.drag !== null ||
+      this.touches.size > 0 ||
+      this.velocity.x !== 0 ||
+      this.velocity.y !== 0 ||
+      Math.abs(this.goal.x - this.cam.x) > 0.5 ||
+      Math.abs(this.goal.y - this.cam.y) > 0.5 ||
+      Math.abs(this.goal.zoom - this.cam.zoom) > 0.002 ||
+      this.shakeT > 0 ||
+      this.flash > 0
+    );
+  }
+
   private tick(dt: number): void {
     this.time += dt;
+    this.pacer?.update(dt, this.moving());
     const v = this.view;
     if (!this.drag && (this.velocity.x || this.velocity.y)) {
       // A flick keeps the view gliding for a moment.
