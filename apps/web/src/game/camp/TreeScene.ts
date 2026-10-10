@@ -1,7 +1,8 @@
-import { TREE_PLACEMENT, TRUNK, type TreeRegion, onTree } from "@emberheir/content";
+import { SKILL_TREE, type TreeRegion } from "@emberheir/content";
 import type { SkillNode } from "@emberheir/sim";
 import {
   Application,
+  BlurFilter,
   Container,
   type FederatedPointerEvent,
   type FederatedWheelEvent,
@@ -10,13 +11,15 @@ import {
   Text,
 } from "pixi.js";
 import { Fx } from "../battle/fx";
+import { type AshTreeArt, drawTwigs, paintAshTree } from "./ashTreeArt";
 
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
  * with a camera to drag and zoom. Node colours follow the item rarities: grey = Unavailable,
  * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Hovering a
  * node lays its path over the web; a fork's closed side shows as a broken seal. The web grows on
- * the Ash Tree: a bark trunk with an ember heart, limbs up to the crown and down to the roots.
+ * the Ash Tree (`ashTreeArt.ts`): painted bark, limbs up to the crown, roots down into the earth,
+ * and the Ember sigil carved into the trunk, glowing slowly.
  * Looks only:
  * learning goes through the React side and the sim.
  */
@@ -80,8 +83,6 @@ const PENDING = 0x4fe08a;
 const CORE = 0x17120e;
 const EMBER = 0xff8a3a;
 const PATH = 0xfff1c9;
-const BARK = 0x241a13;
-const BARK_GRAIN = 0x3b2c20;
 
 const RADIUS: Record<SkillNode["kind"], number> = {
   minor: 13,
@@ -113,9 +114,10 @@ export class TreeScene {
   private app: Application | null = null;
   private destroyed = false;
   private readonly world = new Container();
-  /** The Ash Tree behind the web: trunk, limbs and the glowing heart. */
-  private readonly bark = new Graphics();
-  private readonly heart = new Graphics();
+  /** The Ash Tree behind the web. */
+  private readonly art: AshTreeArt = paintAshTree(UNIT);
+  private readonly sigilLight = new Container();
+  private twigKey = "";
   private readonly linkGlow = new Graphics();
   private readonly links = new Graphics();
   private readonly pathGlow = new Graphics();
@@ -148,8 +150,10 @@ export class TreeScene {
   constructor(private readonly callbacks: TreeCallbacks) {
     // Branch names sit under the nodes so they never hide one.
     this.world.addChild(
-      this.bark,
-      this.heart,
+      this.art.wood,
+      this.art.twigs,
+      this.art.sigil,
+      this.sigilLight,
       this.labelLayer,
       this.linkGlow,
       this.links,
@@ -159,8 +163,20 @@ export class TreeScene {
     );
     this.linkGlow.blendMode = "add";
     this.pathGlow.blendMode = "add";
-    this.heart.blendMode = "add";
-    this.drawAshTree();
+    // The sigil's bloom is blurred once into a texture; the frame only fades it.
+    const bloom = this.art.sigilBloom;
+    bloom.filters = [new BlurFilter({ strength: 10, quality: 3 })];
+    const b = bloom.getLocalBounds();
+    const bloomWrap = new Container();
+    bloomWrap.addChild(
+      new Graphics()
+        .rect(b.minX - 40, b.minY - 40, b.width + 80, b.height + 80)
+        .fill({ color: 0x000000, alpha: 0.001 }),
+      bloom,
+    );
+    bloomWrap.cacheAsTexture(true);
+    this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
+    this.sigilLight.blendMode = "add";
   }
 
   layout(w: number, h: number, resolution: number): void {
@@ -379,6 +395,7 @@ export class TreeScene {
     if (!this.app) return;
     const byId = new Map(this.view.nodes.map((n) => [n.node.id, n]));
     this.byId = byId;
+    this.drawTwigs();
     this.drawLinks(byId);
     this.drawPath(byId);
 
@@ -431,110 +448,17 @@ export class TreeScene {
     this.applyCamera();
   }
 
-  /**
-   * The trunk runs from the root collar up into the crown; a tapering limb leaves it for each
-   * region's hub. Cracks in the bark show the ember inside.
-   */
-  private drawAshTree(): void {
-    const u = (v: number) => v * UNIT;
-    const [bottom, top] = [TRUNK.bottom, TRUNK.top];
-    const g = this.bark.clear();
-    const limb = (ax: number, ay: number, bx: number, by: number, w0: number, w1: number) => {
-      const len = Math.hypot(bx - ax, by - ay) || 1;
-      const [nx, ny] = [-(by - ay) / len, (bx - ax) / len];
-      // Bends a little upwards in the crown, outwards in the roots.
-      const [cx, cy] = [(ax + bx) / 2, (ay + by) / 2 + (by < ay ? 0.35 : -0.2)];
-      g.moveTo(u(ax + nx * w0), u(ay + ny * w0))
-        .quadraticCurveTo(
-          u(cx + nx * (w0 + w1) * 0.5),
-          u(cy + ny * (w0 + w1) * 0.5),
-          u(bx + nx * w1),
-          u(by + ny * w1),
-        )
-        .lineTo(u(bx - nx * w1), u(by - ny * w1))
-        .quadraticCurveTo(
-          u(cx - nx * (w0 + w1) * 0.5),
-          u(cy - ny * (w0 + w1) * 0.5),
-          u(ax - nx * w0),
-          u(ay - ny * w0),
-        )
-        .closePath()
-        .fill({ color: BARK, alpha: 0.9 });
-    };
-    for (const [region, place] of Object.entries(TREE_PLACEMENT)) {
-      const a = (place.ring * Math.PI) / 180;
-      const hub = onTree({ x: Math.cos(a) * 2.6, y: Math.sin(a) * 2.6 }, region as TreeRegion);
-      const root = place.origin.y > 0;
-      const from = { x: place.origin.x * 0.6, y: clamp(place.origin.y, top + 0.6, bottom - 0.4) };
-      limb(from.x, from.y, hub.x, hub.y, root ? 0.75 : 0.6, 0.16);
-    }
-    // The trunk: wide root collar, a waist, then it opens into the crown. The outline is a
-    // smooth curve through the midpoints between these corners.
-    const left: readonly (readonly [number, number])[] = [
-      [-3.1, bottom + 0.5],
-      [-1.5, bottom - 0.6],
-      [-1.25, -1.5],
-      [-1.45, top + 2.8],
-      [-1.1, top + 0.4],
-    ];
-    const outline = [
-      ...left,
-      [0, top - 0.6] as const,
-      ...left.map(([x, y]) => [-x, y] as const).reverse(),
-      [0, bottom - 0.1] as const,
-    ];
-    const last = outline[outline.length - 1] ?? [0, 0];
-    const mid = (p: readonly [number, number], q: readonly [number, number]) =>
-      [u((p[0] + q[0]) / 2), u((p[1] + q[1]) / 2)] as const;
-    g.moveTo(...mid(last, outline[0] ?? last));
-    for (const [i, p] of outline.entries()) {
-      const next = outline[(i + 1) % outline.length] ?? p;
-      g.quadraticCurveTo(u(p[0]), u(p[1]), ...mid(p, next));
-    }
-    g.closePath().fill({ color: BARK, alpha: 0.9 });
-    // Bark grain.
-    for (const x of [-0.85, -0.35, 0.3, 0.8]) {
-      g.moveTo(u(x * 1.4), u(bottom))
-        .bezierCurveTo(u(x * 0.9), u(-0.5), u(x * 1.2), u(top + 3), u(x * 0.8), u(top + 0.6))
-        .stroke({ color: BARK_GRAIN, width: 3, alpha: 0.5 });
-    }
-    // The ember heart and the cracks it glows through.
-    const h = this.heart.clear();
-    const heartY = (bottom + top) / 2 + 0.6;
-    for (const [r, a] of [
-      [1.5, 0.05],
-      [1.0, 0.08],
-      [0.6, 0.14],
-      [0.3, 0.3],
-    ] as const) {
-      h.circle(0, u(heartY), u(r)).fill({ color: EMBER, alpha: a });
-    }
-    const crack = (pts: readonly (readonly [number, number])[]) => {
-      for (const [i, [x, y]] of pts.entries()) {
-        if (i === 0) h.moveTo(u(x), u(y));
-        else h.lineTo(u(x), u(y));
-      }
-      h.stroke({ color: EMBER, width: 3, alpha: 0.55 });
-    };
-    crack([
-      [0, heartY],
-      [0.15, heartY - 0.8],
-      [-0.1, heartY - 1.6],
-      [0.1, heartY - 2.6],
-    ]);
-    crack([
-      [0, heartY],
-      [-0.2, heartY + 0.7],
-      [0.1, heartY + 1.5],
-    ]);
-    crack([
-      [0.15, heartY - 0.8],
-      [0.55, heartY - 1.3],
-    ]);
-    crack([
-      [-0.2, heartY + 0.7],
-      [-0.6, heartY + 1.1],
-    ]);
+  /** Twigs under the visible nodes' outward links. */
+  private drawTwigs(): void {
+    const key = this.view.nodes.map((n) => n.node.id).join(",");
+    if (key === this.twigKey) return;
+    this.twigKey = key;
+    drawTwigs(
+      this.art.twigs,
+      UNIT,
+      this.view.nodes.map((n) => n.node),
+      regionOf,
+    );
   }
 
   private drawLinks(byId: Map<string, TreeNodeView>): void {
@@ -779,8 +703,8 @@ export class TreeScene {
       this.drawPath(this.byId);
     }
 
-    // The ember heart of the trunk glows slowly.
-    this.heart.alpha = this.motion ? 0.8 + 0.2 * Math.sin(this.time * 1.3) : 1;
+    // The carved Ember sigil glows like breathing coals.
+    this.sigilLight.alpha = this.motion ? 0.6 + 0.4 * Math.sin(this.time * 1.6) ** 2 : 0.85;
 
     // Available nodes breathe.
     const pulse = this.motion ? 0.82 + 0.18 * Math.sin(this.time * 3.2) : 1;
@@ -840,3 +764,20 @@ export class TreeScene {
 const clamp = (v: number, min: number, max: number) => Math.min(max, Math.max(min, v));
 
 export const TREE_UNIT = UNIT;
+
+/** Region of a node on the Ash Tree; Prestige branch nodes belong to their anchor's region. */
+const REGION_OF = (() => {
+  const anchors = new Map((SKILL_TREE.prestigeBranches ?? []).map((b) => [b.id, b.anchor]));
+  const base = new Map(SKILL_TREE.nodes.map((n) => [n.id, n.region]));
+  return new Map(
+    SKILL_TREE.nodes.map((n) => {
+      const anchor = n.prestigeBranch ? anchors.get(n.prestigeBranch) : undefined;
+      const region = n.region ?? (anchor ? base.get(anchor) : undefined);
+      return [n.id, region && region !== "core" ? (region as TreeRegion) : undefined];
+    }),
+  );
+})();
+
+function regionOf(n: SkillNode): TreeRegion | undefined {
+  return REGION_OF.get(n.id);
+}

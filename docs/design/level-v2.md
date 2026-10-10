@@ -184,8 +184,11 @@ was er kostet) und gesperrte Gabelungs-Partner als zerbrochenes Siegel. Lernen b
 
 **Form: der Aschenbaum (Timo 2026-10-10, das Ring-Netz sah aus wie ein Virus).** Die acht Regionen sitzen auf einem
 Baum: Might-Arcana, Might, Arcana, Rupture-Might und Arcana-Affliction bilden die **Krone**, Rupture, Affliction und
-Affliction-Rupture wachsen als **Wurzeln** nach unten. Die Ring-Verbindungen laufen am **Stamm** entlang, in dem ein
-glühendes Ember-Herz sitzt. Prestige-Äste wachsen an ihrer Region weiter. Nur die Lage ändert sich, Wege und Kosten
+Affliction-Rupture wachsen als **Wurzeln** nach unten in die Erde. Die Ring-Verbindungen laufen am **Stamm** entlang.
+Der Baum ist in Code gemalt wie die Waffen der Weapon Mastery (Rinde mit Licht- und Schattenseite, Furchen, Astlöcher,
+Zweige unter den Verbindungen, Herbstlaub an den Spitzen der Krone, `apps/web/src/game/camp/ashTreeArt.ts`). In den
+Stamm ist das **Ember-Siegel** geschnitzt (Flamme im Ring mit acht Kerben, eine pro Region), dessen Rillen langsam
+glühen (Timo 2026-10-10). Prestige-Äste wachsen an ihrer Region weiter. Nur die Lage ändert sich, Wege und Kosten
 bleiben gleich (`packages/content/src/tree-shape.ts`).
 
 ### Leitplanken: groß wie PoE, Spielgefühl wie Diablo ✅ (Timo, 08.10.2026)
