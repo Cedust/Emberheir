@@ -56,6 +56,8 @@ test("The Bloodline step deepens an owned branch", async ({ page }) => {
 });
 
 test("The Skill Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {
+  // Every touch waits for a frame, and the painted Ash Tree renders slowly on CI's software GL.
+  test.slow();
   await seedSave(page, saveDeepTree());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
@@ -98,6 +100,7 @@ test("The Skill Tree zooms with the mouse wheel and a two-finger pinch", async (
 test("The web: a path at once, a fork closes its other side, a node is forgotten", async ({
   page,
 }) => {
+  test.slow();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveWebTree());
