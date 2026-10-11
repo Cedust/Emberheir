@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type HeroClass, classTitle, mainBranch } from "./classes";
+import { type HeroClass, classTitle, lineageEffect, lineageScale, mainBranch } from "./classes";
+import { deriveStats } from "../combat/stats";
 import { rollItem } from "../items/generate";
 import { Rng } from "../rng";
 import {
@@ -103,5 +104,34 @@ describe("classes", () => {
       name: "Caster",
       weaponId: "test-wand",
     });
+  });
+});
+
+describe("Lineage", () => {
+  const iron = { name: "Iron", stat: "Life", percent: 5, lifeMultiplier: 1.05 };
+  const keen = { name: "Keen", stat: "Crit Chance", percent: 3, bonuses: { critChance: 0.03 } };
+
+  it("opens with the first finale win and doubles by step 5", () => {
+    expect(lineageScale(0)).toBe(0);
+    expect(lineageScale(1)).toBe(1);
+    expect(lineageScale(5)).toBe(2);
+    expect(lineageScale(9)).toBe(2);
+    expect(lineageEffect(keen, 0)).toEqual({});
+    expect(lineageEffect(keen, 1).bonuses?.critChance).toBeCloseTo(0.03);
+    expect(lineageEffect(keen, 5).bonuses?.critChance).toBeCloseTo(0.06);
+    expect(lineageEffect(iron, 5).rules?.lifeMultiplier).toBeCloseTo(1.1);
+  });
+
+  it("the hero gets the bonus of its own class", () => {
+    const withLineage = {
+      ...data,
+      classes: data.classes.map((c, i) => (i === 0 ? { ...c, lineage: iron } : c)),
+    };
+    const s = newGame(withLineage, { seed: 1, classId: "test-fighter" });
+    const life = (lineage: number) =>
+      deriveStats(heroSetup({ ...s, lineage }, withLineage).setup).maxLife;
+    expect(life(3)).toBeGreaterThan(life(0));
+    expect(heroTitle({ ...s, lineage: 4 }, withLineage)).toBe("Fighter");
+    expect(heroTitle({ ...s, lineage: 5 }, withLineage)).toBe("Emberheir Fighter");
   });
 });

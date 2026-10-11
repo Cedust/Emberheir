@@ -41,11 +41,12 @@ describe("Walls of the newest act", () => {
     s = { ...s, run: s.run && { ...s.run, stage: 5 } };
     s = applyAction(s, data, { type: "startStage" });
     const encounter = s.run?.encounter;
+    if (!encounter) throw new Error("no encounter");
     expect(encounter?.gate).toBe(true);
     expect(encounter?.thief).toBeUndefined();
     expect(encounter?.eliteModifiers.length).toBeGreaterThan(0);
-    const plain = enemySetup({ ...encounter!, wall: { life: 1, damage: 1 } }, "long-act", data);
-    const walled = enemySetup(encounter!, "long-act", data);
+    const plain = enemySetup({ ...encounter, wall: { life: 1, damage: 1 } }, "long-act", data);
+    const walled = enemySetup(encounter, "long-act", data);
     expect(walled.baseLife).toBeGreaterThan(plain.baseLife ?? 0);
   });
 });

@@ -8,6 +8,7 @@ import {
   actsInOrder,
   finaleOpen,
   flaskCapacity,
+  LINEAGE_STEPS,
   nextAct,
 } from "@emberheir/sim";
 import { useState } from "react";
@@ -373,6 +374,7 @@ export function CampView(props: {
           h={size.h - 64}
           ox={ox}
           banners={completedCollections(state)}
+          ancestor={(state.lineage ?? 0) >= LINEAGE_STEPS}
         />
         <CampFx w={size.w} h={size.h - 64} ox={ox} />
         {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}

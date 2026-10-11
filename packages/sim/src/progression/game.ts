@@ -77,7 +77,7 @@ import {
   bountyAfterWin,
   rollBounty,
 } from "./bounties";
-import { type HeroClass, classTitle, getClass } from "./classes";
+import { type HeroClass, LINEAGE_STEPS, classTitle, getClass, lineageEffect } from "./classes";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
 import {
@@ -465,6 +465,11 @@ export interface GameState {
   readonly boons: BoonsState;
   /** A done bounty the Scout has not paid yet; no new bounty until it is turned in. */
   readonly bountyDone?: BountyDone;
+  /**
+   * Lineage step of the account (0–5): how many characters have won the finale. The UI keeps it
+   * outside the save (like the shared stash) and puts it into the state it loads.
+   */
+  readonly lineage?: number;
 }
 
 export class GameActionError extends Error {}
@@ -982,9 +987,13 @@ export function heroClassOf(state: GameState, data: GameData): HeroClass {
   return getClass(data.classes, state.hero.classId);
 }
 
-/** The character's title: class name, then the main Prestige branch decides (klassen-v2.md). */
+/**
+ * The character's title: class name, then the main Prestige branch decides (klassen-v2.md). A
+ * full Lineage (five finale wins on the account) puts "Emberheir" in front.
+ */
 export function heroTitle(state: GameState, data: GameData): string {
-  return classTitle(heroClassOf(state, data), state.legacy.branches, data.branchEpithets);
+  const title = classTitle(heroClassOf(state, data), state.legacy.branches, data.branchEpithets);
+  return (state.lineage ?? 0) >= LINEAGE_STEPS ? `Emberheir ${title}` : title;
 }
 
 /** The hero's fight setup from the current state. */
@@ -994,7 +1003,9 @@ export function heroSetup(
 ): { readonly setup: CombatantSetup; readonly gear: ResolvedEquipment } {
   const { hero } = state;
   const boons = boonEffects(heroBoons(state, data));
-  const trait = heroClassOf(state, data).trait;
+  const heroClass = heroClassOf(state, data);
+  const trait = heroClass.trait;
+  const lineage = lineageEffect(heroClass.lineage, state.lineage ?? 0);
   const mastery = heroWeapon(state, data);
   return buildHeroSetup(
     {
@@ -1013,6 +1024,7 @@ export function heroSetup(
           treeBonuses(data.skillTree, hero.learned, weapon.range),
           boons.bonuses,
           trait.bonuses,
+          lineage.bonuses,
           mastery.bonuses,
         ),
       triggers: (weapon) => [
@@ -1024,6 +1036,7 @@ export function heroSetup(
         keystoneRules(data.skillTree, hero.learned),
         boons.rules,
         trait.rules,
+        lineage.rules,
         mastery.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),

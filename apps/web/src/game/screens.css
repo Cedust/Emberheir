@@ -5537,14 +5537,19 @@
 }
 
 /* Collections at the Hearthfire (spielzeit-v1.md, E): progress per collection and its banner. */
-.stage .collections {
+.stage .collections-page {
   flex-grow: 1;
   min-height: 0;
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  align-content: start;
+  display: flex;
+  flex-direction: column;
   gap: 24px;
   padding: 32px calc(var(--safe-x) + 36px);
+}
+
+.stage .collections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
 }
 
 .stage .collection {
@@ -5561,9 +5566,9 @@
 
 .stage .collection-bar {
   height: 12px;
-  border: 1.5px solid var(--ink);
+  border: 1.5px solid var(--edge);
   border-radius: 6px;
-  background: var(--track);
+  background: var(--slot-bg);
   overflow: hidden;
 }
 
@@ -5577,4 +5582,67 @@
   align-items: center;
   gap: 6px;
   margin-top: auto;
+}
+
+/* Lineage (spielzeit-v1.md, D): account steps and the five class bonuses. */
+.stage .lineage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+}
+
+.stage .lineage-steps {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.stage .lineage-pip {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--edge);
+  border-radius: 50%;
+  color: var(--text-sub);
+  opacity: 0.45;
+}
+
+.stage .lineage-pip.lit {
+  color: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 10px rgb(255 138 31 / 0.4);
+}
+
+.stage .lineage-classes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stage .lineage-class {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1.5px dashed var(--text-sub);
+  border-radius: 8px;
+  opacity: 0.6;
+  cursor: help;
+}
+
+.stage .lineage-class.open {
+  border-style: solid;
+  opacity: 1;
+}
+
+.stage .lineage-class.own {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgb(255 138 31 / 0.25);
+}
+
+.stage .lineage-class .accent {
+  color: var(--accent);
 }

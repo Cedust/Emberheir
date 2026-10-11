@@ -26,6 +26,51 @@ export interface HeroClass {
   readonly titles: Readonly<Record<string, string>>;
   /** Shown next to the preview in the class select: what the class fights with. */
   readonly text: string;
+  /** The class's Lineage bonus at step 1 (spielzeit-v1.md, D); missing means none. */
+  readonly lineage?: LineageBonus;
+}
+
+/**
+ * Lineage (spielzeit-v1.md, D): the first finale win of any character opens it for every class,
+ * each further finale win of another character raises it one step, up to `LINEAGE_STEPS`. A
+ * character gets the bonus of its own class. Step 5 is twice step 1.
+ */
+export interface LineageBonus {
+  readonly name: string;
+  /** The stat in plain words and its value at step 1 in percent, e.g. Life and 5. */
+  readonly stat: string;
+  readonly percent: number;
+  readonly bonuses?: StatBonuses;
+  /** Max Life multiplier at step 1, e.g. 1.05. */
+  readonly lifeMultiplier?: number;
+}
+
+export const LINEAGE_STEPS = 5;
+
+/** How strong the Lineage is at a step: 0 before the first finale win, 1 at step 1, 2 at step 5. */
+export function lineageScale(step: number): number {
+  const s = Math.min(LINEAGE_STEPS, Math.max(0, Math.floor(step)));
+  return s === 0 ? 0 : 1 + (s - 1) / (LINEAGE_STEPS - 1);
+}
+
+/** The Lineage bonus of a class at a step, as bonuses and rules for the hero setup. */
+export function lineageEffect(
+  lineage: LineageBonus | undefined,
+  step: number,
+): { readonly bonuses?: StatBonuses; readonly rules?: CombatRules } {
+  const k = lineageScale(step);
+  if (!lineage || k === 0) return {};
+  const bonuses = lineage.bonuses
+    ? (Object.fromEntries(
+        Object.entries(lineage.bonuses).map(([key, v]) => [key, (v as number) * k]),
+      ) as StatBonuses)
+    : undefined;
+  return {
+    ...(bonuses ? { bonuses } : {}),
+    ...(lineage.lifeMultiplier
+      ? { rules: { lifeMultiplier: 1 + (lineage.lifeMultiplier - 1) * k } }
+      : {}),
+  };
 }
 
 export function getClass(classes: readonly HeroClass[], id: string): HeroClass {

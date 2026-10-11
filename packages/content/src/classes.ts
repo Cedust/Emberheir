@@ -21,6 +21,7 @@ export const CLASSES: readonly HeroClass[] = [
       vitality: 4,
     },
     trait: { name: "Iron Blood", description: "+10 % Life.", rules: { lifeMultiplier: 1.1 } },
+    lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["duelist", "butcher", "warden", "tactician"],
     titles: {
       duelist: "Blademaster",
@@ -48,6 +49,7 @@ export const CLASSES: readonly HeroClass[] = [
       description: "+15 % Bleed and Poison Damage.",
       rules: { ailmentDamage: { bleed: 1.15, poison: 1.15 } },
     },
+    lineage: { name: "Red Lineage", stat: "Lifesteal", percent: 2, bonuses: { lifesteal: 0.02 } },
     branches: ["butcher", "venomancer", "duelist", "tactician"],
     titles: {
       butcher: "Ravager",
@@ -71,6 +73,12 @@ export const CLASSES: readonly HeroClass[] = [
       vitality: 2,
     },
     trait: { name: "Keen Eye", description: "+5 % Crit Chance.", bonuses: { critChance: 0.05 } },
+    lineage: {
+      name: "Keen Lineage",
+      stat: "Crit Chance",
+      percent: 3,
+      bonuses: { critChance: 0.03 },
+    },
     branches: ["marksman", "venomancer", "warden", "tactician"],
     titles: { marksman: "Deadeye", venomancer: "Stalker", warden: "Sentinel", tactician: "Ranger" },
     text: "Fights from range with Bow or Crossbow. Bolts punch through armor in single heavy shots, arrows leave bleeding and poisoned wounds. Patient, precise, deadly on a critical hit.",
@@ -89,6 +97,12 @@ export const CLASSES: readonly HeroClass[] = [
       vitality: 2,
     },
     trait: { name: "Spark", description: "+10 Starting Heat.", bonuses: { startingHeat: 10 } },
+    lineage: {
+      name: "Storm Lineage",
+      stat: "Elemental Damage",
+      percent: 5,
+      bonuses: { elementalDamage: 0.05 },
+    },
     branches: ["stormcaller", "frostbinder", "warden", "tactician"],
     titles: {
       stormcaller: "Tempest",
@@ -115,6 +129,12 @@ export const CLASSES: readonly HeroClass[] = [
       name: "Lingering",
       description: "+15 % Ailment Duration.",
       bonuses: { ailmentDuration: 0.15 },
+    },
+    lineage: {
+      name: "Hollow Lineage",
+      stat: "Ailment Duration",
+      percent: 10,
+      bonuses: { ailmentDuration: 0.1 },
     },
     branches: ["pyromancer", "void-lord", "warden", "tactician"],
     titles: {

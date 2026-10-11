@@ -3,6 +3,7 @@ import {
   type GameState,
   type PlacedItem,
   INVENTORY_SIZE,
+  LINEAGE_STEPS,
   SAVE_VERSION,
   STASH_SIZE,
   addToGrid,
@@ -35,6 +36,41 @@ export const slotKey = (slot: number) => storageKey(`slot.${slot}`);
  * has to migrate these too.
  */
 export const STASH_KEY = storageKey("stash");
+
+/**
+ * Lineage (spielzeit-v1.md, D): the seeds of the characters that won the finale. Shared by every
+ * slot like the stash; its length is the Lineage step.
+ */
+export const LINEAGE_KEY = storageKey("lineage");
+
+interface SharedLineage {
+  readonly finishers: readonly number[];
+}
+
+function readFinishers(kv: KeyValueStore): number[] {
+  try {
+    const json = kv.getItem(LINEAGE_KEY);
+    const parsed = json ? (JSON.parse(json) as SharedLineage) : null;
+    return Array.isArray(parsed?.finishers) ? parsed.finishers.filter(Number.isFinite) : [];
+  } catch {
+    return [];
+  }
+}
+
+/**
+ * The state with the account's Lineage step. A character that has won the finale joins the
+ * Lineage once (its seed is its name in the list).
+ */
+export function syncLineage(kv: KeyValueStore, state: GameState): GameState {
+  let finishers = readFinishers(kv);
+  if (state.legacy.finaleWon && !finishers.includes(state.seed)) {
+    finishers = [...finishers, state.seed];
+    const shared: SharedLineage = { finishers };
+    kv.setItem(LINEAGE_KEY, JSON.stringify(shared));
+  }
+  const step = Math.min(LINEAGE_STEPS, finishers.length);
+  return (state.lineage ?? 0) === step ? state : { ...state, lineage: step };
+}
 
 interface SharedStash {
   readonly version: number;
@@ -179,3 +215,12 @@ export function saveSlot(slot: number, state: GameState | null): void {
     // Full or blocked storage: the game still runs, it just is not saved.
   }
 }
+/** The state with the account's Lineage; without storage it stays as it is. */
+export const lineageFor = (state: GameState): GameState => {
+  try {
+    const kv = store();
+    return kv ? syncLineage(kv, state) : state;
+  } catch {
+    return state;
+  }
+};
