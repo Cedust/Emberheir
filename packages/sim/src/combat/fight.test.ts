@@ -56,7 +56,7 @@ describe("Fight", () => {
     expect(fight.snapshot().hero.life).toBe(40);
   });
 
-  it("gives the hero a Barrier from Intelligence that refills after 1 s without a hit", () => {
+  it("gives the hero a Barrier from Intelligence that refills after a moment without a hit", () => {
     const hero = dummy({
       baseLife: 100,
       attributeScale: "heir",
@@ -68,13 +68,13 @@ describe("Fight", () => {
       baseLife: 100_000,
     });
     const fight = new Fight(hero, enemy, 1);
-    // 10 Intelligence × 2.5 % of 100 Life.
-    expect(fight.snapshot().hero.barrier).toBe(25);
+    // 10 Intelligence × 3 % of 100 Life.
+    expect(fight.snapshot().hero.barrier).toBe(30);
     fight.advance(5.2);
-    expect(fight.snapshot().hero.barrier).toBeLessThan(25);
+    expect(fight.snapshot().hero.barrier).toBeLessThan(30);
     expect(fight.snapshot().hero.life).toBe(100);
     fight.advance(4.6);
-    expect(fight.snapshot().hero.barrier).toBeCloseTo(25);
+    expect(fight.snapshot().hero.barrier).toBeCloseTo(30);
   });
 
   describe("Rotation and Heat", () => {

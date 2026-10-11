@@ -9,11 +9,14 @@ import {
   type GameState,
   type Item,
   PROGRESSION,
-  RARITIES,
   actsInOrder,
   actsInRun,
   applyAction,
+  armorReduction,
+  type CombatantSetup,
+  Fight,
   currentFight,
+  deriveStats,
   type LearnedNodes,
   equipBlockReason,
   getNode,
@@ -73,9 +76,59 @@ const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   crossbow: ["strength", "dexterity", "vitality"],
 };
 
-const rarityRank = (item: Item) => RARITIES.indexOf(item.rarity);
-/** Crude item score: rarity first, then Item Level. */
-const score = (item: Item) => rarityRank(item) * 10 + item.itemLevel;
+/** Seconds the autopilot spends hitting a training dummy to judge a piece of gear. */
+const DUMMY_SECONDS = 30;
+
+/**
+ * Damage per second of the hero against a training dummy that never hits back: the build's own
+ * rotation, ailments and triggers all count, so Ailment Duration matters to a Warlock just as
+ * Crit matters to a Marksman.
+ */
+function dummyDps(setup: CombatantSetup): number {
+  const dummy: CombatantSetup = {
+    name: "Training Dummy",
+    level: setup.level,
+    attributes: { strength: 0, dexterity: 0, agility: 0, intelligence: 0, wisdom: 0, vitality: 0 },
+    weapon: { ...setup.weapon, attacksPerSecond: 0, triggers: [], ailmentChances: [] },
+    rotation: [],
+    baseLife: 1e9,
+  };
+  const fight = new Fight({ ...setup, lifeFraction: 1 }, dummy, 1);
+  fight.advance(DUMMY_SECONDS);
+  const enemy = fight.snapshot().enemy;
+  return Math.max(1, (enemy.maxLife - enemy.life) / DUMMY_SECONDS);
+}
+
+/**
+ * How good the hero is with this gear: measured damage per second times effective Life against
+ * an even mix of Physical and magic damage. Like a player, the autopilot builds up what its build
+ * lives on and fills its weakest spot (Armor for a caster, Resistance for a fighter).
+ */
+function gearValue(state: GameState, data: GameData): number {
+  const setup = heroSetup(state, data).setup;
+  const st = deriveStats(setup);
+  const dps = dummyDps(setup);
+  const res =
+    (st.fireResistance + st.coldResistance + st.lightningResistance + st.voidResistance) / 4;
+  const physTaken = (1 - armorReduction(st.armor, setup.level)) * (1 - 0.3 * st.blockChance);
+  // Tenacity shortens the ailments that ramp up on the hero (Corruption, Poison stacks).
+  const taken =
+    (0.5 * physTaken + 0.5 * (1 - res)) * (1 - 0.6 * st.evasion) * (1 - 0.3 * st.tenacity);
+  // Lifesteal heals back part of the damage dealt over a fight of about 20 s.
+  const effectiveLife = (st.maxLife + st.barrier) / taken + st.lifesteal * dps * 20;
+  return Math.log(dps) + Math.log(effectiveLife);
+}
+
+/** Value gained by wearing `item` in its slot instead of what is there now. */
+function upgradeGain(state: GameState, data: GameData, item: Item): number {
+  const slot = targetSlot(item, data, state.hero.equipment);
+  if (!slot) return 0;
+  const tried: GameState = {
+    ...state,
+    hero: { ...state.hero, equipment: { ...state.hero.equipment, [slot]: item } },
+  };
+  return gearValue(tried, data) - gearValue(state, data);
+}
 
 /** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */
 function bestBoon(state: GameState, data: GameData, offer: readonly BoonPick[]): number {
@@ -106,10 +159,8 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
     let bestGain = 0;
     rewards.items.forEach((item, i) => {
       if (taken.has(i) || equipBlockReason(s, data, item, "pick")) return;
-      const slot = targetSlot(item, data, s.hero.equipment);
-      const current = slot ? s.hero.equipment[slot] : undefined;
-      const gain = score(item) - (current ? score(current) : -1);
-      if (gain > bestGain) {
+      const gain = upgradeGain(s, data, item);
+      if (gain > bestGain + 1e-6) {
         best = i;
         bestGain = gain;
       }
