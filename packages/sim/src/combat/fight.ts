@@ -1246,7 +1246,12 @@ export class Fight {
     }
 
     // Quick Reflexes: the first attack of the fight misses.
-    if (h.evadable && !h.fromTrigger && this.usePerk(defender, "quickReflexes")) {
+    if (
+      h.evadable &&
+      h.type === "physical" &&
+      !h.fromTrigger &&
+      this.usePerk(defender, "quickReflexes")
+    ) {
       this.perk(defender, "quickReflexes");
       this.evaded(defender, h);
       return "miss";

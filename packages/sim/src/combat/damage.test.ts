@@ -116,6 +116,17 @@ describe("resolveHit", () => {
     });
   });
 
+  it("never evades or blocks elemental hits, only Resistance helps", () => {
+    const defender = stats({ evasion: 1, blockChance: 1, blockValue: 30 });
+    const r = rng();
+    for (let i = 0; i < 200; i++) {
+      expect(resolveHit(input({ defender, type: "fire" }), r)).toMatchObject({
+        kind: "hit",
+        blocked: false,
+      });
+    }
+  });
+
   it("adds Shock's damage taken bonus and the extra multiplier", () => {
     expect(resolveHit(input({ defenderDamageTaken: 0.2, multiplier: 2 }), rng())).toMatchObject({
       damage: 240,

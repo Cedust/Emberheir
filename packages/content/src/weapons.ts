@@ -358,12 +358,14 @@ export const OBSIDIAN_GLAIVE: WeaponDefinition = {
   implicit: {},
 };
 
+// Boss blades hit Physical (half as hard, Armor is weaker than Resistance), the boss's
+// spells bring the element: every boss mixes (Timo).
 export const TYRANT_BRAND: WeaponDefinition = {
   id: "tyrant-brand",
   name: "Tyrant's Brand",
   defaultAttack: "Brand",
-  damage: { min: 2.42, max: 3.41 },
-  damageType: "fire",
+  damage: { min: 1.21, max: 1.71 },
+  damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -429,12 +431,13 @@ export const ICE_SHARDS: WeaponDefinition = {
   implicit: {},
 };
 
+// Physical blade, elemental spells (see Tyrant's Brand).
 export const WARDEN_HALBERD: WeaponDefinition = {
   id: "warden-halberd",
   name: "Warden's Halberd",
   defaultAttack: "Sweep",
-  damage: { min: 2.64, max: 3.68 },
-  damageType: "cold",
+  damage: { min: 1.32, max: 1.84 },
+  damageType: "physical",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",
   heatPerHit: 24,
@@ -500,12 +503,13 @@ export const COPPER_FISTS: WeaponDefinition = {
   implicit: {},
 };
 
+// Physical blade, elemental spells (see Tyrant's Brand).
 export const HERALD_SPEAR: WeaponDefinition = {
   id: "herald-spear",
   name: "Herald's Spear",
   defaultAttack: "Lance",
-  damage: { min: 2.34, max: 3.33 },
-  damageType: "lightning",
+  damage: { min: 1.17, max: 1.67 },
+  damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -571,12 +575,13 @@ export const GLOOM_THREADS: WeaponDefinition = {
   ailmentChances: [{ ailment: "corruption", chance: 0.35 }],
 };
 
+// Physical blade, elemental spells (see Tyrant's Brand).
 export const MAW_JAWS: WeaponDefinition = {
   id: "maw-jaws",
   name: "Maw",
   defaultAttack: "Bite",
-  damage: { min: 2.5, max: 3.6 },
-  damageType: "void",
+  damage: { min: 1.25, max: 1.8 },
+  damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -587,12 +592,13 @@ export const MAW_JAWS: WeaponDefinition = {
 
 // Act 7 (Emberfall) enemy weapons: everything at once.
 
+// Ember-forged: Emberfall gets as much magic as Physical threat.
 export const REVENANT_BLADE: WeaponDefinition = {
   id: "revenant-blade",
   name: "Revenant Blade",
   defaultAttack: "Cleave",
   damage: { min: 1.67, max: 2.46 },
-  damageType: "physical",
+  damageType: "fire",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",
   heatPerHit: 24,

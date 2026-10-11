@@ -578,19 +578,19 @@ export const RAKE: SkillDefinition = {
   ],
 };
 
-/** Rotwood: a glob of rot that Poisons three times. */
+/** Rotwood: a glob of rot magic (Void) that Poisons three times. */
 export const BLIGHT_SPIT: SkillDefinition = {
   id: "blight-spit",
   name: "Blight Spit",
   type: "spell",
   heatCost: 45,
-  tags: ["physical", "over-time", "any"],
-  description: "3 small hits, each Poisons.",
+  tags: ["void", "over-time", "any"],
+  description: "3 small Void hits, each Poisons.",
   hits: [
     {
       kind: "spell",
       damage: { min: 0.99, max: 1.54 },
-      damageType: "physical",
+      damageType: "void",
       count: 3,
       ailmentChances: [{ ailment: "poison", chance: 1 }],
     },
@@ -609,19 +609,19 @@ export const MOSS_MEND: SkillDefinition = {
   effects: [{ kind: "heal", fraction: 0.08 }],
 };
 
-/** Mother of Rot: a spray that piles Poison on the hero. */
+/** Mother of Rot: a Void spray that piles Poison on the hero; her lash stays Physical. */
 export const ROT_SPRAY: SkillDefinition = {
   id: "rot-spray",
   name: "Rot Spray",
   type: "spell",
   heatCost: 50,
-  tags: ["physical", "over-time", "any"],
-  description: "4 hits, each Poisons.",
+  tags: ["void", "over-time", "any"],
+  description: "4 Void hits, each Poisons.",
   hits: [
     {
       kind: "spell",
       damage: { min: 0.99, max: 1.43 },
-      damageType: "physical",
+      damageType: "void",
       count: 4,
       ailmentChances: [{ ailment: "poison", chance: 1 }],
     },
@@ -646,9 +646,10 @@ export const GORRAK_SLAM: SkillDefinition = {
   name: "Slam",
   type: "attack",
   heatCost: 0,
-  tags: ["physical", "direct", "melee"],
-  description: "A huge, announced blow for 400 % Weapon Damage.",
-  hits: [{ kind: "weapon", multiplier: 4 }],
+  tags: ["fire", "direct", "melee"],
+  description: "A huge, announced blow for 400 % Weapon Damage as Fire.",
+  // The pit's embers burst out: Gorrak's one Fire threat for the casters' Resistance (Timo).
+  hits: [{ kind: "weapon", multiplier: 4, damageType: "fire" }],
 };
 
 // Act 3 (Ember Wastes) enemy skills.
@@ -774,8 +775,15 @@ export const AVALANCHE: SkillDefinition = {
   type: "attack",
   heatCost: 0,
   tags: ["cold", "direct", "melee"],
-  description: "An announced blow for 350 % Weapon Damage that always Chills.",
-  hits: [{ kind: "weapon", multiplier: 3.5, ailmentChances: [{ ailment: "chill", chance: 1 }] }],
+  description: "An announced blow for 700 % Weapon Damage as Cold that always Chills.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 7,
+      damageType: "cold",
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    },
+  ],
 };
 
 // Act 5 (Storm Spires) enemy skills.
@@ -894,8 +902,8 @@ export const RIFT_SNAP: SkillDefinition = {
   type: "attack",
   heatCost: 0,
   tags: ["void", "direct", "melee"],
-  description: "An announced bite for 350 % Weapon Damage.",
-  hits: [{ kind: "weapon", multiplier: 3.5 }],
+  description: "An announced bite for 700 % Weapon Damage as Void.",
+  hits: [{ kind: "weapon", multiplier: 7, damageType: "void" }],
 };
 
 // Act 7 (Emberfall) and The Ashen Harvester.

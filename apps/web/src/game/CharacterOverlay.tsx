@@ -137,8 +137,8 @@ export function CharacterOverlay(props: {
     Defense: [
       { label: "Life", value: fmt(stats.maxLife) },
       { label: "Armor", value: fmt(stats.armor) },
-      { label: "Evasion", value: pct(stats.evasion) },
-      { label: "Block", value: pct(stats.blockChance) },
+      { label: "Evasion (Physical)", value: pct(stats.evasion) },
+      { label: "Block (Physical)", value: pct(stats.blockChance) },
       { label: "Fire Resistance", value: pct(stats.fireResistance) },
       { label: "Cold Resistance", value: pct(stats.coldResistance) },
       { label: "Lightning Resistance", value: pct(stats.lightningResistance) },
