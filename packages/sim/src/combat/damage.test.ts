@@ -24,14 +24,14 @@ function input(overrides: Partial<HitInput> = {}): HitInput {
 }
 
 describe("armorReduction", () => {
-  it("follows armor / (armor + 40 × attacker level)", () => {
-    expect(armorReduction(40, 1)).toBeCloseTo(0.5);
-    expect(armorReduction(40, 3)).toBeCloseTo(0.25);
+  it("follows armor / (armor + 20 × attacker level)", () => {
+    expect(armorReduction(20, 1)).toBeCloseTo(0.5);
+    expect(armorReduction(20, 3)).toBeCloseTo(0.25);
     expect(armorReduction(0, 1)).toBe(0);
   });
 
   it("is reduced by Physical Penetration and capped", () => {
-    expect(armorReduction(80, 1, 0.5)).toBeCloseTo(0.5);
+    expect(armorReduction(40, 1, 0.5)).toBeCloseTo(0.5);
     expect(armorReduction(1_000_000, 1)).toBe(COMBAT.maxArmorReduction);
   });
 });
@@ -82,7 +82,7 @@ describe("resolveHit", () => {
   });
 
   it("reduces physical damage by Armor and elemental damage by Resistance", () => {
-    const defender = stats({ armor: 40, allResistance: 0.3 });
+    const defender = stats({ armor: 20, allResistance: 0.3 });
     expect(resolveHit(input({ defender }), rng())).toMatchObject({ damage: 50 });
     expect(resolveHit(input({ defender, type: "cold" }), rng())).toMatchObject({ damage: 70 });
   });
@@ -150,7 +150,7 @@ describe("resolveHit", () => {
 
   it("lets Crits ignore extra Armor with Crit Penetration", () => {
     const attacker = stats({ critChance: 1 });
-    const defender = stats({ armor: 40 });
+    const defender = stats({ armor: 20 });
     const plain = resolveHit(input({ attacker, defender }), rng());
     const pierced = resolveHit(input({ attacker, defender, critPenetration: 1 }), rng());
     expect(plain).toMatchObject({ damage: 75 });

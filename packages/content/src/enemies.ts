@@ -684,7 +684,8 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   skills: [SOUL_REAP],
   baseLife: 520,
   boss: true,
-  bonuses: { allResistance: 0.1 },
+  // As tough against Physical as against Elemental (Timo): about 10 % each at the hero's level.
+  bonuses: { armor: 200, allResistance: 0.08 },
   telegraphs: [
     { skill: HARVEST_SWING, interval: 10, windup: 2 },
     { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66 },

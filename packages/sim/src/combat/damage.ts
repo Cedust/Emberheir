@@ -7,7 +7,7 @@ const clamp = (value: number, min: number, max: number) => Math.min(max, Math.ma
 
 /**
  * Fraction of physical damage that Armor removes, with diminishing returns:
- * `armor / (armor + 40 × attacker level)`. Physical Penetration ignores part of the Armor.
+ * `armor / (armor + 20 × attacker level)`. Physical Penetration ignores part of the Armor.
  */
 export function armorReduction(armor: number, attackerLevel: number, penetration = 0): number {
   const effective = Math.max(0, armor * (1 - clamp(penetration, 0, 1)));

@@ -279,7 +279,8 @@ export const WARDEN_STAFF: WeaponDefinition = {
   name: "Warden Staff",
   defaultAttack: "Strike",
   damage: { min: 0.83, max: 1.26 },
-  damageType: "physical",
+  // Rot magic: the Rotwood brings a first Void threat before the Ember Wastes.
+  damageType: "void",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -655,7 +656,7 @@ export const HARVEST_SCYTHE: WeaponDefinition = {
   id: "harvest-scythe",
   name: "Harvest Scythe",
   defaultAttack: "Reap",
-  damage: { min: 2.55, max: 3.61 },
+  damage: { min: 2.95, max: 4.15 },
   damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",

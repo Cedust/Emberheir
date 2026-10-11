@@ -64,7 +64,7 @@ export const COMBAT = {
   maxTenacity: 0.75,
   maxArmorReduction: 0.9,
   /** Armor reduction = armor / (armor + armorConstantPerLevel × attacker level). */
-  armorConstantPerLevel: 40,
+  armorConstantPerLevel: 20,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
