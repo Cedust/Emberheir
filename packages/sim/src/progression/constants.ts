@@ -250,10 +250,11 @@ export const PROGRESSION = {
    * the run's `strength` on Life and damage, a Gatekeeper on its Waymark stages 5 and 10 (a sure
    * Elite) takes `gateShare` of it, and its normal enemies ramp up to `rampShare` of it on the
    * stage before the boss. Index 0 = run 1, which stays gentle. Tuned with the balance CLI: a few
-   * deaths at the gates and 3–5 at the boss for a typical build, beaten by farming a few levels.
+   * deaths at the gates and 3–5 at the boss for a typical build, beaten by farming a few levels
+   * (measured with the autopilot that gears up like a player: about the median boss margin).
    */
   wall: {
-    strength: [1.2, 1.8, 2, 2.1, 1.9, 1.8, 1.1],
+    strength: [1.6, 3.3, 3.6, 3.4, 4.4, 3.4, 3.3],
     gateShare: 0.5,
     rampShare: 0.3,
   },
@@ -269,7 +270,7 @@ export const PROGRESSION = {
    * instead of the Run Pressure).
    */
   finalPrestige: 7,
-  finale: { life: 1.8, damage: 1.25 },
+  finale: { life: 6, damage: 3.6 },
   /**
    * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
    * chosen tier. Monster Level is `baseLevel` + tier (T10 loot from tier I on, finer rolls higher

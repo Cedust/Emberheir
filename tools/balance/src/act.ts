@@ -181,16 +181,29 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
   return applyAction(s, data, { type: "continue" });
 }
 
-/** Spreads the points over the plan's attributes in turn; full ones (10) are passed over. */
+/**
+ * Spends each point where it helps this hero most (same measure as for gear: damage on the
+ * training dummy times effective Life), so a caster facing Corruption raises Vitality like a
+ * player would. Ties go to the weapon's plan.
+ */
 function spendPoints(state: GameState, data: GameData, weaponId: string): GameState {
   const plan = [...(ATTRIBUTE_PLAN[weaponId] ?? []), ...ATTRIBUTES];
+  const order = plan.filter((a, i) => plan.indexOf(a) === i);
   let s = state;
-  let i = 0;
   while (s.hero.unspentAttributePoints > 0) {
-    const open = plan.filter((a) => s.hero.attributes[a] < ATTRIBUTE_RULES.max).slice(0, 3);
-    const attribute = open[i++ % Math.max(1, open.length)];
-    if (!attribute) break;
-    s = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: 1 } });
+    let best: GameState | null = null;
+    let bestValue = -Infinity;
+    for (const attribute of order) {
+      if (s.hero.attributes[attribute] >= ATTRIBUTE_RULES.max) continue;
+      const next = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: 1 } });
+      const value = gearValue(next, data);
+      if (value > bestValue + 1e-6) {
+        best = next;
+        bestValue = value;
+      }
+    }
+    if (!best) break;
+    s = best;
   }
   return s;
 }
@@ -811,7 +824,13 @@ export function playGenerations(
   if (options.finale && data.finale && s.pendingPrestige) {
     s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
-      const finale = playFinale(s, data, options.generations + 1, options.maxAttempts);
+      const finale = playFinale(
+        s,
+        data,
+        options.generations + 1,
+        options.maxAttempts,
+        options.onFight,
+      );
       reports.push(finale.report);
       s = finale.state;
       for (let tier = 1; tier <= (options.wildfire ?? 0) && s.legacy.finaleWon; tier++) {
@@ -906,6 +925,7 @@ function playFinale(
   data: GameData,
   generation: number,
   maxAttempts: number,
+  onFight?: (state: GameState, generation: number, act: number) => void,
 ): { state: GameState; report: ActRunReport } {
   let s = state;
   const before = s.stats;
@@ -921,6 +941,7 @@ function playFinale(
         s = applyAction(s, data, { type: "useFlask" });
       }
       s = applyAction(s, data, { type: "startStage" });
+      onFight?.(s, generation, data.finale?.number ?? 8);
       const fight = currentFight(s, data);
       const result = runFight(fight.hero, fight.enemy, fight.seed);
       const stage = s.run?.stage ?? 0;
