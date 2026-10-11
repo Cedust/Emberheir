@@ -44,7 +44,7 @@ export const FIREBOLT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 16, max: 22 },
+      damage: { min: 21, max: 29 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.25 }],
     },
@@ -61,7 +61,7 @@ export const ICE_LANCE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 14, max: 20 },
+      damage: { min: 18, max: 26 },
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 1 }],
     },
@@ -78,7 +78,7 @@ export const CHAIN_LIGHTNING: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 14, max: 22 },
+      damage: { min: 18, max: 29 },
       damageType: "lightning",
       count: 3,
       falloff: 0.75,
@@ -97,7 +97,7 @@ export const METEOR: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 55, max: 75 },
+      damage: { min: 72, max: 98 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.5 }],
     },
@@ -161,7 +161,7 @@ export const IMMOLATE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 9, max: 13 },
+      damage: { min: 12, max: 17 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 1 }],
       ailmentPower: 3,
@@ -179,7 +179,7 @@ export const CORRUPT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 12, max: 18 },
+      damage: { min: 16, max: 23 },
       damageType: "void",
       ailmentChances: [{ ailment: "corruption", chance: 1 }],
       ailmentPower: 2,
@@ -277,7 +277,7 @@ export const THUNDERSTRIKE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 40, max: 62 },
+      damage: { min: 52, max: 81 },
       damageType: "lightning",
       ailmentChances: [{ ailment: "shock", chance: 0.5 }],
     },
@@ -294,7 +294,7 @@ export const FROST_NOVA: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 24, max: 34 },
+      damage: { min: 31, max: 44 },
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 1 }],
     },
@@ -312,7 +312,7 @@ export const INFERNO: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 22, max: 30 },
+      damage: { min: 29, max: 39 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 1 }],
       ailmentPower: 4,
@@ -330,7 +330,7 @@ export const VOID_RIFT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 18, max: 26 },
+      damage: { min: 23, max: 34 },
       damageType: "void",
       ailmentChances: [{ ailment: "corruption", chance: 1 }],
       ailmentPower: 2,
@@ -499,7 +499,7 @@ export const VOID_BOLT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 17, max: 25 },
+      damage: { min: 22, max: 32 },
       damageType: "void",
       ailmentChances: [{ ailment: "corruption", chance: 0.5 }],
     },

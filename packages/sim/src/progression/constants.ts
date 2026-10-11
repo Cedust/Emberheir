@@ -246,6 +246,18 @@ export const PROGRESSION = {
    */
   runPressure: { life: 0.8, damage: 0.35 },
   /**
+   * Walls (spielzeit-v1.md): the newest act of a run is where the hero has to grow. Its boss takes
+   * the run's `strength` on Life and damage, a Gatekeeper on its Waymark stages 5 and 10 (a sure
+   * Elite) takes `gateShare` of it, and its normal enemies ramp up to `rampShare` of it on the
+   * stage before the boss. Index 0 = run 1, which stays gentle. Tuned with the balance CLI: a few
+   * deaths at the gates and 3–5 at the boss for a typical build, beaten by farming a few levels.
+   */
+  wall: {
+    strength: [1.2, 1.8, 2, 2.1, 1.9, 2, 1.1],
+    gateShare: 0.5,
+    rampShare: 0.3,
+  },
+  /**
    * Act bosses have this much more Life than their content value, so a boss fight lasts about
    * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.
    */
@@ -257,7 +269,7 @@ export const PROGRESSION = {
    * instead of the Run Pressure).
    */
   finalPrestige: 7,
-  finale: { life: 2, damage: 1.4 },
+  finale: { life: 1.8, damage: 1.25 },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
   /** Fusion Boons are this much likelier in the finale's Stolen Fire. */

@@ -41,6 +41,8 @@ export interface EnemyLook {
   readonly ranged?: boolean;
   /** Enemy level minus hero level (level-v2.md): who has outgrown whom shows on the ground. */
   readonly levelGap?: number;
+  /** A Gatekeeper of the newest act: it fights in front of a burning stone gate. */
+  readonly gate?: boolean;
 }
 
 /** Original damage-type colors (ui-look-v1.md): the arena uses them in both modes. */
@@ -295,6 +297,10 @@ export class ArenaScene {
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
+  /** The Gatekeeper's stone gate, its fire bowls and the Ember sigil on the lintel. */
+  private gate: { root: Container; sigil: Graphics; fires: { x: number; y: number }[] } | null =
+    null;
+  private gateCarry = 0;
   private echoAura: Container | null = null;
   /** Exalted weapons shed golden sparks from this point of the hero figure. */
   private exaltedTip: Container | null = null;
@@ -373,6 +379,10 @@ export class ArenaScene {
         .stroke({ color: enemy.boss ? 0xff8a1f : 0xffd84a, width: 3, alpha: 0.45 });
     }
     this.world.addChild(this.aura);
+    if (enemy.gate) {
+      this.gate = drawGate();
+      this.world.addChildAt(this.gate.root, 1);
+    }
     this.levelGlow = drawLevelGlow(enemy.levelGap ?? 0);
     if (this.levelGlow) this.world.addChild(this.levelGlow);
     this.telegraph = new Graphics()
@@ -932,9 +942,45 @@ export class ArenaScene {
     this.fx.burst({ ...style, x: c.x, y: c.y + 20, count });
   }
 
+  /** The Gatekeeper fell: its gate cracks, the fires go out in a rain of stone and sparks. */
+  private breakGate(gate: NonNullable<ArenaScene["gate"]>): void {
+    gate.root.alpha = 0.3;
+    gate.sigil.alpha = 0;
+    for (const f of gate.fires) {
+      this.fx?.burst({
+        x: f.x,
+        y: f.y + 120,
+        count: 30,
+        kind: "bit",
+        color: [0x5e5750, 0x8a8178, 0x3a332d],
+        spreadX: 40,
+        spreadY: 200,
+        angle: [RISE - 1, RISE + 1],
+        speed: [40, 160],
+        life: [0.8, 1.6],
+        size: [8, 16],
+        gravity: 500,
+        spin: 5,
+      });
+      this.fx?.burst({
+        x: f.x,
+        y: f.y,
+        count: 24,
+        color: [0xff8a1f, 0xffd84a],
+        angle: [RISE - 0.8, RISE + 0.8],
+        speed: [80, 260],
+        life: [0.5, 1],
+        size: [8, 14],
+        drag: 0.4,
+      });
+    }
+    this.shake(0.5);
+  }
+
   private die(side: Side): void {
     const f = this.figure(side);
     if (f.root.alpha < 1) return;
+    if (side === "enemy" && this.gate) this.breakGate(this.gate);
     f.root.alpha = 0.35;
     f.knock = 1.6;
     f.stun = 0;
@@ -1090,6 +1136,28 @@ export class ArenaScene {
     }
     if (this.levelGlow && this.motion) {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
+    }
+    // The Gatekeeper's gate: the fire bowls burn, the sigil glows while the keeper stands.
+    if (this.gate && this.gate.root.alpha === 1) {
+      if (this.motion) this.gate.sigil.alpha = 0.7 + 0.3 * Math.sin(this.clock * 2.4);
+      this.gateCarry += 14 * dt;
+      for (; this.fx && this.gateCarry >= 1; this.gateCarry--) {
+        for (const f of this.gate.fires) {
+          this.fx.burst({
+            x: f.x,
+            y: f.y,
+            count: 1,
+            color: [0xff6a2b, 0xffb13b, 0xffd84a],
+            spreadX: 26,
+            spreadY: 6,
+            angle: [RISE - 0.3, RISE + 0.3],
+            speed: [60, 130],
+            life: [0.4, 0.8],
+            size: [12, 22],
+            endSize: 0.1,
+          });
+        }
+      }
     }
     // The worn Echo walks with the hero: its aura breathes, its motes drift up around them.
     if (this.echoAura && this.motion) {
@@ -1732,6 +1800,74 @@ function drawEnemy(look: EnemyLook): Container {
   c.scale.set(scale);
   c.y = 150 * scale;
   return c;
+}
+
+/**
+ * The Gatekeeper's gate (spielzeit-v1.md, walls): two ash-stone pillars carved with the Ember
+ * sigil, fire bowls and a lintel, standing behind the enemy on the Waymark stages of a run's
+ * newest act.
+ */
+function drawGate(): {
+  root: Container;
+  sigil: Graphics;
+  fires: { x: number; y: number }[];
+} {
+  const root = new Container();
+  const stone = 0x6b625a;
+  const dark = 0x3a332d;
+  const top = GROUND_Y - 470;
+  const fires: { x: number; y: number }[] = [];
+  for (const dx of [-250, 250]) {
+    const x = ENEMY_X + dx;
+    root.addChild(
+      new Graphics()
+        .roundRect(x - 34, top, 68, GROUND_Y - top + 10, 8)
+        .fill(stone)
+        .stroke({ color: INK, width: 5 }),
+      new Graphics()
+        .moveTo(x - 20, top + 60)
+        .lineTo(x - 8, top + 140)
+        .lineTo(x - 22, top + 230)
+        .moveTo(x + 14, top + 300)
+        .lineTo(x + 4, top + 380)
+        .stroke({ color: dark, width: 3, cap: "round" }),
+    );
+    // A fire bowl on an iron bracket halfway up the pillar.
+    const by = top + 210;
+    root.addChild(
+      new Graphics()
+        .moveTo(x, by + 40)
+        .lineTo(x, by + 10)
+        .stroke({ color: INK, width: 6, cap: "round" }),
+      new Graphics()
+        .poly([x - 34, by - 4, x + 34, by - 4, x + 22, by + 22, x - 22, by + 22])
+        .fill(dark)
+        .stroke({ color: INK, width: 4 }),
+    );
+    const glow = new Graphics().ellipse(x, by - 14, 40, 26).fill({ color: 0xff8a1f, alpha: 0.4 });
+    glow.blendMode = "add";
+    root.addChild(glow);
+    fires.push({ x, y: by - 8 });
+  }
+  root.addChild(
+    new Graphics()
+      .roundRect(ENEMY_X - 302, top + 20, 604, 56, 10)
+      .fill(stone)
+      .stroke({ color: INK, width: 5 }),
+  );
+  // The Ember sigil carved into both pillars, glowing while the keeper stands.
+  const sigil = new Graphics();
+  for (const x of [ENEMY_X - 250, ENEMY_X + 250]) {
+    const y = top + 110;
+    sigil
+      .circle(x, y, 18)
+      .stroke({ color: 0xffb13b, width: 4 })
+      .poly([x, y - 14, x + 9, y + 5, x, y + 13, x - 9, y + 5])
+      .fill(0xff8a1f);
+  }
+  sigil.blendMode = "add";
+  root.addChild(sigil);
+  return { root, sigil, fires };
 }
 
 /**

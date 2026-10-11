@@ -657,6 +657,8 @@ export function playGenerations(
     readonly generations: number;
     /** After the last generation: the final Prestige and The Last Ember (report act = 8). */
     readonly finale?: boolean;
+    /** Called before every fight (balance probes). */
+    readonly onFight?: (state: GameState, generation: number, act: number) => void;
   },
 ): ActRunReport[] {
   // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
@@ -698,6 +700,7 @@ export function playGenerations(
             s = applyAction(s, data, { type: "useFlask" });
           }
           s = applyAction(s, data, { type: "startStage" });
+          options.onFight?.(s, generation, act.number);
           const fight = currentFight(s, data);
           const result = runFight(fight.hero, fight.enemy, fight.seed);
           const encounter = s.run?.encounter;

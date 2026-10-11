@@ -398,3 +398,10 @@ export async function createHero(page: Page, onAttributes?: () => Promise<void>)
   }
   await page.getByRole("button", { name: "Begin" }).click();
 }
+
+/** On the road into the Rotwood (the newest act of run 2), right before the Gatekeeper of Stage 5. */
+export function saveBeforeGatekeeper(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "rotwood" });
+  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 5 } });
+}

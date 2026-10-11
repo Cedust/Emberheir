@@ -464,6 +464,17 @@
   border-color: #c9a063;
 }
 
+.stage .act-dot.gate {
+  border-radius: 2px;
+  transform: rotate(45deg);
+  background: #4a423b;
+  border-color: #ff8a1f;
+}
+
+.stage .act-dot.gate.done {
+  background: var(--accent);
+}
+
 .stage .act-dot.boss {
   background: #6a2a20;
   border-color: #ff8a1f;
@@ -589,6 +600,14 @@
 
 .stage .rank-tag.boss {
   background: #ff8a1f;
+}
+
+/* Gatekeeper (walls of the newest act): ash stone with an ember rim. */
+.stage .rank-tag.gate {
+  color: #ffd8a8;
+  background: #4a423b;
+  border-color: #ff8a1f;
+  cursor: help;
 }
 
 .stage .bar-life,

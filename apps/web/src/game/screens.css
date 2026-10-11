@@ -871,6 +871,15 @@
   border: 2px solid #c9a063;
 }
 
+.stage .gate-mark {
+  width: 11px;
+  height: 11px;
+  margin: 0 1px;
+  transform: rotate(45deg);
+  background: #4a423b;
+  border: 2px solid #ff8a1f;
+}
+
 .stage .intermission-center {
   padding: 26px 20px 20px;
   display: flex;

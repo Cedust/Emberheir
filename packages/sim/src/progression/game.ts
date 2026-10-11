@@ -254,6 +254,10 @@ export interface Encounter {
   readonly eliteModifiers: readonly string[];
   /** Run Pressure on Life and damage (see `stagePressure`); missing means none. */
   readonly pressure?: { readonly life: number; readonly damage: number };
+  /** Wall of the run's newest act on Life and damage (see `stageWall`); missing means none. */
+  readonly wall?: { readonly life: number; readonly damage: number };
+  /** A Gatekeeper: the sure Elite on a Waymark stage of the run's newest act. */
+  readonly gate?: boolean;
   /** Fight seed: the same encounter always plays out the same. */
   readonly seed: number;
   /** The Ember Thief instead of the stage's enemy. */
@@ -719,6 +723,43 @@ export function stagePressure(
   };
 }
 
+/** True for the newest act of the run (its boss brings The Harvest): the act with the walls. */
+export function isWallAct(data: GameData, act: ActData, prestige: number): boolean {
+  return !isFinaleAct(data, act.id) && harvestAct(data, prestige).id === act.id;
+}
+
+/**
+ * Stages of the newest act that hold a Gatekeeper: the Waymarks before the boss (5 and 10), never
+ * the Elite-free first stages.
+ */
+export function gateStages(act: ActData): readonly number[] {
+  return waymarkStages(act).filter((s) => s < act.stages && s > PROGRESSION.eliteFreeStages);
+}
+
+/**
+ * The wall of a stage (PROGRESSION.wall): only in the run's newest act. The boss takes the run's
+ * full strength, a Gatekeeper part of it and normal enemies ramp up to a smaller part on the stage
+ * before the boss. `null` = no wall.
+ */
+export function stageWall(
+  data: GameData,
+  act: ActData,
+  stage: number,
+  prestige: number,
+): { readonly life: number; readonly damage: number; readonly gate: boolean } | null {
+  if (!isWallAct(data, act, prestige)) return null;
+  const w = PROGRESSION.wall;
+  const strength = w.strength[Math.min(prestige, w.strength.length - 1)] ?? 1;
+  const part = (share: number) => 1 + (strength - 1) * share;
+  if (stage >= act.stages) return { life: strength, damage: strength, gate: false };
+  if (gateStages(act).includes(stage)) {
+    const k = part(w.gateShare);
+    return { life: k, damage: k, gate: true };
+  }
+  const k = part(w.rampShare * Math.min(1, (stage - 1) / Math.max(1, act.stages - 2)));
+  return { life: k, damage: k, gate: false };
+}
+
 /** What the Prestige at `prestige` (1 = the first one) gives. */
 export function prestigeRewards(data: GameData, prestige: number): PrestigeRewards {
   return {
@@ -1051,8 +1092,16 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
         damageMultiplier: (base.damageMultiplier ?? 1) * scaled(p.damage, share?.damage),
       }
     : base;
+  const w = encounter.wall;
+  const walled = w
+    ? {
+        ...setup,
+        baseLife: (setup.baseLife ?? 0) * w.life,
+        damageMultiplier: (setup.damageMultiplier ?? 1) * w.damage,
+      }
+    : setup;
   const mods = eliteModifiersOf(encounter, data);
-  return mods.length ? applyEliteModifiers(setup, mods) : setup;
+  return mods.length ? applyEliteModifiers(walled, mods) : walled;
 }
 
 export function encounterName(encounter: Encounter, actId: string, data: GameData): string {
@@ -1408,6 +1457,8 @@ function startStage(state: GameState, data: GameData): GameState {
   const level = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
   const p = stagePressure(data, act, run.stage, state.legacy.prestige);
   const pressure = p.life > 1 ? { pressure: p } : {};
+  const wall = stageWall(data, act, run.stage, state.legacy.prestige);
+  const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
   if (run.stage >= stagesInAct(act)) {
     encounter = {
@@ -1416,6 +1467,7 @@ function startStage(state: GameState, data: GameData): GameState {
       boss: true,
       eliteModifiers: bossAbilities(data, act, state.legacy.prestige).map((m) => m.id),
       ...pressure,
+      ...walled,
       seed: rng.int(0, 0x7fffffff),
     };
   } else {
@@ -1425,11 +1477,13 @@ function startStage(state: GameState, data: GameData): GameState {
     // An open "catch the Ember Thief" bounty: the Scout saw it nearby.
     const hunted =
       run.bounty?.status === "open" && getBounty(data, run.bounty.id).goal.kind === "thief";
+    // A Gatekeeper holds the Waymark: no thief there.
     const thief =
+      !wall?.gate &&
       data.thief !== undefined &&
       act.number >= PROGRESSION.thiefFromAct &&
       rng.chance(PROGRESSION.thiefChance * (hunted ? PROGRESSION.bounty.thiefBoost : 1));
-    if (!thief && rng.chance(eliteChance(act.number, run.stage))) {
+    if (!thief && (wall?.gate || rng.chance(eliteChance(act.number, run.stage)))) {
       const pool = [...data.eliteModifiers];
       for (let i = 0; i < eliteModifierCount(level) && pool.length; i++) {
         const [mod] = pool.splice(rng.int(0, pool.length - 1), 1);
@@ -1442,6 +1496,8 @@ function startStage(state: GameState, data: GameData): GameState {
       boss: false,
       eliteModifiers: mods,
       ...pressure,
+      ...walled,
+      ...(wall?.gate ? { gate: true } : {}),
       seed: rng.int(0, 0x7fffffff),
       ...(thief ? { thief: true } : {}),
     };

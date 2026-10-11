@@ -91,7 +91,7 @@ export const COMBAT = {
   bleedDamagePerSecond: 0.5,
   bleedDurationSeconds: 3,
   /** Poison: every stack deals X of its hit per second and runs out on its own. */
-  poisonDamagePerSecond: 0.1,
+  poisonDamagePerSecond: 0.13,
   poisonDurationSeconds: 5,
   poisonMaxStacks: 20,
   /**

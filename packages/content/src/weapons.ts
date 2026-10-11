@@ -91,7 +91,7 @@ export const BOW: WeaponDefinition = {
   id: "bow",
   name: "Bow",
   defaultAttack: "Shoot",
-  damage: { min: 8, max: 14 },
+  damage: { min: 10, max: 17 },
   damageType: "physical",
   attacksPerSecond: 0.9,
   heatBehavior: "steady",

@@ -107,7 +107,8 @@ describe("Poison", () => {
     expect(poisonStacks(s)).toBe(2);
     const { ticks, expired } = run(s, 6);
     // Ticks at 3 s, 4 s, 5 s with both stacks, then only the second stack until 7 s.
-    expect(ticks).toEqual([20, 20, 20, 10, 10]);
+    const one = 100 * COMBAT.poisonDamagePerSecond;
+    expect(ticks).toEqual([2 * one, 2 * one, 2 * one, one, one]);
     expect(expired).toEqual(["poison"]);
   });
 
@@ -147,9 +148,9 @@ describe("Corruption", () => {
 describe("dotDamagePerSecond", () => {
   it("adds up every DoT and every Poison stack", () => {
     let states = applyAilment({}, "bleed", 3, 10); // 5/s
-    states = applyAilment(states, "poison", 5, 10); // 1/s
-    states = applyAilment(states, "poison", 5, 10); // 1/s
+    states = applyAilment(states, "poison", 5, 10); // 10 × Poison per second
+    states = applyAilment(states, "poison", 5, 10);
     states = advanceCorruption(applyAilment(states, "corruption", 6, 100), 4); // 10 × 2
-    expect(dotDamagePerSecond(states)).toBeCloseTo(27);
+    expect(dotDamagePerSecond(states)).toBeCloseTo(25 + 2 * 10 * COMBAT.poisonDamagePerSecond);
   });
 });
