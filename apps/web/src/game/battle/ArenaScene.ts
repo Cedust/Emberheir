@@ -295,6 +295,9 @@ export class ArenaScene {
   private clock = 0;
   private telegraphOn = false;
   private tint: Record<Side, number> = { hero: 0xffffff, enemy: 0xffffff };
+  /** Barrier share of max Life per side; the ward bubble around the fighter shows it. */
+  private barrier: Record<Side, number> = { hero: 0, enemy: 0 };
+  private ward: Record<Side, Graphics | null> = { hero: null, enemy: null };
   private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
@@ -384,6 +387,20 @@ export class ArenaScene {
         .stroke({ color: enemy.boss ? 0xff8a1f : 0xffd84a, width: 3, alpha: 0.45 });
     }
     this.world.addChild(this.aura);
+    // Barrier (Intelligence, Warden skills): a pale ward bubble that fades as it is used up.
+    for (const side of ["hero", "enemy"] as const) {
+      const x = side === "hero" ? HERO_X : ENEMY_X;
+      const ward = new Graphics()
+        .ellipse(x, GROUND_Y - 190, 150, 205)
+        .fill({ color: 0x9fd8ff, alpha: 0.14 })
+        .stroke({ color: 0x8fd0ff, width: 14, alpha: 0.18 })
+        .stroke({ color: 0x9fdcff, width: 4, alpha: 1 })
+        .ellipse(x - 52, GROUND_Y - 300, 34, 60)
+        .fill({ color: 0xffffff, alpha: 0.18 });
+      ward.alpha = 0;
+      this.ward[side] = ward;
+      this.world.addChild(ward);
+    }
     if (enemy.gate) {
       this.gate = drawGate();
       this.world.addChildAt(this.gate.root, 1);
@@ -559,6 +576,10 @@ export class ArenaScene {
   onSnapshot(snapshot: FightSnapshot): void {
     this.telegraphOn = snapshot.enemy.telegraph !== null;
     for (const side of ["hero", "enemy"] as const) {
+      this.barrier[side] = Math.min(
+        1,
+        snapshot[side].barrier / Math.max(1, snapshot[side].maxLife),
+      );
       const list = snapshot[side].ailments;
       const first = list[0];
       this.tint[side] = first ? (AILMENT_TINT[first.type] ?? 0xffffff) : 0xffffff;
@@ -1108,6 +1129,14 @@ export class ArenaScene {
       f.body.tint = f.flash > 0.5 ? 0xff7777 : base;
       f.stars.visible = f.stun > 0;
       if (f.stun > 0) drawStars(f.stars, this.clock, f.side === "hero" ? -440 : -470);
+    }
+    for (const side of ["hero", "enemy"] as const) {
+      const ward = this.ward[side];
+      if (!ward) continue;
+      const share = this.barrier[side];
+      const pulse = this.motion ? 0.08 * Math.sin(this.clock * 3) : 0;
+      const target = share > 0.005 ? 0.55 + 0.45 * Math.min(1, share * 3) + pulse : 0;
+      ward.alpha += (target - ward.alpha) * Math.min(1, dt * 8);
     }
     if (this.telegraph) {
       const target = this.telegraphOn ? 0.55 + 0.35 * Math.sin(this.clock * 9) : 0;

@@ -15,6 +15,8 @@ export interface DerivedStats {
   readonly evasion: number;
   readonly blockChance: number;
   readonly blockValue: number;
+  /** Barrier from Intelligence (hero only): absorbs damage before Life, recharges in fights. */
+  readonly barrier: number;
   /** All Resistance (from Intelligence and gear) before the element's own Resistance. */
   readonly resistance: number;
   /** Final Resistance per element: All Resistance + the element's own, capped. */
@@ -171,6 +173,14 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       COMBAT.maxBlockChance,
     ),
     blockValue: b.blockValue * (perks.has("stoneguard") ? 1 + PERK.stoneguardBlockValue : 1),
+    barrier: heir
+      ? Math.round(
+          life *
+            (setup.rules?.lifeMultiplier ?? 1) *
+            a.intelligence *
+            COMBAT.heir.barrierPerIntelligence,
+        )
+      : 0,
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance),
     coldResistance: resist(b.coldResistance),

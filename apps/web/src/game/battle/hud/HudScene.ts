@@ -558,7 +558,9 @@ export class HudScene {
   private effects(prev: FighterSnapshot, hero: FighterSnapshot): void {
     if (!this.life || !this.heat) return;
     if (hero.life > prev.life + 0.5) this.life.puff([0x4fe08a, 0xa8ffc8], 16);
-    if (hero.barrier > prev.barrier + 0.5) this.life.puff([0x9fe0ff, 0xffffff], 20, false);
+    // Skills that grant Barrier puff; the slow Intelligence recharge does not.
+    if (hero.barrier > prev.barrier + hero.maxLife * 0.02)
+      this.life.puff([0x9fe0ff, 0xffffff], 20, false);
     // Heat spent on a skill: a flare out of the orb.
     if (hero.heat < prev.heat - 8) this.heat.puff([0xffd27a, 0xff8a2a, 0xffffff], 26);
   }

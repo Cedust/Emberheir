@@ -301,6 +301,8 @@ interface Fighter {
   poisonLockout: number;
   /** Fight time of the last hit taken (Steady Aim). */
   lastHitTakenAt: number;
+  /** Barrier recharged since it last started filling up (one event when it is full). */
+  barrierRecharged: number;
   /** Fight time of the last own skill (Patient Draw). */
   lastSkillAt: number;
   /** Hunter's Mark: the target is marked. */
@@ -399,7 +401,7 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     baseStats: stats,
     stats,
     life: Math.max(1, Math.round(stats.maxLife * lifeFraction)),
-    barrier: 0,
+    barrier: stats.barrier,
     heat: setup.capstone?.kind === "ignition" ? COMBAT.maxHeat : stats.startingHeat,
     attackProgress: 0,
     nextSlot: 0,
@@ -426,6 +428,7 @@ function createFighter(side: Side, setup: CombatantSetup): Fighter {
     rampage: 0,
     poisonLockout: 0,
     lastHitTakenAt: 0,
+    barrierRecharged: 0,
     lastSkillAt: 0,
     marked: false,
     perks: new Set(setup.perks ?? []),
@@ -637,6 +640,7 @@ export class Fight {
 
   /** Ailments, DoT ticks and passive Heat. */
   private stepStatus(f: Fighter, dt: number): void {
+    this.rechargeBarrier(f, dt);
     const { states, ticks, expired } = stepAilments(f.ailments, dt);
     f.ailments = states;
     for (const tick of ticks) {
@@ -1754,6 +1758,29 @@ export class Fight {
       if (c.kind === "lifeBelow" && f.life / f.stats.maxLife >= c.threshold) state.armed = true;
     }
     this.checkReactionThresholds();
+  }
+
+  /**
+   * Intelligence Barrier (like PoE's Energy Shield): a moment without a hit and it fills up
+   * again. One "barrier" event when it is full, so the arena shows it without spamming the log.
+   */
+  private rechargeBarrier(f: Fighter, dt: number): void {
+    const max = f.stats.barrier;
+    if (max <= 0 || f.barrier >= max) return;
+    if (this.time - f.lastHitTakenAt < COMBAT.barrierRecharge.delay) return;
+    const gain = Math.min(max - f.barrier, max * COMBAT.barrierRecharge.perSecond * dt);
+    f.barrier += gain;
+    f.barrierRecharged += gain;
+    if (f.barrier >= max - 1e-6) {
+      f.barrier = max;
+      this.emit({
+        t: this.time,
+        type: "barrier",
+        side: f.side,
+        amount: Math.round(f.barrierRecharged),
+      });
+      f.barrierRecharged = 0;
+    }
   }
 
   /** Barrier absorbs damage first, the rest goes to life. */

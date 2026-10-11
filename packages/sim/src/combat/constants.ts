@@ -41,7 +41,11 @@ export const COMBAT = {
     critChancePerDexterity: 0.015,
     triggerChancePerDexterity: 0.04,
     elementalDamagePerIntelligence: 0.08,
-    allResistancePerIntelligence: 0.015,
+    // Intelligence gives Barrier, not Resistance: Resistance comes from gear for every class
+    // (Timo, PoE rule: Strength Armor, Agility Evasion, Intelligence Barrier).
+    allResistancePerIntelligence: 0,
+    /** Barrier per Intelligence point, as a share of max Life. */
+    barrierPerIntelligence: 0.025,
     attackSpeedPerAgility: 0.03,
     evasionPerAgility: 0.02,
     heatGainPerWisdom: 0.06,
@@ -56,6 +60,9 @@ export const COMBAT = {
   glancingDamage: 0.5,
   /** Stacking Sunder of Weapon Mastery before nodes: no chance of its own, 5 % Armor per stack. */
   sunder: { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 },
+
+  /** Intelligence Barrier: full at fight start, refills after 1 s without a hit (12 % per s). */
+  barrierRecharge: { delay: 1, perSecond: 0.12 },
 
   // Caps.
   maxEvasion: 0.5,
