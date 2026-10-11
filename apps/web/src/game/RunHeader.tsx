@@ -67,8 +67,8 @@ export function ActProgress(props: {
                   : gate
                     ? `Stage ${n} · Gatekeeper${shrine ? " · Ember Shrine" : ""}`
                     : shrine
-                    ? `Stage ${n} · Ember Shrine`
-                    : `Stage ${n}`
+                      ? `Stage ${n} · Ember Shrine`
+                      : `Stage ${n}`
             }
             style={{
               left: left0 + (i / (stages - 1)) * span - size / 2,

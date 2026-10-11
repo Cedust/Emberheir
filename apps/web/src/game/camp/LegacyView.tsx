@@ -13,6 +13,7 @@ import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
+import { collections } from "../collections";
 import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
@@ -37,11 +38,13 @@ const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
 export function LegacyView(props: {
   state: GameState;
   onClose: () => void;
-  initialTab?: "gear" | "trophies";
+  initialTab?: "gear" | "trophies" | "collections";
 }) {
   const { state } = props;
   const { legacy } = state;
-  const [tab, setTab] = useState<"gear" | "trophies">(props.initialTab ?? "gear");
+  const [tab, setTab] = useState<"gear" | "trophies" | "collections">(props.initialTab ?? "gear");
+  const goals = collections(state);
+  const full = goals.filter((g) => g.found >= g.total).length;
   const generation = legacy.prestige + 1;
   const [sel, setSel] = useState<EquipmentSlot>("body");
   const wornIn = (slot: EquipmentSlot) => state.hero.equipment[slot];
@@ -111,6 +114,15 @@ export function LegacyView(props: {
           >
             Trophy Wall · {legacy.trophies.length}/{TROPHY_COUNT}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "collections"}
+            className={`tab title-font ${tab === "collections" ? "on" : ""}`}
+            onClick={() => setTab("collections")}
+          >
+            Collections · {full}/{goals.length}
+          </button>
         </div>
         <div className="grow" />
         <button
@@ -125,6 +137,38 @@ export function LegacyView(props: {
       </header>
       {tab === "trophies" ? (
         <TrophyWall state={state} />
+      ) : tab === "collections" ? (
+        <div className="collections" aria-label="Collections">
+          {goals.map((g) => {
+            const done = g.found >= g.total;
+            return (
+              <section
+                key={g.id}
+                className={`panel-card collection${done ? " done" : ""}`}
+                aria-label={g.name}
+              >
+                <span className="eyebrow">{g.name.toUpperCase()}</span>
+                <span className="title-font big">
+                  {g.found} / {g.total}
+                </span>
+                <div
+                  className="collection-bar"
+                  role="progressbar"
+                  aria-valuemin={0}
+                  aria-valuemax={g.total}
+                  aria-valuenow={g.found}
+                >
+                  <div style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
+                </div>
+                <span className="sub small">{g.how}</span>
+                <span className={`collection-reward small${done ? " accent" : ""}`}>
+                  <Icon name={done ? "check" : "lock"} size={14} />
+                  {done ? `${g.reward.replace(/^A /, "The ")} is raised.` : g.reward}
+                </span>
+              </section>
+            );
+          })}
+        </div>
       ) : (
         <div className="legacy-body">
           <aside className="legacy-facts">

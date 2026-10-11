@@ -1,4 +1,4 @@
-import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
+import { GAME_DATA, ITEM_CATALOG, RUNEWORDS, SKILL_TREE } from "@emberheir/content";
 import type { Page } from "@playwright/test";
 import {
   type GameState,
@@ -404,4 +404,17 @@ export function saveBeforeGatekeeper(): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
   const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "rotwood" });
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 5 } });
+}
+
+/** In the Camp with every Unique found and every Runeword forged: two banners hang. */
+export function saveCollector(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({
+    ...camp,
+    legacy: {
+      ...camp.legacy,
+      trophies: [...ITEM_CATALOG.uniques.keys()],
+      runewords: RUNEWORDS.map((w) => w.id),
+    },
+  });
 }

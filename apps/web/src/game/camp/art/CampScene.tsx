@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { CollectionId } from "../../collections";
 import { DirtPattern, Foreground, HearthPlaza, Palisade } from "./CampDetail";
 import type { CampLightSource } from "./CampLight";
 import { INK, L, S, circ } from "./paint";
@@ -213,7 +214,61 @@ function groundBits(h: number) {
 }
 
 /** The still part of the camp: sky, hills, tents, wagons, stall, anvil and the road. */
-export function CampBackdrop(props: { roadName: string; w: number; h: number; ox: number }) {
+/** Collection banners (spielzeit-v1.md, E): one per full collection, on the palisade. */
+const BANNERS: Record<CollectionId, { x: number; cloth: string; emblem: string }> = {
+  trophies: {
+    x: 190,
+    cloth: "#c98a2a",
+    emblem: "M-10 -6 h20 v6 a10 10 0 0 1 -20 0 Z M-3 10 h6 v6 h-6 Z M-8 18 h16",
+  },
+  runewords: {
+    x: 1250,
+    cloth: "#2d5bd0",
+    emblem: "M0 -14 L10 -6 V8 L0 16 L-10 8 V-6 Z M0 -6 V10 M-5 0 L0 4 L5 0",
+  },
+  codex: {
+    x: 1360,
+    cloth: "#a8401a",
+    emblem: "M0 -14 a14 14 0 1 0 0.1 0 Z M0 -8 L6 4 L0 10 L-6 4 Z",
+  },
+};
+
+function Banner(props: { id: CollectionId }) {
+  const b = BANNERS[props.id];
+  const top = 214;
+  return (
+    <g className={`camp-banner banner-${props.id}`} data-testid={`banner-${props.id}`}>
+      <L
+        d={`M${b.x} 352 L${b.x} ${top - 8} M${b.x - 30} ${top} L${b.x + 30} ${top}`}
+        w={4}
+        color="#4a3220"
+      />
+      <S
+        d={`M${b.x - 26} ${top} L${b.x + 26} ${top} L${b.x + 26} ${top + 96} L${b.x} ${top + 80} L${b.x - 26} ${top + 96} Z`}
+        fill={b.cloth}
+        w={2.2}
+      />
+      <path
+        d={b.emblem}
+        transform={`translate(${b.x} ${top + 40})`}
+        fill="none"
+        stroke="#ffd27a"
+        strokeWidth="2.6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </g>
+  );
+}
+
+export function CampBackdrop(props: {
+  roadName: string;
+  w: number;
+  h: number;
+  ox: number;
+  /** Full collections: each hangs its banner. */
+  banners?: readonly CollectionId[];
+}) {
   const { w, h, ox } = props;
   const stars = rand(5);
   const bits = groundBits(h);
@@ -314,6 +369,9 @@ export function CampBackdrop(props: { roadName: string; w: number; h: number; ox
       <ellipse cx={HEARTH_X} cy="540" rx="700" ry="290" fill="url(#camp-clearing)" />
       <Palisade x0={X0} x1={452} y={334} />
       <Palisade x0={990} x1={X1} y={334} />
+      {props.banners?.map((id) => (
+        <Banner key={id} id={id} />
+      ))}
       <path
         d="M2640 400 L1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836 L1360 1400 L2640 1400 Z"
         fill="url(#camp-road)"

@@ -5535,3 +5535,46 @@
 .stage .perk-chip {
   cursor: help;
 }
+
+/* Collections at the Hearthfire (spielzeit-v1.md, E): progress per collection and its banner. */
+.stage .collections {
+  flex-grow: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-content: start;
+  gap: 24px;
+  padding: 32px calc(var(--safe-x) + 36px);
+}
+
+.stage .collection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+}
+
+.stage .collection.done {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgb(255 138 31 / 0.25);
+}
+
+.stage .collection-bar {
+  height: 12px;
+  border: 1.5px solid var(--ink);
+  border-radius: 6px;
+  background: var(--track);
+  overflow: hidden;
+}
+
+.stage .collection-bar > div {
+  height: 100%;
+  background: var(--accent);
+}
+
+.stage .collection-reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+}

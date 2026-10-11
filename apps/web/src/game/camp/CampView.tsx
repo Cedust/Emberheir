@@ -21,6 +21,7 @@ import { CampBackdrop, CampFx, HEARTH_X, SCENE_W, campLights } from "./art/CampS
 import { CampLight } from "./art/CampLight";
 import { FIGURE_H, FIGURE_W, type HeirGear, PORTRAIT, PersonaArt } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
+import { completedCollections } from "../collections";
 
 export type CampTarget =
   | "legacy"
@@ -78,7 +79,12 @@ function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#a8401a",
       object: { w: 150, h: 200 },
       quote: "Whatever rests near the fire survives the burning.",
-      actions: [{ name: "Worn Gear" }, { name: "Trophy Wall" }, { name: "Chronicle" }],
+      actions: [
+        { name: "Worn Gear" },
+        { name: "Trophy Wall" },
+        { name: "Collections" },
+        { name: "Chronicle" },
+      ],
       cta: "Open Legacy",
       target: "legacy",
     },
@@ -361,7 +367,13 @@ export function CampView(props: {
 
       <div className="camp-stage">
         <PaintDefs />
-        <CampBackdrop roadName={act.name} w={size.w} h={size.h - 64} ox={ox} />
+        <CampBackdrop
+          roadName={act.name}
+          w={size.w}
+          h={size.h - 64}
+          ox={ox}
+          banners={completedCollections(state)}
+        />
         <CampFx w={size.w} h={size.h - 64} ox={ox} />
         {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
         {list.map((p, i) => {
