@@ -59,7 +59,7 @@ export interface HitInput {
   /** Damage before increases, crit and mitigation (weapon roll × skill multiplier). */
   readonly baseDamage: number;
   readonly type: DamageType;
-  /** Attacks can be evaded, spells cannot. Only Physical hits are evaded or blocked. */
+  /** Attacks can be evaded (any damage type), spells cannot. Only Physical hits are blocked. */
   readonly evadable: boolean;
   readonly attacker: DerivedStats;
   readonly attackerLevel: number;
@@ -93,16 +93,16 @@ export type HitOutcome =
     };
 
 /**
- * Resolves one hit: Evasion → Precision → Block (both Physical only) → Crit → Damage % → Armor/Resistance → Shock.
+ * Resolves one hit: Evasion (attacks) → Precision → Block (Physical only) → Crit → Damage % → Armor/Resistance → Shock.
  * Rolls happen in this fixed order so the same seed always gives the same result. The Precision
  * roll only happens for fighters that have Precision (the hero's Weapon Mastery).
  */
 export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   const { defender } = input;
-  // Evasion and Block only stop Physical hits; against magic only Resistance helps, so every
-  // build has to shore up its weak side (Timo, Diablo rule).
+  // Evasion dodges every attack, magic ones too, but no spell (Timo, PoE rule). Block only stops
+  // Physical hits.
   const physical = input.type === "physical";
-  if (input.evadable && physical && rng.chance(defender.evasion)) return { kind: "evaded" };
+  if (input.evadable && rng.chance(defender.evasion)) return { kind: "evaded" };
 
   const glancing =
     !input.forceCrit && input.precision !== undefined && !rng.chance(input.precision);

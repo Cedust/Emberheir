@@ -116,11 +116,17 @@ describe("resolveHit", () => {
     });
   });
 
-  it("never evades or blocks elemental hits, only Resistance helps", () => {
-    const defender = stats({ evasion: 1, blockChance: 1, blockValue: 30 });
+  it("evades elemental attacks but never blocks elemental hits", () => {
     const r = rng();
+    const evader = stats({ evasion: 1 });
+    const kinds = Array.from(
+      { length: 200 },
+      () => resolveHit(input({ defender: evader, type: "fire" }), r).kind,
+    );
+    expect(kinds).toContain("evaded");
+    const wall = stats({ blockChance: 1, blockValue: 30 });
     for (let i = 0; i < 200; i++) {
-      expect(resolveHit(input({ defender, type: "fire" }), r)).toMatchObject({
+      expect(resolveHit(input({ defender: wall, type: "fire" }), r)).toMatchObject({
         kind: "hit",
         blocked: false,
       });
