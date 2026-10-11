@@ -96,7 +96,12 @@ export const CLASSES: readonly HeroClass[] = [
       wisdom: 3,
       vitality: 2,
     },
-    trait: { name: "Spark", description: "+10 Starting Heat.", bonuses: { startingHeat: 10 } },
+    trait: {
+      name: "Spark",
+      description: "+10 Starting Heat, +15 % Life.",
+      bonuses: { startingHeat: 10 },
+      rules: { lifeMultiplier: 1.15 },
+    },
     lineage: {
       name: "Storm Lineage",
       stat: "Elemental Damage",
@@ -127,8 +132,9 @@ export const CLASSES: readonly HeroClass[] = [
     },
     trait: {
       name: "Lingering",
-      description: "+15 % Ailment Duration.",
+      description: "+15 % Ailment Duration, +15 % Life.",
       bonuses: { ailmentDuration: 0.15 },
+      rules: { lifeMultiplier: 1.15 },
     },
     lineage: {
       name: "Hollow Lineage",

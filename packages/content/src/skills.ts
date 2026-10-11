@@ -61,7 +61,7 @@ export const ICE_LANCE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 18, max: 26 },
+      damage: { min: 28, max: 40 },
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 1 }],
     },
@@ -294,7 +294,7 @@ export const FROST_NOVA: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 31, max: 44 },
+      damage: { min: 37, max: 53 },
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 1 }],
     },
