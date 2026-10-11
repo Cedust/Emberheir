@@ -7,6 +7,9 @@ import {
   applyAction,
   actsInOrder,
   finaleOpen,
+  wildfireLevel,
+  wildfireName,
+  wildfireTop,
   flaskCapacity,
   LINEAGE_STEPS,
   nextAct,
@@ -304,10 +307,21 @@ export function CampView(props: {
   const size = useStageSize();
   const ox = (size.w - SCENE_W) / 2;
   const [road, setRoad] = useState<string | null>(null);
+  // Wildfire tier for the next trip (0 = a normal trip); every act is open in the Wildfire.
+  const top = wildfireTop(state);
+  const [fire, setFire] = useState(0);
+  const tier = Math.min(fire, top);
+  const roadOpen = (id: string) => tier > 0 || actUnlocked(state, GAME_DATA, id);
   const acts = actsInOrder(GAME_DATA);
   const next = nextAct(state, GAME_DATA);
   // The road the Heir takes: the next act unless a cleared one is picked to farm it again.
-  const act = acts.find((a) => a.id === road && actUnlocked(state, GAME_DATA, a.id)) ?? next;
+  const act = acts.find((a) => a.id === road && roadOpen(a.id)) ?? next;
+  const setOut = () =>
+    game.dispatch(
+      tier > 0
+        ? { type: "setOut", actId: act.id, wildfire: tier }
+        : { type: "setOut", actId: act.id },
+    );
   const list = personas(state, act);
   const gear = heirGear(state);
   const sel = list.find((p) => p.id === picked) ?? list[0];
@@ -324,7 +338,7 @@ export function CampView(props: {
   const quote = sel.id === "nan" ? `“${NAN_LINES[nanLine % NAN_LINES.length]}”` : sel.quote;
   const cta = () => {
     if (sel.id === "nan") setNanLine((n) => n + 1);
-    else if (sel.id === "eldrin" && !sel.locked) game.dispatch({ type: "setOut", actId: act.id });
+    else if (sel.id === "eldrin" && !sel.locked) setOut();
     else if (sel.target && !sel.locked) props.onOpen(sel.target);
   };
   return (
@@ -474,7 +488,7 @@ export function CampView(props: {
             aria-label="Road"
           >
             {acts.map((a) => {
-              const open = actUnlocked(state, GAME_DATA, a.id);
+              const open = roadOpen(a.id);
               const done = state.progress.actsCleared.includes(a.id);
               const on = a.id === act.id;
               const info = ACTS.find((x) => x.id === a.id);
@@ -525,6 +539,14 @@ export function CampView(props: {
                 THE LAST EMBER
               </button>
             )}
+            {top > 0 && (
+              <WildfirePicker
+                tier={tier}
+                top={top}
+                best={state.legacy.wildfire ?? 0}
+                onPick={setFire}
+              />
+            )}
             {state.bountyDone ? (
               <span className="hint-light bounty-hint">
                 <Icon name="target" size={14} /> Bounty done · turn it in at Eldrin
@@ -539,15 +561,60 @@ export function CampView(props: {
             <span className="hint-light">Flask refilled · wounds healed</span>
             <button
               type="button"
-              className="btn big primary glow"
-              onClick={() => game.dispatch({ type: "setOut", actId: act.id })}
+              className={`btn big primary glow${tier > 0 ? " wildfire-go" : ""}`}
+              onClick={setOut}
             >
-              SET OUT · ACT {act.number}
+              {tier > 0
+                ? `${wildfireName(tier).toUpperCase()} · ACT ${act.number}`
+                : `SET OUT · ACT ${act.number}`}
             </button>
           </div>
         </div>
       </div>
     </section>
+  );
+}
+
+const WILDFIRE_HINT =
+  "Wildfire: any act burns again, harder each tier. Monster Level 91 at I up to 100 at X, only T10 items, more Legendaries and higher Runes. Clear an act boss to open the next tier.";
+
+/** Wildfire tier for the next trip (spielzeit-v1.md, C): Off, then I up to one above the best. */
+function WildfirePicker(props: {
+  tier: number;
+  top: number;
+  best: number;
+  onPick: (tier: number) => void;
+}) {
+  const { tier, top, best } = props;
+  return (
+    <div className="wildfire-picker" aria-label="Wildfire" title={WILDFIRE_HINT}>
+      <button
+        type="button"
+        className="btn ghost wildfire-step"
+        aria-label="Lower Wildfire"
+        disabled={tier <= 0}
+        onClick={() => props.onPick(tier - 1)}
+      >
+        <Icon name="prev" size={16} />
+      </button>
+      <span className={`wildfire-tier title-font${tier > 0 ? " on" : ""}`}>
+        <Icon name="fire" size={16} />
+        {tier > 0 ? wildfireName(tier) : "Wildfire off"}
+        <span className="sub small">
+          {tier > 0 ? `Monster Level ${wildfireLevel(tier)}` : ""}
+          {best > 0 ? `${tier > 0 ? " · " : ""}best ${wildfireName(best).slice(9)}` : ""}
+        </span>
+      </span>
+      <button
+        type="button"
+        className="btn ghost wildfire-step"
+        aria-label="Raise Wildfire"
+        disabled={tier >= top}
+        onClick={() => props.onPick(tier + 1)}
+      >
+        <Icon name="next" size={16} />
+      </button>
+    </div>
   );
 }
 

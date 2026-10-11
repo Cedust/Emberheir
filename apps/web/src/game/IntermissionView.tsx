@@ -16,6 +16,7 @@ import {
   gateStages,
   getAct,
   isWallAct,
+  wildfireName,
   getBase,
   heroSetup,
   rewardsDone,
@@ -236,16 +237,21 @@ function UpNext(props: { run: RunState; prestige: number }) {
       </section>
     );
   }
-  const shrine = act.shrineStages.find((s) => s >= next);
-  const gate = isWallAct(GAME_DATA, act, props.prestige)
-    ? gateStages(act).find((s) => s >= next)
-    : undefined;
+  // The Wildfire has no Shrines and no Gatekeepers.
+  const shrine = run.wildfire ? undefined : act.shrineStages.find((s) => s >= next);
+  const gate =
+    !run.wildfire && isWallAct(GAME_DATA, act, props.prestige)
+      ? gateStages(act).find((s) => s >= next)
+      : undefined;
   return (
     <section className="panel-card up-next" aria-label="Up next">
       <span className="eyebrow">Up next</span>
       <div className="up-row">
         <span className="title-font">Stage {next}</span>
-        <span className="sub">{act.name}</span>
+        <span className="sub">
+          {act.name}
+          {run.wildfire ? ` · ${wildfireName(run.wildfire)}` : ""}
+        </span>
       </div>
       {shrine !== undefined && (
         <div className="up-row">
@@ -792,6 +798,7 @@ export function IntermissionView(props: {
         skillPoints={state.hero.unspentSkillPoints}
         waymarks={state.progress.waymarks}
         prestige={state.legacy.prestige}
+        {...(run.wildfire ? { wildfire: run.wildfire } : {})}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
         onMenu={props.onMenu}

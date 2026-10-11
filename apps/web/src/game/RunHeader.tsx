@@ -1,5 +1,13 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type ActData, gateStages, isWallAct, waymarkKey, waymarkStages } from "@emberheir/sim";
+import {
+  type ActData,
+  gateStages,
+  isWallAct,
+  waymarkKey,
+  waymarkStages,
+  wildfireLevel,
+  wildfireName,
+} from "@emberheir/sim";
 import { Icon } from "../ui/Icon";
 import { actTitle, finaleFoe, inFinale } from "./finale";
 
@@ -108,6 +116,8 @@ export function RunHeader(props: {
   waymarks?: readonly string[];
   /** Prestige level: the run's newest act shows its Gatekeepers. */
   prestige?: number;
+  /** Wildfire tier of the trip: a burning badge, no Waymarks or Gatekeepers. */
+  wildfire?: number;
   onCharacter: () => void;
   onTree: () => void;
   onMenu: () => void;
@@ -116,14 +126,27 @@ export function RunHeader(props: {
     <header className="run-header bar-top">
       <div className="run-title">
         <span className="title-font">{actTitle(props.act)}</span>
-        <span className="sub">{props.sub}</span>
+        <span className="sub">
+          {props.wildfire ? (
+            <span
+              className="wildfire-badge"
+              title={`Monster Level ${wildfireLevel(props.wildfire)}`}
+            >
+              <Icon name="fire" size={12} />
+              {wildfireName(props.wildfire)}
+            </span>
+          ) : null}
+          {props.sub}
+        </span>
       </div>
       <ActProgress
         act={props.act}
         stage={props.stage}
         cleared={props.cleared}
-        {...(props.waymarks ? { waymarks: props.waymarks } : {})}
-        {...(props.prestige !== undefined && isWallAct(GAME_DATA, props.act, props.prestige)
+        {...(props.waymarks && !props.wildfire ? { waymarks: props.waymarks } : {})}
+        {...(props.prestige !== undefined &&
+        !props.wildfire &&
+        isWallAct(GAME_DATA, props.act, props.prestige)
           ? { gates: gateStages(props.act) }
           : {})}
       />

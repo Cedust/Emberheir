@@ -182,13 +182,58 @@ const WEATHER: Record<number, readonly Drift[]> = {
   ],
 };
 
+/**
+ * Wildfire (spielzeit-v1.md, C): on top of the act's own air, embers rise from the burning ground
+ * and soot falls from the sky. Both grow with the tier.
+ */
+function wildfireDrifts(tier: number): Drift[] {
+  return [
+    {
+      rate: 10 + 4 * tier,
+      from: "ground",
+      burst: {
+        color: [0xff6a2b, 0xffb13b, 0xffd84a],
+        angle: [RISE - 0.35, RISE + 0.35],
+        speed: [40, 110],
+        life: [1.6, 3],
+        size: [5, 10],
+        endSize: 0.2,
+        wobble: 20,
+        alpha: 0.9,
+        layer: "back",
+      },
+    },
+    {
+      rate: 3 + tier,
+      from: "top",
+      burst: {
+        kind: "bit",
+        color: [0x2a1e18, 0x4a3a30, 0x5e4a3a],
+        angle: [FALL - 0.3, FALL + 0.3],
+        speed: [30, 60],
+        life: [8, 12],
+        size: [4, 8],
+        endSize: 0.8,
+        wobble: 16,
+        spin: 2,
+        alpha: 0.6,
+        layer: "back",
+      },
+    },
+  ];
+}
+
 /** Carries fractional spawns between frames so low rates still emit. */
 export class Weather {
   private carry: number[] = [];
   private readonly drifts: readonly Drift[];
 
-  constructor(act: number) {
-    this.drifts = WEATHER[act] ?? WEATHER[1] ?? [];
+  /** `wildfire`: the Wildfire tier of the trip (0 = none). */
+  constructor(act: number, wildfire = 0) {
+    this.drifts = [
+      ...(WEATHER[act] ?? WEATHER[1] ?? []),
+      ...(wildfire > 0 ? wildfireDrifts(wildfire) : []),
+    ];
   }
 
   update(fx: Fx, view: View, dt: number): void {

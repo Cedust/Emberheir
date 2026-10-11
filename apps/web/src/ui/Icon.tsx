@@ -31,6 +31,8 @@ export const ICONS = {
   box: "M21 8l-9-5-9 5v8l9 5 9-5z M3 8l9 5 9-5 M12 13v8",
   lock: "M4 11h16v10H4z M8 11V7a4 4 0 0 1 8 0v4",
   check: "M20 6L9 17l-5-5",
+  prev: "M15 18l-6-6 6-6",
+  next: "M9 18l6-6-6-6",
   warning:
     "M10.3 3.9L1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z M12 9v4 M12 17h.01",
   strike: "M13 2L3 14h9l-1 8 10-12h-9l1-8z",

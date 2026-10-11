@@ -418,3 +418,13 @@ export function saveCollector(): string {
     },
   });
 }
+
+/** After The Last Ember with Wildfire III cleared: Wildfire IV is the next tier. */
+export function saveWildfire(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({
+    ...camp,
+    hero: { ...camp.hero, level: 100, xp: 0 },
+    legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: 3 },
+  });
+}

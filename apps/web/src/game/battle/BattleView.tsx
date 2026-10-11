@@ -93,6 +93,7 @@ function useLooks(state: GameState, run: RunState) {
     ranged: enemyDef?.weapon.range === "ranged",
     ...(encounter?.thief ? { thief: true } : {}),
     ...(encounter?.gate ? { gate: true } : {}),
+    ...(run.wildfire ? { wildfire: run.wildfire } : {}),
     ...(encounter ? { levelGap: encounter.level - state.hero.level } : {}),
   };
   const heroInfo: PlaqueInfo = {
@@ -298,6 +299,7 @@ export function BattleView(props: {
         skillPoints={state.hero.unspentSkillPoints}
         waymarks={state.progress.waymarks}
         prestige={state.legacy.prestige}
+        {...(run.wildfire ? { wildfire: run.wildfire } : {})}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
         onMenu={props.onMenu}

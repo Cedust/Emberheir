@@ -10,6 +10,7 @@ import {
   type Item,
   PROGRESSION,
   RARITIES,
+  actsInOrder,
   actsInRun,
   applyAction,
   currentFight,
@@ -657,6 +658,8 @@ export function playGenerations(
     readonly generations: number;
     /** After the last generation: the final Prestige and The Last Ember (report act = 8). */
     readonly finale?: boolean;
+    /** After a won finale: Wildfire tiers to climb (report act = 100 + tier). */
+    readonly wildfire?: number;
     /** Called before every fight (balance probes). */
     readonly onFight?: (state: GameState, generation: number, act: number) => void;
   },
@@ -757,10 +760,93 @@ export function playGenerations(
   if (options.finale && data.finale && s.pendingPrestige) {
     s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
-      reports.push(playFinale(s, data, options.generations + 1, options.maxAttempts));
+      const finale = playFinale(s, data, options.generations + 1, options.maxAttempts);
+      reports.push(finale.report);
+      s = finale.state;
+      for (let tier = 1; tier <= (options.wildfire ?? 0) && s.legacy.finaleWon; tier++) {
+        const fire = playWildfire(s, data, build, options, tier);
+        reports.push(fire.report);
+        s = fire.state;
+        if (!fire.report.cleared) break;
+      }
     }
   }
   return reports;
+}
+
+/**
+ * One Wildfire tier with the autopilot: the acts take turns by tier (I = Act 1, ... VIII = Act 1
+ * again), attempts until the act boss falls.
+ */
+function playWildfire(
+  state: GameState,
+  data: GameData,
+  build: BuildPlan | undefined,
+  options: { readonly starterWeapon: string; readonly maxAttempts: number },
+  tier: number,
+): { state: GameState; report: ActRunReport } {
+  const acts = actsInOrder(data);
+  const act = acts[(tier - 1) % acts.length] ?? acts[0];
+  if (!act) throw new Error("No acts");
+  let s = state;
+  const before = s.stats;
+  const fightSeconds: number[] = [];
+  const deathStages: number[] = [];
+  const deathEnemies: string[] = [];
+  let bossSeconds = 0;
+  let elites = 0;
+  let cleared = false;
+  for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
+    for (const placed of s.inventory) {
+      s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
+    }
+    s = spendSkillPoints(s, data, build);
+    s = applyAction(s, data, { type: "setOut", actId: act.id, wildfire: tier });
+    while (s.run) {
+      s = spendPoints(s, data, options.starterWeapon);
+      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+        s = applyAction(s, data, { type: "useFlask" });
+      }
+      s = applyAction(s, data, { type: "startStage" });
+      const fight = currentFight(s, data);
+      const result = runFight(fight.hero, fight.enemy, fight.seed);
+      const encounter = s.run?.encounter;
+      if (encounter?.boss) bossSeconds = result.duration;
+      else {
+        fightSeconds.push(result.duration);
+        if (encounter?.eliteModifiers.length) elites++;
+      }
+      const stage = s.run?.stage ?? 0;
+      s = applyAction(s, data, { type: "resolveFight" });
+      if (!s.run && s.notice?.kind === "death") {
+        deathStages.push(stage);
+        if (encounter) deathEnemies.push(encounter.enemyId);
+      }
+      if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+    }
+    cleared = s.notice?.kind === "actCleared";
+    s = applyAction(s, data, { type: "dismissNotice" });
+  }
+  return {
+    state: s,
+    report: {
+      generation: tier,
+      act: 100 + tier,
+      cleared,
+      deaths: s.stats.deaths - before.deaths,
+      deathEnemies,
+      fights: s.stats.fights - before.fights,
+      levelAtBoss: s.hero.level,
+      fightSeconds,
+      bossSeconds,
+      elites,
+      thieves: 0,
+      thievesCaught: 0,
+      deathStages,
+      bossDeaths: deathStages.filter((st) => st === act.stages).length,
+      firstFightLost: false,
+    },
+  };
 }
 
 /** The Last Ember with the autopilot: attempts until the Core falls (best Boon after each win). */
@@ -769,7 +855,7 @@ function playFinale(
   data: GameData,
   generation: number,
   maxAttempts: number,
-): ActRunReport {
+): { state: GameState; report: ActRunReport } {
   let s = state;
   const before = s.stats;
   const fightSeconds: number[] = [];
@@ -804,7 +890,7 @@ function playFinale(
     cleared = s.notice?.kind === "ending";
     s = applyAction(s, data, { type: "dismissNotice" });
   }
-  return {
+  const report: ActRunReport = {
     generation,
     act: data.finale?.number ?? 8,
     cleared,
@@ -821,6 +907,7 @@ function playFinale(
     bossDeaths: deathStages.filter((st) => st === data.finale?.stages).length,
     firstFightLost: false,
   };
+  return { state: s, report };
 }
 
 /** Plays one generation up to one act (see `playGenerations`). The report of that act. */

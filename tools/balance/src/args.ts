@@ -25,6 +25,8 @@ export interface BalanceArgs {
   generations: number;
   /** Act mode: 1 = play all ten runs, the final Prestige and The Last Ember. */
   finale: number;
+  /** Act mode: after The Last Ember, climb Wildfire up to this tier (implies --finale). */
+  wildfire: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -45,6 +47,7 @@ const DEFAULTS: BalanceArgs = {
   attempts: 30,
   generations: 1,
   finale: 0,
+  wildfire: 0,
 };
 
 const NUMBER_FLAGS = {
@@ -56,6 +59,7 @@ const NUMBER_FLAGS = {
   "--attempts": "attempts",
   "--generations": "generations",
   "--finale": "finale",
+  "--wildfire": "wildfire",
 } as const;
 const STRING_FLAGS = {
   "--weapon": "weapon",

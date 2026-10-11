@@ -253,7 +253,7 @@ export const PROGRESSION = {
    * deaths at the gates and 3–5 at the boss for a typical build, beaten by farming a few levels.
    */
   wall: {
-    strength: [1.2, 1.8, 2, 2.1, 1.9, 2, 1.1],
+    strength: [1.2, 1.8, 2, 2.1, 1.9, 1.8, 1.1],
     gateShare: 0.5,
     rampShare: 0.3,
   },
@@ -270,6 +270,23 @@ export const PROGRESSION = {
    */
   finalPrestige: 7,
   finale: { life: 1.8, damage: 1.25 },
+  /**
+   * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
+   * chosen tier. Monster Level is `baseLevel` + tier (T10 loot from tier I on, finer rolls higher
+   * up), the enemies take the seventh run's newest-act pressure plus `life`/`damage` per tier
+   * above I, and Legendaries and Runes come more often. No new currency: the highest tier cleared
+   * is the goal.
+   */
+  wildfire: {
+    tiers: 10,
+    baseLevel: 90,
+    life: 0.15,
+    damage: 0.08,
+    /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
+    abilities: [1, 3] as const,
+    legendaryPerTier: 0.1,
+    runeTiersPerTier: 1,
+  },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
   /** Fusion Boons are this much likelier in the finale's Stolen Fire. */

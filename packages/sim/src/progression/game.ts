@@ -337,6 +337,8 @@ export interface RunState {
   readonly rewards: Rewards | null;
   /** The Scout's bounty for this trip, if one was handed out. */
   readonly bounty?: BountyState;
+  /** Wildfire tier (1–10) of this trip; missing on a normal trip. */
+  readonly wildfire?: number;
 }
 
 /** Shown once in the Camp after a run ends. */
@@ -346,6 +348,8 @@ export interface Notice {
   readonly actId: string;
   readonly stage: number;
   readonly enemyName?: string;
+  /** The Wildfire tier the act burned at (a cleared or lost Wildfire trip). */
+  readonly wildfire?: number;
 }
 
 /** What one Prestige gives (docs/design/ui-views-v1.md, Prestige flow: Inheritance). */
@@ -407,6 +411,8 @@ export interface LegacyState {
   /** The Last Ember: attempts so far and whether the last flame is home. */
   readonly finaleAttempts?: number;
   readonly finaleWon?: boolean;
+  /** Wildfire: the highest tier whose act boss fell (0 or missing = none yet). */
+  readonly wildfire?: number;
 }
 
 /** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */
@@ -765,6 +771,44 @@ export function stageWall(
   return { life: k, damage: k, gate: false };
 }
 
+const WILDFIRE_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
+
+/** Wildfire opens once The Last Ember is won (spielzeit-v1.md, C). */
+export const wildfireOpen = (state: GameState) => state.legacy.finaleWon === true;
+
+/** The highest Wildfire tier the hero may choose: one above the highest cleared, 0 = closed. */
+export function wildfireTop(state: GameState): number {
+  if (!wildfireOpen(state)) return 0;
+  return Math.min(PROGRESSION.wildfire.tiers, (state.legacy.wildfire ?? 0) + 1);
+}
+
+/** "Wildfire IV". */
+export const wildfireName = (tier: number) =>
+  `Wildfire ${WILDFIRE_NUMERALS[tier - 1] ?? String(tier)}`;
+
+/** Monster Level of every stage at a Wildfire tier: 91 at I, 100 at X. */
+export const wildfireLevel = (tier: number) => PROGRESSION.wildfire.baseLevel + tier;
+
+/**
+ * Life and damage of a Wildfire stage, raised per tier above I. Normal stages take the pressure of
+ * the same stage in the seventh run's newest act (every act burns like the last one); the act boss
+ * takes the finale's (it is the Warden echo at full strength).
+ */
+export function wildfirePressure(
+  data: GameData,
+  stage: number,
+  tier: number,
+  boss = false,
+): { readonly life: number; readonly damage: number } {
+  const last = PROGRESSION.finalPrestige - 1;
+  const p = boss ? PROGRESSION.finale : stagePressure(data, harvestAct(data, last), stage, last);
+  const w = PROGRESSION.wildfire;
+  return {
+    life: p.life * (1 + w.life * (tier - 1)),
+    damage: p.damage * (1 + w.damage * (tier - 1)),
+  };
+}
+
 /** What the Prestige at `prestige` (1 = the first one) gives. */
 export function prestigeRewards(data: GameData, prestige: number): PrestigeRewards {
   return {
@@ -1077,6 +1121,20 @@ export function bossAbilities(data: GameData, act: ActData, prestige: number): E
   );
 }
 
+/**
+ * Boss abilities in the Wildfire: the same count for every act boss, rising with the tier
+ * (`PROGRESSION.wildfire.abilities`), so Act 1 burns as hot as Act 6. The Harvester has none.
+ */
+export function wildfireBossAbilities(data: GameData, act: ActData, tier: number): EliteModifier[] {
+  const list = data.bossAbilities ?? [];
+  if (act.boss.archetype === "harvester") return [];
+  const w = PROGRESSION.wildfire;
+  const count = Math.min(list.length, w.abilities[0] + Math.floor(tier / w.abilities[1]));
+  return Array.from({ length: count }, (_, i) => list[(act.number - 1 + i) % list.length]).filter(
+    (m): m is EliteModifier => m !== undefined,
+  );
+}
+
 export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteModifier[] {
   return encounter.eliteModifiers.flatMap((id) => {
     const mod =
@@ -1225,7 +1283,7 @@ export function unequipBlockReason(
 
 export type GameAction =
   /** Leave the Camp and start an act at stage 1. */
-  | { readonly type: "setOut"; readonly actId: string }
+  | { readonly type: "setOut"; readonly actId: string; readonly wildfire?: number }
   /** Turn in a done bounty at the Scout. */
   | { readonly type: "turnInBounty" }
   /** The Last Ember: from the Camp into the finale's gauntlet. */
@@ -1302,7 +1360,9 @@ export type GameAction =
 export function applyAction(state: GameState, data: GameData, action: GameAction): GameState {
   switch (action.type) {
     case "setOut":
-      return setOut(state, data, action.actId);
+      return action.wildfire
+        ? setOutWildfire(state, data, action.actId, action.wildfire)
+        : setOut(state, data, action.actId);
     case "turnInBounty":
       return turnInBounty(state, data);
     case "enterFinale":
@@ -1410,6 +1470,31 @@ function setOut(state: GameState, data: GameData, actId: string): GameState {
   };
 }
 
+/** Wildfire: any act at a chosen tier, once The Last Ember is won. */
+function setOutWildfire(state: GameState, data: GameData, actId: string, tier: number): GameState {
+  requireCamp(state);
+  if (!wildfireOpen(state)) return fail("Wildfire opens after The Last Ember");
+  if (!Number.isInteger(tier) || tier < 1 || tier > wildfireTop(state)) {
+    return fail("That Wildfire still smoulders out of reach");
+  }
+  if (isFinaleAct(data, actId)) return fail("The Last Ember does not burn again");
+  getAct(data, actId);
+  return {
+    ...state,
+    notice: null,
+    flaskCharges: flaskCapacity(state, data),
+    run: {
+      actId,
+      stage: 1,
+      lifeFraction: 1,
+      phase: "intermission",
+      encounter: null,
+      rewards: null,
+      wildfire: tier,
+    },
+  };
+}
+
 /** The definition of a bounty by id. */
 export function getBounty(data: GameData, id: string): BountyDefinition {
   return data.bounties?.find((b) => b.id === id) ?? fail(`Unknown bounty "${id}"`);
@@ -1467,10 +1552,15 @@ function startStage(state: GameState, data: GameData): GameState {
     const encounter = finaleEncounter(data, run.stage, rng);
     return { ...next, run: { ...run, phase: "fight", encounter } };
   }
-  const level = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
-  const p = stagePressure(data, act, run.stage, state.legacy.prestige);
+  const tier = run.wildfire;
+  const level = tier
+    ? wildfireLevel(tier)
+    : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
+  const p = tier
+    ? wildfirePressure(data, run.stage, tier, run.stage >= stagesInAct(act))
+    : stagePressure(data, act, run.stage, state.legacy.prestige);
   const pressure = p.life > 1 ? { pressure: p } : {};
-  const wall = stageWall(data, act, run.stage, state.legacy.prestige);
+  const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
   if (run.stage >= stagesInAct(act)) {
@@ -1478,7 +1568,10 @@ function startStage(state: GameState, data: GameData): GameState {
       enemyId: act.boss.id,
       level,
       boss: true,
-      eliteModifiers: bossAbilities(data, act, state.legacy.prestige).map((m) => m.id),
+      eliteModifiers: (tier
+        ? wildfireBossAbilities(data, act, tier)
+        : bossAbilities(data, act, state.legacy.prestige)
+      ).map((m) => m.id),
       ...pressure,
       ...walled,
       seed: rng.int(0, 0x7fffffff),
@@ -1570,7 +1663,13 @@ function resolveFight(state: GameState, data: GameData): GameState {
         progress: { ...state.progress, deathsInAct: state.progress.deathsInAct + 1 },
       },
       data,
-      { kind: "death", actId: run.actId, stage: run.stage, enemyName },
+      {
+        kind: "death",
+        actId: run.actId,
+        stage: run.stage,
+        enemyName,
+        ...(run.wildfire ? { wildfire: run.wildfire } : {}),
+      },
     );
   }
 
@@ -1594,7 +1693,9 @@ function resolveFight(state: GameState, data: GameData): GameState {
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
+  const tier = run.wildfire ?? 0;
   const waymark =
+    !tier &&
     !state.progress.waymarks.includes(waymarkKey(act.id, run.stage)) &&
     waymarkStages(act).includes(run.stage);
   const fight = {
@@ -1611,13 +1712,21 @@ function resolveFight(state: GameState, data: GameData): GameState {
     state.legacy.prestige,
     rng,
     actAffixFactor(act, codexAffixFactor(data.items, fight)),
+    1 + PROGRESSION.wildfire.legendaryPerTier * tier,
   );
-  const runes = rollRuneDrops(data, rank, act.number + state.legacy.prestige, rng);
+  const runes = rollRuneDrops(
+    data,
+    rank,
+    act.number + state.legacy.prestige + PROGRESSION.wildfire.runeTiersPerTier * tier,
+    rng,
+  );
   const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
   const newTrophies = [...new Set(found)].filter((id) => !state.legacy.trophies.includes(id));
   // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10 and Elites of an act this run has not
   // cleared yet. Bosses have none: their moment belongs to the Hoard and the Echo.
+  // Wildfire has no Shrines: the Boons of the run carry the fire.
   const shrine =
+    !tier &&
     (data.boons?.length ?? 0) > 0 &&
     !state.progress.actsCleared.includes(act.id) &&
     rank !== "boss" &&
@@ -1902,6 +2011,8 @@ function rollItemChoices(
   prestige: number,
   rng: Rng,
   affixFactor?: (affix: AffixDefinition) => number,
+  /** Wildfire: Legendary chances times this. */
+  legendaryBoost = 1,
 ): Item[] {
   const count =
     rank === "boss"
@@ -1924,7 +2035,9 @@ function rollItemChoices(
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
   // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
-  const legendaryCard = rng.chance(gate.legendary[rank]) ? rng.int(0, count - 1) : -1;
+  const legendaryCard = rng.chance(Math.min(1, gate.legendary[rank] * legendaryBoost))
+    ? rng.int(0, count - 1)
+    : -1;
   // A boss may drop one of its own trophies (Teil 3 "Boss-Trophäen").
   const trophies =
     rank === "boss" && encounter.boss && gate.trophies
@@ -2042,6 +2155,7 @@ function retreat(state: GameState, data: GameData): GameState {
     actId: run.actId,
     stage: run.stage,
     ...(enemyName ? { enemyName } : {}),
+    ...(run.wildfire ? { wildfire: run.wildfire } : {}),
   });
 }
 
@@ -2145,6 +2259,20 @@ function continueRun(state: GameState, data: GameData): GameState {
   const { run, rewards } = requireRewards(state);
   if (!rewardsDone(rewards)) return fail("Pick your rewards first");
   const encounter = run.encounter ?? fail("No encounter");
+  if (encounter.boss && run.wildfire) {
+    const tier = run.wildfire;
+    const after = toCamp({ ...state, progress: { ...state.progress, deathsInAct: 0 } }, data, {
+      kind: "actCleared",
+      actId: run.actId,
+      stage: run.stage,
+      enemyName: encounterName(encounter, run.actId, data),
+      wildfire: tier,
+    });
+    return {
+      ...after,
+      legacy: { ...after.legacy, wildfire: Math.max(state.legacy.wildfire ?? 0, tier) },
+    };
+  }
   if (encounter.boss && !isFinaleAct(data, run.actId)) {
     const cleared = state.progress.actsCleared.includes(run.actId)
       ? state.progress.actsCleared
