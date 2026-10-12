@@ -395,6 +395,8 @@ export interface CombatRules {
   readonly ailmentDamage?: Readonly<Partial<Record<AilmentType, number>>>;
   /** Multiplies max life (Warrior: Iron Blood). */
   readonly lifeMultiplier?: number;
+  /** Multiplies the damage of your hits, and so the ailments they cause (Warrior: Iron Blood). */
+  readonly hitDamage?: number;
 }
 
 /** A state of the fight a Weapon Mastery bonus can depend on. */

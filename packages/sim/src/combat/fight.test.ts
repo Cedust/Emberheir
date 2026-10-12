@@ -755,6 +755,14 @@ describe("Affliction effects", () => {
     expect(fight.snapshot().hero.maxLife).toBe(110);
   });
 
+  it("the hit damage rule raises hits and the Bleed they cause (Warrior: Iron Blood)", () => {
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rules: { hitDamage: 1.2 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit")[0]?.damage).toBe(12);
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(6);
+  });
+
   it("Soul Harvest deals seconds of all DoTs at once", () => {
     const harvest = skill([{ kind: "detonateDots", seconds: 4 }]);
     const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: harvest }] });

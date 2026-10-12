@@ -1278,6 +1278,7 @@ export class Fight {
           h.multiplier *
           (attacker.setup.damageMultiplier ?? 1) *
           executeFactor(attacker.setup.rules, defender) *
+          (attacker.setup.rules?.hitDamage ?? 1) *
           crescendoFactor(attacker) *
           this.masteryDamageFactor(attacker, defender) *
           (opener ? 1 + (wr?.openerDamage ?? 0) : 1),

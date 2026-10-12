@@ -20,7 +20,11 @@ export const CLASSES: readonly HeroClass[] = [
       wisdom: 1,
       vitality: 3,
     },
-    trait: { name: "Iron Blood", description: "+10 % Life.", rules: { lifeMultiplier: 1.1 } },
+    trait: {
+      name: "Iron Blood",
+      description: "+10 % Life. Your hits deal 20 % more damage.",
+      rules: { lifeMultiplier: 1.1, hitDamage: 1.2 },
+    },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["duelist", "butcher", "warden", "tactician"],
     titles: {

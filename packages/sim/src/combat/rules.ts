@@ -15,6 +15,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let dotLifesteal = 0;
   let dotDamage = 1;
   let lifeMultiplier = 1;
+  let hitDamage = 1;
   const ailmentDamage: Partial<Record<AilmentType, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
   let execute: CombatRules["execute"];
@@ -29,6 +30,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     dotLifesteal += r.dotLifesteal ?? 0;
     dotDamage *= r.dotDamage ?? 1;
     lifeMultiplier *= r.lifeMultiplier ?? 1;
+    hitDamage *= r.hitDamage ?? 1;
     for (const [ailment, factor] of Object.entries(r.ailmentDamage ?? {}) as [
       AilmentType,
       number,
@@ -51,6 +53,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(dotLifesteal > 0 ? { dotLifesteal } : {}),
     ...(dotDamage !== 1 ? { dotDamage } : {}),
     ...(lifeMultiplier !== 1 ? { lifeMultiplier } : {}),
+    ...(hitDamage !== 1 ? { hitDamage } : {}),
     ...(Object.keys(ailmentDamage).length ? { ailmentDamage } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
     ...(execute ? { execute } : {}),
