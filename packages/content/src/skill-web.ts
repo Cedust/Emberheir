@@ -308,7 +308,12 @@ const REGIONS: readonly RegionSpec[] = [
         ],
         notable: [
           { name: "Tempest", bonuses: { shockChance: 0.12, elementalPenetration: 0.05 } },
-          { name: "Glacier", bonuses: { chillChance: 0.12, allResistance: 0.08 } },
+          {
+            name: "Glacier",
+            description: "+12 % Chill Chance. Your hits deal 25 % more damage to Chilled enemies.",
+            bonuses: { chillChance: 0.12 },
+            rules: { chilledDamage: 1.25 },
+          },
         ],
         keystones: [
           {
@@ -486,7 +491,13 @@ const REGIONS: readonly RegionSpec[] = [
           s(CORRUPT),
           m("Dread", { ailmentDuration: 0.08 }),
         ],
-        notable: { name: "Void Lord", bonuses: { corruptionChance: 0.1, ailmentDuration: 0.15 } },
+        notable: {
+          name: "Void Lord",
+          description:
+            "+10 % Corruption Chance, +15 % Ailment Duration. Heal 2 % of the damage your ailments deal.",
+          bonuses: { corruptionChance: 0.1, ailmentDuration: 0.15 },
+          rules: { dotLifesteal: 0.02 },
+        },
       },
     ],
     innerTravel: m("Decay", { ailmentDuration: 0.08 }),

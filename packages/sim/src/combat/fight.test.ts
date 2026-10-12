@@ -763,6 +763,19 @@ describe("Affliction effects", () => {
     expect(ofType(fight.events, "dot")[0]?.damage).toBe(6);
   });
 
+  it("the chilled damage rule raises hits on a Chilled enemy (Sorcerer: Glacier)", () => {
+    const chilling: WeaponDefinition = {
+      ...TEST_WEAPON,
+      attacksPerSecond: 1,
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    };
+    const hero = setup({ weapon: chilling, bonuses: NO_CRIT, rules: { chilledDamage: 1.5 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    // The first hit Chills, the second lands on a Chilled enemy.
+    expect(ofType(fight.events, "hit").map((h) => h.damage)).toEqual([10, 15]);
+  });
+
   it("Soul Harvest deals seconds of all DoTs at once", () => {
     const harvest = skill([{ kind: "detonateDots", seconds: 4 }]);
     const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: harvest }] });
