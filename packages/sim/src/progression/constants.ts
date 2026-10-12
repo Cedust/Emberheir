@@ -24,7 +24,7 @@ function buildXpTable(base: number, perLevel: number): readonly number[] {
 const XP_BASE = 20;
 const XP_PER_MONSTER_LEVEL = 10;
 /** Normal kills of the same Monster Level per level (balance CLI). */
-const XP_KILLS = (level: number) => 1.6 + 0.07 * (level - 1);
+const XP_KILLS = (level: number) => 1.5 * (1.6 + 0.07 * (level - 1));
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
@@ -254,7 +254,7 @@ export const PROGRESSION = {
    * (measured with the autopilot that gears up like a player: about the median boss margin).
    */
   wall: {
-    strength: [1.6, 3.3, 3.3, 3.2, 3.8, 2.7, 2.9],
+    strength: [1.6, 5.4, 4.4, 5.4, 5.6, 4.4, 4.4],
     gateShare: 0.5,
     rampShare: 0.3,
   },
