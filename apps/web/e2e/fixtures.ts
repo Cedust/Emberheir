@@ -392,10 +392,10 @@ export function saveWebTree(): string {
 export async function createHero(page: Page, onAttributes?: () => Promise<void>): Promise<void> {
   await page.getByRole("button", { name: "Next" }).click();
   await onAttributes?.();
-  for (let i = 0; i < 3; i++) {
-    await page.getByRole("button", { name: "Add Strength" }).click();
-    await page.getByRole("button", { name: "Add Vitality" }).click();
-  }
+  // The Warrior starts at Strength 5 and creation stops at 7: the sixth point goes to Agility.
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Add Vitality" }).click();
+  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Add Strength" }).click();
+  await page.getByRole("button", { name: "Add Agility" }).click();
   await page.getByRole("button", { name: "Begin" }).click();
 }
 
