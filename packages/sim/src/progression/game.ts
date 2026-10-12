@@ -761,20 +761,29 @@ export function stageWall(
   if (!isWallAct(data, act, prestige)) return null;
   const w = PROGRESSION.wall;
   const strength = w.strength[Math.min(prestige, w.strength.length - 1)] ?? 1;
+  // Mostly Life, little damage (balance-grundlagen-v1.md D): a wall is a test of damage and
+  // staying power that a few levels or better gear win, not a lottery of one-shots.
+  const at = (life: number, gate: boolean) => ({
+    life,
+    damage: life ** w.damageExponent,
+    gate,
+  });
   const part = (share: number) => 1 + (strength - 1) * share;
-  if (stage >= act.stages) return { life: strength, damage: strength, gate: false };
-  if (gateStages(act).includes(stage)) {
-    const k = part(w.gateShare);
-    return { life: k, damage: k, gate: true };
-  }
-  const k = part(w.rampShare * Math.min(1, (stage - 1) / Math.max(1, act.stages - 2)));
-  return { life: k, damage: k, gate: false };
+  if (stage >= act.stages) return at(strength, false);
+  if (gateStages(act).includes(stage)) return at(part(w.gateShare), true);
+  return at(part(w.rampShare * Math.min(1, (stage - 1) / Math.max(1, act.stages - 2))), false);
 }
 
 const WILDFIRE_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
 /** Wildfire opens once The Last Ember is won (spielzeit-v1.md, C). */
 export const wildfireOpen = (state: GameState) => state.legacy.finaleWon === true;
+
+/** Ember Penalty on every Resistance in this run (0 in run 1, −60 % from run 7 on). */
+export function emberPenalty(state: GameState): number {
+  const p = PROGRESSION.resistancePenalty;
+  return Math.min(p.max, p.perPrestige * state.legacy.prestige);
+}
 
 /** The highest Wildfire tier the hero may choose: one above the highest cleared, 0 = closed. */
 export function wildfireTop(state: GameState): number {
@@ -1087,6 +1096,7 @@ export function heroSetup(
         mastery.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
+      resistancePenalty: emberPenalty(state),
     },
     data.items,
   );
@@ -1175,7 +1185,8 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
       }
     : setup;
   const mods = eliteModifiersOf(encounter, data);
-  return mods.length ? applyEliteModifiers(walled, mods) : walled;
+  // A Gatekeeper is already half the wall: its modifiers, but no Elite Life and damage on top.
+  return mods.length ? applyEliteModifiers(walled, mods, { plain: encounter.gate }) : walled;
 }
 
 export function encounterName(encounter: Encounter, actId: string, data: GameData): string {

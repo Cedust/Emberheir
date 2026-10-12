@@ -53,6 +53,8 @@ export {
   statAffixValue,
   tierForItemLevel,
   tierGrowth,
+  lifeGrowth,
+  isLifeLikeStat,
   unlockedStages,
 } from "./items/affixes";
 export {
@@ -85,6 +87,7 @@ export {
   requirementsFor,
   resolveEquipment,
   scaledBaseStats,
+  scaledFlatBonuses,
   type InactiveReason,
   type ItemModifiers,
   type ResolvedEquipment,

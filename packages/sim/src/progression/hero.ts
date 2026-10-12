@@ -38,6 +38,8 @@ export interface HeroBuildOptions {
   readonly triggers?: (weapon: WeaponDefinition) => readonly TriggerSpec[];
   readonly rules?: CombatRules;
   readonly lifeFraction?: number;
+  /** Ember Penalty of the run on every Resistance. */
+  readonly resistancePenalty?: number;
 }
 
 /** Builds the hero's fight setup from attributes, gear, Skill Tree bonuses and the Battle Plan. */
@@ -74,6 +76,7 @@ export function buildHeroSetup(
       ? { weaponRules: options.weaponRules }
       : {}),
     ...(options.lifeFraction !== undefined ? { lifeFraction: options.lifeFraction } : {}),
+    ...(options.resistancePenalty ? { resistancePenalty: options.resistancePenalty } : {}),
   };
   return { setup, gear };
 }

@@ -136,7 +136,8 @@ export function FighterPanel({
         <dd>+{(fighter.stats.elementalDamage * 100).toFixed(0)} %</dd>
         <dt>Block</dt>
         <dd>
-          {(fighter.stats.blockChance * 100).toFixed(0)} % / {fighter.stats.blockValue}
+          {(fighter.stats.blockChance * 100).toFixed(0)} %, stops{" "}
+          {(fighter.stats.blockReduction * 100).toFixed(0)} %
         </dd>
         <dt>Lifesteal</dt>
         <dd>{(fighter.stats.lifesteal * 100).toFixed(1)} %</dd>

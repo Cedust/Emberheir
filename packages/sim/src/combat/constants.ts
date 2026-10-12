@@ -44,8 +44,8 @@ export const COMBAT = {
     // Intelligence gives Barrier, not Resistance: Resistance comes from gear for every class
     // (Timo, PoE rule: Strength Armor, Agility Evasion, Intelligence Barrier).
     allResistancePerIntelligence: 0,
-    /** Barrier per Intelligence point, as a share of max Life. */
-    barrierPerIntelligence: 0.03,
+    /** % more Barrier per Intelligence point (the Barrier itself comes from gear). */
+    barrierPerIntelligence: 0.08,
     attackSpeedPerAgility: 0.03,
     evasionPerAgility: 0.02,
     heatGainPerWisdom: 0.06,
@@ -62,10 +62,14 @@ export const COMBAT = {
   sunder: { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 },
 
   /**
-   * Intelligence Barrier: full at fight start, refills after 1.5 s without a hit (20 % per s). A
-   * longer pause keeps it from refilling fully between the slow swings of early bosses.
+   * Barrier (like Energy Shield): full at fight start and always trickles back (`steady` of its
+   * max per s), so it holds a long boss fight like Armor does. After `delay` s without a hit it
+   * refills fast (`perSecond`). The delay keeps it from refilling fully between the slow swings
+   * of early bosses.
    */
-  barrierRecharge: { delay: 1.5, perSecond: 0.2 },
+  barrierRecharge: { steady: 0.03, delay: 1.5, perSecond: 0.2 },
+  /** Share of a blocked hit that a block stops (before Stoneguard). */
+  blockReduction: 0.5,
   /** Bosses shrug off stuns: a stun holds them this much as long (no stunlocked boss). */
   bossStunTaken: 0.5,
 
@@ -77,6 +81,11 @@ export const COMBAT = {
   maxArmorReduction: 0.9,
   /** Armor reduction = armor / (armor + armorConstantPerLevel × attacker level). */
   armorConstantPerLevel: 20,
+  /**
+   * Monster Armor × (this × Monster Level): an armored monster (about 30 Armor) stops about a
+   * third of a Physical hit at every level, a plain one about a tenth.
+   */
+  monsterArmorPerLevel: 0.34,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,

@@ -34,7 +34,7 @@ export const TEST_SHIELD: ItemBaseDefinition = {
   name: "Test Shield",
   slot: "offHand",
   fitsWeaponRange: "melee",
-  baseStats: { armor: 10, blockChance: 0.2, blockValue: 3 },
+  baseStats: { armor: 10, blockChance: 0.2 },
   requirements: { strength: 8 },
   maxSockets: 2,
 };

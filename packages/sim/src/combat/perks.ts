@@ -41,8 +41,8 @@ export const BREAKPOINTS = [4, 7, 10] as const;
 
 /** Numbers of the Perks. Starting values for the balance CLI. */
 export const PERK = {
-  /** Stoneguard: more Block Value. */
-  stoneguardBlockValue: 0.25,
+  /** Stoneguard: a block stops this much more of the hit. */
+  stoneguardBlock: 0.15,
   /** Titan: a hit of at least this share of the target's max life stuns. */
   titanThreshold: 0.1,
   titanStun: 0.5,
@@ -80,8 +80,8 @@ export const PERKS: readonly PerkDefinition[] = [
     name: "Stoneguard",
     attribute: "strength",
     threshold: 7,
-    description: `+${pct(PERK.stoneguardBlockValue)} Block Value.`,
-    explain: `When you block with a shield, you stop ${pct(PERK.stoneguardBlockValue)} more damage.`,
+    description: `Blocks stop ${pct(PERK.stoneguardBlock)} more of the hit.`,
+    explain: `When you block with a shield, it stops ${pct(PERK.stoneguardBlock)} more of the hit.`,
   },
   {
     id: "titan",

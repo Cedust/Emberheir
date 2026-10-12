@@ -67,6 +67,39 @@ describe("deriveStats", () => {
     expect(s.voidResistance).toBeCloseTo(0.12);
   });
 
+  it("the Ember Penalty comes off every Resistance before the cap", () => {
+    const s = deriveStats(
+      setup({
+        resistancePenalty: 0.4,
+        bonuses: { allResistance: 0.1, fireResistance: 0.5, coldResistance: 2 },
+      }),
+    );
+    expect(s.resistance).toBe(0);
+    expect(s.fireResistance).toBeCloseTo(0.2);
+    expect(s.coldResistance).toBe(COMBAT.maxResistance);
+    expect(s.voidResistance).toBe(0);
+  });
+
+  it("% Life, % Armor and % Barrier add up with the hero's attributes", () => {
+    const s = deriveStats(
+      setup({
+        attributeScale: "heir",
+        baseLife: 100,
+        attributes: { ...ZERO_ATTRIBUTES, vitality: 5, strength: 5, intelligence: 5 },
+        bonuses: {
+          armor: 100,
+          barrier: 100,
+          increasedLife: 0.2,
+          increasedArmor: 0.2,
+          increasedBarrier: 0.2,
+        },
+      }),
+    );
+    expect(s.maxLife).toBe(Math.round(100 * (1 + 5 * COMBAT.heir.lifePerVitality + 0.2)));
+    expect(s.armor).toBeCloseTo(100 * (1 + 5 * COMBAT.heir.armorPerStrength + 0.2));
+    expect(s.barrier).toBe(Math.round(100 * (1 + 5 * COMBAT.heir.barrierPerIntelligence + 0.2)));
+  });
+
   it("uses the hero life curve when no base life is given", () => {
     const noBaseLife = {
       name: "Heir",

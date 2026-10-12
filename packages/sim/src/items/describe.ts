@@ -15,6 +15,7 @@ import {
   requiredLevel,
   requirementsFor,
   scaledBaseStats,
+  scaledFlatBonuses,
 } from "./equipment";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
@@ -29,7 +30,11 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   wisdom: "Wisdom",
   vitality: "Vitality",
   life: "Life",
+  increasedLife: "max Life",
   armor: "Armor",
+  increasedArmor: "Armor",
+  barrier: "Barrier",
+  increasedBarrier: "Barrier",
   physicalDamage: "Physical Damage",
   elementalDamage: "Elemental Damage",
   critChance: "Crit Chance",
@@ -37,7 +42,6 @@ export const STAT_NAMES: Readonly<Record<AffixStat, string>> = {
   attackSpeed: "Attack Speed",
   evasion: "Evasion",
   blockChance: "Block Chance",
-  blockValue: "Block Value",
   allResistance: "All Resistance",
   fireResistance: "Fire Resistance",
   coldResistance: "Cold Resistance",
@@ -272,7 +276,9 @@ export function describeItem(
   baseLines.push(...describeBonuses(scaledBaseStats(base, item.tier)));
 
   const implicitLines = [
-    ...describeBonuses((weapon ? base.weapon?.implicit : base.implicit) ?? {}),
+    ...describeBonuses(
+      weapon ? (base.weapon?.implicit ?? {}) : scaledFlatBonuses(base.implicit, item.tier),
+    ),
     ...(weapon?.triggers ?? []).map(describeTrigger),
   ];
 
@@ -303,7 +309,10 @@ export function describeItem(
     ];
   });
   // Runeword and Rune bonuses read like affixes.
-  const extra = sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses);
+  const extra = scaledFlatBonuses(
+    sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses),
+    item.tier,
+  );
   const wordAttributes = ATTRIBUTES.flatMap((a) =>
     word?.attributes?.[a] ? [describeStat(a, word.attributes[a])] : [],
   );

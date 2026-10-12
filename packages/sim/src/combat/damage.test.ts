@@ -93,27 +93,24 @@ describe("resolveHit", () => {
     expect(resolveHit(input({ defender, type: "void" }), rng())).toMatchObject({ damage: 90 });
   });
 
-  it("subtracts Block Value from blocked hits, down to 0", () => {
-    const defender = stats({ blockChance: 1, blockValue: 30 });
+  it("a block stops a fixed share of the hit, so it holds against the biggest hits", () => {
+    const defender = stats({ blockChance: 1 });
     // Block chance is capped at 75 %, so look for a blocked hit.
     const r = rng();
     const results = Array.from({ length: 20 }, () => resolveHit(input({ defender }), r));
     expect(results).toContainEqual({
       kind: "hit",
-      damage: 70,
+      damage: 100 * (1 - COMBAT.blockReduction),
       crit: false,
       blocked: true,
       glancing: false,
     });
-    const wall = stats({ blockChance: 1, blockValue: 500 });
-    const walled = Array.from({ length: 20 }, () => resolveHit(input({ defender: wall }), r));
-    expect(walled).toContainEqual({
-      kind: "hit",
-      damage: 0,
-      crit: false,
-      blocked: true,
-      glancing: false,
-    });
+    const huge = Array.from({ length: 20 }, () =>
+      resolveHit(input({ defender, baseDamage: 10_000 }), r),
+    );
+    expect(huge).toContainEqual(
+      expect.objectContaining({ blocked: true, damage: 10_000 * (1 - COMBAT.blockReduction) }),
+    );
   });
 
   it("evades elemental attacks but never blocks elemental hits", () => {
@@ -124,7 +121,7 @@ describe("resolveHit", () => {
       () => resolveHit(input({ defender: evader, type: "fire" }), r).kind,
     );
     expect(kinds).toContain("evaded");
-    const wall = stats({ blockChance: 1, blockValue: 30 });
+    const wall = stats({ blockChance: 1 });
     for (let i = 0; i < 200; i++) {
       expect(resolveHit(input({ defender: wall, type: "fire" }), r)).toMatchObject({
         kind: "hit",

@@ -19,6 +19,9 @@ const PERCENT_STATS: ReadonlySet<AffixStat> = new Set<AffixStat>([
   "attackSpeed",
   "evasion",
   "blockChance",
+  "increasedLife",
+  "increasedArmor",
+  "increasedBarrier",
   "allResistance",
   "fireResistance",
   "coldResistance",
@@ -84,10 +87,30 @@ export function tierGrowth(perTier: number, tier: number): number {
   return 1 + perTier * (Math.max(1, tier) - 1);
 }
 
+/**
+ * Flat values that count in hit points (Life, Barrier, Thorns) grow with the tier like the hero's
+ * own Base Life grows with the level, so gear Life stays a steady share all game
+ * (balance-grundlagen-v1.md A3) instead of fading to a few percent.
+ */
+const LIFE_LIKE_STATS: ReadonlySet<AffixStat> = new Set<AffixStat>(["life", "barrier", "thorns"]);
+
+export function isLifeLikeStat(stat: AffixStat): boolean {
+  return LIFE_LIKE_STATS.has(stat);
+}
+
+/** Growth factor of a Life-like flat value at a tier (T1 = 1). */
+export function lifeGrowth(tier: number): number {
+  return (1 + ITEMS.lifeGrowthPerTier) ** (Math.max(1, Math.min(tier, ITEMS.maxTier)) - 1);
+}
+
 /** Raw (unrounded) value of an affix at a tier and quality. */
 export function rawAffixValue(def: AffixDefinition, tier: number, quality: number): number {
   const q = Math.min(1, Math.max(0, quality));
-  return (def.value.min + (def.value.max - def.value.min) * q) * tierGrowth(def.perTier, tier);
+  const growth =
+    def.kind === "stat" && isLifeLikeStat(def.stat)
+      ? lifeGrowth(tier)
+      : tierGrowth(def.perTier, tier);
+  return (def.value.min + (def.value.max - def.value.min) * q) * growth;
 }
 
 /** Final value of a stat affix at a tier and quality. */

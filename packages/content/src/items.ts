@@ -128,7 +128,7 @@ export const ROUND_SHIELD: ItemBaseDefinition = {
   name: "Round Shield",
   slot: "offHand",
   fitsWeaponRange: "melee",
-  baseStats: { armor: 4, blockChance: 0.15, blockValue: 2 },
+  baseStats: { armor: 4, blockChance: 0.15 },
   requirements: { strength: 3 },
   affixWeights: { defense: 1.5, elemental: 0.5 },
   maxSockets: 3,
@@ -141,9 +141,10 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   fitsWeaponRange: "ranged",
   // A Focus is for casters; a Bow or Crossbow takes a Quiver.
   fitsWeapons: ["fire-wand", "staff"],
+  baseStats: { barrier: 10 },
   implicit: { elementalDamage: 0.08, heatGain: 0.05 },
   requirements: { intelligence: 3 },
-  affixWeights: { elemental: 1.5, heat: 1.5, block: 0, physical: 0.5 },
+  affixWeights: { elemental: 1.5, heat: 1.5, barrier: 4, block: 0, physical: 0.5 },
   maxSockets: 2,
 };
 
@@ -166,9 +167,10 @@ export const GRIMOIRE: ItemBaseDefinition = {
   slot: "offHand",
   fitsWeaponRange: "ranged",
   fitsWeapons: ["fire-wand", "staff"],
+  baseStats: { barrier: 10 },
   implicit: { ailmentDuration: 0.1, burnChance: 0.03, corruptionChance: 0.03 },
   requirements: { wisdom: 3 },
-  affixWeights: { ailment: 1.5, elemental: 1.2, block: 0, physical: 0.5 },
+  affixWeights: { ailment: 1.5, elemental: 1.2, barrier: 4, block: 0, physical: 0.5 },
   maxSockets: 2,
 };
 
@@ -212,10 +214,11 @@ export const SILK_ROBE: ItemBaseDefinition = {
   id: "silk-robe",
   name: "Silk Robe",
   slot: "body",
-  baseStats: { armor: 3 },
+  // Caster bases carry Barrier instead of Armor, like PoE's Energy Shield bases.
+  baseStats: { armor: 1, barrier: 22 },
   implicit: { allResistance: 0.05 },
   requirements: { intelligence: 3 },
-  affixWeights: { elemental: 1.5, heat: 1.5 },
+  affixWeights: { elemental: 1.5, heat: 1.5, barrier: 4 },
   maxSockets: 3,
 };
 
@@ -244,10 +247,10 @@ export const CIRCLET: ItemBaseDefinition = {
   id: "circlet",
   name: "Circlet",
   slot: "helm",
-  baseStats: { armor: 1 },
+  baseStats: { barrier: 12 },
   implicit: { heatGain: 0.05 },
   requirements: { intelligence: 3 },
-  affixWeights: { elemental: 1.5, heat: 1.5 },
+  affixWeights: { elemental: 1.5, heat: 1.5, barrier: 4 },
   maxSockets: 2,
 };
 
@@ -274,10 +277,10 @@ export const SILK_WRAPS: ItemBaseDefinition = {
   id: "silk-wraps",
   name: "Silk Wraps",
   slot: "gloves",
-  baseStats: { armor: 1 },
+  baseStats: { barrier: 8 },
   implicit: { elementalDamage: 0.04 },
   requirements: { intelligence: 3 },
-  affixWeights: { elemental: 1.5, physical: 0.5 },
+  affixWeights: { elemental: 1.5, barrier: 4, physical: 0.5 },
 };
 
 export const LEATHER_BOOTS: ItemBaseDefinition = {
@@ -304,10 +307,10 @@ export const SILK_SLIPPERS: ItemBaseDefinition = {
   id: "silk-slippers",
   name: "Silk Slippers",
   slot: "boots",
-  baseStats: { armor: 1 },
+  baseStats: { barrier: 8 },
   implicit: { startingHeat: 5 },
   requirements: { intelligence: 3 },
-  affixWeights: { heat: 1.5, elemental: 1.5 },
+  affixWeights: { heat: 1.5, elemental: 1.5, barrier: 4 },
 };
 
 export const SASH: ItemBaseDefinition = {
@@ -462,7 +465,19 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     tags: ["life", "defense"],
     weight: 14,
     value: { min: 8, max: 20 },
-    perTier: 1,
+    // Life grows with the tier like the hero's Base Life (ITEMS.lifeGrowthPerTier), not by this.
+    perTier: 0,
+  }),
+  // Barrier (like Energy Shield) rolls mostly on caster bases (their `barrier` weight).
+  stat({
+    id: "barrier",
+    stat: "barrier",
+    prefix: "Warded",
+    slots: ["offHand", "helm", "body", "gloves", "boots"],
+    tags: ["barrier", "defense"],
+    weight: 3,
+    value: { min: 6, max: 15 },
+    perTier: 0,
   }),
   // Belts only: the Ember Flask holds more (entschlackung-v1.md: no Flask Charges as drops).
   stat({
@@ -554,11 +569,13 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "all-resistance",
     stat: "allResistance",
     prefix: "Shimmering",
-    slots: ["offHand", ...ARMOR_SLOTS, ...JEWELRY],
+    // Only on jewelry, off hands and body armor: All Resistance is the rare, valued roll.
+    slots: ["offHand", "body", ...JEWELRY],
     tags: ["defense", "resistance"],
     value: { min: 0.04, max: 0.1 },
-    // Resistance is no free pass any more: it grows slower than Armor (Timo, Diablo rule).
-    perTier: 0.08,
+    // Resistance is no free pass any more: it grows slower than Armor (Timo, Diablo rule), and
+    // the Ember Penalty of later runs takes part of it away (PROGRESSION.resistancePenalty).
+    perTier: 0.05,
   }),
   ...(
     [
@@ -576,7 +593,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
       tags: ["defense", "resistance"],
       weight: 8,
       value: { min: 0.08, max: 0.18 },
-      perTier: 0.08,
+      perTier: 0.05,
     }),
   ),
   stat({
@@ -662,7 +679,8 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     tags: ["defense"],
     weight: 6,
     value: { min: 2, max: 4 },
-    perTier: 1,
+    // Grows with the tier like Life (ITEMS.lifeGrowthPerTier).
+    perTier: 0,
   }),
   stat({
     id: "burn-chance",

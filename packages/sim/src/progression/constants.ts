@@ -127,7 +127,13 @@ export const PROGRESSION = {
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: XP_BASE,
   xpPerMonsterLevel: XP_PER_MONSTER_LEVEL,
-  /** Enemies below the hero's level give 10 % less XP per level, at least 10 %. */
+  /**
+   * Enemies below the hero's level give less XP (Timo, balance-grundlagen-v1.md E): only
+   * `xpSoftPenalty` per level up to `xpSoftGap` levels (farming a few levels pays), then
+   * `xpPenaltyPerLevel` more per level, at least `xpMinFactor`.
+   */
+  xpSoftPenalty: 0.02,
+  xpSoftGap: 5,
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
   /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
@@ -212,6 +218,13 @@ export const PROGRESSION = {
   /** ...for at most this many deaths. Resets when the act boss falls. */
   pityMaxDeaths: 4,
 
+  /**
+   * Ember Penalty (balance-grundlagen-v1.md C, the D2/PoE rule): every run after the first takes
+   * this much off every Resistance, up to `max` (run 7, the finale and the Wildfire). Resistance
+   * becomes a gear goal instead of a free pass.
+   */
+  resistancePenalty: { perPrestige: 0.1, max: 0.6 },
+
   /** Elite chance = base + perStage × (stage in act − 1) (+ per act / prestige later). */
   eliteChanceBase: 0.05,
   /** No Elites on the first stages of an act, so a fresh Heir cannot lose its first fight. */
@@ -255,6 +268,8 @@ export const PROGRESSION = {
    */
   wall: {
     strength: [1.6, 5.4, 4.4, 5.4, 5.6, 4.4, 4.4],
+    /** Damage takes only strength^this (√), Life the full strength. */
+    damageExponent: 0.5,
     gateShare: 0.5,
     rampShare: 0.3,
   },

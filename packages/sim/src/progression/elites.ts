@@ -35,12 +35,16 @@ export function eliteModifierCount(monsterLevel: number): number {
 export function applyEliteModifiers(
   setup: CombatantSetup,
   modifiers: readonly EliteModifier[],
+  /** `plain`: the modifiers only, without the Elite Life and damage (Gatekeepers). */
+  options: { readonly plain?: boolean | undefined } = {},
 ): CombatantSetup {
   const triggers = [...(setup.triggers ?? []), ...modifiers.flatMap((m) => m.triggers ?? [])];
+  const life = options.plain ? 1 : PROGRESSION.eliteLifeMultiplier;
+  const damage = options.plain ? 1 : PROGRESSION.eliteDamageMultiplier;
   return {
     ...setup,
-    baseLife: (setup.baseLife ?? 100) * PROGRESSION.eliteLifeMultiplier,
-    damageMultiplier: (setup.damageMultiplier ?? 1) * PROGRESSION.eliteDamageMultiplier,
+    baseLife: (setup.baseLife ?? 100) * life,
+    damageMultiplier: (setup.damageMultiplier ?? 1) * damage,
     bonuses: sumBonuses(setup.bonuses, ...modifiers.map((m) => m.bonuses)),
     ...(triggers.length ? { triggers } : {}),
   };

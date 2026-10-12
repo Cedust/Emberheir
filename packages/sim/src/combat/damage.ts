@@ -122,13 +122,13 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   if (glancing) damage *= input.glancingDamage ?? COMBAT.glancingDamage;
   damage = mitigate(damage, input.type, attacker, input.attackerLevel, defender);
   damage *= 1 + input.defenderDamageTaken;
-  if (blocked) damage -= defender.blockValue;
+  // A block stops a share of the hit (D2: the shield takes the blow), so it keeps its worth
+  // against the biggest late hits.
+  if (blocked) damage *= 1 - defender.blockReduction;
 
-  // A hit that lands always deals at least 1, a blocked hit can be absorbed completely.
-  const minimum = blocked ? 0 : 1;
   return {
     kind: "hit",
-    damage: Math.max(minimum, Math.round(damage)),
+    damage: Math.max(1, Math.round(damage)),
     crit,
     blocked,
     glancing,

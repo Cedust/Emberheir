@@ -106,6 +106,12 @@ export function monsterLevelScaling(level: number): {
 /** Builds the fight setup for an enemy at a given Monster Level. */
 export function createEnemySetup(enemy: EnemyDefinition, level: number): CombatantSetup {
   const scaling = monsterLevelScaling(level);
+  // Monster Armor grows with the Monster Level like the hero's Armor constant does, so an armored
+  // monster keeps the same footing all game and Physical Penetration stays worth something.
+  const bonuses = {
+    ...enemy.bonuses,
+    increasedArmor: (enemy.bonuses?.increasedArmor ?? 0) + COMBAT.monsterArmorPerLevel * level - 1,
+  };
   return {
     name: enemy.name,
     level,
@@ -114,7 +120,7 @@ export function createEnemySetup(enemy: EnemyDefinition, level: number): Combata
     rotation: enemy.skills.map((skill) => ({ skill })),
     baseLife: enemy.baseLife * scaling.life,
     damageMultiplier: scaling.damage,
-    ...(enemy.bonuses ? { bonuses: enemy.bonuses } : {}),
+    bonuses,
     ...(enemy.telegraphs ? { telegraphs: enemy.telegraphs } : {}),
     ...(enemy.triggers ? { triggers: enemy.triggers } : {}),
     ...(enemy.boss ? { rules: { stunTaken: COMBAT.bossStunTaken } } : {}),

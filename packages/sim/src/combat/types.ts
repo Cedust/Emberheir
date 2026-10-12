@@ -51,7 +51,15 @@ export interface AilmentChance {
  */
 export interface StatBonuses {
   readonly life?: number;
+  /** % more max Life (adds up with Vitality's share). */
+  readonly increasedLife?: number;
   readonly armor?: number;
+  /** % more Armor (adds up with Strength's share). */
+  readonly increasedArmor?: number;
+  /** Barrier from gear (caster bases), like Energy Shield: absorbs damage before Life. */
+  readonly barrier?: number;
+  /** % more Barrier (adds up with Intelligence's share). */
+  readonly increasedBarrier?: number;
   readonly physicalDamage?: number;
   readonly elementalDamage?: number;
   readonly critChance?: number;
@@ -59,7 +67,6 @@ export interface StatBonuses {
   readonly attackSpeed?: number;
   readonly evasion?: number;
   readonly blockChance?: number;
-  readonly blockValue?: number;
   readonly allResistance?: number;
   /** Resistance against one element, added to All Resistance (same cap). */
   readonly fireResistance?: number;
@@ -87,7 +94,7 @@ export interface StatBonuses {
 }
 
 /** Stats a timed buff may raise. Life is excluded so buffs never change max life mid-fight. */
-export type BuffStat = Exclude<keyof StatBonuses, "life">;
+export type BuffStat = Exclude<keyof StatBonuses, "life" | "increasedLife">;
 
 /**
  * When a trigger fires (docs/design/stat-liste-v2.md section 8). "Attack" means the fighter's
@@ -399,6 +406,8 @@ export interface CombatRules {
   readonly hitDamage?: number;
   /** Multiplies the damage of your hits against a Chilled enemy (Sorcerer: Glacier). */
   readonly chilledDamage?: number;
+  /** Multiplies how fast your Barrier recharges (Ward Draught, Barrier Notables). */
+  readonly barrierRecharge?: number;
 }
 
 /** A state of the fight a Weapon Mastery bonus can depend on. */
@@ -548,4 +557,9 @@ export interface CombatantSetup {
   readonly attributeScale?: "classic" | "heir";
   /** Attribute Breakpoint Perks (attribute-v1.md section 4). */
   readonly perks?: readonly PerkId[];
+  /**
+   * Ember Penalty (D2/PoE rule, balance-grundlagen-v1.md C): taken off every Resistance before
+   * the cap, so later runs need real Resistance gear.
+   */
+  readonly resistancePenalty?: number;
 }
