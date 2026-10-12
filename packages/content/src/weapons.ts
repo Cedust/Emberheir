@@ -14,7 +14,9 @@ export const SWORD: WeaponDefinition = {
   id: "sword",
   name: "Sword",
   defaultAttack: "Slash",
-  damage: { min: 10, max: 17 },
+  // Raised from 10-17: the Riposte rarely fires against slow bosses, so the Sword had the least
+  // damage of all melee weapons.
+  damage: { min: 12, max: 20 },
   damageType: "physical",
   attacksPerSecond: 0.8,
   heatBehavior: "cooling",

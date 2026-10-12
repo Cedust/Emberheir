@@ -471,8 +471,8 @@ const SWORD = buildTree({
       id: "final-verdict",
       name: "Final Verdict",
       form: "Verdict Blade",
-      description: "+50 % damage to enemies below 30 % Life, −15 % above.",
-      effect: { rules: { execute: { below: 0.3, bonus: 0.5, above: 0.15 } } },
+      description: "+80 % damage to enemies below 30 % Life, −10 % above.",
+      effect: { rules: { execute: { below: 0.3, bonus: 0.8, above: 0.1 } } },
     },
   ],
 });
@@ -885,8 +885,8 @@ const DAGGER = buildTree({
       name: "Toxic Bloom",
       form: "Venom Fang",
       description:
-        "At 10 Poison stacks all of them burst for 150 % of their rest. Then no Poison for 3 s.",
-      effect: { weaponRules: { poisonBurst: { stacks: 10, multiplier: 1.5, lockout: 3 } } },
+        "At 10 Poison stacks all of them burst for 200 % of their rest. Then no Poison for 1 s.",
+      effect: { weaponRules: { poisonBurst: { stacks: 10, multiplier: 2, lockout: 1 } } },
     },
     {
       id: "shadowstep",

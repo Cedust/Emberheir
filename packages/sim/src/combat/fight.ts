@@ -383,7 +383,9 @@ export function skillCost(setup: CombatantSetup, skill: SkillDefinition): number
 function executeFactor(rules: CombatRules | undefined, defender: Fighter): number {
   const execute = rules?.execute;
   if (!execute) return 1;
-  return defender.life / defender.stats.maxLife < execute.below ? 1 + execute.bonus : 1;
+  return defender.life / defender.stats.maxLife < execute.below
+    ? 1 + execute.bonus
+    : 1 - (execute.above ?? 0);
 }
 
 /** Crescendo (Capstone): +2 % damage for every 100 Heat spent this fight. */
@@ -652,7 +654,8 @@ export class Fight {
       this.damage(f, damage);
       if (this.result) return;
       const source = this.fighters[other(f.side)];
-      const leech = source.setup.rules?.dotLifesteal ?? 0;
+      const leech =
+        (source.setup.rules?.dotLifesteal ?? 0) + source.stats.lifesteal * COMBAT.ailmentLifesteal;
       if (leech > 0) this.heal(source, damage * leech);
       const wr = source.setup.weaponRules;
       if (wr?.heatPerDotTick?.ailment === tick.ailment) {

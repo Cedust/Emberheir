@@ -596,6 +596,19 @@ describe("Legendary Power rules", () => {
     expect(ofType(full.events, "hit")[0]?.damage).toBe(10);
   });
 
+  it("Execute rule with a penalty above the threshold (Final Verdict)", () => {
+    const hero = setup({
+      bonuses: NO_CRIT,
+      rules: { execute: { below: 0.3, bonus: 0.8, above: 0.1 } },
+    });
+    const full = new Fight(hero, dummy(), 1);
+    full.advance(1.1);
+    expect(ofType(full.events, "hit")[0]?.damage).toBe(9);
+    const low = new Fight(hero, dummy({ lifeFraction: 0.2 }), 1);
+    low.advance(1.1);
+    expect(ofType(low.events, "hit")[0]?.damage).toBe(18);
+  });
+
   it("DoT Lifesteal: your ailment ticks heal you", () => {
     const hero = setup({
       bonuses: { ...NO_CRIT, bleedChance: 1 },
@@ -608,6 +621,29 @@ describe("Legendary Power rules", () => {
     const dots = ofType(fight.events, "dot");
     expect(dots.length).toBeGreaterThan(0);
     expect(heals.map((h) => h.amount)).toEqual(dots.map((d) => d.damage));
+  });
+
+  it("Lifesteal heals half as much from ailment ticks as from hits", () => {
+    const hero = setup({
+      bonuses: { ...NO_CRIT, bleedChance: 1, lifesteal: 0.5 },
+      lifeFraction: 0.2,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.5);
+    const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
+    const hits = sum(
+      ofType(fight.events, "hit")
+        .filter((e) => e.side === "hero")
+        .map((e) => e.damage),
+    );
+    const dots = sum(ofType(fight.events, "dot").map((e) => e.damage));
+    const heals = sum(
+      ofType(fight.events, "heal")
+        .filter((e) => e.side === "hero")
+        .map((e) => e.amount),
+    );
+    expect(dots).toBeGreaterThan(0);
+    expect(heals).toBeCloseTo(hits * 0.5 + dots * 0.5 * COMBAT.ailmentLifesteal, -1);
   });
 });
 
