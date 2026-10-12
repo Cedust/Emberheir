@@ -33,9 +33,9 @@ describe("Walls of the newest act", () => {
     expect(late?.life).toBeGreaterThan(1);
     expect(gate?.gate).toBe(true);
     expect(gate?.life).toBeGreaterThan(late?.life ?? 0);
-    expect(boss?.life).toBe(PROGRESSION.wall.strength[1]);
-    // Mostly Life: damage takes only the square root.
-    expect(boss?.damage).toBeCloseTo(Math.sqrt(boss?.life ?? 0));
+    expect(boss?.damage).toBe(PROGRESSION.wall.strength[1]);
+    // Mostly damage: Life takes only the square root, so the fight stays short.
+    expect(boss?.life).toBeCloseTo(Math.sqrt(boss?.damage ?? 0));
   });
 
   it("run 1 is gentler than run 2", () => {

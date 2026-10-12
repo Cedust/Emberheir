@@ -1,8 +1,12 @@
-import type { FighterSnapshot } from "@emberheir/sim";
+import { COMBAT, type FighterSnapshot } from "@emberheir/sim";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { fmt } from "../../../ui/items";
 import { skillIcon, skillTint } from "../skills";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, hudLayout } from "./layout";
+
+/** Tooltip of an announced Heavy Attack: it hits hard, but never more than its cap. */
+const heavyTitle = (skill: string) =>
+  `Heavy Attack: ${skill}. Hits hard, but never more than ${Math.round(COMBAT.heavyHitCap * 100)} % of your Life + Barrier.`;
 
 /**
  * The DOM half of the Diablo-style battle HUD: everything you read or hover (numbers, slots,
@@ -226,13 +230,13 @@ export function Rhythm(props: {
             left: px(heavyAt),
             width: Math.max(10, px(heavyAt + f.nextHeavy.windup) - px(heavyAt)),
           }}
-          title={`Heavy Attack: ${f.nextHeavy.skill}`}
+          title={heavyTitle(f.nextHeavy.skill)}
         >
           <Icon name="warning" size={12} color="#ffd9bf" />
         </div>
       )}
       {heavyAt !== null && f.nextHeavy && heavyAt >= RHYTHM_WINDOW && (
-        <div className="rhythm-heavy later" title={`Heavy Attack: ${f.nextHeavy.skill}`}>
+        <div className="rhythm-heavy later" title={heavyTitle(f.nextHeavy.skill)}>
           <Icon name="warning" size={11} color="#ffd9bf" />
           {Math.ceil(heavyAt)}s
         </div>

@@ -14,7 +14,11 @@ import {
   applyAction,
   armorReduction,
   type CombatantSetup,
+  type DamageType,
+  type EnemyDefinition,
+  type ActData,
   Fight,
+  draughtsOpen,
   currentFight,
   deriveStats,
   type LearnedNodes,
@@ -99,24 +103,129 @@ function dummyDps(setup: CombatantSetup): number {
   return Math.max(1, (enemy.maxLife - enemy.life) / DUMMY_SECONDS);
 }
 
+/** Share of the incoming damage by type: Physical and the four elements, summing to 1. */
+export type DamageProfile = Readonly<Record<DamageType, number>>;
+
+const EVEN_PROFILE: DamageProfile = {
+  physical: 0.5,
+  fire: 0.125,
+  cold: 0.125,
+  lightning: 0.125,
+  void: 0.125,
+};
+
+/** Damage types an enemy deals: its weapon, its skills and its telegraphs, one vote each. */
+function enemyProfile(enemy: EnemyDefinition): Record<DamageType, number> {
+  const votes: Record<DamageType, number> = {
+    physical: 0,
+    fire: 0,
+    cold: 0,
+    lightning: 0,
+    void: 0,
+  };
+  // The Default Attack lands most of the damage over a fight.
+  votes[enemy.weapon.damageType] += 4;
+  const skills = [...enemy.skills, ...(enemy.telegraphs ?? []).map((t) => t.skill)];
+  for (const skill of skills) {
+    for (const hit of skill.hits) {
+      votes[hit.kind === "spell" ? hit.damageType : (hit.damageType ?? enemy.weapon.damageType)]++;
+    }
+  }
+  const total = Object.values(votes).reduce((a, b) => a + b, 0);
+  for (const key of Object.keys(votes) as DamageType[]) votes[key] /= total;
+  return votes;
+}
+
+/**
+ * What an act throws at the hero: half its enemies, half its boss. Like a player reading the
+ * Scout's report, the autopilot gears and brews for it.
+ */
+export function actProfile(act: ActData): DamageProfile {
+  const out: Record<DamageType, number> = { physical: 0, fire: 0, cold: 0, lightning: 0, void: 0 };
+  const boss = enemyProfile(act.boss);
+  for (const enemy of act.enemies) {
+    const p = enemyProfile(enemy);
+    for (const key of Object.keys(out) as DamageType[]) {
+      out[key] += (0.5 * p[key]) / act.enemies.length;
+    }
+  }
+  for (const key of Object.keys(out) as DamageType[]) out[key] += 0.5 * boss[key];
+  return out;
+}
+
+const PROFILES = new Map<string, DamageProfile>();
+
+/** The damage mix of the act the hero is in (an even mix in the Camp and the finale). */
+function runProfile(state: GameState, data: GameData): DamageProfile {
+  const actId = state.run?.actId;
+  const act = actId ? data.acts.find((a) => a.id === actId) : undefined;
+  if (!act) return EVEN_PROFILE;
+  let profile = PROFILES.get(act.id);
+  if (!profile) {
+    profile = actProfile(act);
+    PROFILES.set(act.id, profile);
+  }
+  return profile;
+}
+
 /**
  * How good the hero is with this gear: measured damage per second times effective Life against
- * an even mix of Physical and magic damage. Like a player, the autopilot builds up what its build
- * lives on and fills its weakest spot (Armor for a caster, Resistance for a fighter).
+ * the coming act's damage mix (an even Physical/magic mix when unknown). Like a player, the
+ * autopilot builds up what its build lives on and fills its weakest spot.
  */
-function gearValue(state: GameState, data: GameData): number {
+function gearValue(
+  state: GameState,
+  data: GameData,
+  profile: DamageProfile = runProfile(state, data),
+): number {
   const setup = heroSetup(state, data).setup;
   const st = deriveStats(setup);
   const dps = dummyDps(setup);
-  const res =
-    (st.fireResistance + st.coldResistance + st.lightningResistance + st.voidResistance) / 4;
-  const physTaken = (1 - armorReduction(st.armor, setup.level)) * (1 - 0.3 * st.blockChance);
+  const physTaken =
+    (1 - armorReduction(st.armor, setup.level)) * (1 - st.blockReduction * st.blockChance);
+  const magic =
+    profile.fire * (1 - st.fireResistance) +
+    profile.cold * (1 - st.coldResistance) +
+    profile.lightning * (1 - st.lightningResistance) +
+    profile.void * (1 - st.voidResistance);
   // Tenacity shortens the ailments that ramp up on the hero (Corruption, Poison stacks).
   const taken =
-    (0.5 * physTaken + 0.5 * (1 - res)) * (1 - 0.6 * st.evasion) * (1 - 0.3 * st.tenacity);
+    (profile.physical * physTaken + magic) * (1 - 0.6 * st.evasion) * (1 - 0.3 * st.tenacity);
   // Lifesteal heals back part of the damage dealt over a fight of about 20 s.
   const effectiveLife = (st.maxLife + st.barrier) / taken + st.lifesteal * dps * 20;
   return Math.log(dps) + Math.log(effectiveLife);
+}
+
+/**
+ * The Draught for the coming trip: the one that adds the most effective Life against the act's
+ * damage mix (balance-grundlagen-v1.md F).
+ */
+function brewDraught(state: GameState, data: GameData, act: ActData | undefined): GameState {
+  if (!draughtsOpen(state, data) || !act) return state;
+  const profile = actProfile(act);
+  const tryWith = (id: string | undefined): number =>
+    gearValue(
+      {
+        ...state,
+        draught: id ?? null,
+        // heroSetup reads the brewed Draught from the run; a stand-in run is enough here.
+        run: id ? ({ draught: id, lifeFraction: 1 } as unknown as GameState["run"]) : null,
+      } as GameState,
+      data,
+      profile,
+    );
+  let best: string | null = null;
+  let bestValue = tryWith(undefined);
+  for (const d of data.draughts ?? []) {
+    const value = tryWith(d.id);
+    if (value > bestValue + 1e-9) {
+      best = d.id;
+      bestValue = value;
+    }
+  }
+  return state.draught === best
+    ? state
+    : applyAction(state, data, { type: "chooseDraught", draughtId: best });
 }
 
 /** Value gained by wearing `item` in its slot instead of what is there now. */
@@ -600,6 +709,24 @@ function fillNode(s: GameState, data: GameData, id: string): GameState {
   return s;
 }
 
+const DEFENSE_STATS = new Set([
+  "life",
+  "increasedLife",
+  "armor",
+  "increasedArmor",
+  "barrier",
+  "increasedBarrier",
+  "evasion",
+  "tenacity",
+  "blockChance",
+  "allResistance",
+]);
+
+/** Nodes that make the hero harder to kill (Ward buds, Life, Armor, Barrier, Evasion). */
+function isDefenseNode(node: { readonly bonuses?: object; readonly keystone?: object }): boolean {
+  return Object.keys(node.bonuses ?? {}).some((k) => DEFENSE_STATS.has(k));
+}
+
 /**
  * Kaelen: spends Skill Points on the build's goals in order (the owned Prestige branches where the
  * plan says "@branches"), then on the nearest open nodes (no Keystones). Fills the Rotation, a
@@ -640,7 +767,9 @@ function spendSkillPoints(
         ) === undefined &&
         ((learned[n.id] ?? 0) > 0 || (graph.get(n.id) ?? []).some((l) => (learned[l] ?? 0) > 0)),
     );
-    const next = open.sort((a, b) => order[a.kind] - order[b.kind])[0];
+    // Within a kind, defense first: a player stuck at a wall takes Life, Armor and Barrier.
+    const rank = (n: (typeof open)[number]) => 2 * order[n.kind] + (isDefenseNode(n) ? 0 : 1);
+    const next = open.sort((a, b) => rank(a) - rank(b))[0];
     if (!next) break;
     s = applyAction(s, data, { type: "learnNodes", nodeIds: [next.id] });
   }
@@ -760,6 +889,7 @@ export function playGenerations(
           s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
         }
         s = spendSkillPoints(s, data, build);
+        s = brewDraught(s, data, act);
         s = applyAction(s, data, { type: "setOut", actId: act.id });
         while (s.run) {
           s = spendPoints(s, data, options.starterWeapon);
@@ -871,6 +1001,7 @@ function playWildfire(
       s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
     }
     s = spendSkillPoints(s, data, build);
+    s = brewDraught(s, data, act);
     s = applyAction(s, data, { type: "setOut", actId: act.id, wildfire: tier });
     while (s.run) {
       s = spendPoints(s, data, options.starterWeapon);
@@ -935,6 +1066,7 @@ function playFinale(
   let bossSeconds = 0;
   let cleared = false;
   for (let attempt = 0; attempt < maxAttempts && !cleared; attempt++) {
+    s = brewDraught(s, data, data.finale);
     s = applyAction(s, data, { type: "enterFinale" });
     while (s.run) {
       if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {

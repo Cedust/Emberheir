@@ -23,6 +23,7 @@ export {
 export { triggerThreshold } from "./combat/heat";
 export {
   Fight,
+  heavyHitCap,
   runFight,
   skillCost,
   type CombatEvent,

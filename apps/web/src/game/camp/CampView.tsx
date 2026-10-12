@@ -595,7 +595,7 @@ export function CampView(props: {
  */
 function DraughtPicker(props: { chosen: string | null; onPick: (id: string | null) => void }) {
   return (
-    <div className="draught-picker" role="radiogroup" aria-label="Draught">
+    <div className="draught-picker" role="group" aria-label="Draught">
       <span className="draught-label sub">Draught</span>
       {(GAME_DATA.draughts ?? []).map((d) => (
         <DraughtVial
@@ -621,8 +621,7 @@ function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: (
   return (
     <button
       type="button"
-      role="radio"
-      aria-checked={props.on}
+      aria-pressed={props.on}
       aria-label={d.name}
       className={`draught-vial${props.on ? " on" : ""}`}
       style={{ "--vial": color } as React.CSSProperties}

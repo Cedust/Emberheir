@@ -12,6 +12,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -108,14 +109,30 @@ export function usePerkHover(perk: PerkHover) {
 export function useNoteHover(note: NoteHover | undefined) {
   const api = useContext(HoverContext);
   const { name, kind, explain, status } = note ?? { name: "", kind: "", explain: "" };
+  // A note shown by this element goes away with it (closing the sheet with Escape, setting out).
+  const shown = useRef(false);
+  useEffect(
+    () => () => {
+      if (shown.current) api?.hide();
+    },
+    [api],
+  );
   return useMemo(() => {
     if (!api || !name) return {};
     const hover = { note: { name, kind, explain, ...(status ? { status } : {}) } };
+    const show = (element: Element) => {
+      shown.current = true;
+      api.show(hover, element);
+    };
+    const hide = () => {
+      shown.current = false;
+      api.hide();
+    };
     return {
-      onMouseEnter: (e: React.MouseEvent) => api.show(hover, e.currentTarget),
-      onMouseLeave: () => api.hide(),
-      onFocus: (e: React.FocusEvent) => api.show(hover, e.currentTarget),
-      onBlur: () => api.hide(),
+      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
+      onMouseLeave: hide,
+      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
+      onBlur: hide,
     };
   }, [api, name, kind, explain, status]);
 }

@@ -70,6 +70,12 @@ export const COMBAT = {
   barrierRecharge: { steady: 0.03, delay: 1.5, perSecond: 0.2 },
   /** Share of a blocked hit that a block stops (before Stoneguard). */
   blockReduction: 0.5,
+  /**
+   * A telegraphed Heavy Attack takes at most this share of the target's max Life + Barrier per
+   * hit (balance-grundlagen-v1.md D): it is announced so it can hurt, but a wall is never a
+   * one-shot lottery.
+   */
+  heavyHitCap: 0.35,
   /** Bosses shrug off stuns: a stun holds them this much as long (no stunlocked boss). */
   bossStunTaken: 0.5,
 

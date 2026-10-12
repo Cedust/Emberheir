@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
-import { type CombatEvent, Fight, runFight } from "./fight";
+import { type CombatEvent, Fight, heavyHitCap, runFight } from "./fight";
+import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
 import type { CombatantSetup, SkillDefinition, SlotModifier, WeaponDefinition } from "./types";
 
@@ -348,6 +349,21 @@ describe("Fight", () => {
       expect(slam).toMatchObject({ source: "Slam", damage: 50 });
       expect(ofType(fight.events, "skill").at(-1)).toMatchObject({ skill: "Slam", heatCost: 0 });
       expect(fight.snapshot().enemy.telegraph).toBeNull();
+    });
+
+    it("a Heavy Attack hit takes at most its share of Life + Barrier, other hits are not capped", () => {
+      const huge = { ...SLAM, hits: [{ kind: "weapon" as const, multiplier: 500 }] };
+      const target = dummy({ baseLife: 400 });
+      const cap = heavyHitCap(deriveStats(target));
+      expect(cap).toBe(Math.round(COMBAT.heavyHitCap * deriveStats(target).maxLife));
+      const fight = new Fight(
+        target,
+        { ...boss(), telegraphs: [{ skill: huge, interval: 4, windup: 1.5 }] },
+        1,
+      );
+      fight.advance(5.6);
+      const slam = ofType(fight.events, "hit").find((h) => h.source === "Slam");
+      expect(slam?.damage).toBe(cap);
     });
 
     it("repeats every interval after the wind-up", () => {

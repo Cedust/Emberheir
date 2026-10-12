@@ -88,6 +88,8 @@ export type CombatEvent =
       readonly blocked: boolean;
       /** Weapon Mastery: the hit did not land cleanly (Glancing Blow). */
       readonly glancing?: boolean;
+      /** A Heavy Attack hit held back by `COMBAT.heavyHitCap`. */
+      readonly capped?: boolean;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {
@@ -372,6 +374,11 @@ interface HitOptions {
   readonly extraAttack?: boolean;
 }
 
+/** Most damage one hit of a telegraphed Heavy Attack can deal (`COMBAT.heavyHitCap`). */
+export function heavyHitCap(stats: { readonly maxLife: number; readonly barrier: number }): number {
+  return Math.max(1, Math.round(COMBAT.heavyHitCap * (stats.maxLife + stats.barrier)));
+}
+
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 
 /** Heat Cost of a Rotation skill after rule changes (e.g. Keystones). */
@@ -486,6 +493,8 @@ export class Fight {
   /** Fight time asked for by `advance` so far; ticks run until `time` catches up with it. */
   private requested = 0;
   private result: { winner: Side | null; fled: Side | null } | undefined;
+  /** The side whose telegraphed Heavy Attack is landing right now (its hits are capped). */
+  private heavyFrom: Side | null = null;
 
   constructor(hero: CombatantSetup, enemy: CombatantSetup, seed: number) {
     this.rng = new Rng(seed);
@@ -714,7 +723,11 @@ export class Fight {
       if (f.windup.remaining > 1e-9) return;
       const spec = telegraphs[f.windup.index];
       f.windup = null;
-      if (spec) this.castSkill(f, spec.skill, 1);
+      if (spec) {
+        this.heavyFrom = f.side;
+        this.castSkill(f, spec.skill, 1);
+        this.heavyFrom = null;
+      }
       return;
     }
     for (let i = 0; i < telegraphs.length; i++) {
@@ -1304,7 +1317,9 @@ export class Fight {
 
     const { glancing } = outcome;
     // Hunter's Mark: until the first clean hit, Glancing Blows deal nothing.
-    const damage = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
+    const dealt = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
+    const damage =
+      this.heavyFrom === attacker.side ? Math.min(dealt, heavyHitCap(defender.stats)) : dealt;
     this.emit({
       t: this.time,
       type: "hit",
@@ -1315,6 +1330,7 @@ export class Fight {
       crit: outcome.crit,
       blocked: outcome.blocked,
       ...(glancing ? { glancing: true } : {}),
+      ...(damage < dealt ? { capped: true } : {}),
     });
     defender.lastHitTakenAt = this.time;
     if (outcome.blocked && defender.setup.weaponRules?.critAfter?.includes("block")) {

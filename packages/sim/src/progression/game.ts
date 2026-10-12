@@ -768,11 +768,12 @@ export function stageWall(
   if (!isWallAct(data, act, prestige)) return null;
   const w = PROGRESSION.wall;
   const strength = w.strength[Math.min(prestige, w.strength.length - 1)] ?? 1;
-  // Mostly Life, little damage (balance-grundlagen-v1.md D): a wall is a test of damage and
-  // staying power that a few levels or better gear win, not a lottery of one-shots.
-  const at = (life: number, gate: boolean) => ({
-    life,
-    damage: life ** w.damageExponent,
+  // A wall is a fight that a few levels or better gear win (balance-grundlagen-v1.md D): the
+  // enemy hits harder, with only a little more Life so the fight stays short. Heavy Attacks stay
+  // below `COMBAT.heavyHitCap`, so it is never a one-shot lottery.
+  const at = (strength: number, gate: boolean) => ({
+    life: strength ** w.lifeExponent,
+    damage: strength,
     gate,
   });
   const part = (share: number) => 1 + (strength - 1) * share;

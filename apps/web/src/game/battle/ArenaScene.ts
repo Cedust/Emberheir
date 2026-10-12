@@ -473,6 +473,25 @@ export class ArenaScene {
           const n = order.get(key) ?? 0;
           order.set(key, n + 1);
           this.hit(e, n * 0.08);
+          // The Heavy Attack cap held part of the blow back: an ember shield flares on the target.
+          if (e.capped) {
+            const target = e.side === "hero" ? "enemy" : "hero";
+            const c = this.center(target);
+            this.fx?.ring(c.x, c.y, 0xffc46b, 50, 170, 0.45, 9, 1);
+            this.fx?.burst({
+              x: c.x,
+              y: c.y,
+              count: 22,
+              color: [0xffc46b, 0xfff1c9],
+              spreadX: 30,
+              angle: [0, Math.PI * 2],
+              speed: [160, 320],
+              life: [0.3, 0.6],
+              size: [6, 11],
+              drag: 0.4,
+            });
+            if (this.showNumbers) this.float(target, "Held", 0xffc46b, false, 0.8);
+          }
           break;
         }
         case "dot":
