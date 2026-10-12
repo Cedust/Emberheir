@@ -13,12 +13,12 @@ export const CLASSES: readonly HeroClass[] = [
     weapons: ["sword", "mace"],
     offHand: "round-shield",
     startingAttributes: {
-      strength: 4,
+      strength: 5,
       dexterity: 2,
       agility: 2,
       intelligence: 1,
       wisdom: 1,
-      vitality: 4,
+      vitality: 3,
     },
     trait: { name: "Iron Blood", description: "+10 % Life.", rules: { lifeMultiplier: 1.1 } },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
@@ -67,10 +67,10 @@ export const CLASSES: readonly HeroClass[] = [
     startingAttributes: {
       strength: 2,
       dexterity: 4,
-      agility: 4,
+      agility: 3,
       intelligence: 1,
       wisdom: 1,
-      vitality: 2,
+      vitality: 3,
     },
     trait: { name: "Keen Eye", description: "+5 % Crit Chance.", bonuses: { critChance: 0.05 } },
     lineage: {
@@ -91,10 +91,10 @@ export const CLASSES: readonly HeroClass[] = [
     startingAttributes: {
       strength: 1,
       dexterity: 2,
-      agility: 2,
+      agility: 1,
       intelligence: 4,
       wisdom: 3,
-      vitality: 2,
+      vitality: 3,
     },
     trait: { name: "Spark", description: "+10 Starting Heat.", bonuses: { startingHeat: 10 } },
     lineage: {

@@ -1205,6 +1205,7 @@ export class Fight {
     const time =
       seconds *
       (source.setup.weaponRules?.stunDuration ?? 1) *
+      (target.setup.rules?.stunTaken ?? 1) *
       (1 - Math.min(0.75, target.stats.tenacity));
     if (time <= 0) return;
     target.stunned = Math.max(target.stunned, time);

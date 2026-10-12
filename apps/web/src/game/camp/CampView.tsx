@@ -576,7 +576,7 @@ export function CampView(props: {
 }
 
 const WILDFIRE_HINT =
-  "Wildfire: any act burns again, harder each tier. Monster Level 91 at I up to 100 at X, only T10 items, more Legendaries and higher Runes. Clear an act boss to open the next tier.";
+  "Wildfire: any act burns again, harder each tier. Monster Level 92 at I up to 110 at X (above V the foes outlevel you), only T10 items, more Legendaries and higher Runes. Clear an act boss to open the next tier.";
 
 /** Wildfire tier for the next trip (spielzeit-v1.md, C): Off, then I up to one above the best. */
 function WildfirePicker(props: {

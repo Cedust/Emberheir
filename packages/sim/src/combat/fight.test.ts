@@ -821,6 +821,28 @@ describe("M10 building blocks", () => {
     expect(barrier(3)).toBeGreaterThan(barrier(1));
   });
 
+  it("bosses shrug stuns off: a stun holds them only bossStunTaken as long", () => {
+    const stunner: SkillDefinition = {
+      id: "stunner",
+      name: "Stunner",
+      type: "buff",
+      heatCost: 0,
+      tags: [],
+      description: "",
+      hits: [],
+      effects: [{ kind: "stun", seconds: 1 }],
+    };
+    const stunFor = (enemy: CombatantSetup) => {
+      const fight = new Fight(setup({ rotation: [{ skill: stunner }] }), enemy, 1);
+      fight.advance(1.01);
+      return ofType(fight.events, "stun")[0]?.seconds ?? 0;
+    };
+    const plain = stunFor(dummy());
+    expect(stunFor(dummy({ rules: { stunTaken: COMBAT.bossStunTaken } }))).toBeCloseTo(
+      plain * COMBAT.bossStunTaken,
+    );
+  });
+
   it("Every Nth Hit Taken reflects part of the hit back (Storm Herald)", () => {
     const fight = new Fight(
       setup({ weapon: { ...TEST_WEAPON, damageType: "physical" }, bonuses: NO_CRIT }),

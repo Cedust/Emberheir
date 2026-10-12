@@ -8,6 +8,7 @@ import {
   fail,
   finaleEchoes,
   finaleOpen,
+  finalePressure,
   newGame,
 } from "./game";
 import { DEADLY_ENEMY, TEST_ACT, TEST_BOON_DATA, TEST_BOSS } from "./test-fixtures";
@@ -82,6 +83,15 @@ describe("The Last Ember", () => {
     expect(s.notice).toMatchObject({ kind: "ending", enemyName: "The Core" });
     expect(s.legacy.finaleWon).toBe(true);
     expect(s.boons).toEqual({ kept: [], fresh: [] });
+  });
+
+  it("the pressure ramps from the first echo up to the full finale at the Core", () => {
+    const first = finalePressure(1, 7);
+    const core = finalePressure(7, 7);
+    expect(core).toEqual(PROGRESSION.finale);
+    expect(first.life).toBeCloseTo(1 + (PROGRESSION.finale.life - 1) * PROGRESSION.finaleRamp);
+    expect(first.damage).toBeLessThan(finalePressure(4, 7).damage);
+    expect(finalePressure(4, 7).damage).toBeLessThan(core.damage);
   });
 
   it("a death ends the attempt: back to the Camp, the Boons are gone", () => {

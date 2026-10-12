@@ -254,7 +254,7 @@ export const PROGRESSION = {
    * (measured with the autopilot that gears up like a player: about the median boss margin).
    */
   wall: {
-    strength: [1.6, 3.3, 3.6, 3.4, 4.4, 3.4, 3.3],
+    strength: [1.6, 3.3, 3.3, 3.2, 3.8, 2.7, 2.9],
     gateShare: 0.5,
     rampShare: 0.3,
   },
@@ -270,19 +270,22 @@ export const PROGRESSION = {
    * instead of the Run Pressure).
    */
   finalPrestige: 7,
-  finale: { life: 6, damage: 3.6 },
+  finale: { life: 6.5, damage: 3.6 },
+  /** The first Warden echo takes this share of the finale's pressure, rising to all of it at the Core (Boons pile up on the way). */
+  finaleRamp: 0.7,
   /**
    * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
-   * chosen tier. Monster Level is `baseLevel` + tier (T10 loot from tier I on, finer rolls higher
-   * up), the enemies take the seventh run's newest-act pressure plus `life`/`damage` per tier
+   * chosen tier. Monster Level is `baseLevel` + `levelsPerTier` × tier: 92 at I, 100 at V (the
+   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on), the enemies take the seventh run's newest-act pressure plus `life`/`damage` per tier
    * above I, and Legendaries and Runes come more often. No new currency: the highest tier cleared
    * is the goal.
    */
   wildfire: {
     tiers: 10,
     baseLevel: 90,
-    life: 0.15,
-    damage: 0.08,
+    levelsPerTier: 2,
+    life: 0.05,
+    damage: 0.03,
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,

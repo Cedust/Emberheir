@@ -381,6 +381,8 @@ export interface CombatRules {
   readonly execute?: { readonly below: number; readonly bonus: number; readonly above?: number };
   /** Heals this fraction of the damage your ailments deal over time. */
   readonly dotLifesteal?: number;
+  /** Multiplies how long stuns hold you (bosses shrug them off, `COMBAT.bossStunTaken`). */
+  readonly stunTaken?: number;
   /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
   readonly dotDamage?: number;
   /** Multiplies the damage over time of single ailments (Reaver: Bleed and Poison). */

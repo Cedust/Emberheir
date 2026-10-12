@@ -786,8 +786,9 @@ export function wildfireTop(state: GameState): number {
 export const wildfireName = (tier: number) =>
   `Wildfire ${WILDFIRE_NUMERALS[tier - 1] ?? String(tier)}`;
 
-/** Monster Level of every stage at a Wildfire tier: 91 at I, 100 at X. */
-export const wildfireLevel = (tier: number) => PROGRESSION.wildfire.baseLevel + tier;
+/** Monster Level of every stage at a Wildfire tier: 92 at I, 100 at V, 110 at X. */
+export const wildfireLevel = (tier: number) =>
+  PROGRESSION.wildfire.baseLevel + PROGRESSION.wildfire.levelsPerTier * tier;
 
 /**
  * Life and damage of a Wildfire stage, raised per tier above I. Normal stages take the pressure of
@@ -1520,12 +1521,27 @@ function enterFinale(state: GameState, data: GameData): GameState {
   };
 }
 
+/**
+ * Life and damage of the finale's foe at a stage: `PROGRESSION.finaleRamp` of the finale's pressure
+ * at the first echo, all of it at the Core.
+ */
+export function finalePressure(
+  stage: number,
+  stages: number,
+): { readonly life: number; readonly damage: number } {
+  const k =
+    PROGRESSION.finaleRamp +
+    (1 - PROGRESSION.finaleRamp) * Math.min(1, (stage - 1) / Math.max(1, stages - 1));
+  const p = PROGRESSION.finale;
+  return { life: 1 + (p.life - 1) * k, damage: 1 + (p.damage - 1) * k };
+}
+
 /** The finale's foe at a stage: a Warden echo (one boss ability more per stage), then the Core. */
 function finaleEncounter(data: GameData, stage: number, rng: Rng): Encounter {
   const finale = data.finale ?? fail("No finale in this game");
   const last = harvestAct(data, PROGRESSION.finalPrestige - 1);
   const level = stageMonsterLevel(data, last, last.stages, PROGRESSION.finalPrestige - 1);
-  const pressure = PROGRESSION.finale;
+  const pressure = finalePressure(stage, finale.stages);
   const echo = finaleEchoes(data)[stage - 1];
   const seed = rng.int(0, 0x7fffffff);
   if (!echo || stage >= finale.stages) {

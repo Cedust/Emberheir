@@ -61,8 +61,13 @@ export const COMBAT = {
   /** Stacking Sunder of Weapon Mastery before nodes: no chance of its own, 5 % Armor per stack. */
   sunder: { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 },
 
-  /** Intelligence Barrier: full at fight start, refills after 0.5 s without a hit (20 % per s). */
-  barrierRecharge: { delay: 0.5, perSecond: 0.2 },
+  /**
+   * Intelligence Barrier: full at fight start, refills after 1.5 s without a hit (20 % per s). A
+   * longer pause keeps it from refilling fully between the slow swings of early bosses.
+   */
+  barrierRecharge: { delay: 1.5, perSecond: 0.2 },
+  /** Bosses shrug off stuns: a stun holds them this much as long (no stunlocked boss). */
+  bossStunTaken: 0.5,
 
   // Caps.
   maxEvasion: 0.5,

@@ -56,14 +56,16 @@ describe("Wildfire", () => {
     expect(wildfireName(4)).toBe("Wildfire IV");
   });
 
-  it("any act burns at Monster Level 90 + tier, harder per tier, without Waymarks", () => {
+  it("any act burns at Monster Level 90 + 2 per tier, harder per tier, without Waymarks", () => {
     // The last act may be chosen although no act of this run has fallen.
     let s = act(finaleWon(2), { type: "setOut", actId: "final-act", wildfire: 3 });
     expect(s.run?.wildfire).toBe(3);
     s = act(s, { type: "startStage" });
     const encounter = s.run?.encounter ?? fail("missing");
     expect(encounter.level).toBe(wildfireLevel(3));
-    expect(encounter.level).toBe(93);
+    expect(encounter.level).toBe(96);
+    expect(wildfireLevel(5)).toBe(100);
+    expect(wildfireLevel(10)).toBe(110);
     expect(encounter.wall).toBeUndefined();
     expect(wildfirePressure(data, 1, 3).life).toBeGreaterThan(wildfirePressure(data, 1, 1).life);
     const tierOne = enemySetup(
