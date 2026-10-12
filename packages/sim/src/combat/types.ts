@@ -393,7 +393,7 @@ export interface CombatRules {
   readonly dotDamage?: number;
   /** Multiplies the damage over time of single ailments (Reaver: Bleed and Poison). */
   readonly ailmentDamage?: Readonly<Partial<Record<AilmentType, number>>>;
-  /** Multiplies max life (Warrior: Iron Blood). */
+  /** Multiplies max life (Iron Lineage, Keystones). */
   readonly lifeMultiplier?: number;
   /** Multiplies the damage of your hits, and so the ailments they cause (Warrior: Iron Blood). */
   readonly hitDamage?: number;

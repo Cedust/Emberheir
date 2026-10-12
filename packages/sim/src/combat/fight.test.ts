@@ -750,7 +750,7 @@ describe("Affliction effects", () => {
     expect(ofType(plain.events, "dot").every((d) => d.damage === 5)).toBe(true);
   });
 
-  it("the life multiplier rule raises max life (Warrior: Iron Blood)", () => {
+  it("the life multiplier rule raises max life (Iron Lineage)", () => {
     const fight = new Fight(setup({ rules: { lifeMultiplier: 1.1 } }), dummy(), 1);
     expect(fight.snapshot().hero.maxLife).toBe(110);
   });

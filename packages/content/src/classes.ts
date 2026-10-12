@@ -22,8 +22,8 @@ export const CLASSES: readonly HeroClass[] = [
     },
     trait: {
       name: "Iron Blood",
-      description: "+10 % Life. Your hits deal 20 % more damage.",
-      rules: { lifeMultiplier: 1.1, hitDamage: 1.2 },
+      description: "Your hits deal 20 % more damage.",
+      rules: { hitDamage: 1.2 },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["duelist", "butcher", "warden", "tactician"],
@@ -100,7 +100,11 @@ export const CLASSES: readonly HeroClass[] = [
       wisdom: 3,
       vitality: 3,
     },
-    trait: { name: "Spark", description: "+10 Starting Heat.", bonuses: { startingHeat: 10 } },
+    trait: {
+      name: "Spark",
+      description: "Your hits deal 20 % more damage.",
+      rules: { hitDamage: 1.2 },
+    },
     lineage: {
       name: "Storm Lineage",
       stat: "Elemental Damage",
@@ -131,8 +135,8 @@ export const CLASSES: readonly HeroClass[] = [
     },
     trait: {
       name: "Lingering",
-      description: "+15 % Ailment Duration.",
-      bonuses: { ailmentDuration: 0.15 },
+      description: "Your ailments deal 20 % more damage.",
+      rules: { dotDamage: 1.2 },
     },
     lineage: {
       name: "Hollow Lineage",
