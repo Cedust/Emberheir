@@ -654,8 +654,7 @@ export class Fight {
       this.damage(f, damage);
       if (this.result) return;
       const source = this.fighters[other(f.side)];
-      const leech =
-        (source.setup.rules?.dotLifesteal ?? 0) + source.stats.lifesteal * COMBAT.ailmentLifesteal;
+      const leech = source.setup.rules?.dotLifesteal ?? 0;
       if (leech > 0) this.heal(source, damage * leech);
       const wr = source.setup.weaponRules;
       if (wr?.heatPerDotTick?.ailment === tick.ailment) {
@@ -1120,6 +1119,7 @@ export class Fight {
           blocked: false,
         });
         this.damage(target, damage);
+        if (effect.leech && !this.result) this.heal(f, damage * effect.leech);
         return;
       }
       case "multiplyPoison": {

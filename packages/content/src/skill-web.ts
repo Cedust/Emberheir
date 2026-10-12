@@ -565,7 +565,13 @@ const REGIONS: readonly RegionSpec[] = [
           s(ENVENOM),
           m("Patience", { ailmentDuration: 0.08 }),
         ],
-        notable: { name: "Venomancer", bonuses: { poisonChance: 0.1, ailmentDuration: 0.15 } },
+        notable: {
+          name: "Venomancer",
+          description:
+            "+10 % Poison Chance, +15 % Ailment Duration. Heal 2 % of the damage your ailments deal.",
+          bonuses: { poisonChance: 0.1, ailmentDuration: 0.15 },
+          rules: { dotLifesteal: 0.02 },
+        },
       },
       {
         nodes: [

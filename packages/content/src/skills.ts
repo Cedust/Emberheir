@@ -133,9 +133,10 @@ export const REND: SkillDefinition = {
   type: "attack",
   heatCost: 60,
   tags: ["physical", "over-time", "melee"],
-  description: "120 % Weapon Damage, then ends the Bleed and deals the rest at once, ×1.5.",
+  description:
+    "120 % Weapon Damage, then ends the Bleed and deals the rest at once, ×1.5. Heals you for 15 % of that burst.",
   hits: [{ kind: "weapon", multiplier: 1.2 }],
-  effects: [{ kind: "consumeBleed", multiplier: 1.5 }],
+  effects: [{ kind: "consumeBleed", multiplier: 1.5, leech: 0.15 }],
 };
 
 export const TOXIC_BURST: SkillDefinition = {

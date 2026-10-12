@@ -245,8 +245,11 @@ export type SkillEffect =
       readonly amount: number;
       readonly duration: number;
     }
-  /** Rend: ends the target's Bleed and deals its remaining damage × multiplier at once. */
-  | { readonly kind: "consumeBleed"; readonly multiplier: number }
+  /**
+   * Rend: ends the target's Bleed and deals its remaining damage × multiplier at once; `leech`
+   * heals the caster for that share of it.
+   */
+  | { readonly kind: "consumeBleed"; readonly multiplier: number; readonly leech?: number }
   /** Toxic Burst: multiplies the target's Poison stacks (up to the cap). */
   | { readonly kind: "multiplyPoison"; readonly factor: number }
   /** Heals the caster by a fraction of max life (Burn halves it). */

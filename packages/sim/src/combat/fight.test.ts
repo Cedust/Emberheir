@@ -484,6 +484,31 @@ describe("Bleed, Poison and skill effects", () => {
     expect(fight.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(false);
   });
 
+  it("Rend with leech heals for a share of its burst", () => {
+    const rend: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "rend",
+      name: "Rend",
+      heatCost: 10,
+      hits: [],
+      effects: [{ kind: "consumeBleed", multiplier: 1.5, leech: 0.4 }],
+    };
+    const hero = setup({
+      weapon: always("bleed"),
+      bonuses: NO_CRIT,
+      rotation: [{ skill: rend }],
+      lifeFraction: 0.5,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit").find((h) => h.source === "Rend")?.damage).toBe(15);
+    expect(
+      ofType(fight.events, "heal")
+        .filter((e) => e.side === "hero")
+        .at(-1)?.amount,
+    ).toBe(6);
+  });
+
   it("Toxic Burst doubles the Poison stacks", () => {
     const burst: SkillDefinition = {
       ...TEST_SKILL,
@@ -621,29 +646,6 @@ describe("Legendary Power rules", () => {
     const dots = ofType(fight.events, "dot");
     expect(dots.length).toBeGreaterThan(0);
     expect(heals.map((h) => h.amount)).toEqual(dots.map((d) => d.damage));
-  });
-
-  it("Lifesteal heals half as much from ailment ticks as from hits", () => {
-    const hero = setup({
-      bonuses: { ...NO_CRIT, bleedChance: 1, lifesteal: 0.5 },
-      lifeFraction: 0.2,
-    });
-    const fight = new Fight(hero, dummy(), 1);
-    fight.advance(2.5);
-    const sum = (xs: number[]) => xs.reduce((a, b) => a + b, 0);
-    const hits = sum(
-      ofType(fight.events, "hit")
-        .filter((e) => e.side === "hero")
-        .map((e) => e.damage),
-    );
-    const dots = sum(ofType(fight.events, "dot").map((e) => e.damage));
-    const heals = sum(
-      ofType(fight.events, "heal")
-        .filter((e) => e.side === "hero")
-        .map((e) => e.amount),
-    );
-    expect(dots).toBeGreaterThan(0);
-    expect(heals).toBeCloseTo(hits * 0.5 + dots * 0.5 * COMBAT.ailmentLifesteal, -1);
   });
 });
 

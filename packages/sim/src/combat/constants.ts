@@ -107,11 +107,6 @@ export const COMBAT = {
   poisonDurationSeconds: 5,
   poisonMaxStacks: 20,
   /**
-   * Lifesteal also heals from the damage your ailments deal, at this share. Bleed, Poison and
-   * Corruption builds deal most of their damage over time and would otherwise have no sustain.
-   */
-  ailmentLifesteal: 0.5,
-  /**
    * Corruption (Void): starts weak and grows with every tick by this fraction of its base damage,
    * up to `corruptionMaxRamp` ticks. Re-applying refreshes the duration and keeps the growth.
    */

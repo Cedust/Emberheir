@@ -145,7 +145,7 @@ export function CharacterOverlay(props: {
       { label: "Lightning Resistance", value: pct(stats.lightningResistance) },
       { label: "Void Resistance", value: pct(stats.voidResistance) },
       { label: "Tenacity", value: pct(stats.tenacity) },
-      { label: "Lifesteal (Ailments half)", value: pct(stats.lifesteal) },
+      { label: "Lifesteal", value: pct(stats.lifesteal) },
     ],
     Heat: [
       { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },

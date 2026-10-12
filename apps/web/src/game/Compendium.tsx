@@ -8,7 +8,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Life and the Ember Flask",
-    text: "Life carries over from stage to stage. Between stages you can drink the Ember Flask (+35% Life). It holds 3 charges, a Belt “of Plenty” adds 1-2 more, and it refills in the Camp. Lifesteal heals you from your hits, and half as much from the damage your Bleed, Poison, Burn and Corruption deal.",
+    text: "Life carries over from stage to stage. Between stages you can drink the Ember Flask (+35% Life). It holds 3 charges, a Belt “of Plenty” adds 1-2 more, and it refills in the Camp.",
   },
   {
     title: "Death and Retreat",
