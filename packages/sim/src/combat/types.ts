@@ -408,6 +408,8 @@ export interface CombatRules {
   readonly chilledDamage?: number;
   /** Multiplies how fast your Barrier recharges (Ward Draught, Barrier Notables). */
   readonly barrierRecharge?: number;
+  /** Raises the Resistance cap of single elements (Fire Draught: +5 %). */
+  readonly maxResistance?: Readonly<Partial<Record<Element, number>>>;
 }
 
 /** A state of the fight a Weapon Mastery bonus can depend on. */

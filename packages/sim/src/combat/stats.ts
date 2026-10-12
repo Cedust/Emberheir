@@ -1,6 +1,6 @@
 import { COMBAT } from "./constants";
 import { PERK } from "./perks";
-import type { Attributes, CombatantSetup, StatBonuses } from "./types";
+import type { Attributes, CombatantSetup, Element, StatBonuses } from "./types";
 
 /** Final combat stats of a fighter, derived from attributes, weapon and bonuses. */
 export interface DerivedStats {
@@ -159,7 +159,9 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
   const baseLife = setup.baseLife ?? heroBaseLife(setup.level);
   const penalty = setup.resistancePenalty ?? 0;
   const allResistance = a.intelligence * step.allResistance + b.allResistance - penalty;
-  const resist = (own: number) => clamp(allResistance + own, 0, COMBAT.maxResistance);
+  const capOf = (element: Element) =>
+    COMBAT.maxResistance + (setup.rules?.maxResistance?.[element] ?? 0);
+  const resist = (own: number, element: Element) => clamp(allResistance + own, 0, capOf(element));
   const life = heir
     ? (baseLife + b.life) * (1 + a.vitality * COMBAT.heir.lifePerVitality + b.increasedLife)
     : (baseLife + a.vitality * COMBAT.lifePerVitality + b.life) * (1 + b.increasedLife);
@@ -191,10 +193,10 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       Math.max(0, b.barrier) * (1 + a.intelligence * step.barrier + b.increasedBarrier),
     ),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
-    fireResistance: resist(b.fireResistance),
-    coldResistance: resist(b.coldResistance),
-    lightningResistance: resist(b.lightningResistance),
-    voidResistance: resist(b.voidResistance),
+    fireResistance: resist(b.fireResistance, "fire"),
+    coldResistance: resist(b.coldResistance, "cold"),
+    lightningResistance: resist(b.lightningResistance, "lightning"),
+    voidResistance: resist(b.voidResistance, "void"),
     heatGain: a.wisdom * step.heatGain + b.heatGain,
     startingHeat: clamp(
       b.startingHeat + (perks.has("innerFire") ? PERK.innerFireHeat : 0),

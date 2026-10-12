@@ -9,6 +9,8 @@ export * from "./battle-plan";
 export * from "./boons";
 export * from "./classes";
 export * from "./game";
+export * from "./draughts";
+export * from "./notes";
 export * from "./crafting";
 export * from "./codex";
 export * from "./bounties";

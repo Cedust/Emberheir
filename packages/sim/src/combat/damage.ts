@@ -16,9 +16,16 @@ export function armorReduction(armor: number, attackerLevel: number, penetration
   return Math.min(reduction, COMBAT.maxArmorReduction);
 }
 
-/** Fraction of elemental damage that Resistance removes (capped at 75 %, minus Penetration). */
-export function resistanceReduction(resistance: number, penetration = 0): number {
-  return clamp(Math.min(resistance, COMBAT.maxResistance) - penetration, 0, COMBAT.maxResistance);
+/**
+ * Fraction of elemental damage that Resistance removes (capped, minus Penetration). The cap is
+ * 75 % unless something raised it (a Fire Draught: the defender's final Resistance carries it).
+ */
+export function resistanceReduction(
+  resistance: number,
+  penetration = 0,
+  cap: number = COMBAT.maxResistance,
+): number {
+  return clamp(Math.min(resistance, cap) - penetration, 0, cap);
 }
 
 /** The defender's final Resistance against one element. */
@@ -51,7 +58,11 @@ export function mitigate(
   const reduction =
     type === "physical"
       ? armorReduction(defender.armor, attackerLevel, attacker.physicalPenetration)
-      : resistanceReduction(elementResistance(defender, type), attacker.elementalPenetration);
+      : resistanceReduction(
+          elementResistance(defender, type),
+          attacker.elementalPenetration,
+          Math.max(COMBAT.maxResistance, elementResistance(defender, type)),
+        );
   return amount * (1 - reduction);
 }
 

@@ -16,4 +16,5 @@ export const GAME_TITLE = "Emberheir";
 export { PRESTIGE_BRANCHES } from "./prestige-branches";
 export { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 export { BOUNTIES } from "./bounties";
+export { DRAUGHTS } from "./draughts";
 export { BRANCH_EPITHETS, CLASSES } from "./classes";

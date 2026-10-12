@@ -15,6 +15,7 @@ import {
   wornEcho,
   heroTitle,
   isFinaleAct,
+  activeDraught,
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../ui/Icon";
@@ -76,13 +77,17 @@ function useLooks(state: GameState, run: RunState) {
   const act = getAct(GAME_DATA, run.actId);
   const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
   const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
-  const heroLook = heroLookOf(
-    state.hero.classId,
-    state.hero.weaponId,
-    state.hero.equipment,
-    wornEcho(state, GAME_DATA)?.def.color,
-    heroWeaponLook(state),
-  );
+  const draught = activeDraught(state, GAME_DATA);
+  const heroLook = {
+    ...heroLookOf(
+      state.hero.classId,
+      state.hero.weaponId,
+      state.hero.equipment,
+      wornEcho(state, GAME_DATA)?.def.color,
+      heroWeaponLook(state),
+    ),
+    ...(draught ? { draught: draught.color } : {}),
+  };
   const weapon = heroWeapon(state, GAME_DATA).weapon;
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
   const enemyLook: EnemyLook = {
