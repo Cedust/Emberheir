@@ -287,7 +287,7 @@ export const PROGRESSION = {
     levelsPerTier: 2,
     life: 0.05,
     damage: 0.03,
-    steep: { from: 5, life: 0.15, damage: 0.08 },
+    steep: { from: 5, life: 0.25, damage: 0.12 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,
