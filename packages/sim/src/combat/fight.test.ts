@@ -728,6 +728,20 @@ describe("Affliction effects", () => {
     expect(fight.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(true);
   });
 
+  it("Soul Harvest can heal a share of the damage it deals", () => {
+    const harvest = skill([{ kind: "detonateDots", seconds: 4, leech: 0.5 }]);
+    const hero = setup({
+      weapon: bleeding,
+      bonuses: NO_CRIT,
+      rotation: [{ skill: harvest }],
+      lifeFraction: 0.5,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    // Half of the 20 it dealt.
+    expect(ofType(fight.events, "heal").map((h) => h.amount)).toContain(10);
+  });
+
   it("Ailment Power makes the ailment of a hit stronger (Immolate)", () => {
     const immolate = skill(undefined, [
       {

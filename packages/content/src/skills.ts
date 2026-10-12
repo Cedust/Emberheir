@@ -205,9 +205,10 @@ export const SOUL_HARVEST: SkillDefinition = {
   type: "spell",
   heatCost: 70,
   tags: ["void", "over-time", "any"],
-  description: "Deals 4 seconds of all damage over time at once. The ailments keep running.",
+  description:
+    "Deals 4 seconds of all damage over time at once and heals you for 25 % of it. The ailments keep running.",
   hits: [],
-  effects: [{ kind: "detonateDots", seconds: 4 }],
+  effects: [{ kind: "detonateDots", seconds: 4, leech: 0.25 }],
 };
 
 // Prestige branch skills (skill-tree-v1.md section 3): one per branch.

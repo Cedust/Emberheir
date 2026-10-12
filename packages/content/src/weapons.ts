@@ -91,7 +91,9 @@ export const BOW: WeaponDefinition = {
   id: "bow",
   name: "Bow",
   defaultAttack: "Shoot",
-  damage: { min: 10, max: 17 },
+  // Many small arrows: Bleed keeps only the strongest hit, so the Bow hits 30 % harder than it
+  // looks next to the Crossbow.
+  damage: { min: 13, max: 22 },
   damageType: "physical",
   attacksPerSecond: 0.9,
   heatBehavior: "steady",

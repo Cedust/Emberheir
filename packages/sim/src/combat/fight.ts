@@ -1194,6 +1194,7 @@ export class Fight {
           blocked: false,
         });
         this.damage(target, damage);
+        if (effect.leech && !this.result) this.heal(f, damage * effect.leech);
         return;
       }
     }
