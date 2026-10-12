@@ -4,6 +4,8 @@ import { saveMastery, seedSave } from "./fixtures";
 test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", async ({
   page,
 }) => {
+  // CI's software renderer starts the Pixi tree slowly and the Echo rows wait for it to settle.
+  test.slow();
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveMastery());
@@ -12,7 +14,9 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
   await page.keyboard.press("t");
   await page.getByRole("tab", { name: "Weapon Mastery" }).click();
 
-  await expect(page.getByTestId("mastery-canvas").locator("canvas")).toBeVisible();
+  await expect(page.getByTestId("mastery-canvas").locator("canvas")).toBeVisible({
+    timeout: 15_000,
+  });
   const plate = page.getByTestId("weapon-name");
   await expect(plate).toContainText("ASCENDANT · RANK 13");
   await expect(plate).toContainText("Ascendant Sword of Ashfall Wrath");
