@@ -68,6 +68,13 @@ describe("Wildfire", () => {
     expect(wildfireLevel(10)).toBe(110);
     expect(encounter.wall).toBeUndefined();
     expect(wildfirePressure(data, 1, 3).life).toBeGreaterThan(wildfirePressure(data, 1, 1).life);
+    // Above V each tier climbs at the steep rate.
+    const w = PROGRESSION.wildfire;
+    const step = (t: number) =>
+      wildfirePressure(data, 1, t + 1).life - wildfirePressure(data, 1, t).life;
+    const base = wildfirePressure(data, 1, 1).life;
+    expect(step(2)).toBeCloseTo(base * w.life);
+    expect(step(w.steep.from)).toBeCloseTo(base * w.steep.life);
     const tierOne = enemySetup(
       { ...encounter, pressure: wildfirePressure(data, 1, 1) },
       "final-act",

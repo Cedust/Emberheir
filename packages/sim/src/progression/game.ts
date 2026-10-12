@@ -793,7 +793,7 @@ export const wildfireLevel = (tier: number) =>
 /**
  * Life and damage of a Wildfire stage, raised per tier above I. Normal stages take the pressure of
  * the same stage in the seventh run's newest act (every act burns like the last one); the act boss
- * takes the finale's (it is the Warden echo at full strength).
+ * takes the finale's (it is the Warden echo at full strength). Above V each tier rises steeply.
  */
 export function wildfirePressure(
   data: GameData,
@@ -804,9 +804,11 @@ export function wildfirePressure(
   const last = PROGRESSION.finalPrestige - 1;
   const p = boss ? PROGRESSION.finale : stagePressure(data, harvestAct(data, last), stage, last);
   const w = PROGRESSION.wildfire;
+  const gentle = Math.min(tier, w.steep.from) - 1;
+  const steep = Math.max(0, tier - w.steep.from);
   return {
-    life: p.life * (1 + w.life * (tier - 1)),
-    damage: p.damage * (1 + w.damage * (tier - 1)),
+    life: p.life * (1 + w.life * gentle + w.steep.life * steep),
+    damage: p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
   };
 }
 

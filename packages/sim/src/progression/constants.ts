@@ -276,9 +276,10 @@ export const PROGRESSION = {
   /**
    * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
    * chosen tier. Monster Level is `baseLevel` + `levelsPerTier` × tier: 92 at I, 100 at V (the
-   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on), the enemies take the seventh run's newest-act pressure plus `life`/`damage` per tier
-   * above I, and Legendaries and Runes come more often. No new currency: the highest tier cleared
-   * is the goal.
+   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). The enemies
+   * take the seventh run's newest-act pressure plus `life`/`damage` per tier above I, and the
+   * steeper `steep` rates per tier above `steep.from` (VI–X are meant to be really hard).
+   * Legendaries and Runes come more often. No new currency: the highest tier cleared is the goal.
    */
   wildfire: {
     tiers: 10,
@@ -286,6 +287,7 @@ export const PROGRESSION = {
     levelsPerTier: 2,
     life: 0.05,
     damage: 0.03,
+    steep: { from: 5, life: 0.15, damage: 0.08 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,
