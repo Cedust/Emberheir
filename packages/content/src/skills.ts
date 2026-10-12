@@ -44,7 +44,7 @@ export const FIREBOLT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 16, max: 22 },
+      damage: { min: 21, max: 29 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.25 }],
     },
@@ -61,7 +61,7 @@ export const ICE_LANCE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 14, max: 20 },
+      damage: { min: 28, max: 40 },
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 1 }],
     },
@@ -78,7 +78,7 @@ export const CHAIN_LIGHTNING: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 14, max: 22 },
+      damage: { min: 18, max: 29 },
       damageType: "lightning",
       count: 3,
       falloff: 0.75,
@@ -97,7 +97,7 @@ export const METEOR: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 55, max: 75 },
+      damage: { min: 72, max: 98 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 0.5 }],
     },
@@ -133,9 +133,10 @@ export const REND: SkillDefinition = {
   type: "attack",
   heatCost: 60,
   tags: ["physical", "over-time", "melee"],
-  description: "120 % Weapon Damage, then ends the Bleed and deals the rest at once, ×1.5.",
+  description:
+    "120 % Weapon Damage, then ends the Bleed and deals the rest at once, ×1.5. Heals you for 15 % of that burst.",
   hits: [{ kind: "weapon", multiplier: 1.2 }],
-  effects: [{ kind: "consumeBleed", multiplier: 1.5 }],
+  effects: [{ kind: "consumeBleed", multiplier: 1.5, leech: 0.15 }],
 };
 
 export const TOXIC_BURST: SkillDefinition = {
@@ -161,7 +162,7 @@ export const IMMOLATE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 9, max: 13 },
+      damage: { min: 12, max: 17 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 1 }],
       ailmentPower: 3,
@@ -179,7 +180,7 @@ export const CORRUPT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 12, max: 18 },
+      damage: { min: 16, max: 23 },
       damageType: "void",
       ailmentChances: [{ ailment: "corruption", chance: 1 }],
       ailmentPower: 2,
@@ -205,9 +206,10 @@ export const SOUL_HARVEST: SkillDefinition = {
   type: "spell",
   heatCost: 70,
   tags: ["void", "over-time", "any"],
-  description: "Deals 4 seconds of all damage over time at once. The ailments keep running.",
+  description:
+    "Deals 4 seconds of all damage over time at once and heals you for 25 % of it. The ailments keep running.",
   hits: [],
-  effects: [{ kind: "detonateDots", seconds: 4 }],
+  effects: [{ kind: "detonateDots", seconds: 4, leech: 0.25 }],
 };
 
 // Prestige branch skills (skill-tree-v1.md section 3): one per branch.
@@ -277,7 +279,7 @@ export const THUNDERSTRIKE: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 40, max: 62 },
+      damage: { min: 52, max: 81 },
       damageType: "lightning",
       ailmentChances: [{ ailment: "shock", chance: 0.5 }],
     },
@@ -294,7 +296,7 @@ export const FROST_NOVA: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 24, max: 34 },
+      damage: { min: 37, max: 53 },
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 1 }],
     },
@@ -312,7 +314,7 @@ export const INFERNO: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 22, max: 30 },
+      damage: { min: 29, max: 39 },
       damageType: "fire",
       ailmentChances: [{ ailment: "burn", chance: 1 }],
       ailmentPower: 4,
@@ -330,7 +332,7 @@ export const VOID_RIFT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 18, max: 26 },
+      damage: { min: 23, max: 34 },
       damageType: "void",
       ailmentChances: [{ ailment: "corruption", chance: 1 }],
       ailmentPower: 2,
@@ -499,7 +501,7 @@ export const VOID_BOLT: SkillDefinition = {
   hits: [
     {
       kind: "spell",
-      damage: { min: 17, max: 25 },
+      damage: { min: 22, max: 32 },
       damageType: "void",
       ailmentChances: [{ ailment: "corruption", chance: 0.5 }],
     },
@@ -578,19 +580,19 @@ export const RAKE: SkillDefinition = {
   ],
 };
 
-/** Rotwood: a glob of rot that Poisons three times. */
+/** Rotwood: a glob of rot magic (Void) that Poisons three times. */
 export const BLIGHT_SPIT: SkillDefinition = {
   id: "blight-spit",
   name: "Blight Spit",
   type: "spell",
   heatCost: 45,
-  tags: ["physical", "over-time", "any"],
-  description: "3 small hits, each Poisons.",
+  tags: ["void", "over-time", "any"],
+  description: "3 small Void hits, each Poisons.",
   hits: [
     {
       kind: "spell",
       damage: { min: 0.99, max: 1.54 },
-      damageType: "physical",
+      damageType: "void",
       count: 3,
       ailmentChances: [{ ailment: "poison", chance: 1 }],
     },
@@ -609,19 +611,19 @@ export const MOSS_MEND: SkillDefinition = {
   effects: [{ kind: "heal", fraction: 0.08 }],
 };
 
-/** Mother of Rot: a spray that piles Poison on the hero. */
+/** Mother of Rot: a Void spray that piles Poison on the hero; her lash stays Physical. */
 export const ROT_SPRAY: SkillDefinition = {
   id: "rot-spray",
   name: "Rot Spray",
   type: "spell",
   heatCost: 50,
-  tags: ["physical", "over-time", "any"],
-  description: "4 hits, each Poisons.",
+  tags: ["void", "over-time", "any"],
+  description: "4 Void hits, each Poisons.",
   hits: [
     {
       kind: "spell",
       damage: { min: 0.99, max: 1.43 },
-      damageType: "physical",
+      damageType: "void",
       count: 4,
       ailmentChances: [{ ailment: "poison", chance: 1 }],
     },
@@ -646,9 +648,10 @@ export const GORRAK_SLAM: SkillDefinition = {
   name: "Slam",
   type: "attack",
   heatCost: 0,
-  tags: ["physical", "direct", "melee"],
-  description: "A huge, announced blow for 400 % Weapon Damage.",
-  hits: [{ kind: "weapon", multiplier: 4 }],
+  tags: ["fire", "direct", "melee"],
+  description: "A huge, announced blow for 400 % Weapon Damage as Fire.",
+  // The pit's embers burst out: Gorrak's one Fire threat for the casters' Resistance (Timo).
+  hits: [{ kind: "weapon", multiplier: 4, damageType: "fire" }],
 };
 
 // Act 3 (Ember Wastes) enemy skills.
@@ -774,8 +777,15 @@ export const AVALANCHE: SkillDefinition = {
   type: "attack",
   heatCost: 0,
   tags: ["cold", "direct", "melee"],
-  description: "An announced blow for 350 % Weapon Damage that always Chills.",
-  hits: [{ kind: "weapon", multiplier: 3.5, ailmentChances: [{ ailment: "chill", chance: 1 }] }],
+  description: "An announced blow for 700 % Weapon Damage as Cold that always Chills.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 7,
+      damageType: "cold",
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    },
+  ],
 };
 
 // Act 5 (Storm Spires) enemy skills.
@@ -894,8 +904,8 @@ export const RIFT_SNAP: SkillDefinition = {
   type: "attack",
   heatCost: 0,
   tags: ["void", "direct", "melee"],
-  description: "An announced bite for 350 % Weapon Damage.",
-  hits: [{ kind: "weapon", multiplier: 3.5 }],
+  description: "An announced bite for 700 % Weapon Damage as Void.",
+  hits: [{ kind: "weapon", multiplier: 7, damageType: "void" }],
 };
 
 // Act 7 (Emberfall) and The Ashen Harvester.
@@ -927,9 +937,10 @@ export const HARVEST_SWING: SkillDefinition = {
   name: "Harvest Swing",
   type: "attack",
   heatCost: 0,
-  tags: ["physical", "direct", "melee"],
-  description: "An announced sweep for 400 % Weapon Damage.",
-  hits: [{ kind: "weapon", multiplier: 4 }],
+  tags: ["void", "direct", "melee"],
+  description: "An announced sweep for 400 % Weapon Damage as Void.",
+  // Reap cuts flesh, the Swing cuts souls: the Harvester mixes Physical and Void (Timo).
+  hits: [{ kind: "weapon", multiplier: 4, damageType: "void" }],
 };
 
 /** Phase 2 telegraph: the Tyrant's Eruption and the Warden's cold. */

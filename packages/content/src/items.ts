@@ -557,7 +557,8 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     slots: ["offHand", ...ARMOR_SLOTS, ...JEWELRY],
     tags: ["defense", "resistance"],
     value: { min: 0.04, max: 0.1 },
-    perTier: 0.15,
+    // Resistance is no free pass any more: it grows slower than Armor (Timo, Diablo rule).
+    perTier: 0.08,
   }),
   ...(
     [
@@ -575,7 +576,7 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
       tags: ["defense", "resistance"],
       weight: 8,
       value: { min: 0.08, max: 0.18 },
-      perTier: 0.15,
+      perTier: 0.08,
     }),
   ),
   stat({

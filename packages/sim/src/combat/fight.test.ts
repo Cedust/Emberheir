@@ -56,6 +56,27 @@ describe("Fight", () => {
     expect(fight.snapshot().hero.life).toBe(40);
   });
 
+  it("gives the hero a Barrier from Intelligence that refills after a moment without a hit", () => {
+    const hero = dummy({
+      baseLife: 100,
+      attributeScale: "heir",
+      attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+    });
+    const enemy = setup({
+      weapon: { ...TEST_WEAPON, attacksPerSecond: 0.2 },
+      bonuses: NO_CRIT,
+      baseLife: 100_000,
+    });
+    const fight = new Fight(hero, enemy, 1);
+    // 10 Intelligence × 3 % of 100 Life.
+    expect(fight.snapshot().hero.barrier).toBe(30);
+    fight.advance(5.2);
+    expect(fight.snapshot().hero.barrier).toBeLessThan(30);
+    expect(fight.snapshot().hero.life).toBe(100);
+    fight.advance(4.6);
+    expect(fight.snapshot().hero.barrier).toBeCloseTo(30);
+  });
+
   describe("Rotation and Heat", () => {
     const hero = (thresholds: (number | undefined)[] = []) =>
       setup({
@@ -463,6 +484,31 @@ describe("Bleed, Poison and skill effects", () => {
     expect(fight.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(false);
   });
 
+  it("Rend with leech heals for a share of its burst", () => {
+    const rend: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "rend",
+      name: "Rend",
+      heatCost: 10,
+      hits: [],
+      effects: [{ kind: "consumeBleed", multiplier: 1.5, leech: 0.4 }],
+    };
+    const hero = setup({
+      weapon: always("bleed"),
+      bonuses: NO_CRIT,
+      rotation: [{ skill: rend }],
+      lifeFraction: 0.5,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit").find((h) => h.source === "Rend")?.damage).toBe(15);
+    expect(
+      ofType(fight.events, "heal")
+        .filter((e) => e.side === "hero")
+        .at(-1)?.amount,
+    ).toBe(6);
+  });
+
   it("Toxic Burst doubles the Poison stacks", () => {
     const burst: SkillDefinition = {
       ...TEST_SKILL,
@@ -573,6 +619,19 @@ describe("Legendary Power rules", () => {
     const full = new Fight(hero({ execute: { below: 0.3, bonus: 0.5 } }), dummy(), 1);
     full.advance(1.1);
     expect(ofType(full.events, "hit")[0]?.damage).toBe(10);
+  });
+
+  it("Execute rule with a penalty above the threshold (Final Verdict)", () => {
+    const hero = setup({
+      bonuses: NO_CRIT,
+      rules: { execute: { below: 0.3, bonus: 0.8, above: 0.1 } },
+    });
+    const full = new Fight(hero, dummy(), 1);
+    full.advance(1.1);
+    expect(ofType(full.events, "hit")[0]?.damage).toBe(9);
+    const low = new Fight(hero, dummy({ lifeFraction: 0.2 }), 1);
+    low.advance(1.1);
+    expect(ofType(low.events, "hit")[0]?.damage).toBe(18);
   });
 
   it("DoT Lifesteal: your ailment ticks heal you", () => {
@@ -691,9 +750,30 @@ describe("Affliction effects", () => {
     expect(ofType(plain.events, "dot").every((d) => d.damage === 5)).toBe(true);
   });
 
-  it("the life multiplier rule raises max life (Warrior: Iron Blood)", () => {
+  it("the life multiplier rule raises max life (Iron Lineage)", () => {
     const fight = new Fight(setup({ rules: { lifeMultiplier: 1.1 } }), dummy(), 1);
     expect(fight.snapshot().hero.maxLife).toBe(110);
+  });
+
+  it("the hit damage rule raises hits and the Bleed they cause (Warrior: Iron Blood)", () => {
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rules: { hitDamage: 1.2 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit")[0]?.damage).toBe(12);
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(6);
+  });
+
+  it("the chilled damage rule raises hits on a Chilled enemy (Sorcerer: Glacier)", () => {
+    const chilling: WeaponDefinition = {
+      ...TEST_WEAPON,
+      attacksPerSecond: 1,
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    };
+    const hero = setup({ weapon: chilling, bonuses: NO_CRIT, rules: { chilledDamage: 1.5 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    // The first hit Chills, the second lands on a Chilled enemy.
+    expect(ofType(fight.events, "hit").map((h) => h.damage)).toEqual([10, 15]);
   });
 
   it("Soul Harvest deals seconds of all DoTs at once", () => {
@@ -705,6 +785,20 @@ describe("Affliction effects", () => {
     // Bleed 5/s × 4 s; the Bleed keeps running.
     expect(hit?.damage).toBe(20);
     expect(fight.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(true);
+  });
+
+  it("Soul Harvest can heal a share of the damage it deals", () => {
+    const harvest = skill([{ kind: "detonateDots", seconds: 4, leech: 0.5 }]);
+    const hero = setup({
+      weapon: bleeding,
+      bonuses: NO_CRIT,
+      rotation: [{ skill: harvest }],
+      lifeFraction: 0.5,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    // Half of the 20 it dealt.
+    expect(ofType(fight.events, "heal").map((h) => h.amount)).toContain(10);
   });
 
   it("Ailment Power makes the ailment of a hit stronger (Immolate)", () => {
@@ -798,6 +892,28 @@ describe("M10 building blocks", () => {
     };
     expect(barrier(1)).toBeGreaterThan(0);
     expect(barrier(3)).toBeGreaterThan(barrier(1));
+  });
+
+  it("bosses shrug stuns off: a stun holds them only bossStunTaken as long", () => {
+    const stunner: SkillDefinition = {
+      id: "stunner",
+      name: "Stunner",
+      type: "buff",
+      heatCost: 0,
+      tags: [],
+      description: "",
+      hits: [],
+      effects: [{ kind: "stun", seconds: 1 }],
+    };
+    const stunFor = (enemy: CombatantSetup) => {
+      const fight = new Fight(setup({ rotation: [{ skill: stunner }] }), enemy, 1);
+      fight.advance(1.01);
+      return ofType(fight.events, "stun")[0]?.seconds ?? 0;
+    };
+    const plain = stunFor(dummy());
+    expect(stunFor(dummy({ rules: { stunTaken: COMBAT.bossStunTaken } }))).toBeCloseTo(
+      plain * COMBAT.bossStunTaken,
+    );
   });
 
   it("Every Nth Hit Taken reflects part of the hit back (Storm Herald)", () => {

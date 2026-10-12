@@ -1,4 +1,13 @@
-import { type ActData, waymarkKey, waymarkStages } from "@emberheir/sim";
+import { GAME_DATA } from "@emberheir/content";
+import {
+  type ActData,
+  gateStages,
+  isWallAct,
+  waymarkKey,
+  waymarkStages,
+  wildfireLevel,
+  wildfireName,
+} from "@emberheir/sim";
 import { Icon } from "../ui/Icon";
 import { actTitle, finaleFoe, inFinale } from "./finale";
 
@@ -12,6 +21,8 @@ export function ActProgress(props: {
   cleared: boolean;
   /** Waymarks reached this run (`progress.waymarks`). */
   waymarks?: readonly string[];
+  /** Stages with a Gatekeeper (the newest act's walls). */
+  gates?: readonly number[];
 }) {
   const { act, stage } = props;
   const stages = act.stages;
@@ -42,6 +53,7 @@ export function ActProgress(props: {
         const cur = n === stage;
         const boss = n === stages || finale;
         const shrine = act.shrineStages.includes(n);
+        const gate = props.gates?.includes(n) ?? false;
         const size = cur ? 30 : boss ? 26 : shrine ? 16 : 12;
         const cls = [
           "act-dot",
@@ -49,6 +61,7 @@ export function ActProgress(props: {
           cur ? "current" : "",
           boss ? "boss" : "",
           shrine ? "shrine" : "",
+          gate ? "gate" : "",
         ].join(" ");
         return (
           <div
@@ -59,9 +72,11 @@ export function ActProgress(props: {
                 ? `Stage ${n} · ${finaleFoe(n)}`
                 : boss
                   ? `Stage ${n} · Boss`
-                  : shrine
-                    ? `Stage ${n} · Ember Shrine`
-                    : `Stage ${n}`
+                  : gate
+                    ? `Stage ${n} · Gatekeeper${shrine ? " · Ember Shrine" : ""}`
+                    : shrine
+                      ? `Stage ${n} · Ember Shrine`
+                      : `Stage ${n}`
             }
             style={{
               left: left0 + (i / (stages - 1)) * span - size / 2,
@@ -99,6 +114,10 @@ export function RunHeader(props: {
   skillPoints: number;
   /** Waymarks reached this run; shows the Waymark stages on the act bar. */
   waymarks?: readonly string[];
+  /** Prestige level: the run's newest act shows its Gatekeepers. */
+  prestige?: number;
+  /** Wildfire tier of the trip: a burning badge, no Waymarks or Gatekeepers. */
+  wildfire?: number;
   onCharacter: () => void;
   onTree: () => void;
   onMenu: () => void;
@@ -107,13 +126,29 @@ export function RunHeader(props: {
     <header className="run-header bar-top">
       <div className="run-title">
         <span className="title-font">{actTitle(props.act)}</span>
-        <span className="sub">{props.sub}</span>
+        <span className="sub">
+          {props.wildfire ? (
+            <span
+              className="wildfire-badge"
+              title={`Monster Level ${wildfireLevel(props.wildfire)}`}
+            >
+              <Icon name="fire" size={12} />
+              {wildfireName(props.wildfire)}
+            </span>
+          ) : null}
+          {props.sub}
+        </span>
       </div>
       <ActProgress
         act={props.act}
         stage={props.stage}
         cleared={props.cleared}
-        {...(props.waymarks ? { waymarks: props.waymarks } : {})}
+        {...(props.waymarks && !props.wildfire ? { waymarks: props.waymarks } : {})}
+        {...(props.prestige !== undefined &&
+        !props.wildfire &&
+        isWallAct(GAME_DATA, props.act, props.prestige)
+          ? { gates: gateStages(props.act) }
+          : {})}
       />
       <div className="grow" />
       <button type="button" className="hud-button" onClick={props.onCharacter}>

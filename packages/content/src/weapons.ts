@@ -14,7 +14,9 @@ export const SWORD: WeaponDefinition = {
   id: "sword",
   name: "Sword",
   defaultAttack: "Slash",
-  damage: { min: 10, max: 17 },
+  // Raised from 10-17: the Riposte rarely fires against slow bosses, so the Sword had the least
+  // damage of all melee weapons.
+  damage: { min: 12, max: 20 },
   damageType: "physical",
   attacksPerSecond: 0.8,
   heatBehavior: "cooling",
@@ -91,7 +93,9 @@ export const BOW: WeaponDefinition = {
   id: "bow",
   name: "Bow",
   defaultAttack: "Shoot",
-  damage: { min: 8, max: 14 },
+  // Many small arrows: Bleed keeps only the strongest hit, so the Bow hits 30 % harder than it
+  // looks next to the Crossbow.
+  damage: { min: 13, max: 22 },
   damageType: "physical",
   attacksPerSecond: 0.9,
   heatBehavior: "steady",
@@ -279,7 +283,8 @@ export const WARDEN_STAFF: WeaponDefinition = {
   name: "Warden Staff",
   defaultAttack: "Strike",
   damage: { min: 0.83, max: 1.26 },
-  damageType: "physical",
+  // Rot magic: the Rotwood brings a first Void threat before the Ember Wastes.
+  damageType: "void",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -357,12 +362,14 @@ export const OBSIDIAN_GLAIVE: WeaponDefinition = {
   implicit: {},
 };
 
+// Boss blades hit Physical (half as hard, Armor is weaker than Resistance), the boss's
+// spells bring the element: every boss mixes (Timo).
 export const TYRANT_BRAND: WeaponDefinition = {
   id: "tyrant-brand",
   name: "Tyrant's Brand",
   defaultAttack: "Brand",
-  damage: { min: 2.42, max: 3.41 },
-  damageType: "fire",
+  damage: { min: 1.21, max: 1.71 },
+  damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -428,12 +435,13 @@ export const ICE_SHARDS: WeaponDefinition = {
   implicit: {},
 };
 
+// Physical blade, elemental spells (see Tyrant's Brand).
 export const WARDEN_HALBERD: WeaponDefinition = {
   id: "warden-halberd",
   name: "Warden's Halberd",
   defaultAttack: "Sweep",
-  damage: { min: 2.64, max: 3.68 },
-  damageType: "cold",
+  damage: { min: 1.32, max: 1.84 },
+  damageType: "physical",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",
   heatPerHit: 24,
@@ -499,12 +507,13 @@ export const COPPER_FISTS: WeaponDefinition = {
   implicit: {},
 };
 
+// Physical blade, elemental spells (see Tyrant's Brand).
 export const HERALD_SPEAR: WeaponDefinition = {
   id: "herald-spear",
   name: "Herald's Spear",
   defaultAttack: "Lance",
-  damage: { min: 2.34, max: 3.33 },
-  damageType: "lightning",
+  damage: { min: 1.17, max: 1.67 },
+  damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -570,12 +579,13 @@ export const GLOOM_THREADS: WeaponDefinition = {
   ailmentChances: [{ ailment: "corruption", chance: 0.35 }],
 };
 
+// Physical blade, elemental spells (see Tyrant's Brand).
 export const MAW_JAWS: WeaponDefinition = {
   id: "maw-jaws",
   name: "Maw",
   defaultAttack: "Bite",
-  damage: { min: 2.5, max: 3.6 },
-  damageType: "void",
+  damage: { min: 1.25, max: 1.8 },
+  damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,
@@ -586,12 +596,13 @@ export const MAW_JAWS: WeaponDefinition = {
 
 // Act 7 (Emberfall) enemy weapons: everything at once.
 
+// Ember-forged: Emberfall gets as much magic as Physical threat.
 export const REVENANT_BLADE: WeaponDefinition = {
   id: "revenant-blade",
   name: "Revenant Blade",
   defaultAttack: "Cleave",
   damage: { min: 1.67, max: 2.46 },
-  damageType: "physical",
+  damageType: "fire",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",
   heatPerHit: 24,
@@ -655,7 +666,7 @@ export const HARVEST_SCYTHE: WeaponDefinition = {
   id: "harvest-scythe",
   name: "Harvest Scythe",
   defaultAttack: "Reap",
-  damage: { min: 2.55, max: 3.61 },
+  damage: { min: 2.95, max: 4.15 },
   damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",

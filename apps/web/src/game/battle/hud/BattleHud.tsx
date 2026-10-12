@@ -404,7 +404,7 @@ export interface EnemyFrameProps {
   name: string;
   sub: string;
   icon: IconName;
-  tag?: "ELITE" | "BOSS";
+  tag?: "ELITE" | "BOSS" | "GATEKEEPER";
   mods: readonly string[];
   attackIcon: IconName;
   thiefLeft: number | null;
@@ -428,10 +428,20 @@ function levelHint(gap: number): string {
   return "About your level";
 }
 
+const GATEKEEPER_HINT =
+  "Gatekeeper: an Elite that guards this Waymark of the newest act. Much tougher than the road so far. Farm a few levels if it stops you.";
+
 /** The enemy at the top center: name, liquid Life (Pixi), Heat, attack rhythm with Heavy Attacks. */
 export function EnemyFrame(props: EnemyFrameProps) {
   const e = props.enemy;
-  const tagClass = props.tag === "BOSS" ? "boss" : props.tag === "ELITE" ? "elite" : "";
+  const tagClass =
+    props.tag === "BOSS"
+      ? "boss"
+      : props.tag === "ELITE"
+        ? "elite"
+        : props.tag === "GATEKEEPER"
+          ? "elite gate"
+          : "";
   return (
     <section
       className={`hud-enemy ${tagClass}${e.telegraph ? " charging" : ""}`}
@@ -440,7 +450,14 @@ export function EnemyFrame(props: EnemyFrameProps) {
     >
       <div className="hud-enemy-head" title={props.sub}>
         <Icon name={props.icon} size={20} color="#f3e6c8" />
-        {props.tag && <span className={`rank-tag title-font ${tagClass}`}>{props.tag}</span>}
+        {props.tag && (
+          <span
+            className={`rank-tag title-font ${tagClass}`}
+            title={props.tag === "GATEKEEPER" ? GATEKEEPER_HINT : undefined}
+          >
+            {props.tag}
+          </span>
+        )}
         <span className="hud-enemy-name title-font">{props.name}</span>
         <span className="hud-enemy-kind">{props.sub.split(" · ")[0]}</span>
         <span

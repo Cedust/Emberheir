@@ -1,5 +1,13 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type ActData, type GameState, type Notice, getAct, isFinaleAct } from "@emberheir/sim";
+import {
+  type ActData,
+  type GameState,
+  type Notice,
+  PROGRESSION,
+  getAct,
+  isFinaleAct,
+  wildfireName,
+} from "@emberheir/sim";
 
 interface NoticeText {
   readonly title: string;
@@ -15,8 +23,8 @@ interface NoticeText {
 type NoticeKind = Exclude<Notice["kind"], "prestige" | "ending">;
 
 /** "Act 3 · Stage 4", or "The Last Ember · Stage 4". */
-const where = (act: ActData, stage: number) =>
-  `${isFinaleAct(GAME_DATA, act.id) ? act.name : `Act ${act.number}`} · Stage ${stage}`;
+const where = (act: ActData, stage: number, wildfire?: number) =>
+  `${isFinaleAct(GAME_DATA, act.id) ? act.name : `Act ${act.number}`} · Stage ${stage}${wildfire ? ` · ${wildfireName(wildfire)}` : ""}`;
 const camp = (act: ActData) => (isFinaleAct(GAME_DATA, act.id) ? "Camp" : `Camp · ${act.name}`);
 
 const TEXT: Record<NoticeKind, NoticeText> = {
@@ -25,7 +33,7 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You fell, and the ash gave you back. You keep everything: gear, Acorns, Ash and Inventory. Only the way through this Act starts over.",
     nan: "The ash spat you back out. It does that. It likes you.",
     facts: (n, act) => [
-      { k: "FELL AT", v: where(act, n.stage), tone: "text" },
+      { k: "FELL AT", v: where(act, n.stage, n.wildfire), tone: "text" },
       { k: "BY", v: n.enemyName ?? "Unknown", tone: "rare" },
       { k: "BACK TO", v: camp(act), tone: "accent" },
     ],
@@ -35,7 +43,7 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You left the fight and went back to camp. Same rules as a death: you keep everything, and the Act starts over.",
     nan: "Sensible. Dead heroes don't farm.",
     facts: (n, act) => [
-      { k: "LEFT AT", v: where(act, n.stage), tone: "text" },
+      { k: "LEFT AT", v: where(act, n.stage, n.wildfire), tone: "text" },
       { k: "KEPT", v: "Everything", tone: "good" },
       { k: "BACK TO", v: camp(act), tone: "accent" },
     ],
@@ -53,6 +61,25 @@ const TEXT: Record<NoticeKind, NoticeText> = {
         tone: "accent",
       },
     ],
+  },
+};
+
+/** An act boss fell in the Wildfire: the next tier opens. */
+const WILDFIRE_CLEARED: NoticeText = {
+  title: "WILDFIRE QUENCHED",
+  sub: "The act burned again and you walked out of it. A hotter fire is waiting.",
+  nan: "Hot enough for you? It gets hotter, dear.",
+  facts: (n, act) => {
+    const tier = n.wildfire ?? 1;
+    const top = tier >= PROGRESSION.wildfire.tiers;
+    return [
+      { k: "QUENCHED", v: `${wildfireName(tier)} · ${act.name}`, tone: "text" },
+      {
+        k: top ? "THE LAST TIER" : "NOW OPEN",
+        v: top ? "Wildfire X held" : wildfireName(tier + 1),
+        tone: "accent",
+      },
+    ];
   },
 };
 
@@ -154,10 +181,13 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
   const { notice } = props;
   // Prestige and the ending have their own screens.
   const text =
-    TEXT[notice.kind === "prestige" || notice.kind === "ending" ? "actCleared" : notice.kind];
+    notice.kind === "actCleared" && notice.wildfire
+      ? WILDFIRE_CLEARED
+      : TEXT[notice.kind === "prestige" || notice.kind === "ending" ? "actCleared" : notice.kind];
   const act = getAct(GAME_DATA, notice.actId);
   const next = GAME_DATA.acts.find((a) => a.number === act.number + 1);
-  const nan = notice.kind === "actCleared" ? (CLEARED_NAN[act.id] ?? text.nan) : text.nan;
+  const nan =
+    notice.kind === "actCleared" && !notice.wildfire ? (CLEARED_NAN[act.id] ?? text.nan) : text.nan;
   return (
     <section
       className={`screen notice-screen notice-${notice.kind}`}

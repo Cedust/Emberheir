@@ -9,10 +9,14 @@ import {
   type GameState,
   type Item,
   PROGRESSION,
-  RARITIES,
+  actsInOrder,
   actsInRun,
   applyAction,
+  armorReduction,
+  type CombatantSetup,
+  Fight,
   currentFight,
+  deriveStats,
   type LearnedNodes,
   equipBlockReason,
   getNode,
@@ -72,9 +76,59 @@ const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   crossbow: ["strength", "dexterity", "vitality"],
 };
 
-const rarityRank = (item: Item) => RARITIES.indexOf(item.rarity);
-/** Crude item score: rarity first, then Item Level. */
-const score = (item: Item) => rarityRank(item) * 10 + item.itemLevel;
+/** Seconds the autopilot spends hitting a training dummy to judge a piece of gear. */
+const DUMMY_SECONDS = 30;
+
+/**
+ * Damage per second of the hero against a training dummy that never hits back: the build's own
+ * rotation, ailments and triggers all count, so Ailment Duration matters to a Warlock just as
+ * Crit matters to a Marksman.
+ */
+function dummyDps(setup: CombatantSetup): number {
+  const dummy: CombatantSetup = {
+    name: "Training Dummy",
+    level: setup.level,
+    attributes: { strength: 0, dexterity: 0, agility: 0, intelligence: 0, wisdom: 0, vitality: 0 },
+    weapon: { ...setup.weapon, attacksPerSecond: 0, triggers: [], ailmentChances: [] },
+    rotation: [],
+    baseLife: 1e9,
+  };
+  const fight = new Fight({ ...setup, lifeFraction: 1 }, dummy, 1);
+  fight.advance(DUMMY_SECONDS);
+  const enemy = fight.snapshot().enemy;
+  return Math.max(1, (enemy.maxLife - enemy.life) / DUMMY_SECONDS);
+}
+
+/**
+ * How good the hero is with this gear: measured damage per second times effective Life against
+ * an even mix of Physical and magic damage. Like a player, the autopilot builds up what its build
+ * lives on and fills its weakest spot (Armor for a caster, Resistance for a fighter).
+ */
+function gearValue(state: GameState, data: GameData): number {
+  const setup = heroSetup(state, data).setup;
+  const st = deriveStats(setup);
+  const dps = dummyDps(setup);
+  const res =
+    (st.fireResistance + st.coldResistance + st.lightningResistance + st.voidResistance) / 4;
+  const physTaken = (1 - armorReduction(st.armor, setup.level)) * (1 - 0.3 * st.blockChance);
+  // Tenacity shortens the ailments that ramp up on the hero (Corruption, Poison stacks).
+  const taken =
+    (0.5 * physTaken + 0.5 * (1 - res)) * (1 - 0.6 * st.evasion) * (1 - 0.3 * st.tenacity);
+  // Lifesteal heals back part of the damage dealt over a fight of about 20 s.
+  const effectiveLife = (st.maxLife + st.barrier) / taken + st.lifesteal * dps * 20;
+  return Math.log(dps) + Math.log(effectiveLife);
+}
+
+/** Value gained by wearing `item` in its slot instead of what is there now. */
+function upgradeGain(state: GameState, data: GameData, item: Item): number {
+  const slot = targetSlot(item, data, state.hero.equipment);
+  if (!slot) return 0;
+  const tried: GameState = {
+    ...state,
+    hero: { ...state.hero, equipment: { ...state.hero.equipment, [slot]: item } },
+  };
+  return gearValue(tried, data) - gearValue(state, data);
+}
 
 /** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */
 function bestBoon(state: GameState, data: GameData, offer: readonly BoonPick[]): number {
@@ -105,10 +159,8 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
     let bestGain = 0;
     rewards.items.forEach((item, i) => {
       if (taken.has(i) || equipBlockReason(s, data, item, "pick")) return;
-      const slot = targetSlot(item, data, s.hero.equipment);
-      const current = slot ? s.hero.equipment[slot] : undefined;
-      const gain = score(item) - (current ? score(current) : -1);
-      if (gain > bestGain) {
+      const gain = upgradeGain(s, data, item);
+      if (gain > bestGain + 1e-6) {
         best = i;
         bestGain = gain;
       }
@@ -129,16 +181,29 @@ function autopilotRewards(state: GameState, data: GameData): GameState {
   return applyAction(s, data, { type: "continue" });
 }
 
-/** Spreads the points over the plan's attributes in turn; full ones (10) are passed over. */
+/**
+ * Spends each point where it helps this hero most (same measure as for gear: damage on the
+ * training dummy times effective Life), so a caster facing Corruption raises Vitality like a
+ * player would. Ties go to the weapon's plan.
+ */
 function spendPoints(state: GameState, data: GameData, weaponId: string): GameState {
   const plan = [...(ATTRIBUTE_PLAN[weaponId] ?? []), ...ATTRIBUTES];
+  const order = plan.filter((a, i) => plan.indexOf(a) === i);
   let s = state;
-  let i = 0;
   while (s.hero.unspentAttributePoints > 0) {
-    const open = plan.filter((a) => s.hero.attributes[a] < ATTRIBUTE_RULES.max).slice(0, 3);
-    const attribute = open[i++ % Math.max(1, open.length)];
-    if (!attribute) break;
-    s = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: 1 } });
+    let best: GameState | null = null;
+    let bestValue = -Infinity;
+    for (const attribute of order) {
+      if (s.hero.attributes[attribute] >= ATTRIBUTE_RULES.max) continue;
+      const next = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: 1 } });
+      const value = gearValue(next, data);
+      if (value > bestValue + 1e-6) {
+        best = next;
+        bestValue = value;
+      }
+    }
+    if (!best) break;
+    s = best;
   }
   return s;
 }
@@ -657,6 +722,10 @@ export function playGenerations(
     readonly generations: number;
     /** After the last generation: the final Prestige and The Last Ember (report act = 8). */
     readonly finale?: boolean;
+    /** After a won finale: Wildfire tiers to climb (report act = 100 + tier). */
+    readonly wildfire?: number;
+    /** Called before every fight (balance probes). */
+    readonly onFight?: (state: GameState, generation: number, act: number) => void;
   },
 ): ActRunReport[] {
   // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
@@ -698,6 +767,7 @@ export function playGenerations(
             s = applyAction(s, data, { type: "useFlask" });
           }
           s = applyAction(s, data, { type: "startStage" });
+          options.onFight?.(s, generation, act.number);
           const fight = currentFight(s, data);
           const result = runFight(fight.hero, fight.enemy, fight.seed);
           const encounter = s.run?.encounter;
@@ -754,10 +824,99 @@ export function playGenerations(
   if (options.finale && data.finale && s.pendingPrestige) {
     s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
-      reports.push(playFinale(s, data, options.generations + 1, options.maxAttempts));
+      const finale = playFinale(
+        s,
+        data,
+        options.generations + 1,
+        options.maxAttempts,
+        options.onFight,
+      );
+      reports.push(finale.report);
+      s = finale.state;
+      for (let tier = 1; tier <= (options.wildfire ?? 0) && s.legacy.finaleWon; tier++) {
+        const fire = playWildfire(s, data, build, options, tier);
+        reports.push(fire.report);
+        s = fire.state;
+        if (!fire.report.cleared) break;
+      }
     }
   }
   return reports;
+}
+
+/**
+ * One Wildfire tier with the autopilot: the acts take turns by tier (I = Act 1, ... VIII = Act 1
+ * again), attempts until the act boss falls.
+ */
+function playWildfire(
+  state: GameState,
+  data: GameData,
+  build: BuildPlan | undefined,
+  options: { readonly starterWeapon: string; readonly maxAttempts: number },
+  tier: number,
+): { state: GameState; report: ActRunReport } {
+  const acts = actsInOrder(data);
+  const act = acts[(tier - 1) % acts.length] ?? acts[0];
+  if (!act) throw new Error("No acts");
+  let s = state;
+  const before = s.stats;
+  const fightSeconds: number[] = [];
+  const deathStages: number[] = [];
+  const deathEnemies: string[] = [];
+  let bossSeconds = 0;
+  let elites = 0;
+  let cleared = false;
+  for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
+    for (const placed of s.inventory) {
+      s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
+    }
+    s = spendSkillPoints(s, data, build);
+    s = applyAction(s, data, { type: "setOut", actId: act.id, wildfire: tier });
+    while (s.run) {
+      s = spendPoints(s, data, options.starterWeapon);
+      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+        s = applyAction(s, data, { type: "useFlask" });
+      }
+      s = applyAction(s, data, { type: "startStage" });
+      const fight = currentFight(s, data);
+      const result = runFight(fight.hero, fight.enemy, fight.seed);
+      const encounter = s.run?.encounter;
+      if (encounter?.boss) bossSeconds = result.duration;
+      else {
+        fightSeconds.push(result.duration);
+        if (encounter?.eliteModifiers.length) elites++;
+      }
+      const stage = s.run?.stage ?? 0;
+      s = applyAction(s, data, { type: "resolveFight" });
+      if (!s.run && s.notice?.kind === "death") {
+        deathStages.push(stage);
+        if (encounter) deathEnemies.push(encounter.enemyId);
+      }
+      if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+    }
+    cleared = s.notice?.kind === "actCleared";
+    s = applyAction(s, data, { type: "dismissNotice" });
+  }
+  return {
+    state: s,
+    report: {
+      generation: tier,
+      act: 100 + tier,
+      cleared,
+      deaths: s.stats.deaths - before.deaths,
+      deathEnemies,
+      fights: s.stats.fights - before.fights,
+      levelAtBoss: s.hero.level,
+      fightSeconds,
+      bossSeconds,
+      elites,
+      thieves: 0,
+      thievesCaught: 0,
+      deathStages,
+      bossDeaths: deathStages.filter((st) => st === act.stages).length,
+      firstFightLost: false,
+    },
+  };
 }
 
 /** The Last Ember with the autopilot: attempts until the Core falls (best Boon after each win). */
@@ -766,7 +925,8 @@ function playFinale(
   data: GameData,
   generation: number,
   maxAttempts: number,
-): ActRunReport {
+  onFight?: (state: GameState, generation: number, act: number) => void,
+): { state: GameState; report: ActRunReport } {
   let s = state;
   const before = s.stats;
   const fightSeconds: number[] = [];
@@ -781,6 +941,7 @@ function playFinale(
         s = applyAction(s, data, { type: "useFlask" });
       }
       s = applyAction(s, data, { type: "startStage" });
+      onFight?.(s, generation, data.finale?.number ?? 8);
       const fight = currentFight(s, data);
       const result = runFight(fight.hero, fight.enemy, fight.seed);
       const stage = s.run?.stage ?? 0;
@@ -801,7 +962,7 @@ function playFinale(
     cleared = s.notice?.kind === "ending";
     s = applyAction(s, data, { type: "dismissNotice" });
   }
-  return {
+  const report: ActRunReport = {
     generation,
     act: data.finale?.number ?? 8,
     cleared,
@@ -818,6 +979,7 @@ function playFinale(
     bossDeaths: deathStages.filter((st) => st === data.finale?.stages).length,
     firstFightLost: false,
   };
+  return { state: s, report };
 }
 
 /** Plays one generation up to one act (see `playGenerations`). The report of that act. */

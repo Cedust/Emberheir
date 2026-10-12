@@ -1,4 +1,4 @@
-import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
+import { GAME_DATA, ITEM_CATALOG, RUNEWORDS, SKILL_TREE } from "@emberheir/content";
 import type { Page } from "@playwright/test";
 import {
   type GameState,
@@ -392,9 +392,39 @@ export function saveWebTree(): string {
 export async function createHero(page: Page, onAttributes?: () => Promise<void>): Promise<void> {
   await page.getByRole("button", { name: "Next" }).click();
   await onAttributes?.();
-  for (let i = 0; i < 3; i++) {
-    await page.getByRole("button", { name: "Add Strength" }).click();
-    await page.getByRole("button", { name: "Add Vitality" }).click();
-  }
+  // The Warrior starts at Strength 5 and creation stops at 7: the sixth point goes to Agility.
+  for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Add Vitality" }).click();
+  for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Add Strength" }).click();
+  await page.getByRole("button", { name: "Add Agility" }).click();
   await page.getByRole("button", { name: "Begin" }).click();
+}
+
+/** On the road into the Rotwood (the newest act of run 2), right before the Gatekeeper of Stage 5. */
+export function saveBeforeGatekeeper(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "rotwood" });
+  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 5 } });
+}
+
+/** In the Camp with every Unique found and every Runeword forged: two banners hang. */
+export function saveCollector(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({
+    ...camp,
+    legacy: {
+      ...camp.legacy,
+      trophies: [...ITEM_CATALOG.uniques.keys()],
+      runewords: RUNEWORDS.map((w) => w.id),
+    },
+  });
+}
+
+/** After The Last Ember with Wildfire III cleared: Wildfire IV is the next tier. */
+export function saveWildfire(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({
+    ...camp,
+    hero: { ...camp.hero, level: 100, xp: 0 },
+    legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: 3 },
+  });
 }

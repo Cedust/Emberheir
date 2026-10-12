@@ -17,6 +17,7 @@ import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
 
+if (args.wildfire > 0) args.finale = 1;
 if (args.act > 0 || args.finale > 0) {
   runActMode();
   process.exit(0);
@@ -66,9 +67,32 @@ function runActMode(): void {
         maxAttempts: args.attempts,
         generations,
         finale: args.finale > 0,
+        wildfire: args.wildfire,
       }),
     ).flat();
     const finale = GAME_DATA.finale;
+    for (let tier = 1; tier <= args.wildfire; tier++) {
+      const reports = all.filter((x) => x.act === 100 + tier);
+      if (!reports.length) continue;
+      const s = summarizeActRuns(reports);
+      rows.push({
+        weapon: build ? `${starterWeapon} (${build})` : starterWeapon,
+        gen: `W${tier}`,
+        act: ((tier - 1) % GAME_DATA.acts.length) + 1,
+        runs: reports.length,
+        "cleared %": (s.clearRate * 100).toFixed(0),
+        "deaths before clear": s.avgDeaths.toFixed(1),
+        "1st fight lost %": "-",
+        "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
+        "level at boss": s.avgLevelAtBoss.toFixed(1),
+        "avg fight s": s.avgFightSeconds.toFixed(1),
+        "p90 fight s": s.p90FightSeconds.toFixed(1),
+        "boss fight s": s.avgBossSeconds.toFixed(1),
+        "elites / run": s.avgElites.toFixed(1),
+        "thief caught %": "-",
+        "top killer": s.topKiller,
+      });
+    }
     for (let g = 1; g <= generations + 1; g++) {
       const acts = g > generations ? (finale ? [finale] : []) : GAME_DATA.acts;
       for (const act of acts.filter((a) => g > generations || a.number <= last.number)) {

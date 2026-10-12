@@ -41,7 +41,11 @@ export const COMBAT = {
     critChancePerDexterity: 0.015,
     triggerChancePerDexterity: 0.04,
     elementalDamagePerIntelligence: 0.08,
-    allResistancePerIntelligence: 0.015,
+    // Intelligence gives Barrier, not Resistance: Resistance comes from gear for every class
+    // (Timo, PoE rule: Strength Armor, Agility Evasion, Intelligence Barrier).
+    allResistancePerIntelligence: 0,
+    /** Barrier per Intelligence point, as a share of max Life. */
+    barrierPerIntelligence: 0.03,
     attackSpeedPerAgility: 0.03,
     evasionPerAgility: 0.02,
     heatGainPerWisdom: 0.06,
@@ -57,6 +61,14 @@ export const COMBAT = {
   /** Stacking Sunder of Weapon Mastery before nodes: no chance of its own, 5 % Armor per stack. */
   sunder: { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 },
 
+  /**
+   * Intelligence Barrier: full at fight start, refills after 1.5 s without a hit (20 % per s). A
+   * longer pause keeps it from refilling fully between the slow swings of early bosses.
+   */
+  barrierRecharge: { delay: 1.5, perSecond: 0.2 },
+  /** Bosses shrug off stuns: a stun holds them this much as long (no stunlocked boss). */
+  bossStunTaken: 0.5,
+
   // Caps.
   maxEvasion: 0.5,
   maxBlockChance: 0.75,
@@ -64,7 +76,7 @@ export const COMBAT = {
   maxTenacity: 0.75,
   maxArmorReduction: 0.9,
   /** Armor reduction = armor / (armor + armorConstantPerLevel × attacker level). */
-  armorConstantPerLevel: 40,
+  armorConstantPerLevel: 20,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
@@ -91,7 +103,7 @@ export const COMBAT = {
   bleedDamagePerSecond: 0.5,
   bleedDurationSeconds: 3,
   /** Poison: every stack deals X of its hit per second and runs out on its own. */
-  poisonDamagePerSecond: 0.1,
+  poisonDamagePerSecond: 0.17,
   poisonDurationSeconds: 5,
   poisonMaxStacks: 20,
   /**

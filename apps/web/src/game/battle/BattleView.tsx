@@ -37,7 +37,7 @@ interface PlaqueInfo {
   readonly name: string;
   readonly sub: string;
   readonly icon: IconName;
-  readonly tag?: "ELITE" | "BOSS";
+  readonly tag?: "ELITE" | "BOSS" | "GATEKEEPER";
   readonly mods?: readonly string[];
 }
 
@@ -92,6 +92,8 @@ function useLooks(state: GameState, run: RunState) {
     act: (echo ?? act).number,
     ranged: enemyDef?.weapon.range === "ranged",
     ...(encounter?.thief ? { thief: true } : {}),
+    ...(encounter?.gate ? { gate: true } : {}),
+    ...(run.wildfire ? { wildfire: run.wildfire } : {}),
     ...(encounter ? { levelGap: encounter.level - state.hero.level } : {}),
   };
   const heroInfo: PlaqueInfo = {
@@ -103,7 +105,13 @@ function useLooks(state: GameState, run: RunState) {
     name: echo ? `Echo of ${enemyDef?.name ?? ""}` : (enemyDef?.name ?? "Enemy"),
     sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
     icon: encounter?.boss ? "boss" : ((enemyDef?.archetype ?? "brute") as "brute"),
-    ...(encounter?.boss ? { tag: "BOSS" as const } : mods.length ? { tag: "ELITE" as const } : {}),
+    ...(encounter?.boss
+      ? { tag: "BOSS" as const }
+      : encounter?.gate
+        ? { tag: "GATEKEEPER" as const }
+        : mods.length
+          ? { tag: "ELITE" as const }
+          : {}),
     mods,
   };
   const enemyAttackIcon: IconName = enemyLook.ranged
@@ -290,6 +298,8 @@ export function BattleView(props: {
         attributePoints={state.hero.unspentAttributePoints}
         skillPoints={state.hero.unspentSkillPoints}
         waymarks={state.progress.waymarks}
+        prestige={state.legacy.prestige}
+        {...(run.wildfire ? { wildfire: run.wildfire } : {})}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
         onMenu={props.onMenu}

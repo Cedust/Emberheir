@@ -7,12 +7,15 @@ import {
   heroTitle,
   keystoneLimit,
   itemSlotFor,
+  LINEAGE_STEPS,
+  lineageScale,
   levelCap,
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
+import { collections } from "../collections";
 import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
@@ -37,11 +40,13 @@ const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
 export function LegacyView(props: {
   state: GameState;
   onClose: () => void;
-  initialTab?: "gear" | "trophies";
+  initialTab?: "gear" | "trophies" | "collections";
 }) {
   const { state } = props;
   const { legacy } = state;
-  const [tab, setTab] = useState<"gear" | "trophies">(props.initialTab ?? "gear");
+  const [tab, setTab] = useState<"gear" | "trophies" | "collections">(props.initialTab ?? "gear");
+  const goals = collections(state);
+  const full = goals.filter((g) => g.found >= g.total).length;
   const generation = legacy.prestige + 1;
   const [sel, setSel] = useState<EquipmentSlot>("body");
   const wornIn = (slot: EquipmentSlot) => state.hero.equipment[slot];
@@ -111,6 +116,15 @@ export function LegacyView(props: {
           >
             Trophy Wall · {legacy.trophies.length}/{TROPHY_COUNT}
           </button>
+          <button
+            type="button"
+            role="tab"
+            aria-selected={tab === "collections"}
+            className={`tab title-font ${tab === "collections" ? "on" : ""}`}
+            onClick={() => setTab("collections")}
+          >
+            Collections · {full}/{goals.length}
+          </button>
         </div>
         <div className="grow" />
         <button
@@ -125,6 +139,41 @@ export function LegacyView(props: {
       </header>
       {tab === "trophies" ? (
         <TrophyWall state={state} />
+      ) : tab === "collections" ? (
+        <div className="collections-page">
+          <div className="collections" aria-label="Collections">
+            {goals.map((g) => {
+              const done = g.found >= g.total;
+              return (
+                <section
+                  key={g.id}
+                  className={`panel-card collection${done ? " done" : ""}`}
+                  aria-label={g.name}
+                >
+                  <span className="eyebrow">{g.name.toUpperCase()}</span>
+                  <span className="title-font big">
+                    {g.found} / {g.total}
+                  </span>
+                  <div
+                    className="collection-bar"
+                    role="progressbar"
+                    aria-valuemin={0}
+                    aria-valuemax={g.total}
+                    aria-valuenow={g.found}
+                  >
+                    <div style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
+                  </div>
+                  <span className="sub small">{g.how}</span>
+                  <span className={`collection-reward small${done ? " accent" : ""}`}>
+                    <Icon name={done ? "check" : "lock"} size={14} />
+                    {done ? `${g.reward.replace(/^A /, "The ")} is raised.` : g.reward}
+                  </span>
+                </section>
+              );
+            })}
+          </div>
+          <Lineage state={state} />
+        </div>
       ) : (
         <div className="legacy-body">
           <aside className="legacy-facts">
@@ -215,6 +264,59 @@ export function LegacyView(props: {
           </aside>
         </div>
       )}
+    </section>
+  );
+}
+
+/**
+ * Lineage (spielzeit-v1.md, D): the account's finale wins. The first one opens a bonus for every
+ * class, each further one raises them all a step; a character carries its own class's bonus.
+ */
+function Lineage(props: { state: GameState }) {
+  const step = props.state.lineage ?? 0;
+  const scale = lineageScale(step);
+  const own = props.state.hero.classId;
+  return (
+    <section className="panel-card lineage" aria-label="Lineage">
+      <div className="section-row">
+        <span className="title-font section-title">Lineage</span>
+        <span className="lineage-steps" aria-label={`Step ${step} of ${LINEAGE_STEPS}`}>
+          {Array.from({ length: LINEAGE_STEPS }, (_, i) => (
+            <span key={i} className={`lineage-pip${i < step ? " lit" : ""}`}>
+              <Icon name="flame" size={16} />
+            </span>
+          ))}
+        </span>
+      </div>
+      <span className="sub small">
+        {step === 0
+          ? "Win The Last Ember with any Heir to open it. Every class then inherits its bonus."
+          : `Step ${step} of ${LINEAGE_STEPS}. Every Heir who wins The Last Ember adds a step.`}{" "}
+        {step >= LINEAGE_STEPS
+          ? "The title Emberheir is yours."
+          : `At step ${LINEAGE_STEPS} every Heir is called Emberheir.`}
+      </span>
+      <div className="lineage-classes">
+        {GAME_DATA.classes.map((c) => {
+          const l = c.lineage;
+          if (!l) return null;
+          const value = Math.round(l.percent * Math.max(1, scale) * 10) / 10;
+          return (
+            <div
+              key={c.id}
+              className={`lineage-class${c.id === own ? " own" : ""}${step > 0 ? " open" : ""}`}
+              title={`${l.name}: every new ${c.name} gets +${value} % ${l.stat}${step === 0 ? " once the Lineage opens" : ""}.`}
+            >
+              <span className="eyebrow">{c.name.toUpperCase()}</span>
+              <span className="title-font">{l.name}</span>
+              <span className="mono">
+                +{value} % {l.stat}
+              </span>
+              {c.id === own && <span className="sub small accent">This Heir</span>}
+            </div>
+          );
+        })}
+      </div>
     </section>
   );
 }

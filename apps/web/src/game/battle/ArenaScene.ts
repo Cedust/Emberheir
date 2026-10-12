@@ -41,6 +41,10 @@ export interface EnemyLook {
   readonly ranged?: boolean;
   /** Enemy level minus hero level (level-v2.md): who has outgrown whom shows on the ground. */
   readonly levelGap?: number;
+  /** A Gatekeeper of the newest act: it fights in front of a burning stone gate. */
+  readonly gate?: boolean;
+  /** Wildfire tier of the trip: the ground burns, embers rise, flames lick at the edges. */
+  readonly wildfire?: number;
 }
 
 /** Original damage-type colors (ui-look-v1.md): the arena uses them in both modes. */
@@ -291,10 +295,20 @@ export class ArenaScene {
   private clock = 0;
   private telegraphOn = false;
   private tint: Record<Side, number> = { hero: 0xffffff, enemy: 0xffffff };
+  /** Barrier share of max Life per side; the ward bubble around the fighter shows it. */
+  private barrier: Record<Side, number> = { hero: 0, enemy: 0 };
+  private ward: Record<Side, Graphics | null> = { hero: null, enemy: null };
   private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
+  /** The Gatekeeper's stone gate, its fire bowls and the Ember sigil on the lintel. */
+  private gate: { root: Container; sigil: Graphics; fires: { x: number; y: number }[] } | null =
+    null;
+  private gateCarry = 0;
+  /** Wildfire: the burning ground glow and how hard the edges flame (the tier). */
+  private wildfire: { glow: Graphics; tier: number } | null = null;
+  private wildfireCarry = 0;
   private echoAura: Container | null = null;
   /** Exalted weapons shed golden sparks from this point of the hero figure. */
   private exaltedTip: Container | null = null;
@@ -362,7 +376,7 @@ export class ArenaScene {
 
     const fx = new Fx(app.renderer);
     this.fx = fx;
-    this.weather = new Weather(enemy.act);
+    this.weather = new Weather(enemy.act, enemy.wildfire ?? 0);
     this.ranged = { hero: RANGED_WEAPONS.has(hero.weapon), enemy: enemy.ranged ?? false };
 
     this.world.addChild(drawGround(), fx.back);
@@ -373,6 +387,28 @@ export class ArenaScene {
         .stroke({ color: enemy.boss ? 0xff8a1f : 0xffd84a, width: 3, alpha: 0.45 });
     }
     this.world.addChild(this.aura);
+    // Barrier (Intelligence, Warden skills): a pale ward bubble that fades as it is used up.
+    for (const side of ["hero", "enemy"] as const) {
+      const x = side === "hero" ? HERO_X : ENEMY_X;
+      const ward = new Graphics()
+        .ellipse(x, GROUND_Y - 190, 150, 205)
+        .fill({ color: 0x9fd8ff, alpha: 0.14 })
+        .stroke({ color: 0x8fd0ff, width: 14, alpha: 0.18 })
+        .stroke({ color: 0x9fdcff, width: 4, alpha: 1 })
+        .ellipse(x - 52, GROUND_Y - 300, 34, 60)
+        .fill({ color: 0xffffff, alpha: 0.18 });
+      ward.alpha = 0;
+      this.ward[side] = ward;
+      this.world.addChild(ward);
+    }
+    if (enemy.gate) {
+      this.gate = drawGate();
+      this.world.addChildAt(this.gate.root, 1);
+    }
+    if (enemy.wildfire) {
+      this.wildfire = { glow: drawWildfireGlow(), tier: enemy.wildfire };
+      this.world.addChildAt(this.wildfire.glow, 1);
+    }
     this.levelGlow = drawLevelGlow(enemy.levelGap ?? 0);
     if (this.levelGlow) this.world.addChild(this.levelGlow);
     this.telegraph = new Graphics()
@@ -540,6 +576,10 @@ export class ArenaScene {
   onSnapshot(snapshot: FightSnapshot): void {
     this.telegraphOn = snapshot.enemy.telegraph !== null;
     for (const side of ["hero", "enemy"] as const) {
+      this.barrier[side] = Math.min(
+        1,
+        snapshot[side].barrier / Math.max(1, snapshot[side].maxLife),
+      );
       const list = snapshot[side].ailments;
       const first = list[0];
       this.tint[side] = first ? (AILMENT_TINT[first.type] ?? 0xffffff) : 0xffffff;
@@ -932,9 +972,45 @@ export class ArenaScene {
     this.fx.burst({ ...style, x: c.x, y: c.y + 20, count });
   }
 
+  /** The Gatekeeper fell: its gate cracks, the fires go out in a rain of stone and sparks. */
+  private breakGate(gate: NonNullable<ArenaScene["gate"]>): void {
+    gate.root.alpha = 0.3;
+    gate.sigil.alpha = 0;
+    for (const f of gate.fires) {
+      this.fx?.burst({
+        x: f.x,
+        y: f.y + 120,
+        count: 30,
+        kind: "bit",
+        color: [0x5e5750, 0x8a8178, 0x3a332d],
+        spreadX: 40,
+        spreadY: 200,
+        angle: [RISE - 1, RISE + 1],
+        speed: [40, 160],
+        life: [0.8, 1.6],
+        size: [8, 16],
+        gravity: 500,
+        spin: 5,
+      });
+      this.fx?.burst({
+        x: f.x,
+        y: f.y,
+        count: 24,
+        color: [0xff8a1f, 0xffd84a],
+        angle: [RISE - 0.8, RISE + 0.8],
+        speed: [80, 260],
+        life: [0.5, 1],
+        size: [8, 14],
+        drag: 0.4,
+      });
+    }
+    this.shake(0.5);
+  }
+
   private die(side: Side): void {
     const f = this.figure(side);
     if (f.root.alpha < 1) return;
+    if (side === "enemy" && this.gate) this.breakGate(this.gate);
     f.root.alpha = 0.35;
     f.knock = 1.6;
     f.stun = 0;
@@ -1054,6 +1130,14 @@ export class ArenaScene {
       f.stars.visible = f.stun > 0;
       if (f.stun > 0) drawStars(f.stars, this.clock, f.side === "hero" ? -440 : -470);
     }
+    for (const side of ["hero", "enemy"] as const) {
+      const ward = this.ward[side];
+      if (!ward) continue;
+      const share = this.barrier[side];
+      const pulse = this.motion ? 0.08 * Math.sin(this.clock * 3) : 0;
+      const target = share > 0.005 ? 0.55 + 0.45 * Math.min(1, share * 3) + pulse : 0;
+      ward.alpha += (target - ward.alpha) * Math.min(1, dt * 8);
+    }
     if (this.telegraph) {
       const target = this.telegraphOn ? 0.55 + 0.35 * Math.sin(this.clock * 9) : 0;
       this.telegraph.alpha += (target - this.telegraph.alpha) * Math.min(1, dt * 12);
@@ -1090,6 +1174,53 @@ export class ArenaScene {
     }
     if (this.levelGlow && this.motion) {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
+    }
+    // The Gatekeeper's gate: the fire bowls burn, the sigil glows while the keeper stands.
+    if (this.gate && this.gate.root.alpha === 1) {
+      if (this.motion) this.gate.sigil.alpha = 0.7 + 0.3 * Math.sin(this.clock * 2.4);
+      this.gateCarry += 14 * dt;
+      for (; this.fx && this.gateCarry >= 1; this.gateCarry--) {
+        for (const f of this.gate.fires) {
+          this.fx.burst({
+            x: f.x,
+            y: f.y,
+            count: 1,
+            color: [0xff6a2b, 0xffb13b, 0xffd84a],
+            spreadX: 26,
+            spreadY: 6,
+            angle: [RISE - 0.3, RISE + 0.3],
+            speed: [60, 130],
+            life: [0.4, 0.8],
+            size: [12, 22],
+            endSize: 0.1,
+          });
+        }
+      }
+    }
+    // Wildfire: the ground glow breathes, flames lick up at both edges of the view.
+    if (this.wildfire) {
+      const { glow, tier } = this.wildfire;
+      if (this.motion) glow.alpha = 0.8 + 0.2 * Math.sin(this.clock * 1.7);
+      this.wildfireCarry += (4 + tier) * dt;
+      const view = this.view();
+      for (; this.fx && this.wildfireCarry >= 1; this.wildfireCarry--) {
+        for (const side of [view.left + 70, view.right - 70]) {
+          this.fx.burst({
+            x: side,
+            y: view.ground + 20,
+            count: 1,
+            color: [0xff4a1a, 0xff8a1f, 0xffb13b],
+            spreadX: 90,
+            spreadY: 10,
+            angle: [RISE - 0.25, RISE + 0.25],
+            speed: [90, 190],
+            life: [0.5, 1],
+            size: [26, 46],
+            endSize: 0.1,
+            layer: "back",
+          });
+        }
+      }
     }
     // The worn Echo walks with the hero: its aura breathes, its motes drift up around them.
     if (this.echoAura && this.motion) {
@@ -1735,9 +1866,92 @@ function drawEnemy(look: EnemyLook): Container {
 }
 
 /**
+ * The Gatekeeper's gate (spielzeit-v1.md, walls): two ash-stone pillars carved with the Ember
+ * sigil, fire bowls and a lintel, standing behind the enemy on the Waymark stages of a run's
+ * newest act.
+ */
+function drawGate(): {
+  root: Container;
+  sigil: Graphics;
+  fires: { x: number; y: number }[];
+} {
+  const root = new Container();
+  const stone = 0x6b625a;
+  const dark = 0x3a332d;
+  const top = GROUND_Y - 470;
+  const fires: { x: number; y: number }[] = [];
+  for (const dx of [-250, 250]) {
+    const x = ENEMY_X + dx;
+    root.addChild(
+      new Graphics()
+        .roundRect(x - 34, top, 68, GROUND_Y - top + 10, 8)
+        .fill(stone)
+        .stroke({ color: INK, width: 5 }),
+      new Graphics()
+        .moveTo(x - 20, top + 60)
+        .lineTo(x - 8, top + 140)
+        .lineTo(x - 22, top + 230)
+        .moveTo(x + 14, top + 300)
+        .lineTo(x + 4, top + 380)
+        .stroke({ color: dark, width: 3, cap: "round" }),
+    );
+    // A fire bowl on an iron bracket halfway up the pillar.
+    const by = top + 210;
+    root.addChild(
+      new Graphics()
+        .moveTo(x, by + 40)
+        .lineTo(x, by + 10)
+        .stroke({ color: INK, width: 6, cap: "round" }),
+      new Graphics()
+        .poly([x - 34, by - 4, x + 34, by - 4, x + 22, by + 22, x - 22, by + 22])
+        .fill(dark)
+        .stroke({ color: INK, width: 4 }),
+    );
+    const glow = new Graphics().ellipse(x, by - 14, 40, 26).fill({ color: 0xff8a1f, alpha: 0.4 });
+    glow.blendMode = "add";
+    root.addChild(glow);
+    fires.push({ x, y: by - 8 });
+  }
+  root.addChild(
+    new Graphics()
+      .roundRect(ENEMY_X - 302, top + 20, 604, 56, 10)
+      .fill(stone)
+      .stroke({ color: INK, width: 5 }),
+  );
+  // The Ember sigil carved into both pillars, glowing while the keeper stands.
+  const sigil = new Graphics();
+  for (const x of [ENEMY_X - 250, ENEMY_X + 250]) {
+    const y = top + 110;
+    sigil
+      .circle(x, y, 18)
+      .stroke({ color: 0xffb13b, width: 4 })
+      .poly([x, y - 14, x + 9, y + 5, x, y + 13, x - 9, y + 5])
+      .fill(0xff8a1f);
+  }
+  sigil.blendMode = "add";
+  root.addChild(sigil);
+  return { root, sigil, fires };
+}
+
+/**
  * Level gap on the ground: a warm gold light under the hero who has outlevelled a foe by 3 or
  * more (a wall farmed down, level-v2.md), a red one under an enemy 5 or more levels above.
  */
+/** Wildfire: a wide ember glow over the ground, brightest at the edges where the fire stands. */
+function drawWildfireGlow(): Graphics {
+  const g = new Graphics();
+  for (let i = 6; i > 0; i--) {
+    g.ellipse(720, GROUND_Y + 30, 520 + i * 90, 40 + i * 16).fill({ color: 0xff5a1a, alpha: 0.05 });
+  }
+  for (const x of [0, 1440]) {
+    for (let i = 5; i > 0; i--) {
+      g.ellipse(x, GROUND_Y, 120 + i * 40, 90 + i * 30).fill({ color: 0xff8a1f, alpha: 0.06 });
+    }
+  }
+  g.blendMode = "add";
+  return g;
+}
+
 function drawLevelGlow(gap: number): Graphics | null {
   const hero = gap <= -3;
   if (!hero && gap < 5) return null;

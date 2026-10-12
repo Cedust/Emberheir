@@ -117,5 +117,6 @@ export function createEnemySetup(enemy: EnemyDefinition, level: number): Combata
     ...(enemy.bonuses ? { bonuses: enemy.bonuses } : {}),
     ...(enemy.telegraphs ? { telegraphs: enemy.telegraphs } : {}),
     ...(enemy.triggers ? { triggers: enemy.triggers } : {}),
+    ...(enemy.boss ? { rules: { stunTaken: COMBAT.bossStunTaken } } : {}),
   };
 }

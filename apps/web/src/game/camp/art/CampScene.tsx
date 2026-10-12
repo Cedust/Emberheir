@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { CollectionId } from "../../collections";
 import { DirtPattern, Foreground, HearthPlaza, Palisade } from "./CampDetail";
 import type { CampLightSource } from "./CampLight";
 import { INK, L, S, circ } from "./paint";
@@ -213,7 +214,98 @@ function groundBits(h: number) {
 }
 
 /** The still part of the camp: sky, hills, tents, wagons, stall, anvil and the road. */
-export function CampBackdrop(props: { roadName: string; w: number; h: number; ox: number }) {
+/** Collection banners (spielzeit-v1.md, E): one per full collection, on the palisade. */
+const BANNERS: Record<CollectionId, { x: number; cloth: string; emblem: string }> = {
+  trophies: {
+    x: 190,
+    cloth: "#c98a2a",
+    emblem: "M-10 -6 h20 v6 a10 10 0 0 1 -20 0 Z M-3 10 h6 v6 h-6 Z M-8 18 h16",
+  },
+  runewords: {
+    x: 1250,
+    cloth: "#2d5bd0",
+    emblem: "M0 -14 L10 -6 V8 L0 16 L-10 8 V-6 Z M0 -6 V10 M-5 0 L0 4 L5 0",
+  },
+  codex: {
+    x: 1360,
+    cloth: "#a8401a",
+    emblem: "M0 -14 a14 14 0 1 0 0.1 0 Z M0 -8 L6 4 L0 10 L-6 4 Z",
+  },
+};
+
+function Banner(props: { id: CollectionId }) {
+  const b = BANNERS[props.id];
+  const top = 214;
+  return (
+    <g className={`camp-banner banner-${props.id}`} data-testid={`banner-${props.id}`}>
+      <L
+        d={`M${b.x} 352 L${b.x} ${top - 8} M${b.x - 30} ${top} L${b.x + 30} ${top}`}
+        w={4}
+        color="#4a3220"
+      />
+      <S
+        d={`M${b.x - 26} ${top} L${b.x + 26} ${top} L${b.x + 26} ${top + 96} L${b.x} ${top + 80} L${b.x - 26} ${top + 96} Z`}
+        fill={b.cloth}
+        w={2.2}
+      />
+      <path
+        d={b.emblem}
+        transform={`translate(${b.x} ${top + 40})`}
+        fill="none"
+        stroke="#ffd27a"
+        strokeWidth="2.6"
+        strokeLinejoin="round"
+        strokeLinecap="round"
+      />
+    </g>
+  );
+}
+
+/**
+ * The ancestor portrait (spielzeit-v1.md, D): hangs on the palisade once the Lineage is full. A
+ * framed Heir otter in gold, lit from below by a small ember.
+ */
+function AncestorPortrait() {
+  const x = 330;
+  const y = 196;
+  return (
+    <g className="camp-ancestor" data-testid="ancestor-portrait">
+      <L d={`M${x - 34} ${y - 4} L${x} ${y - 30} L${x + 34} ${y - 4}`} w={2.5} color="#4a3220" />
+      <S d={`M${x - 44} ${y - 6} h88 v118 h-88 Z`} fill="#c98a2a" w={2.4} />
+      <S d={`M${x - 34} ${y + 4} h68 v98 h-68 Z`} fill="#2a1f1a" w={1.8} />
+      <ellipse cx={x} cy={y + 96} rx="30" ry="20" fill="#ff8a3a" opacity="0.35" />
+      {/* The ancestor: head, ears, muzzle, shoulders */}
+      <path
+        d={`M${x - 24} ${y + 102} C${x - 22} ${y + 74} ${x + 22} ${y + 74} ${x + 24} ${y + 102} Z`}
+        fill="#7a5034"
+      />
+      <circle cx={x - 13} cy={y + 30} r="5" fill="#7a5034" />
+      <circle cx={x + 13} cy={y + 30} r="5" fill="#7a5034" />
+      <ellipse cx={x} cy={y + 46} rx="17" ry="19" fill="#8e5e3c" />
+      <ellipse cx={x} cy={y + 56} rx="10" ry="7" fill="#d9b48a" />
+      <circle cx={x - 6} cy={y + 42} r="2.2" fill="#1a1210" />
+      <circle cx={x + 6} cy={y + 42} r="2.2" fill="#1a1210" />
+      <circle cx={x} cy={y + 52} r="2.6" fill="#1a1210" />
+      <path
+        d={`M${x} ${y + 128} c-6 -8 -4 -14 0 -20 c4 6 6 12 0 20 Z`}
+        fill="#ffb13b"
+        stroke={INK}
+        strokeWidth="1.4"
+      />
+    </g>
+  );
+}
+
+export function CampBackdrop(props: {
+  roadName: string;
+  w: number;
+  h: number;
+  ox: number;
+  /** Full collections: each hangs its banner. */
+  banners?: readonly CollectionId[];
+  /** Full Lineage: the ancestor portrait hangs on the palisade. */
+  ancestor?: boolean;
+}) {
   const { w, h, ox } = props;
   const stars = rand(5);
   const bits = groundBits(h);
@@ -314,6 +406,10 @@ export function CampBackdrop(props: { roadName: string; w: number; h: number; ox
       <ellipse cx={HEARTH_X} cy="540" rx="700" ry="290" fill="url(#camp-clearing)" />
       <Palisade x0={X0} x1={452} y={334} />
       <Palisade x0={990} x1={X1} y={334} />
+      {props.banners?.map((id) => (
+        <Banner key={id} id={id} />
+      ))}
+      {props.ancestor && <AncestorPortrait />}
       <path
         d="M2640 400 L1440 470 C1330 500 1260 560 1250 620 C1240 700 1300 780 1320 836 L1360 1400 L2640 1400 Z"
         fill="url(#camp-road)"

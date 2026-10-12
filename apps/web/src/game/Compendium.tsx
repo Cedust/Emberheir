@@ -32,11 +32,11 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "The Last Ember",
-    text: "After the seventh Prestige, when all seven Acts have fallen, the world no longer burns. One flame got away. Enter The Last Ember from the Camp: six Warden echoes with every boss ability, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
+    text: "After the seventh Prestige, when all seven Acts have fallen, the world no longer burns. One flame got away. Enter The Last Ember from the Camp: six Warden echoes, each one hotter than the last, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
   },
   {
     title: "Elites and Bosses",
-    text: "Elites carry modifiers and drop better loot, sometimes a Phoenix Feather. The boss of each Act telegraphs its heavy attack: watch for 'Charging'. Bosses always drop a Phoenix Feather.",
+    text: "Elites carry modifiers and drop better loot, sometimes a Phoenix Feather. The boss of each Act telegraphs its heavy attack: watch for 'Charging'. Bosses always drop a Phoenix Feather and shrug off stuns: they stay stunned only half as long.",
   },
   {
     title: "Thoric, the Blacksmith",
@@ -72,7 +72,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Attributes",
-    text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Intelligence: Elemental Damage, All Resistance. Agility: Attack Speed, Evasion. Wisdom: Heat Gain, Ailment Duration. Vitality: Life, Tenacity. Crit Damage is always 150%.",
+    text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Intelligence: Elemental Damage, Barrier (absorbs damage before Life, refills after a moment without a hit). Resistance comes from gear. Agility: Attack Speed, Evasion. Wisdom: Heat Gain, Ailment Duration. Vitality: Life, Tenacity. Crit Damage is always 150%.",
   },
 ];
 

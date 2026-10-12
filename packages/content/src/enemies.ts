@@ -501,14 +501,14 @@ export const STORM_HERALD: EnemyDefinition = {
   skills: [FORKED_BOLT],
   baseLife: 410,
   boss: true,
-  bonuses: { lightningResistance: 0.4 },
+  bonuses: { lightningResistance: 0.25 },
   telegraphs: [{ skill: THUNDERCLAP, interval: 11, windup: 2 }],
   triggers: [
     {
       id: "herald-mirror",
       name: "Storm Mirror",
       condition: { kind: "everyNthHitTaken", n: 5 },
-      effect: { kind: "reflect", fraction: 0.8, cap: 0.08, damageType: "lightning" },
+      effect: { kind: "reflect", fraction: 0.8, cap: 0.05, damageType: "lightning" },
     },
   ],
 };
@@ -684,7 +684,8 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   skills: [SOUL_REAP],
   baseLife: 520,
   boss: true,
-  bonuses: { allResistance: 0.2 },
+  // As tough against Physical as against Elemental (Timo): about 10 % each at the hero's level.
+  bonuses: { armor: 200, allResistance: 0.08 },
   telegraphs: [
     { skill: HARVEST_SWING, interval: 10, windup: 2 },
     { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66 },

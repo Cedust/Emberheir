@@ -18,6 +18,7 @@ describe("parseArgs", () => {
       attempts: 30,
       generations: 1,
       finale: 0,
+      wildfire: 0,
     });
   });
 
@@ -62,6 +63,7 @@ describe("parseArgs", () => {
       attempts: 5,
       generations: 2,
       finale: 0,
+      wildfire: 0,
     });
   });
 

@@ -245,8 +245,11 @@ export type SkillEffect =
       readonly amount: number;
       readonly duration: number;
     }
-  /** Rend: ends the target's Bleed and deals its remaining damage × multiplier at once. */
-  | { readonly kind: "consumeBleed"; readonly multiplier: number }
+  /**
+   * Rend: ends the target's Bleed and deals its remaining damage × multiplier at once; `leech`
+   * heals the caster for that share of it.
+   */
+  | { readonly kind: "consumeBleed"; readonly multiplier: number; readonly leech?: number }
   /** Toxic Burst: multiplies the target's Poison stacks (up to the cap). */
   | { readonly kind: "multiplyPoison"; readonly factor: number }
   /** Heals the caster by a fraction of max life (Burn halves it). */
@@ -261,8 +264,11 @@ export type SkillEffect =
   | { readonly kind: "advanceCorruption"; readonly ticks: number }
   /** Curse (Wither): the target takes `amount` more damage over time for a while. */
   | { readonly kind: "curse"; readonly dotDamageTaken: number; readonly duration: number }
-  /** Soul Harvest: deals `seconds` worth of all DoTs on the target at once; they keep running. */
-  | { readonly kind: "detonateDots"; readonly seconds: number }
+  /**
+   * Soul Harvest: deals `seconds` worth of all DoTs on the target at once; they keep running. The
+   * caster heals `leech` of the damage dealt.
+   */
+  | { readonly kind: "detonateDots"; readonly seconds: number; readonly leech?: number }
   /** Weapon Mastery Sunder: adds stacks of the caster's stacking Sunder (Bone Breaker). */
   | { readonly kind: "sunderStacks"; readonly stacks: number }
   /** Gives back this share of the paid Heat if a hit of the skill landed cleanly (Rising Strike). */
@@ -381,12 +387,18 @@ export interface CombatRules {
   readonly execute?: { readonly below: number; readonly bonus: number; readonly above?: number };
   /** Heals this fraction of the damage your ailments deal over time. */
   readonly dotLifesteal?: number;
+  /** Multiplies how long stuns hold you (bosses shrug them off, `COMBAT.bossStunTaken`). */
+  readonly stunTaken?: number;
   /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
   readonly dotDamage?: number;
   /** Multiplies the damage over time of single ailments (Reaver: Bleed and Poison). */
   readonly ailmentDamage?: Readonly<Partial<Record<AilmentType, number>>>;
-  /** Multiplies max life (Warrior: Iron Blood). */
+  /** Multiplies max life (Iron Lineage, Keystones). */
   readonly lifeMultiplier?: number;
+  /** Multiplies the damage of your hits, and so the ailments they cause (Warrior: Iron Blood). */
+  readonly hitDamage?: number;
+  /** Multiplies the damage of your hits against a Chilled enemy (Sorcerer: Glacier). */
+  readonly chilledDamage?: number;
 }
 
 /** A state of the fight a Weapon Mastery bonus can depend on. */

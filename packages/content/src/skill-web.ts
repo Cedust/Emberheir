@@ -166,7 +166,7 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [m("Brawn", { physicalDamage: 0.06 }), s(CRUSHING_BLOW), m("Grit", { armor: 12 })],
         notable: {
           name: "Brutal Force",
-          bonuses: { physicalDamage: 0.2, armor: 10 },
+          bonuses: { physicalDamage: 0.2, armor: 10, lifesteal: 0.02 },
           weaponRange: "melee",
         },
       },
@@ -308,7 +308,12 @@ const REGIONS: readonly RegionSpec[] = [
         ],
         notable: [
           { name: "Tempest", bonuses: { shockChance: 0.12, elementalPenetration: 0.05 } },
-          { name: "Glacier", bonuses: { chillChance: 0.12, allResistance: 0.08 } },
+          {
+            name: "Glacier",
+            description: "+12 % Chill Chance. Your hits deal 25 % more damage to Chilled enemies.",
+            bonuses: { chillChance: 0.12 },
+            rules: { chilledDamage: 1.25 },
+          },
         ],
         keystones: [
           {
@@ -486,7 +491,13 @@ const REGIONS: readonly RegionSpec[] = [
           s(CORRUPT),
           m("Dread", { ailmentDuration: 0.08 }),
         ],
-        notable: { name: "Void Lord", bonuses: { corruptionChance: 0.1, ailmentDuration: 0.15 } },
+        notable: {
+          name: "Void Lord",
+          description:
+            "+10 % Corruption Chance, +15 % Ailment Duration. Heal 2 % of the damage your ailments deal.",
+          bonuses: { corruptionChance: 0.1, ailmentDuration: 0.15 },
+          rules: { dotLifesteal: 0.02 },
+        },
       },
     ],
     innerTravel: m("Decay", { ailmentDuration: 0.08 }),
@@ -565,7 +576,13 @@ const REGIONS: readonly RegionSpec[] = [
           s(ENVENOM),
           m("Patience", { ailmentDuration: 0.08 }),
         ],
-        notable: { name: "Venomancer", bonuses: { poisonChance: 0.1, ailmentDuration: 0.15 } },
+        notable: {
+          name: "Venomancer",
+          description:
+            "+10 % Poison Chance, +15 % Ailment Duration. Heal 2 % of the damage your ailments deal.",
+          bonuses: { poisonChance: 0.1, ailmentDuration: 0.15 },
+          rules: { dotLifesteal: 0.02 },
+        },
       },
       {
         nodes: [

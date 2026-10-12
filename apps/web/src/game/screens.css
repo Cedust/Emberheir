@@ -871,6 +871,15 @@
   border: 2px solid #c9a063;
 }
 
+.stage .gate-mark {
+  width: 11px;
+  height: 11px;
+  margin: 0 1px;
+  transform: rotate(45deg);
+  background: #4a423b;
+  border: 2px solid #ff8a1f;
+}
+
 .stage .intermission-center {
   padding: 26px 20px 20px;
   display: flex;
@@ -1699,6 +1708,55 @@
   color: #ffd27a;
   border-color: #ff8a1f;
   box-shadow: 0 0 18px rgb(255 138 31 / 0.45);
+}
+
+/* Wildfire tier for the next trip (spielzeit-v1.md, C). */
+.stage .wildfire-picker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 6px;
+  border: 1.5px solid #6a3a1a;
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgb(40 16 6 / 0.85), rgb(20 8 4 / 0.85));
+  color: #f3e6c8;
+  cursor: help;
+}
+
+.stage .wildfire-step {
+  min-width: 0;
+  padding: 4px 6px;
+  color: inherit;
+}
+
+.stage .wildfire-tier {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-width: 150px;
+  font-size: 16px;
+  opacity: 0.7;
+}
+
+.stage .wildfire-tier > svg {
+  display: none;
+}
+
+.stage .wildfire-tier.on {
+  color: #ffb13b;
+  opacity: 1;
+  text-shadow: 0 0 10px rgb(255 120 30 / 0.7);
+}
+
+.stage .wildfire-tier .sub {
+  color: #d9c4a0;
+  text-shadow: none;
+}
+
+.stage .btn.wildfire-go {
+  background: linear-gradient(180deg, #c2410c, #5a1d08);
+  border-color: #ffb13b;
+  box-shadow: 0 0 22px rgb(255 120 30 / 0.6);
 }
 
 .stage .set-out-go {
@@ -5525,4 +5583,130 @@
 .stage .notch.seal,
 .stage .perk-chip {
   cursor: help;
+}
+
+/* Collections at the Hearthfire (spielzeit-v1.md, E): progress per collection and its banner. */
+.stage .collections-page {
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 32px calc(var(--safe-x) + 36px);
+}
+
+.stage .collections {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.stage .collection {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 20px 22px;
+}
+
+.stage .collection.done {
+  border-color: var(--accent);
+  box-shadow: 0 0 18px rgb(255 138 31 / 0.25);
+}
+
+.stage .collection-bar {
+  height: 12px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--slot-bg);
+  overflow: hidden;
+}
+
+.stage .collection-bar > div {
+  height: 100%;
+  background: var(--accent);
+}
+
+.stage .collection-reward {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+}
+
+/* Lineage (spielzeit-v1.md, D): account steps and the five class bonuses. */
+.stage .lineage {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 20px 22px;
+}
+
+.stage .lineage-steps {
+  display: flex;
+  gap: 6px;
+  margin-left: auto;
+}
+
+.stage .lineage-pip {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--edge);
+  border-radius: 50%;
+  color: var(--text-sub);
+  opacity: 0.45;
+}
+
+.stage .lineage-pip.lit {
+  color: var(--accent);
+  border-color: var(--accent);
+  opacity: 1;
+  box-shadow: 0 0 10px rgb(255 138 31 / 0.4);
+}
+
+.stage .lineage-classes {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.stage .lineage-class {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border: 1.5px dashed var(--text-sub);
+  border-radius: 8px;
+  opacity: 0.6;
+  cursor: help;
+}
+
+.stage .lineage-class.open {
+  border-style: solid;
+  opacity: 1;
+}
+
+.stage .lineage-class.own {
+  border-color: var(--accent);
+  box-shadow: 0 0 14px rgb(255 138 31 / 0.25);
+}
+
+.stage .lineage-class .accent {
+  color: var(--accent);
+}
+
+.stage .wildfire-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+  padding: 0 7px;
+  border: 1.5px solid #ffb13b;
+  border-radius: 999px;
+  background: linear-gradient(180deg, #c2410c, #5a1d08);
+  color: #ffe0a0;
+  font-size: 12px;
+  vertical-align: middle;
+  box-shadow: 0 0 10px rgb(255 120 30 / 0.55);
 }

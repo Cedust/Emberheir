@@ -24,7 +24,7 @@ function buildXpTable(base: number, perLevel: number): readonly number[] {
 const XP_BASE = 20;
 const XP_PER_MONSTER_LEVEL = 10;
 /** Normal kills of the same Monster Level per level (balance CLI). */
-const XP_KILLS = (level: number) => 1.6 + 0.07 * (level - 1);
+const XP_KILLS = (level: number) => 1.5 * (1.6 + 0.07 * (level - 1));
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
@@ -246,6 +246,19 @@ export const PROGRESSION = {
    */
   runPressure: { life: 0.8, damage: 0.35 },
   /**
+   * Walls (spielzeit-v1.md): the newest act of a run is where the hero has to grow. Its boss takes
+   * the run's `strength` on Life and damage, a Gatekeeper on its Waymark stages 5 and 10 (a sure
+   * Elite) takes `gateShare` of it, and its normal enemies ramp up to `rampShare` of it on the
+   * stage before the boss. Index 0 = run 1, which stays gentle. Tuned with the balance CLI: a few
+   * deaths at the gates and 3–5 at the boss for a typical build, beaten by farming a few levels
+   * (measured with the autopilot that gears up like a player: about the median boss margin).
+   */
+  wall: {
+    strength: [1.6, 5.4, 4.4, 5.4, 5.6, 4.4, 4.4],
+    gateShare: 0.5,
+    rampShare: 0.3,
+  },
+  /**
    * Act bosses have this much more Life than their content value, so a boss fight lasts about
    * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.
    */
@@ -257,7 +270,29 @@ export const PROGRESSION = {
    * instead of the Run Pressure).
    */
   finalPrestige: 7,
-  finale: { life: 2, damage: 1.4 },
+  finale: { life: 6.5, damage: 3.6 },
+  /** The first Warden echo takes this share of the finale's pressure, rising to all of it at the Core (Boons pile up on the way). */
+  finaleRamp: 0.7,
+  /**
+   * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
+   * chosen tier. Monster Level is `baseLevel` + `levelsPerTier` × tier: 92 at I, 100 at V (the
+   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). The enemies
+   * take the seventh run's newest-act pressure plus `life`/`damage` per tier above I, and the
+   * steeper `steep` rates per tier above `steep.from` (VI–X are meant to be really hard).
+   * Legendaries and Runes come more often. No new currency: the highest tier cleared is the goal.
+   */
+  wildfire: {
+    tiers: 10,
+    baseLevel: 90,
+    levelsPerTier: 2,
+    life: 0.05,
+    damage: 0.03,
+    steep: { from: 5, life: 0.25, damage: 0.12 },
+    /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
+    abilities: [1, 3] as const,
+    legendaryPerTier: 0.1,
+    runeTiersPerTier: 1,
+  },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
   /** Fusion Boons are this much likelier in the finale's Stolen Fire. */

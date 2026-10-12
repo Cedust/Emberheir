@@ -13,7 +13,10 @@ import {
   heroReactions,
   equipBlockReason,
   flaskCapacity,
+  gateStages,
   getAct,
+  isWallAct,
+  wildfireName,
   getBase,
   heroSetup,
   rewardsDone,
@@ -199,7 +202,7 @@ function PlanCard(props: { state: GameState; run: RunState; onPlan: () => void }
   );
 }
 
-function UpNext(props: { run: RunState }) {
+function UpNext(props: { run: RunState; prestige: number }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const stages = act.stages;
@@ -234,13 +237,21 @@ function UpNext(props: { run: RunState }) {
       </section>
     );
   }
-  const shrine = act.shrineStages.find((s) => s >= next);
+  // The Wildfire has no Shrines and no Gatekeepers.
+  const shrine = run.wildfire ? undefined : act.shrineStages.find((s) => s >= next);
+  const gate =
+    !run.wildfire && isWallAct(GAME_DATA, act, props.prestige)
+      ? gateStages(act).find((s) => s >= next)
+      : undefined;
   return (
     <section className="panel-card up-next" aria-label="Up next">
       <span className="eyebrow">Up next</span>
       <div className="up-row">
         <span className="title-font">Stage {next}</span>
-        <span className="sub">{act.name}</span>
+        <span className="sub">
+          {act.name}
+          {run.wildfire ? ` · ${wildfireName(run.wildfire)}` : ""}
+        </span>
       </div>
       {shrine !== undefined && (
         <div className="up-row">
@@ -248,6 +259,15 @@ function UpNext(props: { run: RunState }) {
           <span>Ember Shrine</span>
           <span className="sub">
             after Stage {shrine} · {shrine === next ? "next" : `in ${shrine - next}`}
+          </span>
+        </div>
+      )}
+      {gate !== undefined && (
+        <div className="up-row" title="An Elite guards this Waymark of the newest act.">
+          <span className="gate-mark" />
+          <span>Gatekeeper</span>
+          <span className="sub">
+            Stage {gate} · {gate === next ? "now" : `in ${gate - next}`}
           </span>
         </div>
       )}
@@ -777,6 +797,8 @@ export function IntermissionView(props: {
         attributePoints={state.hero.unspentAttributePoints}
         skillPoints={state.hero.unspentSkillPoints}
         waymarks={state.progress.waymarks}
+        prestige={state.legacy.prestige}
+        {...(run.wildfire ? { wildfire: run.wildfire } : {})}
         onCharacter={props.onCharacter}
         onTree={props.onTree}
         onMenu={props.onMenu}
@@ -784,7 +806,7 @@ export function IntermissionView(props: {
       <div className="intermission-body">
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
-          <UpNext run={run} />
+          <UpNext run={run} prestige={state.legacy.prestige} />
           {run.bounty && <BountyCard run={run} />}
           <PlanCard state={state} run={run} onPlan={props.onPlan} />
         </aside>

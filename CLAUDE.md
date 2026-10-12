@@ -71,6 +71,7 @@ npm run balance -- --act 2 --runs 200      # ...then prestiges and plays run 2 (
 npm run balance -- --act 2 --generations 3 # ...and a third run (acts open one per prestige)
 npm run balance -- --act 7 --generations 7 --runs 12 --weapon staff  # all seven runs up to the Harvester
 npm run balance -- --act 7 --generations 7 --runs 8 --build all     # the three autopilot builds per class
+npm run balance -- --wildfire 10 --build all --runs 2  # ...plus The Last Ember and Wildfire I-X
 npm run format                       # Prettier
 ```
 

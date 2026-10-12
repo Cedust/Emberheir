@@ -11,6 +11,7 @@ import {
   withSharedStash,
   writeSlot,
   type KeyValueStore,
+  syncLineage,
 } from "./saves";
 
 function memory(): KeyValueStore & { data: Map<string, string> } {
@@ -93,5 +94,23 @@ describe("shared stash", () => {
     expect(slots[0]?.stash).toEqual(slots[3]?.stash);
     writeSlot(kv, 3, null);
     expect(readSlot(kv, 0)?.stash).toHaveLength(3);
+  });
+});
+
+describe("Lineage", () => {
+  const hero = (seed: number) => newGame(GAME_DATA, { seed, classId: "warrior" });
+  const won = (s: GameState): GameState => ({ ...s, legacy: { ...s.legacy, finaleWon: true } });
+
+  it("every character that wins the finale raises it once, up to 5", () => {
+    const kv = memory();
+    expect(syncLineage(kv, hero(1)).lineage ?? 0).toBe(0);
+    expect(syncLineage(kv, won(hero(1))).lineage).toBe(1);
+    // The same character again changes nothing.
+    expect(syncLineage(kv, won(hero(1))).lineage).toBe(1);
+    expect(syncLineage(kv, won(hero(2))).lineage).toBe(2);
+    // A fresh character inherits the step.
+    expect(syncLineage(kv, hero(3)).lineage).toBe(2);
+    for (let seed = 4; seed < 10; seed++) syncLineage(kv, won(hero(seed)));
+    expect(syncLineage(kv, hero(11)).lineage).toBe(5);
   });
 });
