@@ -166,7 +166,7 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [m("Brawn", { physicalDamage: 0.06 }), s(CRUSHING_BLOW), m("Grit", { armor: 12 })],
         notable: {
           name: "Brutal Force",
-          bonuses: { physicalDamage: 0.2, armor: 10 },
+          bonuses: { physicalDamage: 0.2, armor: 10, lifesteal: 0.02 },
           weaponRange: "melee",
         },
       },
