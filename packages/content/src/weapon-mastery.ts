@@ -1314,8 +1314,8 @@ const WAND = buildTree({
       id: "glass-cannon",
       name: "Glass Cannon",
       form: "Glass Wand",
-      description: "+40 % Elemental Damage. −25 % Life.",
-      effect: { bonuses: { elementalDamage: 0.4 }, rules: { lifeMultiplier: 0.75 } },
+      description: "+40 % Elemental Damage. −10 % Life.",
+      effect: { bonuses: { elementalDamage: 0.4 }, rules: { lifeMultiplier: 0.9 } },
     },
     {
       id: "focused-will",
