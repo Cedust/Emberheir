@@ -75,8 +75,15 @@ describe("Item picks: fewer, but weightier", () => {
     expect(itemPickAt("normal", 1, true)).toBe(true);
   });
 
-  it("a stage without a pick pays its cards as Ash at once", () => {
-    let s = applyAction(onRoad(1), data, { type: "startStage" });
+  it("a stage without a pick pays its cards as Ash at once (from run 2 on)", () => {
+    const run1 = applyAction(onRoad(1), data, { type: "startStage" });
+    expect(applyAction(run1, data, { type: "resolveFight" }).run?.rewards?.items.length).toBe(
+      PROGRESSION.itemChoices,
+    );
+    const road = onRoad(1);
+    let s = applyAction({ ...road, legacy: { ...road.legacy, prestige: 1 } }, data, {
+      type: "startStage",
+    });
     const ash = s.wallet.ash;
     s = applyAction(s, data, { type: "resolveFight" });
     const rewards = s.run?.rewards;

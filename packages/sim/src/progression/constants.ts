@@ -196,9 +196,9 @@ export const PROGRESSION = {
   /** Cards in the item pick. */
   itemChoices: 3,
   /**
-   * Item picks: weniger, aber schwerer (neuausrichtung-v1.md 6.3). A normal fight offers a pick
-   * only on every this many'th stage (the others give Ash and Acorns); Elites, Gatekeepers and
-   * bosses always do.
+   * Item picks: weniger, aber schwerer (neuausrichtung-v1.md 6.3). From run 2 on a normal fight
+   * offers a pick only on every this many'th stage (the others give Ash and Acorns); Elites,
+   * Gatekeepers and bosses always do. Run 1 (the way in) has a pick after every fight.
    */
   normalPickEvery: 3,
   /**
@@ -300,7 +300,7 @@ export const PROGRESSION = {
    * 29 % Gatekeeper, 50 % boss.
    */
   wall: {
-    strength: [1.8, 8.3, 6.3, 7, 7, 5.8, 4.8],
+    strength: [1.8, 9, 7, 8, 8, 6.6, 5.4],
     /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
     lifeExponent: 0.5,
     gates: [0.4, 0.45],
@@ -317,7 +317,7 @@ export const PROGRESSION = {
    * Gatekeeper 45–70 s, boss 60–100 s.
    */
   fightLength: {
-    life: { normal: 1.2, elite: 1.3, gate: 1.4, boss: 1.3 },
+    life: { normal: 1.4, elite: 1.25, gate: 1.7, boss: 1.5 },
     bossDamage: 0.9,
   },
   /** Hearth Embers (neuausrichtung-v1.md 5.4): a won Waymark before the boss heals this much. */

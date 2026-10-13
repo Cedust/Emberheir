@@ -5805,7 +5805,7 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
-  padding: 24px var(--safe-x, 32px);
+  padding: 24px calc(var(--safe-x, 0px) + 32px);
   min-height: 0;
 }
 

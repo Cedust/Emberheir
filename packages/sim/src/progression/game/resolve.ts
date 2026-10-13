@@ -128,7 +128,9 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
   );
   // Fewer, weightier picks: most normal fights pay Ash for their cards at once.
-  const pick = itemPickAt(rank, run.stage, caught, act.pickEvery);
+  // Run 1 is the way in: a pick after every fight; from run 2 on every third normal stage.
+  const every = state.legacy.prestige === 0 ? 1 : act.pickEvery;
+  const pick = itemPickAt(rank, run.stage, caught, every);
   const items = pick ? rolled : [];
   const autoAsh = pick ? 0 : rolled.reduce((sum, it) => sum + salvageValue(it), 0);
   const runes = rollRuneDrops(
@@ -149,7 +151,8 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     (data.boons?.length ?? 0) > 0 &&
     !state.progress.actsCleared.includes(act.id) &&
     rank !== "boss" &&
-    (rank === "elite" ||
+    // Elites of the Elite path pay in themed loot, not in Boons (neuausrichtung-v1.md 6.2).
+    ((rank === "elite" && route?.kind !== "elite") ||
       act.shrineStages.includes(run.stage) ||
       (route?.kind === "shrine" && route.second));
   const rest =

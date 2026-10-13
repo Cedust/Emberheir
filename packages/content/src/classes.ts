@@ -23,8 +23,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Iron Blood",
       description:
-        "Announced Heavy Attacks deal 25 % less damage to you, and each one you stand through gives 20 Heat.",
-      rules: { ironBlood: { damageTaken: 0.75, heat: 20 } },
+        "Announced Heavy Attacks deal 35 % less damage to you, and each one you stand through gives 25 Heat.",
+      rules: { ironBlood: { damageTaken: 0.65, heat: 25 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["duelist", "butcher", "warden", "tactician"],
