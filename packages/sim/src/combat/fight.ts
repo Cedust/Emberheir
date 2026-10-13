@@ -62,6 +62,7 @@ import type {
   SlotModifier,
   TriggerCondition,
   TriggerEffect,
+  WeaponRules,
 } from "./types";
 
 /** One entry of the combat log. `side` is always the fighter the event is about. */
@@ -90,6 +91,8 @@ export type CombatEvent =
       readonly glancing?: boolean;
       /** A Heavy Attack hit held back by `COMBAT.heavyHitCap`. */
       readonly capped?: boolean;
+      /** A spell Deflected by Evasion. */
+      readonly deflected?: boolean;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {
@@ -1142,7 +1145,12 @@ export class Fight {
       case "multiplyPoison": {
         const before = poisonStacks(target.ailments);
         if (before === 0) return;
-        target.ailments = multiplyPoison(target.ailments, effect.factor);
+        const { states, overflow } = multiplyPoison(
+          target.ailments,
+          effect.factor,
+          this.poisonCap(f),
+        );
+        target.ailments = states;
         this.emit({
           t: this.time,
           type: "ailment",
@@ -1150,6 +1158,8 @@ export class Fight {
           ailment: "poison",
           stacks: poisonStacks(target.ailments),
         });
+        // Stacks over the cap burst at once for their remaining damage.
+        if (overflow > 0) this.dotBurst(f, target, overflow, skill.name);
         return;
       }
       case "heal":
@@ -1283,6 +1293,8 @@ export class Fight {
         baseDamage: h.baseDamage,
         type: h.type,
         evadable: h.evadable,
+        // Deflect is the hero's answer to spells; monsters only dodge attacks.
+        deflects: defender.side === "hero",
         attacker:
           penetration > 0
             ? {
@@ -1330,6 +1342,7 @@ export class Fight {
       crit: outcome.crit,
       blocked: outcome.blocked,
       ...(glancing ? { glancing: true } : {}),
+      ...(outcome.deflected ? { deflected: true } : {}),
       ...(damage < dealt ? { capped: true } : {}),
     });
     defender.lastHitTakenAt = this.time;
@@ -1585,14 +1598,12 @@ export class Fight {
       ailment,
       duration,
       hitDamage,
-      COMBAT.poisonMaxStacks +
-        (wr?.poisonMaxStacks ?? 0) +
-        (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0),
+      this.poisonCap(attacker),
     );
     if (duration <= 0) return;
     const burst = wr?.poisonBurst;
     if (ailment === "poison" && burst && poisonStacks(defender.ailments) >= burst.stacks) {
-      this.poisonBurst(attacker, defender, burst.multiplier, burst.lockout);
+      this.poisonBurst(attacker, defender, burst);
       return;
     }
     this.react(defender, "ailmented");
@@ -1606,24 +1617,49 @@ export class Fight {
     });
   }
 
+  /** How many Poison stacks `attacker` can keep on a target. */
+  private poisonCap(attacker: Fighter): number {
+    return (
+      COMBAT.poisonMaxStacks +
+      (attacker.setup.weaponRules?.poisonMaxStacks ?? 0) +
+      (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0)
+    );
+  }
+
   /** Toxic Bloom: every Poison stack bursts for its remaining damage at once. */
-  private poisonBurst(attacker: Fighter, defender: Fighter, multiplier: number, lockout: number) {
+  private poisonBurst(
+    attacker: Fighter,
+    defender: Fighter,
+    { multiplier, lockout, leech }: NonNullable<WeaponRules["poisonBurst"]>,
+  ) {
     const rest = remainingPoisonDamage(defender.ailments);
     defender.ailments = clearAilment(defender.ailments, "poison");
     defender.poisonLockout = lockout;
     this.emit({ t: this.time, type: "ailmentExpired", side: defender.side, ailment: "poison" });
-    const damage = Math.max(1, Math.round(rest * multiplier * this.dotFactor(defender)));
+    const damage = this.dotBurst(attacker, defender, rest * multiplier, "Toxic Bloom");
+    if (leech && !this.result) this.heal(attacker, damage * leech);
+  }
+
+  /**
+   * Poison damage that lands at once (Toxic Bloom, Toxic Burst overflow): a Physical hit that
+   * scales like a DoT and leeches like a DoT tick.
+   */
+  private dotBurst(attacker: Fighter, defender: Fighter, amount: number, source: string): number {
+    const damage = Math.max(1, Math.round(amount * this.dotFactor(defender)));
     this.emit({
       t: this.time,
       type: "hit",
       side: attacker.side,
-      source: "Toxic Bloom",
+      source,
       damage,
       damageType: "physical",
       crit: false,
       blocked: false,
     });
     this.damage(defender, damage);
+    const leech = attacker.setup.rules?.dotLifesteal ?? 0;
+    if (leech > 0 && !this.result) this.heal(attacker, damage * leech);
+    return damage;
   }
 
   // --- triggers ----------------------------------------------------------------------------

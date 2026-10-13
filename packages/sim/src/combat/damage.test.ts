@@ -53,6 +53,7 @@ describe("resolveHit", () => {
       damage: 100,
       crit: false,
       blocked: false,
+      deflected: false,
       glancing: false,
     });
   });
@@ -81,6 +82,30 @@ describe("resolveHit", () => {
     }
   });
 
+  it("Deflects spells with the Evasion chance for less damage", () => {
+    const r = rng();
+    const evader = stats({ evasion: 1 }); // capped at 50 %
+    let deflected = 0;
+    for (let i = 0; i < 1000; i++) {
+      const out = resolveHit(input({ defender: evader, evadable: false, deflects: true }), r);
+      if (out.kind === "hit" && out.deflected) {
+        deflected++;
+        expect(out.damage).toBe(100 * COMBAT.deflectDamage);
+      }
+    }
+    expect(deflected / 1000).toBeCloseTo(COMBAT.maxEvasion, 1);
+    const plain = resolveHit(input({ defender: stats(), evadable: false, deflects: true }), r);
+    expect(plain).toMatchObject({ kind: "hit", deflected: false, damage: 100 });
+    // Monsters do not Deflect.
+    for (let i = 0; i < 50; i++) {
+      const monster = resolveHit(input({ defender: evader, evadable: false }), r);
+      expect(monster).toMatchObject({ deflected: false, damage: 100 });
+    }
+    // Attacks are dodged, never Deflected.
+    const attack = resolveHit(input({ defender: evader }), r);
+    expect(attack.kind === "evaded" || !attack.deflected).toBe(true);
+  });
+
   it("reduces physical damage by Armor and elemental damage by Resistance", () => {
     const defender = stats({ armor: 20, allResistance: 0.3 });
     expect(resolveHit(input({ defender }), rng())).toMatchObject({ damage: 50 });
@@ -103,6 +128,7 @@ describe("resolveHit", () => {
       damage: 100 * (1 - COMBAT.blockReduction),
       crit: false,
       blocked: true,
+      deflected: false,
       glancing: false,
     });
     const huge = Array.from({ length: 20 }, () =>

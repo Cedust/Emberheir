@@ -168,6 +168,12 @@ export interface ActData {
   readonly favoredAffixes?: Readonly<Record<string, number>>;
   /** The Stolen Fire Boon family of this act's Warden (open from this act on). */
   readonly boonFamily?: string;
+  /**
+   * Life and damage factor of this act's boss in the endgame (default 1): its Warden echo in The
+   * Last Ember and its Wildfire fights. The bosses were made for their own act; this evens them
+   * out, so every act burns about as hot at the same tier (endgame-balance-v1.md A).
+   */
+  readonly endgameBoss?: number;
 }
 
 /** Everything content-related the game loop needs. Built once in `@emberheir/content`. */
@@ -741,6 +747,20 @@ export function stagePressure(
   };
 }
 
+/**
+ * The Harvester at the end of a run takes only part of the Run Pressure: its own values already
+ * make it the run's peak. The Wildfire evens out its bosses per act (`ActData.wildfireBoss`), and
+ * the Harvester's Core in the finale takes all of the finale's pressure.
+ */
+function harvesterShare(
+  p: { readonly life: number; readonly damage: number },
+  harvester: boolean,
+): { readonly life: number; readonly damage: number } {
+  if (!harvester) return p;
+  const k = PROGRESSION.harvesterPressure;
+  return { life: 1 + (p.life - 1) * k.life, damage: 1 + (p.damage - 1) * k.damage };
+}
+
 /** True for the newest act of the run (its boss brings The Harvest): the act with the walls. */
 export function isWallAct(data: GameData, act: ActData, prestige: number): boolean {
   return !isFinaleAct(data, act.id) && harvestAct(data, prestige).id === act.id;
@@ -810,22 +830,25 @@ export const wildfireLevel = (tier: number) =>
 /**
  * Life and damage of a Wildfire stage, raised per tier above I. Normal stages take the pressure of
  * the same stage in the seventh run's newest act (every act burns like the last one); the act boss
- * takes the finale's (it is the Warden echo at full strength). Above V each tier rises steeply.
+ * takes `PROGRESSION.wildfire.boss` times its act's `endgameBoss` factor (endgame-balance-v1.md
+ * A). Above V each tier rises steeply.
  */
 export function wildfirePressure(
   data: GameData,
   stage: number,
   tier: number,
   boss = false,
+  act?: ActData,
 ): { readonly life: number; readonly damage: number } {
   const last = PROGRESSION.finalPrestige - 1;
-  const p = boss ? PROGRESSION.finale : stagePressure(data, harvestAct(data, last), stage, last);
   const w = PROGRESSION.wildfire;
+  const k = boss ? (act?.endgameBoss ?? 1) : 1;
+  const p = boss ? w.boss : stagePressure(data, harvestAct(data, last), stage, last);
   const gentle = Math.min(tier, w.steep.from) - 1;
   const steep = Math.max(0, tier - w.steep.from);
   return {
-    life: p.life * (1 + w.life * gentle + w.steep.life * steep),
-    damage: p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
+    life: k * p.life * (1 + w.life * gentle + w.steep.life * steep),
+    damage: k * p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
   };
 }
 
@@ -1177,14 +1200,11 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
       ? { ...created, baseLife: (created.baseLife ?? 0) * PROGRESSION.bossLife }
       : created;
   const p = encounter.pressure;
-  // The Harvester takes only part of the Run Pressure: it is already the run's peak.
-  const share = enemy.archetype === "harvester" ? PROGRESSION.harvesterPressure : undefined;
-  const scaled = (x: number, k: number | undefined) => (k === undefined ? x : 1 + (x - 1) * k);
   const setup = p
     ? {
         ...base,
-        baseLife: (base.baseLife ?? 0) * scaled(p.life, share?.life),
-        damageMultiplier: (base.damageMultiplier ?? 1) * scaled(p.damage, share?.damage),
+        baseLife: (base.baseLife ?? 0) * p.life,
+        damageMultiplier: (base.damageMultiplier ?? 1) * p.damage,
       }
     : base;
   const w = encounter.wall;
@@ -1586,16 +1606,19 @@ function enterFinale(state: GameState, data: GameData): GameState {
 }
 
 /**
- * Life and damage of the finale's foe at a stage: `PROGRESSION.finaleRamp` of the finale's pressure
- * at the first echo, all of it at the Core.
+ * Life and damage of the finale's foe at a stage: the Warden echoes build up from
+ * `PROGRESSION.finaleRamp.first` to `.last` of the finale's pressure, the Core takes all of it
+ * (it is the climax, endgame-balance-v1.md B).
  */
 export function finalePressure(
   stage: number,
   stages: number,
 ): { readonly life: number; readonly damage: number } {
+  const ramp = PROGRESSION.finaleRamp;
   const k =
-    PROGRESSION.finaleRamp +
-    (1 - PROGRESSION.finaleRamp) * Math.min(1, (stage - 1) / Math.max(1, stages - 1));
+    stage >= stages
+      ? 1
+      : ramp.first + (ramp.last - ramp.first) * Math.min(1, (stage - 1) / Math.max(1, stages - 2));
   const p = PROGRESSION.finale;
   return { life: 1 + (p.life - 1) * k, damage: 1 + (p.damage - 1) * k };
 }
@@ -1618,7 +1641,11 @@ function finaleEncounter(data: GameData, stage: number, rng: Rng): Encounter {
     eliteModifiers: bossAbilities(data, echo, PROGRESSION.finalPrestige)
       .slice(0, Math.min(stage, PROGRESSION.finaleEchoAbilities))
       .map((m) => m.id),
-    pressure,
+    // The echoes are evened out like the Wildfire's bosses (ActData.endgameBoss).
+    pressure: {
+      life: pressure.life * (echo.endgameBoss ?? 1),
+      damage: pressure.damage * (echo.endgameBoss ?? 1),
+    },
     seed,
     echo: echo.id,
   };
@@ -1636,14 +1663,18 @@ function startStage(state: GameState, data: GameData): GameState {
   const level = tier
     ? wildfireLevel(tier)
     : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
+  const atBoss = run.stage >= stagesInAct(act);
   const p = tier
-    ? wildfirePressure(data, run.stage, tier, run.stage >= stagesInAct(act))
-    : stagePressure(data, act, run.stage, state.legacy.prestige);
+    ? wildfirePressure(data, run.stage, tier, atBoss, act)
+    : harvesterShare(
+        stagePressure(data, act, run.stage, state.legacy.prestige),
+        atBoss && act.boss.archetype === "harvester",
+      );
   const pressure = p.life > 1 ? { pressure: p } : {};
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
-  if (run.stage >= stagesInAct(act)) {
+  if (atBoss) {
     encounter = {
       enemyId: act.boss.id,
       level,

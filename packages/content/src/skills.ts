@@ -145,7 +145,8 @@ export const TOXIC_BURST: SkillDefinition = {
   type: "attack",
   heatCost: 80,
   tags: ["physical", "over-time", "any"],
-  description: "100 % Weapon Damage that Poisons, then doubles the Poison stacks.",
+  description:
+    "100 % Weapon Damage that Poisons, then doubles the Poison stacks. Stacks over the limit burst at once.",
   hits: [{ kind: "weapon", multiplier: 1, ailmentChances: [{ ailment: "poison", chance: 1 }] }],
   effects: [{ kind: "multiplyPoison", factor: 2 }],
 };
@@ -615,14 +616,14 @@ export const MOSS_MEND: SkillDefinition = {
 export const ROT_SPRAY: SkillDefinition = {
   id: "rot-spray",
   name: "Rot Spray",
-  type: "spell",
+  type: "attack",
   heatCost: 50,
   tags: ["void", "over-time", "any"],
-  description: "4 Void hits, each Poisons.",
+  description: "4 Void hits of 60 % Weapon Damage, each Poisons. Can be evaded.",
   hits: [
     {
-      kind: "spell",
-      damage: { min: 0.99, max: 1.43 },
+      kind: "weapon",
+      multiplier: 0.6,
       damageType: "void",
       count: 4,
       ailmentChances: [{ ailment: "poison", chance: 1 }],
@@ -630,7 +631,6 @@ export const ROT_SPRAY: SkillDefinition = {
   ],
 };
 
-/** Mother of Rot's telegraph: she feeds on the rot and heals, unless she burns. */
 export const DEVOUR: SkillDefinition = {
   id: "devour",
   name: "Devour",

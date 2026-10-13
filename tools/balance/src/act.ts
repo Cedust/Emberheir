@@ -331,6 +331,8 @@ export interface BuildPlan {
   readonly rotation: readonly string[];
   readonly branches: readonly string[];
   readonly reaction?: { readonly skillId: string; readonly conditionId: string };
+  /** Weapon Mastery choices that differ from the weapon's plan (`MASTERY_PLAN`). */
+  readonly mastery?: Partial<MasteryPlan>;
 }
 
 const GUARD = { skillId: "iron-bastion", conditionId: "life-50" };
@@ -419,6 +421,8 @@ export const BUILDS: readonly BuildPlan[] = [
     rotation: ["envenom", "toxic-burst", "plague-cloud"],
     branches: ["venomancer", "marksman", "tactician", "warden"],
     reaction: GUARD,
+    // A Poison bow: the Poison innate and the Toxin path, not the Bleed ones of the bow's plan.
+    mastery: { innate: "toxic-arrow", paths: ["toxin", "volley", "barbs"] },
   },
   {
     id: "barbs",
@@ -568,10 +572,11 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
 };
 
 /** The order the autopilot learns Weapon Mastery nodes in (a node id per point). */
-export function masteryOrder(data: GameData, weaponId: string): string[] {
-  const plan = MASTERY_PLAN[weaponId];
+export function masteryOrder(data: GameData, weaponId: string, build?: BuildPlan): string[] {
+  const base = MASTERY_PLAN[weaponId];
   const tree = data.weaponMastery[weaponId];
-  if (!plan || !tree) return [];
+  if (!base || !tree) return [];
+  const plan = { ...base, ...build?.mastery };
   const path = (id: string | undefined) =>
     id ? tree.nodes.filter((n) => n.path === id).map((n) => n.id) : [];
   return [
@@ -596,9 +601,9 @@ export function masteryOrder(data: GameData, weaponId: string): string[] {
 }
 
 /** Kaelen: learns Weapon Mastery along the plan and wears the strongest Echo. */
-function spendMastery(state: GameState, data: GameData): GameState {
+function spendMastery(state: GameState, data: GameData, build?: BuildPlan): GameState {
   let s = state;
-  const order = masteryOrder(data, s.hero.weaponId);
+  const order = masteryOrder(data, s.hero.weaponId, build);
   for (let guard = 0; guard < 64 && masteryPointsLeft(s, data) > 0; guard++) {
     let learned = false;
     const counts = new Map<string, number>();
@@ -738,7 +743,7 @@ function spendSkillPoints(
   plan: BuildPlan | undefined,
 ): GameState {
   if (!plan || state.run) return state;
-  let s = spendMastery(state, data);
+  let s = spendMastery(state, data, plan);
   const tree = data.skillTree;
   for (const target of plan.nodes) {
     if (target !== "@branches") {
@@ -855,6 +860,8 @@ export function playGenerations(
     readonly wildfire?: number;
     /** Called before every fight (balance probes). */
     readonly onFight?: (state: GameState, generation: number, act: number) => void;
+    /** Called in the Camp right before The Last Ember (balance probes replay the endgame). */
+    readonly onEndgame?: (state: GameState) => void;
   },
 ): ActRunReport[] {
   // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
@@ -954,12 +961,14 @@ export function playGenerations(
   if (options.finale && data.finale && s.pendingPrestige) {
     s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
+      options.onEndgame?.(s);
       const finale = playFinale(
         s,
         data,
         options.generations + 1,
         options.maxAttempts,
         options.onFight,
+        { build, starterWeapon: options.starterWeapon },
       );
       reports.push(finale.report);
       s = finale.state;
@@ -978,7 +987,7 @@ export function playGenerations(
  * One Wildfire tier with the autopilot: the acts take turns by tier (I = Act 1, ... VIII = Act 1
  * again), attempts until the act boss falls.
  */
-function playWildfire(
+export function playWildfire(
   state: GameState,
   data: GameData,
   build: BuildPlan | undefined,
@@ -1050,13 +1059,45 @@ function playWildfire(
   };
 }
 
+/**
+ * A failed finale sends the autopilot back into the world like a player: one trip through the
+ * last act for levels and gear (the finale is a wall, endgame-balance-v1.md B).
+ */
+function farmLastAct(
+  state: GameState,
+  data: GameData,
+  build: BuildPlan | undefined,
+  starterWeapon: string,
+): GameState {
+  const act = actsInOrder(data).at(-1);
+  if (!act) return state;
+  let s = state;
+  for (const placed of s.inventory) {
+    s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
+  }
+  s = spendSkillPoints(s, data, build);
+  s = brewDraught(s, data, act);
+  s = applyAction(s, data, { type: "setOut", actId: act.id });
+  while (s.run) {
+    s = spendPoints(s, data, starterWeapon);
+    if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+      s = applyAction(s, data, { type: "useFlask" });
+    }
+    s = applyAction(s, data, { type: "startStage" });
+    s = applyAction(s, data, { type: "resolveFight" });
+    if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+  }
+  return s.notice ? applyAction(s, data, { type: "dismissNotice" }) : s;
+}
+
 /** The Last Ember with the autopilot: attempts until the Core falls (best Boon after each win). */
-function playFinale(
+export function playFinale(
   state: GameState,
   data: GameData,
   generation: number,
   maxAttempts: number,
   onFight?: (state: GameState, generation: number, act: number) => void,
+  farm?: { readonly build: BuildPlan | undefined; readonly starterWeapon: string },
 ): { state: GameState; report: ActRunReport } {
   let s = state;
   const before = s.stats;
@@ -1093,12 +1134,14 @@ function playFinale(
     }
     cleared = s.notice?.kind === "ending";
     s = applyAction(s, data, { type: "dismissNotice" });
+    if (!cleared && farm) s = farmLastAct(s, data, farm.build, farm.starterWeapon);
   }
   const report: ActRunReport = {
     generation,
     act: data.finale?.number ?? 8,
     cleared,
-    deaths: s.stats.deaths - before.deaths,
+    // Deaths in the finale itself; the farming trips between attempts do not count.
+    deaths: deathStages.length,
     deathEnemies,
     fights: s.stats.fights - before.fights,
     levelAtBoss: s.hero.level,
