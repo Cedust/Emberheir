@@ -9,6 +9,7 @@ import {
   flaskCapacity,
   gateStages,
   getAct,
+  hearthEmbers,
   heroReactions,
   heroSetup,
   isWallAct,
@@ -60,6 +61,9 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
   const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
   const next = xpToNextLevel(hero.level, levelCap(state.legacy.prestige));
+  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
+  const hearth =
+    run.rewards !== null && hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
   return (
     <section className="panel-card hero-card" aria-label="Hero">
       <div className="hero-card-head">
@@ -74,9 +78,14 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
           </span>
         </div>
       </div>
-      {run.rewards?.waymark && (
+      {(run.rewards?.waymark || hearth) && (
         <div className="waymark-moment title-font" role="status">
-          Waymark! +1 Skill Point
+          {[
+            run.rewards?.waymark ? "Waymark! +1 Skill Point" : "",
+            hearth ? `Hearth Embers: +${Math.round(PROGRESSION.hearthEmbers * 100)} % Life` : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </div>
       )}
       {run.rewards && run.rewards.levelsGained > 0 && (

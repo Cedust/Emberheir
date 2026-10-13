@@ -84,11 +84,14 @@ export function isHarvestAct(data: GameData, actId: string, prestige: number): b
 }
 
 /**
- * The run's level band (prestige-acts-v1.md section 4): it starts at the previous harvest boss's
- * level, where the hero left off with all of its gear, and ends at the new harvest boss.
+ * The run's level band (neuausrichtung-v1.md 5.1): the whole world burns at the new level. Act 1
+ * starts `PROGRESSION.worldBelowCap` levels below the Level Cap of the run before (where the hero
+ * left off with all of its gear) and the band ends at the new harvest boss.
  */
 export function levelBand(prestige: number): LevelBand {
-  return { start: prestige === 0 ? 1 : bossLevel(prestige - 1), end: bossLevel(prestige) };
+  const end = bossLevel(prestige);
+  if (prestige === 0) return { start: 1, end };
+  return { start: Math.min(end, levelCap(prestige - 1) - PROGRESSION.worldBelowCap), end };
 }
 
 /** How far into its run a stage is: 0 on the run's first stage, 1 on its last. */
@@ -122,6 +125,14 @@ export function stageMonsterLevel(
  */
 export function waymarkStages(act: ActData): readonly number[] {
   return [Math.round(act.stages / 3), Math.round((2 * act.stages) / 3), act.stages];
+}
+
+/**
+ * Hearth Embers (neuausrichtung-v1.md 5.4): a won Waymark before the boss heals
+ * `PROGRESSION.hearthEmbers` of max Life, every time. Not in the Wildfire.
+ */
+export function hearthEmbers(act: ActData, stage: number, wildfire = 0): boolean {
+  return !wildfire && stage < act.stages && waymarkStages(act).includes(stage);
 }
 
 export const waymarkKey = (actId: string, stage: number) => `${actId}:${stage}`;
@@ -185,8 +196,8 @@ export function gateStages(act: ActData): readonly number[] {
 
 /**
  * The wall of a stage (PROGRESSION.wall): only in the run's newest act. The boss takes the run's
- * full strength, a Gatekeeper part of it and normal enemies ramp up to a smaller part on the stage
- * before the boss. `null` = no wall.
+ * full strength; before it the act climbs in teeth (neuausrichtung-v1.md 5.3): normal stages ramp
+ * up stretch by stretch, each Gatekeeper is a peak above the stretch before it. `null` = no wall.
  */
 export function stageWall(
   data: GameData,
@@ -207,8 +218,22 @@ export function stageWall(
   });
   const part = (share: number) => 1 + (strength - 1) * share;
   if (stage >= act.stages) return at(strength, false);
-  if (gateStages(act).includes(stage)) return at(part(w.gateShare), true);
-  return at(part(w.rampShare * Math.min(1, (stage - 1) / Math.max(1, act.stages - 2))), false);
+  return at(part(sawtoothShare(act, stage)), gateStages(act).includes(stage));
+}
+
+/** Share of the wall on a stage before the boss: a Gatekeeper's peak or its stretch's ramp. */
+export function sawtoothShare(act: ActData, stage: number): number {
+  const w = PROGRESSION.wall;
+  const gates = gateStages(act);
+  const gate = gates.indexOf(stage);
+  if (gate >= 0) return w.gates[Math.min(gate, w.gates.length - 1)] ?? 1;
+  // The stretch between the Gatekeeper before this stage and the next one (or the boss).
+  const stretch = gates.filter((g) => g < stage).length;
+  const first = (gates[stretch - 1] ?? 0) + 1;
+  const last = (gates[stretch] ?? act.stages) - 1;
+  const [from, to] = w.ramps[Math.min(stretch, w.ramps.length - 1)] ?? [1, 1];
+  const t = last > first ? (stage - first) / (last - first) : 1;
+  return from + (to - from) * t;
 }
 
 const WILDFIRE_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];

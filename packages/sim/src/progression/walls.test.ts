@@ -6,7 +6,9 @@ import {
   emberPenalty,
   enemySetup,
   gateStages,
+  hearthEmbers,
   newGame,
+  sawtoothShare,
   stageWall,
 } from "./game";
 import { TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
@@ -29,13 +31,30 @@ describe("Walls of the newest act", () => {
     const late = stageWall(data, NEXT_ACT, 14, 1);
     const gate = stageWall(data, NEXT_ACT, 10, 1);
     const boss = stageWall(data, NEXT_ACT, 15, 1);
-    expect(first).toEqual({ life: 1, damage: 1, gate: false });
-    expect(late?.life).toBeGreaterThan(1);
+    const strength = PROGRESSION.wall.strength[1] ?? 0;
+    const share = (s: number) => 1 + (strength - 1) * s;
+    expect(first?.damage).toBeCloseTo(share(PROGRESSION.wall.ramps[0]?.[0] ?? 0));
+    expect(late?.damage).toBeCloseTo(share(PROGRESSION.wall.ramps[2]?.[1] ?? 0));
     expect(gate?.gate).toBe(true);
-    expect(gate?.life).toBeGreaterThan(late?.life ?? 0);
+    expect(boss?.damage).toBeGreaterThan(late?.damage ?? 0);
     expect(boss?.damage).toBe(PROGRESSION.wall.strength[1]);
     // Mostly damage: Life takes only the square root, so the fight stays short.
     expect(boss?.life).toBeCloseTo(Math.sqrt(boss?.damage ?? 0));
+  });
+
+  it("climbs in teeth: each Gatekeeper is a peak above the stretch around it", () => {
+    const shares = Array.from({ length: 14 }, (_, i) => sawtoothShare(NEXT_ACT, i + 1));
+    const [r1, r2, r3] = PROGRESSION.wall.ramps;
+    expect(shares[0]).toBeCloseTo(r1?.[0] ?? 0);
+    expect(shares[3]).toBeCloseTo(r1?.[1] ?? 0);
+    expect(shares[4]).toBe(PROGRESSION.wall.gates[0]);
+    expect(shares[5]).toBeCloseTo(r2?.[0] ?? 0);
+    expect(shares[9]).toBe(PROGRESSION.wall.gates[1]);
+    expect(shares[13]).toBeCloseTo(r3?.[1] ?? 0);
+    expect(shares[4]).toBeGreaterThan(shares[5] ?? 1);
+    expect(shares[9]).toBeGreaterThan(shares[10] ?? 1);
+    // Rising within a stretch.
+    expect(shares[7]).toBeGreaterThan(shares[6] ?? 1);
   });
 
   it("run 1 is gentler than run 2", () => {
@@ -63,6 +82,30 @@ describe("Walls of the newest act", () => {
     const elite = enemySetup({ ...encounter, gate: false }, "long-act", data);
     expect(elite.baseLife).toBeCloseTo((walled.baseLife ?? 0) * PROGRESSION.eliteLifeMultiplier);
     expect(wall).toBeGreaterThan(1);
+  });
+
+  it("fights last longer over enemy Life per stage kind; the boss hits a little softer", () => {
+    const at = (stage: number) => {
+      let s = newGame(data, { seed: 3, classId: "test-fighter" });
+      s = applyAction(s, data, { type: "setOut", actId: "long-act" });
+      s = { ...s, run: s.run && { ...s.run, stage } };
+      return applyAction(s, data, { type: "startStage" }).run?.encounter;
+    };
+    const k = PROGRESSION.fightLength;
+    // Run 1 has no Run Pressure, so the encounter carries only the fight length.
+    expect(at(1)?.pressure?.life ?? 1).toBeCloseTo(k.life.normal);
+    expect(at(5)?.pressure?.life ?? 1).toBeCloseTo(k.life.gate);
+    expect(at(15)?.pressure).toEqual({ life: k.life.boss, damage: k.bossDamage });
+  });
+
+  it("Hearth Embers burn on the Waymarks before the boss, not in the Wildfire", () => {
+    expect([4, 5, 10, 15].map((st) => hearthEmbers(LONG_ACT, st))).toEqual([
+      false,
+      true,
+      true,
+      false,
+    ]);
+    expect(hearthEmbers(LONG_ACT, 5, 3)).toBe(false);
   });
 
   it("the Ember Penalty grows by run: none in run 1, up to its max", () => {

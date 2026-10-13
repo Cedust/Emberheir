@@ -6,7 +6,7 @@ import { codexAffixFactor } from "../codex";
 import { PROGRESSION } from "../constants";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
-import { getAct, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
+import { getAct, hearthEmbers, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
 import { getBounty } from "./bounty";
 import { encounterEnemy, encounterFight, encounterName, encounterRank } from "./encounters";
 import { requireRun } from "./guards";
@@ -195,7 +195,9 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     run: {
       ...run,
       phase: "rewards",
-      lifeFraction,
+      lifeFraction: hearthEmbers(act, run.stage, tier)
+        ? Math.min(1, lifeFraction + PROGRESSION.hearthEmbers)
+        : lifeFraction,
       ...(bounty ? { bounty } : {}),
       rewards: {
         rank,

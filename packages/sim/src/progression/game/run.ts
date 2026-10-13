@@ -144,8 +144,13 @@ export function startStage(state: GameState, data: GameData): GameState {
         stagePressure(data, act, run.stage, state.legacy.prestige),
         atBoss && act.boss.archetype === "harvester",
       );
-  const pressure = p.life > 1 ? { pressure: p } : {};
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
+  // Longer fights over more enemy Life (neuausrichtung-v1.md 5.5), not in the Wildfire.
+  const length = (kind: keyof typeof PROGRESSION.fightLength.life) => {
+    const life = p.life * (tier ? 1 : PROGRESSION.fightLength.life[kind]);
+    const damage = p.damage * (tier || kind !== "boss" ? 1 : PROGRESSION.fightLength.bossDamage);
+    return life !== 1 || damage !== 1 ? { pressure: { life, damage } } : {};
+  };
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
   if (atBoss) {
@@ -157,7 +162,7 @@ export function startStage(state: GameState, data: GameData): GameState {
         ? wildfireBossAbilities(data, act, tier)
         : bossAbilities(data, act, state.legacy.prestige)
       ).map((m) => m.id),
-      ...pressure,
+      ...length("boss"),
       ...walled,
       seed: rng.int(0, 0x7fffffff),
     };
@@ -186,7 +191,7 @@ export function startStage(state: GameState, data: GameData): GameState {
       level,
       boss: false,
       eliteModifiers: mods,
-      ...pressure,
+      ...length(wall?.gate ? "gate" : mods.length ? "elite" : "normal"),
       ...walled,
       ...(wall?.gate ? { gate: true } : {}),
       seed: rng.int(0, 0x7fffffff),
