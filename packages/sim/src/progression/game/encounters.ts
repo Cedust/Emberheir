@@ -1,5 +1,5 @@
 import { createEnemySetup, type EnemyDefinition } from "../../combat/monsters";
-import { recordFight, type FightRecording } from "../../combat/recording";
+import { Fight } from "../../combat/fight";
 import { type CombatantSetup } from "../../combat/types";
 import { Rng } from "../../rng";
 import { PROGRESSION } from "../constants";
@@ -127,30 +127,23 @@ export function currentFight(
   };
 }
 
-/** Fights simulated so far, by encounter (an encounter is immutable, so is its fight). */
-const recordings = new WeakMap<Encounter, FightRecording>();
+/** The fight of each encounter so far (an encounter is immutable, so is its fight's course). */
+const fights = new WeakMap<Encounter, Fight>();
 
 /**
- * The current fight, simulated to the end. Each encounter is simulated once: the Battle view
- * plays this recording back, and the outcome in it is the one `startFight` stored.
+ * The fight of the current encounter: one `Fight` per encounter, so it is simulated once. The
+ * Battle view plays it in real time, `resolveFight` finishes it (if the view has not) and reads
+ * how it ended. A fight loaded from a save starts again from its seed and ends the same way.
  */
-export function fightRecording(state: GameState, data: GameData): FightRecording {
+export function encounterFight(state: GameState, data: GameData): Fight {
   const encounter = state.run?.encounter ?? fail("No fight in progress");
-  const cached = recordings.get(encounter);
-  if (cached) return cached;
-  const { hero, enemy, seed } = currentFight(state, data);
-  const recording = recordFight(hero, enemy, seed);
-  recordings.set(encounter, recording);
-  return recording;
-}
-
-/** A state that just entered the "fight" phase, with the fight's outcome fixed in it. */
-export function startFight(state: GameState, data: GameData): GameState {
-  const run = state.run ?? fail("Not in a run");
-  const recording = fightRecording(state, data);
-  const encounter = { ...(run.encounter ?? fail("No encounter")), outcome: recording.outcome };
-  recordings.set(encounter, recording);
-  return { ...state, run: { ...run, encounter } };
+  let fight = fights.get(encounter);
+  if (!fight) {
+    const { hero, enemy, seed } = currentFight(state, data);
+    fight = new Fight(hero, enemy, seed);
+    fights.set(encounter, fight);
+  }
+  return fight;
 }
 
 /**

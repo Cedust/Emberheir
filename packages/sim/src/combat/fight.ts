@@ -323,6 +323,13 @@ export class Fight {
     while (!this.core.result) this.step();
   }
 
+  /** Plays the rest of the fight at once (Skip); returns the events skipped over. */
+  finish(): readonly CombatEvent[] {
+    const start = this.core.log.length;
+    this.runToEnd();
+    return this.core.log.slice(start);
+  }
+
   snapshot(): FightSnapshot {
     return {
       time: this.time,

@@ -1,13 +1,12 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
-  FightReplay,
   type FightSnapshot,
   type GameState,
   PROGRESSION,
   type RunState,
   eliteModifiersOf,
-  fightRecording,
+  encounterFight,
   encounterEnemy,
   getAct,
   heroWeapon,
@@ -135,9 +134,9 @@ const reducedMotion = () =>
  * The Battle view: the PixiJS arena, the enemy frame at the top and the Diablo-style bottom bar
  * (Life and Heat orbs, skill bar with the Default Attack's rhythm, flasks, statuses, Boons).
  *
- * The sim simulated the fight when it started (`startFight`), so its outcome is already fixed.
- * This view only plays the recording back in real time, pausing while an overlay is open, and
- * then lets the sim resolve the stored outcome.
+ * The sim keeps one fight per encounter (`encounterFight`). This view plays it in real time,
+ * pausing while an overlay is open; `resolveFight` then reads how that same fight ended, so it
+ * is simulated only once.
  */
 export function BattleView(props: {
   state: GameState;
@@ -152,7 +151,7 @@ export function BattleView(props: {
   const { state, run, game, settings } = props;
   const looks = useLooks(state, run);
   // GameApp remounts this view for every encounter (key = fight seed).
-  const [fight] = useState(() => new FightReplay(fightRecording(state, GAME_DATA)));
+  const [fight] = useState(() => encounterFight(state, GAME_DATA));
   const [snapshot, setSnapshot] = useState<FightSnapshot>(() => fight.snapshot());
   const [flash, setFlash] = useState<{ slot: number; n: number } | null>(null);
   const [speed, setSpeed] = useState<number>(1);
@@ -265,7 +264,7 @@ export function BattleView(props: {
   }, [over, game, bossFight, snapshot.winner]);
 
   const skip = () => {
-    sceneRef.current?.onEvents(fight.skipToEnd());
+    sceneRef.current?.onEvents(fight.finish());
     hudRef.current?.onSnapshot(fight.snapshot(), true);
     setSnapshot(fight.snapshot());
   };

@@ -25,9 +25,9 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
   banned in `sim`/`content`). Same seed + same input = same fight.
 - New affixes, skills and enemies are **data** in `content`. New building blocks (conditions,
   effects, mechanics) in `sim` always get unit tests.
-- A fight is simulated once, when it starts (`startFight`): its outcome is stored in the
-  encounter, the Battle view only plays the recording back (`FightReplay`), `resolveFight` reads
-  the stored outcome. Never simulate a fight a second time to find out how it ended.
+- A fight is simulated once: `encounterFight` keeps one `Fight` per encounter. The Battle view
+  plays it in real time, `resolveFight` finishes the same fight (if needed) and reads how it
+  ended. Never start a second `Fight` for an encounter to find out its result.
 - Save games go through `packages/sim/src/save/`: a zod schema typed against `GameState`, and a
   migration table. A change to the save shape bumps `SAVE_VERSION` and adds a migration step; a
   change to items goes into the step's `item` function, so it reaches the shared stash too.

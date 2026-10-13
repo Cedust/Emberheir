@@ -89,8 +89,7 @@ export {
   encounterName,
   encounterRank,
   currentFight,
-  fightRecording,
-  startFight,
+  encounterFight,
   finalePressure,
 } from "./encounters";
 export {

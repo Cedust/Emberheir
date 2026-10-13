@@ -30,13 +30,7 @@ export type {
   FighterSnapshot,
   RotationSlotSnapshot,
 } from "./combat/events";
-export {
-  FightReplay,
-  outcomeOf,
-  recordFight,
-  type FightOutcome,
-  type FightRecording,
-} from "./combat/recording";
+export { outcomeOf, type FightOutcome } from "./combat/outcome";
 export { AILMENT_SOURCE, damageShare, fightReport, type FightReport } from "./combat/report";
 export {
   createEnemySetup,

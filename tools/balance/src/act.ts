@@ -2,7 +2,9 @@ import {
   actsInOrder,
   actsInRun,
   applyAction,
-  fightRecording,
+  encounterFight,
+  outcomeOf,
+  type FightOutcome,
   type GameData,
   type GameState,
   newGame,
@@ -22,6 +24,13 @@ import { spendSkillPoints } from "./skill-path";
  * Plays whole acts with a simple autopilot to answer "how long does a fight take" and "how often
  * do you die before the boss" (game-design-document-v1.md section 11).
  */
+
+/** How the current encounter's fight ends; resolveFight then reads the same, finished fight. */
+function finishedFight(state: GameState, data: GameData): FightOutcome {
+  const fight = encounterFight(state, data);
+  fight.runToEnd();
+  return outcomeOf(fight);
+}
 
 export interface ActRunReport {
   /** 1 = the first run, 2 = after the first Prestige, ... */
@@ -113,8 +122,8 @@ export function playGenerations(
           }
           s = applyAction(s, data, { type: "startStage" });
           options.onFight?.(s, generation, act.number);
-          // Simulated once by startStage; resolveFight reads the same outcome.
-          const result = fightRecording(s, data).outcome;
+          // The encounter's one fight; resolveFight reads the same one.
+          const result = finishedFight(s, data);
           const encounter = s.run?.encounter;
           if (encounter?.boss) {
             bossSeconds = result.duration;
@@ -224,7 +233,7 @@ function playWildfire(
         s = applyAction(s, data, { type: "useFlask" });
       }
       s = applyAction(s, data, { type: "startStage" });
-      const result = fightRecording(s, data).outcome;
+      const result = finishedFight(s, data);
       const encounter = s.run?.encounter;
       if (encounter?.boss) bossSeconds = result.duration;
       else {
@@ -288,7 +297,7 @@ function playFinale(
       }
       s = applyAction(s, data, { type: "startStage" });
       onFight?.(s, generation, data.finale?.number ?? 8);
-      const result = fightRecording(s, data).outcome;
+      const result = finishedFight(s, data);
       const stage = s.run?.stage ?? 0;
       const enemyId = s.run?.encounter?.enemyId ?? "";
       if (stage === data.finale?.stages) bossSeconds = result.duration;

@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { runFight } from "../combat/fight";
-import { outcomeOf } from "../combat/recording";
+import { outcomeOf } from "../combat/outcome";
 import { deserializeGame, serializeGame } from "../save";
 import { bossTrophies, rollItem, uniquesFor } from "../items/generate";
 import { ATTRIBUTE_RULES } from "./attributes";
@@ -19,7 +19,7 @@ import {
   enemySetup,
   nextAct,
   currentFight,
-  fightRecording,
+  encounterFight,
   equipBlockReason,
   heroRotation,
   heroSetup,
@@ -723,34 +723,34 @@ describe("Ember Thief", () => {
   });
 });
 
-describe("a fight is simulated once, when it starts", () => {
+describe("a fight is simulated once", () => {
   const fighting = () =>
     act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
 
-  it("the outcome is fixed in the encounter and matches the recording the arena plays", () => {
+  it("the Battle view and resolveFight share one fight per encounter", () => {
     const s = fighting();
-    const outcome = s.run?.encounter?.outcome;
+    const fight = encounterFight(s, data);
+    expect(encounterFight(s, data)).toBe(fight);
+    // The view plays a bit of it; resolving finishes that same fight.
+    fight.advance(1);
+    const resolved = act(s, { type: "resolveFight" });
+    expect(fight.over).toBe(true);
     const { hero, enemy, seed } = currentFight(s, data);
-    expect(outcome).toEqual(outcomeOf(runFight(hero, enemy, seed)));
-    // The arena gets the very recording the outcome came from, not a second simulation.
-    expect(fightRecording(s, data).outcome).toBe(outcome);
+    const alone = runFight(hero, enemy, seed);
+    expect(fight.events).toEqual(alone.events);
+    expect(resolved.run?.rewards?.report).toEqual(outcomeOf(fight).report);
   });
 
-  it("resolving reads the stored outcome instead of fighting again", () => {
+  it("resolving reads the shared fight instead of fighting again", () => {
     const s = fighting();
-    expect(act(s, { type: "resolveFight" }).run?.phase).toBe("rewards");
-    const encounter = s.run?.encounter ?? fail();
-    const lost = {
-      ...encounter,
-      outcome: { ...(encounter.outcome ?? fail()), winner: "enemy" as const },
-    };
-    const doomed: GameState = { ...s, run: { ...(s.run ?? fail()), encounter: lost } };
-    expect(act(doomed, { type: "resolveFight" }).notice?.kind).toBe("death");
-  });
-
-  it("a fight loaded from a save plays back to the stored outcome", () => {
-    const s = fighting();
+    const fight = encounterFight(s, data);
+    fight.finish();
+    expect(fight.winner).toBe("hero");
+    // A fresh encounter (same course) gets its own fight.
     const loaded = deserializeGame(serializeGame(s), data);
-    expect(fightRecording(loaded, data).outcome).toEqual(s.run?.encounter?.outcome);
+    expect(encounterFight(loaded, data)).not.toBe(fight);
+    expect(act(loaded, { type: "resolveFight" }).run?.rewards?.report).toEqual(
+      outcomeOf(fight).report,
+    );
   });
 });

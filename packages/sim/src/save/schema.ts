@@ -100,8 +100,6 @@ const wallet = z.object({
 
 const boonPick = z.object({ id: id, grade: z.enum(["spark", "flame", "blaze"]) });
 
-const side = z.enum(["hero", "enemy"]);
-
 const lifeAndDamage = z.object({ life: num, damage: num });
 
 const fightReport = z.object({
@@ -121,15 +119,6 @@ const encounter = z.object({
   seed: int,
   thief: opt(z.boolean()),
   echo: opt(id),
-  outcome: opt(
-    z.object({
-      winner: side.nullable(),
-      fled: side.nullable(),
-      duration: num.nonnegative(),
-      heroLife: num.min(0).max(1),
-      report: fightReport,
-    }),
-  ),
 });
 
 const pickKind = z.enum(["equip", "take"]);

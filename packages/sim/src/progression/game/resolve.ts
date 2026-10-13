@@ -1,4 +1,4 @@
-import { type FightOutcome } from "../../combat/recording";
+import { type FightOutcome, outcomeOf } from "../../combat/outcome";
 import { battlePlanUnlocks } from "../battle-plan";
 import { EMPTY_BOONS, rollBoonOffer } from "../boons";
 import { bountyAfterWin } from "../bounties";
@@ -8,7 +8,7 @@ import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
 import { getAct, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
 import { getBounty } from "./bounty";
-import { encounterEnemy, encounterName, encounterRank, fightRecording } from "./encounters";
+import { encounterEnemy, encounterFight, encounterName, encounterRank } from "./encounters";
 import { requireRun } from "./guards";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
 import { actAffixFactor, addRunes, rollItemChoices, rollRuneDrops } from "./loot";
@@ -21,8 +21,10 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "fight");
   const encounter = run.encounter ?? fail("No encounter");
   const hero = heroSetup(state, data).setup;
-  // Simulated when the fight started; a state built by hand simulates it now.
-  const outcome = encounter.outcome ?? fightRecording(state, data).outcome;
+  // The fight the Battle view played; finished here if it is not over yet (Skip, balance CLI).
+  const played = encounterFight(state, data);
+  played.runToEnd();
+  const outcome = outcomeOf(played);
   const stats = { ...state.stats, fights: state.stats.fights + 1 };
   const enemyName = encounterName(encounter, run.actId, data);
   if (isFinaleAct(data, run.actId))

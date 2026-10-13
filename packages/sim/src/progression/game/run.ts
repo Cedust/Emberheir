@@ -19,13 +19,7 @@ import {
   wildfireTop,
 } from "./acts";
 import { getBounty } from "./bounty";
-import {
-  bossAbilities,
-  encounterName,
-  finaleEncounter,
-  startFight,
-  wildfireBossAbilities,
-} from "./encounters";
+import { bossAbilities, encounterName, finaleEncounter, wildfireBossAbilities } from "./encounters";
 import { brewedDraught, draughtsOpen, flaskCapacity, getDraught } from "./flask";
 import { requireCamp, requireRun } from "./guards";
 import { requireRewards, rewardsDone } from "./rewards";
@@ -136,7 +130,7 @@ export function startStage(state: GameState, data: GameData): GameState {
   const [rng, next] = nextRng(state);
   if (isFinaleAct(data, act.id)) {
     const encounter = finaleEncounter(data, run.stage, rng);
-    return startFight({ ...next, run: { ...run, phase: "fight", encounter } }, data);
+    return { ...next, run: { ...run, phase: "fight", encounter } };
   }
   const tier = run.wildfire;
   const level = tier
@@ -194,7 +188,7 @@ export function startStage(state: GameState, data: GameData): GameState {
       ...(thief ? { thief: true } : {}),
     };
   }
-  return startFight({ ...next, run: { ...run, phase: "fight", encounter } }, data);
+  return { ...next, run: { ...run, phase: "fight", encounter } };
 }
 
 /** Back to the Camp: flask refilled, life full, act progress and the trip's bounty gone. */
