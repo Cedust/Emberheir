@@ -27,6 +27,12 @@ export interface BalanceArgs {
   finale: number;
   /** Act mode: after The Last Ember, climb Wildfire up to this tier (implies --finale). */
   wildfire: number;
+  /** Act mode: 1 = the autopilot uses Runes and Runewords (default), 0 = it leaves them. */
+  runes: number;
+  /** Act mode: 1 = only the newest-act tables (deaths and fight lengths per stage kind). */
+  newest: number;
+  /** Act mode: write every report as JSON to this file ("" = none). */
+  json: string;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -48,6 +54,9 @@ const DEFAULTS: BalanceArgs = {
   generations: 1,
   finale: 0,
   wildfire: 0,
+  runes: 1,
+  newest: 0,
+  json: "",
 };
 
 const NUMBER_FLAGS = {
@@ -60,12 +69,15 @@ const NUMBER_FLAGS = {
   "--generations": "generations",
   "--finale": "finale",
   "--wildfire": "wildfire",
+  "--runes": "runes",
+  "--newest": "newest",
 } as const;
 const STRING_FLAGS = {
   "--weapon": "weapon",
   "--enemy": "enemy",
   "--class": "class",
   "--build": "build",
+  "--json": "json",
 } as const;
 
 /** Parses `--runs 1000 --seed 42 --weapon sword --skills power-strike,flurry` style arguments. */
