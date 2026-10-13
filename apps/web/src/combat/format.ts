@@ -51,7 +51,11 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
       };
     case "hit": {
       const target = names[event.side === "hero" ? "enemy" : "hero"];
-      const extras = [event.crit ? "Crit!" : "", event.blocked ? "Blocked" : ""].filter(Boolean);
+      const extras = [
+        event.crit ? "Crit!" : "",
+        event.blocked ? "Blocked" : "",
+        event.deflected ? "Deflected" : "",
+      ].filter(Boolean);
       return {
         time,
         side: event.side,

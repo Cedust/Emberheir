@@ -91,6 +91,8 @@ export type CombatEvent =
       readonly glancing?: boolean;
       /** A Heavy Attack hit held back by `COMBAT.heavyHitCap`. */
       readonly capped?: boolean;
+      /** A spell Deflected by Evasion. */
+      readonly deflected?: boolean;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {
@@ -1291,6 +1293,8 @@ export class Fight {
         baseDamage: h.baseDamage,
         type: h.type,
         evadable: h.evadable,
+        // Deflect is the hero's answer to spells; monsters only dodge attacks.
+        deflects: defender.side === "hero",
         attacker:
           penetration > 0
             ? {
@@ -1338,6 +1342,7 @@ export class Fight {
       crit: outcome.crit,
       blocked: outcome.blocked,
       ...(glancing ? { glancing: true } : {}),
+      ...(outcome.deflected ? { deflected: true } : {}),
       ...(damage < dealt ? { capped: true } : {}),
     });
     defender.lastHitTakenAt = this.time;

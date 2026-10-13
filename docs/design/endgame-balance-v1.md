@@ -249,3 +249,27 @@ Timo hat am 13.10. „Überlauf platzt“ gewählt. Gebaut:
 
 Noch offen: Venom in Akt 2 (Ø 12 Tode an der Mother of Rot), weil der Bogen dort Festering noch
 nicht hat.
+
+## 8. Bosse, gegen die eine Verteidigung nutzlos ist
+
+Venom starb in Akt 2 im Schnitt 12-mal, aber das galt für alle Hunter (Barbs, Marksman 9–12) und
+den Assassin. Ursache: Etwa 75 % des Schadens der Mother of Rot kann Evasion nicht abwehren (Rot
+Spray ist ein Spell, dazu Poison als DoT). Caster (Barrier) starben dort nur 1–3-mal. In Akt 5/6
+war es umgekehrt.
+
+Timo (13.10.) wählte beides:
+
+- **Boss-Mix:** Rot Spray ist jetzt ein Angriff mit Void-Schaden (4 × 60 % Weapon Damage, je
+  Poison). Er bleibt magisch, kann aber ausgewichen werden.
+- **Deflect:** Evasion weicht weiter keinem Spell aus, lenkt Spells aber mit derselben Chance ab:
+  halber Schaden (wie Spell Suppression in PoE). Nur der Held lenkt ab; Monster mit Evasion
+  lenkten sonst die Spells der Caster ab (Akt 5 wurde für Caster deutlich schwerer). In der Arena:
+  halbes Ausweichen, heller Ring, „↺“ an der Zahl; Tooltip an Evasion.
+
+| 15 Builds × 3 Läufe, Tode im neuesten Akt | Akt 2 | 3   | 4   | 5   | 6   | 7   | Summe pro Build |
+| ----------------------------------------- | ----- | --- | --- | --- | --- | --- | --------------- |
+| vorher (vor PR #27)                       | 6,1   | 5,1 | 5,0 | 5,3 | 6,2 | 6,9 | 22–56           |
+| jetzt                                     | 4,9   | 4,4 | 4,0 | 4,7 | 4,7 | 5,3 | 19–40           |
+
+Hunter in Akt 2: 6–8 Tode (vorher 10–15). Offen: Fire Wand (Akt 3 und 6 je 10–11 Tode); das Spiel
+ist insgesamt etwas leichter (Ziel waren 6–8 Anläufe pro neuestem Akt).
