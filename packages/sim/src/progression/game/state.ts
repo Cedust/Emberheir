@@ -1,3 +1,4 @@
+import type { FightOutcome } from "../../combat/recording";
 import { type EnemyDefinition } from "../../combat/monsters";
 import { type FightReport } from "../../combat/report";
 import type { Attributes, SkillDefinition } from "../../combat/types";
@@ -162,6 +163,11 @@ export interface Encounter {
   readonly thief?: boolean;
   /** The Last Ember: the echo of this act's boss. */
   readonly echo?: string;
+  /**
+   * How the fight ends. It is simulated once, when the fight starts (`startFight`): the Battle
+   * view only plays it back and `resolveFight` reads it. Missing in states built by hand.
+   */
+  readonly outcome?: FightOutcome;
 }
 
 export type ItemPick =

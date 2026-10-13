@@ -382,6 +382,25 @@ export function heavyHitCap(stats: { readonly maxLife: number; readonly barrier:
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 
 /** Heat Cost of a Rotation skill after rule changes (e.g. Keystones). */
+/** The Rotation as the HUD shows it; it is fixed for a fight, so it is built once per setup. */
+const rotationSnapshots = new WeakMap<CombatantSetup, readonly RotationSlotSnapshot[]>();
+function rotationSnapshot(setup: CombatantSetup): readonly RotationSlotSnapshot[] {
+  let rotation = rotationSnapshots.get(setup);
+  if (!rotation) {
+    rotation = setup.rotation.map((slot) => {
+      const cost = skillCost(setup, slot.skill);
+      return {
+        skillId: slot.skill.id,
+        name: slot.skill.name,
+        heatCost: cost,
+        threshold: triggerThreshold(cost, slot.threshold),
+      };
+    });
+    rotationSnapshots.set(setup, rotation);
+  }
+  return rotation;
+}
+
 export function skillCost(setup: CombatantSetup, skill: SkillDefinition): number {
   return Math.max(0, Math.round(skill.heatCost * (setup.rules?.skillCostMultiplier ?? 1)));
 }
@@ -1868,15 +1887,7 @@ export class Fight {
       barrier: f.barrier,
       heat: f.heat,
       maxHeat: COMBAT.maxHeat,
-      rotation: f.setup.rotation.map((slot) => {
-        const cost = skillCost(f.setup, slot.skill);
-        return {
-          skillId: slot.skill.id,
-          name: slot.skill.name,
-          heatCost: cost,
-          threshold: triggerThreshold(cost, slot.threshold),
-        };
-      }),
+      rotation: rotationSnapshot(f.setup),
       nextSlot: f.nextSlot,
       reactions: f.reactions.map((r) => ({
         skillId: r.spec.skill.id,

@@ -1,4 +1,7 @@
 import { describe, expect, it } from "vitest";
+import { runFight } from "../combat/fight";
+import { outcomeOf } from "../combat/recording";
+import { deserializeGame, serializeGame } from "../save";
 import { bossTrophies, rollItem, uniquesFor } from "../items/generate";
 import { ATTRIBUTE_RULES } from "./attributes";
 import { PROGRESSION } from "./constants";
@@ -16,6 +19,7 @@ import {
   enemySetup,
   nextAct,
   currentFight,
+  fightRecording,
   equipBlockReason,
   heroRotation,
   heroSetup,
@@ -716,5 +720,37 @@ describe("Ember Thief", () => {
     expect(s.run?.rewards?.thief).toBe("escaped");
     expect(s.run?.rewards?.items).toHaveLength(PROGRESSION.itemChoices);
     expect(s.stats.deaths).toBe(0);
+  });
+});
+
+describe("a fight is simulated once, when it starts", () => {
+  const fighting = () =>
+    act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+
+  it("the outcome is fixed in the encounter and matches the recording the arena plays", () => {
+    const s = fighting();
+    const outcome = s.run?.encounter?.outcome;
+    const { hero, enemy, seed } = currentFight(s, data);
+    expect(outcome).toEqual(outcomeOf(runFight(hero, enemy, seed)));
+    // The arena gets the very recording the outcome came from, not a second simulation.
+    expect(fightRecording(s, data).outcome).toBe(outcome);
+  });
+
+  it("resolving reads the stored outcome instead of fighting again", () => {
+    const s = fighting();
+    expect(act(s, { type: "resolveFight" }).run?.phase).toBe("rewards");
+    const encounter = s.run?.encounter ?? fail();
+    const lost = {
+      ...encounter,
+      outcome: { ...(encounter.outcome ?? fail()), winner: "enemy" as const },
+    };
+    const doomed: GameState = { ...s, run: { ...(s.run ?? fail()), encounter: lost } };
+    expect(act(doomed, { type: "resolveFight" }).notice?.kind).toBe("death");
+  });
+
+  it("a fight loaded from a save plays back to the stored outcome", () => {
+    const s = fighting();
+    const loaded = deserializeGame(serializeGame(s), data);
+    expect(fightRecording(loaded, data).outcome).toEqual(s.run?.encounter?.outcome);
   });
 });

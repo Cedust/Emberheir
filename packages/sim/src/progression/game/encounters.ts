@@ -1,4 +1,5 @@
 import { type EnemyDefinition, createEnemySetup } from "../../combat/monsters";
+import { type FightRecording, recordFight } from "../../combat/recording";
 import type { CombatantSetup } from "../../combat/types";
 import { Rng } from "../../rng";
 import { PROGRESSION } from "../constants";
@@ -110,10 +111,7 @@ export function encounterRank(encounter: Encounter): EnemyRank {
   return encounter.boss ? "boss" : encounter.eliteModifiers.length ? "elite" : "normal";
 }
 
-/**
- * Both setups and the seed of the current fight. The UI plays this exact fight, and
- * `resolveFight` runs the same one, so both always agree.
- */
+/** Both setups and the seed of the current fight. */
 export function currentFight(
   state: GameState,
   data: GameData,
@@ -125,6 +123,32 @@ export function currentFight(
     enemy: enemySetup(run.encounter, run.actId, data),
     seed: run.encounter.seed,
   };
+}
+
+/** Fights simulated so far, by encounter (an encounter is immutable, so is its fight). */
+const recordings = new WeakMap<Encounter, FightRecording>();
+
+/**
+ * The current fight, simulated to the end. Each encounter is simulated once: the Battle view
+ * plays this recording back, and the outcome in it is the one `startFight` stored.
+ */
+export function fightRecording(state: GameState, data: GameData): FightRecording {
+  const encounter = state.run?.encounter ?? fail("No fight in progress");
+  const cached = recordings.get(encounter);
+  if (cached) return cached;
+  const { hero, enemy, seed } = currentFight(state, data);
+  const recording = recordFight(hero, enemy, seed);
+  recordings.set(encounter, recording);
+  return recording;
+}
+
+/** A state that just entered the "fight" phase, with the fight's outcome fixed in it. */
+export function startFight(state: GameState, data: GameData): GameState {
+  const run = state.run ?? fail("Not in a run");
+  const recording = fightRecording(state, data);
+  const encounter = { ...(run.encounter ?? fail("No encounter")), outcome: recording.outcome };
+  recordings.set(encounter, recording);
+  return { ...state, run: { ...run, encounter } };
 }
 
 /**

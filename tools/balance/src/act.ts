@@ -19,7 +19,7 @@ import {
   type ActData,
   Fight,
   draughtsOpen,
-  currentFight,
+  fightRecording,
   deriveStats,
   type LearnedNodes,
   equipBlockReason,
@@ -27,7 +27,6 @@ import {
   forkPartner,
   learnBlockReason,
   newGame,
-  runFight,
   type SlotModifier,
   battlePlanUnlocks,
   heroSetup,
@@ -898,8 +897,8 @@ export function playGenerations(
           }
           s = applyAction(s, data, { type: "startStage" });
           options.onFight?.(s, generation, act.number);
-          const fight = currentFight(s, data);
-          const result = runFight(fight.hero, fight.enemy, fight.seed);
+          // Simulated once by startStage; resolveFight reads the same outcome.
+          const result = fightRecording(s, data).outcome;
           const encounter = s.run?.encounter;
           if (encounter?.boss) {
             bossSeconds = result.duration;
@@ -1009,8 +1008,7 @@ function playWildfire(
         s = applyAction(s, data, { type: "useFlask" });
       }
       s = applyAction(s, data, { type: "startStage" });
-      const fight = currentFight(s, data);
-      const result = runFight(fight.hero, fight.enemy, fight.seed);
+      const result = fightRecording(s, data).outcome;
       const encounter = s.run?.encounter;
       if (encounter?.boss) bossSeconds = result.duration;
       else {
@@ -1074,8 +1072,7 @@ function playFinale(
       }
       s = applyAction(s, data, { type: "startStage" });
       onFight?.(s, generation, data.finale?.number ?? 8);
-      const fight = currentFight(s, data);
-      const result = runFight(fight.hero, fight.enemy, fight.seed);
+      const result = fightRecording(s, data).outcome;
       const stage = s.run?.stage ?? 0;
       const enemyId = s.run?.encounter?.enemyId ?? "";
       if (stage === data.finale?.stages) bossSeconds = result.duration;

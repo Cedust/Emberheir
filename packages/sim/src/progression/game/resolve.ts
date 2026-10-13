@@ -1,5 +1,4 @@
-import { type FightResult, runFight } from "../../combat/fight";
-import { fightReport } from "../../combat/report";
+import type { FightOutcome } from "../../combat/recording";
 import { rollItem, rollRarity } from "../../items/generate";
 import { type Rarity, RARITIES } from "../../items/types";
 import { Rng } from "../../rng";
@@ -13,7 +12,7 @@ import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
 import { requireCamp, requireRun } from "./actions";
 import { getAct, isFinaleAct, stageMonsterLevel, waymarkKey, waymarkStages } from "./acts";
-import { currentFight, encounterEnemy, encounterName, encounterRank } from "./encounters";
+import { encounterEnemy, fightRecording, encounterName, encounterRank } from "./encounters";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
 import { actAffixFactor, addRunes, lootGate, rollItemChoices, rollRuneDrops } from "./loot";
 import { toCamp } from "./run";
@@ -36,17 +35,18 @@ export function getBounty(data: GameData, id: string): BountyDefinition {
 export function resolveFight(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "fight");
   const encounter = run.encounter ?? fail("No encounter");
-  const { hero, enemy, seed } = currentFight(state, data);
-  const result: FightResult = runFight(hero, enemy, seed);
+  const hero = heroSetup(state, data).setup;
+  // Simulated when the fight started; a state built by hand simulates it now.
+  const outcome = encounter.outcome ?? fightRecording(state, data).outcome;
   const stats = { ...state.stats, fights: state.stats.fights + 1 };
   const enemyName = encounterName(encounter, run.actId, data);
   if (isFinaleAct(data, run.actId))
-    return resolveFinaleFight(state, data, result, stats, enemyName);
+    return resolveFinaleFight(state, data, outcome, stats, enemyName);
 
   // The Ember Thief got away: the stage still counts, with the normal loot.
-  const escaped = encounter.thief === true && result.fled === "enemy";
-  const caught = encounter.thief === true && result.winner === "hero";
-  if (result.winner !== "hero" && !escaped) {
+  const escaped = encounter.thief === true && outcome.fled === "enemy";
+  const caught = encounter.thief === true && outcome.winner === "hero";
+  if (outcome.winner !== "hero" && !escaped) {
     // A draw at the time limit counts as a defeat: the act has to be tried again.
     return toCamp(
       {
@@ -148,7 +148,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     : [];
 
   // The Scout's bounty: a win may finish it; it is turned in at the Scout in the Camp.
-  const lifeFraction = result.final.hero.life / result.final.hero.maxLife;
+  const lifeFraction = outcome.heroLife;
   const bounty = run.bounty
     ? bountyAfterWin(run.bounty, getBounty(data, run.bounty.id).goal, {
         rank,
@@ -220,7 +220,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         runes,
         levelsGained: leveled.levelsGained,
         ...(waymark ? { waymark: true } : {}),
-        report: fightReport(result.events),
+        report: outcome.report,
         items,
         ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
         ...(caught ? { picks: PROGRESSION.thiefPicks, thief: "caught" as const } : {}),
@@ -296,13 +296,13 @@ export function turnInBounty(state: GameState, data: GameData): GameState {
 function resolveFinaleFight(
   state: GameState,
   data: GameData,
-  result: FightResult,
+  outcome: FightOutcome,
   stats: GameStats,
   enemyName: string,
 ): GameState {
   const run = requireRun(state, "fight");
   const finale = getAct(data, run.actId);
-  if (result.winner !== "hero") {
+  if (outcome.winner !== "hero") {
     return toCamp({ ...state, stats: { ...stats, deaths: stats.deaths + 1 } }, data, {
       kind: "death",
       actId: run.actId,
@@ -339,7 +339,7 @@ function resolveFinaleFight(
     run: {
       ...run,
       phase: "rewards",
-      lifeFraction: result.final.hero.life / result.final.hero.maxLife,
+      lifeFraction: outcome.heroLife,
       rewards: {
         rank: "boss",
         xp: 0,
@@ -349,7 +349,7 @@ function resolveFinaleFight(
         phoenixFeathers: 0,
         runes: [],
         levelsGained: 0,
-        report: fightReport(result.events),
+        report: outcome.report,
         items: [],
         itemPick: { kind: "salvageAll" },
         salvagedAsh: 0,
