@@ -1143,7 +1143,12 @@ export class Fight {
       case "multiplyPoison": {
         const before = poisonStacks(target.ailments);
         if (before === 0) return;
-        target.ailments = multiplyPoison(target.ailments, effect.factor);
+        const { states, overflow } = multiplyPoison(
+          target.ailments,
+          effect.factor,
+          this.poisonCap(f),
+        );
+        target.ailments = states;
         this.emit({
           t: this.time,
           type: "ailment",
@@ -1151,6 +1156,8 @@ export class Fight {
           ailment: "poison",
           stacks: poisonStacks(target.ailments),
         });
+        // Stacks over the cap burst at once for their remaining damage.
+        if (overflow > 0) this.dotBurst(f, target, overflow, skill.name);
         return;
       }
       case "heal":
@@ -1586,9 +1593,7 @@ export class Fight {
       ailment,
       duration,
       hitDamage,
-      COMBAT.poisonMaxStacks +
-        (wr?.poisonMaxStacks ?? 0) +
-        (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0),
+      this.poisonCap(attacker),
     );
     if (duration <= 0) return;
     const burst = wr?.poisonBurst;
@@ -1607,6 +1612,15 @@ export class Fight {
     });
   }
 
+  /** How many Poison stacks `attacker` can keep on a target. */
+  private poisonCap(attacker: Fighter): number {
+    return (
+      COMBAT.poisonMaxStacks +
+      (attacker.setup.weaponRules?.poisonMaxStacks ?? 0) +
+      (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0)
+    );
+  }
+
   /** Toxic Bloom: every Poison stack bursts for its remaining damage at once. */
   private poisonBurst(
     attacker: Fighter,
@@ -1617,19 +1631,30 @@ export class Fight {
     defender.ailments = clearAilment(defender.ailments, "poison");
     defender.poisonLockout = lockout;
     this.emit({ t: this.time, type: "ailmentExpired", side: defender.side, ailment: "poison" });
-    const damage = Math.max(1, Math.round(rest * multiplier * this.dotFactor(defender)));
+    const damage = this.dotBurst(attacker, defender, rest * multiplier, "Toxic Bloom");
+    if (leech && !this.result) this.heal(attacker, damage * leech);
+  }
+
+  /**
+   * Poison damage that lands at once (Toxic Bloom, Toxic Burst overflow): a Physical hit that
+   * scales like a DoT and leeches like a DoT tick.
+   */
+  private dotBurst(attacker: Fighter, defender: Fighter, amount: number, source: string): number {
+    const damage = Math.max(1, Math.round(amount * this.dotFactor(defender)));
     this.emit({
       t: this.time,
       type: "hit",
       side: attacker.side,
-      source: "Toxic Bloom",
+      source,
       damage,
       damageType: "physical",
       crit: false,
       blocked: false,
     });
     this.damage(defender, damage);
-    if (leech && !this.result) this.heal(attacker, damage * leech);
+    const leech = attacker.setup.rules?.dotLifesteal ?? 0;
+    if (leech > 0 && !this.result) this.heal(attacker, damage * leech);
+    return damage;
   }
 
   // --- triggers ----------------------------------------------------------------------------

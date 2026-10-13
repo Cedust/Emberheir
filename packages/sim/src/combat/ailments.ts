@@ -146,15 +146,26 @@ export function clearAilment(states: AilmentStates, type: AilmentType): AilmentS
   return Object.fromEntries(Object.entries(states).filter(([key]) => key !== type));
 }
 
-/** Multiplies the Poison stacks (Toxic Burst doubles them), up to the cap. */
-export function multiplyPoison(states: AilmentStates, factor: number): AilmentStates {
+/**
+ * Multiplies the Poison stacks (Toxic Burst doubles them), up to `maxStacks`. The oldest stacks
+ * that do not fit any more are returned as `overflow`: their remaining damage, which bursts at once.
+ */
+export function multiplyPoison(
+  states: AilmentStates,
+  factor: number,
+  maxStacks: number = COMBAT.poisonMaxStacks,
+): { readonly states: AilmentStates; readonly overflow: number } {
   const poison = states.poison;
-  if (!poison || factor <= 1) return states;
+  if (!poison || factor <= 1) return { states, overflow: 0 };
   const stacks: PoisonStack[] = [];
   for (const stack of poison.stacks) {
     for (let i = 0; i < Math.round(factor); i++) stacks.push(stack);
   }
-  return { ...states, poison: { ...poison, stacks: stacks.slice(-COMBAT.poisonMaxStacks) } };
+  const cut = Math.max(0, stacks.length - maxStacks);
+  const overflow = stacks
+    .slice(0, cut)
+    .reduce((sum, p) => sum + p.damagePerSecond * p.remaining, 0);
+  return { states: { ...states, poison: { ...poison, stacks: stacks.slice(cut) } }, overflow };
 }
 
 export interface AilmentStepResult {

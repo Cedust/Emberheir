@@ -145,7 +145,8 @@ export const TOXIC_BURST: SkillDefinition = {
   type: "attack",
   heatCost: 80,
   tags: ["physical", "over-time", "any"],
-  description: "100 % Weapon Damage that Poisons, then doubles the Poison stacks.",
+  description:
+    "100 % Weapon Damage that Poisons, then doubles the Poison stacks. Stacks over the limit burst at once.",
   hits: [{ kind: "weapon", multiplier: 1, ailmentChances: [{ ailment: "poison", chance: 1 }] }],
   effects: [{ kind: "multiplyPoison", factor: 2 }],
 };

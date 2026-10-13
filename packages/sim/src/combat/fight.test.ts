@@ -561,6 +561,41 @@ describe("Bleed, Poison and skill effects", () => {
     expect(fight.snapshot().enemy.ailments.find((a) => a.type === "poison")?.stacks).toBe(4);
   });
 
+  it("Toxic Burst: stacks over the cap burst at once", () => {
+    const cast = (hitCount: number) => {
+      const flood: SkillDefinition = {
+        ...TEST_SKILL,
+        id: "flood",
+        name: "Flood",
+        heatCost: 0,
+        hits: Array.from({ length: hitCount }, () => ({
+          kind: "weapon" as const,
+          multiplier: 0.1,
+          ailmentChances: [{ ailment: "poison" as const, chance: 1 }],
+        })),
+        effects: [{ kind: "multiplyPoison", factor: 2 }],
+      };
+      const fight = new Fight(
+        setup({ bonuses: NO_CRIT, rotation: [{ skill: flood }] }),
+        dummy(),
+        1,
+      );
+      fight.advance(1.05);
+      const first = ofType(fight.events, "skill")[0]?.t;
+      const hits = ofType(fight.events, "hit").filter((h) => h.t === first);
+      const stacks = fight.snapshot().enemy.ailments.find((a) => a.type === "poison")?.stacks;
+      return { hits: hits.length, stacks };
+    };
+    // 10 stacks double to 20: nothing overflows.
+    expect(cast(COMBAT.poisonMaxStacks / 2)).toEqual({
+      hits: COMBAT.poisonMaxStacks / 2,
+      stacks: COMBAT.poisonMaxStacks,
+    });
+    // 12 stacks double to 24: 4 overflow and burst as one extra hit.
+    const over = COMBAT.poisonMaxStacks / 2 + 2;
+    expect(cast(over)).toEqual({ hits: over + 1, stacks: COMBAT.poisonMaxStacks });
+  });
+
   it("a heal skill heals the caster, halved by Burn", () => {
     const mend: SkillDefinition = {
       ...TEST_SKILL,

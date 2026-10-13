@@ -231,7 +231,21 @@ Vorher: Akt 2 Ø 15 Tode, Akt 7 Ø 19 (Median aller Builds 5–7).
 3. Nebenbefund: Toxic Burst kappt immer auf 20 Stacks, auch wenn der Held mehr erlaubt (Reaver
    +3). Kleiner Fehler.
 
-Vorschlag (wartet auf Timo): **Toxic Burst löst den Überlauf ein.** Stacks, die beim Verdoppeln über
-die Grenze gehen, platzen sofort für ihren Restschaden. Im Test: Venom 10,6k → 16,4k Schaden/s. Das
-repariert den toten Skill für alle Poison-Builds. Venom braucht danach noch etwas Sustain (heilt
-sich ~40 % langsamer als Barbs); das würde ich nach der Messung über den Toxin-Pfad lösen.
+Timo hat am 13.10. „Überlauf platzt“ gewählt. Gebaut:
+
+- **Toxic Burst:** Stacks, die beim Verdoppeln über die Grenze gehen, platzen sofort für ihren
+  Restschaden. Die Grenze ist jetzt die des Helden (behebt den Nebenbefund). Venom macht am Harvester
+  jetzt 20k statt 10,6k Schaden/s, so viel wie die anderen Builds.
+- **Festering (Toxin-Pfad des Bogens):** heilt zusätzlich um 3 % des Ailment-Schadens. Venom heilte
+  sich zu langsam (Sieg gegen den Ash Revenant in Akt 7: 0 %, mit +4 % Heilung 47 %). Lifesteal
+  bleibt nur für Treffer, DoT-Heilung kommt wie vereinbart aus DoT-Knoten.
+- Toxic Bloom und der Überlauf heilen wie ein DoT-Tick über die eigene DoT-Heilung.
+
+| Venom, 8 Läufe, Tode im neuesten Akt | Akt 4 | Akt 5 | Akt 6 | Akt 7 |
+| ------------------------------------ | ----- | ----- | ----- | ----- |
+| nur Überlauf                         | 5,9   | 9,8   | 4,8   | 10,4  |
+| + Festering 3 % (gewählt)            | 1,8   | 7,9   | 0,6   | 6,5   |
+| + Festering 5 %                      | 0,9   | 5,1   | 0,6   | 8,6   |
+
+Noch offen: Venom in Akt 2 (Ø 12 Tode an der Mother of Rot), weil der Bogen dort Festering noch
+nicht hat.

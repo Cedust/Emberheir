@@ -935,9 +935,11 @@ const BOW = buildTree({
       ],
       notables: [
         notable("Dipped Arrows", "+15 % Poison Chance.", { bonuses: { poisonChance: 0.15 } }),
-        notable("Festering", "Every Poison stack lets your hits ignore 2 % of the enemy's Armor.", {
-          weaponRules: { poisonArmorShred: 0.02 },
-        }),
+        notable(
+          "Festering",
+          "Every Poison stack lets your hits ignore 2 % of the enemy's Armor. Your ailments heal you for 3 % of their damage.",
+          { weaponRules: { poisonArmorShred: 0.02 }, rules: { dotLifesteal: 0.03 } },
+        ),
       ],
     },
     {
