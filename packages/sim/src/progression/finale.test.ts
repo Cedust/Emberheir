@@ -5,6 +5,7 @@ import {
   type GameData,
   type GameState,
   applyAction,
+  enemySetup,
   fail,
   finaleEchoes,
   finaleOpen,
@@ -88,10 +89,31 @@ describe("The Last Ember", () => {
   it("the pressure ramps from the first echo up to the full finale at the Core", () => {
     const first = finalePressure(1, 7);
     const core = finalePressure(7, 7);
+    const lastEcho = finalePressure(6, 7);
+    const ramp = PROGRESSION.finaleRamp;
     expect(core).toEqual(PROGRESSION.finale);
-    expect(first.life).toBeCloseTo(1 + (PROGRESSION.finale.life - 1) * PROGRESSION.finaleRamp);
+    expect(first.life).toBeCloseTo(1 + (PROGRESSION.finale.life - 1) * ramp.first);
+    expect(lastEcho.damage).toBeCloseTo(1 + (PROGRESSION.finale.damage - 1) * ramp.last);
     expect(first.damage).toBeLessThan(finalePressure(4, 7).damage);
-    expect(finalePressure(4, 7).damage).toBeLessThan(core.damage);
+    expect(lastEcho.damage).toBeLessThan(core.damage);
+  });
+
+  it("the Harvester's Core takes the full finale pressure, no Harvester share", () => {
+    const core = { ...TEST_BOSS, id: "core", archetype: "harvester" as const };
+    const d: GameData = { ...data, finale: { ...FINALE, boss: core } };
+    const encounter = {
+      enemyId: "core",
+      level: 50,
+      boss: true,
+      eliteModifiers: [],
+      pressure: finalePressure(FINALE.stages, FINALE.stages),
+      seed: 1,
+    };
+    const plain = enemySetup({ ...encounter, pressure: { life: 1, damage: 1 } }, FINALE.id, d);
+    const full = enemySetup(encounter, FINALE.id, d);
+    expect(full.damageMultiplier).toBeCloseTo(
+      (plain.damageMultiplier ?? 1) * PROGRESSION.finale.damage,
+    );
   });
 
   it("a death ends the attempt: back to the Camp, the Boons are gone", () => {

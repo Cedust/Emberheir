@@ -855,6 +855,8 @@ export function playGenerations(
     readonly wildfire?: number;
     /** Called before every fight (balance probes). */
     readonly onFight?: (state: GameState, generation: number, act: number) => void;
+    /** Called in the Camp right before The Last Ember (balance probes replay the endgame). */
+    readonly onEndgame?: (state: GameState) => void;
   },
 ): ActRunReport[] {
   // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
@@ -954,12 +956,14 @@ export function playGenerations(
   if (options.finale && data.finale && s.pendingPrestige) {
     s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
+      options.onEndgame?.(s);
       const finale = playFinale(
         s,
         data,
         options.generations + 1,
         options.maxAttempts,
         options.onFight,
+        { build, starterWeapon: options.starterWeapon },
       );
       reports.push(finale.report);
       s = finale.state;
@@ -978,7 +982,7 @@ export function playGenerations(
  * One Wildfire tier with the autopilot: the acts take turns by tier (I = Act 1, ... VIII = Act 1
  * again), attempts until the act boss falls.
  */
-function playWildfire(
+export function playWildfire(
   state: GameState,
   data: GameData,
   build: BuildPlan | undefined,
@@ -1050,13 +1054,45 @@ function playWildfire(
   };
 }
 
+/**
+ * A failed finale sends the autopilot back into the world like a player: one trip through the
+ * last act for levels and gear (the finale is a wall, endgame-balance-v1.md B).
+ */
+function farmLastAct(
+  state: GameState,
+  data: GameData,
+  build: BuildPlan | undefined,
+  starterWeapon: string,
+): GameState {
+  const act = actsInOrder(data).at(-1);
+  if (!act) return state;
+  let s = state;
+  for (const placed of s.inventory) {
+    s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
+  }
+  s = spendSkillPoints(s, data, build);
+  s = brewDraught(s, data, act);
+  s = applyAction(s, data, { type: "setOut", actId: act.id });
+  while (s.run) {
+    s = spendPoints(s, data, starterWeapon);
+    if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+      s = applyAction(s, data, { type: "useFlask" });
+    }
+    s = applyAction(s, data, { type: "startStage" });
+    s = applyAction(s, data, { type: "resolveFight" });
+    if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+  }
+  return s.notice ? applyAction(s, data, { type: "dismissNotice" }) : s;
+}
+
 /** The Last Ember with the autopilot: attempts until the Core falls (best Boon after each win). */
-function playFinale(
+export function playFinale(
   state: GameState,
   data: GameData,
   generation: number,
   maxAttempts: number,
   onFight?: (state: GameState, generation: number, act: number) => void,
+  farm?: { readonly build: BuildPlan | undefined; readonly starterWeapon: string },
 ): { state: GameState; report: ActRunReport } {
   let s = state;
   const before = s.stats;
@@ -1093,6 +1129,7 @@ function playFinale(
     }
     cleared = s.notice?.kind === "ending";
     s = applyAction(s, data, { type: "dismissNotice" });
+    if (!cleared && farm) s = farmLastAct(s, data, farm.build, farm.starterWeapon);
   }
   const report: ActRunReport = {
     generation,

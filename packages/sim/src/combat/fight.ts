@@ -62,6 +62,7 @@ import type {
   SlotModifier,
   TriggerCondition,
   TriggerEffect,
+  WeaponRules,
 } from "./types";
 
 /** One entry of the combat log. `side` is always the fighter the event is about. */
@@ -1592,7 +1593,7 @@ export class Fight {
     if (duration <= 0) return;
     const burst = wr?.poisonBurst;
     if (ailment === "poison" && burst && poisonStacks(defender.ailments) >= burst.stacks) {
-      this.poisonBurst(attacker, defender, burst.multiplier, burst.lockout);
+      this.poisonBurst(attacker, defender, burst);
       return;
     }
     this.react(defender, "ailmented");
@@ -1607,7 +1608,11 @@ export class Fight {
   }
 
   /** Toxic Bloom: every Poison stack bursts for its remaining damage at once. */
-  private poisonBurst(attacker: Fighter, defender: Fighter, multiplier: number, lockout: number) {
+  private poisonBurst(
+    attacker: Fighter,
+    defender: Fighter,
+    { multiplier, lockout, leech }: NonNullable<WeaponRules["poisonBurst"]>,
+  ) {
     const rest = remainingPoisonDamage(defender.ailments);
     defender.ailments = clearAilment(defender.ailments, "poison");
     defender.poisonLockout = lockout;
@@ -1624,6 +1629,7 @@ export class Fight {
       blocked: false,
     });
     this.damage(defender, damage);
+    if (leech && !this.result) this.heal(attacker, damage * leech);
   }
 
   // --- triggers ----------------------------------------------------------------------------

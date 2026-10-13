@@ -885,8 +885,10 @@ const DAGGER = buildTree({
       name: "Toxic Bloom",
       form: "Venom Fang",
       description:
-        "At 10 Poison stacks all of them burst for 200 % of their rest. Then no Poison for 1 s.",
-      effect: { weaponRules: { poisonBurst: { stacks: 10, multiplier: 2, lockout: 1 } } },
+        "At 10 Poison stacks all of them burst for 200 % of their rest and heal you for 15 % of it. Then no Poison for 1 s.",
+      effect: {
+        weaponRules: { poisonBurst: { stacks: 10, multiplier: 2, lockout: 1, leech: 0.15 } },
+      },
     },
     {
       id: "shadowstep",
