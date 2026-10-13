@@ -852,6 +852,37 @@
   gap: 8px;
 }
 
+/* A fork of the road (neuausrichtung-v1.md 6.2): one small button per path. */
+.stage .route-choice {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 6px 8px;
+  border: 1px dashed var(--edge);
+  border-radius: 4px;
+}
+
+.stage .route-options {
+  display: flex;
+  gap: 4px;
+}
+
+.stage .route-option {
+  flex: 1;
+  padding: 3px 4px;
+  font-size: 13px;
+  border-radius: 3px;
+  border: 1px solid var(--edge);
+  background: transparent;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.stage .route-option.chosen {
+  border-color: var(--heat);
+  background: rgb(255 154 60 / 0.25);
+}
+
 .stage .up-row {
   display: flex;
   align-items: center;
@@ -5766,4 +5797,94 @@
   font-size: 12px;
   vertical-align: middle;
   box-shadow: 0 0 10px rgb(255 120 30 / 0.55);
+}
+
+/* Kaelen's Training Dummy (neuausrichtung-v1.md 9). */
+.stage .dummy-tab {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 24px var(--safe-x, 32px);
+  min-height: 0;
+}
+
+.stage .dummy-head {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.stage .dummy-head .route-options {
+  width: 420px;
+}
+
+.stage .dummy-body {
+  display: flex;
+  gap: 16px;
+  min-height: 0;
+}
+
+.stage .dummy-numbers {
+  width: 340px;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage .dummy-dps b {
+  font-size: 40px;
+  margin-right: 8px;
+}
+
+.stage .dummy-sources {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 14px;
+}
+
+.stage .dummy-sources li {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stage .dummy-items {
+  flex-grow: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+
+.stage .dummy-item-list {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 10px;
+  overflow: hidden;
+}
+
+.stage .dummy-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage .dummy-item-delta {
+  display: flex;
+  flex-direction: column;
+  flex-grow: 1;
+}
+
+.stage .dummy-item-delta .better {
+  color: #3fa56a;
+}
+
+.stage .dummy-item-delta .worse {
+  color: var(--warn);
 }

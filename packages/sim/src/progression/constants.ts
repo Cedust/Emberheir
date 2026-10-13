@@ -193,8 +193,24 @@ export const PROGRESSION = {
     number
   >,
 
-  /** Cards in the item pick after every win. */
+  /** Cards in the item pick. */
   itemChoices: 3,
+  /**
+   * Item picks: weniger, aber schwerer (neuausrichtung-v1.md 6.3). A normal fight offers a pick
+   * only on every this many'th stage (the others give Ash and Acorns); Elites, Gatekeepers and
+   * bosses always do.
+   */
+  normalPickEvery: 3,
+  /**
+   * Champions (neuausrichtung-v1.md 6.1): from run 3 an Elite is a named Champion with this
+   * chance: three modifiers, more Life, and its own hoard of `cards` cards, one of them sure Epic
+   * and Legendary with `legendary`.
+   */
+  champion: { fromPrestige: 2, chance: 0.04, life: 1.3, cards: 4, legendary: 0.15 },
+  /** Elite theme: affixes with a tag of the Elite's modifiers roll this much more often (6.1). */
+  eliteThemeWeight: 4,
+  /** The boss's build card: affixes with a tag the hero's build uses roll this much more often. */
+  buildCardWeight: 4,
   /**
    * Item pick: each card picks an item slot by these weights (three different slots while
    * possible), then a random base of that slot. So adding bases to a slot never makes weapons
@@ -306,6 +322,8 @@ export const PROGRESSION = {
   },
   /** Hearth Embers (neuausrichtung-v1.md 5.4): a won Waymark before the boss heals this much. */
   hearthEmbers: 0.25,
+  /** The Hearth path of a fork (6.2): its second stage won heals this much. */
+  hearthPath: 0.25,
   /**
    * Act bosses have this much more Life than their content value, so a boss fight lasts about
    * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.

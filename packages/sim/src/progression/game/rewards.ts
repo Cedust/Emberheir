@@ -87,6 +87,8 @@ function finishItemPick(
 /** Salvages every card that was not taken (all of them before the first pick). */
 export function salvageAll(state: GameState): GameState {
   const { run, rewards } = requireRewards(state);
+  // A stage without a pick (neuausrichtung-v1.md 6.3) has its cards salvaged already.
+  if (rewards.itemPick?.kind === "salvageAll" && rewards.items.length === 0) return state;
   if (rewards.itemPick) return fail("Item already picked");
   return finishItemPick(state, run, rewards, { kind: "salvageAll" });
 }

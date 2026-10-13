@@ -8,6 +8,8 @@ import {
   type BoonPick,
   draughtsOpen,
   equipBlockReason,
+  getAct,
+  routeAt,
   type GameData,
   type GameState,
   heroBoons,
@@ -64,6 +66,20 @@ export function brewDraught(state: GameState, data: GameData, act: ActData | und
   return state.draught === best
     ? state
     : applyAction(state, data, { type: "chooseDraught", draughtId: best });
+}
+
+/**
+ * At a fork (neuausrichtung-v1.md 6.2) the autopilot reads its Life like a player: healthy, it
+ * takes the Elite path for the better loot; hurt, it rests on the Hearth path; else the Shrine.
+ */
+export function chooseRoute(state: GameState, data: GameData): GameState {
+  const run = state.run;
+  if (!run || run.phase !== "intermission") return state;
+  const at = routeAt(run, getAct(data, run.actId), run.stage);
+  if (!at || at.second || run.routes?.[String(at.fork)]) return state;
+  const life = run.lifeFraction;
+  const route = life >= 0.75 ? "elite" : life < 0.5 ? "hearth" : "shrine";
+  return applyAction(state, data, { type: "chooseRoute", route });
 }
 
 /** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */

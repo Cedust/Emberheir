@@ -178,7 +178,14 @@ export class ArenaScene {
 
     this.world.addChild(drawGround(), fx.back);
     this.aura = new Graphics();
-    if (enemy.elite || enemy.boss) {
+    if (enemy.champion) {
+      // A Champion wears two rings: violet Void-fire around the gold of an Elite.
+      this.aura
+        .ellipse(ENEMY_X, GROUND_Y - 120, 200, 172)
+        .stroke({ color: 0xa35cff, width: 10, alpha: 0.22 })
+        .ellipse(ENEMY_X, GROUND_Y - 120, 178, 156)
+        .stroke({ color: 0xffd84a, width: 3, alpha: 0.6 });
+    } else if (enemy.elite || enemy.boss) {
       this.aura
         .ellipse(ENEMY_X, GROUND_Y - 120, enemy.boss ? 210 : 170, enemy.boss ? 180 : 150)
         .stroke({ color: enemy.boss ? 0xff8a1f : 0xffd84a, width: 3, alpha: 0.45 });

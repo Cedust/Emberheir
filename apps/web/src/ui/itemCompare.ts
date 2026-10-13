@@ -6,6 +6,7 @@ import {
   type ItemComparison,
   compareItem,
   formatPercent,
+  gearDelta,
   missingRequirements,
 } from "@emberheir/sim";
 import { preferredSlotFor } from "./ringSlot";
@@ -75,4 +76,27 @@ export function compareWithEquipped(state: GameState, item: Item) {
   if (missing.length > 0)
     return { text: "Inactive until you meet its requirements", better: false };
   return compareSummary(compareItem(state, GAME_DATA, item, preferredSlotFor(item)));
+}
+
+/** Dummy measurements per item, for the state they were made in (render reuses them). */
+const DUMMY_CACHE = new WeakMap<Item, { state: GameState; dps: number | null }>();
+
+/**
+ * Like `compareWithEquipped`, but the DPS arrow comes from the Training Dummy (a real fight
+ * against the next act's boss hide: ailments, triggers and the Battle Plan all count,
+ * neuausrichtung-v1.md 6.3). For the loot cards.
+ */
+export function compareWithDummy(state: GameState, item: Item) {
+  const missing = missingRequirements(item, ITEM_CATALOG, state.hero.attributes);
+  if (missing.length > 0)
+    return { text: "Inactive until you meet its requirements", better: false };
+  let cached = DUMMY_CACHE.get(item);
+  if (!cached || cached.state !== state) {
+    cached = { state, dps: gearDelta(state, GAME_DATA, item)?.dps ?? null };
+    DUMMY_CACHE.set(item, cached);
+  }
+  const cmp = compareItem(state, GAME_DATA, item, preferredSlotFor(item));
+  return compareSummary(
+    cached.dps === null ? cmp : { ...cmp, dps: { before: 1, after: 1 + cached.dps } },
+  );
 }

@@ -38,7 +38,7 @@ interface PlaqueInfo {
   readonly name: string;
   readonly sub: string;
   readonly icon: IconName;
-  readonly tag?: "ELITE" | "BOSS" | "GATEKEEPER";
+  readonly tag?: "ELITE" | "BOSS" | "GATEKEEPER" | "CHAMPION";
   readonly mods?: readonly string[];
 }
 
@@ -98,6 +98,7 @@ function useLooks(state: GameState, run: RunState) {
     ranged: enemyDef?.weapon.range === "ranged",
     ...(encounter?.thief ? { thief: true } : {}),
     ...(encounter?.gate ? { gate: true } : {}),
+    ...(encounter?.champion ? { champion: true } : {}),
     ...(run.wildfire ? { wildfire: run.wildfire } : {}),
     ...(encounter ? { levelGap: encounter.level - state.hero.level } : {}),
   };
@@ -106,17 +107,23 @@ function useLooks(state: GameState, run: RunState) {
     sub: `${heroWeaponName(state, GAME_DATA)} · ${HEAT_TEXT[weapon.heatBehavior]}`,
     icon: "user",
   };
+  // An Elite carries the name of its act modifier ("Rootbound Barkhide", neuausrichtung 6.1).
+  const plain = enemyDef?.name ?? "Enemy";
+  const titled =
+    mods.length && !encounter?.boss && !encounter?.gate ? `${mods[0]} ${plain}` : plain;
   const enemyInfo: PlaqueInfo = {
-    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : (enemyDef?.name ?? "Enemy"),
+    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : titled,
     sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
     icon: encounter?.boss ? "boss" : ((enemyDef?.archetype ?? "brute") as "brute"),
     ...(encounter?.boss
       ? { tag: "BOSS" as const }
       : encounter?.gate
         ? { tag: "GATEKEEPER" as const }
-        : mods.length
-          ? { tag: "ELITE" as const }
-          : {}),
+        : encounter?.champion
+          ? { tag: "CHAMPION" as const }
+          : mods.length
+            ? { tag: "ELITE" as const }
+            : {}),
     mods,
   };
   const enemyAttackIcon: IconName = enemyLook.ranged

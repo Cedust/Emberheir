@@ -42,6 +42,8 @@ function renameAffixes(item: RawSave, renamed: Readonly<Record<string, string>>)
  */
 export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   1: { item: (item) => renameAffixes(item, RENAMED_AFFIXES_V2) },
+  // Routes and Champions (neuausrichtung-v1.md 6.1, 6.2): new optional fields, nothing to move.
+  2: {},
 };
 
 export interface MigrateOptions {

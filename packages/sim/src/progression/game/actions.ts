@@ -18,6 +18,7 @@ import { resolveFight } from "./resolve";
 import { pickBoon, pickItem, salvageAll } from "./rewards";
 import {
   chooseDraught,
+  chooseRoute,
   continueRun,
   enterFinale,
   retreat,
@@ -26,7 +27,7 @@ import {
   startStage,
   useFlask,
 } from "./run";
-import { type GameData, type GameState } from "./state";
+import { type GameData, type GameState, type RouteKind } from "./state";
 import {
   allocateAttributes,
   forgetNode,
@@ -69,6 +70,8 @@ export type GameAction =
   /** After the rewards: on to the next stage (or back to Camp after the boss). */
   | { readonly type: "continue" }
   | { readonly type: "useFlask" }
+  /** At a fork of the road: the path for its two stages (neuausrichtung-v1.md 6.2). */
+  | { readonly type: "chooseRoute"; readonly route: RouteKind }
   | { readonly type: "allocateAttributes"; readonly points: Partial<Attributes> }
   /** From inventory or (Camp) stash; `slot` picks the Ring slot or a drop target. */
   | { readonly type: "equip"; readonly itemId: string; readonly slot?: EquipmentSlot }
@@ -148,6 +151,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return continueRun(state, data);
     case "useFlask":
       return useFlask(state, data);
+    case "chooseRoute":
+      return chooseRoute(state, data, action.route);
     case "allocateAttributes":
       return allocateAttributes(state, action.points);
     case "equip":

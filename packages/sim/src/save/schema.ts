@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ATTRIBUTES } from "../combat/types";
 import { EQUIPMENT_SLOTS, type Item, RARITIES } from "../items/types";
 import type { PlacedItem } from "../progression/inventory";
-import type { GameState } from "../progression/game";
+import { type GameState, ROUTE_KINDS } from "../progression/game/state";
 
 /**
  * The shape of a save game (zod). `deserializeGame` parses every save with it, so a broken or
@@ -119,6 +119,7 @@ const encounter = z.object({
   seed: int,
   thief: opt(z.boolean()),
   echo: opt(id),
+  champion: opt(z.boolean()),
 });
 
 const pickKind = z.enum(["equip", "take"]);
@@ -169,6 +170,7 @@ const run = z.object({
   bounty: opt(bounty),
   wildfire: opt(int.positive()),
   draught: opt(id),
+  routes: opt(z.record(z.string(), z.enum(ROUTE_KINDS))),
 });
 
 const notice = z.object({

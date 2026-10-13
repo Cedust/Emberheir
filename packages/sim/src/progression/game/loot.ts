@@ -67,19 +67,25 @@ export function rollItemChoices(
   affixFactor?: (affix: AffixDefinition) => number,
   /** Wildfire: Legendary chances times this. */
   legendaryBoost = 1,
+  /** The boss's build card (neuausrichtung-v1.md 6.3): the first card leans to these affixes. */
+  buildFactor?: (affix: AffixDefinition) => number,
 ): Item[] {
+  const champion = encounter.champion === true;
   const count =
     rank === "boss"
       ? PROGRESSION.bossHoardCards
       : encounter.thief
         ? PROGRESSION.thiefCards
-        : PROGRESSION.itemChoices;
+        : champion
+          ? PROGRESSION.champion.cards
+          : PROGRESSION.itemChoices;
   // A caught Ember Thief always drops one card that is at least Rare.
   const rareCard = encounter.thief ? rng.int(0, count - 1) : -1;
   const gate = lootGate(prestige);
   const weights = itemPickWeights(rank, deathsInAct, prestige);
   // The run's window may promise one card of at least a rarity (the boss of run 1: a Rare).
-  const sure = gate[rank].sure;
+  // A Champion's hoard holds one sure Epic (neuausrichtung-v1.md 6.1).
+  const sure = champion ? "epic" : gate[rank].sure;
   const sureCard = sure ? rng.int(0, count - 1) : -1;
   const bySlot = new Map<ItemSlot, string[]>();
   for (const baseId of data.lootBases) {
@@ -89,7 +95,10 @@ export function rollItemChoices(
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
   // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
-  const legendaryCard = rng.chance(Math.min(1, gate.legendary[rank] * legendaryBoost))
+  const legendaryChance = champion
+    ? Math.max(PROGRESSION.champion.legendary, gate.legendary[rank])
+    : gate.legendary[rank];
+  const legendaryCard = rng.chance(Math.min(1, legendaryChance * legendaryBoost))
     ? rng.int(0, count - 1)
     : -1;
   // A boss may drop one of its own trophies (Teil 3 "Boss-Trophäen").
@@ -133,6 +142,11 @@ export function rollItemChoices(
       RARITIES.indexOf(r) < RARITIES.indexOf(min) ? min : r;
     let rarity = i === rareCard ? atLeast(rolled, "rare") : rolled;
     if (sure && i === sureCard) rarity = atLeast(rarity, sure);
+    const base = affixFactor ?? (() => 1);
+    const factor =
+      buildFactor && i === 0
+        ? (affix: AffixDefinition) => base(affix) * buildFactor(affix)
+        : affixFactor;
     items.push(
       rollItem(
         data.items,
@@ -140,7 +154,7 @@ export function rollItemChoices(
           baseId,
           itemLevel: encounter.level,
           rarity,
-          ...(affixFactor ? { affixFactor } : {}),
+          ...(factor ? { affixFactor: factor } : {}),
         },
         rng,
       ),
@@ -151,6 +165,31 @@ export function rollItemChoices(
 
 /** Adds Runes to the pouch. */
 /** Act loot (favored affixes, e.g. Fire Resistance in the Ember Wastes) on top of the Codex. */
+/**
+ * Affixes whose tags match `tags` roll `weight` times as often (Elite themes, the boss's build
+ * card). No tags: no change.
+ */
+export function tagAffixFactor(
+  tags: readonly string[],
+  weight: number,
+): (affix: AffixDefinition) => number {
+  if (!tags.length) return () => 1;
+  return (affix) => (affix.tags.some((t) => tags.includes(t)) ? weight : 1);
+}
+
+/**
+ * Normal fights give an item pick only on every `PROGRESSION.normalPickEvery`th stage; Elites,
+ * Gatekeepers, bosses and a caught Ember Thief always do (neuausrichtung-v1.md 6.3).
+ */
+export function itemPickAt(
+  rank: EnemyRank,
+  stage: number,
+  thiefCaught: boolean,
+  every: number = PROGRESSION.normalPickEvery,
+): boolean {
+  return rank !== "normal" || thiefCaught || stage % every === 0;
+}
+
 export function actAffixFactor(
   act: ActData,
   codex: (affix: AffixDefinition) => number,

@@ -99,7 +99,7 @@ export function IntermissionView(props: {
       <div className="intermission-body">
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
-          <UpNext run={run} prestige={state.legacy.prestige} />
+          <UpNext run={run} prestige={state.legacy.prestige} state={state} game={game} />
           {run.bounty && <BountyCard run={run} />}
           <PlanCard state={state} run={run} onPlan={props.onPlan} />
         </aside>

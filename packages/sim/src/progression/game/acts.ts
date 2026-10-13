@@ -11,6 +11,7 @@ import {
   type GameState,
   type LevelBand,
   type PrestigeRewards,
+  type RouteKind,
 } from "./state";
 
 /** The road: acts of a run, Monster Levels, Run Pressure, walls, Waymarks and Wildfire. */
@@ -133,6 +134,36 @@ export function waymarkStages(act: ActData): readonly number[] {
  */
 export function hearthEmbers(act: ActData, stage: number, wildfire = 0): boolean {
   return !wildfire && stage < act.stages && waymarkStages(act).includes(stage);
+}
+
+/**
+ * Forks of the road (neuausrichtung-v1.md 6.2): the two stages right before each Waymark before
+ * the boss (3–4 and 8–9 in a 15-stage act), so both paths are equally long and the Gatekeepers
+ * stay where they are. Never on the Elite-free first stages.
+ */
+export function routeForks(act: ActData): readonly (readonly [number, number])[] {
+  return waymarkStages(act)
+    .filter((w) => w < act.stages && w - 2 > PROGRESSION.eliteFreeStages)
+    .map((w) => [w - 2, w - 1] as const);
+}
+
+/**
+ * The route a stage lies on: the fork's chosen path (the Shrine path when none was chosen) and
+ * whether the stage is the fork's first or second. `null` off the forks and in the Wildfire.
+ */
+export function routeAt(
+  run: { readonly routes?: Readonly<Record<string, RouteKind>>; readonly wildfire?: number },
+  act: ActData,
+  stage: number,
+): { readonly kind: RouteKind; readonly second: boolean; readonly fork: number } | null {
+  if (run.wildfire) return null;
+  const fork = routeForks(act).find(([a, b]) => stage === a || stage === b);
+  if (!fork) return null;
+  return {
+    kind: run.routes?.[String(fork[0])] ?? "shrine",
+    second: stage === fork[1],
+    fork: fork[0],
+  };
 }
 
 export const waymarkKey = (actId: string, stage: number) => `${actId}:${stage}`;

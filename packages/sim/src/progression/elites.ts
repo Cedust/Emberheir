@@ -10,6 +10,13 @@ export interface EliteModifier {
   readonly description: string;
   readonly bonuses?: StatBonuses;
   readonly triggers?: readonly TriggerSpec[];
+  /**
+   * Beute nach Thema (neuausrichtung-v1.md 6.1): affix tags this Elite's loot leans to, e.g.
+   * Vampiric drops Lifesteal, Stone Skin Armor.
+   */
+  readonly lootTags?: readonly string[];
+  /** Elites of this act roll this modifier first (6.1: an act modifier plus general ones). */
+  readonly act?: string;
 }
 
 /** Elite chance at a stage: base + per act + per stage in the act, capped. */

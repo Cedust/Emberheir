@@ -18,6 +18,7 @@ import {
   autopilotRewards,
   bestBoon,
   brewDraught,
+  chooseRoute,
   spendPoints,
 } from "./autopilot";
 import { type BuildPlan, findBuild } from "./builds";
@@ -177,6 +178,7 @@ export function playGenerations(
           if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
             s = applyAction(s, data, { type: "useFlask" });
           }
+          s = chooseRoute(s, data);
           s = applyAction(s, data, { type: "startStage" });
           options.onFight?.(s, generation, act.number);
           // The encounter's one fight; resolveFight reads the same one.

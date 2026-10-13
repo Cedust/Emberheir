@@ -36,6 +36,7 @@ import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
 import { AttributeRespecTab } from "./AttributeRespecTab";
+import { TrainingDummyTab } from "./TrainingDummyTab";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -505,7 +506,7 @@ export function KaelenView(props: {
 }) {
   const { state, game, viewOnly } = props;
   const planEditable = props.planEditable ?? !viewOnly;
-  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "attributes">(
+  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "attributes" | "dummy">(
     props.initialTab ?? "tree",
   );
   const [respec, setRespec] = useState(false);
@@ -566,6 +567,17 @@ export function KaelenView(props: {
                 onClick={() => setTab("attributes")}
               >
                 Attributes
+              </button>
+            )}
+            {!viewOnly && (
+              <button
+                type="button"
+                role="tab"
+                aria-selected={tab === "dummy"}
+                className={`tab title-font ${tab === "dummy" ? "on" : ""}`}
+                onClick={() => setTab("dummy")}
+              >
+                Training Dummy
               </button>
             )}
           </div>
@@ -630,6 +642,8 @@ export function KaelenView(props: {
         <Suspense fallback={null}>
           {tab === "attributes" && !viewOnly ? (
             <AttributeRespecTab state={state} game={game} />
+          ) : tab === "dummy" && !viewOnly ? (
+            <TrainingDummyTab state={state} game={game} />
           ) : tab === "mastery" ? (
             <MasteryTab state={state} game={game} viewOnly={viewOnly} />
           ) : tab === "tree" || !planEditable ? (

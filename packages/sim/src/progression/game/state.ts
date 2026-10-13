@@ -38,7 +38,7 @@ import {
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 1 in the Early Dev Preview.
  */
-export const SAVE_VERSION = 2;
+export const SAVE_VERSION = 3;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -56,6 +56,11 @@ export interface ActData {
   readonly runesmith?: boolean;
   /** Stages with an Ember Shrine (5 and 10); Elites have one too. */
   readonly shrineStages: readonly number[];
+  /**
+   * Normal fights offer an item pick on every this many'th stage (default
+   * `PROGRESSION.normalPickEvery`, neuausrichtung-v1.md 6.3).
+   */
+  readonly pickEvery?: number;
   /**
    * Act loot (gegner-bosse-v1.md section 9): affix weight multipliers by affix id, so each act
    * drops the answer to its own question more often.
@@ -168,6 +173,8 @@ export interface Encounter {
   readonly thief?: boolean;
   /** The Last Ember: the echo of this act's boss. */
   readonly echo?: string;
+  /** A named Champion (neuausrichtung-v1.md 6.1): three modifiers and its own hoard. */
+  readonly champion?: boolean;
 }
 
 export type ItemPick =
@@ -245,7 +252,19 @@ export interface RunState {
   readonly wildfire?: number;
   /** The Draught brewed for this trip (it lasts until the Camp). */
   readonly draught?: string;
+  /**
+   * Routes chosen on this trip (neuausrichtung-v1.md 6.2): by the first stage of each fork
+   * (`routeForks`). A fork without a choice takes the Shrine path.
+   */
+  readonly routes?: Readonly<Record<string, RouteKind>>;
 }
+
+/**
+ * The paths of a fork on the road (neuausrichtung-v1.md 6.2): two Elites with better loot, a
+ * Shrine, a fire to rest at, or the Ember Thief's trail while a thief bounty runs.
+ */
+export const ROUTE_KINDS = ["elite", "shrine", "hearth", "thief"] as const;
+export type RouteKind = (typeof ROUTE_KINDS)[number];
 
 /** Shown once in the Camp after a run ends. */
 export interface Notice {
