@@ -1,6 +1,5 @@
 import { type Side } from "@emberheir/sim";
 import { Container, Graphics } from "pixi.js";
-import { type HeroLook } from "./heroArt";
 
 /** The arena's stage coordinates and the helpers every arena module shares. */
 
@@ -33,8 +32,6 @@ export interface Figure {
   /** Seconds of Stun left. */
   stun: number;
 }
-
-export const RANGED_WEAPONS = new Set<HeroLook["weapon"]>(["wand", "staff", "bow", "crossbow"]);
 
 export const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 

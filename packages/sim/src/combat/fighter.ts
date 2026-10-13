@@ -1,10 +1,10 @@
 import { Rng } from "../rng";
-import { type AilmentStates, chillFactor, damageTakenBonus } from "./ailments";
+import { type AilmentStates, chillFactor, damageTakenBonus, poisonStacks } from "./ailments";
+import type { MasteryCondition, SlotCondition } from "./types";
 import { COMBAT } from "./constants";
 import { type CombatEvent } from "./events";
 import { heatGainMultiplier } from "./heat";
 import { type PerkId } from "./perks";
-import { conditionHolds } from "./rotation";
 import { type DerivedStats, deriveStats, sumBonuses } from "./stats";
 import { type BuffState, type TriggerState, buffBonuses, createTriggerState } from "./triggers";
 import type {
@@ -307,4 +307,38 @@ export function endFight(core: FightCore, winner: Side | null, fled: Side | null
 
 export function rollRange(core: FightCore, range: DamageRange): number {
   return range.min + core.rng.next() * (range.max - range.min);
+}
+
+/** Whether a Battle Plan or Weapon Mastery condition holds for `f` right now. */
+export function conditionHolds(
+  core: FightCore,
+  f: Fighter,
+  condition: SlotCondition | MasteryCondition,
+): boolean {
+  const target = core.fighters[other(f.side)];
+  switch (condition.kind) {
+    case "enemyStunned":
+      return target.stunned > 1e-9;
+    case "enemySundered": {
+      const max = (f.setup.weaponRules?.sunder ?? COMBAT.sunder).maxStacks;
+      return (target.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0) >= max;
+    }
+    case "enemyHas":
+      return condition.ailment === "poison"
+        ? poisonStacks(target.ailments) > 0
+        : target.ailments[condition.ailment] !== undefined;
+    case "enemyBelow":
+      return target.life / target.stats.maxLife < condition.fraction;
+    case "lifeBelow":
+      return f.life / f.stats.maxLife < condition.fraction;
+  }
+}
+
+/** Swings per second: Attack Speed, Chill and Weapon Mastery's conditional Attack Speed. */
+export function attackRate(core: FightCore, f: Fighter): number {
+  let extra = 0;
+  for (const e of f.setup.weaponRules?.conditionalAttackSpeed ?? []) {
+    if (conditionHolds(core, f, e.condition)) extra += e.amount;
+  }
+  return f.stats.attackSpeed * (1 + extra) * chillFactor(f.ailments);
 }

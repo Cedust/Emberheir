@@ -41,7 +41,12 @@ export default tseslint.config(
     rules: reactHooks.configs.recommended.rules,
   },
   {
-    files: ["tools/**/*.ts", "**/*.config.{ts,js}", "apps/web/e2e/**/*.ts"],
+    files: [
+      "tools/**/*.ts",
+      "**/*.config.{ts,js}",
+      "apps/web/e2e/**/*.ts",
+      ".dependency-cruiser.cjs",
+    ],
     languageOptions: { globals: { ...globals.node } },
   },
 );

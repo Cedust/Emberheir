@@ -1,38 +1,21 @@
-import type { FightOutcome } from "../../combat/recording";
-import { rollItem, rollRarity } from "../../items/generate";
-import { type Rarity, RARITIES } from "../../items/types";
-import { Rng } from "../../rng";
+import { type FightOutcome } from "../../combat/recording";
 import { battlePlanUnlocks } from "../battle-plan";
 import { EMPTY_BOONS, rollBoonOffer } from "../boons";
-import { type BountyDefinition, bountyAfterWin } from "../bounties";
+import { bountyAfterWin } from "../bounties";
 import { codexAffixFactor } from "../codex";
 import { PROGRESSION } from "../constants";
-import { addToGrid } from "../inventory";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
-import { requireCamp, requireRun } from "./actions";
-import { getAct, isFinaleAct, stageMonsterLevel, waymarkKey, waymarkStages } from "./acts";
-import { encounterEnemy, fightRecording, encounterName, encounterRank } from "./encounters";
+import { getAct, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
+import { getBounty } from "./bounty";
+import { encounterEnemy, encounterName, encounterRank, fightRecording } from "./encounters";
+import { requireRun } from "./guards";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
-import { actAffixFactor, addRunes, lootGate, rollItemChoices, rollRuneDrops } from "./loot";
+import { actAffixFactor, addRunes, rollItemChoices, rollRuneDrops } from "./loot";
 import { toCamp } from "./run";
-import {
-  type ActData,
-  type BountyDone,
-  type BountyReward,
-  type GameData,
-  type GameState,
-  type GameStats,
-  fail,
-  nextRng,
-} from "./state";
+import { fail, nextRng, type GameData, type GameState, type GameStats } from "./state";
 
-/** The end of a fight: death, rewards, bounties and The Last Ember's fights. */
-
-/** The definition of a bounty by id. */
-export function getBounty(data: GameData, id: string): BountyDefinition {
-  return data.bounties?.find((b) => b.id === id) ?? fail(`Unknown bounty "${id}"`);
-}
+/** The end of a fight: death, rewards and The Last Ember's fights. */
 
 export function resolveFight(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "fight");
@@ -237,58 +220,6 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     },
   };
   return won;
-}
-
-/**
- * What a done bounty pays: Acorns worth `bounty.acornKills` normal kills at the act boss's level,
- * Ember Coal and one item of at least Rare (inside the run's Elite window).
- */
-export function bountyReward(
-  state: GameState,
-  data: GameData,
-  act: ActData,
-  rng: Rng,
-): BountyReward {
-  const level = stageMonsterLevel(data, act, act.stages, state.legacy.prestige);
-  const window = lootGate(state.legacy.prestige).elite;
-  const top = RARITIES.indexOf(window.max);
-  const weights = { ...PROGRESSION.rarityWeights } as Record<Rarity, number>;
-  for (const r of RARITIES) {
-    const i = RARITIES.indexOf(r);
-    if (i < RARITIES.indexOf("rare") || i > Math.max(top, RARITIES.indexOf("rare"))) weights[r] = 0;
-  }
-  if (RARITIES.every((r) => weights[r] === 0)) weights.rare = 1;
-  const baseId = data.lootBases[rng.int(0, data.lootBases.length - 1)] ?? fail("No loot bases");
-  const item = rollItem(
-    data.items,
-    { baseId, itemLevel: level, rarity: rollRarity(rng, weights) },
-    rng,
-  );
-  return {
-    acorns: autoRewards(level, "normal").acorns * PROGRESSION.bounty.acornKills,
-    emberCoal: PROGRESSION.bounty.emberCoal,
-    item,
-  };
-}
-
-/** The Scout pays a done bounty: Acorns and Ember Coal, the item goes into the inventory. */
-export function turnInBounty(state: GameState, data: GameData): GameState {
-  requireCamp(state);
-  const done = state.bountyDone ?? fail("No bounty to turn in");
-  const [rng, next] = nextRng(state);
-  const reward = bountyReward(state, data, getAct(data, done.actId), rng);
-  const inventory = addToGrid(state.inventory, reward.item, data.items) ?? fail("Inventory full");
-  const rest: GameState = { ...next };
-  delete (rest as { bountyDone?: BountyDone }).bountyDone;
-  return {
-    ...rest,
-    inventory,
-    wallet: {
-      ...state.wallet,
-      acorns: state.wallet.acorns + reward.acorns,
-      emberCoal: state.wallet.emberCoal + reward.emberCoal,
-    },
-  };
 }
 
 /**

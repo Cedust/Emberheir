@@ -33,15 +33,7 @@ import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ClassEmblem } from "./ClassEmblem";
-import {
-  ItemDetail,
-  ItemGrid,
-  ItemTile,
-  RingSwitch,
-  compareWithEquipped,
-  fmt,
-  walletEntries,
-} from "../ui/items";
+import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt, walletEntries } from "../ui/items";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
 import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
@@ -49,6 +41,7 @@ import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 import { WeaponSlot } from "./WeaponSlot";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
+import { compareWithEquipped } from "../ui/itemCompare";
 
 const TABS = ["Offense", "Defense", "Heat"] as const;
 type Tab = (typeof TABS)[number];

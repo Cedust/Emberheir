@@ -17,17 +17,10 @@ import { Rng } from "../rng";
 import { CODEX, CRAFTING, PROGRESSION } from "./constants";
 import { codexKnows, kindledIndex } from "./codex";
 import { kindledAffixId } from "../items/codex";
-import {
-  type GameData,
-  type GameState,
-  addRunes,
-  fail,
-  lootGate,
-  nextAct,
-  nextRng,
-  requireCamp,
-  stageMonsterLevel,
-} from "./game";
+import { nextAct, stageMonsterLevel } from "./game/acts";
+import { requireCamp } from "./game/guards";
+import { addRunes, lootGate } from "./game/loot";
+import { type GameData, type GameState, fail, nextRng } from "./game/state";
 import { addToGrid } from "./inventory";
 
 /**

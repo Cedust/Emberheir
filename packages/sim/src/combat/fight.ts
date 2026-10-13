@@ -1,5 +1,5 @@
 import { Rng } from "../rng";
-import { chillFactor, stepAilments } from "./ailments";
+import { stepAilments } from "./ailments";
 import { COMBAT } from "./constants";
 import { type CombatEvent, type FightResult, type FightSnapshot } from "./events";
 import {
@@ -17,6 +17,7 @@ import {
   phaseActive,
   REACTION_PATIENCE,
   refreshStats,
+  attackRate,
 } from "./fighter";
 import { addHeat, stepHeat, triggerThreshold } from "./heat";
 import { dealDamage, defaultAttack, heal, rechargeBarrier } from "./hits";
@@ -25,7 +26,6 @@ import {
   actReaction,
   advanceRotation,
   castSlot,
-  conditionHolds,
   overflowCost,
   react,
   slotCost,
@@ -197,15 +197,6 @@ function takeTurn(core: FightCore, f: Fighter): void {
     return;
   }
   defaultAttack(core, f);
-}
-
-/** Swings per second: Attack Speed, Chill and Weapon Mastery's conditional Attack Speed. */
-export function attackRate(core: FightCore, f: Fighter): number {
-  let extra = 0;
-  for (const e of f.setup.weaponRules?.conditionalAttackSpeed ?? []) {
-    if (conditionHolds(core, f, e.condition)) extra += e.amount;
-  }
-  return f.stats.attackSpeed * (1 + extra) * chillFactor(f.ailments);
 }
 
 /** Plays one tick of the fight and returns its events. */

@@ -1,8 +1,9 @@
-import type { Attributes } from "../../combat/types";
+import { type Attributes } from "../../combat/types";
 import { type EquipmentSlot } from "../../items/types";
 import { type BattlePlanState } from "../battle-plan";
-import { type CraftRequest, craft } from "../crafting";
+import { craft, type CraftRequest } from "../crafting";
 import { type GridPosition } from "../inventory";
+import { turnInBounty } from "./bounty";
 import {
   discard,
   equipFromInventory,
@@ -13,7 +14,7 @@ import {
   unequip,
 } from "./item-actions";
 import { doPrestige } from "./prestige";
-import { resolveFight, turnInBounty } from "./resolve";
+import { resolveFight } from "./resolve";
 import { pickBoon, pickItem, salvageAll } from "./rewards";
 import {
   chooseDraught,
@@ -25,7 +26,7 @@ import {
   startStage,
   useFlask,
 } from "./run";
-import { type GameData, type GameState, type RunPhase, type RunState, fail } from "./state";
+import { type GameData, type GameState } from "./state";
 import {
   allocateAttributes,
   forgetNode,
@@ -188,16 +189,4 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "dismissNotice":
       return { ...state, notice: null };
   }
-}
-
-export function requireRun(state: GameState, ...phases: RunPhase[]): RunState {
-  const run = state.run;
-  if (!run) return fail("Not in a run");
-  if (!phases.includes(run.phase)) return fail(`Not allowed during ${run.phase}`);
-  return run;
-}
-
-export function requireCamp(state: GameState): void {
-  if (state.run) fail("Only in the Camp");
-  if (state.pendingPrestige) fail("The harvest comes first");
 }

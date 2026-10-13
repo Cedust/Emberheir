@@ -4,13 +4,13 @@ import { PROGRESSION } from "../constants";
 import { bossLevel, levelCap } from "../leveling";
 import { keystoneLimit } from "../skill-tree";
 import {
+  fail,
+  GameActionError,
   type ActData,
   type GameData,
   type GameState,
   type LevelBand,
   type PrestigeRewards,
-  fail,
-  GameActionError,
 } from "./state";
 
 /** The road: acts of a run, Monster Levels, Run Pressure, walls, Waymarks and Wildfire. */

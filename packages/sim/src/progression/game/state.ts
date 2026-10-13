@@ -1,7 +1,7 @@
-import type { FightOutcome } from "../../combat/recording";
 import { type EnemyDefinition } from "../../combat/monsters";
+import { type FightOutcome } from "../../combat/recording";
 import { type FightReport } from "../../combat/report";
-import type { Attributes, SkillDefinition } from "../../combat/types";
+import { type Attributes, type SkillDefinition } from "../../combat/types";
 import { type Equipment, type EquipmentSlot, type Item, type ItemCatalog } from "../../items/types";
 import { Rng } from "../../rng";
 import { type BattlePlanState } from "../battle-plan";

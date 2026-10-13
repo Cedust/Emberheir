@@ -1,5 +1,7 @@
 import type { ItemSlot, Rarity } from "../items/types";
-import type { EnemyRank } from "./leveling";
+
+/** How strong an enemy is: its rewards scale with it. */
+export type EnemyRank = "normal" | "elite" | "boss";
 
 /**
  * Tuning numbers for progression and rewards. Starting values for the balance CLI

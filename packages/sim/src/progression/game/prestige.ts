@@ -1,12 +1,12 @@
-import type { Attributes } from "../../combat/types";
+import { type Attributes } from "../../combat/types";
 import { attributeProblem, sumAttributes } from "../attributes";
 import { EMPTY_BOONS } from "../boons";
 import { PROGRESSION } from "../constants";
-import { type PrestigeBranchDefinition, branchTier, MAX_BRANCH_TIER } from "../skill-tree";
+import { branchTier, MAX_BRANCH_TIER, type PrestigeBranchDefinition } from "../skill-tree";
 import { prestigeRewards } from "./acts";
+import { flaskCapacity } from "./flask";
 import { heroClassOf, heroTitle } from "./hero-build";
-import { flaskCapacity } from "./run";
-import { type GameData, type GameState, type Notice, fail } from "./state";
+import { fail, type GameData, type GameState, type Notice } from "./state";
 
 /** The Prestige: the next generation inherits, branches open. */
 

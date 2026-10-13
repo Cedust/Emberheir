@@ -1,7 +1,14 @@
 import { GAME_DATA } from "@emberheir/content";
 import { type GameState, newGame, rollItem, Rng, serializeStash } from "@emberheir/sim";
 import { describe, expect, it } from "vitest";
-import { SLOT_COUNT, STASH_KEY, SaveStore, slotKey, type KeyValueStore } from "./saves";
+import {
+  LINEAGE_KEY,
+  SLOT_COUNT,
+  STASH_KEY,
+  SaveStore,
+  slotKey,
+  type KeyValueStore,
+} from "./saves";
 
 function memory(): KeyValueStore & { data: Map<string, string>; writes: string[] } {
   const data = new Map<string, string>();
@@ -148,5 +155,18 @@ describe("Lineage", () => {
     expect(store.syncLineage(hero(3)).lineage).toBe(2);
     for (let seed = 4; seed < 10; seed++) store.syncLineage(won(hero(seed)));
     expect(store.syncLineage(hero(11)).lineage).toBe(5);
+  });
+});
+
+describe("Lineage storage", () => {
+  it("a broken list reads as empty and is written anew", () => {
+    const kv = memory();
+    kv.setItem(LINEAGE_KEY, JSON.stringify({ finishers: ["x", 2] }));
+    const store = new SaveStore(kv);
+    const won = newGame(GAME_DATA, { seed: 9, classId: "warrior" });
+    expect(store.syncLineage(won).lineage ?? 0).toBe(0);
+    const winner = { ...won, legacy: { ...won.legacy, finaleWon: true } };
+    expect(store.syncLineage(winner).lineage).toBe(1);
+    expect(JSON.parse(kv.getItem(LINEAGE_KEY) ?? "")).toEqual({ finishers: [9] });
   });
 });

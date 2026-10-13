@@ -1,9 +1,7 @@
 import { COMBAT } from "../../combat/constants";
-import type { Attribute, Attributes, SlotModifier } from "../../combat/types";
-import { ATTRIBUTES } from "../../combat/types";
+import { ATTRIBUTES, type Attribute, type Attributes, type SlotModifier } from "../../combat/types";
 import { ATTRIBUTE_RULES, attributeProblem, sumAttributes } from "../attributes";
 import {
-  type BattlePlanState,
   battlePlanUnlocks,
   CAPSTONES,
   modifierAllowed,
@@ -11,28 +9,29 @@ import {
   reactionConditionAllowed,
   SLOT_MODIFIERS,
   slotCondition,
+  type BattlePlanState,
 } from "../battle-plan";
 import { PROGRESSION } from "../constants";
 import { autoRewards, bossLevel } from "../leveling";
 import {
-  type LearnedNodes,
   forgetBlockReason,
   getNode,
   learnBudget,
   learnCost,
   learnNodes,
   startingNodes,
+  type LearnedNodes,
 } from "../skill-tree";
 import {
-  type MasteryState,
   EMPTY_MASTERY,
   learnMastery,
   MASTERY,
   pointsSpent,
+  type MasteryState,
 } from "../weapon-mastery";
-import { requireCamp } from "./actions";
+import { requireCamp } from "./guards";
 import { heroClassOf, heroSetup, heroWeaponRank, knownSkills, masteryTree } from "./hero-build";
-import { type GameData, type GameState, fail } from "./state";
+import { fail, type GameData, type GameState } from "./state";
 
 /** Kaelen and the hero's points: attributes, Skill Tree, Weapon Mastery, Battle Plan, respecs. */
 

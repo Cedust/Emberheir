@@ -12,21 +12,14 @@ import {
 } from "@emberheir/sim";
 import { type MouseEvent, useState } from "react";
 import { Icon } from "../../ui/Icon";
-import {
-  ItemDetail,
-  ItemGrid,
-  ItemTile,
-  RingSwitch,
-  compareWithEquipped,
-  fmt,
-  walletEntries,
-} from "../../ui/items";
+import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt, walletEntries } from "../../ui/items";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
 import { itemDrops } from "../itemDrops";
 import { EQUIP_BLOCK_TEXT, MOVE_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { Paperdoll, dollBox } from "../../ui/Paperdoll";
 import { WeaponSlot } from "../WeaponSlot";
+import { compareWithEquipped } from "../../ui/itemCompare";
 
 /** Scale of the paperdoll next to the inventory. */
 const SIDE_DOLL = 0.85;

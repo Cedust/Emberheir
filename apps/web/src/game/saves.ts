@@ -8,7 +8,8 @@ import {
   serializeGame,
   serializeStash,
 } from "@emberheir/sim";
-import { storageKey } from "../storage";
+import { z } from "zod";
+import { parseStored, storageKey } from "../storage";
 
 /**
  * Character slots (klassen-v2.md section 5): up to six characters, each its own bloodline with
@@ -34,9 +35,10 @@ export const STASH_KEY = storageKey("stash");
  */
 export const LINEAGE_KEY = storageKey("lineage");
 
-interface SharedLineage {
-  readonly finishers: readonly number[];
-}
+/** The seeds of the finishers; a broken list reads as empty. */
+const lineageSchema = z.object({ finishers: z.array(z.number().int()) });
+type SharedLineage = z.infer<typeof lineageSchema>;
+const EMPTY_LINEAGE: SharedLineage = { finishers: [] };
 
 /**
  * The save games in the browser storage, with what was read kept in memory: each slot, the
@@ -143,15 +145,11 @@ export class SaveStore {
 
   private readFinishers(): readonly number[] {
     if (this.finishers === null) {
-      try {
-        const json = this.kv.getItem(LINEAGE_KEY);
-        const parsed = json ? (JSON.parse(json) as Partial<SharedLineage>) : null;
-        this.finishers = Array.isArray(parsed?.finishers)
-          ? parsed.finishers.filter(Number.isFinite)
-          : [];
-      } catch {
-        this.finishers = [];
-      }
+      this.finishers = parseStored(
+        this.kv.getItem(LINEAGE_KEY),
+        lineageSchema,
+        EMPTY_LINEAGE,
+      ).finishers;
     }
     return this.finishers;
   }
@@ -163,10 +161,9 @@ export class SaveStore {
   syncLineage(state: GameState): GameState {
     let finishers = this.readFinishers();
     if (state.legacy.finaleWon && !finishers.includes(state.seed)) {
-      finishers = [...finishers, state.seed];
-      const shared: SharedLineage = { finishers };
+      const shared: SharedLineage = { finishers: [...finishers, state.seed] };
       this.kv.setItem(LINEAGE_KEY, JSON.stringify(shared));
-      this.finishers = finishers;
+      this.finishers = finishers = shared.finishers;
     }
     const step = Math.min(LINEAGE_STEPS, finishers.length);
     return (state.lineage ?? 0) === step ? state : { ...state, lineage: step };

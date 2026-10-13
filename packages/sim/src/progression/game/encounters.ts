@@ -1,19 +1,19 @@
-import { type EnemyDefinition, createEnemySetup } from "../../combat/monsters";
-import { type FightRecording, recordFight } from "../../combat/recording";
-import type { CombatantSetup } from "../../combat/types";
+import { createEnemySetup, type EnemyDefinition } from "../../combat/monsters";
+import { recordFight, type FightRecording } from "../../combat/recording";
+import { type CombatantSetup } from "../../combat/types";
 import { Rng } from "../../rng";
 import { PROGRESSION } from "../constants";
-import { type EliteModifier, applyEliteModifiers } from "../elites";
+import { applyEliteModifiers, type EliteModifier } from "../elites";
 import { type EnemyRank } from "../leveling";
 import { finaleEchoes, getAct, harvestAct, stageMonsterLevel } from "./acts";
 import { heroSetup } from "./hero-build";
 import {
+  fail,
+  GameActionError,
   type ActData,
   type Encounter,
   type GameData,
   type GameState,
-  fail,
-  GameActionError,
 } from "./state";
 
 /** Who the hero fights at a stage, and the fight itself (simulated once, when it starts). */

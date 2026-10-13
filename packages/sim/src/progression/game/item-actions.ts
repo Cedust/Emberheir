@@ -1,17 +1,17 @@
 import { type Equipment, type EquipmentSlot } from "../../items/types";
 import { learnFromItem } from "../codex";
 import {
-  type GridPosition,
-  type PlacedItem,
   addToGrid,
   INVENTORY_SIZE,
   packGrid,
   placeAt,
   STASH_SIZE,
+  type GridPosition,
+  type PlacedItem,
 } from "../inventory";
-import { requireCamp } from "./actions";
+import { requireCamp } from "./guards";
 import { equipBlockReason, salvageValue, targetSlot, unequipBlockReason } from "./item-rules";
-import { type GameData, type GameState, fail } from "./state";
+import { fail, type GameData, type GameState } from "./state";
 
 /** Inventory, stash and gear actions outside of the rewards. */
 

@@ -31,6 +31,9 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
 - Save games go through `packages/sim/src/save/`: a zod schema typed against `GameState`, and a
   migration table. A change to the save shape bumps `SAVE_VERSION` and adds a migration step; a
   change to items goes into the step's `item` function, so it reaches the shared stash too.
+- No import cycles (`npm run deps`, `.dependency-cruiser.cjs`): shared helpers go into small leaf
+  modules. The only allowed cycle is the fight's own recursion (hit → trigger/Reaction → skill →
+  hit) between `combat/hits`, `rotation`, `skills` and `trigger-effects`.
 - Packages are consumed as TypeScript source (`exports` points to `src/index.ts`); there is no
   separate package build step.
 
@@ -39,7 +42,7 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
 Run before pushing:
 
 ```sh
-npm run check      # typecheck + lint + format check + unit tests
+npm run check      # typecheck + lint + import cycles + format check + unit tests
 npm run test:e2e   # Playwright smoke tests (builds the web app)
 ```
 

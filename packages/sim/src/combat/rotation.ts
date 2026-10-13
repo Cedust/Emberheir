@@ -1,14 +1,7 @@
-import { ailmentStacks, poisonStacks } from "./ailments";
-import { COMBAT } from "./constants";
-import { type FightCore, type Fighter, other, skillCost, SUNDER_ID } from "./fighter";
+import { ailmentStacks } from "./ailments";
+import { type FightCore, type Fighter, conditionHolds, other, skillCost } from "./fighter";
 import { castSkill } from "./skills";
-import type {
-  MasteryCondition,
-  RotationSlot,
-  SkillDefinition,
-  SlotCondition,
-  SlotModifier,
-} from "./types";
+import type { RotationSlot, SkillDefinition, SlotModifier } from "./types";
 
 /** The Battle Plan in a fight: Rotation slots, their conditions and the Reaction Slots. */
 
@@ -44,30 +37,6 @@ export function slotLevel(
 /** "Skip if…": a Rotation Slot with a condition only fires while it holds. */
 export function slotReady(core: FightCore, f: Fighter, slot: RotationSlot): boolean {
   return slot.condition ? conditionHolds(core, f, slot.condition) : true;
-}
-
-export function conditionHolds(
-  core: FightCore,
-  f: Fighter,
-  condition: SlotCondition | MasteryCondition,
-): boolean {
-  const target = core.fighters[other(f.side)];
-  switch (condition.kind) {
-    case "enemyStunned":
-      return target.stunned > 1e-9;
-    case "enemySundered": {
-      const max = (f.setup.weaponRules?.sunder ?? COMBAT.sunder).maxStacks;
-      return (target.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0) >= max;
-    }
-    case "enemyHas":
-      return condition.ailment === "poison"
-        ? poisonStacks(target.ailments) > 0
-        : target.ailments[condition.ailment] !== undefined;
-    case "enemyBelow":
-      return target.life / target.stats.maxLife < condition.fraction;
-    case "lifeBelow":
-      return f.life / f.stats.maxLife < condition.fraction;
-  }
 }
 
 /** Casts a slot's skill and rolls Reverb (20 % chance to repeat it for free). */

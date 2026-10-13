@@ -1,14 +1,14 @@
 import { type EquipmentSlot, type Item } from "../../items/types";
-import { type PlacedItem, addToGrid } from "../inventory";
-import { requireRun } from "./actions";
+import { addToGrid, type PlacedItem } from "../inventory";
+import { requireRun } from "./guards";
 import { equipBlockReason, salvageValue, targetSlot } from "./item-rules";
 import {
+  fail,
   type GameData,
   type GameState,
   type ItemPick,
   type Rewards,
   type RunState,
-  fail,
 } from "./state";
 
 /** The rewards screen after a won fight: item pick, Salvage All, Boons. */

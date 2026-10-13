@@ -2,7 +2,8 @@
  * The game loop (docs/design/game-design-document-v1.md section 2), one module per part:
  * `state` (the types of a save game), `actions` (`applyAction`), `new-game`, `acts`,
  * `hero-build`, `encounters`, `run`, `resolve`, `loot`, `rewards`, `item-rules`,
- * `item-actions`, `trainer` and `prestige`. Save games are in `../../save`.
+ * `item-actions`, `trainer`, `prestige`, and the leaves `guards`, `flask` and `bounty`.
+ * Save games are in `../../save`.
  *
  * This barrel is the public API; the modules import each other directly.
  */
@@ -104,9 +105,10 @@ export {
   type UnequipBlockReason,
   type MoveBlockReason,
 } from "./item-rules";
-export { applyAction, requireCamp, type GameAction } from "./actions";
-export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./run";
-export { getBounty, bountyReward } from "./resolve";
+export { applyAction, type GameAction } from "./actions";
+export { requireCamp } from "./guards";
+export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
+export { getBounty, bountyReward } from "./bounty";
 export { lootGate, itemPickWeights, addRunes, maxRuneRank, rollRuneDrops } from "./loot";
 export { rewardsDone } from "./rewards";
 export {

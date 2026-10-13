@@ -1,12 +1,12 @@
 import { mergeRules } from "../../combat/rules";
 import { sumBonuses } from "../../combat/stats";
-import type {
-  Capstone,
-  CombatantSetup,
-  ReactionSlot,
-  RotationSlot,
-  SkillDefinition,
-  WeaponDefinition,
+import {
+  type Capstone,
+  type CombatantSetup,
+  type ReactionSlot,
+  type RotationSlot,
+  type SkillDefinition,
+  type WeaponDefinition,
 } from "../../combat/types";
 import { type ResolvedEquipment } from "../../items/equipment";
 import { getBase } from "../../items/generate";
@@ -20,21 +20,21 @@ import {
   slotModifiers,
 } from "../battle-plan";
 import { activeBoons, boonEffects } from "../boons";
-import { type HeroClass, classTitle, getClass, LINEAGE_STEPS, lineageEffect } from "../classes";
+import { classTitle, getClass, LINEAGE_STEPS, lineageEffect, type HeroClass } from "../classes";
 import { buildHeroSetup } from "../hero";
 import { keystoneRules, treeBonuses, treeSkills, treeTriggers } from "../skill-tree";
 import {
-  type EchoDefinition,
-  type MasteryBuild,
-  type WeaponMasteryTree,
   buildMasteryWeapon,
   pointsAvailable,
   weaponRank,
   weaponTitle,
+  type EchoDefinition,
+  type MasteryBuild,
+  type WeaponMasteryTree,
 } from "../weapon-mastery";
 import { emberPenalty } from "./acts";
-import { activeDraught } from "./run";
-import { type GameData, type GameState, fail } from "./state";
+import { activeDraught } from "./flask";
+import { fail, type GameData, type GameState } from "./state";
 
 /** The hero as the fight sees it: weapon, Mastery, known skills, Battle Plan, Boons, title. */
 

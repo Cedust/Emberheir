@@ -8,16 +8,16 @@ import {
   uniquesFor,
 } from "../../items/generate";
 import {
+  RARITIES,
   type AffixDefinition,
   type Item,
   type ItemSlot,
   type Rarity,
-  RARITIES,
 } from "../../items/types";
 import { Rng } from "../../rng";
-import { type LootGate, PROGRESSION } from "../constants";
+import { PROGRESSION, type LootGate } from "../constants";
 import { type EnemyRank } from "../leveling";
-import { type ActData, type Encounter, type GameData, fail } from "./state";
+import { fail, type ActData, type Encounter, type GameData } from "./state";
 
 /** Loot rolls: the item pick, act affix weights and Rune drops. */
 

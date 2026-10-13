@@ -25,7 +25,6 @@ import {
   lighten,
   makeFigure,
   other,
-  RANGED_WEAPONS,
   spread,
   W,
 } from "./arenaLayout";
@@ -39,7 +38,7 @@ import {
 } from "./arenaProps";
 import { type EnemyLook, drawEnemy } from "./enemyArt";
 import { Fx } from "./fx";
-import { type HeroLook, drawHero } from "./heroArt";
+import { type HeroLook, RANGED_WEAPONS, drawHero } from "./heroArt";
 import { type View, Weather } from "./weather";
 
 /** A Skip resolves the rest of the fight at once: then only the outcome is shown. */

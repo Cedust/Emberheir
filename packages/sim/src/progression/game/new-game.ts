@@ -2,11 +2,11 @@ import { ATTRIBUTES } from "../../combat/types";
 import { rollItem } from "../../items/generate";
 import { Rng } from "../../rng";
 import {
-  type AttributePoints,
   addAttributes,
   ATTRIBUTE_RULES,
   attributeProblem,
   sumAttributes,
+  type AttributePoints,
 } from "../attributes";
 import { battlePlanUnlocks, EMPTY_PLAN } from "../battle-plan";
 import { EMPTY_BOONS } from "../boons";
@@ -14,7 +14,7 @@ import { EMPTY_CODEX } from "../codex";
 import { PROGRESSION } from "../constants";
 import { startingNodes } from "../skill-tree";
 import { EMPTY_MASTERY } from "../weapon-mastery";
-import { type GameData, type GameState, fail, mixSeed, SAVE_VERSION } from "./state";
+import { fail, mixSeed, SAVE_VERSION, type GameData, type GameState } from "./state";
 
 /** A new character (Character Select). */
 

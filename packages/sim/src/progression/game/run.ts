@@ -1,10 +1,8 @@
-import { itemFlaskCharges } from "../../items/equipment";
 import { EMPTY_BOONS } from "../boons";
 import { bountyAfterFlask, rollBounty } from "../bounties";
 import { PROGRESSION } from "../constants";
-import { type DraughtDefinition, DRAUGHT_FLASK_COST, DRAUGHT_FROM_PRESTIGE } from "../draughts";
+import { DRAUGHT_FLASK_COST } from "../draughts";
 import { eliteChance, eliteModifierCount } from "../elites";
-import { requireCamp, requireRun } from "./actions";
 import {
   actUnlocked,
   finaleOpen,
@@ -20,6 +18,7 @@ import {
   wildfirePressure,
   wildfireTop,
 } from "./acts";
+import { getBounty } from "./bounty";
 import {
   bossAbilities,
   encounterName,
@@ -27,11 +26,12 @@ import {
   startFight,
   wildfireBossAbilities,
 } from "./encounters";
-import { getBounty } from "./resolve";
+import { brewedDraught, draughtsOpen, flaskCapacity, getDraught } from "./flask";
+import { requireCamp, requireRun } from "./guards";
 import { requireRewards, rewardsDone } from "./rewards";
-import { type Encounter, type GameData, type GameState, type Notice, fail, nextRng } from "./state";
+import { fail, nextRng, type Encounter, type GameData, type GameState, type Notice } from "./state";
 
-/** A trip out of the Camp: set out, Draughts, stages, the Ember Flask, back to the Camp. */
+/** A trip out of the Camp: set out, stages, drinking from the Ember Flask, back to the Camp. */
 
 export function setOut(state: GameState, data: GameData, actId: string): GameState {
   requireCamp(state);
@@ -65,27 +65,6 @@ export function setOut(state: GameState, data: GameData, actId: string): GameSta
       ...(draught ? { draught: draught.id } : {}),
     },
   };
-}
-
-/** Draughts can be brewed from the first Prestige on (and when the game has any). */
-export function draughtsOpen(state: GameState, data: GameData): boolean {
-  return (data.draughts?.length ?? 0) > 0 && state.legacy.prestige >= DRAUGHT_FROM_PRESTIGE;
-}
-
-export function getDraught(data: GameData, id: string): DraughtDefinition | undefined {
-  return data.draughts?.find((d) => d.id === id);
-}
-
-/** The Draught a set-out brews: the chosen one, if Draughts are open and the Flask can spare it. */
-export function brewedDraught(state: GameState, data: GameData): DraughtDefinition | undefined {
-  if (!state.draught || !draughtsOpen(state, data)) return undefined;
-  if (flaskCapacity(state, data) < DRAUGHT_FLASK_COST) return undefined;
-  return getDraught(data, state.draught);
-}
-
-/** The Draught working right now: the one brewed for this trip. */
-export function activeDraught(state: GameState, data: GameData): DraughtDefinition | undefined {
-  return state.run?.draught ? getDraught(data, state.run.draught) : undefined;
 }
 
 export function chooseDraught(state: GameState, data: GameData, id: string | null): GameState {
@@ -329,10 +308,4 @@ export function useFlask(state: GameState, data: GameData): GameState {
       ...(bounty ? { bounty } : {}),
     },
   };
-}
-
-/** Charges the Ember Flask holds: its start charges plus the worn Belt's "Flask Charges". */
-export function flaskCapacity(state: GameState, data: GameData): number {
-  const belt = state.hero.equipment.belt;
-  return PROGRESSION.flaskStartCharges + (belt ? itemFlaskCharges(belt, data.items) : 0);
 }

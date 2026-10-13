@@ -247,3 +247,5 @@ export function drawHero(look: HeroLook): Container {
   c.y = 150;
   return c;
 }
+
+export const RANGED_WEAPONS = new Set<HeroLook["weapon"]>(["wand", "staff", "bow", "crossbow"]);

@@ -1,7 +1,6 @@
 import { COMBAT } from "./constants";
 import { type FighterSnapshot, type RotationSlotSnapshot } from "./events";
-import { attackRate } from "./fight";
-import { type FightCore, type Fighter, phaseActive, skillCost } from "./fighter";
+import { type FightCore, type Fighter, attackRate, phaseActive, skillCost } from "./fighter";
 import { triggerThreshold } from "./heat";
 import { slotCost } from "./rotation";
 import type { CombatantSetup } from "./types";

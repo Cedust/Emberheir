@@ -29,10 +29,11 @@ import {
   SUNDER_ID,
   usePerk,
   withStatAilmentChances,
+  conditionHolds,
 } from "./fighter";
 import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
 import { PERK } from "./perks";
-import { checkReactionThresholds, conditionHolds, react } from "./rotation";
+import { checkReactionThresholds, react } from "./rotation";
 import { applyEffect, fireTriggers, tryTrigger } from "./trigger-effects";
 import type { AilmentChance, AilmentType, DamageType } from "./types";
 import { AILMENT_TYPES } from "./types";

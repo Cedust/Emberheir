@@ -15,7 +15,7 @@ import {
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
-import { compareWithEquipped, ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
+import { ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
 import { runeName, RuneStone } from "../../ui/RuneArt";
@@ -23,6 +23,7 @@ import { type DropSound, playSound } from "../../ui/sound";
 import { EQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { WeaponSlot } from "../WeaponSlot";
+import { compareWithEquipped } from "../../ui/itemCompare";
 
 /** The rewards after a won fight: Rune drops, the item cards with their reveal, the worn gear. */
 
