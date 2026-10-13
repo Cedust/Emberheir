@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
-import { storageKey } from "../storage";
+import { z } from "zod";
+import { parseStored, storageKey } from "../storage";
 import { setSoundEnabled } from "./sound";
 
 /** Player settings (Settings mock): stored per browser, not in the save game. */
@@ -20,25 +21,30 @@ export const DEFAULT_SETTINGS: Settings = {
 
 const KEY = storageKey("settings");
 
+/**
+ * The stored settings. Each field falls back to its default on its own, so one broken value (or
+ * one from an older version) does not reset the others; fields that no longer exist are dropped.
+ */
+const settingsSchema: z.ZodType<Settings> = z
+  .object({
+    theme: z.enum(["system", "light", "dark"]).catch(DEFAULT_SETTINGS.theme),
+    damageNumbers: z.boolean().catch(DEFAULT_SETTINGS.damageNumbers),
+    sound: z.boolean().catch(DEFAULT_SETTINGS.sound),
+    screenShake: z.boolean().catch(DEFAULT_SETTINGS.screenShake),
+  })
+  .catch(DEFAULT_SETTINGS);
+
+/** Settings from their stored JSON (`null` = never saved). */
+export function parseSettings(json: string | null): Settings {
+  return parseStored(json, settingsSchema, DEFAULT_SETTINGS);
+}
+
 function load(): Settings {
   try {
-    const raw = localStorage.getItem(KEY);
-    return raw
-      ? pick({ ...DEFAULT_SETTINGS, ...(JSON.parse(raw) as Partial<Settings>) })
-      : DEFAULT_SETTINGS;
+    return parseSettings(localStorage.getItem(KEY));
   } catch {
     return DEFAULT_SETTINGS;
   }
-}
-
-/** Drops settings that no longer exist (e.g. the removed auto-drink) from old saves. */
-function pick(s: Settings): Settings {
-  return {
-    theme: s.theme,
-    damageNumbers: s.damageNumbers,
-    sound: s.sound,
-    screenShake: s.screenShake,
-  };
 }
 
 function applyTheme(theme: Settings["theme"]) {

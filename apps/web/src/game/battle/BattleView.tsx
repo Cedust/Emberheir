@@ -1,13 +1,12 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
-  Fight,
   type FightSnapshot,
   type GameState,
   PROGRESSION,
   type RunState,
-  currentFight,
   eliteModifiersOf,
+  encounterFight,
   encounterEnemy,
   getAct,
   heroWeapon,
@@ -25,7 +24,8 @@ import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { heroLookOf } from "../heroLook";
 import { heroWeaponLook } from "../weaponLook";
-import { ArenaScene, type EnemyLook } from "./ArenaScene";
+import { ArenaScene } from "./ArenaScene";
+import type { EnemyLook } from "./enemyArt";
 import { BoonBar } from "../Boons";
 import type { IconName } from "../../ui/Icon";
 import { HudScene } from "./hud/HudScene";
@@ -132,8 +132,11 @@ const reducedMotion = () =>
 
 /**
  * The Battle view: the PixiJS arena, the enemy frame at the top and the Diablo-style bottom bar
- * (Life and Heat orbs, skill bar with the Default Attack's rhythm, flasks, statuses, Boons). The fight plays in real time and pauses while an overlay is open; the sim
- * resolves the same fight (same setups and seed) when it ends.
+ * (Life and Heat orbs, skill bar with the Default Attack's rhythm, flasks, statuses, Boons).
+ *
+ * The sim keeps one fight per encounter (`encounterFight`). This view plays it in real time,
+ * pausing while an overlay is open; `resolveFight` then reads how that same fight ended, so it
+ * is simulated only once.
  */
 export function BattleView(props: {
   state: GameState;
@@ -148,10 +151,7 @@ export function BattleView(props: {
   const { state, run, game, settings } = props;
   const looks = useLooks(state, run);
   // GameApp remounts this view for every encounter (key = fight seed).
-  const [fight] = useState(() => {
-    const setups = currentFight(state, GAME_DATA);
-    return new Fight(setups.hero, setups.enemy, setups.seed);
-  });
+  const [fight] = useState(() => encounterFight(state, GAME_DATA));
   const [snapshot, setSnapshot] = useState<FightSnapshot>(() => fight.snapshot());
   const [flash, setFlash] = useState<{ slot: number; n: number } | null>(null);
   const [speed, setSpeed] = useState<number>(1);
@@ -219,11 +219,7 @@ export function BattleView(props: {
       const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current * slowRef.current;
       last = now;
       // A hit-stop holds the fight for a few frames; the lost time is simply skipped.
-      if (!pausedRef.current && !sceneRef.current?.frozen) {
-        const before = fight.events.length;
-        fight.advance(dt);
-        publish(fight.events.slice(before));
-      }
+      if (!pausedRef.current && !sceneRef.current?.frozen) publish(fight.advance(dt));
       if (!fight.over) frame = requestAnimationFrame(loop);
     };
     const publish = (fresh: readonly CombatEvent[]) => {
@@ -268,9 +264,7 @@ export function BattleView(props: {
   }, [over, game, bossFight, snapshot.winner]);
 
   const skip = () => {
-    const before = fight.events.length;
-    fight.runToEnd();
-    sceneRef.current?.onEvents(fight.events.slice(before));
+    sceneRef.current?.onEvents(fight.finish());
     hudRef.current?.onSnapshot(fight.snapshot(), true);
     setSnapshot(fight.snapshot());
   };

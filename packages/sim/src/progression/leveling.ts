@@ -1,5 +1,5 @@
 import { MONSTER_BAND_ENDS } from "../combat/monsters";
-import { PROGRESSION } from "./constants";
+import { type EnemyRank, PROGRESSION } from "./constants";
 
 /** Monster Level of the harvest boss of the run at a Prestige level: 10, 20, 30, 45, 60, 75, 90. */
 export function bossLevel(prestige: number): number {
@@ -38,7 +38,7 @@ export function xpLevelFactor(heroLevel: number, monsterLevel: number): number {
   );
 }
 
-export type EnemyRank = "normal" | "elite" | "boss";
+export type { EnemyRank } from "./constants";
 
 const rankMultiplier = (rank: EnemyRank, key: "xp" | "acorns" | "ash") =>
   rank === "elite"

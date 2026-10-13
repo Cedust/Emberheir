@@ -21,17 +21,16 @@ export {
   type HitOutcome,
 } from "./combat/damage";
 export { triggerThreshold } from "./combat/heat";
-export {
-  Fight,
-  heavyHitCap,
-  runFight,
-  skillCost,
-  type CombatEvent,
-  type FightResult,
-  type FightSnapshot,
-  type FighterSnapshot,
-  type RotationSlotSnapshot,
-} from "./combat/fight";
+export { Fight, runFight } from "./combat/fight";
+export { heavyHitCap, skillCost } from "./combat/fighter";
+export type {
+  CombatEvent,
+  FightResult,
+  FightSnapshot,
+  FighterSnapshot,
+  RotationSlotSnapshot,
+} from "./combat/events";
+export { outcomeOf, type FightOutcome } from "./combat/outcome";
 export { AILMENT_SOURCE, damageShare, fightReport, type FightReport } from "./combat/report";
 export {
   createEnemySetup,
@@ -110,6 +109,7 @@ export {
 } from "./items/describe";
 
 export * from "./progression/index";
+export * from "./save/index";
 
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
 export const SIM_VERSION = "0.12.0";

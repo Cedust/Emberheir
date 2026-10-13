@@ -1,0 +1,106 @@
+import { describe, expect, it } from "vitest";
+import { rollItem } from "../items/generate";
+import { TEST_SHIELD } from "../items/test-fixtures";
+import { type GameAction, type GameState, applyAction, newGame } from "../progression/game";
+import { TEST_GAME_DATA as data } from "../progression/test-fixtures";
+import { Rng } from "../rng";
+import type { SaveMigration } from "./migrations";
+import { deserializeGame, deserializeStash, serializeGame, serializeStash } from "./save";
+
+const act = (state: GameState, ...actions: GameAction[]) =>
+  actions.reduce((s, a) => applyAction(s, data, a), state);
+
+const start = () => newGame(data, { seed: 7, classId: "test-fighter" });
+
+const shield = (id: string) => ({
+  ...rollItem(data.items, { baseId: TEST_SHIELD.id, itemLevel: 3, rarity: "magic" }, new Rng(3)),
+  id,
+});
+
+/** A hero in a won fight's rewards, with gear, a bag and a stash. */
+function rich(): GameState {
+  const s = act(start(), { type: "setOut", actId: "test-act" }, { type: "startStage" });
+  const won = act(s, { type: "resolveFight" });
+  return {
+    ...won,
+    hero: { ...won.hero, equipment: { ...won.hero.equipment, offHand: shield("worn") } },
+    inventory: [{ item: shield("bag"), x: 0, y: 0 }],
+    stash: [{ item: shield("wagon"), x: 2, y: 1 }],
+  };
+}
+
+describe("save games", () => {
+  it("round-trip without losing a field", () => {
+    for (const state of [start(), rich()]) {
+      expect(deserializeGame(serializeGame(state), data)).toEqual(state);
+    }
+    expect(rich().run?.phase).toBe("rewards");
+  });
+
+  it("reject broken JSON, unknown versions and saves from a newer game", () => {
+    const s = start();
+    expect(() => deserializeGame("{oops")).toThrow(/JSON/);
+    expect(() => deserializeGame("null")).toThrow(/object/);
+    expect(() => deserializeGame(JSON.stringify({ ...s, version: undefined }))).toThrow(/version/);
+    expect(() => deserializeGame(JSON.stringify({ ...s, version: 99 }))).toThrow(/newer/);
+    // A version without a migration step (none before 1 here) is not supported.
+    expect(() =>
+      deserializeGame(JSON.stringify({ ...s, version: 1 }), data, { to: 3, migrations: {} }),
+    ).toThrow(/not supported/);
+  });
+
+  it("reject a broken shape and name where it broke", () => {
+    const s = start();
+    const broken = { ...s, hero: { ...s.hero, level: "high" } };
+    expect(() => deserializeGame(JSON.stringify(broken))).toThrow(/hero\.level/);
+    const noWallet = { ...s, wallet: undefined };
+    expect(() => deserializeGame(JSON.stringify(noWallet))).toThrow(/wallet/);
+  });
+
+  it("reject content that no longer exists", () => {
+    const s = rich();
+    const gone = { ...s, inventory: [{ item: { ...shield("x"), baseId: "lost" }, x: 0, y: 0 }] };
+    expect(() => deserializeGame(JSON.stringify(gone), data)).toThrow(/lost/);
+    expect(() =>
+      deserializeGame(JSON.stringify({ ...s, hero: { ...s.hero, classId: "bard" } }), data),
+    ).toThrow(/bard/);
+    // Without content data only the shape is checked.
+    expect(deserializeGame(JSON.stringify(gone)).inventory[0]?.item.baseId).toBe("lost");
+  });
+});
+
+/** Version 1 → 2 in the tests: items get a `name` suffix, the wallet some Acorns. */
+const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
+  1: {
+    item: (item) => ({ ...item, name: `${String(item["name"])} (v2)` }),
+    state: (save) => ({ ...save, wallet: { ...(save["wallet"] as object), acorns: 5 } }),
+  },
+};
+
+describe("migrations", () => {
+  it("run the item step on every item of a save, then the state step", () => {
+    const s = rich();
+    const migrated = deserializeGame(serializeGame(s), data, { to: 2, migrations: MIGRATIONS });
+    expect(migrated.version).toBe(2);
+    expect(migrated.wallet.acorns).toBe(5);
+    const names = [
+      migrated.hero.equipment.offHand,
+      migrated.inventory[0]?.item,
+      migrated.stash[0]?.item,
+      ...(migrated.run?.rewards?.items ?? []),
+    ].map((i) => i?.name ?? "");
+    expect(names.length).toBeGreaterThan(3);
+    expect(names.every((n) => n.endsWith(" (v2)"))).toBe(true);
+  });
+
+  it("reach the items of the shared stash too", () => {
+    const json = serializeStash([{ item: shield("a"), x: 0, y: 0 }]);
+    const stash = deserializeStash(json, data, { to: 2, migrations: MIGRATIONS });
+    expect(stash[0]?.item.name).toMatch(/ \(v2\)$/);
+    // Already current: nothing to do.
+    expect(deserializeStash(json, data)[0]?.item).toEqual(shield("a"));
+    expect(() => deserializeStash(JSON.stringify({ version: 1, items: [{ x: 0 }] }))).toThrow(
+      /Stash is broken/,
+    );
+  });
+});

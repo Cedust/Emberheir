@@ -1,6 +1,6 @@
 import { ITEM_CATALOG } from "@emberheir/content";
 import { type Equipment, getBase } from "@emberheir/sim";
-import type { HeroLook } from "./battle/ArenaScene";
+import type { HeroLook } from "./battle/heroArt";
 import { PLAIN_LOOK, type WeaponLook } from "./camp/weaponLookData";
 
 const WEAPONS = new Set<HeroLook["weapon"]>(["axe", "dagger", "bow", "crossbow", "mace", "staff"]);

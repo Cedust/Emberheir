@@ -1,16 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { type HeroClass, classTitle, lineageEffect, lineageScale, mainBranch } from "./classes";
 import { deriveStats } from "../combat/stats";
-import { rollItem } from "../items/generate";
-import { Rng } from "../rng";
-import {
-  SAVE_VERSION,
-  deserializeGame,
-  heroSetup,
-  heroTitle,
-  newGame,
-  serializeGame,
-} from "./game";
+import { heroSetup, heroTitle, newGame } from "./game";
 import { TEST_CLASSES, TEST_GAME_DATA as data } from "./test-fixtures";
 
 const [fighter, caster] = TEST_CLASSES as [HeroClass, HeroClass];
@@ -81,29 +72,6 @@ describe("classes", () => {
       legacy: { ...s.legacy, branches: ["other-branch", "test-branch", "test-branch"] },
     };
     expect(heroTitle(later, data)).toBe("Champion");
-  });
-
-  it("older saves get the class of the weapon in hand", () => {
-    const s = newGame(data, { seed: 1, classId: "test-caster" });
-    const old = JSON.parse(serializeGame(s)) as { version: number; hero: Record<string, unknown> };
-    old.version = 8;
-    delete old.hero.classId;
-    delete old.hero.name;
-    delete old.hero.weaponId;
-    delete old.hero.mastery;
-    const wand = rollItem(
-      data.items,
-      { baseId: "test-wand", itemLevel: 1, rarity: "normal" },
-      new Rng(1),
-    );
-    old.hero.equipment = { mainHand: wand };
-    const loaded = deserializeGame(JSON.stringify(old), data);
-    expect(loaded.version).toBe(SAVE_VERSION);
-    expect(loaded.hero).toMatchObject({
-      classId: "test-caster",
-      name: "Caster",
-      weaponId: "test-wand",
-    });
   });
 });
 

@@ -8,12 +8,10 @@ import {
   type GameState,
   applyAction,
   attributeRespecAcorns,
-  deserializeGame,
   heroSetup,
   newGame,
-  SAVE_VERSION,
 } from "./game";
-import { TEST_BOON_DATA, TEST_GAME_DATA as data, withOldCurrencies } from "./test-fixtures";
+import { TEST_BOON_DATA, TEST_GAME_DATA as data } from "./test-fixtures";
 
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -138,19 +136,5 @@ describe("Attributes v1", () => {
     expect(setup.attributeScale).toBe("heir");
     expect(setup.attributes.strength).toBe(7);
     expect(setup.perks).toEqual(["armorbreaker", "stoneguard", "secondBreath"]);
-  });
-
-  it("migrates v10 saves: back to the Class Array with the points of every Prestige", () => {
-    const s = act(fresh(), { type: "allocateAttributes", points: { strength: 4 } });
-    const v10 = {
-      ...withOldCurrencies(s),
-      version: 10,
-      hero: { ...s.hero, attributes: { ...s.hero.attributes, strength: 80 } },
-      legacy: { ...s.legacy, prestige: 3 },
-    };
-    const migrated = deserializeGame(JSON.stringify(v10), data);
-    expect(migrated.version).toBe(SAVE_VERSION);
-    expect(migrated.hero.attributes).toEqual(floor());
-    expect(migrated.hero.unspentAttributePoints).toBe(6 + 3 * 2);
   });
 });

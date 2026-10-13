@@ -40,11 +40,12 @@ export function saveAfterHarvestBoss(): string {
   return serializeGame(state);
 }
 
-/** Loads `json` as the save game once (a reload keeps what the game saved since). */
+/** Loads `json` as the save game of slot 1 once (a reload keeps what the game saved since). */
 export async function seedSave(page: Page, json: string): Promise<void> {
   await page.addInitScript((save) => {
     if (!sessionStorage.getItem("seeded")) {
-      localStorage.setItem("emberheir.save", save);
+      localStorage.setItem("emberheir.slot.0", save);
+      localStorage.setItem("emberheir.lastSlot", "0");
       sessionStorage.setItem("seeded", "1");
     }
   }, json);

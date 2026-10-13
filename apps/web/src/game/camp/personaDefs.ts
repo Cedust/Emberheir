@@ -1,0 +1,162 @@
+import { ITEM_CATALOG } from "@emberheir/content";
+import {
+  affixRollRange,
+  describeStat,
+  describeTrigger,
+  resolveTrigger,
+  statAffixValue,
+  type CraftCost,
+  type GameState,
+  type Item,
+} from "@emberheir/sim";
+import { fmt } from "../../ui/items";
+import { runeName } from "../../ui/RuneArt";
+
+/** The Camp's traders and trainers: their names, actions and the texts of their offers. */
+
+/** Scale of the paperdoll next to the inventory. */
+export const SIDE_DOLL = 0.85;
+
+export type PersonaId = "thoric" | "liora" | "nyssa" | "marisha";
+
+export type ActionKind =
+  | "upgrade"
+  | "socket"
+  | "salvage"
+  | "reforge"
+  | "temper"
+  | "kindle"
+  | "rune"
+  | "combine"
+  | "codex"
+  | "gamble";
+
+interface PersonaDef {
+  readonly name: string;
+  readonly role: string;
+  readonly portrait: string;
+  readonly accent: string;
+  readonly quote: string;
+  readonly actions: readonly { k: ActionKind; name: string; desc: string }[];
+}
+
+export const PERSONAS: Record<PersonaId, PersonaDef> = {
+  thoric: {
+    name: "Thoric",
+    role: "Blacksmith",
+    portrait: "#5a3a24",
+    accent: "#c9c2b8",
+    quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
+    actions: [
+      { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
+      { k: "reforge", name: "Reforge", desc: "Reroll all affixes. Removes the lock." },
+      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Ash." },
+    ],
+  },
+  liora: {
+    name: "Liora",
+    role: "Mystic",
+    portrait: "#3a2a5a",
+    accent: "#b36bff",
+    quote: "Affixes are like moods, dear. I can change one. I cannot change all of them twice.",
+    actions: [
+      { k: "temper", name: "Temper", desc: "Reroll the value of one affix." },
+      { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
+    ],
+  },
+  nyssa: {
+    name: "Nyssa",
+    role: "Runesmith",
+    portrait: "#2e4a26",
+    accent: "#8fd06a",
+    quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
+    actions: [
+      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
+      { k: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
+      { k: "combine", name: "Combine Runes", desc: "Three of a kind make the next Rune." },
+      { k: "codex", name: "Runeword Codex", desc: "Every Runeword you know." },
+    ],
+  },
+  marisha: {
+    name: "Marisha",
+    role: "Black Market",
+    portrait: "#5a4218",
+    accent: "#e0c27a",
+    quote: "Gamble? Of course. The house always wins. I am the house.",
+    actions: [
+      { k: "gamble", name: "Gamble", desc: "A random item for a slot. Better odds than loot." },
+    ],
+  },
+};
+
+export const PERSONA_ORDER: readonly PersonaId[] = ["thoric", "liora", "nyssa", "marisha"];
+
+/** Whether a persona travels with the caravan yet. */
+export function personaPresent(state: GameState, id: PersonaId): boolean {
+  if (id === "liora") return state.progress.trainerUnlocked;
+  if (id === "nyssa") return state.progress.runesmithUnlocked;
+  return true;
+}
+
+export const PERSONA_LOCKED: Partial<Record<PersonaId, string>> = {
+  liora: "Liora joins after the act boss falls",
+  nyssa: "Nyssa waits somewhere in the Rotwood",
+};
+
+export const ACTION_HINT: Record<ActionKind, string> = {
+  upgrade: "Choose any item. Values grow with the Tier.",
+  socket: "Normal items only, before the first Rune.",
+  rune: "Choose an item with a free Socket, then a Rune.",
+  combine: "Choose a Rune you have three of.",
+  codex: "A Runeword shows itself once you have found all of its Runes.",
+  gamble: "Choose a slot.",
+  salvage: "Choose an item from your inventory.",
+  reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
+  temper: "Click the affix to reroll. It stays locked in afterwards.",
+  kindle: "Choose an item, then a Condition and an Effect you have learned.",
+};
+
+export function affixText(item: Item, index: number): { text: string; trigger: boolean } {
+  const roll = item.affixes[index];
+  const affix = roll ? ITEM_CATALOG.affixes.get(roll.affixId) : undefined;
+  if (!roll || !affix) return { text: "?", trigger: false };
+  if (affix.kind === "trigger") {
+    return {
+      text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
+      trigger: true,
+    };
+  }
+  return {
+    text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality, item.rarity)),
+    trigger: false,
+  };
+}
+
+export function rangeText(item: Item, affixId: string): string {
+  const affix = ITEM_CATALOG.affixes.get(affixId);
+  const range = affixRollRange(item, affixId, ITEM_CATALOG);
+  if (!affix || affix.kind !== "stat" || !range) return "?";
+  const lo = describeStat(affix.stat, range.min);
+  const hi = describeStat(affix.stat, range.max);
+  // "+3% Crit Chance" and "+5% Crit Chance" → "+3–5% Crit Chance"
+  const m1 = /^([+-]?[\d.,]+)(.*)$/.exec(lo);
+  const m2 = /^([+-]?[\d.,]+)(.*)$/.exec(hi);
+  if (m1 && m2 && m1[2] === m2[2]) {
+    return m1[1] === m2[1] ? lo : `${m1[1]}–${(m2[1] ?? "").replace("+", "")}${m1[2]}`;
+  }
+  return `${lo} to ${hi}`;
+}
+
+export function costText(cost: CraftCost): string {
+  const parts: string[] = [];
+  if (cost.acorns) parts.push(`${fmt(cost.acorns)} Acorns`);
+  if (cost.ash) parts.push(`${fmt(cost.ash)} Ash`);
+  if (cost.emberCoal) {
+    parts.push(`${cost.emberCoal} Ember Coal`);
+  }
+  if (cost.phoenixFeathers) {
+    parts.push(`${cost.phoenixFeathers} Phoenix Feather${cost.phoenixFeathers > 1 ? "s" : ""}`);
+  }
+  for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
+  return parts.join(" · ") || "Free";
+}

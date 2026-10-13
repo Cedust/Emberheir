@@ -18,10 +18,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { compareWithEquipped } from "./items";
 import { RuneStone } from "./RuneArt";
 import { aimedSlot, useRingSlot } from "./ringSlot";
 import { useStageSize } from "./Stage";
+import { compareWithEquipped } from "./itemCompare";
 
 /**
  * Diablo-style item tooltips: hovering an item tile or a grid item shows its full tooltip next
