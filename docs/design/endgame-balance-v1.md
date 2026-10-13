@@ -185,7 +185,7 @@ Empfehlungen.
 |---|---|
 | C Poison | Der Burst von Toxic Bloom heilt 15 % seines Schadens (wie Rend). |
 | B Finale | Der Harvester-Rabatt gilt nur noch am Ende eines Runs. Die Echos steigen von 60 % auf 90 % der Finale-Stärke, der Core hat 100 %. Finale-Schaden ×6 → ×8,5. Der Autopilot zieht nach einem verlorenen Finale einmal durch Emberfall (Level und Gear), wie ein Spieler. |
-| A Wildfire | Eigener Boss-Druck (`wildfire.boss`) statt der Finale-Werte. Jeder Akt-Boss bekommt einen Faktor (`endgameBoss`: Gorrak 0,88, Mother of Rot 0,72, Cinder Tyrant 0,94, Rime Warden 1,45, Storm Herald 1,0, Voidborn Maw 1,55, Harvester 0,85), gemessen über alle 15 Builds und 10 Stufen, damit jeder Akt auf derselben Stufe etwa gleich hart ist. Der Faktor gilt auch für die Echos im Finale. Pro Stufe bis V +12 % Life / +8 % Schaden (war 5/3). |
+| A Wildfire | Eigener Boss-Druck (`wildfire.boss`) statt der Finale-Werte. Jeder Akt-Boss bekommt einen Faktor (`endgameBoss`: Gorrak 0,88, Mother of Rot 0,72, Cinder Tyrant 0,94, Rime Warden 1,45, Storm Herald 1,0, Voidborn Maw 1,55, Harvester 0,85), gemessen über alle 15 Builds und 10 Stufen, damit jeder Akt auf derselben Stufe etwa gleich hart ist. Der Faktor gilt auch für die Echos im Finale. Boss-Druck Life ×3,6 / Schaden ×8,4, pro Stufe bis V +8 % Life / +6 % Schaden; über V nur noch +20 % Life pro Stufe, weil der Held bei Level 100 endet und das Monster Level weiter steigt. |
 
 ### Abweichung: Akt-Faktoren
 
@@ -201,16 +201,37 @@ bekommt jeder Akt einen eigenen Faktor statt nur der Harvester.
 | Tode im neuesten Akt (Ø Akt 2–7) | 6,1 / 5,1 / 5,9 / 6,0 / 6,9 / 8,3 | 6,1 / 5,1 / 5,0 / 5,3 / 6,2 / 6,9 |
 | Poison: Tode an Akt 4 / 5 / 6 / 7 | 19,5 / 13 / 10 / 23 | 8,7 / 2,3 / 2,3 / 1,3 |
 | The Last Ember: Tode | Ø 0,7, keiner am Core | Ø 3,1 (≈ 4 Anläufe), Core ist der häufigste Todesort |
-| Wildfire I–V: Tode pro Stufe | 0–1,9 | 0,1 / 0,1 / 0,2 / 0,4 / 1,0 |
-| Wildfire VI / VII | 0,1 / 0,1 | 5,1 / 8,0 (VII: 93 % geschafft) |
-| Wildfire VIII / IX / X geschafft | 31 % / 15 % / 0 % | 54 % / 50 % / 27 % der Läufe, die hinkamen |
-| Läufe, die X schaffen | 0 von 42 | 3 von 44 |
+| Wildfire I–V: Tode pro Stufe | 0,1 / 1,9 / 0,2 / 0,0 / 0,3 | 0,5 / 1,4 / 1,1 / 1,0 / 1,2 |
+| Wildfire VI / VII | 0,1 / 0,1 | 8,6 / 6,2 (VI: 95 %, VII: 86 % geschafft) |
+| Wildfire VIII / IX / X geschafft | 31 % / 15 % / 0 % | 42 % / 67 % / 10 % der Läufe, die hinkamen |
+| Läufe, die X schaffen | 0 von 42 | 1 von 44 |
+
+Nachtrag 13.10. (Timo: „I–V klingt sehr leicht“): I–V angehoben, erste Messung hatte 0,1–1,0 Tode.
+Die Wildfire-Zahlen stammen aus Wiederholungen ab den gespeicherten Spielständen vor dem Finale.
 
 ### Was offen bleibt
 
 - **Finale je Klasse:** Warrior Ø 1,2 Tode, Warlock 2,3, Sorcerer 2,9, Hunter 4,3, Reaver 4,7.
   3 Läufe pro Build streuen stark; vor einer Korrektur mit mehr Seeds messen.
-- **Venom (Hunter, Bogen)** stirbt an Akt 7 Ø 19-mal. Andere Ursache als Poison: In Akt 7 macht
-  Venom nur halb so viel Schaden wie die anderen Builds (am Harvester 10–13k statt 18–30k pro Sekunde).
-  Nächster Kandidat für eine Ursachen-Analyse.
+- **Venom (Hunter, Bogen)**, siehe Abschnitt 7.
 - Wand-Ansicht in der Balance-CLI (D) ist noch nicht gebaut; die Messungen liefen über Skripte.
+
+## 7. Venom (Hunter, Bogen)
+
+Vorher: Akt 2 Ø 15 Tode, Akt 7 Ø 19 (Median aller Builds 5–7).
+
+1. **Autopilot-Fehler (behoben):** Beide Bogen-Builds teilten einen Mastery-Plan. Venom nahm das
+   Bleed-Innate Hooked Arrow und den Barbs-Pfad (Bleed) zuerst. Jetzt: Toxic Arrow und der
+   Toxin-Pfad. Ergebnis: Akt 2 15 → 8,3, Akt 7 19 → 13,3 Tode.
+2. **Eigentliche Ursache: Poison stößt an die Stack-Grenze und kann sie nicht einlösen.** In Akt 7
+   liegt Venom im Schnitt bei 19,4 von 20 Stacks. Mehr Poison Chance (Toxin-Pfad, Dipped Arrows)
+   bringt dann nichts mehr, und Toxic Burst („verdoppelt die Stacks“) ist am Cap wirkungslos. Der
+   Reaver löst seine Stacks mit Toxic Bloom ein (85 % seines Schadens), Barbs mit Rend. Der
+   Bogen hat keinen Einlöser. Am Harvester: Venom 10,6k Schaden/s, Barbs 22,8k, Poison 18–28k.
+3. Nebenbefund: Toxic Burst kappt immer auf 20 Stacks, auch wenn der Held mehr erlaubt (Reaver
+   +3). Kleiner Fehler.
+
+Vorschlag (wartet auf Timo): **Toxic Burst löst den Überlauf ein.** Stacks, die beim Verdoppeln über
+die Grenze gehen, platzen sofort für ihren Restschaden. Im Test: Venom 10,6k → 16,4k Schaden/s. Das
+repariert den toten Skill für alle Poison-Builds. Venom braucht danach noch etwas Sustain (heilt
+sich ~40 % langsamer als Barbs); das würde ich nach der Messung über den Toxin-Pfad lösen.

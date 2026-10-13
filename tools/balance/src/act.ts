@@ -331,6 +331,8 @@ export interface BuildPlan {
   readonly rotation: readonly string[];
   readonly branches: readonly string[];
   readonly reaction?: { readonly skillId: string; readonly conditionId: string };
+  /** Weapon Mastery choices that differ from the weapon's plan (`MASTERY_PLAN`). */
+  readonly mastery?: Partial<MasteryPlan>;
 }
 
 const GUARD = { skillId: "iron-bastion", conditionId: "life-50" };
@@ -419,6 +421,8 @@ export const BUILDS: readonly BuildPlan[] = [
     rotation: ["envenom", "toxic-burst", "plague-cloud"],
     branches: ["venomancer", "marksman", "tactician", "warden"],
     reaction: GUARD,
+    // A Poison bow: the Poison innate and the Toxin path, not the Bleed ones of the bow's plan.
+    mastery: { innate: "toxic-arrow", paths: ["toxin", "volley", "barbs"] },
   },
   {
     id: "barbs",
@@ -568,10 +572,11 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
 };
 
 /** The order the autopilot learns Weapon Mastery nodes in (a node id per point). */
-export function masteryOrder(data: GameData, weaponId: string): string[] {
-  const plan = MASTERY_PLAN[weaponId];
+export function masteryOrder(data: GameData, weaponId: string, build?: BuildPlan): string[] {
+  const base = MASTERY_PLAN[weaponId];
   const tree = data.weaponMastery[weaponId];
-  if (!plan || !tree) return [];
+  if (!base || !tree) return [];
+  const plan = { ...base, ...build?.mastery };
   const path = (id: string | undefined) =>
     id ? tree.nodes.filter((n) => n.path === id).map((n) => n.id) : [];
   return [
@@ -596,9 +601,9 @@ export function masteryOrder(data: GameData, weaponId: string): string[] {
 }
 
 /** Kaelen: learns Weapon Mastery along the plan and wears the strongest Echo. */
-function spendMastery(state: GameState, data: GameData): GameState {
+function spendMastery(state: GameState, data: GameData, build?: BuildPlan): GameState {
   let s = state;
-  const order = masteryOrder(data, s.hero.weaponId);
+  const order = masteryOrder(data, s.hero.weaponId, build);
   for (let guard = 0; guard < 64 && masteryPointsLeft(s, data) > 0; guard++) {
     let learned = false;
     const counts = new Map<string, number>();
@@ -738,7 +743,7 @@ function spendSkillPoints(
   plan: BuildPlan | undefined,
 ): GameState {
   if (!plan || state.run) return state;
-  let s = spendMastery(state, data);
+  let s = spendMastery(state, data, plan);
   const tree = data.skillTree;
   for (const target of plan.nodes) {
     if (target !== "@branches") {

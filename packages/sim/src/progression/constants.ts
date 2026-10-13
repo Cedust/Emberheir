@@ -308,12 +308,13 @@ export const PROGRESSION = {
   wildfire: {
     tiers: 10,
     /** Life and damage of every act boss at Wildfire I (the Harvester included), before the tiers. */
-    boss: { life: 3, damage: 6 },
+    boss: { life: 3.6, damage: 8.4 },
     baseLevel: 90,
     levelsPerTier: 2,
-    life: 0.12,
-    damage: 0.08,
-    steep: { from: 5, life: 0.25, damage: 0.12 },
+    life: 0.08,
+    damage: 0.06,
+    /** Above V the hero is capped at level 100 while Monster Levels keep rising: Life only. */
+    steep: { from: 5, life: 0.2, damage: 0 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,
