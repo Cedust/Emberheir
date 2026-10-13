@@ -156,6 +156,20 @@ export function stagePressure(
   };
 }
 
+/**
+ * The Harvester at the end of a run takes only part of the Run Pressure: its own values already
+ * make it the run's peak. The Wildfire evens out its bosses per act (`ActData.wildfireBoss`), and
+ * the Harvester's Core in the finale takes all of the finale's pressure.
+ */
+export function harvesterShare(
+  p: { readonly life: number; readonly damage: number },
+  harvester: boolean,
+): { readonly life: number; readonly damage: number } {
+  if (!harvester) return p;
+  const k = PROGRESSION.harvesterPressure;
+  return { life: 1 + (p.life - 1) * k.life, damage: 1 + (p.damage - 1) * k.damage };
+}
+
 /** True for the newest act of the run (its boss brings The Harvest): the act with the walls. */
 export function isWallAct(data: GameData, act: ActData, prestige: number): boolean {
   return !isFinaleAct(data, act.id) && harvestAct(data, prestige).id === act.id;
@@ -225,22 +239,25 @@ export const wildfireLevel = (tier: number) =>
 /**
  * Life and damage of a Wildfire stage, raised per tier above I. Normal stages take the pressure of
  * the same stage in the seventh run's newest act (every act burns like the last one); the act boss
- * takes the finale's (it is the Warden echo at full strength). Above V each tier rises steeply.
+ * takes `PROGRESSION.wildfire.boss` times its act's `endgameBoss` factor (endgame-balance-v1.md
+ * A). Above V each tier rises steeply.
  */
 export function wildfirePressure(
   data: GameData,
   stage: number,
   tier: number,
   boss = false,
+  act?: ActData,
 ): { readonly life: number; readonly damage: number } {
   const last = PROGRESSION.finalPrestige - 1;
-  const p = boss ? PROGRESSION.finale : stagePressure(data, harvestAct(data, last), stage, last);
   const w = PROGRESSION.wildfire;
+  const k = boss ? (act?.endgameBoss ?? 1) : 1;
+  const p = boss ? w.boss : stagePressure(data, harvestAct(data, last), stage, last);
   const gentle = Math.min(tier, w.steep.from) - 1;
   const steep = Math.max(0, tier - w.steep.from);
   return {
-    life: p.life * (1 + w.life * gentle + w.steep.life * steep),
-    damage: p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
+    life: k * p.life * (1 + w.life * gentle + w.steep.life * steep),
+    damage: k * p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
   };
 }
 

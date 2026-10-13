@@ -35,7 +35,7 @@ import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
 import { PERK } from "./perks";
 import { checkReactionThresholds, react } from "./rotation";
 import { applyEffect, fireTriggers, tryTrigger } from "./trigger-effects";
-import type { AilmentChance, AilmentType, DamageType } from "./types";
+import type { AilmentChance, AilmentType, DamageType, WeaponRules } from "./types";
 import { AILMENT_TYPES } from "./types";
 
 /**
@@ -188,6 +188,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       baseDamage: h.baseDamage,
       type: h.type,
       evadable: h.evadable,
+      // Deflect is the hero's answer to spells; monsters only dodge attacks.
+      deflects: defender.side === "hero",
       attacker:
         penetration > 0
           ? {
@@ -235,6 +237,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     crit: outcome.crit,
     blocked: outcome.blocked,
     ...(glancing ? { glancing: true } : {}),
+    ...(outcome.deflected ? { deflected: true } : {}),
     ...(damage < dealt ? { capped: true } : {}),
   });
   defender.lastHitTakenAt = fightTime(core);
@@ -490,14 +493,12 @@ export function inflict(
     ailment,
     duration,
     hitDamage,
-    COMBAT.poisonMaxStacks +
-      (wr?.poisonMaxStacks ?? 0) +
-      (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0),
+    poisonCap(attacker),
   );
   if (duration <= 0) return;
   const burst = wr?.poisonBurst;
   if (ailment === "poison" && burst && poisonStacks(defender.ailments) >= burst.stacks) {
-    poisonBurst(core, attacker, defender, burst.multiplier, burst.lockout);
+    poisonBurst(core, attacker, defender, burst);
     return;
   }
   react(defender, "ailmented");
@@ -511,13 +512,21 @@ export function inflict(
   });
 }
 
+/** How many Poison stacks `attacker` can keep on a target. */
+export function poisonCap(attacker: Fighter): number {
+  return (
+    COMBAT.poisonMaxStacks +
+    (attacker.setup.weaponRules?.poisonMaxStacks ?? 0) +
+    (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0)
+  );
+}
+
 /** Toxic Bloom: every Poison stack bursts for its remaining damage at once. */
 function poisonBurst(
   core: FightCore,
   attacker: Fighter,
   defender: Fighter,
-  multiplier: number,
-  lockout: number,
+  { multiplier, lockout, leech }: NonNullable<WeaponRules["poisonBurst"]>,
 ) {
   const rest = remainingPoisonDamage(defender.ailments);
   defender.ailments = clearAilment(defender.ailments, "poison");
@@ -528,18 +537,36 @@ function poisonBurst(
     side: defender.side,
     ailment: "poison",
   });
-  const damage = Math.max(1, Math.round(rest * multiplier * dotFactor(core, defender)));
+  const damage = dotBurst(core, attacker, defender, rest * multiplier, "Toxic Bloom");
+  if (leech && !core.result) heal(core, attacker, damage * leech);
+}
+
+/**
+ * Poison damage that lands at once (Toxic Bloom, Toxic Burst overflow): a Physical hit that
+ * scales like a DoT and leeches like a DoT tick.
+ */
+export function dotBurst(
+  core: FightCore,
+  attacker: Fighter,
+  defender: Fighter,
+  amount: number,
+  source: string,
+): number {
+  const damage = Math.max(1, Math.round(amount * dotFactor(core, defender)));
   emit(core, {
     t: fightTime(core),
     type: "hit",
     side: attacker.side,
-    source: "Toxic Bloom",
+    source,
     damage,
     damageType: "physical",
     crit: false,
     blocked: false,
   });
   dealDamage(core, defender, damage);
+  const leech = attacker.setup.rules?.dotLifesteal ?? 0;
+  if (leech > 0 && !core.result) heal(core, attacker, damage * leech);
+  return damage;
 }
 
 export function heal(core: FightCore, f: Fighter, amount: number): void {

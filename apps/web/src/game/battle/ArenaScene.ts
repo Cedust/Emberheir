@@ -732,6 +732,22 @@ export class ArenaScene {
     this.signature(e.source, at, away);
     if (e.blocked)
       fx.ring(at.x + (target === "hero" ? -56 : 56), at.y, 0xffe9a8, 20, 80, 0.25, 6, 1);
+    if (e.deflected) {
+      // A Deflect: the victim half-dodges and the spell glances off in a pale arc.
+      victim.dodge = Math.max(victim.dodge, 0.5);
+      fx.ring(at.x, at.y, 0xd8f0c8, 24, 110, 0.3, 5, 1);
+      fx.burst({
+        x: at.x,
+        y: at.y,
+        count: 10,
+        color: [0xd8f0c8, 0xa8d8a0, 0xffffff],
+        angle: [RISE - 1.1, RISE + 1.1],
+        speed: [160, 340],
+        life: [0.25, 0.5],
+        size: [6, 11],
+        drag: 0.08,
+      });
+    }
     if (big) {
       fx.ring(at.x, at.y, 0xffffff, 30, heavy ? 220 : 160, 0.3, 8, 1);
       this.shake(heavy ? 0.7 : 0.35);
@@ -741,7 +757,7 @@ export class ArenaScene {
     }
     if (this.showNumbers) {
       const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}`;
-      this.float(target, e.blocked ? `${text} ⛨` : text, color, e.crit);
+      this.float(target, e.blocked ? `${text} ⛨` : e.deflected ? `${text} ↺` : text, color, e.crit);
     }
   }
 

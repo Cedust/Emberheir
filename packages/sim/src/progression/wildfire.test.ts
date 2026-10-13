@@ -89,6 +89,21 @@ describe("Wildfire", () => {
     expect(s.progress.waymarks).toEqual([]);
   });
 
+  it("the act boss takes the Wildfire boss pressure times its act's endgame factor", () => {
+    const testAct = data.acts.find((a) => a.id === "test-act") ?? fail("missing");
+    const plain = wildfirePressure(data, testAct.stages, 4, true, testAct);
+    expect(plain.damage).toBeCloseTo(
+      (PROGRESSION.wildfire.boss.damage * wildfirePressure(data, 1, 4).damage) /
+        wildfirePressure(data, 1, 1).damage,
+    );
+    const evened = wildfirePressure(data, testAct.stages, 4, true, {
+      ...testAct,
+      endgameBoss: 0.5,
+    });
+    expect(evened.life).toBeCloseTo(plain.life * 0.5);
+    expect(evened.damage).toBeCloseTo(plain.damage * 0.5);
+  });
+
   it("the act boss raises the highest tier and opens the next", () => {
     let s = act(finaleWon(), { type: "setOut", actId: "test-act", wildfire: 1 });
     const stages = data.acts.find((a) => a.id === "test-act")?.stages ?? 0;

@@ -277,9 +277,9 @@ export function spendPoints(state: GameState, data: GameData, weaponId: string):
 }
 
 /** Kaelen: learns Weapon Mastery along the plan and wears the strongest Echo. */
-export function spendMastery(state: GameState, data: GameData): GameState {
+export function spendMastery(state: GameState, data: GameData, build?: BuildPlan): GameState {
   let s = state;
-  const order = masteryOrder(data, s.hero.weaponId);
+  const order = masteryOrder(data, s.hero.weaponId, build);
   for (let guard = 0; guard < 64 && masteryPointsLeft(s, data) > 0; guard++) {
     let learned = false;
     const counts = new Map<string, number>();

@@ -70,8 +70,10 @@ export interface HitInput {
   /** Damage before increases, crit and mitigation (weapon roll × skill multiplier). */
   readonly baseDamage: number;
   readonly type: DamageType;
-  /** Attacks can be evaded (any damage type), spells cannot. Only Physical hits are blocked. */
+  /** Attacks can be evaded (any damage type), spells only Deflected. Only Physical hits are blocked. */
   readonly evadable: boolean;
+  /** The defender's Evasion Deflects spells (the hero). Default false. */
+  readonly deflects?: boolean;
   readonly attacker: DerivedStats;
   readonly attackerLevel: number;
   /** Extra damage multiplier, e.g. monster level scaling or Execute. */
@@ -99,6 +101,8 @@ export type HitOutcome =
       readonly damage: number;
       readonly crit: boolean;
       readonly blocked: boolean;
+      /** A spell Deflected by Evasion: `COMBAT.deflectDamage` of the damage. */
+      readonly deflected: boolean;
       /** Weapon Mastery: the hit did not land cleanly. */
       readonly glancing: boolean;
     };
@@ -114,6 +118,12 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   // Physical hits.
   const physical = input.type === "physical";
   if (input.evadable && rng.chance(defender.evasion)) return { kind: "evaded" };
+  // Spells are Deflected instead, with the same chance: they land, but weaker (Timo 2026-10-13).
+  const deflected =
+    input.deflects === true &&
+    !input.evadable &&
+    defender.evasion > 0 &&
+    rng.chance(defender.evasion);
 
   const glancing =
     !input.forceCrit && input.precision !== undefined && !rng.chance(input.precision);
@@ -136,12 +146,14 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   // A block stops a share of the hit (D2: the shield takes the blow), so it keeps its worth
   // against the biggest late hits.
   if (blocked) damage *= 1 - defender.blockReduction;
+  if (deflected) damage *= COMBAT.deflectDamage;
 
   return {
     kind: "hit",
     damage: Math.max(1, Math.round(damage)),
     crit,
     blocked,
+    deflected,
     glancing,
   };
 }

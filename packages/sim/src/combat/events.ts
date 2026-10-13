@@ -30,6 +30,8 @@ export type CombatEvent =
       readonly glancing?: boolean;
       /** A Heavy Attack hit held back by `COMBAT.heavyHitCap`. */
       readonly capped?: boolean;
+      /** A spell Deflected by Evasion. */
+      readonly deflected?: boolean;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {

@@ -20,6 +20,11 @@ export const DEFENSE_NOTES = {
     explain:
       "Takes a share off every Physical hit. It comes from heavy gear; each point of Strength raises it.",
   },
+  evasion: {
+    name: "Evasion",
+    kind: "Defense · light gear",
+    explain: `Your chance to dodge an attack completely. Spells cannot be dodged, but with the same chance you Deflect them and take ${pct(1 - COMBAT.deflectDamage)} less. It comes from light gear; each point of Agility raises it.`,
+  },
   block: {
     name: "Block",
     kind: "Defense · shield",

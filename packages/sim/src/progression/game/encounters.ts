@@ -82,14 +82,11 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
       ? { ...created, baseLife: (created.baseLife ?? 0) * PROGRESSION.bossLife }
       : created;
   const p = encounter.pressure;
-  // The Harvester takes only part of the Run Pressure: it is already the run's peak.
-  const share = enemy.archetype === "harvester" ? PROGRESSION.harvesterPressure : undefined;
-  const scaled = (x: number, k: number | undefined) => (k === undefined ? x : 1 + (x - 1) * k);
   const setup = p
     ? {
         ...base,
-        baseLife: (base.baseLife ?? 0) * scaled(p.life, share?.life),
-        damageMultiplier: (base.damageMultiplier ?? 1) * scaled(p.damage, share?.damage),
+        baseLife: (base.baseLife ?? 0) * p.life,
+        damageMultiplier: (base.damageMultiplier ?? 1) * p.damage,
       }
     : base;
   const w = encounter.wall;
@@ -147,16 +144,19 @@ export function encounterFight(state: GameState, data: GameData): Fight {
 }
 
 /**
- * Life and damage of the finale's foe at a stage: `PROGRESSION.finaleRamp` of the finale's pressure
- * at the first echo, all of it at the Core.
+ * Life and damage of the finale's foe at a stage: the Warden echoes build up from
+ * `PROGRESSION.finaleRamp.first` to `.last` of the finale's pressure, the Core takes all of it
+ * (it is the climax, endgame-balance-v1.md B).
  */
 export function finalePressure(
   stage: number,
   stages: number,
 ): { readonly life: number; readonly damage: number } {
+  const ramp = PROGRESSION.finaleRamp;
   const k =
-    PROGRESSION.finaleRamp +
-    (1 - PROGRESSION.finaleRamp) * Math.min(1, (stage - 1) / Math.max(1, stages - 1));
+    stage >= stages
+      ? 1
+      : ramp.first + (ramp.last - ramp.first) * Math.min(1, (stage - 1) / Math.max(1, stages - 2));
   const p = PROGRESSION.finale;
   return { life: 1 + (p.life - 1) * k, damage: 1 + (p.damage - 1) * k };
 }
@@ -179,7 +179,11 @@ export function finaleEncounter(data: GameData, stage: number, rng: Rng): Encoun
     eliteModifiers: bossAbilities(data, echo, PROGRESSION.finalPrestige)
       .slice(0, Math.min(stage, PROGRESSION.finaleEchoAbilities))
       .map((m) => m.id),
-    pressure,
+    // The echoes are evened out like the Wildfire's bosses (ActData.endgameBoss).
+    pressure: {
+      life: pressure.life * (echo.endgameBoss ?? 1),
+      damage: pressure.damage * (echo.endgameBoss ?? 1),
+    },
     seed,
     echo: echo.id,
   };

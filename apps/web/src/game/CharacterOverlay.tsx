@@ -139,7 +139,7 @@ export function CharacterOverlay(props: {
       { label: "Life", value: fmt(stats.maxLife) },
       { label: "Barrier", value: fmt(stats.barrier), note: DEFENSE_NOTES.barrier },
       { label: "Armor", value: fmt(stats.armor), note: DEFENSE_NOTES.armor },
-      { label: "Evasion (Attacks)", value: pct(stats.evasion) },
+      { label: "Evasion", value: pct(stats.evasion), note: DEFENSE_NOTES.evasion },
       { label: "Block (Physical)", value: pct(stats.blockChance), note: DEFENSE_NOTES.block },
       ...(penalty > 0
         ? [{ label: "Ember Penalty", value: `−${pct(penalty)}`, note: resNote }]

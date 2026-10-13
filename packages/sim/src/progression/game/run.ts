@@ -10,6 +10,7 @@ import {
   isFinaleAct,
   isHarvestAct,
   stageMonsterLevel,
+  harvesterShare,
   stagePressure,
   stagesInAct,
   stageWall,
@@ -136,14 +137,18 @@ export function startStage(state: GameState, data: GameData): GameState {
   const level = tier
     ? wildfireLevel(tier)
     : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
+  const atBoss = run.stage >= stagesInAct(act);
   const p = tier
-    ? wildfirePressure(data, run.stage, tier, run.stage >= stagesInAct(act))
-    : stagePressure(data, act, run.stage, state.legacy.prestige);
+    ? wildfirePressure(data, run.stage, tier, atBoss, act)
+    : harvesterShare(
+        stagePressure(data, act, run.stage, state.legacy.prestige),
+        atBoss && act.boss.archetype === "harvester",
+      );
   const pressure = p.life > 1 ? { pressure: p } : {};
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
-  if (run.stage >= stagesInAct(act)) {
+  if (atBoss) {
     encounter = {
       enemyId: act.boss.id,
       level,

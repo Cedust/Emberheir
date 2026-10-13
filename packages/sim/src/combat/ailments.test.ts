@@ -11,6 +11,7 @@ import {
   multiplyPoison,
   poisonStacks,
   remainingBleedDamage,
+  remainingPoisonDamage,
   stepAilments,
 } from "./ailments";
 import { COMBAT } from "./constants";
@@ -121,8 +122,17 @@ describe("Poison", () => {
   it("can be multiplied (Toxic Burst)", () => {
     let s = applyAilment({}, "poison", 5, 100);
     s = applyAilment(s, "poison", 5, 100);
-    expect(poisonStacks(multiplyPoison(s, 2))).toBe(4);
-    expect(multiplyPoison({}, 2)).toEqual({});
+    expect(poisonStacks(multiplyPoison(s, 2).states)).toBe(4);
+    expect(multiplyPoison({}, 2)).toEqual({ states: {}, overflow: 0 });
+  });
+
+  it("returns the stacks over the cap as overflow damage", () => {
+    let s = {};
+    for (let i = 0; i < 3; i++) s = applyAilment(s, "poison", 5, 100);
+    const { states, overflow } = multiplyPoison(s, 2, 4);
+    expect(poisonStacks(states)).toBe(4);
+    expect(overflow).toBeCloseTo(remainingPoisonDamage(s) * (2 / 3));
+    expect(poisonStacks(multiplyPoison(s, 2, 10).states)).toBe(6);
   });
 });
 

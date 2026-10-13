@@ -292,24 +292,31 @@ export const PROGRESSION = {
    * instead of the Run Pressure). Like the walls: mostly damage, little more Life.
    */
   finalPrestige: 7,
-  finale: { life: 3, damage: 6 },
-  /** The first Warden echo takes this share of the finale's pressure, rising to all of it at the Core (Boons pile up on the way). */
-  finaleRamp: 0.7,
+  finale: { life: 3, damage: 8.5 },
+  /**
+   * The Warden echoes take this share of the finale's pressure, from the first to the last (Boons
+   * pile up on the way); the Harvester's Core takes all of it, the hardest fight of the finale.
+   */
+  finaleRamp: { first: 0.6, last: 0.9 },
   /**
    * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
    * chosen tier. Monster Level is `baseLevel` + `levelsPerTier` × tier: 92 at I, 100 at V (the
-   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). The enemies
-   * take the seventh run's newest-act pressure plus `life`/`damage` per tier above I, and the
-   * steeper `steep` rates per tier above `steep.from` (VI–X are meant to be really hard).
+   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). Normal
+   * enemies take the seventh run's newest-act pressure, the act boss takes `boss` times its act's
+   * `endgameBoss` factor (endgame-balance-v1.md A). Both rise by `life`/`damage` per tier above I
+   * and by the steeper `steep` rates per tier above `steep.from` (VI–X are meant to be really hard).
    * Legendaries and Runes come more often. No new currency: the highest tier cleared is the goal.
    */
   wildfire: {
     tiers: 10,
+    /** Life and damage of every act boss at Wildfire I (the Harvester included), before the tiers. */
+    boss: { life: 3.6, damage: 8.4 },
     baseLevel: 90,
     levelsPerTier: 2,
-    life: 0.05,
-    damage: 0.03,
-    steep: { from: 5, life: 0.25, damage: 0.12 },
+    life: 0.08,
+    damage: 0.06,
+    /** Above V the hero is capped at level 100 while Monster Levels keep rising: Life only. */
+    steep: { from: 5, life: 0.2, damage: 0 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,
@@ -319,7 +326,7 @@ export const PROGRESSION = {
   finaleEchoAbilities: 5,
   /** Fusion Boons are this much likelier in the finale's Stolen Fire. */
   finaleFusionWeight: 1,
-  /** Share of the Run Pressure on Life and damage that the Harvester takes. */
+  /** Share of the Run Pressure on Life and damage that the Harvester takes at the end of a run. */
   harvesterPressure: { life: 0.7, damage: 0.2 },
 
   /** Phoenix Feathers (Upgrade at the Blacksmith): every boss, sometimes an Elite. */

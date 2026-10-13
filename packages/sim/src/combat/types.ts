@@ -485,11 +485,15 @@ export interface WeaponRules {
   readonly critPoisonStacks?: number;
   /** The first clean hit of a fight crits and deals this much more damage (Assassinate). */
   readonly openerDamage?: number;
-  /** At `stacks` Poison stacks all of them burst for `multiplier` × their rest (Toxic Bloom). */
+  /**
+   * At `stacks` Poison stacks all of them burst for `multiplier` × their rest (Toxic Bloom);
+   * `leech` heals the attacker for that share of the burst.
+   */
   readonly poisonBurst?: {
     readonly stacks: number;
     readonly multiplier: number;
     readonly lockout: number;
+    readonly leech?: number;
   };
   /** Every Poison stack on the target ignores this share of its Armor (Festering). */
   readonly poisonArmorShred?: number;

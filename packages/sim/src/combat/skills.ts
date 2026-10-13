@@ -21,7 +21,16 @@ import {
   usePerk,
 } from "./fighter";
 import { addHeat } from "./heat";
-import { addBarrier, addSunder, dealDamage, heal, landHit, stun } from "./hits";
+import {
+  addBarrier,
+  addSunder,
+  dealDamage,
+  dotBurst,
+  heal,
+  landHit,
+  poisonCap,
+  stun,
+} from "./hits";
 import { PERK } from "./perks";
 import { applyEffect, fireTriggers } from "./trigger-effects";
 import type { SkillDefinition, SkillEffect } from "./types";
@@ -180,7 +189,8 @@ function applySkillEffect(
     case "multiplyPoison": {
       const before = poisonStacks(target.ailments);
       if (before === 0) return;
-      target.ailments = multiplyPoison(target.ailments, effect.factor);
+      const { states, overflow } = multiplyPoison(target.ailments, effect.factor, poisonCap(f));
+      target.ailments = states;
       emit(core, {
         t: fightTime(core),
         type: "ailment",
@@ -188,6 +198,8 @@ function applySkillEffect(
         ailment: "poison",
         stacks: poisonStacks(target.ailments),
       });
+      // Stacks over the cap burst at once for their remaining damage.
+      if (overflow > 0) dotBurst(core, f, target, overflow, skill.name);
       return;
     }
     case "heal":

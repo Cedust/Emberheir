@@ -27,6 +27,30 @@ function fight(precision: number, weaponRules?: WeaponRules, extra: Partial<Comb
 }
 
 describe("Weapon Mastery in a fight", () => {
+  it("Toxic Bloom: the burst heals the attacker for its leech share", () => {
+    const burst = (leech?: number) =>
+      fight(
+        1,
+        { poisonBurst: { stacks: 3, multiplier: 2, lockout: 1, ...(leech ? { leech } : {}) } },
+        { bonuses: { ...NO_CRIT, poisonChance: 1 }, lifeFraction: 0.2, baseLife: 10_000 },
+      ).events;
+    const bloom = (events: readonly CombatEvent[]) =>
+      hits(events).find((h) => h.source === "Toxic Bloom");
+    const healAfter = (events: readonly CombatEvent[], t: number) =>
+      events.find((e) => e.type === "heal" && e.side === "hero" && e.t === t);
+
+    const plain = burst();
+    const first = bloom(plain);
+    expect(first).toBeDefined();
+    expect(healAfter(plain, first?.t ?? -1)).toBeUndefined();
+
+    const leeching = burst(0.5);
+    const hit = bloom(leeching);
+    const heal = healAfter(leeching, hit?.t ?? -1);
+    expect(heal).toBeDefined();
+    if (heal?.type === "heal") expect(heal.amount).toBe(Math.round((hit?.damage ?? 0) * 0.5));
+  });
+
   it("a failed Precision roll is a Glancing Blow: half damage, no on-hit triggers", () => {
     const onHit: TriggerSpec = {
       id: "spark",

@@ -123,7 +123,7 @@ export function spendSkillPoints(
   plan: BuildPlan | undefined,
 ): GameState {
   if (!plan || state.run) return state;
-  let s = spendMastery(state, data);
+  let s = spendMastery(state, data, plan);
   const tree = data.skillTree;
   for (const target of plan.nodes) {
     if (target !== "@branches") {
