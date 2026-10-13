@@ -77,6 +77,8 @@ Endgame **Wildfire I–X**.
 - Boons des laufenden Acts verbrennen bei Tod und Retreat, ein geschaffter Act behält sie bis zum Prestige.
 - **Life bleibt zwischen den Stages erhalten**, keine Regeneration. Heilung zwischen Stages nur über die **Ember Flask**
   (3 Ladungen à 35 % Max Life, voll im Camp, nur per Klick; Belt-Affix „of Plenty“ +1–2 Ladungen).
+- **Hearth Embers:** Ein gewonnener Waymark vor dem Boss (Stage 5 und 10) heilt 25 % Life, jedes Mal (nicht im
+  Wildfire). Ein Zwischenziel, auf das man hinkämpft (`neuausrichtung-v1.md` 5.4).
 
 ### 2.5 Prestige ✅ (`entschlackung-v1.md`)
 - Pflicht nach dem Sieg über den Boss des neuesten Acts. Wer noch farmen will, macht vorher Retreat oder Revisit.
@@ -127,8 +129,10 @@ Endgame **Wildfire I–X**.
 
 ### 3.1 Level ✅ (`level-v2.md`)
 - Max Level 100. **Level Cap pro Run** = Boss-Level des Runs + 10: **20, 30, 40, 55, 70, 85, 100**.
-- Monster-Level-Band pro Run endet bei **10, 20, 30, 45, 60, 75, 90**; es läuft vom Boss-Level des vorigen Runs
-  gleichmäßig über alle Stages des Runs.
+- Monster-Level-Band pro Run endet bei **10, 20, 30, 45, 60, 75, 90**. **Die ganze Welt brennt neu**
+  (`neuausrichtung-v1.md` 5.1): Ab Run 2 beginnt Act 1 **5 Level unter dem Level Cap des vorigen Runs**
+  (15, 25, 35, 50, 65, 80), das Band steigt gleichmäßig über alle Stages bis zum neuen Boss. So droppt jeder Act
+  aktuelles Gear.
 - Jedes Level: **+4 % Base Life, +3 % Weapon Damage** (zusammen ~+7 % Kampfkraft). Sonst nichts.
 - XP-Malus: −2 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
 - Level ist der **sichere, langsame Hebel** gegen eine Wand; Gear der schnelle, glücksabhängige.
@@ -282,8 +286,13 @@ Endgame **Wildfire I–X**.
 - **Skalierung:** Das Monster Level bestimmt die Grundwerte. Dazu:
   - **Run Pressure:** Life +80 %, Schaden +35 % pro Act nach dem ersten (der neueste Act bleibt der härteste).
   - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 8,3 / 6,3 / 7 / 7 / 5,8 / 4,8),
-    Life nur mit deren Wurzel. **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) mit 50 %, normale Gegner steigen bis
-    30 % an. Ziel: 6–8 Anläufe pro neuestem Act, jede Wand mit höchstens +10 Level schaffbar.
+    Life nur mit deren Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3, Startwerte aus
+    `balance-messung-v1.md`): normale Stages 15 → 30 %, 25 → 35 %, 30 → 40 % der Wand, die **Gatekeeper** auf
+    Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Jede Wand mit höchstens +10 Level schaffbar.
+  - **Kampfdauer** (5.5): Gegner haben je Stage-Art mehr Life (normal ×1,2, Elite ×1,3, Gatekeeper ×1,4, Boss ×1,3;
+    der Boss trifft dafür mit ×0,9), in allen Acts eines Runs, nicht im Finale und im Wildfire.
+  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
+    normal 5–15 %; Kampfdauer normal 20–30 s, Elite 35–50 s, Gatekeeper 45–70 s, Boss 60–100 s.
 
 ---
 
@@ -293,6 +302,10 @@ Endgame **Wildfire I–X**.
   Autopilot-Ranking schafft jede Wand mit bis zu +10 Level.
 - Resistance ist eine Entscheidung (Ember Penalty). Kein Magic Find, Gold Find oder XP %.
 - Messung immer mit der Balance-CLI: 15 Autopilot-Builds (3 pro Klasse), mehrere Seeds, Vorher/Nachher im PR.
+- Der Autopilot nutzt Runes und Runewords (behält Normal-Basen, schmiedet ein Runeword, wenn es das getragene Item
+  schlägt, kombiniert übrige Runes), aber kein Crafting (Reforge, Temper, Kindle). `--runes 0` misst ohne Runes.
+- Die CLI misst im neuesten Act die **Tode und Kampfdauern je Stage-Art** (normal, Elite, Gatekeeper, Boss; Median und
+  p90) gegen die Ziele aus `neuausrichtung-v1.md` 5.3 und 5.5 (`--newest 1` zeigt nur diese Tabellen). Stand: `balance-messung-v1.md`.
 
 ---
 
@@ -307,10 +320,11 @@ Endgame **Wildfire I–X**.
 
 ## 9. Offene Baustellen
 
-- Neuausrichtung (Systemidentität, Class Traits, Web v3, Mastery v2, Ailments v2, Sägezahn im Act, Routen, Elites, Omens,
-  Ashborn, Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md`, von Timo entschieden (13.10.), noch nicht umgesetzt
+- Neuausrichtung (Systemidentität, Class Traits, Web v3, Mastery v2, Ailments v2, Routen, Elites, Omens, Ashborn,
+  Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md`, von Timo entschieden (13.10.). Phase 1
+  (Messwerkzeug) ist gebaut, Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers) mit Startwerten begonnen.
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
-- Autopilot nutzt keine Runes und kein Crafting (Balance-Zahlen sind pessimistisch).
+- Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch.
 
 ---
 
@@ -337,6 +351,7 @@ Endgame **Wildfire I–X**.
 | `ui-look-v1.md`, `ui-views-v1.md`, `battle-view-v1.md` | Darstellung | gültig |
 | `story-theme-v1.md`, `story-texte-v1.md`, `fabelwelt-v1.md` | Welt und Texte | gültig |
 | `neuausrichtung-v1.md` | Vorschläge zur Neuausrichtung | 💡 offen |
+| `balance-messung-v1.md` | Messung Phase 1 (Runes im Autopilot, Tode und Kampfdauer je Stage-Art), Startwerte Phase 2 | gemessen |
 | `weapon-mastery-v2.md` | neue Mastery-Pfade, Precision, Mighty Hits, Parry | 💡 offen |
 | `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | 💡 offen |
 | `merkliste-spaeter.md` | Ideen für später | gemerkt |
