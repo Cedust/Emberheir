@@ -15,9 +15,16 @@ export interface DotState {
   readonly ramp?: number;
 }
 
-/** Chill (-Attack Speed, -Heat Gain) and Shock (+damage taken) only have a duration. */
+/**
+ * Chill (-Attack Speed, -Heat Gain) and Shock (+damage taken): a duration and a strength that
+ * Ailment Effect raises. Shock stacks (ailments-v2.md 3.1).
+ */
 export interface TimedAilmentState {
   readonly remaining: number;
+  /** Chill: the slow; Shock: damage taken per stack. Missing = the base value. */
+  readonly power?: number;
+  /** Shock stacks (1 when missing). */
+  readonly stacks?: number;
 }
 
 /** One Poison stack: each runs out on its own. */
@@ -65,22 +72,20 @@ const BASE_DURATION: Record<AilmentType, number> = {
 };
 
 /**
- * Ailment duration: base × (1 + attacker's Ailment Duration) × (1 − defender's Tenacity).
+ * Ailment duration: base × (1 − defender's Tenacity). Ailment Effect makes ailments stronger, not
+ * longer (ailments-v2.md 3.3); longer ailments are rules of single nodes (`ailmentDurationBy`).
  */
-export function ailmentDuration(
-  type: AilmentType,
-  attackerAilmentDuration: number,
-  defenderTenacity: number,
-): number {
-  return BASE_DURATION[type] * (1 + attackerAilmentDuration) * (1 - defenderTenacity);
+export function ailmentDuration(type: AilmentType, defenderTenacity: number): number {
+  return BASE_DURATION[type] * (1 - defenderTenacity);
 }
 
 /**
  * Applies an ailment. Burn, Corruption and Bleed refresh their duration and keep the stronger of
  * the old and the new damage (Corruption keeps its growth); Poison adds a stack (the oldest falls
- * off at the cap); Chill and Shock refresh.
+ * off at the cap); Chill refreshes, Shock adds a stack up to its cap.
  *
  * @param hitDamage damage of the hit that caused the ailment (the DoTs scale with it)
+ * @param effect the attacker's Ailment Effect: more DoT damage, a stronger Chill and Shock
  */
 export function applyAilment(
   states: AilmentStates,
@@ -89,13 +94,15 @@ export function applyAilment(
   hitDamage: number,
   /** Poison stacks kept at most (Virulence raises it). */
   maxPoisonStacks: number = COMBAT.poisonMaxStacks,
+  effect = 0,
 ): AilmentStates {
   if (duration <= 0) return states;
+  const strength = Math.max(0, 1 + effect);
   if (type === "burn" || type === "bleed" || type === "corruption") {
     const previous = states[type];
     const damagePerSecond = Math.max(
       previous?.damagePerSecond ?? 0,
-      hitDamage * DOT_PER_SECOND[type],
+      hitDamage * DOT_PER_SECOND[type] * strength,
     );
     const dot: DotState = {
       damagePerSecond,
@@ -107,13 +114,48 @@ export function applyAilment(
   }
   if (type === "poison") {
     const stack = {
-      damagePerSecond: hitDamage * COMBAT.poisonDamagePerSecond,
+      damagePerSecond: hitDamage * COMBAT.poisonDamagePerSecond * strength,
       remaining: duration,
     };
     const stacks = [...(states.poison?.stacks ?? []), stack].slice(-maxPoisonStacks);
     return { ...states, poison: { stacks, nextTickIn: states.poison?.nextTickIn ?? 1 } };
   }
-  return { ...states, [type]: { remaining: duration } };
+  if (type === "chill") {
+    const power = Math.min(COMBAT.chillMaxSlow, COMBAT.chillSlow * strength);
+    return {
+      ...states,
+      chill: {
+        remaining: Math.max(duration, states.chill?.remaining ?? 0),
+        power: Math.max(power, states.chill?.power ?? 0),
+      },
+    };
+  }
+  const previous = states.shock;
+  return {
+    ...states,
+    shock: {
+      remaining: duration,
+      power: Math.max(COMBAT.shockDamageTaken * strength, previous?.power ?? 0),
+      stacks: Math.min(COMBAT.shockMaxStacks, (previous ? (previous.stacks ?? 1) : 0) + 1),
+    },
+  };
+}
+
+/** The Poison stack that the next application pushes off at the cap (Overflow), if any. */
+export function poisonOverflow(
+  states: AilmentStates,
+  maxPoisonStacks: number = COMBAT.poisonMaxStacks,
+): PoisonStack | undefined {
+  const stacks = states.poison?.stacks ?? [];
+  return stacks.length >= maxPoisonStacks ? stacks[stacks.length - maxPoisonStacks] : undefined;
+}
+
+/** Burn damage that is still to come (Combust deals a share of it at once). */
+export function remainingBurnDamage(states: AilmentStates): number {
+  const burn = states.burn;
+  if (!burn) return 0;
+  const ticks = Math.max(0, Math.floor(burn.remaining - burn.nextTickIn + 1e-9) + 1);
+  return burn.damagePerSecond * ticks;
 }
 
 /** Damage all Poison stacks would still deal if they ran out (Toxic Bloom). */
@@ -174,6 +216,8 @@ export interface AilmentStepResult {
   readonly ticks: readonly {
     readonly ailment: (typeof DOT_AILMENTS)[number];
     readonly damage: number;
+    /** Corruption at full growth collapsed: this tick is its burst (`COMBAT.collapseSeconds`). */
+    readonly collapse?: boolean;
   }[];
   readonly expired: readonly AilmentType[];
 }
@@ -181,7 +225,8 @@ export interface AilmentStepResult {
 /** Advances all ailments on one fighter by `dt` seconds. */
 export function stepAilments(states: AilmentStates, dt: number): AilmentStepResult {
   const next: { -readonly [K in keyof AilmentStates]: AilmentStates[K] } = {};
-  const ticks: { ailment: (typeof DOT_AILMENTS)[number]; damage: number }[] = [];
+  const ticks: { ailment: (typeof DOT_AILMENTS)[number]; damage: number; collapse?: boolean }[] =
+    [];
   const expired: AilmentType[] = [];
 
   for (const type of REFRESHING_DOTS) {
@@ -197,7 +242,18 @@ export function stepAilments(states: AilmentStates, dt: number): AilmentStepResu
         ailment: type,
         damage: dotTickDamage(ramp === undefined ? dot : { ...dot, ramp }),
       });
-      if (ramp !== undefined) ramp = Math.min(COMBAT.corruptionMaxRamp, ramp + 1);
+      if (ramp !== undefined) {
+        ramp = Math.min(COMBAT.corruptionMaxRamp, ramp + 1);
+        // Collapse: at full growth it deals several seconds at once and falls back to half.
+        if (ramp >= COMBAT.corruptionMaxRamp) {
+          ticks.push({
+            ailment: type,
+            damage: dotTickDamage({ ...dot, ramp }) * COMBAT.collapseSeconds,
+            collapse: true,
+          });
+          ramp = Math.floor(COMBAT.corruptionMaxRamp / 2);
+        }
+      }
       nextTickIn += 1;
     }
     if (remaining <= EPSILON) expired.push(type);
@@ -236,7 +292,7 @@ export function stepAilments(states: AilmentStates, dt: number): AilmentStepResu
     if (!state) continue;
     const remaining = state.remaining - dt;
     if (remaining <= EPSILON) expired.push(type);
-    else next[type] = { remaining };
+    else next[type] = { ...state, remaining };
   }
 
   return { states: next, ticks, expired };
@@ -266,14 +322,17 @@ export function dotDamagePerSecond(states: AilmentStates): number {
   return total;
 }
 
-/** "+X % damage taken" from Shock. */
+/** "+X % damage taken" from Shock: its stacks times their power, up to the cap. */
 export function damageTakenBonus(states: AilmentStates): number {
-  return states.shock ? COMBAT.shockDamageTaken : 0;
+  const shock = states.shock;
+  if (!shock) return 0;
+  const total = (shock.power ?? COMBAT.shockDamageTaken) * (shock.stacks ?? 1);
+  return Math.min(COMBAT.shockMaxDamageTaken, total);
 }
 
 /** Multiplier on Attack Speed and Heat Gain from Chill. */
 export function chillFactor(states: AilmentStates): number {
-  return states.chill ? 1 - COMBAT.chillSlow : 1;
+  return states.chill ? 1 - (states.chill.power ?? COMBAT.chillSlow) : 1;
 }
 
 /** Multiplier on healing received (Burn reduces healing). */
@@ -295,7 +354,7 @@ export function extendAilments(states: AilmentStates, fraction: number): Ailment
   }
   for (const type of ["chill", "shock"] as const) {
     const s = states[type];
-    if (s) next[type] = { remaining: extend(type, s.remaining) };
+    if (s) next[type] = { ...s, remaining: extend(type, s.remaining) };
   }
   if (states.poison) {
     next.poison = {

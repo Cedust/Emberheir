@@ -931,7 +931,7 @@ const BOW = buildTree({
       color: C.venom,
       minors: [
         minor("Dip", "+3 % Poison Chance.", { bonuses: { poisonChance: 0.03 } }),
-        minor("Linger", "+4 % Ailment Duration.", { bonuses: { ailmentDuration: 0.04 } }),
+        minor("Linger", "+4 % Ailment Effect.", { bonuses: { ailmentEffect: 0.04 } }),
       ],
       notables: [
         notable("Dipped Arrows", "+15 % Poison Chance.", { bonuses: { poisonChance: 0.15 } }),
@@ -1237,7 +1237,7 @@ const WAND = buildTree({
       color: C.frost,
       minors: [
         minor("Frost", "+3 % Chill Chance.", { bonuses: { chillChance: 0.03 } }),
-        minor("Hold", "+4 % Ailment Duration.", { bonuses: { ailmentDuration: 0.04 } }),
+        minor("Hold", "+4 % Ailment Effect.", { bonuses: { ailmentEffect: 0.04 } }),
       ],
       notables: [
         notable("Bitter Cold", "Chill lasts 40 % longer.", {
@@ -1396,7 +1396,7 @@ const STAFF = buildTree({
       color: C.void,
       minors: [
         minor("Taint", "+3 % Corruption Chance.", { bonuses: { corruptionChance: 0.03 } }),
-        minor("Dusk", "+4 % Ailment Duration.", { bonuses: { ailmentDuration: 0.04 } }),
+        minor("Dusk", "+4 % Ailment Effect.", { bonuses: { ailmentEffect: 0.04 } }),
       ],
       notables: [
         notable("Deepening Dark", "Corruption deals 30 % more damage.", {
@@ -1418,10 +1418,10 @@ const STAFF = buildTree({
       color: C.frost,
       minors: [
         minor("Breath", "+4 % Heat Gain.", { bonuses: { heatGain: 0.04 } }),
-        minor("Patience", "+3 % Ailment Duration.", { bonuses: { ailmentDuration: 0.03 } }),
+        minor("Patience", "+3 % Ailment Effect.", { bonuses: { ailmentEffect: 0.03 } }),
       ],
       notables: [
-        notable("Long Breath", "+20 % Ailment Duration.", { bonuses: { ailmentDuration: 0.2 } }),
+        notable("Long Breath", "+20 % Ailment Effect.", { bonuses: { ailmentEffect: 0.2 } }),
         notable("Overflow", "Above 80 Heat, skills cost 15 % less.", {
           weaponRules: { overflow: { above: 80, discount: 0.15 } },
         }),

@@ -248,8 +248,8 @@ const RIME: readonly BoonDefinition[] = [
   boon("rime", "passive", "Ice Wall", "+# % Block Chance", 5, {
     bonuses: { blockChance: 0.05 },
   }),
-  boon("rime", "passive", "Permafrost", "+# % Ailment Duration", 15, {
-    bonuses: { ailmentDuration: 0.15 },
+  boon("rime", "passive", "Permafrost", "+# % Ailment Effect", 15, {
+    bonuses: { ailmentEffect: 0.15 },
   }),
   boon("rime", "trigger", "Frost Nip", "Hit taken: # % chance to Chill", 25, {
     trigger: { when: { kind: "whenHit" }, effect: ailment("chill"), chance: 0.25, cooldown: 3 },

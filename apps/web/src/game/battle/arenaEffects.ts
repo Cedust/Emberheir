@@ -1,4 +1,4 @@
-import { type PerkId } from "@emberheir/sim";
+import { type PayoffKind, type PerkId } from "@emberheir/sim";
 import { type Burst } from "./fx";
 
 /** How each skill, Perk and ailment looks in the arena (the effect tables of `ArenaScene`). */
@@ -107,6 +107,37 @@ export const PERK_FX: Record<
   secondBreath: { color: [0x4fe08a, 0xffb13b], on: "self", look: "rise", name: true },
   thickSkin: { color: [0x9a9088], on: "self", look: "ring" },
   undying: { color: [0xff4a2a, 0xffd84a], on: "self", look: "star", name: true },
+};
+
+/**
+ * Ailment payoffs and Class Traits (ailments-v2.md 3.1, neuausrichtung-v1.md 2.1): the "hits" of a
+ * DoT build get a big moment, the traits a small sign. `on` is where it shows, `name` floats it.
+ */
+export const PAYOFF_FX: Record<
+  PayoffKind,
+  {
+    color: readonly number[];
+    on: "self" | "foe";
+    look: "pop" | "flare" | "implode" | "ring" | "star";
+    shake?: number;
+  }
+> = {
+  overflow: { color: [0xb5d82c, 0xe8ff7a, 0x6f9a10], on: "foe", look: "pop", shake: 0.15 },
+  combust: { color: [0xff6a2b, 0xffd84a, 0xfff1c9], on: "foe", look: "flare", shake: 0.2 },
+  collapse: { color: [0xa35cff, 0x3a1a6a, 0xe0c8ff], on: "foe", look: "implode", shake: 0.3 },
+  ironBlood: { color: [0xc9c2b8, 0xff8a3a], on: "self", look: "ring" },
+  keenEye: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star" },
+  spark: { color: [0x5b8cff, 0xffe14d], on: "foe", look: "star" },
+};
+
+/** Floating names of the payoffs. */
+export const PAYOFF_NAMES: Record<PayoffKind, string> = {
+  overflow: "Overflow",
+  combust: "Combust",
+  collapse: "Collapse",
+  ironBlood: "Iron Blood",
+  keenEye: "Keen Eye",
+  spark: "Spark",
 };
 
 const FALL = Math.PI / 2;

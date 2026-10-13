@@ -28,8 +28,10 @@ export type {
   FightResult,
   FightSnapshot,
   FighterSnapshot,
+  PayoffKind,
   RotationSlotSnapshot,
 } from "./combat/events";
+export { PAYOFF_KINDS } from "./combat/events";
 export { outcomeOf, type FightOutcome } from "./combat/outcome";
 export { AILMENT_SOURCE, damageShare, fightReport, type FightReport } from "./combat/report";
 export {

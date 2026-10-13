@@ -22,8 +22,17 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   const maxResistance: Partial<Record<Element, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
   let execute: CombatRules["execute"];
+  // Class Traits come from one source (the class): the first one wins.
+  let ironBlood: CombatRules["ironBlood"];
+  let keenEye = false;
+  let spark: CombatRules["spark"];
+  let lingering: CombatRules["lingering"];
   for (const r of sources) {
     if (!r) continue;
+    ironBlood ??= r.ironBlood;
+    keenEye ||= r.keenEye ?? false;
+    spark ??= r.spark;
+    lingering ??= r.lingering;
     damageTaken += r.damageTaken ?? 0;
     skillCostMultiplier *= r.skillCostMultiplier ?? 1;
     defaultAttackDamage *= r.defaultAttackDamage ?? 1;
@@ -68,5 +77,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
     ...(execute ? { execute } : {}),
+    ...(ironBlood ? { ironBlood } : {}),
+    ...(keenEye ? { keenEye } : {}),
+    ...(spark ? { spark } : {}),
+    ...(lingering ? { lingering } : {}),
   };
 }

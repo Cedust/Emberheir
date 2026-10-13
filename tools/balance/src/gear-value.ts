@@ -23,7 +23,7 @@ const DUMMY_SECONDS = 30;
 
 /**
  * Damage per second of the hero against a training dummy that never hits back: the build's own
- * rotation, ailments and triggers all count, so Ailment Duration matters to a Warlock just as
+ * rotation, ailments and triggers all count, so Ailment Effect matters to a Warlock just as
  * Crit matters to a Marksman.
  */
 function dummyDps(setup: CombatantSetup): number {

@@ -1,6 +1,7 @@
 import {
   type CombatEvent,
   type FightSnapshot,
+  type PayoffKind,
   type PerkId,
   type Side,
   getPerk,
@@ -12,6 +13,8 @@ import {
   AILMENT_FX,
   AILMENT_TINT,
   DAMAGE_COLORS,
+  PAYOFF_FX,
+  PAYOFF_NAMES,
   PERK_FX,
   RISE,
   SKILL_FX,
@@ -377,6 +380,9 @@ export class ArenaScene {
         case "perk":
           this.perk(e.side, e.perk);
           break;
+        case "payoff":
+          this.payoff(e.side, e.payoff);
+          break;
         case "stun":
           this.figure(e.side).stun = e.seconds;
           break;
@@ -512,6 +518,88 @@ export class ArenaScene {
     }
     if (perk === "titan" || perk === "undying") this.shake(0.35);
     if (look.name) this.float(owner, getPerk(perk).name, main, false, 0.8);
+  }
+
+  /** An ailment payoff or Class Trait (`PAYOFF_FX`). */
+  private payoff(owner: Side, kind: PayoffKind): void {
+    const look = PAYOFF_FX[kind];
+    const side: Side = look.on === "self" ? owner : owner === "hero" ? "enemy" : "hero";
+    const c = this.center(side);
+    const color = [...look.color];
+    const main = color[0] ?? 0xffffff;
+    switch (look.look) {
+      case "pop":
+        // Poison stacks burst: green droplets spray out of the target.
+        this.fx?.ring(c.x, c.y, main, 30, 140, 0.35, 8, 1);
+        this.fx?.burst({
+          x: c.x,
+          y: c.y,
+          count: 26,
+          color,
+          angle: [0, Math.PI * 2],
+          speed: [140, 300],
+          gravity: 420,
+          life: [0.4, 0.8],
+          size: [8, 15],
+          drag: 0.3,
+        });
+        break;
+      case "flare":
+        // The Burn flares up: a column of fire rises from the target.
+        this.fx?.ring(c.x, c.y, main, 40, 180, 0.4, 10, 1);
+        this.fx?.burst({
+          x: c.x,
+          y: GROUND_Y - 30,
+          count: 30,
+          color,
+          spreadX: 70,
+          angle: [RISE - 0.25, RISE + 0.25],
+          speed: [260, 480],
+          life: [0.35, 0.7],
+          size: [16, 30],
+          drag: 0.25,
+          wobble: 10,
+        });
+        break;
+      case "implode":
+        // Corruption collapses: a dark ring shrinks into the target, then bursts.
+        this.fx?.ring(c.x, c.y, color[1] ?? main, 200, 30, 0.45, 12, 1);
+        this.wait(0.3, () => {
+          this.fx?.ring(c.x, c.y, main, 30, 220, 0.5, 10, 1);
+          this.fx?.burst({
+            x: c.x,
+            y: c.y,
+            count: 32,
+            color,
+            angle: [0, Math.PI * 2],
+            speed: [200, 420],
+            life: [0.3, 0.7],
+            size: [10, 22],
+            endSize: 0.1,
+            drag: 0.2,
+          });
+        });
+        break;
+      case "ring":
+        this.fx?.ring(c.x, c.y, main, 50, 170, 0.45, 9, 1);
+        break;
+      case "star":
+        this.fx?.ring(c.x, c.y, main, 20, 110, 0.3, 6, 1);
+        this.fx?.burst({
+          x: c.x,
+          y: c.y,
+          count: 14,
+          color,
+          speed: [180, 340],
+          life: [0.25, 0.5],
+          size: [5, 9],
+          stretch: 1,
+          drag: 0.15,
+        });
+        break;
+    }
+    if (look.shake) this.shake(look.shake);
+    this.float(owner === side ? owner : side, PAYOFF_NAMES[kind], main, false, 0.8);
   }
 
   private shake(amount: number): void {

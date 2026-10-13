@@ -16,11 +16,33 @@ export interface SaveMigration {
   readonly state?: (save: RawSave) => RawSave;
 }
 
+/** Affix ids that were renamed: old id → new id. */
+const RENAMED_AFFIXES_V2: Readonly<Record<string, string>> = {
+  // Ailments v2: Ailment Duration became Ailment Effect, with the same roll share.
+  "ailment-duration": "ailment-effect",
+};
+
+/** Renames affix ids on an item (its stat affixes and the rolls keep their quality). */
+function renameAffixes(item: RawSave, renamed: Readonly<Record<string, string>>): RawSave {
+  const affixes = item["affixes"];
+  if (!Array.isArray(affixes)) return item;
+  return {
+    ...item,
+    affixes: affixes.map((a: unknown) => {
+      if (!isRecord(a) || typeof a["affixId"] !== "string") return a;
+      const to = renamed[a["affixId"]];
+      return to ? { ...a, affixId: to } : a;
+    }),
+  };
+}
+
 /**
- * The migrations by version. Empty: the save format started over at version 1 (Early Dev
- * Preview, older saves were dropped).
+ * The migrations by version. The save format started over at version 1 (Early Dev Preview,
+ * older saves were dropped).
  */
-export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {};
+export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
+  1: { item: (item) => renameAffixes(item, RENAMED_AFFIXES_V2) },
+};
 
 export interface MigrateOptions {
   /** The version to end at (tests); default `SAVE_VERSION`. */

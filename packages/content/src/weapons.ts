@@ -164,7 +164,7 @@ export const STAFF: WeaponDefinition = {
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",
-  implicit: { ailmentDuration: 0.15 },
+  implicit: { ailmentEffect: 0.15 },
   ailmentChances: [{ ailment: "corruption", chance: 0.3 }],
 };
 

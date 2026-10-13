@@ -33,7 +33,7 @@ const STAT_LABEL: Partial<Record<keyof DerivedStats, string>> = {
   triggerChance: "Trigger Chance",
   bleedChance: "Chance to Bleed",
   poisonChance: "Chance to Poison",
-  ailmentDuration: "Ailment Duration",
+  ailmentEffect: "Ailment Effect",
 };
 const FLAT = new Set<keyof DerivedStats>(["maxLife", "armor", "startingHeat"]);
 

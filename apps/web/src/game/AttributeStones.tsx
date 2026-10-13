@@ -21,7 +21,7 @@ export const ATTRIBUTE_INFO: Record<Attribute, { name: string; short: string; ef
     effects: "Elemental Damage · Barrier",
   },
   agility: { name: "Agility", short: "AGI", effects: "Attack Speed · Evasion" },
-  wisdom: { name: "Wisdom", short: "WIS", effects: "Heat Gain · Ailment Duration" },
+  wisdom: { name: "Wisdom", short: "WIS", effects: "Heat Gain · Ailment Effect" },
   vitality: { name: "Vitality", short: "VIT", effects: "Life · Tenacity" },
 };
 

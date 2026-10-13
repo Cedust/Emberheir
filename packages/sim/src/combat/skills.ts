@@ -16,6 +16,7 @@ import {
   emit,
   fightTime,
   other,
+  payoffFactor,
   perk,
   rollRange,
   usePerk,
@@ -24,6 +25,7 @@ import { addHeat } from "./heat";
 import {
   addBarrier,
   addSunder,
+  combust,
   dealDamage,
   dotBurst,
   heal,
@@ -70,6 +72,8 @@ export function castSkill(
   }
   fireTriggers(core, f, "onSkillUse");
   if (core.result) return;
+  // Spark (Sorcerer): the Default Attack after a skill is charged.
+  if (f.setup.rules?.spark) f.sparkReady = true;
   const target = core.fighters[other(f.side)];
   let landed = false;
   let clean = false;
@@ -170,7 +174,9 @@ function applySkillEffect(
       const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
       const damage = Math.max(
         1,
-        Math.round(rest * effect.multiplier * levelScale * (1 + damageTaken(target))),
+        Math.round(
+          rest * effect.multiplier * levelScale * (1 + damageTaken(target)) * payoffFactor(core, f),
+        ),
       );
       emit(core, {
         t: fightTime(core),
@@ -199,7 +205,7 @@ function applySkillEffect(
         stacks: poisonStacks(target.ailments),
       });
       // Stacks over the cap burst at once for their remaining damage.
-      if (overflow > 0) dotBurst(core, f, target, overflow, skill.name);
+      if (overflow > 0) dotBurst(core, f, target, overflow * payoffFactor(core, f), skill.name);
       return;
     }
     case "heal":
@@ -245,6 +251,9 @@ function applySkillEffect(
           remaining: effect.duration,
         },
       ];
+      return;
+    case "combust":
+      combust(core, f, target, effect.times);
       return;
     case "detonateDots": {
       const perSecond = dotDamagePerSecond(target.ailments);

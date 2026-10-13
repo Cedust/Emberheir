@@ -129,7 +129,7 @@ const STAT_TEXT: Record<keyof StatBonuses, readonly [string, "pct" | "flat"]> = 
   heatGain: ["Heat Gain", "pct"],
   startingHeat: ["Starting Heat", "flat"],
   heatFromHitsTaken: ["Heat from Hits Taken", "pct"],
-  ailmentDuration: ["Ailment Duration", "pct"],
+  ailmentEffect: ["Ailment Effect", "pct"],
   tenacity: ["Tenacity", "pct"],
   lifesteal: ["Lifesteal", "pct"],
   physicalPenetration: ["Physical Penetration", "pct"],
@@ -414,7 +414,7 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Sparks", { burnChance: 0.05 }),
           m("Fervent Mind", { elementalDamage: 0.06 }),
-          m("Lingering Heat", { ailmentDuration: 0.08 }),
+          m("Lingering Heat", { ailmentEffect: 0.04 }),
         ],
         notable: [
           {
@@ -423,7 +423,7 @@ const REGIONS: readonly RegionSpec[] = [
             bonuses: { burnChance: 0.15 },
             rules: { ailmentDamage: { burn: 1.2 } },
           },
-          { name: "Smoulder", bonuses: { ailmentDuration: 0.3 } },
+          { name: "Smoulder", bonuses: { ailmentEffect: 0.3 } },
         ],
       },
       {
@@ -454,13 +454,13 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Ashen Skin", { fireResistance: 0.08, coldResistance: 0.08 }),
           m("Ward Runes", { allResistance: 0.05 }),
-          m("Foreboding", { ailmentDuration: 0.08 }),
+          m("Foreboding", { ailmentEffect: 0.04 }),
         ],
         notable: { name: "Heart of Embers", bonuses: { allResistance: 0.1, tenacity: 0.1 } },
       },
     ],
     innerTravel: m("Kindled Path", { burnChance: 0.05 }),
-    middleTravel: m("Black Smoke", { ailmentDuration: 0.05, burnChance: 0.03 }),
+    middleTravel: m("Black Smoke", { ailmentEffect: 0.03, burnChance: 0.03 }),
     ward: {
       turn: 8,
       nodes: [
@@ -477,8 +477,8 @@ const REGIONS: readonly RegionSpec[] = [
     hub: {
       name: "Warlock's Brand",
       classStart: "warlock",
-      description: "+5 % Chance to Corrupt, +8 % Ailment Duration. The Warlock starts here.",
-      bonuses: { corruptionChance: 0.05, ailmentDuration: 0.08 },
+      description: "+5 % Chance to Corrupt, +4 % Ailment Effect. The Warlock starts here.",
+      bonuses: { corruptionChance: 0.05, ailmentEffect: 0.04 },
     },
     spokes: [
       {
@@ -493,7 +493,7 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Blight", { corruptionChance: 0.05 }),
           s(SOUL_HARVEST),
-          m("Malice", { ailmentDuration: 0.08 }),
+          m("Malice", { ailmentEffect: 0.04 }),
         ],
         notable: [
           {
@@ -511,7 +511,7 @@ const REGIONS: readonly RegionSpec[] = [
           {
             turn: -6,
             reach: [
-              m("Rot Within", { ailmentDuration: 0.08 }),
+              m("Rot Within", { ailmentEffect: 0.04 }),
               m("Withering", { elementalDamage: 0.06 }),
             ],
             keystone: {
@@ -526,7 +526,7 @@ const REGIONS: readonly RegionSpec[] = [
             reach: [
               m("Ash Pact", { corruptionChance: 0.05 }),
               m("Grave Cold", { tenacity: 0.05 }),
-              m("Soul Ember", { ailmentDuration: 0.08 }),
+              m("Soul Ember", { ailmentEffect: 0.04 }),
             ],
             keystone: {
               name: "Pact of Ash",
@@ -541,19 +541,19 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Umbra", { corruptionChance: 0.05 }),
           s(CORRUPT),
-          m("Dread", { ailmentDuration: 0.08 }),
+          m("Dread", { ailmentEffect: 0.04 }),
         ],
         notable: {
           name: "Void Lord",
           description:
-            "+10 % Corruption Chance, +15 % Ailment Duration. Heal 2 % of the damage your ailments deal.",
-          bonuses: { corruptionChance: 0.1, ailmentDuration: 0.15 },
+            "+10 % Corruption Chance, +15 % Ailment Effect. Heal 2 % of the damage your ailments deal.",
+          bonuses: { corruptionChance: 0.1, ailmentEffect: 0.15 },
           rules: { dotLifesteal: 0.02 },
         },
       },
     ],
-    innerTravel: m("Decay", { ailmentDuration: 0.08 }),
-    middleTravel: m("Mire", { ailmentDuration: 0.05, poisonChance: 0.03 }),
+    innerTravel: m("Decay", { ailmentEffect: 0.04 }),
+    middleTravel: m("Mire", { ailmentEffect: 0.03, poisonChance: 0.03 }),
     ward: {
       turn: 8,
       nodes: [m("Grave Hide", { increasedLife: 0.04 }), m("Stubborn", { tenacity: 0.08 })],
@@ -567,24 +567,17 @@ const REGIONS: readonly RegionSpec[] = [
     hub: m("Rampart", { increasedArmor: 0.08 }),
     spokes: [
       {
-        nodes: [
-          m("Septic", { poisonChance: 0.05 }),
-          s(WITHER),
-          m("Rot", { ailmentDuration: 0.08 }),
-        ],
+        nodes: [m("Septic", { poisonChance: 0.05 }), s(WITHER), m("Rot", { ailmentEffect: 0.04 })],
         notable: {
           name: "Leeching Rot",
-          description: "Heal 4 % of the damage your ailments deal. +10 % Ailment Duration.",
-          bonuses: { ailmentDuration: 0.1 },
+          description: "Heal 4 % of the damage your ailments deal. +10 % Ailment Effect.",
+          bonuses: { ailmentEffect: 0.1 },
           rules: { dotLifesteal: 0.04 },
         },
         keystones: [
           {
             turn: -6,
-            reach: [
-              m("Fester", { poisonChance: 0.05 }),
-              m("Pestilence", { ailmentDuration: 0.08 }),
-            ],
+            reach: [m("Fester", { poisonChance: 0.05 }), m("Pestilence", { ailmentEffect: 0.04 })],
             keystone: {
               name: "Plague Bearer",
               description: "Your Poisons deal 50 % more damage. Your Bleeds deal 50 % less.",
@@ -639,13 +632,13 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Venom Gland", { poisonChance: 0.05 }),
           s(ENVENOM),
-          m("Patience", { ailmentDuration: 0.08 }),
+          m("Patience", { ailmentEffect: 0.04 }),
         ],
         notable: {
           name: "Venomancer",
           description:
-            "+10 % Poison Chance, +15 % Ailment Duration. Heal 2 % of the damage your ailments deal.",
-          bonuses: { poisonChance: 0.1, ailmentDuration: 0.15 },
+            "+10 % Poison Chance, +15 % Ailment Effect. Heal 2 % of the damage your ailments deal.",
+          bonuses: { poisonChance: 0.1, ailmentEffect: 0.15 },
           rules: { dotLifesteal: 0.02 },
         },
       },
@@ -653,7 +646,7 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [
           m("Cruelty", { bleedChance: 0.05 }),
           s(REND),
-          m("Lingering Wounds", { ailmentDuration: 0.08 }),
+          m("Lingering Wounds", { ailmentEffect: 0.04 }),
         ],
         notable: [
           {
@@ -661,7 +654,7 @@ const REGIONS: readonly RegionSpec[] = [
             description: "Your Bleeds deal 35 % more damage.",
             rules: { ailmentDamage: { bleed: 1.35 } },
           },
-          { name: "Bloodletter", bonuses: { bleedChance: 0.15, ailmentDuration: 0.2 } },
+          { name: "Bloodletter", bonuses: { bleedChance: 0.15, ailmentEffect: 0.2 } },
         ],
         keystones: [
           {

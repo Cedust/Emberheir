@@ -16,6 +16,9 @@ export const DEATH_TARGETS: Readonly<Record<StageKind, Range>> = {
   boss: [0.35, 0.55],
 };
 
+/** Attempts per newest act (deaths + 1): Timo's target with Runes in the game (13.10.). */
+export const ATTEMPT_TARGET: Range = [3, 5];
+
 /** Fight length in seconds per stage kind (5.5). */
 export const SECONDS_TARGETS: Readonly<Record<StageKind, Range>> = {
   normal: [20, 30],
@@ -97,7 +100,9 @@ export function stageKindRow(s: StageKindSummary, marks: boolean): Record<string
   const row: Record<string, string> = {
     runs: String(s.runs),
     "cleared %": (s.clearRate * 100).toFixed(0),
-    attempts: s.avgAttempts.toFixed(1),
+    attempts: marks
+      ? `${s.avgAttempts.toFixed(1)} ${targetMark(s.avgAttempts, ATTEMPT_TARGET)}`
+      : s.avgAttempts.toFixed(1),
     deaths: String(s.deaths),
   };
   for (const kind of STAGE_KINDS) {

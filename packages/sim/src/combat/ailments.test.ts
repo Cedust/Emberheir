@@ -17,10 +17,9 @@ import {
 import { COMBAT } from "./constants";
 
 describe("ailmentDuration", () => {
-  it("scales with Ailment Duration and Tenacity", () => {
-    expect(ailmentDuration("burn", 0, 0)).toBe(COMBAT.burnDurationSeconds);
-    expect(ailmentDuration("chill", 0.5, 0)).toBeCloseTo(COMBAT.chillDurationSeconds * 1.5);
-    expect(ailmentDuration("shock", 0, 0.5)).toBeCloseTo(COMBAT.shockDurationSeconds * 0.5);
+  it("is the base, shortened by Tenacity (Ailment Effect makes ailments stronger, not longer)", () => {
+    expect(ailmentDuration("burn", 0)).toBe(COMBAT.burnDurationSeconds);
+    expect(ailmentDuration("shock", 0.5)).toBeCloseTo(COMBAT.shockDurationSeconds * 0.5);
   });
 });
 

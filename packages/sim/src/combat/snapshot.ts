@@ -57,6 +57,10 @@ export function fighterSnapshot(core: FightCore, f: Fighter): FighterSnapshot {
         const remaining = Math.max(...stacks.map((s) => s.remaining));
         return [{ type, remaining, stacks: stacks.length }];
       }
+      if (type === "shock") {
+        const shock = f.ailments.shock;
+        return shock ? [{ type, remaining: shock.remaining, stacks: shock.stacks ?? 1 }] : [];
+      }
       const state = f.ailments[type];
       return state ? [{ type, remaining: state.remaining }] : [];
     }),

@@ -171,7 +171,7 @@ export function CharacterOverlay(props: {
       { label: "Heat per second (estimate)", value: heatPerSecond(setup, stats).toFixed(1) },
       { label: "Heat Gain", value: `+${pct(stats.heatGain)}` },
       { label: "Starting Heat", value: fmt(stats.startingHeat) },
-      { label: "Ailment Duration", value: `+${pct(stats.ailmentDuration)}` },
+      { label: "Ailment Effect", value: `+${pct(stats.ailmentEffect)}` },
       {
         label: "Battle Plan",
         value: setup.rotation.map((r) => `${r.skill.name} ${r.level ?? 1}`).join(" · "),

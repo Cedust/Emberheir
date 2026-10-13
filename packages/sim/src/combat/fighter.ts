@@ -2,9 +2,9 @@ import { Rng } from "../rng";
 import { type AilmentStates, chillFactor, damageTakenBonus, poisonStacks } from "./ailments";
 import type { MasteryCondition, SlotCondition } from "./types";
 import { COMBAT } from "./constants";
-import { type CombatEvent } from "./events";
+import { type CombatEvent, type PayoffKind } from "./events";
 import { heatGainMultiplier } from "./heat";
-import { type PerkId } from "./perks";
+import { PERK, type PerkId } from "./perks";
 import { type DerivedStats, deriveStats, sumBonuses } from "./stats";
 import { type BuffState, type TriggerState, buffBonuses, createTriggerState } from "./triggers";
 import type {
@@ -88,6 +88,11 @@ export interface Fighter {
   titanReadyAt: number;
   /** Once-per-fight Perks already used. */
   perksUsed: Set<PerkId>;
+  // Class Traits.
+  /** Keen Eye: the first hit of the fight has been a clean Crit. */
+  keenOpened: boolean;
+  /** Spark: a skill was cast, the next Default Attack is charged. */
+  sparkReady: boolean;
 }
 
 /** Sunder stacks without a Sunder rule of their own (Riposte, Bone Breaker). */
@@ -183,6 +188,8 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     perks: new Set(setup.perks ?? []),
     titanReadyAt: 0,
     perksUsed: new Set(),
+    keenOpened: false,
+    sparkReady: false,
   };
 }
 
@@ -239,6 +246,23 @@ export function emit(core: FightCore, event: CombatEvent): void {
   core.log.push(event);
 }
 
+export function payoff(core: FightCore, f: Fighter, kind: PayoffKind, damage?: number): void {
+  emit(core, {
+    t: fightTime(core),
+    type: "payoff",
+    side: f.side,
+    payoff: kind,
+    ...(damage !== undefined ? { damage } : {}),
+  });
+}
+
+/** Clarity (Wisdom 10): the built-in payoffs of the owner's ailments hit harder. */
+export function payoffFactor(core: FightCore, f: Fighter): number {
+  if (!f.perks.has("clarity")) return 1;
+  perk(core, f, "clarity");
+  return 1 + PERK.clarityPayoff;
+}
+
 export function perk(core: FightCore, f: Fighter, perk: PerkId): void {
   emit(core, { t: fightTime(core), type: "perk", side: f.side, perk });
 }
@@ -270,7 +294,9 @@ export function heatMultiplier(core: FightCore, f: Fighter): number {
 export function dotFactor(core: FightCore, f: Fighter): number {
   const cursed = f.curses.reduce((sum, c) => sum + c.dotDamageTaken, 0);
   const source = core.fighters[other(f.side)];
-  return (1 + damageTaken(f) + cursed) * (source.setup.rules?.dotDamage ?? 1);
+  const lingering = source.setup.rules?.lingering;
+  const grown = lingering ? 1 + Math.min(lingering.max, lingering.perSecond * fightTime(core)) : 1;
+  return (1 + damageTaken(f) + cursed) * (source.setup.rules?.dotDamage ?? 1) * grown;
 }
 
 /** Boss phases: a trigger or telegraph with `belowLife` waits until life drops below it. */

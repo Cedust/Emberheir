@@ -13,6 +13,8 @@ import {
   fightTime,
   heatMultiplier,
   other,
+  payoff,
+  payoffFactor,
   perk,
   phaseActive,
   REACTION_PATIENCE,
@@ -61,11 +63,17 @@ function stepStatus(core: FightCore, f: Fighter, dt: number): void {
   for (const tick of ticks) {
     const byAilment = core.fighters[other(f.side)].setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
     const hide = f.perks.has("thickSkin") ? 1 - PERK.thickSkinDotTaken : 1;
-    const damage = Math.max(1, Math.round(tick.damage * dotFactor(core, f) * byAilment * hide));
+    const source = core.fighters[other(f.side)];
+    // Collapse: the burst of Corruption at full growth (Clarity makes it stronger).
+    const burst = tick.collapse ? payoffFactor(core, source) : 1;
+    const damage = Math.max(
+      1,
+      Math.round(tick.damage * dotFactor(core, f) * byAilment * hide * burst),
+    );
     emit(core, { t: fightTime(core), type: "dot", side: f.side, ailment: tick.ailment, damage });
+    if (tick.collapse) payoff(core, source, "collapse", damage);
     dealDamage(core, f, damage);
     if (core.result) return;
-    const source = core.fighters[other(f.side)];
     const leech = source.setup.rules?.dotLifesteal ?? 0;
     if (leech > 0) heal(core, source, damage * leech);
     const wr = source.setup.weaponRules;
@@ -130,6 +138,13 @@ function stepTelegraphs(core: FightCore, f: Fighter, dt: number): void {
       core.heavyFrom = f.side;
       castSkill(core, f, spec.skill, 1);
       core.heavyFrom = null;
+      // Iron Blood (Warrior): a Heavy Attack stood through gives Heat to strike back.
+      const target = core.fighters[other(f.side)];
+      const iron = target.setup.rules?.ironBlood;
+      if (iron && !core.result) {
+        target.heat = addHeat(target.heat, iron.heat, heatMultiplier(core, target));
+        payoff(core, target, "ironBlood");
+      }
     }
     return;
   }

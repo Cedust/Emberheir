@@ -1,7 +1,13 @@
 import { describe, expect, it } from "vitest";
 import { rollItem } from "../items/generate";
 import { TEST_SHIELD } from "../items/test-fixtures";
-import { type GameAction, type GameState, applyAction, newGame } from "../progression/game";
+import {
+  type GameAction,
+  type GameState,
+  SAVE_VERSION,
+  applyAction,
+  newGame,
+} from "../progression/game";
 import { TEST_GAME_DATA as data } from "../progression/test-fixtures";
 import { Rng } from "../rng";
 import type { SaveMigration } from "./migrations";
@@ -69,9 +75,9 @@ describe("save games", () => {
   });
 });
 
-/** Version 1 → 2 in the tests: items get a `name` suffix, the wallet some Acorns. */
+/** One version up in the tests: items get a `name` suffix, the wallet some Acorns. */
 const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
-  1: {
+  [SAVE_VERSION]: {
     item: (item) => ({ ...item, name: `${String(item["name"])} (v2)` }),
     state: (save) => ({ ...save, wallet: { ...(save["wallet"] as object), acorns: 5 } }),
   },
@@ -80,8 +86,9 @@ const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
 describe("migrations", () => {
   it("run the item step on every item of a save, then the state step", () => {
     const s = rich();
-    const migrated = deserializeGame(serializeGame(s), data, { to: 2, migrations: MIGRATIONS });
-    expect(migrated.version).toBe(2);
+    const next = SAVE_VERSION + 1;
+    const migrated = deserializeGame(serializeGame(s), data, { to: next, migrations: MIGRATIONS });
+    expect(migrated.version).toBe(next);
     expect(migrated.wallet.acorns).toBe(5);
     const names = [
       migrated.hero.equipment.offHand,
@@ -95,12 +102,31 @@ describe("migrations", () => {
 
   it("reach the items of the shared stash too", () => {
     const json = serializeStash([{ item: shield("a"), x: 0, y: 0 }]);
-    const stash = deserializeStash(json, data, { to: 2, migrations: MIGRATIONS });
+    const stash = deserializeStash(json, data, {
+      to: SAVE_VERSION + 1,
+      migrations: MIGRATIONS,
+    });
     expect(stash[0]?.item.name).toMatch(/ \(v2\)$/);
     // Already current: nothing to do.
     expect(deserializeStash(json, data)[0]?.item).toEqual(shield("a"));
     expect(() => deserializeStash(JSON.stringify({ version: 1, items: [{ x: 0 }] }))).toThrow(
       /Stash is broken/,
     );
+  });
+});
+
+describe("the real migrations", () => {
+  it("2: Ailment Duration rolls become Ailment Effect with the same quality", () => {
+    const s = start();
+    const old = {
+      ...shield("old"),
+      affixes: [{ affixId: "ailment-duration", quality: 0.7 }],
+    };
+    const v1 = { ...s, version: 1, inventory: [{ item: old, x: 0, y: 0 }] };
+    const migrated = deserializeGame(JSON.stringify(v1));
+    expect(migrated.version).toBe(SAVE_VERSION);
+    expect(migrated.inventory[0]?.item.affixes).toEqual([
+      { affixId: "ailment-effect", quality: 0.7 },
+    ]);
   });
 });
