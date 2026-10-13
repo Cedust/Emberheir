@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { PROGRESSION } from "./constants";
-import { type GameData, applyAction, enemySetup, gateStages, newGame, stageWall } from "./game";
+import {
+  type GameData,
+  applyAction,
+  emberPenalty,
+  enemySetup,
+  gateStages,
+  newGame,
+  stageWall,
+} from "./game";
 import { TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
 
 /** Two 15-stage acts: run 1 has only the first, run 2 both. */
@@ -25,7 +33,9 @@ describe("Walls of the newest act", () => {
     expect(late?.life).toBeGreaterThan(1);
     expect(gate?.gate).toBe(true);
     expect(gate?.life).toBeGreaterThan(late?.life ?? 0);
-    expect(boss?.life).toBe(PROGRESSION.wall.strength[1]);
+    expect(boss?.damage).toBe(PROGRESSION.wall.strength[1]);
+    // Mostly damage: Life takes only the square root, so the fight stays short.
+    expect(boss?.life).toBeCloseTo(Math.sqrt(boss?.damage ?? 0));
   });
 
   it("run 1 is gentler than run 2", () => {
@@ -48,5 +58,19 @@ describe("Walls of the newest act", () => {
     const plain = enemySetup({ ...encounter, wall: { life: 1, damage: 1 } }, "long-act", data);
     const walled = enemySetup(encounter, "long-act", data);
     expect(walled.baseLife).toBeGreaterThan(plain.baseLife ?? 0);
+    // The Gatekeeper is half the wall, without the Elite Life on top.
+    const wall = encounter.wall?.life ?? 1;
+    const elite = enemySetup({ ...encounter, gate: false }, "long-act", data);
+    expect(elite.baseLife).toBeCloseTo((walled.baseLife ?? 0) * PROGRESSION.eliteLifeMultiplier);
+    expect(wall).toBeGreaterThan(1);
+  });
+
+  it("the Ember Penalty grows by run: none in run 1, up to its max", () => {
+    const game = newGame(data, { seed: 1, classId: "test-fighter" });
+    const at = (prestige: number) =>
+      emberPenalty({ ...game, legacy: { ...game.legacy, prestige } });
+    expect(at(0)).toBe(0);
+    expect(at(2)).toBeCloseTo(2 * PROGRESSION.resistancePenalty.perPrestige);
+    expect(at(20)).toBe(PROGRESSION.resistancePenalty.max);
   });
 });

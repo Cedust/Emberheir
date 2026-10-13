@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { COMBAT } from "./constants";
 import { type CombatEvent, Fight, runFight } from "./fight";
 import { PERK, PERKS, type PerkId, perksFor } from "./perks";
 import { deriveStats } from "./stats";
@@ -60,10 +61,8 @@ describe("the hero's attribute scale", () => {
   });
 
   it("stat Perks: Stoneguard, Attuned and Inner Fire", () => {
-    const stats = deriveStats(
-      setup({ perks: ["stoneguard", "attuned", "innerFire"], bonuses: { blockValue: 20 } }),
-    );
-    expect(stats.blockValue).toBeCloseTo(25);
+    const stats = deriveStats(setup({ perks: ["stoneguard", "attuned", "innerFire"] }));
+    expect(stats.blockReduction).toBeCloseTo(COMBAT.blockReduction + PERK.stoneguardBlock);
     expect(stats.elementalPenetration).toBeCloseTo(PERK.attunedPenetration);
     expect(stats.startingHeat).toBe(PERK.innerFireHeat);
   });

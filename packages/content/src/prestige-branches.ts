@@ -243,8 +243,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     a1: {
       name: "Parry",
-      description: "+3 % Block Chance per rank.",
-      bonuses: { blockChance: 0.03 },
+      description: "+3 % Block Chance and +2 % max Life per rank.",
+      bonuses: { blockChance: 0.03, increasedLife: 0.02 },
     },
     b1: {
       name: "Lunge",
@@ -284,8 +284,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "En Garde",
-      description: "+6 % Block Chance, +10 % Tenacity.",
-      bonuses: { blockChance: 0.06, tenacity: 0.1 },
+      description: "+6 % Block Chance, +10 % Tenacity, +3 % max Life.",
+      bonuses: { blockChance: 0.06, tenacity: 0.1, increasedLife: 0.03 },
     },
     b4: {
       name: "Steel Nerves",
@@ -572,8 +572,8 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       b: {
         name: "Iron Gut",
-        description: "+20 Armor per rank.",
-        bonuses: { armor: 20 },
+        description: "+12 % Armor per rank.",
+        bonuses: { increasedArmor: 0.12 },
       },
       keystone: {
         name: "Greater Exsanguinate",
@@ -1298,15 +1298,15 @@ const BRANCHES: readonly BranchSpec[] = [
     angle: 90,
     entry: {
       name: "Bulwark",
-      description: "+3 % Block Chance per rank.",
-      bonuses: { blockChance: 0.03 },
+      description: "+3 % Block Chance and +2 % max Life per rank.",
+      bonuses: { blockChance: 0.03, increasedLife: 0.02 },
     },
     a1: {
       name: "Stone Skin",
       description: "+4 % All Resistance per rank.",
       bonuses: { allResistance: 0.04 },
     },
-    b1: { name: "Plating", description: "+15 Armor per rank.", bonuses: { armor: 15 } },
+    b1: { name: "Plating", description: "+10 % Armor per rank.", bonuses: { increasedArmor: 0.1 } },
     a2: {
       name: "Shield Bash",
       description: "When you Block, stun the enemy for 0.5 s.",
@@ -1349,8 +1349,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b4: {
       name: "Fortress",
-      description: "+3 % Block Chance per rank.",
-      bonuses: { blockChance: 0.03 },
+      description: "+3 % Block Chance and +2 % max Life per rank.",
+      bonuses: { blockChance: 0.03, increasedLife: 0.02 },
     },
     keystone: {
       name: "Juggernaut",
@@ -1360,8 +1360,8 @@ const BRANCHES: readonly BranchSpec[] = [
     t2: {
       a: {
         name: "Bastion",
-        description: "+3 % Block Chance per rank.",
-        bonuses: { blockChance: 0.03 },
+        description: "+3 % Block Chance and +2 % max Life per rank.",
+        bonuses: { blockChance: 0.03, increasedLife: 0.02 },
       },
       notable: {
         name: "Shield Wall",
@@ -1378,8 +1378,8 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       b: {
         name: "Reinforced",
-        description: "+20 Armor per rank.",
-        bonuses: { armor: 20 },
+        description: "+12 % Armor per rank.",
+        bonuses: { increasedArmor: 0.12 },
       },
       keystone: {
         name: "Greater Juggernaut",
@@ -1390,8 +1390,8 @@ const BRANCHES: readonly BranchSpec[] = [
     t3: {
       a: {
         name: "Stoneheart",
-        description: "+20 Life per rank.",
-        bonuses: { life: 20 },
+        description: "+3 % max Life per rank.",
+        bonuses: { increasedLife: 0.03 },
       },
       notable: {
         name: "Vengeance",
@@ -1408,8 +1408,8 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       b: {
         name: "Rampart",
-        description: "+3 % Block Chance per rank.",
-        bonuses: { blockChance: 0.03 },
+        description: "+3 % Block Chance and +2 % max Life per rank.",
+        bonuses: { blockChance: 0.03, increasedLife: 0.02 },
       },
       keystone: {
         name: "Supreme Juggernaut",

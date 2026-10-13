@@ -23,8 +23,12 @@ function buildXpTable(base: number, perLevel: number): readonly number[] {
 
 const XP_BASE = 20;
 const XP_PER_MONSTER_LEVEL = 10;
-/** Normal kills of the same Monster Level per level (balance CLI). */
-const XP_KILLS = (level: number) => 1.5 * (1.6 + 0.07 * (level - 1));
+/**
+ * Normal kills of the same Monster Level per level (balance CLI). Raised from 1.5 to 3 with the
+ * new walls (balance-grundlagen-v1.md): levels come slower, so a wall takes several trips of
+ * level and gear, not one lucky one.
+ */
+const XP_KILLS = (level: number) => 3 * (1.6 + 0.07 * (level - 1));
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
@@ -127,7 +131,13 @@ export const PROGRESSION = {
   /** XP of a normal enemy: base + perLevel × (Monster Level − 1). */
   xpBase: XP_BASE,
   xpPerMonsterLevel: XP_PER_MONSTER_LEVEL,
-  /** Enemies below the hero's level give 10 % less XP per level, at least 10 %. */
+  /**
+   * Enemies below the hero's level give less XP (Timo, balance-grundlagen-v1.md E): only
+   * `xpSoftPenalty` per level up to `xpSoftGap` levels (farming a few levels pays), then
+   * `xpPenaltyPerLevel` more per level, at least `xpMinFactor`.
+   */
+  xpSoftPenalty: 0.02,
+  xpSoftGap: 5,
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
   /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
@@ -212,6 +222,13 @@ export const PROGRESSION = {
   /** ...for at most this many deaths. Resets when the act boss falls. */
   pityMaxDeaths: 4,
 
+  /**
+   * Ember Penalty (balance-grundlagen-v1.md C, the D2/PoE rule): every run after the first takes
+   * this much off every Resistance, up to `max` (run 7, the finale and the Wildfire). Resistance
+   * becomes a gear goal instead of a free pass.
+   */
+  resistancePenalty: { perPrestige: 0.1, max: 0.6 },
+
   /** Elite chance = base + perStage × (stage in act − 1) (+ per act / prestige later). */
   eliteChanceBase: 0.05,
   /** No Elites on the first stages of an act, so a fresh Heir cannot lose its first fight. */
@@ -246,15 +263,18 @@ export const PROGRESSION = {
    */
   runPressure: { life: 0.8, damage: 0.35 },
   /**
-   * Walls (spielzeit-v1.md): the newest act of a run is where the hero has to grow. Its boss takes
-   * the run's `strength` on Life and damage, a Gatekeeper on its Waymark stages 5 and 10 (a sure
-   * Elite) takes `gateShare` of it, and its normal enemies ramp up to `rampShare` of it on the
-   * stage before the boss. Index 0 = run 1, which stays gentle. Tuned with the balance CLI: a few
-   * deaths at the gates and 3–5 at the boss for a typical build, beaten by farming a few levels
-   * (measured with the autopilot that gears up like a player: about the median boss margin).
+   * Walls (spielzeit-v1.md, balance-grundlagen-v1.md D): the newest act of a run is where the hero
+   * has to grow. Its boss hits with the run's `strength` (Life only takes its square root, so the
+   * fight stays short; Heavy Attacks stay under `COMBAT.heavyHitCap`), a Gatekeeper on its Waymark
+   * stages 5 and 10 (a sure Elite) takes `gateShare` of it, and its normal enemies ramp up to
+   * `rampShare` of it on the stage before the boss. Index 0 = run 1, which stays gentle. Tuned with
+   * the balance CLI (all 15 autopilot builds): about 7–8 attempts per newest act for a typical
+   * build, fewer with drop luck, and every build clears with at most +10 levels.
    */
   wall: {
-    strength: [1.6, 5.4, 4.4, 5.4, 5.6, 4.4, 4.4],
+    strength: [1.8, 8.3, 6.3, 7, 7, 5.8, 4.8],
+    /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
+    lifeExponent: 0.5,
     gateShare: 0.5,
     rampShare: 0.3,
   },
@@ -267,10 +287,10 @@ export const PROGRESSION = {
    * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
    * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
    * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
-   * instead of the Run Pressure).
+   * instead of the Run Pressure). Like the walls: mostly damage, little more Life.
    */
   finalPrestige: 7,
-  finale: { life: 6.5, damage: 3.6 },
+  finale: { life: 3, damage: 6 },
   /** The first Warden echo takes this share of the finale's pressure, rising to all of it at the Core (Boons pile up on the way). */
   finaleRamp: 0.7,
   /**

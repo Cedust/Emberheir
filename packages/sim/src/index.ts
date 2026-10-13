@@ -23,6 +23,7 @@ export {
 export { triggerThreshold } from "./combat/heat";
 export {
   Fight,
+  heavyHitCap,
   runFight,
   skillCost,
   type CombatEvent,
@@ -53,6 +54,8 @@ export {
   statAffixValue,
   tierForItemLevel,
   tierGrowth,
+  lifeGrowth,
+  isLifeLikeStat,
   unlockedStages,
 } from "./items/affixes";
 export {
@@ -85,6 +88,7 @@ export {
   requirementsFor,
   resolveEquipment,
   scaledBaseStats,
+  scaledFlatBonuses,
   type InactiveReason,
   type ItemModifiers,
   type ResolvedEquipment,

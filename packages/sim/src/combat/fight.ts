@@ -88,6 +88,8 @@ export type CombatEvent =
       readonly blocked: boolean;
       /** Weapon Mastery: the hit did not land cleanly (Glancing Blow). */
       readonly glancing?: boolean;
+      /** A Heavy Attack hit held back by `COMBAT.heavyHitCap`. */
+      readonly capped?: boolean;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {
@@ -372,6 +374,11 @@ interface HitOptions {
   readonly extraAttack?: boolean;
 }
 
+/** Most damage one hit of a telegraphed Heavy Attack can deal (`COMBAT.heavyHitCap`). */
+export function heavyHitCap(stats: { readonly maxLife: number; readonly barrier: number }): number {
+  return Math.max(1, Math.round(COMBAT.heavyHitCap * (stats.maxLife + stats.barrier)));
+}
+
 const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 
 /** Heat Cost of a Rotation skill after rule changes (e.g. Keystones). */
@@ -486,6 +493,8 @@ export class Fight {
   /** Fight time asked for by `advance` so far; ticks run until `time` catches up with it. */
   private requested = 0;
   private result: { winner: Side | null; fled: Side | null } | undefined;
+  /** The side whose telegraphed Heavy Attack is landing right now (its hits are capped). */
+  private heavyFrom: Side | null = null;
 
   constructor(hero: CombatantSetup, enemy: CombatantSetup, seed: number) {
     this.rng = new Rng(seed);
@@ -714,7 +723,11 @@ export class Fight {
       if (f.windup.remaining > 1e-9) return;
       const spec = telegraphs[f.windup.index];
       f.windup = null;
-      if (spec) this.castSkill(f, spec.skill, 1);
+      if (spec) {
+        this.heavyFrom = f.side;
+        this.castSkill(f, spec.skill, 1);
+        this.heavyFrom = null;
+      }
       return;
     }
     for (let i = 0; i < telegraphs.length; i++) {
@@ -946,13 +959,17 @@ export class Fight {
     if (prism) ailmentChances.push({ ailment: prism.ailment, chance: 0.25 });
     const nthAttack = (n: number) => !fromTrigger && (f.attackCount + 1) % n === 0;
     const trueShot = f.perks.has("trueShot") && nthAttack(PERK.trueShotEvery);
+    const defaultDamage = f.setup.rules?.defaultAttackDamage ?? 1;
     if (trueShot) this.perk(f, "trueShot");
     const result = this.hit(f, {
       source: weapon.defaultAttack,
       baseDamage: weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min),
       type: prism?.type ?? weapon.damageType,
       evadable: true,
-      multiplier: f.setup.rules?.defaultAttackDamage ?? 1,
+      multiplier: defaultDamage,
+      // A Keystone that weakens the Default Attack (Void-lord I, Black Flame) does not weaken the
+      // ailments it carries.
+      ...(defaultDamage < 1 ? { ailmentPower: 1 / defaultDamage } : {}),
       ailmentChances,
       fromTrigger,
       precisionApplies: true,
@@ -1300,7 +1317,9 @@ export class Fight {
 
     const { glancing } = outcome;
     // Hunter's Mark: until the first clean hit, Glancing Blows deal nothing.
-    const damage = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
+    const dealt = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
+    const damage =
+      this.heavyFrom === attacker.side ? Math.min(dealt, heavyHitCap(defender.stats)) : dealt;
     this.emit({
       t: this.time,
       type: "hit",
@@ -1311,6 +1330,7 @@ export class Fight {
       crit: outcome.crit,
       blocked: outcome.blocked,
       ...(glancing ? { glancing: true } : {}),
+      ...(damage < dealt ? { capped: true } : {}),
     });
     defender.lastHitTakenAt = this.time;
     if (outcome.blocked && defender.setup.weaponRules?.critAfter?.includes("block")) {
@@ -1336,17 +1356,21 @@ export class Fight {
       this.glance(attacker);
     } else {
       if (rolls) this.cleanHit(attacker, defender, h);
+      // Ailments grow from the hit before "damage taken" (Shock, Keystones): their ticks take it
+      // again on their own, so it counts once, not twice.
+      const hitBase = damage / (1 + this.damageTaken(defender));
+      const ailmentBase = hitBase * (h.ailmentPower ?? 1);
       for (const { ailment, chance } of withStatAilmentChances(
         this.elementalSurge(attacker, h),
         attacker.stats,
       )) {
         if (!this.rng.chance(chance)) continue;
-        this.inflict(attacker, defender, ailment, damage * (h.ailmentPower ?? 1));
+        this.inflict(attacker, defender, ailment, ailmentBase);
       }
       if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
-        this.inflict(attacker, defender, "bleed", damage);
+        this.inflict(attacker, defender, "bleed", hitBase);
       }
-      if (outcome.crit && wr) this.critMastery(attacker, defender, damage);
+      if (outcome.crit && wr) this.critMastery(attacker, defender, hitBase);
       if (outcome.crit && attacker.perks.has("armorbreaker")) {
         this.perk(attacker, "armorbreaker");
         this.addSunder(attacker, defender, 1);
@@ -1671,7 +1695,11 @@ export class Fight {
         return;
       case "ailment": {
         const weapon = f.setup.weapon.damage;
-        this.inflict(f, target, effect.ailment, context.damage ?? (weapon.min + weapon.max) / 2);
+        const hit =
+          context.damage !== undefined
+            ? context.damage / (1 + this.damageTaken(target))
+            : (weapon.min + weapon.max) / 2;
+        this.inflict(f, target, effect.ailment, hit);
         return;
       }
       case "heal":
@@ -1763,14 +1791,16 @@ export class Fight {
   }
 
   /**
-   * Intelligence Barrier (like PoE's Energy Shield): a moment without a hit and it fills up
-   * again. One "barrier" event when it is full, so the arena shows it without spamming the log.
+   * Barrier (like PoE's Energy Shield): it always trickles back, and a moment without a hit fills
+   * it up fast. One "barrier" event when it is full, so the arena shows it without spamming the log.
    */
   private rechargeBarrier(f: Fighter, dt: number): void {
     const max = f.stats.barrier;
     if (max <= 0 || f.barrier >= max) return;
-    if (this.time - f.lastHitTakenAt < COMBAT.barrierRecharge.delay) return;
-    const gain = Math.min(max - f.barrier, max * COMBAT.barrierRecharge.perSecond * dt);
+    const { steady, delay, perSecond } = COMBAT.barrierRecharge;
+    const rate = this.time - f.lastHitTakenAt < delay ? steady : perSecond;
+    const faster = f.setup.rules?.barrierRecharge ?? 1;
+    const gain = Math.min(max - f.barrier, max * rate * faster * dt);
     f.barrier += gain;
     f.barrierRecharged += gain;
     if (f.barrier >= max - 1e-6) {

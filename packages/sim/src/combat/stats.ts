@@ -1,6 +1,6 @@
 import { COMBAT } from "./constants";
 import { PERK } from "./perks";
-import type { Attributes, CombatantSetup, StatBonuses } from "./types";
+import type { Attributes, CombatantSetup, Element, StatBonuses } from "./types";
 
 /** Final combat stats of a fighter, derived from attributes, weapon and bonuses. */
 export interface DerivedStats {
@@ -14,8 +14,12 @@ export interface DerivedStats {
   readonly attackSpeed: number;
   readonly evasion: number;
   readonly blockChance: number;
-  readonly blockValue: number;
-  /** Barrier from Intelligence (hero only): absorbs damage before Life, recharges in fights. */
+  /** Share of a blocked hit that the block stops. */
+  readonly blockReduction: number;
+  /**
+   * Barrier (like Energy Shield): gear Barrier × (1 + Intelligence's share + % Barrier). Absorbs
+   * damage before Life and recharges during the fight.
+   */
   readonly barrier: number;
   /** All Resistance (from Intelligence and gear) before the element's own Resistance. */
   readonly resistance: number;
@@ -50,7 +54,11 @@ export function heroBaseLife(level: number): number {
 export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Required<StatBonuses> {
   const total: Record<keyof StatBonuses, number> = {
     life: 0,
+    increasedLife: 0,
     armor: 0,
+    increasedArmor: 0,
+    barrier: 0,
+    increasedBarrier: 0,
     physicalDamage: 0,
     elementalDamage: 0,
     critChance: 0,
@@ -58,7 +66,6 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     attackSpeed: 0,
     evasion: 0,
     blockChance: 0,
-    blockValue: 0,
     allResistance: 0,
     fireResistance: 0,
     coldResistance: 0,
@@ -98,6 +105,8 @@ interface AttributeSteps {
   readonly critChance: number;
   readonly triggerChance: number;
   readonly elementalDamage: number;
+  /** Intelligence: % more Barrier per point. */
+  readonly barrier: number;
   readonly allResistance: number;
   readonly attackSpeed: number;
   readonly evasion: number;
@@ -112,6 +121,7 @@ const CLASSIC_STEPS: AttributeSteps = {
   critChance: COMBAT.critChancePerDexterity,
   triggerChance: COMBAT.triggerChancePerDexterity,
   elementalDamage: COMBAT.elementalDamagePerIntelligence,
+  barrier: 0,
   allResistance: COMBAT.allResistancePerIntelligence,
   attackSpeed: COMBAT.attackSpeedPerAgility,
   evasion: COMBAT.evasionPerAgility,
@@ -126,6 +136,7 @@ const HEIR_STEPS: AttributeSteps = {
   critChance: COMBAT.heir.critChancePerDexterity,
   triggerChance: COMBAT.heir.triggerChancePerDexterity,
   elementalDamage: COMBAT.heir.elementalDamagePerIntelligence,
+  barrier: COMBAT.heir.barrierPerIntelligence,
   allResistance: COMBAT.heir.allResistancePerIntelligence,
   attackSpeed: COMBAT.heir.attackSpeedPerAgility,
   evasion: COMBAT.heir.evasionPerAgility,
@@ -146,12 +157,17 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
   const step = heir ? HEIR_STEPS : CLASSIC_STEPS;
   const perks = new Set(setup.perks ?? []);
   const baseLife = setup.baseLife ?? heroBaseLife(setup.level);
-  const allResistance = a.intelligence * step.allResistance + b.allResistance;
-  const resist = (own: number) => clamp(allResistance + own, 0, COMBAT.maxResistance);
+  const penalty = setup.resistancePenalty ?? 0;
+  const allResistance = a.intelligence * step.allResistance + b.allResistance - penalty;
+  const capOf = (element: Element) =>
+    COMBAT.maxResistance + (setup.rules?.maxResistance?.[element] ?? 0);
+  const resist = (own: number, element: Element) => clamp(allResistance + own, 0, capOf(element));
   const life = heir
-    ? (baseLife + b.life) * (1 + a.vitality * COMBAT.heir.lifePerVitality)
-    : baseLife + a.vitality * COMBAT.lifePerVitality + b.life;
-  const armor = heir ? b.armor * (1 + a.strength * step.armor) : a.strength * step.armor + b.armor;
+    ? (baseLife + b.life) * (1 + a.vitality * COMBAT.heir.lifePerVitality + b.increasedLife)
+    : (baseLife + a.vitality * COMBAT.lifePerVitality + b.life) * (1 + b.increasedLife);
+  const armor = heir
+    ? b.armor * (1 + a.strength * step.armor + b.increasedArmor)
+    : (a.strength * step.armor + b.armor) * (1 + b.increasedArmor);
 
   return {
     maxLife: Math.round(life * (setup.rules?.lifeMultiplier ?? 1)),
@@ -172,20 +188,15 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       0,
       COMBAT.maxBlockChance,
     ),
-    blockValue: b.blockValue * (perks.has("stoneguard") ? 1 + PERK.stoneguardBlockValue : 1),
-    barrier: heir
-      ? Math.round(
-          life *
-            (setup.rules?.lifeMultiplier ?? 1) *
-            a.intelligence *
-            COMBAT.heir.barrierPerIntelligence,
-        )
-      : 0,
+    blockReduction: COMBAT.blockReduction + (perks.has("stoneguard") ? PERK.stoneguardBlock : 0),
+    barrier: Math.round(
+      Math.max(0, b.barrier) * (1 + a.intelligence * step.barrier + b.increasedBarrier),
+    ),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
-    fireResistance: resist(b.fireResistance),
-    coldResistance: resist(b.coldResistance),
-    lightningResistance: resist(b.lightningResistance),
-    voidResistance: resist(b.voidResistance),
+    fireResistance: resist(b.fireResistance, "fire"),
+    coldResistance: resist(b.coldResistance, "cold"),
+    lightningResistance: resist(b.lightningResistance, "lightning"),
+    voidResistance: resist(b.voidResistance, "void"),
     heatGain: a.wisdom * step.heatGain + b.heatGain,
     startingHeat: clamp(
       b.startingHeat + (perks.has("innerFire") ? PERK.innerFireHeat : 0),

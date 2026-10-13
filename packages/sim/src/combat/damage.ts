@@ -16,9 +16,16 @@ export function armorReduction(armor: number, attackerLevel: number, penetration
   return Math.min(reduction, COMBAT.maxArmorReduction);
 }
 
-/** Fraction of elemental damage that Resistance removes (capped at 75 %, minus Penetration). */
-export function resistanceReduction(resistance: number, penetration = 0): number {
-  return clamp(Math.min(resistance, COMBAT.maxResistance) - penetration, 0, COMBAT.maxResistance);
+/**
+ * Fraction of elemental damage that Resistance removes (capped, minus Penetration). The cap is
+ * 75 % unless something raised it (a Fire Draught: the defender's final Resistance carries it).
+ */
+export function resistanceReduction(
+  resistance: number,
+  penetration = 0,
+  cap: number = COMBAT.maxResistance,
+): number {
+  return clamp(Math.min(resistance, cap) - penetration, 0, cap);
 }
 
 /** The defender's final Resistance against one element. */
@@ -51,7 +58,11 @@ export function mitigate(
   const reduction =
     type === "physical"
       ? armorReduction(defender.armor, attackerLevel, attacker.physicalPenetration)
-      : resistanceReduction(elementResistance(defender, type), attacker.elementalPenetration);
+      : resistanceReduction(
+          elementResistance(defender, type),
+          attacker.elementalPenetration,
+          Math.max(COMBAT.maxResistance, elementResistance(defender, type)),
+        );
   return amount * (1 - reduction);
 }
 
@@ -122,13 +133,13 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   if (glancing) damage *= input.glancingDamage ?? COMBAT.glancingDamage;
   damage = mitigate(damage, input.type, attacker, input.attackerLevel, defender);
   damage *= 1 + input.defenderDamageTaken;
-  if (blocked) damage -= defender.blockValue;
+  // A block stops a share of the hit (D2: the shield takes the blow), so it keeps its worth
+  // against the biggest late hits.
+  if (blocked) damage *= 1 - defender.blockReduction;
 
-  // A hit that lands always deals at least 1, a blocked hit can be absorbed completely.
-  const minimum = blocked ? 0 : 1;
   return {
     kind: "hit",
-    damage: Math.max(minimum, Math.round(damage)),
+    damage: Math.max(1, Math.round(damage)),
     crit,
     blocked,
     glancing,

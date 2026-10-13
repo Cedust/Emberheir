@@ -48,7 +48,10 @@ describe("leveling", () => {
   it("gives 10 % less XP per level above the enemy, at least 10 %", () => {
     expect(xpLevelFactor(1, 3)).toBeCloseTo(1.1);
     expect(xpLevelFactor(1, 60)).toBe(PROGRESSION.xpMaxFactor);
-    expect(xpLevelFactor(4, 2)).toBeCloseTo(0.8);
+    // A small penalty up to 5 levels above, then a steep one.
+    expect(xpLevelFactor(4, 2)).toBeCloseTo(0.96);
+    expect(xpLevelFactor(7, 2)).toBeCloseTo(0.9);
+    expect(xpLevelFactor(12, 2)).toBeCloseTo(0.4);
     expect(xpLevelFactor(30, 1)).toBe(PROGRESSION.xpMinFactor);
     expect(xpForKill(2, "normal", 2)).toBe(PROGRESSION.xpBase + PROGRESSION.xpPerMonsterLevel);
     expect(xpForKill(1, "boss", 1)).toBe(PROGRESSION.xpBase * PROGRESSION.bossRewardMultiplier.xp);

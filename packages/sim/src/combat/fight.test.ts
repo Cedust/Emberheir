@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
-import { type CombatEvent, Fight, runFight } from "./fight";
+import { type CombatEvent, Fight, heavyHitCap, runFight } from "./fight";
+import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
 import type { CombatantSetup, SkillDefinition, SlotModifier, WeaponDefinition } from "./types";
 
@@ -56,11 +57,12 @@ describe("Fight", () => {
     expect(fight.snapshot().hero.life).toBe(40);
   });
 
-  it("gives the hero a Barrier from Intelligence that refills after a moment without a hit", () => {
+  it("gives the hero Barrier from gear, raised by Intelligence, that recharges in the fight", () => {
     const hero = dummy({
       baseLife: 100,
       attributeScale: "heir",
       attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+      bonuses: { barrier: 50 },
     });
     const enemy = setup({
       weapon: { ...TEST_WEAPON, attacksPerSecond: 0.2 },
@@ -68,13 +70,28 @@ describe("Fight", () => {
       baseLife: 100_000,
     });
     const fight = new Fight(hero, enemy, 1);
-    // 10 Intelligence × 3 % of 100 Life.
-    expect(fight.snapshot().hero.barrier).toBe(30);
+    // 50 Barrier from gear × (1 + 10 Intelligence × 8 %).
+    const full = 50 * (1 + 10 * COMBAT.heir.barrierPerIntelligence);
+    expect(fight.snapshot().hero.barrier).toBe(full);
     fight.advance(5.2);
-    expect(fight.snapshot().hero.barrier).toBeLessThan(30);
+    const hit = fight.snapshot().hero.barrier;
+    expect(hit).toBeLessThan(full);
     expect(fight.snapshot().hero.life).toBe(100);
-    fight.advance(4.6);
-    expect(fight.snapshot().hero.barrier).toBeCloseTo(30);
+    // Right after a hit it only trickles back...
+    fight.advance(1);
+    const trickle = fight.snapshot().hero.barrier;
+    expect(trickle - hit).toBeCloseTo(full * COMBAT.barrierRecharge.steady, 0);
+    // ...and a moment without a hit fills it up.
+    fight.advance(3.6);
+    expect(fight.snapshot().hero.barrier).toBeCloseTo(full);
+  });
+
+  it("gives no Barrier without Barrier gear, however much Intelligence", () => {
+    const hero = dummy({
+      attributeScale: "heir",
+      attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+    });
+    expect(new Fight(hero, dummy(), 1).snapshot().hero.barrier).toBe(0);
   });
 
   describe("Rotation and Heat", () => {
@@ -332,6 +349,21 @@ describe("Fight", () => {
       expect(slam).toMatchObject({ source: "Slam", damage: 50 });
       expect(ofType(fight.events, "skill").at(-1)).toMatchObject({ skill: "Slam", heatCost: 0 });
       expect(fight.snapshot().enemy.telegraph).toBeNull();
+    });
+
+    it("a Heavy Attack hit takes at most its share of Life + Barrier, other hits are not capped", () => {
+      const huge = { ...SLAM, hits: [{ kind: "weapon" as const, multiplier: 500 }] };
+      const target = dummy({ baseLife: 400 });
+      const cap = heavyHitCap(deriveStats(target));
+      expect(cap).toBe(Math.round(COMBAT.heavyHitCap * deriveStats(target).maxLife));
+      const fight = new Fight(
+        target,
+        { ...boss(), telegraphs: [{ skill: huge, interval: 4, windup: 1.5 }] },
+        1,
+      );
+      fight.advance(5.6);
+      const slam = ofType(fight.events, "hit").find((h) => h.source === "Slam");
+      expect(slam?.damage).toBe(cap);
     });
 
     it("repeats every interval after the wind-up", () => {
@@ -761,6 +793,24 @@ describe("Affliction effects", () => {
     fight.advance(2.05);
     expect(ofType(fight.events, "hit")[0]?.damage).toBe(12);
     expect(ofType(fight.events, "dot")[0]?.damage).toBe(6);
+  });
+
+  it("damage taken counts once on a DoT: in its ticks, not again in the hit it grew from", () => {
+    // The target takes 50 % more damage: the hit deals 15, the Bleed grows from the 10 before it
+    // and ticks for 5 × 1.5 (not 7.5 × 1.5).
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT });
+    const fight = new Fight(hero, dummy({ rules: { damageTaken: 0.5 } }), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit")[0]?.damage).toBe(15);
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(8);
+  });
+
+  it("a weaker Default Attack keeps the full ailments it carries (Void-lord I)", () => {
+    const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rules: { defaultAttackDamage: 0.5 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit")[0]?.damage).toBe(5);
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(5);
   });
 
   it("the chilled damage rule raises hits on a Chilled enemy (Sorcerer: Glacier)", () => {

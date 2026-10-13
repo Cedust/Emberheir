@@ -80,6 +80,7 @@ import {
 import { type HeroClass, LINEAGE_STEPS, classTitle, getClass, lineageEffect } from "./classes";
 import { type EliteModifier, applyEliteModifiers, eliteChance, eliteModifierCount } from "./elites";
 import { buildHeroSetup } from "./hero";
+import { DRAUGHT_FLASK_COST, DRAUGHT_FROM_PRESTIGE, type DraughtDefinition } from "./draughts";
 import {
   ATTRIBUTE_RULES,
   type AttributePoints,
@@ -207,6 +208,8 @@ export interface GameData {
    */
   readonly finale?: ActData;
   readonly startingAttributes: Attributes;
+  /** Draughts brewed from a Flask charge before setting out; none without them. */
+  readonly draughts?: readonly DraughtDefinition[];
 }
 
 export interface Wallet {
@@ -339,6 +342,8 @@ export interface RunState {
   readonly bounty?: BountyState;
   /** Wildfire tier (1–10) of this trip; missing on a normal trip. */
   readonly wildfire?: number;
+  /** The Draught brewed for this trip (it lasts until the Camp). */
+  readonly draught?: string;
 }
 
 /** Shown once in the Camp after a run ends. */
@@ -476,6 +481,8 @@ export interface GameState {
    * outside the save (like the shared stash) and puts it into the state it loads.
    */
   readonly lineage?: number;
+  /** The Draught chosen in the Camp: brewed from a Flask charge at every set-out. */
+  readonly draught?: string | null;
 }
 
 export class GameActionError extends Error {}
@@ -761,20 +768,30 @@ export function stageWall(
   if (!isWallAct(data, act, prestige)) return null;
   const w = PROGRESSION.wall;
   const strength = w.strength[Math.min(prestige, w.strength.length - 1)] ?? 1;
+  // A wall is a fight that a few levels or better gear win (balance-grundlagen-v1.md D): the
+  // enemy hits harder, with only a little more Life so the fight stays short. Heavy Attacks stay
+  // below `COMBAT.heavyHitCap`, so it is never a one-shot lottery.
+  const at = (strength: number, gate: boolean) => ({
+    life: strength ** w.lifeExponent,
+    damage: strength,
+    gate,
+  });
   const part = (share: number) => 1 + (strength - 1) * share;
-  if (stage >= act.stages) return { life: strength, damage: strength, gate: false };
-  if (gateStages(act).includes(stage)) {
-    const k = part(w.gateShare);
-    return { life: k, damage: k, gate: true };
-  }
-  const k = part(w.rampShare * Math.min(1, (stage - 1) / Math.max(1, act.stages - 2)));
-  return { life: k, damage: k, gate: false };
+  if (stage >= act.stages) return at(strength, false);
+  if (gateStages(act).includes(stage)) return at(part(w.gateShare), true);
+  return at(part(w.rampShare * Math.min(1, (stage - 1) / Math.max(1, act.stages - 2))), false);
 }
 
 const WILDFIRE_NUMERALS = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X"];
 
 /** Wildfire opens once The Last Ember is won (spielzeit-v1.md, C). */
 export const wildfireOpen = (state: GameState) => state.legacy.finaleWon === true;
+
+/** Ember Penalty on every Resistance in this run (0 in run 1, −60 % from run 7 on). */
+export function emberPenalty(state: GameState): number {
+  const p = PROGRESSION.resistancePenalty;
+  return Math.min(p.max, p.perPrestige * state.legacy.prestige);
+}
 
 /** The highest Wildfire tier the hero may choose: one above the highest cleared, 0 = closed. */
 export function wildfireTop(state: GameState): number {
@@ -1054,6 +1071,7 @@ export function heroSetup(
   const trait = heroClass.trait;
   const lineage = lineageEffect(heroClass.lineage, state.lineage ?? 0);
   const mastery = heroWeapon(state, data);
+  const draught = activeDraught(state, data);
   return buildHeroSetup(
     {
       level: hero.level,
@@ -1073,6 +1091,7 @@ export function heroSetup(
           trait.bonuses,
           lineage.bonuses,
           mastery.bonuses,
+          draught?.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
@@ -1085,8 +1104,10 @@ export function heroSetup(
         trait.rules,
         lineage.rules,
         mastery.rules,
+        draught?.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
+      resistancePenalty: emberPenalty(state),
     },
     data.items,
   );
@@ -1175,7 +1196,8 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
       }
     : setup;
   const mods = eliteModifiersOf(encounter, data);
-  return mods.length ? applyEliteModifiers(walled, mods) : walled;
+  // A Gatekeeper is already half the wall: its modifiers, but no Elite Life and damage on top.
+  return mods.length ? applyEliteModifiers(walled, mods, { plain: encounter.gate }) : walled;
 }
 
 export function encounterName(encounter: Encounter, actId: string, data: GameData): string {
@@ -1289,6 +1311,8 @@ export type GameAction =
   | { readonly type: "setOut"; readonly actId: string; readonly wildfire?: number }
   /** Turn in a done bounty at the Scout. */
   | { readonly type: "turnInBounty" }
+  /** Camp: the Draught to brew at every set-out (`null` = none). */
+  | { readonly type: "chooseDraught"; readonly draughtId: string | null }
   /** The Last Ember: from the Camp into the finale's gauntlet. */
   | { readonly type: "enterFinale" }
   /** From the intermission into the next fight. */
@@ -1368,6 +1392,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
         : setOut(state, data, action.actId);
     case "turnInBounty":
       return turnInBounty(state, data);
+    case "chooseDraught":
+      return chooseDraught(state, data, action.draughtId);
     case "enterFinale":
       return enterFinale(state, data);
     case "startStage":
@@ -1456,11 +1482,12 @@ function setOut(state: GameState, data: GameData, actId: string): GameState {
           rng,
         )
       : undefined;
+  const draught = brewedDraught(state, data);
   return {
     ...(bounty ? next : state),
     notice: null,
-    // The Flask leaves the Camp full, as much as the worn Belt allows.
-    flaskCharges: flaskCapacity(state, data),
+    // The Flask leaves the Camp full, as much as the worn Belt allows, minus a brewed Draught.
+    flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),
     run: {
       actId,
       stage: 1,
@@ -1469,8 +1496,39 @@ function setOut(state: GameState, data: GameData, actId: string): GameState {
       encounter: null,
       rewards: null,
       ...(bounty ? { bounty } : {}),
+      ...(draught ? { draught: draught.id } : {}),
     },
   };
+}
+
+/** Draughts can be brewed from the first Prestige on (and when the game has any). */
+export function draughtsOpen(state: GameState, data: GameData): boolean {
+  return (data.draughts?.length ?? 0) > 0 && state.legacy.prestige >= DRAUGHT_FROM_PRESTIGE;
+}
+
+export function getDraught(data: GameData, id: string): DraughtDefinition | undefined {
+  return data.draughts?.find((d) => d.id === id);
+}
+
+/** The Draught a set-out brews: the chosen one, if Draughts are open and the Flask can spare it. */
+export function brewedDraught(state: GameState, data: GameData): DraughtDefinition | undefined {
+  if (!state.draught || !draughtsOpen(state, data)) return undefined;
+  if (flaskCapacity(state, data) < DRAUGHT_FLASK_COST) return undefined;
+  return getDraught(data, state.draught);
+}
+
+/** The Draught working right now: the one brewed for this trip. */
+export function activeDraught(state: GameState, data: GameData): DraughtDefinition | undefined {
+  return state.run?.draught ? getDraught(data, state.run.draught) : undefined;
+}
+
+function chooseDraught(state: GameState, data: GameData, id: string | null): GameState {
+  requireCamp(state);
+  if (id !== null) {
+    if (!draughtsOpen(state, data)) return fail("Draughts come with the first Prestige");
+    if (!getDraught(data, id)) return fail(`Unknown Draught "${id}"`);
+  }
+  return { ...state, draught: id };
 }
 
 /** Wildfire: any act at a chosen tier, once The Last Ember is won. */
@@ -1482,10 +1540,11 @@ function setOutWildfire(state: GameState, data: GameData, actId: string, tier: n
   }
   if (isFinaleAct(data, actId)) return fail("The Last Ember does not burn again");
   getAct(data, actId);
+  const draught = brewedDraught(state, data);
   return {
     ...state,
     notice: null,
-    flaskCharges: flaskCapacity(state, data),
+    flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),
     run: {
       actId,
       stage: 1,
@@ -1494,6 +1553,7 @@ function setOutWildfire(state: GameState, data: GameData, actId: string, tier: n
       encounter: null,
       rewards: null,
       wildfire: tier,
+      ...(draught ? { draught: draught.id } : {}),
     },
   };
 }
@@ -1506,11 +1566,12 @@ export function getBounty(data: GameData, id: string): BountyDefinition {
 function enterFinale(state: GameState, data: GameData): GameState {
   requireCamp(state);
   if (!finaleOpen(state, data) || !data.finale) return fail("The last flame is not in reach yet");
+  const draught = brewedDraught(state, data);
   return {
     ...state,
     notice: null,
     boons: EMPTY_BOONS,
-    flaskCharges: flaskCapacity(state, data),
+    flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),
     legacy: { ...state.legacy, finaleAttempts: (state.legacy.finaleAttempts ?? 0) + 1 },
     run: {
       actId: data.finale.id,
@@ -1519,6 +1580,7 @@ function enterFinale(state: GameState, data: GameData): GameState {
       phase: "intermission",
       encounter: null,
       rewards: null,
+      ...(draught ? { draught: draught.id } : {}),
     },
   };
 }

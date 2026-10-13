@@ -13,8 +13,13 @@ export const ITEMS = {
    * rolls stage 1, 4–6 up to stage 2, 7–10 up to stage 3. Each stage is a third of the range.
    */
   stageUnlockPositions: [1, 4, 7],
-  /** Weapon damage and flat base values (Armor, Block Value): × (1 + this × (tier − 1)). */
+  /** Weapon damage and flat base values (Armor): × (1 + this × (tier − 1)). */
   baseScalePerTier: 1,
+  /**
+   * Flat Life, Barrier and Thorns on items grow by this much per tier, compounding: the hero's
+   * Base Life grows 4 % per level, 10 levels per tier (1.04^10 ≈ 1.48).
+   */
+  lifeGrowthPerTier: 0.48,
   /** Attribute Requirements grow by this many points per tier above 1. */
   requirementPerTier: 0,
   /**

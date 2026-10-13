@@ -192,7 +192,7 @@ export const MOSSBOUND_WARDEN: EnemyDefinition = {
   weapon: WARDEN_STAFF,
   skills: [MOSS_MEND],
   baseLife: 250,
-  bonuses: { blockChance: 0.15, blockValue: 1 },
+  bonuses: { blockChance: 0.1 },
 };
 
 export const ACT2_ENEMIES: readonly EnemyDefinition[] = [
@@ -268,7 +268,7 @@ export const OBSIDIAN_GUARD: EnemyDefinition = {
   weapon: OBSIDIAN_GLAIVE,
   skills: [OBSIDIAN_SHELL],
   baseLife: 285,
-  bonuses: { blockChance: 0.15, blockValue: 1, fireResistance: 0.3 },
+  bonuses: { blockChance: 0.1, fireResistance: 0.3 },
   triggers: [
     {
       id: "obsidian-barrier",
@@ -376,7 +376,7 @@ export const FROST_WARDEN: EnemyDefinition = {
   weapon: ICE_SHARDS,
   skills: [GLACIAL_MEND],
   baseLife: 305,
-  bonuses: { blockChance: 0.15, blockValue: 1, coldResistance: 0.3 },
+  bonuses: { blockChance: 0.1, coldResistance: 0.3 },
   triggers: [
     {
       id: "ice-wall",
@@ -409,7 +409,7 @@ export const RIME_WARDEN: EnemyDefinition = {
   skills: [ICE_BOLT],
   baseLife: 385,
   boss: true,
-  bonuses: { blockChance: 0.1, blockValue: 1, coldResistance: 0.4 },
+  bonuses: { blockChance: 0.07, coldResistance: 0.4 },
   telegraphs: [{ skill: AVALANCHE, interval: 12, windup: 2.5 }],
   triggers: [0.75, 0.5, 0.25].map((threshold) => ({
     id: `ice-barrier-${threshold * 100}`,
@@ -648,7 +648,7 @@ export const CINDER_KNIGHT: EnemyDefinition = {
   weapon: CINDER_LANCE,
   skills: [OBSIDIAN_SHELL],
   baseLife: 330,
-  bonuses: { blockChance: 0.18, blockValue: 1, allResistance: 0.15 },
+  bonuses: { blockChance: 0.12, allResistance: 0.15 },
   triggers: [
     {
       id: "cinder-ward",
@@ -684,8 +684,9 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   skills: [SOUL_REAP],
   baseLife: 520,
   boss: true,
-  // As tough against Physical as against Elemental (Timo): about 10 % each at the hero's level.
-  bonuses: { armor: 200, allResistance: 0.08 },
+  // As tough against Physical as against Elemental (Timo): about 15 % each at the hero's level
+  // (its Strength gives the Armor, COMBAT.monsterArmorPerLevel).
+  bonuses: { allResistance: 0.15 },
   telegraphs: [
     { skill: HARVEST_SWING, interval: 10, windup: 2 },
     { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66 },

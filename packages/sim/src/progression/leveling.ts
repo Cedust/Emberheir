@@ -23,13 +23,19 @@ export function xpToNextLevel(level: number, cap: number = levelCap(0)): number 
 }
 
 /**
- * −10 % XP per level the hero is above the enemy, at least 10 %; +5 % per level the enemy is
- * above the hero, at most double, so a hero behind the Monster Level catches up.
+ * A small XP penalty per level the hero is above the enemy (−2 % up to 5 levels), then −10 % per
+ * further level, at least 10 %; +5 % per level the enemy is above the hero, at most double, so a
+ * hero behind the Monster Level catches up.
  */
 export function xpLevelFactor(heroLevel: number, monsterLevel: number): number {
   const gap = heroLevel - monsterLevel;
   if (gap < 0) return Math.min(PROGRESSION.xpMaxFactor, 1 - PROGRESSION.xpBonusPerLevel * gap);
-  return Math.max(PROGRESSION.xpMinFactor, 1 - PROGRESSION.xpPenaltyPerLevel * gap);
+  const soft = Math.min(gap, PROGRESSION.xpSoftGap);
+  const steep = Math.max(0, gap - PROGRESSION.xpSoftGap);
+  return Math.max(
+    PROGRESSION.xpMinFactor,
+    1 - PROGRESSION.xpSoftPenalty * soft - PROGRESSION.xpPenaltyPerLevel * steep,
+  );
 }
 
 export type EnemyRank = "normal" | "elite" | "boss";

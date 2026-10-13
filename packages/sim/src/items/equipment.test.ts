@@ -8,7 +8,10 @@ import {
   requirementsFor,
   resolveEquipment,
   scaledBaseStats,
+  scaledFlatBonuses,
 } from "./equipment";
+import { lifeGrowth } from "./affixes";
+import { ITEMS } from "./constants";
 import { TEST_AXE, TEST_CATALOG, TEST_SHIELD, TEST_SWORD, TEST_WAND } from "./test-fixtures";
 import type { Item } from "./types";
 
@@ -35,7 +38,22 @@ describe("equipment stats", () => {
   });
 
   it("flat base values scale with the tier, percentages do not", () => {
-    expect(scaledBaseStats(TEST_SHIELD, 2)).toEqual({ armor: 20, blockChance: 0.2, blockValue: 6 });
+    expect(scaledBaseStats(TEST_SHIELD, 2)).toEqual({ armor: 20, blockChance: 0.2 });
+  });
+
+  it("flat Life grows with the tier like the hero's Base Life, on affixes and implicits alike", () => {
+    expect(lifeGrowth(1)).toBe(1);
+    expect(lifeGrowth(3)).toBeCloseTo((1 + ITEMS.lifeGrowthPerTier) ** 2);
+    expect(lifeGrowth(20)).toBe(lifeGrowth(ITEMS.maxTier));
+    const t1 = itemModifiers(item("test-ring", [{ affixId: "life", quality: 1 }], 1), TEST_CATALOG);
+    const t5 = itemModifiers(item("test-ring", [{ affixId: "life", quality: 1 }], 5), TEST_CATALOG);
+    expect(t5.bonuses.life).toBe(Math.round((t1.bonuses.life ?? 0) * lifeGrowth(5)));
+    // Percentages and other flat values stay as written.
+    expect(scaledFlatBonuses({ life: 10, armor: 10, critChance: 0.1 }, 3)).toEqual({
+      life: Math.round(10 * lifeGrowth(3)),
+      armor: 10,
+      critChance: 0.1,
+    });
   });
 
   it("weapon damage scales with the tier and gets local Added Weapon Damage", () => {

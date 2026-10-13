@@ -94,11 +94,26 @@ interface RegionSpec {
   /** Travel nodes towards the next region: on the inner ring and on the middle ring. */
   readonly innerTravel: NodeSpec;
   readonly middleTravel: NodeSpec;
+  /**
+   * Ward bud (balance-grundlagen-v1.md B): a short defense twig growing out from the middle
+   * travel node towards the next region: two small nodes and a Notable with % Life and the
+   * neighbours' layer (Armor, Barrier or Evasion). It adds to the web, nothing was replaced.
+   */
+  readonly ward: {
+    /** Turn against the middle ring, in degrees, so the bud finds a free spot on the tree. */
+    readonly turn: number;
+    readonly nodes: readonly [NodeSpec, NodeSpec];
+    readonly notable: NodeSpec;
+  };
 }
 
 const STAT_TEXT: Record<keyof StatBonuses, readonly [string, "pct" | "flat"]> = {
   life: ["Life", "flat"],
+  increasedLife: ["max Life", "pct"],
   armor: ["Armor", "flat"],
+  increasedArmor: ["Armor", "pct"],
+  barrier: ["Barrier", "flat"],
+  increasedBarrier: ["Barrier", "pct"],
   physicalDamage: ["Physical Damage", "pct"],
   elementalDamage: ["Elemental Damage", "pct"],
   critChance: ["Crit Chance", "pct"],
@@ -106,7 +121,6 @@ const STAT_TEXT: Record<keyof StatBonuses, readonly [string, "pct" | "flat"]> = 
   attackSpeed: ["Attack Speed", "pct"],
   evasion: ["Evasion", "pct"],
   blockChance: ["Block Chance", "pct"],
-  blockValue: ["Block Value", "flat"],
   allResistance: ["All Resistance", "pct"],
   fireResistance: ["Fire Resistance", "pct"],
   coldResistance: ["Cold Resistance", "pct"],
@@ -129,7 +143,7 @@ const STAT_TEXT: Record<keyof StatBonuses, readonly [string, "pct" | "flat"]> = 
   poisonChance: ["Chance to Poison", "pct"],
 };
 
-/** "+6 % Physical Damage, +12 Armor." */
+/** "+6 % Physical Damage, +8 % Armor." */
 export function describeBonuses(bonuses: StatBonuses, weaponRange?: WeaponRange): string {
   const parts = (Object.entries(bonuses) as [keyof StatBonuses, number][]).map(([stat, v]) => {
     if (stat === "startingHeat") return `Start every fight with +${v} Heat`;
@@ -158,15 +172,19 @@ const REGIONS: readonly RegionSpec[] = [
     hub: {
       name: "Warrior's Oath",
       classStart: "warrior",
-      description: "+6 % Physical Damage, +12 Armor. The Warrior starts here.",
-      bonuses: { physicalDamage: 0.06, armor: 12 },
+      description: "+6 % Physical Damage, +8 % Armor. The Warrior starts here.",
+      bonuses: { physicalDamage: 0.06, increasedArmor: 0.08 },
     },
     spokes: [
       {
-        nodes: [m("Brawn", { physicalDamage: 0.06 }), s(CRUSHING_BLOW), m("Grit", { armor: 12 })],
+        nodes: [
+          m("Brawn", { physicalDamage: 0.06 }),
+          s(CRUSHING_BLOW),
+          m("Grit", { increasedArmor: 0.08 }),
+        ],
         notable: {
           name: "Brutal Force",
-          bonuses: { physicalDamage: 0.2, armor: 10, lifesteal: 0.02 },
+          bonuses: { physicalDamage: 0.2, increasedArmor: 0.06, lifesteal: 0.02 },
           weaponRange: "melee",
         },
       },
@@ -177,12 +195,12 @@ const REGIONS: readonly RegionSpec[] = [
           m("Ferocity", { physicalDamage: 0.06 }),
         ],
         notable: [
-          { name: "Colossus", bonuses: { physicalDamage: 0.25, armor: 15 } },
+          { name: "Colossus", bonuses: { physicalDamage: 0.25, increasedArmor: 0.1 } },
           { name: "Whirlwind", bonuses: { attackSpeed: 0.12, triggerChance: 0.04 } },
         ],
         keystones: [
           {
-            reach: [m("Iron Resolve", { tenacity: 0.05 }), m("Bulk", { armor: 15 })],
+            reach: [m("Iron Resolve", { tenacity: 0.05 }), m("Bulk", { increasedArmor: 0.1 })],
             keystone: {
               name: "Unyielding",
               description: "Your max Life is 30 % higher. You cannot Crit.",
@@ -205,7 +223,7 @@ const REGIONS: readonly RegionSpec[] = [
         ],
         notable: {
           name: "Unbroken",
-          bonuses: { heatFromHitsTaken: 0.5, armor: 10 },
+          bonuses: { heatFromHitsTaken: 0.5, increasedArmor: 0.06 },
           weaponRange: "melee",
         },
         keystones: [
@@ -225,6 +243,11 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Drive", { attackSpeed: 0.04 }),
     middleTravel: m("Tempered Steel", { physicalDamage: 0.04, heatGain: 0.03 }),
+    ward: {
+      turn: -3,
+      nodes: [m("Thick Hide", { increasedLife: 0.04 }), m("Ironbark", { increasedArmor: 0.1 })],
+      notable: { name: "Oakheart", bonuses: { increasedLife: 0.08, increasedArmor: 0.15 } },
+    },
   },
   {
     id: "might-arcana",
@@ -276,6 +299,14 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Flux", { elementalDamage: 0.05 }),
     middleTravel: m("Charged Air", { heatGain: 0.03, elementalDamage: 0.04 }),
+    ward: {
+      turn: 6,
+      nodes: [
+        m("Warding Rune", { increasedBarrier: 0.12 }),
+        m("Hearthguard", { increasedLife: 0.04 }),
+      ],
+      notable: { name: "Spellguard", bonuses: { increasedBarrier: 0.2, increasedArmor: 0.1 } },
+    },
   },
   {
     id: "arcana",
@@ -359,6 +390,19 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Glow", { elementalDamage: 0.05 }),
     middleTravel: m("Searing Wind", { elementalDamage: 0.04, burnChance: 0.03 }),
+    ward: {
+      turn: 2,
+      nodes: [
+        m("Ward Weave", { increasedBarrier: 0.12 }),
+        m("Quick Ward", { increasedLife: 0.04 }),
+      ],
+      notable: {
+        name: "Ever-Ward",
+        description: "+20 % Barrier. Your Barrier recharges 30 % faster.",
+        bonuses: { increasedBarrier: 0.2 },
+        rules: { barrierRecharge: 1.3 },
+      },
+    },
   },
   {
     id: "arcana-affliction",
@@ -417,6 +461,14 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Kindled Path", { burnChance: 0.05 }),
     middleTravel: m("Black Smoke", { ailmentDuration: 0.05, burnChance: 0.03 }),
+    ward: {
+      turn: 8,
+      nodes: [
+        m("Ashen Veil", { increasedBarrier: 0.12 }),
+        m("Warm Blood", { increasedLife: 0.04 }),
+      ],
+      notable: { name: "Ember Mantle", bonuses: { increasedBarrier: 0.15, allResistance: 0.06 } },
+    },
   },
   {
     id: "affliction",
@@ -502,12 +554,17 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Decay", { ailmentDuration: 0.08 }),
     middleTravel: m("Mire", { ailmentDuration: 0.05, poisonChance: 0.03 }),
+    ward: {
+      turn: 8,
+      nodes: [m("Grave Hide", { increasedLife: 0.04 }), m("Stubborn", { tenacity: 0.08 })],
+      notable: { name: "Deathless", bonuses: { increasedLife: 0.1, tenacity: 0.1 } },
+    },
   },
   {
     id: "affliction-rupture",
     branch: "core",
     angle: 90,
-    hub: m("Rampart", { armor: 12 }),
+    hub: m("Rampart", { increasedArmor: 0.08 }),
     spokes: [
       {
         nodes: [
@@ -538,11 +595,14 @@ const REGIONS: readonly RegionSpec[] = [
       },
       {
         nodes: [
-          m("Iron Hide", { armor: 12 }),
+          m("Iron Hide", { increasedArmor: 0.08 }),
           m("Resolve", { tenacity: 0.05 }),
           m("Ashguard", { allResistance: 0.05 }),
         ],
-        notable: { name: "Iron Will", bonuses: { tenacity: 0.15, armor: 15, allResistance: 0.05 } },
+        notable: {
+          name: "Iron Will",
+          bonuses: { tenacity: 0.15, increasedArmor: 0.1, allResistance: 0.05 },
+        },
       },
       {
         nodes: [
@@ -551,13 +611,18 @@ const REGIONS: readonly RegionSpec[] = [
           m("Thick Blood", { tenacity: 0.05 }),
         ],
         notable: [
-          { name: "Stoneskin", bonuses: { armor: 20, allResistance: 0.08 } },
+          { name: "Stoneskin", bonuses: { increasedArmor: 0.12, allResistance: 0.08 } },
           { name: "Bloodthirst", bonuses: { lifesteal: 0.02 } },
         ],
       },
     ],
     innerTravel: m("Sinew", { tenacity: 0.05 }),
-    middleTravel: m("Scar Tissue", { armor: 8, poisonChance: 0.03 }),
+    middleTravel: m("Scar Tissue", { increasedArmor: 0.05, poisonChance: 0.03 }),
+    ward: {
+      turn: 8,
+      nodes: [m("Light Step", { evasion: 0.03 }), m("Lean Muscle", { increasedLife: 0.04 })],
+      notable: { name: "Ghost Step", bonuses: { evasion: 0.06, increasedLife: 0.06 } },
+    },
   },
   {
     id: "rupture",
@@ -641,6 +706,11 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Bite", { bleedChance: 0.05 }),
     middleTravel: m("Barbs", { bleedChance: 0.03, critChance: 0.01 }),
+    ward: {
+      turn: 8,
+      nodes: [m("Side Step", { evasion: 0.03 }), m("Wiry", { increasedLife: 0.04 })],
+      notable: { name: "Shadow Dancer", bonuses: { evasion: 0.08, increasedLife: 0.05 } },
+    },
   },
   {
     id: "rupture-might",
@@ -699,6 +769,14 @@ const REGIONS: readonly RegionSpec[] = [
     ],
     innerTravel: m("Whetted", { physicalDamage: 0.05 }),
     middleTravel: m("Hunter's Path", { critChance: 0.01, attackSpeed: 0.03 }),
+    ward: {
+      turn: 1,
+      nodes: [m("Hardened", { increasedArmor: 0.1 }), m("Second Wind", { increasedLife: 0.04 })],
+      notable: {
+        name: "Veteran",
+        bonuses: { increasedLife: 0.08, increasedArmor: 0.1, tenacity: 0.05 },
+      },
+    },
   },
 ];
 
@@ -709,6 +787,8 @@ const NOTABLE_RADIUS = 7;
 const MIDDLE_TRAVEL_RADIUS = 6.4;
 const RADIUS_STEP = 1.1;
 const SPOKE_TURN = 14;
+/** The Ward bud: two nodes and its Notable, outwards from the middle travel node. */
+const WARD_RADII = [7.7, 8.75, 9.85] as const;
 const FORK_TURN = 4.5;
 
 const slug = (name: string) =>
@@ -781,7 +861,7 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
         region.middleTravel,
         "minor",
         polar(MIDDLE_TRAVEL_RADIUS, region.angle + 22.5),
-        [id(next, next.spokes[0].nodes[2])],
+        [id(next, next.spokes[0].nodes[2]), id(region, region.ward.nodes[0])],
       ),
     );
 
@@ -853,6 +933,18 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
         });
       }
     });
+
+    // The Ward bud grows out of the middle travel node, between this region and the next.
+    const wardAngle = region.angle + 22.5 + region.ward.turn;
+    const wardIds = [...region.ward.nodes, region.ward.notable].map((n) => id(region, n));
+    region.ward.nodes.forEach((spec, k) => {
+      add(
+        plain(region, spec, "minor", polar(WARD_RADII[k] ?? NOTABLE_RADIUS, wardAngle), [
+          wardIds[k + 1] ?? "",
+        ]),
+      );
+    });
+    add(plain(region, region.ward.notable, "notable", polar(WARD_RADII[2], wardAngle), []));
   });
   return { nodes, classStarts };
 }

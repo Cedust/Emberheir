@@ -532,7 +532,7 @@ const MACE = buildTree({
       color: C.gold,
       minors: [
         minor("Guard", "+2 % Block Chance.", { bonuses: { blockChance: 0.02 } }),
-        minor("Plate", "+5 Armor.", { bonuses: { armor: 5 } }),
+        minor("Plate", "+3 % Armor.", { bonuses: { increasedArmor: 0.03 } }),
       ],
       notables: [
         notable("Iron Rhythm", "Every Block gives 10 Heat.", {
@@ -545,8 +545,8 @@ const MACE = buildTree({
             },
           ],
         }),
-        notable("Hold the Line", "+8 % Block Chance, +15 Armor.", {
-          bonuses: { blockChance: 0.08, armor: 15 },
+        notable("Hold the Line", "+8 % Block Chance, +10 % Armor.", {
+          bonuses: { blockChance: 0.08, increasedArmor: 0.1 },
         }),
       ],
     },

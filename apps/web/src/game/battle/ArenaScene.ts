@@ -27,6 +27,8 @@ export interface HeroLook {
   readonly weaponLook: WeaponLook;
   /** Colour of the Echo worn on the weapon: its aura wraps the weapon, its motes the hero. */
   readonly echo?: number;
+  /** Colour of the Draught brewed for the trip: a brew ring at the hero's feet, rising bubbles. */
+  readonly draught?: number;
 }
 
 export interface EnemyLook {
@@ -302,6 +304,8 @@ export class ArenaScene {
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
+  private draught: { ring: Graphics; color: number } | null = null;
+  private draughtCarry = 0;
   /** The Gatekeeper's stone gate, its fire bowls and the Ember sigil on the lintel. */
   private gate: { root: Container; sigil: Graphics; fires: { x: number; y: number }[] } | null =
     null;
@@ -411,6 +415,10 @@ export class ArenaScene {
     }
     this.levelGlow = drawLevelGlow(enemy.levelGap ?? 0);
     if (this.levelGlow) this.world.addChild(this.levelGlow);
+    if (hero.draught !== undefined) {
+      this.draught = { ring: drawDraughtRing(hero.draught), color: hero.draught };
+      this.world.addChild(this.draught.ring);
+    }
     this.telegraph = new Graphics()
       .ellipse(ENEMY_X, GROUND_Y - 130, 200, 170)
       .stroke({ color: 0xff6a2b, width: 5 });
@@ -465,6 +473,25 @@ export class ArenaScene {
           const n = order.get(key) ?? 0;
           order.set(key, n + 1);
           this.hit(e, n * 0.08);
+          // The Heavy Attack cap held part of the blow back: an ember shield flares on the target.
+          if (e.capped) {
+            const target = e.side === "hero" ? "enemy" : "hero";
+            const c = this.center(target);
+            this.fx?.ring(c.x, c.y, 0xffc46b, 50, 170, 0.45, 9, 1);
+            this.fx?.burst({
+              x: c.x,
+              y: c.y,
+              count: 22,
+              color: [0xffc46b, 0xfff1c9],
+              spreadX: 30,
+              angle: [0, Math.PI * 2],
+              speed: [160, 320],
+              life: [0.3, 0.6],
+              size: [6, 11],
+              drag: 0.4,
+            });
+            if (this.showNumbers) this.float(target, "Held", 0xffc46b, false, 0.8);
+          }
           break;
         }
         case "dot":
@@ -1222,6 +1249,32 @@ export class ArenaScene {
         }
       }
     }
+    // The Draught of the trip: its brew ring breathes, bubbles rise from it.
+    if (this.draught) {
+      const { ring, color } = this.draught;
+      if (this.motion) ring.alpha = 0.75 + 0.25 * Math.sin(this.clock * 2.1);
+      if (this.fx && this.hero && this.hero.root.alpha === 1) {
+        this.draughtCarry += 4 * dt;
+        for (; this.draughtCarry >= 1; this.draughtCarry--) {
+          this.fx.burst({
+            x: HERO_X,
+            y: GROUND_Y - 4,
+            count: 1,
+            color: [color, lighten(color)],
+            spreadX: 120,
+            spreadY: 8,
+            angle: [RISE - 0.15, RISE + 0.15],
+            speed: [40, 90],
+            life: [0.8, 1.4],
+            size: [6, 12],
+            endSize: 0.4,
+            wobble: 10,
+            alpha: 0.7,
+            layer: "back",
+          });
+        }
+      }
+    }
     // The worn Echo walks with the hero: its aura breathes, its motes drift up around them.
     if (this.echoAura && this.motion) {
       this.echoAura.alpha = 0.5 + 0.15 * Math.sin(this.clock * 1.4);
@@ -1949,6 +2002,19 @@ function drawWildfireGlow(): Graphics {
     }
   }
   g.blendMode = "add";
+  return g;
+}
+
+/** The Draught's brew ring: a glowing pool of its colour under the hero, with a thin rim. */
+function drawDraughtRing(color: number): Graphics {
+  const g = new Graphics();
+  for (let i = 4; i > 0; i--) {
+    g.ellipse(HERO_X, GROUND_Y + 4, 60 + i * 18, 12 + i * 5).fill({ color, alpha: 0.07 });
+  }
+  g.ellipse(HERO_X, GROUND_Y + 4, 118, 28).stroke({ color, width: 2.5, alpha: 0.7 });
+  g.ellipse(HERO_X, GROUND_Y + 4, 100, 22).stroke({ color: lighten(color), width: 1, alpha: 0.5 });
+  g.blendMode = "add";
+  g.label = "draught-ring";
   return g;
 }
 

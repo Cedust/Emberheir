@@ -13,11 +13,15 @@ import {
   flaskCapacity,
   LINEAGE_STEPS,
   nextAct,
+  type DraughtDefinition,
+  DRAUGHT_FLASK_COST,
+  brewedDraught,
+  draughtsOpen,
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { useStageSize } from "../../ui/Stage";
-import { useItemHover } from "../../ui/ItemTooltip";
+import { useItemHover, useNoteHover } from "../../ui/ItemTooltip";
 import { fmt, rarityClass, walletEntries } from "../../ui/items";
 import { type BountyView, bountyPreview, bountyView } from "../bounty";
 import type { GameApi } from "../useGame";
@@ -558,7 +562,17 @@ export function CampView(props: {
                 </span>
               )
             )}
-            <span className="hint-light">Flask refilled · wounds healed</span>
+            {draughtsOpen(state, GAME_DATA) && (
+              <DraughtPicker
+                chosen={state.draught ?? null}
+                onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
+              />
+            )}
+            <span className="hint-light">
+              {brewedDraught(state, GAME_DATA)
+                ? `Flask ${flaskCapacity(state, GAME_DATA) - DRAUGHT_FLASK_COST}/${flaskCapacity(state, GAME_DATA)} + ${brewedDraught(state, GAME_DATA)?.name} · wounds healed`
+                : "Flask refilled · wounds healed"}
+            </span>
             <button
               type="button"
               className={`btn big primary glow${tier > 0 ? " wildfire-go" : ""}`}
@@ -572,6 +586,53 @@ export function CampView(props: {
         </div>
       </div>
     </section>
+  );
+}
+
+/**
+ * Draughts (balance-grundlagen-v1.md F): one vial per Draught; the chosen one is brewed from a
+ * Flask charge at every set-out. Clicking it again pours it back (no Draught).
+ */
+function DraughtPicker(props: { chosen: string | null; onPick: (id: string | null) => void }) {
+  return (
+    <div className="draught-picker" role="group" aria-label="Draught">
+      <span className="draught-label sub">Draught</span>
+      {(GAME_DATA.draughts ?? []).map((d) => (
+        <DraughtVial
+          key={d.id}
+          draught={d}
+          on={props.chosen === d.id}
+          onPick={() => props.onPick(props.chosen === d.id ? null : d.id)}
+        />
+      ))}
+    </div>
+  );
+}
+
+function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: () => void }) {
+  const d = props.draught;
+  const hover = useNoteHover({
+    name: d.name,
+    kind: `Draught · ${DRAUGHT_FLASK_COST} Flask charge · until the Camp`,
+    explain: `${d.description}. ${d.explain}`,
+    status: props.on ? "Brewed at every set-out · click to pour it back" : "Click to brew it",
+  });
+  const color = `#${d.color.toString(16).padStart(6, "0")}`;
+  return (
+    <button
+      type="button"
+      aria-pressed={props.on}
+      aria-label={d.name}
+      className={`draught-vial${props.on ? " on" : ""}`}
+      style={{ "--vial": color } as React.CSSProperties}
+      onClick={props.onPick}
+      {...hover}
+    >
+      <svg viewBox="0 0 20 28" width="18" height="26" aria-hidden="true">
+        <path d="M7 1h6v6l5 8v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9l5-8z" className="vial-glass" />
+        <path d="M3.5 16h13v8a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2z" className="vial-brew" />
+      </svg>
+    </button>
   );
 }
 

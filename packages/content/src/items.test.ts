@@ -190,5 +190,6 @@ describe("item content", () => {
     expect(rare.duration).toBeLessThan(none.duration);
     expect(epic.duration).toBeLessThan(rare.duration);
     expect(epic.lifeLeft).toBeGreaterThan(none.lifeLeft);
-  });
+    // Thousands of fights: give a busy CI runner room.
+  }, 20_000);
 });

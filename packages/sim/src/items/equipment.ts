@@ -9,7 +9,14 @@ import {
   type TriggerSpec,
   type WeaponDefinition,
 } from "../combat/types";
-import { isPercentStat, resolveTrigger, statAffixValue, tierGrowth } from "./affixes";
+import {
+  isLifeLikeStat,
+  isPercentStat,
+  lifeGrowth,
+  resolveTrigger,
+  statAffixValue,
+  tierGrowth,
+} from "./affixes";
 import { ITEMS } from "./constants";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
@@ -75,7 +82,24 @@ export function scaledBaseStats(base: ItemBaseDefinition, tier: number): StatBon
     keyof StatBonuses,
     number,
   ][]) {
-    result[key] = isPercentStat(key) ? value : Math.round(value * growth);
+    result[key] = isPercentStat(key)
+      ? value
+      : Math.round(value * (isLifeLikeStat(key) ? lifeGrowth(tier) : growth));
+  }
+  return result;
+}
+
+/**
+ * Flat Life, Barrier and Thorns of an item's implicit, Runes, Runeword and Legendary Power grow
+ * with its tier like its affixes do; everything else stays as written.
+ */
+export function scaledFlatBonuses(bonuses: StatBonuses | undefined, tier: number): StatBonuses {
+  if (!bonuses) return {};
+  const result: Partial<Record<keyof StatBonuses, number>> = { ...bonuses };
+  for (const key of Object.keys(bonuses) as (keyof StatBonuses)[]) {
+    const value = bonuses[key];
+    if (value !== undefined && isLifeLikeStat(key))
+      result[key] = Math.round(value * lifeGrowth(tier));
   }
   return result;
 }
@@ -155,11 +179,11 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
     attributes,
     bonuses: sumBonuses(
       scaledBaseStats(base, item.tier),
-      base.weapon ? undefined : base.implicit,
+      base.weapon ? undefined : scaledFlatBonuses(base.implicit, item.tier),
       bonuses,
-      runeBonuses(item, catalog),
-      word?.bonuses,
-      power?.bonuses,
+      scaledFlatBonuses(runeBonuses(item, catalog), item.tier),
+      scaledFlatBonuses(word?.bonuses, item.tier),
+      scaledFlatBonuses(power?.bonuses, item.tier),
     ),
     triggers,
     ...(rules ? { rules } : {}),

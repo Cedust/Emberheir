@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { armorReduction } from "./damage";
 import { MONSTER_BAND_ENDS, createEnemySetup, monsterLevelScaling } from "./monsters";
 import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES } from "./test-fixtures";
@@ -22,6 +23,24 @@ describe("monsters", () => {
     expect(step(25)).toBeGreaterThan(step(15));
     expect(step(80)).toBeGreaterThan(step(50));
     expect(monsterLevelScaling(100).life).toBeGreaterThan(monsterLevelScaling(90).life);
+  });
+
+  it("Monster Armor grows with the Monster Level, so it stops the same share at every level", () => {
+    const enemy = {
+      id: "e",
+      name: "Enemy",
+      archetype: "brute" as const,
+      description: "",
+      attributes: { ...ZERO_ATTRIBUTES, strength: 10 },
+      weapon: TEST_WEAPON,
+      skills: [],
+      baseLife: 50,
+      bonuses: { armor: 20 },
+    };
+    const share = (level: number) =>
+      armorReduction(deriveStats(createEnemySetup(enemy, level)).armor, level);
+    expect(share(10)).toBeCloseTo(share(90), 2);
+    expect(share(90)).toBeGreaterThan(0.25);
   });
 
   it("builds a fight setup with its skills as rotation", () => {

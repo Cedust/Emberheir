@@ -12,6 +12,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useLayoutEffect,
   useMemo,
   useRef,
@@ -38,9 +39,20 @@ interface PerkHover {
   readonly value: number;
 }
 
+/** A plain game note: a mechanic, a stat or a Draught explained in simple words. */
+export interface NoteHover {
+  readonly name: string;
+  /** Small line under the name, e.g. "Defense" or "Draught · 1 Flask charge". */
+  readonly kind: string;
+  readonly explain: string;
+  /** Last line, e.g. "Run 4: −30 % on every Resistance". */
+  readonly status?: string;
+}
+
 interface Hover {
   readonly item?: Item;
   readonly perk?: PerkHover;
+  readonly note?: NoteHover;
   /** The hovered element in stage pixels. */
   readonly anchor: {
     readonly x: number;
@@ -91,6 +103,38 @@ export function usePerkHover(perk: PerkHover) {
       onBlur: () => api.hide(),
     };
   }, [api, id, status, value]);
+}
+
+/** Mouse and focus handlers that show a game note (mechanics, stats, Draughts). */
+export function useNoteHover(note: NoteHover | undefined) {
+  const api = useContext(HoverContext);
+  const { name, kind, explain, status } = note ?? { name: "", kind: "", explain: "" };
+  // A note shown by this element goes away with it (closing the sheet with Escape, setting out).
+  const shown = useRef(false);
+  useEffect(
+    () => () => {
+      if (shown.current) api?.hide();
+    },
+    [api],
+  );
+  return useMemo(() => {
+    if (!api || !name) return {};
+    const hover = { note: { name, kind, explain, ...(status ? { status } : {}) } };
+    const show = (element: Element) => {
+      shown.current = true;
+      api.show(hover, element);
+    };
+    const hide = () => {
+      shown.current = false;
+      api.hide();
+    };
+    return {
+      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
+      onMouseLeave: hide,
+      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
+      onBlur: hide,
+    };
+  }, [api, name, kind, explain, status]);
 }
 
 const GAP = 12;
@@ -161,6 +205,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
             data-testid="item-tooltip"
           >
             {hover.perk && <PerkTooltipCard {...hover.perk} />}
+            {hover.note && <NoteTooltipCard {...hover.note} />}
             {hover.item && (
               <ItemTooltipCard
                 item={hover.item}
@@ -208,6 +253,24 @@ function PerkTooltipCard(props: PerkHover) {
       <span className="tip-line perk-tip-explain">{perk.explain}</span>
       <span className="tip-rule" />
       <span className="perk-tip-status">{status}</span>
+    </div>
+  );
+}
+
+/** A game note in the tooltip plate: name, kind, the effect in plain words, a status line. */
+function NoteTooltipCard(props: NoteHover) {
+  return (
+    <div className="item-tooltip perk-tooltip note-tooltip" data-testid="note-tooltip">
+      <span className="tip-name">{props.name}</span>
+      <span className="tip-kind">{props.kind}</span>
+      <span className="tip-rule" />
+      <span className="tip-line perk-tip-explain">{props.explain}</span>
+      {props.status && (
+        <>
+          <span className="tip-rule" />
+          <span className="perk-tip-status">{props.status}</span>
+        </>
+      )}
     </div>
   );
 }

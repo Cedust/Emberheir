@@ -1759,6 +1759,63 @@
   box-shadow: 0 0 22px rgb(255 120 30 / 0.6);
 }
 
+.stage .draught-picker {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 8px;
+  border: 1.5px solid var(--border, #6a5a40);
+  border-radius: 10px;
+  background: rgb(20 12 6 / 0.7);
+}
+
+.stage .draught-label {
+  margin-right: 4px;
+  color: #f3e6c8;
+}
+
+.stage .draught-vial {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 34px;
+  padding: 0;
+  border: 1.5px solid transparent;
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  opacity: 0.6;
+  transition:
+    opacity 0.15s,
+    transform 0.15s;
+}
+
+.stage .draught-vial:hover,
+.stage .draught-vial:focus-visible {
+  opacity: 0.9;
+  transform: translateY(-2px);
+}
+
+.stage .draught-vial.on {
+  border-color: var(--vial);
+  opacity: 1;
+  box-shadow: 0 0 10px var(--vial);
+}
+
+.stage .draught-vial .vial-glass {
+  fill: rgb(255 255 255 / 0.12);
+  stroke: #e8dcc0;
+  stroke-width: 1.2;
+}
+
+.stage .draught-vial .vial-brew {
+  fill: var(--vial);
+}
+
+.stage .stat-row.has-note {
+  cursor: help;
+}
+
 .stage .set-out-go {
   display: flex;
   flex-direction: column;

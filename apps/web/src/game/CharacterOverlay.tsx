@@ -24,7 +24,12 @@ import {
   bossLevel,
   levelCap,
   xpToNextLevel,
+  DEFENSE_NOTES,
+  activeDraught,
+  emberPenalty,
+  emberPenaltyLine,
 } from "@emberheir/sim";
+import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ClassEmblem } from "./ClassEmblem";
@@ -117,7 +122,10 @@ export function CharacterOverlay(props: {
     ? `${Math.floor((state.hero.xp / next) * 100)}% to Lv ${state.hero.level + 1} · Cap ${cap}`
     : `Level cap ${cap} reached`;
 
-  const rows: Record<Tab, { label: string; value: string }[]> = {
+  const penalty = emberPenalty(state);
+  const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
+  const draught = activeDraught(state, GAME_DATA);
+  const rows: Record<Tab, { label: string; value: string; note?: NoteHover }[]> = {
     Offense: [
       { label: "Damage per second (estimate)", value: fmt(dps) },
       {
@@ -136,16 +144,28 @@ export function CharacterOverlay(props: {
     ],
     Defense: [
       { label: "Life", value: fmt(stats.maxLife) },
-      { label: "Barrier", value: fmt(stats.barrier) },
-      { label: "Armor", value: fmt(stats.armor) },
+      { label: "Barrier", value: fmt(stats.barrier), note: DEFENSE_NOTES.barrier },
+      { label: "Armor", value: fmt(stats.armor), note: DEFENSE_NOTES.armor },
       { label: "Evasion (Attacks)", value: pct(stats.evasion) },
-      { label: "Block (Physical)", value: pct(stats.blockChance) },
-      { label: "Fire Resistance", value: pct(stats.fireResistance) },
-      { label: "Cold Resistance", value: pct(stats.coldResistance) },
-      { label: "Lightning Resistance", value: pct(stats.lightningResistance) },
-      { label: "Void Resistance", value: pct(stats.voidResistance) },
+      { label: "Block (Physical)", value: pct(stats.blockChance), note: DEFENSE_NOTES.block },
+      ...(penalty > 0
+        ? [{ label: "Ember Penalty", value: `−${pct(penalty)}`, note: resNote }]
+        : []),
+      { label: "Fire Resistance", value: pct(stats.fireResistance), note: resNote },
+      { label: "Cold Resistance", value: pct(stats.coldResistance), note: resNote },
+      { label: "Lightning Resistance", value: pct(stats.lightningResistance), note: resNote },
+      { label: "Void Resistance", value: pct(stats.voidResistance), note: resNote },
       { label: "Tenacity", value: pct(stats.tenacity) },
       { label: "Lifesteal", value: pct(stats.lifesteal) },
+      ...(draught
+        ? [
+            {
+              label: "Draught",
+              value: draught.name,
+              note: { name: draught.name, kind: draught.description, explain: draught.explain },
+            },
+          ]
+        : []),
     ],
     Heat: [
       { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },
@@ -370,10 +390,7 @@ export function CharacterOverlay(props: {
             </div>
             <dl className="stat-rows">
               {rows[tab].map((r) => (
-                <div key={r.label} className="stat-row">
-                  <dt>{r.label}</dt>
-                  <dd className="mono">{r.value}</dd>
-                </div>
+                <StatRow key={r.label} {...r} />
               ))}
             </dl>
           </section>
@@ -418,6 +435,21 @@ export function CharacterOverlay(props: {
           </section>
         </div>
       </div>
+    </div>
+  );
+}
+
+/** One stat line; a hover explains the mechanic in plain words where it has a note. */
+function StatRow(props: { label: string; value: string; note?: NoteHover | undefined }) {
+  const hover = useNoteHover(props.note);
+  return (
+    <div
+      className={`stat-row${props.note ? " has-note" : ""}`}
+      {...hover}
+      tabIndex={props.note ? 0 : undefined}
+    >
+      <dt>{props.label}</dt>
+      <dd className="mono">{props.value}</dd>
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import type { AilmentType, CombatRules } from "./types";
+import type { AilmentType, CombatRules, Element } from "./types";
 
 /**
  * Combines rules from several sources (Keystones, Legendary Powers, Runewords): extra damage
@@ -17,7 +17,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let lifeMultiplier = 1;
   let hitDamage = 1;
   let chilledDamage = 1;
+  let barrierRecharge = 1;
   const ailmentDamage: Partial<Record<AilmentType, number>> = {};
+  const maxResistance: Partial<Record<Element, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
   let execute: CombatRules["execute"];
   for (const r of sources) {
@@ -33,11 +35,15 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     lifeMultiplier *= r.lifeMultiplier ?? 1;
     hitDamage *= r.hitDamage ?? 1;
     chilledDamage *= r.chilledDamage ?? 1;
+    barrierRecharge *= r.barrierRecharge ?? 1;
     for (const [ailment, factor] of Object.entries(r.ailmentDamage ?? {}) as [
       AilmentType,
       number,
     ][]) {
       ailmentDamage[ailment] = (ailmentDamage[ailment] ?? 1) * factor;
+    }
+    for (const [element, extra] of Object.entries(r.maxResistance ?? {}) as [Element, number][]) {
+      maxResistance[element] = (maxResistance[element] ?? 0) + extra;
     }
     for (const echo of r.ailmentEcho ?? []) {
       if (!ailmentEcho.some((e) => e.from === echo.from && e.to === echo.to))
@@ -57,7 +63,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(lifeMultiplier !== 1 ? { lifeMultiplier } : {}),
     ...(hitDamage !== 1 ? { hitDamage } : {}),
     ...(chilledDamage !== 1 ? { chilledDamage } : {}),
+    ...(barrierRecharge !== 1 ? { barrierRecharge } : {}),
     ...(Object.keys(ailmentDamage).length ? { ailmentDamage } : {}),
+    ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
     ...(execute ? { execute } : {}),
   };
