@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import type { CombatEvent } from "./fight";
+import type { CombatEvent } from "./events";
 import { AILMENT_SOURCE, damageShare, fightReport } from "./report";
 
 const hit = (side: "hero" | "enemy", source: string, damage: number): CombatEvent => ({

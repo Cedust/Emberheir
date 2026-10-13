@@ -21,17 +21,15 @@ export {
   type HitOutcome,
 } from "./combat/damage";
 export { triggerThreshold } from "./combat/heat";
-export {
-  Fight,
-  heavyHitCap,
-  runFight,
-  skillCost,
-  type CombatEvent,
-  type FightResult,
-  type FightSnapshot,
-  type FighterSnapshot,
-  type RotationSlotSnapshot,
-} from "./combat/fight";
+export { Fight, runFight } from "./combat/fight";
+export { heavyHitCap, skillCost } from "./combat/fighter";
+export type {
+  CombatEvent,
+  FightResult,
+  FightSnapshot,
+  FighterSnapshot,
+  RotationSlotSnapshot,
+} from "./combat/events";
 export {
   FightReplay,
   outcomeOf,

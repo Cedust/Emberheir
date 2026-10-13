@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
-import { type CombatEvent, Fight, heavyHitCap, runFight } from "./fight";
+import type { CombatEvent } from "./events";
+import { Fight, runFight } from "./fight";
+import { heavyHitCap } from "./fighter";
 import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
 import type { CombatantSetup, SkillDefinition, SlotModifier, WeaponDefinition } from "./types";

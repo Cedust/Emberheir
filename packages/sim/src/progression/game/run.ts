@@ -31,6 +31,8 @@ import { getBounty } from "./resolve";
 import { requireRewards, rewardsDone } from "./rewards";
 import { type Encounter, type GameData, type GameState, type Notice, fail, nextRng } from "./state";
 
+/** A trip out of the Camp: set out, Draughts, stages, the Ember Flask, back to the Camp. */
+
 export function setOut(state: GameState, data: GameData, actId: string): GameState {
   requireCamp(state);
   const act = getAct(data, actId);

@@ -27,6 +27,8 @@ import {
   nextRng,
 } from "./state";
 
+/** The end of a fight: death, rewards, bounties and The Last Ember's fights. */
+
 /** The definition of a bounty by id. */
 export function getBounty(data: GameData, id: string): BountyDefinition {
   return data.bounties?.find((b) => b.id === id) ?? fail(`Unknown bounty "${id}"`);

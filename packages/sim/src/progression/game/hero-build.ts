@@ -36,6 +36,8 @@ import { emberPenalty } from "./acts";
 import { activeDraught } from "./run";
 import { type GameData, type GameState, fail } from "./state";
 
+/** The hero as the fight sees it: weapon, Mastery, known skills, Battle Plan, Boons, title. */
+
 /** The weapon type's base values (damage, speed, Innate) from the item catalog. */
 export function weaponBase(data: GameData, weaponId: string): WeaponDefinition {
   return getBase(data.items, weaponId).weapon ?? fail(`"${weaponId}" is not a weapon`);

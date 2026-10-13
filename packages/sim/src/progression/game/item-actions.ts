@@ -13,6 +13,8 @@ import { requireCamp } from "./actions";
 import { equipBlockReason, salvageValue, targetSlot, unequipBlockReason } from "./item-rules";
 import { type GameData, type GameState, fail } from "./state";
 
+/** Inventory, stash and gear actions outside of the rewards. */
+
 function findInInventory(state: GameState, itemId: string): PlacedItem {
   return state.inventory.find((p) => p.item.id === itemId) ?? fail("Item not in the inventory");
 }

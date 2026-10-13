@@ -13,6 +13,8 @@ import {
   GameActionError,
 } from "./state";
 
+/** The road: acts of a run, Monster Levels, Run Pressure, walls, Waymarks and Wildfire. */
+
 export function getAct(data: GameData, actId: string): ActData {
   const act =
     data.acts.find((a) => a.id === actId) ?? (data.finale?.id === actId ? data.finale : undefined);

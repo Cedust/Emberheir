@@ -19,6 +19,8 @@ import { type LootGate, PROGRESSION } from "../constants";
 import { type EnemyRank } from "../leveling";
 import { type ActData, type Encounter, type GameData, fail } from "./state";
 
+/** Loot rolls: the item pick, act affix weights and Rune drops. */
+
 /** What a run can drop (`PROGRESSION.lootGates`), by Prestige level. */
 export function lootGate(prestige: number): LootGate {
   const gates = PROGRESSION.lootGates;

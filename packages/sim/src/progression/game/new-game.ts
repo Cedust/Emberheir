@@ -16,6 +16,8 @@ import { startingNodes } from "../skill-tree";
 import { EMPTY_MASTERY } from "../weapon-mastery";
 import { type GameData, type GameState, fail, mixSeed, SAVE_VERSION } from "./state";
 
+/** A new character (Character Select). */
+
 export interface NewGameOptions {
   readonly seed: number;
   readonly classId: string;

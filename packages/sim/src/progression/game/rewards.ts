@@ -11,6 +11,8 @@ import {
   fail,
 } from "./state";
 
+/** The rewards screen after a won fight: item pick, Salvage All, Boons. */
+
 export function requireRewards(state: GameState): { run: RunState; rewards: Rewards } {
   const run = requireRun(state, "rewards");
   return { run, rewards: run.rewards ?? fail("No rewards") };

@@ -8,6 +8,8 @@ import { heroClassOf, heroTitle } from "./hero-build";
 import { flaskCapacity } from "./run";
 import { type GameData, type GameState, type Notice, fail } from "./state";
 
+/** The Prestige: the next generation inherits, branches open. */
+
 /**
  * Prestige branches the coming Prestige can pick (skilltree-v2.md): the class's branches
  * (klassen-v2.md), new ones and owned ones that can be deepened one tier, in the class's order.

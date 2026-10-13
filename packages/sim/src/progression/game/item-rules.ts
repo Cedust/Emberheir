@@ -5,6 +5,8 @@ import { PROGRESSION } from "../constants";
 import { addToGrid, INVENTORY_SIZE, STASH_SIZE } from "../inventory";
 import { type GameData, type GameState } from "./state";
 
+/** What may happen to an item right now (equip, take, unequip, move) and what it is worth. */
+
 /** Ash an item is worth. */
 export function salvageValue(item: Item): number {
   return PROGRESSION.salvageAsh[item.rarity] * Math.max(1, item.tier);

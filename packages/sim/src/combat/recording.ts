@@ -1,5 +1,6 @@
 import { COMBAT } from "./constants";
-import { type CombatEvent, Fight, type FightResult, type FightSnapshot } from "./fight";
+import type { CombatEvent, FightResult, FightSnapshot } from "./events";
+import { Fight } from "./fight";
 import { type FightReport, fightReport } from "./report";
 import type { CombatantSetup, Side } from "./types";
 

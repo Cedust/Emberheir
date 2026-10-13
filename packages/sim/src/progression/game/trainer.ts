@@ -34,6 +34,8 @@ import { requireCamp } from "./actions";
 import { heroClassOf, heroSetup, heroWeaponRank, knownSkills, masteryTree } from "./hero-build";
 import { type GameData, type GameState, fail } from "./state";
 
+/** Kaelen and the hero's points: attributes, Skill Tree, Weapon Mastery, Battle Plan, respecs. */
+
 export function allocateAttributes(state: GameState, points: Partial<Attributes>): GameState {
   if (state.run?.phase === "fight") return fail("Not during a fight");
   let total = 0;

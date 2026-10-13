@@ -39,6 +39,8 @@ import {
   setRotationSkill,
 } from "./trainer";
 
+/** `GameAction` and `applyAction`, the only way to change a `GameState`. */
+
 export type GameAction =
   /** Leave the Camp and start an act at stage 1. */
   | { readonly type: "setOut"; readonly actId: string; readonly wildfire?: number }

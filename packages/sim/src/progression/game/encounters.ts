@@ -16,6 +16,8 @@ import {
   GameActionError,
 } from "./state";
 
+/** Who the hero fights at a stage, and the fight itself (simulated once, when it starts). */
+
 /** The enemy of an encounter: the act's enemy or boss, or the Ember Thief. */
 export function encounterEnemy(
   encounter: Encounter,

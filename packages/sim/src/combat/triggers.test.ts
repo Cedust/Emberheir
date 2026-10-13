@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type CombatEvent, Fight, runFight } from "./fight";
+import type { CombatEvent } from "./events";
+import { Fight, runFight } from "./fight";
 import { TEST_WEAPON, dummy, setup } from "./test-fixtures";
 import {
   applyBuff,

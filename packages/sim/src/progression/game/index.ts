@@ -1,3 +1,11 @@
+/**
+ * The game loop (docs/design/game-design-document-v1.md section 2), one module per part:
+ * `state` (the types of a save game), `actions` (`applyAction`), `new-game`, `acts`,
+ * `hero-build`, `encounters`, `run`, `resolve`, `loot`, `rewards`, `item-rules`,
+ * `item-actions`, `trainer` and `prestige`. Save games are in `../../save`.
+ *
+ * This barrel is the public API; the modules import each other directly.
+ */
 export {
   SAVE_VERSION,
   GameActionError,

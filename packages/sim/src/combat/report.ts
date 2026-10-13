@@ -1,4 +1,4 @@
-import type { CombatEvent } from "./fight";
+import type { CombatEvent } from "./events";
 import type { Side } from "./types";
 
 /** What one fighter's Battle Plan did in a fight ("Plan-Feedback ohne Text"). */
