@@ -6,6 +6,26 @@ Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwer
 Timo hat ausdrücklich erlaubt, jedes System grundlegend zu hinterfragen. Dieses Dokument nutzt das. Es ist aus der Sicht
 eines verantwortlichen Game Designers und Produktmanagers geschrieben: Was ändere ich, in welcher Reihenfolge, und warum.
 
+**Begleitdokumente:** `weapon-mastery-v2.md` (alle 24 Pfade, Precision, Mighty Hits) · `ailments-v2.md` (Ailments,
+Ailment Effect, Wisdom) · `merkliste-spaeter.md` (Ideen für später, auch alle Pixi-Looks).
+
+### Runde 2 (Timo, 13.10.)
+
+| Punkt | Timo | Folge im Dokument |
+|---|---|---|
+| Warrior und Sorcerer haben denselben Trait | überarbeiten, Klassenidentität statt nur Physical/Elemental | neuer Abschnitt 2.1 |
+| Weapon Mastery v2 | gefällt ✅, Pfade bitte konkret zeigen | `weapon-mastery-v2.md` |
+| Precision und Damage Range aufwerten | Idee: Range 20–200 %, evtl. 4 Stufen | Mighty Hits, breitere Ranges, 3 stärkere Stufen (`weapon-mastery-v2.md` 1) |
+| Glancing Damage | sinnvoll? | gestrichen (3.3) |
+| Omens | spannend, aber gezielt wählen; Parched zu hart | Regeln für Omens (5.2) |
+| Push-Bonus | nötig? Man startet nach dem Camp ohnehin bei Stage 1 | gestrichen (5.4) |
+| Längere Kämpfe über mehr Gegner-Life | gefällt ✅ | 5.5 entschieden |
+| Pixi-Effekte | erst als Idee merken (gemalte Assets kommen noch) ✅ | alle Looks in `merkliste-spaeter.md` |
+| Routen | coole Ergänzung ✅ | 6.2 entschieden |
+| Gear im Endgame | Greater Affixes wie in Diablo? | neuer Abschnitt 7.5 |
+| Ashborn bei Kaelen zu voll | lieber am Charakter? | 7.3: Character Sheet und Old Nan |
+| Ailments | Identität, Burst, Ailment Duration, Wisdom prüfen | `ailments-v2.md` |
+
 ---
 
 ## 0. Kurzfassung
@@ -17,7 +37,7 @@ nur am Boss des neuesten Acts. Mein Plan in sieben Punkten:
 1. **Jedes System bekommt ein Hoheitsgebiet** (Abschnitt 2). Gear liefert die **Zahlen** (auch Offense!), die Bäume liefern
    **Mechanik**, der Battle Plan das **Timing**. Generische „+X %“-Minors verschwinden aus Web und Mastery.
 2. **Weapon Mastery v2** (Abschnitt 3): Pfade mit **Gabelungen** und einem **Pfad-Meister** statt einer Kette aus zwei
-   wiederholten Minors. Waffeneigene Werte (Precision, Glancing, Damage Range, Riposte …) statt Crit/Evasion/Trigger Chance.
+   wiederholten Minors. Waffeneigene Werte (Precision, Parry, Damage Range mit **Mighty Hits**, Riposte …) statt Crit/Evasion/Trigger Chance.
 3. **Skill Web v3** (Abschnitt 4): weniger, aber bedingte Notables („vs. Bleeding“, „bei Heat ≥ 50“), **Conversion**,
    Rune Sockets im Web, Keystones ohne Schablone. Travel-Nodes werden Defense, wie die Attribut-Nodes im PoE-Tree.
 4. **Die ganze Welt wird im neuen Run hart** (Abschnitt 5): Jeder Act passt sich der neuen Schwierigkeit an, dazu
@@ -25,6 +45,7 @@ nur am Boss des neuesten Acts. Mein Plan in sieben Punkten:
 5. **Elites werden Mini-Bosse mit Beute-Thema** (Abschnitt 6), und **Item-Picks** werden seltener, aber schwerer.
 6. **Endgame** (Abschnitt 7): Wildfire bekommt **Omens als Map-Mods**, VIII–X werden Pinnacles. Nach Level 100 kommt
    **Ashborn** (Paragon): langsam zu farmen, gezielt gegen die Schwächen des Builds, mit einer festen Obergrenze.
+   **Greater Affixes** halten das Gear im Endgame lebendig.
 7. **Ember Crucible** (Abschnitt 8): Legendary Powers per Salvage lernen und in drei Crucible-Slots tragen (Kanais Würfel).
    Dazu der **Training Dummy** (Abschnitt 9) und der Autopilot mit Runes (Abschnitt 10).
 
@@ -129,7 +150,7 @@ Spalte ihres Systems passen, sonst gehören sie woanders hin.
 | Attack Speed | Gear (Gloves, Jewelry) | AGI, Refine „Balance“ | Web-Minors, Prestige-Minors |
 | Trigger Chance | Gear + Charm | DEX | Web, Mastery, Prestige-Äste |
 | Ailment Chance | Mastery (Innate, Attunement) + Gear | bedingte Web-Notables | Web-Minors |
-| Ailment Duration | WIS | einzelne Notables mit Regel | 29 Minors in Web und Prestige-Ästen |
+| Ailment Duration → **Ailment Effect** (`ailments-v2.md`) | WIS, Gear | einzelne Notables mit Regel | 29 Minors in Web und Prestige-Ästen |
 | Heat Gain, Starting Heat | Mastery (Heat Form) | WIS, Gear (Off Hand, Helm) | Web-Minors (Core behält Heat-Notables mit Regel) |
 | Life %, Armor %, Barrier %, Evasion | Gear | Web-Travel-Nodes, Attribute, Ashborn | – |
 | Resistances | Gear, Draughts | Ashborn (klein) | Web-Minors |
@@ -138,6 +159,27 @@ Spalte ihres Systems passen, sonst gehören sie woanders hin.
 **Folge fürs Balancing:** Wenn das Web keine rohen Offense-Zahlen mehr gibt, fehlt Schaden. Der wandert auf das Gear
 (höhere Rolls, ein Prefix mehr für Rare/Epic) und in bedingte „more“-Multiplikatoren im Web. Das macht Gear-Drops
 wichtiger, genau wie gewünscht.
+
+---
+
+### 2.1 Class Traits: Identität statt Zahl 💡
+
+**Timo (13.10.):** Warrior und Sorcerer haben denselben Trait. Die Traits sollen die Klassenidentität tragen, nicht nur
+Physical gegen Elemental unterscheiden.
+
+Regel für Traits: **Ein Trait beschreibt, wie die Klasse kämpft.** Er nutzt eine Mechanik, die man in der Arena sieht
+(Telegraph, Skill-Rhythmus, Wunden, lange Kämpfe), und er ist etwa 2 Skill Points wert (wie in `klassen-v2.md`).
+
+| Klasse | heute | neu (Vorschlag) | Warum |
+|---|---|---|---|
+| **Warrior** | Iron Blood: Treffer +20 % | **Iron Blood**: Angekündigte Heavy Attacks des Gegners machen 25 % weniger Schaden, und jede überstandene gibt 20 Heat | Der Warrior **steht den großen Schlag durch** und schlägt zurück. Nutzt Telegraphs, das Herz des 1v1 |
+| **Reaver** | Bloodletter: Bleed und Poison +15 % | bleibt, als **+15 % Ailment Effect für Bleed und Poison** | passt, die Wunden töten |
+| **Hunter** | Keen Eye: +5 % Crit Chance | **Keen Eye**: Der erste Treffer jedes Kampfes und jeder Treffer, während der Gegner zu einer Heavy Attack ausholt, ist ein sauberer Crit | Der Jäger **schießt in die Lücke**. Crit Chance gehört dem Gear (Abschnitt 2) |
+| **Sorcerer** | Spark: Treffer +20 % | **Spark**: Nach jedem Skill macht die nächste Default Attack +50 % Schaden und setzt immer das Ailment ihres Elements | Rhythmus **Skill → Funke**, sichtbar, passt zur Wand mit Warming-Heat |
+| **Warlock** | Lingering: Ailments +20 % | **Lingering**: Deine Ailments machen pro Sekunde Kampfdauer 1 % mehr Schaden (bis +40 % nach 40 s) | „Je länger der Kampf, desto sicherer stirbt der Gegner“ (Klassentext) |
+
+Warrior und Hunter nutzen beide den Telegraph, aber von verschiedenen Seiten: Der Warrior hält ihn aus, der Hunter
+bestraft das Ausholen. Ein Warrior-Hunter-Vergleich im Dummy zeigt den Unterschied sofort.
 
 ---
 
@@ -192,21 +234,25 @@ Diese Werte gibt es **nur** in der Mastery. So hat das System etwas, das kein It
 |---|---|
 | Precision | weniger eigene Glancing Blows |
 | **Parry** (neu) | gegnerische Angriffe werden öfter zu Glancing Blows (Defense nur über die Waffe) |
-| Glancing Damage | eigene Glancing Blows machen mehr Schaden (heute fest 50 %) |
-| Damage Range Min / Max | wie Refine, aber pfadgebunden |
+| Damage Range Min / Max und **Mighty Hits** | breitere Ranges, Mighty Hit ab 125 % Weapon Damage (`weapon-mastery-v2.md` 1) |
 | Innate Damage / Innate Cost | Stärke und Heat-Kosten des Innate Skills |
 | Extra-Attack Damage | Riposte, Double Stab, Split Shot, Rain of Arrows |
 | Sunder pro Treffer / Max Sunder | Mace, Crossbow |
-| Ailment Potency der Waffe | Bleed/Poison/Burn aus dem Innate stärker (nicht Duration!) |
+| Ailment Effect der Waffe | Bleed/Poison/Burn aus der Waffe stärker (nicht Duration, siehe `ailments-v2.md`) |
 | Heat per Hit | für Cooling und Steady |
+
+**Glancing Damage** (in der ersten Fassung als Wert vorgeschlagen) ist gestrichen ✅: Es wird mit jedem Punkt Precision
+schwächer und ist nie die bessere Wahl. Glancing Blows bekommen stattdessen Mechanik (Heat, Gratis-Bolzen).
 
 ### 3.4 Beispiel: Sword
 
+Alle acht Waffen mit je drei Pfaden, Build-Ideen und Nodes: **`weapon-mastery-v2.md`**. Hier nur das Sword:
+
 | Pfad | Technik I | Gabel 1 | Technik II | Gabel 2 | Pfad-Meister |
 |---|---|---|---|---|---|
-| **Riposte** (Konter) | +6 % Parry/Rang | **Counterweight** (Riposte trifft immer sauber, +1 Sunder) ◇ **Read the Blow** (nach Block/Evade/Parry: nächster Treffer sauberer Crit) | +15 % Extra-Attack Damage/Rang | **Perfect Timing** (Parry löst Riposte aus, 1 s Cooldown) ◇ **Iron Wall** (Block und Parry geben 8 Heat) | **Master of the Counter**: Ripostes lösen deine Trigger-Affixe aus (Gear-Synergie) |
-| **Edge** (Präzision) | +3 % Precision/Rang | **Keen Edge** (Crits bluten) ◇ **Measured Cut** (+10 % Precision, Min +10 %) | +10 % Glancing Damage/Rang | **Clean Line** (5 saubere Treffer in Folge: nächster Treffer +100 %) ◇ **Hamstring** (Bleed senkt Gegner-Attack-Speed um 10 %) | **Master of the Edge**: Glancing Blows gibt es nicht mehr, darüber hinausgehende Precision wird zu Crit Chance |
-| **Tempo** (Rhythmus) | +1 Heat per Hit/Rang | **Rhythm** (jeder 3. Slash +10 Heat) ◇ **Unbroken Flow** (+3 % Attack Speed pro sauberem Treffer, bis 5) | +8 % Innate Damage/Rang | **Building Edge** (Innate kostet 5 Heat weniger pro sauberem Treffer seit dem letzten Skill) ◇ **Steady Breath** (Glancing Blows kühlen nicht ab) | **Master of Tempo**: der erste Rotation Slot wird nach jedem Innate kostenlos wiederholt, 1× pro 8 s (Battle-Plan-Synergie) |
+| **Riposte** (Konter) | +4 % Parry/Rang | **Counterweight** (Riposte trifft immer sauber, +1 Sunder) ◇ **Read the Blow** (nach Block/Evade/Parry: nächster Treffer sauberer Crit) | +20 % Extra-Attack Damage/Rang | **Perfect Timing** (Parry löst Riposte aus, 1 s Cooldown) ◇ **Iron Wall** (Block und Parry geben 8 Heat) | **Master of the Counter**: Ripostes lösen deine Trigger-Affixe aus (Gear-Synergie) |
+| **Edge** (Präzision) | +3 % Precision/Rang | **Keen Edge** (Crits bluten) ◇ **Clean Line** (5 saubere Treffer in Folge: nächster Treffer +100 %) | +12 % Bleed-Wirkung des Swords/Rang | **Hamstring** (Bleed senkt Gegner-Attack-Speed um 10 %) ◇ **Deep Wound** (Bleed aus Crits ×1,5) | **Master of the Edge**: Glancing Blows gibt es nicht mehr, darüber hinausgehende Precision wird zu Crit Chance |
+| **Tempo** (Rhythmus) | +8 % Heat per Hit/Rang | **Rhythm** (jeder 3. Slash +10 Heat) ◇ **Unbroken Flow** (+3 % Attack Speed pro sauberem Treffer, bis 5) | +10 % Innate Damage/Rang | **Building Edge** (Innate kostet 5 Heat weniger pro sauberem Treffer seit dem letzten Skill) ◇ **Steady Breath** (Glancing Blows kühlen nicht ab) | **Master of Tempo**: der erste Rotation Slot wird nach jedem Innate kostenlos wiederholt, 1× pro 8 s (Battle-Plan-Synergie) |
 
 Die Pfad-Meister binden je ein anderes System an: **Gear** (Trigger), **Attribute** (Precision → Crit, also DEX),
 **Battle Plan** (Rotation). Das ist das Muster für alle acht Waffen.
@@ -327,23 +373,36 @@ Act 1 liegt also immer weit unter dem Helden.
 Beispiel Run 5 (Band heute 45 → 60): Act 1 bei ML 55, Act 2 bei 57, Act 3 bei 59 … Act 5 endet bei 60 + Wand.
 Damit droppt **jeder Act aktuelles Gear**, und der Held muss die ganze Strecke ernst nehmen.
 
-### 5.2 Omens: Jeder Act ist in jedem Run anders
+### 5.2 Omens: Jeder Act ist in jedem Run anders 💡
 
 Damit der fünfte Besuch im Rotwood nicht der vierte ist, bekommt **jeder alte Act pro Run ein Omen**: eine sichtbare
-Regel für den ganzen Act, die der Scout ankündigt. Omens sind dasselbe System wie die Wildfire-Mods (Abschnitt 7).
-Ein System, zwei Einsätze.
+Regel für den ganzen Act. Omens sind dasselbe System wie die Wildfire-Mods (Abschnitt 7.2). Ein System, zwei Einsätze.
 
-| Omen (Beispiel) | Wirkung | Frage an den Build |
-|---|---|---|
-| Blight Bloom | Gegner heilen sich an ihrem eigenen Poison | Anti-Heal (Burn), Burst |
-| Stoneflesh | Gegner +50 % Armor | Penetration, Sunder, Elemental |
-| Cinder Rain | alle 8 s ein Feuer-Telegraph | Fire Resistance, Reaction Slot |
-| Parched | keine Flask auf diesem Zug, dafür doppelte Ember Coal | Lifesteal, Barrier |
-| Restless Dead | Elites kommen in Paaren (zwei Kämpfe am Stück, ohne Pause) | Zermürbung |
-| Thin Veil | Ailments halten auf beiden Seiten doppelt so lange | DoT-Builds, Tenacity |
+**Timo (13.10.):** spannend, aber Omens müssen **gezielt gewählt** werden; „Parched“ (keine Flask) ist zu hart und für manche
+Builds vielleicht gar nicht machbar.
 
-Pro Run wählt das Spiel für jeden alten Act ein Omen aus der Liste seines Acts. Die Bosse behalten ihre neue
-Prestige-Fähigkeit (`gegner-bosse-v1.md`). Jedes Omen bekommt seinen Look in der Arena (`weather.ts`, Partikel).
+**Hilft der Level-Bonus gegen ein hartes Omen?** Nein. Die Messungen in `endgame-balance-v1.md` zeigen: Wandkämpfe sind ein
+Sustain-Rennen, das fast binär kippt (Poison: +5 % Heilung drehten 0 % auf 100 % Siege). Ein Omen, das einem Build seine
+Heilung nimmt, gleicht kein Level aus. Deshalb gelten feste Regeln:
+
+| Regel | Inhalt |
+|---|---|
+| **Wahl statt Zufall** | Beim Aufbruch in einen alten Act zeigt Eldrin **2 Omens**, der Spieler wählt eins. Wer gegen Armor schwach ist, nimmt das andere. |
+| **Zweischneidig** | Jedes Run-Omen hat einen Preis **und** einen Lohn (mehr Ember Coal, eine Rune, bessere Rarity, ein Vorteil für den Helden). |
+| **Keine Schicht ganz weg** | Ein Run-Omen schwächt eine Defense- oder Heil-Schicht höchstens um die Hälfte, schaltet sie aber nie ab. |
+| **Harte Omens nur im Wildfire** | Omens wie „Parched“ (keine Flask) gibt es nur im Wildfire, wo der Spieler sie selbst für mehr Belohnung wählt. |
+| **Lesbar** | Ein Satz pro Omen, der Scout nennt die Frage an den Build („Brauchst du Penetration?“). |
+
+| Run-Omen (Beispiel) | Preis | Lohn | Frage an den Build |
+|---|---|---|---|
+| Blight Bloom | Gegner heilen sich an ihrem eigenen Poison | Burn wirkt doppelt gegen Heilung | Anti-Heal (Burn), Burst |
+| Stoneflesh | Gegner +50 % Armor | +50 % Ember Coal | Penetration, Sunder, Elemental |
+| Cinder Rain | alle 8 s ein Fire-Telegraph | jeder überstandene Telegraph +5 Heat | Fire Resistance, Reaction Slot |
+| Dry Season | Flask heilt 20 % statt 35 % | Waymarks heilen 40 % | Lifesteal, Barrier |
+| Restless Dead | Elites kommen in Paaren | jedes Paar gibt eine extra Pick-Karte | Zermürbung |
+| Thin Veil | Ailments halten auf beiden Seiten doppelt so lange | – (beidseitig) | DoT-Builds, Tenacity |
+
+Die Bosse behalten ihre Prestige-Fähigkeit (`gegner-bosse-v1.md`). Looks der Omens: später (`merkliste-spaeter.md`).
 
 ### 5.3 Sägezahn statt Klippe im Act
 
@@ -369,13 +428,15 @@ Ziel-Verteilung der Tode im neuesten Act (neuer Akzeptanztest in der Balance-CLI
 
 Mit härteren normalen Stages greift, was schon gebaut ist: **Life bleibt zwischen den Stages, keine Regeneration,
 3 Flask-Ladungen.** Die Kernfrage jedes Zugs wird „**Weiter oder zurück ins Camp?**“, wie in Darkest Dungeon.
-Dazu zwei kleine Ergänzungen:
+Dazu eine kleine Ergänzung:
 
 - **Hearth Embers:** Waymark-Stages (5, 10) heilen 25 % Life. Ein Zwischenziel, auf das man hinkämpft.
-- **Push-Bonus:** Jede Stage ohne Camp-Rückkehr erhöht die Item-Rarity der nächsten Pick-Auswahl leicht (bis +3 Stufen).
-  Mutig weiterzugehen lohnt sich, Retreat bleibt erlaubt.
 
-### 5.5 Kampfdauer
+Den **Push-Bonus** aus der ersten Fassung streiche ich ✅ (Timo, 13.10.). Timo hat recht: Nach jeder Rückkehr ins Camp
+beginnt der Act wieder bei Stage 1. Weiterkämpfen wird schon dadurch belohnt, dass man dem Boss näher kommt und keinen
+Weg doppelt läuft. Ein Extra-Bonus würde nur das Retreat bestrafen, das gewollt ist.
+
+### 5.5 Kampfdauer ✅ (Timo, 13.10.: „Wir wollen die Kämpfe und unseren Build sehen.“)
 
 | Kampf | heute | Ziel |
 |---|---|---|
@@ -407,16 +468,29 @@ Heute: 1–3 Modifier aus 20, garantiert Rare, Ember Coal. Sie sterben meist wie
    Enraged → Telegraph → Reaction Slot. Vampiric → Burn. Die Conditions dafür existieren schon.
 3. **Beute nach Thema:** Der Modifier lenkt den Loot. Stone Skin droppt bevorzugt Armor-Affixe, Vampiric Lifesteal,
    Frenzied Attack Speed. Elites werden **gezieltes Farmen**: „Ich brauche Lifesteal, ich jage Vampiric-Elites.“
-4. **Name und Look:** Ein Elite trägt einen Namen aus seinen Modifiern („Vampiric Stone-Skinned Barkhide“) und bekommt
-   Pixi-Effekte pro Modifier (Aura, Partikel, Blend Mode).
+4. **Name:** Ein Elite trägt einen Namen aus seinen Modifiern („Vampiric Stone-Skinned Barkhide“). Looks pro Modifier:
+   später (`merkliste-spaeter.md`).
 5. **Rare Elite (Champion):** Ab Run 3 hat jede Act-Strecke mit ~10 % Chance einen **benannten Champion** mit drei
    Modifiern und eigenem Hoard (garantiert Epic, 15 % Legendary). Das ist der D2-Moment „ein Unique Monster!“.
 
-### 6.2 Routen statt einer festen Linie (optional, größerer Schritt) ❓
+### 6.2 Routen statt einer festen Linie ✅ (Timo, 13.10.: „coole Ergänzung“)
 
 Auf der Straßenkarte gabelt sich der Weg an zwei Stellen pro Act (z. B. nach Stage 3 und 8): **Elite-Pfad** (2 Elites,
 bessere Beute) oder **Shrine-Pfad** (Boon, ein Normalkampf). Kein Auto-Resolve, keine Abkürzung, aber eine echte Wahl,
 die vom Zustand des Helden abhängt (Life, Flask, Bounty). Wie die Karte in Slay the Spire.
+
+Ausbau 💡:
+
+| Knoten auf der Route | Inhalt |
+|---|---|
+| **Elite-Pfad** | 2 Elites hintereinander, garantierte Thema-Beute (6.1) |
+| **Shrine-Pfad** | ein Normalkampf, danach Ember Shrine (Boon) |
+| **Hearth-Pfad** | ein Normalkampf, danach heilt der Held 25 % (statt Hearth Embers am Waymark, wenn genommen) |
+| **Thief-Spur** | nur wenn eine Thief-Bounty läuft: der Ember Thief taucht sicher auf |
+
+- Gabelungen nach Stage 3 und nach Stage 8, beide Wege gleich lang, damit niemand Kämpfe spart.
+- Die Gatekeeper (Stage 5, 10) und der Boss bleiben fest.
+- Die Straßenkarte im Camp zeigt die Routen schon vorher (Planung gehört zum Spiel).
 
 ### 6.3 Item-Picks: weniger, aber schwerer
 
@@ -492,25 +566,68 @@ feste Act-Twists (Abschnitt 5.2), man lernt sie also schon vorher kennen.
 
 | Kreis | Werte (je bis zur Grenze) |
 |---|---|
-| **Onslaught** (Offense) | Damage %, Crit Chance, Attack Speed, Ailment Potency, Penetration, Skill Damage |
+| **Onslaught** (Offense) | Damage %, Crit Chance, Attack Speed, Ailment Effect, Penetration, Skill Damage |
 | **Aegis** (Defense) | Life %, Armor/Evasion/Barrier %, Resistances (+max Resistance bis +5 %), Tenacity, Block |
 | **Mending** (Sustain) | Lifesteal, DoT-Heilung, Barrier-Recharge, Flask-Wirkung |
 | **Ignite** (Heat und Trigger) | Heat Gain, Starting Heat, Trigger Chance, Skill Cost |
 
 - **Obergrenze gesamt: 200 Punkte.** Ein Wert kann höchstens etwa **25 Punkte** aufnehmen, kein Build kann also alles
   maximieren, und die Punkte gehen dorthin, wo der Build schwach ist.
-- **Respec** jederzeit bei Kaelen für Acorns (eine Regel für alles, wie in `entschlackung-v1.md`).
+- **Wo:** Timo (13.10.): Kaelen ist mit Skill Web, Weapon Mastery, Battle Plan und Attributen zu voll. Mein Vorschlag:
+
+  | Was | wo | warum |
+  |---|---|---|
+  | Attribute und Ashborn **verteilen** | im **Character Sheet** (Charakter-Ansicht), überall im Camp | Das ist der Held selbst, kein Training |
+  | Attribute und Ashborn **umverteilen** | bei **Old Nan** am Hearthfire, für Acorns | Sie weckt den Heir aus der Asche, also formt sie ihn neu. Passt zum Namen Ashborn |
+  | Skill Web, Weapon Mastery, Battle Plan | bei **Kaelen** (wie heute) | Kaelen bleibt der Trainer für Technik und Taktik |
+
+  Die Regel aus `entschlackung-v1.md` („Respec kostet überall Acorns“) bleibt, nur der Ort für den Helden selbst wechselt.
 - **Ziel-Zeiten:** Ein gut gebauter Build schafft X mit ~60 Punkten (Min-Maxing + Omen-Wahl), ein schwächerer mit
   ~150–200 Punkten nach langem Farmen. Akzeptanztest: Der schwächste Build aus dem Autopilot-Ranking schafft X mit
   200 Punkten.
 - **Wo man XP farmt:** Wildfire, je mehr Glut, desto schneller. Damit bekommen die Omens einen Grund jenseits der Stufe.
-- **Look:** Ashborn-Level zeigen sich am Helden (Glutrisse, Aschepartikel ab 50/100/150/200).
 
 ### 7.4 Was man außerdem farmt, wenn alles fertig ist
 
-1. **Ashborn-XP** (sicherer, langsamer Hebel, wie Level in Run 1–7).
-2. **Bessere Crucible-Powers** (Abschnitt 8.4): ein höherer Roll einer Legendary Power ersetzt den gelernten.
-3. **Wildfire-Uniques:** ab VI eine kleine Zahl Uniques, die nur dort droppen (Pinnacle-Beute, wie die Uber-Uniques in PoE).
+Drei Spuren, je in einem anderen System (Abschnitt 2), damit kein System im Endgame stirbt:
+
+| Spur | System | Hebel |
+|---|---|---|
+| **Ashborn-XP** | Held | sicher, langsam, gegen Schwächen |
+| **Greater Affixes** (7.5) | Gear (Zahlen) | Gear wächst über das Maximum hinaus |
+| **Bessere Crucible-Powers** (8.4) | Regeln | ein höherer Roll ersetzt den gelernten |
+
+Dazu **Wildfire-Uniques**: ab VI eine kleine Zahl Uniques, die nur dort droppen (Pinnacle-Beute, wie die Uber-Uniques in PoE).
+
+### 7.5 Greater Affixes: Gear über das Maximum heben (Timos Idee, ausgebaut) 💡
+
+**Timo (13.10.):** Ohne etwas für das Gear zählt im Endgame nur noch Ashborn, und das Gear ist als System tot, sobald alles
+min-maxed ist. Idee wie in Diablo: Ein Item auswählen, eine Wildfire-Währung zahlen, ein zufälliges Affix wird **Greater**.
+Nur eins pro Item, jederzeit neu würfelbar, danach weiter verstärkbar (Greater I–V oder I–X).
+
+**Meine Meinung:** Ja, genau das fehlt. Es hält das Gear im Endgame am Leben und gehört ins Hoheitsgebiet des Gears
+(Zahlen). Ich würde es so bauen:
+
+| Schritt | bei | Kosten | Wirkung |
+|---|---|---|---|
+| **Awaken** | Liora (Affix-Magie) | 3 Fireglass | ein **zufälliges** Affix (Stat oder Trigger) wird **Greater I** |
+| **Shift** | Liora | 1 Fireglass | das Greater wandert auf ein anderes zufälliges Affix des Items, **die Stufe bleibt** |
+| **Intensify** | Liora | 2 / 4 / 8 / 16 Fireglass | Greater II → V |
+
+- **Wert:** Greater I = 110 % des Höchstwerts seines Tiers, jede Stufe +10 %, Greater V = 150 %.
+- **Fünf Stufen, nicht zehn:** Jede Stufe soll man spüren. Fünf Stufen auf zehn Items sind 310 Fireglass ohne Shifts,
+  also ein langer, aber endlicher Farm.
+- **Meine Verbesserung:** Die **Stufe gehört dem Item, nicht dem Affix.** Wer neu würfelt (Shift), verliert keine
+  Investition, sondern nur den Zufall. So ist Neu-Würfeln nie eine Strafe, und das teure Intensify geht nie verloren.
+- **Regeln mit dem restlichen Crafting:** Reforge würfelt die Affixe neu, das Greater bleibt mit seiner Stufe auf einem
+  zufälligen neuen Affix. Temper und Upgrade (Tier) gehen weiter. Legendary Powers und Runewords können nicht Greater werden.
+- **Uniques dürfen ein Greater Affix bekommen.** Das ist der einzige Weg, ein Unique zu verbessern, und macht gute Uniques
+  zu einem Endgame-Projekt.
+- **Fireglass** (neue Währung, **nur aus Wildfire**): jeder Wildfire-Boss 1–2, +1 pro 3 Glut, Pinnacles (VIII–X) mehr.
+  Im Wildfire entsteht das Glas aus Asche und Feuer, daher der Name. Es ist Währung Nummer 6. Sie wird erst im Endgame
+  sichtbar, deshalb verletzt sie die Entschlackung nicht.
+- **Gezielt statt Zufall?** Ich lasse den Zufall bewusst drin (Timos Idee, sonst ist Min-Maxing zu schnell fertig).
+  Nur das Ziel ist zufällig, die Stufe nie.
 
 ---
 
@@ -546,7 +663,7 @@ Da die Waffe fest ist, sortiere ich nicht nach Slots wie in D3, sondern nach **A
 - Im Crucible wirkt eine Power mit ihrem gelernten Roll. Der höchste Roll ist ein Ziel für das Endgame.
 - Der Power Codex ist **permanent** (überlebt Prestige) und gehört **dem Charakter** ❓ (oder dem Account wie der Stash,
   dann lohnt sich Twinken mehr).
-- **Mehr Powers:** heute 13. Ziel ~36: pro Klasse 4 eigene, 16 allgemeine. Jede bekommt einen Look in der Arena.
+- **Mehr Powers:** heute 13. Ziel ~36: pro Klasse 4 eigene, 16 allgemeine.
 - Boss-Uniques (Trophies) haben eine Power, die man nur bei diesem Boss lernen kann: Grund, ihn erneut zu besuchen.
 
 ### 8.5 Warum das in den Rest passt
@@ -591,13 +708,14 @@ Ja. Solange der Autopilot keine Runes nutzt, unterschätzen alle Balance-Zahlen 
 
 | Phase | Inhalt | Warum zuerst | Aufwand |
 |---|---|---|---|
-| **0** | GDD v2 (erledigt in diesem PR), Merkliste für später | Agents arbeiten sonst gegen alte Regeln | klein |
+| **0** | GDD v2, Merkliste, Mastery v2 und Ailments v2 als Konzept (erledigt) | Agents arbeiten sonst gegen alte Regeln | klein |
 | **1** | Autopilot mit Runes, Balance-CLI misst Tod-Verteilung und Kampfdauer pro Stage-Art | Messwerkzeug vor jeder Balance-Änderung | klein |
-| **2** | Welt-Band pro Run (5.1), Sägezahn (5.3), Kampfdauer (5.5), Hearth Embers und Push-Bonus (5.4) | größter Spaß-Hebel, ändert nur Zahlen und wenig Code | mittel |
-| **3** | Elites neu (6.1), Item-Picks (6.3), Training Dummy (9) | macht Loot und Elites spürbar | mittel |
-| **4** | Hoheitsgebiete (2), Web v3 (4), Mastery v2 (3), Umbenennungen (1.3) | großer Inhalt, braucht Phase 1–3 als stabile Basis | groß |
-| **5** | Omens (5.2 und 7.2), Wildfire neu, Ashborn (7.3), Ember Crucible (8) | Endgame baut auf allem davor auf | groß |
-| später | Routen (6.2), siehe auch `merkliste-spaeter.md` | optional | mittel |
+| **2** | Welt-Band pro Run (5.1), Sägezahn (5.3), Kampfdauer über Gegner-Life (5.5), Hearth Embers (5.4) | größter Spaß-Hebel, ändert nur Zahlen und wenig Code | mittel |
+| **3** | Ailments v2 (`ailments-v2.md`), Class Traits (2.1) | ändern die Grundzahlen aller Builds, also vor den Bäumen | mittel |
+| **4** | Elites neu (6.1), Routen (6.2), Item-Picks (6.3), Training Dummy (9) | macht Loot, Elites und den Weg durch den Act spürbar | mittel |
+| **5** | Hoheitsgebiete (2), Web v3 (4), Mastery v2 (`weapon-mastery-v2.md`), Umbenennungen (1.3) | großer Inhalt, braucht Phase 1–4 als stabile Basis | groß |
+| **6** | Omens (5.2 und 7.2), Wildfire neu, Ashborn (7.3), Greater Affixes (7.5), Ember Crucible (8) | Endgame baut auf allem davor auf | groß |
+| später | Pixi-Looks für alles Neue, Ancestor Duels, Presets, Death Recap: `merkliste-spaeter.md` | nach den gemalten Assets | – |
 
 Jede Phase ist ein eigener PR mit Vorher/Nachher-Messung (15 Builds × 3 Läufe).
 
@@ -605,13 +723,22 @@ Jede Phase ist ein eigener PR mit Vorher/Nachher-Messung (15 Builds × 3 Läufe)
 
 ## 12. Fragen an Timo
 
+Offen aus Runde 1:
+
 1. **Hoheitsgebiete (2):** Einverstanden, dass die Bäume rohe Offense-Zahlen abgeben und das Gear dafür stärker wird?
-2. **Mastery v2 (3):** Gabelungen und Pfad-Meister wie im Sword-Beispiel? Neuer Wert **Parry** als Defense nur über die Waffe?
-3. **Web v3 (4):** Travel-Nodes nur Defense, Notables immer bedingt, Conversion und Rune Sockets im Web?
-4. **Welt pro Run (5.1):** Jeder Act startet beim Heldenlevel des Run-Starts, wie Nightmare/Hell in D2?
-5. **Omens (5.2):** Jeder alte Act bekommt pro Run ein Omen, das gleiche System wie die Wildfire-Mods?
-6. **Picks (6.3):** Normale Kämpfe nur jede dritte Stage mit Item-Pick, dafür Elites und Bosse mit mehr Gewicht?
-7. **Routen (6.2):** jetzt, später oder gar nicht?
-8. **Endgame (7.3):** Ashborn (Paragon mit Obergrenze 200) statt einer gestreckten Levelkurve?
-9. **Crucible (8.4):** Power Codex pro Charakter oder für den ganzen Account?
-10. **Namen:** Ashborn, Omen, Glut, Ember Crucible, Parry, Hearth Embers als Arbeitsnamen in Ordnung?
+2. **Web v3 (4):** Travel-Nodes nur Defense, Notables immer bedingt, Conversion und Rune Sockets im Web?
+3. **Welt pro Run (5.1):** Jeder Act startet beim Heldenlevel des Run-Starts, wie Nightmare/Hell in D2?
+4. **Picks (6.3):** Normale Kämpfe nur jede dritte Stage mit Item-Pick, dafür Elites und Bosse mit mehr Gewicht?
+5. **Endgame (7.3):** Ashborn (Paragon mit Obergrenze 200) statt einer gestreckten Levelkurve?
+6. **Crucible (8.4):** Power Codex pro Charakter oder für den ganzen Account?
+
+Neu aus Runde 2:
+
+7. **Class Traits (2.1):** Iron Blood (Telegraphs aushalten), Keen Eye (in die Lücke schießen), Spark (Skill → Funke),
+   Lingering (wächst mit der Kampfdauer)?
+8. **Mastery v2:** Mighty Hits, breitere Ranges, Parry, die 24 Pfade (`weapon-mastery-v2.md` 5)?
+9. **Ailments v2:** eingebaute Payoffs, Ailment Effect statt Duration, Wisdom neu (`ailments-v2.md` 4)?
+10. **Omens (5.2):** 2 zur Wahl pro Act, zweischneidig, harte Omens nur im Wildfire?
+11. **Greater Affixes (7.5):** Awaken / Shift / Intensify bei Liora, Greater I–V, Stufe gehört dem Item, Fireglass nur aus Wildfire?
+12. **Ashborn und Attribute (7.3):** verteilen im Character Sheet, umverteilen bei Old Nan?
+13. **Namen:** Ashborn, Omen, Glut, Ember Crucible, Parry, Mighty Hit, Flashpoint, Collapse, Fireglass als Arbeitsnamen?

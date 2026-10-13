@@ -9,7 +9,7 @@ Hier steht nur das Nötigste, damit nichts verloren geht. Planung und Umsetzung 
 | Battle Plan Presets | gemerkt | später |
 | Death Recap | gemerkt (Platzhalter im Ashbound-Screen) | später |
 | Fight Stats | gemerkt | später |
-| Routen auf der Straßenkarte | Vorschlag in `neuausrichtung-v1.md` 6.2 | offen |
+| Pixi-Looks für die Neuausrichtung | gemerkt (Timo: erst nach den gemalten Assets) | später |
 
 ---
 
@@ -41,3 +41,25 @@ Der Platzhalter steht schon in `apps/web/src/game/NoticeScreen.tsx`. Nutzt diese
 
 **Idee:** Nach jedem Kampf (und im Combat Log) Schaden nach Quelle, Ailment-Anteile, Trigger-Auslösungen, Heat-Verlauf.
 Basis ist das Event-Log der Sim. Der Training Dummy (`neuausrichtung-v1.md`, Abschnitt 9) zeigt einen Teil davon live.
+
+## Pixi-Looks für die Neuausrichtung
+
+**Timo (13.10.):** Effekte für neue Systeme erst als Idee merken. Held und Gegner werden vielleicht noch durch gemalte
+Assets ersetzt, und danach muss man ohnehin neu schauen, wie die Effekte gebaut werden. Bis dahin bekommen neue Mechaniken
+nur einen einfachen, lesbaren Platzhalter (Zahl, Farbe, kurzer Text in der Arena), damit man sie im Kampf erkennt.
+
+| Was | Idee |
+|---|---|
+| Mighty Hit | großer Treffer mit Kamera-Ruck und eigener Zahl |
+| Parry | Klingen-Funke, Treffer prallt halb ab |
+| Flashpoint (Burn) | Glut springt auf, kurze Stichflamme |
+| Collapse (Corruption) | Void zieht sich zusammen und implodiert |
+| Poison-Überlauf | grüne Blasen platzen |
+| Freeze, Shock-Stacks | Eiskristalle am Gegner, 1–3 Blitzringe |
+| Doom-Anzeige | schraffierter Teil der Gegner-Lifeleiste: Schaden, den laufende DoTs noch machen |
+| Omens | Wetter und Licht pro Omen (`weather.ts`), z. B. Cinder Rain als Ascheregen |
+| Elite-Modifier | Aura, Partikel oder Blend Mode pro Modifier |
+| Champions | Namensschild, stärkere Aura |
+| Ashborn | Glutrisse und Aschepartikel am Helden ab 50/100/150/200 Punkten |
+| Greater Affix | goldener Schimmer am Item-Icon, kein Arena-Effekt |
+| Class Traits | Warrior: Glutschild beim Aushalten einer Heavy Attack · Hunter: Fadenkreuz beim Schuss in die Lücke · Sorcerer: Funke an der Wand nach jedem Skill · Warlock: dunkler Schleier, der mit der Kampfzeit wächst |

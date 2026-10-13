@@ -307,8 +307,8 @@ Endgame **Wildfire I–X**.
 
 ## 9. Offene Baustellen
 
-- Neuausrichtung (Systemidentität, Web v3, Mastery v2, Sägezahn im Act, Elites, Omens, Ashborn, Ember Crucible,
-  Training Dummy): `neuausrichtung-v1.md` 💡
+- Neuausrichtung (Systemidentität, Class Traits, Web v3, Mastery v2, Ailments v2, Sägezahn im Act, Routen, Elites, Omens,
+  Ashborn, Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md` 💡
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
 - Autopilot nutzt keine Runes und kein Crafting (Balance-Zahlen sind pessimistisch).
 
@@ -337,4 +337,6 @@ Endgame **Wildfire I–X**.
 | `ui-look-v1.md`, `ui-views-v1.md`, `battle-view-v1.md` | Darstellung | gültig |
 | `story-theme-v1.md`, `story-texte-v1.md`, `fabelwelt-v1.md` | Welt und Texte | gültig |
 | `neuausrichtung-v1.md` | Vorschläge zur Neuausrichtung | 💡 offen |
+| `weapon-mastery-v2.md` | neue Mastery-Pfade, Precision, Mighty Hits, Parry | 💡 offen |
+| `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | 💡 offen |
 | `merkliste-spaeter.md` | Ideen für später | gemerkt |
