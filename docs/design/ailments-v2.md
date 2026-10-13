@@ -1,6 +1,6 @@
 # Ailments v2: klare Identität, eingebauter Payoff, Ailment Effect statt Duration
 
-Stand 13.10.2026 · Analyse und Konzept für Timo, noch nichts umgesetzt · gehört zu `neuausrichtung-v1.md`
+Stand 13.10.2026 · ✅ von Timo angenommen (13.10.), noch nichts umgesetzt · gehört zu `neuausrichtung-v1.md`
 Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwerte für die Balance-CLI.
 
 **Timos Fragen (13.10.):** Sind die Ailments cool, macht jedes Spaß, hat jedes eine klare Identität? DoTs brauchen länger
@@ -132,7 +132,9 @@ Wisdom wird damit das Attribut für **„Skills und Ailments“**, gleich gut f�
 Mit der längeren Kampfdauer aus `neuausrichtung-v1.md` 5.5 (normal 20–30 s, Boss 60–100 s) erreicht Corruption ihr volles
 Wachstum auch in normalen Kämpfen, und DoT-Builds sind nicht mehr im Nachteil, weil der Gegner stirbt, bevor sie wirken.
 
-## 4. Offene Fragen
+## 4. Entscheidungen
+
+Alle Punkte ✅ (Timo, 13.10.):
 
 1. Eingebaute Payoffs für alle: Überlauf (Poison), Flashpoint (Burn), Collapse (Corruption)?
 2. Ailment Duration → **Ailment Effect** auf Items, Wisdom und im Web?

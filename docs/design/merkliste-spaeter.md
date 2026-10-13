@@ -60,6 +60,6 @@ nur einen einfachen, lesbaren Platzhalter (Zahl, Farbe, kurzer Text in der Arena
 | Omens | Wetter und Licht pro Omen (`weather.ts`), z. B. Cinder Rain als Ascheregen |
 | Elite-Modifier | Aura, Partikel oder Blend Mode pro Modifier |
 | Champions | Namensschild, stärkere Aura |
-| Ashborn | Glutrisse und Aschepartikel am Helden ab 50/100/150/200 Punkten |
+| Ashborn | Glutrisse und Aschepartikel am Helden ab 25/50/75/100 Punkten |
 | Greater Affix | goldener Schimmer am Item-Icon, kein Arena-Effekt |
 | Class Traits | Warrior: Glutschild beim Aushalten einer Heavy Attack · Hunter: Fadenkreuz beim Schuss in die Lücke · Sorcerer: Funke an der Wand nach jedem Skill · Warlock: dunkler Schleier, der mit der Kampfzeit wächst |

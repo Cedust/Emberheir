@@ -1,6 +1,6 @@
 # Weapon Mastery v2: Pfade mit Gabelungen, Precision und Mighty Hits
 
-Stand 13.10.2026 · Konzept für Timo, noch nichts umgesetzt · gehört zu `neuausrichtung-v1.md` (Abschnitt 3)
+Stand 13.10.2026 · ✅ von Timo angenommen (13.10.), noch nichts umgesetzt · gehört zu `neuausrichtung-v1.md` (Abschnitt 3)
 Ersetzt bei Annahme die Pfad-Inhalte aus `weapon-mastery-baeume-v1.md`. Refine, Heat Forms, Innate Forms, Attunements und
 Echoes bleiben, wie sie sind (mit den neuen Zahlen aus Abschnitt 1).
 Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwerte für die Balance-CLI.
@@ -236,7 +236,9 @@ Bleiben je 4 pro Waffe, 1 wählbar. Zahlen-Tauschs werden durch Regeln ersetzt (
 Siege Engine, Repeater, Glass Cannon, Thousand Cuts. Gore und Wild Shot nutzen künftig Mighty Hits
 (z. B. Gore: „Mighty Hits deal double damage. Damage Range minimum is 10 %.“).
 
-## 5. Offene Fragen
+## 5. Entscheidungen
+
+Alle Punkte ✅ (Timo, 13.10.):
 
 1. Mighty Hit ab 125 % Weapon Damage, und die neuen Ranges mit gleichem Durchschnitt?
 2. Parry als Defense nur über die Waffe (max. 30 %)?

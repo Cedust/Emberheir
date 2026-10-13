@@ -308,7 +308,7 @@ Endgame **Wildfire I–X**.
 ## 9. Offene Baustellen
 
 - Neuausrichtung (Systemidentität, Class Traits, Web v3, Mastery v2, Ailments v2, Sägezahn im Act, Routen, Elites, Omens,
-  Ashborn, Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md` 💡
+  Ashborn, Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md`, von Timo entschieden (13.10.), noch nicht umgesetzt
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
 - Autopilot nutzt keine Runes und kein Crafting (Balance-Zahlen sind pessimistisch).
 

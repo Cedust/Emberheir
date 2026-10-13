@@ -1,6 +1,6 @@
 # Neuausrichtung v1: Jeder Kampf eine Frage, jedes System eine Aufgabe
 
-Stand 13.10.2026 · Konzept für Timo, noch nichts umgesetzt · Basis: `main` nach PR #28 · Game-Begriffe auf Englisch
+Stand 13.10.2026 · von Timo entschieden (Abschnitt 12), noch nichts umgesetzt · Basis: `main` nach PR #28 · Game-Begriffe auf Englisch
 Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwerte für die Balance-CLI.
 
 Timo hat ausdrücklich erlaubt, jedes System grundlegend zu hinterfragen. Dieses Dokument nutzt das. Es ist aus der Sicht
@@ -124,7 +124,7 @@ Ein Name soll genau eine Sache sein. Die Umbenennung kommt mit Web v3 und Master
 
 ---
 
-## 2. Das Leitbild: Jedes System hat ein Hoheitsgebiet 💡
+## 2. Das Leitbild: Jedes System hat ein Hoheitsgebiet ✅
 
 **Regel:** Ein Wert hat genau eine **Hauptquelle**, höchstens zwei kleine Nebenquellen. Neue Inhalte müssen in die
 Spalte ihres Systems passen, sonst gehören sie woanders hin.
@@ -162,7 +162,7 @@ wichtiger, genau wie gewünscht.
 
 ---
 
-### 2.1 Class Traits: Identität statt Zahl 💡
+### 2.1 Class Traits: Identität statt Zahl ✅
 
 **Timo (13.10.):** Warrior und Sorcerer haben denselben Trait. Die Traits sollen die Klassenidentität tragen, nicht nur
 Physical gegen Elemental unterscheiden.
@@ -183,7 +183,7 @@ bestraft das Ausholen. Ein Warrior-Hunter-Vergleich im Dummy zeigt den Unterschi
 
 ---
 
-## 3. Weapon Mastery v2: Gabelungen und eigene Werte 💡
+## 3. Weapon Mastery v2: Gabelungen und eigene Werte ✅
 
 ### 3.1 Bewertung der heutigen Nodes
 
@@ -275,7 +275,7 @@ statt geliehener**. Die Zahl der Nodes ist nicht das Problem, die fehlende Wahl 
 
 ---
 
-## 4. Skill Web v3: von „+6 %“ zu „wenn, dann“ 💡
+## 4. Skill Web v3: von „+6 %“ zu „wenn, dann“ ✅
 
 ### 4.1 Bewertung der heutigen Nodes
 
@@ -357,7 +357,7 @@ Der Tree bleibt groß genug für das Budget von 100 Skill Points (`level-v2.md`)
 
 Kein Auto-Resolve ✅ (Timo). Stattdessen soll **jeder Kampf etwas bedeuten**, also mehr echte Spielzeit statt mehr Leerlauf.
 
-### 5.1 Die Welt brennt neu: Level-Band pro Run
+### 5.1 Die Welt brennt neu: Level-Band pro Run ✅
 
 **Heute:** Das Level-Band eines Runs läuft vom letzten Boss-Level bis zum neuen Boss-Level, verteilt über alle Stages.
 Act 1 liegt also immer weit unter dem Helden.
@@ -366,14 +366,18 @@ Act 1 liegt also immer weit unter dem Helden.
 
 | Act im Run | Monster Level (Vorschlag) |
 |---|---|
-| Act 1 | Level Cap des letzten Runs (= Heldenlevel bei Run-Start), also ein fairer Kampf ab Stage 1 |
-| jeder weitere Act | +2 bis +3 Level gegenüber dem vorigen |
+| Act 1 | **5 Level unter** dem Level Cap des letzten Runs (= Heldenlevel bei Run-Start): Aufwärmen, aber kein Leerlauf ✅ |
+| jeder weitere Act | steigt gleichmäßig bis zum neuen Boss-Level |
 | neuester Act | endet beim neuen Boss-Level wie heute |
 
-Beispiel Run 5 (Band heute 45 → 60): Act 1 bei ML 55, Act 2 bei 57, Act 3 bei 59 … Act 5 endet bei 60 + Wand.
+**Timo (13.10.):** ja, Act 1 leicht darunter (~5 Level) ✅. Das passt: Nach dem Prestige hat der Held neue Punkte
+(Ast, Battle-Plan-Sprosse), die er in Act 1 ausprobieren soll, bevor es ernst wird.
+
+Beispiel Run 5 (Band heute 45 → 60, Held startet mit Level 55): Act 1 bei ML 50, Act 2 bei 53, Act 3 bei 55,
+Act 4 bei 58, Act 5 endet bei 60 + Wand.
 Damit droppt **jeder Act aktuelles Gear**, und der Held muss die ganze Strecke ernst nehmen.
 
-### 5.2 Omens: Jeder Act ist in jedem Run anders 💡
+### 5.2 Omens: Jeder Act ist in jedem Run anders ✅
 
 Damit der fünfte Besuch im Rotwood nicht der vierte ist, bekommt **jeder alte Act pro Run ein Omen**: eine sichtbare
 Regel für den ganzen Act. Omens sind dasselbe System wie die Wildfire-Mods (Abschnitt 7.2). Ein System, zwei Einsätze.
@@ -521,17 +525,17 @@ Weniger Picks, aber jeder auf aktuellem Item Level, mit Thema und mit sichtbarem
 
 ### 7.2 Omens als Wildfire-Mods (wie Map-Mods und Heat in Hades)
 
-Vor jedem Wildfire-Zug wählt man **Omens** aus einem Pool von ~20. Jedes Omen hat einen **Glutwert** (1–3).
+Vor jedem Wildfire-Zug wählt man **Omens** aus einem Pool von ~20. Jedes Omen hat einen **Peril**-Wert (1–3). (Vorher „Glut“, Timo: deutsches Wort, also englischer Spielbegriff.)
 
 | Regel | Wert (Startwert) |
 |---|---|
-| Mindest-Glut pro Stufe | I–V: 0 · VI: 2 · VII: 4 · VIII: 6 · IX: 8 · X: 10 |
-| Belohnung pro Glut | +8 % Ashborn-XP, +5 % Legendary-Chance, +1 Rune-Rang ab 4 Glut |
+| Mindest-Peril pro Stufe | I–V: 0 · VI: 2 · VII: 4 · VIII: 6 · IX: 8 · X: 10 |
+| Belohnung pro Peril | +8 % Ashborn-XP, +5 % Legendary-Chance, +1 Rune-Rang ab 4 Peril |
 | Omen-Arten | Gegner-Omens (stärker), Helden-Omens (Einschränkung), Welt-Omens (Regel) |
 
 Beispiele:
 
-| Omen | Glut | Wirkung |
+| Omen | Peril | Wirkung |
 |---|---|---|
 | Searing Touch | 1 | Gegner-Treffer setzen Burn |
 | Stoneflesh | 1 | Gegner +50 % Armor |
@@ -542,7 +546,7 @@ Beispiele:
 | Silenced Ember | 3 | der erste Rotation Slot ist gesperrt |
 | Crushing Weight | 3 | Heavy-Hit-Deckel 50 % statt 35 % |
 
-**Warum das zu Pinnacles passt:** Auf X braucht man 10 Glut, darf sie aber **selbst wählen**. Ein Barrier-Caster nimmt
+**Warum das zu Pinnacles passt:** Auf X braucht man 10 Peril, darf sie aber **selbst wählen**. Ein Barrier-Caster nimmt
 „Stoneflesh“ (betrifft ihn nicht), ein Physical-Build nimmt „Hexed Ground“, wenn seine Resistances überzählig sind.
 Min-Maxing heißt dann auch: **die Omens wählen, die zum Build passen.** Dieselben Omens erscheinen in den Runs als
 feste Act-Twists (Abschnitt 5.2), man lernt sie also schon vorher kennen.
@@ -557,12 +561,12 @@ feste Act-Twists (Abschnitt 5.2), man lernt sie also schon vorher kennen.
 | Langer Farm | 10–20 Level, dann Ende | lang, mit fester Obergrenze |
 | Risiko | Finale und Wände verschieben sich | Power Creep, wenn ohne Grenze (D3-Fehler) |
 
-**Empfehlung: B.** Die Levelkurve bleibt, wie sie ist. Ab Level 100 fließt XP in **Ashborn-Level**.
+**Entscheidung: B** ✅ (Timo, 13.10.). Die Levelkurve bleibt, wie sie ist. Ab Level 100 fließt XP in **Ashborn-Level**.
 
 **Ashborn** (Arbeitsname: der Held wird aus der Asche neu geboren, passt zu Harvest und Phoenix Feathers):
 
 - Jedes Ashborn-Level gibt **1 Ashborn-Punkt**. XP pro Ashborn-Level steigt um 4 % pro Level.
-- Vier **Glutkreise** (Boards), je 6 Werte mit eigener Obergrenze:
+- Vier **Ashborn Boards**, je 6 Werte mit eigener Obergrenze:
 
 | Kreis | Werte (je bis zur Grenze) |
 |---|---|
@@ -571,21 +575,23 @@ feste Act-Twists (Abschnitt 5.2), man lernt sie also schon vorher kennen.
 | **Mending** (Sustain) | Lifesteal, DoT-Heilung, Barrier-Recharge, Flask-Wirkung |
 | **Ignite** (Heat und Trigger) | Heat Gain, Starting Heat, Trigger Chance, Skill Cost |
 
-- **Obergrenze gesamt: 200 Punkte.** Ein Wert kann höchstens etwa **25 Punkte** aufnehmen, kein Build kann also alles
-  maximieren, und die Punkte gehen dorthin, wo der Build schwach ist.
+- **Obergrenze gesamt: 100 Punkte** ✅ (Timo, 13.10.: „reicht Obergrenze 100?“ – ja). Ein Wert nimmt höchstens
+  **15 Punkte** auf, kein Build kann also alles maximieren, und die Punkte gehen dorthin, wo der Build schwach ist.
+  100 reichen, weil Ashborn nicht mehr der einzige Farm im Endgame ist: Greater Affixes (7.5) und Crucible-Rolls (8.4)
+  laufen daneben. Jeder Punkt ist dafür doppelt so viel wert wie in der 200er-Fassung, also spürbarer.
 - **Wo:** Timo (13.10.): Kaelen ist mit Skill Web, Weapon Mastery, Battle Plan und Attributen zu voll. Mein Vorschlag:
 
   | Was | wo | warum |
   |---|---|---|
   | Attribute und Ashborn **verteilen** | im **Character Sheet** (Charakter-Ansicht), überall im Camp | Das ist der Held selbst, kein Training |
-  | Attribute und Ashborn **umverteilen** | bei **Old Nan** am Hearthfire, für Acorns | Sie weckt den Heir aus der Asche, also formt sie ihn neu. Passt zum Namen Ashborn |
+  | Attribute und Ashborn **zurücksetzen** | bei **Old Nan** am Hearthfire, für Acorns: alle Punkte kommen frei zurück, neu verteilt wird danach im Character Sheet | Sie weckt den Heir aus der Asche, also setzt sie ihn zurück. Passt zum Namen Ashborn |
   | Skill Web, Weapon Mastery, Battle Plan | bei **Kaelen** (wie heute) | Kaelen bleibt der Trainer für Technik und Taktik |
 
   Die Regel aus `entschlackung-v1.md` („Respec kostet überall Acorns“) bleibt, nur der Ort für den Helden selbst wechselt.
-- **Ziel-Zeiten:** Ein gut gebauter Build schafft X mit ~60 Punkten (Min-Maxing + Omen-Wahl), ein schwächerer mit
-  ~150–200 Punkten nach langem Farmen. Akzeptanztest: Der schwächste Build aus dem Autopilot-Ranking schafft X mit
-  200 Punkten.
-- **Wo man XP farmt:** Wildfire, je mehr Glut, desto schneller. Damit bekommen die Omens einen Grund jenseits der Stufe.
+- **Ziel-Zeiten:** Ein gut gebauter Build schafft X mit ~30 Punkten (Min-Maxing + Omen-Wahl), ein schwächerer mit
+  ~80–100 Punkten nach langem Farmen (dazu Greater Affixes). Akzeptanztest: Der schwächste Build aus dem
+  Autopilot-Ranking schafft X mit 100 Punkten und Greater III auf seinen wichtigsten Items.
+- **Wo man XP farmt:** Wildfire, je mehr Peril, desto schneller. Damit bekommen die Omens einen Grund jenseits der Stufe.
 
 ### 7.4 Was man außerdem farmt, wenn alles fertig ist
 
@@ -599,7 +605,7 @@ Drei Spuren, je in einem anderen System (Abschnitt 2), damit kein System im Endg
 
 Dazu **Wildfire-Uniques**: ab VI eine kleine Zahl Uniques, die nur dort droppen (Pinnacle-Beute, wie die Uber-Uniques in PoE).
 
-### 7.5 Greater Affixes: Gear über das Maximum heben (Timos Idee, ausgebaut) 💡
+### 7.5 Greater Affixes: Gear über das Maximum heben (Timos Idee, ausgebaut) ✅
 
 **Timo (13.10.):** Ohne etwas für das Gear zählt im Endgame nur noch Ashborn, und das Gear ist als System tot, sobald alles
 min-maxed ist. Idee wie in Diablo: Ein Item auswählen, eine Wildfire-Währung zahlen, ein zufälliges Affix wird **Greater**.
@@ -623,7 +629,7 @@ Nur eins pro Item, jederzeit neu würfelbar, danach weiter verstärkbar (Greater
   zufälligen neuen Affix. Temper und Upgrade (Tier) gehen weiter. Legendary Powers und Runewords können nicht Greater werden.
 - **Uniques dürfen ein Greater Affix bekommen.** Das ist der einzige Weg, ein Unique zu verbessern, und macht gute Uniques
   zu einem Endgame-Projekt.
-- **Fireglass** (neue Währung, **nur aus Wildfire**): jeder Wildfire-Boss 1–2, +1 pro 3 Glut, Pinnacles (VIII–X) mehr.
+- **Fireglass** (neue Währung, **nur aus Wildfire**): jeder Wildfire-Boss 1–2, +1 pro 3 Peril, Pinnacles (VIII–X) mehr.
   Im Wildfire entsteht das Glas aus Asche und Feuer, daher der Name. Es ist Währung Nummer 6. Sie wird erst im Endgame
   sichtbar, deshalb verletzt sie die Entschlackung nicht.
 - **Gezielt statt Zufall?** Ich lasse den Zufall bewusst drin (Timos Idee, sonst ist Min-Maxing zu schnell fertig).
@@ -631,7 +637,7 @@ Nur eins pro Item, jederzeit neu würfelbar, danach weiter verstärkbar (Greater
 
 ---
 
-## 8. Ember Crucible: Legendary Powers lernen und tragen (Kanais Würfel) 💡
+## 8. Ember Crucible: Legendary Powers lernen und tragen (Kanais Würfel) ✅
 
 ### 8.1 Idee
 
@@ -661,8 +667,9 @@ Da die Waffe fest ist, sortiere ich nicht nach Slots wie in D3, sondern nach **A
 
 - Eine Power wirkt **nur einmal**, auch wenn sie zusätzlich auf einem getragenen Item ist.
 - Im Crucible wirkt eine Power mit ihrem gelernten Roll. Der höchste Roll ist ein Ziel für das Endgame.
-- Der Power Codex ist **permanent** (überlebt Prestige) und gehört **dem Charakter** ❓ (oder dem Account wie der Stash,
-  dann lohnt sich Twinken mehr).
+- Der Power Codex ist **permanent** und gehört **dem ganzen Account** ✅ (Timo, 13.10.), wie der Supply Wagon und die
+  Lineage: Was ein Charakter lernt, kennen alle. Die **Crucible-Slots** schaltet aber jeder Charakter selbst frei
+  (8.3), und das Binden kostet seine eigenen Währungen. So hilft der Codex beim Twinken, ersetzt aber nicht den Fortschritt.
 - **Mehr Powers:** heute 13. Ziel ~36: pro Klasse 4 eigene, 16 allgemeine.
 - Boss-Uniques (Trophies) haben eine Power, die man nur bei diesem Boss lernen kann: Grund, ihn erneut zu besuchen.
 
@@ -721,24 +728,31 @@ Jede Phase ist ein eigener PR mit Vorher/Nachher-Messung (15 Builds × 3 Läufe)
 
 ---
 
-## 12. Fragen an Timo
+## 12. Entscheidungen (Timo, 13.10.)
 
-Offen aus Runde 1:
+Alle Fragen aus Runde 1 und 2 sind beantwortet. Nichts davon ist umgesetzt; die Umsetzung folgt der Reihenfolge in Abschnitt 11.
 
-1. **Hoheitsgebiete (2):** Einverstanden, dass die Bäume rohe Offense-Zahlen abgeben und das Gear dafür stärker wird?
-2. **Web v3 (4):** Travel-Nodes nur Defense, Notables immer bedingt, Conversion und Rune Sockets im Web?
-3. **Welt pro Run (5.1):** Jeder Act startet beim Heldenlevel des Run-Starts, wie Nightmare/Hell in D2?
-4. **Picks (6.3):** Normale Kämpfe nur jede dritte Stage mit Item-Pick, dafür Elites und Bosse mit mehr Gewicht?
-5. **Endgame (7.3):** Ashborn (Paragon mit Obergrenze 200) statt einer gestreckten Levelkurve?
-6. **Crucible (8.4):** Power Codex pro Charakter oder für den ganzen Account?
+| # | Thema | Entscheidung |
+|---|---|---|
+| 1 | Hoheitsgebiete (2) | ✅ Bäume geben rohe Offense-Zahlen ab, Gear wird stärker |
+| 2 | Skill Web v3 (4) | ✅ Travel-Nodes nur Defense, Notables bedingt, Conversion, Rune Sockets |
+| 3 | Welt pro Run (5.1) | ✅ jeder Act auf der neuen Stufe, **Act 1 etwa 5 Level unter** dem Heldenlevel bei Run-Start |
+| 4 | Item-Picks (6.3) | ✅ normale Kämpfe nur jede dritte Stage, Elites und Bosse mit mehr Gewicht |
+| 5 | Ashborn (7.3) | ✅ Paragon statt gestreckter Levelkurve, **Obergrenze 100**, höchstens 15 pro Wert |
+| 6 | Power Codex (8.4) | ✅ gehört dem **Account**, Crucible-Slots schaltet jeder Charakter selbst frei |
+| 7 | Class Traits (2.1) | ✅ |
+| 8 | Weapon Mastery v2 | ✅ Mighty Hits, breitere Ranges, Parry, 24 Pfade |
+| 9 | Ailments v2 | ✅ eingebaute Payoffs, Ailment Effect statt Duration, Wisdom neu |
+| 10 | Omens (5.2) | ✅ 2 zur Wahl, zweischneidig, harte Omens nur im Wildfire |
+| 11 | Greater Affixes (7.5) | ✅ Awaken / Shift / Intensify, Greater I–V, Stufe gehört dem Item, Fireglass nur aus Wildfire |
+| 12 | Ashborn und Attribute (7.3) | ✅ verteilen im Character Sheet; Old Nan nur **zurücksetzen** |
+| 13 | Namen | ✅ Ashborn, Omen, Ember Crucible, Parry, Mighty Hit, Flashpoint, Collapse, Fireglass. **„Glut“ wird „Peril“** (englischer Spielbegriff) |
 
-Neu aus Runde 2:
+**Zur Erinnerung (Timos Rückfrage zu 13):**
 
-7. **Class Traits (2.1):** Iron Blood (Telegraphs aushalten), Keen Eye (in die Lücke schießen), Spark (Skill → Funke),
-   Lingering (wächst mit der Kampfdauer)?
-8. **Mastery v2:** Mighty Hits, breitere Ranges, Parry, die 24 Pfade (`weapon-mastery-v2.md` 5)?
-9. **Ailments v2:** eingebaute Payoffs, Ailment Effect statt Duration, Wisdom neu (`ailments-v2.md` 4)?
-10. **Omens (5.2):** 2 zur Wahl pro Act, zweischneidig, harte Omens nur im Wildfire?
-11. **Greater Affixes (7.5):** Awaken / Shift / Intensify bei Liora, Greater I–V, Stufe gehört dem Item, Fireglass nur aus Wildfire?
-12. **Ashborn und Attribute (7.3):** verteilen im Character Sheet, umverteilen bei Old Nan?
-13. **Namen:** Ashborn, Omen, Glut, Ember Crucible, Parry, Mighty Hit, Flashpoint, Collapse, Fireglass als Arbeitsnamen?
+- **Flashpoint** ist der eingebaute Payoff von **Burn**: Trifft ein Fire-**Treffer** einen brennenden Gegner, wird sofort
+  25 % des restlichen Burn-Schadens ausgelöst, und der Burn läuft weiter. Fire-Builds mit direkten Treffern und Burn
+  spielen sich damit zusammen (`ailments-v2.md` 3.1).
+- **Collapse** ist der eingebaute Payoff von **Corruption**: Hat die Corruption ihr volles Wachstum erreicht, bricht sie
+  zusammen, trifft sofort mit dem Schaden von 4 Sekunden und fällt auf halbes Wachstum zurück. Danach wächst sie wieder.
+  So hat der Warlock in langen Kämpfen wiederkehrende große Momente (`ailments-v2.md` 3.1).
