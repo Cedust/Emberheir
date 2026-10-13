@@ -616,12 +616,12 @@ Nur eins pro Item, jederzeit neu würfelbar, danach weiter verstärkbar (Greater
 
 | Schritt | bei | Kosten | Wirkung |
 |---|---|---|---|
-| **Awaken** | Liora (Affix-Magie) | 3 Fireglass | ein **zufälliges** Affix (Stat oder Trigger) wird **Greater I** |
-| **Shift** | Liora | 1 Fireglass | das Greater wandert auf ein anderes zufälliges Affix des Items, **die Stufe bleibt** |
-| **Intensify** | Liora | 2 / 4 / 8 / 16 Fireglass | Greater II → V |
+| **Awaken** | Liora (Affix-Magie) | 3 Cinderglass | ein **zufälliges** Affix (Stat oder Trigger) wird **Greater I** |
+| **Shift** | Liora | 1 Cinderglass | das Greater wandert auf ein anderes zufälliges Affix des Items, **die Stufe bleibt** |
+| **Intensify** | Liora | 2 / 4 / 8 / 16 Cinderglass | Greater II → V |
 
 - **Wert:** Greater I = 110 % des Höchstwerts seines Tiers, jede Stufe +10 %, Greater V = 150 %.
-- **Fünf Stufen, nicht zehn:** Jede Stufe soll man spüren. Fünf Stufen auf zehn Items sind 310 Fireglass ohne Shifts,
+- **Fünf Stufen, nicht zehn:** Jede Stufe soll man spüren. Fünf Stufen auf zehn Items sind 310 Cinderglass ohne Shifts,
   also ein langer, aber endlicher Farm.
 - **Meine Verbesserung:** Die **Stufe gehört dem Item, nicht dem Affix.** Wer neu würfelt (Shift), verliert keine
   Investition, sondern nur den Zufall. So ist Neu-Würfeln nie eine Strafe, und das teure Intensify geht nie verloren.
@@ -629,8 +629,8 @@ Nur eins pro Item, jederzeit neu würfelbar, danach weiter verstärkbar (Greater
   zufälligen neuen Affix. Temper und Upgrade (Tier) gehen weiter. Legendary Powers und Runewords können nicht Greater werden.
 - **Uniques dürfen ein Greater Affix bekommen.** Das ist der einzige Weg, ein Unique zu verbessern, und macht gute Uniques
   zu einem Endgame-Projekt.
-- **Fireglass** (neue Währung, **nur aus Wildfire**): jeder Wildfire-Boss 1–2, +1 pro 3 Peril, Pinnacles (VIII–X) mehr.
-  Im Wildfire entsteht das Glas aus Asche und Feuer, daher der Name. Es ist Währung Nummer 6. Sie wird erst im Endgame
+- **Cinderglass** (neue Währung, **nur aus Wildfire**): jeder Wildfire-Boss 1–2, +1 pro 3 Peril, Pinnacles (VIII–X) mehr.
+  Im Wildfire schmilzt die Asche zu Glas, daher der Name. Es ist Währung Nummer 6. Sie wird erst im Endgame
   sichtbar, deshalb verletzt sie die Entschlackung nicht.
 - **Gezielt statt Zufall?** Ich lasse den Zufall bewusst drin (Timos Idee, sonst ist Min-Maxing zu schnell fertig).
   Nur das Ziel ist zufällig, die Stufe nie.
@@ -744,13 +744,13 @@ Alle Fragen aus Runde 1 und 2 sind beantwortet. Nichts davon ist umgesetzt; die 
 | 8 | Weapon Mastery v2 | ✅ Mighty Hits, breitere Ranges, Parry, 24 Pfade |
 | 9 | Ailments v2 | ✅ eingebaute Payoffs, Ailment Effect statt Duration, Wisdom neu |
 | 10 | Omens (5.2) | ✅ 2 zur Wahl, zweischneidig, harte Omens nur im Wildfire |
-| 11 | Greater Affixes (7.5) | ✅ Awaken / Shift / Intensify, Greater I–V, Stufe gehört dem Item, Fireglass nur aus Wildfire |
+| 11 | Greater Affixes (7.5) | ✅ Awaken / Shift / Intensify, Greater I–V, Stufe gehört dem Item, Cinderglass nur aus Wildfire |
 | 12 | Ashborn und Attribute (7.3) | ✅ verteilen im Character Sheet; Old Nan nur **zurücksetzen** |
-| 13 | Namen | ✅ Ashborn, Omen, Ember Crucible, Parry, Mighty Hit, Flashpoint, Collapse, Fireglass. **„Glut“ wird „Peril“** (englischer Spielbegriff) |
+| 13 | Namen | ✅ Ashborn, Omen, Peril (statt „Glut“), Ember Crucible, Parry, Mighty Hit, Combust (statt Flashpoint), Collapse, Cinderglass (statt Fireglass) |
 
 **Zur Erinnerung (Timos Rückfrage zu 13):**
 
-- **Flashpoint** ist der eingebaute Payoff von **Burn**: Trifft ein Fire-**Treffer** einen brennenden Gegner, wird sofort
+- **Combust** ist der eingebaute Payoff von **Burn**: Trifft ein Fire-**Treffer** einen brennenden Gegner, wird sofort
   25 % des restlichen Burn-Schadens ausgelöst, und der Burn läuft weiter. Fire-Builds mit direkten Treffern und Burn
   spielen sich damit zusammen (`ailments-v2.md` 3.1).
 - **Collapse** ist der eingebaute Payoff von **Corruption**: Hat die Corruption ihr volles Wachstum erreicht, bricht sie

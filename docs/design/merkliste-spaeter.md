@@ -52,7 +52,7 @@ nur einen einfachen, lesbaren Platzhalter (Zahl, Farbe, kurzer Text in der Arena
 |---|---|
 | Mighty Hit | großer Treffer mit Kamera-Ruck und eigener Zahl |
 | Parry | Klingen-Funke, Treffer prallt halb ab |
-| Flashpoint (Burn) | Glut springt auf, kurze Stichflamme |
+| Combust (Burn) | Glut springt auf, kurze Stichflamme |
 | Collapse (Corruption) | Void zieht sich zusammen und implodiert |
 | Poison-Überlauf | grüne Blasen platzen |
 | Freeze, Shock-Stacks | Eiskristalle am Gegner, 1–3 Blitzringe |

@@ -210,7 +210,7 @@ die Skills im Web andere Elemente bringen. Der Pfad „Pyre“ heißt neu **Blaz
 
 | Pfad | Technik I | Gabel 1 | Technik II | Gabel 2 | Meister |
 |---|---|---|---|---|---|
-| Blaze | +12 % Burn-Wirkung der Wand | **Kindle**: +20 % Burn Chance ◇ **Wildfire**: Burn +30 % | +4 % Burn Chance | **Flare**: Flashpoint (siehe `ailments-v2.md`) löst 50 % statt 25 % aus ◇ **Smother**: brennende Gegner heilen gar nicht | **Master of Flame**: jeder Burn-Tick gibt 2 Heat |
+| Blaze | +12 % Burn-Wirkung der Wand | **Kindle**: +20 % Burn Chance ◇ **Wildfire**: Burn +30 % | +4 % Burn Chance | **Flare**: Combust (siehe `ailments-v2.md`) löst 50 % statt 25 % aus ◇ **Smother**: brennende Gegner heilen gar nicht | **Master of Flame**: jeder Burn-Tick gibt 2 Heat |
 | Rime | +10 % Chill-Wirkung | **Bitter Cold**: Chill hält 40 % länger ◇ **Shatterpoint**: +25 % Schaden gegen Chilled | +4 % Chill Chance | **Frozen Solid**: 3 Chills in 6 s frieren 1 s ein ◇ **Cold Snap**: Telegraphs Chilled Gegner brauchen 30 % länger | **Master of Rime**: Chill während eines Telegraphs verschiebt die Heavy Attack um 1 s |
 | Storm | +10 % Shock-Wirkung | **Static Field**: +20 % Shock Chance ◇ **Arc**: jeder Crit gibt 8 Heat | +3 % Precision | **Arc Chain**: Crits gegen Shocked springen für 30 % nach ◇ **Static Build**: Shock stapelt bis 3 | **Master of Storm**: solange Shock läuft, kosten Skills 10 % weniger |
 
@@ -224,7 +224,7 @@ die Skills im Web andere Elemente bringen. Der Pfad „Pyre“ heißt neu **Blaz
 
 | Pfad | Technik I | Gabel 1 | Technik II | Gabel 2 | Meister |
 |---|---|---|---|---|---|
-| Smolder | +12 % Burn-Wirkung des Staffs | **Slow Burn**: Burn hält 40 % länger ◇ **Cinders**: Burn +25 % | +4 % Burn Chance | **Pyroclast**: alle 4 s Flashpoint ohne Fire-Treffer ◇ **Ashen Veil**: brennende Gegner machen 10 % weniger Schaden | **Master of Smolder**: Burn und Corruption auf demselben Gegner: beide +20 % |
+| Smolder | +12 % Burn-Wirkung des Staffs | **Slow Burn**: Burn hält 40 % länger ◇ **Cinders**: Burn +25 % | +4 % Burn Chance | **Pyroclast**: alle 4 s Combust ohne Fire-Treffer ◇ **Ashen Veil**: brennende Gegner machen 10 % weniger Schaden | **Master of Smolder**: Burn und Corruption auf demselben Gegner: beide +20 % |
 | Hollow | +1 Ramp-Schritt pro 3 Ticks | **Deepening Dark**: Corruption +30 % ◇ **Grasp**: Corrupted Gegner −10 % Heat Gain | +4 % Corruption Chance | **Collapse Deeper**: Collapse (siehe `ailments-v2.md`) trifft mit 6 statt 4 s ◇ **Void Hunger**: Corruption heilt 3 % | **Master of the Hollow**: Corruption startet 4 Schritte weiter |
 | Channel | +5 % Heat Gain | **Overflow**: über 80 Heat kosten Skills 15 % weniger ◇ **Deep Breath**: +20 Starting Heat | +8 % Skill Damage | **Echoing Chant**: jeder 3. Skill wiederholt sich mit 30 % ◇ **Siphon Ember**: Skills heilen 2 % Life pro 10 Heat Cost | **Master of Channel**: Reaction Slots kosten 25 % weniger |
 

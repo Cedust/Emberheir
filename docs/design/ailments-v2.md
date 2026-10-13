@@ -69,7 +69,7 @@ Payoffs (aus DoT wird sofortiger Schaden), die es schon gibt:
 |---|---|---|---|
 | **Bleed** | „Große Wunden“ | stark, kurz, behält den stärksten Treffer | **Mighty Hits** frischen Bleed mit 150 % auf (siehe `weapon-mastery-v2.md`); Rend bleibt |
 | **Poison** | „Tausend Stiche“ | Stacks, skaliert mit Trefferzahl | **Überlauf**: jeder Stack über der Grenze platzt sofort (heute nur mit Toxic Burst, künftig immer) |
-| **Burn** | „Glut, die zündet“ | dauerhaft, halbiert Heilung | **Flashpoint** (neu): ein Fire-**Treffer** auf einen brennenden Gegner löst sofort 25 % des restlichen Burns aus, der Burn läuft weiter |
+| **Burn** | „Glut, die zündet“ | dauerhaft, halbiert Heilung | **Combust** (neu): ein Fire-**Treffer** auf einen brennenden Gegner löst sofort 25 % des restlichen Burns aus, der Burn läuft weiter |
 | **Corruption** | „Je länger, desto tödlicher“ | wächst pro Tick | **Collapse** (neu): bei vollem Wachstum bricht sie zusammen, trifft sofort mit 4 s ihres Schadens und fällt auf halbes Wachstum zurück |
 | **Chill** | „Kontrolle“ | verlangsamt | **Freeze** (über Rime-Pfad und Nodes): 3 Chills in 6 s frieren 1 s ein |
 | **Shock** | „Verstärker“ | mehr erlittener Schaden | Shock **stapelt bis 3** (je +10 %, zusammen +30 %), damit Lightning einen Aufbau hat |
@@ -87,7 +87,7 @@ starken Payoff-Skill und einen Payoff-Pfad in der Mastery. Mehr nicht, sonst wir
 |---|---|---|
 | Bleed | Rend (bleibt) | Axe Butcher, Bow Barbs (Hooked Rend) |
 | Poison | Toxic Burst (bleibt) | Dagger Venom, Bow Toxin (Toxic Cascade) |
-| Burn | **Immolate** wird zum Payoff: Fire-Treffer + Flashpoint ×3 | Wand Blaze, Staff Smolder (Pyroclast) |
+| Burn | **Immolate** wird zum Payoff: Fire-Treffer + Combust ×3 | Wand Blaze, Staff Smolder (Pyroclast) |
 | Corruption | Corrupt (bleibt, springt im Wachstum) | Staff Hollow (Collapse Deeper) |
 | alle | Soul Harvest (bleibt) | – |
 
@@ -117,7 +117,7 @@ Jede DoT hat damit eine eigene Sustain-Quelle: Rend, Toxin-Meister, Smother/Siph
 | pro Punkt | +6 % Heat Gain, +6 % Ailment Duration | +6 % Heat Gain, **+5 % Ailment Effect** |
 | Perk 4 | Inner Fire: +10 Starting Heat | bleibt |
 | Perk 7 | Afterglow: Skills geben 10 % Heat zurück | bleibt |
-| Perk 10 | Clarity: +1 Stack bzw. +1 s | **Clarity**: deine Payoffs (Rend, Überlauf, Flashpoint, Collapse, Freeze) sind 25 % stärker |
+| Perk 10 | Clarity: +1 Stack bzw. +1 s | **Clarity**: deine Payoffs (Rend, Überlauf, Combust, Collapse, Freeze) sind 25 % stärker |
 
 Wisdom wird damit das Attribut für **„Skills und Ailments“**, gleich gut für alle fünf Klassen mit Ailment-Builds.
 
@@ -125,7 +125,7 @@ Wisdom wird damit das Attribut für **„Skills und Ailments“**, gleich gut f�
 
 - **Doom-Anzeige:** Die Life-Leiste des Gegners zeigt den Schaden, den die laufenden DoTs noch machen werden, als
   schraffierten Teil. So sieht man den Treffer eines DoT-Builds sofort, nicht erst über Sekunden.
-- Payoffs (Flashpoint, Collapse, Überlauf) bekommen große, eigene Effekte, weil sie die „Treffer“ eines DoT-Builds sind.
+- Payoffs (Combust, Collapse, Überlauf) bekommen große, eigene Effekte, weil sie die „Treffer“ eines DoT-Builds sind.
 
 ### 3.6 Längere Kämpfe helfen DoT
 
@@ -136,7 +136,7 @@ Wachstum auch in normalen Kämpfen, und DoT-Builds sind nicht mehr im Nachteil, 
 
 Alle Punkte ✅ (Timo, 13.10.):
 
-1. Eingebaute Payoffs für alle: Überlauf (Poison), Flashpoint (Burn), Collapse (Corruption)?
+1. Eingebaute Payoffs für alle: Überlauf (Poison), Combust (Burn), Collapse (Corruption)?
 2. Ailment Duration → **Ailment Effect** auf Items, Wisdom und im Web?
 3. Shock stapelt bis 3?
 4. Wisdom-Perk Clarity wird „Payoffs +25 %“?
