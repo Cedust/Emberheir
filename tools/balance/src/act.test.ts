@@ -1,6 +1,7 @@
 import { GAME_DATA } from "@emberheir/content";
 import { describe, expect, it } from "vitest";
-import { BUILDS, playAct, playGenerations } from "./act";
+import { playAct, playGenerations } from "./act";
+import { BUILDS } from "./builds";
 
 describe("act autopilot", () => {
   it("plays Act 1 to the end and reports it", () => {

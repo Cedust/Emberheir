@@ -17,7 +17,8 @@ import {
   newGame,
   rollItem,
 } from "@emberheir/sim";
-import type { EnemyLook, HeroLook } from "./battle/ArenaScene";
+import type { EnemyLook } from "./battle/enemyArt";
+import type { HeroLook } from "./battle/heroArt";
 import { heroLookOf } from "./heroLook";
 import { heroWeaponLook } from "./weaponLook";
 

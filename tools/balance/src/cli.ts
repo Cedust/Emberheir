@@ -12,7 +12,8 @@ import {
 } from "@emberheir/content";
 import { PROGRESSION, Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
-import { BUILDS, playGenerations, summarizeActRuns } from "./act";
+import { playGenerations, summarizeActRuns } from "./act";
+import { BUILDS } from "./builds";
 import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));

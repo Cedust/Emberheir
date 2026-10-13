@@ -1,217 +1,45 @@
-import { ITEM_CATALOG, GAME_DATA } from "@emberheir/content";
+import { GAME_DATA, ITEM_CATALOG } from "@emberheir/content";
 import {
-  CODEX,
-  type CodexPartKind,
-  type CraftCost,
-  type LearnedPart,
-  codexKnows,
-  kindleTargets,
-  kindledAffixId,
-  learnFromItem,
-  type CraftRequest,
-  type GameState,
-  type Item,
-  PROGRESSION,
-  SLOT_NAMES,
-  affixRollRange,
   applyAction,
   craftBlockReason,
   craftCost,
-  describeBonuses,
-  getBase,
-  matchRuneword,
-  runeGroup,
-  type ItemSlot,
-  describeStat,
-  describeTrigger,
+  type CraftRequest,
   findCraftItem,
+  type GameState,
+  type Item,
+  type ItemSlot,
   itemSlotFor,
+  kindleTargets,
+  learnFromItem,
   nextAct,
-  resolveTrigger,
+  PROGRESSION,
   salvageValue,
-  statAffixValue,
-  upgradedItem,
+  SLOT_NAMES,
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
-import {
-  ItemGrid,
-  ItemTile,
-  baseSummary,
-  fmt,
-  rarityClass,
-  rarityName,
-  walletEntries,
-} from "../../ui/items";
+import { fmt, ItemGrid, ItemTile, rarityClass, walletEntries } from "../../ui/items";
+import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { runeName } from "../../ui/RuneArt";
-import { GamblePanel, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
 import { CRAFT_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
-import { Paperdoll, dollBox } from "../../ui/Paperdoll";
 import { WeaponSlot } from "../WeaponSlot";
-import { PersonaPortrait } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
-
-/** Scale of the paperdoll next to the inventory. */
-const SIDE_DOLL = 0.85;
-
-export type PersonaId = "thoric" | "liora" | "nyssa" | "marisha";
-type ActionKind =
-  | "upgrade"
-  | "socket"
-  | "salvage"
-  | "reforge"
-  | "temper"
-  | "kindle"
-  | "rune"
-  | "combine"
-  | "codex"
-  | "gamble";
-
-interface PersonaDef {
-  readonly name: string;
-  readonly role: string;
-  readonly portrait: string;
-  readonly accent: string;
-  readonly quote: string;
-  readonly actions: readonly { k: ActionKind; name: string; desc: string }[];
-}
-
-const PERSONAS: Record<PersonaId, PersonaDef> = {
-  thoric: {
-    name: "Thoric",
-    role: "Blacksmith",
-    portrait: "#5a3a24",
-    accent: "#c9c2b8",
-    quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
-    actions: [
-      { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
-      { k: "reforge", name: "Reforge", desc: "Reroll all affixes. Removes the lock." },
-      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Ash." },
-    ],
-  },
-  liora: {
-    name: "Liora",
-    role: "Mystic",
-    portrait: "#3a2a5a",
-    accent: "#b36bff",
-    quote: "Affixes are like moods, dear. I can change one. I cannot change all of them twice.",
-    actions: [
-      { k: "temper", name: "Temper", desc: "Reroll the value of one affix." },
-      { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
-    ],
-  },
-  nyssa: {
-    name: "Nyssa",
-    role: "Runesmith",
-    portrait: "#2e4a26",
-    accent: "#8fd06a",
-    quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
-    actions: [
-      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
-      { k: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
-      { k: "combine", name: "Combine Runes", desc: "Three of a kind make the next Rune." },
-      { k: "codex", name: "Runeword Codex", desc: "Every Runeword you know." },
-    ],
-  },
-  marisha: {
-    name: "Marisha",
-    role: "Black Market",
-    portrait: "#5a4218",
-    accent: "#e0c27a",
-    quote: "Gamble? Of course. The house always wins. I am the house.",
-    actions: [
-      { k: "gamble", name: "Gamble", desc: "A random item for a slot. Better odds than loot." },
-    ],
-  },
-};
-
-export const PERSONA_ORDER: readonly PersonaId[] = ["thoric", "liora", "nyssa", "marisha"];
-
-/** Whether a persona travels with the caravan yet. */
-export function personaPresent(state: GameState, id: PersonaId): boolean {
-  if (id === "liora") return state.progress.trainerUnlocked;
-  if (id === "nyssa") return state.progress.runesmithUnlocked;
-  return true;
-}
-
-const PERSONA_LOCKED: Partial<Record<PersonaId, string>> = {
-  liora: "Liora joins after the act boss falls",
-  nyssa: "Nyssa waits somewhere in the Rotwood",
-};
-
-const ACTION_HINT: Record<ActionKind, string> = {
-  upgrade: "Choose any item. Values grow with the Tier.",
-  socket: "Normal items only, before the first Rune.",
-  rune: "Choose an item with a free Socket, then a Rune.",
-  combine: "Choose a Rune you have three of.",
-  codex: "A Runeword shows itself once you have found all of its Runes.",
-  gamble: "Choose a slot.",
-  salvage: "Choose an item from your inventory.",
-  reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
-  temper: "Click the affix to reroll. It stays locked in afterwards.",
-  kindle: "Choose an item, then a Condition and an Effect you have learned.",
-};
-
-function affixText(item: Item, index: number): { text: string; trigger: boolean } {
-  const roll = item.affixes[index];
-  const affix = roll ? ITEM_CATALOG.affixes.get(roll.affixId) : undefined;
-  if (!roll || !affix) return { text: "?", trigger: false };
-  if (affix.kind === "trigger") {
-    return {
-      text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
-      trigger: true,
-    };
-  }
-  return {
-    text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality, item.rarity)),
-    trigger: false,
-  };
-}
-
-function rangeText(item: Item, affixId: string): string {
-  const affix = ITEM_CATALOG.affixes.get(affixId);
-  const range = affixRollRange(item, affixId, ITEM_CATALOG);
-  if (!affix || affix.kind !== "stat" || !range) return "?";
-  const lo = describeStat(affix.stat, range.min);
-  const hi = describeStat(affix.stat, range.max);
-  // "+3% Crit Chance" and "+5% Crit Chance" → "+3–5% Crit Chance"
-  const m1 = /^([+-]?[\d.,]+)(.*)$/.exec(lo);
-  const m2 = /^([+-]?[\d.,]+)(.*)$/.exec(hi);
-  if (m1 && m2 && m1[2] === m2[2]) {
-    return m1[1] === m2[1] ? lo : `${m1[1]}–${(m2[1] ?? "").replace("+", "")}${m1[2]}`;
-  }
-  return `${lo} to ${hi}`;
-}
-
-function costText(cost: CraftCost): string {
-  const parts: string[] = [];
-  if (cost.acorns) parts.push(`${fmt(cost.acorns)} Acorns`);
-  if (cost.ash) parts.push(`${fmt(cost.ash)} Ash`);
-  if (cost.emberCoal) {
-    parts.push(`${cost.emberCoal} Ember Coal`);
-  }
-  if (cost.phoenixFeathers) {
-    parts.push(`${cost.phoenixFeathers} Phoenix Feather${cost.phoenixFeathers > 1 ? "s" : ""}`);
-  }
-  for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
-  return parts.join(" · ") || "Free";
-}
-
-function ItemHead(props: { item: Item; label: string; dashed?: boolean }) {
-  const { item } = props;
-  return (
-    <>
-      <span className="eyebrow">{props.label}</span>
-      <span className="title-font craft-item-name rarity-text">{item.name}</span>
-      <span className="rarity-text small strong">
-        {rarityName(item)} · T{item.tier}
-      </span>
-      <span className="sub">{baseSummary(item)}</span>
-      <div className="item-detail-rule" />
-    </>
-  );
-}
+import { PersonaPortrait } from "./art/PersonaArt";
+import { AfterCard, ItemHead, KindleParts, partName } from "./PersonaCards";
+import {
+  ACTION_HINT,
+  type ActionKind,
+  affixText,
+  costText,
+  PERSONA_LOCKED,
+  PERSONA_ORDER,
+  type PersonaId,
+  personaPresent,
+  PERSONAS,
+  SIDE_DOLL,
+} from "./personaDefs";
+import { GamblePanel, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
 
 /**
  * The Camp's crafters in one view (Persona mock): actions on the left,
@@ -266,7 +94,6 @@ export function PersonaView(props: {
     setAffixIndex(item?.lockedAffix ?? null);
   };
 
-  // --- what the action would do ------------------------------------------------------------
   let request: CraftRequest | null = null;
   if (item && kind === "socket") request = { kind: "addSocket", itemId: item.id };
   else if (item && kind === "rune" && runeId) {
@@ -638,194 +465,5 @@ export function PersonaView(props: {
         </aside>
       </div>
     </section>
-  );
-}
-
-function AfterCard(props: {
-  item: Item | undefined;
-  kind: ActionKind;
-  affixIndex: number | null;
-  runeId: string | null;
-  learned: readonly LearnedPart[];
-  kindle: { conditionId: string; effectId: string; index: number } | undefined;
-}) {
-  const { item, kind } = props;
-  if (!item) return <div className="craft-card panel-card dashed" />;
-  if (kind === "socket") {
-    const sockets = (item.sockets ?? 0) + 1;
-    return (
-      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
-        <ItemHead item={item} label="AFTER" />
-        <SocketRow sockets={sockets} runes={item.runes ?? []} highlight={sockets - 1} />
-        <span className="after-line new">{sockets} Sockets</span>
-      </div>
-    );
-  }
-  if (kind === "rune") {
-    const runes = props.runeId ? [...(item.runes ?? []), props.runeId] : (item.runes ?? []);
-    const slot = getBase(ITEM_CATALOG, item.baseId).slot;
-    const word = matchRuneword(ITEM_CATALOG, slot, item.sockets ?? 0, runes);
-    return (
-      <div
-        className={`craft-card panel-card dashed ${word ? "special-runeword" : rarityClass(item)}`}
-      >
-        <ItemHead item={word ? { ...item, name: word.name } : item} label="AFTER" />
-        <SocketRow sockets={item.sockets ?? 0} runes={runes} highlight={runes.length - 1} />
-        {props.runeId && (
-          <span className="after-line new">
-            {describeBonuses(
-              ITEM_CATALOG.runes.get(props.runeId)?.bonuses[runeGroup(slot)] ?? {},
-            ).join(" · ")}
-          </span>
-        )}
-        {word && <span className="after-line new runeword-line">Runeword: {word.name}</span>}
-      </div>
-    );
-  }
-  if (kind === "salvage") {
-    return (
-      <div className="craft-card panel-card dashed">
-        <span className="eyebrow">AFTER</span>
-        <span className="title-font craft-item-name">Ash</span>
-        <span className="sub">The item is gone for good.</span>
-        <div className="item-detail-rule" />
-        <span className="after-line new">+{salvageValue(item)} Ash</span>
-        {props.learned.map((l) => (
-          <span key={`${l.kind}-${l.id}`} className="after-line new kindled">
-            Codex: {partName(l.kind, l.id)} · new
-          </span>
-        ))}
-      </div>
-    );
-  }
-  if (kind === "kindle") {
-    const k = props.kindle;
-    const affix = k ? kindledAffix(k.conditionId, k.effectId) : undefined;
-    return (
-      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
-        <ItemHead item={item} label="AFTER" />
-        {item.affixes.map((_, i) =>
-          i === k?.index ? null : (
-            <span key={i} className="after-line">
-              {affixText(item, i).text}
-            </span>
-          ),
-        )}
-        {k && affix ? (
-          <span className="after-line new kindled">
-            <span className="locked-in">UP TO</span>{" "}
-            {describeTrigger(resolveTrigger(affix, item.tier, CODEX.kindleMaxQuality))}
-          </span>
-        ) : (
-          <span className="after-line sub">? new trigger</span>
-        )}
-      </div>
-    );
-  }
-  if (kind === "upgrade") {
-    const up = upgradedItem(item);
-    return (
-      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
-        <ItemHead item={up} label="AFTER" />
-        {item.affixes.map((_, i) => {
-          const before = affixText(item, i).text;
-          const now = affixText(up, i).text;
-          return (
-            <span key={i} className={`after-line ${before !== now ? "new" : ""}`}>
-              {now}
-            </span>
-          );
-        })}
-      </div>
-    );
-  }
-  if (kind === "reforge") {
-    return (
-      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
-        <ItemHead item={{ ...item, name: "New name" }} label="AFTER" />
-        {item.affixes.map((_, i) => (
-          <span key={i} className="after-line new">
-            ? new random affix
-          </span>
-        ))}
-        <span className="sub small">No lock afterwards.</span>
-      </div>
-    );
-  }
-  // Temper: only the chosen affix changes.
-  return (
-    <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
-      <ItemHead item={item} label="AFTER" />
-      {item.affixes.map((roll, i) => {
-        if (i !== props.affixIndex) {
-          return (
-            <span key={i} className="after-line">
-              {affixText(item, i).text}
-            </span>
-          );
-        }
-        return (
-          <span key={i} className="after-line new">
-            {rangeText(item, roll.affixId)} <span className="locked-in">LOCKED IN</span>
-          </span>
-        );
-      })}
-    </div>
-  );
-}
-
-const kindledAffix = (conditionId: string, effectId: string) => {
-  const affix = ITEM_CATALOG.affixes.get(kindledAffixId(conditionId, effectId));
-  return affix?.kind === "trigger" ? affix : undefined;
-};
-
-function partName(kind: CodexPartKind, id: string): string {
-  const part =
-    kind === "condition" ? ITEM_CATALOG.conditions.get(id) : ITEM_CATALOG.effects.get(id);
-  return part?.name ?? id;
-}
-
-/** Kindle: the learned Conditions and Effects. */
-function KindleParts(props: {
-  state: GameState;
-  conditionId: string | null;
-  effectId: string | null;
-  onCondition: (id: string) => void;
-  onEffect: (id: string) => void;
-}) {
-  const codex = props.state.legacy.codex;
-  const row = (
-    label: string,
-    kind: CodexPartKind,
-    selected: string | null,
-    onPick: (id: string) => void,
-  ) => {
-    const parts = [
-      ...(kind === "condition" ? ITEM_CATALOG.conditions : ITEM_CATALOG.effects).values(),
-    ].filter((p) => codexKnows(codex, kind, p.id));
-    return (
-      <div className="kindle-row" role="radiogroup" aria-label={label}>
-        <span className="strong">{label}</span>
-        {parts.length === 0 && <span className="sub">Salvage triggers at Thoric.</span>}
-        {parts.map((p) => (
-          <button
-            key={p.id}
-            type="button"
-            role="radio"
-            aria-checked={selected === p.id}
-            className={`part-chip ${selected === p.id ? "on" : ""}`}
-            onClick={() => onPick(p.id)}
-          >
-            {p.name}
-          </button>
-        ))}
-      </div>
-    );
-  };
-  return (
-    <div className="kindle-parts">
-      {row("Condition", "condition", props.conditionId, props.onCondition)}
-      {row("Effect", "effect", props.effectId, props.onEffect)}
-    </div>
   );
 }

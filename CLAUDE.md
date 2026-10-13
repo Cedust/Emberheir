@@ -25,6 +25,12 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
   banned in `sim`/`content`). Same seed + same input = same fight.
 - New affixes, skills and enemies are **data** in `content`. New building blocks (conditions,
   effects, mechanics) in `sim` always get unit tests.
+- A fight is simulated once, when it starts (`startFight`): its outcome is stored in the
+  encounter, the Battle view only plays the recording back (`FightReplay`), `resolveFight` reads
+  the stored outcome. Never simulate a fight a second time to find out how it ended.
+- Save games go through `packages/sim/src/save/`: a zod schema typed against `GameState`, and a
+  migration table. A change to the save shape bumps `SAVE_VERSION` and adds a migration step; a
+  change to items goes into the step's `item` function, so it reaches the shared stash too.
 - Packages are consumed as TypeScript source (`exports` points to `src/index.ts`); there is no
   separate package build step.
 
@@ -52,7 +58,7 @@ npm run test:e2e   # Playwright smoke tests (builds the web app)
   arena, not only in numbers or the log. Every new skill, ailment, mechanic, enemy ability or
   act gets its own look via the effect toolkit in `apps/web/src/game/battle/` (`fx.ts`
   particles and shapes, `weather.ts` per-act air, `SKILL_FX`/`AILMENT_FX` in
-  `ArenaScene.ts`). Prefer Pixi features (particles, filters, blend modes, meshes, camera)
+  `arenaEffects.ts`). Prefer Pixi features (particles, filters, blend modes, meshes, camera)
   over plain shapes when they make it feel better. Effects stay visual only, never change the
   sim, respect the Screen shake setting and `prefers-reduced-motion`, and keep the arena smooth
   (particle cap, no effects for a Skip).
