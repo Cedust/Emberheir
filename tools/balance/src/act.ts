@@ -1135,7 +1135,8 @@ export function playFinale(
     generation,
     act: data.finale?.number ?? 8,
     cleared,
-    deaths: s.stats.deaths - before.deaths,
+    // Deaths in the finale itself; the farming trips between attempts do not count.
+    deaths: deathStages.length,
     deathEnemies,
     fights: s.stats.fights - before.fights,
     levelAtBoss: s.hero.level,
