@@ -1,3 +1,4 @@
+import { deserializeGame } from "../save";
 import { describe, expect, it } from "vitest";
 import { kindledAffix, kindledAffixId } from "../items/codex";
 import { itemModifiers } from "../items/equipment";
@@ -6,7 +7,7 @@ import type { Item } from "../items/types";
 import { EMPTY_CODEX, codexAffixFactor, codexKnows, isHome, learnFromItem } from "./codex";
 import { CODEX } from "./constants";
 import { craftBlockReason, craftCost, kindleTargets } from "./crafting";
-import { type GameAction, type GameState, applyAction, deserializeGame, newGame } from "./game";
+import { type GameAction, type GameState, applyAction, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;

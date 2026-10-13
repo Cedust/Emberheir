@@ -14,13 +14,12 @@ import {
   type GameAction,
   type GameState,
   applyAction,
-  deserializeGame,
   heroSetup,
   newGame,
   openBoonFamilies,
   rewardsDone,
 } from "./game";
-import { TEST_BOONS, TEST_BOON_DATA, TEST_BOON_FAMILIES, withOldCurrencies } from "./test-fixtures";
+import { TEST_BOONS, TEST_BOON_DATA, TEST_BOON_FAMILIES } from "./test-fixtures";
 
 const data = TEST_BOON_DATA;
 const act = (state: GameState, ...actions: GameAction[]) =>
@@ -164,12 +163,6 @@ describe("Stolen Fire Boons", () => {
     s = act(s, { type: "continue" });
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run?.rewards?.boonOffer).toBeUndefined();
-  });
-
-  it("v6 save games start without Boons", () => {
-    const s = start();
-    const v6 = { ...withOldCurrencies(s), version: 6, boons: undefined };
-    expect(deserializeGame(JSON.stringify(v6)).boons).toEqual(EMPTY_BOONS);
   });
 });
 

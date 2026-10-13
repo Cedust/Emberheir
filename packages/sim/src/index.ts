@@ -110,6 +110,7 @@ export {
 } from "./items/describe";
 
 export * from "./progression/index";
+export * from "./save/index";
 
 /** Bumped whenever simulation rules change in a way that affects results or save games. */
 export const SIM_VERSION = "0.12.0";

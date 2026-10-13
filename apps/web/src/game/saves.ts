@@ -2,14 +2,11 @@ import { GAME_DATA } from "@emberheir/content";
 import {
   type GameState,
   type PlacedItem,
-  INVENTORY_SIZE,
   LINEAGE_STEPS,
-  SAVE_VERSION,
-  STASH_SIZE,
-  addToGrid,
   deserializeGame,
-  salvageValue,
+  deserializeStash,
   serializeGame,
+  serializeStash,
 } from "@emberheir/sim";
 import { storageKey } from "../storage";
 
@@ -27,16 +24,10 @@ export interface KeyValueStore {
   removeItem(key: string): void;
 }
 
-/** The single save game from before character slots. */
-const LEGACY_KEY = storageKey("save");
 const LAST_KEY = storageKey("lastSlot");
 export const slotKey = (slot: number) => storageKey(`slot.${slot}`);
-/**
- * The shared stash with the save version it was written in. A save migration that changes items
- * has to migrate these too.
- */
+/** The shared stash with the save version its items were written in (`serializeStash`). */
 export const STASH_KEY = storageKey("stash");
-
 /**
  * Lineage (spielzeit-v1.md, D): the seeds of the characters that won the finale. Shared by every
  * slot like the stash; its length is the Lineage step.
@@ -47,180 +38,179 @@ interface SharedLineage {
   readonly finishers: readonly number[];
 }
 
-function readFinishers(kv: KeyValueStore): number[] {
-  try {
-    const json = kv.getItem(LINEAGE_KEY);
-    const parsed = json ? (JSON.parse(json) as SharedLineage) : null;
-    return Array.isArray(parsed?.finishers) ? parsed.finishers.filter(Number.isFinite) : [];
-  } catch {
-    return [];
-  }
-}
-
 /**
- * The state with the account's Lineage step. A character that has won the finale joins the
- * Lineage once (its seed is its name in the list).
+ * The save games in the browser storage, with what was read kept in memory: each slot, the
+ * stash and the Lineage are parsed once, and a write only touches what changed. Every action
+ * saves the game, so without this each one would read, parse and write the whole stash again.
+ *
+ * Broken saves, and saves from a version without a migration, read as empty (Early Dev
+ * Preview: they are dropped and overwritten).
+ *
+ * The cache assumes this store is the only writer. Another tab writes the same keys: the
+ * browser reports that with a `storage` event, and `forget` drops the cache.
  */
-export function syncLineage(kv: KeyValueStore, state: GameState): GameState {
-  let finishers = readFinishers(kv);
-  if (state.legacy.finaleWon && !finishers.includes(state.seed)) {
-    finishers = [...finishers, state.seed];
-    const shared: SharedLineage = { finishers };
-    kv.setItem(LINEAGE_KEY, JSON.stringify(shared));
+export class SaveStore {
+  private readonly slots = new Map<number, GameState | null>();
+  /** What each slot's key holds right now, by reference (skips writing the same state twice). */
+  private readonly written = new Map<number, GameState>();
+  private stash: readonly PlacedItem[] | null = null;
+  private finishers: readonly number[] | null = null;
+
+  constructor(private readonly kv: KeyValueStore) {}
+
+  /** Drops everything read so far (the storage changed behind this store's back). */
+  forget(): void {
+    this.slots.clear();
+    this.written.clear();
+    this.stash = null;
+    this.finishers = null;
   }
-  const step = Math.min(LINEAGE_STEPS, finishers.length);
-  return (state.lineage ?? 0) === step ? state : { ...state, lineage: step };
-}
 
-interface SharedStash {
-  readonly version: number;
-  readonly items: readonly PlacedItem[];
-}
-
-function store(): KeyValueStore | null {
-  try {
-    return window.localStorage;
-  } catch {
-    return null;
-  }
-}
-
-/** Moves the old single save into the first free slot, once. */
-export function migrateLegacySave(kv: KeyValueStore): void {
-  const old = kv.getItem(LEGACY_KEY);
-  if (old === null) return;
-  const free = Array.from({ length: SLOT_COUNT }, (_, i) => i).find(
-    (i) => kv.getItem(slotKey(i)) === null,
-  );
-  if (free === undefined) return;
-  kv.setItem(slotKey(free), old);
-  kv.setItem(LAST_KEY, String(free));
-  kv.removeItem(LEGACY_KEY);
-}
-
-/** One slot's own save game, without the shared stash; broken or outdated saves read as empty. */
-function readOwnSlot(kv: KeyValueStore, slot: number): GameState | null {
-  try {
-    const json = kv.getItem(slotKey(slot));
-    return json ? deserializeGame(json, GAME_DATA) : null;
-  } catch {
-    return null;
-  }
-}
-
-/**
- * The shared stash. The first time, the stashes of all slots move into it (slot by slot); what no
- * longer fits goes into that character's inventory, or turns into its Ash.
- */
-export function readSharedStash(kv: KeyValueStore): PlacedItem[] {
-  const json = kv.getItem(STASH_KEY);
-  if (json !== null) {
-    try {
-      const shared = JSON.parse(json) as SharedStash;
-      return Array.isArray(shared.items) ? [...shared.items] : [];
-    } catch {
-      return [];
-    }
-  }
-  let stash: PlacedItem[] = [];
-  for (let slot = 0; slot < SLOT_COUNT; slot++) {
-    const state = readOwnSlot(kv, slot);
-    if (!state || state.stash.length === 0) continue;
-    let { inventory, wallet } = state;
-    for (const placed of state.stash) {
-      const toStash = addToGrid(stash, placed.item, GAME_DATA.items, STASH_SIZE);
-      if (toStash) {
-        stash = toStash;
-        continue;
+  /** One slot's own save game, without the shared stash. */
+  private ownSlot(slot: number): GameState | null {
+    if (!this.slots.has(slot)) {
+      const json = this.kv.getItem(slotKey(slot));
+      let state: GameState | null;
+      try {
+        state = json === null ? null : deserializeGame(json, GAME_DATA);
+      } catch {
+        state = null;
       }
-      const toBag = addToGrid(inventory, placed.item, GAME_DATA.items, INVENTORY_SIZE);
-      if (toBag) inventory = toBag;
-      else wallet = { ...wallet, ash: wallet.ash + salvageValue(placed.item) };
+      this.slots.set(slot, state);
     }
-    kv.setItem(slotKey(slot), serializeGame({ ...state, stash: [], inventory, wallet }));
+    return this.slots.get(slot) ?? null;
   }
-  writeSharedStash(kv, stash);
-  return stash;
-}
 
-function writeSharedStash(kv: KeyValueStore, items: readonly PlacedItem[]): void {
-  const shared: SharedStash = { version: SAVE_VERSION, items };
-  kv.setItem(STASH_KEY, JSON.stringify(shared));
-}
-
-/** One slot's save game with the shared stash. */
-export function readSlot(kv: KeyValueStore, slot: number): GameState | null {
-  const state = readOwnSlot(kv, slot);
-  return state ? { ...state, stash: readSharedStash(kv) } : null;
-}
-
-/** A new character's state with the shared stash in its Supply Wagon. */
-export function withSharedStash(kv: KeyValueStore, state: GameState): GameState {
-  return { ...state, stash: readSharedStash(kv) };
-}
-
-export function readSlots(kv: KeyValueStore): (GameState | null)[] {
-  migrateLegacySave(kv);
-  return Array.from({ length: SLOT_COUNT }, (_, i) => readSlot(kv, i));
-}
-
-export function writeSlot(kv: KeyValueStore, slot: number, state: GameState | null): void {
-  if (state) {
-    // The stash is written before it leaves the slot's save, so a first write still merges.
-    readSharedStash(kv);
-    writeSharedStash(kv, state.stash);
-    kv.setItem(slotKey(slot), serializeGame({ ...state, stash: [] }));
-    kv.setItem(LAST_KEY, String(slot));
-  } else {
-    kv.removeItem(slotKey(slot));
-    if (kv.getItem(LAST_KEY) === String(slot)) kv.removeItem(LAST_KEY);
+  /** The shared stash; a broken one reads as empty. */
+  sharedStash(): readonly PlacedItem[] {
+    if (this.stash === null) {
+      const json = this.kv.getItem(STASH_KEY);
+      try {
+        this.stash = json === null ? [] : deserializeStash(json, GAME_DATA);
+      } catch {
+        this.stash = [];
+      }
+    }
+    return this.stash;
   }
-}
 
-/** The slot played last, if it still holds a character. */
-export function lastSlot(kv: KeyValueStore): number | null {
-  migrateLegacySave(kv);
-  const slot = Number(kv.getItem(LAST_KEY));
-  return kv.getItem(LAST_KEY) !== null && readOwnSlot(kv, slot) ? slot : null;
+  private writeStash(items: readonly PlacedItem[]): void {
+    if (items === this.stash) return;
+    this.kv.setItem(STASH_KEY, serializeStash(items));
+    this.stash = items;
+  }
+
+  /** One slot's save game with the shared stash. */
+  slot(slot: number): GameState | null {
+    const state = this.ownSlot(slot);
+    return state ? { ...state, stash: this.sharedStash() } : null;
+  }
+
+  allSlots(): (GameState | null)[] {
+    return Array.from({ length: SLOT_COUNT }, (_, i) => this.slot(i));
+  }
+
+  /** A new character's state with the shared stash in its Supply Wagon. */
+  withSharedStash(state: GameState): GameState {
+    return { ...state, stash: this.sharedStash() };
+  }
+
+  /** Saves a slot (`null` deletes the character). The stash goes to its shared key. */
+  write(slot: number, state: GameState | null): void {
+    if (!state) {
+      this.kv.removeItem(slotKey(slot));
+      this.slots.set(slot, null);
+      this.written.delete(slot);
+      if (this.kv.getItem(LAST_KEY) === String(slot)) this.kv.removeItem(LAST_KEY);
+      return;
+    }
+    this.writeStash(state.stash);
+    if (this.written.get(slot) !== state) {
+      const own = { ...state, stash: [] };
+      this.kv.setItem(slotKey(slot), serializeGame(own));
+      this.slots.set(slot, own);
+      this.written.set(slot, state);
+    }
+    if (this.kv.getItem(LAST_KEY) !== String(slot)) this.kv.setItem(LAST_KEY, String(slot));
+  }
+
+  /** The slot played last, if it still holds a character. */
+  lastSlot(): number | null {
+    const raw = this.kv.getItem(LAST_KEY);
+    const slot = Number(raw);
+    return raw !== null && this.ownSlot(slot) ? slot : null;
+  }
+
+  private readFinishers(): readonly number[] {
+    if (this.finishers === null) {
+      try {
+        const json = this.kv.getItem(LINEAGE_KEY);
+        const parsed = json ? (JSON.parse(json) as Partial<SharedLineage>) : null;
+        this.finishers = Array.isArray(parsed?.finishers)
+          ? parsed.finishers.filter(Number.isFinite)
+          : [];
+      } catch {
+        this.finishers = [];
+      }
+    }
+    return this.finishers;
+  }
+
+  /**
+   * The state with the account's Lineage step. A character that has won the finale joins the
+   * Lineage once (its seed is its name in the list).
+   */
+  syncLineage(state: GameState): GameState {
+    let finishers = this.readFinishers();
+    if (state.legacy.finaleWon && !finishers.includes(state.seed)) {
+      finishers = [...finishers, state.seed];
+      const shared: SharedLineage = { finishers };
+      this.kv.setItem(LINEAGE_KEY, JSON.stringify(shared));
+      this.finishers = finishers;
+    }
+    const step = Math.min(LINEAGE_STEPS, finishers.length);
+    return (state.lineage ?? 0) === step ? state : { ...state, lineage: step };
+  }
 }
 
 // The browser's storage; private windows can block it, then nothing is saved.
 
-export const loadSlots = () => {
-  const kv = store();
-  return kv ? readSlots(kv) : Array.from({ length: SLOT_COUNT }, () => null);
-};
-export const loadSlot = (slot: number) => {
-  const kv = store();
-  return kv ? readSlot(kv, slot) : null;
-};
-/** A new character with the shared stash; without storage it starts with an empty one. */
-export const sharedStashFor = (state: GameState): GameState => {
-  try {
-    const kv = store();
-    return kv ? withSharedStash(kv, state) : state;
-  } catch {
-    return state;
+let browserStore: SaveStore | null | undefined;
+
+function store(): SaveStore | null {
+  if (browserStore === undefined) {
+    try {
+      browserStore = new SaveStore(window.localStorage);
+      window.addEventListener("storage", () => browserStore?.forget());
+    } catch {
+      browserStore = null;
+    }
   }
-};
-export const loadLastSlot = () => {
-  const kv = store();
-  return kv ? lastSlot(kv) : null;
-};
-export function saveSlot(slot: number, state: GameState | null): void {
+  return browserStore;
+}
+
+/** Runs `use` on the browser's store; full or blocked storage gives `fallback`. */
+function withStore<T>(run: (s: SaveStore) => T, fallback: T): T {
   try {
-    const kv = store();
-    if (kv) writeSlot(kv, slot, state);
+    const s = store();
+    return s ? run(s) : fallback;
   } catch {
-    // Full or blocked storage: the game still runs, it just is not saved.
+    return fallback;
   }
 }
+
+export const loadSlots = () =>
+  withStore(
+    (s) => s.allSlots(),
+    Array.from({ length: SLOT_COUNT }, () => null),
+  );
+export const loadSlot = (slot: number) => withStore((s) => s.slot(slot), null);
+export const loadLastSlot = () => withStore((s) => s.lastSlot(), null);
+/** A new character with the shared stash; without storage it starts with an empty one. */
+export const sharedStashFor = (state: GameState) =>
+  withStore((s) => s.withSharedStash(state), state);
+/** Full or blocked storage: the game still runs, it just is not saved. */
+export const saveSlot = (slot: number, state: GameState | null) =>
+  withStore((s) => s.write(slot, state), undefined);
 /** The state with the account's Lineage; without storage it stays as it is. */
-export const lineageFor = (state: GameState): GameState => {
-  try {
-    const kv = store();
-    return kv ? syncLineage(kv, state) : state;
-  } catch {
-    return state;
-  }
-};
+export const lineageFor = (state: GameState) => withStore((s) => s.syncLineage(state), state);

@@ -16,7 +16,6 @@ import {
   enemySetup,
   nextAct,
   currentFight,
-  deserializeGame,
   equipBlockReason,
   heroRotation,
   heroSetup,
@@ -25,13 +24,11 @@ import {
   moveBlockReason,
   prestigeRewards,
   newGame,
-  SAVE_VERSION,
   spentInTree,
   earnedSkillPoints,
   respecAcorns,
   forgetAcorns,
   rewardsDone,
-  serializeGame,
   addRunes,
   maxRuneRank,
   rollRuneDrops,
@@ -39,13 +36,7 @@ import {
 import { requiredLevel } from "../items/equipment";
 import { bossLevel, levelCap } from "./leveling";
 import { Rng } from "../rng";
-import {
-  TEST_ACT,
-  TEST_GAME_DATA,
-  TREE_SKILL,
-  WEAK_ENEMY,
-  withOldCurrencies,
-} from "./test-fixtures";
+import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
 const start = (seed = 1) => newGame(data, { seed, classId: "test-fighter" });
@@ -479,137 +470,6 @@ describe("game loop", () => {
     // Never more acts than the game has.
     expect(prestigeRewards(data, 9).acts).toBe(3);
   });
-
-  it("migrates M4 save games (version 2)", () => {
-    const s = start(4);
-    const v2 = {
-      ...withOldCurrencies(s),
-      version: 2,
-      legacy: undefined,
-      pendingPrestige: undefined,
-    };
-    const migrated = deserializeGame(JSON.stringify(v2));
-    expect(migrated).toEqual(s);
-  });
-
-  it("migrates M3 save games (version 1)", () => {
-    const s = clearStage(act(start(3), { type: "setOut", actId: "test-act" }));
-    const old = withOldCurrencies(s);
-    const v1 = {
-      ...old,
-      version: 1,
-      stash: undefined,
-      wallet: { ...old.wallet, ascensionShards: undefined },
-    };
-    const migrated = deserializeGame(JSON.stringify(v1));
-    expect(migrated.version).toBe(SAVE_VERSION);
-    expect(migrated.stash).toEqual([]);
-    expect(migrated.wallet.phoenixFeathers).toBe(0);
-    expect(migrated.run).toEqual(s.run);
-  });
-
-  it("migrates Seal-era save games (version 7): no Seals, points back above the new cap", () => {
-    const s = start(3);
-    const v7 = {
-      ...withOldCurrencies(s),
-      version: 7,
-      hero: { ...s.hero, level: 30, learned: { a: 1 }, unspentAttributePoints: 1 },
-      merchant: { key: 0, sold: [] },
-      legacy: {
-        ...s.legacy,
-        prestige: 1,
-        seals: ["ring1"],
-        chronicle: [{ generation: 1, sealed: ["ring1"], level: 20, deaths: 2, enemyName: "Boss" }],
-      },
-    };
-    const migrated = deserializeGame(JSON.stringify(v7), data);
-    expect(migrated.version).toBe(SAVE_VERSION);
-    expect(migrated.legacy).not.toHaveProperty("seals");
-    expect(migrated).not.toHaveProperty("merchant");
-    expect(migrated.legacy.chronicle).toEqual([
-      { generation: 1, level: 20, deaths: 2, enemyName: "Boss" },
-    ]);
-    // Attributes go back to the Class Array (v10 → v11). Level 15 of the old scale (run 2's cap)
-    // is the boss level of run 2 on the new one (v11 → v12).
-    expect(migrated.hero).toMatchObject({
-      level: 20,
-      xp: 0,
-      attributes: data.startingAttributes,
-      unspentAttributePoints: ATTRIBUTE_RULES.creationPoints + ATTRIBUTE_RULES.harvestPoints,
-      learned: {},
-    });
-    // A hero below the cap keeps its Class Array attributes.
-    const low = deserializeGame(JSON.stringify({ ...v7, hero: s.hero }), data);
-    expect(low.hero.attributes).toEqual(s.hero.attributes);
-  });
-
-  it("migrates pre-Waymark save games (version 11): new level scale, tree points from progress", () => {
-    const s = start();
-    const v11 = {
-      ...withOldCurrencies(s),
-      version: 11,
-      hero: { ...s.hero, level: 50, learned: { a: 1, k: 1 }, unspentSkillPoints: 3 },
-      progress: { ...s.progress, actsCleared: ["test-act"], waymarks: undefined },
-      legacy: { ...s.legacy, prestige: 3 },
-    };
-    const migrated = deserializeGame(JSON.stringify(v11), data);
-    expect(migrated.version).toBe(SAVE_VERSION);
-    // Old level 50 was run 4's cap; now run 4's boss stands at 45.
-    expect(migrated.hero.level).toBe(45);
-    expect(migrated.hero.learned).toEqual({});
-    expect(migrated.progress.waymarks).toEqual(["test-act:1", "test-act:2", "test-act:3"]);
-    expect(migrated.hero.unspentSkillPoints).toBe(earnedSkillPoints(migrated, data));
-  });
-
-  it("migrates pre-cleanup save games (version 12): currencies renamed and folded in, tree refunded", () => {
-    const s = start();
-    const v12 = {
-      ...withOldCurrencies(s),
-      version: 12,
-      hero: {
-        ...s.hero,
-        learned: { a: 1, k: 1 },
-        unspentSkillPoints: 0,
-        rotation: [TREE_SKILL.id],
-      },
-      wallet: {
-        gold: 50,
-        dust: 10,
-        reforgeStones: 1,
-        ascensionShards: 2,
-        runes: s.wallet.runes,
-        essences: { fire: 2, cold: 1 },
-        kindling: 3,
-        harvesterEmber: 2,
-        phoenixAsh: 1,
-      },
-      progress: { ...s.progress, stashBurned: true },
-      legacy: { ...s.legacy, quarry: { affixId: "crit", found: 0 } },
-    };
-    const migrated = deserializeGame(JSON.stringify(v12), data);
-    expect(migrated.version).toBe(SAVE_VERSION);
-    // Gold, Dust, Reforge Stones and Ascension Shards take their lore names.
-    expect(migrated.wallet).toEqual({
-      acorns: 50,
-      ash: 10 + 3 * 20,
-      emberCoal: 1 + 3,
-      phoenixFeathers: 2,
-      runes: s.wallet.runes,
-    });
-    expect(migrated.progress).not.toHaveProperty("stashBurned");
-    expect(migrated.legacy).not.toHaveProperty("quarry");
-    expect(migrated.hero.learned).toEqual({});
-    expect(migrated.hero.rotation).toEqual([null]);
-    expect(migrated.hero.unspentSkillPoints).toBe(earnedSkillPoints(migrated, data));
-  });
-
-  it("save games round-trip and reject other versions", () => {
-    const s = clearStage(act(start(3), { type: "setOut", actId: "test-act" }));
-    const json = serializeGame(s);
-    expect(deserializeGame(json)).toEqual(s);
-    expect(() => deserializeGame(JSON.stringify({ ...s, version: 99 }))).toThrow(/version/);
-    expect(() => deserializeGame("null")).toThrow();
-  });
 });
 
 function fail(): never {
@@ -735,18 +595,6 @@ describe("Boss trophies and the Trophy Wall", () => {
     expect(uniquesFor(data.items, 50).map((u) => u.id)).not.toContain("boss-trophy");
     expect(bossTrophies(data.items, "test-act").map((u) => u.id)).toEqual(["boss-trophy"]);
   });
-
-  it("v6 save games start the Trophy Wall with the Uniques the hero carries", () => {
-    const s = start();
-    const ring = { ...OLD_RING, id: "u", uniqueId: "band" };
-    const v6 = {
-      ...s,
-      version: 6,
-      hero: { ...s.hero, equipment: { ...s.hero.equipment, ring1: ring } },
-      legacy: { ...s.legacy, trophies: undefined },
-    };
-    expect(deserializeGame(JSON.stringify(v6)).legacy.trophies).toEqual(["band"]);
-  });
 });
 
 describe("Runes in the run", () => {
@@ -790,18 +638,6 @@ describe("Runes in the run", () => {
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run).toBeNull();
     expect(s.progress.runesmithUnlocked).toBe(true);
-  });
-
-  it("v3 save games get an empty pouch and Codex", () => {
-    const v3 = JSON.parse(serializeGame(start())) as Record<string, unknown>;
-    const wallet = { ...(v3.wallet as object) } as Record<string, unknown>;
-    delete wallet.runes;
-    const old = { ...v3, version: 3, wallet, merchant: undefined };
-    const s = deserializeGame(JSON.stringify(old));
-    expect(s.version).toBe(SAVE_VERSION);
-    expect(s.wallet.runes).toEqual({});
-    expect(s.legacy.runewords).toEqual([]);
-    expect(s.progress.runesmithUnlocked).toBe(false);
   });
 });
 

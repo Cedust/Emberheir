@@ -6,15 +6,8 @@ import {
   REACTION_COOLDOWN,
   battlePlanUnlocks,
 } from "./battle-plan";
-import {
-  type GameAction,
-  type GameState,
-  applyAction,
-  deserializeGame,
-  heroSetup,
-  newGame,
-} from "./game";
-import { TEST_GAME_DATA, TREE_SKILL, withOldCurrencies } from "./test-fixtures";
+import { type GameAction, type GameState, applyAction, heroSetup, newGame } from "./game";
+import { TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
 const act = (state: GameState, ...actions: GameAction[]) =>
@@ -125,16 +118,6 @@ describe("Battle Plan", () => {
     expect(setup.reactions).toBeUndefined();
   });
 
-  it("v6 save games get the Rotation Slots of the faster ladder", () => {
-    const s = hero(2);
-    const v6 = {
-      ...withOldCurrencies(s),
-      version: 6,
-      progress: { ...s.progress, rotationSlots: 2 },
-    };
-    expect(deserializeGame(JSON.stringify(v6)).progress.rotationSlots).toBe(3);
-  });
-
   it("puts Thresholds, Modifiers and Conditions on the Rotation Slots", () => {
     let s = act(hero(9), { type: "setRotationSkill", slot: 1, skillId: TREE_SKILL.id });
     s = act(
@@ -189,11 +172,5 @@ describe("Battle Plan", () => {
     expect(s.wallet.acorns).toBe(500 - PROGRESSION.capstoneChangeAcorns);
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "crescendo" });
     expect(() => act(s, plan({}))).toThrow(/removed/);
-  });
-
-  it("v5 save games get an empty Battle Plan", () => {
-    const s = hero(0);
-    const v5 = { ...withOldCurrencies(s), version: 5, hero: { ...s.hero, plan: undefined } };
-    expect(deserializeGame(JSON.stringify(v5))).toEqual(s);
   });
 });

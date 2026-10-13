@@ -8,7 +8,7 @@ import {
   applyCheat,
   newGame,
 } from "@emberheir/sim";
-import { useCallback, useRef, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { lineageFor, loadSlot, saveSlot, sharedStashFor } from "./saves";
 
 /** What the class select hands over for a new character. */
@@ -39,49 +39,38 @@ export function useGame() {
     if (next) saveSlot(slotRef.current, next);
   }, []);
 
-  const dispatch = useCallback(
-    (action: GameAction) => {
+  /**
+   * Runs one change of the state: the result replaces the state, a failed action (a
+   * `GameActionError`, or a cheat that does not fit) leaves it as it was and shows why.
+   */
+  const update = useCallback(
+    (change: (state: GameState) => GameState) => {
       const prev = ref.current;
       if (!prev) return;
       try {
-        replace(applyAction(prev, GAME_DATA, action));
+        replace(change(prev));
         setError(null);
       } catch (e) {
         setError(e instanceof Error ? e.message : String(e));
       }
     },
     [replace],
+  );
+
+  const dispatch = useCallback(
+    (action: GameAction) => update((s) => applyAction(s, GAME_DATA, action)),
+    [update],
   );
 
   /** Applies several actions as one step: all or nothing. */
   const dispatchAll = useCallback(
-    (actions: readonly GameAction[]) => {
-      const prev = ref.current;
-      if (!prev) return;
-      try {
-        replace(actions.reduce((s, a) => applyAction(s, GAME_DATA, a), prev));
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-    },
-    [replace],
+    (actions: readonly GameAction[]) =>
+      update((s) => actions.reduce((acc, a) => applyAction(acc, GAME_DATA, a), s)),
+    [update],
   );
 
   /** Cheat Mode (PR previews and `?cheat`): changes the save directly. */
-  const cheat = useCallback(
-    (c: Cheat) => {
-      const prev = ref.current;
-      if (!prev) return;
-      try {
-        replace(applyCheat(prev, GAME_DATA, c));
-        setError(null);
-      } catch (e) {
-        setError(e instanceof Error ? e.message : String(e));
-      }
-    },
-    [replace],
-  );
+  const cheat = useCallback((c: Cheat) => update((s) => applyCheat(s, GAME_DATA, c)), [update]);
 
   const start = useCallback(
     (character: NewCharacter) => {
@@ -118,17 +107,14 @@ export function useGame() {
     setState(null);
   }, []);
 
-  return {
-    state,
-    error,
-    dispatch,
-    dispatchAll,
-    cheat,
-    start,
-    resume,
-    quit,
-    clearError: () => setError(null),
-  };
+  const clearError = useCallback(() => setError(null), []);
+
+  // One object per state, so views that keep `game` in an effect's deps do not rerun it on
+  // every render (the fight's resolve timer, for one).
+  return useMemo(
+    () => ({ state, error, dispatch, dispatchAll, cheat, start, resume, quit, clearError }),
+    [state, error, dispatch, dispatchAll, cheat, start, resume, quit, clearError],
+  );
 }
 
 export type GameApi = ReturnType<typeof useGame>;
