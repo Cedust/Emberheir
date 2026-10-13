@@ -1,6 +1,6 @@
 # Ailments v2: klare Identität, eingebauter Payoff, Ailment Effect statt Duration
 
-Stand 13.10.2026 · ✅ von Timo angenommen (13.10.), noch nichts umgesetzt · gehört zu `neuausrichtung-v1.md`
+Stand 13.10.2026 · ✅ von Timo angenommen (13.10.), in Phase 3 gebaut (Bleed über Mighty Hits und Freeze folgen mit Weapon Mastery v2) · gehört zu `neuausrichtung-v1.md`
 Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwerte für die Balance-CLI.
 
 **Timos Fragen (13.10.):** Sind die Ailments cool, macht jedes Spaß, hat jedes eine klare Identität? DoTs brauchen länger

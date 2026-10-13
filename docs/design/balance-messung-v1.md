@@ -216,3 +216,47 @@ Alte Acts eines Runs: normale Kämpfe 13 → 17 s, Boss 33 → 46 s, weiterhin 0
 5. **Frage an Timo:** Mit Runes braucht ein Build im Schnitt **3 Anläufe** pro neuestem Act statt der alten 6–8. Soll
    das neue Ziel 3–5 sein (Runes gehören zum Spiel), oder sollen die Wände wieder auf 6–8 steigen (Wand-Stärke etwa
    ×1,3)? Bis zur Antwort bleibt die Wand-Stärke unverändert.
+
+---
+
+## 7. Phase 3 und 4: Messung und Nachstellen (Stand nach Lauf G)
+
+Timo (13.10.): **neues Ziel 3–5 Anläufe** pro neuestem Act, weil Runes zum Spiel gehören. Alle Läufe wie oben: 15 Builds
+× 3 Läufe, Seeds 31–33, bis Act 7, mit Runes.
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Kampf s normal / Elite / Gate / Boss | Clear |
+| --- | --- | --- | --- | --- | --- |
+| D | Phase 2 (Startwerte) | 3,15 | 9 / 12 / 29 / 50 % | 28 / 49 / 38 / 53 | 100 % |
+| P3 | + Ailments v2, Class Traits | 2,89 | 9 / 11 / 21 / 58 % | 22 / 35 / 29 / 42 | 100 % |
+| P4 | + Elites, Routen, Item-Picks | 2,02 | 1 / 42 / 11 / 47 % | 20 / 33 / 27 / 46 | 100 % |
+| E | Elite-Pfad ohne Shrine, Wand ×1,2 | 3,25 | 3 / 23 / 18 / 56 % | 19 / 28 / 27 / 37 | 99 % |
+| F | Ironhide, Blinking, Iron Blood weicher; mehr Gegner-Life | 3,02 | 2 / 24 / 18 / 56 % | 23 / 31 / 33 / 43 | 99 % |
+| **G** | **Static Skin, Numbing Blow, Ice Shell weicher (jetzt im Code)** | **2,87** | **2 / 18 / 16 / 64 %** | **22 / 32 / 33 / 43** | **100 %** |
+| Ziel | | 3–5 | 5–15 / 10–20 / 20–30 / 35–55 % | 20–30 / 35–50 / 45–70 / 60–100 | |
+
+**Was die Phasen bewirkt haben:**
+
+1. **Phase 3** (Ailments v2, Class Traits) macht die Builds im Schnitt etwas stärker (3,15 → 2,89 Anläufe). DoT-Builds
+   gewinnen durch die Payoffs (Rot 4,3 → 2,4), der Warrior verliert durch Iron Blood seine +20 % Trefferschaden
+   (Smasher 2,7 → 4,9).
+2. **Phase 4** hat zuerst alles zu leicht gemacht (2,0): Der Elite-Pfad gab zwei Elites **und** zwei Shrines. Jetzt
+   zahlen Elites des Elite-Pfads nur in Beute. Mit dem Elite-Pfad gibt es fast viermal so viele Elite-Kämpfe wie
+   vorher, deshalb tragen Elites jetzt ihren Anteil an den Toden (18 %, im Ziel).
+3. **Physical gegen Elemental:** Act-Modifier wie Ironhide (Armor), Blinking (Evasion) und Static Skin (Reflect)
+   treffen Builds mit vielen kleinen physischen Treffern. Nach dem Nachstellen liegen alle Builds zwischen 1,9 und 4,7
+   Anläufen, die Caster aber am unteren Rand (1,9–2,9), die Warrior und Bögen am oberen (3,6–4,7).
+
+**Werte im Code (Lauf G):** Wand-Stärke 1,8 / 9 / 7 / 8 / 8 / 6,6 / 5,4; Gegner-Life normal ×1,4, Elite ×1,25,
+Gatekeeper ×1,7, Boss ×1,5 (Schaden ×0,9); Iron Blood −35 % und +25 Heat; Ironhide +25 Armor, Blinking +12 % Evasion,
+Static Skin jeder 5. Treffer (max 4 %), Numbing Blow jeder 8. Angriff 0,5 s, Ice Shell alle 12 s 6 %.
+
+### 7.1 Offen für die nächste Runde
+
+1. **Run 2 und 3 sind am Boss noch eine Klippe** (75–100 % der Tode am Boss). Vorschlag wie in 6.3: Sägezahn-Anteile
+   und Kampflänge pro Run statt einer Tabelle für alle.
+2. **Gatekeeper und Bosse sind zu kurz** (33 s und 43 s im Median, Ziel 45–70 und 60–100), späte Bosse dagegen lang
+   (Act 4: 108 s). Auch das löst ein Faktor pro Run.
+3. **Caster gegen Physical:** Caster brauchen 1,9–2,9 Anläufe, Warrior und Bögen 3,6–4,7. Kandidaten: Resistances der
+   Act-Bosse gegen Elemental, oder Spark (+50 %) etwas kleiner.
+4. **Normale Stages töten kaum** (2 %, Ziel 5–15 %). Die Zermürbung greift mit Hearth Embers und dem Hearth-Pfad wenig;
+   die Rampe der normalen Stages kann höher, wenn die Bosse in Run 2–3 sanfter werden.

@@ -35,11 +35,14 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Achsen | Waffe (eine wählen) | Class Trait | Klassenpfade (Prestige-Äste) |
 |---|---|---|---|---|
-| **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: Treffer +20 % Schaden | Duelist, Butcher, Warden, Tactician |
-| **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: +15 % Bleed und Poison Damage | Butcher, Venomancer, Duelist, Tactician |
-| **Hunter** | Physical · Ranged | Bow, Crossbow | Keen Eye: +5 % Crit Chance | Marksman, Venomancer, Warden, Tactician |
-| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: Treffer +20 % Schaden | Stormcaller, Frostbinder, Warden, Tactician |
-| **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +20 % Schaden | Pyromancer, Void Lord, Warden, Tactician |
+| **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −35 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
+| **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: +15 % Ailment Effect für Bleed und Poison | Butcher, Venomancer, Duelist, Tactician |
+| **Hunter** | Physical · Ranged | Bow, Crossbow | Keen Eye: erster Treffer jedes Kampfes und Treffer ins Ausholen des Gegners sind saubere Crits | Marksman, Venomancer, Warden, Tactician |
+| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +50 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
+| **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +1 % Schaden pro Sekunde Kampf (bis +40 %) | Pyromancer, Void Lord, Warden, Tactician |
+
+- Class Traits seit Phase 3 der Neuausrichtung (`neuausrichtung-v1.md` 2.1): Ein Trait beschreibt, **wie** die Klasse
+  kämpft, und hat in der Arena einen eigenen Moment.
 
 - Die Klasse ist ein Startpunkt, kein Käfig: Alle Items und alle Regionen des Skill Webs sind für jede Klasse nutzbar.
 - **Lineage:** Gewinnt ein Charakter das Finale, bekommen alle Klassen des Accounts einen kleinen Lineage-Bonus
@@ -61,10 +64,16 @@ Endgame **Wildfire I–X**.
 - Fällt der Boss des **neuesten** Acts, kommt **The Harvest**: Der Harvester erntet die Glut, der Heir erwacht im Camp,
   das nächste Prestige beginnt. In Run 7 kämpft man selbst gegen den Harvester.
 - **Waymarks:** Stage 5, 10 und 15 jedes Acts. Der erste Sieg dort in einem Run gibt einen Skill Point.
+- **Routen** (`elites-routen-v1.md`): Vor jedem Waymark vor dem Boss gabelt sich der Weg für zwei Stages (3–4 und 8–9):
+  **Elite-Pfad** (zwei sichere Elites), **Shrine-Pfad** (danach eine Shrine), **Hearth-Pfad** (danach +25 % Life),
+  mit offener Thief-Bounty auch die **Thief's Trail**. Gewählt in der Intermission, ohne Wahl gilt der Shrine-Pfad.
 - Jeder Kampf ist 1 gegen 1 und läuft automatisch. Keine Zeitraffer- oder Auto-Resolve-Funktion ✅ (Timo).
 
 ### 2.3 Nach jedem Kampf ✅ (`entschlackung-v1.md`)
-- XP, Acorns, Ash und **1 aus 3 Items** (Equip oder Take; die anderen zerfallen zu Ash).
+- XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe ab Run 2 nur **jede dritte Stage 1 aus 3**
+  (sonst werden die Karten sofort zu Ash; Run 1 hat als Einstieg einen Pick nach jedem Kampf), Elites, Gatekeeper und
+  Bosse immer. Die DPS-Pfeile auf den Karten misst der
+  Training Dummy.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 2–3 Ember Coal, Boss 4–6, normale Gegner 15 % auf 1).
 - **Ember Shrine** nach Stage 5 und 10 und nach Elites (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
@@ -99,7 +108,7 @@ Endgame **Wildfire I–X**.
 
 | Persona | Rolle | Aufgaben |
 |---|---|---|
-| **Kaelen** | Trainer | Skill Web, Weapon Mastery, Battle Plan, Attribute; jeder Respec kostet Acorns |
+| **Kaelen** | Trainer | Skill Web, Weapon Mastery, Battle Plan, Attribute (jeder Respec kostet Acorns), **Training Dummy** (Schaden/s nach Quelle, Items live anprobieren) |
 | **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers), Reforge (Ember Coal), Salvage (→ Ash, lehrt den Trigger Codex) |
 | **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
@@ -148,7 +157,7 @@ Endgame **Wildfire I–X**.
 | **Dexterity** | +1,5 % Crit Chance, +4 % Trigger Chance | Hawkeye / Opportunist / True Shot |
 | **Intelligence** | +8 % Elemental Damage, +8 % Barrier | Attuned / Elemental Surge / Spellfire |
 | **Agility** | +3 % Attack Speed, +2 % Evasion | Quick Reflexes / Ember Dance / Double Time |
-| **Wisdom** | +6 % Heat Gain, +6 % Ailment Duration | Inner Fire / Afterglow / Clarity |
+| **Wisdom** | +6 % Heat Gain, +5 % Ailment Effect | Inner Fire / Afterglow / Clarity (Payoffs +25 %) |
 | **Vitality** | +6 % Life, +3 % Tenacity | Second Breath / Thick Skin / Undying |
 
 ### 3.3 Skill Points ✅
@@ -177,14 +186,17 @@ Endgame **Wildfire I–X**.
 
 ### 4.2 Damage Types und Ailments
 
-| Damage Type | Ailment | Mechanik |
-|---|---|---|
-| Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert |
-| Physical | **Poison** | 17 %/s für 5 s, stapelt bis 20 |
-| Fire | **Burn** | 25 %/s für 4 s, halbiert die Heilung des Gegners |
-| Void | **Corruption** | 10 %/s, wächst pro Tick (+25 %, bis 12×), 6 s |
-| Cold | **Chill** | −30 % Attack Speed und Heat Gain, 2 s |
-| Lightning | **Shock** | +20 % erlittener Schaden, 3 s |
+| Damage Type | Ailment | Mechanik | Eingebauter Payoff |
+|---|---|---|---|
+| Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert | Rend (Skill) |
+| Physical | **Poison** | 17 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
+| Fire | **Burn** | 25 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus |
+| Void | **Corruption** | 10 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
+| Cold | **Chill** | −30 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −50 %) | – |
+| Lightning | **Shock** | +10 % erlittener Schaden pro Stack, bis 3 Stacks, 3 s (mit Ailment Effect bis +50 %) | – |
+
+- **Ailment Effect** (statt Ailment Duration, `ailments-v2.md`): stärkere DoTs, stärkeres Chill und Shock, nicht
+  längere Ailments. Längere Dauer gibt es nur als Regel einzelner Nodes. Immolate löst Combust dreifach aus.
 
 - **Crit Damage ist fest 150 %** (nur Crit Chance skaliert; Ausnahmen über einzelne Keystones).
 - **Sunder** (Debuff, senkt Armor stapelnd) ≠ **Physical Penetration** (ignoriert Armor pro Treffer).
@@ -279,19 +291,21 @@ Endgame **Wildfire I–X**.
 ## 6. Gegner ✅ (`gegner-bosse-v1.md`)
 - Archetypen: Brute, Skirmisher, Caster, Afflicter, Warden, Thornback. Gleiche Regeln wie der Held, sichtbare Heat-Leiste,
   1–2 Skills, Telegraphs (Conditions für Reaction Slots).
-- **Elites:** 1–3 von 20 Modifiern (Extra Fast, Stone Skin, Vampiric, Thorns, Enraged, Ashen Shell, Second Wind …),
-  besserer Loot, Ember Coal, öffnen eine Ember Shrine.
+- **Elites** (`elites-routen-v1.md`): 1–3 Modifier, zuerst einer der drei **Act-Modifier** (z. B. Rotwood: Sporeburst,
+  Rootbound, Thornbark), dann allgemeine (Extra Fast, Stone Skin, Vampiric, Thorns, Enraged). Ihre Beute folgt dem
+  Thema der Modifier. Besserer Loot, Ember Coal, öffnen eine Ember Shrine.
+- **Champions** (ab Run 3, 4 % pro Elite): drei Modifier, +30 % Life, eigener Hoard (sicher Epic, 15 % Legendary).
 - **Ember Thief:** seltener Gegner, der wegläuft; fängt man ihn, gibt es Beute.
 - **Bosse:** pro Act einer mit Phasen und Signatur-Mechanik. Jedes Prestige gibt jedem Boss eine Fähigkeit dazu.
 - **Skalierung:** Das Monster Level bestimmt die Grundwerte. Dazu:
   - **Run Pressure:** Life +80 %, Schaden +35 % pro Act nach dem ersten (der neueste Act bleibt der härteste).
-  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 8,3 / 6,3 / 7 / 7 / 5,8 / 4,8),
+  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7 / 8 / 8 / 6,6 / 5,4),
     Life nur mit deren Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3, Startwerte aus
     `balance-messung-v1.md`): normale Stages 15 → 30 %, 25 → 35 %, 30 → 40 % der Wand, die **Gatekeeper** auf
     Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Jede Wand mit höchstens +10 Level schaffbar.
-  - **Kampfdauer** (5.5): Gegner haben je Stage-Art mehr Life (normal ×1,2, Elite ×1,3, Gatekeeper ×1,4, Boss ×1,3;
+  - **Kampfdauer** (5.5): Gegner haben je Stage-Art mehr Life (normal ×1,4, Elite ×1,25, Gatekeeper ×1,7, Boss ×1,5;
     der Boss trifft dafür mit ×0,9), in allen Acts eines Runs, nicht im Finale und im Wildfire.
-  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
+  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **3–5 Anläufe** (Timo, 13.10.: mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
     normal 5–15 %; Kampfdauer normal 20–30 s, Elite 35–50 s, Gatekeeper 45–70 s, Boss 60–100 s.
 
 ---
@@ -322,7 +336,9 @@ Endgame **Wildfire I–X**.
 
 - Neuausrichtung (Systemidentität, Class Traits, Web v3, Mastery v2, Ailments v2, Routen, Elites, Omens, Ashborn,
   Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md`, von Timo entschieden (13.10.). Phase 1
-  (Messwerkzeug) ist gebaut, Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers) mit Startwerten begonnen.
+  (Messwerkzeug), Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers), Phase 3 (Ailments v2, Class Traits) und
+  Phase 4 (Elites, Routen, Item-Picks, Training Dummy) sind gebaut; offen sind Phase 5 und 6.
+- Aus Ailments v2 hängen an Weapon Mastery v2 (Phase 5): Bleed über Mighty Hits, Freeze über den Rime-Pfad.
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
 - Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch.
 
@@ -353,5 +369,6 @@ Endgame **Wildfire I–X**.
 | `neuausrichtung-v1.md` | Vorschläge zur Neuausrichtung | 💡 offen |
 | `balance-messung-v1.md` | Messung Phase 1 (Runes im Autopilot, Tode und Kampfdauer je Stage-Art), Startwerte Phase 2 | gemessen |
 | `weapon-mastery-v2.md` | neue Mastery-Pfade, Precision, Mighty Hits, Parry | 💡 offen |
-| `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | 💡 offen |
+| `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | gebaut (ohne Mighty Hits, Freeze) |
+| `elites-routen-v1.md` | Elite-Modifier pro Act, Champions, Routen, Item-Picks, Training Dummy | gebaut |
 | `merkliste-spaeter.md` | Ideen für später | gemerkt |
