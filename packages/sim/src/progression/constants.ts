@@ -300,7 +300,7 @@ export const PROGRESSION = {
    * 29 % Gatekeeper, 50 % boss.
    */
   wall: {
-    strength: [1.8, 9, 7.6, 9, 8.8, 8.6, 7.6],
+    strength: [1.8, 9, 7.6, 9, 8.8, 8.6, 8.4],
     /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
     lifeExponent: 0.5,
     gates: [0.4, 0.45],

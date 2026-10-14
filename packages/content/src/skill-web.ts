@@ -666,8 +666,8 @@ const REGIONS: readonly RegionSpec[] = [
       {
         nodes: [t("Scarred Hide", ARMOR), s(REND), t("Tough Sinew", TENACITY)],
         notable: [
-          n("Exsanguinate", "Your Bleeds deal 25 % more damage to enemies below 50 % Life.", {
-            ailmentDamageWhen: [{ ailment: "bleed", amount: 0.25, condition: below(0.5) }],
+          n("Exsanguinate", "Your Bleeds deal 40 % more damage to enemies below 50 % Life.", {
+            ailmentDamageWhen: [{ ailment: "bleed", amount: 0.4, condition: below(0.5) }],
           }),
           n("Red Tide", "Your hits deal 35 % more damage to Bleeding enemies.", {
             conditionalDamage: [more(has("bleed"), 0.35)],

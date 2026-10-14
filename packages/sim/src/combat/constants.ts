@@ -121,8 +121,8 @@ export const COMBAT = {
   burnHealingReduction: 0.5,
   chillDurationSeconds: 2,
   /** Chill: -X Attack Speed and -X Heat Gain; Ailment Effect raises it up to `chillMaxSlow`. */
-  chillSlow: 0.3,
-  chillMaxSlow: 0.5,
+  chillSlow: 0.25,
+  chillMaxSlow: 0.4,
   shockDurationSeconds: 3,
   /**
    * Shock (ailments-v2.md 3.1): stacks up to `shockMaxStacks`, each one +X damage taken; with

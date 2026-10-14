@@ -452,8 +452,8 @@ const SWORD = buildTree({
       color: C.blood,
       techniques: [
         technique("True Line", "+3 % Precision.", { precision: 0.03 }),
-        technique("Bleeding Steel", "+12 % effect of the Sword's Bleed.", {
-          weaponRules: { ailmentEffectBy: { bleed: 0.12 } },
+        technique("Bleeding Steel", "+16 % effect of the Sword's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.16 } },
         }),
       ],
       forks: [
@@ -825,8 +825,8 @@ const AXE = buildTree({
       theme: "Bleed",
       color: C.blood,
       techniques: [
-        technique("Gash", "+12 % effect of the Axe's Bleed.", {
-          weaponRules: { ailmentEffectBy: { bleed: 0.12 } },
+        technique("Gash", "+16 % effect of the Axe's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.16 } },
         }),
         technique("Barb", "+4 % Bleed Chance.", { bonuses: { bleedChance: 0.04 } }),
       ],
@@ -1242,8 +1242,8 @@ const BOW = buildTree({
       theme: "Bleed",
       color: C.blood,
       techniques: [
-        technique("Barbed Heads", "+12 % effect of the Bow's Bleed.", {
-          weaponRules: { ailmentEffectBy: { bleed: 0.12 } },
+        technique("Barbed Heads", "+16 % effect of the Bow's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.16 } },
         }),
         technique("Serration", "+4 % Bleed Chance.", { bonuses: { bleedChance: 0.04 } }),
       ],
