@@ -102,7 +102,7 @@ export const COMBAT = {
    * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10):
    * Elemental builds had it far easier than Physical ones against the same walls.
    */
-  monsterResistance: 0.1,
+  monsterResistance: 0.2,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
