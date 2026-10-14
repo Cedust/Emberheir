@@ -1,6 +1,6 @@
 # Neuausrichtung v1: Jeder Kampf eine Frage, jedes System eine Aufgabe
 
-Stand 13.10.2026 · von Timo entschieden (Abschnitt 12) · Phase 1–4 gebaut (`balance-messung-v1.md`, `elites-routen-v1.md`), Phase 5 gebaut bis auf Rune Sockets im Web: Weapon Mastery v2 (`weapon-mastery-v2.md` 6), Skill Web v3, Hoheitsgebiete, Umbenennungen (Abschnitt 13) · Basis: `main` nach PR #28 · Game-Begriffe auf Englisch
+Stand 13.10.2026 · von Timo entschieden (Abschnitt 12) · Phase 1–4 gebaut (`balance-messung-v1.md`, `elites-routen-v1.md`), Phase 5 gebaut: Weapon Mastery v2 (`weapon-mastery-v2.md` 6), Skill Web v3, Hoheitsgebiete, Umbenennungen (Abschnitt 13) · Basis: `main` nach PR #28 · Game-Begriffe auf Englisch
 Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwerte für die Balance-CLI.
 
 Timo hat ausdrücklich erlaubt, jedes System grundlegend zu hinterfragen. Dieses Dokument nutzt das. Es ist aus der Sicht
@@ -731,7 +731,7 @@ Jede Phase ist ein eigener PR mit Vorher/Nachher-Messung (15 Builds × 3 Läufe)
 ## 12. Entscheidungen (Timo, 13.10.)
 
 Alle Fragen aus Runde 1 und 2 sind beantwortet. Die Umsetzung folgt der Reihenfolge in Abschnitt 11: Phase 1 bis 4 sind
-gebaut (`balance-messung-v1.md`, `elites-routen-v1.md`), Phase 5 bis auf die Rune Sockets im Web (Abschnitt 13). Neues Ziel (Timo, 13.10.): **3–5 Anläufe** pro neuestem Act,
+gebaut (`balance-messung-v1.md`, `elites-routen-v1.md`), Phase 5 (Abschnitt 13). Neues Ziel (Timo, 13.10.): **3–5 Anläufe** pro neuestem Act,
 weil Runes zum Spiel gehören.
 
 | # | Thema | Entscheidung |
@@ -769,7 +769,8 @@ Messung: `balance-messung-v1.md` 8 und 9.
 | Teil | gebaut | Abweichung vom Konzept |
 |---|---|---|
 | Hoheitsgebiete (2) | Web- und Prestige-Travel-Nodes geben nur Defense; Rare/Epic/Legendary rollen einen Stat-Affix mehr | – |
-| Web v3 (4.2) | Travel = Defense, Notables bedingt oder mit Regel, Conversion (Searing Steel, Arcane Edge, Void Ember), Keystones ohne Schablone | Gerüst und Größe des Netzes bleiben (185 statt ~150 Nodes); **Rune Sockets im Web noch nicht gebaut** |
+| Web v3 (4.2) | Travel = Defense, Notables bedingt oder mit Regel, Conversion (Searing Steel, Arcane Edge, Void Ember), Keystones ohne Schablone | Gerüst und Größe des Netzes bleiben (185 Nodes + 8 Rune Sockets statt ~150) |
+| Rune Sockets (4.2) | 8 Sockets, einer pro Region; jede Rune hat eine dritte Wirkung im Web (eine kleine Regel); Kaelen setzt sie, Herausnehmen und Vergessen geben die Rune zurück | – |
 | Bedingungen (4.3) | Ailment und Stacks des Gegners, Heat ≥ X, „innerhalb N s nach Crit/Evade/Block/Parry/Skill“, Barrier aktiv, eigene Life niedrig, Gegner unter X %, Telegraph, Stun | mehrere „more“-Boni multiplizieren |
 | Keystones (4.4) | Spellblade, Arcane Conduit, Black Flame, Slow Death, Blood and Bile | Spellblade: Default Attack −60 % statt 0; Arcane Conduit: Heat behält ihr Maximum; Black Flame: Burn korrumpiert, Corruption halbiert Heilung; Slow Death: Treffer −50 %, Ailments bleiben stark, +25 % DoT; Blood and Bile: Bleed und Poison lösen einander aus (statt geteilter Stacks) |
 | Prestige-Äste (4.5) | Minors sind Defense-Travel-Nodes, reine Zahl-Notables bekommen Bedingungen | – |

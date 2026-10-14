@@ -287,7 +287,9 @@ Endgame **Wildfire I–X**.
 - **Prestige-Äste** (`skilltree-v2.md`) sind die **Ascendancy**: 10 Äste, jede Klasse wählt aus ihren 4 Klassenpfaden.
   Jedes Prestige: neuer Ast (Stufe I) oder einen eigenen Ast **vertiefen** (II, III; Keystone wird Greater / Supreme).
   Ihre kleinen Nodes sind Travel-Nodes mit Defense, die Notables tragen Trigger und Regeln.
-- **Rune Sockets im Web** (4.2) sind noch nicht gebaut.
+- **Rune Sockets** (8, einer pro Region, zwischen innerem und mittlerem Ring): ein gelernter Socket nimmt bei Kaelen eine
+  Rune aus dem Beutel und gibt ihre **Web-Wirkung**, eine kleine Regel (Ember: Burns +15 %, Rime: +12 % gegen Chilled,
+  Dusk: +15 % nach einem Crit …). Herausnehmen oder Vergessen legt die Rune zurück in den Beutel.
 - Titel: Klassenname, später ein Titel nach dem Haupt-Ast (z. B. Warrior + Duelist = Blademaster).
 
 ### 5.3 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
@@ -366,7 +368,7 @@ Endgame **Wildfire I–X**.
   (Messwerkzeug), Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers), Phase 3 (Ailments v2, Class Traits) und
   Phase 4 (Elites, Routen, Item-Picks, Training Dummy) sind gebaut. Von Phase 5 ist **Weapon Mastery v2** gebaut
   (mit Mighty Hits, Parry und dem Freeze des Rime-Pfads), dazu **Skill Web v3**, die Hoheitsgebiete in Web und
-  Prestige-Ästen, mehr Affixe auf Rare/Epic/Legendary und die Umbenennungen aus 1.3. Offen: Rune Sockets im Web,
+  Prestige-Ästen, mehr Affixe auf Rare/Epic/Legendary, die Rune Sockets im Web und die Umbenennungen aus 1.3. Offen:
   Phase 6.
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
 - Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch.
