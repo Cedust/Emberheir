@@ -134,3 +134,29 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   }
   expect(errors).toEqual([]);
 });
+
+test("A Rune Socket of the web takes a Rune from the pouch", async ({ page }) => {
+  test.slow();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveWebTree({ rime: 2 }));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("t");
+  const tree = page.getByRole("group", { name: "Skill Tree" });
+  const detail = page.getByRole("region", { name: "Node details" });
+
+  // The Warrior's socket: its path is learned at once, then the Rune goes in.
+  await tree.getByRole("button", { name: "Rune Socket" }).first().press("Enter");
+  await detail.getByRole("button", { name: /Learn path/ }).click();
+  await page.getByRole("button", { name: "Confirm" }).click();
+  await detail.getByRole("button", { name: /Rime ×2/ }).click();
+  await expect(detail).toContainText("Chilled enemies");
+  await expect(detail.getByRole("button", { name: "Take out" })).toBeVisible();
+  await expect(detail.getByRole("button", { name: /Rime ×1/ })).toBeVisible();
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${process.env.SHOTS}/tree-socket.png` });
+  }
+  expect(errors).toEqual([]);
+});
