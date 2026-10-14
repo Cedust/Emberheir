@@ -1622,8 +1622,8 @@ const CROSSBOW = buildTree({
       name: "Siege Engine",
       form: "Siege Arbalest",
       description:
-        "Every Bolt winds for 2 s, whatever your Attack Speed. A clean Bolt sets off every Sunder stack: +40 % damage each.",
-      effect: { weaponRules: { fixedAttackRate: 0.5, siegeEngine: { perStack: 0.4 } } },
+        "Every Bolt winds for 2 s, whatever your Attack Speed. A clean Bolt sets off every Sunder stack: +80 % damage each.",
+      effect: { weaponRules: { fixedAttackRate: 0.5, siegeEngine: { perStack: 0.8 } } },
     },
     {
       id: "repeater",

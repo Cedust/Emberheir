@@ -235,7 +235,7 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
     innate: "gutting-lacerate",
     keystone: "rampage",
     paths: ["butcher", "frenzy", "cleave"],
-    forks: { butcher: [0, 1] },
+    forks: { butcher: [0, 0] },
   },
   dagger: {
     heat: "heat-cooling",
@@ -252,7 +252,7 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
   },
   crossbow: {
     innate: "ballista-bolt",
-    keystone: "siege-engine",
+    keystone: "repeater",
     paths: ["payload", "pierce", "reload"],
     forks: { pierce: [1, 0] },
   },
