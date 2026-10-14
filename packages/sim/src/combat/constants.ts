@@ -115,7 +115,7 @@ export const COMBAT = {
 
   // Ailments.
   /** Burn deals this fraction of the triggering hit as damage per second. */
-  burnDamagePerSecond: 0.25,
+  burnDamagePerSecond: 0.22,
   burnDurationSeconds: 4,
   /** Burning fighters heal this much less. */
   burnHealingReduction: 0.5,
@@ -135,14 +135,14 @@ export const COMBAT = {
   bleedDamagePerSecond: 0.5,
   bleedDurationSeconds: 3,
   /** Poison: every stack deals X of its hit per second and runs out on its own. */
-  poisonDamagePerSecond: 0.17,
+  poisonDamagePerSecond: 0.15,
   poisonDurationSeconds: 5,
   poisonMaxStacks: 20,
   /**
    * Corruption (Void): starts weak and grows with every tick by this fraction of its base damage,
    * up to `corruptionMaxRamp` ticks. Re-applying refreshes the duration and keeps the growth.
    */
-  corruptionDamagePerSecond: 0.1,
+  corruptionDamagePerSecond: 0.09,
   corruptionDurationSeconds: 6,
   corruptionRampPerTick: 0.25,
   corruptionMaxRamp: 12,

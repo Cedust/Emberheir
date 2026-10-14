@@ -38,7 +38,7 @@ Endgame **Wildfire I–X**.
 | **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −35 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
 | **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: +15 % Ailment Effect für Bleed und Poison | Butcher, Venomancer, Duelist, Tactician |
 | **Hunter** | Physical · Ranged | Bow, Crossbow | Keen Eye: erster Treffer jedes Kampfes und Treffer ins Ausholen des Gegners sind saubere Crits | Marksman, Venomancer, Warden, Tactician |
-| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +30 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
+| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +20 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
 | **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +1 % Schaden pro Sekunde Kampf (bis +25 %) | Pyromancer, Void Lord, Warden, Tactician |
 
 - Class Traits seit Phase 3 der Neuausrichtung (`neuausrichtung-v1.md` 2.1): Ein Trait beschreibt, **wie** die Klasse
