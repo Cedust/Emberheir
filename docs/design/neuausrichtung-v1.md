@@ -758,3 +758,23 @@ weil Runes zum Spiel gehören.
 - **Collapse** ist der eingebaute Payoff von **Corruption**: Hat die Corruption ihr volles Wachstum erreicht, bricht sie
   zusammen, trifft sofort mit dem Schaden von 4 Sekunden und fällt auf halbes Wachstum zurück. Danach wächst sie wieder.
   So hat der Warlock in langen Kämpfen wiederkehrende große Momente (`ailments-v2.md` 3.1).
+
+---
+
+## 13. Umsetzung Phase 5 (14.10.)
+
+Gebaut: Weapon Mastery v2 (`weapon-mastery-v2.md` 6), Skill Web v3, Hoheitsgebiete, die Umbenennungen aus 1.3.
+Messung: `balance-messung-v1.md` 8 und 9.
+
+| Teil | gebaut | Abweichung vom Konzept |
+|---|---|---|
+| Hoheitsgebiete (2) | Web- und Prestige-Travel-Nodes geben nur Defense; Rare/Epic/Legendary rollen einen Stat-Affix mehr | – |
+| Web v3 (4.2) | Travel = Defense, Notables bedingt oder mit Regel, Conversion (Searing Steel, Arcane Edge, Void Ember), Keystones ohne Schablone | Gerüst und Größe des Netzes bleiben (185 statt ~150 Nodes); **Rune Sockets im Web noch nicht gebaut** |
+| Bedingungen (4.3) | Ailment und Stacks des Gegners, Heat ≥ X, „innerhalb N s nach Crit/Evade/Block/Parry/Skill“, Barrier aktiv, eigene Life niedrig, Gegner unter X %, Telegraph, Stun | mehrere „more“-Boni multiplizieren |
+| Keystones (4.4) | Spellblade, Arcane Conduit, Black Flame, Slow Death, Blood and Bile | Spellblade: Default Attack −60 % statt 0; Arcane Conduit: Heat behält ihr Maximum; Black Flame: Burn korrumpiert, Corruption halbiert Heilung; Slow Death: Treffer −50 %, Ailments bleiben stark, +25 % DoT; Blood and Bile: Bleed und Poison lösen einander aus (statt geteilter Stacks) |
+| Prestige-Äste (4.5) | Minors sind Defense-Travel-Nodes, reine Zahl-Notables bekommen Bedingungen | – |
+| Namen (1.3) | Venomancer → Venom Heart, Void Lord → Hollow Crown, Butcher → Flayer, Pyromancer → Pyre Heart (Web-Notables); Headsman → Final Mercy; Second Wind → Last Stand (Tactician) bzw. Recovery (Web); Spark → Sorcerer's Sigil (Hub); Ember Ward → Cinder Mantle; Kindling → Forge Heart; Hardened → Toughened; Opportunist → Exploit Weakness; Precision (Tactician), Toxin, Barbs, Cadence, Clarity als Web-/Ast-Minors weg; Wildfire (Pyromancer-Notable) → Flame Tongue; Shatter (Frostbinder) → Brittle; Deadeye (Marksman) → Sighted; Virulence (Venomancer) → Toxic Tide | – |
+| Balance | Spark +30 %, Lingering bis +25 %, Wand-Stärke 1,8 / 9 / 7,6 / 9 / 8 / 7,6 / 6,6 | Werte nach Messung, siehe `balance-messung-v1.md` 9 |
+
+Alte Saves (Version 4 → 5) bekommen alle Skill Points zurück und behalten ihren Klassenstart.
+

@@ -290,3 +290,40 @@ mit +40 % pro Stack zu schwach (Marksman 5,6 Anläufe), Repeater und Harpoon lie
 
 **Offen für die nächste Runde:** Venom-Bow (5,1, die Toxin-Gabeln tragen Poison weniger als die alten Minors) und der
 Unbroken-Sword (6,3) bleiben am oberen Rand; das gehört zum Hoheitsgebiete-Schritt (Gear bekommt mehr Offense).
+
+---
+
+## 9. Phase 5, Teil 2: Skill Web v3, Hoheitsgebiete (14.10.)
+
+Gleicher Aufbau. Vorher = M2 (Mastery v2, Abschnitt 8).
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Clear |
+| --- | --- | --- | --- | --- |
+| M2 | vorher | 3,0 | 2 / 29 / 18 / 51 % | 100 % |
+| W1 | Web v3 (Travel-Nodes nur Defense), Prestige-Minors Defense, +1 Affix auf Rare/Epic/Legendary | 2,3 | 4 / 28 / 21 / 47 % | 100 % |
+| W2 | W1 ohne Extra-Affix | 2,8 | 5 / 37 / 20 / 39 % | 98 % (Mace 9,1) |
+| W4 | W1 mit halber Travel-Defense | 2,7 | 8 / 30 / 21 / 41 % | 99 % |
+| W5 | + Spark +30 % (statt 50), Lingering bis +25 % (statt 40), stärkere Physical-Notables | 2,4 | 1 / 20 / 21 / 57 % | 100 % |
+| W6 | + Ailment-Notables schwächer | 2,5 | 1 / 21 / 24 / 54 % | 100 % |
+| **W7** | **+ Wand-Stärke Run 3/4/6/7: 7 → 7,6, 8 → 9, 6,6 → 7,6, 5,4 → 6,6 (im Code)** | **2,9** | **4 / 31 / 20 / 45 %** | **99 %** |
+
+Anläufe pro Build (Run 2–7, M2 → W7): unbroken 6,3 → 5,5 · smasher 3,8 → 2,9 · bleeder 4,4 → 5,0 · axe 3,9 → 5,0 ·
+dagger poison 3,1 → 2,4 · assassin 2,6 → 2,3 · marksman 3,5 → 3,3 · bow venom 5,1 → 6,0 · barbs 4,3 → 4,7 ·
+wand storm / frost / fire 2,1 / 1,9 / 1,8 → 2,1 / 1,3 / 2,3 · staff void / pyre / rot 2,6 / 2,2 / 2,6 → 1,8 / 1,7 / 1,5.
+
+**Was die Messung zeigt:**
+
+1. **Defense schlägt rohen Schaden.** Travel-Nodes mit Defense statt Offense machen das Spiel leichter, nicht schwerer
+   (W1). Wandkämpfe sind ein Sustain-Rennen (`endgame-balance-v1.md`). Die Werte sind deshalb halbiert: +1,5 % Life,
+   +3 % Armor, +4 % Barrier, +1 % Evasion, +2 % Tenacity pro Web-Travel-Node.
+2. **Bedingte DoT-Boni sind fast immer an.** „Gegen Corrupted“ oder „ab 50 Heat“ gilt für einen DoT-Build den ganzen
+   Kampf. Ohne die bedingten Boni brauchte der Void-Staff 2,4 Anläufe statt 1,4. Die Ailment-Notables sind deshalb kleiner
+   (10–15 %) als die Treffer-Notables (20–35 %).
+3. **Der Extra-Affix gehört aufs Gear:** Ohne ihn verlieren die Physical-Builds am meisten (Mace 3,8 → 9,1).
+
+**Offen für die nächste Runde:**
+
+- **Physical-Nahkampf gegen Armor:** Ein Mace-Lauf (Act 4) und ein Axe-Lauf (Act 5) schaffen den Boss nicht in 30
+  Anläufen. Kandidaten: Elite-Modifier Ironhide, Penetration auf Gear-Affixen.
+- **Caster und Staff** liegen mit 1,3–2,3 Anläufen am unteren Rand, Venom-Bow (6,0) und Unbroken-Sword (5,5) am oberen.
+- **Elites** tragen 31 % der Tode (Ziel 10–20 %).
