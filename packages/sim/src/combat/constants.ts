@@ -102,7 +102,7 @@ export const COMBAT = {
    * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10):
    * Elemental builds had it far easier than Physical ones against the same walls.
    */
-  monsterResistance: 0.2,
+  monsterResistance: 0.3,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
@@ -135,7 +135,7 @@ export const COMBAT = {
   bleedDamagePerSecond: 0.5,
   bleedDurationSeconds: 3,
   /** Poison: every stack deals X of its hit per second and runs out on its own. */
-  poisonDamagePerSecond: 0.15,
+  poisonDamagePerSecond: 0.14,
   poisonDurationSeconds: 5,
   poisonMaxStacks: 20,
   /**
