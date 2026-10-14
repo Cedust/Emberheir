@@ -32,7 +32,7 @@ export interface DerivedStats {
   readonly startingHeat: number;
   /** Cooling: share of the Heat from hits taken. */
   readonly heatFromHitsTaken: number;
-  readonly ailmentDuration: number;
+  readonly ailmentEffect: number;
   readonly tenacity: number;
   readonly lifesteal: number;
   readonly physicalPenetration: number;
@@ -74,7 +74,7 @@ export function sumBonuses(...sets: readonly (StatBonuses | undefined)[]): Requi
     heatGain: 0,
     startingHeat: 0,
     heatFromHitsTaken: 0,
-    ailmentDuration: 0,
+    ailmentEffect: 0,
     tenacity: 0,
     lifesteal: 0,
     physicalPenetration: 0,
@@ -111,7 +111,7 @@ interface AttributeSteps {
   readonly attackSpeed: number;
   readonly evasion: number;
   readonly heatGain: number;
-  readonly ailmentDuration: number;
+  readonly ailmentEffect: number;
   readonly tenacity: number;
 }
 
@@ -126,7 +126,7 @@ const CLASSIC_STEPS: AttributeSteps = {
   attackSpeed: COMBAT.attackSpeedPerAgility,
   evasion: COMBAT.evasionPerAgility,
   heatGain: COMBAT.heatGainPerWisdom,
-  ailmentDuration: COMBAT.ailmentDurationPerWisdom,
+  ailmentEffect: COMBAT.ailmentEffectPerWisdom,
   tenacity: COMBAT.tenacityPerVitality,
 };
 
@@ -141,7 +141,7 @@ const HEIR_STEPS: AttributeSteps = {
   attackSpeed: COMBAT.heir.attackSpeedPerAgility,
   evasion: COMBAT.heir.evasionPerAgility,
   heatGain: COMBAT.heir.heatGainPerWisdom,
-  ailmentDuration: COMBAT.heir.ailmentDurationPerWisdom,
+  ailmentEffect: COMBAT.heir.ailmentEffectPerWisdom,
   tenacity: COMBAT.heir.tenacityPerVitality,
 };
 
@@ -204,7 +204,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       COMBAT.maxHeat,
     ),
     heatFromHitsTaken: Math.max(0, (setup.baseHeatFromHitsTaken ?? 1) + b.heatFromHitsTaken),
-    ailmentDuration: a.wisdom * step.ailmentDuration + b.ailmentDuration,
+    ailmentEffect: a.wisdom * step.ailmentEffect + b.ailmentEffect,
     tenacity: clamp(a.vitality * step.tenacity + b.tenacity, 0, COMBAT.maxTenacity),
     lifesteal: b.lifesteal,
     physicalPenetration: b.physicalPenetration,

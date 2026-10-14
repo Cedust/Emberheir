@@ -77,7 +77,7 @@ export interface StatBonuses {
   readonly startingHeat?: number;
   /** Cooling: share of the Heat from hits taken (0.5 = +50 %). */
   readonly heatFromHitsTaken?: number;
-  readonly ailmentDuration?: number;
+  readonly ailmentEffect?: number;
   readonly tenacity?: number;
   readonly lifesteal?: number;
   readonly physicalPenetration?: number;
@@ -276,6 +276,8 @@ export type SkillEffect =
    * caster heals `leech` of the damage dealt.
    */
   | { readonly kind: "detonateDots"; readonly seconds: number; readonly leech?: number }
+  /** Immolate: Combust `times` over after the hit (ailments-v2.md 3.2). */
+  | { readonly kind: "combust"; readonly times: number }
   /** Weapon Mastery Sunder: adds stacks of the caster's stacking Sunder (Bone Breaker). */
   | { readonly kind: "sunderStacks"; readonly stacks: number }
   /** Gives back this share of the paid Heat if a hit of the skill landed cleanly (Rising Strike). */
@@ -373,6 +375,21 @@ export interface TelegraphSpec {
 
 /** Rule changes, e.g. from Keystones. They change rules, not just numbers. */
 export interface CombatRules {
+  // Class Traits (neuausrichtung-v1.md 2.1): each one says how the class fights.
+  /**
+   * Warrior, Iron Blood: the enemy's telegraphed Heavy Attacks deal `damageTaken` of their damage,
+   * and each one the Warrior survives gives `heat` Heat.
+   */
+  readonly ironBlood?: { readonly damageTaken: number; readonly heat: number };
+  /** Hunter, Keen Eye: the first hit of a fight and every hit while the enemy winds up are clean Crits. */
+  readonly keenEye?: boolean;
+  /**
+   * Sorcerer, Spark: after each skill the next Default Attack deals `damage` more and always
+   * applies the ailment of its element.
+   */
+  readonly spark?: { readonly damage: number };
+  /** Warlock, Lingering: own ailments deal `perSecond` more per second of fight, up to `max`. */
+  readonly lingering?: { readonly perSecond: number; readonly max: number };
   /** Extra damage taken from every source (0.2 = +20 %). */
   readonly damageTaken?: number;
   /** Multiplies the Heat Cost of every Rotation skill. */
@@ -479,7 +496,7 @@ export interface WeaponRules {
   readonly rampage?: { readonly ailment: AilmentType; readonly perTick: number };
   /** Extra Poison stacks above the cap. */
   readonly poisonMaxStacks?: number;
-  /** Longer (or shorter) own ailments by type, on top of Ailment Duration. */
+  /** Longer (or shorter) own ailments by type, on top of Ailment Effect. */
   readonly ailmentDurationBy?: Readonly<Partial<Record<AilmentType, number>>>;
   /** Crits add this many Poison stacks (Twist the Blade). */
   readonly critPoisonStacks?: number;

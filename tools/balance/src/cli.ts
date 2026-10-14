@@ -12,7 +12,9 @@ import {
 } from "@emberheir/content";
 import { PROGRESSION, Rng, SIM_VERSION, createEnemySetup } from "@emberheir/sim";
 import { GEAR_MODES, type GearMode, parseArgs } from "./args";
-import { playGenerations, summarizeActRuns } from "./act";
+import { writeFileSync } from "node:fs";
+import { type ActRunReport, playGenerations, summarizeActRuns } from "./act";
+import { isNewestAct, stageKindRow, summarizeStageKinds } from "./newest";
 import { BUILDS } from "./builds";
 import { simulateMatchup } from "./simulate";
 
@@ -39,7 +41,7 @@ function runActMode(): void {
     : Math.max(args.generations, last.number);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
-    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations}`,
+    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations} runes=${args.runes ? "on" : "off"}`,
   );
   console.log("");
   const rows = [];
@@ -58,6 +60,7 @@ function runActMode(): void {
         weapon,
       }));
   if (!plays.length) throw new Error(`Unknown build "${args.build}"`);
+  const byPlay: { label: string; reports: ActRunReport[] }[] = [];
   for (const { weapon: starterWeapon, build } of plays) {
     const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(GAME_DATA, {
@@ -69,8 +72,10 @@ function runActMode(): void {
         generations,
         finale: args.finale > 0,
         wildfire: args.wildfire,
+        runes: args.runes > 0,
       }),
     ).flat();
+    byPlay.push({ label: build ? `${starterWeapon} (${build})` : starterWeapon, reports: all });
     const finale = GAME_DATA.finale;
     for (let tier = 1; tier <= args.wildfire; tier++) {
       const reports = all.filter((x) => x.act === 100 + tier);
@@ -120,7 +125,61 @@ function runActMode(): void {
       }
     }
   }
-  console.table(rows);
+  if (!args.newest) console.table(rows);
+  printNewestActs(byPlay, generations);
+  if (args.json) {
+    writeFileSync(args.json, JSON.stringify({ args, plays: byPlay }, null, 1));
+    console.log(`reports written to ${args.json}`);
+  }
+}
+
+/**
+ * The newest act of each run (where the run's tension sits): attempts, where the hero dies and
+ * how long fights last per stage kind, per build and for all builds, with the targets of
+ * neuausrichtung-v1.md 5.3 and 5.5 (✓ inside, ↑ too low, ↓ too high).
+ */
+function printNewestActs(
+  byPlay: readonly { label: string; reports: readonly ActRunReport[] }[],
+  generations: number,
+): void {
+  const perBuild = [];
+  for (const { label, reports } of byPlay) {
+    for (let g = 1; g <= generations; g++) {
+      const newest = reports.filter((r) => r.generation === g && isNewestAct(r));
+      if (newest.length) {
+        perBuild.push({
+          build: label,
+          act: g,
+          ...stageKindRow(summarizeStageKinds(newest), false),
+        });
+      }
+    }
+  }
+  console.log("");
+  console.log("Newest act per run, by build (deaths and fight seconds per stage kind)");
+  console.table(perBuild);
+  const all = byPlay.flatMap((p) => p.reports);
+  const pooled = [];
+  for (let g = 1; g <= generations; g++) {
+    const newest = all.filter((r) => r.generation === g && isNewestAct(r));
+    const older = all.filter((r) => r.generation === g && r.act < g);
+    if (newest.length) {
+      pooled.push({ act: `${g} newest`, ...stageKindRow(summarizeStageKinds(newest), true) });
+    }
+    if (older.length) {
+      pooled.push({
+        act: `1-${g - 1} in run ${g}`,
+        ...stageKindRow(summarizeStageKinds(older), false),
+      });
+    }
+  }
+  const newestAll = all.filter((r) => r.generation <= generations && isNewestAct(r));
+  if (newestAll.length) {
+    pooled.push({ act: "all newest", ...stageKindRow(summarizeStageKinds(newestAll), true) });
+  }
+  console.log("");
+  console.log("All builds pooled (targets: ✓ inside, ↑ too low, ↓ too high)");
+  console.table(pooled);
 }
 
 const pick = <T extends { id: string }>(list: readonly T[], id: string, what: string): T[] => {

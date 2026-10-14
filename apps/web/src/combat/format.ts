@@ -2,6 +2,7 @@ import {
   type AilmentType,
   type CombatEvent,
   type DamageType,
+  type PayoffKind,
   STAT_NAMES,
   type Side,
   formatPercent,
@@ -25,6 +26,16 @@ const AILMENT_NAMES: Record<AilmentType, string> = {
   bleed: "Bleed",
   poison: "Poison",
   corruption: "Corruption",
+};
+
+/** Names of the ailment payoffs and Class Traits in the log. */
+const PAYOFF_NAMES: Record<PayoffKind, string> = {
+  overflow: "Overflow",
+  combust: "Combust",
+  collapse: "Collapse",
+  ironBlood: "Iron Blood",
+  keenEye: "Keen Eye",
+  spark: "Spark",
 };
 
 const VIA = {
@@ -97,6 +108,13 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         side: event.side,
         tone: "heal",
         text: `${names[event.side]} heals +${event.amount}`,
+      };
+    case "payoff":
+      return {
+        time,
+        side: event.side,
+        tone: "trigger",
+        text: `${names[event.side]}: ${PAYOFF_NAMES[event.payoff]}${event.damage ? ` (${event.damage})` : ""}`,
       };
     case "perk":
       return {

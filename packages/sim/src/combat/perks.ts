@@ -56,9 +56,8 @@ export const PERK = {
   doubleTimeEvery: 4,
   innerFireHeat: 10,
   afterglowRefund: 0.1,
-  /** Clarity: own ailments last this much longer, Poison holds one stack more. */
-  claritySeconds: 1,
-  clarityPoisonStacks: 1,
+  /** Clarity: the built-in payoffs (Overflow, Combust, Collapse, Rend) deal this much more. */
+  clarityPayoff: 0.25,
   secondBreathBelow: 0.3,
   secondBreathHeal: 0.15,
   thickSkinDotTaken: 0.15,
@@ -184,8 +183,8 @@ export const PERKS: readonly PerkDefinition[] = [
     name: "Clarity",
     attribute: "wisdom",
     threshold: 10,
-    description: `Your ailments last ${PERK.claritySeconds} s longer, Poison stacks once more.`,
-    explain: `Your ailments last ${PERK.claritySeconds} s longer, and Poison can stack once more.`,
+    description: `Your payoffs (Overflow, Combust, Collapse, Rend) deal ${pct(PERK.clarityPayoff)} more.`,
+    explain: `The big moments of your ailments hit harder: Poison Overflow, Combust, Collapse and Rend deal ${pct(PERK.clarityPayoff)} more.`,
   },
   {
     id: "secondBreath",

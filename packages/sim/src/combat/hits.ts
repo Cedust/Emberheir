@@ -3,7 +3,9 @@ import {
   applyAilment,
   clearAilment,
   healingFactor,
+  poisonOverflow,
   poisonStacks,
+  remainingBurnDamage,
   remainingPoisonDamage,
 } from "./ailments";
 import { COMBAT } from "./constants";
@@ -22,6 +24,8 @@ import {
   heatMultiplier,
   heavyHitCap,
   other,
+  payoff,
+  payoffFactor,
   perk,
   PRISM,
   refreshStats,
@@ -85,7 +89,19 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
   if (prism) ailmentChances.push({ ailment: prism.ailment, chance: 0.25 });
   const nthAttack = (n: number) => !fromTrigger && (f.attackCount + 1) % n === 0;
   const trueShot = f.perks.has("trueShot") && nthAttack(PERK.trueShotEvery);
-  const defaultDamage = f.setup.rules?.defaultAttackDamage ?? 1;
+  // Spark (Sorcerer): the Default Attack after a skill is charged and sets its element's ailment.
+  const spark = !fromTrigger && f.sparkReady ? f.setup.rules?.spark : undefined;
+  if (spark) {
+    f.sparkReady = false;
+    const own = ELEMENT_AILMENT[prism?.type ?? weapon.damageType];
+    if (own) {
+      const at = ailmentChances.findIndex((c) => c.ailment === own);
+      if (at >= 0) ailmentChances.splice(at, 1);
+      ailmentChances.push({ ailment: own, chance: 1 });
+    }
+    payoff(core, f, "spark");
+  }
+  const defaultDamage = (f.setup.rules?.defaultAttackDamage ?? 1) * (1 + (spark?.damage ?? 0));
   if (trueShot) perk(core, f, "trueShot");
   const result = landHit(core, f, {
     source: weapon.defaultAttack,
@@ -164,11 +180,21 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     wr?.topRollCrits !== undefined &&
     h.rollFraction !== undefined &&
     h.rollFraction >= wr.topRollCrits;
-  const forceCrit = rolls && (h.forceCrit === true || attacker.nextCrit || opener || topRoll);
+  // Keen Eye (Hunter): the first hit and every hit into an enemy's wind-up is a clean Crit.
+  const keen =
+    attacker.setup.rules?.keenEye === true &&
+    !h.fromTrigger &&
+    (!attacker.keenOpened || defender.windup !== null);
+  if (keen) {
+    attacker.keenOpened = true;
+    payoff(core, attacker, "keenEye");
+  }
+  const forceCrit =
+    keen || (rolls && (h.forceCrit === true || attacker.nextCrit || opener || topRoll));
   if (forceCrit) attacker.nextCrit = false;
   if (opener) attacker.openerUsed = true;
   let precision: number | undefined;
-  if (rolls && !h.precise) {
+  if (rolls && !h.precise && !keen) {
     const aim = wr?.steadyAim;
     const steady =
       aim && fightTime(core) - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
@@ -206,6 +232,10 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         (defender.ailments.chill ? (attacker.setup.rules?.chilledDamage ?? 1) : 1) *
         crescendoFactor(attacker) *
         masteryDamageFactor(core, attacker, defender) *
+        // Iron Blood (Warrior): announced Heavy Attacks hit the Warrior softer.
+        (core.heavyFrom === attacker.side
+          ? (defender.setup.rules?.ironBlood?.damageTaken ?? 1)
+          : 1) *
         (opener ? 1 + (wr?.openerDamage ?? 0) : 1),
       defender: defender.stats,
       defenderDamageTaken: damageTaken(defender),
@@ -258,6 +288,12 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
 
   if (attacker.stats.lifesteal > 0 && damage > 0) {
     heal(core, attacker, damage * attacker.stats.lifesteal);
+  }
+
+  // Combust: a Fire hit on a burning enemy sets part of the Burn off at once; it keeps burning.
+  if (h.type === "fire" && defender.ailments.burn && damage > 0) {
+    combust(core, attacker, defender, 1);
+    if (core.result) return glancing ? "glancing" : "clean";
   }
 
   if (glancing) {
@@ -466,10 +502,7 @@ export function addSunder(attacker: Fighter, defender: Fighter, stacks: number):
 /** Duration of an ailment the attacker inflicts. */
 function ownAilmentDuration(attacker: Fighter, defender: Fighter, ailment: AilmentType): number {
   const by = attacker.setup.weaponRules?.ailmentDurationBy?.[ailment] ?? 0;
-  const duration =
-    ailmentDuration(ailment, attacker.stats.ailmentDuration, defender.stats.tenacity) *
-    Math.max(0, 1 + by);
-  return duration > 0 && attacker.perks.has("clarity") ? duration + PERK.claritySeconds : duration;
+  return ailmentDuration(ailment, defender.stats.tenacity) * Math.max(0, 1 + by);
 }
 
 export function inflict(
@@ -488,14 +521,28 @@ export function inflict(
   if (ailment === "poison" && defender.poisonLockout > 1e-9) return;
   const duration = ownAilmentDuration(attacker, defender, ailment);
   const wr = attacker.setup.weaponRules;
+  // Overflow: the stack pushed off at the cap deals its remaining damage at once.
+  const pushed =
+    ailment === "poison" && duration > 0
+      ? poisonOverflow(defender.ailments, poisonCap(attacker))
+      : undefined;
   defender.ailments = applyAilment(
     defender.ailments,
     ailment,
     duration,
     hitDamage,
     poisonCap(attacker),
+    attacker.stats.ailmentEffect,
   );
   if (duration <= 0) return;
+  if (pushed) {
+    const rest = pushed.damagePerSecond * pushed.remaining * payoffFactor(core, attacker);
+    if (rest > 0) {
+      const dealt = dotBurst(core, attacker, defender, rest, "Overflow");
+      payoff(core, attacker, "overflow", dealt);
+      if (core.result) return;
+    }
+  }
   const burst = wr?.poisonBurst;
   if (ailment === "poison" && burst && poisonStacks(defender.ailments) >= burst.stacks) {
     poisonBurst(core, attacker, defender, burst);
@@ -514,11 +561,19 @@ export function inflict(
 
 /** How many Poison stacks `attacker` can keep on a target. */
 export function poisonCap(attacker: Fighter): number {
-  return (
-    COMBAT.poisonMaxStacks +
-    (attacker.setup.weaponRules?.poisonMaxStacks ?? 0) +
-    (attacker.perks.has("clarity") ? PERK.clarityPoisonStacks : 0)
-  );
+  return COMBAT.poisonMaxStacks + (attacker.setup.weaponRules?.poisonMaxStacks ?? 0);
+}
+
+/**
+ * Combust (ailments-v2.md 3.1): `COMBAT.combustShare` × `times` of the Burn's remaining damage
+ * at once, as Fire. The Burn keeps running. Immolate combusts three times over.
+ */
+export function combust(core: FightCore, attacker: Fighter, defender: Fighter, times: number) {
+  const rest = remainingBurnDamage(defender.ailments);
+  if (rest <= 0) return;
+  const amount = rest * COMBAT.combustShare * times * payoffFactor(core, attacker);
+  const dealt = dotBurst(core, attacker, defender, amount, "Combust", "fire");
+  payoff(core, attacker, "combust", dealt);
 }
 
 /** Toxic Bloom: every Poison stack bursts for its remaining damage at once. */
@@ -551,6 +606,7 @@ export function dotBurst(
   defender: Fighter,
   amount: number,
   source: string,
+  damageType: DamageType = "physical",
 ): number {
   const damage = Math.max(1, Math.round(amount * dotFactor(core, defender)));
   emit(core, {
@@ -559,7 +615,7 @@ export function dotBurst(
     side: attacker.side,
     source,
     damage,
-    damageType: "physical",
+    damageType,
     crit: false,
     blocked: false,
   });

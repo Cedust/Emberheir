@@ -8,7 +8,13 @@ import {
   deriveStats,
   flaskCapacity,
   gateStages,
+  type ActData,
   getAct,
+  hearthEmbers,
+  ROUTE_KINDS,
+  type RouteKind,
+  routeAt,
+  thiefTrailOpen,
   heroReactions,
   heroSetup,
   isWallAct,
@@ -60,6 +66,9 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
   const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
   const next = xpToNextLevel(hero.level, levelCap(state.legacy.prestige));
+  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
+  const hearth =
+    run.rewards !== null && hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
   return (
     <section className="panel-card hero-card" aria-label="Hero">
       <div className="hero-card-head">
@@ -74,9 +83,14 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
           </span>
         </div>
       </div>
-      {run.rewards?.waymark && (
+      {(run.rewards?.waymark || hearth) && (
         <div className="waymark-moment title-font" role="status">
-          Waymark! +1 Skill Point
+          {[
+            run.rewards?.waymark ? "Waymark! +1 Skill Point" : "",
+            hearth ? `Hearth Embers: +${Math.round(PROGRESSION.hearthEmbers * 100)} % Life` : "",
+          ]
+            .filter(Boolean)
+            .join(" · ")}
         </div>
       )}
       {run.rewards && run.rewards.levelsGained > 0 && (
@@ -177,7 +191,61 @@ export function PlanCard(props: { state: GameState; run: RunState; onPlan: () =>
   );
 }
 
-export function UpNext(props: { run: RunState; prestige: number }) {
+/** The paths of a fork (neuausrichtung-v1.md 6.2): what each one holds. */
+const ROUTE_TEXT: Record<RouteKind, { name: string; text: string }> = {
+  elite: { name: "Elite Path", text: "Two Elites in a row: harder, with their themed loot." },
+  shrine: { name: "Shrine Path", text: "Two fights, then an Ember Shrine (a Boon)." },
+  hearth: { name: "Hearth Path", text: "Two fights, then a fire to rest at: +25 % Life." },
+  thief: { name: "Thief's Trail", text: "The Ember Thief waits on it for sure." },
+};
+
+/** The choice at a fork of the road: two stages, one path. */
+function RouteChoice(props: {
+  state: GameState;
+  run: RunState;
+  act: ActData;
+  next: number;
+  game: GameApi;
+}) {
+  const { state, run, act, next, game } = props;
+  const at = routeAt(run, act, next);
+  if (!at) return null;
+  const kinds = ROUTE_KINDS.filter((k) => k !== "thief" || thiefTrailOpen(state, GAME_DATA));
+  return (
+    <div className="route-choice" aria-label="Route">
+      <span className="small">
+        {at.second
+          ? `On the ${ROUTE_TEXT[at.kind].name}`
+          : `A fork: your path for Stages ${at.fork}–${at.fork + 1}`}
+      </span>
+      {!at.second && (
+        <div className="route-options" role="radiogroup" aria-label="Choose a path">
+          {kinds.map((k) => (
+            <button
+              key={k}
+              type="button"
+              role="radio"
+              aria-checked={at.kind === k}
+              className={`route-option title-font${at.kind === k ? " chosen" : ""}`}
+              title={ROUTE_TEXT[k].text}
+              onClick={() => game.dispatch({ type: "chooseRoute", route: k })}
+            >
+              {ROUTE_TEXT[k].name.split(" ")[0]}
+            </button>
+          ))}
+        </div>
+      )}
+      <span className="sub small">{ROUTE_TEXT[at.kind].text}</span>
+    </div>
+  );
+}
+
+export function UpNext(props: {
+  run: RunState;
+  prestige: number;
+  state?: GameState;
+  game?: GameApi;
+}) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const stages = act.stages;
@@ -228,6 +296,9 @@ export function UpNext(props: { run: RunState; prestige: number }) {
           {run.wildfire ? ` · ${wildfireName(run.wildfire)}` : ""}
         </span>
       </div>
+      {props.state && props.game && (
+        <RouteChoice state={props.state} run={run} act={act} next={next} game={props.game} />
+      )}
       {shrine !== undefined && (
         <div className="up-row">
           <span className="shrine-mark" />

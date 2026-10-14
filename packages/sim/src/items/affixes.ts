@@ -28,7 +28,7 @@ const PERCENT_STATS: ReadonlySet<AffixStat> = new Set<AffixStat>([
   "lightningResistance",
   "voidResistance",
   "heatGain",
-  "ailmentDuration",
+  "ailmentEffect",
   "tenacity",
   "lifesteal",
   "physicalPenetration",

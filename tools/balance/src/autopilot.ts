@@ -1,29 +1,26 @@
 import {
   type ActData,
   applyAction,
-  armorReduction,
   ATTRIBUTE_RULES,
   ATTRIBUTES,
   type Attributes,
   BOON_GRADES,
   type BoonPick,
-  type CombatantSetup,
-  type DamageType,
-  deriveStats,
   draughtsOpen,
-  type EnemyDefinition,
   equipBlockReason,
-  Fight,
+  getAct,
+  routeAt,
   type GameData,
   type GameState,
   heroBoons,
   heroSetup,
-  type Item,
   masteryPointsLeft,
   openBranches,
-  targetSlot,
+  takeBlockReason,
 } from "@emberheir/sim";
 import { type BuildPlan, masteryOrder } from "./builds";
+import { actProfile, gearValue, upgradeGain } from "./gear-value";
+import { keptBases, wantsBase } from "./runes";
 
 /** The autopilot's choices outside the Skill Tree: gear, Boons, Draughts, attributes, Mastery. */
 
@@ -38,122 +35,6 @@ const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   bow: ["dexterity", "agility", "vitality"],
   crossbow: ["strength", "dexterity", "vitality"],
 };
-
-/** Seconds the autopilot spends hitting a training dummy to judge a piece of gear. */
-const DUMMY_SECONDS = 30;
-
-/**
- * Damage per second of the hero against a training dummy that never hits back: the build's own
- * rotation, ailments and triggers all count, so Ailment Duration matters to a Warlock just as
- * Crit matters to a Marksman.
- */
-function dummyDps(setup: CombatantSetup): number {
-  const dummy: CombatantSetup = {
-    name: "Training Dummy",
-    level: setup.level,
-    attributes: { strength: 0, dexterity: 0, agility: 0, intelligence: 0, wisdom: 0, vitality: 0 },
-    weapon: { ...setup.weapon, attacksPerSecond: 0, triggers: [], ailmentChances: [] },
-    rotation: [],
-    baseLife: 1e9,
-  };
-  const fight = new Fight({ ...setup, lifeFraction: 1 }, dummy, 1);
-  fight.advance(DUMMY_SECONDS);
-  const enemy = fight.snapshot().enemy;
-  return Math.max(1, (enemy.maxLife - enemy.life) / DUMMY_SECONDS);
-}
-
-/** Share of the incoming damage by type: Physical and the four elements, summing to 1. */
-export type DamageProfile = Readonly<Record<DamageType, number>>;
-
-const EVEN_PROFILE: DamageProfile = {
-  physical: 0.5,
-  fire: 0.125,
-  cold: 0.125,
-  lightning: 0.125,
-  void: 0.125,
-};
-
-/** Damage types an enemy deals: its weapon, its skills and its telegraphs, one vote each. */
-function enemyProfile(enemy: EnemyDefinition): Record<DamageType, number> {
-  const votes: Record<DamageType, number> = {
-    physical: 0,
-    fire: 0,
-    cold: 0,
-    lightning: 0,
-    void: 0,
-  };
-  // The Default Attack lands most of the damage over a fight.
-  votes[enemy.weapon.damageType] += 4;
-  const skills = [...enemy.skills, ...(enemy.telegraphs ?? []).map((t) => t.skill)];
-  for (const skill of skills) {
-    for (const hit of skill.hits) {
-      votes[hit.kind === "spell" ? hit.damageType : (hit.damageType ?? enemy.weapon.damageType)]++;
-    }
-  }
-  const total = Object.values(votes).reduce((a, b) => a + b, 0);
-  for (const key of Object.keys(votes) as DamageType[]) votes[key] /= total;
-  return votes;
-}
-
-/**
- * What an act throws at the hero: half its enemies, half its boss. Like a player reading the
- * Scout's report, the autopilot gears and brews for it.
- */
-export function actProfile(act: ActData): DamageProfile {
-  const out: Record<DamageType, number> = { physical: 0, fire: 0, cold: 0, lightning: 0, void: 0 };
-  const boss = enemyProfile(act.boss);
-  for (const enemy of act.enemies) {
-    const p = enemyProfile(enemy);
-    for (const key of Object.keys(out) as DamageType[]) {
-      out[key] += (0.5 * p[key]) / act.enemies.length;
-    }
-  }
-  for (const key of Object.keys(out) as DamageType[]) out[key] += 0.5 * boss[key];
-  return out;
-}
-
-const PROFILES = new Map<string, DamageProfile>();
-
-/** The damage mix of the act the hero is in (an even mix in the Camp and the finale). */
-function runProfile(state: GameState, data: GameData): DamageProfile {
-  const actId = state.run?.actId;
-  const act = actId ? data.acts.find((a) => a.id === actId) : undefined;
-  if (!act) return EVEN_PROFILE;
-  let profile = PROFILES.get(act.id);
-  if (!profile) {
-    profile = actProfile(act);
-    PROFILES.set(act.id, profile);
-  }
-  return profile;
-}
-
-/**
- * How good the hero is with this gear: measured damage per second times effective Life against
- * the coming act's damage mix (an even Physical/magic mix when unknown). Like a player, the
- * autopilot builds up what its build lives on and fills its weakest spot.
- */
-function gearValue(
-  state: GameState,
-  data: GameData,
-  profile: DamageProfile = runProfile(state, data),
-): number {
-  const setup = heroSetup(state, data).setup;
-  const st = deriveStats(setup);
-  const dps = dummyDps(setup);
-  const physTaken =
-    (1 - armorReduction(st.armor, setup.level)) * (1 - st.blockReduction * st.blockChance);
-  const magic =
-    profile.fire * (1 - st.fireResistance) +
-    profile.cold * (1 - st.coldResistance) +
-    profile.lightning * (1 - st.lightningResistance) +
-    profile.void * (1 - st.voidResistance);
-  // Tenacity shortens the ailments that ramp up on the hero (Corruption, Poison stacks).
-  const taken =
-    (profile.physical * physTaken + magic) * (1 - 0.6 * st.evasion) * (1 - 0.3 * st.tenacity);
-  // Lifesteal heals back part of the damage dealt over a fight of about 20 s.
-  const effectiveLife = (st.maxLife + st.barrier) / taken + st.lifesteal * dps * 20;
-  return Math.log(dps) + Math.log(effectiveLife);
-}
 
 /**
  * The Draught for the coming trip: the one that adds the most effective Life against the act's
@@ -187,15 +68,18 @@ export function brewDraught(state: GameState, data: GameData, act: ActData | und
     : applyAction(state, data, { type: "chooseDraught", draughtId: best });
 }
 
-/** Value gained by wearing `item` in its slot instead of what is there now. */
-function upgradeGain(state: GameState, data: GameData, item: Item): number {
-  const slot = targetSlot(item, data, state.hero.equipment);
-  if (!slot) return 0;
-  const tried: GameState = {
-    ...state,
-    hero: { ...state.hero, equipment: { ...state.hero.equipment, [slot]: item } },
-  };
-  return gearValue(tried, data) - gearValue(state, data);
+/**
+ * At a fork (neuausrichtung-v1.md 6.2) the autopilot reads its Life like a player: healthy, it
+ * takes the Elite path for the better loot; hurt, it rests on the Hearth path; else the Shrine.
+ */
+export function chooseRoute(state: GameState, data: GameData): GameState {
+  const run = state.run;
+  if (!run || run.phase !== "intermission") return state;
+  const at = routeAt(run, getAct(data, run.actId), run.stage);
+  if (!at || at.second || run.routes?.[String(at.fork)]) return state;
+  const life = run.lifeFraction;
+  const route = life >= 0.75 ? "elite" : life < 0.5 ? "hearth" : "shrine";
+  return applyAction(state, data, { type: "chooseRoute", route });
 }
 
 /** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */
@@ -216,7 +100,7 @@ export function bestBoon(state: GameState, data: GameData, offer: readonly BoonP
   return best;
 }
 
-export function autopilotRewards(state: GameState, data: GameData): GameState {
+export function autopilotRewards(state: GameState, data: GameData, runes = false): GameState {
   let s = state;
   const rewards = s.run?.rewards;
   if (!rewards) return s;
@@ -233,14 +117,26 @@ export function autopilotRewards(state: GameState, data: GameData): GameState {
         bestGain = gain;
       }
     });
+    if (best >= 0) {
+      s = applyAction(s, data, { type: "pickItem", index: best, mode: "equip" });
+      continue;
+    }
+    // No upgrade: a Normal card may still be worth taking home as a Runeword base.
+    const base = runes
+      ? rewards.items.findIndex(
+          (item, i) => !taken.has(i) && !takeBlockReason(s, data, item) && wantsBase(s, data, item),
+        )
+      : -1;
     s =
-      best >= 0
-        ? applyAction(s, data, { type: "pickItem", index: best, mode: "equip" })
+      base >= 0
+        ? applyAction(s, data, { type: "pickItem", index: base, mode: "take" })
         : applyAction(s, data, { type: "salvageAll" });
   }
   // Old items are never needed again by the autopilot: Thoric salvages them in the Camp, so on
-  // the road they wait in the inventory (thrown away only to make room).
-  for (const placed of s.inventory.slice(0, Math.max(0, s.inventory.length - 4))) {
+  // the road they wait in the inventory (thrown away only to make room). Runeword bases stay.
+  const kept = runes ? keptBases(s, data) : new Set<string>();
+  const loose = s.inventory.filter((p) => !kept.has(p.item.id));
+  for (const placed of loose.slice(0, Math.max(0, loose.length - 4))) {
     s = applyAction(s, data, { type: "discard", itemId: placed.item.id });
   }
   const offer = s.run?.rewards?.boonOffer;

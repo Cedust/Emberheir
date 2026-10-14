@@ -295,8 +295,9 @@ describe("Fight", () => {
         ailmentChances: [{ ailment: "shock", chance: 1 }],
       };
       const fight = new Fight(setup({ weapon: shocking, bonuses: NO_CRIT }), dummy(), 1);
-      fight.advance(2.01);
-      expect(ofType(fight.events, "hit").map((h) => h.damage)).toEqual([10, 12]);
+      fight.advance(4.01);
+      // Each Shock stack adds 10 % damage taken, up to three stacks (ailments-v2.md 3.1).
+      expect(ofType(fight.events, "hit").map((h) => h.damage)).toEqual([10, 11, 12, 13]);
     });
   });
 

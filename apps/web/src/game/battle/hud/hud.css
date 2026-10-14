@@ -20,6 +20,10 @@
   box-shadow: 0 0 22px rgb(255 216 74 / 0.35);
 }
 
+.stage .hud-enemy.champion {
+  box-shadow: 0 0 26px rgb(163 92 255 / 0.5);
+}
+
 .stage .hud-enemy.boss {
   box-shadow:
     0 0 28px rgb(255 138 31 / 0.5),

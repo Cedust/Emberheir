@@ -15,6 +15,8 @@ export interface EnemyLook {
   readonly ranged?: boolean;
   /** Enemy level minus hero level (level-v2.md): who has outgrown whom shows on the ground. */
   readonly levelGap?: number;
+  /** A named Champion (run 3+): a violet-gold double aura. */
+  readonly champion?: boolean;
   /** A Gatekeeper of the newest act: it fights in front of a burning stone gate. */
   readonly gate?: boolean;
   /** Wildfire tier of the trip: the ground burns, embers rise, flames lick at the edges. */

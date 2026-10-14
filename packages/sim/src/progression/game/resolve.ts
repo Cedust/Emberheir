@@ -1,4 +1,7 @@
+import { withStatAilmentChances } from "../../combat/fighter";
 import { type FightOutcome, outcomeOf } from "../../combat/outcome";
+import { deriveStats } from "../../combat/stats";
+import type { CombatantSetup } from "../../combat/types";
 import { battlePlanUnlocks } from "../battle-plan";
 import { EMPTY_BOONS, rollBoonOffer } from "../boons";
 import { bountyAfterWin } from "../bounties";
@@ -6,16 +9,40 @@ import { codexAffixFactor } from "../codex";
 import { PROGRESSION } from "../constants";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
-import { getAct, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
+import { getAct, hearthEmbers, isFinaleAct, routeAt, waymarkKey, waymarkStages } from "./acts";
 import { getBounty } from "./bounty";
-import { encounterEnemy, encounterFight, encounterName, encounterRank } from "./encounters";
+import {
+  eliteModifiersOf,
+  encounterEnemy,
+  encounterFight,
+  encounterName,
+  encounterRank,
+} from "./encounters";
+import { salvageValue } from "./item-rules";
 import { requireRun } from "./guards";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
-import { actAffixFactor, addRunes, rollItemChoices, rollRuneDrops } from "./loot";
+import {
+  actAffixFactor,
+  addRunes,
+  itemPickAt,
+  rollItemChoices,
+  rollRuneDrops,
+  tagAffixFactor,
+} from "./loot";
 import { toCamp } from "./run";
 import { fail, nextRng, type GameData, type GameState, type GameStats } from "./state";
 
 /** The end of a fight: death, rewards and The Last Ember's fights. */
+
+/** Affix tags the hero's build lives on: its damage, its ailments, its Crits. */
+function buildTags(hero: CombatantSetup): string[] {
+  const stats = deriveStats(hero);
+  const tags = [hero.weapon.damageType === "physical" ? "physical" : "elemental"];
+  const chances = withStatAilmentChances(hero.weapon.ailmentChances ?? [], stats);
+  if (chances.some((c) => c.chance >= 0.15)) tags.push("ailment");
+  if (stats.critChance >= 0.15) tags.push("crit");
+  return tags;
+}
 
 export function resolveFight(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "fight");
@@ -82,7 +109,13 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     actId: act.id,
     boss: encounter.boss,
   };
-  const items = rollItemChoices(
+  // Elites drop by their theme, the boss has one card for the hero's build.
+  const theme = tagAffixFactor(
+    eliteModifiersOf(encounter, data).flatMap((m) => m.lootTags ?? []),
+    PROGRESSION.eliteThemeWeight,
+  );
+  const codex = actAffixFactor(act, codexAffixFactor(data.items, fight));
+  const rolled = rollItemChoices(
     data,
     act.id,
     caught ? encounter : { ...encounter, thief: false },
@@ -90,9 +123,16 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     state.progress.deathsInAct,
     state.legacy.prestige,
     rng,
-    actAffixFactor(act, codexAffixFactor(data.items, fight)),
+    (affix) => codex(affix) * theme(affix),
     1 + PROGRESSION.wildfire.legendaryPerTier * tier,
+    rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
   );
+  // Fewer, weightier picks: most normal fights pay Ash for their cards at once.
+  // Run 1 is the way in: a pick after every fight; from run 2 on every third normal stage.
+  const every = state.legacy.prestige === 0 ? 1 : act.pickEvery;
+  const pick = itemPickAt(rank, run.stage, caught, every);
+  const items = pick ? rolled : [];
+  const autoAsh = pick ? 0 : rolled.reduce((sum, it) => sum + salvageValue(it), 0);
   const runes = rollRuneDrops(
     data,
     rank,
@@ -104,12 +144,20 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10 and Elites of an act this run has not
   // cleared yet. Bosses have none: their moment belongs to the Hoard and the Echo.
   // Wildfire has no Shrines: the Boons of the run carry the fire.
+  // The route of a fork (neuausrichtung-v1.md 6.2): its second stage ends in a Shrine or a fire.
+  const route = routeAt(run, act, run.stage);
   const shrine =
     !tier &&
     (data.boons?.length ?? 0) > 0 &&
     !state.progress.actsCleared.includes(act.id) &&
     rank !== "boss" &&
-    (rank === "elite" || act.shrineStages.includes(run.stage));
+    // Elites of the Elite path pay in themed loot, not in Boons (neuausrichtung-v1.md 6.2).
+    ((rank === "elite" && route?.kind !== "elite") ||
+      act.shrineStages.includes(run.stage) ||
+      (route?.kind === "shrine" && route.second));
+  const rest =
+    (hearthEmbers(act, run.stage, tier) ? PROGRESSION.hearthEmbers : 0) +
+    (route?.kind === "hearth" && route.second ? PROGRESSION.hearthPath : 0);
   // The act boss leaves its Echo, one stage stronger once per run (Weapon Mastery).
   const echoDef = rank === "boss" ? data.echoes.find((e) => e.actId === act.id) : undefined;
   const echoBefore = echoDef ? state.legacy.echoes[echoDef.id] : undefined;
@@ -174,7 +222,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     wallet: {
       ...state.wallet,
       acorns: state.wallet.acorns + auto.acorns,
-      ash: state.wallet.ash + auto.ash,
+      ash: state.wallet.ash + auto.ash + autoAsh,
       emberCoal: state.wallet.emberCoal + stones,
       phoenixFeathers: state.wallet.phoenixFeathers + feathers,
       runes: addRunes(state.wallet.runes, runes),
@@ -195,7 +243,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     run: {
       ...run,
       phase: "rewards",
-      lifeFraction,
+      lifeFraction: Math.min(1, lifeFraction + rest),
       ...(bounty ? { bounty } : {}),
       rewards: {
         rank,
@@ -216,8 +264,9 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         ...(newTrophies.length ? { newTrophies } : {}),
         ...(echo ? { echo } : {}),
         ...(bountyDone ? { bountyDone: true } : {}),
-        itemPick: null,
-        salvagedAsh: 0,
+        ...(pick
+          ? { itemPick: null, salvagedAsh: 0 }
+          : { itemPick: { kind: "salvageAll" as const }, salvagedAsh: autoAsh }),
       },
     },
   };

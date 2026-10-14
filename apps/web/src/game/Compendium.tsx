@@ -72,7 +72,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "Attributes",
-    text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Intelligence: Elemental Damage, Barrier (absorbs damage before Life, refills after a moment without a hit). Resistance comes from gear. Agility: Attack Speed, Evasion (dodges attacks, Deflects spells). Wisdom: Heat Gain, Ailment Duration. Vitality: Life, Tenacity. Crit Damage is always 150%.",
+    text: "Strength: Physical Damage, Armor. Dexterity: Crit Chance, Trigger Chance. Intelligence: Elemental Damage, Barrier (absorbs damage before Life, refills after a moment without a hit). Resistance comes from gear. Agility: Attack Speed, Evasion (dodges attacks, Deflects spells). Wisdom: Heat Gain, Ailment Effect. Vitality: Life, Tenacity. Crit Damage is always 150%.",
   },
 ];
 

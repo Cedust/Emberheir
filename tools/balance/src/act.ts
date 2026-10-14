@@ -1,4 +1,6 @@
 import {
+  type ActData,
+  activeRuneword,
   actsInOrder,
   actsInRun,
   applyAction,
@@ -7,6 +9,7 @@ import {
   type FightOutcome,
   type GameData,
   type GameState,
+  type Encounter,
   newGame,
   PROGRESSION,
 } from "@emberheir/sim";
@@ -15,9 +18,11 @@ import {
   autopilotRewards,
   bestBoon,
   brewDraught,
+  chooseRoute,
   spendPoints,
 } from "./autopilot";
 import { type BuildPlan, findBuild } from "./builds";
+import { autopilotRunes, campSalvage, type RuneMemo } from "./runes";
 import { spendSkillPoints } from "./skill-path";
 
 /** How the current encounter's fight ends; resolveFight then reads the same, finished fight. */
@@ -25,6 +30,39 @@ function finishedFight(state: GameState, data: GameData): FightOutcome {
   const fight = encounterFight(state, data);
   fight.runToEnd();
   return outcomeOf(fight);
+}
+
+/** What a stage holds, for deaths and fight lengths per kind (neuausrichtung-v1.md 5.3, 5.5). */
+export type StageKind = "normal" | "elite" | "gate" | "boss";
+export const STAGE_KINDS: readonly StageKind[] = ["normal", "elite", "gate", "boss"];
+
+export function stageKind(encounter: Encounter | null | undefined): StageKind {
+  if (encounter?.boss) return "boss";
+  if (encounter?.gate) return "gate";
+  if (encounter?.eliteModifiers.length) return "elite";
+  return "normal";
+}
+
+/** One fight of a report: its stage kind, length and whether the hero died (a fled thief is no death). */
+export interface StageFight {
+  readonly kind: StageKind;
+  readonly seconds: number;
+  readonly died: boolean;
+}
+
+/** In the Camp before a trip: Thoric salvages, Kaelen trains, Nyssa sockets, a Draught. */
+function prepare(
+  state: GameState,
+  data: GameData,
+  build: BuildPlan | undefined,
+  act: ActData | undefined,
+  runes: boolean,
+  memo: RuneMemo,
+): GameState {
+  let s = campSalvage(state, data, runes);
+  s = spendSkillPoints(s, data, build);
+  if (runes) s = autopilotRunes(s, data, act, memo);
+  return brewDraught(s, data, act);
 }
 
 /**
@@ -55,6 +93,23 @@ export interface ActRunReport {
   readonly bossDeaths: number;
   /** The very first fight of the generation was lost. */
   readonly firstFightLost: boolean;
+  /** Every fight with its stage kind, the boss included. */
+  readonly stageFights: readonly StageFight[];
+  /** Runewords and single Runes the hero wears when the act ends. */
+  readonly runewords: readonly string[];
+  readonly runesWorn: number;
+}
+
+/** The Runewords and the count of socketed Runes on the hero right now. */
+function wornRunes(state: GameState, data: GameData): { runewords: string[]; runesWorn: number } {
+  const items = Object.values(state.hero.equipment).filter((i) => !!i);
+  return {
+    runewords: items.flatMap((i) => {
+      const word = activeRuneword(i, data.items);
+      return word ? [word.id] : [];
+    }),
+    runesWorn: items.reduce((n, i) => n + (i.runes?.length ?? 0), 0),
+  };
 }
 
 /**
@@ -81,8 +136,12 @@ export function playGenerations(
     readonly onFight?: (state: GameState, generation: number, act: number) => void;
     /** Called in the Camp right before The Last Ember (balance probes replay the endgame). */
     readonly onEndgame?: (state: GameState) => void;
+    /** The autopilot uses Runes and Runewords (default); false measures without them. */
+    readonly runes?: boolean;
   },
 ): ActRunReport[] {
+  const runes = options.runes ?? true;
+  const memo: RuneMemo = new Set();
   // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
   const heroClass = data.classes.find((c) => c.weapons.includes(options.starterWeapon));
   if (!heroClass) throw new Error(`No class starts with "${options.starterWeapon}"`);
@@ -109,19 +168,17 @@ export function playGenerations(
       const deathEnemies: string[] = [];
       let bossDeaths = 0;
       let firstFightLost = false;
+      const stageFights: StageFight[] = [];
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
-        for (const placed of s.inventory) {
-          s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
-        }
-        s = spendSkillPoints(s, data, build);
-        s = brewDraught(s, data, act);
+        s = prepare(s, data, build, act, runes, memo);
         s = applyAction(s, data, { type: "setOut", actId: act.id });
         while (s.run) {
           s = spendPoints(s, data, options.starterWeapon);
           if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
             s = applyAction(s, data, { type: "useFlask" });
           }
+          s = chooseRoute(s, data);
           s = applyAction(s, data, { type: "startStage" });
           options.onFight?.(s, generation, act.number);
           // The encounter's one fight; resolveFight reads the same one.
@@ -141,13 +198,15 @@ export function playGenerations(
           const stage = s.run?.stage ?? 0;
           const first = s.stats.fights === before.fights;
           s = applyAction(s, data, { type: "resolveFight" });
-          if (!s.run && s.notice?.kind === "death") {
+          const died = !s.run && s.notice?.kind === "death";
+          stageFights.push({ kind: stageKind(encounter), seconds: result.duration, died });
+          if (died) {
             if (first) firstFightLost = true;
             deathStages.push(stage);
             if (encounter) deathEnemies.push(encounter.enemyId);
             if (encounter?.boss) bossDeaths++;
           }
-          if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+          if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
         }
         cleared = s.pendingPrestige !== null || s.notice?.kind === "actCleared";
         if (!s.pendingPrestige) s = applyAction(s, data, { type: "dismissNotice" });
@@ -168,6 +227,8 @@ export function playGenerations(
         deathStages,
         bossDeaths,
         firstFightLost,
+        stageFights,
+        ...wornRunes(s, data),
       });
       if (!cleared) {
         allCleared = false;
@@ -187,12 +248,12 @@ export function playGenerations(
         options.generations + 1,
         options.maxAttempts,
         options.onFight,
-        { build, starterWeapon: options.starterWeapon },
+        { build, starterWeapon: options.starterWeapon, runes, memo },
       );
       reports.push(finale.report);
       s = finale.state;
       for (let tier = 1; tier <= (options.wildfire ?? 0) && s.legacy.finaleWon; tier++) {
-        const fire = playWildfire(s, data, build, options, tier);
+        const fire = playWildfire(s, data, build, { ...options, runes, memo }, tier);
         reports.push(fire.report);
         s = fire.state;
         if (!fire.report.cleared) break;
@@ -210,7 +271,12 @@ export function playWildfire(
   state: GameState,
   data: GameData,
   build: BuildPlan | undefined,
-  options: { readonly starterWeapon: string; readonly maxAttempts: number },
+  options: {
+    readonly starterWeapon: string;
+    readonly maxAttempts: number;
+    readonly runes?: boolean;
+    readonly memo?: RuneMemo;
+  },
   tier: number,
 ): { state: GameState; report: ActRunReport } {
   const acts = actsInOrder(data);
@@ -223,13 +289,12 @@ export function playWildfire(
   const deathEnemies: string[] = [];
   let bossSeconds = 0;
   let elites = 0;
+  const stageFights: StageFight[] = [];
+  const runes = options.runes ?? true;
+  const memo = options.memo ?? new Set<string>();
   let cleared = false;
   for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
-    for (const placed of s.inventory) {
-      s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
-    }
-    s = spendSkillPoints(s, data, build);
-    s = brewDraught(s, data, act);
+    s = prepare(s, data, build, act, runes, memo);
     s = applyAction(s, data, { type: "setOut", actId: act.id, wildfire: tier });
     while (s.run) {
       s = spendPoints(s, data, options.starterWeapon);
@@ -246,11 +311,13 @@ export function playWildfire(
       }
       const stage = s.run?.stage ?? 0;
       s = applyAction(s, data, { type: "resolveFight" });
-      if (!s.run && s.notice?.kind === "death") {
+      const died = !s.run && s.notice?.kind === "death";
+      stageFights.push({ kind: stageKind(encounter), seconds: result.duration, died });
+      if (died) {
         deathStages.push(stage);
         if (encounter) deathEnemies.push(encounter.enemyId);
       }
-      if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+      if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
     }
     cleared = s.notice?.kind === "actCleared";
     s = applyAction(s, data, { type: "dismissNotice" });
@@ -273,6 +340,8 @@ export function playWildfire(
       deathStages,
       bossDeaths: deathStages.filter((st) => st === act.stages).length,
       firstFightLost: false,
+      stageFights,
+      ...wornRunes(s, data),
     },
   };
 }
@@ -286,15 +355,12 @@ function farmLastAct(
   data: GameData,
   build: BuildPlan | undefined,
   starterWeapon: string,
+  runes: boolean,
+  memo: RuneMemo,
 ): GameState {
   const act = actsInOrder(data).at(-1);
   if (!act) return state;
-  let s = state;
-  for (const placed of s.inventory) {
-    s = applyAction(s, data, { type: "salvage", itemId: placed.item.id });
-  }
-  s = spendSkillPoints(s, data, build);
-  s = brewDraught(s, data, act);
+  let s = prepare(state, data, build, act, runes, memo);
   s = applyAction(s, data, { type: "setOut", actId: act.id });
   while (s.run) {
     s = spendPoints(s, data, starterWeapon);
@@ -303,7 +369,7 @@ function farmLastAct(
     }
     s = applyAction(s, data, { type: "startStage" });
     s = applyAction(s, data, { type: "resolveFight" });
-    if (s.run?.phase === "rewards") s = autopilotRewards(s, data);
+    if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
   }
   return s.notice ? applyAction(s, data, { type: "dismissNotice" }) : s;
 }
@@ -315,7 +381,12 @@ export function playFinale(
   generation: number,
   maxAttempts: number,
   onFight?: (state: GameState, generation: number, act: number) => void,
-  farm?: { readonly build: BuildPlan | undefined; readonly starterWeapon: string },
+  farm?: {
+    readonly build: BuildPlan | undefined;
+    readonly starterWeapon: string;
+    readonly runes: boolean;
+    readonly memo: RuneMemo;
+  },
 ): { state: GameState; report: ActRunReport } {
   let s = state;
   const before = s.stats;
@@ -323,6 +394,7 @@ export function playFinale(
   const deathStages: number[] = [];
   const deathEnemies: string[] = [];
   let bossSeconds = 0;
+  const stageFights: StageFight[] = [];
   let cleared = false;
   for (let attempt = 0; attempt < maxAttempts && !cleared; attempt++) {
     s = brewDraught(s, data, data.finale);
@@ -336,10 +408,13 @@ export function playFinale(
       const result = finishedFight(s, data);
       const stage = s.run?.stage ?? 0;
       const enemyId = s.run?.encounter?.enemyId ?? "";
-      if (stage === data.finale?.stages) bossSeconds = result.duration;
+      const core = stage === data.finale?.stages;
+      if (core) bossSeconds = result.duration;
       else fightSeconds.push(result.duration);
       s = applyAction(s, data, { type: "resolveFight" });
-      if (!s.run && s.notice?.kind === "death") {
+      const died = !s.run && s.notice?.kind === "death";
+      stageFights.push({ kind: core ? "boss" : "gate", seconds: result.duration, died });
+      if (died) {
         deathStages.push(stage);
         deathEnemies.push(enemyId);
       }
@@ -351,7 +426,8 @@ export function playFinale(
     }
     cleared = s.notice?.kind === "ending";
     s = applyAction(s, data, { type: "dismissNotice" });
-    if (!cleared && farm) s = farmLastAct(s, data, farm.build, farm.starterWeapon);
+    if (!cleared && farm)
+      s = farmLastAct(s, data, farm.build, farm.starterWeapon, farm.runes, farm.memo);
   }
   const report: ActRunReport = {
     generation,
@@ -370,6 +446,8 @@ export function playFinale(
     deathStages,
     bossDeaths: deathStages.filter((st) => st === data.finale?.stages).length,
     firstFightLost: false,
+    stageFights,
+    ...wornRunes(s, data),
   };
   return { state: s, report };
 }

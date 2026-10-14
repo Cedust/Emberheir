@@ -506,8 +506,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b1: {
       name: "Gore",
-      description: "+10 % Ailment Duration per rank.",
-      bonuses: { ailmentDuration: 0.1 },
+      description: "+5 % Ailment Effect per rank.",
+      bonuses: { ailmentEffect: 0.05 },
     },
     a2: {
       name: "Hemorrhage",
@@ -633,8 +633,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b1: {
       name: "Lingering Venom",
-      description: "+10 % Ailment Duration per rank.",
-      bonuses: { ailmentDuration: 0.1 },
+      description: "+5 % Ailment Effect per rank.",
+      bonuses: { ailmentEffect: 0.05 },
     },
     a2: {
       name: "Paralytic",
@@ -669,8 +669,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Virulence",
-      description: "+12 % Chance to Poison, +10 % Ailment Duration.",
-      bonuses: { poisonChance: 0.12, ailmentDuration: 0.1 },
+      description: "+12 % Chance to Poison, +10 % Ailment Effect.",
+      bonuses: { poisonChance: 0.12, ailmentEffect: 0.1 },
     },
     b4: { name: "Antivenom", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -712,8 +712,8 @@ const BRANCHES: readonly BranchSpec[] = [
     t3: {
       a: {
         name: "Corrosive",
-        description: "+10 % Ailment Duration per rank.",
-        bonuses: { ailmentDuration: 0.1 },
+        description: "+5 % Ailment Effect per rank.",
+        bonuses: { ailmentEffect: 0.05 },
       },
       notable: {
         name: "Pandemic",
@@ -922,8 +922,8 @@ const BRANCHES: readonly BranchSpec[] = [
     skill: FROST_NOVA,
     mid: {
       name: "Permafrost",
-      description: "+10 % Ailment Duration per rank.",
-      bonuses: { ailmentDuration: 0.1 },
+      description: "+5 % Ailment Effect per rank.",
+      bonuses: { ailmentEffect: 0.05 },
     },
     a3: {
       name: "Ice Shell",
@@ -993,8 +993,8 @@ const BRANCHES: readonly BranchSpec[] = [
     t3: {
       a: {
         name: "Deep Cold",
-        description: "+10 % Ailment Duration per rank.",
-        bonuses: { ailmentDuration: 0.1 },
+        description: "+5 % Ailment Effect per rank.",
+        bonuses: { ailmentEffect: 0.05 },
       },
       notable: {
         name: "Cryo Shell",
@@ -1067,8 +1067,8 @@ const BRANCHES: readonly BranchSpec[] = [
     skill: INFERNO,
     mid: {
       name: "Smolder",
-      description: "+10 % Ailment Duration per rank.",
-      bonuses: { ailmentDuration: 0.1 },
+      description: "+5 % Ailment Effect per rank.",
+      bonuses: { ailmentEffect: 0.05 },
     },
     a3: {
       name: "Burning Blood",
@@ -1181,8 +1181,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b1: {
       name: "Long Night",
-      description: "+10 % Ailment Duration per rank.",
-      bonuses: { ailmentDuration: 0.1 },
+      description: "+5 % Ailment Effect per rank.",
+      bonuses: { ailmentEffect: 0.05 },
     },
     a2: {
       name: "Entropy",
@@ -1216,8 +1216,8 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Eternal Night",
-      description: "+12 % Chance to Corrupt, +15 % Ailment Duration.",
-      bonuses: { corruptionChance: 0.12, ailmentDuration: 0.15 },
+      description: "+12 % Chance to Corrupt, +15 % Ailment Effect.",
+      bonuses: { corruptionChance: 0.12, ailmentEffect: 0.15 },
     },
     b4: { name: "Endless", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -1278,8 +1278,8 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       b: {
         name: "Night Eternal",
-        description: "+10 % Ailment Duration per rank.",
-        bonuses: { ailmentDuration: 0.1 },
+        description: "+5 % Ailment Effect per rank.",
+        bonuses: { ailmentEffect: 0.05 },
       },
       keystone: {
         name: "Supreme Event Horizon",

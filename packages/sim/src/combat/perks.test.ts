@@ -198,12 +198,18 @@ describe("Perks in the fight", () => {
     expect(perkEvents(focused.events, "innerFire")).toHaveLength(1);
   });
 
-  it("Clarity: own ailments last longer", () => {
-    const bleed = { ...TEST_WEAPON, ailmentChances: [{ ailment: "bleed" as const, chance: 1 }] };
-    const remaining = (perks: PerkId[]) =>
-      play(setup({ perks, weapon: bleed }), dummy(), 1.05).snapshot().enemy.ailments[0]
-        ?.remaining ?? 0;
-    expect(remaining(["clarity"]) - remaining([])).toBeCloseTo(PERK.claritySeconds);
+  it("Clarity: the built-in payoffs hit harder (Poison Overflow)", () => {
+    const poison = {
+      ...TEST_WEAPON,
+      attacksPerSecond: 6,
+      ailmentChances: [{ ailment: "poison" as const, chance: 1 }],
+    };
+    const overflow = (perks: PerkId[]) =>
+      play(setup({ perks, weapon: poison, bonuses: NO_CRIT }), dummy(), 40)
+        .events.filter((e) => e.type === "payoff" && e.payoff === "overflow")
+        .reduce((sum, e) => sum + (e.type === "payoff" ? (e.damage ?? 0) : 0), 0);
+    expect(overflow([])).toBeGreaterThan(0);
+    expect(overflow(["clarity"])).toBeGreaterThan(overflow([]) * 1.15);
   });
 
   it("Second Breath: once per fight below 30 % Life", () => {

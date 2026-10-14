@@ -31,6 +31,8 @@ export {
   type PendingPrestige,
   type GameStats,
   type GameState,
+  ROUTE_KINDS,
+  type RouteKind,
 } from "./state";
 export { newGame, type NewGameOptions } from "./new-game";
 export {
@@ -48,12 +50,16 @@ export {
   levelBand,
   stageMonsterLevel,
   waymarkStages,
+  hearthEmbers,
+  routeForks,
+  routeAt,
   waymarkKey,
   earnedSkillPoints,
   stagePressure,
   isWallAct,
   gateStages,
   stageWall,
+  sawtoothShare,
   wildfireOpen,
   emberPenalty,
   wildfireTop,
@@ -108,7 +114,15 @@ export { applyAction, type GameAction } from "./actions";
 export { requireCamp } from "./guards";
 export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
 export { getBounty, bountyReward } from "./bounty";
-export { lootGate, itemPickWeights, addRunes, maxRuneRank, rollRuneDrops } from "./loot";
+export {
+  lootGate,
+  itemPickWeights,
+  itemPickAt,
+  addRunes,
+  maxRuneRank,
+  rollRuneDrops,
+  tagAffixFactor,
+} from "./loot";
 export { rewardsDone } from "./rewards";
 export {
   requireTrainer,
@@ -118,3 +132,14 @@ export {
   attributeRespecAcorns,
 } from "./trainer";
 export { openBranches } from "./prestige";
+export { thiefTrailOpen } from "./run";
+export {
+  DUMMY_PROFILES,
+  type DummyProfile,
+  type DummyReport,
+  dummyReport,
+  dummySetup,
+  gearDelta,
+  trainingDummy,
+  wearing,
+} from "./dummy";

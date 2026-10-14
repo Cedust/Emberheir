@@ -29,18 +29,17 @@ export function estimateDps(setup: CombatantSetup, stats: DerivedStats = deriveS
         stats[`${ailment}Chance`] +
         (ailment === "bleed" && setup.rules?.critsApplyBleed ? stats.critChance : 0),
     );
-  const duration = (base: number) => base * (1 + stats.ailmentDuration);
+  // Ailment Effect makes the DoTs stronger (ailments-v2.md 3.3).
+  const effect = 1 + stats.ailmentEffect;
   const refreshing = (ailment: "burn" | "bleed", perSecond: number, base: number) =>
-    Math.min(1, chance(ailment) * aps * duration(base)) * hit * perSecond;
+    Math.min(1, chance(ailment) * aps * base) * hit * perSecond * effect;
   const dots =
     refreshing("burn", COMBAT.burnDamagePerSecond, COMBAT.burnDurationSeconds) +
     refreshing("bleed", COMBAT.bleedDamagePerSecond, COMBAT.bleedDurationSeconds) +
-    Math.min(
-      COMBAT.poisonMaxStacks,
-      chance("poison") * aps * duration(COMBAT.poisonDurationSeconds),
-    ) *
+    Math.min(COMBAT.poisonMaxStacks, chance("poison") * aps * COMBAT.poisonDurationSeconds) *
       hit *
-      COMBAT.poisonDamagePerSecond;
+      COMBAT.poisonDamagePerSecond *
+      effect;
   return hit * aps + dots;
 }
 
@@ -136,7 +135,7 @@ const COMPARED: readonly (keyof DerivedStats)[] = [
   "corruptionChance",
   "bleedChance",
   "poisonChance",
-  "ailmentDuration",
+  "ailmentEffect",
 ];
 
 /** What changes if the hero equips `item` (it goes to the slot Equip would use). */

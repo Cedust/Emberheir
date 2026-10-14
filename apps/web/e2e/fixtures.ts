@@ -429,3 +429,10 @@ export function saveWildfire(): string {
     legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: 3 },
   });
 }
+
+/** On the road in the Ashen Fields (second run), right before the fork of Stages 3–4. */
+export function saveAtFork(): string {
+  const camp = JSON.parse(saveAfterAct1()) as GameState;
+  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
+  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
+}

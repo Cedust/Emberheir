@@ -24,7 +24,8 @@ describe("deriveStats", () => {
     expect(one("agility").evasion).toBeCloseTo(0.04);
     expect(one("intelligence").elementalDamage).toBeCloseTo(0.1);
     expect(one("intelligence").resistance).toBeCloseTo(0.02);
-    expect(one("wisdom")).toMatchObject({ heatGain: 0.1, ailmentDuration: 0.1 });
+    // Ailment Effect is the hero's value: monsters keep their ailments as they are.
+    expect(one("wisdom")).toMatchObject({ heatGain: 0.1, ailmentEffect: 0 });
     expect(one("vitality").maxLife).toBe(150);
     expect(one("vitality").tenacity).toBeCloseTo(0.05);
   });

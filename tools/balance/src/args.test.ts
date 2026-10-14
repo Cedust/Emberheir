@@ -19,6 +19,9 @@ describe("parseArgs", () => {
       generations: 1,
       finale: 0,
       wildfire: 0,
+      runes: 1,
+      newest: 0,
+      json: "",
     });
   });
 
@@ -47,6 +50,12 @@ describe("parseArgs", () => {
         "5",
         "--generations",
         "2",
+        "--runes",
+        "0",
+        "--newest",
+        "1",
+        "--json",
+        "out.json",
       ]),
     ).toEqual({
       runs: 50,
@@ -64,6 +73,9 @@ describe("parseArgs", () => {
       generations: 2,
       finale: 0,
       wildfire: 0,
+      runes: 0,
+      newest: 1,
+      json: "out.json",
     });
   });
 

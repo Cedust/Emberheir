@@ -159,7 +159,7 @@ export const IMMOLATE: SkillDefinition = {
   type: "spell",
   heatCost: 30,
   tags: ["fire", "over-time", "any"],
-  description: "A small Fire hit that sets a strong Burn.",
+  description: "A small Fire hit that sets a strong Burn, then Combusts it three times over.",
   hits: [
     {
       kind: "spell",
@@ -169,6 +169,7 @@ export const IMMOLATE: SkillDefinition = {
       ailmentPower: 3,
     },
   ],
+  effects: [{ kind: "combust", times: 3 }],
 };
 
 export const CORRUPT: SkillDefinition = {

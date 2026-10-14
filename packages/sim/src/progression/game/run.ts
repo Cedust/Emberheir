@@ -2,7 +2,8 @@ import { EMPTY_BOONS } from "../boons";
 import { bountyAfterFlask, rollBounty } from "../bounties";
 import { PROGRESSION } from "../constants";
 import { DRAUGHT_FLASK_COST } from "../draughts";
-import { eliteChance, eliteModifierCount } from "../elites";
+import { type EliteModifier, eliteChance, eliteModifierCount } from "../elites";
+import type { Rng } from "../../rng";
 import {
   actUnlocked,
   finaleOpen,
@@ -14,6 +15,7 @@ import {
   stagePressure,
   stagesInAct,
   stageWall,
+  routeAt,
   wildfireLevel,
   wildfireOpen,
   wildfirePressure,
@@ -24,7 +26,16 @@ import { bossAbilities, encounterName, finaleEncounter, wildfireBossAbilities } 
 import { brewedDraught, draughtsOpen, flaskCapacity, getDraught } from "./flask";
 import { requireCamp, requireRun } from "./guards";
 import { requireRewards, rewardsDone } from "./rewards";
-import { fail, nextRng, type Encounter, type GameData, type GameState, type Notice } from "./state";
+import {
+  type ActData,
+  fail,
+  nextRng,
+  type Encounter,
+  type GameData,
+  type GameState,
+  type Notice,
+  type RouteKind,
+} from "./state";
 
 /** A trip out of the Camp: set out, stages, drinking from the Ember Flask, back to the Camp. */
 
@@ -125,6 +136,59 @@ export function enterFinale(state: GameState, data: GameData): GameState {
   };
 }
 
+/**
+ * Picks the path of the fork ahead (neuausrichtung-v1.md 6.2): before the fork's first stage
+ * (in the intermission, or in the rewards of the stage before). The thief's trail is only there while a thief bounty runs.
+ */
+export function chooseRoute(state: GameState, data: GameData, route: RouteKind): GameState {
+  const run = requireRun(state, "intermission", "rewards");
+  const act = getAct(data, run.actId);
+  // In the rewards the road ahead starts with the next stage.
+  const ahead = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  const at = routeAt(run, act, ahead);
+  if (!at || at.second) return fail("No fork ahead");
+  if (route === "thief" && !thiefTrailOpen(state, data)) return fail("No thief to follow");
+  return {
+    ...state,
+    run: { ...run, routes: { ...run.routes, [String(at.fork)]: route } },
+  };
+}
+
+/** The thief's trail is a route while a "catch the Ember Thief" bounty is open. */
+export function thiefTrailOpen(state: GameState, data: GameData): boolean {
+  const bounty = state.run?.bounty;
+  return (
+    data.thief !== undefined &&
+    bounty?.status === "open" &&
+    getBounty(data, bounty.id).goal.kind === "thief"
+  );
+}
+
+/**
+ * An Elite's modifiers (neuausrichtung-v1.md 6.1): one of its act's own first (an act without
+ * own ones, like Emberfall, draws from all acts), the rest from the general pool.
+ */
+export function rollEliteModifiers(
+  data: GameData,
+  act: ActData,
+  count: number,
+  rng: Rng,
+): string[] {
+  const actOwn = data.eliteModifiers.filter((m) => m.act === act.id);
+  const anyAct = data.eliteModifiers.filter((m) => m.act !== undefined);
+  const first = actOwn.length ? actOwn : anyAct;
+  const general = data.eliteModifiers.filter((m) => m.act === undefined);
+  const out: string[] = [];
+  const draw = (pool: EliteModifier[]) => {
+    const [mod] = pool.splice(rng.int(0, pool.length - 1), 1);
+    if (mod) out.push(mod.id);
+  };
+  if (count > 0 && first.length) draw([...first]);
+  const rest = [...(first.length ? general : data.eliteModifiers)];
+  while (out.length < count && rest.length) draw(rest);
+  return out;
+}
+
 export function startStage(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission");
   const act = getAct(data, run.actId);
@@ -144,8 +208,13 @@ export function startStage(state: GameState, data: GameData): GameState {
         stagePressure(data, act, run.stage, state.legacy.prestige),
         atBoss && act.boss.archetype === "harvester",
       );
-  const pressure = p.life > 1 ? { pressure: p } : {};
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
+  // Longer fights over more enemy Life (neuausrichtung-v1.md 5.5), not in the Wildfire.
+  const length = (kind: keyof typeof PROGRESSION.fightLength.life) => {
+    const life = p.life * (tier ? 1 : PROGRESSION.fightLength.life[kind]);
+    const damage = p.damage * (tier || kind !== "boss" ? 1 : PROGRESSION.fightLength.bossDamage);
+    return life !== 1 || damage !== 1 ? { pressure: { life, damage } } : {};
+  };
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
   if (atBoss) {
@@ -157,7 +226,7 @@ export function startStage(state: GameState, data: GameData): GameState {
         ? wildfireBossAbilities(data, act, tier)
         : bossAbilities(data, act, state.legacy.prestige)
       ).map((m) => m.id),
-      ...pressure,
+      ...length("boss"),
       ...walled,
       seed: rng.int(0, 0x7fffffff),
     };
@@ -168,25 +237,43 @@ export function startStage(state: GameState, data: GameData): GameState {
     // An open "catch the Ember Thief" bounty: the Scout saw it nearby.
     const hunted =
       run.bounty?.status === "open" && getBounty(data, run.bounty.id).goal.kind === "thief";
+    // The route of a fork (neuausrichtung-v1.md 6.2): sure Elites, or the thief's trail.
+    const route = routeAt(run, act, run.stage);
+    const trail = route?.kind === "thief" && !route.second && hunted && data.thief !== undefined;
     // A Gatekeeper holds the Waymark: no thief there.
     const thief =
-      !wall?.gate &&
-      data.thief !== undefined &&
-      act.number >= PROGRESSION.thiefFromAct &&
-      rng.chance(PROGRESSION.thiefChance * (hunted ? PROGRESSION.bounty.thiefBoost : 1));
-    if (!thief && (wall?.gate || rng.chance(eliteChance(act.number, run.stage)))) {
-      const pool = [...data.eliteModifiers];
-      for (let i = 0; i < eliteModifierCount(level) && pool.length; i++) {
-        const [mod] = pool.splice(rng.int(0, pool.length - 1), 1);
-        if (mod) mods.push(mod.id);
-      }
+      trail ||
+      (!wall?.gate &&
+        data.thief !== undefined &&
+        act.number >= PROGRESSION.thiefFromAct &&
+        rng.chance(PROGRESSION.thiefChance * (hunted ? PROGRESSION.bounty.thiefBoost : 1)));
+    let champion = false;
+    if (
+      !thief &&
+      (wall?.gate || route?.kind === "elite" || rng.chance(eliteChance(act.number, run.stage)))
+    ) {
+      // From run 3 an Elite may be a named Champion: three modifiers and its own hoard.
+      const c = PROGRESSION.champion;
+      champion = !wall?.gate && state.legacy.prestige >= c.fromPrestige && rng.chance(c.chance);
+      const count = champion ? PROGRESSION.maxEliteModifiers : eliteModifierCount(level);
+      mods.push(...rollEliteModifiers(data, act, count, rng));
     }
+    const kind = wall?.gate ? "gate" : mods.length ? "elite" : "normal";
+    const sized = length(kind);
     encounter = {
       enemyId: thief && data.thief ? data.thief.id : enemy.id,
       level,
       boss: false,
       eliteModifiers: mods,
-      ...pressure,
+      ...(champion
+        ? {
+            pressure: {
+              life: (sized.pressure?.life ?? 1) * PROGRESSION.champion.life,
+              damage: sized.pressure?.damage ?? 1,
+            },
+            champion: true,
+          }
+        : sized),
       ...walled,
       ...(wall?.gate ? { gate: true } : {}),
       seed: rng.int(0, 0x7fffffff),

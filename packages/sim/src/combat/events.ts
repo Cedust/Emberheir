@@ -4,6 +4,20 @@ import type { AilmentType, BuffStat, DamageType, HeatBehavior, Side } from "./ty
 
 /** What a fight tells the outside world: the combat log and the snapshots. */
 
+/**
+ * A built-in payoff of an ailment (ailments-v2.md 3.1) or a Class Trait (neuausrichtung-v1.md
+ * 2.1) did something. The arena gives each its own moment.
+ */
+export const PAYOFF_KINDS = [
+  "overflow",
+  "combust",
+  "collapse",
+  "ironBlood",
+  "keenEye",
+  "spark",
+] as const;
+export type PayoffKind = (typeof PAYOFF_KINDS)[number];
+
 /** One entry of the combat log. `side` is always the fighter the event is about. */
 export type CombatEvent =
   | {
@@ -98,6 +112,14 @@ export type CombatEvent =
     }
   /** A fighter with `fleeAfter` ran away; the fight ends without a winner. */
   | { readonly t: number; readonly type: "flee"; readonly side: Side }
+  /** A payoff or Class Trait fired; `side` is its owner, `damage` what it dealt (if any). */
+  | {
+      readonly t: number;
+      readonly type: "payoff";
+      readonly side: Side;
+      readonly payoff: PayoffKind;
+      readonly damage?: number;
+    }
   /** An Attribute Breakpoint Perk did something (attribute-v1.md section 4). */
   | { readonly t: number; readonly type: "perk"; readonly side: Side; readonly perk: PerkId };
 

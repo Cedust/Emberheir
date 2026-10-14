@@ -29,7 +29,8 @@ export const COMBAT = {
   elementalDamagePerIntelligence: 0.01,
   allResistancePerIntelligence: 0.002,
   heatGainPerWisdom: 0.01,
-  ailmentDurationPerWisdom: 0.01,
+  /** Monsters keep their ailments as they are (Ailment Effect is the hero's value). */
+  ailmentEffectPerWisdom: 0,
 
   /**
    * The hero's attributes (attribute-v1.md section 3): 1–10 points, each worth a lot. Life and
@@ -49,7 +50,7 @@ export const COMBAT = {
     attackSpeedPerAgility: 0.03,
     evasionPerAgility: 0.02,
     heatGainPerWisdom: 0.06,
-    ailmentDurationPerWisdom: 0.06,
+    ailmentEffectPerWisdom: 0.05,
     lifePerVitality: 0.06,
     tenacityPerVitality: 0.03,
   },
@@ -111,11 +112,17 @@ export const COMBAT = {
   /** Burning fighters heal this much less. */
   burnHealingReduction: 0.5,
   chillDurationSeconds: 2,
-  /** Chill: -X Attack Speed and -X Heat Gain. */
+  /** Chill: -X Attack Speed and -X Heat Gain; Ailment Effect raises it up to `chillMaxSlow`. */
   chillSlow: 0.3,
+  chillMaxSlow: 0.5,
   shockDurationSeconds: 3,
-  /** Shock: target takes +X damage. */
-  shockDamageTaken: 0.2,
+  /**
+   * Shock (ailments-v2.md 3.1): stacks up to `shockMaxStacks`, each one +X damage taken; with
+   * Ailment Effect at most `shockMaxDamageTaken` in all.
+   */
+  shockDamageTaken: 0.1,
+  shockMaxStacks: 3,
+  shockMaxDamageTaken: 0.5,
   /** Bleed: short and strong, X of the triggering hit per second. Refreshes like Burn. */
   bleedDamagePerSecond: 0.5,
   bleedDurationSeconds: 3,
@@ -131,6 +138,15 @@ export const COMBAT = {
   corruptionDurationSeconds: 6,
   corruptionRampPerTick: 0.25,
   corruptionMaxRamp: 12,
+
+  /**
+   * Built-in payoffs (ailments-v2.md 3.1): every DoT has its own burst moment. Overflow: a Poison
+   * stack pushed off at the cap deals its remaining damage at once. Combust: a Fire hit on a
+   * burning target deals this share of the Burn's remaining damage at once. Collapse: Corruption
+   * at full growth deals `collapseSeconds` of its damage at once and falls back to half growth.
+   */
+  combustShare: 0.25,
+  collapseSeconds: 4,
 
   /** Spell skills gain this much base damage per skill level above 1. */
   spellDamagePerSkillLevel: 0.2,

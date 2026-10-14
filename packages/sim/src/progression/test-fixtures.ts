@@ -39,6 +39,8 @@ export const TEST_ACT: ActData = {
   enemies: [WEAK_ENEMY],
   boss: TEST_BOSS,
   shrineStages: [2],
+  // The game-loop tests look at the pick after every stage.
+  pickEvery: 1,
 };
 
 export const DEADLY_ACT: ActData = {

@@ -193,8 +193,24 @@ export const PROGRESSION = {
     number
   >,
 
-  /** Cards in the item pick after every win. */
+  /** Cards in the item pick. */
   itemChoices: 3,
+  /**
+   * Item picks: weniger, aber schwerer (neuausrichtung-v1.md 6.3). From run 2 on a normal fight
+   * offers a pick only on every this many'th stage (the others give Ash and Acorns); Elites,
+   * Gatekeepers and bosses always do. Run 1 (the way in) has a pick after every fight.
+   */
+  normalPickEvery: 3,
+  /**
+   * Champions (neuausrichtung-v1.md 6.1): from run 3 an Elite is a named Champion with this
+   * chance: three modifiers, more Life, and its own hoard of `cards` cards, one of them sure Epic
+   * and Legendary with `legendary`.
+   */
+  champion: { fromPrestige: 2, chance: 0.04, life: 1.3, cards: 4, legendary: 0.15 },
+  /** Elite theme: affixes with a tag of the Elite's modifiers roll this much more often (6.1). */
+  eliteThemeWeight: 4,
+  /** The boss's build card: affixes with a tag the hero's build uses roll this much more often. */
+  buildCardWeight: 4,
   /**
    * Item pick: each card picks an item slot by these weights (three different slots while
    * possible), then a random base of that slot. So adding bases to a slot never makes weapons
@@ -265,21 +281,49 @@ export const PROGRESSION = {
    */
   runPressure: { life: 0.8, damage: 0.35 },
   /**
+   * The world burns anew (neuausrichtung-v1.md 5.1): from run 2 on every act of a run is at the
+   * new level. Act 1 starts this many levels below the Level Cap of the run before (the hero's
+   * level when the run starts), and the band rises evenly to the new boss.
+   */
+  worldBelowCap: 5,
+  /**
    * Walls (spielzeit-v1.md, balance-grundlagen-v1.md D): the newest act of a run is where the hero
    * has to grow. Its boss hits with the run's `strength` (Life only takes its square root, so the
-   * fight stays short; Heavy Attacks stay under `COMBAT.heavyHitCap`), a Gatekeeper on its Waymark
-   * stages 5 and 10 (a sure Elite) takes `gateShare` of it, and its normal enemies ramp up to
-   * `rampShare` of it on the stage before the boss. Index 0 = run 1, which stays gentle. Tuned with
-   * the balance CLI (all 15 autopilot builds): about 7–8 attempts per newest act for a typical
-   * build, fewer with drop luck, and every build clears with at most +10 levels.
+   * fight stays short; Heavy Attacks stay under `COMBAT.heavyHitCap`). Index 0 = run 1, which
+   * stays gentle.
+   *
+   * Sägezahn (neuausrichtung-v1.md 5.3): the act climbs in teeth instead of one cliff. The
+   * Gatekeepers on the Waymarks (stages 5 and 10) take `gates` of the strength, the normal stages
+   * between them ramp along `ramps` (one [from, to] per stretch: before the first Gatekeeper,
+   * between them, after the last). Shares of the strength's excess over 1. Start values from the
+   * balance CLI (balance-messung-v1.md 6, run D): deaths in the newest act 9 % normal, 12 % Elite,
+   * 29 % Gatekeeper, 50 % boss.
    */
   wall: {
-    strength: [1.8, 8.3, 6.3, 7, 7, 5.8, 4.8],
+    strength: [1.8, 9, 7, 8, 8, 6.6, 5.4],
     /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
     lifeExponent: 0.5,
-    gateShare: 0.5,
-    rampShare: 0.3,
+    gates: [0.4, 0.45],
+    ramps: [
+      [0.15, 0.3],
+      [0.25, 0.35],
+      [0.3, 0.4],
+    ],
   },
+  /**
+   * Fights long enough to watch the build (neuausrichtung-v1.md 5.5): enemies get this much more
+   * Life by stage kind, in every act of a run (not the finale or the Wildfire). The boss also
+   * hits a little softer, since its fight gets longer. Targets: normal 20–30 s, Elite 35–50 s,
+   * Gatekeeper 45–70 s, boss 60–100 s.
+   */
+  fightLength: {
+    life: { normal: 1.4, elite: 1.25, gate: 1.7, boss: 1.5 },
+    bossDamage: 0.9,
+  },
+  /** Hearth Embers (neuausrichtung-v1.md 5.4): a won Waymark before the boss heals this much. */
+  hearthEmbers: 0.25,
+  /** The Hearth path of a fork (6.2): its second stage won heals this much. */
+  hearthPath: 0.25,
   /**
    * Act bosses have this much more Life than their content value, so a boss fight lasts about
    * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.

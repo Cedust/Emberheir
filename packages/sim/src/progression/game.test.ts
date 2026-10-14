@@ -38,7 +38,7 @@ import {
   rollRuneDrops,
 } from "./game";
 import { requiredLevel } from "../items/equipment";
-import { bossLevel, levelCap } from "./leveling";
+import { levelCap } from "./leveling";
 import { Rng } from "../rng";
 import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
@@ -110,6 +110,18 @@ describe("game loop", () => {
     expect(rewardsDone(s.run?.rewards ?? fail())).toBe(true);
     s = act(s, { type: "continue" });
     expect(s.run).toMatchObject({ stage: 2, phase: "intermission", encounter: null });
+  });
+
+  it("a won Waymark before the boss heals with Hearth Embers", () => {
+    let s = act(start(), { type: "setOut", actId: "test-act" });
+    s = { ...s, run: s.run && { ...s.run, lifeFraction: 0.5 } };
+    s = act(s, { type: "startStage" });
+    const fight = encounterFight(s, data);
+    fight.runToEnd();
+    const left = outcomeOf(fight).heroLife;
+    s = act(s, { type: "resolveFight" });
+    // Stage 1 of the 3-stage test act is its first Waymark.
+    expect(s.run?.lifeFraction).toBeCloseTo(Math.min(1, left + PROGRESSION.hearthEmbers));
   });
 
   it("clears the act after the boss: back to Camp, Kaelen joins, Pity resets", () => {
@@ -451,11 +463,11 @@ describe("game loop", () => {
     ]);
     expect(levelCap(s.legacy.prestige)).toBe(30);
 
-    // The new run's level band starts at the old boss level.
+    // The new run's world burns 5 levels below the old Level Cap (neuausrichtung-v1.md 5.1).
     s = act(s, { type: "dismissNotice" });
     expect(moveBlockReason(s, data, "stashed", "inventory")).toBeUndefined();
     s = act(s, { type: "setOut", actId: "test-act" }, { type: "startStage" });
-    expect(s.run?.encounter?.level).toBe(bossLevel(0));
+    expect(s.run?.encounter?.level).toBe(levelCap(0) - PROGRESSION.worldBelowCap);
     expect(actUnlocked(s, data, "deadly-act")).toBe(false);
   });
 
@@ -469,7 +481,7 @@ describe("game loop", () => {
       keystones: 1,
       levelCap: 30,
       acts: 2,
-      levelBand: { start: 10, end: 20 },
+      levelBand: { start: 15, end: 20 },
     });
     // Never more acts than the game has.
     expect(prestigeRewards(data, 9).acts).toBe(3);
@@ -497,16 +509,17 @@ describe("the road through the acts", () => {
     expect(isHarvestAct(data, "final-act", 5)).toBe(true);
   });
 
-  it("the level band rises evenly over all stages of the run", () => {
+  it("the whole world burns at the new level: 5 below the last Level Cap up to the new boss", () => {
     expect(levelBand(0)).toEqual({ start: 1, end: 10 });
-    expect(levelBand(1)).toEqual({ start: 10, end: 20 });
-    expect(levelBand(3)).toEqual({ start: 30, end: 45 });
+    // Level Cap of run 1 is 20, so run 2's Act 1 starts at 15.
+    expect(levelBand(1)).toEqual({ start: 15, end: 20 });
+    expect(levelBand(3)).toEqual({ start: 35, end: 45 });
     // Run 1: one act of 3 stages, 1 → 10.
     expect([1, 2, 3].map((st) => stageMonsterLevel(data, TEST_ACT, st, 0))).toEqual([1, 6, 10]);
-    // Run 2: two acts, 6 stages from 10 to 20; the second act carries on where the first ends.
+    // Run 2: two acts, 6 stages from 15 to 20; the second act carries on where the first ends.
     const second = data.acts[1] ?? fail();
-    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(10);
-    expect(stageMonsterLevel(data, second, 1, 1)).toBe(16);
+    expect(stageMonsterLevel(data, TEST_ACT, 1, 1)).toBe(15);
+    expect(stageMonsterLevel(data, second, 1, 1)).toBe(18);
     expect(stageMonsterLevel(data, second, 3, 1)).toBe(20);
   });
 

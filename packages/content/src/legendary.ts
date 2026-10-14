@@ -107,7 +107,7 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     name: "Rotheart",
     runes: ["venom", "moss"],
     slots: ["offHand", "helm"],
-    bonuses: { poisonChance: 0.35, ailmentDuration: 0.2 },
+    bonuses: { poisonChance: 0.35, ailmentEffect: 0.2 },
     rules: { dotLifesteal: 0.15 },
   },
   {
@@ -656,7 +656,7 @@ export const BOSS_TROPHIES: readonly UniqueDefinition[] = [
     "mothers-brood",
     [
       ["poison-chance", 0.7],
-      ["ailment-duration", 0.6],
+      ["ailment-effect", 0.6],
       ["life", 0.5],
     ],
     "Something inside it still hums a lullaby.",
@@ -760,7 +760,7 @@ export const BOSS_TROPHIES: readonly UniqueDefinition[] = [
     "endless-hunger",
     [
       ["corruption-chance", 0.7],
-      ["ailment-duration", 0.6],
+      ["ailment-effect", 0.6],
       ["void-resistance", 0.6],
     ],
     "It is never full. Neither are you, now.",
