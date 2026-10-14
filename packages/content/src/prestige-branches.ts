@@ -818,11 +818,11 @@ const BRANCHES: readonly BranchSpec[] = [
     b3: {
       name: "Toxic Tide",
       description:
-        "+12 % Chance to Poison. Your Poisons deal 30 % more damage to enemies below 50 % Life.",
+        "+12 % Chance to Poison. Your Poisons deal 15 % more damage to enemies below 50 % Life.",
       bonuses: { poisonChance: 0.12 },
       rules: {
         ailmentDamageWhen: [
-          { ailment: "poison", amount: 0.3, condition: { kind: "enemyBelow", fraction: 0.5 } },
+          { ailment: "poison", amount: 0.15, condition: { kind: "enemyBelow", fraction: 0.5 } },
         ],
       },
     },
@@ -1381,11 +1381,11 @@ const BRANCHES: readonly BranchSpec[] = [
     b3: {
       name: "Eternal Night",
       description:
-        "+12 % Chance to Corrupt. Your Corruption deals 30 % more damage while you have 50 Heat or more.",
+        "+12 % Chance to Corrupt. Your Corruption deals 15 % more damage while you have 50 Heat or more.",
       bonuses: { corruptionChance: 0.12 },
       rules: {
         ailmentDamageWhen: [
-          { ailment: "corruption", amount: 0.3, condition: { kind: "heatAtLeast", amount: 50 } },
+          { ailment: "corruption", amount: 0.15, condition: { kind: "heatAtLeast", amount: 50 } },
         ],
       },
     },

@@ -448,8 +448,8 @@ const REGIONS: readonly RegionSpec[] = [
             bonuses: { burnChance: 0.15 },
             rules: { ailmentDamage: { burn: 1.2 } },
           },
-          n("Smoulder", "Your Burns deal 25 % more damage to enemies below 50 % Life.", {
-            ailmentDamageWhen: [{ ailment: "burn", amount: 0.25, condition: below(0.5) }],
+          n("Smoulder", "Your Burns deal 15 % more damage to enemies below 50 % Life.", {
+            ailmentDamageWhen: [{ ailment: "burn", amount: 0.15, condition: below(0.5) }],
           }),
         ],
       },
@@ -512,11 +512,11 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Scorched Hide", LIFE), s(IMMOLATE), t("Ember Ash", TENACITY)],
         notable: n(
           "Pyre Heart",
-          "Your Burns deal 20 % more damage to Corrupted enemies, your Corruption 20 % more to Burning ones.",
+          "Your Burns deal 10 % more damage to Corrupted enemies, your Corruption 10 % more to Burning ones.",
           {
             ailmentDamageWhen: [
-              { ailment: "burn", amount: 0.2, condition: has("corruption") },
-              { ailment: "corruption", amount: 0.2, condition: has("burn") },
+              { ailment: "burn", amount: 0.1, condition: has("corruption") },
+              { ailment: "corruption", amount: 0.1, condition: has("burn") },
             ],
           },
         ),
@@ -526,11 +526,11 @@ const REGIONS: readonly RegionSpec[] = [
         notable: [
           n(
             "Hungering Void",
-            "Your Corruption deals 25 % more damage to enemies below 50 % Life.",
-            { ailmentDamageWhen: [{ ailment: "corruption", amount: 0.25, condition: below(0.5) }] },
+            "Your Corruption deals 15 % more damage to enemies below 50 % Life.",
+            { ailmentDamageWhen: [{ ailment: "corruption", amount: 0.15, condition: below(0.5) }] },
           ),
-          n("Cinder Heart", "Your Burns deal 25 % more damage while you have 50 Heat or more.", {
-            ailmentDamageWhen: [{ ailment: "burn", amount: 0.25, condition: heat(50) }],
+          n("Cinder Heart", "Your Burns deal 15 % more damage while you have 50 Heat or more.", {
+            ailmentDamageWhen: [{ ailment: "burn", amount: 0.15, condition: heat(50) }],
           }),
         ],
         keystones: [
@@ -560,8 +560,8 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Umbra", BARRIER), s(CORRUPT), t("Dread", TENACITY)],
         notable: n(
           "Hollow Crown",
-          "Your hits deal 20 % more damage to Corrupted enemies. Heal 3 % of the damage your ailments deal.",
-          { conditionalDamage: [more(has("corruption"), 0.2)], dotLifesteal: 0.03 },
+          "Your hits deal 10 % more damage to Corrupted enemies. Heal 3 % of the damage your ailments deal.",
+          { conditionalDamage: [more(has("corruption"), 0.1)], dotLifesteal: 0.03 },
         ),
       },
     ],
@@ -583,8 +583,8 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Septic", LIFE), s(WITHER), t("Bitter Blood", TENACITY)],
         notable: n(
           "Leeching Rot",
-          "Heal 4 % of the damage your ailments deal. Your hits deal 15 % more damage to Poisoned enemies.",
-          { dotLifesteal: 0.04, conditionalDamage: [more(has("poison"), 0.15)] },
+          "Heal 4 % of the damage your ailments deal. Your hits deal 10 % more damage to Poisoned enemies.",
+          { dotLifesteal: 0.04, conditionalDamage: [more(has("poison"), 0.1)] },
         ),
         keystones: [
           {
@@ -654,10 +654,10 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Supple", EVASION), s(ENVENOM), t("Lithe", LIFE)],
         notable: n(
           "Venom Heart",
-          "Your hits deal 2 % more damage for every Poison stack on the enemy (up to 10). Heal 2 % of the damage your ailments deal.",
+          "Your hits deal 1.5 % more damage for every Poison stack on the enemy (up to 10). Heal 2 % of the damage your ailments deal.",
           {
             conditionalDamage: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((c) =>
-              more(stacks("poison", c), 0.02),
+              more(stacks("poison", c), 0.015),
             ),
             dotLifesteal: 0.02,
           },
