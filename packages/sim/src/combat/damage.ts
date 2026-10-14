@@ -98,6 +98,8 @@ export interface HitInput {
   readonly cleanMultiplier?: number;
   /** Decides the Crit instead of the roll (Repeater: one roll for the volley). */
   readonly critOverride?: boolean;
+  /** Conversion: this share of the hit is dealt as `to` (its Damage % and the defender's layer). */
+  readonly conversion?: { readonly to: DamageType; readonly share: number };
 }
 
 export type HitOutcome =
@@ -148,14 +150,29 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
         }
       : input.attacker;
 
-  let damage = input.baseDamage * input.multiplier * (1 + increasedDamage(attacker, input.type));
+  let damage = input.baseDamage * input.multiplier;
   if (crit) damage *= COMBAT.critMultiplier;
   if (glancing) {
     damage *= parried ? COMBAT.glancingDamage : (input.glancingDamage ?? COMBAT.glancingDamage);
   } else {
     damage *= input.cleanMultiplier ?? 1;
   }
-  damage = mitigate(damage, input.type, attacker, input.attackerLevel, defender);
+  // Each part of the hit takes its own Damage % and the defender's layer against its type.
+  const conv = input.conversion;
+  const share = conv && conv.to !== input.type ? clamp(conv.share, 0, 1) : 0;
+  const part = (type: DamageType, amount: number) =>
+    amount > 0
+      ? mitigate(
+          amount * (1 + increasedDamage(attacker, type)),
+          type,
+          attacker,
+          input.attackerLevel,
+          defender,
+        )
+      : 0;
+  damage =
+    part(input.type, damage * (1 - share)) +
+    (conv && share > 0 ? part(conv.to, damage * share) : 0);
   damage *= 1 + input.defenderDamageTaken;
   // A block stops a share of the hit (D2: the shield takes the blow), so it keeps its worth
   // against the biggest late hits.

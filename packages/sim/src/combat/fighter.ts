@@ -1,6 +1,6 @@
 import { Rng } from "../rng";
 import { type AilmentStates, chillFactor, damageTakenBonus, poisonStacks } from "./ailments";
-import type { MasteryCondition, SlotCondition } from "./types";
+import type { FightMoment, RuleCondition } from "./types";
 import { COMBAT } from "./constants";
 import { type CombatEvent, type PayoffKind } from "./events";
 import { heatGainMultiplier } from "./heat";
@@ -126,6 +126,8 @@ export interface Fighter {
   critsLeft: number;
   /** Barrier given up for Glass Cannon. */
   readonly glassBarrier: number;
+  /** Fight time of the last Crit, Evade, Block, Parry and skill (Skill Web "within" conditions). */
+  readonly moments: Record<FightMoment, number>;
 }
 
 /** Sunder stacks without a Sunder rule of their own (Riposte, Bone Breaker). */
@@ -246,6 +248,7 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     freeInnate: false,
     critsLeft: 0,
     glassBarrier,
+    moments: { crit: -1e9, evade: -1e9, block: -1e9, parry: -1e9, skill: -1e9 },
   };
 }
 
@@ -391,14 +394,21 @@ export function rollRange(core: FightCore, range: DamageRange): number {
   return range.min + core.rng.next() * (range.max - range.min);
 }
 
-/** Whether a Battle Plan or Weapon Mastery condition holds for `f` right now. */
-export function conditionHolds(
-  core: FightCore,
-  f: Fighter,
-  condition: SlotCondition | MasteryCondition,
-): boolean {
+/** Remembers when a moment happened (Skill Web "within N s after …" conditions). */
+export function mark(core: FightCore, f: Fighter, moment: FightMoment): void {
+  f.moments[moment] = fightTime(core);
+}
+
+/** Whether a Battle Plan, Weapon Mastery or Skill Web condition holds for `f` right now. */
+export function conditionHolds(core: FightCore, f: Fighter, condition: RuleCondition): boolean {
   const target = core.fighters[other(f.side)];
   switch (condition.kind) {
+    case "heatAtLeast":
+      return f.heat + 1e-9 >= condition.amount;
+    case "barrierActive":
+      return f.barrier >= 1;
+    case "within":
+      return fightTime(core) - f.moments[condition.event] <= condition.seconds + 1e-9;
     case "enemyStunned":
       return target.stunned > 1e-9;
     case "enemySundered": {

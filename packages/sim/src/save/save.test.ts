@@ -142,4 +142,26 @@ describe("the real migrations", () => {
     expect(migrated.hero.mastery.learned).toEqual({ precision: 2 });
     expect(migrated.hero.mastery.choices).toEqual({ keystone: "ks1" });
   });
+
+  it("4: Skill Web v3 gives every Skill Point back and keeps the class start", () => {
+    const s = start();
+    const hero = {
+      ...s.hero,
+      classId: "sorcerer",
+      unspentSkillPoints: 2,
+      learned: {
+        "arcana-sorcerers-spark": 1,
+        "arcana-glow": 1,
+        "arcana-arcane-conduit": 1,
+        "pb-stormcaller-keystone-2": 1,
+      },
+      rotation: ["chain-lightning", null],
+    };
+    const v4 = { ...s, version: 4, hero };
+    const migrated = deserializeGame(JSON.stringify(v4));
+    expect(migrated.hero.learned).toEqual({ "arcana-sorcerers-sigil": 1 });
+    // One plain node and two Keystones (3 points each).
+    expect(migrated.hero.unspentSkillPoints).toBe(2 + 1 + 3 + 3);
+    expect(migrated.hero.rotation).toEqual([null, null]);
+  });
 });

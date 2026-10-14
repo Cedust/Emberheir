@@ -35,12 +35,13 @@ import {
   usePerk,
   withStatAilmentChances,
   conditionHolds,
+  mark,
 } from "./fighter";
 import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
 import { PERK } from "./perks";
 import { checkReactionThresholds, react } from "./rotation";
 import { applyEffect, fireTriggers, tryTrigger } from "./trigger-effects";
-import type { AilmentChance, AilmentType, DamageType, WeaponRules } from "./types";
+import type { AilmentChance, AilmentType, DamageType, RuleBonus, WeaponRules } from "./types";
 import { AILMENT_TYPES } from "./types";
 
 /**
@@ -332,8 +333,11 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   if (forceCrit) attacker.nextCrit = false;
   if (forceCrit && promised) attacker.critsLeft--;
   if (opener) attacker.openerUsed = true;
-  // Find the Gap: the first hit after a skill has a better Crit Chance.
-  const gap = rolls && attacker.afterSkill ? (wr?.critAfterSkill ?? 0) : 0;
+  // Find the Gap: the first hit after a skill has a better Crit Chance; Skill Web Notables add
+  // Crit Chance while their condition holds.
+  const gap =
+    (rolls && attacker.afterSkill ? (wr?.critAfterSkill ?? 0) : 0) +
+    ruleBonus(core, attacker, attacker.setup.rules?.conditionalCrit);
   if (rolls) attacker.afterSkill = false;
   const precise = h.precise === true || (h.mighty === true && wr?.mightyNeverGlances === true);
   let precision: number | undefined;
@@ -375,6 +379,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
           : 1) *
         (opener ? 1 + (wr?.openerDamage ?? 0) : 1) *
         (h.fromSkill ? 1 + (wr?.skillDamage ?? 0) : 1) *
+        ruleFactor(core, attacker, attacker.setup.rules?.conditionalDamage) *
+        (attacker.setup.rules?.slowDeath?.hit ?? 1) *
         // Braced: right after a Block the defender takes less.
         (now <= defender.bracedUntil + 1e-9
           ? 1 - (defender.setup.weaponRules?.braced?.reduction ?? 0)
@@ -391,6 +397,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         ? { parry: defender.setup.weaponRules.parry }
         : {}),
       cleanMultiplier: cleanMultiplier(attacker, defender, h, rolls),
+      ...conversionOf(attacker, h.type),
       ...(h.critOverride !== undefined ? { critOverride: h.critOverride } : {}),
     },
     core.rng,
@@ -402,6 +409,9 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   }
 
   const { glancing, parried } = outcome;
+  if (outcome.crit) mark(core, attacker, "crit");
+  if (outcome.blocked) mark(core, defender, "block");
+  if (parried) mark(core, defender, "parry");
   const mighty = rolls && h.mighty === true && !glancing;
   if (!glancing && rolls && attacker.cleanLineReady) attacker.cleanLineReady = false;
   // Hunter's Mark: until the first clean hit, Glancing Blows deal nothing.
@@ -453,7 +463,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   }
 
   // Combust: a Fire hit on a burning enemy sets part of the Burn off at once; it keeps burning.
-  if (h.type === "fire" && defender.ailments.burn && damage > 0) {
+  const fire = h.type === "fire" || conversionOf(attacker, h.type).conversion?.to === "fire";
+  if (fire && defender.ailments.burn && damage > 0) {
     combust(core, attacker, defender, 1);
     if (core.result) return glancing ? "glancing" : "clean";
   }
@@ -464,7 +475,9 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     if (rolls) cleanHit(core, attacker, defender, h, damage);
     // Ailments grow from the hit before "damage taken" (Shock, Keystones): their ticks take it
     // again on their own, so it counts once, not twice.
-    const hitBase = damage / (1 + damageTaken(defender));
+    // Slow Death weakens the hit, not the ailments it carries.
+    const hitBase =
+      damage / (1 + damageTaken(defender)) / (attacker.setup.rules?.slowDeath?.hit ?? 1);
     const ailmentBase = hitBase * (h.ailmentPower ?? 1);
     const deepWound = outcome.crit ? (wr?.critBleedPower ?? 1) : 1;
     for (const { ailment, chance } of withStatAilmentChances(
@@ -548,6 +561,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
 /** An attack missed the defender: Read the Blow, Ember Dance and On Evade triggers. */
 function evaded(core: FightCore, defender: Fighter, h: HitOptions): void {
   emit(core, { t: fightTime(core), type: "evade", side: defender.side, source: h.source });
+  mark(core, defender, "evade");
   const dwr = defender.setup.weaponRules;
   if (dwr?.critAfter?.includes("evade")) defender.nextCrit = true;
   if (dwr?.critsAfterEvade) defender.critsLeft = dwr.critsAfterEvade;
@@ -660,6 +674,39 @@ export function releaseStored(core: FightCore, f: Fighter, source: string): void
     blocked: false,
   });
   dealDamage(core, core.fighters[other(f.side)], damage);
+}
+
+/** Skill Web: the product of the "more" bonuses whose condition holds. */
+function ruleFactor(core: FightCore, f: Fighter, bonuses: readonly RuleBonus[] | undefined) {
+  let factor = 1;
+  for (const b of bonuses ?? []) if (conditionHolds(core, f, b.condition)) factor *= 1 + b.amount;
+  return factor;
+}
+
+/** Skill Web: the sum of the bonuses whose condition holds. */
+function ruleBonus(core: FightCore, f: Fighter, bonuses: readonly RuleBonus[] | undefined) {
+  let sum = 0;
+  for (const b of bonuses ?? []) if (conditionHolds(core, f, b.condition)) sum += b.amount;
+  return sum;
+}
+
+/** Conversion of a hit of this type (shares add up; the first target type counts). */
+function conversionOf(
+  f: Fighter,
+  type: DamageType,
+): { conversion?: { to: DamageType; share: number } } {
+  const list = (f.setup.rules?.conversion ?? []).filter((c) => c.from === type && c.to !== type);
+  const first = list[0];
+  if (!first) return {};
+  return {
+    conversion: {
+      to: first.to,
+      share: Math.min(
+        1,
+        list.reduce((s, c) => s + c.share, 0),
+      ),
+    },
+  };
 }
 
 /** Weapon Mastery multipliers on own hit damage. */
@@ -993,7 +1040,13 @@ export function dotBurst(
 export function heal(core: FightCore, f: Fighter, amount: number): void {
   // Smother: a burning fighter cannot heal at all.
   if (f.ailments.burn && core.fighters[other(f.side)].setup.weaponRules?.noHealWhileBurning) return;
-  const healed = Math.min(f.stats.maxLife - f.life, Math.round(amount * healingFactor(f.ailments)));
+  // Black Flame: Corruption cuts healing like Burn (they do not stack).
+  const blackFlame =
+    f.ailments.corruption && core.fighters[other(f.side)].setup.rules?.corruptionStopsHeal
+      ? 1 - COMBAT.burnHealingReduction
+      : 1;
+  const factor = Math.min(healingFactor(f.ailments), blackFlame);
+  const healed = Math.min(f.stats.maxLife - f.life, Math.round(amount * factor));
   if (healed <= 0) return;
   f.life += healed;
   emit(core, { t: fightTime(core), type: "heal", side: f.side, amount: healed });

@@ -15,7 +15,7 @@ test("The Skill Tree grows with the Prestige branches and their tiers", async ({
   await expect(tree.getByRole("button", { name: "Supreme Blade Dancer" })).toHaveCount(1);
   await expect(tree.getByRole("button", { name: "Bulwark" })).toHaveCount(1);
   await expect(tree.getByRole("button", { name: "Shield Wall" })).toHaveCount(0);
-  await expect(tree.getByRole("button", { name: "Cleaver" })).toHaveCount(0);
+  await expect(tree.getByRole("button", { name: "Cleaver's Arm" })).toHaveCount(0);
 
   // A deeper tier lists the node it replaces.
   await tree.getByRole("button", { name: "Counterstance" }).press("Enter");

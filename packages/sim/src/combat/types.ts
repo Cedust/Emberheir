@@ -447,6 +447,53 @@ export interface CombatRules {
   readonly barrierRecharge?: number;
   /** Raises the Resistance cap of single elements (Fire Draught: +5 %). */
   readonly maxResistance?: Readonly<Partial<Record<Element, number>>>;
+  // Skill Web v3 (neuausrichtung-v1.md 4): Notables are "if, then", not plain numbers.
+  /** Your hits deal `amount` more damage while the condition holds; each one multiplies. */
+  readonly conditionalDamage?: readonly RuleBonus[];
+  /** More Crit Chance (added) while the condition holds. */
+  readonly conditionalCrit?: readonly RuleBonus[];
+  /** Your ailments of a type deal `amount` more damage while the condition holds. */
+  readonly ailmentDamageWhen?: readonly {
+    readonly ailment: AilmentType;
+    readonly amount: number;
+    readonly condition: RuleCondition;
+  }[];
+  /** Spellblade: every skill with hits also strikes with your weapon for `multiplier`. */
+  readonly spellblade?: { readonly multiplier: number };
+  /** Arcane Conduit: skills spend all your Heat and deal 1 % more per Heat paid above the cost. */
+  readonly arcaneConduit?: boolean;
+  /** Black Flame: your Corruption cuts the enemy's healing like Burn. */
+  readonly corruptionStopsHeal?: boolean;
+  /** Slow Death: your hits deal `hit` of their damage, their ailments stay as strong as before. */
+  readonly slowDeath?: { readonly hit: number };
+  /** Conversion: `share` of your `from` damage is dealt as `to` (shares add up, at most all). */
+  readonly conversion?: readonly {
+    readonly from: DamageType;
+    readonly to: DamageType;
+    readonly share: number;
+  }[];
+}
+
+/**
+ * A state of the fight a Skill Web Notable can depend on (neuausrichtung-v1.md 4.3): the Weapon
+ * Mastery ones, Heat, an own Barrier, and "within N s after a Crit / Evade / Block / Parry / skill".
+ */
+export type RuleCondition =
+  | MasteryCondition
+  | { readonly kind: "heatAtLeast"; readonly amount: number }
+  | { readonly kind: "barrierActive" }
+  | {
+      readonly kind: "within";
+      readonly event: FightMoment;
+      readonly seconds: number;
+    };
+
+/** Moments a fighter remembers for `within` conditions. */
+export type FightMoment = "crit" | "evade" | "block" | "parry" | "skill";
+
+export interface RuleBonus {
+  readonly condition: RuleCondition;
+  readonly amount: number;
 }
 
 /** A state of the fight a Weapon Mastery bonus can depend on. */

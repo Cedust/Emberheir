@@ -1,5 +1,8 @@
 import type {
+  AilmentType,
   CombatRules,
+  FightMoment,
+  RuleCondition,
   SkillDefinition,
   SkillNode,
   SkillTreeBranch,
@@ -156,13 +159,42 @@ export function describeBonuses(bonuses: StatBonuses, weaponRange?: WeaponRange)
   return `${prefix}${parts.join(", ")}.`;
 }
 
-/** A small node: a bonus that fits its region, text from the numbers. */
-const m = (name: string, bonuses: StatBonuses, weaponRange?: WeaponRange): NodeSpec => ({
-  name,
-  bonuses,
-  ...(weaponRange ? { weaponRange } : {}),
-});
 const s = (skill: SkillDefinition): SkillSpec => ({ skill });
+
+// Travel nodes give small Defense only (neuausrichtung-v1.md 4.2): the way to a Notable costs
+// nothing and makes the hero a little tougher.
+const LIFE = { increasedLife: 0.03 };
+const ARMOR = { increasedArmor: 0.06 };
+const BARRIER = { increasedBarrier: 0.08 };
+const EVASION = { evasion: 0.02 };
+const TENACITY = { tenacity: 0.04 };
+
+/** A travel node. */
+const t = (name: string, bonuses: StatBonuses): NodeSpec => ({ name, bonuses });
+
+/** A Notable with its own text: "if, then" or a rule, never a plain number. */
+const n = (
+  name: string,
+  description: string,
+  rules: CombatRules,
+  bonuses?: StatBonuses,
+): NodeSpec => ({ name, description, rules, ...(bonuses ? { bonuses } : {}) });
+
+/** "Your hits deal X more damage while …" */
+const more = (condition: RuleCondition, amount: number) => ({ condition, amount });
+const has = (ailment: AilmentType): RuleCondition => ({ kind: "enemyHas", ailment });
+const below = (fraction: number): RuleCondition => ({ kind: "enemyBelow", fraction });
+const within = (event: FightMoment, seconds: number): RuleCondition => ({
+  kind: "within",
+  event,
+  seconds,
+});
+const heat = (amount: number): RuleCondition => ({ kind: "heatAtLeast", amount });
+const stacks = (ailment: AilmentType, count: number): RuleCondition => ({
+  kind: "enemyStacks",
+  ailment,
+  count,
+});
 
 const REGIONS: readonly RegionSpec[] = [
   {
@@ -172,35 +204,34 @@ const REGIONS: readonly RegionSpec[] = [
     hub: {
       name: "Warrior's Oath",
       classStart: "warrior",
-      description: "+6 % Physical Damage, +8 % Armor. The Warrior starts here.",
-      bonuses: { physicalDamage: 0.06, increasedArmor: 0.08 },
+      description: "+4 % max Life, +8 % Armor. The Warrior starts here.",
+      bonuses: { increasedLife: 0.04, increasedArmor: 0.08 },
     },
     spokes: [
       {
-        nodes: [
-          m("Brawn", { physicalDamage: 0.06 }),
-          s(CRUSHING_BLOW),
-          m("Grit", { increasedArmor: 0.08 }),
-        ],
-        notable: {
-          name: "Brutal Force",
-          bonuses: { physicalDamage: 0.2, increasedArmor: 0.06, lifesteal: 0.02 },
-          weaponRange: "melee",
-        },
+        nodes: [t("Thick Neck", ARMOR), s(CRUSHING_BLOW), t("Grit", LIFE)],
+        notable: n(
+          "Brutal Force",
+          "Your hits deal 30 % more damage to Stunned enemies and 20 % more while you have 50 Heat or more.",
+          { conditionalDamage: [more({ kind: "enemyStunned" }, 0.3), more(heat(50), 0.2)] },
+        ),
       },
       {
-        nodes: [
-          m("Haste", { attackSpeed: 0.04 }),
-          m("Heft", { physicalDamage: 0.06 }),
-          m("Ferocity", { physicalDamage: 0.06 }),
-        ],
+        nodes: [t("Iron Skin", ARMOR), t("Bulwark Stance", TENACITY), t("Hardy", LIFE)],
         notable: [
-          { name: "Colossus", bonuses: { physicalDamage: 0.25, increasedArmor: 0.1 } },
-          { name: "Whirlwind", bonuses: { attackSpeed: 0.12, triggerChance: 0.04 } },
+          n(
+            "Colossus",
+            "+8 % max Life. Within 3 s after you Block, your hits deal 30 % more damage.",
+            { conditionalDamage: [more(within("block", 3), 0.3)] },
+            { increasedLife: 0.08 },
+          ),
+          n("Whirlwind", "Within 3 s after a Crit, your hits deal 25 % more damage.", {
+            conditionalDamage: [more(within("crit", 3), 0.25)],
+          }),
         ],
         keystones: [
           {
-            reach: [m("Iron Resolve", { tenacity: 0.05 }), m("Bulk", { increasedArmor: 0.1 })],
+            reach: [t("Iron Resolve", TENACITY), t("Bulk", ARMOR)],
             keystone: {
               name: "Unyielding",
               description: "Your max Life is 30 % higher. You cannot Crit.",
@@ -219,19 +250,19 @@ const REGIONS: readonly RegionSpec[] = [
             weaponRange: "melee",
           },
           s(FLURRY),
-          m("Grudge", { heatFromHitsTaken: 0.5 }, "melee"),
+          t("Grudge", LIFE),
         ],
         notable: {
           name: "Unbroken",
-          bonuses: { heatFromHitsTaken: 0.5, increasedArmor: 0.06 },
+          description:
+            "While wielding a Melee Weapon: +50 % Heat from Hits Taken. Below 50 % Life your hits deal 25 % more damage.",
+          bonuses: { heatFromHitsTaken: 0.5 },
           weaponRange: "melee",
+          rules: { conditionalDamage: [more({ kind: "lifeBelow", fraction: 0.5 }, 0.25)] },
         },
         keystones: [
           {
-            reach: [
-              m("Swift Blades", { attackSpeed: 0.04 }),
-              m("War Cry", { physicalDamage: 0.06 }),
-            ],
+            reach: [t("Swift Recovery", LIFE), t("Scarred", ARMOR)],
             keystone: {
               name: "Glass Focus",
               description: "Heat no longer cools down. You take 20 % more damage.",
@@ -241,11 +272,11 @@ const REGIONS: readonly RegionSpec[] = [
         ],
       },
     ],
-    innerTravel: m("Drive", { attackSpeed: 0.04 }),
-    middleTravel: m("Tempered Steel", { physicalDamage: 0.04, heatGain: 0.03 }),
+    innerTravel: t("Drive", LIFE),
+    middleTravel: t("Tempered Steel", ARMOR),
     ward: {
       turn: -3,
-      nodes: [m("Thick Hide", { increasedLife: 0.04 }), m("Ironbark", { increasedArmor: 0.1 })],
+      nodes: [t("Thick Hide", { increasedLife: 0.04 }), t("Ironbark", { increasedArmor: 0.1 })],
       notable: { name: "Oakheart", bonuses: { increasedLife: 0.08, increasedArmor: 0.15 } },
     },
   },
@@ -253,57 +284,61 @@ const REGIONS: readonly RegionSpec[] = [
     id: "might-arcana",
     branch: "core",
     angle: -90,
-    hub: m("Kindling", { heatGain: 0.05 }),
+    hub: t("Forge Heart", { increasedLife: 0.03, increasedBarrier: 0.06 }),
     spokes: [
       {
-        nodes: [
-          m("Spark", { startingHeat: 6 }),
-          m("Flow", { heatGain: 0.05 }),
-          m("Quickening", { attackSpeed: 0.04 }),
-        ],
+        nodes: [t("Ember Skin", BARRIER), t("Steady Pulse", TENACITY), t("Warm Hide", LIFE)],
         notable: [
-          { name: "Battle Trance", bonuses: { startingHeat: 30 } },
-          { name: "Overflow", bonuses: { heatGain: 0.15 } },
+          n(
+            "Battle Trance",
+            "Start every fight with 25 Heat. With 80 Heat or more your hits deal 20 % more damage.",
+            { conditionalDamage: [more(heat(80), 0.2)] },
+            { startingHeat: 25 },
+          ),
+          n("Searing Steel", "30 % of your Physical Damage is converted to Fire.", {
+            conversion: [{ from: "physical", to: "fire", share: 0.3 }],
+          }),
         ],
       },
       {
-        nodes: [
-          m("First Spark", { startingHeat: 6 }),
-          m("Tinder", { heatGain: 0.05 }),
-          m("Fervor", { triggerChance: 0.03 }),
-        ],
-        notable: {
-          name: "Stoked",
-          bonuses: { startingHeat: 15, triggerChance: 0.08 },
-        },
+        nodes: [t("First Light", BARRIER), t("Kiln Wall", ARMOR), t("Hearth Blood", LIFE)],
+        notable: n(
+          "Stoked",
+          "Start every fight with 15 Heat. Within 3 s after a skill, your hits deal 20 % more damage.",
+          { conditionalDamage: [more(within("skill", 3), 0.2)] },
+          { startingHeat: 15 },
+        ),
       },
       {
-        nodes: [
-          m("Arcing Blade", { elementalDamage: 0.06 }),
-          m("Honed Mind", { physicalDamage: 0.04, elementalDamage: 0.04 }),
-          m("Concentration", { heatGain: 0.05 }),
-        ],
-        notable: { name: "Arcane Edge", bonuses: { physicalDamage: 0.12, elementalDamage: 0.12 } },
+        nodes: [t("Arcing Ward", BARRIER), t("Steady Mind", TENACITY), t("Focus Ward", LIFE)],
+        notable: n(
+          "Arcane Edge",
+          "20 % of your Physical Damage is converted to Lightning. Your hits deal 20 % more damage to Shocked enemies.",
+          {
+            conversion: [{ from: "physical", to: "lightning", share: 0.2 }],
+            conditionalDamage: [more(has("shock"), 0.2)],
+          },
+        ),
         keystones: [
           {
-            reach: [m("Cadence", { attackSpeed: 0.04 })],
+            reach: [t("Measured Breath", TENACITY)],
             keystone: {
               name: "Spellblade",
               description:
-                "Your Default Attack deals 40 % more damage. Skills cost 25 % more Heat.",
-              rules: { defaultAttackDamage: 1.4, skillCostMultiplier: 1.25 },
+                "Your skills also strike with your weapon for 100 % Weapon Damage. Your Default Attack deals 60 % less damage.",
+              rules: { spellblade: { multiplier: 1 }, defaultAttackDamage: 0.4 },
             },
           },
         ],
       },
     ],
-    innerTravel: m("Flux", { elementalDamage: 0.05 }),
-    middleTravel: m("Charged Air", { heatGain: 0.03, elementalDamage: 0.04 }),
+    innerTravel: t("Ward Flux", BARRIER),
+    middleTravel: t("Charged Skin", LIFE),
     ward: {
       turn: 6,
       nodes: [
-        m("Warding Rune", { increasedBarrier: 0.12 }),
-        m("Hearthguard", { increasedLife: 0.04 }),
+        t("Warding Rune", { increasedBarrier: 0.12 }),
+        t("Hearthguard", { increasedLife: 0.04 }),
       ],
       notable: { name: "Spellguard", bonuses: { increasedBarrier: 0.2, increasedArmor: 0.1 } },
     },
@@ -313,32 +348,28 @@ const REGIONS: readonly RegionSpec[] = [
     branch: "arcana",
     angle: -45,
     hub: {
-      name: "Sorcerer's Spark",
+      name: "Sorcerer's Sigil",
       classStart: "sorcerer",
-      description:
-        "+6 % Elemental Damage, start every fight with +6 Heat. The Sorcerer starts here.",
-      bonuses: { elementalDamage: 0.06, startingHeat: 6 },
+      description: "+10 % Barrier, +3 % max Life. The Sorcerer starts here.",
+      bonuses: { increasedBarrier: 0.1, increasedLife: 0.03 },
     },
     spokes: [
       {
-        nodes: [
-          m("Crackle", { shockChance: 0.05 }),
-          s(CHAIN_LIGHTNING),
-          m("Intensity", { elementalDamage: 0.06 }),
-        ],
-        notable: {
-          name: "Storm Weaver",
-          bonuses: { shockChance: 0.08, elementalPenetration: 0.05 },
-        },
+        nodes: [t("Static Ward", BARRIER), s(CHAIN_LIGHTNING), t("Clear Mind", TENACITY)],
+        notable: n(
+          "Storm Weaver",
+          "Your hits deal 10 % more damage for every Shock stack on the enemy.",
+          {
+            conditionalDamage: [1, 2, 3, 4, 5].map((c) => more(stacks("shock", c), 0.1)),
+          },
+        ),
       },
       {
-        nodes: [
-          m("Mindfire", { elementalDamage: 0.06 }),
-          m("Insight", { allResistance: 0.05 }),
-          m("Attunement", { elementalPenetration: 0.03 }),
-        ],
+        nodes: [t("Mind Shield", BARRIER), t("Insight", LIFE), t("Inner Calm", TENACITY)],
         notable: [
-          { name: "Tempest", bonuses: { shockChance: 0.12, elementalPenetration: 0.05 } },
+          n("Tempest", "Your hits against a Shocked enemy have +12 % Crit Chance.", {
+            conditionalCrit: [more(has("shock"), 0.12)],
+          }),
           {
             name: "Glacier",
             description: "+12 % Chill Chance. Your hits deal 25 % more damage to Chilled enemies.",
@@ -349,21 +380,17 @@ const REGIONS: readonly RegionSpec[] = [
         keystones: [
           {
             turn: -6,
-            reach: [m("Lucidity", { heatGain: 0.05 }), m("Resonance", { elementalDamage: 0.06 })],
+            reach: [t("Lucidity", BARRIER), t("Echo Ward", LIFE)],
             keystone: {
               name: "Arcane Conduit",
               description:
-                "Skills cost 30 % less Heat. Your Default Attack deals 50 % less damage.",
-              rules: { skillCostMultiplier: 0.7, defaultAttackDamage: 0.5 },
+                "Your skills spend all your Heat and deal 1 % more damage for every Heat above their cost. Your Default Attack deals 30 % less damage.",
+              rules: { arcaneConduit: true, defaultAttackDamage: 0.7 },
             },
           },
           {
             turn: 6,
-            reach: [
-              m("Galvanize", { shockChance: 0.05 }),
-              m("Rimecall", { chillChance: 0.05 }),
-              m("Upwelling", { elementalDamage: 0.06 }),
-            ],
+            reach: [t("Grounding", TENACITY), t("Frost Skin", BARRIER), t("Upwelling", LIFE)],
             keystone: {
               name: "Elemental Overload",
               description:
@@ -380,21 +407,23 @@ const REGIONS: readonly RegionSpec[] = [
         ],
       },
       {
-        nodes: [m("Frost", { chillChance: 0.05 }), s(ICE_LANCE), m("Clarity", { heatGain: 0.05 })],
-        notable: {
-          name: "Kindled Mind",
-          bonuses: { elementalDamage: 0.2, heatGain: 0.1 },
-          weaponRange: "ranged",
-        },
+        nodes: [t("Rime Ward", BARRIER), s(ICE_LANCE), t("Still Mind", TENACITY)],
+        notable: n(
+          "Kindled Mind",
+          "Your hits deal 20 % more damage to Chilled enemies and 15 % more while your Barrier holds.",
+          {
+            conditionalDamage: [more(has("chill"), 0.2), more({ kind: "barrierActive" }, 0.15)],
+          },
+        ),
       },
     ],
-    innerTravel: m("Glow", { elementalDamage: 0.05 }),
-    middleTravel: m("Searing Wind", { elementalDamage: 0.04, burnChance: 0.03 }),
+    innerTravel: t("Glow Ward", BARRIER),
+    middleTravel: t("Heat Shimmer", LIFE),
     ward: {
       turn: 2,
       nodes: [
-        m("Ward Weave", { increasedBarrier: 0.12 }),
-        m("Quick Ward", { increasedLife: 0.04 }),
+        t("Ward Weave", { increasedBarrier: 0.12 }),
+        t("Quick Ward", { increasedLife: 0.04 }),
       ],
       notable: {
         name: "Ever-Ward",
@@ -408,14 +437,10 @@ const REGIONS: readonly RegionSpec[] = [
     id: "arcana-affliction",
     branch: "core",
     angle: 0,
-    hub: m("Ember Ward", { allResistance: 0.05 }),
+    hub: t("Cinder Mantle", { increasedLife: 0.03, tenacity: 0.04 }),
     spokes: [
       {
-        nodes: [
-          m("Sparks", { burnChance: 0.05 }),
-          m("Fervent Mind", { elementalDamage: 0.06 }),
-          m("Lingering Heat", { ailmentEffect: 0.04 }),
-        ],
+        nodes: [t("Soot Skin", LIFE), t("Smoke Veil", EVASION), t("Ash Blood", TENACITY)],
         notable: [
           {
             name: "Firestarter",
@@ -423,27 +448,26 @@ const REGIONS: readonly RegionSpec[] = [
             bonuses: { burnChance: 0.15 },
             rules: { ailmentDamage: { burn: 1.2 } },
           },
-          { name: "Smoulder", bonuses: { ailmentEffect: 0.3 } },
+          n("Smoulder", "Your Burns deal 40 % more damage to enemies below 50 % Life.", {
+            ailmentDamageWhen: [{ ailment: "burn", amount: 0.4, condition: below(0.5) }],
+          }),
         ],
       },
       {
-        nodes: [
-          m("Scorch", { elementalDamage: 0.06 }),
-          s(METEOR),
-          m("Embers", { burnChance: 0.05 }),
-        ],
-        notable: { name: "Pyroclasm", bonuses: { elementalDamage: 0.15, burnChance: 0.1 } },
+        nodes: [t("Heat Ward", BARRIER), s(METEOR), t("Ember Hide", LIFE)],
+        notable: n("Pyroclasm", "Your hits deal 25 % more damage to Burning enemies.", {
+          conditionalDamage: [more(has("burn"), 0.25)],
+        }),
         keystones: [
           {
-            reach: [
-              m("Ashfall", { burnChance: 0.05 }),
-              m("Conflagrate", { elementalDamage: 0.06 }),
-            ],
+            reach: [t("Ashfall", LIFE), t("Charred Skin", ARMOR)],
             keystone: {
               name: "Black Flame",
-              description: "Your Burns also Corrupt. Your Default Attack deals 25 % less damage.",
+              description:
+                "Your Burns also Corrupt, and your Corruption cuts healing like Burn. Your Default Attack deals 25 % less damage.",
               rules: {
                 ailmentEcho: [{ from: "burn", to: "corruption" }],
+                corruptionStopsHeal: true,
                 defaultAttackDamage: 0.75,
               },
             },
@@ -451,23 +475,26 @@ const REGIONS: readonly RegionSpec[] = [
         ],
       },
       {
-        nodes: [
-          m("Ashen Skin", { fireResistance: 0.08, coldResistance: 0.08 }),
-          m("Ward Runes", { allResistance: 0.05 }),
-          m("Foreboding", { ailmentEffect: 0.04 }),
+        nodes: [t("Ashen Skin", TENACITY), t("Ward Runes", BARRIER), t("Foreboding", LIFE)],
+        notable: [
+          n(
+            "Heart of Embers",
+            "+10 % Tenacity. Your hits deal 20 % more damage while your Barrier holds.",
+            { conditionalDamage: [more({ kind: "barrierActive" }, 0.2)] },
+            { tenacity: 0.1 },
+          ),
+          n("Void Ember", "30 % of your Fire Damage is converted to Void.", {
+            conversion: [{ from: "fire", to: "void", share: 0.3 }],
+          }),
         ],
-        notable: { name: "Heart of Embers", bonuses: { allResistance: 0.1, tenacity: 0.1 } },
       },
     ],
-    innerTravel: m("Kindled Path", { burnChance: 0.05 }),
-    middleTravel: m("Black Smoke", { ailmentEffect: 0.03, burnChance: 0.03 }),
+    innerTravel: t("Kindled Path", BARRIER),
+    middleTravel: t("Black Smoke", TENACITY),
     ward: {
       turn: 8,
-      nodes: [
-        m("Ashen Veil", { increasedBarrier: 0.12 }),
-        m("Warm Blood", { increasedLife: 0.04 }),
-      ],
-      notable: { name: "Ember Mantle", bonuses: { increasedBarrier: 0.15, allResistance: 0.06 } },
+      nodes: [t("Ash Weave", { increasedBarrier: 0.12 }), t("Warm Blood", { increasedLife: 0.04 })],
+      notable: { name: "Ember Mantle", bonuses: { increasedBarrier: 0.15, increasedLife: 0.05 } },
     },
   },
   {
@@ -477,57 +504,49 @@ const REGIONS: readonly RegionSpec[] = [
     hub: {
       name: "Warlock's Brand",
       classStart: "warlock",
-      description: "+5 % Chance to Corrupt, +4 % Ailment Effect. The Warlock starts here.",
-      bonuses: { corruptionChance: 0.05, ailmentEffect: 0.04 },
+      description: "+4 % max Life, +6 % Tenacity. The Warlock starts here.",
+      bonuses: { increasedLife: 0.04, tenacity: 0.06 },
     },
     spokes: [
       {
-        nodes: [
-          m("Kindle", { burnChance: 0.05 }),
-          s(IMMOLATE),
-          m("Ember Ash", { elementalDamage: 0.06 }),
-        ],
-        notable: { name: "Pyromancer", bonuses: { burnChance: 0.1, elementalDamage: 0.1 } },
+        nodes: [t("Scorched Hide", LIFE), s(IMMOLATE), t("Ember Ash", TENACITY)],
+        notable: n(
+          "Pyre Heart",
+          "Your Burns deal 30 % more damage to Corrupted enemies, your Corruption 30 % more to Burning ones.",
+          {
+            ailmentDamageWhen: [
+              { ailment: "burn", amount: 0.3, condition: has("corruption") },
+              { ailment: "corruption", amount: 0.3, condition: has("burn") },
+            ],
+          },
+        ),
       },
       {
-        nodes: [
-          m("Blight", { corruptionChance: 0.05 }),
-          s(SOUL_HARVEST),
-          m("Malice", { ailmentEffect: 0.04 }),
-        ],
+        nodes: [t("Blight", LIFE), s(SOUL_HARVEST), t("Grim Ward", BARRIER)],
         notable: [
-          {
-            name: "Hungering Void",
-            description: "Your Corruption deals 30 % more damage.",
-            rules: { ailmentDamage: { corruption: 1.3 } },
-          },
-          {
-            name: "Cinder Heart",
-            description: "Your Burns deal 30 % more damage.",
-            rules: { ailmentDamage: { burn: 1.3 } },
-          },
+          n(
+            "Hungering Void",
+            "Your Corruption deals 40 % more damage to enemies below 50 % Life.",
+            { ailmentDamageWhen: [{ ailment: "corruption", amount: 0.4, condition: below(0.5) }] },
+          ),
+          n("Cinder Heart", "Your Burns deal 40 % more damage while you have 50 Heat or more.", {
+            ailmentDamageWhen: [{ ailment: "burn", amount: 0.4, condition: heat(50) }],
+          }),
         ],
         keystones: [
           {
             turn: -6,
-            reach: [
-              m("Rot Within", { ailmentEffect: 0.04 }),
-              m("Withering", { elementalDamage: 0.06 }),
-            ],
+            reach: [t("Rot Within", TENACITY), t("Withering", LIFE)],
             keystone: {
               name: "Slow Death",
               description:
-                "Your ailments deal 50 % more damage over time. Your Default Attack deals 30 % less.",
-              rules: { dotDamage: 1.5, defaultAttackDamage: 0.7 },
+                "Your hits deal 50 % less damage, but the ailments they cause stay as strong. Your ailments deal 25 % more damage.",
+              rules: { slowDeath: { hit: 0.5 }, dotDamage: 1.25 },
             },
           },
           {
             turn: 6,
-            reach: [
-              m("Ash Pact", { corruptionChance: 0.05 }),
-              m("Grave Cold", { tenacity: 0.05 }),
-              m("Soul Ember", { ailmentEffect: 0.04 }),
-            ],
+            reach: [t("Ash Oath", LIFE), t("Grave Cold", TENACITY), t("Soul Ember", BARRIER)],
             keystone: {
               name: "Pact of Ash",
               description:
@@ -538,25 +557,19 @@ const REGIONS: readonly RegionSpec[] = [
         ],
       },
       {
-        nodes: [
-          m("Umbra", { corruptionChance: 0.05 }),
-          s(CORRUPT),
-          m("Dread", { ailmentEffect: 0.04 }),
-        ],
-        notable: {
-          name: "Void Lord",
-          description:
-            "+10 % Corruption Chance, +15 % Ailment Effect. Heal 2 % of the damage your ailments deal.",
-          bonuses: { corruptionChance: 0.1, ailmentEffect: 0.15 },
-          rules: { dotLifesteal: 0.02 },
-        },
+        nodes: [t("Umbra", BARRIER), s(CORRUPT), t("Dread", TENACITY)],
+        notable: n(
+          "Hollow Crown",
+          "Your hits deal 20 % more damage to Corrupted enemies. Heal 3 % of the damage your ailments deal.",
+          { conditionalDamage: [more(has("corruption"), 0.2)], dotLifesteal: 0.03 },
+        ),
       },
     ],
-    innerTravel: m("Decay", { ailmentEffect: 0.04 }),
-    middleTravel: m("Mire", { ailmentEffect: 0.03, poisonChance: 0.03 }),
+    innerTravel: t("Decay", LIFE),
+    middleTravel: t("Mire", TENACITY),
     ward: {
       turn: 8,
-      nodes: [m("Grave Hide", { increasedLife: 0.04 }), m("Stubborn", { tenacity: 0.08 })],
+      nodes: [t("Grave Hide", { increasedLife: 0.04 }), t("Stubborn", { tenacity: 0.08 })],
       notable: { name: "Deathless", bonuses: { increasedLife: 0.1, tenacity: 0.1 } },
     },
   },
@@ -564,56 +577,65 @@ const REGIONS: readonly RegionSpec[] = [
     id: "affliction-rupture",
     branch: "core",
     angle: 90,
-    hub: m("Rampart", { increasedArmor: 0.08 }),
+    hub: t("Rampart", { increasedArmor: 0.08, tenacity: 0.04 }),
     spokes: [
       {
-        nodes: [m("Septic", { poisonChance: 0.05 }), s(WITHER), m("Rot", { ailmentEffect: 0.04 })],
-        notable: {
-          name: "Leeching Rot",
-          description: "Heal 4 % of the damage your ailments deal. +10 % Ailment Effect.",
-          bonuses: { ailmentEffect: 0.1 },
-          rules: { dotLifesteal: 0.04 },
-        },
+        nodes: [t("Septic", LIFE), s(WITHER), t("Bitter Blood", TENACITY)],
+        notable: n(
+          "Leeching Rot",
+          "Heal 4 % of the damage your ailments deal. Your hits deal 15 % more damage to Poisoned enemies.",
+          { dotLifesteal: 0.04, conditionalDamage: [more(has("poison"), 0.15)] },
+        ),
         keystones: [
           {
             turn: -6,
-            reach: [m("Fester", { poisonChance: 0.05 }), m("Pestilence", { ailmentEffect: 0.04 })],
+            reach: [t("Fester", LIFE), t("Pestilence", TENACITY)],
             keystone: {
-              name: "Plague Bearer",
-              description: "Your Poisons deal 50 % more damage. Your Bleeds deal 50 % less.",
-              rules: { ailmentDamage: { poison: 1.5, bleed: 0.5 } },
+              name: "Blood and Bile",
+              description:
+                "Your Bleeds also Poison and your Poisons also make the enemy Bleed. Your hits deal 10 % less damage.",
+              rules: {
+                ailmentEcho: [
+                  { from: "bleed", to: "poison" },
+                  { from: "poison", to: "bleed" },
+                ],
+                hitDamage: 0.9,
+              },
             },
           },
         ],
       },
       {
-        nodes: [
-          m("Iron Hide", { increasedArmor: 0.08 }),
-          m("Resolve", { tenacity: 0.05 }),
-          m("Ashguard", { allResistance: 0.05 }),
-        ],
-        notable: {
-          name: "Iron Will",
-          bonuses: { tenacity: 0.15, increasedArmor: 0.1, allResistance: 0.05 },
-        },
+        nodes: [t("Iron Hide", ARMOR), t("Resolve", TENACITY), t("Ashguard", LIFE)],
+        notable: n(
+          "Iron Will",
+          "+15 % Tenacity, +10 % Armor. Within 3 s after you Block, your hits deal 25 % more damage.",
+          { conditionalDamage: [more(within("block", 3), 0.25)] },
+          { tenacity: 0.15, increasedArmor: 0.1 },
+        ),
       },
       {
-        nodes: [
-          m("Toxin", { poisonChance: 0.05 }),
-          s(TOXIC_BURST),
-          m("Thick Blood", { tenacity: 0.05 }),
-        ],
+        nodes: [t("Leatherback", ARMOR), s(TOXIC_BURST), t("Thick Blood", TENACITY)],
         notable: [
-          { name: "Stoneskin", bonuses: { increasedArmor: 0.12, allResistance: 0.08 } },
-          { name: "Bloodthirst", bonuses: { lifesteal: 0.02 } },
+          {
+            name: "Stoneskin",
+            description: "+15 % Armor, +5 % max Life.",
+            bonuses: { increasedArmor: 0.15, increasedLife: 0.05 },
+          },
+          n(
+            "Bloodthirst",
+            "+2 % Lifesteal. Below 50 % Life your hits deal 20 % more damage.",
+            { conditionalDamage: [more({ kind: "lifeBelow", fraction: 0.5 }, 0.2)] },
+            { lifesteal: 0.02 },
+          ),
         ],
       },
     ],
-    innerTravel: m("Sinew", { tenacity: 0.05 }),
-    middleTravel: m("Scar Tissue", { increasedArmor: 0.05, poisonChance: 0.03 }),
+    innerTravel: t("Sinew", TENACITY),
+    middleTravel: t("Scar Tissue", ARMOR),
     ward: {
       turn: 8,
-      nodes: [m("Light Step", { evasion: 0.03 }), m("Lean Muscle", { increasedLife: 0.04 })],
+      nodes: [t("Light Step", { evasion: 0.03 }), t("Lean Muscle", { increasedLife: 0.04 })],
       notable: { name: "Ghost Step", bonuses: { evasion: 0.06, increasedLife: 0.06 } },
     },
   },
@@ -624,84 +646,59 @@ const REGIONS: readonly RegionSpec[] = [
     hub: {
       name: "Reaver's Edge",
       classStart: "reaver",
-      description: "+5 % Chance to Bleed, +5 % Physical Damage. The Reaver starts here.",
-      bonuses: { bleedChance: 0.05, physicalDamage: 0.05 },
+      description: "+3 % Evasion, +3 % max Life. The Reaver starts here.",
+      bonuses: { evasion: 0.03, increasedLife: 0.03 },
     },
     spokes: [
       {
-        nodes: [
-          m("Venom Gland", { poisonChance: 0.05 }),
-          s(ENVENOM),
-          m("Patience", { ailmentEffect: 0.04 }),
-        ],
-        notable: {
-          name: "Venomancer",
-          description:
-            "+10 % Poison Chance, +15 % Ailment Effect. Heal 2 % of the damage your ailments deal.",
-          bonuses: { poisonChance: 0.1, ailmentEffect: 0.15 },
-          rules: { dotLifesteal: 0.02 },
-        },
+        nodes: [t("Supple", EVASION), s(ENVENOM), t("Lithe", LIFE)],
+        notable: n(
+          "Venom Heart",
+          "Your hits deal 2 % more damage for every Poison stack on the enemy (up to 10). Heal 2 % of the damage your ailments deal.",
+          {
+            conditionalDamage: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((c) =>
+              more(stacks("poison", c), 0.02),
+            ),
+            dotLifesteal: 0.02,
+          },
+        ),
       },
       {
-        nodes: [
-          m("Cruelty", { bleedChance: 0.05 }),
-          s(REND),
-          m("Lingering Wounds", { ailmentEffect: 0.04 }),
-        ],
+        nodes: [t("Scarred Hide", ARMOR), s(REND), t("Tough Sinew", TENACITY)],
         notable: [
-          {
-            name: "Exsanguinate",
-            description: "Your Bleeds deal 35 % more damage.",
-            rules: { ailmentDamage: { bleed: 1.35 } },
-          },
-          { name: "Bloodletter", bonuses: { bleedChance: 0.15, ailmentEffect: 0.2 } },
+          n("Exsanguinate", "Your Bleeds deal 40 % more damage to enemies below 50 % Life.", {
+            ailmentDamageWhen: [{ ailment: "bleed", amount: 0.4, condition: below(0.5) }],
+          }),
+          n("Red Tide", "Your hits deal 25 % more damage to Bleeding enemies.", {
+            conditionalDamage: [more(has("bleed"), 0.25)],
+          }),
         ],
         keystones: [
           {
             turn: -6,
-            reach: [
-              m("Open Wounds", { bleedChance: 0.05 }),
-              m("Savagery", { physicalDamage: 0.06 }),
-            ],
+            reach: [t("Hard Lessons", LIFE), t("Battle Hardened", ARMOR)],
             keystone: {
               name: "Blood Price",
               description: "Your Crits always Bleed. Your Crit Chance is halved.",
               rules: { critsApplyBleed: true, critChanceMultiplier: 0.5 },
             },
           },
-          {
-            turn: 6,
-            reach: [
-              m("Deep Cut", { bleedChance: 0.05 }),
-              m("Red Mist", { attackSpeed: 0.04 }),
-              m("Blood Rush", { physicalDamage: 0.06 }),
-            ],
-            keystone: {
-              name: "Hemomancer",
-              description: "Your Bleeds deal 50 % more damage. Your Poisons deal 50 % less.",
-              rules: { ailmentDamage: { bleed: 1.5, poison: 0.5 } },
-            },
-          },
         ],
       },
       {
-        nodes: [
-          m("Serrate", { physicalDamage: 0.06 }),
-          s(SERRATED_EDGE),
-          m("Sharpened", { critChance: 0.015 }),
-        ],
-        notable: {
-          name: "Butcher",
-          bonuses: { bleedChance: 0.1, physicalDamage: 0.1 },
-          weaponRange: "melee",
-        },
+        nodes: [t("Quick Step", EVASION), s(SERRATED_EDGE), t("Wary", TENACITY)],
+        notable: n(
+          "Flayer",
+          "Your hits deal 15 % more damage to Bleeding enemies and 15 % more to enemies below 50 % Life.",
+          { conditionalDamage: [more(has("bleed"), 0.15), more(below(0.5), 0.15)] },
+        ),
       },
     ],
-    innerTravel: m("Bite", { bleedChance: 0.05 }),
-    middleTravel: m("Barbs", { bleedChance: 0.03, critChance: 0.01 }),
+    innerTravel: t("Bite", EVASION),
+    middleTravel: t("Thornhide", ARMOR),
     ward: {
       turn: 8,
-      nodes: [m("Side Step", { evasion: 0.03 }), m("Wiry", { increasedLife: 0.04 })],
+      nodes: [t("Side Step", { evasion: 0.03 }), t("Wiry", { increasedLife: 0.04 })],
       notable: { name: "Shadow Dancer", bonuses: { evasion: 0.08, increasedLife: 0.05 } },
     },
   },
@@ -712,16 +709,12 @@ const REGIONS: readonly RegionSpec[] = [
     hub: {
       name: "Hunter's Eye",
       classStart: "hunter",
-      description: "+1.5 % Crit Chance, +4 % Attack Speed. The Hunter starts here.",
-      bonuses: { critChance: 0.015, attackSpeed: 0.04 },
+      description: "+3 % Evasion, +6 % Armor. The Hunter starts here.",
+      bonuses: { evasion: 0.03, increasedArmor: 0.06 },
     },
     spokes: [
       {
-        nodes: [
-          m("Pinpoint", { critChance: 0.015 }),
-          s(EXECUTE),
-          m("Cold Blood", { physicalPenetration: 0.03 }),
-        ],
+        nodes: [t("Camouflage", EVASION), s(EXECUTE), t("Cold Blood", TENACITY)],
         notable: {
           name: "Coup de Grace",
           description: "Hits deal 25 % more damage to an enemy below 30 % Life.",
@@ -729,9 +722,9 @@ const REGIONS: readonly RegionSpec[] = [
         },
         keystones: [
           {
-            reach: [m("Stalker", { critChance: 0.015 })],
+            reach: [t("Stalker", EVASION)],
             keystone: {
-              name: "Headsman",
+              name: "Final Mercy",
               description:
                 "Hits deal 60 % more damage to an enemy below 35 % Life, 15 % less while it is above.",
               rules: { execute: { below: 0.35, bonus: 0.6, above: 0.15 } },
@@ -741,30 +734,38 @@ const REGIONS: readonly RegionSpec[] = [
       },
       {
         branch: "might",
-        nodes: [
-          m("Keenness", { critChance: 0.015 }),
-          m("Draw Weight", { physicalDamage: 0.08 }, "ranged"),
-          m("Whetstone", { critChance: 0.015 }),
-        ],
-        notable: { name: "Killer Instinct", bonuses: { critChance: 0.03, triggerChance: 0.05 } },
+        nodes: [t("Leather Guard", ARMOR), t("Steady Stance", TENACITY), t("Hunter's Hide", LIFE)],
+        notable: n(
+          "Killer Instinct",
+          "Within 3 s after a Crit, your hits deal 20 % more damage and have +5 % Crit Chance.",
+          {
+            conditionalDamage: [more(within("crit", 3), 0.2)],
+            conditionalCrit: [more(within("crit", 3), 0.05)],
+          },
+        ),
       },
       {
-        nodes: [
-          m("Swift Shots", { attackSpeed: 0.04 }),
-          m("Serrations", { bleedChance: 0.05 }),
-          m("Sharp Eye", { critChance: 0.015 }),
-        ],
+        nodes: [t("Fleet", EVASION), t("Sure Footing", TENACITY), t("Weathered", LIFE)],
         notable: [
-          { name: "Killer's Eye", bonuses: { critChance: 0.05 } },
-          { name: "Opportunist", bonuses: { triggerChance: 0.1, attackSpeed: 0.04 } },
+          n(
+            "Killer's Eye",
+            "Against an enemy winding up a Heavy Attack your hits have +15 % Crit Chance and deal 20 % more damage.",
+            {
+              conditionalCrit: [more({ kind: "enemyWindup" }, 0.15)],
+              conditionalDamage: [more({ kind: "enemyWindup" }, 0.2)],
+            },
+          ),
+          n("Exploit Weakness", "Within 2 s after you Evade, your hits deal 30 % more damage.", {
+            conditionalDamage: [more(within("evade", 2), 0.3)],
+          }),
         ],
       },
     ],
-    innerTravel: m("Whetted", { physicalDamage: 0.05 }),
-    middleTravel: m("Hunter's Path", { critChance: 0.01, attackSpeed: 0.03 }),
+    innerTravel: t("Whetted", EVASION),
+    middleTravel: t("Hunter's Path", LIFE),
     ward: {
       turn: 1,
-      nodes: [m("Hardened", { increasedArmor: 0.1 }), m("Second Wind", { increasedLife: 0.04 })],
+      nodes: [t("Toughened", { increasedArmor: 0.1 }), t("Recovery", { increasedLife: 0.04 })],
       notable: {
         name: "Veteran",
         bonuses: { increasedLife: 0.08, increasedArmor: 0.1, tenacity: 0.05 },

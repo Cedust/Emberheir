@@ -18,6 +18,7 @@ import {
   other,
   payoffFactor,
   perk,
+  mark,
   rollRange,
   usePerk,
 } from "./fighter";
@@ -64,6 +65,7 @@ export function castSkill(
   });
   f.heatSpent += heatCost;
   f.lastSkillAt = fightTime(core);
+  mark(core, f, "skill");
   const wr = f.setup.weaponRules;
   const innate = wr?.innateId !== undefined && skill.id === wr.innateId;
   if (innate) f.freeInnate = false;
@@ -140,6 +142,23 @@ export function castSkill(
       continue;
     }
     applySkillEffect(core, f, target, skill, effect, level);
+  }
+  // Spellblade: a skill that hits also strikes with the weapon.
+  const blade = f.setup.rules?.spellblade;
+  if (blade && skill.hits.length > 0 && !core.result) {
+    const roll = rollRange(core, f.setup.weapon.damage);
+    landHit(core, f, {
+      source: `${skill.name} (Spellblade)`,
+      baseDamage: roll * blade.multiplier * power,
+      type: f.setup.weapon.damageType,
+      evadable: true,
+      multiplier: 1,
+      ailmentChances: f.setup.weapon.ailmentChances ?? [],
+      fromTrigger: false,
+      precisionApplies: true,
+      fromSkill: true,
+      ...(isMighty(f.setup.weapon, roll) ? { mighty: true } : {}),
+    });
   }
   if (core.result) return;
   // Master of the Wall, Impale: the Innate releases the stored damage.

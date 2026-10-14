@@ -70,7 +70,10 @@ function stepStatus(core: FightCore, f: Fighter, dt: number): void {
   for (const tick of ticks) {
     let byAilment = source.setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
     // Bleeding Out, Master of Smolder: more ailment damage while a condition holds.
-    for (const e of swr?.ailmentDamageWhen ?? []) {
+    for (const e of [
+      ...(swr?.ailmentDamageWhen ?? []),
+      ...(source.setup.rules?.ailmentDamageWhen ?? []),
+    ]) {
       if (e.ailment === tick.ailment && conditionHolds(core, source, e.condition)) {
         byAilment *= 1 + e.amount;
       }
@@ -224,11 +227,14 @@ function takeTurn(core: FightCore, f: Fighter): void {
       : 0;
   const threshold = slot ? triggerThreshold(cost, free ? 0 : slot.threshold) : 0;
   if (slot && f.heat >= threshold) {
-    const overcharge = slot.modifiers?.includes("overcharge") ? Math.max(0, f.heat - cost) : 0;
+    // Arcane Conduit: every skill spends all the Heat, without Overcharge's cap.
+    const conduit = f.setup.rules?.arcaneConduit === true;
+    const overcharge =
+      conduit || slot.modifiers?.includes("overcharge") ? Math.max(0, f.heat - cost) : 0;
     const paid = cost + overcharge;
     f.heat -= paid;
     advanceRotation(f);
-    const power = 1 + Math.min(0.5, overcharge / 100);
+    const power = 1 + (conduit ? overcharge / 100 : Math.min(0.5, overcharge / 100));
     castSlot(
       core,
       f,
