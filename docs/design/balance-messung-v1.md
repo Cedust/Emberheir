@@ -347,6 +347,7 @@ Pro Build (Run 2–7): unbroken 6,6 · smasher 5,5 · bleeder 4,9 · axe 5,5 · 
 **Warum die Penetration aufs Gear musste:** Mit den Web- und Ast-Minors ist auch die Physical Penetration weggefallen
 (Cold Blood, Steel Nerves, Keen Edge). Gegen gepanzerte Gegner fehlte sie den Physical-Builds.
 
-**Offen:** Caster und Staff (1,7–2,2) gegen Nahkampf (4,9–6,6). Die 10 % Resistenz hilft kaum, weil DoTs keine
-Resistenz kennen. Ideen für die nächste Runde: DoT-Schaden gegen die Resistenz des Gegners rechnen (wie in PoE), oder
-den Nahkampf über Leech und Block stärken. Run 7 (2,2) könnte noch eine höhere Wand vertragen.
+**Offen:** Caster und Staff (1,7–2,2) gegen Nahkampf (4,9–6,6). Die 10 % Resistenz hilft kaum: DoTs rechnen mit dem
+schon gemilderten Treffer (Resistenz zählt also einmal, wie in PoE), aber der Perk Attuned (+10 % Elemental Penetration)
+und Penetration vom Gear heben 10 % Resistenz ganz auf. Idee für die nächste Runde: 20–25 % Grundresistenz, eventuell
+mit dem Monster Level wachsend wie die Armor. Run 7 (2,2) könnte noch eine höhere Wand vertragen.
