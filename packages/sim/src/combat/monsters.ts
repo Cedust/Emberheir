@@ -111,6 +111,7 @@ export function createEnemySetup(enemy: EnemyDefinition, level: number): Combata
   const bonuses = {
     ...enemy.bonuses,
     increasedArmor: (enemy.bonuses?.increasedArmor ?? 0) + COMBAT.monsterArmorPerLevel * level - 1,
+    allResistance: (enemy.bonuses?.allResistance ?? 0) + COMBAT.monsterResistance,
   };
   return {
     name: enemy.name,
