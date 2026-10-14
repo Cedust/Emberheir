@@ -188,10 +188,16 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       0,
       COMBAT.maxBlockChance,
     ),
-    blockReduction: COMBAT.blockReduction + (perks.has("stoneguard") ? PERK.stoneguardBlock : 0),
-    barrier: Math.round(
-      Math.max(0, b.barrier) * (1 + a.intelligence * step.barrier + b.increasedBarrier),
-    ),
+    blockReduction:
+      COMBAT.blockReduction +
+      (perks.has("stoneguard") ? PERK.stoneguardBlock : 0) +
+      (setup.weaponRules?.blockReduction ?? 0),
+    // Glass Cannon gives the Barrier up (its Default Attacks hit for part of it instead).
+    barrier: setup.weaponRules?.glassCannon
+      ? 0
+      : Math.round(
+          Math.max(0, b.barrier) * (1 + a.intelligence * step.barrier + b.increasedBarrier),
+        ),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance, "fire"),
     coldResistance: resist(b.coldResistance, "cold"),

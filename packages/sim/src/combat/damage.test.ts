@@ -55,6 +55,7 @@ describe("resolveHit", () => {
       blocked: false,
       deflected: false,
       glancing: false,
+      parried: false,
     });
   });
 
@@ -130,6 +131,7 @@ describe("resolveHit", () => {
       blocked: true,
       deflected: false,
       glancing: false,
+      parried: false,
     });
     const huge = Array.from({ length: 20 }, () =>
       resolveHit(input({ defender, baseDamage: 10_000 }), r),

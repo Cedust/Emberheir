@@ -1,4 +1,4 @@
-import { COMBAT } from "../combat/constants";
+import { COMBAT, MIGHTY_SHARE } from "../combat/constants";
 import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import type {
@@ -8,6 +8,7 @@ import type {
   DamageType,
   HeatBehavior,
   SkillDefinition,
+  SkillEffect,
   StatBonuses,
   SunderRule,
   TriggerSpec,
@@ -16,14 +17,24 @@ import type {
 } from "../combat/types";
 
 /**
- * Weapon Mastery (docs/design/waffe-als-system-v1.md, weapon-mastery-baeume-v1.md): the weapon is
- * chosen with the class and never changes. Instead of weapon drops it grows with the hero: its
- * Weapon Rank follows the hero's level and raises its damage, and every Rank gives a point for
- * its own tree at Kaelen (Refine, Heat Form, Innate Form, three paths, one Keystone).
+ * Weapon Mastery (docs/design/waffe-als-system-v1.md, weapon-mastery-v2.md): the weapon is chosen
+ * with the class and never changes. Instead of weapon drops it grows with the hero: its Weapon
+ * Rank follows the hero's level and raises its damage, and every Rank gives a point for its own
+ * tree at Kaelen (Refine, Heat Form, Innate Form, three paths, one Keystone).
+ *
+ * A path (v2): Technique I (3 ranks) → Fork 1 (one of two Notables) → Technique II (3 ranks) →
+ * Fork 2 (one of two) → Path Master.
  */
 
 export type MasteryNodeKind =
-  "refine" | "minor" | "notable" | "keystone" | "heatForm" | "innateForm" | "attunement";
+  | "refine"
+  | "technique"
+  | "notable"
+  | "master"
+  | "keystone"
+  | "heatForm"
+  | "innateForm"
+  | "attunement";
 
 /** Exclusive groups: one node of a group is chosen at a time. */
 export type MasteryGroup = "heatForm" | "innateForm" | "keystone" | "attunement";
@@ -48,12 +59,29 @@ export interface MasteryEffect {
   readonly triggers?: readonly TriggerSpec[];
   /** Changes a weapon trigger by id (Heavy Head: Stagger every 3rd Smash). */
   readonly weaponTriggers?: readonly { readonly id: string; readonly n: number }[];
-  /** The Innate Form: replaces the weapon's Innate skill. */
-  readonly innate?: SkillDefinition;
   /** Attunement: the element of the Default Attack and the Innate (Wand, Staff). */
   readonly attunement?: { readonly damageType: DamageType; readonly ailment: AilmentType };
   /** Extra ailment chances of the Default Attack. */
   readonly ailmentChances?: readonly AilmentChance[];
+  /** The Innate Form: replaces the weapon's Innate skill. */
+  readonly innate?: SkillDefinition;
+  /** Changes the Innate skill: more damage (adds up), Heat Cost, extra effects, always Mighty. */
+  readonly innatePatch?: InnatePatch;
+  /** Rules that only hold once Precision reaches `atLeast` (Dead Center). */
+  readonly whenPrecision?: { readonly atLeast: number; readonly weaponRules: MasteryWeaponRules };
+  /** No more Glancing Blows; Precision above `above` becomes Crit Chance (Master of the Edge). */
+  readonly precisionToCrit?: { readonly above: number };
+}
+
+/** How a node changes the weapon's Innate skill. */
+export interface InnatePatch {
+  /** More damage (0.1 = +10 %), adds up across ranks and nodes. */
+  readonly damage?: number;
+  /** Heat Cost change (−4 = 4 less). */
+  readonly cost?: number;
+  readonly effects?: readonly SkillEffect[];
+  /** Its weapon hits are always Mighty Hits. */
+  readonly mighty?: boolean;
 }
 
 export interface MasteryNode {
@@ -61,8 +89,10 @@ export interface MasteryNode {
   readonly name: string;
   readonly description: string;
   readonly kind: MasteryNodeKind;
-  /** Path id (minor and notable nodes). */
+  /** Path id (technique, notable and master nodes). */
   readonly path?: string;
+  /** Fork of a path: of the nodes with the same fork id only one can be learned. */
+  readonly fork?: string;
   readonly maxRanks?: number;
   /** Nodes one of which must be learned first. Nodes without links are open from the start. */
   readonly links?: readonly string[];
@@ -96,6 +126,11 @@ export interface WeaponMasteryTree {
   /** Damage Range at Rank 0, as shares of Weapon Damage. */
   readonly rangeMin: number;
   readonly rangeMax: number;
+  /**
+   * Weapon Damage factor that keeps the weapon's average hit when its Damage Range changed
+   * (v2 ranges are wider; the range sets the style, not the strength). Default 1.
+   */
+  readonly damageScale?: number;
   readonly paths: readonly MasteryPath[];
   readonly nodes: readonly MasteryNode[];
 }
@@ -143,10 +178,11 @@ export const MASTERY = {
   rankCaps: [4, 7, 10, 13, 16, 18, 20],
   /** Weapon Damage factor on the weapon's base damage (balance CLI). */
   damageFactor: 1.15,
-  /** Precision and Damage Range caps. */
+  /** Precision, Damage Range and Parry caps. */
   maxPrecision: 0.95,
   maxRangeMin: 1,
-  maxRangeMax: 2,
+  maxRangeMax: 2.2,
+  maxParry: 0.3,
   /** Rank that opens the Heat Form and the Innate Form. */
   heatFormRank: 3,
   innateFormRank: 5,
@@ -261,6 +297,8 @@ export type MasteryBlockReason =
   | "rankLocked"
   /** The Keystone ring opens after 12 points. */
   | "keystoneLocked"
+  /** The other side of the fork is learned. */
+  | "forkTaken"
   | "chosen";
 
 /** Why a node cannot be learned (or chosen) right now, or undefined if it can. */
@@ -288,8 +326,16 @@ export function masteryBlockReason(
   }
   const ranks = state.learned[id] ?? 0;
   if (ranks >= (node.maxRanks ?? 1)) return "maxed";
+  if (ranks === 0 && forkTaken(tree, state, node)) return "forkTaken";
   if (ranks === 0 && !connected(tree, state, node)) return "notConnected";
   return free < 1 ? "noPoints" : undefined;
+}
+
+function forkTaken(tree: WeaponMasteryTree, state: MasteryState, node: MasteryNode): boolean {
+  if (!node.fork) return false;
+  return tree.nodes.some(
+    (n) => n.fork === node.fork && n.id !== node.id && (state.learned[n.id] ?? 0) > 0,
+  );
 }
 
 function connected(tree: WeaponMasteryTree, state: MasteryState, node: MasteryNode): boolean {
@@ -366,7 +412,11 @@ export function buildMasteryWeapon(
   level?: number,
 ): MasteryBuild {
   const growth = level === undefined ? rankGrowth(rank) : levelGrowth(level);
-  const weaponDamage = ((base.damage.min + base.damage.max) / 2) * growth * MASTERY.damageFactor;
+  const weaponDamage =
+    ((base.damage.min + base.damage.max) / 2) *
+    growth *
+    MASTERY.damageFactor *
+    (tree.damageScale ?? 1);
   const effects = activeEffects(tree, state, echo, weaponDamage);
   let precision = tree.precision;
   let rangeMin = tree.rangeMin;
@@ -383,7 +433,13 @@ export function buildMasteryWeapon(
   const patches = new Map<string, number>();
   let maxCap: number | undefined;
   let minSet: number | undefined;
+  const innatePatches: InnatePatch[] = [];
+  const precisionRules: NonNullable<MasteryEffect["whenPrecision"]>[] = [];
+  let toCrit: number | undefined;
   for (const e of effects) {
+    if (e.innatePatch) innatePatches.push(e.innatePatch);
+    if (e.whenPrecision) precisionRules.push(e.whenPrecision);
+    if (e.precisionToCrit) toCrit = Math.min(toCrit ?? 1, e.precisionToCrit.above);
     precision += e.precision ?? 0;
     rangeMin += e.rangeMin ?? 0;
     rangeMax += e.rangeMax ?? 0;
@@ -402,12 +458,20 @@ export function buildMasteryWeapon(
   }
   if (minSet !== undefined) rangeMin = minSet;
   if (maxCap !== undefined) rangeMax = Math.min(rangeMax, maxCap);
+  // Master of the Edge: Precision past the mark turns into Crit Chance.
+  const rawPrecision = precision;
+  if (toCrit !== undefined && rawPrecision > toCrit) {
+    bonuses.push({ critChance: rawPrecision - toCrit });
+  }
   precision = Math.min(MASTERY.maxPrecision, Math.max(0, precision));
   rangeMax = Math.min(MASTERY.maxRangeMax, rangeMax);
   rangeMin = Math.min(MASTERY.maxRangeMin, rangeMax, Math.max(0, rangeMin));
+  for (const p of precisionRules) {
+    if (precision + 1e-9 >= p.atLeast) weaponRules.push(p.weaponRules);
+  }
   const merged = mergeWeaponRules(...weaponRules);
-  // Focused Will and Anvil: no Glancing Blows at all.
-  if (merged.noGlancing) precision = 1;
+  // Focused Will, Anvil and Master of the Edge: no Glancing Blows at all.
+  if (merged.noGlancing || toCrit !== undefined) precision = 1;
 
   const damageType = attunement?.damageType ?? base.damageType;
   const baseAilments = (base.ailmentChances ?? []).map((c) =>
@@ -424,6 +488,7 @@ export function buildMasteryWeapon(
         ? 0
         : Math.round((COMBAT.warmingHeatPerSecond / base.attacksPerSecond) * heatPerHit),
     precision,
+    mightyAt: weaponDamage * MIGHTY_SHARE,
     ...(baseAilments.length || ailmentChances.length
       ? { ailmentChances: [...baseAilments, ...ailmentChances] }
       : {}),
@@ -438,16 +503,22 @@ export function buildMasteryWeapon(
         }
       : {}),
   };
+  const patched = innateSkill ? patchInnate(innateSkill, innatePatches) : undefined;
+  const finalInnate = patched && attunement ? attuneSkill(patched, attunement) : patched;
   const fightRules: WeaponRules = {
     ...Object.fromEntries(
       Object.entries(merged).filter(([k]) => k !== "noGlancing" && k !== "sunder"),
     ),
+    ...(merged.parry ? { parry: Math.min(MASTERY.maxParry, merged.parry) } : {}),
+    ...(finalInnate ? { innateId: finalInnate.id } : {}),
     ...(merged.sunder
       ? {
           sunder: {
             chance: COMBAT.sunder.chance + (merged.sunder.chance ?? 0),
-            maxStacks: COMBAT.sunder.maxStacks + (merged.sunder.maxStacks ?? 0),
-            perStack: Math.max(COMBAT.sunder.perStack, merged.sunder.perStack ?? 0),
+            maxStacks: Math.max(1, COMBAT.sunder.maxStacks + (merged.sunder.maxStacks ?? 0)),
+            perStack:
+              Math.max(COMBAT.sunder.perStack, merged.sunder.perStack ?? 0) +
+              (merged.sunder.perStackBonus ?? 0),
             duration: Math.max(COMBAT.sunder.duration, merged.sunder.duration ?? 0),
           },
         }
@@ -456,14 +527,51 @@ export function buildMasteryWeapon(
   return {
     weapon,
     bonuses: sumBonuses(...bonuses),
-    triggers,
+    triggers: mergeTriggers(triggers),
     rules: mergeRules(...rules),
     weaponRules: fightRules,
-    innate: innateSkill && attunement ? attuneSkill(innateSkill, attunement) : innateSkill,
+    innate: finalInnate,
     precision,
     rangeMin,
     rangeMax,
     weaponDamage,
+  };
+}
+
+/** Ranks of a trigger node give the same trigger several times: their chances add up. */
+function mergeTriggers(triggers: readonly TriggerSpec[]): TriggerSpec[] {
+  const out: TriggerSpec[] = [];
+  for (const t of triggers) {
+    const at = out.findIndex((o) => o.id === t.id);
+    const prev = out[at];
+    if (!prev) {
+      out.push(t);
+      continue;
+    }
+    out[at] = { ...prev, chance: Math.min(1, (prev.chance ?? 1) + (t.chance ?? 1)) };
+  }
+  return out;
+}
+
+/** Applies the Innate patches of the learned nodes (Tempo, Reload, Hooked Rend, Payload). */
+export function patchInnate(
+  skill: SkillDefinition,
+  patches: readonly InnatePatch[],
+): SkillDefinition {
+  if (patches.length === 0) return skill;
+  const more = 1 + patches.reduce((sum, p) => sum + (p.damage ?? 0), 0);
+  const cost = patches.reduce((sum, p) => sum + (p.cost ?? 0), 0);
+  const mighty = patches.some((p) => p.mighty);
+  const effects = patches.flatMap((p) => p.effects ?? []);
+  return {
+    ...skill,
+    heatCost: Math.max(0, skill.heatCost + cost),
+    hits: skill.hits.map((h) =>
+      h.kind === "weapon"
+        ? { ...h, multiplier: h.multiplier * more, ...(mighty ? { mighty: true } : {}) }
+        : { ...h, damage: { min: h.damage.min * more, max: h.damage.max * more } },
+    ),
+    ...(effects.length ? { effects: [...(skill.effects ?? []), ...effects] } : {}),
   };
 }
 
@@ -519,7 +627,8 @@ export function attuneSkill(
  * build-time flag "no Glancing Blows".
  */
 export type MasteryWeaponRules = Omit<WeaponRules, "sunder"> & {
-  readonly sunder?: Partial<SunderRule>;
+  /** `perStackBonus` adds Armor share per stack on top of the strongest `perStack`. */
+  readonly sunder?: Partial<SunderRule> & { readonly perStackBonus?: number };
   readonly noGlancing?: boolean;
 };
 
@@ -538,7 +647,14 @@ export function mergeWeaponRules(...sources: readonly MasteryWeaponRules[]): Mas
     "critAfter",
     "refreshOnHit",
     "enemyHeatGain",
+    "enemyAttackSpeed",
+    "extraAttackAilments",
+    "ailmentDamageWhen",
+    "heatOnHitWhen",
+    "tickAilment",
+    "skillDiscountWhen",
   ]);
+  const byAilment = new Set(["ailmentDurationBy", "ailmentEffectBy", "ailmentLeech"]);
   for (const src of sources) {
     for (const [key, value] of Object.entries(src)) {
       if (value === undefined) continue;
@@ -553,15 +669,22 @@ export function mergeWeaponRules(...sources: readonly MasteryWeaponRules[]): Mas
         out[key] = (prev as boolean | undefined) || value;
       } else if (key === "sunder") {
         // Sunder adds up: more chance and stacks, the longest duration, the strongest stack.
-        const a = (prev as Partial<SunderRule> | undefined) ?? {};
-        const b = value as Partial<SunderRule>;
+        type Part = NonNullable<MasteryWeaponRules["sunder"]>;
+        const a = (prev as Part | undefined) ?? {};
+        const b = value as Part;
         out[key] = {
           chance: (a.chance ?? 0) + (b.chance ?? 0),
           maxStacks: (a.maxStacks ?? 0) + (b.maxStacks ?? 0),
           perStack: Math.max(a.perStack ?? 0, b.perStack ?? 0),
+          perStackBonus: (a.perStackBonus ?? 0) + (b.perStackBonus ?? 0),
           duration: Math.max(a.duration ?? 0, b.duration ?? 0),
         };
-      } else if (key === "ailmentDurationBy") {
+      } else if (key === "poisonBurst") {
+        // Toxic Bloom and Master of Venom: the stronger burst counts.
+        const a = prev as { multiplier: number } | undefined;
+        const b = value as { multiplier: number };
+        out[key] = a && a.multiplier >= b.multiplier ? a : b;
+      } else if (byAilment.has(key)) {
         const merged: Record<string, number> = { ...((prev as Record<string, number>) ?? {}) };
         for (const [a, v] of Object.entries(value as Record<string, number>)) {
           merged[a] = (merged[a] ?? 0) + v;

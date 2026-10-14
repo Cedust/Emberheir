@@ -1,3 +1,6 @@
+/** A Mighty Hit rolls at least this share of Weapon Damage (weapon-mastery-v2.md 1.2). */
+export const MIGHTY_SHARE = 1.25;
+
 /**
  * Tuning numbers for the combat core. These are starting values for the balance CLI, not final
  * design. Percentages are fractions (0.01 = 1 %).

@@ -38,7 +38,7 @@ import {
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 1 in the Early Dev Preview.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 4;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {

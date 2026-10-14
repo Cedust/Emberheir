@@ -17,6 +17,31 @@ export function overflowCost(f: Fighter, cost: number): number {
   return overflow && f.heat >= overflow.above ? Math.round(cost * (1 - overflow.discount)) : cost;
 }
 
+/**
+ * Weapon Mastery v2 on a Rotation skill's cost: Whirl (free Innate), Building Edge (cheaper per
+ * clean hit), Master of Reload (one slot cheaper) and Master of Storm (cheaper while it holds).
+ */
+export function masteryCost(
+  core: FightCore,
+  f: Fighter,
+  skill: SkillDefinition,
+  slot: number,
+  cost: number,
+): number {
+  const wr = f.setup.weaponRules;
+  if (!wr || cost <= 0) return cost;
+  const innate = wr.innateId !== undefined && skill.id === wr.innateId;
+  if (innate && f.freeInnate) return 0;
+  let c = cost;
+  if (innate && wr.innateDiscountPerHit) c -= wr.innateDiscountPerHit * f.cleanSinceSkill;
+  let discount = 0;
+  if (wr.slotDiscount?.slot === slot) discount += wr.slotDiscount.discount;
+  for (const e of wr.skillDiscountWhen ?? []) {
+    if (conditionHolds(core, f, e.condition)) discount += e.amount;
+  }
+  return Math.max(0, Math.round(c * (1 - Math.min(1, discount))));
+}
+
 /** Heat Cost of a slot: rules (Keystones) and the Thrifty modifier. */
 export function slotCost(
   f: Fighter,
@@ -94,9 +119,17 @@ export function checkReactionThresholds(core: FightCore): void {
 /** Fires the first pending Reaction Slot if Heat allows. True if one fired. */
 export function actReaction(core: FightCore, f: Fighter): boolean {
   const vigil = f.setup.capstone?.kind === "vigil";
+  const wr = f.setup.weaponRules;
+  // Master of Quake: Reaction Slots are free while the enemy is stunned.
+  const stunned = wr?.freeReactionsVsStunned && core.fighters[other(f.side)].stunned > 1e-9;
   for (const r of f.reactions) {
     if (r.pending === null) continue;
-    const cost = vigil ? 0 : slotCost(f, r.spec.skill, r.spec.modifiers);
+    const cost =
+      vigil || stunned
+        ? 0
+        : Math.round(
+            slotCost(f, r.spec.skill, r.spec.modifiers) * (1 - (wr?.reactionDiscount ?? 0)),
+          );
     if (f.heat < cost) continue;
     f.heat -= cost;
     r.pending = null;

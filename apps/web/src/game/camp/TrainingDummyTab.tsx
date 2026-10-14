@@ -93,6 +93,10 @@ export function TrainingDummyTab(props: { state: GameState; game: GameApi }) {
               <span>Glancing Blows</span>
               <span className="mono">{Math.round(report.glancingRate * 100)} %</span>
             </li>
+            <li>
+              <span>Mighty Hits</span>
+              <span className="mono">{Math.round(report.mightyRate * 100)} %</span>
+            </li>
             {profile === "striking" && (
               <>
                 <li>

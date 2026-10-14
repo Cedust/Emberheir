@@ -129,4 +129,17 @@ describe("the real migrations", () => {
       { affixId: "ailment-effect", quality: 0.7 },
     ]);
   });
+
+  it("3: Weapon Mastery v2 gives the path points back and keeps Refine and the choices", () => {
+    const s = start();
+    const mastery = {
+      learned: { precision: 2, "riposte-1": 1, "riposte-counterweight": 1 },
+      choices: { keystone: "ks1" },
+      echo: null,
+    };
+    const v3 = { ...s, version: 3, hero: { ...s.hero, mastery } };
+    const migrated = deserializeGame(JSON.stringify(v3));
+    expect(migrated.hero.mastery.learned).toEqual({ precision: 2 });
+    expect(migrated.hero.mastery.choices).toEqual({ keystone: "ks1" });
+  });
 });

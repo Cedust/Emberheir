@@ -202,14 +202,17 @@ export function findBuild(weaponId: string, buildId?: string): BuildPlan | undef
 }
 
 /**
- * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone
- * and the paths in order. Refine is spread between them.
+ * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone,
+ * the paths in order and the side taken at each fork (0 = the first Notable, 1 = the second).
+ * Refine is spread between them.
  */
 interface MasteryPlan {
   readonly heat?: string;
   readonly innate: string;
   readonly keystone: string;
   readonly paths: readonly string[];
+  /** Fork sides per path; a path without an entry takes the first Notable at both forks. */
+  readonly forks?: Readonly<Record<string, readonly [0 | 1, 0 | 1]>>;
 }
 
 const MASTERY_PLAN: Record<string, MasteryPlan> = {
@@ -218,42 +221,54 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
     innate: "rising-strike",
     keystone: "final-verdict",
     paths: ["edge", "tempo", "riposte"],
+    forks: { edge: [0, 1], riposte: [1, 0] },
   },
   mace: {
     heat: "heat-cooling",
     innate: "bone-breaker",
     keystone: "siege",
     paths: ["crush", "quake", "bulwark"],
+    forks: { quake: [1, 0], bulwark: [0, 1] },
   },
   axe: {
     heat: "heat-cooling",
     innate: "gutting-lacerate",
     keystone: "rampage",
     paths: ["butcher", "frenzy", "cleave"],
+    forks: { butcher: [0, 1] },
   },
   dagger: {
     heat: "heat-cooling",
     innate: "virulent-coat",
     keystone: "toxic-bloom",
     paths: ["venom", "assassin", "flurry"],
+    forks: { assassin: [1, 1] },
   },
-  bow: { innate: "hooked-arrow", keystone: "hunters-mark", paths: ["barbs", "volley", "toxin"] },
+  bow: {
+    innate: "hooked-arrow",
+    keystone: "hunters-mark",
+    paths: ["barbs", "volley", "toxin"],
+    forks: { barbs: [0, 1] },
+  },
   crossbow: {
     innate: "ballista-bolt",
     keystone: "siege-engine",
     paths: ["payload", "pierce", "reload"],
+    forks: { pierce: [1, 0] },
   },
   "fire-wand": {
     heat: "heat-warming",
     innate: "barrage",
-    keystone: "glass-cannon",
-    paths: ["storm", "pyre", "rime"],
+    keystone: "wild-magic",
+    paths: ["storm", "blaze", "rime"],
+    forks: { blaze: [1, 0], rime: [1, 0] },
   },
   staff: {
     heat: "heat-warming",
     innate: "void-lance",
     keystone: "endless-night",
     paths: ["hollow", "channel", "smolder"],
+    forks: { smolder: [1, 0] },
   },
 };
 
@@ -263,8 +278,22 @@ export function masteryOrder(data: GameData, weaponId: string, build?: BuildPlan
   const tree = data.weaponMastery[weaponId];
   if (!base || !tree) return [];
   const plan = { ...base, ...build?.mastery };
-  const path = (id: string | undefined) =>
-    id ? tree.nodes.filter((n) => n.path === id).map((n) => n.id) : [];
+  // A path: Technique I (3 ranks), a fork side, Technique II (3 ranks), a fork side, the Master.
+  const path = (id: string | undefined): string[] => {
+    if (!id) return [];
+    const nodes = tree.nodes.filter((n) => n.path === id);
+    const sides = plan.forks?.[id] ?? [0, 0];
+    const fork = (step: number) =>
+      nodes.filter((n) => n.fork === `${id}-${step}`)[sides[step - 1] ?? 0]?.id;
+    const out: (string | undefined)[] = [
+      ...Array<string>(3).fill(`${id}-t1`),
+      fork(1),
+      ...Array<string>(3).fill(`${id}-t2`),
+      fork(2),
+      `${id}-master`,
+    ];
+    return out.filter((n): n is string => n !== undefined && nodes.some((m) => m.id === n));
+  };
   return [
     ...(plan.heat ? [plan.heat] : []),
     plan.innate,

@@ -366,9 +366,9 @@ export function saveMastery(extra: readonly string[] = []): string {
     "full-swing",
     "full-swing",
     "heat-cooling",
-    "riposte-1",
-    "riposte-2",
-    "riposte-3",
+    "riposte-t1",
+    "riposte-t1",
+    "riposte-t1",
     "riposte-counterweight",
     ...extra,
   ];

@@ -44,7 +44,24 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   1: { item: (item) => renameAffixes(item, RENAMED_AFFIXES_V2) },
   // Routes and Champions (neuausrichtung-v1.md 6.1, 6.2): new optional fields, nothing to move.
   2: {},
+  // Weapon Mastery v2 (weapon-mastery-v2.md): the paths were rebuilt with forks, so their points
+  // come back. Refine, the chosen forms, Keystone, Attunement and the Echo stay.
+  3: { state: refundMasteryPaths },
 };
+
+/** Refine nodes kept their ids and meaning in Weapon Mastery v2. */
+const MASTERY_REFINE = new Set(["balance", "precision", "steady-hand", "full-swing"]);
+
+function refundMasteryPaths(save: RawSave): RawSave {
+  const hero = save["hero"];
+  if (!isRecord(hero)) return save;
+  const mastery = hero["mastery"];
+  if (!isRecord(mastery) || !isRecord(mastery["learned"])) return save;
+  const learned = Object.fromEntries(
+    Object.entries(mastery["learned"]).filter(([id]) => MASTERY_REFINE.has(id)),
+  );
+  return { ...save, hero: { ...hero, mastery: { ...mastery, learned } } };
+}
 
 export interface MigrateOptions {
   /** The version to end at (tests); default `SAVE_VERSION`. */

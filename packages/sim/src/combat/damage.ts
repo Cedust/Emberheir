@@ -92,6 +92,12 @@ export interface HitInput {
   readonly forceCrit?: boolean;
   /** Crits ignore this extra share of Armor (Killshot). */
   readonly critPenetration?: number;
+  /** The defender's Parry: chance an attack becomes a Glancing Blow (half damage, no Crit). */
+  readonly parry?: number;
+  /** Extra damage multiplier that only a clean hit gets (Mighty Hits, Clean Line). */
+  readonly cleanMultiplier?: number;
+  /** Decides the Crit instead of the roll (Repeater: one roll for the volley). */
+  readonly critOverride?: boolean;
 }
 
 export type HitOutcome =
@@ -105,6 +111,8 @@ export type HitOutcome =
       readonly deflected: boolean;
       /** Weapon Mastery: the hit did not land cleanly. */
       readonly glancing: boolean;
+      /** The defender Parried it (a Glancing Blow from the other side). */
+      readonly parried: boolean;
     };
 
 /**
@@ -125,11 +133,13 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
     defender.evasion > 0 &&
     rng.chance(defender.evasion);
 
+  // Parry (the defender's weapon) rolls only when there is some, so other fights keep their rolls.
+  const parried = input.evadable && (input.parry ?? 0) > 0 && rng.chance(input.parry ?? 0);
   const glancing =
-    !input.forceCrit && input.precision !== undefined && !rng.chance(input.precision);
+    parried || (!input.forceCrit && input.precision !== undefined && !rng.chance(input.precision));
   const blocked = physical && rng.chance(defender.blockChance);
   const critRoll = rng.chance(input.attacker.critChance);
-  const crit = !glancing && (input.forceCrit === true || critRoll);
+  const crit = !glancing && (input.forceCrit === true || (input.critOverride ?? critRoll));
   const attacker =
     crit && input.critPenetration
       ? {
@@ -140,7 +150,11 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
 
   let damage = input.baseDamage * input.multiplier * (1 + increasedDamage(attacker, input.type));
   if (crit) damage *= COMBAT.critMultiplier;
-  if (glancing) damage *= input.glancingDamage ?? COMBAT.glancingDamage;
+  if (glancing) {
+    damage *= parried ? COMBAT.glancingDamage : (input.glancingDamage ?? COMBAT.glancingDamage);
+  } else {
+    damage *= input.cleanMultiplier ?? 1;
+  }
   damage = mitigate(damage, input.type, attacker, input.attackerLevel, defender);
   damage *= 1 + input.defenderDamageTaken;
   // A block stops a share of the hit (D2: the shield takes the blow), so it keeps its worth
@@ -155,5 +169,6 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
     blocked,
     deflected,
     glancing,
+    parried,
   };
 }

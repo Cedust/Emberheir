@@ -17,6 +17,7 @@ import type {
   ReactionSlot,
   Side,
   SkillDefinition,
+  WeaponRules,
 } from "./types";
 import { AILMENT_TYPES } from "./types";
 
@@ -52,8 +53,8 @@ export interface Fighter {
   }[];
   /** Seconds since the last telegraph ended, per telegraph. */
   telegraphTimers: number[];
-  /** The telegraph winding up right now. */
-  windup: { index: number; remaining: number } | null;
+  /** The telegraph winding up right now (`delayed`: a Chill already pushed it back). */
+  windup: { index: number; remaining: number; delayed?: boolean } | null;
   /** Seconds the fighter is still stunned. */
   stunned: number;
   /** Hits taken that were not evaded (for "Every Nth Hit Taken"). */
@@ -93,6 +94,38 @@ export interface Fighter {
   keenOpened: boolean;
   /** Spark: a skill was cast, the next Default Attack is charged. */
   sparkReady: boolean;
+  // Weapon Mastery v2 state.
+  /** Clean hits in a row (Clean Line); the bonus is ready when it reaches its count. */
+  cleanStreak: number;
+  cleanLineReady: boolean;
+  /** Nesting of extra attacks: only the first level may fire triggers (Path Masters). */
+  extraDepth: number;
+  /** Clean hits since the last own skill (Building Edge). */
+  cleanSinceSkill: number;
+  /** Fight time from which the free repeat of Rotation Slot 1 is ready (Master of Tempo). */
+  repeatReadyAt: number;
+  /** Fight time from which Interrupt is ready again. */
+  interruptReadyAt: number;
+  /** Fight time until which Braced holds. */
+  bracedUntil: number;
+  /** Damage stored for the next Innate (Master of the Wall, Impale). */
+  stored: number;
+  /** Glancing Blows so far (Spring Trap). */
+  glancingCount: number;
+  /** Fight times of recent Chills inflicted (Frozen Solid). */
+  chillTimes: number[];
+  /** Skills cast so far (Echoing Chant). */
+  skillCount: number;
+  /** A skill was cast and no hit has followed yet (Find the Gap). */
+  afterSkill: boolean;
+  /** Fight times of recent Default Attacks (Whirl). */
+  recentAttacks: number[];
+  /** The next Innate is free (Whirl). */
+  freeInnate: boolean;
+  /** Clean Crits still promised after an Evade (Vanishing Act). */
+  critsLeft: number;
+  /** Barrier given up for Glass Cannon. */
+  readonly glassBarrier: number;
 }
 
 /** Sunder stacks without a Sunder rule of their own (Riposte, Bone Breaker). */
@@ -145,8 +178,15 @@ export function crescendoFactor(f: Fighter): number {
   return f.setup.capstone?.kind === "crescendo" ? 1 + 0.02 * Math.floor(f.heatSpent / 100) : 1;
 }
 
+function withoutGlass(rules: WeaponRules): WeaponRules {
+  return Object.fromEntries(Object.entries(rules).filter(([k]) => k !== "glassCannon"));
+}
+
 export function createFighter(side: Side, setup: CombatantSetup): Fighter {
   const stats = deriveStats(setup);
+  const glassBarrier = setup.weaponRules?.glassCannon
+    ? deriveStats({ ...setup, weaponRules: withoutGlass(setup.weaponRules) }).barrier
+    : 0;
   const lifeFraction = Math.min(1, Math.max(0, setup.lifeFraction ?? 1));
   const triggers = [...(setup.weapon.triggers ?? []), ...(setup.triggers ?? [])];
   return {
@@ -190,6 +230,22 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     perksUsed: new Set(),
     keenOpened: false,
     sparkReady: false,
+    cleanStreak: 0,
+    cleanLineReady: false,
+    extraDepth: 0,
+    cleanSinceSkill: 0,
+    repeatReadyAt: 0,
+    interruptReadyAt: 0,
+    bracedUntil: -1,
+    stored: 0,
+    glancingCount: 0,
+    chillTimes: [],
+    skillCount: 0,
+    afterSkill: false,
+    recentAttacks: [],
+    freeInnate: false,
+    critsLeft: 0,
+    glassBarrier,
   };
 }
 
@@ -349,6 +405,19 @@ export function conditionHolds(
       const max = (f.setup.weaponRules?.sunder ?? COMBAT.sunder).maxStacks;
       return (target.curses.find((c) => c.id === SUNDER_ID)?.stacks ?? 0) >= max;
     }
+    case "enemyWindup":
+      return target.windup !== null;
+    case "enemyStacks": {
+      const stacks =
+        condition.ailment === "poison"
+          ? poisonStacks(target.ailments)
+          : condition.ailment === "shock"
+            ? (target.ailments.shock?.stacks ?? (target.ailments.shock ? 1 : 0))
+            : target.ailments[condition.ailment]
+              ? 1
+              : 0;
+      return stacks >= condition.count;
+    }
     case "enemyHas":
       return condition.ailment === "poison"
         ? poisonStacks(target.ailments) > 0
@@ -360,11 +429,20 @@ export function conditionHolds(
   }
 }
 
-/** Swings per second: Attack Speed, Chill and Weapon Mastery's conditional Attack Speed. */
+/**
+ * Swings per second: Attack Speed, Chill and Weapon Mastery's conditional Attack Speed (own, and
+ * the opponent's that slows this fighter: Hamstring, Numbing).
+ */
 export function attackRate(core: FightCore, f: Fighter): number {
+  const opponent = core.fighters[other(f.side)];
   let extra = 0;
   for (const e of f.setup.weaponRules?.conditionalAttackSpeed ?? []) {
     if (conditionHolds(core, f, e.condition)) extra += e.amount;
   }
-  return f.stats.attackSpeed * (1 + extra) * chillFactor(f.ailments);
+  for (const e of opponent.setup.weaponRules?.enemyAttackSpeed ?? []) {
+    if (conditionHolds(core, opponent, e.condition)) extra += e.amount;
+  }
+  const fixed = f.setup.weaponRules?.fixedAttackRate;
+  const base = fixed ?? f.stats.attackSpeed * Math.max(0.1, 1 + extra);
+  return base * chillFactor(f.ailments);
 }

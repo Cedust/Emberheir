@@ -94,8 +94,9 @@ export { ELEMENT_COLOR } from "../weaponLook";
 
 const RADIUS: Record<MasteryNode["kind"], number> = {
   refine: 16,
-  minor: 10,
+  technique: 12,
   notable: 16,
+  master: 21,
   keystone: 19,
   heatForm: 20,
   innateForm: 17,
@@ -424,7 +425,7 @@ export class MasteryScene {
     const close = this.cam.zoom >= this.fitZoom * 1.35;
     for (const s of this.sprites.values()) {
       const kind = s.view.node.kind;
-      if (kind === "minor" || kind === "refine") s.name.visible = close || s.view.selected;
+      if (kind === "technique" || kind === "refine") s.name.visible = close || s.view.selected;
     }
   }
 
@@ -451,8 +452,7 @@ export class MasteryScene {
                 ? (GRADE_GLOW[this.view?.grade ?? 0]?.color ?? GOLD)
                 : this.pathColor(node);
     if (n.state === "learned") return own;
-    if (n.state === "available")
-      return node.kind === "minor" || node.kind === "notable" ? own : 0xd8d4cc;
+    if (n.state === "available") return node.path ? own : 0xd8d4cc;
     return DIM;
   }
 
@@ -631,31 +631,83 @@ export class MasteryScene {
     });
   }
 
-  /** Path polylines: from the weapon to each node in order. */
-  private pathLines(
-    v: MasteryView,
-  ): { path: MasteryPath; points: { x: number; y: number }[]; lit: number }[] {
+  /**
+   * The engraving of each path: one segment from every node to the nodes it links to (the root
+   * grows out of the nearest point of the weapon), so the forks split and join again. `lit`: both
+   * ends are learned (or pending).
+   */
+  private pathLines(v: MasteryView): {
+    path: MasteryPath;
+    segments: { a: { x: number; y: number }; b: { x: number; y: number }; lit: boolean }[];
+    /** Lit chains from the weapon outward, for the sparks. */
+    chains: { x: number; y: number }[][];
+    /** The Master and the node before it (the label sits beyond them). */
+    end: { x: number; y: number } | undefined;
+    before: { x: number; y: number } | undefined;
+  }[] {
+    const on = (n: MasteryNodeView | undefined) => !!n && (n.state === "learned" || n.pending);
     return v.paths.map((path) => {
       const nodes = v.nodes.filter((n) => n.node.path === path.id);
-      const first = nodes[0]?.node;
-      const points: { x: number; y: number }[] = [];
-      if (first) {
-        // The root grows out of the nearest point of the weapon.
+      const byId = new Map(nodes.map((n) => [n.node.id, n]));
+      const rootOf = (node: MasteryNode) => {
         const ax = v.tip.x - v.pommel.x;
         const ay = v.tip.y - v.pommel.y;
-        const t = ((first.x - v.pommel.x) * ax + (first.y - v.pommel.y) * ay) / (ax * ax + ay * ay);
-        points.push({ x: (v.pommel.x + ax * t) * U, y: (v.pommel.y + ay * t) * U });
+        const t = ((node.x - v.pommel.x) * ax + (node.y - v.pommel.y) * ay) / (ax * ax + ay * ay);
+        return { x: (v.pommel.x + ax * t) * U, y: (v.pommel.y + ay * t) * U };
+      };
+      const segments: { a: { x: number; y: number }; b: { x: number; y: number }; lit: boolean }[] =
+        [];
+      for (const n of nodes) {
+        const links = (n.node.links ?? []).map((id) => byId.get(id)).filter((l) => l);
+        if (links.length === 0) {
+          segments.push({ a: rootOf(n.node), b: this.pos(n.node), lit: on(n) });
+        }
+        for (const l of links) {
+          if (!l) continue;
+          segments.push({ a: this.pos(l.node), b: this.pos(n.node), lit: on(n) && on(l) });
+        }
       }
-      for (const n of nodes) points.push(this.pos(n.node));
-      const lit = nodes.findIndex((n) => !(n.state === "learned" || n.pending));
-      return { path, points, lit: lit === -1 ? nodes.length : lit };
+      // Sparks run along the deepest lit chain.
+      const chains: { x: number; y: number }[][] = [];
+      const deepest = [...nodes].reverse().find((n) => on(n));
+      if (deepest) {
+        const chain = [this.pos(deepest.node)];
+        let at: MasteryNodeView | undefined = deepest;
+        while (at) {
+          const prev: MasteryNodeView | undefined = (at.node.links ?? [])
+            .map((id) => byId.get(id))
+            .find((l) => on(l));
+          if (!prev) {
+            chain.unshift(rootOf(at.node));
+            break;
+          }
+          chain.unshift(this.pos(prev.node));
+          at = prev;
+        }
+        chains.push(chain);
+      }
+      const master = nodes.find((n) => n.node.kind === "master")?.node;
+      const before = [...nodes].reverse().find((n) => n.node.kind === "technique")?.node;
+      return {
+        path,
+        segments,
+        chains,
+        end: master ? this.pos(master) : undefined,
+        before: before ? this.pos(before) : undefined,
+      };
     });
   }
 
   private drawFiligree(v: MasteryView): void {
     const g = this.filigree.clear();
     const glow = this.filigreeGlow.clear();
-    const curve = (target: Graphics, pts: { x: number; y: number }[], from: number, to: number) => {
+    const curve = (
+      target: Graphics,
+      pts: { x: number; y: number }[],
+      from: number,
+      to: number,
+      bow = 0,
+    ) => {
       const a = pts[from];
       if (!a) return;
       target.moveTo(a.x, a.y);
@@ -666,41 +718,36 @@ export class MasteryScene {
         // A soft bow on every segment, alternating sides like a vine.
         const mx = (prev.x + p.x) / 2;
         const my = (prev.y + p.y) / 2;
-        const side = i % 2 === 0 ? 1 : -1;
+        const side = (i + bow) % 2 === 0 ? 1 : -1;
         const dx = p.x - prev.x;
         const dy = p.y - prev.y;
         target.quadraticCurveTo(mx - dy * 0.18 * side, my + dx * 0.18 * side, p.x, p.y);
       }
     };
-    for (const { path, points, lit } of this.pathLines(v)) {
-      if (points.length < 2) continue;
-      // The engraving groove, then the metal line in it.
-      curve(g, points, 0, points.length - 1);
-      g.stroke({ color: 0x0c0806, width: 8, alpha: 0.9, cap: "round" });
-      curve(g, points, 0, points.length - 1);
-      g.stroke({ color: path.color, width: 2, alpha: 0.32, cap: "round" });
-      // Little curls along the way.
-      for (let i = 1; i < points.length - 1; i++) {
-        const p = points[i];
-        const q = points[i + 1];
-        if (!p || !q) continue;
+    for (const { path, segments } of this.pathLines(v)) {
+      segments.forEach(({ a, b, lit }, i) => {
+        const pts = [a, b];
+        // The engraving groove, then the metal line in it.
+        curve(g, pts, 0, 1, i);
+        g.stroke({ color: 0x0c0806, width: 8, alpha: 0.9, cap: "round" });
+        curve(g, pts, 0, 1, i);
+        g.stroke({ color: path.color, width: 2, alpha: 0.32, cap: "round" });
+        // A little curl beside every segment.
         const side = i % 2 === 0 ? 1 : -1;
-        const nx = -(q.y - p.y) * 0.25 * side;
-        const ny = (q.x - p.x) * 0.25 * side;
-        const cx = (p.x + q.x) / 2 + nx;
-        const cy = (p.y + q.y) / 2 + ny;
+        const cx = (a.x + b.x) / 2 - (b.y - a.y) * 0.22 * side;
+        const cy = (a.y + b.y) / 2 + (b.x - a.x) * 0.22 * side;
         arcPath(g, cx, cy, 6, 0, Math.PI * 1.4).stroke({
-          color: i < lit ? path.color : 0x3a322b,
+          color: lit ? path.color : 0x3a322b,
           width: 2,
-          alpha: i < lit ? 0.8 : 0.6,
+          alpha: lit ? 0.8 : 0.6,
         });
-      }
-      if (lit > 0) {
-        curve(g, points, 0, lit);
-        g.stroke({ color: path.color, width: 4, cap: "round" });
-        curve(glow, points, 0, lit);
-        glow.stroke({ color: path.color, width: 14, alpha: 0.5, cap: "round" });
-      }
+        if (lit) {
+          curve(g, pts, 0, 1, i);
+          g.stroke({ color: path.color, width: 4, cap: "round" });
+          curve(glow, pts, 0, 1, i);
+          glow.stroke({ color: path.color, width: 14, alpha: 0.5, cap: "round" });
+        }
+      });
     }
     // The Keystone ring around the pommel.
     const ks = v.nodes.filter((n) => n.node.kind === "keystone");
@@ -771,9 +818,7 @@ export class MasteryScene {
       this.labelLayer.addChild(t);
       this.labels.push(t);
     };
-    for (const { path, points } of this.pathLines(v)) {
-      const last = points[points.length - 1];
-      const prev = points[points.length - 2];
+    for (const { path, end: last, before: prev } of this.pathLines(v)) {
       if (!last || !prev) continue;
       const d = Math.hypot(last.x - prev.x, last.y - prev.y) || 1;
       add(
@@ -875,11 +920,33 @@ export class MasteryScene {
         }
         break;
       }
-      case "minor": {
+      case "technique": {
+        // A diamond with a pip per rank.
         const d = [0, -r, r, 0, 0, r, -r, 0];
         g.poly(d).fill({ color: 0x17120e });
         if (lit) g.poly(d.map((v) => v * 0.6)).fill({ color, alpha: 0.9 });
         g.poly(d).stroke({ color, width: 2.5, alpha: dim ? 0.7 : 1 });
+        const max = n.maxRanks;
+        for (let i = 0; i < max; i++) {
+          const x = (i - (max - 1) / 2) * 9;
+          g.circle(x, -r - 7, 3).fill({ color: i < n.ranks ? color : 0x2a1f17 });
+          g.circle(x, -r - 7, 3).stroke({ color: 0x0b0705, width: 1.2 });
+        }
+        break;
+      }
+      case "master": {
+        // The path's crown: an eight-pointed star in a ring.
+        const star: number[] = [];
+        for (let i = 0; i < 16; i++) {
+          const a = -Math.PI / 2 + (i * Math.PI) / 8;
+          const k = i % 2 === 0 ? r : r * 0.55;
+          star.push(Math.cos(a) * k, Math.sin(a) * k);
+        }
+        g.circle(0, 0, r + 3).fill({ color: 0x17120e });
+        g.poly(star).fill({ color: lit ? color : 0x241a12, alpha: lit ? 0.85 : 1 });
+        g.poly(star).stroke({ color, width: 2.5, alpha: dim ? 0.7 : 1 });
+        g.circle(0, 0, r + 3).stroke({ color: 0xa8732e, width: 1.5, alpha: 0.8 });
+        if (lit) g.circle(0, 0, r * 0.22).fill({ color: 0xffffff, alpha: 0.85 });
         break;
       }
       case "notable": {
@@ -958,12 +1025,12 @@ export class MasteryScene {
     }
 
     // Names: always for the big choices, on select for path nodes.
-    const always = kind !== "minor" && kind !== "refine";
+    const always = kind !== "technique" && kind !== "refine";
     s.name.visible = always || n.selected;
     s.name.position.set(0, r + (kind === "refine" ? 14 : 8));
     // Text styles re-render their texture: only touch them when they change.
     const fill = lit ? 0xfff0c8 : dim ? 0x9a8c78 : 0xecdfc4;
-    const fontSize = kind === "notable" || kind === "keystone" ? 14 : 12;
+    const fontSize = kind === "notable" || kind === "keystone" || kind === "master" ? 14 : 12;
     if (s.name.style.fill !== fill) s.name.style.fill = fill;
     if (s.name.style.fontSize !== fontSize) s.name.style.fontSize = fontSize;
     s.root.alpha = dim ? 0.78 : 1;
@@ -976,7 +1043,7 @@ export class MasteryScene {
     if (!this.fx || !this.motion) return;
     const p = this.pos(n.node);
     const color = this.colorOf(n);
-    const big = n.node.kind === "keystone" || n.node.kind === "notable";
+    const big = n.node.kind === "keystone" || n.node.kind === "notable" || n.node.kind === "master";
     this.fx.ring(p.x, p.y, 0xffffff, 6, big ? 90 : 56, 0.35, 6, 1);
     this.fx.ring(p.x, p.y, color, 10, big ? 130 : 80, 0.55, 4, 1);
     this.fx.burst({
@@ -1173,10 +1240,10 @@ export class MasteryScene {
   private sparkRun(v: MasteryView): void {
     const fx = this.fx;
     if (!fx) return;
-    const lines = this.pathLines(v).filter((l) => l.lit > 0);
+    const lines = this.pathLines(v).filter((l) => l.chains.length > 0);
     const line = lines.length ? fx.rand.pick(lines) : undefined;
-    if (!line) return;
-    const pts = line.points.slice(0, line.lit + 1);
+    const pts = line?.chains[0];
+    if (!line || !pts || pts.length < 2) return;
     const lengths = pts
       .slice(1)
       .map((p, i) => Math.hypot(p.x - (pts[i]?.x ?? 0), p.y - (pts[i]?.y ?? 0)));

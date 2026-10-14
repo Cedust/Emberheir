@@ -42,6 +42,10 @@ export type CombatEvent =
       readonly blocked: boolean;
       /** Weapon Mastery: the hit did not land cleanly (Glancing Blow). */
       readonly glancing?: boolean;
+      /** The defender Parried the attack into a Glancing Blow. */
+      readonly parried?: boolean;
+      /** Weapon Mastery v2: a clean hit that rolled 125 % Weapon Damage or more. */
+      readonly mighty?: boolean;
       /** A Heavy Attack hit held back by `COMBAT.heavyHitCap`. */
       readonly capped?: boolean;
       /** A spell Deflected by Evasion. */

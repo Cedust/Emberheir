@@ -29,8 +29,10 @@ import {
   dealDamage,
   dotBurst,
   heal,
+  isMighty,
   landHit,
   poisonCap,
+  releaseStored,
   stun,
 } from "./hits";
 import { PERK } from "./perks";
@@ -62,6 +64,10 @@ export function castSkill(
   });
   f.heatSpent += heatCost;
   f.lastSkillAt = fightTime(core);
+  const wr = f.setup.weaponRules;
+  const innate = wr?.innateId !== undefined && skill.id === wr.innateId;
+  if (innate) f.freeInnate = false;
+  f.cleanSinceSkill = 0;
   if (heatCost > 0 && f.perks.has("afterglow")) {
     f.heat = addHeat(f.heat, heatCost * PERK.afterglowRefund, 1);
     perk(core, f, "afterglow");
@@ -81,12 +87,17 @@ export function castSkill(
     const count = hit.count ?? 1;
     for (let i = 0; i < count && !core.result; i++) {
       if (hit.kind === "weapon") {
+        const weapon = f.setup.weapon;
+        const rolled = rollRange(core, weapon.damage);
+        // Master of Payload: this hit is always a Mighty Hit.
+        const roll =
+          hit.mighty && weapon.mightyAt !== undefined ? Math.max(rolled, weapon.mightyAt) : rolled;
         const lowLife =
           hit.lowLifeBonus && target.life / target.stats.maxLife < hit.lowLifeBonus.threshold;
         const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
         const result = landHit(core, f, {
           source: skill.name,
-          baseDamage: rollRange(core, f.setup.weapon.damage) * hit.multiplier * levelScale * power,
+          baseDamage: roll * hit.multiplier * levelScale * power,
           type: hit.damageType ?? f.setup.weapon.damageType,
           evadable: true,
           multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
@@ -95,6 +106,8 @@ export function castSkill(
           ...(hit.penetration ? { penetration: hit.penetration } : {}),
           fromTrigger: false,
           precisionApplies: true,
+          fromSkill: true,
+          ...(isMighty(weapon, roll) ? { mighty: true } : {}),
           ...(hit.precise ? { precise: true } : {}),
         });
         landed = result !== "miss" || landed;
@@ -112,6 +125,7 @@ export function castSkill(
           ailmentPower: hit.ailmentPower ?? 1,
           fromTrigger: false,
           precisionApplies: true,
+          fromSkill: true,
           ...(hit.precise ? { precise: true } : {}),
         });
         landed = result !== "miss" || landed;
@@ -127,6 +141,15 @@ export function castSkill(
     }
     applySkillEffect(core, f, target, skill, effect, level);
   }
+  if (core.result) return;
+  // Master of the Wall, Impale: the Innate releases the stored damage.
+  if (innate && wr?.store) {
+    releaseStored(core, f, wr.store.clean ? "Impale" : "Master of the Wall");
+    if (core.result) return;
+  }
+  f.afterSkill = true;
+  if (wr?.siphonEmber && heatCost > 0)
+    heal(core, f, f.stats.maxLife * wr.siphonEmber * (heatCost / 10));
   const capstone = f.setup.capstone?.kind;
   if (capstone === "lingeringFlame" && landed && !core.result) {
     target.ailments = extendAilments(target.ailments, 0.5);
@@ -139,6 +162,21 @@ export function castSkill(
       f.barrier += Math.round(gain);
       emit(core, { t: fightTime(core), type: "barrier", side: f.side, amount: Math.round(gain) });
     }
+  }
+  if (core.result || via === "reverb" || via === "echo") return;
+  f.skillCount++;
+  // Echoing Chant: every few skills repeat themselves, weaker.
+  const chant = wr?.echoChant;
+  if (chant && f.skillCount % chant.every === 0) {
+    castSkill(core, f, skill, level, 0, chant.power, "reverb");
+    if (core.result) return;
+  }
+  // Master of Tempo: after the Innate, Rotation Slot 1 again for free.
+  const repeat = wr?.repeatFirstSlot;
+  const first = f.setup.rotation.find((r) => r.skill.id !== skill.id);
+  if (innate && repeat && first && fightTime(core) + 1e-9 >= f.repeatReadyAt) {
+    f.repeatReadyAt = fightTime(core) + repeat.cooldown;
+    castSkill(core, f, first.skill, first.level ?? 1, 0, 1, "echo");
   }
 }
 
@@ -162,15 +200,26 @@ function applySkillEffect(
       );
       return;
     case "consumeBleed": {
-      const rest = remainingBleedDamage(target.ailments);
-      if (rest <= 0) return;
-      target.ailments = clearAilment(target.ailments, "bleed");
-      emit(core, {
-        t: fightTime(core),
-        type: "ailmentExpired",
-        side: target.side,
-        ailment: "bleed",
-      });
+      const all = remainingBleedDamage(target.ailments);
+      if (all <= 0) return;
+      // Hooked Rend, Master Butcher: only a share bursts, the rest bleeds on.
+      const share = Math.min(1, effect.share ?? f.setup.weaponRules?.consumeBleedShare ?? 1);
+      const rest = all * share;
+      const bleed = target.ailments.bleed;
+      if (share < 1 && bleed) {
+        target.ailments = {
+          ...target.ailments,
+          bleed: { ...bleed, damagePerSecond: bleed.damagePerSecond * (1 - share) },
+        };
+      } else {
+        target.ailments = clearAilment(target.ailments, "bleed");
+        emit(core, {
+          t: fightTime(core),
+          type: "ailmentExpired",
+          side: target.side,
+          ailment: "bleed",
+        });
+      }
       const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
       const damage = Math.max(
         1,
