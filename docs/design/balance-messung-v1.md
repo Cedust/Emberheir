@@ -260,3 +260,33 @@ Static Skin jeder 5. Treffer (max 4 %), Numbing Blow jeder 8. Angriff 0,5 s, Ice
    Act-Bosse gegen Elemental, oder Spark (+50 %) etwas kleiner.
 4. **Normale Stages töten kaum** (2 %, Ziel 5–15 %). Die Zermürbung greift mit Hearth Embers und dem Hearth-Pfad wenig;
    die Rampe der normalen Stages kann höher, wenn die Bosse in Run 2–3 sanfter werden.
+
+---
+
+## 8. Phase 5, Teil 1: Weapon Mastery v2 (14.10.)
+
+Gleicher Aufbau (15 Builds × 3 Läufe, Seeds 31–33, bis Act 7, mit Runes). Vorher = `main` nach PR #30 (Lauf G).
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Kampf s normal / Elite / Gate / Boss |
+| --- | --- | --- | --- | --- |
+| G | vorher | 3,3 | 1 / 22 / 22 / 55 % | 23 / 32 / 33 / 43 |
+| M1 | Mastery v2, Autopilot wie geplant (Siege Engine +40 %, Ragged Cut) | 3,3 | 2 / 29 / 19 / 51 % | 22 / 31 / 31 / 43 |
+| **M2** | **Siege Engine +80 %; Autopilot: Crossbow Repeater, Axe Bloodrush (im Code)** | **3,0** | **2 / 29 / 18 / 51 %** | **21 / 30 / 30 / 42** |
+
+Anläufe pro Build (Run 2–7, vorher → M2):
+
+| Build | vorher | M2 | | Build | vorher | M2 |
+| --- | --- | --- | --- | --- | --- | --- |
+| sword (unbroken) | 7,0 | 6,3 | | bow (venom) | 3,4 | **5,1** |
+| sword (bleeder) | 7,4 | 4,4 | | bow (barbs) | 5,4 | 4,3 |
+| mace (smasher) | 4,6 | 3,8 | | crossbow (marksman) | 3,2 | 3,5 |
+| axe (bleed) | 3,8 | 3,9 | | wand (storm / frost / fire) | 2,8 / 1,7 / 2,2 | 2,1 / 1,9 / 1,8 |
+| dagger (poison) | 3,4 | 3,1 | | staff (void / pyre / rot) | 2,1 / 2,9 / 2,1 | 2,6 / 2,2 / 2,6 |
+| dagger (assassin) | 3,5 | 2,6 | | | | |
+
+**Ergebnis:** Die Mastery v2 hält die Gesamtstärke (Ranges mit gleichem Durchschnitt), die Builds rücken enger zusammen
+(1,7–7,4 → 1,8–6,3). Die Sword-Builds gewinnen am meisten (Parry, Clean Line, Read the Blow). Der neue Siege Engine war
+mit +40 % pro Stack zu schwach (Marksman 5,6 Anläufe), Repeater und Harpoon liegen bei 3,2.
+
+**Offen für die nächste Runde:** Venom-Bow (5,1, die Toxin-Gabeln tragen Poison weniger als die alten Minors) und der
+Unbroken-Sword (6,3) bleiben am oberen Rand; das gehört zum Hoheitsgebiete-Schritt (Gear bekommt mehr Offense).
