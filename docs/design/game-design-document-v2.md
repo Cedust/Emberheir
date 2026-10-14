@@ -267,22 +267,37 @@ Endgame **Wildfire I–X**.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Venom Coat (Dagger), Barbed Arrow (Bow),
   Heavy Bolt (Crossbow), Firebolt (Wand), Void Bolt (Staff).
 
-### 5.2 Skill Web ✅ (`level-v2.md` Abschnitt 7)
+### 5.2 Skill Web v3 ✅ (`level-v2.md` Abschnitt 7, `neuausrichtung-v1.md` 4)
 - Ein **Netz aus acht Regionen**: vier Äste (Might, Rupture, Arcana, Affliction) und vier Brücken. Jede Klasse startet
-  an ihrem Hub. 189 Nodes: 123 Minor, 40 Notable, 14 Skill, 12 Keystone, dazu Defense-Knospen zwischen den Regionen.
+  an ihrem Hub. 185 Nodes: Travel-Nodes, 41 Notables (9 Gabeln), 14 Skills, 11 Keystones, Defense-Knospen.
+- **Hoheitsgebiete** (`neuausrichtung-v1.md` 2): Das Web gibt keine rohe Offense mehr. **Travel-Nodes geben nur Defense**
+  (+3 % Life, +6 % Armor, +8 % Barrier, +2 % Evasion oder +4 % Tenacity), wie die Attribut-Nodes im PoE-Tree.
+- **Notables** sind bedingt oder haben eine Regel: „Deine Treffer machen 25 % mehr Schaden gegen Brennende“, „innerhalb
+  von 3 s nach einem Crit“, „ab 50 Heat“, „solange deine Barrier hält“, „pro Shock-Stack“, „gegen einen Gegner im
+  Telegraph“. Mehrere „more“-Boni multiplizieren sich. Dazu Defense-Notables (Ward-Knospen, Stoneskin).
+- **Conversion** öffnet Hybride: Searing Steel (30 % Physical → Fire), Arcane Edge (20 % Physical → Lightning), Void Ember
+  (30 % Fire → Void). Der umgewandelte Teil nutzt seinen eigenen Damage % und die passende Defense des Gegners.
 - **Skill-Nodes** schalten aktive Skills frei (Ränge = Skill Level), z. B. Crushing Blow, Flurry, Chain Lightning,
   Ice Lance, Meteor, Immolate, Soul Harvest, Corrupt, Wither, Toxic Burst, Envenom, Rend, Serrated Edge, Execute.
-- **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4).
-- **Prestige-Äste** (`skilltree-v2.md`): 10 Äste, jede Klasse wählt aus ihren 4 Klassenpfaden. Jedes Prestige: neuer Ast
-  (Stufe I) oder einen eigenen Ast **vertiefen** (II, III; Keystone wird Greater / Supreme).
+- **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4). Ohne Schablone:
+  Spellblade (Skills schlagen zusätzlich mit der Waffe), Arcane Conduit (Skills geben alle Heat aus und wachsen damit),
+  Black Flame (Burn korrumpiert, Corruption halbiert Heilung), Slow Death (halbe Treffer, volle Ailments),
+  Blood and Bile (Bleed und Poison lösen einander aus), dazu Unyielding, Glass Focus, Elemental Overload, Pact of Ash,
+  Blood Price, Final Mercy.
+- **Prestige-Äste** (`skilltree-v2.md`) sind die **Ascendancy**: 10 Äste, jede Klasse wählt aus ihren 4 Klassenpfaden.
+  Jedes Prestige: neuer Ast (Stufe I) oder einen eigenen Ast **vertiefen** (II, III; Keystone wird Greater / Supreme).
+  Ihre kleinen Nodes sind Travel-Nodes mit Defense, die Notables tragen Trigger und Regeln.
+- **Rune Sockets im Web** (4.2) sind noch nicht gebaut.
 - Titel: Klassenname, später ein Titel nach dem Haupt-Ast (z. B. Warrior + Duelist = Blademaster).
 
 ### 5.3 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
 - **Slots:** Off Hand, Helm, Body Armor, Gloves, Boots, Belt, Amulet, 2× Ring, **Charm** (nur Trigger-Affixe).
   Off Hand passt zur Waffe: Shield (Melee), Quiver (Bow/Crossbow), Focus (Wand/Staff).
 - **Item Level = Monster Level**, daraus das **Item Tier** (T1–T10). **Required Level** = Item Level − 5.
-- **Rarities:** Normal (Sockets, Basis für Runewords) · Magic (1 Prefix + 1 Suffix) · Rare · Epic (garantiert Trigger) ·
-  Legendary (Affixe + Legendary Power) · Unique (fest, oft mit Power; Boss-Uniques „Dropped by …“).
+- **Rarities:** Normal (Sockets, Basis für Runewords) · Magic (1 Prefix + 1 Suffix) · Rare (4–5 Stat-Affixe) · Epic
+  (5–6 und garantiert Trigger) · Legendary (4–5 Affixe + Legendary Power) · Unique (fest, oft mit Power; Boss-Uniques
+  „Dropped by …“). Gear ist die **Hauptquelle der Zahlen** (Damage %, Crit, Attack Speed, Trigger Chance), die Bäume geben
+  sie seit Phase 5 ab.
 - Welche Rarity droppt, hängt am Run (Run 1: Normal/Magic, Rare am Boss; Epic ab Run 3; Legendary ab Run 4 am Boss).
 - **Affixe:** Stat-Affixe (Prefix oder Suffix) und **Trigger-Affixe** (Condition → Chance → Effect → Cooldown).
 - **Trigger Codex:** Salvage eines Items mit Trigger lehrt Condition und Effect. Liora baut daraus per **Kindle** einen
@@ -350,8 +365,9 @@ Endgame **Wildfire I–X**.
   Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md`, von Timo entschieden (13.10.). Phase 1
   (Messwerkzeug), Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers), Phase 3 (Ailments v2, Class Traits) und
   Phase 4 (Elites, Routen, Item-Picks, Training Dummy) sind gebaut. Von Phase 5 ist **Weapon Mastery v2** gebaut
-  (mit Mighty Hits, Parry und dem Freeze des Rime-Pfads); offen sind Hoheitsgebiete in Web und Prestige-Ästen, Skill
-  Web v3, die übrigen Umbenennungen und Phase 6.
+  (mit Mighty Hits, Parry und dem Freeze des Rime-Pfads), dazu **Skill Web v3**, die Hoheitsgebiete in Web und
+  Prestige-Ästen, mehr Affixe auf Rare/Epic/Legendary und die Umbenennungen aus 1.3. Offen: Rune Sockets im Web,
+  Phase 6.
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
 - Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch.
 

@@ -217,7 +217,7 @@ const REGIONS: readonly RegionSpec[] = [
         ),
       },
       {
-        nodes: [t("Iron Skin", ARMOR), t("Bulwark Stance", TENACITY), t("Hardy", LIFE)],
+        nodes: [t("Iron Skin", ARMOR), t("Steadfast", TENACITY), t("Hardy", LIFE)],
         notable: [
           n(
             "Colossus",
