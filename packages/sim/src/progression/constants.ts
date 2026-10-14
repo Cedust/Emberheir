@@ -256,7 +256,7 @@ export const PROGRESSION = {
   eliteChanceCap: 0.5,
   /** Elites are tougher: life and damage multipliers on top of their modifiers. */
   eliteLifeMultiplier: 1.4,
-  eliteDamageMultiplier: 1.15,
+  eliteDamageMultiplier: 1.05,
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
