@@ -327,3 +327,26 @@ wand storm / frost / fire 2,1 / 1,9 / 1,8 → 2,1 / 1,3 / 2,3 · staff void / py
   Anläufen. Kandidaten: Elite-Modifier Ironhide, Penetration auf Gear-Affixen.
 - **Caster und Staff** liegen mit 1,3–2,3 Anläufen am unteren Rand, Venom-Bow (6,0) und Unbroken-Sword (5,5) am oberen.
 - **Elites** tragen 31 % der Tode (Ziel 10–20 %).
+
+---
+
+## 10. Phase 5, Teil 3: Physical gegen Armor, Elites, Wände (14.10.)
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Clear |
+| --- | --- | --- | --- | --- |
+| W7 | vorher (Abschnitt 9) | 2,9 | 4 / 31 / 20 / 45 % | 99 % |
+| B1 | Physical Penetration als Affix stärker (6–14 %) und auch auf Ringen; Elite-Schaden ×1,05 statt ×1,15 | 2,7 | 6 / 23 / 18 / 53 % | 99 % |
+| B2 | + alle Gegner 10 % All Resistance, Armor pro Monster Level 0,30 statt 0,34 | 2,7 | 9 / 21 / 17 / 53 % | 99 % |
+| **B3** | **+ Wand-Stärke Run 5/6/7: 8 → 8,8, 7,6 → 8,6, 6,6 → 7,6 (im Code)** | **2,9** | **10 / 23 / 20 / 47 %** | **99 %** |
+
+Anläufe pro neuestem Act (B3): Run 2: 4,5 · 3: 3,2 · 4: 3,3 · 5: 3,1 · 6: 3,4 · 7: 2,2. Run 2–6 liegen im Ziel 3–5.
+
+Pro Build (Run 2–7): unbroken 6,6 · smasher 5,5 · bleeder 4,9 · axe 5,5 · dagger poison 1,9 · assassin 3,1 · marksman
+3,0 · venom 5,2 · barbs 4,0 · wand storm / frost / fire 2,2 / 1,8 / 1,7 · staff void / pyre / rot 1,7 / 1,9 / 1,7.
+
+**Warum die Penetration aufs Gear musste:** Mit den Web- und Ast-Minors ist auch die Physical Penetration weggefallen
+(Cold Blood, Steel Nerves, Keen Edge). Gegen gepanzerte Gegner fehlte sie den Physical-Builds.
+
+**Offen:** Caster und Staff (1,7–2,2) gegen Nahkampf (4,9–6,6). Die 10 % Resistenz hilft kaum, weil DoTs keine
+Resistenz kennen. Ideen für die nächste Runde: DoT-Schaden gegen die Resistenz des Gegners rechnen (wie in PoE), oder
+den Nahkampf über Leech und Block stärken. Run 7 (2,2) könnte noch eine höhere Wand vertragen.
