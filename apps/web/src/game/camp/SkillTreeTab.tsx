@@ -1,4 +1,10 @@
-import { SKILL_TREE, TREE_PLACEMENT, type TreeRegion, onTree } from "@emberheir/content";
+import {
+  ITEM_CATALOG,
+  SKILL_TREE,
+  TREE_PLACEMENT,
+  type TreeRegion,
+  onTree,
+} from "@emberheir/content";
 import {
   classStartNode,
   type GameState,
@@ -27,6 +33,66 @@ import { FORGET_BLOCK_TEXT, LEARN_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { type TreeLabel, type TreeNodeView, TreeScene, type TreeView } from "./TreeScene";
 import { canvasResolution } from "../pixiPacing";
+import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
+
+const hexColor = (css: string) => Number.parseInt(css.replace("#", ""), 16);
+
+/** A Rune Socket of the web: the Rune in it and the Runes of the pouch that can go in. */
+function WebSocketPanel(props: {
+  state: GameState;
+  game: GameApi;
+  nodeId: string;
+  learned: boolean;
+  viewOnly: boolean;
+}) {
+  const { state, game, nodeId, learned, viewOnly } = props;
+  const current = state.hero.webRunes?.[nodeId];
+  const pouch = Object.entries(state.wallet.runes).filter(([, n]) => n > 0);
+  const web = (id: string) => ITEM_CATALOG.runes.get(id)?.web?.description ?? "";
+  if (!learned)
+    return <p className="sub small">Learn the socket, then set a Rune from your pouch.</p>;
+  return (
+    <div className="web-socket" aria-label="Rune Socket">
+      {current ? (
+        <div className="web-socket-rune">
+          <RuneStone runeId={current} size={28} />
+          <span className="small">
+            <b>{runeName(current)}</b> · {web(current)}
+          </span>
+          {!viewOnly && (
+            <button
+              type="button"
+              className="btn"
+              onClick={() => game.dispatch({ type: "socketWebRune", nodeId, runeId: null })}
+            >
+              Take out
+            </button>
+          )}
+        </div>
+      ) : (
+        <p className="sub small">Empty. A Rune here gives its web effect.</p>
+      )}
+      {!viewOnly && pouch.length === 0 && <p className="sub small">No Runes in the pouch.</p>}
+      {!viewOnly &&
+        pouch.map(([id, count]) => (
+          <button
+            key={id}
+            type="button"
+            className="btn web-socket-option"
+            onClick={() => game.dispatch({ type: "socketWebRune", nodeId, runeId: id })}
+          >
+            <RuneStone runeId={id} size={22} />
+            <span className="small">
+              <b>
+                {runeName(id)} ×{count}
+              </b>{" "}
+              · {web(id)}
+            </span>
+          </button>
+        ))}
+    </div>
+  );
+}
 
 /** Base branches with their colour (labels). */
 const BRANCHES: readonly { id: SkillTreeBranch; name: string; color: number }[] = [
@@ -42,6 +108,7 @@ const KIND_LABEL: Record<SkillNode["kind"], string> = {
   notable: "Notable",
   skill: "Skill",
   keystone: "Keystone",
+  socket: "Rune Socket",
 };
 const ROMAN = ["", "I", "II", "III"];
 const TIER_NAME = ["", "Magic", "Rare", "Epic"];
@@ -181,6 +248,9 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
         maxRanks: nodeMaxRanks(node, branches),
         tier: colourTier(node, ranks),
         sealed: ranks === 0 && !!forkPartner(SKILL_TREE, preview.learned, node),
+        ...(state.hero.webRunes?.[node.id]
+          ? { rune: hexColor(runeColor(state.hero.webRunes[node.id] ?? "")) }
+          : {}),
       };
     }),
     labels: treeLabels(branches),
@@ -395,6 +465,15 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                 Costs {KEYSTONE.skillPoints} Skill Points and one of your Keystone places (
                 {activeKeystones(SKILL_TREE, preview.learned)}/{keystonePlaces} taken).
               </p>
+            )}
+            {selected.kind === "socket" && (
+              <WebSocketPanel
+                state={state}
+                game={game}
+                nodeId={selected.id}
+                learned={committed && (state.hero.learned[selected.id] ?? 0) > 0}
+                viewOnly={viewOnly}
+              />
             )}
             {selected.fork && (
               <p className="sub small">

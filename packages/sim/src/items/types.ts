@@ -244,6 +244,15 @@ export interface RuneDefinition {
   /** 1 = most common. Three of one rank combine into one of the next. */
   readonly rank: number;
   readonly bonuses: Readonly<Record<RuneGroup, StatBonuses>>;
+  /** Its third effect, in a Rune Socket of the Skill Web (neuausrichtung-v1.md 4.2). */
+  readonly web?: RuneWebEffect;
+}
+
+/** What a Rune does in a Rune Socket of the Skill Web: a small rule, not a plain number. */
+export interface RuneWebEffect {
+  readonly description: string;
+  readonly bonuses?: StatBonuses;
+  readonly rules?: CombatRules;
 }
 
 /** A Runeword: the exact Runes, in order, in a Normal item with exactly that many Sockets. */

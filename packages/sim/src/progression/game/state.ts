@@ -153,6 +153,8 @@ export interface HeroState {
   readonly rotation: readonly (string | null)[];
   /** Thresholds, Modifiers, Reaction Slots and the Capstone (see `battlePlanUnlocks`). */
   readonly plan: BattlePlanState;
+  /** Runes in the Rune Sockets of the Skill Web: socket node id → Rune id. */
+  readonly webRunes?: Readonly<Record<string, string>>;
 }
 
 export interface Encounter {

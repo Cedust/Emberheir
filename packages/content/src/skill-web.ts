@@ -784,6 +784,8 @@ const SPOKE_TURN = 14;
 /** The Ward bud: two nodes and its Notable, outwards from the middle travel node. */
 const WARD_RADII = [7.7, 8.75, 9.85] as const;
 const FORK_TURN = 4.5;
+/** Rune Sockets sit on the travel line between the inner and the middle ring. */
+const SOCKET_RADIUS = 4.6;
 
 const slug = (name: string) =>
   name
@@ -926,6 +928,18 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
           keystone: path.keystone.rules,
         });
       }
+    });
+
+    // A Rune Socket (neuausrichtung-v1.md 4.2) between the inner and the middle ring.
+    add({
+      id: `${region.id}-rune-socket`,
+      name: "Rune Socket",
+      branch: region.branch,
+      region: region.id,
+      kind: "socket",
+      description: "Holds a Rune from your pouch and gives its web effect. Kaelen sets it.",
+      links: [middleId],
+      ...polar(SOCKET_RADIUS, region.angle + 22.5),
     });
 
     // The Ward bud grows out of the middle travel node, between this region and the next.

@@ -39,14 +39,112 @@ const WARDENS: Readonly<Record<string, string>> = {
  */
 export const RUNES: readonly RuneDefinition[] = [
   // Id "ash" from before the currency of that name; the Rune is called Bark.
-  rune("ash", "Bark", 1, { physicalDamage: 0.06 }, { armor: 6 }),
-  rune("moss", "Moss", 2, { lifesteal: 0.015 }, { life: 12 }),
-  rune("thorn", "Thorn", 3, { bleedChance: 0.06 }, { thorns: 2 }),
-  rune("venom", "Venom", 4, { poisonChance: 0.08 }, { tenacity: 0.06 }),
-  rune("ember", "Ember", 5, { elementalDamage: 0.08 }, { fireResistance: 0.1 }),
-  rune("rime", "Rime", 6, { chillChance: 0.08 }, { coldResistance: 0.1 }),
-  rune("volt", "Volt", 7, { attackSpeed: 0.05 }, { lightningResistance: 0.1 }),
-  rune("dusk", "Dusk", 8, { critChance: 0.03 }, { allResistance: 0.06 }),
+  rune(
+    "ash",
+    "Bark",
+    1,
+    { physicalDamage: 0.06 },
+    { armor: 6 },
+    {
+      description: "Below 50 % Life your hits deal 12 % more damage.",
+      rules: {
+        conditionalDamage: [{ condition: { kind: "lifeBelow", fraction: 0.5 }, amount: 0.12 }],
+      },
+    },
+  ),
+  rune(
+    "moss",
+    "Moss",
+    2,
+    { lifesteal: 0.015 },
+    { life: 12 },
+    {
+      description: "Heal 2 % of the damage your ailments deal.",
+      rules: { dotLifesteal: 0.02 },
+    },
+  ),
+  rune(
+    "thorn",
+    "Thorn",
+    3,
+    { bleedChance: 0.06 },
+    { thorns: 2 },
+    {
+      description: "Your Bleeds deal 20 % more damage to enemies below 50 % Life.",
+      rules: {
+        ailmentDamageWhen: [
+          { ailment: "bleed", amount: 0.2, condition: { kind: "enemyBelow", fraction: 0.5 } },
+        ],
+      },
+    },
+  ),
+  rune(
+    "venom",
+    "Venom",
+    4,
+    { poisonChance: 0.08 },
+    { tenacity: 0.06 },
+    {
+      description: "Your hits deal 10 % more damage to enemies with 10 or more Poison stacks.",
+      rules: {
+        conditionalDamage: [
+          { condition: { kind: "enemyStacks", ailment: "poison", count: 10 }, amount: 0.1 },
+        ],
+      },
+    },
+  ),
+  rune(
+    "ember",
+    "Ember",
+    5,
+    { elementalDamage: 0.08 },
+    { fireResistance: 0.1 },
+    {
+      description: "Your Burns deal 15 % more damage.",
+      rules: { ailmentDamage: { burn: 1.15 } },
+    },
+  ),
+  rune(
+    "rime",
+    "Rime",
+    6,
+    { chillChance: 0.08 },
+    { coldResistance: 0.1 },
+    {
+      description: "Your hits deal 12 % more damage to Chilled enemies.",
+      rules: {
+        conditionalDamage: [{ condition: { kind: "enemyHas", ailment: "chill" }, amount: 0.12 }],
+      },
+    },
+  ),
+  rune(
+    "volt",
+    "Volt",
+    7,
+    { attackSpeed: 0.05 },
+    { lightningResistance: 0.1 },
+    {
+      description: "Your hits deal 12 % more damage to Shocked enemies.",
+      rules: {
+        conditionalDamage: [{ condition: { kind: "enemyHas", ailment: "shock" }, amount: 0.12 }],
+      },
+    },
+  ),
+  rune(
+    "dusk",
+    "Dusk",
+    8,
+    { critChance: 0.03 },
+    { allResistance: 0.06 },
+    {
+      description: "Within 3 s after a Crit, your hits deal 15 % more damage.",
+      rules: {
+        conditionalDamage: [
+          { condition: { kind: "within", event: "crit", seconds: 3 }, amount: 0.15 },
+        ],
+      },
+    },
+  ),
 ];
 
 function rune(
@@ -55,8 +153,9 @@ function rune(
   rank: number,
   weapon: RuneDefinition["bonuses"]["weapon"],
   armor: RuneDefinition["bonuses"]["armor"],
+  web: NonNullable<RuneDefinition["web"]>,
 ): RuneDefinition {
-  return { id, name, rank, bonuses: { weapon, armor } };
+  return { id, name, rank, bonuses: { weapon, armor }, web };
 }
 
 /** A trigger only a Legendary Power grants: fixed magnitude `value`, `perTier` more per tier. */

@@ -88,6 +88,7 @@ const hero = z.object({
   equipment: z.partialRecord(z.enum(EQUIPMENT_SLOTS), itemSchema),
   rotation: z.array(z.string().nullable()),
   plan: battlePlan,
+  webRunes: opt(z.record(z.string(), id)),
 });
 
 const wallet = z.object({

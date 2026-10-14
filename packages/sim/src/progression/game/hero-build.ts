@@ -22,6 +22,7 @@ import {
 import { activeBoons, boonEffects } from "../boons";
 import { classTitle, getClass, LINEAGE_STEPS, lineageEffect, type HeroClass } from "../classes";
 import { buildHeroSetup } from "../hero";
+import { webRuneEffects } from "./web-runes";
 import { keystoneRules, treeBonuses, treeSkills, treeTriggers } from "../skill-tree";
 import {
   buildMasteryWeapon,
@@ -264,6 +265,7 @@ export function heroSetup(
   const lineage = lineageEffect(heroClass.lineage, state.lineage ?? 0);
   const mastery = heroWeapon(state, data);
   const draught = activeDraught(state, data);
+  const sockets = webRuneEffects(hero, data);
   return buildHeroSetup(
     {
       level: hero.level,
@@ -284,6 +286,7 @@ export function heroSetup(
           lineage.bonuses,
           mastery.bonuses,
           draught?.bonuses,
+          sockets.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
@@ -297,6 +300,7 @@ export function heroSetup(
         lineage.rules,
         mastery.rules,
         draught?.rules,
+        sockets.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
       resistancePenalty: emberPenalty(state),
