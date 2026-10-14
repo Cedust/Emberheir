@@ -163,11 +163,11 @@ const s = (skill: SkillDefinition): SkillSpec => ({ skill });
 
 // Travel nodes give small Defense only (neuausrichtung-v1.md 4.2): the way to a Notable costs
 // nothing and makes the hero a little tougher.
-const LIFE = { increasedLife: 0.03 };
-const ARMOR = { increasedArmor: 0.06 };
-const BARRIER = { increasedBarrier: 0.08 };
-const EVASION = { evasion: 0.02 };
-const TENACITY = { tenacity: 0.04 };
+const LIFE = { increasedLife: 0.015 };
+const ARMOR = { increasedArmor: 0.03 };
+const BARRIER = { increasedBarrier: 0.04 };
+const EVASION = { evasion: 0.01 };
+const TENACITY = { tenacity: 0.02 };
 
 /** A travel node. */
 const t = (name: string, bonuses: StatBonuses): NodeSpec => ({ name, bonuses });

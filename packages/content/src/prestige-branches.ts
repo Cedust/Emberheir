@@ -167,12 +167,12 @@ const MINOR_SLOTS = ["entry", "a1", "b1", "mid", "b4", "t2a", "t2b", "t3a", "t3b
 type MinorSlot = (typeof MINOR_SLOTS)[number];
 
 /** Defense of one travel node (one rank; the two-rank nodes of tier III give half per rank). */
-const L = { increasedLife: 0.04 };
-const A = { increasedArmor: 0.08 };
-const B = { increasedBarrier: 0.1 };
-const E = { evasion: 0.03 };
-const T = { tenacity: 0.05 };
-const K = { blockChance: 0.03 };
+const L = { increasedLife: 0.02 };
+const A = { increasedArmor: 0.04 };
+const B = { increasedBarrier: 0.05 };
+const E = { evasion: 0.015 };
+const T = { tenacity: 0.025 };
+const K = { blockChance: 0.015 };
 
 /**
  * Travel nodes per branch, in the order of `MINOR_SLOTS`: small Defense that fits the branch.
