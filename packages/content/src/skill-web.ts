@@ -358,9 +358,9 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Static Ward", BARRIER), s(CHAIN_LIGHTNING), t("Clear Mind", TENACITY)],
         notable: n(
           "Storm Weaver",
-          "Your hits deal 10 % more damage for every Shock stack on the enemy.",
+          "Your hits deal 8 % more damage for every Shock stack on the enemy (up to 3).",
           {
-            conditionalDamage: [1, 2, 3, 4, 5].map((c) => more(stacks("shock", c), 0.1)),
+            conditionalDamage: [1, 2, 3].map((c) => more(stacks("shock", c), 0.08)),
           },
         ),
       },
@@ -410,9 +410,9 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Rime Ward", BARRIER), s(ICE_LANCE), t("Still Mind", TENACITY)],
         notable: n(
           "Kindled Mind",
-          "Your hits deal 20 % more damage to Chilled enemies and 15 % more while your Barrier holds.",
+          "Your hits deal 15 % more damage to Chilled enemies and 10 % more while your Barrier holds.",
           {
-            conditionalDamage: [more(has("chill"), 0.2), more({ kind: "barrierActive" }, 0.15)],
+            conditionalDamage: [more(has("chill"), 0.15), more({ kind: "barrierActive" }, 0.1)],
           },
         ),
       },
@@ -448,8 +448,8 @@ const REGIONS: readonly RegionSpec[] = [
             bonuses: { burnChance: 0.15 },
             rules: { ailmentDamage: { burn: 1.2 } },
           },
-          n("Smoulder", "Your Burns deal 40 % more damage to enemies below 50 % Life.", {
-            ailmentDamageWhen: [{ ailment: "burn", amount: 0.4, condition: below(0.5) }],
+          n("Smoulder", "Your Burns deal 25 % more damage to enemies below 50 % Life.", {
+            ailmentDamageWhen: [{ ailment: "burn", amount: 0.25, condition: below(0.5) }],
           }),
         ],
       },
@@ -512,11 +512,11 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Scorched Hide", LIFE), s(IMMOLATE), t("Ember Ash", TENACITY)],
         notable: n(
           "Pyre Heart",
-          "Your Burns deal 30 % more damage to Corrupted enemies, your Corruption 30 % more to Burning ones.",
+          "Your Burns deal 20 % more damage to Corrupted enemies, your Corruption 20 % more to Burning ones.",
           {
             ailmentDamageWhen: [
-              { ailment: "burn", amount: 0.3, condition: has("corruption") },
-              { ailment: "corruption", amount: 0.3, condition: has("burn") },
+              { ailment: "burn", amount: 0.2, condition: has("corruption") },
+              { ailment: "corruption", amount: 0.2, condition: has("burn") },
             ],
           },
         ),
@@ -526,11 +526,11 @@ const REGIONS: readonly RegionSpec[] = [
         notable: [
           n(
             "Hungering Void",
-            "Your Corruption deals 40 % more damage to enemies below 50 % Life.",
-            { ailmentDamageWhen: [{ ailment: "corruption", amount: 0.4, condition: below(0.5) }] },
+            "Your Corruption deals 25 % more damage to enemies below 50 % Life.",
+            { ailmentDamageWhen: [{ ailment: "corruption", amount: 0.25, condition: below(0.5) }] },
           ),
-          n("Cinder Heart", "Your Burns deal 40 % more damage while you have 50 Heat or more.", {
-            ailmentDamageWhen: [{ ailment: "burn", amount: 0.4, condition: heat(50) }],
+          n("Cinder Heart", "Your Burns deal 25 % more damage while you have 50 Heat or more.", {
+            ailmentDamageWhen: [{ ailment: "burn", amount: 0.25, condition: heat(50) }],
           }),
         ],
         keystones: [
@@ -666,8 +666,8 @@ const REGIONS: readonly RegionSpec[] = [
       {
         nodes: [t("Scarred Hide", ARMOR), s(REND), t("Tough Sinew", TENACITY)],
         notable: [
-          n("Exsanguinate", "Your Bleeds deal 40 % more damage to enemies below 50 % Life.", {
-            ailmentDamageWhen: [{ ailment: "bleed", amount: 0.4, condition: below(0.5) }],
+          n("Exsanguinate", "Your Bleeds deal 25 % more damage to enemies below 50 % Life.", {
+            ailmentDamageWhen: [{ ailment: "bleed", amount: 0.25, condition: below(0.5) }],
           }),
           n("Red Tide", "Your hits deal 25 % more damage to Bleeding enemies.", {
             conditionalDamage: [more(has("bleed"), 0.25)],

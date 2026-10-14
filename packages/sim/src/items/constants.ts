@@ -38,10 +38,10 @@ export const ITEMS = {
   affixCounts: {
     normal: { stat: [0, 0], trigger: [0, 0], extraTriggerChance: 0 },
     magic: { stat: [1, 2], trigger: [0, 0], extraTriggerChance: 0.1 },
-    rare: { stat: [3, 4], trigger: [0, 0], extraTriggerChance: 0.25 },
-    epic: { stat: [4, 5], trigger: [1, 1], extraTriggerChance: 0.2 },
+    rare: { stat: [4, 5], trigger: [0, 0], extraTriggerChance: 0.25 },
+    epic: { stat: [5, 6], trigger: [1, 1], extraTriggerChance: 0.2 },
     // Fewer affixes than Epic, but a Legendary Power on top.
-    legendary: { stat: [3, 4], trigger: [1, 1], extraTriggerChance: 0 },
+    legendary: { stat: [4, 5], trigger: [1, 1], extraTriggerChance: 0 },
   } satisfies Record<
     Rarity,
     { stat: [number, number]; trigger: [number, number]; extraTriggerChance: number }
