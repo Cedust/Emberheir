@@ -212,8 +212,8 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Thick Neck", ARMOR), s(CRUSHING_BLOW), t("Grit", LIFE)],
         notable: n(
           "Brutal Force",
-          "Your hits deal 30 % more damage to Stunned enemies and 20 % more while you have 50 Heat or more.",
-          { conditionalDamage: [more({ kind: "enemyStunned" }, 0.3), more(heat(50), 0.2)] },
+          "Your hits deal 25 % more damage while you have 30 Heat or more, and 20 % more to Stunned enemies.",
+          { conditionalDamage: [more(heat(30), 0.25), more({ kind: "enemyStunned" }, 0.2)] },
         ),
       },
       {
@@ -221,8 +221,8 @@ const REGIONS: readonly RegionSpec[] = [
         notable: [
           n(
             "Colossus",
-            "+8 % max Life. Within 3 s after you Block, your hits deal 30 % more damage.",
-            { conditionalDamage: [more(within("block", 3), 0.3)] },
+            "+8 % max Life. Within 4 s after a skill, your hits deal 30 % more damage.",
+            { conditionalDamage: [more(within("skill", 4), 0.3)] },
             { increasedLife: 0.08 },
           ),
           n("Whirlwind", "Within 3 s after a Crit, your hits deal 25 % more damage.", {
@@ -669,8 +669,8 @@ const REGIONS: readonly RegionSpec[] = [
           n("Exsanguinate", "Your Bleeds deal 25 % more damage to enemies below 50 % Life.", {
             ailmentDamageWhen: [{ ailment: "bleed", amount: 0.25, condition: below(0.5) }],
           }),
-          n("Red Tide", "Your hits deal 25 % more damage to Bleeding enemies.", {
-            conditionalDamage: [more(has("bleed"), 0.25)],
+          n("Red Tide", "Your hits deal 35 % more damage to Bleeding enemies.", {
+            conditionalDamage: [more(has("bleed"), 0.35)],
           }),
         ],
         keystones: [
@@ -689,8 +689,8 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Quick Step", EVASION), s(SERRATED_EDGE), t("Wary", TENACITY)],
         notable: n(
           "Flayer",
-          "Your hits deal 15 % more damage to Bleeding enemies and 15 % more to enemies below 50 % Life.",
-          { conditionalDamage: [more(has("bleed"), 0.15), more(below(0.5), 0.15)] },
+          "Your hits deal 25 % more damage to Bleeding enemies and 15 % more to enemies below 50 % Life.",
+          { conditionalDamage: [more(has("bleed"), 0.25), more(below(0.5), 0.15)] },
         ),
       },
     ],

@@ -109,8 +109,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Spark",
       description:
-        "After each skill, your next Default Attack deals 50 % more damage and always applies the ailment of its element.",
-      rules: { spark: { damage: 0.5 } },
+        "After each skill, your next Default Attack deals 30 % more damage and always applies the ailment of its element.",
+      rules: { spark: { damage: 0.3 } },
     },
     lineage: {
       name: "Storm Lineage",
@@ -143,8 +143,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Lingering",
       description:
-        "Your ailments deal 1 % more damage for every second of the fight (up to +40 % after 40 s).",
-      rules: { lingering: { perSecond: 0.01, max: 0.4 } },
+        "Your ailments deal 1 % more damage for every second of the fight (up to +25 % after 25 s).",
+      rules: { lingering: { perSecond: 0.01, max: 0.25 } },
     },
     lineage: {
       name: "Hollow Lineage",
