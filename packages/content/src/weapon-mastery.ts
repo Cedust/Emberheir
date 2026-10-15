@@ -825,8 +825,8 @@ const AXE = buildTree({
       theme: "Bleed",
       color: C.blood,
       techniques: [
-        technique("Gash", "+16 % effect of the Axe's Bleed.", {
-          weaponRules: { ailmentEffectBy: { bleed: 0.16 } },
+        technique("Gash", "+20 % effect of the Axe's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.2 } },
         }),
         technique("Barb", "+4 % Bleed Chance.", { bonuses: { bleedChance: 0.04 } }),
       ],

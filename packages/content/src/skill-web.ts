@@ -255,10 +255,10 @@ const REGIONS: readonly RegionSpec[] = [
         notable: {
           name: "Unbroken",
           description:
-            "While wielding a Melee Weapon: +50 % Heat from Hits Taken. With 50 Heat or more your hits deal 30 % more damage.",
+            "While wielding a Melee Weapon: +50 % Heat from Hits Taken. With 50 Heat or more your hits deal 40 % more damage.",
           bonuses: { heatFromHitsTaken: 0.5 },
           weaponRange: "melee",
-          rules: { conditionalDamage: [more(heat(50), 0.3)] },
+          rules: { conditionalDamage: [more(heat(50), 0.4)] },
         },
         keystones: [
           {
@@ -410,9 +410,9 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Rime Ward", BARRIER), s(ICE_LANCE), t("Still Mind", TENACITY)],
         notable: n(
           "Kindled Mind",
-          "Your hits deal 15 % more damage to Chilled enemies and 10 % more while your Barrier holds.",
+          "Your hits deal 10 % more damage to Chilled enemies and 10 % more while your Barrier holds.",
           {
-            conditionalDamage: [more(has("chill"), 0.15), more({ kind: "barrierActive" }, 0.1)],
+            conditionalDamage: [more(has("chill"), 0.1), more({ kind: "barrierActive" }, 0.1)],
           },
         ),
       },
