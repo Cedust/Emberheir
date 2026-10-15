@@ -15,6 +15,7 @@ import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
+import { useTabKeys } from "../../ui/kit/hotkeys";
 import { collections } from "../collections";
 import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
 
@@ -45,6 +46,7 @@ export function LegacyView(props: {
   const { state } = props;
   const { legacy } = state;
   const [tab, setTab] = useState<"gear" | "trophies" | "collections">(props.initialTab ?? "gear");
+  useTabKeys(["gear", "trophies", "collections"], tab, (id) => setTab(id as typeof tab));
   const goals = collections(state);
   const full = goals.filter((g) => g.found >= g.total).length;
   const generation = legacy.prestige + 1;

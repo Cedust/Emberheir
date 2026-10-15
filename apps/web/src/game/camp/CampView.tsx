@@ -18,7 +18,10 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { fmt, walletEntries } from "../../ui/items";
+import { Wallet } from "../../ui/kit/Currency";
+import { KeyHint } from "../../ui/kit/Button";
+import { HOTKEYS } from "../../ui/kit/hotkeys";
+
 import { useStageSize } from "../../ui/Stage";
 import { bountyPreview } from "../bounty";
 import { completedCollections } from "../collections";
@@ -40,6 +43,12 @@ import {
   WildfirePicker,
 } from "./CampPickers";
 
+/** Persona buttons that a key also opens (ui-ux-plan-v1.md 3.5). */
+const CTA_KEY: Partial<Record<CampTarget, string>> = {
+  character: HOTKEYS.character,
+  kaelen: HOTKEYS.tree,
+  legacy: HOTKEYS.legacy,
+};
 /** The Camp (Camp hub mock): a painted scene with clickable personas and Set Out. */
 export function CampView(props: {
   state: GameState;
@@ -122,20 +131,12 @@ export function CampView(props: {
           </span>
         </div>
         <div className="grow" />
-        <div className="wallet-row camp-wallet" aria-label="Wallet">
-          {walletEntries(state).map((w) => (
-            <span key={w.key} className={`wallet-chip w-${w.key}`} title={w.name}>
-              <span className="dot" />
-              <b className="mono">{fmt(w.value)}</b>
-              <span className="sub">{w.name}</span>
-            </span>
-          ))}
-          <span className="wallet-chip w-flask" title="Ember Flask">
-            <span className="dot" />
-            <b className="mono">{flask}</b>
-            <span className="sub">Flask</span>
-          </span>
-        </div>
+        <Wallet
+          state={state}
+          named
+          className="camp-wallet"
+          extra={[{ id: "flask", amount: flask }]}
+        />
         <button type="button" className="icon-button" aria-label="Menu" onClick={props.onMenu}>
           <Icon name="menu" size={20} />
         </button>
@@ -240,6 +241,9 @@ export function CampView(props: {
           </div>
           <button type="button" className="btn primary" disabled={!!sel.locked} onClick={cta}>
             {sel.cta}
+            {sel.target && CTA_KEY[sel.target] && !sel.locked && (
+              <KeyHint k={CTA_KEY[sel.target] ?? ""} />
+            )}
           </button>
         </section>
 

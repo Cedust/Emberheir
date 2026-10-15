@@ -4,6 +4,7 @@ import { ItemArtDefs } from "../ui/ItemArt";
 import { ItemHoverLayer } from "../ui/ItemTooltip";
 import { Stage } from "../ui/Stage";
 import { useSettings } from "../ui/settings";
+import { isTypingTarget } from "../ui/kit/hotkeys";
 import { CHEATS_ENABLED, CheatPanel } from "./CheatPanel";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
@@ -33,6 +34,7 @@ export function GameApp() {
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [campScreen, setCampScreen] = useState<CampScreen>(null);
   const [persona, setPersona] = useState<PersonaId>("thoric");
+  const [kaelenTab, setKaelenTab] = useState<"tree" | "plan">("tree");
   const [lab, setLab] = useState(false);
   const { state } = game;
   const run = state?.run ?? null;
@@ -40,11 +42,12 @@ export function GameApp() {
 
   const toggle = (o: Exclude<Overlay, null>) => setOverlay((cur) => (cur === o ? null : o));
 
-  // Hotkeys: C = Character, T = Skill Tree, Esc = close or Menu, F8 = Cheats (Cheat Mode).
+  // Hotkeys (ui-ux-plan-v1.md 3.5): Esc = close or Menu, C/I = Character, T = Skill Tree,
+  // B = Battle Plan, L = Legacy (Camp), F8 = Cheats (Cheat Mode). Q/E flip tabs (ui/kit/hotkeys).
   useEffect(() => {
     if (!state || lab) return;
     const onKey = (e: KeyboardEvent) => {
-      if (e.ctrlKey || e.metaKey || e.altKey) return;
+      if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
       if (e.key === "F8" && CHEATS_ENABLED) {
         e.preventDefault();
         setOverlay((cur) => (cur === "cheats" ? null : "cheats"));
@@ -56,16 +59,28 @@ export function GameApp() {
         if (overlay) setOverlay(null);
         else if (!run && campScreen) setCampScreen(null);
         else setOverlay("menu");
-      } else if (key === "c" && overlay !== "menu") {
+      } else if (overlay === "menu" || overlay === "cheats") {
+        return;
+      } else if (key === "c" || key === "i") {
         setOverlay((cur) => (cur === "character" ? null : "character"));
-      } else if (key === "t" && overlay !== "menu") {
-        if (run) setOverlay((cur) => (cur === "tree" || cur === "plan" ? null : "tree"));
-        else setCampScreen((cur) => (cur === "kaelen" ? null : "kaelen"));
+      } else if (key === "t" || key === "b") {
+        // Mid-fight the Battle Plan is locked, so B shows the tree like T.
+        const tab = key === "t" || inFight ? "tree" : "plan";
+        if (run) {
+          setOverlay((cur) => (cur === "tree" || cur === "plan" ? null : tab));
+        } else {
+          setOverlay(null);
+          setKaelenTab(tab);
+          setCampScreen((cur) => (cur === "kaelen" ? null : "kaelen"));
+        }
+      } else if (key === "l" && !run) {
+        setOverlay(null);
+        setCampScreen((cur) => (cur === "legacy" ? null : "legacy"));
       }
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state, lab, overlay, run, campScreen]);
+  }, [state, lab, overlay, run, campScreen, inFight]);
 
   if (lab) {
     return (
@@ -88,6 +103,10 @@ export function GameApp() {
         break;
       case "codex":
         setOverlay("codex");
+        break;
+      case "kaelen":
+        setKaelenTab("tree");
+        setCampScreen("kaelen");
         break;
       case "forge":
         setPersona("thoric");
@@ -167,7 +186,16 @@ export function GameApp() {
     } else if (campScreen === "stash") {
       screen = <StashView state={state} game={game} onClose={close} />;
     } else if (campScreen === "kaelen") {
-      screen = <KaelenView state={state} game={game} viewOnly={false} onClose={close} />;
+      screen = (
+        <KaelenView
+          key={kaelenTab}
+          state={state}
+          game={game}
+          viewOnly={false}
+          initialTab={kaelenTab}
+          onClose={close}
+        />
+      );
     } else if (campScreen === "legacy") {
       screen = <LegacyView state={state} onClose={close} />;
     } else {

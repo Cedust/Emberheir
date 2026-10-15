@@ -11,7 +11,8 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { fmt, walletEntries } from "../../ui/items";
+import { fmt } from "../../ui/items";
+import { type CurrencyId, Wallet } from "../../ui/kit/Currency";
 import { ShrineCards } from "../Boons";
 import { inFinale } from "../finale";
 import { RunHeader } from "../RunHeader";
@@ -71,7 +72,7 @@ export function IntermissionView(props: {
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
-  const gains: Record<string, number> = rewards
+  const gains: Partial<Record<CurrencyId, number>> = rewards
     ? {
         acorns: rewards.acorns,
         ash: rewards.ash + rewards.salvagedAsh,
@@ -162,19 +163,7 @@ export function IntermissionView(props: {
         />
       </div>
       <footer className="intermission-footer bar-bottom">
-        <div className="wallet-row" aria-label="Wallet">
-          {walletEntries(state).map((w) => (
-            <div key={w.key} className="wallet-entry">
-              <span className="mono">
-                {fmt(w.value)}
-                {(gains[w.key] ?? 0) > 0 && (
-                  <span className="gain"> +{fmt(gains[w.key] ?? 0)}</span>
-                )}
-              </span>
-              <span className="sub">{w.name}</span>
-            </div>
-          ))}
-        </div>
+        <Wallet state={state} named gains={gains} />
         <div className="grow" />
         <button
           type="button"

@@ -34,7 +34,9 @@ import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { ClassEmblem } from "./ClassEmblem";
-import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt, walletEntries } from "../ui/items";
+import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt } from "../ui/items";
+import { Wallet } from "../ui/kit/Currency";
+import { useTabKeys } from "../ui/kit/hotkeys";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
 import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
@@ -76,6 +78,7 @@ export function CharacterOverlay(props: {
   const ashbornOpen =
     state.hero.level >= ASHBORN.fromLevel && (GAME_DATA.ashbornValues?.length ?? 0) > 0;
   const tabs = TABS.filter((t) => t !== "Ashborn" || ashbornOpen);
+  useTabKeys(tabs, tab, (t) => setTab(t as Tab));
   const [discarding, setDiscarding] = useState<string | null>(null);
   useRingSlot();
   const drops = itemDrops(state, game);
@@ -436,13 +439,7 @@ export function CharacterOverlay(props: {
             ) : (
               <div className="empty-pick panel-card sub">Select an item.</div>
             )}
-            <div className="wallet-row small-wallet">
-              {walletEntries(state).map((w) => (
-                <span key={w.key} className={`w-${w.key}`}>
-                  <b className="mono">{fmt(w.value)}</b> <span className="sub">{w.name}</span>
-                </span>
-              ))}
-            </div>
+            <Wallet state={state} named />
           </section>
         </div>
       </div>
