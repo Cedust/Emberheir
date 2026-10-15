@@ -188,14 +188,12 @@ export function AttributeStones(props: {
   );
 }
 
-/** Cards to fill the board with when few Perks are lit: the next one per attribute. */
-const BOARD_MIN = 3;
 /** More lit Perks than this: two columns of names, the effect moves into the tooltip. */
 const BOARD_FULL = 3;
 
 /**
- * Breakpoint Perks as cards (ui-ux-plan-v1.md 4.2): what every lit Perk does in one line, then
- * the next Perk of each attribute and how many points it still needs.
+ * Breakpoint Perks as cards (ui-ux-plan-v1.md 4.2): what every lit Perk does in one line. Only
+ * lit Perks show; the seals on the stones hint at the rest.
  */
 function PerkBoard(props: {
   status: (p: PerkId) => PerkStatus;
@@ -203,21 +201,14 @@ function PerkBoard(props: {
   shown: (p: PerkId) => boolean;
 }) {
   const lit = PERKS.filter((p) => props.shown(p.id));
-  const upcoming = ATTRIBUTES.flatMap((a) => {
-    const p = PERKS.find((q) => q.attribute === a && q.threshold > props.value(a));
-    return p && !props.shown(p.id) ? [p] : [];
-  }).sort(
-    (x, y) => x.threshold - props.value(x.attribute) - (y.threshold - props.value(y.attribute)),
-  );
-  const cards = [...lit, ...upcoming.slice(0, Math.max(0, BOARD_MIN - lit.length))];
+  if (lit.length === 0) return null;
   return (
     <section className="perk-board" data-testid="perks" aria-label="Breakpoint Perks">
       <div className="section-row">
         <span className="title-font section-title">Breakpoint Perks</span>
-        <span className="sub">at 4, 7 and 10</span>
       </div>
       <div className={`perk-cards${lit.length > BOARD_FULL ? " compact" : ""}`}>
-        {cards.map((p) => (
+        {lit.map((p) => (
           <PerkCard
             key={p.id}
             perk={p.id}

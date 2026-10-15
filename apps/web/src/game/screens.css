@@ -2512,7 +2512,7 @@
   left: 110px;
   right: 110px;
   top: 30px;
-  bottom: 110px;
+  bottom: 120px;
   border-radius: 50%;
   background: radial-gradient(closest-side, rgb(255 150 60 / 0.28), transparent);
   pointer-events: none;
@@ -2522,7 +2522,7 @@
   position: absolute;
   left: 50%;
   top: 4px;
-  height: 412px;
+  height: 484px;
   transform: translateX(-50%);
   filter: drop-shadow(0 6px 10px rgb(40 20 0 / 0.35));
   pointer-events: none;
@@ -2530,17 +2530,35 @@
 }
 
 .stage .hero-numbers {
-  width: 560px;
   display: grid;
-  grid-template-columns: 1.15fr 0.95fr 1fr 1fr;
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  grid-template-areas:
+    "damage damage"
+    "life defense"
+    "resist resist";
+  gap: 12px;
+}
+
+.stage .hero-damage {
+  grid-area: damage;
+}
+
+.stage .hero-life {
+  grid-area: life;
+}
+
+.stage .hero-defense {
+  grid-area: defense;
+}
+
+.stage .hero-resist {
+  grid-area: resist;
 }
 
 /* A plaque: dark inset with a brass top edge, like the Battle HUD's frames. */
 .stage .hero-card {
   position: relative;
-  min-height: 104px;
-  padding: 8px 11px;
+  padding: 12px 16px 14px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -2572,7 +2590,7 @@
 }
 
 .stage .hero-dps b {
-  font-size: 32px;
+  font-size: 46px;
   line-height: 1.05;
   background: linear-gradient(180deg, #fff2c8, #ffb24a 70%, #e0702a);
   -webkit-background-clip: text;
@@ -2582,22 +2600,36 @@
 }
 
 .stage .hero-unit {
-  font-size: 12px;
+  font-size: 15px;
   color: #b9a888;
 }
 
-.stage .hero-hit {
-  margin-top: auto;
+.stage .hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.stage .hero-pill {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
-  font-size: 13px;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
   color: #cdbd9d;
+  background: rgb(0 0 0 / 0.25);
+  border: 1px solid rgb(201 160 99 / 0.3);
+}
+
+.stage .hero-pill b {
+  color: #f6ead2;
 }
 
 .stage .hero-delta {
   font-family: var(--font-mono);
-  font-size: 14px;
+  font-size: 17px;
   font-weight: 700;
 }
 
@@ -2620,9 +2652,9 @@
 
 .stage .life-orb {
   position: relative;
-  width: 74px;
-  height: 74px;
-  margin-top: -4px;
+  width: 124px;
+  height: 124px;
+  margin: 6px 0 4px;
   display: grid;
   place-items: center;
   border-radius: 50%;
@@ -2654,26 +2686,15 @@
 
 .stage .life-orb b {
   position: relative;
-  font-size: 20px;
+  font-size: 26px;
   color: #fff4ec;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
-}
-
-.stage .life-orb-barrier {
-  position: absolute;
-  bottom: -9px;
-  padding: 0 5px;
-  border-radius: 6px;
-  font-size: 11px;
-  font-weight: 700;
-  color: #e8f4ff;
-  background: #2a5f9a;
 }
 
 .stage .hero-table {
   width: 100%;
   border-collapse: collapse;
-  font-size: 14px;
+  font-size: 16px;
 }
 
 .stage .hero-table tr {
@@ -2685,14 +2706,14 @@
 }
 
 .stage .hero-table th {
-  padding: 3px 4px;
+  padding: 7px 6px;
   text-align: left;
   font-weight: 400;
   color: #cdbd9d;
 }
 
 .stage .hero-table td {
-  padding: 3px 0;
+  padding: 7px 0;
   text-align: right;
   font-weight: 700;
   color: #f6ead2;
@@ -2707,28 +2728,33 @@
 
 .stage .hero-res {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
   margin-top: 4px;
 }
 
 .stage .hero-res-one {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: space-between;
-  gap: 3px;
-  padding: 8px 6px;
-  border-radius: 5px;
-  font-size: 15px;
-  white-space: nowrap;
-  font-weight: 700;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  border-radius: 6px;
   color: var(--res);
   background: color-mix(in srgb, var(--res) 14%, transparent);
   border: 1px solid color-mix(in srgb, var(--res) 45%, transparent);
+  white-space: nowrap;
 }
 
-.stage .hero-res-one .mono {
+.stage .hero-res-one b {
+  font-size: 20px;
   color: #f6ead2;
+}
+
+.stage .hero-res-name {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
 }
 
 .stage .hero-res-one.capped {
@@ -3016,7 +3042,24 @@
 .stage .attr-buttons {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
+}
+
+.stage .pending-gain {
+  margin-right: auto;
+  display: flex;
+  flex-direction: column;
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+.stage .pending-gain .up b {
+  color: var(--good);
+}
+
+.stage .pending-gain .down b {
+  color: var(--warn);
 }
 
 .stage .stat-rows {

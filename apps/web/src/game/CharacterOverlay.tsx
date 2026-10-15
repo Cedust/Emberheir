@@ -7,7 +7,6 @@ import {
   type Attributes,
   type EquipmentSlot,
   type GameState,
-  type DerivedStats,
   type Item,
   PROGRESSION,
   deriveStats,
@@ -52,11 +51,11 @@ import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { HeroDoll, type HeroSlotProps } from "./character/HeroDoll";
-import { HeroNumbers } from "./character/HeroNumbers";
+import { HeroNumbers, PendingGain, type StatsBefore } from "./character/HeroNumbers";
 import { AshbornPanel } from "./AshbornPanel";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 
-type Tab = "Attributes" | "Offense" | "Defense" | "Heat" | "Ashborn";
+type Tab = "Overview" | "Attributes" | "Offense" | "Defense" | "Heat" | "Ashborn";
 
 const pct = (v: number) => `${formatPercent(v)} %`;
 /** Stage width the window frame, the attributes (420) and the bag (464) take from the hero. */
@@ -83,7 +82,10 @@ export function CharacterOverlay(props: {
   const stageSize = useStageSize();
   const [pending, setPending] = useState<Record<Attribute, number>>(NO_POINTS);
   const [selected, setSelected] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("Attributes");
+  // Open where something waits: free Attribute Points, else the key numbers.
+  const [tab, setTab] = useState<Tab>(
+    !inFight && state.hero.unspentAttributePoints > 0 ? "Attributes" : "Overview",
+  );
   // Ashborn opens at level 100 (neuausrichtung-v1.md 7.3).
   const ashbornOpen =
     state.hero.level >= ASHBORN.fromLevel && (GAME_DATA.ashbornValues?.length ?? 0) > 0;
@@ -106,7 +108,7 @@ export function CharacterOverlay(props: {
   const stats = deriveStats(setup);
   const dps = estimateDps(setup, stats);
   // The numbers before the pending points, to show what Confirm changes.
-  let before: { stats: DerivedStats; dps: number } | undefined;
+  let before: StatsBefore | undefined;
   if (spent > 0) {
     const now = heroSetup(state, GAME_DATA).setup;
     const nowStats = deriveStats(now);
@@ -137,7 +139,7 @@ export function CharacterOverlay(props: {
   const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
   const draught = activeDraught(state, GAME_DATA);
   const rows: Record<
-    Exclude<Tab, "Attributes" | "Ashborn">,
+    Exclude<Tab, "Overview" | "Attributes" | "Ashborn">,
     { label: string; value: string; note?: NoteHover }[]
   > = {
     Offense: [
@@ -266,6 +268,12 @@ export function CharacterOverlay(props: {
 
   const tabs: TabItem<Tab>[] = [
     {
+      id: "Overview",
+      name: "Overview",
+      icon: "eye",
+      explain: "Your key numbers at a glance.",
+    },
+    {
       id: "Attributes",
       name: "Attributes",
       icon: "user",
@@ -387,17 +395,6 @@ export function CharacterOverlay(props: {
               </div>
             </div>
             <HeroDoll state={state} slot={slotProps} />
-            <HeroNumbers
-              stats={stats}
-              dps={dps}
-              weapon={{
-                name: setup.weapon.name,
-                min: setup.weapon.damage.min,
-                max: setup.weapon.damage.max,
-              }}
-              before={before}
-              resNote={resNote}
-            />
           </section>
 
           <section className="sheet-column" aria-label={tab}>
@@ -418,6 +415,7 @@ export function CharacterOverlay(props: {
                     !inFight &&
                     state.hero.unspentAttributePoints > 0 && (
                       <div className="attr-buttons">
+                        {before && <PendingGain stats={stats} dps={dps} before={before} />}
                         <Button
                           blocked={spent === 0 ? "Nothing to undo" : null}
                           onClick={() => setPending(NO_POINTS)}
@@ -454,8 +452,21 @@ export function CharacterOverlay(props: {
                 />
               </>
             )}
+            {tab === "Overview" && (
+              <HeroNumbers
+                stats={stats}
+                dps={dps}
+                weapon={{
+                  name: setup.weapon.name,
+                  min: setup.weapon.damage.min,
+                  max: setup.weapon.damage.max,
+                }}
+                before={before}
+                resNote={resNote}
+              />
+            )}
             {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
-            {tab !== "Attributes" && tab !== "Ashborn" && (
+            {tab !== "Overview" && tab !== "Attributes" && tab !== "Ashborn" && (
               <>
                 <span className="title-font section-title">{tab}</span>
                 <dl className="stat-rows">
