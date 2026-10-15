@@ -11,7 +11,18 @@ import {
   rollRange,
 } from "./fighter";
 import { addHeat } from "./heat";
-import { addBarrier, dealDamage, defaultAttack, heal, inflict, landHit, stun } from "./hits";
+import {
+  addBarrier,
+  combust,
+  dealDamage,
+  extraAttack,
+  extraFiresTriggers,
+  heal,
+  inflict,
+  isMighty,
+  landHit,
+  stun,
+} from "./hits";
 import {
   type TriggerState,
   applyBuff,
@@ -78,17 +89,32 @@ export function applyEffect(
 ): void {
   const target = core.fighters[other(f.side)];
   switch (effect.kind) {
-    case "weaponHit":
+    case "weaponHit": {
+      const roll = rollRange(core, f.setup.weapon.damage);
+      const extra = effect.extra === true;
+      const wr = f.setup.weaponRules;
+      if (extra) f.extraDepth++;
       landHit(core, f, {
         source: name,
-        baseDamage: rollRange(core, f.setup.weapon.damage) * effect.multiplier,
+        baseDamage: roll * effect.multiplier,
         type: f.setup.weapon.damageType,
         evadable: true,
-        multiplier: 1,
-        ailmentChances: [],
+        multiplier: extra ? 1 + (wr?.extraAttackDamage ?? 0) : 1,
+        ailmentChances: extra
+          ? (wr?.extraAttackAilments ?? []).map((ailment) => ({ ailment, chance: 1 }))
+          : [],
         fromTrigger: true,
         precisionApplies: true,
+        ...(isMighty(f.setup.weapon, roll) ? { mighty: true } : {}),
+        ...(extra ? { extraAttack: true } : {}),
+        ...(extra && extraFiresTriggers(f) ? { firesTriggers: true } : {}),
+        ...(extra && wr?.extraAttacksPrecise ? { precise: true } : {}),
       });
+      if (extra) f.extraDepth--;
+      return;
+    }
+    case "combust":
+      combust(core, f, target, 1);
       return;
     case "spellHit":
       landHit(core, f, {
@@ -143,7 +169,7 @@ export function applyEffect(
       return;
     }
     case "extraAttack":
-      defaultAttack(core, f, true);
+      extraAttack(core, f);
       return;
     case "stun":
       stun(core, target, effect.seconds);

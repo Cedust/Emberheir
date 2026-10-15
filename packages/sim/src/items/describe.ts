@@ -155,6 +155,8 @@ export function describeCondition(condition: TriggerCondition): string {
       return `Every ${ordinal(condition.n)} Hit Taken`;
     case "enemyWindup":
       return "When the enemy winds up";
+    case "onParry":
+      return "On Parry";
   }
 }
 
@@ -183,6 +185,8 @@ export function describeEffect(effect: TriggerEffect): string {
     }
     case "extraAttack":
       return "strike back with a Default Attack";
+    case "combust":
+      return "Combust the enemy's Burn";
     case "stun":
       return `stun the enemy for ${effect.seconds} s`;
     case "reflect":

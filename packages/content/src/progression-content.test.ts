@@ -48,16 +48,50 @@ describe("Skill Tree", () => {
     expect(points).toBeGreaterThanOrEqual(160);
     expect(base.filter((n) => n.kind === "notable").length).toBeGreaterThanOrEqual(30);
     expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(14);
-    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(12);
+    // Web v3: Plague Bearer and Hemomancer became one Keystone (Blood and Bile).
+    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(11);
     // No flat Life on the web: Life comes from the level and Vitality.
     expect(base.filter((n) => n.bonuses?.life)).toEqual([]);
   });
 
-  it("has eight forks of two Notables each", () => {
+  it("has nine forks of two Notables each", () => {
     const forks = new Map<string, number>();
     for (const n of base) if (n.fork) forks.set(n.fork, (forks.get(n.fork) ?? 0) + 1);
-    expect(forks.size).toBe(8);
+    expect(forks.size).toBe(9);
     for (const count of forks.values()) expect(count).toBe(2);
+  });
+
+  it("Web v3: travel nodes give only Defense, Notables have a rule (neuausrichtung-v1.md 4.2)", () => {
+    const defense = new Set([
+      "increasedLife",
+      "increasedArmor",
+      "increasedBarrier",
+      "evasion",
+      "tenacity",
+    ]);
+    for (const node of base.filter((n) => n.kind === "minor" && n.id !== "might-battle-scars")) {
+      for (const stat of Object.keys(node.bonuses ?? {})) {
+        expect(defense.has(stat), `${node.id}: ${stat}`).toBe(true);
+      }
+      expect(node.rules, node.id).toBeUndefined();
+    }
+    // Every Notable outside the Ward buds changes a rule, except the plain Defense ones.
+    const wards = new Set([
+      "Oakheart",
+      "Spellguard",
+      "Ever-Ward",
+      "Ember Mantle",
+      "Deathless",
+      "Ghost Step",
+      "Shadow Dancer",
+      "Veteran",
+      "Stoneskin",
+    ]);
+    for (const node of base.filter((n) => n.kind === "notable" && !wards.has(n.name))) {
+      expect(node.rules ?? node.triggers, node.id).toBeDefined();
+    }
+    // Conversion opens hybrids.
+    expect(base.filter((n) => n.rules?.conversion).length).toBeGreaterThanOrEqual(3);
   });
 
   it("gives every class its own start node", () => {
@@ -71,11 +105,7 @@ describe("Skill Tree", () => {
 
   it("enemy hits build Heat only through the Heat from Hits Taken nodes", () => {
     const nodes = base.filter((n) => (n.bonuses?.heatFromHitsTaken ?? 0) > 0);
-    expect(nodes.map((n) => n.id)).toEqual([
-      "might-battle-scars",
-      "might-grudge",
-      "might-unbroken",
-    ]);
+    expect(nodes.map((n) => n.id)).toEqual(["might-battle-scars", "might-unbroken"]);
     expect(nodes.every((n) => n.weaponRange === "melee")).toBe(true);
   });
 

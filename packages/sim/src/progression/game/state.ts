@@ -38,7 +38,7 @@ import {
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 1 in the Early Dev Preview.
  */
-export const SAVE_VERSION = 3;
+export const SAVE_VERSION = 5;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -153,6 +153,8 @@ export interface HeroState {
   readonly rotation: readonly (string | null)[];
   /** Thresholds, Modifiers, Reaction Slots and the Capstone (see `battlePlanUnlocks`). */
   readonly plan: BattlePlanState;
+  /** Runes in the Rune Sockets of the Skill Web: socket node id → Rune id. */
+  readonly webRunes?: Readonly<Record<string, string>>;
 }
 
 export interface Encounter {

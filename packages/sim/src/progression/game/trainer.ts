@@ -30,6 +30,7 @@ import {
   type MasteryState,
 } from "../weapon-mastery";
 import { requireCamp } from "./guards";
+import { returnLooseWebRunes } from "./web-runes";
 import { heroClassOf, heroSetup, heroWeaponRank, knownSkills, masteryTree } from "./hero-build";
 import { fail, type GameData, type GameState } from "./state";
 
@@ -132,7 +133,7 @@ export function respecTree(state: GameState, data: GameData): GameState {
   if (spent === 0) return fail("Nothing to respec");
   const price = respecAcorns(state.legacy.prestige);
   if (state.wallet.acorns < price) return fail("Not enough Acorns");
-  return {
+  return returnLooseWebRunes({
     ...state,
     hero: {
       ...state.hero,
@@ -142,7 +143,7 @@ export function respecTree(state: GameState, data: GameData): GameState {
       rotation: state.hero.rotation.map(() => null),
     },
     wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
-  };
+  });
 }
 
 /** Kaelen: forget one rank of one node for a few Acorns (its points come back). */
@@ -159,7 +160,7 @@ export function forgetNode(state: GameState, data: GameData, nodeId: string): Ga
   const learned = Object.fromEntries(
     Object.entries(state.hero.learned).filter(([id]) => id !== nodeId),
   );
-  return {
+  return returnLooseWebRunes({
     ...state,
     hero: {
       ...state.hero,
@@ -167,6 +168,41 @@ export function forgetNode(state: GameState, data: GameData, nodeId: string): Ga
       unspentSkillPoints: state.hero.unspentSkillPoints + learnCost(node).skillPoints,
     },
     wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
+  });
+}
+
+/**
+ * Kaelen: puts a Rune from the pouch into a learned Rune Socket of the web, or takes it out
+ * (`runeId` null). A Rune already in the socket goes back into the pouch.
+ */
+export function socketWebRune(
+  state: GameState,
+  data: GameData,
+  nodeId: string,
+  runeId: string | null,
+): GameState {
+  requireTrainer(state);
+  const node = getNode(data.skillTree, nodeId);
+  if (node.kind !== "socket") return fail(`"${nodeId}" is no Rune Socket`);
+  if ((state.hero.learned[nodeId] ?? 0) <= 0) return fail("Learn the Rune Socket first");
+  const runes: Record<string, number> = { ...state.wallet.runes };
+  if (runeId !== null) {
+    if (!data.items.runes.has(runeId)) return fail(`Unknown Rune "${runeId}"`);
+    if ((runes[runeId] ?? 0) <= 0) return fail("That Rune is not in the pouch");
+    runes[runeId] = (runes[runeId] ?? 0) - 1;
+  }
+  const old = state.hero.webRunes?.[nodeId];
+  if (old) runes[old] = (runes[old] ?? 0) + 1;
+  const sockets = Object.fromEntries(
+    Object.entries(state.hero.webRunes ?? {}).filter(([id]) => id !== nodeId),
+  );
+  return {
+    ...state,
+    hero: { ...state.hero, webRunes: runeId ? { ...sockets, [nodeId]: runeId } : sockets },
+    wallet: {
+      ...state.wallet,
+      runes: Object.fromEntries(Object.entries(runes).filter(([, n]) => n > 0)),
+    },
   };
 }
 

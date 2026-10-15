@@ -33,8 +33,9 @@ import { canvasResolution } from "../pixiPacing";
 
 const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   refine: "Refine",
-  minor: "Minor",
+  technique: "Technique",
   notable: "Notable",
+  master: "Path Master",
   keystone: "Keystone",
   heatForm: "Heat Form",
   innateForm: "Innate Form",
@@ -47,6 +48,7 @@ const BLOCK_TEXT: Record<MasteryBlockReason, string> = {
   notConnected: "Learn the node before it first",
   rankLocked: "Weapon Rank too low",
   keystoneLocked: `Opens after ${MASTERY.keystonePoints} points`,
+  forkTaken: "The other side of this fork is learned. Respec to switch",
   chosen: "Chosen",
 };
 
@@ -340,6 +342,9 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             <h3 className="title-font">{selected.name}</h3>
             <p>{selected.description}</p>
             {selected.form && <p className="sub small">Names the weapon: {selected.form}.</p>}
+            {selected.fork && (
+              <p className="sub small">Fork: only one of its two Notables can be learned.</p>
+            )}
             {!viewOnly && (
               <>
                 <button

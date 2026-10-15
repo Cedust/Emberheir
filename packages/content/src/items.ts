@@ -600,10 +600,11 @@ export const STAT_AFFIXES: readonly StatAffixDefinition[] = [
     id: "physical-penetration",
     stat: "physicalPenetration",
     prefix: "Piercing",
-    slots: ["gloves", "amulet"],
+    // The trees gave their Penetration to the gear (neuausrichtung-v1.md 2): rings carry it too.
+    slots: ["gloves", ...JEWELRY],
     tags: ["physical", "offense"],
     weight: 6,
-    value: { min: 0.04, max: 0.1 },
+    value: { min: 0.06, max: 0.14 },
     perTier: 0.1,
   }),
   stat({

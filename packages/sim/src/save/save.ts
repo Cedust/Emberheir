@@ -130,5 +130,8 @@ export function contentProblems(state: GameState, data: GameData): string[] {
     ...(state.run?.rewards?.items ?? []),
   ];
   for (const item of items) if (item) problems.push(...itemProblems(item, data));
+  for (const rune of Object.values(state.hero.webRunes ?? {})) {
+    if (!data.items.runes.has(rune)) problems.push(`Unknown Rune "${rune}"`);
+  }
   return problems;
 }

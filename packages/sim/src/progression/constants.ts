@@ -256,7 +256,7 @@ export const PROGRESSION = {
   eliteChanceCap: 0.5,
   /** Elites are tougher: life and damage multipliers on top of their modifiers. */
   eliteLifeMultiplier: 1.4,
-  eliteDamageMultiplier: 1.15,
+  eliteDamageMultiplier: 1.05,
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
@@ -300,7 +300,7 @@ export const PROGRESSION = {
    * 29 % Gatekeeper, 50 % boss.
    */
   wall: {
-    strength: [1.8, 9, 7, 8, 8, 6.6, 5.4],
+    strength: [1.8, 9, 7.6, 9, 8.8, 7.8, 8],
     /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
     lifeExponent: 0.5,
     gates: [0.4, 0.45],

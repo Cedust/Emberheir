@@ -260,3 +260,137 @@ Static Skin jeder 5. Treffer (max 4 %), Numbing Blow jeder 8. Angriff 0,5 s, Ice
    Act-Bosse gegen Elemental, oder Spark (+50 %) etwas kleiner.
 4. **Normale Stages töten kaum** (2 %, Ziel 5–15 %). Die Zermürbung greift mit Hearth Embers und dem Hearth-Pfad wenig;
    die Rampe der normalen Stages kann höher, wenn die Bosse in Run 2–3 sanfter werden.
+
+---
+
+## 8. Phase 5, Teil 1: Weapon Mastery v2 (14.10.)
+
+Gleicher Aufbau (15 Builds × 3 Läufe, Seeds 31–33, bis Act 7, mit Runes). Vorher = `main` nach PR #30 (Lauf G).
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Kampf s normal / Elite / Gate / Boss |
+| --- | --- | --- | --- | --- |
+| G | vorher | 3,3 | 1 / 22 / 22 / 55 % | 23 / 32 / 33 / 43 |
+| M1 | Mastery v2, Autopilot wie geplant (Siege Engine +40 %, Ragged Cut) | 3,3 | 2 / 29 / 19 / 51 % | 22 / 31 / 31 / 43 |
+| **M2** | **Siege Engine +80 %; Autopilot: Crossbow Repeater, Axe Bloodrush (im Code)** | **3,0** | **2 / 29 / 18 / 51 %** | **21 / 30 / 30 / 42** |
+
+Anläufe pro Build (Run 2–7, vorher → M2):
+
+| Build | vorher | M2 | | Build | vorher | M2 |
+| --- | --- | --- | --- | --- | --- | --- |
+| sword (unbroken) | 7,0 | 6,3 | | bow (venom) | 3,4 | **5,1** |
+| sword (bleeder) | 7,4 | 4,4 | | bow (barbs) | 5,4 | 4,3 |
+| mace (smasher) | 4,6 | 3,8 | | crossbow (marksman) | 3,2 | 3,5 |
+| axe (bleed) | 3,8 | 3,9 | | wand (storm / frost / fire) | 2,8 / 1,7 / 2,2 | 2,1 / 1,9 / 1,8 |
+| dagger (poison) | 3,4 | 3,1 | | staff (void / pyre / rot) | 2,1 / 2,9 / 2,1 | 2,6 / 2,2 / 2,6 |
+| dagger (assassin) | 3,5 | 2,6 | | | | |
+
+**Ergebnis:** Die Mastery v2 hält die Gesamtstärke (Ranges mit gleichem Durchschnitt), die Builds rücken enger zusammen
+(1,7–7,4 → 1,8–6,3). Die Sword-Builds gewinnen am meisten (Parry, Clean Line, Read the Blow). Der neue Siege Engine war
+mit +40 % pro Stack zu schwach (Marksman 5,6 Anläufe), Repeater und Harpoon liegen bei 3,2.
+
+**Offen für die nächste Runde:** Venom-Bow (5,1, die Toxin-Gabeln tragen Poison weniger als die alten Minors) und der
+Unbroken-Sword (6,3) bleiben am oberen Rand; das gehört zum Hoheitsgebiete-Schritt (Gear bekommt mehr Offense).
+
+---
+
+## 9. Phase 5, Teil 2: Skill Web v3, Hoheitsgebiete (14.10.)
+
+Gleicher Aufbau. Vorher = M2 (Mastery v2, Abschnitt 8).
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Clear |
+| --- | --- | --- | --- | --- |
+| M2 | vorher | 3,0 | 2 / 29 / 18 / 51 % | 100 % |
+| W1 | Web v3 (Travel-Nodes nur Defense), Prestige-Minors Defense, +1 Affix auf Rare/Epic/Legendary | 2,3 | 4 / 28 / 21 / 47 % | 100 % |
+| W2 | W1 ohne Extra-Affix | 2,8 | 5 / 37 / 20 / 39 % | 98 % (Mace 9,1) |
+| W4 | W1 mit halber Travel-Defense | 2,7 | 8 / 30 / 21 / 41 % | 99 % |
+| W5 | + Spark +30 % (statt 50), Lingering bis +25 % (statt 40), stärkere Physical-Notables | 2,4 | 1 / 20 / 21 / 57 % | 100 % |
+| W6 | + Ailment-Notables schwächer | 2,5 | 1 / 21 / 24 / 54 % | 100 % |
+| **W7** | **+ Wand-Stärke Run 3/4/6/7: 7 → 7,6, 8 → 9, 6,6 → 7,6, 5,4 → 6,6 (im Code)** | **2,9** | **4 / 31 / 20 / 45 %** | **99 %** |
+
+Anläufe pro Build (Run 2–7, M2 → W7): unbroken 6,3 → 5,5 · smasher 3,8 → 2,9 · bleeder 4,4 → 5,0 · axe 3,9 → 5,0 ·
+dagger poison 3,1 → 2,4 · assassin 2,6 → 2,3 · marksman 3,5 → 3,3 · bow venom 5,1 → 6,0 · barbs 4,3 → 4,7 ·
+wand storm / frost / fire 2,1 / 1,9 / 1,8 → 2,1 / 1,3 / 2,3 · staff void / pyre / rot 2,6 / 2,2 / 2,6 → 1,8 / 1,7 / 1,5.
+
+**Was die Messung zeigt:**
+
+1. **Defense schlägt rohen Schaden.** Travel-Nodes mit Defense statt Offense machen das Spiel leichter, nicht schwerer
+   (W1). Wandkämpfe sind ein Sustain-Rennen (`endgame-balance-v1.md`). Die Werte sind deshalb halbiert: +1,5 % Life,
+   +3 % Armor, +4 % Barrier, +1 % Evasion, +2 % Tenacity pro Web-Travel-Node.
+2. **Bedingte DoT-Boni sind fast immer an.** „Gegen Corrupted“ oder „ab 50 Heat“ gilt für einen DoT-Build den ganzen
+   Kampf. Ohne die bedingten Boni brauchte der Void-Staff 2,4 Anläufe statt 1,4. Die Ailment-Notables sind deshalb kleiner
+   (10–15 %) als die Treffer-Notables (20–35 %).
+3. **Der Extra-Affix gehört aufs Gear:** Ohne ihn verlieren die Physical-Builds am meisten (Mace 3,8 → 9,1).
+
+**Offen für die nächste Runde:**
+
+- **Physical-Nahkampf gegen Armor:** Ein Mace-Lauf (Act 4) und ein Axe-Lauf (Act 5) schaffen den Boss nicht in 30
+  Anläufen. Kandidaten: Elite-Modifier Ironhide, Penetration auf Gear-Affixen.
+- **Caster und Staff** liegen mit 1,3–2,3 Anläufen am unteren Rand, Venom-Bow (6,0) und Unbroken-Sword (5,5) am oberen.
+- **Elites** tragen 31 % der Tode (Ziel 10–20 %).
+
+---
+
+## 10. Phase 5, Teil 3: Physical gegen Armor, Elites, Wände (14.10.)
+
+| Lauf | was | Anläufe | Tode normal / Elite / Gate / Boss | Clear |
+| --- | --- | --- | --- | --- |
+| W7 | vorher (Abschnitt 9) | 2,9 | 4 / 31 / 20 / 45 % | 99 % |
+| B1 | Physical Penetration als Affix stärker (6–14 %) und auch auf Ringen; Elite-Schaden ×1,05 statt ×1,15 | 2,7 | 6 / 23 / 18 / 53 % | 99 % |
+| B2 | + alle Gegner 10 % All Resistance, Armor pro Monster Level 0,30 statt 0,34 | 2,7 | 9 / 21 / 17 / 53 % | 99 % |
+| **B3** | **+ Wand-Stärke Run 5/6/7: 8 → 8,8, 7,6 → 8,6, 6,6 → 7,6 (im Code)** | **2,9** | **10 / 23 / 20 / 47 %** | **99 %** |
+
+Anläufe pro neuestem Act (B3): Run 2: 4,5 · 3: 3,2 · 4: 3,3 · 5: 3,1 · 6: 3,4 · 7: 2,2. Run 2–6 liegen im Ziel 3–5.
+
+Pro Build (Run 2–7): unbroken 6,6 · smasher 5,5 · bleeder 4,9 · axe 5,5 · dagger poison 1,9 · assassin 3,1 · marksman
+3,0 · venom 5,2 · barbs 4,0 · wand storm / frost / fire 2,2 / 1,8 / 1,7 · staff void / pyre / rot 1,7 / 1,9 / 1,7.
+
+**Warum die Penetration aufs Gear musste:** Mit den Web- und Ast-Minors ist auch die Physical Penetration weggefallen
+(Cold Blood, Steel Nerves, Keen Edge). Gegen gepanzerte Gegner fehlte sie den Physical-Builds.
+
+**Offen:** Caster und Staff (1,7–2,2) gegen Nahkampf (4,9–6,6). Die 10 % Resistenz hilft kaum: DoTs rechnen mit dem
+schon gemilderten Treffer (Resistenz zählt also einmal, wie in PoE), aber der Perk Attuned (+10 % Elemental Penetration)
+und Penetration vom Gear heben 10 % Resistenz ganz auf. Idee für die nächste Runde: 20–25 % Grundresistenz, eventuell
+mit dem Monster Level wachsend wie die Armor. Run 7 (2,2) könnte noch eine höhere Wand vertragen.
+
+---
+
+## 11. Phase 5, Teil 4: Feinschliff für alle Builds (15.10.)
+
+Timo (14.10.): „Miss so lange, bis es gut passt für alle.“ Ab R5 mit **5 Läufen pro Build** (Seeds 31–35), weil 3 Läufe
+um ±0,7 Anläufe streuen.
+
+| Lauf | was | Anläufe | Builds (Run 2–7) | Clear |
+| --- | --- | --- | --- | --- |
+| B3 | vorher (Abschnitt 10) | 2,9 | 1,7 – 6,6 | 99 % |
+| R1 | Gegner 20 % Resistance | 3,0 | 1,8 – 6,6 | 99 % |
+| R2 | DoTs schwächer (Poison 15 %, Burn 22 %, Corruption 9 %/s), Spark +20 %, Iron Blood −45 % | 3,1 | 1,6 – 6,3 | 99 % |
+| R3 | Chill −25 % (max −40 %), Bleed-Techniken +16 %, Exsanguinate 40 %, Wand Run 7 8,4 | 3,2 | 2,4 – 5,5 | 100 % |
+| R4 | Gegner 30 % Resistance, Poison 14 %/s | 3,7 | 2,5 – 5,5 | 99 % |
+| R5 | Wand Run 6 7,8, Monster-Armor ×0,27 pro Level (5 Läufe ab hier) | 3,6 | 2,5 – 7,3 | 99 % |
+| R6 | Unbroken ab 50 Heat, Open Wounds +40 %, Glacier +15 % | 3,5 | 2,7 – 5,5 | 100 % |
+| R7 | Spark +10 %, Bloodletter Bleed +25 %, Iron Blood −50 % | 3,7 | 2,8 – 5,7 | 100 % |
+| **R8** | **Unbroken +40 %, Gash +20 %, Kindled Mind 10 %, Wand Run 7 8,0 (im Code)** | **3,5** | **2,7 – 5,3** | **99 %** |
+
+**R8 im Detail:** Run 2–7: 4,4 / 4,4 / 4,0 / 3,5 / 3,6 / 3,5, alle im Ziel 3–5. Tode normal / Elite / Gate / Boss:
+3 / 24 / 24 / 49 %.
+
+| Build | Anläufe | | Build | Anläufe | | Build | Anläufe |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| sword (unbroken) | 5,3 | | dagger (assassin) | 3,2 | | wand (frost) | 2,7 |
+| mace (smasher) | 3,8 | | crossbow (marksman) | 4,2 | | wand (fire) | 3,9 |
+| sword (bleeder) | 4,4 | | bow (venom) | 4,9 | | staff (void) | 3,3 |
+| axe (bleed) | 5,1 | | bow (barbs) | 4,4 | | staff (pyre) | 3,1 |
+| dagger (poison) | 3,7 | | wand (storm) | 3,1 | | staff (rot) | 2,9 |
+
+12 von 15 Builds liegen im Ziel, die anderen drei höchstens 0,3 daneben, also innerhalb der Streuung zwischen zwei
+Messungen. 3 von 525 Läufen bleiben nach 30 Anläufen hängen (Unbroken Run 6, Marksman Run 7, Frost Run 4).
+
+**Was gewirkt hat:**
+
+1. **Monster-Resistance 30 %**, weil Penetration (Attuned +10 %, Gear) kleinere Werte ganz aufhebt. DoTs rechnen mit dem
+   gemilderten Treffer, also trifft die Resistance auch Burn und Corruption.
+2. **DoT-Grundwerte** etwas kleiner (Poison, Burn, Corruption), **Chill** bremst weniger. Bleed bleibt und wird über
+   Inhalte stärker (Techniken, Exsanguinate, Open Wounds, Bloodletter), weil die Bleed-Builds am schwersten waren.
+3. **Class Traits:** Spark +10 % (statt 50 % vor Phase 5), Iron Blood −50 % Schaden durch Heavy Attacks.
+
+**Offen:** Elites tragen 24 % der Tode (Ziel 10–20 %), normale Stages nur 3 % (Ziel 5–15 %).

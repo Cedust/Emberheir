@@ -8,7 +8,8 @@ export type SkillTreeBranch = "core" | "might" | "arcana" | "rupture" | "afflict
 /** Regions of the web between the four branches (level-v2.md section 7). */
 export type SkillTreeRegion =
   SkillTreeBranch | "might-arcana" | "arcana-affliction" | "affliction-rupture" | "rupture-might";
-export type SkillNodeKind = "minor" | "notable" | "skill" | "keystone";
+/** `socket`: a Rune Socket of the web (neuausrichtung-v1.md 4.2), it takes a Rune from the pouch. */
+export type SkillNodeKind = "minor" | "notable" | "skill" | "keystone" | "socket";
 
 export interface SkillNode {
   readonly id: string;

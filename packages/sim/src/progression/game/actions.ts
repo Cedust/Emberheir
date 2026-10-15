@@ -39,6 +39,7 @@ import {
   setBattlePlan,
   setEcho,
   setRotationSkill,
+  socketWebRune,
 } from "./trainer";
 
 /** `GameAction` and `applyAction`, the only way to change a `GameState`. */
@@ -88,6 +89,8 @@ export type GameAction =
   | { readonly type: "respecTree" }
   /** Kaelen: forget one rank of one node for a few Acorns (`forgetAcorns`). */
   | { readonly type: "forgetNode"; readonly nodeId: string }
+  /** Kaelen: a Rune from the pouch into a learned Rune Socket of the web, or out (`null`). */
+  | { readonly type: "socketWebRune"; readonly nodeId: string; readonly runeId: string | null }
   /** Kaelen, Weapon Mastery: learn a node or pick it in its group (Heat Form, Keystone ...). */
   | { readonly type: "learnMastery"; readonly nodeId: string }
   /** Kaelen: forget the Weapon Mastery for Acorns. The worn Echo stays. */
@@ -171,6 +174,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return respecTree(state, data);
     case "forgetNode":
       return forgetNode(state, data, action.nodeId);
+    case "socketWebRune":
+      return socketWebRune(state, data, action.nodeId, action.runeId);
     case "learnMastery":
       return learnMasteryNode(state, data, action.nodeId);
     case "respecMastery":

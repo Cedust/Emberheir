@@ -129,4 +129,39 @@ describe("the real migrations", () => {
       { affixId: "ailment-effect", quality: 0.7 },
     ]);
   });
+
+  it("3: Weapon Mastery v2 gives the path points back and keeps Refine and the choices", () => {
+    const s = start();
+    const mastery = {
+      learned: { precision: 2, "riposte-1": 1, "riposte-counterweight": 1 },
+      choices: { keystone: "ks1" },
+      echo: null,
+    };
+    const v3 = { ...s, version: 3, hero: { ...s.hero, mastery } };
+    const migrated = deserializeGame(JSON.stringify(v3));
+    expect(migrated.hero.mastery.learned).toEqual({ precision: 2 });
+    expect(migrated.hero.mastery.choices).toEqual({ keystone: "ks1" });
+  });
+
+  it("4: Skill Web v3 gives every Skill Point back and keeps the class start", () => {
+    const s = start();
+    const hero = {
+      ...s.hero,
+      classId: "sorcerer",
+      unspentSkillPoints: 2,
+      learned: {
+        "arcana-sorcerers-spark": 1,
+        "arcana-glow": 1,
+        "arcana-arcane-conduit": 1,
+        "pb-stormcaller-keystone-2": 1,
+      },
+      rotation: ["chain-lightning", null],
+    };
+    const v4 = { ...s, version: 4, hero };
+    const migrated = deserializeGame(JSON.stringify(v4));
+    expect(migrated.hero.learned).toEqual({ "arcana-sorcerers-sigil": 1 });
+    // One plain node and two Keystones (3 points each).
+    expect(migrated.hero.unspentSkillPoints).toBe(2 + 1 + 3 + 3);
+    expect(migrated.hero.rotation).toEqual([null, null]);
+  });
 });

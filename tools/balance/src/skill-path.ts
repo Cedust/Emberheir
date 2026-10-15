@@ -137,7 +137,7 @@ export function spendSkillPoints(
   }
   // The rest: the cheapest open neighbour, again and again (Skill nodes and Notables first).
   const graph = links(tree);
-  const order = { skill: 0, notable: 1, minor: 2, keystone: 3 } as const;
+  const order = { skill: 0, notable: 1, socket: 1, minor: 2, keystone: 3 } as const;
   while (s.hero.unspentSkillPoints > 0) {
     const learned = s.hero.learned;
     const open = tree.nodes.filter(
@@ -158,6 +158,7 @@ export function spendSkillPoints(
     if (!next) break;
     s = applyAction(s, data, { type: "learnNodes", nodeIds: [next.id] });
   }
+  s = fillWebSockets(s, data);
   const weapon = heroSetup(s, data).setup.weapon;
   const known = new Set(knownSkills(s, data, weapon).map((k) => k.skill.id));
   const rotation = plan.rotation.filter((id) => known.has(id));
@@ -192,6 +193,25 @@ export function spendSkillPoints(
     });
   } catch {
     // Keep the old plan.
+  }
+  return s;
+}
+
+/**
+ * Rune Sockets of the web: an empty learned socket takes the highest Rune of which the pouch
+ * holds more than two (two stay for Runeword recipes, like the combining rule).
+ */
+function fillWebSockets(state: GameState, data: GameData): GameState {
+  let s = state;
+  const sockets = data.skillTree.nodes.filter(
+    (n) => n.kind === "socket" && (s.hero.learned[n.id] ?? 0) > 0 && !s.hero.webRunes?.[n.id],
+  );
+  for (const socket of sockets) {
+    const spare = [...data.items.runes.values()]
+      .filter((r) => (s.wallet.runes[r.id] ?? 0) > 2)
+      .sort((a, b) => b.rank - a.rank)[0];
+    if (!spare) break;
+    s = applyAction(s, data, { type: "socketWebRune", nodeId: socket.id, runeId: spare.id });
   }
   return s;
 }

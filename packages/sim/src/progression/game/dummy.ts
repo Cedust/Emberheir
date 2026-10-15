@@ -34,6 +34,8 @@ export interface DummyReport {
   /** Share of own hits that crit, and that were Glancing Blows. */
   readonly critRate: number;
   readonly glancingRate: number;
+  /** Share of own hits that were Mighty Hits. */
+  readonly mightyRate: number;
   /** Striking dummy only: damage taken and healing per second. */
   readonly takenPerSecond: number;
   readonly healedPerSecond: number;
@@ -96,6 +98,9 @@ export function dummyReport(
     critRate: hits.length ? count((e) => e.type === "hit" && own(e) && e.crit) / hits.length : 0,
     glancingRate: hits.length
       ? count((e) => e.type === "hit" && own(e) && e.glancing === true) / hits.length
+      : 0,
+    mightyRate: hits.length
+      ? count((e) => e.type === "hit" && own(e) && e.mighty === true) / hits.length
       : 0,
     takenPerSecond:
       events.reduce(

@@ -1,6 +1,7 @@
 # Weapon Mastery v2: Pfade mit Gabelungen, Precision und Mighty Hits
 
-Stand 13.10.2026 · ✅ von Timo angenommen (13.10.), noch nichts umgesetzt · gehört zu `neuausrichtung-v1.md` (Abschnitt 3)
+Stand 14.10.2026 · ✅ von Timo angenommen (13.10.), **gebaut** (Phase 5, Teil 1; Abweichungen in Abschnitt 6) · gehört
+zu `neuausrichtung-v1.md` (Abschnitt 3)
 Ersetzt bei Annahme die Pfad-Inhalte aus `weapon-mastery-baeume-v1.md`. Refine, Heat Forms, Innate Forms, Attunements und
 Echoes bleiben, wie sie sind (mit den neuen Zahlen aus Abschnitt 1).
 Markierung: ✅ entschieden · 💡 Vorschlag · ❓ offen. Zahlen sind Startwerte für die Balance-CLI.
@@ -244,3 +245,40 @@ Alle Punkte ✅ (Timo, 13.10.):
 2. Parry als Defense nur über die Waffe (max. 30 %)?
 3. Glancing Damage gestrichen, stattdessen Glancing-Mechaniken (Reload, Tempo)?
 4. Wand-Pfad „Pyre“ → „Blaze“?
+
+---
+
+## 6. Umsetzung (14.10.) und Abweichungen
+
+Gebaut wie oben beschrieben: Mighty Hits ab 125 % Weapon Damage, die neuen Ranges mit gleichem Durchschnitt
+(`damageScale` pro Baum), Refine mit +15 % / +25 %, Parry (max. 30 %), 24 Pfade mit zwei Gabeln und Pfad-Meister, die vier
+neuen Keystones. Alte Saves (Version 3 → 4) bekommen die Punkte ihrer Pfade zurück; Refine, Formen, Keystone, Attunement
+und Echo bleiben. Jede neue Mechanik ist ein Baustein in `WeaponRules` mit Unit-Test (`mastery-v2.test.ts`).
+
+| Punkt | Konzept | gebaut | Grund |
+|---|---|---|---|
+| Range-Techniken (Cleave, Payload, Quake) | +25 % / +15 % Max pro Rang | **+10 % pro Rang** | drei Ränge à +25 % wären +75 % Max und mehr Schaden als jede andere Technik; Full Swing gibt schon +25 % |
+| Master of the Edge | Precision über 100 % → Crit | **über 85 %** | 100 % ist kaum erreichbar (Sword 75 % + Technik 9 % + Refine 15 % = 99 %), der Meister wäre leer |
+| Static Build | Shock stapelt bis 3 | **bis 5** | seit Ailments v2 stapelt Shock ohnehin bis 3 |
+| Whirl | 5 Stiche in 2 s | **in 3 s** | 2,5 Stiche/s erreicht der Dagger fast nie |
+| Steady Breath | Glancing Blows kühlen nicht ab | **Glancing Blows brechen keine Serie** (Unbroken Flow, Clean Line, Flowing Blade) | Glancing Blows geben schon Heat; Abkühlen hängt an der Zeit, nicht am Treffer |
+| Split Shot | Technik +5 %, Gabel „Zweitpfeil 60 %“ | Technik ist die Grund-Chance (5 % pro Rang), die Gabel gibt **+20 %** dazu | sonst wäre die Technik ohne die Gabel wertlos |
+| Master of Tempo | Rotation Slot 1 wiederholen | der **erste Slot, der nicht der Innate ist** | Slot 1 ist meist der Innate selbst |
+| Impale | „der nächste Heavy Bolt löst alles aus“ | der Innate zählt seinen eigenen Treffer mit | einfacher lesbar, kaum Unterschied |
+| Namen | Wildfire (Blaze-Gabel) | **Roaring Flame** | Wildfire ist das Endgame |
+| Namen | Thirst (Frenzy-Gabel) | Gabel heißt Thirst, die Technik **Leech** | |
+| Keystone-Namen | Deadeye, Shadowstep, Rain of Arrows | **Sniper's Oath**, **Vanishing Act**, **Hailstorm** (IDs bleiben, Saves passen) | die Namen gehören jetzt den Gabel-Notables |
+| Sniper's Oath | (alter Deadeye: jeder 5. Bolzen, sonst halbe Crit Chance) | jeder **3.** Bolzen sauber und Crit, die anderen nie | eigene Regel neben der Gabel Deadeye |
+| Vanishing Act | (alter Shadowstep) | nach einem Evade **drei** saubere Crits, −20 % Life | eigene Regel neben der Gabel Shadowstep |
+| Siege Engine | Bolt lädt 2 s, löst alle Sunder-Stacks ein | feste 2 s (Attack Speed zählt nicht), **+40 % pro Stack** | Startwert |
+| Repeater | Dreier-Salven, ein Crit-Wurf | 3 Bolzen à **40 %** | Startwert |
+| Glass Cannon | keine Barrier, Spark + 25 % der fehlenden Barrier | wie Konzept | |
+| Gore / Wild Shot | Mighty Hits | Gore: Mighty Hits doppelt, Range-Min 10 %; Wild Shot: Range-Max +60 %, −15 % Precision, ein Wurf ab 125 % glanct nie | |
+| Technik-Namen | (keine) | eigene Namen pro Technik (Parry, True Line, Dent, Gash …) | der Baum braucht Namen |
+
+**Autopilot:** wählt pro Pfad feste Gabel-Seiten (`tools/balance/src/builds.ts`); die Wand nimmt Wild Magic statt Glass
+Cannon (ohne Barrier wäre der Caster zu weich).
+
+**Noch nicht gebaut (Phase 5, nächste Schritte):** Hoheitsgebiete in Skill Web und Prestige-Ästen, Skill Web v3, die
+übrigen Umbenennungen aus `neuausrichtung-v1.md` 1.3 (Toxin, Barbs, Spark … als Web-Minors verschwinden mit Web v3).
+

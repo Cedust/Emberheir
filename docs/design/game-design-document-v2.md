@@ -1,6 +1,6 @@
 # Game Design Document – v2
 
-**Titel:** Emberheir · **Stand:** 13.10.2026 (Code auf `main` nach PR #28) · **Genre:** 1v1-Auto-Battler mit ARPG-Loot,
+**Titel:** Emberheir · **Stand:** 14.10.2026 (Code auf `main` nach PR #30, dazu Weapon Mastery v2) · **Genre:** 1v1-Auto-Battler mit ARPG-Loot,
 Rogue-Lite-Runs und Prestige
 
 Dieses Dokument beschreibt den **aktuellen Stand des Spiels**, wie er im Code gebaut ist. Es ersetzt
@@ -35,11 +35,11 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Achsen | Waffe (eine wählen) | Class Trait | Klassenpfade (Prestige-Äste) |
 |---|---|---|---|---|
-| **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −35 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
-| **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: +15 % Ailment Effect für Bleed und Poison | Butcher, Venomancer, Duelist, Tactician |
+| **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −50 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
+| **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: Bleed +25 %, Poison +15 % Schaden | Butcher, Venomancer, Duelist, Tactician |
 | **Hunter** | Physical · Ranged | Bow, Crossbow | Keen Eye: erster Treffer jedes Kampfes und Treffer ins Ausholen des Gegners sind saubere Crits | Marksman, Venomancer, Warden, Tactician |
-| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +50 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
-| **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +1 % Schaden pro Sekunde Kampf (bis +40 %) | Pyromancer, Void Lord, Warden, Tactician |
+| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +10 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
+| **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +1 % Schaden pro Sekunde Kampf (bis +25 %) | Pyromancer, Void Lord, Warden, Tactician |
 
 - Class Traits seit Phase 3 der Neuausrichtung (`neuausrichtung-v1.md` 2.1): Ein Trait beschreibt, **wie** die Klasse
   kämpft, und hat in der Arena einen eigenen Moment.
@@ -181,7 +181,12 @@ Endgame **Wildfire I–X**.
 
 - Ist Heat ≥ **Trigger Threshold** des nächsten Rotation Slots, ersetzt der Skill die nächste Default Attack.
 - **Precision und Glancing Blows:** Jede Waffe hat eine Precision (60–80 %). Ein unsauberer Treffer ist ein Glancing Blow
-  (50 % Schaden) und löst keine Trigger aus. Jede Waffe hat eine **Damage Range** (z. B. 40–110 % beim Sword).
+  (50 % Schaden) und löst keine Trigger aus. Jede Waffe hat eine **Damage Range** (z. B. 40–140 % beim Sword, 20–180 % bei
+  der Axe). Die Range bestimmt den Stil, nicht die Stärke: Der Durchschnittstreffer jeder Waffe ist derselbe wie mit den
+  alten, engeren Ranges.
+- **Mighty Hits** (`weapon-mastery-v2.md` 1.2): Ein sauberer Waffentreffer, der **125 % Weapon Damage** oder mehr würfelt.
+  Startchance je nach Range 0 % (Dagger, Staff) bis 46 % (Crossbow). Bedingung für Mastery-Nodes und Keystones
+  (Headsplitter, Ragged Cut, Earthbreaker, Gore …). In der Arena: Bodenwelle und ⚒ an der Zahl.
 - **Telegraphs:** Gegner kündigen Heavy Attacks an. Ein angekündigter Treffer nimmt höchstens **35 %** von Life + Barrier.
 
 ### 4.2 Damage Types und Ailments
@@ -189,10 +194,10 @@ Endgame **Wildfire I–X**.
 | Damage Type | Ailment | Mechanik | Eingebauter Payoff |
 |---|---|---|---|
 | Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert | Rend (Skill) |
-| Physical | **Poison** | 17 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
-| Fire | **Burn** | 25 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus |
-| Void | **Corruption** | 10 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
-| Cold | **Chill** | −30 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −50 %) | – |
+| Physical | **Poison** | 14 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
+| Fire | **Burn** | 22 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus |
+| Void | **Corruption** | 9 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
+| Cold | **Chill** | −25 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −40 %) | – |
 | Lightning | **Shock** | +10 % erlittener Schaden pro Stack, bis 3 Stacks, 3 s (mit Ailment Effect bis +50 %) | – |
 
 - **Ailment Effect** (statt Ailment Duration, `ailments-v2.md`): stärkere DoTs, stärkeres Chill und Shock, nicht
@@ -209,6 +214,7 @@ Endgame **Wildfire I–X**.
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
 | **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 1,5 s ohne Treffer 20 %/s |
 | **Block** | Shield | stoppt 50 % des Treffers (Stoneguard mehr), max. 75 % Chance |
+| **Parry** | nur Weapon Mastery (Riposte-Pfad) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
 | **Tenacity** | Gear, VIT | kürzere Ailments auf dem Helden |
 | **Heilung** | Lifesteal (nur Treffer), DoT-Heilung (nur aus DoT-Nodes), Heal-Trigger, Barrier | keine Life Regeneration |
@@ -235,7 +241,7 @@ Endgame **Wildfire I–X**.
 
 ## 5. Build-Systeme
 
-### 5.1 Weapon Mastery ✅ (`waffe-als-system-v1.md`, `weapon-mastery-baeume-v1.md`)
+### 5.1 Weapon Mastery ✅ (`waffe-als-system-v1.md`, `weapon-mastery-v2.md`)
 - **Die Waffe ist fest** und droppt nie. Sie wächst über den **Weapon Rank** (gleiche XP wie der Held, Rank Cap pro Run
   4/7/10/13/16/18/20, 1 Mastery Point pro Rank). Weapon Damage steigt automatisch mit dem Level.
 - Güte: Crude · Honed · Tempered · Ascendant · Exalted.
@@ -243,34 +249,57 @@ Endgame **Wildfire I–X**.
 
 | Teil | Inhalt |
 |---|---|
-| **Refine** (11 Nodes) | Damage Range Min/Max, Precision, Attack Speed |
+| **Refine** (11 Punkte) | Steady Hand (Range-Min +15 %), Full Swing (Range-Max +25 %, bis 220 %), Precision (+5 %), Balance (Attack Speed) |
 | **Heat Form** (1 aus 4) | ab Rank 3 |
 | **Innate Form** (1 aus 3) | Variante des Innate Skills, ab Rank 5 |
-| **3 Pfade** (je 6 Minor + 2 Notable) | Stil der Waffe, z. B. Sword: Riposte, Edge, Tempo |
-| **Keystone** (1 aus 4) | ab 12 ausgegebenen Punkten |
+| **3 Pfade** | je Technik I (3 Ränge) → **Gabel 1** (1 aus 2 Notables) → Technik II (3 Ränge) → **Gabel 2** (1 aus 2) → **Pfad-Meister**; 9 Punkte für einen vollen Pfad |
+| **Keystone** (1 aus 4) | ab 12 ausgegebenen Punkten; jeder ändert, *wie* die Waffe kämpft |
 | **Attunement** (nur Wand, Staff) | Element der Default Attack und des Innate |
 | **Echoes** | Andenken der Act-Bosse, werden pro Run stärker |
 
-- Am Ende ~20 von 38 möglichen Punkten: Zwei gleiche Waffen unterscheiden sich.
+- **Techniken** geben nur Werte, die es ausschließlich an der Waffe gibt: Precision, Damage Range, **Parry**, Sunder,
+  Ailment-Wirkung der Waffe („+12 % Bleed-Wirkung der Axe“), Extra-Attack Damage, Innate Damage/Cost, Mighty-Hit-Schaden,
+  Heat per Hit. Crit, Evasion und Trigger Chance gehören dem Gear (Hoheitsgebiete, `neuausrichtung-v1.md` 2).
+- **Pfad-Meister** binden die Waffe an ein anderes System: Gear (Ripostes, Extra-Stiche und -Pfeile lösen Trigger-Affixe
+  aus), Battle Plan (Master of Tempo, Reload, Quake, Channel), Ailments (Master of Venom, Hollow, Smolder) oder Attribute
+  (Master of the Edge: Precision über 85 % wird Crit Chance).
+- Am Ende ~20 von 41 möglichen Punkten: ein voller Pfad und ein halber, oder zwei Pfade bis zur ersten Gabel.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Venom Coat (Dagger), Barbed Arrow (Bow),
   Heavy Bolt (Crossbow), Firebolt (Wand), Void Bolt (Staff).
 
-### 5.2 Skill Web ✅ (`level-v2.md` Abschnitt 7)
+### 5.2 Skill Web v3 ✅ (`level-v2.md` Abschnitt 7, `neuausrichtung-v1.md` 4)
 - Ein **Netz aus acht Regionen**: vier Äste (Might, Rupture, Arcana, Affliction) und vier Brücken. Jede Klasse startet
-  an ihrem Hub. 189 Nodes: 123 Minor, 40 Notable, 14 Skill, 12 Keystone, dazu Defense-Knospen zwischen den Regionen.
+  an ihrem Hub. 185 Nodes: Travel-Nodes, 41 Notables (9 Gabeln), 14 Skills, 11 Keystones, Defense-Knospen.
+- **Hoheitsgebiete** (`neuausrichtung-v1.md` 2): Das Web gibt keine rohe Offense mehr. **Travel-Nodes geben nur Defense**
+  (+3 % Life, +6 % Armor, +8 % Barrier, +2 % Evasion oder +4 % Tenacity), wie die Attribut-Nodes im PoE-Tree.
+- **Notables** sind bedingt oder haben eine Regel: „Deine Treffer machen 25 % mehr Schaden gegen Brennende“, „innerhalb
+  von 3 s nach einem Crit“, „ab 50 Heat“, „solange deine Barrier hält“, „pro Shock-Stack“, „gegen einen Gegner im
+  Telegraph“. Mehrere „more“-Boni multiplizieren sich. Dazu Defense-Notables (Ward-Knospen, Stoneskin).
+- **Conversion** öffnet Hybride: Searing Steel (30 % Physical → Fire), Arcane Edge (20 % Physical → Lightning), Void Ember
+  (30 % Fire → Void). Der umgewandelte Teil nutzt seinen eigenen Damage % und die passende Defense des Gegners.
 - **Skill-Nodes** schalten aktive Skills frei (Ränge = Skill Level), z. B. Crushing Blow, Flurry, Chain Lightning,
   Ice Lance, Meteor, Immolate, Soul Harvest, Corrupt, Wither, Toxic Burst, Envenom, Rend, Serrated Edge, Execute.
-- **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4).
-- **Prestige-Äste** (`skilltree-v2.md`): 10 Äste, jede Klasse wählt aus ihren 4 Klassenpfaden. Jedes Prestige: neuer Ast
-  (Stufe I) oder einen eigenen Ast **vertiefen** (II, III; Keystone wird Greater / Supreme).
+- **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4). Ohne Schablone:
+  Spellblade (Skills schlagen zusätzlich mit der Waffe), Arcane Conduit (Skills geben alle Heat aus und wachsen damit),
+  Black Flame (Burn korrumpiert, Corruption halbiert Heilung), Slow Death (halbe Treffer, volle Ailments),
+  Blood and Bile (Bleed und Poison lösen einander aus), dazu Unyielding, Glass Focus, Elemental Overload, Pact of Ash,
+  Blood Price, Final Mercy.
+- **Prestige-Äste** (`skilltree-v2.md`) sind die **Ascendancy**: 10 Äste, jede Klasse wählt aus ihren 4 Klassenpfaden.
+  Jedes Prestige: neuer Ast (Stufe I) oder einen eigenen Ast **vertiefen** (II, III; Keystone wird Greater / Supreme).
+  Ihre kleinen Nodes sind Travel-Nodes mit Defense, die Notables tragen Trigger und Regeln.
+- **Rune Sockets** (8, einer pro Region, zwischen innerem und mittlerem Ring): ein gelernter Socket nimmt bei Kaelen eine
+  Rune aus dem Beutel und gibt ihre **Web-Wirkung**, eine kleine Regel (Ember: Burns +15 %, Rime: +12 % gegen Chilled,
+  Dusk: +15 % nach einem Crit …). Herausnehmen oder Vergessen legt die Rune zurück in den Beutel.
 - Titel: Klassenname, später ein Titel nach dem Haupt-Ast (z. B. Warrior + Duelist = Blademaster).
 
 ### 5.3 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
 - **Slots:** Off Hand, Helm, Body Armor, Gloves, Boots, Belt, Amulet, 2× Ring, **Charm** (nur Trigger-Affixe).
   Off Hand passt zur Waffe: Shield (Melee), Quiver (Bow/Crossbow), Focus (Wand/Staff).
 - **Item Level = Monster Level**, daraus das **Item Tier** (T1–T10). **Required Level** = Item Level − 5.
-- **Rarities:** Normal (Sockets, Basis für Runewords) · Magic (1 Prefix + 1 Suffix) · Rare · Epic (garantiert Trigger) ·
-  Legendary (Affixe + Legendary Power) · Unique (fest, oft mit Power; Boss-Uniques „Dropped by …“).
+- **Rarities:** Normal (Sockets, Basis für Runewords) · Magic (1 Prefix + 1 Suffix) · Rare (4–5 Stat-Affixe) · Epic
+  (5–6 und garantiert Trigger) · Legendary (4–5 Affixe + Legendary Power) · Unique (fest, oft mit Power; Boss-Uniques
+  „Dropped by …“). Gear ist die **Hauptquelle der Zahlen** (Damage %, Crit, Attack Speed, Trigger Chance), die Bäume geben
+  sie seit Phase 5 ab.
 - Welche Rarity droppt, hängt am Run (Run 1: Normal/Magic, Rare am Boss; Epic ab Run 3; Legendary ab Run 4 am Boss).
 - **Affixe:** Stat-Affixe (Prefix oder Suffix) und **Trigger-Affixe** (Condition → Chance → Effect → Cooldown).
 - **Trigger Codex:** Salvage eines Items mit Trigger lehrt Condition und Effect. Liora baut daraus per **Kindle** einen
@@ -297,9 +326,11 @@ Endgame **Wildfire I–X**.
 - **Champions** (ab Run 3, 4 % pro Elite): drei Modifier, +30 % Life, eigener Hoard (sicher Epic, 15 % Legendary).
 - **Ember Thief:** seltener Gegner, der wegläuft; fängt man ihn, gibt es Beute.
 - **Bosse:** pro Act einer mit Phasen und Signatur-Mechanik. Jedes Prestige gibt jedem Boss eine Fähigkeit dazu.
+- **Defense der Gegner:** Armor wächst mit dem Monster Level (×0,27 pro Level), dazu **30 % All Resistance** für
+  jeden Gegner, damit Physical und Elemental gleich schwer durchkommen (`balance-messung-v1.md` 11).
 - **Skalierung:** Das Monster Level bestimmt die Grundwerte. Dazu:
   - **Run Pressure:** Life +80 %, Schaden +35 % pro Act nach dem ersten (der neueste Act bleibt der härteste).
-  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7 / 8 / 8 / 6,6 / 5,4),
+  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7,6 / 9 / 8,8 / 7,8 / 8),
     Life nur mit deren Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3, Startwerte aus
     `balance-messung-v1.md`): normale Stages 15 → 30 %, 25 → 35 %, 30 → 40 % der Wand, die **Gatekeeper** auf
     Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Jede Wand mit höchstens +10 Level schaffbar.
@@ -337,8 +368,10 @@ Endgame **Wildfire I–X**.
 - Neuausrichtung (Systemidentität, Class Traits, Web v3, Mastery v2, Ailments v2, Routen, Elites, Omens, Ashborn,
   Greater Affixes, Ember Crucible, Training Dummy): `neuausrichtung-v1.md`, von Timo entschieden (13.10.). Phase 1
   (Messwerkzeug), Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers), Phase 3 (Ailments v2, Class Traits) und
-  Phase 4 (Elites, Routen, Item-Picks, Training Dummy) sind gebaut; offen sind Phase 5 und 6.
-- Aus Ailments v2 hängen an Weapon Mastery v2 (Phase 5): Bleed über Mighty Hits, Freeze über den Rime-Pfad.
+  Phase 4 (Elites, Routen, Item-Picks, Training Dummy) sind gebaut. Von Phase 5 ist **Weapon Mastery v2** gebaut
+  (mit Mighty Hits, Parry und dem Freeze des Rime-Pfads), dazu **Skill Web v3**, die Hoheitsgebiete in Web und
+  Prestige-Ästen, mehr Affixe auf Rare/Epic/Legendary, die Rune Sockets im Web und die Umbenennungen aus 1.3. Offen:
+  Phase 6.
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
 - Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch.
 
@@ -352,7 +385,7 @@ Endgame **Wildfire I–X**.
 | `attribute-v1.md` | Attribute 1–10, Breakpoints | gültig |
 | `level-v2.md` | Level, Level Cap, Skill Points, Skill Web | gültig |
 | `waffe-als-system-v1.md` | Weapon Mastery Grundsystem | gültig |
-| `weapon-mastery-baeume-v1.md` | die 8 Mastery-Bäume | gültig (Zahlen im Code) |
+| `weapon-mastery-baeume-v1.md` | die 8 Mastery-Bäume v1 | Pfade **überholt** durch `weapon-mastery-v2.md`; Formen, Keystone-Ring, Echoes gültig |
 | `skilltree-v2.md` | Prestige-Äste, Vertiefen | gültig (Ast-Teil) |
 | `skills-v1.md` | Skills, Battle Plan | gültig (Sprossen siehe 4.4) |
 | `prestige-acts-v1.md` | Acts öffnen pro Prestige | gültig (Gear-Verlust und Seals überholt) |
@@ -368,7 +401,7 @@ Endgame **Wildfire I–X**.
 | `story-theme-v1.md`, `story-texte-v1.md`, `fabelwelt-v1.md` | Welt und Texte | gültig |
 | `neuausrichtung-v1.md` | Vorschläge zur Neuausrichtung | 💡 offen |
 | `balance-messung-v1.md` | Messung Phase 1 (Runes im Autopilot, Tode und Kampfdauer je Stage-Art), Startwerte Phase 2 | gemessen |
-| `weapon-mastery-v2.md` | neue Mastery-Pfade, Precision, Mighty Hits, Parry | 💡 offen |
-| `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | gebaut (ohne Mighty Hits, Freeze) |
+| `weapon-mastery-v2.md` | Mastery-Pfade mit Gabeln, Precision, Mighty Hits, Parry | gebaut (Abweichungen dort in Abschnitt 6) |
+| `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | gebaut |
 | `elites-routen-v1.md` | Elite-Modifier pro Act, Champions, Routen, Item-Picks, Training Dummy | gebaut |
 | `merkliste-spaeter.md` | Ideen für später | gemerkt |

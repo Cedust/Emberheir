@@ -132,6 +132,66 @@ describe("Weapon Mastery tree", () => {
     expect(merged.noGlancing).toBe(true);
   });
 
+  it("forks: one side of a fork shuts the other; the Path Master links to both", () => {
+    const s = learn(EMPTY_MASTERY, 10, "refine", "p1", "p2", "fa");
+    expect(masteryBlockReason(tree, s, "fb", 10)).toBe("forkTaken");
+    expect(masteryBlockReason(tree, s, "master", 10)).toBeUndefined();
+    const w = build(learn(s, 10, "master"), 10);
+    expect(w.weaponRules.parry).toBe(MASTERY.maxParry);
+  });
+
+  it("Innate patches add damage and change the cost; the fight knows the Innate", () => {
+    const w = build(learn(EMPTY_MASTERY, 10, "refine", "p1", "p2", "fa"), 10);
+    const hit = w.innate?.hits[0];
+    expect(hit?.kind === "weapon" ? hit.multiplier : 0).toBeCloseTo(3);
+    expect(w.innate?.heatCost).toBe(TEST_SKILL.heatCost - 5);
+    expect(w.weaponRules.innateId).toBe(TEST_SKILL.id);
+  });
+
+  it("Master of the Edge style: no Glancing Blows, Precision past the mark becomes Crit", () => {
+    const w = build(learn(EMPTY_MASTERY, 10, "refine", "refine", "p1", "p2", "fb"), 10);
+    expect(w.precision).toBe(1);
+    expect(w.bonuses.critChance).toBeCloseTo(0.1);
+  });
+
+  it("Mighty Hits start at 125 % Weapon Damage; the damage scale keeps the average", () => {
+    const w = build(EMPTY_MASTERY);
+    expect(w.weapon.mightyAt).toBeCloseTo(w.weaponDamage * 1.25);
+    const scaled = buildMasteryWeapon(
+      TEST_WEAPON,
+      { ...tree, damageScale: 0.5 },
+      EMPTY_MASTERY,
+      0,
+      TEST_SKILL,
+    );
+    expect(scaled.weaponDamage).toBeCloseTo(w.weaponDamage * 0.5);
+  });
+
+  it("ranks of a trigger node add up their chances", () => {
+    const t = {
+      id: "x",
+      name: "X",
+      condition: { kind: "onHit" as const },
+      chance: 0.05,
+      effect: { kind: "extraAttack" as const },
+    };
+    const p1 = tree.nodes.find((n) => n.id === "p1");
+    if (!p1) throw new Error("p1");
+    const node3 = {
+      ...p1,
+      id: "t",
+      kind: "technique" as const,
+      maxRanks: 3,
+      requiresRefine: false,
+      effect: { triggers: [t] },
+    };
+    const withT = { ...tree, nodes: [...tree.nodes, node3] };
+    const s = ["t", "t", "t"].reduce((m, id) => learnMastery(withT, m, id, 3), EMPTY_MASTERY);
+    const w = buildMasteryWeapon(TEST_WEAPON, withT, s, 3, TEST_SKILL);
+    expect(w.triggers.filter((x) => x.id === "x")).toHaveLength(1);
+    expect(w.triggers.find((x) => x.id === "x")?.chance).toBeCloseTo(0.15);
+  });
+
   it("Attunement turns a Fire Innate into another element", () => {
     const firebolt = {
       ...TEST_SKILL,

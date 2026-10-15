@@ -162,9 +162,139 @@ function slotSpec(spec: BranchSpec, slot: Slot): NodeSpec | KeystoneSpec {
   }
 }
 
-const doubled = (bonuses: StatBonuses): StatBonuses =>
+/** The Minor slots of a branch: they are travel nodes now (neuausrichtung-v1.md 4.5). */
+const MINOR_SLOTS = ["entry", "a1", "b1", "mid", "b4", "t2a", "t2b", "t3a", "t3b"] as const;
+type MinorSlot = (typeof MINOR_SLOTS)[number];
+
+/** Defense of one travel node (one rank; the two-rank nodes of tier III give half per rank). */
+const L = { increasedLife: 0.02 };
+const A = { increasedArmor: 0.04 };
+const B = { increasedBarrier: 0.05 };
+const E = { evasion: 0.015 };
+const T = { tenacity: 0.025 };
+const K = { blockChance: 0.015 };
+
+/**
+ * Travel nodes per branch, in the order of `MINOR_SLOTS`: small Defense that fits the branch.
+ * Raw offense (Damage %, Crit, Attack Speed, Trigger Chance, Ailment Effect) belongs to the gear
+ * now (neuausrichtung-v1.md 2).
+ */
+const TRAVEL: Readonly<Record<string, readonly (readonly [string, StatBonuses])[]>> = {
+  duelist: [
+    ["Fencer's Stance", E],
+    ["Guard Up", K],
+    ["Lunge Step", L],
+    ["Footwork", E],
+    ["Steel Nerves", T],
+    ["Blade Ward", K],
+    ["Light Feet", E],
+    ["Fencer's Grace", L],
+    ["Cold Steel", E],
+  ],
+  marksman: [
+    ["Steady Footing", E],
+    ["Eagle Eye", L],
+    ["Leather Jerkin", A],
+    ["Quickdraw", E],
+    ["Patient Hunter", T],
+    ["Long Watch", L],
+    ["Fletcher's Coat", A],
+    ["Rapid Retreat", E],
+    ["Weathered Hide", L],
+  ],
+  butcher: [
+    ["Cleaver's Arm", L],
+    ["Hack Guard", A],
+    ["Gore Hide", L],
+    ["Meat Hook", T],
+    ["Thick Hide", A],
+    ["Rending Strength", L],
+    ["Iron Gut", A],
+    ["Carver's Frame", L],
+    ["Butcher's Apron", A],
+  ],
+  venomancer: [
+    ["Toxin Skin", E],
+    ["Viper Coil", E],
+    ["Lingering Venom", T],
+    ["Fang Guard", L],
+    ["Antivenom", T],
+    ["Neurotoxin Ward", L],
+    ["Viper Blood", T],
+    ["Corrosive Hide", E],
+    ["Fang Speed", L],
+  ],
+  stormcaller: [
+    ["Static Ward", B],
+    ["Conductive Skin", L],
+    ["Surge Shield", B],
+    ["Arc Ward", B],
+    ["Insulation", T],
+    ["Charged Veil", B],
+    ["Grounding", L],
+    ["Ionized Air", B],
+    ["Storm Cloak", L],
+  ],
+  frostbinder: [
+    ["Rime Skin", B],
+    ["Glacial Ward", B],
+    ["Cold Focus", L],
+    ["Permafrost", T],
+    ["Hoarfrost", B],
+    ["Frozen Heart", L],
+    ["Frozen Blood", T],
+    ["Deep Cold", B],
+    ["Rimecraft", L],
+  ],
+  pyromancer: [
+    ["Ember Skin", L],
+    ["Heat Wave Ward", B],
+    ["Kindled Blood", L],
+    ["Smoldering Hide", T],
+    ["Ash Skin", B],
+    ["Stoked Heart", L],
+    ["Cinder Skin", B],
+    ["Kindler's Coat", T],
+    ["Blaze Ward", L],
+  ],
+  "void-lord": [
+    ["Gloom", L],
+    ["Abyssal Ward", B],
+    ["Long Night", T],
+    ["Hollow Shell", B],
+    ["Endless", L],
+    ["Umbral Skin", T],
+    ["Void Ward", B],
+    ["Abyssal Heart", L],
+    ["Night Eternal", T],
+  ],
+  warden: [
+    ["Bulwark", K],
+    ["Stone Skin", A],
+    ["Plating", A],
+    ["Stalwart", T],
+    ["Fortress", K],
+    ["Bastion", L],
+    ["Reinforced", A],
+    ["Stoneheart", L],
+    ["Rampart", K],
+  ],
+  tactician: [
+    ["Planning", L],
+    ["Measured Pace", T],
+    ["Drill", A],
+    ["Momentum Guard", E],
+    ["Discipline", T],
+    ["Foresight", L],
+    ["Composure", T],
+    ["Steady Plan", L],
+    ["Quickstep", E],
+  ],
+};
+
+const half = (bonuses: StatBonuses): StatBonuses =>
   Object.fromEntries(
-    Object.entries(bonuses).map(([stat, v]) => [stat, Math.round((v as number) * 2 * 1e4) / 1e4]),
+    Object.entries(bonuses).map(([stat, v]) => [stat, Math.round((v as number) * 0.5 * 1e4) / 1e4]),
   );
 
 function buildBranch(spec: BranchSpec): SkillNode[] {
@@ -210,14 +340,26 @@ function buildBranch(spec: BranchSpec): SkillNode[] {
       };
     }
     const plain = node as NodeSpec;
-    // Minor nodes with a single rank give what two ranks gave before (level-v2.md: 8/5/6 points).
-    const single = shape.kind === "minor" && shape.ranks === 1 && plain.bonuses;
-    const bonuses = single ? doubled(plain.bonuses ?? {}) : plain.bonuses;
+    // Minor slots are travel nodes: small Defense from the branch's table.
+    const travel = (MINOR_SLOTS as readonly string[]).includes(slot)
+      ? TRAVEL[spec.id]?.[MINOR_SLOTS.indexOf(slot as MinorSlot)]
+      : undefined;
+    if (travel) {
+      const [name, defense] = travel;
+      const bonuses = shape.ranks > 1 ? half(defense) : defense;
+      const text = describeBonuses(bonuses);
+      return {
+        ...base,
+        name,
+        description: shape.ranks > 1 ? `${text.slice(0, -1)} per rank.` : text,
+        bonuses,
+      };
+    }
+    const bonuses = plain.bonuses;
     return {
       ...base,
       name: plain.name,
-      description:
-        single && bonuses ? describeBonuses(bonuses, plain.weaponRange) : plain.description,
+      description: plain.description,
       ...(bonuses ? { bonuses } : {}),
       ...(plain.triggers ? { triggers: plain.triggers } : {}),
       ...(plain.weaponRange ? { weaponRange: plain.weaponRange } : {}),
@@ -407,9 +549,13 @@ const BRANCHES: readonly BranchSpec[] = [
       bonuses: { heatGain: 0.05 },
     },
     a3: {
-      name: "Deadeye",
-      description: "+5 % Crit Chance, +8 % Trigger Chance.",
-      bonuses: { critChance: 0.05, triggerChance: 0.08 },
+      name: "Sighted",
+      description:
+        "Against an enemy winding up a Heavy Attack your hits have +10 % Crit Chance and deal 25 % more damage.",
+      rules: {
+        conditionalCrit: [{ condition: { kind: "enemyWindup" }, amount: 0.1 }],
+        conditionalDamage: [{ condition: { kind: "enemyWindup" }, amount: 0.25 }],
+      },
     },
     b3: {
       name: "Pinning Shot",
@@ -491,7 +637,7 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "butcher",
     name: "Butcher",
     branch: "rupture",
-    anchor: "rupture-butcher",
+    anchor: "rupture-flayer",
     theme: "Big Bleeds from big hits.",
     angle: 150,
     entry: {
@@ -541,9 +687,11 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Slaughter",
-      description: "While wielding a Melee Weapon: +12 % Chance to Bleed, +10 % Physical Damage.",
-      bonuses: { bleedChance: 0.12, physicalDamage: 0.1 },
-      weaponRange: "melee",
+      description: "+12 % Chance to Bleed. Your hits deal 20 % more damage to Bleeding enemies.",
+      bonuses: { bleedChance: 0.12 },
+      rules: {
+        conditionalDamage: [{ condition: { kind: "enemyHas", ailment: "bleed" }, amount: 0.2 }],
+      },
     },
     b4: { name: "Thick Hide", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -618,7 +766,7 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "venomancer",
     name: "Venomancer",
     branch: "rupture",
-    anchor: "rupture-venomancer",
+    anchor: "rupture-venom-heart",
     theme: "Poison stacks that bite back.",
     angle: 120,
     entry: {
@@ -668,9 +816,15 @@ const BRANCHES: readonly BranchSpec[] = [
       ],
     },
     b3: {
-      name: "Virulence",
-      description: "+12 % Chance to Poison, +10 % Ailment Effect.",
-      bonuses: { poisonChance: 0.12, ailmentEffect: 0.1 },
+      name: "Toxic Tide",
+      description:
+        "+12 % Chance to Poison. Your Poisons deal 15 % more damage to enemies below 50 % Life.",
+      bonuses: { poisonChance: 0.12 },
+      rules: {
+        ailmentDamageWhen: [
+          { ailment: "poison", amount: 0.15, condition: { kind: "enemyBelow", fraction: 0.5 } },
+        ],
+      },
     },
     b4: { name: "Antivenom", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -790,8 +944,12 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Galvanize",
-      description: "+12 % Chance to Shock, +5 % Trigger Chance.",
-      bonuses: { shockChance: 0.12, triggerChance: 0.05 },
+      description:
+        "+12 % Chance to Shock. Your hits have +8 % Crit Chance against Shocked enemies.",
+      bonuses: { shockChance: 0.12 },
+      rules: {
+        conditionalCrit: [{ condition: { kind: "enemyHas", ailment: "shock" }, amount: 0.08 }],
+      },
     },
     b4: {
       name: "Insulation",
@@ -939,9 +1097,12 @@ const BRANCHES: readonly BranchSpec[] = [
       ],
     },
     b3: {
-      name: "Shatter",
-      description: "+12 % Chance to Chill, +5 % Elemental Penetration.",
-      bonuses: { chillChance: 0.12, elementalPenetration: 0.05 },
+      name: "Brittle",
+      description: "+12 % Chance to Chill. Your hits deal 20 % more damage to Chilled enemies.",
+      bonuses: { chillChance: 0.12 },
+      rules: {
+        conditionalDamage: [{ condition: { kind: "enemyHas", ailment: "chill" }, amount: 0.2 }],
+      },
     },
     b4: { name: "Hoarfrost", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -1033,7 +1194,7 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "pyromancer",
     name: "Pyromancer",
     branch: "affliction",
-    anchor: "affliction-pyromancer",
+    anchor: "affliction-pyre-heart",
     theme: "Burn and anti-heal.",
     angle: 30,
     entry: {
@@ -1052,12 +1213,12 @@ const BRANCHES: readonly BranchSpec[] = [
       bonuses: { startingHeat: 6 },
     },
     a2: {
-      name: "Wildfire",
+      name: "Flame Tongue",
       description: "Skills have a 30 % chance to Burn.",
       triggers: [
         {
           id: "pyro-wildfire",
-          name: "Wildfire",
+          name: "Flame Tongue",
           condition: { kind: "onSkillUse" },
           chance: 0.3,
           effect: { kind: "ailment", ailment: "burn" },
@@ -1086,8 +1247,11 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Combustion",
-      description: "+12 % Chance to Burn, +5 % Elemental Penetration.",
-      bonuses: { burnChance: 0.12, elementalPenetration: 0.05 },
+      description: "+12 % Chance to Burn. Your hits deal 20 % more damage to Burning enemies.",
+      bonuses: { burnChance: 0.12 },
+      rules: {
+        conditionalDamage: [{ condition: { kind: "enemyHas", ailment: "burn" }, amount: 0.2 }],
+      },
     },
     b4: {
       name: "Ash Skin",
@@ -1166,7 +1330,7 @@ const BRANCHES: readonly BranchSpec[] = [
     id: "void-lord",
     name: "Void Lord",
     branch: "affliction",
-    anchor: "affliction-void-lord",
+    anchor: "affliction-hollow-crown",
     theme: "Corruption for long fights.",
     angle: 60,
     entry: {
@@ -1216,8 +1380,14 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Eternal Night",
-      description: "+12 % Chance to Corrupt, +15 % Ailment Effect.",
-      bonuses: { corruptionChance: 0.12, ailmentEffect: 0.15 },
+      description:
+        "+12 % Chance to Corrupt. Your Corruption deals 15 % more damage while you have 50 Heat or more.",
+      bonuses: { corruptionChance: 0.12 },
+      rules: {
+        ailmentDamageWhen: [
+          { ailment: "corruption", amount: 0.15, condition: { kind: "heatAtLeast", amount: 50 } },
+        ],
+      },
     },
     b4: { name: "Endless", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -1469,8 +1639,14 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     b3: {
       name: "Battle Rhythm",
-      description: "+10 Starting Heat, +8 % Heat Gain.",
-      bonuses: { startingHeat: 10, heatGain: 0.08 },
+      description:
+        "Start every fight with 10 Heat. Within 3 s after a skill your hits deal 15 % more damage.",
+      bonuses: { startingHeat: 10 },
+      rules: {
+        conditionalDamage: [
+          { condition: { kind: "within", event: "skill", seconds: 3 }, amount: 0.15 },
+        ],
+      },
     },
     b4: { name: "Discipline", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
@@ -1485,12 +1661,12 @@ const BRANCHES: readonly BranchSpec[] = [
         bonuses: { startingHeat: 5 },
       },
       notable: {
-        name: "Second Wind",
+        name: "Last Stand",
         description: "Once per fight, below 40 % Life: gain 40 Heat.",
         triggers: [
           {
             id: "tactician-wind",
-            name: "Second Wind",
+            name: "Last Stand",
             condition: { kind: "lifeBelow", threshold: 0.4 },
             oncePerFight: true,
             effect: { kind: "heat", amount: 40 },

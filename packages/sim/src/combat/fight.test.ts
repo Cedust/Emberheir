@@ -264,8 +264,11 @@ describe("Fight", () => {
       ]);
       expect(fight.snapshot().enemy.ailments.map((a) => a.type)).toEqual(["burn"]);
       fight.advance(1);
-      // 25 % of the 10 damage hit per second.
-      expect(ofType(fight.events, "dot")[0]).toMatchObject({ side: "enemy", damage: 3 });
+      // The Burn's share of the 10 damage hit per second.
+      expect(ofType(fight.events, "dot")[0]).toMatchObject({
+        side: "enemy",
+        damage: Math.round(10 * COMBAT.burnDamagePerSecond),
+      });
     });
 
     it("Chill slows the target's attacks", () => {
@@ -902,8 +905,10 @@ describe("Affliction effects", () => {
     const hero = setup({ bonuses: NO_CRIT, rotation: [{ skill: immolate }] });
     const fight = new Fight(hero, dummy(), 1);
     fight.advance(3.1);
-    // 20 × 2 × 25 % per second.
-    expect(ofType(fight.events, "dot").map((d) => d.damage)).toContain(10);
+    // 20 × 2 × the Burn's share per second.
+    expect(ofType(fight.events, "dot").map((d) => d.damage)).toContain(
+      Math.round(40 * COMBAT.burnDamagePerSecond),
+    );
   });
 
   it("Corrupt lets the Corruption start higher", () => {
@@ -921,8 +926,13 @@ describe("Affliction effects", () => {
     const hero = setup({ bonuses: NO_CRIT, rotation: [{ skill: corrupt }] });
     const fight = new Fight(hero, dummy(), 1);
     fight.advance(3.1);
-    // Base 10/s, grown by 4 ticks: 20 for the first tick.
-    expect(ofType(fight.events, "dot")[0]).toMatchObject({ ailment: "corruption", damage: 20 });
+    // The base per second, grown by 4 ticks.
+    expect(ofType(fight.events, "dot")[0]).toMatchObject({
+      ailment: "corruption",
+      damage: Math.round(
+        100 * COMBAT.corruptionDamagePerSecond * (1 + 4 * COMBAT.corruptionRampPerTick),
+      ),
+    });
   });
 });
 

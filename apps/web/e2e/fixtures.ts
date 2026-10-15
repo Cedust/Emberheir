@@ -366,9 +366,9 @@ export function saveMastery(extra: readonly string[] = []): string {
     "full-swing",
     "full-swing",
     "heat-cooling",
-    "riposte-1",
-    "riposte-2",
-    "riposte-3",
+    "riposte-t1",
+    "riposte-t1",
+    "riposte-t1",
     "riposte-counterweight",
     ...extra,
   ];
@@ -379,12 +379,12 @@ export function saveMastery(extra: readonly string[] = []): string {
 }
 
 /** A fresh Warrior at the Camp with Skill Points and Acorns: the web from its start (level-v2.md). */
-export function saveWebTree(): string {
+export function saveWebTree(runes: Readonly<Record<string, number>> = {}): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
   return serializeGame({
     ...base,
     hero: { ...base.hero, level: 12, unspentSkillPoints: 8 },
-    wallet: { ...base.wallet, acorns: 5000 },
+    wallet: { ...base.wallet, acorns: 5000, runes },
     progress: { ...base.progress, trainerUnlocked: true },
   });
 }

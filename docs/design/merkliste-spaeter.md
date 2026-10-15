@@ -50,8 +50,9 @@ nur einen einfachen, lesbaren Platzhalter (Zahl, Farbe, kurzer Text in der Arena
 
 | Was | Idee |
 |---|---|
-| Mighty Hit | großer Treffer mit Kamera-Ruck und eigener Zahl |
-| Parry | Klingen-Funke, Treffer prallt halb ab |
+| Mighty Hit | großer Treffer mit Kamera-Ruck und eigener Zahl (Platzhalter gebaut: Bodenwelle, Splitter, ⚒) |
+| Parry | Klingen-Funke, Treffer prallt halb ab (Platzhalter gebaut: heller Ring, Funken, ⚔) |
+| Mastery-v2-Regeln | Interrupt (Telegraph zerbricht), Frozen Solid (Eisblock), Arc Chain (Blitzbogen), Spring Trap (Gratis-Bolzen), Rupture Plate (Rüstung platzt), Impale / Master of the Wall (gesammelter Schaden entlädt sich); bis dahin nur Log und Trefferzahl |
 | Combust (Burn) | Glut springt auf, kurze Stichflamme |
 | Collapse (Corruption) | Void zieht sich zusammen und implodiert |
 | Poison-Überlauf | grüne Blasen platzen |

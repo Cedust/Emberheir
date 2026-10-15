@@ -2772,6 +2772,34 @@
   font-size: 14px;
 }
 
+/* Rune Socket of the web: the Rune in it, then the pouch to choose from. */
+.stage .web-socket {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.stage .web-socket-rune,
+.stage .node-detail .web-socket-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-self: stretch;
+  text-align: left;
+}
+
+.stage .node-detail .web-socket-option {
+  justify-content: flex-start;
+  white-space: normal;
+  text-transform: none;
+  letter-spacing: normal;
+  font-family: inherit;
+  height: auto;
+  padding: 6px 10px;
+}
+
 .stage .branch-name {
   font-family: var(--font-title);
   font-weight: 700;

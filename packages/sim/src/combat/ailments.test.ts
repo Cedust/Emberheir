@@ -41,7 +41,8 @@ describe("Burn", () => {
   it("ticks once per second for its duration, then expires", () => {
     const burning = applyAilment({}, "burn", 4, 40);
     const { states, ticks, expired } = run(burning, 5);
-    expect(ticks).toEqual([10, 10, 10, 10]);
+    const tick = 40 * COMBAT.burnDamagePerSecond;
+    expect(ticks).toEqual([tick, tick, tick, tick]);
     expect(expired).toEqual(["burn"]);
     expect(states.burn).toBeUndefined();
   });
@@ -50,9 +51,12 @@ describe("Burn", () => {
     let s = applyAilment({}, "burn", 4, 40);
     s = run(s, 3).states;
     s = applyAilment(s, "burn", 4, 20);
-    expect(s.burn).toMatchObject({ damagePerSecond: 10, remaining: 4 });
+    expect(s.burn).toMatchObject({
+      damagePerSecond: 40 * COMBAT.burnDamagePerSecond,
+      remaining: 4,
+    });
     s = applyAilment(s, "burn", 4, 80);
-    expect(s.burn?.damagePerSecond).toBe(20);
+    expect(s.burn?.damagePerSecond).toBeCloseTo(80 * COMBAT.burnDamagePerSecond);
   });
 
   it("halves healing received", () => {
@@ -139,12 +143,14 @@ describe("Corruption", () => {
   it("grows with every tick and keeps its growth when refreshed", () => {
     const corrupted = applyAilment({}, "corruption", 6, 100);
     const first = run(corrupted, 3);
-    // Base 10/s, +25 % of the base per tick.
-    expect(first.ticks).toEqual([10, 12.5, 15]);
+    // The base per second, +25 % of the base per tick.
+    const base = 100 * COMBAT.corruptionDamagePerSecond;
+    const grown = (ticks: number) => base * (1 + COMBAT.corruptionRampPerTick * ticks);
+    first.ticks.forEach((t, i) => expect(t).toBeCloseTo(grown(i)));
     const refreshed = applyAilment(first.states, "corruption", 6, 50);
     expect(refreshed.corruption?.ramp).toBe(3);
     expect(refreshed.corruption?.remaining).toBe(6);
-    expect(run(refreshed, 1).ticks).toEqual([17.5]);
+    expect(run(refreshed, 1).ticks[0]).toBeCloseTo(grown(3));
   });
 
   it("stops growing at the cap and can jump ahead (Corrupt)", () => {
@@ -159,7 +165,9 @@ describe("dotDamagePerSecond", () => {
     let states = applyAilment({}, "bleed", 3, 10); // 5/s
     states = applyAilment(states, "poison", 5, 10); // 10 × Poison per second
     states = applyAilment(states, "poison", 5, 10);
-    states = advanceCorruption(applyAilment(states, "corruption", 6, 100), 4); // 10 × 2
-    expect(dotDamagePerSecond(states)).toBeCloseTo(25 + 2 * 10 * COMBAT.poisonDamagePerSecond);
+    states = advanceCorruption(applyAilment(states, "corruption", 6, 100), 4); // base × 2
+    expect(dotDamagePerSecond(states)).toBeCloseTo(
+      5 + 200 * COMBAT.corruptionDamagePerSecond + 2 * 10 * COMBAT.poisonDamagePerSecond,
+    );
   });
 });

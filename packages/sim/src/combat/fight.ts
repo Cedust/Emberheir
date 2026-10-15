@@ -20,14 +20,16 @@ import {
   REACTION_PATIENCE,
   refreshStats,
   attackRate,
+  conditionHolds,
 } from "./fighter";
 import { addHeat, stepHeat, triggerThreshold } from "./heat";
-import { dealDamage, defaultAttack, heal, rechargeBarrier } from "./hits";
+import { dealDamage, defaultAttack, heal, inflict, rechargeBarrier } from "./hits";
 import { PERK } from "./perks";
 import {
   actReaction,
   advanceRotation,
   castSlot,
+  masteryCost,
   overflowCost,
   react,
   slotCost,
@@ -58,12 +60,25 @@ import type { CombatantSetup, RotationSlot, Side } from "./types";
 /** Ailments, DoT ticks and passive Heat. */
 function stepStatus(core: FightCore, f: Fighter, dt: number): void {
   rechargeBarrier(core, f, dt);
-  const { states, ticks, expired } = stepAilments(f.ailments, dt);
+  const source = core.fighters[other(f.side)];
+  const swr = source.setup.weaponRules;
+  const { states, ticks, expired } = stepAilments(f.ailments, dt, {
+    ...(swr?.corruptionRamp ? { ramp: swr.corruptionRamp } : {}),
+    ...(swr?.collapseSeconds ? { collapse: swr.collapseSeconds } : {}),
+  });
   f.ailments = states;
   for (const tick of ticks) {
-    const byAilment = core.fighters[other(f.side)].setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
+    let byAilment = source.setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
+    // Bleeding Out, Master of Smolder: more ailment damage while a condition holds.
+    for (const e of [
+      ...(swr?.ailmentDamageWhen ?? []),
+      ...(source.setup.rules?.ailmentDamageWhen ?? []),
+    ]) {
+      if (e.ailment === tick.ailment && conditionHolds(core, source, e.condition)) {
+        byAilment *= 1 + e.amount;
+      }
+    }
     const hide = f.perks.has("thickSkin") ? 1 - PERK.thickSkinDotTaken : 1;
-    const source = core.fighters[other(f.side)];
     // Collapse: the burst of Corruption at full growth (Clarity makes it stronger).
     const burst = tick.collapse ? payoffFactor(core, source) : 1;
     const damage = Math.max(
@@ -74,9 +89,17 @@ function stepStatus(core: FightCore, f: Fighter, dt: number): void {
     if (tick.collapse) payoff(core, source, "collapse", damage);
     dealDamage(core, f, damage);
     if (core.result) return;
-    const leech = source.setup.rules?.dotLifesteal ?? 0;
+    const leech =
+      (source.setup.rules?.dotLifesteal ?? 0) + (swr?.ailmentLeech?.[tick.ailment] ?? 0);
     if (leech > 0) heal(core, source, damage * leech);
-    const wr = source.setup.weaponRules;
+    // Lingering Cloud: a tick may carry another ailment.
+    for (const e of swr?.tickAilment ?? []) {
+      if (e.from === tick.ailment && core.rng.chance(e.chance)) {
+        inflict(core, source, f, e.to, damage);
+        if (core.result) return;
+      }
+    }
+    const wr = swr;
     if (wr?.heatPerDotTick?.ailment === tick.ailment) {
       source.heat = addHeat(source.heat, wr.heatPerDotTick.amount, heatMultiplier(core, source));
     }
@@ -130,7 +153,11 @@ function stepTelegraphs(core: FightCore, f: Fighter, dt: number): void {
   const telegraphs = f.setup.telegraphs;
   if (!telegraphs?.length) return;
   if (f.windup) {
-    f.windup.remaining -= dt;
+    // Cold Snap: a Chilled fighter winds up slower.
+    const snap = f.ailments.chill
+      ? (core.fighters[other(f.side)].setup.weaponRules?.coldSnap ?? 0)
+      : 0;
+    f.windup.remaining -= dt / (1 + snap);
     if (f.windup.remaining > 1e-9) return;
     const spec = telegraphs[f.windup.index];
     f.windup = null;
@@ -188,14 +215,26 @@ function takeTurn(core: FightCore, f: Fighter): void {
   }
   const index = f.nextSlot;
   const free = f.setup.capstone?.kind === "ignition" && f.rotationPasses === 0;
-  const cost = slot && !free ? overflowCost(f, slotCost(f, slot.skill, slot.modifiers)) : 0;
+  const cost =
+    slot && !free
+      ? masteryCost(
+          core,
+          f,
+          slot.skill,
+          index,
+          overflowCost(f, slotCost(f, slot.skill, slot.modifiers)),
+        )
+      : 0;
   const threshold = slot ? triggerThreshold(cost, free ? 0 : slot.threshold) : 0;
   if (slot && f.heat >= threshold) {
-    const overcharge = slot.modifiers?.includes("overcharge") ? Math.max(0, f.heat - cost) : 0;
+    // Arcane Conduit: every skill spends all the Heat, without Overcharge's cap.
+    const conduit = f.setup.rules?.arcaneConduit === true;
+    const overcharge =
+      conduit || slot.modifiers?.includes("overcharge") ? Math.max(0, f.heat - cost) : 0;
     const paid = cost + overcharge;
     f.heat -= paid;
     advanceRotation(f);
-    const power = 1 + Math.min(0.5, overcharge / 100);
+    const power = 1 + (conduit ? overcharge / 100 : Math.min(0.5, overcharge / 100));
     castSlot(
       core,
       f,

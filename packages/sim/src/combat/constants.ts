@@ -1,3 +1,6 @@
+/** A Mighty Hit rolls at least this share of Weapon Damage (weapon-mastery-v2.md 1.2). */
+export const MIGHTY_SHARE = 1.25;
+
 /**
  * Tuning numbers for the combat core. These are starting values for the balance CLI, not final
  * design. Percentages are fractions (0.01 = 1 %).
@@ -94,7 +97,12 @@ export const COMBAT = {
    * Monster Armor × (this × Monster Level): an armored monster (about 30 Armor) stops about a
    * third of a Physical hit at every level, a plain one about a tenth.
    */
-  monsterArmorPerLevel: 0.34,
+  monsterArmorPerLevel: 0.27,
+  /**
+   * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10):
+   * Elemental builds had it far easier than Physical ones against the same walls.
+   */
+  monsterResistance: 0.3,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
@@ -107,14 +115,14 @@ export const COMBAT = {
 
   // Ailments.
   /** Burn deals this fraction of the triggering hit as damage per second. */
-  burnDamagePerSecond: 0.25,
+  burnDamagePerSecond: 0.22,
   burnDurationSeconds: 4,
   /** Burning fighters heal this much less. */
   burnHealingReduction: 0.5,
   chillDurationSeconds: 2,
   /** Chill: -X Attack Speed and -X Heat Gain; Ailment Effect raises it up to `chillMaxSlow`. */
-  chillSlow: 0.3,
-  chillMaxSlow: 0.5,
+  chillSlow: 0.25,
+  chillMaxSlow: 0.4,
   shockDurationSeconds: 3,
   /**
    * Shock (ailments-v2.md 3.1): stacks up to `shockMaxStacks`, each one +X damage taken; with
@@ -127,14 +135,14 @@ export const COMBAT = {
   bleedDamagePerSecond: 0.5,
   bleedDurationSeconds: 3,
   /** Poison: every stack deals X of its hit per second and runs out on its own. */
-  poisonDamagePerSecond: 0.17,
+  poisonDamagePerSecond: 0.14,
   poisonDurationSeconds: 5,
   poisonMaxStacks: 20,
   /**
    * Corruption (Void): starts weak and grows with every tick by this fraction of its base damage,
    * up to `corruptionMaxRamp` ticks. Re-applying refreshes the duration and keeps the growth.
    */
-  corruptionDamagePerSecond: 0.1,
+  corruptionDamagePerSecond: 0.09,
   corruptionDurationSeconds: 6,
   corruptionRampPerTick: 0.25,
   corruptionMaxRamp: 12,

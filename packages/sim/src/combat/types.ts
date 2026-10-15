@@ -118,11 +118,18 @@ export type TriggerCondition =
   /** Every Nth hit taken that was not evaded (Storm Herald's reflect). */
   | { readonly kind: "everyNthHitTaken"; readonly n: number }
   /** The opponent starts winding up a telegraphed Heavy Attack (Ice Shell). */
-  | { readonly kind: "enemyWindup" };
+  | { readonly kind: "enemyWindup" }
+  /** Parried an attack: it became a Glancing Blow (Weapon Mastery, `WeaponRules.parry`). */
+  | { readonly kind: "onParry" };
 
 export type TriggerEffect =
-  /** Extra hit for X × Weapon Damage. Can be evaded like an attack. */
-  | { readonly kind: "weaponHit"; readonly multiplier: number }
+  /**
+   * Extra hit for X × Weapon Damage. Can be evaded like an attack. `extra` marks an extra attack
+   * of the weapon (Split Shot, Rain of Arrows): Extra-Attack Damage and the Path Masters apply.
+   */
+  | { readonly kind: "weaponHit"; readonly multiplier: number; readonly extra?: boolean }
+  /** Combust: sets off part of the target's Burn at once (Pyroclast). */
+  | { readonly kind: "combust" }
   /** Extra spell hit with its own damage. Cannot be evaded. */
   | {
       readonly kind: "spellHit";
@@ -203,6 +210,11 @@ export interface WeaponDefinition {
    * damage, no Crit, no ailments, no on-hit triggers. Default 1 (enemies never glance).
    */
   readonly precision?: number;
+  /**
+   * Weapon Mastery v2: a clean weapon hit whose roll (before skill multipliers) reaches this damage
+   * is a Mighty Hit (125 % Weapon Damage, weapon-mastery-v2.md 1.2). Undefined = never.
+   */
+  readonly mightyAt?: number;
 }
 
 export type SkillType = "attack" | "spell" | "buff" | "curse";
@@ -227,6 +239,8 @@ export type SkillHit =
       readonly damageType?: DamageType;
       /** Never a Glancing Blow (Seeking Bolt). */
       readonly precise?: boolean;
+      /** Always a Mighty Hit: the roll is at least the Mighty threshold (Master of Payload). */
+      readonly mighty?: boolean;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -256,7 +270,13 @@ export type SkillEffect =
    * Rend: ends the target's Bleed and deals its remaining damage × multiplier at once; `leech`
    * heals the caster for that share of it.
    */
-  | { readonly kind: "consumeBleed"; readonly multiplier: number; readonly leech?: number }
+  | {
+      readonly kind: "consumeBleed";
+      readonly multiplier: number;
+      readonly leech?: number;
+      /** Only this share of the Bleed is set off; the rest keeps running (Hooked Rend). */
+      readonly share?: number;
+    }
   /** Toxic Burst: multiplies the target's Poison stacks (up to the cap). */
   | { readonly kind: "multiplyPoison"; readonly factor: number }
   /** Heals the caster by a fraction of max life (Burn halves it). */
@@ -427,6 +447,53 @@ export interface CombatRules {
   readonly barrierRecharge?: number;
   /** Raises the Resistance cap of single elements (Fire Draught: +5 %). */
   readonly maxResistance?: Readonly<Partial<Record<Element, number>>>;
+  // Skill Web v3 (neuausrichtung-v1.md 4): Notables are "if, then", not plain numbers.
+  /** Your hits deal `amount` more damage while the condition holds; each one multiplies. */
+  readonly conditionalDamage?: readonly RuleBonus[];
+  /** More Crit Chance (added) while the condition holds. */
+  readonly conditionalCrit?: readonly RuleBonus[];
+  /** Your ailments of a type deal `amount` more damage while the condition holds. */
+  readonly ailmentDamageWhen?: readonly {
+    readonly ailment: AilmentType;
+    readonly amount: number;
+    readonly condition: RuleCondition;
+  }[];
+  /** Spellblade: every skill with hits also strikes with your weapon for `multiplier`. */
+  readonly spellblade?: { readonly multiplier: number };
+  /** Arcane Conduit: skills spend all your Heat and deal 1 % more per Heat paid above the cost. */
+  readonly arcaneConduit?: boolean;
+  /** Black Flame: your Corruption cuts the enemy's healing like Burn. */
+  readonly corruptionStopsHeal?: boolean;
+  /** Slow Death: your hits deal `hit` of their damage, their ailments stay as strong as before. */
+  readonly slowDeath?: { readonly hit: number };
+  /** Conversion: `share` of your `from` damage is dealt as `to` (shares add up, at most all). */
+  readonly conversion?: readonly {
+    readonly from: DamageType;
+    readonly to: DamageType;
+    readonly share: number;
+  }[];
+}
+
+/**
+ * A state of the fight a Skill Web Notable can depend on (neuausrichtung-v1.md 4.3): the Weapon
+ * Mastery ones, Heat, an own Barrier, and "within N s after a Crit / Evade / Block / Parry / skill".
+ */
+export type RuleCondition =
+  | MasteryCondition
+  | { readonly kind: "heatAtLeast"; readonly amount: number }
+  | { readonly kind: "barrierActive" }
+  | {
+      readonly kind: "within";
+      readonly event: FightMoment;
+      readonly seconds: number;
+    };
+
+/** Moments a fighter remembers for `within` conditions. */
+export type FightMoment = "crit" | "evade" | "block" | "parry" | "skill";
+
+export interface RuleBonus {
+  readonly condition: RuleCondition;
+  readonly amount: number;
 }
 
 /** A state of the fight a Weapon Mastery bonus can depend on. */
@@ -434,7 +501,17 @@ export type MasteryCondition =
   | SlotCondition
   | { readonly kind: "enemyStunned" }
   /** The enemy carries the caster's Sunder at its maximum stacks. */
-  | { readonly kind: "enemySundered" };
+  | { readonly kind: "enemySundered" }
+  /** The enemy winds up a telegraphed Heavy Attack right now. */
+  | { readonly kind: "enemyWindup" }
+  /** The enemy carries at least `count` stacks of the ailment (Poison stacks count one by one). */
+  | { readonly kind: "enemyStacks"; readonly ailment: AilmentType; readonly count: number };
+
+/** A Weapon Mastery bonus that holds while its condition holds. */
+export interface MasteryBonus {
+  readonly condition: MasteryCondition;
+  readonly amount: number;
+}
 
 /** Stacking Sunder from Weapon Mastery: each stack ignores `perStack` of the target's Armor. */
 export interface SunderRule {
@@ -461,7 +538,7 @@ export interface WeaponRules {
   readonly extraAttackSunder?: boolean;
   readonly sunder?: SunderRule;
   /** After these defences the next own hit is clean and a Crit (Read the Blow, Shadowstep). */
-  readonly critAfter?: readonly ("evade" | "block")[];
+  readonly critAfter?: readonly ("evade" | "block" | "parry")[];
   /** Every clean hit in a row adds a stack of this buff; a Glancing Blow ends the streak. */
   readonly streak?: { readonly stat: BuffStat; readonly amount: number; readonly max: number };
   /** Cooling and Steady Heat do not decay while the last hit was clean (Flowing Blade). */
@@ -503,7 +580,7 @@ export interface WeaponRules {
   /** The first clean hit of a fight crits and deals this much more damage (Assassinate). */
   readonly openerDamage?: number;
   /**
-   * At `stacks` Poison stacks all of them burst for `multiplier` × their rest (Toxic Bloom);
+   * At `stacks` Poison stacks (0: at the cap) all of them burst for `multiplier` × their rest (Toxic Bloom);
    * `leech` heals the attacker for that share of the burst.
    */
   readonly poisonBurst?: {
@@ -537,6 +614,153 @@ export interface WeaponRules {
   readonly damagePerAilment?: number;
   /** The Default Attack inflicts no ailments of its own (Eclipse). */
   readonly noDefaultAilments?: boolean;
+
+  // Weapon Mastery v2 (weapon-mastery-v2.md): Mighty Hits, Parry, forks and Path Masters.
+  /** The weapon's Innate skill (id), for rules that change it in the fight. */
+  readonly innateId?: string;
+  /** Chance that an enemy attack (not a spell) becomes a Glancing Blow (Parry, at most 30 %). */
+  readonly parry?: number;
+  /** Extra attacks (Riposte, Double Stab, Split Shot) deal this much more damage. */
+  readonly extraAttackDamage?: number;
+  /** Extra attacks can fire your trigger affixes (Path Masters); not the ones they cause. */
+  readonly extraAttacksTrigger?: boolean;
+  /** Extra attacks always inflict these ailments (Thousand Needles). */
+  readonly extraAttackAilments?: readonly AilmentType[];
+  /** Mighty Hits deal this much more damage. */
+  readonly mightyDamage?: number;
+  /** Mighty Hits always crit (Headsplitter). */
+  readonly mightyCrit?: boolean;
+  /** A roll that would be a Mighty Hit never glances (Wild Shot). */
+  readonly mightyNeverGlances?: boolean;
+  /** Mighty Hits stun for this long (Earthbreaker). */
+  readonly mightyStun?: number;
+  /** Mighty Hits add this many Sunder stacks (Splitting Blow). */
+  readonly mightySunder?: number;
+  /** Mighty Hits always Bleed, this much stronger (Ragged Cut). */
+  readonly mightyBleed?: number;
+  /** Mighty Hits take this much Heat from the enemy (Recoil). */
+  readonly mightyHeatDrain?: number;
+  /** Mighty Hits deal `bonus` more against an enemy below `below` Life (Executioner's Swing). */
+  readonly mightyExecute?: { readonly below: number; readonly bonus: number };
+  /** Mighty Hits roll your on-hit triggers twice (Master of Cleave). */
+  readonly mightyTriggersTwice?: boolean;
+  /** At full Sunder the next Mighty Hit sets off every stack for `perStack` Weapon Damage. */
+  readonly rupture?: { readonly perStack: number };
+  /** Every Sunder stack also lowers the target's Evasion and Block by its Armor share. */
+  readonly sunderDefense?: boolean;
+  /** After `hits` clean hits in a row the next hit deals `bonus` more (Clean Line). */
+  readonly cleanLine?: { readonly hits: number; readonly bonus: number };
+  /** Bleed from Crits is this much stronger (Deep Wound). */
+  readonly critBleedPower?: number;
+  /** The enemy attacks this much faster (negative: slower) while the condition holds. */
+  readonly enemyAttackSpeed?: readonly MasteryBonus[];
+  /** Glancing Blows keep your streaks and Flowing Blade (Steady Breath). */
+  readonly glancingKeepsFlow?: boolean;
+  /** The Innate costs this much less Heat per clean hit since your last skill (Building Edge). */
+  readonly innateDiscountPerHit?: number;
+  /** After the Innate, Rotation Slot 1 is cast again for free, once per `cooldown` s. */
+  readonly repeatFirstSlot?: { readonly cooldown: number };
+  /** A stun during a telegraph breaks the Heavy Attack, once per `cooldown` s (Interrupt). */
+  readonly interrupt?: { readonly cooldown: number };
+  /** Reaction Slots cost no Heat while the enemy is stunned (Master of Quake). */
+  readonly freeReactionsVsStunned?: boolean;
+  /** Extra share of a blocked hit that the block stops. */
+  readonly blockReduction?: number;
+  /** After a Block you take `reduction` less damage for `seconds` (Braced). */
+  readonly braced?: { readonly seconds: number; readonly reduction: number };
+  /**
+   * Damage stored and released by the next Innate as an extra hit: `blocked` of the damage your
+   * blocks stopped (Master of the Wall), `clean` of your clean hits (Impale).
+   */
+  readonly store?: { readonly blocked?: number; readonly clean?: number };
+  /** Lifesteal × `multiplier` below `below` Life (Thirst). */
+  readonly lowLifeLifesteal?: { readonly below: number; readonly multiplier: number };
+  /** Ticks of these own ailments heal you for this share of their damage. */
+  readonly ailmentLeech?: Readonly<Partial<Record<AilmentType, number>>>;
+  /** Rend and Hemorrhage set off only this share of the Bleed; the rest runs on (Master Butcher). */
+  readonly consumeBleedShare?: number;
+  /** Own ailments deal `amount` more damage while the condition holds (Bleeding Out). */
+  readonly ailmentDamageWhen?: readonly {
+    readonly ailment: AilmentType;
+    readonly amount: number;
+    readonly condition: MasteryCondition;
+  }[];
+  /** Landed Default Attacks give Heat while the condition holds (Master of Barbs). */
+  readonly heatOnHitWhen?: readonly MasteryBonus[];
+  /** Every `every`-th Default Attack sets off `share` of the Poison stacks at once (Toxic Cascade). */
+  readonly cascade?: { readonly every: number; readonly share: number };
+  /** Ticks of `from` inflict `to` with this chance (Lingering Cloud). */
+  readonly tickAilment?: readonly {
+    readonly from: AilmentType;
+    readonly to: AilmentType;
+    readonly chance: number;
+  }[];
+  /** Poison set off at once (Overflow, Toxic Bloom, Toxic Cascade) heals this share (Master of Toxin). */
+  readonly burstLeech?: number;
+  /** Crits destroy this share of the enemy's max Barrier (Armor Shred). */
+  readonly critBarrierShred?: number;
+  /** Physical Penetration also lowers Resistances (Master of Pierce). */
+  readonly penetrationToElemental?: boolean;
+  /** Every Nth Glancing Blow fires a free extra attack (Spring Trap). */
+  readonly glancingExtraAttack?: number;
+  /** Rotation Slot `slot` (0-based) costs `discount` less Heat (Master of Reload). */
+  readonly slotDiscount?: { readonly slot: number; readonly discount: number };
+  /** Skills cost `amount` less while the condition holds (Master of Storm). */
+  readonly skillDiscountWhen?: readonly MasteryBonus[];
+  /** Combust sets off this much more (Flare: 2 = 50 % instead of 25 %). */
+  readonly combustMultiplier?: number;
+  /** Burning enemies cannot heal (Smother). */
+  readonly noHealWhileBurning?: boolean;
+  /** `chills` Chills within `seconds` freeze the enemy for `freeze` s (Frozen Solid). */
+  readonly frozenSolid?: {
+    readonly chills: number;
+    readonly seconds: number;
+    readonly freeze: number;
+  };
+  /** A Chilled enemy winds up its Heavy Attacks this much slower (Cold Snap: 0.3). */
+  readonly coldSnap?: number;
+  /** A Chill during a wind-up delays the Heavy Attack by this many seconds, once per wind-up. */
+  readonly chillDelay?: number;
+  /** Crits against a Shocked enemy arc for this share of their damage (Arc Chain). */
+  readonly arcChain?: number;
+  /** Extra Shock stacks (Static Build). */
+  readonly shockMaxStacks?: number;
+  /** Burning enemies deal this much less damage (Ashen Veil). */
+  readonly ashenVeil?: number;
+  /** Corruption grows this many extra steps per tick (Hollow). */
+  readonly corruptionRamp?: number;
+  /** Collapse deals this many more seconds at once (Collapse Deeper). */
+  readonly collapseSeconds?: number;
+  /** Corruption starts this many steps grown (Master of the Hollow). */
+  readonly corruptionStart?: number;
+  /** Own skills deal this much more hit damage (Channel). */
+  readonly skillDamage?: number;
+  /** Every `every`-th skill repeats itself with `power` (Echoing Chant). */
+  readonly echoChant?: { readonly every: number; readonly power: number };
+  /** Skills heal this share of max Life per 10 Heat they cost (Siphon Ember). */
+  readonly siphonEmber?: number;
+  /** Reaction Slots cost this much less Heat (Master of Channel). */
+  readonly reactionDiscount?: number;
+  /** The first hit after a skill gets this much more Crit Chance (Find the Gap). */
+  readonly critAfterSkill?: number;
+  /** Every hit in the first `seconds` of a fight is a clean Crit (Ambush). */
+  readonly ambush?: number;
+  /** `stabs` Default Attacks within `seconds` make the next Innate free (Whirl). */
+  readonly whirl?: { readonly stabs: number; readonly seconds: number };
+  /** After an Evade, this many hits are clean Crits (Vanishing Act). */
+  readonly critsAfterEvade?: number;
+  /** Attacks come at this fixed rate, whatever the Attack Speed (Siege Engine). */
+  readonly fixedAttackRate?: number;
+  /** Every clean Default Attack sets off all Sunder stacks: `perStack` more damage each (Siege Engine). */
+  readonly siegeEngine?: { readonly perStack: number };
+  /** Default Attacks are volleys of `count` bolts of `multiplier` sharing one Crit roll (Repeater). */
+  readonly volley?: { readonly count: number; readonly multiplier: number };
+  /** No Barrier; Default Attacks hit for `share` of the lost Barrier extra (Glass Cannon). */
+  readonly glassCannon?: { readonly share: number };
+  /** Every clean hit adds a Poison stack; Poison Chance no longer counts (Thousand Cuts). */
+  readonly thousandCuts?: boolean;
+  /** More Ailment Effect for single ailments of this weapon ("+12 % Bleed effect of the Axe"). */
+  readonly ailmentEffectBy?: Readonly<Partial<Record<AilmentType, number>>>;
 }
 
 /** Everything the simulation needs to put one fighter into the arena. */

@@ -779,7 +779,7 @@ export class ArenaScene {
     const target = other(e.side);
     const victim = this.figure(target);
     const color = DAMAGE_COLORS[e.damageType] ?? 0xffffff;
-    const big = e.crit || heavy;
+    const big = e.crit || heavy || e.mighty === true;
     const at = this.center(target);
     if (e.glancing) {
       this.glance(e, at, target);
@@ -843,6 +843,23 @@ export class ArenaScene {
         drag: 0.08,
       });
     }
+    if (e.mighty) {
+      // A Mighty Hit: the blow drives down into the ground, a wide amber shock ring.
+      fx.ring(at.x, GROUND_Y - 4, 0xffb13b, 40, 260, 0.4, 10, 1);
+      fx.burst({
+        x: at.x,
+        y: GROUND_Y - 10,
+        count: 16,
+        kind: "bit",
+        color: [0x8a6a48, 0x5e4a36, 0xffb13b],
+        spreadX: 60,
+        angle: [RISE - 0.6, RISE + 0.6],
+        speed: [200, 420],
+        life: [0.3, 0.6],
+        size: [5, 10],
+        gravity: 1100,
+      });
+    }
     if (big) {
       fx.ring(at.x, at.y, 0xffffff, 30, heavy ? 220 : 160, 0.3, 8, 1);
       this.shake(heavy ? 0.7 : 0.35);
@@ -851,7 +868,7 @@ export class ArenaScene {
       this.shake(0.06);
     }
     if (this.showNumbers) {
-      const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}`;
+      const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}${e.mighty ? " ⚒" : ""}`;
       this.float(target, e.blocked ? `${text} ⛨` : e.deflected ? `${text} ↺` : text, color, e.crit);
     }
   }
@@ -889,8 +906,27 @@ export class ArenaScene {
       size: [4, 7],
       gravity: 500,
     });
-    if (this.showNumbers)
-      this.float(target, e.damage.toLocaleString("en-US"), 0x8a8178, false, 0.75);
+    if (e.parried) {
+      // A Parry: the defender's steel catches the blow in a bright arc.
+      const guard = this.center(target);
+      fx.ring(guard.x + (target === "hero" ? 40 : -40), guard.y, 0xdfe6ee, 18, 90, 0.25, 5, 1);
+      fx.burst({
+        x: guard.x + (target === "hero" ? 40 : -40),
+        y: guard.y,
+        count: 12,
+        color: [0xffffff, 0xdfe6ee, 0xb8c0cc],
+        angle: [RISE - 1.2, RISE + 1.2],
+        speed: [220, 460],
+        life: [0.12, 0.3],
+        size: [4, 8],
+        stretch: 1.2,
+        gravity: 600,
+      });
+    }
+    if (this.showNumbers) {
+      const text = e.damage.toLocaleString("en-US");
+      this.float(target, e.parried ? `${text} ⚔` : text, 0x8a8178, false, 0.75);
+    }
   }
 
   private ailmentPuff(side: Side, ailment: string, count: number): void {

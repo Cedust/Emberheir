@@ -30,14 +30,18 @@ export const ITEMS = {
   /** Magic items roll each affix this often and keep the best quality ("higher values"). */
   magicQualityRolls: 2,
 
-  /** Number of affixes per rarity (docs/design/item-system-v1.md section 5). */
+  /**
+   * Number of affixes per rarity (docs/design/item-system-v1.md section 5). Rare, Epic and
+   * Legendary carry one stat affix more since the trees gave their raw offense to the gear
+   * (neuausrichtung-v1.md 2).
+   */
   affixCounts: {
     normal: { stat: [0, 0], trigger: [0, 0], extraTriggerChance: 0 },
     magic: { stat: [1, 2], trigger: [0, 0], extraTriggerChance: 0.1 },
-    rare: { stat: [3, 4], trigger: [0, 0], extraTriggerChance: 0.25 },
-    epic: { stat: [4, 5], trigger: [1, 1], extraTriggerChance: 0.2 },
+    rare: { stat: [4, 5], trigger: [0, 0], extraTriggerChance: 0.25 },
+    epic: { stat: [5, 6], trigger: [1, 1], extraTriggerChance: 0.2 },
     // Fewer affixes than Epic, but a Legendary Power on top.
-    legendary: { stat: [3, 4], trigger: [1, 1], extraTriggerChance: 0 },
+    legendary: { stat: [4, 5], trigger: [1, 1], extraTriggerChance: 0 },
   } satisfies Record<
     Rarity,
     { stat: [number, number]; trigger: [number, number]; extraTriggerChance: number }

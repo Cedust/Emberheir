@@ -1,4 +1,5 @@
 import { SAVE_VERSION } from "../progression/game";
+import { KEYSTONE } from "../progression/skill-tree";
 
 /** A save game or stash as read from JSON, before it is checked against the schema. */
 export type RawSave = Record<string, unknown>;
@@ -44,7 +45,80 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   1: { item: (item) => renameAffixes(item, RENAMED_AFFIXES_V2) },
   // Routes and Champions (neuausrichtung-v1.md 6.1, 6.2): new optional fields, nothing to move.
   2: {},
+  // Weapon Mastery v2 (weapon-mastery-v2.md): the paths were rebuilt with forks, so their points
+  // come back. Refine, the chosen forms, Keystone, Attunement and the Echo stay.
+  3: { state: refundMasteryPaths },
+  // Skill Web v3 and the Prestige branches' travel nodes (neuausrichtung-v1.md 4): nodes were
+  // rebuilt and renamed, so every Skill Point comes back and the hero keeps the class start.
+  4: { state: refundSkillTree },
 };
+
+/** Class start nodes of Skill Web v3 (the Sorcerer's was renamed). */
+const WEB_V3_STARTS: Readonly<Record<string, string>> = {
+  warrior: "might-warriors-oath",
+  sorcerer: "arcana-sorcerers-sigil",
+  warlock: "affliction-warlocks-brand",
+  reaver: "rupture-reavers-edge",
+  hunter: "rupture-might-hunters-eye",
+};
+
+/** Class start nodes before Web v3: they were free. */
+const OLD_STARTS = new Set([...Object.values(WEB_V3_STARTS), "arcana-sorcerers-spark"]);
+
+/** Keystones of the web before v3 (they cost `KEYSTONE.skillPoints`); branch ones end in -keystone. */
+const OLD_KEYSTONES = new Set([
+  "might-unyielding",
+  "might-glass-focus",
+  "might-arcana-spellblade",
+  "arcana-arcane-conduit",
+  "arcana-elemental-overload",
+  "arcana-affliction-black-flame",
+  "affliction-slow-death",
+  "affliction-pact-of-ash",
+  "affliction-rupture-plague-bearer",
+  "rupture-blood-price",
+  "rupture-hemomancer",
+  "rupture-might-headsman",
+]);
+const isOldKeystone = (id: string) => OLD_KEYSTONES.has(id) || /-keystone(-\d)?$/.test(id);
+
+function refundSkillTree(save: RawSave): RawSave {
+  const hero = save["hero"];
+  if (!isRecord(hero) || !isRecord(hero["learned"])) return save;
+  let refund = 0;
+  for (const [id, ranks] of Object.entries(hero["learned"])) {
+    if (OLD_STARTS.has(id) || typeof ranks !== "number") continue;
+    refund += ranks * (isOldKeystone(id) ? KEYSTONE.skillPoints : 1);
+  }
+  const classId = typeof hero["classId"] === "string" ? hero["classId"] : "";
+  const start = WEB_V3_STARTS[classId];
+  const unspent = typeof hero["unspentSkillPoints"] === "number" ? hero["unspentSkillPoints"] : 0;
+  const rotation = Array.isArray(hero["rotation"]) ? hero["rotation"].map(() => null) : [];
+  return {
+    ...save,
+    hero: {
+      ...hero,
+      learned: start ? { [start]: 1 } : {},
+      unspentSkillPoints: unspent + refund,
+      // Tree skills are gone until learned again: the Battle Plan falls back to the Start Skill.
+      rotation,
+    },
+  };
+}
+
+/** Refine nodes kept their ids and meaning in Weapon Mastery v2. */
+const MASTERY_REFINE = new Set(["balance", "precision", "steady-hand", "full-swing"]);
+
+function refundMasteryPaths(save: RawSave): RawSave {
+  const hero = save["hero"];
+  if (!isRecord(hero)) return save;
+  const mastery = hero["mastery"];
+  if (!isRecord(mastery) || !isRecord(mastery["learned"])) return save;
+  const learned = Object.fromEntries(
+    Object.entries(mastery["learned"]).filter(([id]) => MASTERY_REFINE.has(id)),
+  );
+  return { ...save, hero: { ...hero, mastery: { ...mastery, learned } } };
+}
 
 export interface MigrateOptions {
   /** The version to end at (tests); default `SAVE_VERSION`. */

@@ -66,6 +66,8 @@ export function formatEvent(event: CombatEvent, names: Record<Side, string>): Lo
         event.crit ? "Crit!" : "",
         event.blocked ? "Blocked" : "",
         event.deflected ? "Deflected" : "",
+        event.mighty ? "Mighty" : "",
+        event.parried ? "Parried" : event.glancing ? "Glancing" : "",
       ].filter(Boolean);
       return {
         time,

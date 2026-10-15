@@ -38,6 +38,8 @@ export interface TreeNodeView {
   readonly tier: number;
   /** The other side of its fork is learned: a broken seal (level-v2.md). */
   readonly sealed: boolean;
+  /** Rune Socket: the glow colour of the Rune in it (0xRRGGBB), if one is set. */
+  readonly rune?: number;
 }
 
 export interface TreeLabel {
@@ -95,6 +97,7 @@ const RADIUS: Record<SkillNode["kind"], number> = {
   notable: 19,
   skill: 18,
   keystone: 25,
+  socket: 16,
 };
 
 interface NodeSprite {
@@ -115,6 +118,16 @@ function octagon(r: number): number[] {
 }
 
 const diamond = (r: number) => [0, -r, r, 0, 0, r, -r, 0];
+
+/** A flat-topped hexagon: the setting of a Rune Socket. */
+function hexagon(r: number): number[] {
+  const points: number[] = [];
+  for (let i = 0; i < 6; i++) {
+    const a = (i * Math.PI) / 3;
+    points.push(Math.cos(a) * r, Math.sin(a) * r);
+  }
+  return points;
+}
 
 export class TreeScene {
   private app: Application | null = null;
@@ -648,6 +661,7 @@ export class TreeScene {
     const shape = (radius: number) => {
       if (kind === "keystone") return g.poly(octagon(radius));
       if (kind === "skill") return g.poly(diamond(radius));
+      if (kind === "socket") return g.poly(hexagon(radius));
       return g.circle(0, 0, radius);
     };
     // Soft light behind learned nodes.
@@ -681,6 +695,14 @@ export class TreeScene {
     }
     if (kind === "skill") {
       g.poly(diamond(r * 0.45)).fill({ color, alpha: lit ? 0.9 : 0.35 });
+    }
+    if (kind === "socket") {
+      // An empty setting, or the Rune glowing in it.
+      g.poly(hexagon(r * 0.55)).stroke({ color, width: 2, alpha: 0.7 });
+      if (n.rune !== undefined) {
+        g.circle(0, 0, r * 0.75).fill({ color: n.rune, alpha: 0.18 });
+        g.poly(hexagon(r * 0.5)).fill({ color: n.rune, alpha: 0.95 });
+      }
     }
     if (kind === "keystone") {
       const tier = n.node.tier ?? 1;

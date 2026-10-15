@@ -95,6 +95,8 @@ export function applyAilment(
   /** Poison stacks kept at most (Virulence raises it). */
   maxPoisonStacks: number = COMBAT.poisonMaxStacks,
   effect = 0,
+  /** Shock stacks kept at most (Static Build raises it). */
+  maxShockStacks: number = COMBAT.shockMaxStacks,
 ): AilmentStates {
   if (duration <= 0) return states;
   const strength = Math.max(0, 1 + effect);
@@ -136,7 +138,7 @@ export function applyAilment(
     shock: {
       remaining: duration,
       power: Math.max(COMBAT.shockDamageTaken * strength, previous?.power ?? 0),
-      stacks: Math.min(COMBAT.shockMaxStacks, (previous ? (previous.stacks ?? 1) : 0) + 1),
+      stacks: Math.min(maxShockStacks, (previous ? (previous.stacks ?? 1) : 0) + 1),
     },
   };
 }
@@ -222,8 +224,15 @@ export interface AilmentStepResult {
   readonly expired: readonly AilmentType[];
 }
 
-/** Advances all ailments on one fighter by `dt` seconds. */
-export function stepAilments(states: AilmentStates, dt: number): AilmentStepResult {
+/**
+ * Advances all ailments on one fighter by `dt` seconds. `growth` comes from the source's Weapon
+ * Mastery: extra Corruption steps per tick (Hollow) and extra Collapse seconds.
+ */
+export function stepAilments(
+  states: AilmentStates,
+  dt: number,
+  growth: { readonly ramp?: number; readonly collapse?: number } = {},
+): AilmentStepResult {
   const next: { -readonly [K in keyof AilmentStates]: AilmentStates[K] } = {};
   const ticks: { ailment: (typeof DOT_AILMENTS)[number]; damage: number; collapse?: boolean }[] =
     [];
@@ -243,12 +252,13 @@ export function stepAilments(states: AilmentStates, dt: number): AilmentStepResu
         damage: dotTickDamage(ramp === undefined ? dot : { ...dot, ramp }),
       });
       if (ramp !== undefined) {
-        ramp = Math.min(COMBAT.corruptionMaxRamp, ramp + 1);
+        ramp = Math.min(COMBAT.corruptionMaxRamp, ramp + 1 + (growth.ramp ?? 0));
         // Collapse: at full growth it deals several seconds at once and falls back to half.
         if (ramp >= COMBAT.corruptionMaxRamp) {
           ticks.push({
             ailment: type,
-            damage: dotTickDamage({ ...dot, ramp }) * COMBAT.collapseSeconds,
+            damage:
+              dotTickDamage({ ...dot, ramp }) * (COMBAT.collapseSeconds + (growth.collapse ?? 0)),
             collapse: true,
           });
           ramp = Math.floor(COMBAT.corruptionMaxRamp / 2);

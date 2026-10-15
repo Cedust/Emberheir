@@ -4,6 +4,7 @@ import type {
   MasteryNode,
   MasteryPath,
   SkillDefinition,
+  TriggerSpec,
   WeaponMasteryTree,
 } from "@emberheir/sim";
 import {
@@ -18,9 +19,12 @@ import {
 } from "./skills";
 
 /**
- * Weapon Mastery trees (docs/design/weapon-mastery-baeume-v1.md): the same ground plan for all
- * eight weapons (Refine, Heat Form, Innate Form, three paths of 6 minors and 2 notables, a ring
- * of four Keystones) with their own numbers, paths and names. All numbers are starting values.
+ * Weapon Mastery trees (docs/design/weapon-mastery-v2.md): the same ground plan for all eight
+ * weapons (Refine, Heat Form, Innate Form, three paths, a ring of four Keystones) with their own
+ * numbers, paths and names. A path is Technique I (3 ranks) → Fork 1 (one of two Notables) →
+ * Technique II (3 ranks) → Fork 2 (one of two) → Path Master. Techniques only give values that
+ * exist nowhere but on the weapon (Precision, Damage Range, Parry, Sunder, ailment effect of the
+ * weapon, extra attacks, the Innate). All numbers are starting values.
  *
  * Positions are for the "anatomy" view at Kaelen: the weapon lies diagonally from its pommel at
  * the bottom left to its tip at the top right; Refine nodes sit on its parts, the paths grow
@@ -42,6 +46,7 @@ const NORMAL = { x: -AXIS.y / LENGTH, y: AXIS.x / LENGTH };
 export const MASTERY_LAYOUT = { pommel: POMMEL, tip: TIP } as const;
 
 const round = (v: number) => Math.round(v * 100) / 100;
+const round4 = (v: number) => Math.round(v * 10000) / 10000;
 
 /** A point on the weapon at `t` (0 = pommel, 1 = tip), `off` units off its axis. */
 function along(t: number, off = 0): { x: number; y: number } {
@@ -58,12 +63,16 @@ const PATH_LAYOUT = [
   { start: along(0.8, -1.25), dir: { x: 0.5, y: -0.87 }, bend: 1 },
 ] as const;
 
-function pathPosition(path: number, index: number): { x: number; y: number } {
+/**
+ * A path node: `row` 0..4 outward (Technique I, Fork 1, Technique II, Fork 2, Master), `fork`
+ * −1/+1 for the two sides of a fork.
+ */
+function pathPosition(path: number, row: number, fork = 0): { x: number; y: number } {
   const { start, dir, bend } = PATH_LAYOUT[path] ?? PATH_LAYOUT[0];
-  const step = 0.84;
-  const k = index * step;
-  // A gentle S-curve sideways to the direction, like a vine of engraving.
-  const side = Math.sin(index * 0.75) * 0.45 * bend;
+  const step = 1.3;
+  const k = row * step;
+  // A gentle S-curve sideways to the direction, like a vine of engraving; forks split off it.
+  const side = Math.sin(row * 0.75) * 0.35 * bend + fork * 0.62;
   return {
     x: round(start.x + dir.x * k - dir.y * side),
     y: round(start.y + dir.y * k + dir.x * side),
@@ -83,9 +92,12 @@ interface PathSpec {
   readonly name: string;
   readonly theme: string;
   readonly color: number;
-  /** Two kinds of minor node; the path alternates them (a b a · N · b a b · N). */
-  readonly minors: readonly [NodeSpec, NodeSpec];
-  readonly notables: readonly [NodeSpec, NodeSpec];
+  /** Technique I and II: 3 ranks each, the effect is per rank. */
+  readonly techniques: readonly [NodeSpec, NodeSpec];
+  /** Fork 1 and Fork 2: one of the two Notables can be learned. */
+  readonly forks: readonly [readonly [NodeSpec, NodeSpec], readonly [NodeSpec, NodeSpec]];
+  /** Binds the path to another system (Gear, Battle Plan, Ailments, Attributes). */
+  readonly master: NodeSpec;
 }
 
 interface KeystoneSpec extends NodeSpec {
@@ -103,6 +115,8 @@ interface TreeSpec {
   readonly precision: number;
   readonly rangeMin: number;
   readonly rangeMax: number;
+  /** Average of the weapon's old Damage Range (v1), as a share of Weapon Damage. */
+  readonly oldAverage: number;
   readonly paths: readonly [PathSpec, PathSpec, PathSpec];
   readonly innateForms: readonly [InnateFormSpec, InnateFormSpec, InnateFormSpec];
   readonly keystones: readonly [KeystoneSpec, KeystoneSpec, KeystoneSpec, KeystoneSpec];
@@ -143,19 +157,19 @@ const REFINE: readonly (Omit<MasteryNode, "x" | "y"> & { readonly t: number })[]
   {
     id: "steady-hand",
     name: "Steady Hand",
-    description: "Damage Range minimum +10 %.",
+    description: "Damage Range minimum +15 %.",
     kind: "refine",
     maxRanks: 3,
-    effect: { rangeMin: 0.1 },
+    effect: { rangeMin: 0.15 },
     t: 0.48,
   },
   {
     id: "full-swing",
     name: "Full Swing",
-    description: "Damage Range maximum +15 %.",
+    description: "Damage Range maximum +25 %.",
     kind: "refine",
     maxRanks: 3,
-    effect: { rangeMax: 0.15 },
+    effect: { rangeMax: 0.25 },
     t: 0.78,
   },
 ];
@@ -262,26 +276,49 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
     });
   });
   spec.paths.forEach((path, p) => {
-    const [a, b] = path.minors;
-    const order = [a, b, a, path.notables[0], b, a, b, path.notables[1]];
-    let previous: string | undefined;
-    order.forEach((n, index) => {
-      const notable = index === 3 || index === 7;
-      const id = notable
-        ? `${path.id}-${n.name.toLowerCase().replace(/[^a-z]+/g, "-")}`
-        : `${path.id}-${index + 1}`;
+    const slug = (n: NodeSpec) => `${path.id}-${n.name.toLowerCase().replace(/[^a-z]+/g, "-")}`;
+    // The first Technique is open from the start; every later step needs one before it.
+    let previous: string[] = [];
+    for (let step = 0; step < 2; step++) {
+      const technique = path.techniques[step];
+      const forks = path.forks[step];
+      if (!technique || !forks) continue;
+      const tid = `${path.id}-t${step + 1}`;
       nodes.push({
-        id,
-        name: n.name,
-        description: n.description,
-        kind: notable ? "notable" : "minor",
+        id: tid,
+        name: technique.name,
+        description: technique.description,
+        kind: "technique",
         path: path.id,
-        // The first node of a path is open from the start.
-        ...(previous ? { links: [previous] } : {}),
-        effect: n.effect,
-        ...pathPosition(p, index),
+        maxRanks: 3,
+        ...(previous.length ? { links: previous } : {}),
+        effect: technique.effect,
+        ...pathPosition(p, step * 2),
       });
-      previous = id;
+      previous = forks.map((n, side) => {
+        nodes.push({
+          id: slug(n),
+          name: n.name,
+          description: n.description,
+          kind: "notable",
+          path: path.id,
+          fork: `${path.id}-${step + 1}`,
+          links: [tid],
+          effect: n.effect,
+          ...pathPosition(p, step * 2 + 1, side === 0 ? -1 : 1),
+        });
+        return slug(n);
+      });
+    }
+    nodes.push({
+      id: `${path.id}-master`,
+      name: path.master.name,
+      description: path.master.description,
+      kind: "master",
+      path: path.id,
+      links: previous,
+      effect: path.master.effect,
+      ...pathPosition(p, 4),
     });
   });
   const paths: MasteryPath[] = spec.paths.map(({ id, name, theme, color }) => ({
@@ -295,6 +332,8 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
     precision: spec.precision,
     rangeMin: spec.rangeMin,
     rangeMax: spec.rangeMax,
+    // v2 ranges are wider; the old average hit stays (the range sets the style, not the strength).
+    damageScale: round4(spec.oldAverage / ((spec.rangeMin + spec.rangeMax) / 2)),
     paths,
     nodes,
   };
@@ -302,12 +341,24 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
 
 // --- small helpers for the specs ------------------------------------------------------------
 
-const minor = (name: string, description: string, effect: MasteryEffect): NodeSpec => ({
+const node = (name: string, description: string, effect: MasteryEffect): NodeSpec => ({
   name,
   description,
   effect,
 });
-const notable = minor;
+/** A Technique: `description` and `effect` are per rank. */
+const technique = node;
+const notable = node;
+const master = node;
+
+/** A trigger of a Mastery node. */
+const trigger = (
+  id: string,
+  name: string,
+  condition: TriggerSpec["condition"],
+  effect: TriggerSpec["effect"],
+  extra: Partial<TriggerSpec> = {},
+): TriggerSpec => ({ id: `mastery-${id}`, name, condition, effect, ...extra });
 
 /** A variant of the weapon's Innate skill. */
 const form = (
@@ -335,71 +386,149 @@ const SWORD = buildTree({
   weaponId: "sword",
   precision: 0.75,
   rangeMin: 0.4,
-  rangeMax: 1.1,
+  rangeMax: 1.4,
+  oldAverage: 0.75,
   paths: [
     {
       id: "riposte",
       name: "Riposte",
       theme: "Counters",
       color: C.steel,
-      minors: [
-        minor("Light Feet", "+2 % Evasion.", { bonuses: { evasion: 0.02 } }),
-        minor("Ready Blade", "+3 % Trigger Chance.", { bonuses: { triggerChance: 0.03 } }),
-      ],
-      notables: [
-        notable("Counterweight", "Riposte always lands cleanly and adds a Sunder stack.", {
-          weaponRules: { extraAttacksPrecise: true, extraAttackSunder: true },
-        }),
-        notable("Read the Blow", "After you evade or block, your next hit is a clean Crit.", {
-          weaponRules: { critAfter: ["evade", "block"] },
+      techniques: [
+        technique("Parry", "+4 % Parry.", { weaponRules: { parry: 0.04 } }),
+        technique("Counter Edge", "Ripostes deal +20 % damage.", {
+          weaponRules: { extraAttackDamage: 0.2 },
         }),
       ],
+      forks: [
+        [
+          notable("Counterweight", "Ripostes always land cleanly and add a Sunder stack.", {
+            weaponRules: { extraAttacksPrecise: true, extraAttackSunder: true },
+          }),
+          notable(
+            "Read the Blow",
+            "After you block, evade or parry, your next hit is a clean Crit.",
+            { weaponRules: { critAfter: ["evade", "block", "parry"] } },
+          ),
+        ],
+        [
+          notable("Perfect Timing", "Every Parry answers with a Riposte (once per second).", {
+            triggers: [
+              trigger(
+                "perfect-timing",
+                "Riposte",
+                { kind: "onParry" },
+                { kind: "extraAttack" },
+                { cooldown: 1 },
+              ),
+            ],
+          }),
+          notable("Iron Wall", "Every Block and every Parry gives 8 Heat.", {
+            triggers: [
+              trigger(
+                "iron-wall-block",
+                "Iron Wall",
+                { kind: "onBlock" },
+                { kind: "heat", amount: 8 },
+              ),
+              trigger(
+                "iron-wall-parry",
+                "Iron Wall",
+                { kind: "onParry" },
+                { kind: "heat", amount: 8 },
+              ),
+            ],
+          }),
+        ],
+      ],
+      master: master("Master of the Counter", "Ripostes can fire your trigger affixes.", {
+        weaponRules: { extraAttacksTrigger: true },
+      }),
     },
     {
       id: "edge",
       name: "Edge",
-      theme: "Precision, Crit, Bleed",
+      theme: "Precision, Bleed",
       color: C.blood,
-      minors: [
-        minor("Keen", "+2 % Crit Chance.", { bonuses: { critChance: 0.02 } }),
-        minor("True", "+2 % Precision.", { precision: 0.02 }),
-      ],
-      notables: [
-        notable("Keen Edge", "Your Crits make the enemy Bleed.", {
-          rules: { critsApplyBleed: true },
-        }),
-        notable("Measured Cut", "+10 % Precision, Damage Range minimum +10 %.", {
-          precision: 0.1,
-          rangeMin: 0.1,
+      techniques: [
+        technique("True Line", "+3 % Precision.", { precision: 0.03 }),
+        technique("Bleeding Steel", "+16 % effect of the Sword's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.16 } },
         }),
       ],
+      forks: [
+        [
+          notable("Keen Edge", "Your Crits make the enemy Bleed.", {
+            rules: { critsApplyBleed: true },
+          }),
+          notable("Clean Line", "After 5 clean hits in a row, your next hit deals +100 %.", {
+            weaponRules: { cleanLine: { hits: 5, bonus: 1 } },
+          }),
+        ],
+        [
+          notable("Hamstring", "A Bleeding enemy attacks 10 % slower.", {
+            weaponRules: {
+              enemyAttackSpeed: [
+                { condition: { kind: "enemyHas", ailment: "bleed" }, amount: -0.1 },
+              ],
+            },
+          }),
+          notable("Deep Wound", "Bleed from your Crits is 50 % stronger.", {
+            weaponRules: { critBleedPower: 1.5 },
+          }),
+        ],
+      ],
+      master: master(
+        "Master of the Edge",
+        "No more Glancing Blows. Precision above 85 % becomes Crit Chance.",
+        { precisionToCrit: { above: 0.85 } },
+      ),
     },
     {
       id: "tempo",
       name: "Tempo",
-      theme: "Rhythm, Heat",
+      theme: "Rhythm, Heat, the Innate",
       color: C.ember,
-      minors: [
-        minor("Quick", "+3 % Attack Speed.", { bonuses: { attackSpeed: 0.03 } }),
-        minor("Warm", "+4 % Heat Gain.", { bonuses: { heatGain: 0.04 } }),
-      ],
-      notables: [
-        notable("Rhythm", "Every 3rd Slash gives 10 Heat.", {
-          triggers: [
-            {
-              id: "mastery-rhythm",
-              name: "Rhythm",
-              condition: { kind: "everyNthAttack", n: 3 },
-              effect: { kind: "heat", amount: 10 },
-            },
-          ],
+      techniques: [
+        technique("Warm Blade", "+8 % Heat per Hit.", { heatPerHit: 1.08 }),
+        technique("Honed Strike", "Your Innate deals +10 % damage.", {
+          innatePatch: { damage: 0.1 },
         }),
-        notable(
-          "Unbroken Flow",
-          "+3 % Attack Speed for every clean hit in a row (up to 5). A Glancing Blow ends it.",
-          { weaponRules: { streak: { stat: "attackSpeed", amount: 0.03, max: 5 } } },
-        ),
       ],
+      forks: [
+        [
+          notable("Rhythm", "Every 3rd Slash gives 10 Heat.", {
+            triggers: [
+              trigger(
+                "rhythm",
+                "Rhythm",
+                { kind: "everyNthAttack", n: 3 },
+                { kind: "heat", amount: 10 },
+              ),
+            ],
+          }),
+          notable(
+            "Unbroken Flow",
+            "+3 % Attack Speed for every clean hit in a row (up to 5). A Glancing Blow ends it.",
+            { weaponRules: { streak: { stat: "attackSpeed", amount: 0.03, max: 5 } } },
+          ),
+        ],
+        [
+          notable(
+            "Building Edge",
+            "Your Innate costs 5 Heat less for every clean hit since your last skill.",
+            { weaponRules: { innateDiscountPerHit: 5 } },
+          ),
+          notable("Steady Breath", "Glancing Blows no longer break your streaks or your flow.", {
+            weaponRules: { glancingKeepsFlow: true },
+          }),
+        ],
+      ],
+      master: master(
+        "Master of Tempo",
+        "After your Innate, your next Rotation skill is cast again for free (once per 8 s).",
+        { weaponRules: { repeatFirstSlot: { cooldown: 8 } } },
+      ),
     },
   ],
   innateForms: [
@@ -481,74 +610,133 @@ const MACE = buildTree({
   weaponId: "mace",
   precision: 0.65,
   rangeMin: 0.5,
-  rangeMax: 1.2,
+  rangeMax: 1.6,
+  oldAverage: 0.85,
   paths: [
     {
       id: "crush",
       name: "Crush",
       theme: "Sunder",
       color: C.steel,
-      minors: [
-        minor("Dent", "+8 % chance per clean hit to Sunder.", {
+      techniques: [
+        technique("Dent", "+8 % chance per clean hit to Sunder.", {
           weaponRules: { sunder: { chance: 0.08 } },
         }),
-        minor("Pierce", "+2 % Physical Penetration.", { bonuses: { physicalPenetration: 0.02 } }),
-      ],
-      notables: [
-        notable("Armor Breaker", "+3 maximum Sunder stacks.", {
-          weaponRules: { sunder: { maxStacks: 3 } },
-        }),
-        notable("Shatter", "+25 % damage to enemies at full Sunder.", {
-          weaponRules: {
-            conditionalDamage: [{ condition: { kind: "enemySundered" }, amount: 0.25 }],
-          },
+        technique("Cave In", "Every Sunder stack ignores 1 % more Armor.", {
+          weaponRules: { sunder: { perStackBonus: 0.01 } },
         }),
       ],
+      forks: [
+        [
+          notable("Armor Breaker", "+3 maximum Sunder stacks.", {
+            weaponRules: { sunder: { maxStacks: 3 } },
+          }),
+          notable(
+            "Rupture Plate",
+            "At full Sunder your next Mighty Hit sets off every stack for 25 % Weapon Damage each.",
+            { weaponRules: { rupture: { perStack: 0.25 } } },
+          ),
+        ],
+        [
+          notable("Shatter", "+25 % damage to enemies at full Sunder.", {
+            weaponRules: {
+              conditionalDamage: [{ condition: { kind: "enemySundered" }, amount: 0.25 }],
+            },
+          }),
+          notable("Crumble", "Sunder lasts until the fight ends. −2 maximum Sunder stacks.", {
+            weaponRules: { sunder: { duration: 999, maxStacks: -2 } },
+          }),
+        ],
+      ],
+      master: master("Master of Crush", "Sunder also strips the enemy's Evasion and Block.", {
+        weaponRules: { sunderDefense: true },
+      }),
     },
     {
       id: "quake",
       name: "Quake",
-      theme: "Stagger, Stun",
+      theme: "Stun, Telegraphs",
       color: C.ember,
-      minors: [
-        minor("Jolt", "Your stuns last 10 % longer.", { weaponRules: { stunDuration: 1.1 } }),
-        minor("Weight", "+4 % Physical Damage.", { bonuses: { physicalDamage: 0.04 } }),
+      techniques: [
+        technique("Jolt", "Your stuns last 10 % longer.", { weaponRules: { stunDuration: 1.1 } }),
+        technique("Heft", "Damage Range maximum +10 %.", { rangeMax: 0.1 }),
       ],
-      notables: [
-        notable("Heavy Head", "Every 3rd Smash staggers instead of every 4th.", {
-          weaponTriggers: [{ id: "stagger", n: 3 }],
-        }),
-        notable("Aftershock", "Stunned enemies take 20 % more damage from you.", {
-          weaponRules: {
-            conditionalDamage: [{ condition: { kind: "enemyStunned" }, amount: 0.2 }],
-          },
-        }),
+      forks: [
+        [
+          notable("Heavy Head", "Every 3rd Smash staggers instead of every 4th.", {
+            weaponTriggers: [{ id: "stagger", n: 3 }],
+          }),
+          notable("Aftershock", "Stunned enemies take 20 % more damage from you.", {
+            weaponRules: {
+              conditionalDamage: [{ condition: { kind: "enemyStunned" }, amount: 0.2 }],
+            },
+          }),
+        ],
+        [
+          notable("Earthbreaker", "Mighty Hits stun for 0.3 s.", {
+            weaponRules: { mightyStun: 0.3 },
+          }),
+          notable(
+            "Interrupt",
+            "A stun during the enemy's wind-up breaks its Heavy Attack (once per 10 s).",
+            { weaponRules: { interrupt: { cooldown: 10 } } },
+          ),
+        ],
       ],
+      master: master(
+        "Master of Quake",
+        "Your Reaction Slots cost no Heat while the enemy is stunned.",
+        { weaponRules: { freeReactionsVsStunned: true } },
+      ),
     },
     {
       id: "bulwark",
       name: "Bulwark",
       theme: "Block",
       color: C.gold,
-      minors: [
-        minor("Guard", "+2 % Block Chance.", { bonuses: { blockChance: 0.02 } }),
-        minor("Plate", "+3 % Armor.", { bonuses: { increasedArmor: 0.03 } }),
-      ],
-      notables: [
-        notable("Iron Rhythm", "Every Block gives 10 Heat.", {
-          triggers: [
-            {
-              id: "mastery-iron-rhythm",
-              name: "Iron Rhythm",
-              condition: { kind: "onBlock" },
-              effect: { kind: "heat", amount: 10 },
-            },
-          ],
-        }),
-        notable("Hold the Line", "+8 % Block Chance, +10 % Armor.", {
-          bonuses: { blockChance: 0.08, increasedArmor: 0.1 },
+      techniques: [
+        technique("Guard", "+2 % Block Chance.", { bonuses: { blockChance: 0.02 } }),
+        technique("Bracing", "Your blocks stop 5 % more of the hit.", {
+          weaponRules: { blockReduction: 0.05 },
         }),
       ],
+      forks: [
+        [
+          notable("Iron Rhythm", "Every Block gives 10 Heat.", {
+            triggers: [
+              trigger(
+                "iron-rhythm",
+                "Iron Rhythm",
+                { kind: "onBlock" },
+                { kind: "heat", amount: 10 },
+              ),
+            ],
+          }),
+          notable("Shield Slam", "Every Block answers with a slam for 60 % Weapon Damage.", {
+            triggers: [
+              trigger(
+                "shield-slam",
+                "Shield Slam",
+                { kind: "onBlock" },
+                { kind: "weaponHit", multiplier: 0.6 },
+              ),
+            ],
+          }),
+        ],
+        [
+          notable("Hold the Line", "+8 % Block Chance, +10 % Armor.", {
+            bonuses: { blockChance: 0.08, increasedArmor: 0.1 },
+          }),
+          notable("Braced", "After a Block you take 30 % less damage for 2 s.", {
+            weaponRules: { braced: { seconds: 2, reduction: 0.3 } },
+          }),
+        ],
+      ],
+      master: master(
+        "Master of the Wall",
+        "Damage your blocks stop gathers up; your next Innate hits with half of it on top.",
+        { weaponRules: { store: { blocked: 0.5 } } },
+      ),
     },
   ],
   innateForms: [
@@ -627,70 +815,132 @@ const MACE = buildTree({
 const AXE = buildTree({
   weaponId: "axe",
   precision: 0.7,
-  rangeMin: 0.4,
-  rangeMax: 1.2,
+  rangeMin: 0.2,
+  rangeMax: 1.8,
+  oldAverage: 0.8,
   paths: [
     {
       id: "butcher",
       name: "Butcher",
       theme: "Bleed",
       color: C.blood,
-      minors: [
-        minor("Gash", "Bleed deals 5 % more damage.", {
-          rules: { ailmentDamage: { bleed: 1.05 } },
+      techniques: [
+        technique("Gash", "+20 % effect of the Axe's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.2 } },
         }),
-        minor("Barb", "+3 % Bleed Chance.", { bonuses: { bleedChance: 0.03 } }),
+        technique("Barb", "+4 % Bleed Chance.", { bonuses: { bleedChance: 0.04 } }),
       ],
-      notables: [
-        notable("Open Wounds", "Bleed deals 30 % more damage.", {
-          rules: { ailmentDamage: { bleed: 1.3 } },
-        }),
-        notable("Blood Scent", "+15 % Attack Speed against Bleeding enemies.", {
-          weaponRules: {
-            conditionalAttackSpeed: [
-              { condition: { kind: "enemyHas", ailment: "bleed" }, amount: 0.15 },
-            ],
-          },
-        }),
+      forks: [
+        [
+          notable("Open Wounds", "Bleed deals 40 % more damage.", {
+            rules: { ailmentDamage: { bleed: 1.4 } },
+          }),
+          notable("Blood Scent", "+15 % Attack Speed against Bleeding enemies.", {
+            weaponRules: {
+              conditionalAttackSpeed: [
+                { condition: { kind: "enemyHas", ailment: "bleed" }, amount: 0.15 },
+              ],
+            },
+          }),
+        ],
+        [
+          notable("Bloodrush", "Every Bleed tick gives 2 Heat.", {
+            weaponRules: { heatPerDotTick: { ailment: "bleed", amount: 2 } },
+          }),
+          notable("Ragged Cut", "Mighty Hits always Bleed, 50 % stronger.", {
+            weaponRules: { mightyBleed: 1.5 },
+          }),
+        ],
       ],
+      master: master(
+        "Master Butcher",
+        "Rend and Hemorrhage set off only half the Bleed; the rest keeps bleeding.",
+        { weaponRules: { consumeBleedShare: 0.5 } },
+      ),
     },
     {
       id: "frenzy",
       name: "Frenzy",
-      theme: "Speed at low Life",
+      theme: "Low Life, Sustain",
       color: C.ember,
-      minors: [
-        minor("Fury", "+3 % Attack Speed.", { bonuses: { attackSpeed: 0.03 } }),
-        minor("Thirst", "+1 % Lifesteal.", { bonuses: { lifesteal: 0.01 } }),
-      ],
-      notables: [
-        notable("Berserk", "+20 % Attack Speed below 50 % Life.", {
+      techniques: [
+        technique("Leech", "+1 % Lifesteal.", { bonuses: { lifesteal: 0.01 } }),
+        technique("Fury", "+4 % Attack Speed below 50 % Life.", {
           weaponRules: {
             conditionalAttackSpeed: [
-              { condition: { kind: "lifeBelow", fraction: 0.5 }, amount: 0.2 },
+              { condition: { kind: "lifeBelow", fraction: 0.5 }, amount: 0.04 },
             ],
           },
         }),
-        notable("Bloodrush", "Every Bleed tick gives 2 Heat.", {
-          weaponRules: { heatPerDotTick: { ailment: "bleed", amount: 2 } },
-        }),
       ],
+      forks: [
+        [
+          notable("Berserk", "+20 % Attack Speed below 50 % Life.", {
+            weaponRules: {
+              conditionalAttackSpeed: [
+                { condition: { kind: "lifeBelow", fraction: 0.5 }, amount: 0.2 },
+              ],
+            },
+          }),
+          notable("Thirst", "Lifesteal is doubled below 30 % Life.", {
+            weaponRules: { lowLifeLifesteal: { below: 0.3, multiplier: 2 } },
+          }),
+        ],
+        [
+          notable("Deathwish", "+30 % damage below 30 % Life.", {
+            weaponRules: {
+              conditionalDamage: [{ condition: { kind: "lifeBelow", fraction: 0.3 }, amount: 0.3 }],
+            },
+          }),
+          notable("Second Skin", "Once per fight, dropping below 30 % Life heals 20 %.", {
+            triggers: [
+              trigger(
+                "second-skin",
+                "Second Skin",
+                { kind: "lifeBelow", threshold: 0.3 },
+                { kind: "heal", fraction: 0.2 },
+                { oncePerFight: true },
+              ),
+            ],
+          }),
+        ],
+      ],
+      master: master("Master of Frenzy", "Your Bleed ticks heal you for 3 % of their damage.", {
+        weaponRules: { ailmentLeech: { bleed: 0.03 } },
+      }),
     },
     {
       id: "cleave",
       name: "Cleave",
-      theme: "Big single hits",
+      theme: "Mighty Hits",
       color: C.steel,
-      minors: [
-        minor("Heft", "Damage Range maximum +5 %.", { rangeMax: 0.05 }),
-        minor("Brawn", "+4 % Physical Damage.", { bonuses: { physicalDamage: 0.04 } }),
-      ],
-      notables: [
-        notable("Overhead Chop", "Damage Range maximum +30 %.", { rangeMax: 0.3 }),
-        notable("Headsplitter", "Hits in the top quarter of the Damage Range always crit.", {
-          weaponRules: { topRollCrits: 0.75 },
+      techniques: [
+        technique("Wide Arc", "Damage Range maximum +10 %.", { rangeMax: 0.1 }),
+        technique("Weight of the Head", "Mighty Hits deal +8 % damage.", {
+          weaponRules: { mightyDamage: 0.08 },
         }),
       ],
+      forks: [
+        [
+          notable("Overhead Chop", "Mighty Hits deal +30 % damage.", {
+            weaponRules: { mightyDamage: 0.3 },
+          }),
+          notable("Headsplitter", "Mighty Hits always crit.", {
+            weaponRules: { mightyCrit: true },
+          }),
+        ],
+        [
+          notable("Executioner's Swing", "Mighty Hits deal +50 % to enemies below 30 % Life.", {
+            weaponRules: { mightyExecute: { below: 0.3, bonus: 0.5 } },
+          }),
+          notable("Splitting Blow", "Mighty Hits add 2 Sunder stacks.", {
+            weaponRules: { mightySunder: 2 },
+          }),
+        ],
+      ],
+      master: master("Master of Cleave", "Mighty Hits roll your on-hit triggers twice.", {
+        weaponRules: { mightyTriggersTwice: true },
+      }),
     },
   ],
   innateForms: [
@@ -769,8 +1019,8 @@ const AXE = buildTree({
       id: "gore",
       name: "Gore",
       form: "Gore Cleaver",
-      description: "Damage Range maximum +60 %, but its minimum drops to 20 %.",
-      effect: { rangeMax: 0.6, rangeMinSet: 0.2 },
+      description: "Mighty Hits deal double damage. Your Damage Range minimum drops to 10 %.",
+      effect: { weaponRules: { mightyDamage: 1 }, rangeMinSet: 0.1 },
     },
   ],
 });
@@ -778,66 +1028,134 @@ const AXE = buildTree({
 const DAGGER = buildTree({
   weaponId: "dagger",
   precision: 0.8,
-  rangeMin: 0.5,
-  rangeMax: 1,
+  rangeMin: 0.6,
+  rangeMax: 1.1,
+  oldAverage: 0.75,
   paths: [
     {
       id: "venom",
       name: "Venom",
       theme: "Poison stacks",
       color: C.venom,
-      minors: [
-        minor("Sting", "+3 % Poison Chance.", { bonuses: { poisonChance: 0.03 } }),
-        minor("Linger", "Poison lasts 5 % longer.", {
-          weaponRules: { ailmentDurationBy: { poison: 0.05 } },
+      techniques: [
+        technique("Sting", "+12 % effect of the Dagger's Poison.", {
+          weaponRules: { ailmentEffectBy: { poison: 0.12 } },
         }),
+        technique("Dose", "+4 % Poison Chance.", { bonuses: { poisonChance: 0.04 } }),
       ],
-      notables: [
-        notable("Virulence", "+3 maximum Poison stacks.", { weaponRules: { poisonMaxStacks: 3 } }),
-        notable("Seeping", "Poison lasts 30 % longer.", {
-          weaponRules: { ailmentDurationBy: { poison: 0.3 } },
-        }),
+      forks: [
+        [
+          notable("Virulence", "+3 maximum Poison stacks.", {
+            weaponRules: { poisonMaxStacks: 3 },
+          }),
+          notable("Seeping", "Poison lasts 30 % longer.", {
+            weaponRules: { ailmentDurationBy: { poison: 0.3 } },
+          }),
+        ],
+        [
+          notable(
+            "Corrosive",
+            "Every Poison stack lets your hits ignore 1 % of the enemy's Armor.",
+            {
+              weaponRules: { poisonArmorShred: 0.01 },
+            },
+          ),
+          notable("Numbing", "An enemy with 10 or more Poison stacks attacks 10 % slower.", {
+            weaponRules: {
+              enemyAttackSpeed: [
+                {
+                  condition: { kind: "enemyStacks", ailment: "poison", count: 10 },
+                  amount: -0.1,
+                },
+              ],
+            },
+          }),
+        ],
       ],
+      master: master(
+        "Master of Venom",
+        "At full Poison stacks all of them burst for their rest at once. Then no Poison for 1 s.",
+        { weaponRules: { poisonBurst: { stacks: 0, multiplier: 1, lockout: 1 } } },
+      ),
     },
     {
       id: "assassin",
       name: "Assassin",
-      theme: "Crit",
+      theme: "Openings, Crits",
       color: C.blood,
-      minors: [
-        minor("Mark", "+1.5 % Crit Chance.", { bonuses: { critChance: 0.015 } }),
-        minor("Aim", "+2 % Precision.", { precision: 0.02 }),
-      ],
-      notables: [
-        notable("Find the Gap", "+8 % Crit Chance.", { bonuses: { critChance: 0.08 } }),
-        notable("Twist the Blade", "Crits add 2 Poison stacks.", {
-          weaponRules: { critPoisonStacks: 2 },
+      techniques: [
+        technique("Aim", "+3 % Precision.", { precision: 0.03 }),
+        technique("Exploit", "+10 % damage while the enemy winds up a Heavy Attack.", {
+          weaponRules: { conditionalDamage: [{ condition: { kind: "enemyWindup" }, amount: 0.1 }] },
         }),
       ],
+      forks: [
+        [
+          notable("Find the Gap", "The first hit after a skill has +25 % Crit Chance.", {
+            weaponRules: { critAfterSkill: 0.25 },
+          }),
+          notable("Twist the Blade", "Crits add 2 Poison stacks.", {
+            weaponRules: { critPoisonStacks: 2 },
+          }),
+        ],
+        [
+          notable("Shadowstep", "After an Evade your next Stab is a clean Crit.", {
+            weaponRules: { critAfter: ["evade"] },
+          }),
+          notable("Ambush", "Every hit in the first 3 s of a fight is a clean Crit.", {
+            weaponRules: { ambush: 3 },
+          }),
+        ],
+      ],
+      master: master("Master Assassin", "Every Crit gives 5 Heat.", {
+        triggers: [
+          trigger(
+            "master-assassin",
+            "Master Assassin",
+            { kind: "onCrit" },
+            { kind: "heat", amount: 5 },
+          ),
+        ],
+      }),
     },
     {
       id: "flurry",
       name: "Flurry",
-      theme: "Speed",
+      theme: "Speed, extra stabs",
       color: C.storm,
-      minors: [
-        minor("Quick", "+3 % Attack Speed.", { bonuses: { attackSpeed: 0.03 } }),
-        minor("Nimble", "+2 % Evasion.", { bonuses: { evasion: 0.02 } }),
-      ],
-      notables: [
-        notable("Quick Hands", "+12 % Attack Speed.", { bonuses: { attackSpeed: 0.12 } }),
-        notable("Double Stab", "15 % chance to stab a second time at once.", {
+      techniques: [
+        technique("Double Stab", "+5 % chance to stab a second time at once.", {
           triggers: [
-            {
-              id: "mastery-double-stab",
-              name: "Double Stab",
-              condition: { kind: "onHit" },
-              chance: 0.15,
-              effect: { kind: "extraAttack" },
-            },
+            trigger(
+              "double-stab",
+              "Double Stab",
+              { kind: "onHit" },
+              { kind: "extraAttack" },
+              { chance: 0.05 },
+            ),
           ],
         }),
+        technique("Second Blade", "Extra stabs deal +15 % damage.", {
+          weaponRules: { extraAttackDamage: 0.15 },
+        }),
       ],
+      forks: [
+        [
+          notable("Quick Hands", "+12 % Attack Speed.", { bonuses: { attackSpeed: 0.12 } }),
+          notable("Nimble Feet", "+8 % Evasion.", { bonuses: { evasion: 0.08 } }),
+        ],
+        [
+          notable("Thousand Needles", "Extra stabs always Poison.", {
+            weaponRules: { extraAttackAilments: ["poison"] },
+          }),
+          notable("Whirl", "5 Stabs within 3 s make your next Innate free.", {
+            weaponRules: { whirl: { stabs: 5, seconds: 3 } },
+          }),
+        ],
+      ],
+      master: master("Master of Flurry", "Extra stabs can fire your trigger affixes.", {
+        weaponRules: { extraAttacksTrigger: true },
+      }),
     },
   ],
   innateForms: [
@@ -870,8 +1188,8 @@ const DAGGER = buildTree({
       id: "thousand-cuts",
       name: "Thousand Cuts",
       form: "Needle",
-      description: "+40 % Attack Speed. Damage Range maximum drops to 80 %.",
-      effect: { bonuses: { attackSpeed: 0.4 }, rangeMaxCap: 0.8 },
+      description: "Every clean hit adds a Poison stack, but Poison Chance no longer counts.",
+      effect: { weaponRules: { thousandCuts: true } },
     },
     {
       id: "assassinate",
@@ -891,82 +1209,156 @@ const DAGGER = buildTree({
       },
     },
     {
+      // The id stays (saves); the name went to the Assassin's Notable.
       id: "shadowstep",
-      name: "Shadowstep",
+      name: "Vanishing Act",
       form: "Shadow Kris",
-      description: "After an Evade your next Stab is a clean Crit. −20 % Life.",
-      effect: { weaponRules: { critAfter: ["evade"] }, rules: { lifeMultiplier: 0.8 } },
+      description: "After an Evade your next three Stabs are clean Crits. −20 % Life.",
+      effect: { weaponRules: { critsAfterEvade: 3 }, rules: { lifeMultiplier: 0.8 } },
     },
   ],
 });
+
+/** Split Shot: a second arrow for 60 % Weapon Damage; ranks and the Notable add up its chance. */
+const SPLIT_SHOT = (chance: number) =>
+  trigger(
+    "split-shot",
+    "Split Shot",
+    { kind: "onHit" },
+    { kind: "weaponHit", multiplier: 0.6, extra: true },
+    { chance },
+  );
 
 const BOW = buildTree({
   weaponId: "bow",
   precision: 0.75,
   rangeMin: 0.4,
-  rangeMax: 1.1,
+  rangeMax: 1.3,
+  oldAverage: 0.75,
   paths: [
     {
       id: "barbs",
       name: "Barbs",
       theme: "Bleed",
       color: C.blood,
-      minors: [
-        minor("Barb", "+3 % Bleed Chance.", { bonuses: { bleedChance: 0.03 } }),
-        minor("Draw", "+4 % Physical Damage.", { bonuses: { physicalDamage: 0.04 } }),
-      ],
-      notables: [
-        notable("Serrated Heads", "+15 % Bleed Chance.", { bonuses: { bleedChance: 0.15 } }),
-        notable("Bloodtrail", "+10 % damage to Bleeding enemies.", {
-          weaponRules: {
-            conditionalDamage: [{ condition: { kind: "enemyHas", ailment: "bleed" }, amount: 0.1 }],
-          },
+      techniques: [
+        technique("Barbed Heads", "+16 % effect of the Bow's Bleed.", {
+          weaponRules: { ailmentEffectBy: { bleed: 0.16 } },
         }),
+        technique("Serration", "+4 % Bleed Chance.", { bonuses: { bleedChance: 0.04 } }),
       ],
+      forks: [
+        [
+          notable("Serrated Heads", "+15 % Bleed Chance.", { bonuses: { bleedChance: 0.15 } }),
+          notable("Bloodtrail", "+10 % damage to Bleeding enemies.", {
+            weaponRules: {
+              conditionalDamage: [
+                { condition: { kind: "enemyHas", ailment: "bleed" }, amount: 0.1 },
+              ],
+            },
+          }),
+        ],
+        [
+          notable(
+            "Hooked Rend",
+            "Your Innate sets off half the Bleed at once; the rest bleeds on.",
+            {
+              innatePatch: { effects: [{ kind: "consumeBleed", multiplier: 1, share: 0.5 }] },
+            },
+          ),
+          notable("Bleeding Out", "Bleed deals 50 % more to enemies below 50 % Life.", {
+            weaponRules: {
+              ailmentDamageWhen: [
+                { ailment: "bleed", amount: 0.5, condition: { kind: "enemyBelow", fraction: 0.5 } },
+              ],
+            },
+          }),
+        ],
+      ],
+      master: master("Master of Barbs", "Arrows that hit a Bleeding enemy give 3 Heat.", {
+        weaponRules: {
+          heatOnHitWhen: [{ condition: { kind: "enemyHas", ailment: "bleed" }, amount: 3 }],
+        },
+      }),
     },
     {
       id: "toxin",
       name: "Toxin",
-      theme: "Poison",
+      theme: "Poison, Sustain",
       color: C.venom,
-      minors: [
-        minor("Dip", "+3 % Poison Chance.", { bonuses: { poisonChance: 0.03 } }),
-        minor("Linger", "+4 % Ailment Effect.", { bonuses: { ailmentEffect: 0.04 } }),
+      techniques: [
+        technique("Dip", "+4 % Poison Chance.", { bonuses: { poisonChance: 0.04 } }),
+        technique("Reservoir", "+1 maximum Poison stack.", { weaponRules: { poisonMaxStacks: 1 } }),
       ],
-      notables: [
-        notable("Dipped Arrows", "+15 % Poison Chance.", { bonuses: { poisonChance: 0.15 } }),
-        notable(
-          "Festering",
-          "Every Poison stack lets your hits ignore 2 % of the enemy's Armor. Your ailments heal you for 3 % of their damage.",
-          { weaponRules: { poisonArmorShred: 0.02 }, rules: { dotLifesteal: 0.03 } },
-        ),
+      forks: [
+        [
+          notable("Dipped Arrows", "+15 % Poison Chance.", { bonuses: { poisonChance: 0.15 } }),
+          notable(
+            "Festering",
+            "Every Poison stack lets your hits ignore 2 % of the enemy's Armor. Your ailments heal you for 3 % of their damage.",
+            { weaponRules: { poisonArmorShred: 0.02 }, rules: { dotLifesteal: 0.03 } },
+          ),
+        ],
+        [
+          notable("Toxic Cascade", "Every 10th Shoot sets off half the Poison stacks at once.", {
+            weaponRules: { cascade: { every: 10, share: 0.5 } },
+          }),
+          notable("Lingering Cloud", "Poison ticks Chill the enemy with 10 % chance.", {
+            weaponRules: { tickAilment: [{ from: "poison", to: "chill", chance: 0.1 }] },
+          }),
+        ],
       ],
+      master: master(
+        "Master of Toxin",
+        "Poison that bursts at once (Overflow, Toxic Cascade) heals you for 10 % of it.",
+        { weaponRules: { burstLeech: 0.1 } },
+      ),
     },
     {
       id: "volley",
       name: "Volley",
       theme: "More arrows",
       color: C.storm,
-      minors: [
-        minor("Nock", "+3 % Attack Speed.", { bonuses: { attackSpeed: 0.03 } }),
-        minor("Sight", "+2 % Precision.", { precision: 0.02 }),
+      techniques: [
+        technique("Split Nock", "+5 % chance to loose a second arrow for 60 % Weapon Damage.", {
+          triggers: [SPLIT_SHOT(0.05)],
+        }),
+        technique("Fletching", "Extra arrows deal +15 % damage.", {
+          weaponRules: { extraAttackDamage: 0.15 },
+        }),
       ],
-      notables: [
-        notable("Split Shot", "20 % chance to loose a second arrow for 60 % Weapon Damage.", {
-          triggers: [
+      forks: [
+        [
+          notable("Split Shot", "+20 % chance to loose a second arrow.", {
+            triggers: [SPLIT_SHOT(0.2)],
+          }),
+          notable("Steady Aim", "+10 % Precision while you were not hit for 3 s.", {
+            weaponRules: { steadyAim: { seconds: 3, precision: 0.1 } },
+          }),
+        ],
+        [
+          notable(
+            "Rain of Arrows",
+            "Every 6th Shoot looses two more arrows for 60 % Weapon Damage.",
             {
-              id: "mastery-split-shot",
-              name: "Split Shot",
-              condition: { kind: "onHit" },
-              chance: 0.2,
-              effect: { kind: "weaponHit", multiplier: 0.6 },
+              triggers: [0, 1].map((i) =>
+                trigger(
+                  `rain-${i}`,
+                  "Rain of Arrows",
+                  { kind: "everyNthAttack", n: 6 },
+                  { kind: "weaponHit", multiplier: 0.6, extra: true },
+                ),
+              ),
             },
-          ],
-        }),
-        notable("Steady Aim", "+10 % Precision while you were not hit for 3 s.", {
-          weaponRules: { steadyAim: { seconds: 3, precision: 0.1 } },
-        }),
+          ),
+          notable("Dead Center", "With 90 % Precision or more, extra arrows deal +25 % damage.", {
+            whenPrecision: { atLeast: 0.9, weaponRules: { extraAttackDamage: 0.25 } },
+          }),
+        ],
       ],
+      master: master("Master of Volley", "Extra arrows can fire your trigger affixes.", {
+        weaponRules: { extraAttacksTrigger: true },
+      }),
     },
   ],
   innateForms: [
@@ -1020,18 +1412,21 @@ const BOW = buildTree({
   ],
   keystones: [
     {
+      // The id stays (saves); the name went to the Volley Notable.
       id: "rain-of-arrows",
-      name: "Rain of Arrows",
+      name: "Hailstorm",
       form: "Storm Bow",
       description: "Every Shoot looses two more arrows for 40 % Weapon Damage each. −25 % damage.",
       effect: {
         weaponRules: { damageDealt: 0.75 },
-        triggers: [0, 1].map((i) => ({
-          id: `mastery-rain-${i}`,
-          name: "Rain of Arrows",
-          condition: { kind: "onHit" as const },
-          effect: { kind: "weaponHit" as const, multiplier: 0.4 },
-        })),
+        triggers: [0, 1].map((i) =>
+          trigger(
+            `hail-${i}`,
+            "Hailstorm",
+            { kind: "onHit" },
+            { kind: "weaponHit", multiplier: 0.4, extra: true },
+          ),
+        ),
       },
     },
     {
@@ -1057,8 +1452,9 @@ const BOW = buildTree({
       id: "wild-shot",
       name: "Wild Shot",
       form: "Wild Bow",
-      description: "Damage Range maximum +80 %. −15 % Precision.",
-      effect: { rangeMax: 0.8, precision: -0.15 },
+      description:
+        "Damage Range maximum +60 %, −15 % Precision. A roll of 125 % or more never glances.",
+      effect: { rangeMax: 0.6, precision: -0.15, weaponRules: { mightyNeverGlances: true } },
     },
   ],
 });
@@ -1067,57 +1463,116 @@ const CROSSBOW = buildTree({
   weaponId: "crossbow",
   precision: 0.6,
   rangeMin: 0.6,
-  rangeMax: 1.3,
+  rangeMax: 1.8,
+  oldAverage: 0.95,
   paths: [
     {
       id: "pierce",
       name: "Pierce",
-      theme: "Armor Penetration",
+      theme: "Armor Penetration, Sunder",
       color: C.steel,
-      minors: [
-        minor("Point", "+2 % Physical Penetration.", { bonuses: { physicalPenetration: 0.02 } }),
-        minor("Bolt", "+4 % Physical Damage.", { bonuses: { physicalDamage: 0.04 } }),
-      ],
-      notables: [
-        notable("Bodkin", "+15 % Physical Penetration.", {
-          bonuses: { physicalPenetration: 0.15 },
+      techniques: [
+        technique("Point", "+3 % Physical Penetration.", {
+          bonuses: { physicalPenetration: 0.03 },
         }),
-        notable("Through and Through", "Every clean hit adds a Sunder stack.", {
-          weaponRules: { sunder: { chance: 1 } },
+        technique("Wedge", "Every Sunder stack ignores 1 % more Armor.", {
+          weaponRules: { sunder: { perStackBonus: 0.01 } },
         }),
       ],
+      forks: [
+        [
+          notable("Bodkin", "+15 % Physical Penetration.", {
+            bonuses: { physicalPenetration: 0.15 },
+          }),
+          notable("Through and Through", "Every clean hit adds a Sunder stack.", {
+            weaponRules: { sunder: { chance: 1 } },
+          }),
+        ],
+        [
+          notable("Armor Shred", "Crits destroy 20 % of the enemy's Barrier.", {
+            weaponRules: { critBarrierShred: 0.2 },
+          }),
+          notable(
+            "Impale",
+            "Clean hits store 20 % of their damage; your next Innate sets all of it off.",
+            { weaponRules: { store: { clean: 0.2 } } },
+          ),
+        ],
+      ],
+      master: master(
+        "Master of Pierce",
+        "Your Physical Penetration also lowers Resistances (Explosive Bolt, Elemental hits).",
+        { weaponRules: { penetrationToElemental: true } },
+      ),
     },
     {
       id: "payload",
       name: "Payload",
-      theme: "Big hits, Crit",
+      theme: "Mighty Hits",
       color: C.ember,
-      minors: [
-        minor("Tension", "Damage Range maximum +5 %.", { rangeMax: 0.05 }),
-        minor("Sight", "+1.5 % Crit Chance.", { bonuses: { critChance: 0.015 } }),
-      ],
-      notables: [
-        notable("Heavy Draw", "Damage Range maximum +30 %.", { rangeMax: 0.3 }),
-        notable("Killshot", "Crits ignore 50 % of the enemy's Armor.", {
-          weaponRules: { critPenetration: 0.5 },
+      techniques: [
+        technique("Tension", "Damage Range maximum +10 %.", { rangeMax: 0.1 }),
+        technique("Heavy Head", "Mighty Hits deal +8 % damage.", {
+          weaponRules: { mightyDamage: 0.08 },
         }),
       ],
+      forks: [
+        [
+          notable("Heavy Draw", "Mighty Hits deal +30 % damage.", {
+            weaponRules: { mightyDamage: 0.3 },
+          }),
+          notable("Killshot", "Crits ignore 50 % of the enemy's Armor.", {
+            weaponRules: { critPenetration: 0.5 },
+          }),
+        ],
+        [
+          notable("Deadeye", "Every 5th Bolt lands cleanly and crits.", {
+            weaponRules: { everyNthCrit: 5 },
+          }),
+          notable("Recoil", "Mighty Hits take 15 Heat from the enemy.", {
+            weaponRules: { mightyHeatDrain: 15 },
+          }),
+        ],
+      ],
+      master: master("Master of Payload", "Your Innate is always a Mighty Hit.", {
+        innatePatch: { mighty: true },
+      }),
     },
     {
       id: "reload",
       name: "Reload",
-      theme: "Speed, Heat",
+      theme: "Heat, Glancing Blows",
       color: C.storm,
-      minors: [
-        minor("Crank", "+3 % Attack Speed.", { bonuses: { attackSpeed: 0.03 } }),
-        minor("Wind", "+4 % Heat Gain.", { bonuses: { heatGain: 0.04 } }),
+      techniques: [
+        technique("Wind", "+8 % Heat per Hit.", { heatPerHit: 1.08 }),
+        technique("Light Load", "Your Innate costs 4 Heat less.", { innatePatch: { cost: -4 } }),
       ],
-      notables: [
-        notable("Quick Crank", "+10 % Attack Speed.", { bonuses: { attackSpeed: 0.1 } }),
-        notable("Loaded Spring", "Every Glancing Blow gives 10 Heat.", {
-          weaponRules: { glancingHeat: 10 },
-        }),
+      forks: [
+        [
+          notable("Quick Crank", "+10 % Attack Speed.", { bonuses: { attackSpeed: 0.1 } }),
+          notable("Loaded Spring", "Every Glancing Blow gives 10 Heat.", {
+            weaponRules: { glancingHeat: 10 },
+          }),
+        ],
+        [
+          notable("Drum Magazine", "After a skill, +30 % Attack Speed for 3 s.", {
+            triggers: [
+              trigger(
+                "drum-magazine",
+                "Drum Magazine",
+                { kind: "onSkillUse" },
+                { kind: "buff", stat: "attackSpeed", amount: 0.3, duration: 3 },
+              ),
+            ],
+          }),
+          notable("Spring Trap", "Every 5th Glancing Blow fires a free Bolt.", {
+            weaponRules: { glancingExtraAttack: 5 },
+          }),
+        ],
       ],
+      master: master("Master of Reload", "Rotation Slot 1 costs 20 % less Heat.", {
+        weaponRules: { slotDiscount: { slot: 0, discount: 0.2 } },
+      }),
     },
   ],
   innateForms: [
@@ -1155,25 +1610,27 @@ const CROSSBOW = buildTree({
   ],
   keystones: [
     {
+      // The id stays (saves); the name went to the Payload Notable.
       id: "deadeye",
-      name: "Deadeye",
+      name: "Sniper's Oath",
       form: "Deadeye Arbalest",
-      description: "Every 5th Bolt lands cleanly and crits. Your Crit Chance is halved otherwise.",
-      effect: { weaponRules: { everyNthCrit: 5 }, rules: { critChanceMultiplier: 0.5 } },
+      description: "Every 3rd Bolt lands cleanly and crits. Your other Bolts never crit.",
+      effect: { weaponRules: { everyNthCrit: 3 }, rules: { critChanceMultiplier: 0 } },
     },
     {
       id: "siege-engine",
       name: "Siege Engine",
       form: "Siege Arbalest",
-      description: "+60 % damage. −30 % Attack Speed.",
-      effect: { weaponRules: { damageDealt: 1.6 }, bonuses: { attackSpeed: -0.3 } },
+      description:
+        "Every Bolt winds for 2 s, whatever your Attack Speed. A clean Bolt sets off every Sunder stack: +80 % damage each.",
+      effect: { weaponRules: { fixedAttackRate: 0.5, siegeEngine: { perStack: 0.8 } } },
     },
     {
       id: "repeater",
       name: "Repeater",
       form: "Repeater",
-      description: "+50 % Attack Speed. −30 % damage.",
-      effect: { weaponRules: { damageDealt: 0.7 }, bonuses: { attackSpeed: 0.5 } },
+      description: "Every Bolt is a volley of three for 40 % each. A volley shares one Crit roll.",
+      effect: { weaponRules: { volley: { count: 3, multiplier: 0.4 } } },
     },
     {
       id: "harpoon",
@@ -1189,7 +1646,8 @@ const WAND = buildTree({
   weaponId: "fire-wand",
   precision: 0.7,
   rangeMin: 0.4,
-  rangeMax: 1.1,
+  rangeMax: 1.3,
+  oldAverage: 0.75,
   attunements: [
     {
       id: "attune-fire",
@@ -1215,65 +1673,107 @@ const WAND = buildTree({
   ],
   paths: [
     {
-      id: "pyre",
-      name: "Pyre",
+      id: "blaze",
+      name: "Blaze",
       theme: "Burn",
       color: C.ember,
-      minors: [
-        minor("Kindling", "+3 % Burn Chance.", { bonuses: { burnChance: 0.03 } }),
-        minor("Heat", "+4 % Elemental Damage.", { bonuses: { elementalDamage: 0.04 } }),
-      ],
-      notables: [
-        notable("Kindle", "+20 % Burn Chance.", { bonuses: { burnChance: 0.2 } }),
-        notable("Wildfire", "Burn deals 30 % more damage.", {
-          rules: { ailmentDamage: { burn: 1.3 } },
+      techniques: [
+        technique("Kindling", "+12 % effect of the Wand's Burn.", {
+          weaponRules: { ailmentEffectBy: { burn: 0.12 } },
         }),
+        technique("Tinder", "+4 % Burn Chance.", { bonuses: { burnChance: 0.04 } }),
       ],
+      forks: [
+        [
+          notable("Kindle", "+20 % Burn Chance.", { bonuses: { burnChance: 0.2 } }),
+          notable("Roaring Flame", "Burn deals 30 % more damage.", {
+            rules: { ailmentDamage: { burn: 1.3 } },
+          }),
+        ],
+        [
+          notable("Flare", "Combust sets off 50 % of the Burn instead of 25 %.", {
+            weaponRules: { combustMultiplier: 2 },
+          }),
+          notable("Smother", "Burning enemies cannot heal at all.", {
+            weaponRules: { noHealWhileBurning: true },
+          }),
+        ],
+      ],
+      master: master("Master of Flame", "Every Burn tick gives 2 Heat.", {
+        weaponRules: { heatPerDotTick: { ailment: "burn", amount: 2 } },
+      }),
     },
     {
       id: "rime",
       name: "Rime",
       theme: "Chill, control",
       color: C.frost,
-      minors: [
-        minor("Frost", "+3 % Chill Chance.", { bonuses: { chillChance: 0.03 } }),
-        minor("Hold", "+4 % Ailment Effect.", { bonuses: { ailmentEffect: 0.04 } }),
-      ],
-      notables: [
-        notable("Bitter Cold", "Chill lasts 40 % longer.", {
-          weaponRules: { ailmentDurationBy: { chill: 0.4 } },
+      techniques: [
+        technique("Frost", "+10 % effect of the Wand's Chill.", {
+          weaponRules: { ailmentEffectBy: { chill: 0.1 } },
         }),
-        notable("Shatterpoint", "+25 % damage to Chilled enemies.", {
-          weaponRules: {
-            conditionalDamage: [
-              { condition: { kind: "enemyHas", ailment: "chill" }, amount: 0.25 },
-            ],
-          },
-        }),
+        technique("Hoarfrost", "+4 % Chill Chance.", { bonuses: { chillChance: 0.04 } }),
       ],
+      forks: [
+        [
+          notable("Bitter Cold", "Chill lasts 40 % longer.", {
+            weaponRules: { ailmentDurationBy: { chill: 0.4 } },
+          }),
+          notable("Shatterpoint", "+25 % damage to Chilled enemies.", {
+            weaponRules: {
+              conditionalDamage: [
+                { condition: { kind: "enemyHas", ailment: "chill" }, amount: 0.25 },
+              ],
+            },
+          }),
+        ],
+        [
+          notable("Frozen Solid", "Three Chills within 6 s freeze the enemy for 1 s.", {
+            weaponRules: { frozenSolid: { chills: 3, seconds: 6, freeze: 1 } },
+          }),
+          notable("Cold Snap", "A Chilled enemy winds up its Heavy Attacks 30 % slower.", {
+            weaponRules: { coldSnap: 0.3 },
+          }),
+        ],
+      ],
+      master: master(
+        "Master of Rime",
+        "A Chill during the enemy's wind-up delays its Heavy Attack by 1 s.",
+        { weaponRules: { chillDelay: 1 } },
+      ),
     },
     {
       id: "storm",
       name: "Storm",
-      theme: "Shock, Crit",
+      theme: "Shock, Crits",
       color: C.storm,
-      minors: [
-        minor("Static", "+3 % Shock Chance.", { bonuses: { shockChance: 0.03 } }),
-        minor("Spark", "+1.5 % Crit Chance.", { bonuses: { critChance: 0.015 } }),
-      ],
-      notables: [
-        notable("Static Field", "+20 % Shock Chance.", { bonuses: { shockChance: 0.2 } }),
-        notable("Arc", "Every Crit gives 8 Heat.", {
-          triggers: [
-            {
-              id: "mastery-arc",
-              name: "Arc",
-              condition: { kind: "onCrit" },
-              effect: { kind: "heat", amount: 8 },
-            },
-          ],
+      techniques: [
+        technique("Static", "+10 % effect of the Wand's Shock.", {
+          weaponRules: { ailmentEffectBy: { shock: 0.1 } },
         }),
+        technique("Focus", "+3 % Precision.", { precision: 0.03 }),
       ],
+      forks: [
+        [
+          notable("Static Field", "+20 % Shock Chance.", { bonuses: { shockChance: 0.2 } }),
+          notable("Arc", "Every Crit gives 8 Heat.", {
+            triggers: [trigger("arc", "Arc", { kind: "onCrit" }, { kind: "heat", amount: 8 })],
+          }),
+        ],
+        [
+          notable("Arc Chain", "Crits against a Shocked enemy arc for 30 % of their damage.", {
+            weaponRules: { arcChain: 0.3 },
+          }),
+          notable("Static Build", "Shock stacks up to 5 times instead of 3.", {
+            weaponRules: { shockMaxStacks: 2 },
+          }),
+        ],
+      ],
+      master: master("Master of Storm", "While the enemy is Shocked, your skills cost 10 % less.", {
+        weaponRules: {
+          skillDiscountWhen: [{ condition: { kind: "enemyHas", ailment: "shock" }, amount: 0.1 }],
+        },
+      }),
     },
   ],
   innateForms: [
@@ -1318,8 +1818,8 @@ const WAND = buildTree({
       id: "glass-cannon",
       name: "Glass Cannon",
       form: "Glass Wand",
-      description: "+40 % Elemental Damage. −10 % Life.",
-      effect: { bonuses: { elementalDamage: 0.4 }, rules: { lifeMultiplier: 0.9 } },
+      description: "You have no Barrier. Spark hits for 25 % of the Barrier you gave up on top.",
+      effect: { weaponRules: { glassCannon: { share: 0.25 } } },
     },
     {
       id: "focused-will",
@@ -1353,7 +1853,8 @@ const STAFF = buildTree({
   weaponId: "staff",
   precision: 0.65,
   rangeMin: 0.5,
-  rangeMax: 1.1,
+  rangeMax: 1.2,
+  oldAverage: 0.8,
   attunements: [
     {
       id: "attune-void",
@@ -1374,58 +1875,127 @@ const STAFF = buildTree({
     {
       id: "smolder",
       name: "Smolder",
-      theme: "Burn",
+      theme: "Burn, Hybrid",
       color: C.ember,
-      minors: [
-        minor("Ember", "+3 % Burn Chance.", { bonuses: { burnChance: 0.03 } }),
-        minor("Glow", "+4 % Elemental Damage.", { bonuses: { elementalDamage: 0.04 } }),
-      ],
-      notables: [
-        notable("Slow Burn", "Burn lasts 40 % longer.", {
-          weaponRules: { ailmentDurationBy: { burn: 0.4 } },
+      techniques: [
+        technique("Ember", "+12 % effect of the Staff's Burn.", {
+          weaponRules: { ailmentEffectBy: { burn: 0.12 } },
         }),
-        notable("Cinders", "Burn deals 25 % more damage.", {
-          rules: { ailmentDamage: { burn: 1.25 } },
-        }),
+        technique("Glow", "+4 % Burn Chance.", { bonuses: { burnChance: 0.04 } }),
       ],
+      forks: [
+        [
+          notable("Slow Burn", "Burn lasts 40 % longer.", {
+            weaponRules: { ailmentDurationBy: { burn: 0.4 } },
+          }),
+          notable("Cinders", "Burn deals 25 % more damage.", {
+            rules: { ailmentDamage: { burn: 1.25 } },
+          }),
+        ],
+        [
+          notable("Pyroclast", "Every 4 s the Burn combusts by itself.", {
+            triggers: [
+              trigger(
+                "pyroclast",
+                "Pyroclast",
+                { kind: "everySeconds", seconds: 4 },
+                { kind: "combust" },
+              ),
+            ],
+          }),
+          notable("Ashen Veil", "Burning enemies deal 10 % less damage.", {
+            weaponRules: { ashenVeil: 0.1 },
+          }),
+        ],
+      ],
+      master: master(
+        "Master of Smolder",
+        "Burn and Corruption on the same enemy both deal 20 % more damage.",
+        {
+          weaponRules: {
+            ailmentDamageWhen: [
+              {
+                ailment: "burn",
+                amount: 0.2,
+                condition: { kind: "enemyHas", ailment: "corruption" },
+              },
+              {
+                ailment: "corruption",
+                amount: 0.2,
+                condition: { kind: "enemyHas", ailment: "burn" },
+              },
+            ],
+          },
+        },
+      ),
     },
     {
       id: "hollow",
       name: "Hollow",
-      theme: "Corruption",
+      theme: "Corruption, Collapse",
       color: C.void,
-      minors: [
-        minor("Taint", "+3 % Corruption Chance.", { bonuses: { corruptionChance: 0.03 } }),
-        minor("Dusk", "+4 % Ailment Effect.", { bonuses: { ailmentEffect: 0.04 } }),
-      ],
-      notables: [
-        notable("Deepening Dark", "Corruption deals 30 % more damage.", {
-          rules: { ailmentDamage: { corruption: 1.3 } },
+      techniques: [
+        technique("Taint", "Corruption grows a third of a step faster per tick.", {
+          weaponRules: { corruptionRamp: 1 / 3 },
         }),
-        notable("Grasp", "Corrupted enemies gain 10 % less Heat.", {
-          weaponRules: {
-            enemyHeatGain: [
-              { amount: -0.1, condition: { kind: "enemyHas", ailment: "corruption" } },
-            ],
-          },
-        }),
+        technique("Dusk", "+4 % Corruption Chance.", { bonuses: { corruptionChance: 0.04 } }),
       ],
+      forks: [
+        [
+          notable("Deepening Dark", "Corruption deals 30 % more damage.", {
+            rules: { ailmentDamage: { corruption: 1.3 } },
+          }),
+          notable("Grasp", "Corrupted enemies gain 10 % less Heat.", {
+            weaponRules: {
+              enemyHeatGain: [
+                { amount: -0.1, condition: { kind: "enemyHas", ailment: "corruption" } },
+              ],
+            },
+          }),
+        ],
+        [
+          notable("Collapse Deeper", "Collapse deals 6 s of the Corruption at once instead of 4.", {
+            weaponRules: { collapseSeconds: 2 },
+          }),
+          notable("Void Hunger", "Corruption ticks heal you for 3 % of their damage.", {
+            weaponRules: { ailmentLeech: { corruption: 0.03 } },
+          }),
+        ],
+      ],
+      master: master("Master of the Hollow", "Your Corruption starts 4 steps grown.", {
+        weaponRules: { corruptionStart: 4 },
+      }),
     },
     {
       id: "channel",
       name: "Channel",
-      theme: "Heat, duration",
+      theme: "Heat, skills",
       color: C.frost,
-      minors: [
-        minor("Breath", "+4 % Heat Gain.", { bonuses: { heatGain: 0.04 } }),
-        minor("Patience", "+3 % Ailment Effect.", { bonuses: { ailmentEffect: 0.03 } }),
+      techniques: [
+        technique("Breath", "+5 % Heat Gain.", { bonuses: { heatGain: 0.05 } }),
+        technique("Focus", "Your skills deal +8 % damage.", { weaponRules: { skillDamage: 0.08 } }),
       ],
-      notables: [
-        notable("Long Breath", "+20 % Ailment Effect.", { bonuses: { ailmentEffect: 0.2 } }),
-        notable("Overflow", "Above 80 Heat, skills cost 15 % less.", {
-          weaponRules: { overflow: { above: 80, discount: 0.15 } },
-        }),
+      forks: [
+        [
+          notable("Overflow", "Above 80 Heat, skills cost 15 % less.", {
+            weaponRules: { overflow: { above: 80, discount: 0.15 } },
+          }),
+          notable("Deep Breath", "Start every fight with 20 Heat.", {
+            bonuses: { startingHeat: 20 },
+          }),
+        ],
+        [
+          notable("Echoing Chant", "Every 3rd skill repeats itself at 30 % power.", {
+            weaponRules: { echoChant: { every: 3, power: 0.3 } },
+          }),
+          notable("Siphon Ember", "Skills heal 2 % of your Life per 10 Heat they cost.", {
+            weaponRules: { siphonEmber: 0.02 },
+          }),
+        ],
       ],
+      master: master("Master of Channel", "Your Reaction Slots cost 25 % less Heat.", {
+        weaponRules: { reactionDiscount: 0.25 },
+      }),
     },
   ],
   innateForms: [

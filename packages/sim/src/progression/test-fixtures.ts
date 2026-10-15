@@ -146,7 +146,7 @@ export const TEST_MASTERY: WeaponMasteryTree = {
     node({ id: "grip", kind: "refine", maxRanks: 3, effect: { rangeMin: 0.05 } }),
     node({
       id: "p1",
-      kind: "minor",
+      kind: "technique",
       path: "edge",
       requiresRefine: true,
       effect: { bonuses: { life: 10 } },
@@ -157,6 +157,29 @@ export const TEST_MASTERY: WeaponMasteryTree = {
       path: "edge",
       links: ["p1"],
       effect: { weaponRules: { glancingDamage: 0.25 } },
+    }),
+    node({
+      id: "fa",
+      kind: "notable",
+      path: "edge",
+      fork: "edge-1",
+      links: ["p2"],
+      effect: { innatePatch: { damage: 0.5, cost: -5 } },
+    }),
+    node({
+      id: "fb",
+      kind: "notable",
+      path: "edge",
+      fork: "edge-1",
+      links: ["p2"],
+      effect: { precisionToCrit: { above: 0.7 } },
+    }),
+    node({
+      id: "master",
+      kind: "master",
+      path: "edge",
+      links: ["fa", "fb"],
+      effect: { weaponRules: { parry: 0.5 } },
     }),
     node({
       id: "steady",

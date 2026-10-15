@@ -2,8 +2,8 @@ import type { AilmentType, CombatRules, Element } from "./types";
 
 /**
  * Combines rules from several sources (Keystones, Legendary Powers, Runewords): extra damage
- * taken adds up, multipliers multiply, flags switch on, echoes collect, and the strongest
- * Execute wins.
+ * taken adds up, multipliers multiply, flags switch on, echoes and conditional bonuses collect,
+ * and the strongest Execute wins.
  */
 export function mergeRules(...sources: readonly (CombatRules | undefined)[]): CombatRules {
   let damageTaken = 0;
@@ -22,17 +22,29 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   const maxResistance: Partial<Record<Element, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
   let execute: CombatRules["execute"];
+  const conditionalDamage: NonNullable<CombatRules["conditionalDamage"]>[number][] = [];
+  const conditionalCrit: NonNullable<CombatRules["conditionalCrit"]>[number][] = [];
+  const ailmentDamageWhen: NonNullable<CombatRules["ailmentDamageWhen"]>[number][] = [];
+  const conversion: NonNullable<CombatRules["conversion"]>[number][] = [];
   // Class Traits come from one source (the class): the first one wins.
   let ironBlood: CombatRules["ironBlood"];
   let keenEye = false;
   let spark: CombatRules["spark"];
   let lingering: CombatRules["lingering"];
+  let spellblade: CombatRules["spellblade"];
+  let arcaneConduit = false;
+  let corruptionStopsHeal = false;
+  let slowDeath: CombatRules["slowDeath"];
   for (const r of sources) {
     if (!r) continue;
     ironBlood ??= r.ironBlood;
     keenEye ||= r.keenEye ?? false;
     spark ??= r.spark;
     lingering ??= r.lingering;
+    spellblade ??= r.spellblade;
+    arcaneConduit ||= r.arcaneConduit ?? false;
+    corruptionStopsHeal ||= r.corruptionStopsHeal ?? false;
+    slowDeath ??= r.slowDeath;
     damageTaken += r.damageTaken ?? 0;
     skillCostMultiplier *= r.skillCostMultiplier ?? 1;
     defaultAttackDamage *= r.defaultAttackDamage ?? 1;
@@ -58,6 +70,10 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
       if (!ailmentEcho.some((e) => e.from === echo.from && e.to === echo.to))
         ailmentEcho.push(echo);
     }
+    conditionalDamage.push(...(r.conditionalDamage ?? []));
+    conditionalCrit.push(...(r.conditionalCrit ?? []));
+    ailmentDamageWhen.push(...(r.ailmentDamageWhen ?? []));
+    conversion.push(...(r.conversion ?? []));
     if (r.execute && (!execute || r.execute.bonus > execute.bonus)) execute = r.execute;
   }
   return {
@@ -77,9 +93,17 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
     ...(execute ? { execute } : {}),
+    ...(conditionalDamage.length ? { conditionalDamage } : {}),
+    ...(conditionalCrit.length ? { conditionalCrit } : {}),
+    ...(ailmentDamageWhen.length ? { ailmentDamageWhen } : {}),
+    ...(conversion.length ? { conversion } : {}),
     ...(ironBlood ? { ironBlood } : {}),
     ...(keenEye ? { keenEye } : {}),
     ...(spark ? { spark } : {}),
     ...(lingering ? { lingering } : {}),
+    ...(spellblade ? { spellblade } : {}),
+    ...(arcaneConduit ? { arcaneConduit } : {}),
+    ...(corruptionStopsHeal ? { corruptionStopsHeal } : {}),
+    ...(slowDeath ? { slowDeath } : {}),
   };
 }

@@ -47,7 +47,7 @@ export const BUILDS: readonly BuildPlan[] = [
     id: "bleeder",
     classId: "warrior",
     weapon: "sword",
-    nodes: ["might-brutal-force", "rupture-might-serrations", "rupture-exsanguinate", "@branches"],
+    nodes: ["might-brutal-force", "rupture-flayer", "rupture-exsanguinate", "@branches"],
     rotation: ["rend", "cleave", "feint"],
     branches: ["butcher", "duelist", "tactician", "warden"],
     reaction: GUARD,
@@ -56,7 +56,7 @@ export const BUILDS: readonly BuildPlan[] = [
     id: "bleed",
     classId: "reaver",
     weapon: "axe",
-    nodes: ["rupture-exsanguinate", "rupture-butcher", "@branches", "affliction-rupture-iron-will"],
+    nodes: ["rupture-exsanguinate", "rupture-flayer", "@branches", "affliction-rupture-iron-will"],
     rotation: ["rend", "cleave", "serrated-edge"],
     branches: ["butcher", "duelist", "venomancer", "tactician"],
     reaction: GUARD,
@@ -66,7 +66,7 @@ export const BUILDS: readonly BuildPlan[] = [
     classId: "reaver",
     weapon: "dagger",
     nodes: [
-      "rupture-venomancer",
+      "rupture-venom-heart",
       "affliction-rupture-bloodthirst",
       "@branches",
       "affliction-rupture-leeching-rot",
@@ -103,7 +103,7 @@ export const BUILDS: readonly BuildPlan[] = [
     id: "venom",
     classId: "hunter",
     weapon: "bow",
-    nodes: ["rupture-venomancer", "@branches", "affliction-rupture-toxic-burst"],
+    nodes: ["rupture-venom-heart", "@branches", "affliction-rupture-toxic-burst"],
     rotation: ["envenom", "toxic-burst", "plague-cloud"],
     branches: ["venomancer", "marksman", "tactician", "warden"],
     reaction: GUARD,
@@ -118,7 +118,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "rupture-exsanguinate",
       "rupture-serrated-edge",
       "@branches",
-      "rupture-might-opportunist",
+      "rupture-might-exploit-weakness",
     ],
     rotation: ["rend", "serrated-edge", "piercing-shot"],
     branches: ["marksman", "venomancer", "warden", "tactician"],
@@ -160,7 +160,7 @@ export const BUILDS: readonly BuildPlan[] = [
     id: "void",
     classId: "warlock",
     weapon: "staff",
-    nodes: ["affliction-void-lord", "affliction-hungering-void", "@branches"],
+    nodes: ["affliction-hollow-crown", "affliction-hungering-void", "@branches"],
     rotation: ["corrupt", "void-rift", "soul-harvest"],
     branches: ["void-lord", "pyromancer", "tactician", "warden"],
     reaction: NOVA,
@@ -170,7 +170,7 @@ export const BUILDS: readonly BuildPlan[] = [
     classId: "warlock",
     weapon: "staff",
     nodes: [
-      "affliction-pyromancer",
+      "affliction-pyre-heart",
       "affliction-cinder-heart",
       "@branches",
       "arcana-affliction-firestarter",
@@ -187,7 +187,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "affliction-rupture-leeching-rot",
       "affliction-rupture-iron-will",
       "@branches",
-      "affliction-void-lord",
+      "affliction-hollow-crown",
     ],
     rotation: ["wither", "corrupt", "void-rift"],
     branches: ["void-lord", "warden", "pyromancer", "tactician"],
@@ -202,14 +202,17 @@ export function findBuild(weaponId: string, buildId?: string): BuildPlan | undef
 }
 
 /**
- * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone
- * and the paths in order. Refine is spread between them.
+ * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone,
+ * the paths in order and the side taken at each fork (0 = the first Notable, 1 = the second).
+ * Refine is spread between them.
  */
 interface MasteryPlan {
   readonly heat?: string;
   readonly innate: string;
   readonly keystone: string;
   readonly paths: readonly string[];
+  /** Fork sides per path; a path without an entry takes the first Notable at both forks. */
+  readonly forks?: Readonly<Record<string, readonly [0 | 1, 0 | 1]>>;
 }
 
 const MASTERY_PLAN: Record<string, MasteryPlan> = {
@@ -218,42 +221,54 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
     innate: "rising-strike",
     keystone: "final-verdict",
     paths: ["edge", "tempo", "riposte"],
+    forks: { edge: [0, 1], riposte: [1, 0] },
   },
   mace: {
     heat: "heat-cooling",
     innate: "bone-breaker",
     keystone: "siege",
     paths: ["crush", "quake", "bulwark"],
+    forks: { quake: [1, 0], bulwark: [0, 1] },
   },
   axe: {
     heat: "heat-cooling",
     innate: "gutting-lacerate",
     keystone: "rampage",
     paths: ["butcher", "frenzy", "cleave"],
+    forks: { butcher: [0, 0] },
   },
   dagger: {
     heat: "heat-cooling",
     innate: "virulent-coat",
     keystone: "toxic-bloom",
     paths: ["venom", "assassin", "flurry"],
+    forks: { assassin: [1, 1] },
   },
-  bow: { innate: "hooked-arrow", keystone: "hunters-mark", paths: ["barbs", "volley", "toxin"] },
+  bow: {
+    innate: "hooked-arrow",
+    keystone: "hunters-mark",
+    paths: ["barbs", "volley", "toxin"],
+    forks: { barbs: [0, 1] },
+  },
   crossbow: {
     innate: "ballista-bolt",
-    keystone: "siege-engine",
+    keystone: "repeater",
     paths: ["payload", "pierce", "reload"],
+    forks: { pierce: [1, 0] },
   },
   "fire-wand": {
     heat: "heat-warming",
     innate: "barrage",
-    keystone: "glass-cannon",
-    paths: ["storm", "pyre", "rime"],
+    keystone: "wild-magic",
+    paths: ["storm", "blaze", "rime"],
+    forks: { blaze: [1, 0], rime: [1, 0] },
   },
   staff: {
     heat: "heat-warming",
     innate: "void-lance",
     keystone: "endless-night",
     paths: ["hollow", "channel", "smolder"],
+    forks: { smolder: [1, 0] },
   },
 };
 
@@ -263,8 +278,22 @@ export function masteryOrder(data: GameData, weaponId: string, build?: BuildPlan
   const tree = data.weaponMastery[weaponId];
   if (!base || !tree) return [];
   const plan = { ...base, ...build?.mastery };
-  const path = (id: string | undefined) =>
-    id ? tree.nodes.filter((n) => n.path === id).map((n) => n.id) : [];
+  // A path: Technique I (3 ranks), a fork side, Technique II (3 ranks), a fork side, the Master.
+  const path = (id: string | undefined): string[] => {
+    if (!id) return [];
+    const nodes = tree.nodes.filter((n) => n.path === id);
+    const sides = plan.forks?.[id] ?? [0, 0];
+    const fork = (step: number) =>
+      nodes.filter((n) => n.fork === `${id}-${step}`)[sides[step - 1] ?? 0]?.id;
+    const out: (string | undefined)[] = [
+      ...Array<string>(3).fill(`${id}-t1`),
+      fork(1),
+      ...Array<string>(3).fill(`${id}-t2`),
+      fork(2),
+      `${id}-master`,
+    ];
+    return out.filter((n): n is string => n !== undefined && nodes.some((m) => m.id === n));
+  };
   return [
     ...(plan.heat ? [plan.heat] : []),
     plan.innate,
