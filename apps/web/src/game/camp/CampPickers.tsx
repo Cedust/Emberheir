@@ -70,7 +70,7 @@ function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: (
 }
 
 const WILDFIRE_HINT =
-  "Wildfire: any act burns again, harder each tier. Monster Level 92 at I up to 110 at X (above V the foes outlevel you), only T10 items, more Legendaries and higher Runes. Clear an act boss to open the next tier.";
+  "Wildfire: any act burns again, harder each tier. Monster Level 92 at I up to 110 at X (above V the foes outlevel you), only T10 items, more Legendaries and higher Runes. Choose Omens for Peril: VI asks for 2, up to 10 at X, and every point pays more XP and Legendaries. Bosses drop Cinderglass. Clear an act boss to open the next tier.";
 
 /** Wildfire tier for the next trip (spielzeit-v1.md, C): Off, then I up to one above the best. */
 export function WildfirePicker(props: {

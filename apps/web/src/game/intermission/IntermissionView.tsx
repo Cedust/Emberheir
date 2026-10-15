@@ -113,6 +113,7 @@ export function IntermissionView(props: {
               {rewards.phoenixFeathers > 0
                 ? ` · +${rewards.phoenixFeathers} Phoenix Feather${rewards.phoenixFeathers > 1 ? "s" : ""}`
                 : ""}
+              {rewards.cinderglass ? ` · +${rewards.cinderglass} Cinderglass` : ""}
             </p>
           )}
           {rewards?.bountyDone && step !== "ready" && <BountyDone />}

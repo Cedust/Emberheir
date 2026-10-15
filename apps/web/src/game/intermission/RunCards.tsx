@@ -22,6 +22,7 @@ import {
   PROGRESSION,
   wildfireName,
   xpToNextLevel,
+  tripOmenEffects,
 } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/items";
@@ -61,7 +62,9 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
   const hero = state.hero;
   const maxLife = deriveStats(heroSetup(state, GAME_DATA).setup).maxLife;
   const lifePct = Math.round(run.lifeFraction * 100);
-  const canDrink = state.flaskCharges > 0 && run.lifeFraction < 1;
+  // Parched (a Wildfire Omen) takes the Flask for the whole trip.
+  const parched = tripOmenEffects(state, GAME_DATA).flaskHeal <= 0;
+  const canDrink = !parched && state.flaskCharges > 0 && run.lifeFraction < 1;
   const heal = canDrink ? Math.min(PROGRESSION.flaskHeal * 100, 100 - lifePct) : 0;
   const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
@@ -98,6 +101,11 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
           Level up! More Life and Damage
         </div>
       )}
+      {run.rewards?.ashbornLevels ? (
+        <div className="level-up title-font" role="status">
+          Ashborn {state.hero.ashborn?.level ?? ""}! A point for the Character Sheet
+        </div>
+      ) : null}
       <div className="xp-line sub">
         {Number.isFinite(next) ? (
           <>
