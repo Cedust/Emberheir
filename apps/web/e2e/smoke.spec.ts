@@ -120,11 +120,9 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
 
   // Thoric's forge and the Supply Wagon open from the Camp; Esc goes back.
   await page.getByRole("button", { name: "Thoric, Blacksmith" }).click();
-  await page.getByRole("button", { name: "Open Forge" }).click();
   await expect(page.getByRole("region", { name: "Thoric, Blacksmith" })).toBeVisible();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
-  await page.getByRole("button", { name: "Open Stash" }).click();
   await expect(page.getByRole("group", { name: "Stash" })).toBeVisible();
   expect(errors).toEqual([]);
 });

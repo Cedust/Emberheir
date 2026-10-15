@@ -146,8 +146,12 @@ Endgame **Wildfire I–X**.
 | **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
 | **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot) |
-| **Eldrin** | Scout | Act Preview, **Bounties** (ein optionaler Auftrag pro Zug) |
-| **Old Nan** | Hearthfire | Geschichte, Compendium, Legacy, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
+| **Eldrin** | Scout | **The Road**: Act-Wahl, Omen, Wildfire, Draught, **Bounties** (ein optionaler Auftrag pro Zug), The Last Ember, Set Out |
+| **Old Nan** | Hearthfire | Ratschläge, Compendium, Trigger Codex, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
+
+- **Bedienung:** Ein Klick auf eine Persona öffnet ihr Fenster; Hover zeigt ein Namensschild. Marker über den Köpfen
+  zeigen wartende Punkte (Heir: Attribute Points, Kaelen: Skill/Mastery Points) und eine fertige Bounty (Eldrin „!“).
+  Unten im Camp stehen nur die Act-Leiste und Set Out; braucht der Zug noch ein Omen, öffnet Set Out Eldrins Fenster.
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt

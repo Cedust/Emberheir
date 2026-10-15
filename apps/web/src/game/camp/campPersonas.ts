@@ -15,7 +15,9 @@ export type CampTarget =
   | "compendium"
   | "codex"
   | "shop"
-  | "runes";
+  | "runes"
+  | "road"
+  | "nan";
 
 export const NAN_LINES = [
   "Sit, child. The fire remembers every one of you, even the clumsy ones.",
@@ -36,8 +38,6 @@ export interface Persona {
   readonly icon: IconName;
   readonly cloak: string;
   readonly quote: string;
-  readonly actions: readonly { name: string; later?: boolean }[];
-  readonly cta: string;
   readonly target?: CampTarget;
   readonly object?: { w: number; h: number };
   readonly figure?: { fs: number };
@@ -61,13 +61,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#a8401a",
       object: { w: 150, h: 230 },
       quote: "Whatever rests near the fire survives the burning.",
-      actions: [
-        { name: "Worn Gear" },
-        { name: "Trophy Wall" },
-        { name: "Collections" },
-        { name: "Chronicle" },
-      ],
-      cta: "Open Legacy",
       target: "legacy",
     },
     {
@@ -80,13 +73,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#a8401a",
       figure: { fs: 1.25 },
       quote: "Your own gear, stats and attribute points.",
-      actions: [
-        { name: "Equipment" },
-        { name: "Stats" },
-        { name: "Attributes" },
-        { name: "Inventory" },
-      ],
-      cta: "Open Character",
       target: "character",
     },
     {
@@ -99,14 +85,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#5e4a36",
       figure: { fs: 0.9 },
       quote: "",
-      actions: [
-        { name: "Talk" },
-        { name: "Compendium" },
-        { name: "Trigger Codex" },
-        { name: "Ember Flask" },
-        { name: "Reset" },
-      ],
-      cta: "Talk",
     },
     {
       id: "thoric",
@@ -118,8 +96,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#4a4a4e",
       figure: { fs: 1.1 },
       quote: "“Bring me steel. I’ll bring it back better. Mostly.”",
-      actions: [{ name: "Upgrade" }, { name: "Reforge" }, { name: "Salvage" }],
-      cta: "Open Forge",
       target: "forge",
     },
     {
@@ -133,8 +109,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       figure: { fs: 0.95 },
       quote:
         "“Buy now! Everything comes back stronger after the apocalypse. Especially my prices.”",
-      actions: [{ name: "Gamble" }],
-      cta: "Open Shop",
       target: "shop",
     },
     {
@@ -147,8 +121,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#2d5bd0",
       figure: { fs: 0.95 },
       quote: trainer ? "“I foresaw you would come. I also foresee you paying.”" : afterBoss,
-      actions: [{ name: "Temper" }, { name: "Kindle" }],
-      cta: trainer ? "Open Altar" : "Locked",
       target: "altar",
       ...(trainer ? {} : { locked: "boss" }),
     },
@@ -162,8 +134,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#6a2a20",
       figure: { fs: 1.05 },
       quote: "“Late to one battle. Never late to training.”",
-      actions: [{ name: "Skill Tree" }, { name: "Battle Plan" }, { name: "Respec" }],
-      cta: "Open Skill Tree",
       target: "kaelen",
     },
     {
@@ -178,13 +148,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       quote: runesmith
         ? "“Did you know there are runes older than the Harvester? Nobody asks about those.”"
         : later,
-      actions: [
-        { name: "Add Socket" },
-        { name: "Socket Runes" },
-        { name: "Combine Runes" },
-        { name: "Runeword Codex" },
-      ],
-      cta: runesmith ? "Open Runes" : "Locked",
       target: "runes",
       ...(runesmith ? {} : { locked: later }),
     },
@@ -199,8 +162,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#3b5a2c",
       figure: { fs: 0.9 },
       quote: `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`,
-      actions: [{ name: "Act Preview" }, { name: state.bountyDone ? "Turn In" : "Bounty" }],
-      cta: `Set Out · Act ${road.number}`,
     },
     {
       id: "wagon",
@@ -212,8 +173,6 @@ export function personas(state: GameState, road: ActData): Persona[] {
       cloak: "#8a5a32",
       object: { w: 230, h: 270 },
       quote: "Everything you carry but don’t wear. Fixed size, shared by all your Heirs.",
-      actions: [{ name: "Stash" }, { name: "Inventory" }],
-      cta: "Open Stash",
       target: "stash",
     },
   ];

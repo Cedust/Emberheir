@@ -9,7 +9,6 @@ test("Marisha gambles a ring, Nyssa turns three Bark into Moss", async ({ page }
   await page.getByRole("button", { name: /Continue/ }).click();
 
   await page.getByRole("button", { name: "Marisha, Black Market" }).click();
-  await page.getByRole("button", { name: "Open Shop" }).click();
   await page
     .getByRole("radiogroup", { name: "Gamble slot" })
     .getByRole("radio", { name: "Ring" })

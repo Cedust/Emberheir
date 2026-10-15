@@ -18,10 +18,11 @@ test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto 
   await expect(codex).toContainText("Liora can kindle it");
   // Unknown parts show where they live.
   await expect(codex.getByRole("listitem", { name: "Unknown, Rotwood" }).first()).toBeVisible();
+  // Esc closes the Codex, then Old Nan.
+  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Liora, Mystic" }).click();
-  await page.getByRole("button", { name: /Open/ }).click();
   await page.getByRole("button", { name: /^Kindle/ }).click();
   await page.getByRole("button", { name: "Sturdy Iron Ring" }).click();
   await page

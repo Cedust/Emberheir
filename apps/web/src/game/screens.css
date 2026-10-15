@@ -1531,11 +1531,6 @@
   gap: 6px;
 }
 
-/* Opacity goes on the parts: on the button it would trap the name plate under the lighting. */
-.stage .camp-target.locked .figure {
-  opacity: 0.6;
-}
-
 .stage .camp-target:disabled {
   cursor: not-allowed;
 }
@@ -1619,6 +1614,59 @@
 
 .stage .camp-tip .sub {
   font-size: 12px;
+  max-width: 260px;
+  white-space: normal;
+  text-align: center;
+}
+
+.stage .camp-tip .k-key {
+  margin-left: 2px;
+}
+
+/* Opacity goes on the parts: on the button it would trap the name plate under the lighting. */
+.stage .camp-target.locked .figure {
+  opacity: 0.6;
+}
+
+.stage .camp-target.locked {
+  cursor: default;
+}
+
+.stage .camp-target:hover:not(.locked) .figure {
+  filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
+}
+
+/* WoW quest marker over a head: points or a bounty wait there. */
+.stage .camp-marker {
+  position: absolute;
+  left: 50%;
+  top: -16px;
+  transform: translateX(-50%);
+  pointer-events: none;
+  animation: camp-marker-bob 1.6s ease-in-out infinite;
+}
+
+.stage .camp-marker .k-marker {
+  min-width: 26px;
+  height: 26px;
+  font-size: 15px;
+  box-shadow: 0 0 12px 3px rgb(255 190 80 / 0.6);
+}
+
+.stage .camp-target:hover .camp-marker {
+  opacity: 0;
+}
+
+@keyframes camp-marker-bob {
+  50% {
+    transform: translateX(-50%) translateY(-5px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .camp-marker {
+    animation: none;
+  }
 }
 
 .stage .camp-target:hover .camp-tip,
@@ -1631,18 +1679,6 @@
   .stage .camp-tip {
     transition: none;
   }
-}
-
-.stage .persona-card {
-  position: absolute;
-  left: calc(var(--safe-x) + 28px);
-  bottom: 28px;
-  width: 420px;
-  padding: 18px 20px 20px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  z-index: 6;
 }
 
 .stage .persona-head {
@@ -1681,44 +1717,16 @@
   line-height: 1.35;
 }
 
-.stage .chip-row {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.stage .action-chip {
-  font-size: 14px;
-  padding: 3px 9px;
-  border: 1px solid var(--edge);
-  border-radius: 3px;
-  background: var(--bg);
-}
-
-.stage .action-chip.later {
-  opacity: 0.5;
-  text-decoration: line-through;
-}
-
-.stage .action-chip.link {
-  cursor: pointer;
-  border-color: var(--accent);
-  color: var(--accent);
-}
-
-.stage .persona-card .btn {
-  align-self: flex-start;
-}
-
 .stage .set-out {
   position: absolute;
+  left: calc(var(--safe-x) + 28px);
   right: calc(var(--safe-x) + 28px);
   bottom: 28px;
   display: flex;
   align-items: flex-end;
-  gap: 14px;
+  justify-content: center;
+  gap: 18px;
   z-index: 6;
-  /* The box is as tall as the Omen column; the camp under its empty corner stays clickable. */
   pointer-events: none;
 }
 
@@ -1835,18 +1843,6 @@
   fill: var(--vial);
 }
 
-.stage .set-out-go {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  gap: 8px;
-  pointer-events: none;
-}
-
-.stage .set-out-go > * {
-  pointer-events: auto;
-}
-
 /* The road: one card per act, painted in the act's arena colors. */
 .stage .road {
   display: flex;
@@ -1948,17 +1944,118 @@
   color: var(--accent);
 }
 
-.stage .hint-light {
-  font-size: 14px;
-  color: #f3e6c8;
-  text-shadow: 0 1px 2px #000;
+.stage .set-out-button {
+  pointer-events: auto;
+  min-width: 280px;
 }
 
-.stage .bounty-hint {
+/* Eldrin's Road window: the acts as a column, the trip beside it. */
+.stage .road-window {
+  max-width: 1180px;
+  margin: 0 auto;
+}
+
+.stage .road-columns {
+  flex: 1;
+  min-height: 0;
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 22px;
+  padding: 18px 22px 20px;
+}
+
+.stage .road.vertical {
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .road.vertical .road-act {
+  width: 100%;
+  height: 58px;
+}
+
+.stage .road-trip {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage .road-brief {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--grid-line);
+}
+
+.stage .road-brief-name {
+  font-size: 28px;
+  line-height: 1.1;
+}
+
+.stage .road-brief-boss {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  color: var(--rarity-legendary);
+  margin-top: 4px;
+  font-family: var(--font-title);
+  font-weight: 700;
+  color: var(--accent);
+}
+
+.stage .road-brief-text {
+  font-size: 15px;
+  font-style: italic;
+}
+
+.stage .road-trip .finale-button,
+.stage .road-trip .wildfire-picker,
+.stage .road-trip .draught-picker {
+  align-self: flex-start;
+}
+
+.stage .road-go {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 16px;
+}
+
+/* Old Nan: her advice, her books and her resets. */
+.stage .nan-window {
+  max-width: 760px;
+  max-height: 560px;
+  margin: auto;
+}
+
+.stage .nan-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 22px 26px 24px;
+}
+
+.stage .nan-quote {
+  margin: 0;
+  font-size: 20px;
+  font-style: italic;
+  line-height: 1.4;
+  color: var(--text);
+}
+
+.stage .nan-books {
+  display: flex;
+  gap: 10px;
+}
+
+.stage .nan-resets-box {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: auto;
 }
 
 .stage .bounty-card.done {
@@ -2005,43 +2102,6 @@
 
 .stage .bounty-item {
   cursor: help;
-}
-
-/* Eldrin carries a done bounty: a glowing mark over his head, like a quest giver. */
-.stage .bounty-mark {
-  position: absolute;
-  left: 50%;
-  top: -14px;
-  width: 26px;
-  height: 26px;
-  margin-left: -13px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  color: #1c1208;
-  background: var(--rarity-legendary);
-  box-shadow: 0 0 12px 3px color-mix(in srgb, var(--rarity-legendary) 70%, transparent);
-  animation: bounty-mark-bob 1.6s ease-in-out infinite;
-  pointer-events: none;
-}
-
-/* The name plate takes its place while Eldrin is hovered or picked. */
-.stage .camp-target.on .bounty-mark,
-.stage .camp-target:hover .bounty-mark {
-  opacity: 0;
-}
-
-@keyframes bounty-mark-bob {
-  50% {
-    transform: translateY(-5px);
-    box-shadow: 0 0 18px 6px color-mix(in srgb, var(--rarity-legendary) 80%, transparent);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .stage .bounty-mark {
-    animation: none;
-  }
 }
 
 /* --- persona (Thoric, Liora) ---------------------------------------------------------------- */

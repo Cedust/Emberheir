@@ -78,17 +78,20 @@ for (const screen of SCREENS) {
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: "Thoric, Blacksmith" }).click();
-    await page.getByRole("button", { name: "Open Forge" }).click();
     await check("forge");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
-    await page.getByRole("button", { name: "Open Stash" }).click();
     await check("stash");
     await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Marisha, Black Market" }).click();
-    await page.getByRole("button", { name: "Open Shop" }).click();
     // Marisha only gambles: the Black Market opens on it.
     await check("gamble");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Eldrin, Scout" }).click();
+    await check("road");
+    await page.keyboard.press("Escape");
+    await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
+    await check("nan");
     await page.keyboard.press("Escape");
 
     await page.getByRole("button", { name: /SET OUT/ }).click();
@@ -150,7 +153,6 @@ for (const screen of SCREENS) {
     await check("inheritance");
     await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
     await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
-    await page.getByRole("button", { name: "Open Legacy" }).click();
     await expect(page.getByRole("region", { name: "Legacy" })).toBeVisible();
     await check("legacy");
     expect(errors).toEqual([]);

@@ -30,7 +30,6 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   await page.getByRole("button", { name: /RETURN TO CAMP/ }).click();
   await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
   await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
-  await page.getByRole("button", { name: "Open Legacy" }).click();
   await page.getByRole("tab", { name: /Trophy Wall/ }).click();
   await expect(page.getByTestId("trophy-thornsong")).toBeEnabled();
   await expect(page.getByTestId("trophy-tyrants-crown")).toBeDisabled();
@@ -94,6 +93,8 @@ test("Bounty: a done bounty is turned in at Eldrin, the item goes into the inven
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-paid.png` });
   // Eldrin hands out a new bounty for the next trip.
   await expect(page.getByLabel("Bounty done")).toHaveCount(0);
-  await expect(page.locator(".bounty-hint")).toContainText("Bounty:");
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Eldrin, Scout" }).click();
+  await expect(page.getByLabel("Bounty", { exact: true })).toContainText("BOUNTY ·");
   expect(errors).toEqual([]);
 });

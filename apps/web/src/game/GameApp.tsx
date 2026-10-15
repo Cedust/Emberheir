@@ -25,7 +25,7 @@ import { StashView } from "./camp/StashView";
 import { useGame } from "./useGame";
 
 type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "codex" | "cheats" | null;
-type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | null;
+type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | "road" | "nan" | null;
 
 /** The game: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
 export function GameApp() {
@@ -175,7 +175,14 @@ export function GameApp() {
   } else if (!run) {
     const close = () => setCampScreen(null);
     const camp = (
-      <CampView state={state} game={game} onOpen={openCamp} onMenu={() => setOverlay("menu")} />
+      <CampView
+        state={state}
+        game={game}
+        panel={campScreen === "road" || campScreen === "nan" ? campScreen : null}
+        onOpen={openCamp}
+        onClosePanel={close}
+        onMenu={() => setOverlay("menu")}
+      />
     );
     // Persona and Supply Wagon windows float over the dimmed Camp (ui-ux-plan-v1.md 3.2);
     // Kaelen and the Legacy need the whole stage and cover it.

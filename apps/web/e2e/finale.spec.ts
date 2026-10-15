@@ -20,6 +20,7 @@ test("Final Prestige: nothing burns, the Inheritance points to The Last Ember", 
   await expect(heir).toContainText("THE LAST EMBER");
   await expect(heir).toContainText("Everything you own is yours to keep");
   await heir.getByRole("button", { name: "Wake at the Hearthfire" }).click();
+  await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   await expect(page.getByRole("button", { name: /THE LAST EMBER/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -31,6 +32,7 @@ test("The Last Ember: the gauntlet starts with Gorrak's echo", async ({ page }) 
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
+  await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   await page.getByRole("button", { name: /THE LAST EMBER/ }).click();
   const hall = page.getByRole("region", { name: "Intermission" });
   await expect(hall).toContainText("The Last Ember");
