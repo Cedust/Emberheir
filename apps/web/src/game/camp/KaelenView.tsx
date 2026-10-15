@@ -47,13 +47,15 @@ export function KaelenView(props: {
     ...(viewOnly ? [] : [{ id: "dummy" as const, name: "Training Dummy", icon: "eye" as const }]),
   ];
 
+  // On the road the tree is a window over the arena; at Kaelen it needs the whole stage.
+  const mode = viewOnly ? "panel" : "full";
   return (
-    <WindowLayer mode="full">
+    <WindowLayer mode={mode}>
       <PaintDefs />
       <Window
         label="Kaelen"
         role="dialog"
-        mode="full"
+        mode={mode}
         className="kaelen"
         header={
           <WindowHeader

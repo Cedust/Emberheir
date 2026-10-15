@@ -1,6 +1,7 @@
 export { CODEX, CRAFTING, PROGRESSION } from "./constants";
 export * from "./leveling";
 export * from "./inventory";
+export * from "./stash";
 export * from "./skill-tree";
 export * from "./elites";
 export * from "./hero";

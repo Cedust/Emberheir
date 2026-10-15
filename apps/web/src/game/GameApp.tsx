@@ -234,6 +234,8 @@ export function GameApp() {
         state={state}
         run={run}
         game={game}
+        settings={settings.settings}
+        covered={overlay !== null}
         onCharacter={() => toggle("character")}
         onTree={() => toggle("tree")}
         onPlan={() => toggle("plan")}
@@ -251,25 +253,29 @@ export function GameApp() {
           {screen}
         </div>
         {campWindow}
-        {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
-          <CharacterOverlay
-            state={state}
-            game={game}
-            inFight={inFight}
-            onClose={() => setOverlay(null)}
-          />
-        )}
-        {state && (overlay === "tree" || overlay === "plan") && (
-          <KaelenView
-            key={overlay}
-            state={state}
-            game={game}
-            viewOnly
-            planEditable={!inFight}
-            initialTab={overlay === "plan" ? "plan" : "tree"}
-            onClose={() => setOverlay(null)}
-          />
-        )}
+        {/* On the road, Character and Skill Tree are windows over the arena with the arena
+            around them (ui-ux-plan-v1.md 3.4). */}
+        <div className={run ? "road-windows" : "camp-windows"}>
+          {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
+            <CharacterOverlay
+              state={state}
+              game={game}
+              inFight={inFight}
+              onClose={() => setOverlay(null)}
+            />
+          )}
+          {state && (overlay === "tree" || overlay === "plan") && (
+            <KaelenView
+              key={overlay}
+              state={state}
+              game={game}
+              viewOnly
+              planEditable={!inFight}
+              initialTab={overlay === "plan" ? "plan" : "tree"}
+              onClose={() => setOverlay(null)}
+            />
+          )}
+        </div>
         {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
         {state && overlay === "menu" && (
           <MenuOverlay

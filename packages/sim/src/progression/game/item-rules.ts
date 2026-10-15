@@ -2,7 +2,8 @@ import { itemSlotFor, missingRequirements, requiredLevel } from "../../items/equ
 import { getBase } from "../../items/generate";
 import { type Equipment, type EquipmentSlot, type Item } from "../../items/types";
 import { PROGRESSION } from "../constants";
-import { addToGrid, INVENTORY_SIZE, STASH_SIZE } from "../inventory";
+import { addToGrid, INVENTORY_SIZE } from "../inventory";
+import { addToStash, removeFromStash, tabOf } from "../stash";
 import { type GameData, type GameState } from "./state";
 
 /** What may happen to an item right now (equip, take, unequip, move) and what it is worth. */
@@ -56,12 +57,17 @@ export function equipBlockReason(
   if (missingRequirements(item, data.items, state.hero.attributes).length) return "requirements";
   const old = state.hero.equipment[slot];
   if (!old) return undefined;
-  // The old item goes back where the new one came from.
-  const source = from === "stash" ? state.stash : state.inventory;
-  const grid = from === "pick" ? source : source.filter((p) => p.item.id !== item.id);
-  return addToGrid(grid, old, data.items, from === "stash" ? STASH_SIZE : INVENTORY_SIZE)
-    ? undefined
-    : "noRoom";
+  // The old item goes back where the new one came from (the same stash tab).
+  if (from === "stash") {
+    const placed = state.stash.find((p) => p.item.id === item.id);
+    const rest = removeFromStash(state.stash, item.id);
+    return addToStash(rest, old, data.items, placed ? tabOf(placed) : undefined)
+      ? undefined
+      : "noRoom";
+  }
+  const grid =
+    from === "pick" ? state.inventory : state.inventory.filter((p) => p.item.id !== item.id);
+  return addToGrid(grid, old, data.items, INVENTORY_SIZE) ? undefined : "noRoom";
 }
 
 /** Why an item cannot be taken into the inventory (only "noRoom"). */
@@ -88,18 +94,21 @@ export function unequipBlockReason(
 
 export type MoveBlockReason = "camp" | "noRoom";
 
-/** Why an item cannot move between inventory and stash right now. */
+/** Why an item cannot move between inventory and stash (into `tab`) right now. */
 export function moveBlockReason(
   state: GameState,
   data: GameData,
   itemId: string,
   to: "inventory" | "stash",
+  tab?: number,
 ): MoveBlockReason | undefined {
   if (state.run) return "camp";
   const source = to === "stash" ? state.inventory : state.stash;
   const placed = source.find((p) => p.item.id === itemId);
   if (!placed) return undefined;
-  const target = to === "stash" ? state.stash : state.inventory;
-  const size = to === "stash" ? STASH_SIZE : INVENTORY_SIZE;
-  return addToGrid(target, placed.item, data.items, size) ? undefined : "noRoom";
+  const fits =
+    to === "stash"
+      ? addToStash(state.stash, placed.item, data.items, tab)
+      : addToGrid(state.inventory, placed.item, data.items, INVENTORY_SIZE);
+  return fits ? undefined : "noRoom";
 }

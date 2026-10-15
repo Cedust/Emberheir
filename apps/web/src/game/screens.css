@@ -701,10 +701,52 @@
 
 /* --- intermission --------------------------------------------------------------------------- */
 
+/* The Intermission stands in the act's arena (IdleArena): its cards float over it. */
+.stage .intermission {
+  background: #3b3024;
+}
+
+.stage .idle-arena {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.stage .idle-arena .arena-host {
+  top: 0;
+  bottom: 0;
+}
+
+/* A soft veil keeps the cards readable without hiding the hero. */
+.stage .idle-arena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgb(14 10 6 / 0.55) 0, transparent 34%),
+    radial-gradient(ellipse at 60% 40%, transparent 30%, rgb(14 10 6 / 0.45) 100%);
+}
+
+.stage .intermission > :not(.idle-arena) {
+  position: relative;
+  z-index: 1;
+}
+
 .stage .intermission-body {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr) 300px;
+  grid-template-columns: 340px minmax(0, 1fr) 320px;
+  min-height: 0;
+}
+
+/* The road ahead and the trip's bounty, on the enemy's side of the arena. */
+.stage .intermission-right-road {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   min-height: 0;
 }
 
@@ -713,19 +755,34 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  border-right: 2px solid var(--edge);
-  background: var(--side);
 }
 
 .stage .intermission-right {
-  padding: 20px;
+  margin: 20px 20px 20px 0;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  border-left: 2px solid var(--edge);
+  border: 2px solid var(--edge);
+  border-radius: 6px;
   background: var(--side);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
   min-height: 0;
+}
+
+/* Over the arena the big words glow like the fight banners. */
+.stage .intermission-center .screen-title {
+  color: #ffcf7a;
+  text-shadow:
+    0 2px 0 rgb(40 20 8 / 0.9),
+    0 0 24px rgb(255 140 40 / 0.45);
+}
+
+.stage .intermission-center .screen-sub,
+.stage .intermission-center .auto-rewards {
+  color: #f1e2c2;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
 }
 
 .stage .intermission-right .eyebrow {
@@ -812,8 +869,78 @@
   }
 }
 
-.stage .xp-line {
-  font-size: 13px;
+/* The XP bar: fills with the last fight's XP, flares on a level up. */
+.stage .xp-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.stage .xp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.stage .xp-level {
+  font-size: 15px;
+  transition: color 0.3s;
+}
+
+.stage .xp-gain {
+  color: #ffd27a;
+}
+
+.stage .xp-bar-big {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: rgb(0 0 0 / 0.45);
+  border: 1px solid rgb(255 220 160 / 0.18);
+  overflow: hidden;
+}
+
+.stage .xp-bar-big .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #b9821f, #ffd27a);
+  box-shadow: 0 0 8px rgb(255 200 110 / 0.6);
+  transition: width 0.75s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.stage .xp-bar-big .fill.instant {
+  transition: none;
+}
+
+.stage .xp-block.flare .xp-level {
+  color: #ffd27a;
+  text-shadow: 0 0 12px rgb(255 190 90 / 0.9);
+}
+
+.stage .xp-block.flare .xp-bar-big {
+  animation: xp-flare 1.2s ease-out;
+}
+
+@keyframes xp-flare {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 200 110 / 0.9);
+  }
+  40% {
+    box-shadow: 0 0 18px 4px rgb(255 200 110 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 200 110 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .xp-bar-big .fill {
+    transition: none;
+  }
+  .stage .xp-block.flare .xp-bar-big {
+    animation: none;
+  }
 }
 
 .stage .life-head {
@@ -833,6 +960,41 @@
   margin-top: 4px;
 }
 
+/* The Drink button always sits on the right edge, whatever its text. */
+.stage .flask-row > .k-btn {
+  margin-left: auto;
+}
+
+.stage .flask-stock {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 56px;
+}
+
+.stage .flask-potion {
+  width: 40px;
+  height: 55px;
+  filter: drop-shadow(0 2px 3px #000);
+}
+
+.stage .flask-potion.full {
+  filter: drop-shadow(0 2px 3px #000) drop-shadow(0 0 7px rgb(229 72 77 / 0.6));
+}
+
+/* The charges sit on the bulb like a stack count on an item. */
+.stage .flask-count {
+  position: absolute;
+  right: -6px;
+  bottom: -2px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #ffe2a8;
+  background: rgb(20 12 8 / 0.85);
+  border: 1px solid #b8893e;
+}
+
 .stage .up-next {
   padding: 14px 16px;
   display: flex;
@@ -840,16 +1002,85 @@
   gap: 8px;
 }
 
-/* A fork of the road (neuausrichtung-v1.md 6.2): one small button per path. */
-.stage .route-choice {
+/* A fork of the road (neuausrichtung-v1.md 6.2): one big card per path, no default. */
+.stage .path-cards {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px;
-  border: 1px dashed var(--edge);
-  border-radius: 4px;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
 }
 
+.stage .path-card {
+  width: 230px;
+  min-height: 250px;
+  padding: 26px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out;
+}
+
+.stage .path-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
+}
+
+.stage .path-card strong {
+  font-size: 21px;
+}
+
+.stage .path-sigil {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffd27a;
+  background: radial-gradient(circle at 40% 35%, #5a3c22, var(--k-wood-2, #22170f));
+  border: 2px solid var(--k-brass, #b8893e);
+  box-shadow: inset 0 0 12px rgb(0 0 0 / 0.6);
+}
+
+.stage .path-elite .path-sigil {
+  color: #ffb13b;
+}
+
+.stage .path-hearth .path-sigil {
+  color: #ff7a3c;
+}
+
+.stage .path-thief .path-sigil {
+  color: #9fd8ff;
+}
+
+.stage .path-card.chosen {
+  border-color: var(--heat);
+  box-shadow:
+    0 0 0 3px var(--heat),
+    0 0 28px rgb(255 154 60 / 0.55);
+  transform: translateY(-4px);
+}
+
+.stage .path-card.chosen .path-sigil {
+  box-shadow:
+    inset 0 0 12px rgb(0 0 0 / 0.6),
+    0 0 18px rgb(255 160 60 / 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .path-card {
+    transition: none;
+  }
+}
+
+/* Small radio buttons in a row (Training Dummy profiles). */
 .stage .route-options {
   display: flex;
   gap: 4px;
@@ -2046,6 +2277,53 @@
   opacity: 0.6;
 }
 
+/* The last fight's big moments (Waymark, Hearth Embers, Ashborn) under the title. */
+.stage .moment-row,
+.stage .run-moments {
+  display: flex;
+  justify-content: center;
+  gap: 14px;
+}
+
+.stage .moment-row:empty {
+  display: none;
+}
+
+.stage .run-moment {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 18px 10px 12px;
+  border: 2px solid var(--heat);
+  animation: waymark-flare 1.2s ease-out;
+}
+
+.stage .run-moment strong {
+  font-size: 19px;
+}
+
+.stage .moment-sigil {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffd27a;
+  background: radial-gradient(circle at 40% 35%, #6a4424, #22170f);
+  border: 2px solid #c9a063;
+  box-shadow: 0 0 14px rgb(255 160 60 / 0.6);
+}
+
+.stage .moment-hearth .moment-sigil {
+  color: #ff8a4a;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .run-moment {
+    animation: none;
+  }
+}
+
 .stage .bounty-paid {
   display: flex;
   align-items: center;
@@ -2457,6 +2735,40 @@
 
 .stage .stash-pane .section-row {
   align-items: center;
+}
+
+/* Stash tabs (PoE): dark wood bookmarks standing on the grid; the open one joins it. */
+.stage .stash-pane {
+  gap: 0;
+}
+
+.stage .stash-tabs {
+  align-items: flex-end;
+  padding-left: 8px;
+}
+
+.stage .stash-tabs .k-tab {
+  min-width: 64px;
+  justify-content: center;
+  color: var(--k-on-wood-sub);
+  background: linear-gradient(180deg, var(--k-wood), var(--k-wood-2));
+}
+
+.stage .stash-tabs .k-tab:hover {
+  color: var(--k-on-wood);
+  background: linear-gradient(180deg, #4a3624, var(--k-wood-2));
+}
+
+.stage .stash-tabs .k-tab.on {
+  color: #ffd27a;
+  background: var(--slot-bg);
+  border-color: var(--k-brass);
+  margin-bottom: -2px;
+  z-index: 1;
+}
+
+.stage .stash-tabs .k-btn {
+  margin-bottom: 8px;
 }
 
 /* --- overlays ------------------------------------------------------------------------------- */
@@ -6200,6 +6512,59 @@
 .stage .boon-sigil.small.flash {
   filter: brightness(1.6);
   box-shadow: 0 0 14px 4px var(--boon);
+}
+
+/* The Boons panel between stages: a sigil per Boon, the effect in its tooltip. */
+.stage .boon-panel {
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .boon-tiles {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.stage .boon-tile {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  cursor: help;
+}
+
+.stage .boon-sigil.tile {
+  width: 32px;
+  height: 32px;
+  margin: 0;
+  border-width: 2px;
+  box-shadow: 0 0 8px color-mix(in srgb, var(--boon) 60%, transparent);
+}
+
+.stage .boon-tile:hover .boon-sigil.tile,
+.stage .boon-tile:focus-visible .boon-sigil.tile {
+  filter: brightness(1.25);
+}
+
+.stage .boon-tile.fresh .boon-sigil.tile {
+  outline: 1.5px dashed var(--boon);
+  outline-offset: 3px;
+}
+
+.stage .boon-tile i {
+  position: absolute;
+  right: -2px;
+  bottom: -4px;
+  font-style: normal;
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--text);
 }
 
 @keyframes boon-rise {

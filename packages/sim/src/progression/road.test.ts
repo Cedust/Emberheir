@@ -10,6 +10,7 @@ import {
   itemPickAt,
   newGame,
   routeAt,
+  openFork,
   routeForks,
   tagAffixFactor,
   trainingDummy,
@@ -105,6 +106,14 @@ describe("Routes", () => {
     expect(routeForks(TEST_ACT)).toEqual([]);
     expect(routeAt({}, LONG_ACT, 4)).toEqual({ kind: "shrine", second: true, fork: 3 });
     expect(routeAt({ wildfire: 2 }, LONG_ACT, 3)).toBeNull();
+  });
+
+  it("a fork stays open until a path is chosen, only on its first stage", () => {
+    expect(openFork({}, LONG_ACT, 3)).toBe(3);
+    expect(openFork({ routes: { "3": "hearth" } }, LONG_ACT, 3)).toBeNull();
+    expect(openFork({}, LONG_ACT, 4)).toBeNull();
+    expect(openFork({}, LONG_ACT, 5)).toBeNull();
+    expect(openFork({ wildfire: 1 }, LONG_ACT, 8)).toBeNull();
   });
 
   it("the Elite path puts sure Elites on both stages", () => {

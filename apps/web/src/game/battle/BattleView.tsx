@@ -65,7 +65,7 @@ const ARCHETYPE_TEXT: Record<string, string> = {
 const FINALE_GRADIENT = ["#5a1d08", "#080404"] as const;
 
 /** The arena sky in the act's colors (ui-look-v1.md: arena tinted per Act; an echo brings its own). */
-function arenaStyle(run: RunState): React.CSSProperties | undefined {
+export function arenaStyle(run: RunState): React.CSSProperties | undefined {
   const g =
     ACTS.find((a) => a.id === (run.encounter?.echo ?? run.actId))?.arenaGradient ??
     (isFinaleAct(GAME_DATA, run.actId) ? FINALE_GRADIENT : undefined);

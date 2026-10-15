@@ -49,6 +49,7 @@ export const placedItemSchema: z.ZodType<PlacedItem> = z.object({
   item: itemSchema,
   x: count,
   y: count,
+  tab: opt(count),
 });
 
 const slotModifier = z.enum(["thrifty", "empowered", "reverb", "overcharge"]);

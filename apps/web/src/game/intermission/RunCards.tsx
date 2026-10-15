@@ -24,11 +24,13 @@ import {
   xpToNextLevel,
   tripOmenEffects,
 } from "@emberheir/sim";
-import { Icon } from "../../ui/Icon";
+import { useEffect, useState } from "react";
+import { Icon, type IconName } from "../../ui/Icon";
+import { Potion } from "../../ui/Potion";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
-import { BoonBar } from "../Boons";
+import { HeirFace } from "../camp/CampFigures";
 import { bountyView } from "../bounty";
 import { ShareBar } from "../camp/BattlePlanTab";
 import { finaleFoe, inFinale } from "../finale";
@@ -70,53 +72,25 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
   const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
   const next = xpToNextLevel(hero.level, levelCap(state.legacy.prestige));
-  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
-  const hearth =
-    run.rewards !== null && hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
   return (
     <section className="panel-card hero-card" aria-label="Hero">
       <div className="hero-card-head">
         <div className="plaque-portrait">
-          <Icon name="user" size={24} color="#f3e6c8" />
+          <HeirFace />
         </div>
         <div className="plaque-names">
           <span className="plaque-name title-font">Heir of the Ember</span>
-          <span className="sub">
-            Level {hero.level}
-            {gained > 0 ? ` · +${fmt(gained)} XP` : ""}
-          </span>
         </div>
       </div>
-      {(run.rewards?.waymark || hearth) && (
-        <div className="waymark-moment title-font" role="status">
-          {[
-            run.rewards?.waymark ? "Waymark! +1 Skill Point" : "",
-            hearth ? `Hearth Embers: +${Math.round(PROGRESSION.hearthEmbers * 100)} % Life` : "",
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </div>
-      )}
-      {run.rewards && run.rewards.levelsGained > 0 && (
-        <div className="level-up title-font" role="status">
-          Level up! More Life and Damage
-        </div>
-      )}
-      {run.rewards?.ashbornLevels ? (
-        <div className="level-up title-font" role="status">
-          Ashborn {state.hero.ashborn?.level ?? ""}! A point for the Character Sheet
-        </div>
-      ) : null}
-      <div className="xp-line sub">
-        {Number.isFinite(next) ? (
-          <>
-            XP {fmt(hero.xp)} / {fmt(next)}
-          </>
-        ) : (
-          "Level cap reached"
-        )}
-      </div>
-      <BoonBar state={state} />
+      <XpBar
+        key={run.encounter?.seed ?? run.stage}
+        level={hero.level}
+        xp={hero.xp}
+        next={next}
+        gained={gained}
+        levels={run.rewards?.levelsGained ?? 0}
+        prevNext={xpToNextLevel(hero.level - 1, levelCap(state.legacy.prestige))}
+      />
       <div className="life-head">
         <span className="title-font">Life</span>
         <span className="mono">
@@ -138,10 +112,16 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
         <span className="bar-label">{lifePct}%</span>
       </div>
       <div className="flask-row">
-        <div className="flask-pips">
-          {Array.from({ length: flaskMax }, (_, i) => (
-            <span key={i} className={`flask-pip ${i < state.flaskCharges ? "full" : ""}`} />
-          ))}
+        {/* One potion with its charges as a number: grows with the Flask without crowding. */}
+        <div
+          className="flask-stock"
+          role="img"
+          aria-label={`Ember Flask ${state.flaskCharges} of ${flaskMax}`}
+        >
+          <Potion full={state.flaskCharges > 0} className="flask-potion" />
+          <span className="flask-count mono">
+            {state.flaskCharges}/{flaskMax}
+          </span>
         </div>
         <Button
           variant="primary"
@@ -157,6 +137,84 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
         </Button>
       </div>
     </section>
+  );
+}
+
+const reducedMotion = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+
+/**
+ * The XP bar fills up with the XP of the last fight. A level up runs it full, lets it flare and
+ * starts it over at the new level (no banner, Timo).
+ */
+function XpBar(props: {
+  level: number;
+  xp: number;
+  next: number;
+  gained: number;
+  levels: number;
+  /** XP the level before needed (where a level up starts from). */
+  prevNext: number;
+}) {
+  const { level, xp, next, gained, levels, prevNext } = props;
+  const capped = !Number.isFinite(next);
+  const target = capped ? 100 : Math.min(100, (xp / next) * 100);
+  // Before the fight: the old fill (a level up starts from somewhere on the old bar).
+  const before =
+    levels === 1
+      ? Math.max(0, ((prevNext - (gained - xp)) / prevNext) * 100)
+      : levels > 1
+        ? 0
+        : Math.max(0, ((xp - gained) / next) * 100);
+  const animate = gained > 0 && !capped && !reducedMotion();
+  const [shown, setShown] = useState({
+    pct: animate ? before : target,
+    level: animate && levels > 0 ? level - levels : level,
+    instant: true,
+  });
+  const [flare, setFlare] = useState(false);
+  useEffect(() => {
+    if (!animate) return;
+    const timers: number[] = [];
+    const at = (ms: number, f: () => void) => timers.push(window.setTimeout(f, ms));
+    if (levels > 0) {
+      at(150, () => setShown((s) => ({ ...s, pct: 100, instant: false })));
+      at(900, () => {
+        setFlare(true);
+        setShown({ pct: 0, level, instant: true });
+      });
+      at(980, () => setShown({ pct: target, level, instant: false }));
+      at(2200, () => setFlare(false));
+    } else {
+      at(150, () => setShown((s) => ({ ...s, pct: target, instant: false })));
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // Runs once per fight (the parent keys it by encounter).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className={`xp-block${flare ? " flare" : ""}`}>
+      <div className="xp-head">
+        <span className="title-font xp-level">Level {shown.level}</span>
+        <span className="mono small">
+          {capped ? "Max" : `${fmt(xp)} / ${fmt(next)}`}
+          {gained > 0 && <span className="xp-gain"> +{fmt(gained)}</span>}
+        </span>
+      </div>
+      <div
+        className="xp-bar-big"
+        role="meter"
+        aria-label="XP"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(target)}
+      >
+        <div
+          className={`fill${shown.instant ? " instant" : ""}`}
+          style={{ width: `${shown.pct}%` }}
+        />
+      </div>
+    </div>
   );
 }
 
@@ -199,60 +257,65 @@ export function PlanCard(props: { state: GameState; run: RunState; onPlan: () =>
 }
 
 /** The paths of a fork (neuausrichtung-v1.md 6.2): what each one holds. */
-const ROUTE_TEXT: Record<RouteKind, { name: string; text: string }> = {
-  elite: { name: "Elite Path", text: "Two Elites in a row: harder, with their themed loot." },
-  shrine: { name: "Shrine Path", text: "Two fights, then an Ember Shrine (a Boon)." },
-  hearth: { name: "Hearth Path", text: "Two fights, then a fire to rest at: +25 % Life." },
-  thief: { name: "Thief's Trail", text: "The Ember Thief waits on it for sure." },
+const ROUTE_TEXT: Record<RouteKind, { name: string; text: string; icon: IconName }> = {
+  elite: { name: "Elite Path", text: "Two Elites in a row, with their themed loot.", icon: "boss" },
+  shrine: { name: "Shrine Path", text: "Two fights, then an Ember Shrine.", icon: "flame" },
+  hearth: { name: "Hearth Path", text: "Two fights, then a fire: +25 % Life.", icon: "fire" },
+  thief: { name: "Thief's Trail", text: "The Ember Thief waits on it.", icon: "target" },
 };
 
-/** The choice at a fork of the road: two stages, one path. */
-function RouteChoice(props: {
-  state: GameState;
-  run: RunState;
-  act: ActData;
-  next: number;
-  game: GameApi;
-}) {
-  const { state, run, act, next, game } = props;
+/**
+ * A fork of the road, in the middle of the Intermission: one big card per path. There is no
+ * default; NEXT STAGE waits until one is chosen (Timo).
+ */
+export function PathCards(props: { state: GameState; run: RunState; game: GameApi }) {
+  const { state, run, game } = props;
+  const act = getAct(GAME_DATA, run.actId);
+  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
   const at = routeAt(run, act, next);
-  if (!at) return null;
+  if (!at || at.second) return null;
+  const chosen = run.routes?.[String(at.fork)];
   const kinds = ROUTE_KINDS.filter((k) => k !== "thief" || thiefTrailOpen(state, GAME_DATA));
   return (
-    <div className="route-choice" aria-label="Route">
-      <span className="small">
-        {at.second
-          ? `On the ${ROUTE_TEXT[at.kind].name}`
-          : `A fork: your path for Stages ${at.fork}–${at.fork + 1}`}
-      </span>
-      {!at.second && (
-        <div className="route-options" role="radiogroup" aria-label="Choose a path">
-          {kinds.map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={at.kind === k}
-              className={`route-option title-font${at.kind === k ? " chosen" : ""}`}
-              title={ROUTE_TEXT[k].text}
-              onClick={() => game.dispatch({ type: "chooseRoute", route: k })}
-            >
-              {ROUTE_TEXT[k].name.split(" ")[0]}
-            </button>
-          ))}
-        </div>
-      )}
-      <span className="sub small">{ROUTE_TEXT[at.kind].text}</span>
+    <div className="path-cards" role="radiogroup" aria-label="Choose a path">
+      {kinds.map((k) => (
+        <button
+          key={k}
+          type="button"
+          role="radio"
+          aria-checked={chosen === k}
+          aria-label={ROUTE_TEXT[k].name}
+          className={`path-card panel-card path-${k}${chosen === k ? " chosen" : ""}`}
+          onClick={() => game.dispatch({ type: "chooseRoute", route: k })}
+        >
+          <span className="path-sigil">
+            <Icon name={ROUTE_TEXT[k].icon} size={34} />
+          </span>
+          <strong className="title-font">{ROUTE_TEXT[k].name}</strong>
+          <span className="sub">{ROUTE_TEXT[k].text}</span>
+        </button>
+      ))}
     </div>
   );
 }
 
-export function UpNext(props: {
-  run: RunState;
-  prestige: number;
-  state?: GameState;
-  game?: GameApi;
-}) {
+/** The path taken at a fork, while it lasts. */
+function PathRow(props: { run: RunState; act: ActData; next: number }) {
+  const at = routeAt(props.run, props.act, props.next);
+  const chosen = at && props.run.routes?.[String(at.fork)];
+  if (!at || !chosen) return null;
+  return (
+    <div className="up-row" title={ROUTE_TEXT[chosen].text}>
+      <Icon name={ROUTE_TEXT[chosen].icon} size={16} color="var(--heat)" />
+      <span>{ROUTE_TEXT[chosen].name}</span>
+      <span className="sub">
+        Stages {at.fork}–{at.fork + 1}
+      </span>
+    </div>
+  );
+}
+
+export function UpNext(props: { run: RunState; prestige: number }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const stages = act.stages;
@@ -317,9 +380,7 @@ export function UpNext(props: {
           </div>
         ) : null;
       })}
-      {props.state && props.game && (
-        <RouteChoice state={props.state} run={run} act={act} next={next} game={props.game} />
-      )}
+      <PathRow run={run} act={act} next={next} />
       {shrine !== undefined && (
         <div className="up-row">
           <span className="shrine-mark" />
@@ -377,6 +438,59 @@ export function BountyCard(props: { run: RunState }) {
       </div>
       <span className="small">{view.text}</span>
     </section>
+  );
+}
+
+/**
+ * The big moments of the last fight, in the middle under the title (Timo: not hidden in the
+ * hero card): a Waymark, the Hearth Embers before the boss, an Ashborn level.
+ */
+export function RunMoments(props: { state: GameState; run: RunState }) {
+  const { state, run } = props;
+  const rewards = run.rewards;
+  if (!rewards) return null;
+  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
+  const hearth = hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
+  const moments: { key: string; icon: IconName; name: string; sub: string }[] = [
+    ...(rewards.waymark
+      ? [{ key: "waymark", icon: "tree" as const, name: "Waymark!", sub: "+1 Skill Point" }]
+      : []),
+    ...(hearth
+      ? [
+          {
+            key: "hearth",
+            icon: "fire" as const,
+            name: "Hearth Embers",
+            sub: `+${Math.round(PROGRESSION.hearthEmbers * 100)} % Life`,
+          },
+        ]
+      : []),
+    ...(rewards.ashbornLevels
+      ? [
+          {
+            key: "ashborn",
+            icon: "flame" as const,
+            name: `Ashborn ${state.hero.ashborn?.level ?? ""}!`,
+            sub: "+1 Ashborn point",
+          },
+        ]
+      : []),
+  ];
+  if (!moments.length) return null;
+  return (
+    <div className="run-moments" role="status">
+      {moments.map((m) => (
+        <div key={m.key} className={`run-moment panel-card moment-${m.key}`}>
+          <span className="moment-sigil">
+            <Icon name={m.icon} size={26} />
+          </span>
+          <div className="bounty-paid-text">
+            <strong className="title-font">{m.name}</strong>
+            <span className="sub">{m.sub}</span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

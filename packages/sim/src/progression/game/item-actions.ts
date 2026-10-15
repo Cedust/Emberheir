@@ -4,12 +4,18 @@ import { learnFromItem } from "../codex";
 import {
   addToGrid,
   INVENTORY_SIZE,
-  packGrid,
   placeAt,
-  STASH_SIZE,
   type GridPosition,
   type PlacedItem,
 } from "../inventory";
+import {
+  addToStash,
+  placeInStash,
+  removeFromStash,
+  sortStashTab,
+  STASH_TABS,
+  tabOf,
+} from "../stash";
 import { requireCamp } from "./guards";
 import { equipBlockReason, salvageValue, targetSlot, unequipBlockReason } from "./item-rules";
 import { fail, type GameData, type GameState } from "./state";
@@ -36,8 +42,12 @@ export function equipFromInventory(
     targetSlot(placed.item, data, state.hero.equipment, preferred) ?? fail("No slot for this item");
   const old = state.hero.equipment[slot];
   const source = (fromStash ? state.stash : state.inventory).filter((p) => p !== placed);
-  const size = fromStash ? STASH_SIZE : INVENTORY_SIZE;
-  const back = old ? (addToGrid(source, old, data.items, size) ?? fail("No room")) : source;
+  // The old item goes back where the new one came from (the same stash tab).
+  const back = !old
+    ? source
+    : ((fromStash
+        ? addToStash(source, old, data.items, tabOf(placed))
+        : addToGrid(source, old, data.items, INVENTORY_SIZE)) ?? fail("No room"));
   return {
     ...state,
     ...(fromStash ? { stash: back } : { inventory: back }),
@@ -45,33 +55,39 @@ export function equipFromInventory(
   };
 }
 
+/**
+ * Supply Wagon: an item between the inventory and the stash. Into the stash it goes to `tab`
+ * (without one: the first tab with room).
+ */
 export function moveItem(
   state: GameState,
   data: GameData,
   itemId: string,
   to: "inventory" | "stash",
   at?: GridPosition,
+  tab?: number,
 ): GameState {
   requireCamp(state);
   const source = to === "stash" ? state.inventory : state.stash;
   const placed =
     source.find((p) => p.item.id === itemId) ??
     fail(`Item not in the ${to === "stash" ? "inventory" : "stash"}`);
-  const target = to === "stash" ? state.stash : state.inventory;
-  const size = to === "stash" ? STASH_SIZE : INVENTORY_SIZE;
-  const moved =
+  if (to === "stash") {
+    const stash = addToStash(state.stash, placed.item, data.items, tab, at) ?? fail("No room");
+    return { ...state, inventory: state.inventory.filter((p) => p !== placed), stash };
+  }
+  const inventory =
     (at
-      ? placeAt(target, placed.item, at.x, at.y, data.items, size)
-      : addToGrid(target, placed.item, data.items, size)) ?? fail("No room");
-  const rest = source.filter((p) => p !== placed);
-  return to === "stash"
-    ? { ...state, inventory: rest, stash: moved }
-    : { ...state, inventory: moved, stash: rest };
+      ? placeAt(state.inventory, placed.item, at.x, at.y, data.items)
+      : addToGrid(state.inventory, placed.item, data.items)) ?? fail("No room");
+  return { ...state, inventory, stash: removeFromStash(state.stash, itemId) };
 }
 
-export function sortStash(state: GameState, data: GameData): GameState {
+/** Re-packs one stash tab. */
+export function sortStash(state: GameState, data: GameData, tab = 0): GameState {
   requireCamp(state);
-  return { ...state, stash: packGrid(state.stash, data.items, STASH_SIZE) };
+  if (!Number.isInteger(tab) || tab < 0 || tab >= STASH_TABS) return fail("No such stash tab");
+  return { ...state, stash: sortStashTab(state.stash, data.items, tab) };
 }
 
 export function unequip(
@@ -116,21 +132,25 @@ export function discard(state: GameState, itemId: string): GameState {
   return { ...state, inventory: state.inventory.filter((p) => p !== placed) };
 }
 
-/** Drag & drop inside a grid: the item moves to `at` if it fits there. */
+/**
+ * Drag & drop inside a grid: the item moves to `at` if it fits there. A stashed item may move
+ * to another stash tab (`tab`; default its own).
+ */
 export function placeItem(
   state: GameState,
   data: GameData,
   itemId: string,
-  at: GridPosition,
+  at?: GridPosition,
+  tab?: number,
 ): GameState {
   if (state.run?.phase === "fight") return fail("Not during a fight");
-  const inStash = state.stash.some((p) => p.item.id === itemId);
+  const inStash = state.stash.find((p) => p.item.id === itemId);
   if (inStash) {
     requireCamp(state);
-    const placed = state.stash.find((p) => p.item.id === itemId) ?? fail("No such item");
-    const stash = placeAt(state.stash, placed.item, at.x, at.y, data.items, STASH_SIZE);
+    const stash = placeInStash(state.stash, itemId, data.items, tab ?? tabOf(inStash), at);
     return stash ? { ...state, stash } : fail("No room there");
   }
+  if (!at) return fail("No spot given");
   const placed = findInInventory(state, itemId);
   const inventory = placeAt(state.inventory, placed.item, at.x, at.y, data.items);
   return inventory ? { ...state, inventory } : fail("No room there");
