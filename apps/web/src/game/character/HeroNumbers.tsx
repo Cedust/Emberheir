@@ -132,7 +132,7 @@ export function Pill(props: {
 }
 
 /**
- * Armor as a riveted steel plate in front of Life as the Battle HUD draws it: a red bar, with
+ * Life as the Battle HUD draws it, with Armor as a riveted steel plate below: a red bar, with
  * Barrier as the blue layer that takes hits first (its share of the bar is its share of Life plus
  * Barrier).
  */
@@ -144,10 +144,6 @@ export function Vitals(props: { life: number; barrier: number; armor: number }) 
   const barrier = useNoteHover(DEFENSE_NOTES.barrier);
   return (
     <span className="vitals">
-      <span className="armor-plate" tabIndex={0} {...armor}>
-        <Icon name="armor" size={18} />
-        <b className="mono">{fmt(props.armor)}</b>
-      </span>
       <span className="life-bar">
         <span
           className="life-bar-life"
@@ -168,11 +164,15 @@ export function Vitals(props: { life: number; barrier: number; armor: number }) 
           </span>
         )}
       </span>
-      <span className="vitals-name vitals-armor">Armor</span>
       <span className="vitals-names">
         <span className="vitals-name vitals-life">Life</span>
         {props.barrier > 0 && <span className="vitals-name vitals-barrier">Barrier</span>}
       </span>
+      <span className="armor-plate" tabIndex={0} {...armor}>
+        <Icon name="armor" size={18} />
+        <b className="mono">{fmt(props.armor)}</b>
+      </span>
+      <span className="vitals-name vitals-armor">Armor</span>
     </span>
   );
 }
