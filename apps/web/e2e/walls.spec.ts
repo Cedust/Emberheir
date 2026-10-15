@@ -13,6 +13,6 @@ test("a Gatekeeper guards the Waymark of the newest act", async ({ page }) => {
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   const plaque = page.getByLabel(/plaque$/).last();
   await expect(plaque.getByText("GATEKEEPER")).toBeVisible();
-  await page.screenshot({ path: "test-results/gatekeeper.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/gatekeeper.png` });
   expect(errors).toEqual([]);
 });

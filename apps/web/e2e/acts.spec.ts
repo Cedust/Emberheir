@@ -27,7 +27,7 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   await expect(omens.getByRole("radio")).toHaveCount(2);
   await omens.getByRole("radio").first().click();
   await expect(trip.getByRole("button", { name: /SET OUT · ACT 1/i })).toBeEnabled();
-  await page.screenshot({ path: "test-results/omen-choice.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/omen-choice.png` });
   // The newest act has no Omen: go on to the Rotwood.
   await trip.getByRole("radio", { name: /Rotwood/ }).click();
   await expect(trip.getByRole("radiogroup", { name: "Omen" })).toHaveCount(0);
