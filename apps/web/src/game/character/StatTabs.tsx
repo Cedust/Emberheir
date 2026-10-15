@@ -40,11 +40,10 @@ const NOTES = {
     kind: "Offense",
     explain: "How often you attack. A Sword starts at 100; higher is faster.",
   },
-  critChance: { name: "Crit Chance", kind: "Offense", explain: "Your chance to hit extra hard." },
-  critDamage: {
-    name: "Crit Damage",
+  critChance: {
+    name: "Crit Chance",
     kind: "Offense",
-    explain: "A crit deals this much of a normal hit. It is the same for every hero.",
+    explain: "Your chance to hit extra hard: a crit deals 150 % of a normal hit.",
   },
   ailmentEffect: {
     name: "Ailment Effect",
@@ -184,37 +183,36 @@ function BonusTable(props: { stats: DerivedStats }) {
   );
 }
 
+/** The big Damage per Second number; its tooltip says what goes into it. */
+function Dps(props: { value: number }) {
+  const hover = useNoteHover(NOTES.dps);
+  return (
+    <span className="hero-dps" tabIndex={0} {...hover}>
+      <b className="mono">{fmt(props.value)}</b>
+      <span className="hero-unit">per Second</span>
+    </span>
+  );
+}
+
 export function OffensePanel(props: { stats: DerivedStats; dps: number; weapon: WeaponNumbers }) {
   const { stats, weapon } = props;
   return (
     <div className="hero-numbers">
-      <Plaque className="hero-damage" label="Damage" note={NOTES.dps}>
-        <span className="hero-dps">
-          <b className="mono">{fmt(props.dps)}</b>
-          <span className="hero-unit">per Second</span>
+      <Plaque className="hero-damage" label="Damage">
+        <span className="hero-damage-row">
+          <Dps value={props.dps} />
+          <span className="hero-pills hero-pills-stack">
+            <Pill icon="sword" label={weapon.name}>
+              {fmt(weapon.min)}–{fmt(weapon.max)}
+            </Pill>
+            <Pill icon="cycle" label="Speed" note={NOTES.speed}>
+              {speedValue(stats.attackSpeed)}
+            </Pill>
+            <Pill icon="target" label="Crit Chance" note={NOTES.critChance}>
+              {pct(stats.critChance)}
+            </Pill>
+          </span>
         </span>
-        <span className="hero-pills">
-          <Pill icon="sword" label={weapon.name}>
-            {fmt(weapon.min)}–{fmt(weapon.max)}
-          </Pill>
-        </span>
-      </Plaque>
-      <Plaque className="hero-hits" label="Hits">
-        <div className="hero-res three">
-          <Medal
-            icon="cycle"
-            label="Speed"
-            value={String(speedValue(stats.attackSpeed))}
-            note={NOTES.speed}
-          />
-          <Medal
-            icon="target"
-            label="Crit Chance"
-            value={pct(stats.critChance)}
-            note={NOTES.critChance}
-          />
-          <Medal icon="execute" label="Crit Damage" value="150 %" note={NOTES.critDamage} />
-        </div>
       </Plaque>
       <Plaque className="hero-bonus" label="Bonuses">
         <BonusTable stats={stats} />

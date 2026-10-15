@@ -7693,3 +7693,32 @@
   background: linear-gradient(180deg, #f0cf8e, var(--k-brass, #c9a063) 60%, #9a7338);
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
 }
+
+/* Offense: the big number left, weapon, Speed and Crit Chance stacked on the right. */
+.stage .hero-damage-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.stage .hero-damage-row .hero-dps {
+  cursor: help;
+}
+
+.stage .hero-pills-stack {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+  margin-top: 0;
+}
+
+.stage .hero-pills-stack .hero-pill {
+  min-width: 190px;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.stage .hero-pills-stack .hero-pill b {
+  margin-left: auto;
+}
