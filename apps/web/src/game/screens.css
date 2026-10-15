@@ -2456,7 +2456,10 @@
 /* The hero (ui-ux-plan-v1.md 4.2): level on top, the painted Heir among the slots, four numbers. */
 .stage .hero-column {
   align-items: center;
-  justify-content: center;
+}
+
+.stage .hero-column > .hero-doll {
+  margin: auto 0;
 }
 
 .stage .hero-level {
@@ -2531,11 +2534,12 @@
 
 .stage .hero-numbers {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   grid-template-areas:
-    "damage damage"
-    "life defense"
-    "resist resist";
+    "damage"
+    "life"
+    "defense"
+    "resist";
   gap: 12px;
 }
 
@@ -2627,68 +2631,78 @@
   color: #f6ead2;
 }
 
-.stage .hero-delta {
-  font-family: var(--font-mono);
-  font-size: 17px;
-  font-weight: 700;
-}
-
-.stage .hero-delta.up {
-  color: #6fe39a;
-}
-
-.stage .hero-delta.down {
-  color: #ff8a6a;
-}
-
-/* Life: a red globe with a glassy highlight; Barrier wraps it in a blue ring. */
-.stage .hero-life {
-  align-items: center;
-}
-
-.stage .hero-life .hero-card-label {
-  align-self: flex-start;
-}
-
-.stage .life-orb {
-  position: relative;
-  width: 124px;
-  height: 124px;
-  margin: 6px 0 4px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
-  background: radial-gradient(circle at 50% 62%, #d8242e, #8a0d18 62%, #3e0409);
+/* Life as in the Battle HUD: a red bar, Barrier as the blue layer that takes hits first. */
+.stage .life-bar {
+  display: flex;
+  height: 46px;
+  margin-top: 2px;
+  overflow: hidden;
+  border-radius: 6px;
   border: 2px solid #1a0d08;
   box-shadow:
-    0 0 0 2px var(--k-brass, #c9a063),
-    0 0 14px rgb(220 30 40 / 0.45),
-    inset 0 -8px 14px rgb(0 0 0 / 0.45);
+    0 0 0 1.5px var(--k-brass, #c9a063),
+    0 0 12px rgb(220 30 40 / 0.3);
 }
 
-.stage .life-orb.has-barrier {
+.stage .life-bar > span {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  white-space: nowrap;
   box-shadow:
-    0 0 0 2px var(--k-brass, #c9a063),
-    0 0 0 5px #4fa8ff,
-    0 0 16px rgb(80 170 255 / 0.55),
-    inset 0 -8px 14px rgb(0 0 0 / 0.45);
+    inset 0 2px 0 rgb(255 255 255 / 0.22),
+    inset 0 -10px 14px rgb(0 0 0 / 0.35);
 }
 
-.stage .life-orb-glass {
-  position: absolute;
-  left: 16%;
-  top: 9%;
-  width: 46%;
-  height: 30%;
-  border-radius: 50%;
-  background: radial-gradient(closest-side, rgb(255 255 255 / 0.5), transparent);
+.stage .life-bar-life {
+  flex: 1 1 auto;
+  background: linear-gradient(180deg, #e0343c, #a3121c 55%, #6e0811);
 }
 
-.stage .life-orb b {
-  position: relative;
-  font-size: 26px;
-  color: #fff4ec;
+.stage .life-bar > .life-bar-barrier {
+  flex: 0 0 auto;
+  min-width: max-content;
+  justify-content: flex-end;
+  border-left: 2px solid #0d1a2a;
+  background: linear-gradient(180deg, #6cb8ff, #2f74c4 55%, #1c4a86);
+}
+
+.stage .life-bar b {
+  font-size: 24px;
+  color: #fff6ee;
   text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+.stage .life-meter {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .life-bar-legend {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stage .life-bar-name {
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: #e0656b;
+}
+
+.stage .life-bar-name-barrier {
+  color: #6cb8ff;
+}
+
+.stage .hero-def-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 28px;
 }
 
 .stage .hero-table {

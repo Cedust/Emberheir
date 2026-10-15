@@ -45,16 +45,15 @@ export interface StatsBefore {
 
 /**
  * The Overview tab (ui-ux-plan-v1.md 4.2): the hero's key numbers with room to grow. Damage per
- * second on top, Life as an orb next to Defense, the four Resistances in their colours.
+ * second on top, then Life as a bar, Defense and the four Resistances, one row each.
  */
 export function HeroNumbers(props: {
   stats: DerivedStats;
   dps: number;
   weapon: { name: string; min: number; max: number };
-  before?: StatsBefore | undefined;
   resNote: NoteHover;
 }) {
-  const { stats, before, weapon } = props;
+  const { stats, weapon } = props;
   const res: Record<Element, number> = {
     fire: stats.fireResistance,
     cold: stats.coldResistance,
@@ -67,7 +66,6 @@ export function HeroNumbers(props: {
         <span className="hero-dps">
           <b className="mono">{fmt(props.dps)}</b>
           <span className="hero-unit">per second</span>
-          <Delta now={props.dps} was={before?.dps} />
         </span>
         <span className="hero-pills">
           <Pill icon="sword" label={weapon.name}>
@@ -82,33 +80,38 @@ export function HeroNumbers(props: {
         </span>
       </Plaque>
       <Plaque className="hero-life" label="Life" note={LIFE_NOTE}>
-        <LifeOrb life={stats.maxLife} barrier={stats.barrier} />
-        <Delta now={stats.maxLife} was={before?.stats.maxLife} />
+        <LifeBar life={stats.maxLife} barrier={stats.barrier} />
       </Plaque>
       <Plaque className="hero-defense" label="Defense">
-        <table className="hero-table">
-          <tbody>
-            <Row icon="armor" label="Armor" value={fmt(stats.armor)} note={DEFENSE_NOTES.armor} />
-            <Row
-              icon="boots"
-              label="Evasion"
-              value={pct(stats.evasion)}
-              note={DEFENSE_NOTES.evasion}
-            />
-            <Row
-              icon="shield"
-              label="Block"
-              value={pct(stats.blockChance)}
-              note={DEFENSE_NOTES.block}
-            />
-            <Row
-              icon="shell"
-              label="Barrier"
-              value={fmt(stats.barrier)}
-              note={DEFENSE_NOTES.barrier}
-            />
-          </tbody>
-        </table>
+        <div className="hero-def-grid">
+          <table className="hero-table">
+            <tbody>
+              <Row icon="armor" label="Armor" value={fmt(stats.armor)} note={DEFENSE_NOTES.armor} />
+              <Row
+                icon="shell"
+                label="Barrier"
+                value={fmt(stats.barrier)}
+                note={DEFENSE_NOTES.barrier}
+              />
+            </tbody>
+          </table>
+          <table className="hero-table">
+            <tbody>
+              <Row
+                icon="boots"
+                label="Evasion"
+                value={pct(stats.evasion)}
+                note={DEFENSE_NOTES.evasion}
+              />
+              <Row
+                icon="shield"
+                label="Block"
+                value={pct(stats.blockChance)}
+                note={DEFENSE_NOTES.block}
+              />
+            </tbody>
+          </table>
+        </div>
       </Plaque>
       <Plaque className="hero-resist" label="Resistances">
         <div className="hero-res">
@@ -172,12 +175,31 @@ function Pill(props: { icon: IconName; label: string; children: ReactNode }) {
   );
 }
 
-/** Diablo's life globe: the number in a red orb, Barrier as a blue ring around it. */
-function LifeOrb(props: { life: number; barrier: number }) {
+/**
+ * Life as the Battle HUD draws it: a red bar, with Barrier as the blue layer in front that takes
+ * hits first (its share of the bar is its share of Life plus Barrier).
+ */
+function LifeBar(props: { life: number; barrier: number }) {
+  const total = props.life + props.barrier;
+  const share = total > 0 ? (props.barrier / total) * 100 : 0;
   return (
-    <span className={`life-orb${props.barrier > 0 ? " has-barrier" : ""}`}>
-      <span className="life-orb-glass" aria-hidden="true" />
-      <b className="mono">{fmt(props.life)}</b>
+    <span className="life-meter">
+      <span className="life-bar">
+        <span className="life-bar-life" style={{ flexBasis: `${100 - share}%` }}>
+          <b className="mono">{fmt(props.life)}</b>
+        </span>
+        {props.barrier > 0 && (
+          <span className="life-bar-barrier" style={{ flexBasis: `${share}%` }}>
+            <b className="mono">{fmt(props.barrier)}</b>
+          </span>
+        )}
+      </span>
+      {props.barrier > 0 && (
+        <span className="life-bar-legend">
+          <span className="life-bar-name">Life</span>
+          <span className="life-bar-name life-bar-name-barrier">Barrier</span>
+        </span>
+      )}
     </span>
   );
 }
@@ -208,14 +230,5 @@ function Res(props: { element: Element; value: number; note: NoteHover }) {
       <b className="mono">{pct(props.value)}</b>
       <span className="hero-res-name">{RES_NAMES[props.element]}</span>
     </span>
-  );
-}
-
-function Delta(props: { now: number; was: number | undefined }) {
-  if (props.was === undefined) return null;
-  const d = Math.round(props.now) - Math.round(props.was);
-  if (d === 0) return null;
-  return (
-    <span className={`hero-delta ${d > 0 ? "up" : "down"}`}>{d > 0 ? `+${fmt(d)}` : fmt(d)}</span>
   );
 }

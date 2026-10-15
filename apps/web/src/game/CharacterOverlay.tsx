@@ -461,7 +461,6 @@ export function CharacterOverlay(props: {
                   min: setup.weapon.damage.min,
                   max: setup.weapon.damage.max,
                 }}
-                before={before}
                 resNote={resNote}
               />
             )}
