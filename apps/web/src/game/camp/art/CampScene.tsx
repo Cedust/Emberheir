@@ -213,7 +213,7 @@ const FLAME_MID =
 const FLAME_CORE =
   "M704 548 C700 534 708 522 714 510 C718 520 722 522 724 514 C732 526 736 538 732 548 Z";
 
-/** The Hearthfire's flames; braziers reuse them scaled down (base center at 720, 548). */
+/** The Hearthfire's flames (base center at 720, 548). */
 function Flames(props: { transform?: string }) {
   return (
     <g className="flames" transform={props.transform}>
@@ -230,36 +230,6 @@ function Flames(props: { transform?: string }) {
     </g>
   );
 }
-
-/** A standing brazier; x, y is where its legs meet the ground. */
-function Brazier(props: { x: number; y: number }) {
-  const { x, y } = props;
-  const k = 0.32;
-  return (
-    <g>
-      <ellipse cx={x} cy={y + 2} rx="24" ry="5" fill="#000" opacity="0.35" />
-      <L
-        d={`M${x - 20} ${y} L${x - 10} ${y - 44} M${x + 20} ${y} L${x + 10} ${y - 44} M${x} ${y + 2} L${x} ${y - 40}`}
-        color="#2a2622"
-        w={5}
-      />
-      <L
-        d={`M${x - 20} ${y} L${x - 10} ${y - 44} M${x + 20} ${y} L${x + 10} ${y - 44} M${x} ${y + 2} L${x} ${y - 40}`}
-        color="#5a5a62"
-        w={2.4}
-      />
-      <Flames transform={`translate(${f(x - 720 * k)} ${f(y - 54 - 548 * k)}) scale(${k})`} />
-      <S d={`M${x - 24} ${y - 54} Q${x} ${y - 30} ${x + 24} ${y - 54} Z`} fill="#4a4a52" w={2.2} />
-      <ellipse cx={x} cy={y - 54} rx="24" ry="3.5" fill="#ff8a3a" stroke={INK} strokeWidth="2" />
-    </g>
-  );
-}
-
-/** Where the braziers stand, in scene coordinates. */
-const BRAZIERS = [
-  { x: 300, y: 572 },
-  { x: 1150, y: 640 },
-];
 
 /** The painted lanterns (string between the tents, tent doors, wagons), in scene coordinates. */
 const LANTERNS = [
@@ -300,17 +270,8 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
       strength: 0.5,
       flicker: "fire",
     },
-    ...BRAZIERS.map((b) => ({
-      x: b.x,
-      y: b.y - 70,
-      rx: 170,
-      ry: 120,
-      color: "#ff9a40",
-      strength: 0.5,
-      flicker: "fire" as const,
-    })),
     // Marisha's corner by the Supply Wagon.
-    { x: 200, y: 430, rx: 110, ry: 90, color: "#ffb060", strength: 0.35, flicker: "soft" },
+    { x: 250, y: 480, rx: 110, ry: 90, color: "#ffb060", strength: 0.35, flicker: "soft" },
     // Eldrin on the signpost.
     {
       x: 1300 + SIGNPOST_DX,
@@ -327,8 +288,8 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
     ...(opts.orb
       ? [
           {
-            x: 420,
-            y: 350,
+            x: 415,
+            y: 380,
             rx: 80,
             ry: 80,
             color: "#6fd3ff",
@@ -433,9 +394,6 @@ export function CampFx(props: { w: number; h: number; ox: number }) {
           ))}
         </g>
       </g>
-      {BRAZIERS.map((b) => (
-        <Brazier key={b.x} x={b.x} y={b.y} />
-      ))}
     </svg>
   );
 }
