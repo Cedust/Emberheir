@@ -53,7 +53,6 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await expect(camp).toContainText("Generation 2");
 
   await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
-  await page.getByRole("button", { name: "Open Legacy" }).click();
   const legacy = page.getByRole("region", { name: "Legacy" });
   // Round Shield and Body Armor came through the fire (the weapon is no item: Weapon Mastery).
   await expect(legacy).toContainText("2 / 10 worn");

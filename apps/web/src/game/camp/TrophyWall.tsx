@@ -18,8 +18,6 @@ const ROWS: { readonly id: string; readonly name: string; readonly uniques: Uniq
     },
   ];
 
-export const TROPHY_COUNT = ROWS.reduce((n, r) => n + r.uniques.length, 0);
-
 /**
  * The Trophy Wall at the Hearthfire (Teil 3 B): silhouettes of every Unique, sorted by boss; the
  * ones ever found are painted in. Permanent like the Runeword Codex.
@@ -62,12 +60,6 @@ export function TrophyWall(props: { state: GameState }) {
         ))}
       </div>
       <aside className="trophy-side">
-        <section className="panel-card trophy-count">
-          <span className="eyebrow">TROPHY WALL</span>
-          <span className="title-font big">
-            {found.size} / {TROPHY_COUNT}
-          </span>
-        </section>
         {unique ? (
           <section className="panel-card trophy-detail special-unique">
             <span className="eyebrow">{row?.name.toUpperCase()}</span>

@@ -17,7 +17,6 @@ test("full collections raise their banners in the Camp", async ({ page }) => {
     .getByRole("button", { name: /Hearthfire/ })
     .first()
     .click();
-  await page.getByRole("button", { name: /Open Legacy/i }).click();
   await page.getByRole("tab", { name: /Collections/ }).click();
   const goals = page.getByLabel("Collections");
   await expect(goals.getByLabel("Trophy Wall")).toContainText("is raised");
@@ -42,8 +41,7 @@ test("a full Lineage hangs the ancestor portrait", async ({ page }) => {
     .getByRole("button", { name: /Hearthfire/ })
     .first()
     .click();
-  await page.getByRole("button", { name: /Open Legacy/i }).click();
-  await page.getByRole("tab", { name: /Collections/ }).click();
+  await page.getByRole("tab", { name: "Lineage" }).click();
   const lineage = page.getByLabel("Lineage", { exact: true });
   await expect(lineage).toContainText("Step 5 of 5");
   await expect(lineage).toContainText("+10 % Life");

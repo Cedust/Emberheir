@@ -10,7 +10,7 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
 
   const camp = page.getByRole("region", { name: "Camp" });
   await expect(camp).toContainText("Camp at the Rotwood");
-  const road = page.getByRole("radiogroup");
+  const road = camp.getByRole("radiogroup", { name: "Road" });
   await expect(road.getByRole("radio")).toHaveCount(7);
   // Acts 3 to 7 open with later Prestiges.
   for (const name of [/Ember Wastes/, /Frost Peaks/, /Storm Spires/, /Void Rift/, /Emberfall/]) {
@@ -18,18 +18,20 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   }
   await expect(road.getByRole("radio", { name: /Rotwood/ })).toBeChecked();
 
-  // Revisit Act 1: an old act of the run burns under one of two Omens.
+  // Revisit Act 1: an old act of the run burns under one of two Omens, chosen at Eldrin.
   await road.getByRole("radio", { name: /Ashen Fields/ }).click();
-  await expect(page.getByRole("button", { name: "CHOOSE AN OMEN" })).toBeDisabled();
-  const omens = page.getByRole("radiogroup", { name: "Omen" });
+  await camp.getByRole("button", { name: "CHOOSE AN OMEN" }).click();
+  const trip = page.getByRole("region", { name: "Eldrin, The Road" });
+  await expect(trip.getByRole("button", { name: "CHOOSE AN OMEN" })).toBeDisabled();
+  const omens = trip.getByRole("radiogroup", { name: "Omen" });
   await expect(omens.getByRole("radio")).toHaveCount(2);
   await omens.getByRole("radio").first().click();
-  await expect(page.getByRole("button", { name: /SET OUT · ACT 1/i })).toBeEnabled();
+  await expect(trip.getByRole("button", { name: /SET OUT · ACT 1/i })).toBeEnabled();
   await page.screenshot({ path: "test-results/omen-choice.png" });
   // The newest act has no Omen: go on to the Rotwood.
-  await road.getByRole("radio", { name: /Rotwood/ }).click();
-  await expect(page.getByRole("radiogroup", { name: "Omen" })).toHaveCount(0);
-  await page.getByRole("button", { name: /SET OUT · ACT 2/i }).click();
+  await trip.getByRole("radio", { name: /Rotwood/ }).click();
+  await expect(trip.getByRole("radiogroup", { name: "Omen" })).toHaveCount(0);
+  await trip.getByRole("button", { name: /SET OUT · ACT 2/i }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toContainText("Rotwood");
   expect(errors).toEqual([]);
 });

@@ -8,7 +8,6 @@ import { isTypingTarget } from "../ui/kit/hotkeys";
 import { CHEATS_ENABLED, CheatPanel } from "./CheatPanel";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
-import { TriggerCodex } from "./camp/TriggerCodex";
 import { IntermissionView } from "./intermission/IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
 import { EndingScreen, NoticeScreen } from "./NoticeScreen";
@@ -24,8 +23,8 @@ import type { PersonaId } from "./camp/personaDefs";
 import { StashView } from "./camp/StashView";
 import { useGame } from "./useGame";
 
-type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "codex" | "cheats" | null;
-type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | null;
+type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "cheats" | null;
+type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | "road" | "nan" | null;
 
 /** The game: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
 export function GameApp() {
@@ -101,9 +100,6 @@ export function GameApp() {
       case "compendium":
         setOverlay("compendium");
         break;
-      case "codex":
-        setOverlay("codex");
-        break;
       case "kaelen":
         setKaelenTab("tree");
         setCampScreen("kaelen");
@@ -175,7 +171,14 @@ export function GameApp() {
   } else if (!run) {
     const close = () => setCampScreen(null);
     const camp = (
-      <CampView state={state} game={game} onOpen={openCamp} onMenu={() => setOverlay("menu")} />
+      <CampView
+        state={state}
+        game={game}
+        panel={campScreen === "road" || campScreen === "nan" ? campScreen : null}
+        onOpen={openCamp}
+        onClosePanel={close}
+        onMenu={() => setOverlay("menu")}
+      />
     );
     // Persona and Supply Wagon windows float over the dimmed Camp (ui-ux-plan-v1.md 3.2);
     // Kaelen and the Legacy need the whole stage and cover it.
@@ -268,9 +271,6 @@ export function GameApp() {
           />
         )}
         {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
-        {state && overlay === "codex" && (
-          <TriggerCodex state={state} onClose={() => setOverlay(null)} />
-        )}
         {state && overlay === "menu" && (
           <MenuOverlay
             settings={settings}

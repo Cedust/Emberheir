@@ -120,7 +120,8 @@ export function RuneBoard(props: {
   return (
     <div className="codex" role="list" aria-label="Runeword Codex">
       {RUNEWORDS.map((w) => {
-        const known = w.runes.every((id) => found.has(id));
+        // A Runeword forged once stays known, even by a Heir who has not found its Runes yet.
+        const known = forged.has(w.id) || w.runes.every((id) => found.has(id));
         const slots = [...new Set(w.slots.map((s) => SLOT_NAMES[s]))].join(" or ");
         return (
           <div

@@ -10,6 +10,8 @@ test("after the first Prestige a Draught is brewed for the trip and shows in the
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
+  // Draughts are brewed for the trip at Eldrin.
+  await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   const draughts = page.getByRole("group", { name: "Draught" });
   const iron = draughts.getByRole("button", { name: "Iron Draught" });
   await expect(iron).toHaveAttribute("aria-pressed", "false");

@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveWithCodex, seedSave } from "./fixtures";
 
-test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto a ring", async ({
+test("The Trigger Codex at the Hearthfire shows learned parts, Liora kindles a trigger onto a ring", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -10,10 +10,12 @@ test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto 
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
-  await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
-  await page.getByRole("button", { name: "Trigger Codex" }).click();
-  const codex = page.getByRole("dialog", { name: "Trigger Codex" });
-  await expect(codex).toContainText("4 / 26");
+  await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
+  await page.getByRole("tab", { name: /Collections/ }).click();
+  const card = page.getByRole("radio", { name: "Trigger Codex" });
+  await expect(card).toContainText("4 / 26");
+  await card.click();
+  const codex = page.getByRole("region", { name: "Trigger Codex" });
   await codex.getByRole("listitem", { name: "On Crit" }).click();
   await expect(codex).toContainText("Liora can kindle it");
   // Unknown parts show where they live.
@@ -21,7 +23,6 @@ test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto 
   await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Liora, Mystic" }).click();
-  await page.getByRole("button", { name: /Open/ }).click();
   await page.getByRole("button", { name: /^Kindle/ }).click();
   await page.getByRole("button", { name: "Sturdy Iron Ring" }).click();
   await page

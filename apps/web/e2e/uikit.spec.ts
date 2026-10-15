@@ -38,7 +38,7 @@ test("one key scheme in the Camp: B, L, Q/E and Esc", async ({ page }) => {
 
   await page.keyboard.press("l");
   await page.keyboard.press("e");
-  await expect(page.getByRole("tab", { name: /Trophy Wall/ })).toHaveAttribute(
+  await expect(page.getByRole("tab", { name: /Collections/ })).toHaveAttribute(
     "aria-selected",
     "true",
   );

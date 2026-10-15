@@ -16,8 +16,12 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
 import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
-import { collections } from "../collections";
-import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
+import { type CollectionId, collections } from "../collections";
+import { RuneBoard } from "./RuneViews";
+import { TrophyWall } from "./TrophyWall";
+import { TriggerCodex } from "./TriggerCodex";
+
+type LegacyTab = "gear" | "collections" | "lineage";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
   { slot: "helm", icon: "helm" },
@@ -41,13 +45,14 @@ const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
 export function LegacyView(props: {
   state: GameState;
   onClose: () => void;
-  initialTab?: "gear" | "trophies" | "collections";
+  initialTab?: LegacyTab;
 }) {
   const { state } = props;
   const { legacy } = state;
-  const [tab, setTab] = useState<"gear" | "trophies" | "collections">(props.initialTab ?? "gear");
+  const [tab, setTab] = useState<LegacyTab>(props.initialTab ?? "gear");
   const goals = collections(state);
   const full = goals.filter((g) => g.found >= g.total).length;
+  const [pick, setPick] = useState<CollectionId>("trophies");
   const generation = legacy.prestige + 1;
   const [sel, setSel] = useState<EquipmentSlot>("body");
   const wornIn = (slot: EquipmentSlot) => state.hero.equipment[slot];
@@ -106,12 +111,8 @@ export function LegacyView(props: {
                 label="Legacy"
                 items={[
                   { id: "gear", name: "Worn Gear", icon: "shield" },
-                  {
-                    id: "trophies",
-                    name: `Trophy Wall · ${legacy.trophies.length}/${TROPHY_COUNT}`,
-                    icon: "boss",
-                  },
                   { id: "collections", name: `Collections · ${full}/${goals.length}`, icon: "box" },
+                  { id: "lineage", name: "Lineage", icon: "flame" },
                 ]}
                 active={tab}
                 onChange={setTab}
@@ -122,42 +123,58 @@ export function LegacyView(props: {
           />
         }
       >
-        {tab === "trophies" ? (
-          <TrophyWall state={state} />
+        {tab === "lineage" ? (
+          <div className="lineage-page">
+            <Lineage state={state} />
+          </div>
         ) : tab === "collections" ? (
           <div className="collections-page">
-            <div className="collections" aria-label="Collections">
+            <div className="collections" role="radiogroup" aria-label="Collections">
               {goals.map((g) => {
                 const done = g.found >= g.total;
                 return (
-                  <section
+                  <button
                     key={g.id}
-                    className={`panel-card collection${done ? " done" : ""}`}
+                    type="button"
+                    role="radio"
+                    aria-checked={pick === g.id}
+                    className={`panel-card collection${done ? " done" : ""}${pick === g.id ? " on" : ""}`}
                     aria-label={g.name}
+                    onClick={() => setPick(g.id)}
                   >
-                    <span className="eyebrow">{g.name.toUpperCase()}</span>
-                    <span className="title-font big">
-                      {g.found} / {g.total}
+                    <span className="section-row">
+                      <span className="eyebrow">{g.name.toUpperCase()}</span>
+                      <span className="title-font collection-count">
+                        {g.found} / {g.total}
+                      </span>
                     </span>
-                    <div
+                    <span
                       className="collection-bar"
                       role="progressbar"
                       aria-valuemin={0}
                       aria-valuemax={g.total}
                       aria-valuenow={g.found}
                     >
-                      <div style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
-                    </div>
+                      <span style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
+                    </span>
                     <span className="sub small">{g.how}</span>
                     <span className={`collection-reward small${done ? " accent" : ""}`}>
                       <Icon name={done ? "check" : "lock"} size={14} />
                       {done ? `${g.reward.replace(/^A /, "The ")} is raised.` : g.reward}
                     </span>
-                  </section>
+                  </button>
                 );
               })}
             </div>
-            <Lineage state={state} />
+            <div className="collection-detail">
+              {pick === "trophies" ? (
+                <TrophyWall state={state} />
+              ) : pick === "runewords" ? (
+                <RuneBoard state={state} mode="codex" selected={null} onSelect={() => {}} />
+              ) : (
+                <TriggerCodex state={state} />
+              )}
+            </div>
           </div>
         ) : (
           <div className="legacy-body">
