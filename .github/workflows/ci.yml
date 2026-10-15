@@ -29,8 +29,24 @@ jobs:
       - run: npm run balance -- --runs 100
 
   e2e:
-    name: Playwright
+    # Chromium renders the Pixi scenes in software on CI, so the tests are bound by CPU: more
+    # workers on one runner only slow each test down, but more runners add cores. Four runners
+    # take a balanced share each: the five slow "every main view" walks (@screens) in two
+    # halves, the rest in two halves.
+    name: Playwright (${{ matrix.part }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - part: screens 1/2
+            args: --grep @screens --shard 1/2
+          - part: screens 2/2
+            args: --grep @screens --shard 2/2
+          - part: rest 1/2
+            args: --grep-invert @screens --shard 1/2
+          - part: rest 2/2
+            args: --grep-invert @screens --shard 2/2
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -40,10 +56,20 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
         working-directory: apps/web
-      - run: npm run test:e2e
+      - run: npm run test:e2e -- ${{ matrix.args }}
+        working-directory: apps/web
       - uses: actions/upload-artifact@v4
         if: failure()
         with:
-          name: playwright-report
+          name: playwright-report-${{ strategy.job-index }}
           path: apps/web/playwright-report
           retention-days: 7
+
+  # One stable check name for all four parts, so branch protection can require "Playwright".
+  e2e-result:
+    name: Playwright
+    if: always()
+    needs: e2e
+    runs-on: ubuntu-latest
+    steps:
+      - run: test "${{ needs.e2e.result }}" = success

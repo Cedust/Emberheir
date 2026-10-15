@@ -46,6 +46,8 @@ test("Ember Shrine: steal one of three Boons, it shows under the hero in the nex
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
+  // The Waymark won before the boss shows its Hearth Embers.
+  await expect(page.getByRole("status").filter({ hasText: "Hearth Embers" })).toBeVisible();
   const hall = page.getByRole("region", { name: "Intermission" });
   await expect(hall).toContainText("EMBER SHRINE");
   await expect(page.getByTestId("shrine").locator(".boon-card")).toHaveCount(3);
