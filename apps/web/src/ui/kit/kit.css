@@ -615,6 +615,16 @@
   background: rgb(255 138 58 / 0.08);
 }
 
+.stage .k-answer.warn {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.stage .k-answer[aria-disabled] {
+  opacity: 0.45;
+  cursor: default;
+}
+
 .stage .k-answer-note {
   font-weight: 400;
   font-size: 14px;

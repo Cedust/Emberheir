@@ -163,6 +163,10 @@ Endgame **Wildfire I–X**.
   Bibliothek wählen (oder einen Skill auf den Slot ziehen); Modifier sitzen als Sockel unter dem Slot, „Fires at Heat“
   ist ein Regler am Heat-Balken, Bedingungen sind kleine Schilder. Unten läuft „One rotation“ als dunkle Kampf-Leiste.
   Respec und Forget werden gehalten.
+- **Old Nan** spricht in einer Dialog-Box (Hades): großes Porträt, ihr Spruch, Antworten mit Zifferntasten
+  („Tell me more.“, Compendium, die Resets mit Acorn-Preis, „Farewell.“). Ein Reset fragt einmal nach.
+- **Title Screen** und **Class Select** stehen vor dem nächtlichen Camp; Menu und Settings sind Fenster im selben Rahmen.
+  Die Combat Lab gibt es nur mit `?dev` in der Adresse.
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt

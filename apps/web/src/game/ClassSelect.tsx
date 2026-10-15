@@ -2,6 +2,7 @@ import { GAME_DATA, ITEM_CATALOG, PRESTIGE_BRANCHES } from "@emberheir/content";
 import { ATTRIBUTE_RULES, type Attribute, getBase, sumAttributes } from "@emberheir/sim";
 import { Suspense, useMemo, useState } from "react";
 import { Icon, type IconName } from "../ui/Icon";
+import { Button } from "../ui/kit/Button";
 import type { Settings } from "../ui/settings";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 import { ClassEmblem } from "./ClassEmblem";
@@ -163,13 +164,13 @@ export function ClassSelect(props: {
             />
             <div className="grow" />
             <div className="class-buttons">
-              <button type="button" className="btn" onClick={() => setStep("class")}>
+              <Button icon="prev" onClick={() => setStep("class")}>
                 Back
-              </button>
-              <button
-                type="button"
-                className="btn big primary"
-                disabled={freeLeft > 0}
+              </Button>
+              <Button
+                big
+                variant="primary"
+                blocked={freeLeft > 0 ? `${freeLeft} Points left` : null}
                 onClick={() =>
                   props.onBegin({
                     slot: props.slot,
@@ -181,7 +182,7 @@ export function ClassSelect(props: {
                 }
               >
                 Begin
-              </button>
+              </Button>
             </div>
           </div>
         ) : (
@@ -245,16 +246,12 @@ export function ClassSelect(props: {
             </label>
 
             <div className="class-buttons">
-              <button type="button" className="btn" onClick={props.onBack}>
+              <Button icon="prev" onClick={props.onBack}>
                 Back
-              </button>
-              <button
-                type="button"
-                className="btn big primary"
-                onClick={() => setStep("attributes")}
-              >
+              </Button>
+              <Button big variant="primary" onClick={() => setStep("attributes")}>
                 Next
-              </button>
+              </Button>
             </div>
           </div>
         )}

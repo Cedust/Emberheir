@@ -11,7 +11,7 @@ import {
   unequipBlockReason,
 } from "@emberheir/sim";
 import { type MouseEvent, useState } from "react";
-import { Icon } from "../../ui/Icon";
+import { Button } from "../../ui/kit/Button";
 import { ItemDetail, ItemGrid, ItemTile, RingSwitch } from "../../ui/items";
 import { Wallet } from "../../ui/kit/Currency";
 import { EmptyState } from "../../ui/kit/Marker";
@@ -120,7 +120,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
         header={
           <WindowHeader
             title="Supply Wagon"
-            sub="Stash · shared by all your Heirs"
+            sub="Stash"
             medallion={<Medallion icon="box" tint="#5a4218" />}
             right={<Wallet state={state} />}
             onClose={props.onClose}
@@ -142,35 +142,25 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
                   <div className="detail-buttons">
                     {sel.where !== "equipped" && <RingSwitch state={state} item={sel.item} />}
                     {buttons.map((b) => (
-                      <button
+                      <Button
                         key={b.label}
-                        type="button"
-                        className={`btn ${b.primary ? "primary" : ""}`}
-                        disabled={!!b.block}
-                        title={b.block}
+                        variant={b.primary ? "primary" : "secondary"}
+                        blocked={b.block ?? null}
                         onClick={b.run}
                       >
                         {b.label}
-                      </button>
+                      </Button>
                     ))}
-                    {buttons.find((b) => b.block) && (
-                      <span className="block warn">{buttons.find((b) => b.block)?.block}</span>
-                    )}
                   </div>
                 }
               />
             ) : (
-              <EmptyState icon="eye">Pick an item to see it here.</EmptyState>
+              <EmptyState icon="box" />
             )}
           </aside>
           <main className="stash-center">
             <div className="section-row">
-              <span
-                className="title-font section-title"
-                title="The Supply Wagon is shared by all your Heirs."
-              >
-                Stash · shared
-              </span>
+              <span className="title-font section-title">Stash</span>
               <span className="mono sub">{state.stash.length} items</span>
             </div>
             <ItemGrid
@@ -182,15 +172,14 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
               label="Stash"
               drop={drops.grid("stash")}
             />
-            <div className="section-row">
-              <button
-                type="button"
-                className="btn"
+            <div className="stash-actions">
+              <Button
+                variant="ghost"
+                icon="cycle"
                 onClick={() => game.dispatch({ type: "sortStash" })}
               >
-                <Icon name="cycle" size={16} />
                 Sort
-              </button>
+              </Button>
             </div>
           </main>
           <aside className="stash-bag">

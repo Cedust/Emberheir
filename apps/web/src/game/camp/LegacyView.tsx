@@ -66,28 +66,24 @@ export function LegacyView(props: {
       value: String(generation),
       desc:
         generation === 1
-          ? "The first Heir. Everything is still new."
+          ? undefined
           : `${legacy.prestige} harvest${legacy.prestige === 1 ? "" : "s"} survived.`,
     },
     {
       kind: "ITEMS CARRIED",
       value: String(carried),
-      desc: "Worn, packed and stashed. The caravan saves all of it from the fire.",
     },
     {
       kind: "KEYSTONES",
       value: `${activeKeystones(GAME_DATA.skillTree, state.hero.learned)} / ${keystoneLimit(legacy.prestige)}`,
-      desc: "Active at once. One more place at Prestige 2, 4 and 6.",
     },
     {
-      kind: "LEVEL CAP",
-      value: String(levelCap(legacy.prestige)),
-      desc: `Level ${state.hero.level} now. Ten levels above the harvest boss, for farming.`,
+      kind: "LEVEL",
+      value: `${state.hero.level} / ${levelCap(legacy.prestige)}`,
     },
     {
       kind: "BATTLE PLAN",
       value: `${state.progress.rotationSlots} Slot${state.progress.rotationSlots === 1 ? "" : "s"}`,
-      desc: "Grows with every harvest.",
     },
     {
       kind: "THIS GENERATION",
@@ -157,7 +153,6 @@ export function LegacyView(props: {
                     >
                       <span style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
                     </span>
-                    <span className="sub small">{g.how}</span>
                     <span className={`collection-reward small${done ? " accent" : ""}`}>
                       <Icon name={done ? "check" : "lock"} size={14} />
                       {done ? `${g.reward.replace(/^A /, "The ")} is raised.` : g.reward}
@@ -185,7 +180,7 @@ export function LegacyView(props: {
                     <span className="eyebrow">{f.kind}</span>
                     <span className="mono">{f.value}</span>
                   </div>
-                  <span className="sub small">{f.desc}</span>
+                  {f.desc && <span className="sub small">{f.desc}</span>}
                 </div>
               ))}
             </aside>
@@ -226,21 +221,11 @@ export function LegacyView(props: {
               <div className="ring-center">
                 <Icon name="fire" size={64} color="var(--accent)" />
                 <span className="title-font big">{worn} / 10 worn</span>
-                <span className="sub">Click a slot for details</span>
               </div>
             </div>
             <aside className="legacy-side">
               {selItem ? (
-                <ItemDetail
-                  item={selItem}
-                  where="WORN"
-                  className="sealed"
-                  footer={
-                    <span className="sub small">
-                      Survives every harvest. Thoric can raise its Tier with a Phoenix Feather.
-                    </span>
-                  }
-                />
+                <ItemDetail item={selItem} where="WORN" className="sealed" />
               ) : (
                 <section className="panel-card">
                   <span className="eyebrow">{slotName(sel).toUpperCase()}</span>
@@ -287,7 +272,12 @@ function Lineage(props: { state: GameState }) {
   return (
     <section className="panel-card lineage" aria-label="Lineage">
       <div className="section-row">
-        <span className="title-font section-title">Lineage</span>
+        <span
+          className="title-font section-title"
+          title={`Every win of The Last Ember lights a flame. Every class inherits its bonus. At ${LINEAGE_STEPS} flames, every Heir is called Emberheir.`}
+        >
+          Lineage
+        </span>
         <span className="lineage-steps" aria-label={`Step ${step} of ${LINEAGE_STEPS}`}>
           {Array.from({ length: LINEAGE_STEPS }, (_, i) => (
             <span key={i} className={`lineage-pip${i < step ? " lit" : ""}`}>
@@ -296,14 +286,7 @@ function Lineage(props: { state: GameState }) {
           ))}
         </span>
       </div>
-      <span className="sub small">
-        {step === 0
-          ? "Win The Last Ember with any Heir to open it. Every class then inherits its bonus."
-          : `Step ${step} of ${LINEAGE_STEPS}. Every Heir who wins The Last Ember adds a step.`}{" "}
-        {step >= LINEAGE_STEPS
-          ? "The title Emberheir is yours."
-          : `At step ${LINEAGE_STEPS} every Heir is called Emberheir.`}
-      </span>
+      {step >= LINEAGE_STEPS && <span className="title-font accent">Emberheir</span>}
       <div className="lineage-classes">
         {GAME_DATA.classes.map((c) => {
           const l = c.lineage;

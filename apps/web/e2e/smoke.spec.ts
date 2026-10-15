@@ -5,7 +5,7 @@ test("a debug fight runs to the end and fills the log", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
-  await page.goto("/");
+  await page.goto("/?dev");
   await page.getByRole("button", { name: "Combat Lab" }).click();
   await page.getByRole("button", { name: "Start fight" }).click();
   await expect(page.getByRole("meter", { name: "Life" }).first()).toBeVisible();
@@ -22,7 +22,7 @@ test("rolled gear shows item tooltips and goes into the fight", async ({ page })
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
 
-  await page.goto("/");
+  await page.goto("/?dev");
   await page.getByRole("button", { name: "Combat Lab" }).click();
   const cards = page.getByTestId("item-card");
   await expect(cards).toHaveCount(10);

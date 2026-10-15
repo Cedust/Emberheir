@@ -1099,27 +1099,19 @@
   font-style: italic;
 }
 
-.stage .nan-portrait {
-  width: 44px;
-  height: 44px;
-  border-radius: 22px;
-  background: #5e4a36;
-  border: 2px solid #c9a063;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-style: normal;
-  font-size: 20px;
-  color: #f3e6c8;
-  flex-shrink: 0;
+.stage .notice-screen .nan-line .quote {
+  color: #e3d3b4;
 }
 
-.stage .recap-placeholder {
-  font-size: 14px;
-  padding: 8px 14px;
-  border: 1px dashed #6a4a2c;
-  border-radius: 4px;
-  color: #b3a288;
+.stage .nan-portrait {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: radial-gradient(circle at 50% 35%, #6a5038, #2a1e14);
+  border: 2px solid #c9a063;
+  box-shadow: 0 0 0 3px rgb(0 0 0 / 0.35);
+  flex-shrink: 0;
 }
 
 /* The ending: a warm dawn instead of ash. */
@@ -2017,40 +2009,33 @@
   gap: 16px;
 }
 
-/* Old Nan: her advice, her books and her resets. */
-.stage .nan-window {
-  max-width: 760px;
-  max-height: 560px;
-  margin: auto;
+/* Old Nan: the Hades dialogue box at the bottom of the dimmed Camp. */
+.stage .nan-stage {
+  align-self: flex-end;
+  width: 1100px;
+  max-width: 100%;
+  margin-bottom: 40px;
 }
 
-.stage .nan-body {
-  flex: 1;
+.stage .nan-stage .k-dialog-portrait {
+  width: 260px;
+  height: 260px;
+}
+
+.stage .nan-stage .k-dialog-portrait > svg {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  border: 3px solid var(--k-brass);
+  background: #5e4a36;
+  box-shadow: var(--k-frame-shadow);
+}
+
+.stage .bounty-card {
+  padding: 12px 16px;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
-  gap: 16px;
-  padding: 22px 26px 24px;
-}
-
-.stage .nan-quote {
-  margin: 0;
-  font-size: 20px;
-  font-style: italic;
-  line-height: 1.4;
-  color: var(--text);
-}
-
-.stage .nan-books {
-  display: flex;
-  gap: 10px;
-}
-
-.stage .nan-resets-box {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  margin-top: auto;
+  gap: 6px;
 }
 
 .stage .bounty-card.done {
@@ -2467,6 +2452,13 @@
   display: flex;
   flex-direction: column;
   gap: 12px;
+}
+
+.stage .stash-detail .detail-buttons,
+.stage .stash-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 /* --- overlays ------------------------------------------------------------------------------- */
@@ -4216,31 +4208,42 @@
 
 /* --- menu, settings, compendium ------------------------------------------------------------- */
 
-.stage .menu-panel {
-  width: 560px;
-  padding-bottom: 24px;
-  gap: 16px;
-}
-
-.stage .menu-panel > .btn {
-  margin: 0 24px;
-  align-self: flex-start;
+.stage .k-layer > .k-window.menu-window {
+  flex: 0 0 560px;
+  align-self: center;
 }
 
 .stage .menu-buttons {
   display: flex;
   flex-direction: column;
   gap: 12px;
+  padding: 24px;
+}
+
+.stage .menu-buttons .k-btn {
+  width: 100%;
+}
+
+.stage .menu-buttons .k-btn > span {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.stage .menu-settings {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 24px 0;
+}
+
+.stage .menu-foot {
+  display: flex;
+  justify-content: flex-end;
   padding: 0 24px;
 }
 
-.stage .menu-buttons .btn {
-  width: 100%;
-  flex-direction: column;
-  gap: 0;
-}
-
-.stage .menu-buttons .btn small {
+.stage .menu-buttons .k-btn small {
   font-family: var(--font-text);
   font-size: 13px;
   font-weight: 500;
@@ -4586,6 +4589,20 @@
 
 .stage .class-select h2 {
   font-size: 30px;
+  color: var(--k-on-wood);
+  text-shadow: 0 2px 6px rgb(0 0 0 / 0.8);
+}
+
+/* Class cards and panels in the window frame (ui-ux-plan-v1.md 3.1) over the night Camp. */
+.stage .class-preview,
+.stage .class-info {
+  border: 2px solid var(--k-brass);
+  box-shadow: var(--k-frame-shadow);
+}
+
+.stage .class-card {
+  border: 2px solid var(--k-brass);
+  box-shadow: 0 8px 20px rgb(0 0 0 / 0.5);
 }
 
 .stage .class-cards {
@@ -4616,7 +4633,9 @@
 .stage .class-card.on,
 .stage .class-card:hover {
   border-color: var(--accent);
-  box-shadow: 0 0 18px rgb(255 138 58 / 0.25);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 28px rgb(255 138 58 / 0.55);
 }
 
 .stage .class-detail {
@@ -4763,8 +4782,9 @@
 .stage .class-buttons {
   margin-top: auto;
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-end;
   align-items: center;
+  gap: 12px;
 }
 
 .stage .title-settings {
@@ -4775,9 +4795,39 @@
   gap: 16px;
 }
 
-.stage .title-settings > .btn {
-  margin: 0 24px;
-  align-self: flex-start;
+.stage .title-scene {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  z-index: 0;
+  isolation: isolate;
+}
+
+/* Darker at the top and bottom, so the logo and the buttons read over the painting. */
+.stage .title-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 50% 60% at 50% 48%, rgb(14 10 8 / 0.55), transparent 75%),
+    linear-gradient(
+      180deg,
+      rgb(14 10 8 / 0.55) 0%,
+      rgb(14 10 8 / 0.1) 45%,
+      rgb(14 10 8 / 0.65) 100%
+    );
+}
+
+.stage .title-screen .title-sub,
+.stage .title-screen .build-info {
+  color: var(--k-on-wood-sub);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+
+.stage .title-screen .title-logo {
+  color: #ff9a4a;
+  text-shadow:
+    0 0 40px rgb(255 138 58 / 0.55),
+    0 3px 6px rgb(0 0 0 / 0.8);
 }
 
 .stage .build-info {
@@ -6954,18 +7004,6 @@
   color: #ff8a1f;
   font-size: 10px;
   letter-spacing: 1px;
-}
-
-/* Old Nan resets attributes and Ashborn (neuausrichtung-v1.md 7.3). */
-.stage .nan-resets {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.stage .nan-resets .btn {
-  padding: 4px 10px;
-  font-size: 13px;
 }
 
 /* Ashborn in the Character Sheet (neuausrichtung-v1.md 7.3). */

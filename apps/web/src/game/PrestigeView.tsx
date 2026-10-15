@@ -20,6 +20,8 @@ import {
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
+import { PersonaPortrait } from "./camp/art/PersonaArt";
+import { PaintDefs } from "./camp/art/paint";
 import type { GameApi } from "./useGame";
 
 /** The boss's last words when its fall starts the harvest. */
@@ -329,7 +331,10 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
       <div className="heir-body">
         <aside className="heir-nan">
           <div className="heir-nan-head">
-            <span className="nan-portrait title-font">N</span>
+            <span className="nan-portrait">
+              <PaintDefs />
+              <PersonaPortrait id="nan" />
+            </span>
             <div>
               <span className="title-font">Old Nan</span>
               <span className="sub">Hearthkeeper</span>

@@ -10,7 +10,7 @@ import {
   targetSlot,
 } from "@emberheir/sim";
 import { useState } from "react";
-import { Icon } from "../../ui/Icon";
+import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { type CurrencyId, Wallet } from "../../ui/kit/Currency";
 import { ShrineCards } from "../Boons";
@@ -68,7 +68,7 @@ export function IntermissionView(props: {
         ? "Steal 1 of 3 sparks"
         : boss
           ? `${act.name} cleared`
-          : `Ready for Stage ${nextStage}`;
+          : "";
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
@@ -106,7 +106,7 @@ export function IntermissionView(props: {
         </aside>
         <main className="intermission-center">
           <h2 className="screen-title title-font">{title}</h2>
-          <p className="screen-sub">{subtitle}</p>
+          {subtitle && <p className="screen-sub">{subtitle}</p>}
           {rewards && step !== "ready" && !inFinale(act) && (
             <p className="auto-rewards sub" data-testid="auto-rewards">
               +{fmt(rewards.xp)} XP · +{fmt(rewards.acorns)} Acorns · +{fmt(rewards.ash)} Ash
@@ -134,18 +134,13 @@ export function IntermissionView(props: {
           {done && <DoneCard run={run} />}
           {step === "items" && (
             <div className="inventory-line">
-              <button
-                type="button"
-                className="btn"
-                title="Unpicked items become Ash"
-                onClick={() => game.dispatch({ type: "salvageAll" })}
-              >
+              <Button icon="hammer" onClick={() => game.dispatch({ type: "salvageAll" })}>
                 {rewards?.taken?.length ? "Salvage the Rest" : "Salvage All"} · +
                 {(rewards?.items ?? [])
                   .filter((_, i) => !rewards?.taken?.some((t) => t.index === i))
                   .reduce((n, it) => n + salvageValue(it), 0)}{" "}
                 Ash
-              </button>
+              </Button>
             </div>
           )}
         </main>
@@ -165,31 +160,33 @@ export function IntermissionView(props: {
       <footer className="intermission-footer bar-bottom">
         <Wallet state={state} named gains={gains} />
         <div className="grow" />
-        <button
-          type="button"
-          className="btn big primary next-stage"
-          disabled={!done || (rewards !== null && !rewardsDone(rewards))}
+        {!boss && (
+          <Button
+            variant="ghost"
+            icon="retreat"
+            blocked={done ? null : "Pick your rewards first"}
+            tip={{
+              name: "Retreat to Camp",
+              kind: "",
+              explain: "Gear and levels stay, this act's Boons burn.",
+            }}
+            onClick={() => game.dispatch({ type: "retreat" })}
+          >
+            Retreat to Camp
+          </Button>
+        )}
+        <Button
+          big
+          variant="primary"
+          icon="strike"
+          className="next-stage"
+          blocked={
+            !done || (rewards !== null && !rewardsDone(rewards)) ? "Pick your rewards first" : null
+          }
           onClick={() => game.dispatchAll(nextStageActions(state))}
         >
           {boss ? "RETURN TO CAMP" : nextStage === act.stages ? "FACE THE BOSS" : "NEXT STAGE"}
-          <Icon name="strike" size={18} />
-        </button>
-        {!boss && (
-          <button
-            type="button"
-            className="btn ghost"
-            disabled={!done}
-            title={
-              done
-                ? "Back to Camp. Gear and levels stay, this act's Boons burn."
-                : "Pick your rewards first"
-            }
-            onClick={() => game.dispatch({ type: "retreat" })}
-          >
-            <Icon name="retreat" size={16} />
-            Retreat to Camp
-          </button>
-        )}
+        </Button>
       </footer>
     </section>
   );

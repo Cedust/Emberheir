@@ -7,8 +7,6 @@ export type CollectionId = "trophies" | "runewords" | "codex";
 export interface Collection {
   readonly id: CollectionId;
   readonly name: string;
-  /** Plain words: what fills it. */
-  readonly how: string;
   /** What a full collection brings. */
   readonly reward: string;
   readonly found: number;
@@ -29,7 +27,6 @@ export function collections(state: GameState): readonly Collection[] {
     {
       id: "trophies",
       name: "Trophy Wall",
-      how: "Find every Unique. Boss trophies drop only from their boss.",
       reward: "A gold banner in the Camp",
       found: new Set(legacy.trophies.filter((t) => uniques.has(t))).size,
       total: uniques.size,
@@ -37,7 +34,6 @@ export function collections(state: GameState): readonly Collection[] {
     {
       id: "runewords",
       name: "Runeword Codex",
-      how: "Forge every Runeword once at Nyssa.",
       reward: "A rune banner in the Camp",
       found: new Set(legacy.runewords.filter((w) => runewords.has(w))).size,
       total: runewords.size,
@@ -45,7 +41,6 @@ export function collections(state: GameState): readonly Collection[] {
     {
       id: "codex",
       name: "Trigger Codex",
-      how: "Salvage trigger items to learn every Condition and Effect.",
       reward: "A sigil banner in the Camp",
       found: CODEX_PARTS.filter((p) => codexKnows(legacy.codex, p.kind, p.id)).length,
       total: CODEX_PARTS.length,

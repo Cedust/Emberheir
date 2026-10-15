@@ -94,14 +94,10 @@ export function TriggerCodex(props: { state: GameState }) {
         {picked ? (
           <>
             <span className="title-font big">{pickedKnown ? picked.name : "? ? ?"}</span>
-            <span className="sub">
-              {pickedKnown
-                ? "Learned · Liora can kindle it"
-                : `Drops more often: ${homeHint(picked.home)}`}
-            </span>
+            <span className="sub">{pickedKnown ? "Learned" : "Unknown"}</span>
           </>
         ) : (
-          <span className="sub">{count === 0 ? "None" : "Choose a part."}</span>
+          count === 0 && <span className="sub">None</span>
         )}
       </footer>
     </section>

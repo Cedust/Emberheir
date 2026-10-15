@@ -1,5 +1,6 @@
 import type { SettingsApi } from "../ui/settings";
-import { Icon } from "../ui/Icon";
+import { Button } from "../ui/kit/Button";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { useEffect, useState } from "react";
 
 export function SettingsPanel(props: { api: SettingsApi }) {
@@ -126,45 +127,51 @@ export function MenuOverlay(props: {
 }) {
   const [page, setPage] = useState<"main" | "settings">("main");
   return (
-    <div className="overlay" role="dialog" aria-label="Menu">
-      <div className="overlay-panel menu-panel">
-        <header className="overlay-header">
-          <span className="title-font big">{page === "main" ? "MENU" : "SETTINGS"}</span>
-          <div className="grow" />
-          {props.inFight && <span className="view-only title-font">FIGHT PAUSED</span>}
-          <button type="button" className="icon-button" aria-label="Close" onClick={props.onResume}>
-            <Icon name="close" size={20} />
-          </button>
-        </header>
+    <WindowLayer>
+      <Window
+        label="Menu"
+        role="dialog"
+        className="menu-window"
+        header={
+          <WindowHeader
+            title={page === "main" ? "Menu" : "Settings"}
+            medallion={<Medallion icon={page === "main" ? "menu" : "gear"} tint="#5a4218" />}
+            right={props.inFight && <span className="view-only title-font">FIGHT PAUSED</span>}
+            onClose={props.onResume}
+          />
+        }
+      >
         {page === "main" ? (
           <div className="menu-buttons">
-            <button type="button" className="btn big primary" onClick={props.onResume}>
+            <Button big variant="primary" onClick={props.onResume}>
               Resume
-            </button>
-            <button type="button" className="btn big" onClick={() => setPage("settings")}>
-              <Icon name="gear" size={18} /> Settings
-            </button>
-            <button type="button" className="btn big" onClick={props.onCompendium}>
-              <Icon name="book" size={18} /> Compendium
-            </button>
+            </Button>
+            <Button big icon="gear" onClick={() => setPage("settings")}>
+              Settings
+            </Button>
+            <Button big icon="book" onClick={props.onCompendium}>
+              Compendium
+            </Button>
             {props.onCheats && (
-              <button type="button" className="btn big" onClick={props.onCheats}>
-                Cheats · F8
-              </button>
+              <Button big hotkey="F8" onClick={props.onCheats}>
+                Cheats
+              </Button>
             )}
-            <button type="button" className="btn big ghost" onClick={props.onQuit}>
+            <Button big variant="ghost" onClick={props.onQuit}>
               Quit to Title
-            </button>
+            </Button>
           </div>
         ) : (
-          <>
+          <div className="menu-settings">
             <SettingsPanel api={props.settings} />
-            <button type="button" className="btn" onClick={() => setPage("main")}>
-              Back
-            </button>
-          </>
+            <div className="menu-foot">
+              <Button icon="prev" onClick={() => setPage("main")}>
+                Back
+              </Button>
+            </div>
+          </div>
         )}
-      </div>
-    </div>
+      </Window>
+    </WindowLayer>
   );
 }

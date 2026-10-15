@@ -1,65 +1,43 @@
 import type { GameState } from "@emberheir/sim";
 import { useState } from "react";
-import { Button } from "../../ui/kit/Button";
-import { Wallet } from "../../ui/kit/Currency";
-import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
+import { Dialog } from "../../ui/kit/Dialog";
+import { WindowLayer } from "../../ui/kit/Window";
 import type { GameApi } from "../useGame";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { NAN_LINES } from "./campPersonas";
-import { NanResets } from "./NanResets";
+import { useNanResets } from "./NanResets";
 
-/** Old Nan by the fire: a word of advice, the Compendium and her resets. */
+/**
+ * Old Nan by the fire (ui-ux-plan-v1.md 4.5): the Hades dialogue box with her advice, and the
+ * Compendium and her resets as answers.
+ */
 export function NanWindow(props: {
   state: GameState;
   game: GameApi;
   onCompendium: () => void;
   onClose: () => void;
 }) {
-  // A new piece of advice every time she is visited, and on "Talk".
+  // A new piece of advice every time she is visited, and on "Tell me more".
   const [line, setLine] = useState(() => Math.floor(Math.random() * NAN_LINES.length));
+  const resets = useNanResets(props.state, props.game);
   return (
     <WindowLayer>
-      <Window
-        label="Old Nan, Hearthkeeper"
-        className="nan-window"
-        header={
-          <WindowHeader
-            title="Old Nan"
-            sub="Hearthkeeper"
-            medallion={
-              <Medallion tint="#5e4a36">
-                <PersonaPortrait id="nan" />
-              </Medallion>
-            }
-            right={<Wallet state={props.state} />}
-            onClose={props.onClose}
-          />
-        }
-      >
-        <div className="nan-body">
-          <p className="nan-quote">“{NAN_LINES[line % NAN_LINES.length]}”</p>
-          <Button variant="ghost" onClick={() => setLine((n) => n + 1)}>
-            Talk
-          </Button>
-          <div className="nan-books">
-            <Button
-              icon="book"
-              tip={{
-                name: "Compendium",
-                kind: "Old Nan",
-                explain: "Every enemy, item and skill you have met so far.",
-              }}
-              onClick={props.onCompendium}
-            >
-              Compendium
-            </Button>
-          </div>
-          <section className="nan-resets-box" aria-label="Wake from the ashes">
-            <span className="eyebrow">WAKE FROM THE ASHES</span>
-            <NanResets state={props.state} game={props.game} />
-          </section>
-        </div>
-      </Window>
+      <div className="nan-stage">
+        <Dialog
+          name="Old Nan"
+          role="Hearthkeeper"
+          label="Old Nan, Hearthkeeper"
+          portrait={<PersonaPortrait id="nan" />}
+          answers={[
+            { label: "Tell me more.", onPick: () => setLine((n) => n + 1) },
+            { label: "Compendium", onPick: props.onCompendium },
+            ...resets,
+            { label: "Farewell.", onPick: props.onClose },
+          ]}
+        >
+          “{NAN_LINES[line % NAN_LINES.length]}”
+        </Dialog>
+      </div>
     </WindowLayer>
   );
 }

@@ -71,7 +71,7 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   // Old Nan gives every point above the Class Array back, for Acorns (neuausrichtung-v1.md 7.3).
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
-  const reset = page.getByRole("button", { name: /Reset Attributes · 336 Acorns/ });
+  const reset = page.getByRole("button", { name: /Reset Attributes.*336 Acorns/ });
   await reset.click();
   await page.getByRole("button", { name: /8 points back\?/ }).click();
   // They are spent anew in the Character Sheet.

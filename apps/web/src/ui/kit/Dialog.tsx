@@ -3,17 +3,27 @@ import { KeyHint } from "./Button";
 import { isTypingTarget } from "./hotkeys";
 
 /**
- * Hades-style dialogue box: a big portrait, a name plate, the line, up to four answers. Number
- * keys 1–4 pick an answer (shown as key caps).
+ * Hades-style dialogue box: a big portrait, a name plate, the line, up to six answers. Number
+ * keys 1–6 pick an answer (shown as key caps); a blocked answer says why in its tooltip.
  */
 export function Dialog(props: {
   name: string;
   role?: string;
+  /** Accessible name of the dialog (defaults to the name). */
+  label?: string;
   portrait: ReactNode;
   children: ReactNode;
-  answers: readonly { label: string; onPick: () => void; note?: string }[];
+  answers: readonly {
+    label: string;
+    onPick: () => void;
+    note?: string;
+    /** Why the answer cannot be picked right now. */
+    blocked?: string | undefined;
+    /** A second click confirms (Old Nan's resets). */
+    warn?: boolean;
+  }[];
 }) {
-  const answers = props.answers.slice(0, 4);
+  const answers = props.answers.slice(0, 6);
   const latest = useRef(answers);
   useEffect(() => {
     latest.current = answers;
@@ -22,7 +32,7 @@ export function Dialog(props: {
     const onKey = (e: KeyboardEvent) => {
       if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
       const pick = latest.current[Number(e.key) - 1];
-      if (pick) {
+      if (pick && !pick.blocked) {
         e.preventDefault();
         pick.onPick();
       }
@@ -31,7 +41,7 @@ export function Dialog(props: {
     return () => window.removeEventListener("keydown", onKey);
   }, []);
   return (
-    <div className="k-dialog" role="dialog" aria-label={props.name}>
+    <div className="k-dialog" role="dialog" aria-label={props.label ?? props.name}>
       <div className="k-dialog-portrait">{props.portrait}</div>
       <div className="k-dialog-box">
         <div className="k-dialog-plate">
@@ -41,7 +51,14 @@ export function Dialog(props: {
         <p className="k-dialog-line">{props.children}</p>
         <div className="k-dialog-answers">
           {answers.map((a, i) => (
-            <button key={a.label} type="button" className="k-answer" onClick={a.onPick}>
+            <button
+              key={i}
+              type="button"
+              className={`k-answer${a.warn ? " warn" : ""}`}
+              aria-disabled={a.blocked ? true : undefined}
+              title={a.blocked}
+              onClick={a.blocked ? undefined : a.onPick}
+            >
               <KeyHint k={String(i + 1)} />
               <span>{a.label}</span>
               {a.note && <span className="k-answer-note">{a.note}</span>}
