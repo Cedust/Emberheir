@@ -17,7 +17,7 @@ import {
   upgradedItem,
 } from "@emberheir/sim";
 import { baseSummary, rarityClass, rarityName } from "../../ui/items";
-import { type ActionKind, affixText, rangeText } from "./personaDefs";
+import { type ActionKind, affixText, greaterName, rangeText } from "./personaDefs";
 import { SocketRow } from "./RuneViews";
 
 /** Cards of the persona screens: the item in work, the item afterwards, kindled parts. */
@@ -132,6 +132,28 @@ export function AfterCard(props: {
             </span>
           );
         })}
+      </div>
+    );
+  }
+  if (kind === "awaken" || kind === "shift" || kind === "intensify") {
+    const g = item.greater;
+    const rank = kind === "intensify" && g ? Math.min(5, g.rank + 1) : (g?.rank ?? 1);
+    const raised = kind === "intensify" && g ? { ...item, greater: { ...g, rank } } : item;
+    return (
+      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
+        <ItemHead item={item} label="AFTER" />
+        {item.affixes.map((_, i) => {
+          const sure = kind === "intensify" && g?.index === i;
+          return (
+            <span key={i} className={`after-line ${sure ? "new" : ""}`}>
+              {affixText(sure ? raised : item, i).text}
+              {sure && <span className="greater-mark">{greaterName(rank)}</span>}
+            </span>
+          );
+        })}
+        {kind !== "intensify" && (
+          <span className="after-line new">? a random affix becomes {greaterName(rank)}</span>
+        )}
       </div>
     );
   }

@@ -115,6 +115,29 @@ export function saveWithCodex(): string {
   return serializeGame(state);
 }
 
+/** After The Last Ember: a two-affix ring and Cinderglass for Liora's Greater Affixes. */
+export function saveGreater(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  const ring: Item = {
+    id: "greater-ring",
+    baseId: "iron-ring",
+    name: "Glowing Iron Ring",
+    rarity: "rare",
+    itemLevel: 98,
+    tier: 10,
+    affixes: [
+      { affixId: "life", quality: 0.4 },
+      { affixId: "life", quality: 0.2 },
+    ],
+  };
+  return serializeGame({
+    ...camp,
+    progress: { ...camp.progress, trainerUnlocked: true },
+    wallet: { ...camp.wallet, cinderglass: 10 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+  });
+}
+
 /** The Rotwood's boss just fell in run 3: a Boss Hoard of six cards, one of them a new trophy. */
 export function saveBossHoard(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });

@@ -38,6 +38,7 @@ export const itemSchema: z.ZodType<Item> = z.object({
   tier: count,
   affixes: z.array(affixRoll),
   lockedAffix: opt(count),
+  greater: opt(z.object({ index: count, rank: int.positive() })),
   sockets: opt(count),
   runes: opt(z.array(id)),
   powerId: opt(id),
@@ -98,6 +99,7 @@ const wallet = z.object({
   emberCoal: num,
   phoenixFeathers: num,
   runes: z.record(z.string(), count),
+  cinderglass: opt(count),
 });
 
 const boonPick = z.object({ id: id, grade: z.enum(["spark", "flame", "blaze"]) });
@@ -137,6 +139,7 @@ const rewards = z.object({
   runes: z.array(id),
   levelsGained: count,
   ashbornLevels: opt(count),
+  cinderglass: opt(count),
   waymark: opt(z.boolean()),
   items: z.array(itemSchema),
   picks: opt(count),

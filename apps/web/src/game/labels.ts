@@ -74,6 +74,11 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   kindled: "Only one kindled trigger per item",
   notTrigger: "Choose a trigger to replace",
   noTriggerPlace: "Normal items have no trigger place",
+  greater: "Already has its Greater Affix: Shift or Intensify it",
+  noGreater: "Awaken a Greater Affix first",
+  maxGreater: "Already Greater V",
+  noTarget: "No affix here can become Greater",
+  cinderglass: "Not enough Cinderglass (Wildfire bosses)",
 };
 
 /** Short name of the boss whose fall brings The Harvest in a run (the newest act's boss). */

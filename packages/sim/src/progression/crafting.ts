@@ -1,4 +1,4 @@
-import { rollQuality, statAffixValue, unlockedStages } from "../items/affixes";
+import { GREATER, rollQuality, statAffixValue, unlockedStages } from "../items/affixes";
 import { ITEMS } from "../items/constants";
 import { missingRequirements } from "../items/equipment";
 import { getBase, rollItem, rollRarity, rollUnique, uniquesFor } from "../items/generate";
@@ -54,14 +54,26 @@ export type CraftRequest =
       readonly conditionId: string;
       readonly effectId: string;
       readonly affixIndex?: number;
-    };
+    }
+  /** Liora, Greater Affixes (neuausrichtung-v1.md 7.5): a random affix becomes Greater I. */
+  | { readonly kind: "awaken"; readonly itemId: string }
+  /** Liora: the Greater moves to another random affix of the item; its rank stays. */
+  | { readonly kind: "shift"; readonly itemId: string }
+  /** Liora: Greater one rank higher, up to V. */
+  | { readonly kind: "intensify"; readonly itemId: string };
 
 export type CraftKind = CraftRequest["kind"];
 
 /** Thoric travels with the caravan from the start. */
 export const BLACKSMITH_CRAFTS: readonly CraftKind[] = ["upgrade", "reforge"];
 /** Liora joins the caravan with Kaelen, after the first act boss. */
-export const MYSTIC_CRAFTS: readonly CraftKind[] = ["temper", "kindle"];
+export const MYSTIC_CRAFTS: readonly CraftKind[] = [
+  "temper",
+  "kindle",
+  "awaken",
+  "shift",
+  "intensify",
+];
 /** Nyssa joins after the first trip into the Rotwood. */
 export const RUNESMITH_CRAFTS: readonly CraftKind[] = ["addSocket", "socketRune", "combineRunes"];
 
@@ -72,6 +84,7 @@ export interface CraftCost {
   readonly phoenixFeathers: number;
   /** Runes by id. */
   readonly runes: Readonly<Record<string, number>>;
+  readonly cinderglass?: number;
 }
 
 export type CraftBlockReason =
@@ -114,7 +127,16 @@ export type CraftBlockReason =
   /** Kindle: the chosen affix is no trigger. */
   | "notTrigger"
   /** Kindle: a Normal item has no trigger place. */
-  | "noTriggerPlace";
+  | "noTriggerPlace"
+  /** Awaken: the item already has its Greater Affix (Shift or Intensify it). */
+  | "greater"
+  /** Shift, Intensify: the item has no Greater Affix yet. */
+  | "noGreater"
+  /** Intensify: Greater V is the top. */
+  | "maxGreater"
+  /** Awaken, Shift: no affix of the item can be Greater (or no other one to shift to). */
+  | "noTarget"
+  | "cinderglass";
 
 /** Where a craftable item is: equipped or in the inventory (the stash is not at the forge). */
 export interface CraftItemLocation {
@@ -186,7 +208,38 @@ export function craftCost(
         ash: CODEX.kindleAshPerTier * Math.max(1, item?.tier ?? 1),
         emberCoal: CODEX.kindleEmberCoal,
       };
+    case "awaken":
+      return { ...NO_COST, cinderglass: CRAFTING.greater.awaken };
+    case "shift":
+      return { ...NO_COST, cinderglass: CRAFTING.greater.shift };
+    case "intensify":
+      return {
+        ...NO_COST,
+        cinderglass:
+          CRAFTING.greater.intensify[(item?.greater?.rank ?? 1) - 1] ??
+          CRAFTING.greater.intensify.at(-1) ??
+          0,
+      };
   }
+}
+
+/**
+ * Affixes that can be Greater: the item's own stat and trigger affixes, not the fixed values of
+ * Epic and Legendary items (`epicValue`).
+ */
+export function greaterTargets(item: Item, catalog: ItemCatalog): number[] {
+  return item.affixes.flatMap((roll, i) => {
+    const affix = catalog.affixes.get(roll.affixId);
+    if (!affix) return [];
+    if (
+      affix.kind === "stat" &&
+      affix.epicValue !== undefined &&
+      (item.rarity === "epic" || item.rarity === "legendary")
+    ) {
+      return [];
+    }
+    return [i];
+  });
 }
 
 /** The item one Tier higher. Affix qualities stay, so values grow with the Tier. */
@@ -231,6 +284,7 @@ function affixBlockReason(
 
 function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | undefined {
   const w = state.wallet;
+  if ((w.cinderglass ?? 0) < (cost.cinderglass ?? 0)) return "cinderglass";
   if (w.phoenixFeathers < cost.phoenixFeathers) return "phoenixFeathers";
   if (w.emberCoal < cost.emberCoal) return "emberCoal";
   for (const [id, n] of Object.entries(cost.runes)) {
@@ -306,6 +360,18 @@ export function craftBlockReason(
       if (reason) return reason;
       break;
     }
+    case "awaken":
+      if (item.greater) return "greater";
+      if (greaterTargets(item, catalog).length === 0) return "noTarget";
+      break;
+    case "shift":
+      if (!item.greater) return "noGreater";
+      if (!greaterTargets(item, catalog).some((i) => i !== item.greater?.index)) return "noTarget";
+      break;
+    case "intensify":
+      if (!item.greater) return "noGreater";
+      if (item.greater.rank >= GREATER.maxRank) return "maxGreater";
+      break;
   }
   return costBlockReason(state, craftCost(request, item, data, state));
 }
@@ -325,6 +391,9 @@ function pay(state: GameState, cost: CraftCost): GameState {
       emberCoal: state.wallet.emberCoal - cost.emberCoal,
       phoenixFeathers: state.wallet.phoenixFeathers - cost.phoenixFeathers,
       runes,
+      ...(cost.cinderglass
+        ? { cinderglass: (state.wallet.cinderglass ?? 0) - cost.cinderglass }
+        : {}),
     },
   };
 }
@@ -424,7 +493,12 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         ...(item.runes ? { runes: item.runes } : {}),
         ...(item.powerId ? { powerId: item.powerId } : {}),
       };
-      return replaceItem(next, location, reforged);
+      // The Greater Affix keeps its rank on a random new affix (neuausrichtung-v1.md 7.5).
+      const targets = item.greater ? greaterTargets(reforged, data.items) : [];
+      const index = targets[rng.int(0, Math.max(0, targets.length - 1))];
+      const greater =
+        item.greater && index !== undefined ? { greater: { index, rank: item.greater.rank } } : {};
+      return replaceItem(next, location, { ...reforged, ...greater });
     }
     case "temper": {
       const [rng, next] = nextRng(paid);
@@ -449,6 +523,21 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
           ? item.affixes.map((r, i) => (i === index ? roll : r))
           : [...item.affixes, roll];
       return replaceItem(next, location, { ...item, affixes, lockedAffix: index });
+    }
+    case "awaken":
+    case "shift": {
+      const [rng, next] = nextRng(paid);
+      const targets = greaterTargets(item, data.items).filter((i) => i !== item.greater?.index);
+      const index = targets[rng.int(0, targets.length - 1)] ?? fail("No affix to awaken");
+      const rank = item.greater?.rank ?? 1;
+      return replaceItem(next, location, { ...item, greater: { index, rank } });
+    }
+    case "intensify": {
+      const greater = item.greater ?? fail("No Greater Affix");
+      return replaceItem(paid, location, {
+        ...item,
+        greater: { index: greater.index, rank: greater.rank + 1 },
+      });
     }
   }
 }

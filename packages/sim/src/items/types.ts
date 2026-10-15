@@ -232,6 +232,11 @@ export interface Item {
   readonly powerId?: string;
   /** Unique items: hand-made, fixed affixes. */
   readonly uniqueId?: string;
+  /**
+   * Greater Affix (neuausrichtung-v1.md 7.5): the affix at `index` counts at its tier's best roll
+   * times `1 + 0.1 × rank` (Greater I–V). The rank belongs to the item: Shift moves it along.
+   */
+  readonly greater?: { readonly index: number; readonly rank: number };
 }
 
 /** Which bonus of a Rune applies: in a weapon, or in armor (Off Hand, Helm, Body Armor). */

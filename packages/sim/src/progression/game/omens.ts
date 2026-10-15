@@ -54,7 +54,9 @@ export function checkOmens(
   const chosen = omens.map((id) => getOmen(data, id));
   if (wildfire) {
     if (chosen.some((o) => o.kind !== "wildfire")) return fail("Only Wildfire Omens burn here");
-    if (omenPeril(chosen) < minPeril(wildfire)) {
+    // A game without Wildfire Omens asks for no Peril.
+    const need = (data.omens ?? []).some((o) => o.kind === "wildfire") ? minPeril(wildfire) : 0;
+    if (omenPeril(chosen) < need) {
       return fail(`This Wildfire asks for at least ${minPeril(wildfire)} Peril`);
     }
     return [...omens];

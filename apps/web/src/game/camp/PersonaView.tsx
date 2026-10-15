@@ -32,6 +32,7 @@ import {
   type ActionKind,
   affixText,
   costText,
+  greaterName,
   PERSONA_LOCKED,
   PERSONA_ORDER,
   type PersonaId,
@@ -100,8 +101,16 @@ export function PersonaView(props: {
     request = { kind: "socketRune", itemId: item.id, runeId };
   } else if (kind === "combine" && runeId) request = { kind: "combineRunes", runeId };
   else if (kind === "gamble" && slot) request = { kind: "gamble", slot };
-  else if (item && (kind === "upgrade" || kind === "reforge")) request = { kind, itemId: item.id };
-  else if (item && kind === "temper" && affixIndex !== null) {
+  else if (
+    item &&
+    (kind === "upgrade" ||
+      kind === "reforge" ||
+      kind === "awaken" ||
+      kind === "shift" ||
+      kind === "intensify")
+  ) {
+    request = { kind, itemId: item.id };
+  } else if (item && kind === "temper" && affixIndex !== null) {
     request = { kind, itemId: item.id, affixIndex };
   } else if (item && kind === "kindle" && conditionId && effectId && kindleIndex !== null) {
     request = {
@@ -220,6 +229,13 @@ export function PersonaView(props: {
       case "reforge":
         setLast(`Reforged into ${next?.name ?? "?"}`);
         break;
+      case "awaken":
+      case "shift":
+      case "intensify":
+        if (next?.greater) {
+          setLast(`${greaterName(next.greater.rank)}: ${affixText(next, next.greater.index).text}`);
+        }
+        break;
       case "kindle": {
         const index = request.affixIndex ?? item?.affixes.length ?? 0;
         if (next) setLast(`Kindled: ${affixText(next, index).text}`);
@@ -246,6 +262,9 @@ export function PersonaView(props: {
     "temper",
     "kindle",
     "rune",
+    "awaken",
+    "shift",
+    "intensify",
   ].includes(kind);
 
   return (
@@ -308,18 +327,20 @@ export function PersonaView(props: {
             &ldquo;{def.quote}&rdquo;
           </blockquote>
           <div className="persona-actions">
-            {def.actions.map((a) => (
-              <button
-                key={a.k}
-                type="button"
-                className={`persona-action ${kind === a.k ? "on" : ""}`}
-                aria-pressed={kind === a.k}
-                onClick={() => pickKind(a.k)}
-              >
-                <span className="title-font">{a.name}</span>
-                <span className="sub">{a.desc}</span>
-              </button>
-            ))}
+            {def.actions
+              .filter((a) => !a.endgame || state.legacy.finaleWon === true)
+              .map((a) => (
+                <button
+                  key={a.k}
+                  type="button"
+                  className={`persona-action ${kind === a.k ? "on" : ""}`}
+                  aria-pressed={kind === a.k}
+                  onClick={() => pickKind(a.k)}
+                >
+                  <span className="title-font">{a.name}</span>
+                  <span className="sub">{a.desc}</span>
+                </button>
+              ))}
           </div>
         </aside>
 
@@ -367,6 +388,9 @@ export function PersonaView(props: {
                       onClick={() => setAffixIndex(i)}
                     >
                       <span className="grow">{t.text}</span>
+                      {item.greater?.index === i && (
+                        <span className="greater-mark">{greaterName(item.greater.rank)}</span>
+                      )}
                       {lockedOut && <Icon name="lock" size={14} />}
                       {item.lockedAffix === i && <span className="locked-in">LOCKED IN</span>}
                     </button>

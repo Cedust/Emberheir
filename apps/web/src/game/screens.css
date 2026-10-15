@@ -6113,3 +6113,19 @@
   opacity: 0.35;
   cursor: default;
 }
+
+/* Greater Affixes (neuausrichtung-v1.md 7.5). */
+.stage .greater-mark {
+  margin-left: 6px;
+  padding: 0 5px;
+  border: 1px solid #ff8a1f;
+  border-radius: 3px;
+  color: #ff8a1f;
+  font-size: 11px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+}
+
+.stage .w-glass .dot {
+  background: #ff8a1f;
+}

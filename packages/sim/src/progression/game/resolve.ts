@@ -21,7 +21,8 @@ import {
 } from "./encounters";
 import { salvageValue } from "./item-rules";
 import { requireRun } from "./guards";
-import { tripOmenEffects } from "./omens";
+import { tripOmenEffects, tripOmens } from "./omens";
+import { omenPeril } from "../omens";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
 import {
   actAffixFactor,
@@ -111,6 +112,14 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       ? gainAshbornXp(state.hero.ashborn ?? EMPTY_ASHBORN, xp)
       : undefined;
   const tier = run.wildfire ?? 0;
+  // Cinderglass: only from a Wildfire boss (neuausrichtung-v1.md 7.5).
+  const glass = PROGRESSION.wildfire.cinderglass;
+  const cinderglass =
+    tier > 0 && rank === "boss"
+      ? rng.int(...glass.boss) +
+        Math.floor(omenPeril(tripOmens(state, data)) / glass.perPeril) +
+        (tier >= glass.pinnacleFrom ? glass.pinnacle : 0)
+      : 0;
   const waymark =
     !tier &&
     !state.progress.waymarks.includes(waymarkKey(act.id, run.stage)) &&
@@ -242,6 +251,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       emberCoal: state.wallet.emberCoal + stones,
       phoenixFeathers: state.wallet.phoenixFeathers + feathers,
       runes: addRunes(state.wallet.runes, runes),
+      ...(cinderglass ? { cinderglass: (state.wallet.cinderglass ?? 0) + cinderglass } : {}),
     },
     legacy: {
       ...state.legacy,
@@ -271,6 +281,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         runes,
         levelsGained: leveled.levelsGained,
         ...(ashborn?.levelsGained ? { ashbornLevels: ashborn.levelsGained } : {}),
+        ...(cinderglass ? { cinderglass } : {}),
         ...(waymark ? { waymark: true } : {}),
         report: outcome.report,
         items,

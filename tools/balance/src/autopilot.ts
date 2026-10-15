@@ -8,6 +8,8 @@ import {
   type Attributes,
   BOON_GRADES,
   type BoonPick,
+  craftBlockReason,
+  craftCost,
   draughtsOpen,
   equipBlockReason,
   getAct,
@@ -253,4 +255,35 @@ export function autopilotPrestige(
     ...(preferred ? { branchId: preferred } : {}),
   });
   return applyAction(s, data, { type: "dismissNotice" });
+}
+
+/**
+ * Liora's Greater Affixes (neuausrichtung-v1.md 7.5): Cinderglass goes where it adds the most
+ * value per glass on the worn items: Awaken, Intensify, or Shift a Greater that sits on an affix
+ * the build does not use.
+ */
+export function spendCinderglass(state: GameState, data: GameData): GameState {
+  let s = state;
+  for (let guard = 0; guard < 64 && (s.wallet.cinderglass ?? 0) > 0; guard++) {
+    const base = gearValue(s, data);
+    let best: GameState | null = null;
+    let bestGain = 1e-6;
+    for (const item of Object.values(s.hero.equipment)) {
+      if (!item) continue;
+      for (const kind of ["awaken", "intensify", "shift"] as const) {
+        const request = { kind, itemId: item.id };
+        if (craftBlockReason(s, data, request)) continue;
+        const next = applyAction(s, data, { type: "craft", request });
+        const glass = craftCost(request, item, data, s).cinderglass ?? 1;
+        const gain = (gearValue(next, data) - base) / glass;
+        if (gain > bestGain) {
+          best = next;
+          bestGain = gain;
+        }
+      }
+    }
+    if (!best) break;
+    s = best;
+  }
+  return s;
 }

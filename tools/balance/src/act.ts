@@ -19,6 +19,7 @@ import {
   bestBoon,
   brewDraught,
   chooseRoute,
+  spendCinderglass,
   spendPoints,
 } from "./autopilot";
 import { type BuildPlan, findBuild } from "./builds";
@@ -63,6 +64,7 @@ function prepare(
   let s = campSalvage(state, data, runes);
   s = spendSkillPoints(s, data, build);
   if (runes) s = autopilotRunes(s, data, act, memo);
+  s = spendCinderglass(s, data);
   return brewDraught(s, data, act);
 }
 

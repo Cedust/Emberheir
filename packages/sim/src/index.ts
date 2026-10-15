@@ -58,6 +58,9 @@ export {
   lifeGrowth,
   isLifeLikeStat,
   unlockedStages,
+  GREATER,
+  greaterName,
+  greaterRank,
 } from "./items/affixes";
 export {
   basesForSlot,

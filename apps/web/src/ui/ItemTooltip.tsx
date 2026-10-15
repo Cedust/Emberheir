@@ -6,6 +6,7 @@ import {
   describeItem,
   getBase,
   getPerk,
+  greaterName,
 } from "@emberheir/sim";
 import {
   type ReactNode,
@@ -314,6 +315,7 @@ export function ItemTooltipCard(props: {
       {tip.affixLines.map((l, i) => (
         <span key={`${i}-${l.text}`} className={`tip-line tip-${l.kind}`}>
           {l.text}
+          {l.greater ? <span className="greater-mark">{greaterName(l.greater)}</span> : null}
         </span>
       ))}
       {tip.power && (

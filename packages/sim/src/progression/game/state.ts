@@ -132,6 +132,8 @@ export interface Wallet {
   readonly phoenixFeathers: number;
   /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
   readonly runes: Readonly<Record<string, number>>;
+  /** Cinderglass (neuausrichtung-v1.md 7.5): only from the Wildfire, for Greater Affixes. */
+  readonly cinderglass?: number;
 }
 
 export interface HeroState {
@@ -220,6 +222,8 @@ export interface Rewards {
   readonly levelsGained: number;
   /** Ashborn Levels this fight gave (after level 100). */
   readonly ashbornLevels?: number;
+  /** Cinderglass from a Wildfire boss. */
+  readonly cinderglass?: number;
   /** The stage was a Waymark reached for the first time this run: +1 Skill Point. */
   readonly waymark?: boolean;
   /** Item pick: `picks` (default 1) of these. */

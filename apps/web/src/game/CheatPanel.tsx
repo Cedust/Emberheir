@@ -43,6 +43,7 @@ const CURRENCIES: { key: WalletCurrency; name: string }[] = [
   { key: "ash", name: "Ash" },
   { key: "emberCoal", name: "Ember Coal" },
   { key: "phoenixFeathers", name: "Phoenix Feathers" },
+  { key: "cinderglass", name: "Cinderglass" },
 ];
 
 /** A number that is set on Enter, on blur or with the button. */
@@ -225,7 +226,7 @@ function CurrencyTab(props: { state: GameState; game: GameApi }) {
           <NumberRow
             key={c.key}
             label={c.name}
-            value={state.wallet[c.key]}
+            value={state.wallet[c.key] ?? 0}
             quick={c.key === "acorns" || c.key === "ash" ? [1000, 10000] : [10, 100]}
             onSet={(amount) => game.cheat({ kind: "currency", currency: c.key, amount })}
           />

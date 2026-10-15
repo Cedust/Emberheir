@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveAshborn, saveWildfire, seedSave } from "./fixtures";
+import { saveAshborn, saveGreater, saveWildfire, seedSave } from "./fixtures";
 
 test("after The Last Ember any act burns again in the Wildfire", async ({ page }) => {
   const errors: string[] = [];
@@ -77,5 +77,28 @@ test("after level 100 XP becomes Ashborn: points in the Character Sheet, reset a
   await page.keyboard.press("c");
   await page.getByRole("tab", { name: "Ashborn" }).click();
   await expect(page.getByTestId("ashborn-points")).toContainText("5 Ashborn Points");
+  expect(errors).toEqual([]);
+});
+
+test("Liora awakens a Greater Affix with Cinderglass and intensifies it", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveGreater());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  await page.getByRole("button", { name: "Liora, Mystic" }).click();
+  await page.getByRole("button", { name: /Open/ }).click();
+  await page.getByRole("button", { name: /^Awaken/ }).click();
+  await page.getByRole("button", { name: "Glowing Iron Ring" }).click();
+  await expect(page.locator(".cost-bar")).toContainText("3 Cinderglass");
+  await page.locator(".cost-bar").getByRole("button", { name: "Awaken" }).click();
+  await expect(page.getByRole("status")).toContainText("Greater I:");
+  await page.getByRole("button", { name: /^Intensify/ }).click();
+  await expect(page.locator(".cost-bar")).toContainText("2 Cinderglass");
+  await page.locator(".cost-bar").getByRole("button", { name: "Intensify" }).click();
+  await expect(page.getByRole("status")).toContainText("Greater II:");
+  await expect(page.getByTestId("craft-now")).toContainText("Greater II");
+  await page.screenshot({ path: "test-results/greater-affix.png" });
   expect(errors).toEqual([]);
 });
