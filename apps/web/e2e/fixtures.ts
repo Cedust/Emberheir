@@ -494,3 +494,10 @@ export function saveAtFork(): string {
   const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields", omens });
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }
+
+/** A new hero on the road through the Ashen Fields (run 1), Stage 3 ahead: it ends in an item pick. */
+export function saveRun1Stage3(): string {
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
+  const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
+  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
+}

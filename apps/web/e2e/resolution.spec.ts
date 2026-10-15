@@ -1,5 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
-import { createHero, saveAfterHarvestBoss, seedSave } from "./fixtures";
+import { createHero, saveAfterHarvestBoss, saveRun1Stage3, seedSave } from "./fixtures";
 
 /**
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
@@ -64,8 +64,9 @@ for (const screen of SCREENS) {
   test(`${screen.name}: every main view fits without scrolling @screens`, async ({ page }) => {
     // CI's software renderer keeps the live class preview busy while the six free points are
     // set, and 4K renders four times the pixels of 1080p (the battle runs at a few frames per
-    // second there): this walk through every view needs more time.
-    test.slow();
+    // second there): this walk through every view, with a reload to Stage 3 for the item pick,
+    // needs more time.
+    test.setTimeout(150_000);
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
@@ -102,6 +103,14 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: /NEXT STAGE/ }).click();
     await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
     await check("battle");
+    // Normal fights offer an item pick only on every third stage: on to a hero with Stage 3 ahead.
+    await seedSave(page, saveRun1Stage3());
+    await page.goto("/?dev");
+    await page.getByRole("button", { name: /Continue/ }).click();
+    // Stages 3–4 are a fork of the road: the Shrine Path keeps Stage 3 a normal fight.
+    await page.getByRole("radio", { name: "Shrine Path" }).click();
+    await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
+    await page.getByRole("button", { name: /NEXT STAGE/ }).click();
     await page.getByRole("button", { name: "Skip fight" }).click();
     // The cards turn over one after another on timers, which lag behind on a slow renderer.
     await expect(page.getByTestId("item-card")).toHaveCount(3, { timeout: 15_000 });
