@@ -23,8 +23,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Iron Blood",
       description:
-        "Announced Heavy Attacks deal 45 % less damage to you, and each one you stand through gives 25 Heat.",
-      rules: { ironBlood: { damageTaken: 0.55, heat: 25 } },
+        "Announced Heavy Attacks deal 50 % less damage to you, and each one you stand through gives 25 Heat.",
+      rules: { ironBlood: { damageTaken: 0.5, heat: 25 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["duelist", "butcher", "warden", "tactician"],
@@ -51,8 +51,8 @@ export const CLASSES: readonly HeroClass[] = [
     },
     trait: {
       name: "Bloodletter",
-      description: "+15 % Ailment Effect for Bleed and Poison.",
-      rules: { ailmentDamage: { bleed: 1.15, poison: 1.15 } },
+      description: "Your Bleeds deal 25 % more damage, your Poisons 15 % more.",
+      rules: { ailmentDamage: { bleed: 1.25, poison: 1.15 } },
     },
     lineage: { name: "Red Lineage", stat: "Lifesteal", percent: 2, bonuses: { lifesteal: 0.02 } },
     branches: ["butcher", "venomancer", "duelist", "tactician"],
@@ -109,8 +109,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Spark",
       description:
-        "After each skill, your next Default Attack deals 20 % more damage and always applies the ailment of its element.",
-      rules: { spark: { damage: 0.2 } },
+        "After each skill, your next Default Attack deals 10 % more damage and always applies the ailment of its element.",
+      rules: { spark: { damage: 0.1 } },
     },
     lineage: {
       name: "Storm Lineage",
