@@ -1835,10 +1835,6 @@
   fill: var(--vial);
 }
 
-.stage .stat-row.has-note {
-  cursor: help;
-}
-
 .stage .set-out-go {
   display: flex;
   flex-direction: column;
@@ -2376,13 +2372,6 @@
 
 /* --- character ------------------------------------------------------------------------------ */
 
-.stage .k-layer > .k-window.character {
-  flex: none;
-  align-self: center;
-  width: 1360px;
-  height: 820px;
-}
-
 .stage .xp-bar {
   position: relative;
   width: 180px;
@@ -2434,21 +2423,630 @@
 .stage .character-columns {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 420px 400px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 600px) minmax(420px, 1fr) 464px;
   min-height: 0;
 }
 
 .stage .character-columns > section {
-  padding: 18px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
 }
 
-.stage .doll-column,
-.stage .attr-column {
+.stage .character-columns > .inv-column {
+  padding: 16px 12px;
+}
+
+.stage .sheet-column {
+  border-left: 2px solid var(--edge);
   border-right: 2px solid var(--edge);
+}
+
+.stage .sheet-column > .attr-stones {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
+/* The hero (ui-ux-plan-v1.md 4.2): level on top, the painted Heir among the slots, four numbers. */
+.stage .hero-column {
+  align-items: center;
+}
+
+.stage .hero-column > .hero-doll {
+  margin: auto 0;
+}
+
+.stage .hero-level {
+  width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stage .hero-level-badge {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--k-on-wood, #f3e6c8);
+  background: radial-gradient(circle at 40% 35%, #5a3a22, #2a1a10);
+  border: 2px solid var(--k-brass, #b8893e);
+  box-shadow:
+    0 0 0 2px var(--k-brass-dark, #6e4f22),
+    0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+.stage .hero-level-bars {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .hero-level-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.stage .hero-level-bars .xp-bar,
+.stage .hero-level-bars .level-track {
+  width: 100%;
+}
+
+.stage .hero-doll {
+  position: relative;
+  flex: none;
+}
+
+.stage .hero-glow {
+  position: absolute;
+  left: 110px;
+  right: 110px;
+  top: 30px;
+  bottom: 120px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 150 60 / 0.28), transparent);
+  pointer-events: none;
+}
+
+.stage .hero-figure {
+  position: absolute;
+  left: 50%;
+  top: 4px;
+  height: 484px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 6px 10px rgb(40 20 0 / 0.35));
+  pointer-events: none;
+  user-select: none;
+}
+
+.stage .hero-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* A plaque: dark inset with a brass top edge, like the Battle HUD's frames. */
+.stage .hero-card {
+  position: relative;
+  padding: 12px 16px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  border: 1.5px solid var(--k-brass-dark, #6e4f22);
+  border-top: 3px solid var(--k-brass, #c9a063);
+  border-radius: 6px;
+  color: #efe3cb;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 170 90 / 0.12), transparent 60%),
+    linear-gradient(180deg, #3a2a1d, #241a12);
+  box-shadow:
+    inset 0 1px 0 rgb(255 230 180 / 0.12),
+    0 2px 6px rgb(0 0 0 / 0.25);
+}
+
+.stage .hero-card-label {
+  font-family: var(--font-title);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--k-brass, #c9a063);
+}
+
+.stage .hero-dps {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stage .hero-dps b {
+  font-size: 46px;
+  line-height: 1.05;
+  background: linear-gradient(180deg, #fff2c8, #ffb24a 70%, #e0702a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 6px rgb(255 140 50 / 0.35));
+}
+
+.stage .hero-unit {
+  font-size: 15px;
+  color: #b9a888;
+}
+
+.stage .hero-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.stage .hero-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 14px;
+  color: #cdbd9d;
+  background: rgb(0 0 0 / 0.25);
+  border: 1px solid rgb(201 160 99 / 0.3);
+}
+
+.stage .hero-pill b {
+  color: #f6ead2;
+}
+
+/* Defense: the Life bar (Barrier its blue end), Armor as a riveted steel plate below it. */
+.stage .vitals {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 2px;
+}
+
+.stage .vitals-names + .armor-plate {
+  margin-top: 4px;
+}
+
+.stage .armor-plate {
+  height: 46px;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 18px;
+  border-radius: 6px;
+  border: 2px solid #1a0d08;
+  color: #2a2e34;
+  background:
+    radial-gradient(circle at 7px 7px, #e9edf2 1.5px, #3b4048 2.5px, transparent 3px),
+    radial-gradient(circle at calc(100% - 7px) 7px, #e9edf2 1.5px, #3b4048 2.5px, transparent 3px),
+    radial-gradient(circle at 7px calc(100% - 7px), #e9edf2 1.5px, #3b4048 2.5px, transparent 3px),
+    radial-gradient(
+      circle at calc(100% - 7px) calc(100% - 7px),
+      #e9edf2 1.5px,
+      #3b4048 2.5px,
+      transparent 3px
+    ),
+    linear-gradient(180deg, #e3e7ec, #a9b0b9 45%, #7a828c 55%, #5b626b);
+  box-shadow:
+    0 0 0 1.5px var(--k-brass, #c9a063),
+    inset 0 2px 0 rgb(255 255 255 / 0.5),
+    inset 0 -3px 6px rgb(0 0 0 / 0.3);
+  cursor: help;
+}
+
+.stage .armor-plate b {
+  font-size: 24px;
+  color: #1c1f24;
+  text-shadow: 0 1px 0 rgb(255 255 255 / 0.55);
+}
+
+.stage .vitals-names {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stage .vitals-name {
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.stage .vitals-armor {
+  color: #b9c2cc;
+}
+
+.stage .vitals-life {
+  color: #e0656b;
+}
+
+.stage .vitals-barrier {
+  color: #6cb8ff;
+}
+
+/* Life as in the Battle HUD: a red bar, Barrier as the blue layer that takes hits first. */
+.stage .life-bar {
+  display: flex;
+  height: 46px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 2px solid #1a0d08;
+  box-shadow:
+    0 0 0 1.5px var(--k-brass, #c9a063),
+    0 0 12px rgb(220 30 40 / 0.3);
+}
+
+.stage .life-bar > span {
+  min-width: 0;
+  cursor: help;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 0 14px;
+  white-space: nowrap;
+  box-shadow:
+    inset 0 2px 0 rgb(255 255 255 / 0.22),
+    inset 0 -10px 14px rgb(0 0 0 / 0.35);
+}
+
+.stage .life-bar-life {
+  flex: 1 1 auto;
+  background: linear-gradient(180deg, #e0343c, #a3121c 55%, #6e0811);
+}
+
+.stage .life-bar > .life-bar-barrier {
+  flex: 0 0 auto;
+  min-width: max-content;
+  justify-content: flex-end;
+  border-left: 2px solid #0d1a2a;
+  background: linear-gradient(180deg, #6cb8ff, #2f74c4 55%, #1c4a86);
+}
+
+.stage .life-bar b {
+  font-size: 24px;
+  color: #fff6ee;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+.stage .hero-def-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: start;
+  gap: 28px;
+}
+
+.stage .hero-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 16px;
+}
+
+.stage .hero-table tr {
+  border-bottom: 1px solid rgb(201 160 99 / 0.18);
+}
+
+.stage .hero-table tr:last-child {
+  border-bottom: none;
+}
+
+.stage .hero-table th {
+  padding: 7px 6px;
+  text-align: left;
+  font-weight: 400;
+  color: #cdbd9d;
+}
+
+.stage .hero-table td {
+  padding: 7px 0;
+  text-align: right;
+  font-weight: 700;
+  color: #f6ead2;
+  white-space: nowrap;
+}
+
+.stage .hero-table td.hero-table-icon {
+  width: 16px;
+  text-align: left;
+  color: var(--k-brass, #c9a063);
+}
+
+.stage .hero-res {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.stage .hero-res-one {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  padding: 8px 4px 6px;
+  border-radius: 6px;
+  color: var(--res);
+  background: color-mix(in srgb, var(--res) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--res) 45%, transparent);
+  white-space: nowrap;
+}
+
+.stage .hero-res-one b {
+  font-size: 20px;
+  color: #f6ead2;
+}
+
+.stage .hero-res-name {
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.stage .hero-res-one.capped {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--res) 60%, transparent);
+}
+
+.stage .res-fire {
+  --res: var(--dmg-fire);
+}
+
+.stage .res-cold {
+  --res: var(--dmg-cold);
+}
+
+.stage .res-lightning {
+  --res: var(--dmg-lightning);
+}
+
+.stage .res-void {
+  --res: var(--dmg-void);
+}
+
+.stage .res-brass {
+  --res: var(--k-brass, #c9a063);
+}
+
+.stage .hero-res.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.stage .hero-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stage .hero-penalty {
+  font-size: 13px;
+  color: #ff8a7a;
+}
+
+.stage .hero-pill[tabindex] {
+  cursor: help;
+}
+
+/* Heat tab: the bar the fight starts with, filled to Starting Heat. */
+.stage .heat-gauge-text > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage .heat-gauge {
+  position: relative;
+  height: 32px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 2px solid #1a0d08;
+  box-shadow: 0 0 0 1.5px var(--k-brass, #c9a063);
+  background: linear-gradient(180deg, #1c130c, #2a1c12);
+}
+
+.stage .heat-gauge-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(180deg, #ffcf6a, #ff8a3a 55%, #c4431c);
+}
+
+.stage .heat-gauge-text {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #f6ead2;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+/* Breakpoint Perks under the attributes: what each lit Perk does, then the next ones. */
+.stage .perk-board {
+  flex: 1 1 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.stage .perk-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.stage .perk-card {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  cursor: help;
+}
+
+.stage .perk-card.perk-active,
+.stage .perk-card.perk-gained {
+  border-color: var(--rarity-legendary);
+  background: color-mix(in srgb, var(--heat, #ff8a3a) 10%, var(--panel));
+}
+
+.stage .perk-card.perk-gained {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--heat, #ff8a3a) 60%, transparent);
+}
+
+.stage .perk-card.perk-locked {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.stage .perk-card.perk-lost {
+  border-color: var(--life);
+}
+
+/* The seal: an ember diamond with the attribute and the Breakpoint. */
+.stage .perk-card-seal {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff3dc;
+  background: radial-gradient(circle at 50% 35%, #ffb24a, #c2410c 70%, #6a1e08);
+  border: 2px solid #ffd84a;
+  box-shadow: 0 0 8px rgb(255 138 58 / 0.5);
+}
+
+.stage .perk-card-seal b {
+  font-size: 16px;
+}
+
+.stage .perk-locked .perk-card-seal,
+.stage .perk-lost .perk-card-seal {
+  color: var(--text-sub);
+  background: var(--track);
+  border: 2px dashed var(--edge);
+  box-shadow: none;
+}
+
+.stage .perk-card-text {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stage .perk-card-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.stage .perk-card-tag {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--accent);
+  border: 1px solid currentcolor;
+}
+
+.stage .perk-gained .perk-card-tag {
+  color: var(--good);
+}
+
+.stage .perk-lost .perk-card-tag {
+  color: var(--life);
+}
+
+.stage .perk-card-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text-sub);
+}
+
+.stage .perk-cards.compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.stage .perk-cards.compact .perk-card-desc {
+  display: none;
+}
+
+/* The picked item: name, where it is and what can be done with it. */
+.stage .sel-bar {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.stage .sel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage .sel-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 18px;
+}
+
+.stage .sel-name .sub {
+  font-size: 14px;
+}
+
+.stage .sel-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .stage .paperdoll {
@@ -2542,45 +3140,8 @@
 .stage .attr-buttons {
   display: flex;
   align-items: center;
+  justify-content: flex-end;
   gap: 8px;
-}
-
-.stage .small-tabs .tab {
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 14px;
-}
-
-.stage .stat-rows {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stage .stat-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--grid-line);
-  font-size: 15px;
-}
-
-.stage .stat-row dt {
-  color: var(--text-sub);
-}
-
-.stage .stat-row dd {
-  margin: 0;
-  font-weight: 600;
-  text-align: right;
-}
-
-.stage .character-detail {
-  flex-grow: 1;
-  min-height: 0;
-  overflow: auto;
 }
 
 /* --- kaelen --------------------------------------------------------------------------------- */
@@ -5595,6 +6156,14 @@
   padding-top: 26px;
   border-color: #7a4a1c;
   position: relative;
+}
+
+/* Plain notes (tabs, stats): only as big as their text. */
+.stage .perk-tooltip.note-tooltip {
+  width: max-content;
+  min-width: 160px;
+  max-width: 280px;
+  padding-top: 10px;
 }
 
 .stage .perk-tooltip.perk-locked {

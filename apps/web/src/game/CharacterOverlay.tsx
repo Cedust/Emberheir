@@ -9,57 +9,53 @@ import {
   type GameState,
   type Item,
   PROGRESSION,
-  SLOT_NAMES,
   deriveStats,
   equipBlockReason,
   estimateDps,
-  formatPercent,
   heatPerSecond,
   boonEffects,
   heroBoons,
   heroSetup,
   heroTitle,
-  itemSlotFor,
-  speedValue,
   unequipBlockReason,
   bossLevel,
   levelCap,
   xpToNextLevel,
   DEFENSE_NOTES,
-  activeDraught,
   emberPenalty,
   emberPenaltyLine,
 } from "@emberheir/sim";
-import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
+import type { NoteHover } from "../ui/ItemTooltip";
 import { useState } from "react";
-import { Icon } from "../ui/Icon";
 import { ClassEmblem } from "./ClassEmblem";
-import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt } from "../ui/items";
+import {
+  type GridContext,
+  ItemGrid,
+  ItemTile,
+  RingSwitch,
+  rarityClass,
+  slotLabel,
+} from "../ui/items";
+import { Button, HoldButton } from "../ui/kit/Button";
 import { Wallet } from "../ui/kit/Currency";
 import { EmptyState } from "../ui/kit/Marker";
-import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { useStageSize } from "../ui/Stage";
+import { Medallion, type TabItem, Tabs, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirFace } from "./camp/CampFigures";
-import { useTabKeys } from "../ui/kit/hotkeys";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
 import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
-import { Paperdoll, dollBox } from "../ui/Paperdoll";
-import { WeaponSlot } from "./WeaponSlot";
+import { HeroDoll, type HeroSlotProps } from "./character/HeroDoll";
+import { HeroNumbers } from "./character/HeroNumbers";
+import { DefensePanel, HeatPanel, OffensePanel, type WeaponNumbers } from "./character/StatTabs";
 import { AshbornPanel } from "./AshbornPanel";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
-import { compareWithEquipped } from "../ui/itemCompare";
 
-const TABS = ["Offense", "Defense", "Heat", "Ashborn"] as const;
-type Tab = (typeof TABS)[number];
+type Tab = "Overview" | "Attributes" | "Offense" | "Defense" | "Heat" | "Ashborn";
 
-const pct = (v: number) => `${formatPercent(v)} %`;
-const HEAT_TEXT = {
-  cooling: "Cooling",
-  steady: "Steady",
-  warming: "Warming",
-  smoldering: "Smoldering",
-};
+/** Stage width the window frame, the attributes (420) and the bag (464) take from the hero. */
+const HERO_ROOM = 960;
 
 /**
  * Character (Character mock): paperdoll, attributes with pending points (Confirm / Undo),
@@ -73,16 +69,16 @@ export function CharacterOverlay(props: {
   onClose: () => void;
 }) {
   const { state, game, inFight } = props;
+  const stageSize = useStageSize();
   const [pending, setPending] = useState<Record<Attribute, number>>(NO_POINTS);
-  const [locking, setLocking] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
-  const [tab, setTab] = useState<Tab>("Offense");
+  // Open where something waits: free Attribute Points, else the key numbers.
+  const [tab, setTab] = useState<Tab>(
+    !inFight && state.hero.unspentAttributePoints > 0 ? "Attributes" : "Overview",
+  );
   // Ashborn opens at level 100 (neuausrichtung-v1.md 7.3).
   const ashbornOpen =
     state.hero.level >= ASHBORN.fromLevel && (GAME_DATA.ashbornValues?.length ?? 0) > 0;
-  const tabs = TABS.filter((t) => t !== "Ashborn" || ashbornOpen);
-  useTabKeys(tabs, tab, (t) => setTab(t as Tab));
-  const [discarding, setDiscarding] = useState<string | null>(null);
   useRingSlot();
   const drops = itemDrops(state, game);
   const spent = ATTRIBUTES.reduce((n, a) => n + pending[a], 0);
@@ -107,15 +103,10 @@ export function CharacterOverlay(props: {
   const invItem = state.inventory.find((p) => p.item.id === selected)?.item;
   const sel: Item | undefined = equippedEntry?.[1] ?? invItem;
 
-  // Points are permanent (attribute-v1.md): Confirm asks once more.
+  // Points are permanent (attribute-v1.md): Confirm is held, not clicked.
   const confirm = () => {
-    if (!locking) {
-      setLocking(true);
-      return;
-    }
     game.dispatch({ type: "allocateAttributes", points: pending });
     setPending(NO_POINTS);
-    setLocking(false);
   };
   const boonAttributes = boonEffects(heroBoons(state, GAME_DATA)).attributes;
 
@@ -129,138 +120,137 @@ export function CharacterOverlay(props: {
 
   const penalty = emberPenalty(state);
   const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
-  const draught = activeDraught(state, GAME_DATA);
-  const rows: Record<
-    Exclude<Tab, "Ashborn">,
-    { label: string; value: string; note?: NoteHover }[]
-  > = {
-    Offense: [
-      { label: "Damage per second (estimate)", value: fmt(dps) },
-      {
-        label: `${setup.weapon.name} damage`,
-        value: `${Math.round(setup.weapon.damage.min)}–${Math.round(setup.weapon.damage.max)}`,
-      },
-      {
-        label: "Speed (Attack Speed)",
-        value: String(speedValue(stats.attackSpeed)),
-      },
-      { label: "Physical Damage", value: `+${pct(stats.physicalDamage)}` },
-      { label: "Elemental Damage", value: `+${pct(stats.elementalDamage)}` },
-      { label: "Crit Chance", value: pct(stats.critChance) },
-      { label: "Crit Damage", value: "150 %" },
-      { label: "Trigger Chance", value: `+${pct(stats.triggerChance)}` },
-    ],
-    Defense: [
-      { label: "Life", value: fmt(stats.maxLife) },
-      { label: "Barrier", value: fmt(stats.barrier), note: DEFENSE_NOTES.barrier },
-      { label: "Armor", value: fmt(stats.armor), note: DEFENSE_NOTES.armor },
-      { label: "Evasion", value: pct(stats.evasion), note: DEFENSE_NOTES.evasion },
-      { label: "Block (Physical)", value: pct(stats.blockChance), note: DEFENSE_NOTES.block },
-      ...(penalty > 0
-        ? [{ label: "Ember Penalty", value: `−${pct(penalty)}`, note: resNote }]
-        : []),
-      { label: "Fire Resistance", value: pct(stats.fireResistance), note: resNote },
-      { label: "Cold Resistance", value: pct(stats.coldResistance), note: resNote },
-      { label: "Lightning Resistance", value: pct(stats.lightningResistance), note: resNote },
-      { label: "Void Resistance", value: pct(stats.voidResistance), note: resNote },
-      { label: "Tenacity", value: pct(stats.tenacity) },
-      { label: "Lifesteal", value: pct(stats.lifesteal) },
-      ...(draught
-        ? [
-            {
-              label: "Draught",
-              value: draught.name,
-              note: { name: draught.name, kind: draught.description, explain: draught.explain },
-            },
-          ]
-        : []),
-    ],
-    Heat: [
-      { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },
-      ...(setup.weapon.heatBehavior === "warming"
-        ? []
-        : [{ label: "Heat per Hit", value: fmt(setup.weapon.heatPerHit) }]),
-      ...(setup.weapon.heatBehavior === "cooling"
-        ? [{ label: "Heat from Hits Taken", value: pct(stats.heatFromHitsTaken) }]
-        : []),
-      { label: "Heat per second (estimate)", value: heatPerSecond(setup, stats).toFixed(1) },
-      { label: "Heat Gain", value: `+${pct(stats.heatGain)}` },
-      { label: "Starting Heat", value: fmt(stats.startingHeat) },
-      { label: "Ailment Effect", value: `+${pct(stats.ailmentEffect)}` },
-      {
-        label: "Battle Plan",
-        value: setup.rotation.map((r) => `${r.skill.name} ${r.level ?? 1}`).join(" · "),
-      },
-    ],
+  const weaponNumbers: WeaponNumbers = {
+    name: setup.weapon.name,
+    min: setup.weapon.damage.min,
+    max: setup.weapon.damage.max,
+    heatBehavior: setup.weapon.heatBehavior,
+    heatPerHit: setup.weapon.heatPerHit,
   };
 
+  // Right-click: the default action of the Character Sheet (ui-ux-plan-v1.md 3.5).
+  const equipNow = (item: Item) => {
+    const ring = preferredSlotFor(item);
+    game.dispatch({ type: "equip", itemId: item.id, ...(ring ? { slot: ring } : {}) });
+    resetRingSlot();
+    setSelected(null);
+  };
   let footer = null;
   if (sel && invItem) {
-    const ring = preferredSlotFor(invItem);
-    const reason = equipBlockReason(state, GAME_DATA, invItem, "inventory", ring);
-    const confirmDiscard = discarding === invItem.id;
+    const reason = equipBlockReason(
+      state,
+      GAME_DATA,
+      invItem,
+      "inventory",
+      preferredSlotFor(invItem),
+    );
     footer = (
-      <div className="detail-buttons">
+      <div className="sel-buttons">
         <RingSwitch state={state} item={invItem} />
-        <button
-          type="button"
-          className="btn primary"
-          disabled={reason !== undefined}
-          title={reason ? EQUIP_BLOCK_TEXT[reason] : undefined}
-          onClick={() => {
-            game.dispatch({ type: "equip", itemId: invItem.id, ...(ring ? { slot: ring } : {}) });
-            resetRingSlot();
+        <span className="k-grow" />
+        <HoldButton
+          icon="trash"
+          blocked={inFight ? "Between stages only" : null}
+          onConfirm={() => {
+            game.dispatch({ type: "discard", itemId: invItem.id });
             setSelected(null);
           }}
+          tip={{
+            name: "Discard",
+            kind: "Hold to confirm",
+            explain: "Throws the item away for nothing. Thoric salvages it for Ash in the Camp.",
+          }}
+        >
+          Discard
+        </HoldButton>
+        <Button
+          variant="primary"
+          blocked={inFight ? "Between stages only" : reason ? EQUIP_BLOCK_TEXT[reason] : null}
+          onClick={() => equipNow(invItem)}
         >
           Equip
-        </button>
-        <button
-          type="button"
-          className={`btn ${confirmDiscard ? "danger" : ""}`}
-          disabled={inFight}
-          title="Throw it away. Thoric salvages for Ash in the Camp."
-          onClick={() => {
-            if (!confirmDiscard) {
-              setDiscarding(invItem.id);
-              return;
-            }
-            game.dispatch({ type: "discard", itemId: invItem.id });
-            setDiscarding(null);
-            setSelected(null);
-          }}
-        >
-          <Icon name="trash" size={16} />
-          {confirmDiscard ? "Really discard?" : "Discard"}
-        </button>
-        {inFight ? (
-          <span className="block warn">Between stages only</span>
-        ) : (
-          reason && <span className="block warn">{EQUIP_BLOCK_TEXT[reason]}</span>
-        )}
+        </Button>
       </div>
     );
   } else if (sel && equippedSlot) {
     const reason = unequipBlockReason(state, GAME_DATA, equippedSlot);
     const inactive = gear.inactive.find((i) => i.slot === equippedSlot);
     footer = (
-      <div className="detail-buttons">
+      <div className="sel-buttons">
         {inactive && <span className="block warn">Inactive: requirements not met</span>}
-        <button
-          type="button"
-          className="btn"
-          disabled={reason !== undefined}
-          title={reason ? UNEQUIP_BLOCK_TEXT[reason] : undefined}
+        <span className="k-grow" />
+        <Button
+          blocked={inFight ? "Between stages only" : reason ? UNEQUIP_BLOCK_TEXT[reason] : null}
           onClick={() => game.dispatch({ type: "unequip", slot: equippedSlot })}
         >
           Unequip
-        </button>
-        {reason && reason !== "empty" && (
-          <span className="block warn">{UNEQUIP_BLOCK_TEXT[reason]}</span>
-        )}
+        </Button>
       </div>
     );
   }
+
+  // Narrower screens (16:10) shrink the hero, so the attributes keep their room.
+  const heroZoom = Math.min(1, (stageSize.w - HERO_ROOM) / 600);
+
+  const tabs: TabItem<Tab>[] = [
+    {
+      id: "Overview",
+      name: "Overview",
+      icon: "eye",
+    },
+    {
+      id: "Attributes",
+      name: "Attributes",
+      icon: "user",
+      ...(left > 0 && !inFight ? { marker: left } : {}),
+    },
+    { id: "Offense", name: "Offense", icon: "sword" },
+    { id: "Defense", name: "Defense", icon: "shield" },
+    { id: "Heat", name: "Heat", icon: "flame" },
+    ...(ashbornOpen
+      ? [
+          {
+            id: "Ashborn" as const,
+            name: "Ashborn",
+            icon: "fire" as const,
+          },
+        ]
+      : []),
+  ];
+
+  const gridContext: GridContext | undefined = inFight
+    ? undefined
+    : {
+        action: (item) =>
+          equipBlockReason(state, GAME_DATA, item, "inventory", preferredSlotFor(item)) ===
+          undefined
+            ? "Equip"
+            : undefined,
+        run: (item) => {
+          if (
+            equipBlockReason(state, GAME_DATA, item, "inventory", preferredSlotFor(item)) ===
+            undefined
+          )
+            equipNow(item);
+        },
+      };
+  const slotProps = (slot: EquipmentSlot, it: Item | undefined): HeroSlotProps => ({
+    selected: !!it && it.id === selected,
+    inactive: gear.inactive.some((i) => i.slot === slot),
+    aimed: !!invItem && slot.startsWith("ring") && aimedSlot(state, invItem) === slot,
+    drag: inFight ? undefined : drops.slot(slot),
+    onSelect: it ? () => setSelected(it.id) : undefined,
+    context:
+      it && !inFight && unequipBlockReason(state, GAME_DATA, slot) === undefined
+        ? {
+            action: "Unequip",
+            run: () => {
+              game.dispatch({ type: "unequip", slot });
+              if (selected === it.id) setSelected(null);
+            },
+          }
+        : undefined,
+  });
 
   return (
     <WindowLayer>
@@ -280,9 +270,32 @@ export function CharacterOverlay(props: {
                 <HeirFace />
               </Medallion>
             }
+            tabs={<Tabs label="Character pages" items={tabs} active={tab} onChange={setTab} />}
             right={
-              <>
-                <ClassEmblem classId={state.hero.classId} size={22} />
+              inFight ? (
+                <span className="view-only title-font">FIGHT PAUSED · VIEW ONLY</span>
+              ) : null
+            }
+            onClose={props.onClose}
+          />
+        }
+      >
+        <div className="character-columns">
+          <section className="hero-column" aria-label="Equipment" style={{ zoom: heroZoom }}>
+            <div className="hero-level">
+              <span
+                className="hero-level-badge title-font"
+                aria-label={`Level ${state.hero.level}`}
+              >
+                {state.hero.level}
+              </span>
+              <div className="hero-level-bars">
+                <div className="hero-level-line">
+                  <ClassEmblem classId={state.hero.classId} size={18} />
+                  <span className="title-font">{heroTitle(state, GAME_DATA)}</span>
+                  <span className="k-grow" />
+                  <span className="sub">{xpText}</span>
+                </div>
                 <div className="xp-bar" title={xpText}>
                   <div
                     className="fill"
@@ -291,7 +304,6 @@ export function CharacterOverlay(props: {
                     }}
                   />
                 </div>
-                <span className="sub">{xpText}</span>
                 {/* Level 1-100 (level-v2.md): the run's cap is a notch, the harvest boss a tick. */}
                 <div
                   className="level-track"
@@ -303,54 +315,51 @@ export function CharacterOverlay(props: {
                   <i className="boss-tick" style={{ left: `${(boss / max) * 100}%` }} />
                   <i className="cap-notch" style={{ left: `${(cap / max) * 100}%` }} />
                 </div>
-                {inFight && <span className="view-only title-font">FIGHT PAUSED · VIEW ONLY</span>}
-              </>
-            }
-            onClose={props.onClose}
-          />
-        }
-      >
-        <div className="character-columns">
-          <section className="doll-column" aria-label="Equipment">
-            <span className="title-font section-title">Equipment</span>
-            <Paperdoll>
-              <WeaponSlot state={state} />
-              {GAME_DATA.equipmentSlots.map((slot) => {
-                const pos = dollBox(slot);
-                const it = state.hero.equipment[slot];
-                const inactive = gear.inactive.some((i) => i.slot === slot);
-                return (
-                  <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
-                    <ItemTile
-                      item={it}
-                      label={SLOT_NAMES[itemSlotFor(slot)]}
-                      width={pos.w}
-                      height={pos.h}
-                      selected={!!it && it.id === selected}
-                      inactive={inactive}
-                      aimed={
-                        !!invItem && slot.startsWith("ring") && aimedSlot(state, invItem) === slot
-                      }
-                      {...(inFight ? {} : { drag: drops.slot(slot) })}
-                      {...(it ? { onSelect: () => setSelected(it.id) } : {})}
-                    />
-                  </div>
-                );
-              })}
-            </Paperdoll>
+              </div>
+            </div>
+            <HeroDoll state={state} slot={slotProps} />
           </section>
 
-          <section className="attr-column" aria-label="Attributes">
-            <div className="section-row">
-              <span className="title-font section-title">Attributes</span>
-              <span className={`points ${left > 0 ? "has" : ""}`} data-testid="attribute-points">
-                {left} Attribute Points
-              </span>
-            </div>
-            {/* The Ashborn boards need the whole column: the attributes wait on the other tabs. */}
-            {tab !== "Ashborn" && (
+          <section className="sheet-column" aria-label={tab}>
+            {tab === "Attributes" && (
               <>
+                <div className="section-row">
+                  <span className="title-font section-title">Attributes</span>
+                  <span
+                    className={`points ${left > 0 ? "has" : ""}`}
+                    data-testid="attribute-points"
+                  >
+                    {left} Attribute Points
+                  </span>
+                </div>
                 <AttributeStones
+                  perkBoard
+                  actions={
+                    !inFight &&
+                    state.hero.unspentAttributePoints > 0 && (
+                      <div className="attr-buttons">
+                        <Button
+                          blocked={spent === 0 ? "Nothing to undo" : null}
+                          onClick={() => setPending(NO_POINTS)}
+                        >
+                          Undo
+                        </Button>
+                        <HoldButton
+                          primary
+                          blocked={spent === 0 ? "Add a point first" : null}
+                          onConfirm={confirm}
+                          tip={{
+                            name: "Confirm",
+                            kind: "Hold to confirm",
+                            explain:
+                              "Attribute Points are for good. Old Nan can reset them for Acorns.",
+                          }}
+                        >
+                          Confirm
+                        </HoldButton>
+                      </div>
+                    )
+                  }
                   base={state.hero.attributes}
                   delta={pending}
                   boon={boonAttributes}
@@ -360,59 +369,25 @@ export function CharacterOverlay(props: {
                     : {
                         canAdd: (a: Attribute) =>
                           left > 0 && state.hero.attributes[a] + pending[a] < ATTRIBUTE_RULES.max,
-                        onAdd: (a: Attribute) => {
-                          setPending((p) => ({ ...p, [a]: p[a] + 1 }));
-                          setLocking(false);
-                        },
+                        onAdd: (a: Attribute) => setPending((p) => ({ ...p, [a]: p[a] + 1 })),
                       })}
                 />
-                {!inFight && state.hero.unspentAttributePoints > 0 && (
-                  <div className="attr-buttons">
-                    <button
-                      type="button"
-                      className={`btn ${locking ? "danger" : "primary"}`}
-                      disabled={spent === 0}
-                      onClick={confirm}
-                    >
-                      {locking ? "Lock in for good?" : "Confirm"}
-                    </button>
-                    <button
-                      type="button"
-                      className="btn"
-                      disabled={spent === 0}
-                      onClick={() => {
-                        setPending(NO_POINTS);
-                        setLocking(false);
-                      }}
-                    >
-                      Undo
-                    </button>
-                  </div>
-                )}
               </>
             )}
-            <div className="tabs small-tabs" role="tablist">
-              {tabs.map((t) => (
-                <button
-                  key={t}
-                  type="button"
-                  role="tab"
-                  aria-selected={tab === t}
-                  className={`tab title-font ${tab === t ? "on" : ""}`}
-                  onClick={() => setTab(t)}
-                >
-                  {t}
-                </button>
-              ))}
-            </div>
-            {tab === "Ashborn" ? (
-              <AshbornPanel state={state} game={game} inFight={inFight} />
-            ) : (
-              <dl className="stat-rows">
-                {rows[tab].map((r) => (
-                  <StatRow key={r.label} {...r} />
-                ))}
-              </dl>
+            {tab === "Overview" && (
+              <HeroNumbers stats={stats} dps={dps} weapon={weaponNumbers} resNote={resNote} />
+            )}
+            {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
+            {tab === "Offense" && <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />}
+            {tab === "Defense" && (
+              <DefensePanel stats={stats} penalty={penalty} resNote={resNote} />
+            )}
+            {tab === "Heat" && (
+              <HeatPanel
+                stats={stats}
+                weapon={weaponNumbers}
+                perSecond={heatPerSecond(setup, stats)}
+              />
             )}
           </section>
 
@@ -428,43 +403,34 @@ export function CharacterOverlay(props: {
               selected={selected}
               onSelect={(id) => {
                 setSelected(id);
-                setDiscarding(null);
               }}
               label="Inventory grid"
               drop={inFight ? undefined : drops.grid("inventory")}
+              context={gridContext}
             />
             {sel ? (
-              <ItemDetail
-                item={sel}
-                heroAttributes={state.hero.attributes}
-                heroLevel={state.hero.level}
-                where={equippedSlot ? "EQUIPPED" : "INVENTORY"}
-                compare={invItem ? compareWithEquipped(state, invItem) : undefined}
-                footer={footer}
-                className="character-detail"
-              />
+              <div className="sel-bar" data-testid="selected-item">
+                <div className="sel-head">
+                  <ItemTile item={sel} label={slotLabel(sel)} size={56} equipped={!!equippedSlot} />
+                  <div className="sel-name">
+                    <span className={`title-font rarity-text ${rarityClass(sel)}`}>{sel.name}</span>
+                    <span className="sub">
+                      {equippedSlot ? "Equipped" : "In your bag"} · {slotLabel(sel)}
+                    </span>
+                  </div>
+                </div>
+                {footer}
+              </div>
             ) : (
-              <EmptyState icon="eye">Select an item.</EmptyState>
+              <EmptyState icon="inventory">
+                {inFight ? "Hover an item to see it." : "Right-click an item to equip it."}
+              </EmptyState>
             )}
+            <div className="k-grow" />
             <Wallet state={state} named />
           </section>
         </div>
       </Window>
     </WindowLayer>
-  );
-}
-
-/** One stat line; a hover explains the mechanic in plain words where it has a note. */
-function StatRow(props: { label: string; value: string; note?: NoteHover | undefined }) {
-  const hover = useNoteHover(props.note);
-  return (
-    <div
-      className={`stat-row${props.note ? " has-note" : ""}`}
-      {...hover}
-      tabIndex={props.note ? 0 : undefined}
-    >
-      <dt>{props.label}</dt>
-      <dd className="mono">{props.value}</dd>
-    </div>
   );
 }

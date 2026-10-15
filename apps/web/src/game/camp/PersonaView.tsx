@@ -298,7 +298,6 @@ export function PersonaView(props: {
                   id: p,
                   name: PERSONAS[p].name,
                   art: <PersonaPortrait id={p} />,
-                  explain: PERSONAS[p].role,
                   ...(personaPresent(state, p) ? {} : { locked: PERSONA_LOCKED[p] }),
                 }))}
                 active={props.persona}

@@ -105,8 +105,6 @@ export interface TabItem<T extends string> {
   readonly marker?: number | "!";
   /** Why the tab is closed; locked tabs are skipped by Q/E. */
   readonly locked?: string;
-  /** Tooltip text: what the tab is for. */
-  readonly explain?: string;
 }
 
 /** Bookmark tabs; Q and E flip through them while this window is on top. */
@@ -133,15 +131,9 @@ export function Tabs<T extends string>(props: {
 
 function Tab<T extends string>(props: { item: TabItem<T>; on: boolean; onPick: () => void }) {
   const t = props.item;
+  // Only a closed tab explains itself; open tabs need no tooltip (Timo).
   const hover = useNoteHover(
-    t.explain || t.locked
-      ? {
-          name: t.name,
-          kind: "",
-          explain: t.explain ?? "",
-          ...(t.locked ? { status: t.locked } : {}),
-        }
-      : undefined,
+    t.locked ? { name: t.name, kind: "", explain: "", status: t.locked } : undefined,
   );
   return (
     <button

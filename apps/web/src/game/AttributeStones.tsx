@@ -10,6 +10,7 @@ import {
   addAttributes,
   heroPerks,
 } from "@emberheir/sim";
+import type { ReactNode } from "react";
 import { type PerkStatus, usePerkHover } from "../ui/ItemTooltip";
 
 export const ATTRIBUTE_INFO: Record<Attribute, { name: string; short: string; effects: string }> = {
@@ -76,6 +77,10 @@ export function AttributeStones(props: {
   onRemove?: (a: Attribute) => void;
   /** Perks that were lit before the change (lost ones show red). */
   before?: readonly PerkId[];
+  /** Perks as explained cards with the next ones to reach (Character Sheet), not chips. */
+  perkBoard?: boolean;
+  /** Buttons between the stones and the Perks (Confirm, Undo). */
+  actions?: ReactNode;
 }) {
   const next = addAttributes(props.base, props.delta);
   const lit = new Set(heroPerks(next, props.boon ?? {}));
@@ -160,16 +165,86 @@ export function AttributeStones(props: {
           );
         })}
       </ul>
-      <div className="perk-line" data-testid="perks">
-        {PERKS.filter((p) => lit.has(p.id) || lost.includes(p.id)).map((p) => (
-          <PerkChip
+      {props.actions}
+      {props.perkBoard ? (
+        <PerkBoard
+          status={status}
+          value={(a) => next[a] + (props.boon?.[a] ?? 0)}
+          shown={(p) => lit.has(p) || lost.includes(p)}
+        />
+      ) : (
+        <div className="perk-line" data-testid="perks">
+          {PERKS.filter((p) => lit.has(p.id) || lost.includes(p.id)).map((p) => (
+            <PerkChip
+              key={p.id}
+              perk={p.id}
+              status={status(p.id)}
+              value={next[p.attribute] + (props.boon?.[p.attribute] ?? 0)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** More lit Perks than this: two columns of names, the effect moves into the tooltip. */
+const BOARD_FULL = 3;
+
+/**
+ * Breakpoint Perks as cards (ui-ux-plan-v1.md 4.2): what every lit Perk does in one line. Only
+ * lit Perks show; the seals on the stones hint at the rest.
+ */
+function PerkBoard(props: {
+  status: (p: PerkId) => PerkStatus;
+  value: (a: Attribute) => number;
+  shown: (p: PerkId) => boolean;
+}) {
+  const lit = PERKS.filter((p) => props.shown(p.id));
+  if (lit.length === 0) return null;
+  return (
+    <section className="perk-board" data-testid="perks" aria-label="Breakpoint Perks">
+      <div className="section-row">
+        <span className="title-font section-title">Breakpoint Perks</span>
+      </div>
+      <div className={`perk-cards${lit.length > BOARD_FULL ? " compact" : ""}`}>
+        {lit.map((p) => (
+          <PerkCard
             key={p.id}
             perk={p.id}
-            status={status(p.id)}
-            value={next[p.attribute] + (props.boon?.[p.attribute] ?? 0)}
+            status={props.status(p.id)}
+            value={props.value(p.attribute)}
           />
         ))}
       </div>
+    </section>
+  );
+}
+
+function PerkCard(props: { perk: PerkId; status: PerkStatus; value: number }) {
+  const hover = usePerkHover(props);
+  const perk = PERKS.find((p) => p.id === props.perk);
+  if (!perk) return null;
+  const info = ATTRIBUTE_INFO[perk.attribute];
+  const tag = {
+    active: null,
+    gained: "New",
+    lost: "Lost",
+    locked: `Needs ${perk.threshold - props.value} more`,
+  }[props.status];
+  return (
+    <div className={`perk-card perk-${props.status}`} tabIndex={0} {...hover}>
+      <span className="perk-card-seal" aria-label={`${info.name} ${perk.threshold}`}>
+        <span>{info.short}</span>
+        <b>{perk.threshold}</b>
+      </span>
+      <span className="perk-card-text">
+        <span className="perk-card-name title-font">
+          {perk.name}
+          {tag && <em className="perk-card-tag">{tag}</em>}
+        </span>
+        <span className="perk-card-desc">{perk.explain}</span>
+      </span>
     </div>
   );
 }

@@ -65,6 +65,8 @@ interface Hover {
   };
   /** True when the hovered item is worn right now (no comparison then). */
   readonly equipped: boolean;
+  /** What a right-click does here, e.g. "Equip" (ui-ux-plan-v1.md 3.5). */
+  readonly action?: string | undefined;
 }
 
 interface HoverApi {
@@ -78,18 +80,18 @@ interface HoverApi {
 const HoverContext = createContext<HoverApi | null>(null);
 
 /** Mouse handlers that show an item's tooltip; no-ops outside an `ItemHoverLayer`. */
-export function useItemHover(item: Item | undefined, equipped = false) {
+export function useItemHover(item: Item | undefined, equipped = false, action?: string) {
   const api = useContext(HoverContext);
   return useMemo(() => {
     if (!api || !item) return { active: false as const };
     return {
       active: true as const,
-      onMouseEnter: (e: React.MouseEvent) => api.show({ item, equipped }, e.currentTarget),
+      onMouseEnter: (e: React.MouseEvent) => api.show({ item, equipped, action }, e.currentTarget),
       onMouseLeave: () => api.hide(),
-      onFocus: (e: React.FocusEvent) => api.show({ item, equipped }, e.currentTarget),
+      onFocus: (e: React.FocusEvent) => api.show({ item, equipped, action }, e.currentTarget),
       onBlur: () => api.hide(),
     };
-  }, [api, item, equipped]);
+  }, [api, item, equipped, action]);
 }
 
 /** Mouse and focus handlers that show a Breakpoint Perk's tooltip. */
@@ -229,6 +231,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
                 verdict={
                   !hover.equipped && state ? compareWithEquipped(state, hover.item) : undefined
                 }
+                action={hover.action}
               />
             )}
             {worn && <ItemTooltipCard item={worn} state={state} tag="Equipped" />}
@@ -306,6 +309,8 @@ export function ItemTooltipCard(props: {
   state: GameState | null;
   tag?: string;
   verdict?: { text: string; better: boolean } | undefined;
+  /** What a right-click does where the item sits. */
+  action?: string | undefined;
 }) {
   const { item } = props;
   const tip = describeItem(
@@ -378,6 +383,11 @@ export function ItemTooltipCard(props: {
       {props.verdict && (
         <span className={`tip-verdict ${props.verdict.better ? "better" : "worse"}`}>
           {props.verdict.text}
+        </span>
+      )}
+      {props.action && (
+        <span className="tip-hotkey">
+          <kbd className="k-key">Right-click</kbd> {props.action}
         </span>
       )}
     </div>
