@@ -28,6 +28,8 @@ export interface Figure {
   flash: number;
   knock: number;
   recoil: number;
+  /** Weapon swing of the painted Heir's forearm. */
+  swing: number;
   dodge: number;
   /** Seconds of Stun left. */
   stun: number;
@@ -58,5 +60,17 @@ export function makeFigure(side: Side, body: Container, x: number): Figure {
   const stars = new Graphics();
   stars.visible = false;
   root.addChild(shadow, body, stars);
-  return { root, body, side, stars, lunge: 0, flash: 0, knock: 0, recoil: 0, dodge: 0, stun: 0 };
+  return {
+    root,
+    body,
+    side,
+    stars,
+    lunge: 0,
+    flash: 0,
+    knock: 0,
+    recoil: 0,
+    swing: 0,
+    dodge: 0,
+    stun: 0,
+  };
 }

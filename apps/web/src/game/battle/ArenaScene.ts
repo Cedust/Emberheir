@@ -41,6 +41,7 @@ import {
 } from "./arenaProps";
 import { type EnemyLook, drawEnemy } from "./enemyArt";
 import { Fx } from "./fx";
+import { armSwing, loadHeirTextures } from "./heirRig";
 import { type HeroLook, RANGED_WEAPONS, drawHero } from "./heroArt";
 import { type View, Weather } from "./weather";
 
@@ -78,6 +79,9 @@ export class ArenaScene {
   private size = { w: W, h: H, resolution: 1 };
   private destroyed = false;
   private hero: Figure | null = null;
+  /** The painted Heir's forearm (turns to swing) and fist (where shots leave). */
+  private heroArm: Container | null = null;
+  private heroFist: Container | null = null;
   private enemy: Figure | null = null;
   private telegraph: Graphics | null = null;
   private aura: Graphics | null = null;
@@ -165,6 +169,11 @@ export class ArenaScene {
       app.destroy(true, { children: true });
       return null;
     }
+    const heir = await loadHeirTextures();
+    if (this.destroyed) {
+      app.destroy(true, { children: true });
+      return null;
+    }
     this.app = app;
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
@@ -225,7 +234,9 @@ export class ArenaScene {
     this.telegraph.alpha = 0;
     this.world.addChild(this.telegraph);
 
-    this.hero = makeFigure("hero", drawHero(hero), HERO_X);
+    this.hero = makeFigure("hero", drawHero(hero, heir), HERO_X);
+    this.heroArm = this.hero.body.getChildByLabel("heir-arm", true) ?? null;
+    this.heroFist = this.hero.body.getChildByLabel("heir-fist", true) ?? null;
     this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
     this.exaltedTip =
       hero.weaponLook.grade >= 4
@@ -433,6 +444,10 @@ export class ArenaScene {
 
   /** Where projectiles leave: the bow, wand or casting hand. */
   private hand(side: Side): { x: number; y: number } {
+    if (side === "hero" && this.heroFist) {
+      const p = this.world.toLocal(this.heroFist.getGlobalPosition());
+      return { x: p.x + 30, y: p.y - 30 };
+    }
     return side === "hero"
       ? { x: HERO_X + 140, y: GROUND_Y - 350 }
       : { x: ENEMY_X - 130, y: GROUND_Y - 300 };
@@ -746,6 +761,7 @@ export class ArenaScene {
       switch (how) {
         case "slash":
           attacker.lunge = 1;
+          attacker.swing = 1;
           this.wait(0.08, land);
           break;
         case "arrow":
@@ -1080,6 +1096,7 @@ export class ArenaScene {
       f.flash = Math.max(0, f.flash - dt * 6);
       f.knock = Math.max(0, f.knock - dt * 5);
       f.recoil = Math.max(0, f.recoil - dt * 6);
+      f.swing = Math.max(0, f.swing - dt * 3);
       f.dodge = Math.max(0, f.dodge - dt * 4);
       f.stun = Math.max(0, f.stun - dt);
       f.body.x =
@@ -1089,6 +1106,13 @@ export class ArenaScene {
         dir * 60 * Math.sin(f.dodge * Math.PI);
       f.body.y = Math.sin(this.clock * 2.2 + (f.side === "hero" ? 0 : 1.3)) * 3;
       f.body.rotation = -dir * 0.06 * Math.min(1, f.knock);
+      if (f.side === "hero" && this.heroArm) {
+        // The forearm breathes with the body and swings the weapon on an attack.
+        const ranged = this.ranged.hero;
+        const timer = ranged ? f.recoil : f.swing;
+        const swing = timer > 0 ? armSwing(1 - timer, ranged) : 0;
+        this.heroArm.rotation = Math.sin(this.clock * 2.2) * 0.04 + swing;
+      }
       const base = this.tint[f.side];
       f.body.tint = f.flash > 0.5 ? 0xff7777 : base;
       f.stars.visible = f.stun > 0;
