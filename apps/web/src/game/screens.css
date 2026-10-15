@@ -1441,6 +1441,28 @@
 .stage .camp-stage {
   position: relative;
   flex-grow: 1;
+  overflow: hidden;
+}
+
+/* The camera: leans in on the persona whose window is open, eases back when it closes. */
+.stage .camp-camera {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.55s cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+
+.stage .camp-camera.focus {
+  transform: scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .camp-camera {
+    transition: none;
+  }
+
+  .stage .camp-camera.focus {
+    transform: none;
+  }
 }
 
 .stage .camp-scene {
