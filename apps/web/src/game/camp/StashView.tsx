@@ -12,7 +12,8 @@ import {
 } from "@emberheir/sim";
 import { type MouseEvent, useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt, walletEntries } from "../../ui/items";
+import { ItemDetail, ItemGrid, ItemTile, RingSwitch } from "../../ui/items";
+import { Wallet } from "../../ui/kit/Currency";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
 import { itemDrops } from "../itemDrops";
 import { EQUIP_BLOCK_TEXT, MOVE_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "../labels";
@@ -117,13 +118,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
           <span className="sub">Stash</span>
         </div>
         <div className="grow" />
-        <div className="wallet-row small-wallet">
-          {walletEntries(state).map((w) => (
-            <span key={w.key} className={`w-${w.key}`}>
-              <b className="mono">{fmt(w.value)}</b> <span className="sub">{w.name}</span>
-            </span>
-          ))}
-        </div>
+        <Wallet state={state} named />
         <button
           type="button"
           className="icon-button"

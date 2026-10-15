@@ -53,6 +53,19 @@ export function itemIcon(item: Item): IconName {
   }
 }
 
+/** Silhouettes for empty slots (Diablo): the slot's shape instead of its name. */
+const EMPTY_SLOT_ICON: Readonly<Record<string, IconName>> = {
+  Helm: "helm",
+  "Body Armor": "armor",
+  "Off Hand": "shield",
+  Gloves: "gloves",
+  Boots: "boots",
+  Belt: "belt",
+  Amulet: "amulet",
+  Ring: "ring",
+  Charm: "charm",
+};
+
 /** Rarity classes of an item: Uniques and Runewords get their own golden frame and name. */
 export function rarityClass(item: Item): string {
   const special = item.uniqueId
@@ -289,7 +302,9 @@ export function ItemTile(props: {
       {item && base ? (
         <ItemArt baseId={item.baseId} slot={base.slot} />
       ) : (
-        <span className="item-tile-label">{props.label}</span>
+        <span className="item-tile-empty" aria-hidden="true">
+          <Icon name={EMPTY_SLOT_ICON[props.label] ?? "box"} size={Math.min(w, h, 90) * 0.42} />
+        </span>
       )}
       {item && <SocketDots sockets={item.sockets ?? 0} runes={item.runes ?? []} />}
       {item && <span className="item-tile-tier">T{item.tier}</span>}

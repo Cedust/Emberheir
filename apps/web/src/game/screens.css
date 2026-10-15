@@ -369,13 +369,14 @@
   text-shadow: 0 1px 2px #000;
 }
 
-.stage .item-tile-label {
-  font-family: var(--font-title);
-  font-size: 10px;
-  letter-spacing: 0.5px;
+.stage .item-tile-empty {
+  display: flex;
   color: #8a7a64;
-  text-align: center;
-  padding: 0 4px;
+  opacity: 0.55;
+}
+
+.stage .item-tile:hover .item-tile-empty {
+  opacity: 0.85;
 }
 
 .stage .item-grid {
@@ -698,14 +699,6 @@
   gap: 14px;
 }
 
-.stage .small-wallet .w-coal b {
-  color: var(--r-epic);
-}
-
-.stage .small-wallet .w-feathers b {
-  color: #ffb13b;
-}
-
 .stage .empty-pick {
   padding: 30px;
   text-align: center;
@@ -1005,21 +998,6 @@
   gap: 16px;
 }
 
-.stage .wallet-entry {
-  display: flex;
-  flex-direction: column;
-  line-height: 1.2;
-}
-
-.stage .wallet-entry .mono {
-  font-size: 17px;
-  font-weight: 600;
-}
-
-.stage .wallet-entry .sub {
-  font-size: 13px;
-}
-
 .stage .gain {
   color: var(--good);
   font-size: 14px;
@@ -1231,46 +1209,6 @@
 .stage .camp-wallet {
   font-size: 15px;
   gap: 18px;
-}
-
-.stage .wallet-chip {
-  display: flex;
-  align-items: center;
-  gap: 7px;
-}
-
-.stage .wallet-chip .dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 6px;
-  border: 1.5px solid var(--ink);
-  background: #c9c2b8;
-}
-
-.stage .wallet-chip .sub {
-  font-size: 13px;
-}
-
-.stage .w-acorns .dot {
-  background: #ffd84a;
-}
-
-.stage .w-coal .dot {
-  background: #5b8cff;
-}
-
-.stage .w-feathers .dot {
-  background: #ffb13b;
-}
-
-.stage .w-runes .dot {
-  background: #8fd06a;
-  border-radius: 2px;
-  transform: rotate(45deg);
-}
-
-.stage .w-flask .dot {
-  background: #e5484d;
 }
 
 /* An overlay covers the screen: the camp fire and the animals behind it pause, saving work. */

@@ -18,7 +18,9 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { fmt, ItemGrid, ItemTile, rarityClass, walletEntries } from "../../ui/items";
+import { ItemGrid, ItemTile, rarityClass } from "../../ui/items";
+import { Wallet } from "../../ui/kit/Currency";
+import { useTabKeys } from "../../ui/kit/hotkeys";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { runeName } from "../../ui/RuneArt";
 import { CRAFT_BLOCK_TEXT } from "../labels";
@@ -57,6 +59,11 @@ export function PersonaView(props: {
 }) {
   const { state, game } = props;
   const def = PERSONAS[props.persona];
+  useTabKeys(
+    PERSONA_ORDER.filter((p) => personaPresent(state, p)),
+    props.persona,
+    (p) => props.onPersona(p as PersonaId),
+  );
   const [kinds, setKinds] = useState<Record<PersonaId, ActionKind>>({
     thoric: "upgrade",
     liora: "temper",
@@ -298,13 +305,7 @@ export function PersonaView(props: {
           ))}
         </div>
         <div className="grow" />
-        <div className="wallet-row small-wallet">
-          {walletEntries(state).map((w) => (
-            <span key={w.key} className={`w-${w.key}`}>
-              <b className="mono">{fmt(w.value)}</b> <span className="sub">{w.name}</span>
-            </span>
-          ))}
-        </div>
+        <Wallet state={state} named />
         <button
           type="button"
           className="icon-button"

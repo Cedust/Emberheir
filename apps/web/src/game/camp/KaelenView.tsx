@@ -29,7 +29,9 @@ import {
 } from "@emberheir/sim";
 import { Suspense, useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { fmt } from "../../ui/items";
+import { useTabKeys } from "../../ui/kit/hotkeys";
+import { CurrencyChip } from "../../ui/kit/Currency";
+import { useNoteHover } from "../../ui/ItemTooltip";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
@@ -510,6 +512,11 @@ export function KaelenView(props: {
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
   const canRespec = !viewOnly && spent > 0 && state.wallet.acorns >= respecPrice;
+  useTabKeys(
+    ["tree", "mastery", ...(planEditable ? ["plan"] : []), ...(viewOnly ? [] : ["dummy"])],
+    tab,
+    (id) => setTab(id as typeof tab),
+  );
 
   return (
     <div className={viewOnly ? "overlay" : "screen-wrap"} role="dialog" aria-label="Kaelen">
@@ -568,18 +575,19 @@ export function KaelenView(props: {
             )}
           </div>
           <div className="grow" />
-          <div className="wallet-row small-wallet">
-            <span data-testid="skill-points">
-              <b className="mono">{state.hero.unspentSkillPoints}</b>{" "}
-              <span className="sub">Skill Points</span>
-            </span>
-            <span>
-              <b className="mono">{masteryPointsLeft(state, GAME_DATA)}</b>{" "}
-              <span className="sub">Mastery Points</span>
-            </span>
-            <span>
-              <b className="mono">{fmt(state.wallet.acorns)}</b> <span className="sub">Acorns</span>
-            </span>
+          <div className="wallet-row small-wallet k-wallet">
+            <PointChip
+              testId="skill-points"
+              value={state.hero.unspentSkillPoints}
+              name="Skill Points"
+              explain="Learn nodes in the Skill Tree. You earn them at Waymarks on the road."
+            />
+            <PointChip
+              value={masteryPointsLeft(state, GAME_DATA)}
+              name="Mastery Points"
+              explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
+            />
+            <CurrencyChip id="acorns" amount={state.wallet.acorns} named />
           </div>
           {!viewOnly &&
             (tab === "tree" || tab === "plan") &&
@@ -638,5 +646,20 @@ export function KaelenView(props: {
         </Suspense>
       </section>
     </div>
+  );
+}
+
+/** Unspent points in the header, explained on hover. */
+function PointChip(props: { value: number; name: string; explain: string; testId?: string }) {
+  const hover = useNoteHover({
+    name: props.name,
+    kind: "Points",
+    explain: props.explain,
+    status: `${props.value} left to spend`,
+  });
+  return (
+    <span className="k-currency" data-testid={props.testId} tabIndex={0} {...hover}>
+      <b className="mono">{props.value}</b> <span className="sub">{props.name}</span>
+    </span>
   );
 }

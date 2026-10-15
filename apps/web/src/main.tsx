@@ -15,6 +15,7 @@ import "@fontsource/jetbrains-mono/latin-600.css";
 import "./theme.css";
 import "./game/game.css";
 import "./game/screens.css";
+import "./ui/kit/kit.css";
 
 const root = document.getElementById("root");
 if (!root) throw new Error("#root element missing");

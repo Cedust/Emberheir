@@ -12,6 +12,7 @@ export const ICONS = {
   belt: "M2 9h20v6H2z M10 8h4v8h-4z",
   amulet: "M6 3c0 5 3 8 6 8s6-3 6-8 M12 11v2 M12 13a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   ring: "M12 8a6 6 0 1 0 0 12 6 6 0 0 0 0-12z M9 4h6l-3 4z",
+  charm: "M12 2v4 M12 6l6 6-6 10-6-10z M12 10v6",
   user: "M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2 M12 3a4 4 0 1 0 0 8 4 4 0 0 0 0-8z",
   tree: "M12 3v6 M12 9l-6 6 M12 9l6 6 M6 15v6 M18 15v6 M12 9v12",
   menu: "M4 6h16 M4 12h16 M4 18h16",

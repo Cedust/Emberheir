@@ -48,6 +48,8 @@ export interface NoteHover {
   readonly explain: string;
   /** Last line, e.g. "Run 4: −30 % on every Resistance". */
   readonly status?: string;
+  /** The key that does the same, shown as a key cap (ui-ux-plan-v1.md 3.5). */
+  readonly hotkey?: string;
 }
 
 interface Hover {
@@ -109,7 +111,7 @@ export function usePerkHover(perk: PerkHover) {
 /** Mouse and focus handlers that show a game note (mechanics, stats, Draughts). */
 export function useNoteHover(note: NoteHover | undefined) {
   const api = useContext(HoverContext);
-  const { name, kind, explain, status } = note ?? { name: "", kind: "", explain: "" };
+  const { name, kind, explain, status, hotkey } = note ?? { name: "", kind: "", explain: "" };
   // A note shown by this element goes away with it (closing the sheet with Escape, setting out).
   const shown = useRef(false);
   useEffect(
@@ -120,7 +122,9 @@ export function useNoteHover(note: NoteHover | undefined) {
   );
   return useMemo(() => {
     if (!api || !name) return {};
-    const hover = { note: { name, kind, explain, ...(status ? { status } : {}) } };
+    const hover = {
+      note: { name, kind, explain, ...(status ? { status } : {}), ...(hotkey ? { hotkey } : {}) },
+    };
     const show = (element: Element) => {
       shown.current = true;
       api.show(hover, element);
@@ -135,11 +139,13 @@ export function useNoteHover(note: NoteHover | undefined) {
       onFocus: (e: React.FocusEvent) => show(e.currentTarget),
       onBlur: hide,
     };
-  }, [api, name, kind, explain, status]);
+  }, [api, name, kind, explain, status, hotkey]);
 }
 
 const GAP = 12;
 const MARGIN = 10;
+/** Anchors that end above this line sit in a header bar. */
+const HEADER_ZONE = 90;
 
 /** Provides item tooltips to everything inside; renders them on top of the stage. */
 export function ItemHoverLayer(props: { state: GameState | null; children: ReactNode }) {
@@ -179,6 +185,15 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
     const w = box.offsetWidth;
     const h = box.offsetHeight;
     const { anchor } = hover;
+    // Header bars (wallet, points, tabs): hang the note below instead of over the bar.
+    if (!hover.item && anchor.y + anchor.h <= HEADER_ZONE) {
+      const centered = anchor.x + anchor.w / 2 - w / 2;
+      setPos({
+        left: Math.min(Math.max(MARGIN, centered), stage.w - MARGIN - w),
+        top: anchor.y + anchor.h + GAP,
+      });
+      return;
+    }
     const right = anchor.x + anchor.w + GAP;
     const left = right + w <= stage.w - MARGIN ? right : Math.max(MARGIN, anchor.x - GAP - w);
     const top = Math.min(Math.max(MARGIN, anchor.y), stage.h - MARGIN - h);
@@ -263,9 +278,18 @@ function NoteTooltipCard(props: NoteHover) {
   return (
     <div className="item-tooltip perk-tooltip note-tooltip" data-testid="note-tooltip">
       <span className="tip-name">{props.name}</span>
-      <span className="tip-kind">{props.kind}</span>
-      <span className="tip-rule" />
-      <span className="tip-line perk-tip-explain">{props.explain}</span>
+      {props.kind && <span className="tip-kind">{props.kind}</span>}
+      {props.explain && (
+        <>
+          <span className="tip-rule" />
+          <span className="tip-line perk-tip-explain">{props.explain}</span>
+        </>
+      )}
+      {props.hotkey && (
+        <span className="tip-hotkey">
+          Key <kbd className="k-key">{props.hotkey}</kbd>
+        </span>
+      )}
       {props.status && (
         <>
           <span className="tip-rule" />
