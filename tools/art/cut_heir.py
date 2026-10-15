@@ -21,6 +21,9 @@ for y in range(int(min(p[1] for p in poly)),int(max(p[1] for p in poly))+1):
       if (r+g+b)/3>150 and max(r,g,b)-min(r,g,b)<70: mp[x,y]=0
 arm=Image.new('RGBA',im.size,(0,0,0,0)); arm.paste(im,(0,0),m)
 body=im.copy(); body.putalpha(ImageChops.subtract(im.getchannel('A'),m))
+# The fist alone: drawn over the weapon, so thumb and fingers close around the grip.
+fm=Image.new('L',im.size,0); ImageDraw.Draw(fm).polygon([(826,872),(872,834),(912,850),(914,905),(892,942),(835,942),(816,905)],fill=255)
+fist=Image.new('RGBA',im.size,(0,0,0,0)); fist.paste(arm,(0,0),fm)
 # A stump under the sleeve: a clean band of the forearm repeated up into it, so a turned
 # arm shows no gap.
 import math
@@ -29,7 +32,7 @@ nx,ny=0.47,0.885
 def band(o0,o1): return [(A[0]+nx*o0,A[1]+ny*o0),(B[0]+nx*o0,B[1]+ny*o0),(B[0]+nx*o1,B[1]+ny*o1),(A[0]+nx*o1,A[1]+ny*o1)]
 bm=Image.new('L',im.size,0); ImageDraw.Draw(bm).polygon(band(14,44),fill=255)
 src=Image.new('RGBA',im.size,(0,0,0,0)); src.paste(arm,(0,0),bm)
-for k in range(1,5):
+for k in range(1,3):
   sh=Image.new('RGBA',im.size,(0,0,0,0)); sh.paste(src,(round(-nx*28*k),round(-ny*28*k)))
   arm=Image.alpha_composite(sh,arm)
 elbow=(762,750); grip=(866,884)
@@ -40,6 +43,6 @@ def save(img,name):
   c=img.crop(bb); c=c.resize((round(c.width*S),round(c.height*S)),Image.LANCZOS)
   c.save(OUT+name,'WEBP',quality=90,method=6)
   return bb
-bb_body=save(body,'heir-body.webp'); bb_arm=save(arm,'heir-arm.webp')
+bb_body=save(body,'heir-body.webp'); bb_arm=save(arm,'heir-arm.webp'); bb_fist=save(fist,'heir-fist.webp')
 feet=(600,1445)
-print(json.dumps({'body':bb_body,'arm':bb_arm,'elbow':elbow,'grip':grip,'feet':feet}))
+print(json.dumps({'body':bb_body,'arm':bb_arm,'fist':bb_fist,'elbow':elbow,'grip':grip,'feet':feet}))

@@ -122,14 +122,14 @@ function weaponArt(look: HeroLook): Container {
  * the enemy, negative = up), drawn length in figure units, and where along it the fist grips.
  */
 const HEIR_GRIPS: Record<HeroLook["weapon"], { angle: number; length: number; at: number }> = {
-  sword: { angle: -1.05, length: 210, at: 0.1 },
-  axe: { angle: -1.15, length: 200, at: 0.14 },
-  dagger: { angle: -0.9, length: 120, at: 0.2 },
-  mace: { angle: -1.1, length: 190, at: 0.14 },
-  staff: { angle: -1.42, length: 380, at: 0.42 },
+  sword: { angle: -0.7, length: 210, at: 0.1 },
+  axe: { angle: -0.8, length: 200, at: 0.14 },
+  dagger: { angle: -0.6, length: 120, at: 0.2 },
+  mace: { angle: -0.75, length: 190, at: 0.14 },
+  staff: { angle: -1.2, length: 380, at: 0.42 },
   bow: { angle: Math.PI / 2, length: 280, at: 0.5 },
   crossbow: { angle: -0.08, length: 200, at: 0.36 },
-  wand: { angle: -1.0, length: 120, at: 0.14 },
+  wand: { angle: -0.7, length: 120, at: 0.14 },
 };
 
 /**
@@ -160,9 +160,9 @@ function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   weapon.rotation = grip.angle;
   weapon.scale.set(grip.length / WEAPON_LENGTH);
   weapon.pivot.set(grip.at * WEAPON_LENGTH, 0);
-  rig.fist.addChild(weapon);
+  rig.grip.addChild(weapon);
   // The forearm comes out of the sleeve, so it and the weapon sit behind the body.
-  c.addChild(rig.arm, rig.body);
+  c.addChild(rig.sleeveMask, rig.arm, rig.body);
   // The off hand is held in the raised fist, in front of the chest.
   const [ox, oy] = HEIR_OFF_HAND;
   const off = new Container({ label: "heir-off-hand" });
