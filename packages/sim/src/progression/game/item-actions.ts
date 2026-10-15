@@ -90,23 +90,34 @@ export function sortStash(state: GameState, data: GameData, tab = 0): GameState 
   return { ...state, stash: sortStashTab(state.stash, data.items, tab) };
 }
 
+/**
+ * Takes a worn item off: into the inventory, or (Supply Wagon, Camp only) straight into the
+ * stash tab `tab`. `at` is the cell it was dropped on.
+ */
 export function unequip(
   state: GameState,
   data: GameData,
   slot: EquipmentSlot,
   at?: GridPosition,
+  to: "inventory" | "stash" = "inventory",
+  tab?: number,
 ): GameState {
-  const reason = unequipBlockReason(state, data, slot);
+  const reason = unequipBlockReason(state, data, slot, to, tab);
   if (reason) return fail(`Cannot unequip: ${reason}`);
   const item = state.hero.equipment[slot] ?? fail("Slot is empty");
+  const equipment: Equipment = Object.fromEntries(
+    Object.entries(state.hero.equipment).filter(([s]) => s !== slot),
+  );
+  const hero = { ...state.hero, equipment };
+  if (to === "stash") {
+    const stash = addToStash(state.stash, item, data.items, tab, at) ?? fail("No room");
+    return { ...state, stash, hero };
+  }
   const inventory =
     (at
       ? placeAt(state.inventory, item, at.x, at.y, data.items)
       : addToGrid(state.inventory, item, data.items)) ?? fail("No room");
-  const equipment: Equipment = Object.fromEntries(
-    Object.entries(state.hero.equipment).filter(([s]) => s !== slot),
-  );
-  return { ...state, inventory, hero: { ...state.hero, equipment } };
+  return { ...state, inventory, hero };
 }
 
 /** Salvage is Thoric's work, so only in the Camp (Timo, after Playtest 2). */

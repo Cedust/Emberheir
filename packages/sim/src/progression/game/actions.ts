@@ -84,8 +84,17 @@ export type GameAction =
   | { readonly type: "allocateAttributes"; readonly points: Partial<Attributes> }
   /** From inventory or (Camp) stash; `slot` picks the Ring slot or a drop target. */
   | { readonly type: "equip"; readonly itemId: string; readonly slot?: EquipmentSlot }
-  /** Back into the inventory, at `at` when dropped on a cell. */
-  | { readonly type: "unequip"; readonly slot: EquipmentSlot; readonly at?: GridPosition }
+  /**
+   * Back into the inventory, at `at` when dropped on a cell. In the Camp it may go straight into
+   * the stash (`to: "stash"`, tab `tab`; default the first tab with room).
+   */
+  | {
+      readonly type: "unequip";
+      readonly slot: EquipmentSlot;
+      readonly at?: GridPosition;
+      readonly to?: "inventory" | "stash";
+      readonly tab?: number;
+    }
   /** Thoric (Camp only): salvage an inventory item; its trigger parts go into the Codex. */
   | { readonly type: "salvage"; readonly itemId: string }
   /** Throw an inventory item away. Gives nothing. */
@@ -184,7 +193,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "equip":
       return equipFromInventory(state, data, action.itemId, action.slot);
     case "unequip":
-      return unequip(state, data, action.slot, action.at);
+      return unequip(state, data, action.slot, action.at, action.to, action.tab);
     case "salvage":
       return salvage(state, data, action.itemId);
     case "discard":

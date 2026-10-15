@@ -239,7 +239,7 @@ export function ItemTile(props: {
   item: Item | undefined;
   label: string;
   selected?: boolean;
-  onSelect?: () => void;
+  onSelect?: (event?: ReactMouseEvent) => void;
   size?: number;
   width?: number;
   height?: number;

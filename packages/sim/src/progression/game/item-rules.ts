@@ -79,16 +79,26 @@ export function takeBlockReason(
   return addToGrid(state.inventory, item, data.items) ? undefined : "noRoom";
 }
 
-export type UnequipBlockReason = "fight" | "noRoom" | "empty";
+export type UnequipBlockReason = "fight" | "noRoom" | "empty" | "camp";
 
+/**
+ * Why a worn item cannot come off right now: into the inventory, or (Supply Wagon, Camp only)
+ * straight into the stash (`tab`; without one: the first tab with room).
+ */
 export function unequipBlockReason(
   state: GameState,
   data: GameData,
   slot: EquipmentSlot,
+  to: "inventory" | "stash" = "inventory",
+  tab?: number,
 ): UnequipBlockReason | undefined {
   if (state.run?.phase === "fight") return "fight";
   const item = state.hero.equipment[slot];
   if (!item) return "empty";
+  if (to === "stash") {
+    if (state.run) return "camp";
+    return addToStash(state.stash, item, data.items, tab) ? undefined : "noRoom";
+  }
   return addToGrid(state.inventory, item, data.items) ? undefined : "noRoom";
 }
 

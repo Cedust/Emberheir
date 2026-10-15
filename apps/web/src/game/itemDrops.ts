@@ -46,8 +46,8 @@ export function itemDrops(
         const item = itemOf(state, source);
         if (!item || inFight) return false;
         if (source.kind === "slot") {
-          if (target !== "inventory") return false;
-          const reason = unequipBlockReason(state, GAME_DATA, source.slot);
+          // Worn gear goes into the bag, or in the Camp straight into the stash.
+          const reason = unequipBlockReason(state, GAME_DATA, source.slot, target, tab);
           return (reason === undefined || reason === "noRoom") && fits(item, at);
         }
         if (source.grid !== target) {
@@ -57,7 +57,12 @@ export function itemDrops(
       },
       onDrop: (source, at) => {
         if (source.kind === "slot") {
-          game.dispatch({ type: "unequip", slot: source.slot, at });
+          game.dispatch({
+            type: "unequip",
+            slot: source.slot,
+            at,
+            ...(target === "stash" ? { to: "stash", tab } : {}),
+          });
         } else if (source.grid === target) {
           game.dispatch({
             type: "placeItem",

@@ -26,6 +26,7 @@ import {
   itemPickWeights,
   lootGate,
   moveBlockReason,
+  unequipBlockReason,
   prestigeRewards,
   newGame,
   spentInTree,
@@ -376,6 +377,21 @@ describe("game loop", () => {
     const inRun = act(s, { type: "setOut", actId: "test-act" });
     expect(moveBlockReason(inRun, data, old.id, "stash")).toBe("camp");
     expect(() => act(inRun, { type: "moveItem", itemId: old.id, to: "stash" })).toThrow();
+  });
+
+  it("the Supply Wagon takes worn gear straight into the stash, in the Camp only", () => {
+    let s = ringed(start());
+    const ring = s.hero.equipment.ring1 ?? fail();
+    expect(unequipBlockReason(s, data, "ring1", "stash", 3)).toBeUndefined();
+    s = act(s, { type: "unequip", slot: "ring1", to: "stash", tab: 3, at: { x: 2, y: 1 } });
+    expect(s.hero.equipment.ring1).toBeUndefined();
+    expect(s.inventory).toHaveLength(0);
+    expect(s.stash).toEqual([{ item: ring, x: 2, y: 1, tab: 3 }]);
+
+    s = act(s, { type: "equip", itemId: ring.id });
+    const inRun = act(s, { type: "setOut", actId: "test-act" });
+    expect(unequipBlockReason(inRun, data, "ring1", "stash")).toBe("camp");
+    expect(() => act(inRun, { type: "unequip", slot: "ring1", to: "stash" })).toThrow(/camp/);
   });
 
   it("Respec at Kaelen gives back Skill Points for Acorns", () => {

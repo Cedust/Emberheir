@@ -55,7 +55,8 @@ function locate(
 
 /**
  * The Supply Wagon (PoE layout): the big shared stash left, paperdoll and bag right. Items show
- * their details on hover; right-click, Ctrl+Click or dragging moves them.
+ * their details on hover; right-click, Ctrl+Click or dragging moves them (worn gear straight
+ * into the open stash tab).
  */
 export function StashView(props: { state: GameState; game: GameApi; onClose: () => void }) {
   const { state, game } = props;
@@ -78,6 +79,9 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
     game.dispatch({ type: "moveItem", itemId, to, ...(to === "stash" ? { tab } : {}) });
   const canMove = (itemId: string, to: "inventory" | "stash") =>
     !moveBlockReason(state, GAME_DATA, itemId, to, to === "stash" ? tab : undefined);
+
+  const unequipTo = (slot: EquipmentSlot, to: "inventory" | "stash") =>
+    game.dispatch({ type: "unequip", slot, ...(to === "stash" ? { to, tab } : {}) });
 
   // Ctrl+Click moves an item straight across; a plain click marks it.
   const pick = (from: "inventory" | "stash") => (itemId: string, e?: MouseEvent) => {
@@ -152,7 +156,9 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
               {GAME_DATA.equipmentSlots.map((slot) => {
                 const it = state.hero.equipment[slot];
                 const pos = dollBox(slot, SIDE_DOLL);
-                const off = unequipBlockReason(state, GAME_DATA, slot);
+                // Right-click or Ctrl+Click: into the open stash tab, else into the bag.
+                const toStash = !unequipBlockReason(state, GAME_DATA, slot, "stash", tab);
+                const toBag = !unequipBlockReason(state, GAME_DATA, slot);
                 return (
                   <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
                     <ItemTile
@@ -168,12 +174,19 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
                         aimedSlot(state, sel.item) === slot
                       }
                       drag={drops.slot(slot)}
-                      {...(it ? { onSelect: () => setSelected(it.id) } : {})}
+                      {...(it
+                        ? {
+                            onSelect: (e?: MouseEvent) => {
+                              if ((e?.ctrlKey || e?.metaKey) && toStash) unequipTo(slot, "stash");
+                              else setSelected(it.id);
+                            },
+                          }
+                        : {})}
                       context={
-                        it && !off
+                        it && (toStash || toBag)
                           ? {
-                              action: "Unequip",
-                              run: () => game.dispatch({ type: "unequip", slot }),
+                              action: toStash ? "Move to Stash" : "Unequip",
+                              run: () => unequipTo(slot, toStash ? "stash" : "inventory"),
                             }
                           : undefined
                       }
