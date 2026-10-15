@@ -4,15 +4,46 @@
  */
 export type DropSound = "flip" | "rare" | "legendary" | "unique" | "rune" | "highRune";
 
-let enabled = true;
-let ctx: AudioContext | null = null;
+/** Kinds of sound the player can switch off one by one (Settings). */
+export const SOUND_GROUPS = ["hover", "click", "window", "coin", "loot"] as const;
+export type SoundGroup = (typeof SOUND_GROUPS)[number];
 
-export function setSoundEnabled(on: boolean) {
-  enabled = on;
+let enabled = true;
+let volume = 0.8;
+let groups: Readonly<Record<SoundGroup, boolean>> = {
+  hover: true,
+  click: true,
+  window: true,
+  coin: true,
+  loot: true,
+};
+let ctx: AudioContext | null = null;
+let master: GainNode | null = null;
+
+export function setSoundOptions(options: {
+  on: boolean;
+  volume: number;
+  groups: Readonly<Record<SoundGroup, boolean>>;
+}) {
+  enabled = options.on;
+  volume = options.volume;
+  groups = options.groups;
+  if (master) master.gain.value = volume;
 }
 
-function audio(): AudioContext | null {
-  if (!enabled || typeof window === "undefined" || !("AudioContext" in window)) return null;
+/** The node every sound plays into: the master volume. */
+function out(ac: AudioContext): AudioNode {
+  if (!master) {
+    master = ac.createGain();
+    master.gain.value = volume;
+    master.connect(ac.destination);
+  }
+  return master;
+}
+
+function audio(group: SoundGroup): AudioContext | null {
+  if (!enabled || volume <= 0 || !groups[group]) return null;
+  if (typeof window === "undefined" || !("AudioContext" in window)) return null;
   try {
     ctx ??= new AudioContext();
     if (ctx.state === "suspended") void ctx.resume();
@@ -40,7 +71,7 @@ function tone(
   gain.gain.setValueAtTime(0.0001, start);
   gain.gain.exponentialRampToValueAtTime(peak, start + 0.01);
   gain.gain.exponentialRampToValueAtTime(0.0001, start + length);
-  osc.connect(gain).connect(ac.destination);
+  osc.connect(gain).connect(out(ac));
   osc.start(start);
   osc.stop(start + length + 0.02);
 }
@@ -70,12 +101,12 @@ function swish(
   filter.frequency.value = freq;
   const gain = ac.createGain();
   gain.gain.value = peak;
-  src.connect(filter).connect(gain).connect(ac.destination);
+  src.connect(filter).connect(gain).connect(out(ac));
   src.start(start);
 }
 
 export function playSound(kind: DropSound) {
-  const ac = audio();
+  const ac = audio("loot");
   if (!ac) return;
   const t = ac.currentTime + 0.01;
   switch (kind) {
@@ -135,10 +166,21 @@ const UI_GAP_MS: Readonly<Record<UiSound, number>> = {
 };
 const lastPlayed = new Map<UiSound, number>();
 
+/** Which Settings switch silences a menu sound. */
+export const UI_SOUND_GROUP: Readonly<Record<UiSound, SoundGroup>> = {
+  hover: "hover",
+  click: "click",
+  blocked: "click",
+  tab: "click",
+  open: "window",
+  close: "window",
+  coin: "coin",
+};
+
 export function playUiSound(kind: UiSound) {
   const now = typeof performance === "undefined" ? 0 : performance.now();
   if (now - (lastPlayed.get(kind) ?? -Infinity) < UI_GAP_MS[kind]) return;
-  const ac = audio();
+  const ac = audio(UI_SOUND_GROUP[kind]);
   if (!ac) return;
   lastPlayed.set(kind, now);
   const t = ac.currentTime + 0.005;

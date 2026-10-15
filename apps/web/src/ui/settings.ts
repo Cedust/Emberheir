@@ -1,13 +1,17 @@
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
 import { parseStored, storageKey } from "../storage";
-import { setSoundEnabled } from "./sound";
+import { SOUND_GROUPS, type SoundGroup, setSoundOptions } from "./sound";
 
 /** Player settings (Settings mock): stored per browser, not in the save game. */
 export interface Settings {
   readonly theme: "system" | "light" | "dark";
   readonly damageNumbers: boolean;
   readonly sound: boolean;
+  /** Master volume, 0..1. */
+  readonly volume: number;
+  /** Each kind of sound on its own (Hover ticks, Clicks, Windows, Coins, Loot). */
+  readonly sounds: Readonly<Record<SoundGroup, boolean>>;
   /** Screen shake and camera zoom in fights. */
   readonly screenShake: boolean;
 }
@@ -16,8 +20,17 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: "system",
   damageNumbers: true,
   sound: true,
+  volume: 0.8,
+  sounds: { hover: true, click: true, window: true, coin: true, loot: true },
   screenShake: true,
 };
+
+const soundsSchema = z.object(
+  Object.fromEntries(SOUND_GROUPS.map((g) => [g, z.boolean().catch(true)])) as Record<
+    SoundGroup,
+    z.ZodCatch<z.ZodBoolean>
+  >,
+);
 
 const KEY = storageKey("settings");
 
@@ -30,6 +43,8 @@ const settingsSchema: z.ZodType<Settings> = z
     theme: z.enum(["system", "light", "dark"]).catch(DEFAULT_SETTINGS.theme),
     damageNumbers: z.boolean().catch(DEFAULT_SETTINGS.damageNumbers),
     sound: z.boolean().catch(DEFAULT_SETTINGS.sound),
+    volume: z.number().min(0).max(1).catch(DEFAULT_SETTINGS.volume),
+    sounds: soundsSchema.catch(DEFAULT_SETTINGS.sounds),
     screenShake: z.boolean().catch(DEFAULT_SETTINGS.screenShake),
   })
   .catch(DEFAULT_SETTINGS);
@@ -56,7 +71,10 @@ function applyTheme(theme: Settings["theme"]) {
 export function useSettings() {
   const [settings, setSettings] = useState<Settings>(load);
   useEffect(() => applyTheme(settings.theme), [settings.theme]);
-  useEffect(() => setSoundEnabled(settings.sound), [settings.sound]);
+  useEffect(
+    () => setSoundOptions({ on: settings.sound, volume: settings.volume, groups: settings.sounds }),
+    [settings.sound, settings.volume, settings.sounds],
+  );
   const update = useCallback((patch: Partial<Settings>) => {
     setSettings((prev) => {
       const next = { ...prev, ...patch };

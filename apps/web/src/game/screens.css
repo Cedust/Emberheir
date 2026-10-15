@@ -4585,7 +4585,7 @@
 .stage .settings {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   padding: 0 24px;
 }
 
@@ -4594,6 +4594,44 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+.stage .settings-head {
+  margin: 6px 0 -4px;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  border-bottom: 1px solid var(--edge);
+  padding-bottom: 4px;
+}
+
+.stage .setting-row.sub-row {
+  padding-left: 18px;
+}
+
+.stage .setting-row.muted {
+  opacity: 0.45;
+}
+
+.stage .setting-row.muted button {
+  cursor: not-allowed;
+}
+
+.stage .setting-volume {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage .setting-volume input {
+  width: 180px;
+  accent-color: var(--accent);
+}
+
+.stage .setting-volume b {
+  width: 44px;
+  text-align: right;
 }
 
 .stage .segmented {
