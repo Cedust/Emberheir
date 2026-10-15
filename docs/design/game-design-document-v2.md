@@ -170,6 +170,10 @@ Endgame **Wildfire I–X**.
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter. Großer Stash links,
   Paperdoll und Tasche rechts (wie PoE); Details beim Hovern, Rechtsklick oder Ctrl+Klick schiebt ein Item hinüber.
+  Der Stash hat **4 Tabs** (I-IV, je 10×10): Q/E oder Klick wechselt, ein gezogenes Item öffnet den Tab, über dem es
+  schwebt; Rechtsklick legt in den offenen Tab, Sort ordnet nur diesen.
+- **Intermission:** steht in der Arena des Acts (der Heir wartet dort, Wetter läuft weiter). Karten links, Beute in
+  der Mitte, die Paperdoll nur während der Item-Wahl. Character und Skill Tree öffnen als Fenster über der Arena.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
   (Iron +25 % Armor, Ward +25 % Barrier, Vigor +10 % Life, Fire/Frost/Storm/Void +20 % Resistance und +5 % max).
 - **Bounties:** Elite Hunt, Culling, Thief Chase (ab Act 2), Dry Throat, Hale and Whole. Einreichen bei Eldrin,

@@ -9,12 +9,14 @@ import {
   takeBlockReason,
   targetSlot,
 } from "@emberheir/sim";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { type CurrencyId, Wallet } from "../../ui/kit/Currency";
 import { ShrineCards } from "../Boons";
 import { inFinale } from "../finale";
+import { IdleArena } from "../lazyViews";
+import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { EquippedPanel, ItemCards, RuneDrops } from "./RewardCards";
@@ -36,6 +38,9 @@ export function IntermissionView(props: {
   state: GameState;
   run: RunState;
   game: GameApi;
+  settings: Settings;
+  /** A window is open over the arena: it holds still. */
+  covered: boolean;
   onCharacter: () => void;
   onTree: () => void;
   onPlan: () => void;
@@ -83,6 +88,9 @@ export function IntermissionView(props: {
 
   return (
     <section className="screen intermission" aria-label="Intermission">
+      <Suspense fallback={null}>
+        <IdleArena state={state} run={run} settings={props.settings} paused={props.covered} />
+      </Suspense>
       <RunHeader
         act={act}
         stage={run.stage}
@@ -97,7 +105,7 @@ export function IntermissionView(props: {
         onTree={props.onTree}
         onMenu={props.onMenu}
       />
-      <div className="intermission-body">
+      <div className={`intermission-body${step === "items" ? " with-doll" : ""}`}>
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
           <UpNext run={run} prestige={state.legacy.prestige} state={state} game={game} />
@@ -144,18 +152,21 @@ export function IntermissionView(props: {
             </div>
           )}
         </main>
-        <EquippedPanel
-          state={state}
-          focus={
-            focus ??
-            (step === "items" && rewards?.items[0]
-              ? targetSlot(rewards.items[0], GAME_DATA, state.hero.equipment)
-              : undefined)
-          }
-          onFocus={setFocus}
-          inventoryFull={anyBlocked}
-          onInventory={props.onCharacter}
-        />
+        {/* The paperdoll only joins the item pick; otherwise the hero stands in the arena. */}
+        {step === "items" && (
+          <EquippedPanel
+            state={state}
+            focus={
+              focus ??
+              (step === "items" && rewards?.items[0]
+                ? targetSlot(rewards.items[0], GAME_DATA, state.hero.equipment)
+                : undefined)
+            }
+            onFocus={setFocus}
+            inventoryFull={anyBlocked}
+            onInventory={props.onCharacter}
+          />
+        )}
       </div>
       <footer className="intermission-footer bar-bottom">
         <Wallet state={state} named gains={gains} />

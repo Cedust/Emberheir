@@ -701,11 +701,48 @@
 
 /* --- intermission --------------------------------------------------------------------------- */
 
+/* The Intermission stands in the act's arena (IdleArena): its cards float over it. */
+.stage .intermission {
+  background: #3b3024;
+}
+
+.stage .idle-arena {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.stage .idle-arena .arena-host {
+  top: 0;
+  bottom: 0;
+}
+
+/* A soft veil keeps the cards readable without hiding the hero. */
+.stage .idle-arena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background:
+    linear-gradient(90deg, rgb(14 10 6 / 0.55) 0, transparent 34%),
+    radial-gradient(ellipse at 60% 40%, transparent 30%, rgb(14 10 6 / 0.45) 100%);
+}
+
+.stage .intermission > :not(.idle-arena) {
+  position: relative;
+  z-index: 1;
+}
+
 .stage .intermission-body {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr) 300px;
+  grid-template-columns: 340px minmax(0, 1fr);
   min-height: 0;
+}
+
+.stage .intermission-body.with-doll {
+  grid-template-columns: 340px minmax(0, 1fr) 300px;
 }
 
 .stage .intermission-left {
@@ -713,19 +750,34 @@
   display: flex;
   flex-direction: column;
   gap: 16px;
-  border-right: 2px solid var(--edge);
-  background: var(--side);
 }
 
 .stage .intermission-right {
-  padding: 20px;
+  margin: 20px 20px 20px 0;
+  padding: 18px;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 12px;
-  border-left: 2px solid var(--edge);
+  border: 2px solid var(--edge);
+  border-radius: 6px;
   background: var(--side);
+  box-shadow: 0 10px 30px rgb(0 0 0 / 0.4);
   min-height: 0;
+}
+
+/* Over the arena the big words glow like the fight banners. */
+.stage .intermission-center .screen-title {
+  color: #ffcf7a;
+  text-shadow:
+    0 2px 0 rgb(40 20 8 / 0.9),
+    0 0 24px rgb(255 140 40 / 0.45);
+}
+
+.stage .intermission-center .screen-sub,
+.stage .intermission-center .auto-rewards {
+  color: #f1e2c2;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.9);
 }
 
 .stage .intermission-right .eyebrow {
@@ -2457,6 +2509,40 @@
 
 .stage .stash-pane .section-row {
   align-items: center;
+}
+
+/* Stash tabs (PoE): dark wood bookmarks standing on the grid; the open one joins it. */
+.stage .stash-pane {
+  gap: 0;
+}
+
+.stage .stash-tabs {
+  align-items: flex-end;
+  padding-left: 8px;
+}
+
+.stage .stash-tabs .k-tab {
+  min-width: 64px;
+  justify-content: center;
+  color: var(--k-on-wood-sub);
+  background: linear-gradient(180deg, var(--k-wood), var(--k-wood-2));
+}
+
+.stage .stash-tabs .k-tab:hover {
+  color: var(--k-on-wood);
+  background: linear-gradient(180deg, #4a3624, var(--k-wood-2));
+}
+
+.stage .stash-tabs .k-tab.on {
+  color: #ffd27a;
+  background: var(--slot-bg);
+  border-color: var(--k-brass);
+  margin-bottom: -2px;
+  z-index: 1;
+}
+
+.stage .stash-tabs .k-btn {
+  margin-bottom: 8px;
 }
 
 /* --- overlays ------------------------------------------------------------------------------- */

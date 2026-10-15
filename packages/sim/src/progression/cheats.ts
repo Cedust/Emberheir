@@ -13,7 +13,8 @@ import {
   waymarkKey,
   waymarkStages,
 } from "./game";
-import { type GridSize, INVENTORY_SIZE, STASH_SIZE, addToGrid } from "./inventory";
+import { addToGrid } from "./inventory";
+import { addToStash } from "./stash";
 import { EMPTY_MASTERY, MASTERY, weaponRank } from "./weapon-mastery";
 
 /**
@@ -190,8 +191,9 @@ function giveItem(
   const itemLevel = whole(cheat.itemLevel, 1, 999);
   const [item, next] = rollFor(data, cheat.baseId, cheat.rarity, itemLevel, cheat.uniqueId, state);
   const toStash = cheat.to === "stash";
-  const grid: GridSize = toStash ? STASH_SIZE : INVENTORY_SIZE;
-  const placed = addToGrid(toStash ? state.stash : state.inventory, item, data.items, grid);
+  const placed = toStash
+    ? addToStash(state.stash, item, data.items)
+    : addToGrid(state.inventory, item, data.items);
   if (!placed) return fail(toStash ? "The stash is full" : "The inventory is full");
   return toStash ? { ...next, stash: placed } : { ...next, inventory: placed };
 }

@@ -91,7 +91,13 @@ export type GameAction =
   /** Throw an inventory item away. Gives nothing. */
   | { readonly type: "discard"; readonly itemId: string }
   /** Drag & drop inside the inventory or the stash. */
-  | { readonly type: "placeItem"; readonly itemId: string; readonly at: GridPosition }
+  | {
+      readonly type: "placeItem";
+      readonly itemId: string;
+      readonly at?: GridPosition;
+      /** A stashed item may go to another stash tab (default: its own). */
+      readonly tab?: number;
+    }
   | { readonly type: "learnNodes"; readonly nodeIds: readonly string[] }
   /** Kaelen: forget all Skill Tree nodes for Acorns (points and Ember come back). */
   | { readonly type: "respecTree" }
@@ -111,8 +117,11 @@ export type GameAction =
       readonly itemId: string;
       readonly to: "inventory" | "stash";
       readonly at?: GridPosition;
+      /** The stash tab (default: the first one with room). */
+      readonly tab?: number;
     }
-  | { readonly type: "sortStash" }
+  /** Re-pack one stash tab (default the first). */
+  | { readonly type: "sortStash"; readonly tab?: number }
   /** Thoric and Liora (Camp only). */
   | { readonly type: "craft"; readonly request: CraftRequest }
   | { readonly type: "setRotationSkill"; readonly slot: number; readonly skillId: string | null }
@@ -181,7 +190,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "discard":
       return discard(state, action.itemId);
     case "placeItem":
-      return placeItem(state, data, action.itemId, action.at);
+      return placeItem(state, data, action.itemId, action.at, action.tab);
     case "learnNodes":
       return learn(state, data, action.nodeIds);
     case "respecTree":
@@ -197,9 +206,9 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "setEcho":
       return setEcho(state, data, action.echoId);
     case "moveItem":
-      return moveItem(state, data, action.itemId, action.to, action.at);
+      return moveItem(state, data, action.itemId, action.to, action.at, action.tab);
     case "sortStash":
-      return sortStash(state, data);
+      return sortStash(state, data, action.tab);
     case "craft":
       return craft(state, data, action.request);
     case "setRotationSkill":

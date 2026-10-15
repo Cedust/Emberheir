@@ -114,6 +114,8 @@ export function Tabs<T extends string>(props: {
   onChange: (id: T) => void;
   label: string;
   keys?: boolean;
+  /** An item dragged over a tab opens it (PoE stash tabs). */
+  onDragHover?: (id: T) => void;
 }) {
   const open = props.items.filter((t) => !t.locked).map((t) => t.id);
   useTabKeys(open, props.active, (id) => props.onChange(id as T), props.keys ?? true);
@@ -122,14 +124,27 @@ export function Tabs<T extends string>(props: {
     <div className="k-tabs" role="tablist" aria-label={props.label}>
       {showKeys && <KeyHint k={HOTKEYS.prevTab} />}
       {props.items.map((t) => (
-        <Tab key={t.id} item={t} on={t.id === props.active} onPick={() => props.onChange(t.id)} />
+        <Tab
+          key={t.id}
+          item={t}
+          on={t.id === props.active}
+          onPick={() => props.onChange(t.id)}
+          {...(props.onDragHover && !t.locked
+            ? { onDragHover: () => props.onDragHover?.(t.id) }
+            : {})}
+        />
       ))}
       {showKeys && <KeyHint k={HOTKEYS.nextTab} />}
     </div>
   );
 }
 
-function Tab<T extends string>(props: { item: TabItem<T>; on: boolean; onPick: () => void }) {
+function Tab<T extends string>(props: {
+  item: TabItem<T>;
+  on: boolean;
+  onPick: () => void;
+  onDragHover?: () => void;
+}) {
   const t = props.item;
   // Only a closed tab explains itself; open tabs need no tooltip (Timo).
   const hover = useNoteHover(
@@ -143,6 +158,7 @@ function Tab<T extends string>(props: { item: TabItem<T>; on: boolean; onPick: (
       aria-disabled={t.locked ? true : undefined}
       className={`k-tab${props.on ? " on" : ""}${t.locked ? " locked" : ""}`}
       onClick={t.locked ? undefined : props.onPick}
+      onDragEnter={props.onDragHover}
       {...hover}
     >
       {t.locked ? (

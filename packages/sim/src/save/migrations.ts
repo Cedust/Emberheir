@@ -54,6 +54,9 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Omens, Ashborn, Greater Affixes, Cinderglass and the Ember Crucible (neuausrichtung-v1.md 5.2,
   // 7.2, 7.3, 7.5, 8): new optional fields, nothing to move.
   5: {},
+  // Stash tabs (ui-ux-plan-v1.md 3.4): stashed items name their tab; without one they sit in the
+  // first, so nothing moves.
+  6: {},
 };
 
 /** Class start nodes of Skill Web v3 (the Sorcerer's was renamed). */

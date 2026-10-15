@@ -122,6 +122,18 @@
   animation: k-layer-in 0.16s ease-out;
 }
 
+/* GameApp groups the windows; the group itself takes no room. */
+.stage .road-windows,
+.stage .camp-windows {
+  display: contents;
+}
+
+/* On the road the arena stays in sight around the window. */
+.stage .road-windows > .k-layer-panel {
+  padding: 36px calc(var(--safe-x) + 44px);
+  background: rgb(14 10 6 / 0.4);
+}
+
 .stage .k-layer-panel > .k-window {
   align-self: stretch;
   animation: k-window-in 0.18s ease-out;

@@ -21,3 +21,35 @@ test("the Supply Wagon moves items with a right-click", async ({ page }) => {
   await expect(stash.getByTestId("grid-item")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
+
+test("the Supply Wagon has stash tabs", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveWithRings());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
+  const tabs = page.getByRole("tablist", { name: "Stash tabs" });
+  const stash = page.getByRole("group", { name: "Stash" });
+  const bag = page.getByRole("group", { name: "Inventory" });
+  await expect(tabs.getByRole("tab")).toHaveCount(4);
+
+  // E opens the next tab; a right-click stores into the open tab only.
+  await page.keyboard.press("e");
+  await expect(tabs.getByRole("tab", { name: "II", exact: true })).toHaveAttribute(
+    "aria-selected",
+    "true",
+  );
+  await bag.getByTestId("grid-item").first().click({ button: "right" });
+  await expect(stash.getByTestId("grid-item")).toHaveCount(1);
+  await tabs.getByRole("tab", { name: "I", exact: true }).click();
+  await expect(stash.getByTestId("grid-item")).toHaveCount(0);
+
+  // The wagon opens on the last tab again, and the item stays there after a reload.
+  await page.reload();
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
+  await tabs.getByRole("tab", { name: "II", exact: true }).click();
+  await expect(stash.getByTestId("grid-item")).toHaveCount(1);
+  expect(errors).toEqual([]);
+});
