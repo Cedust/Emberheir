@@ -255,10 +255,10 @@ const REGIONS: readonly RegionSpec[] = [
         notable: {
           name: "Unbroken",
           description:
-            "While wielding a Melee Weapon: +50 % Heat from Hits Taken. Below 50 % Life your hits deal 25 % more damage.",
+            "While wielding a Melee Weapon: +50 % Heat from Hits Taken. With 50 Heat or more your hits deal 30 % more damage.",
           bonuses: { heatFromHitsTaken: 0.5 },
           weaponRange: "melee",
-          rules: { conditionalDamage: [more({ kind: "lifeBelow", fraction: 0.5 }, 0.25)] },
+          rules: { conditionalDamage: [more(heat(50), 0.3)] },
         },
         keystones: [
           {
@@ -372,9 +372,9 @@ const REGIONS: readonly RegionSpec[] = [
           }),
           {
             name: "Glacier",
-            description: "+12 % Chill Chance. Your hits deal 25 % more damage to Chilled enemies.",
+            description: "+12 % Chill Chance. Your hits deal 15 % more damage to Chilled enemies.",
             bonuses: { chillChance: 0.12 },
-            rules: { chilledDamage: 1.25 },
+            rules: { chilledDamage: 1.15 },
           },
         ],
         keystones: [

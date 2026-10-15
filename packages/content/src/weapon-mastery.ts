@@ -832,8 +832,8 @@ const AXE = buildTree({
       ],
       forks: [
         [
-          notable("Open Wounds", "Bleed deals 30 % more damage.", {
-            rules: { ailmentDamage: { bleed: 1.3 } },
+          notable("Open Wounds", "Bleed deals 40 % more damage.", {
+            rules: { ailmentDamage: { bleed: 1.4 } },
           }),
           notable("Blood Scent", "+15 % Attack Speed against Bleeding enemies.", {
             weaponRules: {
