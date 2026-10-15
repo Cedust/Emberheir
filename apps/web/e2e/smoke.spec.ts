@@ -1,16 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { createHero } from "./fixtures";
 
-test("start page shows the game title", async ({ page }) => {
-  const errors: string[] = [];
-  page.on("pageerror", (e) => errors.push(e.message));
-
-  await page.goto("/");
-  await expect(page).toHaveTitle("Emberheir");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Emberheir");
-  expect(errors).toEqual([]);
-});
-
 test("a debug fight runs to the end and fills the log", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
@@ -65,6 +55,8 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   });
   // ?dev shows the Skip button in fights.
   await page.goto("/?dev");
+  await expect(page).toHaveTitle("Emberheir");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText("Emberheir");
   await page.getByRole("button", { name: "New Game" }).click();
   await createHero(page);
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();

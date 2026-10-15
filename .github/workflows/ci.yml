@@ -31,7 +31,7 @@ jobs:
   e2e:
     # Chromium renders the Pixi scenes in software on CI, so the tests are bound by CPU: more
     # workers on one runner only slow each test down, but more runners add cores. Four runners
-    # take a balanced share each: the six slow "every main view" walks (@screens) in two
+    # take a balanced share each: the five slow "every main view" walks (@screens) in two
     # halves, the rest in two halves.
     name: Playwright (${{ matrix.part }})
     runs-on: ubuntu-latest

@@ -5,14 +5,14 @@ import { createHero, saveAfterHarvestBoss, seedSave } from "./fixtures";
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
  * show the same picture (positions scale exactly with the screen height).
  */
-// CI runs the @screens walks on two machines, split in half in this order (ci.yml): the slow
-// 4K walk shares its half with the two quickest ones.
+// CI runs the @screens walks on two machines, split in this order (ci.yml): the slow 4K walk
+// shares its part with one quick one. 1440p is left out: it is 16:9 like 1080p and 4K, and
+// "1080p and 4K show the same picture" proves that 16:9 only scales.
 const SCREENS = [
   { name: "1080p", width: 1920, height: 1080 },
-  { name: "4K", width: 3840, height: 2160 },
   { name: "laptop", width: 1366, height: 768 },
-  { name: "1440p", width: 2560, height: 1440 },
   { name: "16:10", width: 1680, height: 1050 },
+  { name: "4K", width: 3840, height: 2160 },
   { name: "21:9", width: 2560, height: 1080 },
 ];
 
