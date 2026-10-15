@@ -10,6 +10,7 @@ import {
 } from "@emberheir/sim";
 import { Icon, type IconName } from "../../ui/Icon";
 import { EmptyState } from "../../ui/kit/Marker";
+import { playUiSound } from "../../ui/sound";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { fmt } from "../../ui/items";
 import { type Element, Vitals, Medal, Plaque, Pill, Res, Row, pct } from "./HeroNumbers";
@@ -468,6 +469,39 @@ export function HeatPanel(props: {
           </tbody>
         </table>
       </Plaque>
+    </div>
+  );
+}
+
+export type StatPage = "Offense" | "Defense" | "Heat" | "Triggers";
+
+const PAGES: readonly { readonly id: StatPage; readonly icon: IconName }[] = [
+  { id: "Offense", icon: "sword" },
+  { id: "Defense", icon: "shield" },
+  { id: "Heat", icon: "flame" },
+  { id: "Triggers", icon: "rune" },
+];
+
+/** The Stats tab's pages: a brass switch above the plaques. */
+export function StatPages(props: { active: StatPage; onChange: (page: StatPage) => void }) {
+  return (
+    <div className="stat-pages" role="tablist" aria-label="Stats pages">
+      {PAGES.map((p) => (
+        <button
+          key={p.id}
+          type="button"
+          role="tab"
+          aria-selected={p.id === props.active}
+          className={`stat-page${p.id === props.active ? " on" : ""}`}
+          onClick={() => {
+            if (p.id !== props.active) playUiSound("tab");
+            props.onChange(p.id);
+          }}
+        >
+          <Icon name={p.icon} size={14} />
+          {p.id}
+        </button>
+      ))}
     </div>
   );
 }

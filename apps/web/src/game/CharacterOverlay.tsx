@@ -57,13 +57,15 @@ import {
   type GearTrigger,
   HeatPanel,
   OffensePanel,
+  type StatPage,
+  StatPages,
   TriggersPanel,
   type WeaponNumbers,
 } from "./character/StatTabs";
 import { AshbornPanel } from "./AshbornPanel";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 
-type Tab = "Overview" | "Attributes" | "Offense" | "Defense" | "Heat" | "Triggers" | "Ashborn";
+type Tab = "Overview" | "Attributes" | "Stats" | "Ashborn";
 
 /** Stage width the window frame, the attributes (420) and the bag (464) take from the hero. */
 const HERO_ROOM = 960;
@@ -87,6 +89,7 @@ export function CharacterOverlay(props: {
   const [tab, setTab] = useState<Tab>(
     !inFight && state.hero.unspentAttributePoints > 0 ? "Attributes" : "Overview",
   );
+  const [page, setPage] = useState<StatPage>("Offense");
   // Ashborn opens at level 100 (neuausrichtung-v1.md 7.3).
   const ashbornOpen =
     state.hero.level >= ASHBORN.fromLevel && (GAME_DATA.ashbornValues?.length ?? 0) > 0;
@@ -227,10 +230,7 @@ export function CharacterOverlay(props: {
       icon: "user",
       ...(left > 0 && !inFight ? { marker: left } : {}),
     },
-    { id: "Offense", name: "Offense", icon: "sword" },
-    { id: "Defense", name: "Defense", icon: "shield" },
-    { id: "Heat", name: "Heat", icon: "flame" },
-    { id: "Triggers", name: "Triggers", icon: "rune" },
+    { id: "Stats", name: "Stats", icon: "target" },
     ...(ashbornOpen
       ? [
           {
@@ -402,24 +402,31 @@ export function CharacterOverlay(props: {
               <HeroNumbers stats={stats} dps={dps} weapon={weaponNumbers} resNote={resNote} />
             )}
             {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
-            {tab === "Offense" && <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />}
-            {tab === "Defense" && (
-              <DefensePanel
-                stats={stats}
-                penalty={penalty}
-                resNote={resNote}
-                flaskCharges={flaskCapacity(state, GAME_DATA)}
-              />
-            )}
-            {tab === "Triggers" && (
-              <TriggersPanel stats={stats} triggers={gearTriggers} powers={gearPowers} />
-            )}
-            {tab === "Heat" && (
-              <HeatPanel
-                stats={stats}
-                weapon={weaponNumbers}
-                perSecond={heatPerSecond(setup, stats)}
-              />
+            {tab === "Stats" && (
+              <>
+                <StatPages active={page} onChange={setPage} />
+                {page === "Offense" && (
+                  <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />
+                )}
+                {page === "Defense" && (
+                  <DefensePanel
+                    stats={stats}
+                    penalty={penalty}
+                    resNote={resNote}
+                    flaskCharges={flaskCapacity(state, GAME_DATA)}
+                  />
+                )}
+                {page === "Heat" && (
+                  <HeatPanel
+                    stats={stats}
+                    weapon={weaponNumbers}
+                    perSecond={heatPerSecond(setup, stats)}
+                  />
+                )}
+                {page === "Triggers" && (
+                  <TriggersPanel stats={stats} triggers={gearTriggers} powers={gearPowers} />
+                )}
+              </>
             )}
           </section>
 

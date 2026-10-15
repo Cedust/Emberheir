@@ -7647,3 +7647,49 @@
 .stage .hero-matrix td.mono {
   width: 120px;
 }
+
+/* The Stats tab's pages: one brass bar of four buttons above the plaques. */
+.stage .stat-pages {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  margin-bottom: 12px;
+  border: 1.5px solid var(--k-brass-dark, #6e4f22);
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #3a2a1d, #241a12);
+}
+
+.stage .stat-page {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px 2px;
+  border: none;
+  border-left: 1px solid rgb(201 160 99 / 0.25);
+  border-radius: 0;
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+  text-transform: uppercase;
+  color: #b9a888;
+  background: transparent;
+  cursor: pointer;
+}
+
+.stage .stat-page:first-child {
+  border-left: none;
+}
+
+.stage .stat-page:hover {
+  color: #f6ead2;
+}
+
+.stage .stat-page.on {
+  color: #2a1a0c;
+  background: linear-gradient(180deg, #f0cf8e, var(--k-brass, #c9a063) 60%, #9a7338);
+  box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
+}
