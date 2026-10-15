@@ -36,6 +36,9 @@ import { Icon } from "../ui/Icon";
 import { ClassEmblem } from "./ClassEmblem";
 import { ItemDetail, ItemGrid, ItemTile, RingSwitch, fmt } from "../ui/items";
 import { Wallet } from "../ui/kit/Currency";
+import { EmptyState } from "../ui/kit/Marker";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { HeirFace } from "./camp/CampFigures";
 import { useTabKeys } from "../ui/kit/hotkeys";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
 import { itemDrops } from "./itemDrops";
@@ -260,49 +263,53 @@ export function CharacterOverlay(props: {
   }
 
   return (
-    <div className="overlay" role="dialog" aria-label="Character">
-      <div className="overlay-panel character">
-        <header className="overlay-header">
-          <div className="run-title">
-            <span className="title-font big">CHARACTER</span>
-            <span className="sub hero-title-line">
-              <ClassEmblem classId={state.hero.classId} size={16} />
-              {state.hero.name} · {heroTitle(state, GAME_DATA)} · Level {state.hero.level}
-            </span>
-          </div>
-          <div className="xp-bar" title={xpText}>
-            <div
-              className="fill"
-              style={{
-                width: `${Number.isFinite(next) ? Math.min(100, (state.hero.xp / next) * 100) : 100}%`,
-              }}
-            />
-          </div>
-          <span className="sub">{xpText}</span>
-          {/* Level 1-100 (level-v2.md): the run's cap is a notch, the harvest boss a tick. */}
-          <div
-            className="level-track"
-            role="img"
-            aria-label={`Level ${state.hero.level} of ${max}, cap ${cap}, harvest boss ${boss}`}
-            title={`Level ${state.hero.level} of ${max} · Cap ${cap} this run · Harvest boss Lv ${boss}`}
-          >
-            <div className="fill" style={{ width: `${(state.hero.level / max) * 100}%` }} />
-            <i className="boss-tick" style={{ left: `${(boss / max) * 100}%` }} />
-            <i className="cap-notch" style={{ left: `${(cap / max) * 100}%` }} />
-          </div>
-          <div className="grow" />
-          {inFight && <span className="view-only title-font">FIGHT PAUSED · VIEW ONLY</span>}
-          <button
-            type="button"
-            className="icon-button"
-            aria-label="Close"
-            title="Close (C or Esc)"
-            onClick={props.onClose}
-          >
-            <Icon name="close" size={20} />
-          </button>
-        </header>
-
+    <WindowLayer>
+      <Window
+        label="Character"
+        role="dialog"
+        className="character"
+        header={
+          <WindowHeader
+            title="Character"
+            sub={[
+              ...new Set([state.hero.name, heroTitle(state, GAME_DATA)]),
+              `Level ${state.hero.level}`,
+            ].join(" · ")}
+            medallion={
+              <Medallion>
+                <HeirFace />
+              </Medallion>
+            }
+            right={
+              <>
+                <ClassEmblem classId={state.hero.classId} size={22} />
+                <div className="xp-bar" title={xpText}>
+                  <div
+                    className="fill"
+                    style={{
+                      width: `${Number.isFinite(next) ? Math.min(100, (state.hero.xp / next) * 100) : 100}%`,
+                    }}
+                  />
+                </div>
+                <span className="sub">{xpText}</span>
+                {/* Level 1-100 (level-v2.md): the run's cap is a notch, the harvest boss a tick. */}
+                <div
+                  className="level-track"
+                  role="img"
+                  aria-label={`Level ${state.hero.level} of ${max}, cap ${cap}, harvest boss ${boss}`}
+                  title={`Level ${state.hero.level} of ${max} · Cap ${cap} this run · Harvest boss Lv ${boss}`}
+                >
+                  <div className="fill" style={{ width: `${(state.hero.level / max) * 100}%` }} />
+                  <i className="boss-tick" style={{ left: `${(boss / max) * 100}%` }} />
+                  <i className="cap-notch" style={{ left: `${(cap / max) * 100}%` }} />
+                </div>
+                {inFight && <span className="view-only title-font">FIGHT PAUSED · VIEW ONLY</span>}
+              </>
+            }
+            onClose={props.onClose}
+          />
+        }
+      >
         <div className="character-columns">
           <section className="doll-column" aria-label="Equipment">
             <span className="title-font section-title">Equipment</span>
@@ -437,13 +444,13 @@ export function CharacterOverlay(props: {
                 className="character-detail"
               />
             ) : (
-              <div className="empty-pick panel-card sub">Select an item.</div>
+              <EmptyState icon="eye">Select an item.</EmptyState>
             )}
             <Wallet state={state} named />
           </section>
         </div>
-      </div>
-    </div>
+      </Window>
+    </WindowLayer>
   );
 }
 

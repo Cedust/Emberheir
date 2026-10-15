@@ -20,7 +20,7 @@ import { useState } from "react";
 import { Icon } from "../../ui/Icon";
 import { ItemGrid, ItemTile, rarityClass } from "../../ui/items";
 import { Wallet } from "../../ui/kit/Currency";
-import { useTabKeys } from "../../ui/kit/hotkeys";
+import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { runeName } from "../../ui/RuneArt";
 import { CRAFT_BLOCK_TEXT } from "../labels";
@@ -59,11 +59,6 @@ export function PersonaView(props: {
 }) {
   const { state, game } = props;
   const def = PERSONAS[props.persona];
-  useTabKeys(
-    PERSONA_ORDER.filter((p) => personaPresent(state, p)),
-    props.persona,
-    (p) => props.onPersona(p as PersonaId),
-  );
   const [kinds, setKinds] = useState<Record<PersonaId, ActionKind>>({
     thoric: "upgrade",
     liora: "temper",
@@ -282,229 +277,231 @@ export function PersonaView(props: {
   ].includes(kind);
 
   return (
-    <section className="screen persona-view" aria-label={`${def.name}, ${def.role}`}>
+    <WindowLayer>
       <PaintDefs />
-      <header className="persona-header bar-top">
-        <span className="title-font eyebrow-big">
-          CAMP · {nextAct(state, GAME_DATA).name.toUpperCase()}
-        </span>
-        <div className="tabs" role="tablist">
-          {PERSONA_ORDER.map((p) => (
-            <button
-              key={p}
-              type="button"
-              role="tab"
-              aria-selected={props.persona === p}
-              className={`tab title-font ${props.persona === p ? "on" : ""}`}
-              disabled={!personaPresent(state, p)}
-              title={personaPresent(state, p) ? undefined : PERSONA_LOCKED[p]}
-              onClick={() => props.onPersona(p)}
-            >
-              {PERSONAS[p].name} · {PERSONAS[p].role}
-            </button>
-          ))}
-        </div>
-        <div className="grow" />
-        <Wallet state={state} named />
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Back to Camp"
-          title="Back to Camp (Esc)"
-          onClick={props.onClose}
-        >
-          <Icon name="close" size={20} />
-        </button>
-      </header>
-
-      <div className="persona-body">
-        <aside className="persona-left">
-          <div className="persona-head">
-            <div
-              className="persona-portrait big title-font"
-              style={{ background: def.portrait, borderColor: def.accent }}
-            >
-              <PersonaPortrait id={props.persona} />
-            </div>
-            <div className="plaque-names">
-              <span className="title-font huge">{def.name}</span>
-              <span className="sub">{def.role}</span>
-            </div>
-          </div>
-          <blockquote className="persona-quote" style={{ borderColor: def.accent }}>
-            &ldquo;{def.quote}&rdquo;
-          </blockquote>
-          <div className="persona-actions">
-            {def.actions
-              .filter((a) => !a.endgame || state.legacy.finaleWon === true)
-              .filter(
-                (a) =>
-                  !a.powers ||
-                  Object.keys(state.powerCodex ?? {}).length > 0 ||
-                  state.legacy.finaleWon === true,
-              )
-              .map((a) => (
-                <button
-                  key={a.k}
-                  type="button"
-                  className={`persona-action ${kind === a.k ? "on" : ""}`}
-                  aria-pressed={kind === a.k}
-                  onClick={() => pickKind(a.k)}
-                >
-                  <span className="title-font">{a.name}</span>
-                  <span className="sub">{a.desc}</span>
-                </button>
-              ))}
-          </div>
-        </aside>
-
-        <main className="persona-center">
-          <div className="center-head">
-            <span className="title-font huge">{actionName}</span>
-            <span className="sub">{ACTION_HINT[kind]}</span>
-          </div>
-
-          {kind === "crucible" ? (
-            <CruciblePanel state={state} game={game} />
-          ) : kind === "combine" || kind === "codex" ? (
-            <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
-          ) : kind === "gamble" ? (
-            <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
-          ) : !itemCenter ? null : item ? (
-            <div className="now-after">
-              <div className={`craft-card panel-card ${rarityClass(item)}`} data-testid="craft-now">
-                <ItemHead item={item} label={`NOW · ${equipped ? "EQUIPPED" : "INVENTORY"}`} />
-                {(kind === "rune" || kind === "socket") && (
-                  <SocketRow sockets={item.sockets ?? 0} runes={item.runes ?? []} />
-                )}
-                {item.affixes.length === 0 && kind !== "rune" && kind !== "socket" && (
-                  <span className="sub">No affixes</span>
-                )}
-                {item.affixes.map((_, i) => {
-                  const t = affixText(item, i);
-                  const kindleMode = kind === "kindle";
-                  const pickable = kind === "temper" || kindleMode;
-                  const lockedOut = item.lockedAffix !== undefined && item.lockedAffix !== i;
-                  const disabled = kindleMode
-                    ? !targets.includes(i) || lockedOut
-                    : !pickable || lockedOut || t.trigger;
-                  return (
-                    <button
-                      key={i}
-                      type="button"
-                      className={`affix-line ${t.trigger ? "trigger" : ""} ${item.affixes[i]?.kindled ? "kindled" : ""} ${(kindleMode ? kindleIndex === i : affixIndex === i && pickable) ? "on" : ""}`}
-                      disabled={disabled}
-                      title={
-                        t.trigger && pickable && !kindleMode
-                          ? "Trigger Affixes cannot be changed"
-                          : lockedOut && pickable
-                            ? "Locked: only the locked-in affix can change"
-                            : undefined
-                      }
-                      onClick={() => setAffixIndex(i)}
-                    >
-                      <span className="grow">{t.text}</span>
-                      {item.greater?.index === i && (
-                        <span className="greater-mark">{greaterName(item.greater.rank)}</span>
-                      )}
-                      {lockedOut && <Icon name="lock" size={14} />}
-                      {item.lockedAffix === i && <span className="locked-in">LOCKED IN</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              <div className="arrow">→</div>
-              <AfterCard
-                item={after}
-                kind={kind}
-                affixIndex={kind === "kindle" ? (kindleIndex ?? null) : affixIndex}
-                runeId={runeId}
-                learned={learned}
-                power={teaches}
-                kindle={
-                  conditionId && effectId && kindleIndex !== null
-                    ? {
-                        conditionId,
-                        effectId,
-                        index: kindleIndex ?? item.affixes.length,
-                      }
-                    : undefined
-                }
+      <Window
+        label={`${def.name}, ${def.role}`}
+        className="persona-view"
+        header={
+          <WindowHeader
+            title={def.name}
+            sub={`${def.role} · Camp at the ${nextAct(state, GAME_DATA).name}`}
+            medallion={
+              <Medallion tint={def.portrait}>
+                <PersonaPortrait id={props.persona} />
+              </Medallion>
+            }
+            tabs={
+              <Tabs
+                label="Camp crafters"
+                items={PERSONA_ORDER.map((p) => ({
+                  id: p,
+                  name: PERSONAS[p].name,
+                  art: <PersonaPortrait id={p} />,
+                  explain: PERSONAS[p].role,
+                  ...(personaPresent(state, p) ? {} : { locked: PERSONA_LOCKED[p] }),
+                }))}
+                active={props.persona}
+                onChange={props.onPersona}
               />
-            </div>
-          ) : (
-            <div className="empty-pick panel-card sub">Choose an item on the right.</div>
-          )}
-
-          {kind === "rune" && <RunePouch state={state} selected={runeId} onSelect={setRuneId} />}
-
-          {kind === "kindle" && (
-            <KindleParts
-              state={state}
-              conditionId={conditionId}
-              effectId={effectId}
-              onCondition={setConditionId}
-              onEffect={setEffectId}
-            />
-          )}
-
-          <div className="grow" />
-          {last && (
-            <div className="craft-last panel-card" role="status">
-              {last}
-            </div>
-          )}
-          {kind !== "codex" && kind !== "crucible" && (
-            <div className="cost-bar panel-card">
-              <div className="cost-text">
-                <span className="eyebrow">COST</span>
-                <span className="mono strong">{cost}</span>
-                <span className={block ? "block warn" : "block ok"}>
-                  {block ?? "Ready. There is no Undo."}
-                </span>
-              </div>
-              <button type="button" className="btn big primary" disabled={!!block} onClick={run}>
-                {actionName}
-              </button>
-            </div>
-          )}
-        </main>
-
-        <aside className="persona-right">
-          <span className="title-font section-title">Equipped</span>
-          <Paperdoll scale={SIDE_DOLL} className="side">
-            <WeaponSlot state={state} scale={SIDE_DOLL} />
-            {GAME_DATA.equipmentSlots.map((slot) => {
-              const it = state.hero.equipment[slot];
-              const pos = dollBox(slot, SIDE_DOLL);
-              return (
-                <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
-                  <ItemTile
-                    item={it}
-                    label={SLOT_NAMES[itemSlotFor(slot)]}
-                    width={pos.w}
-                    height={pos.h}
-                    selected={!!it && it.id === itemId}
-                    {...(it ? { onSelect: () => pickItem(it.id) } : {})}
-                  />
-                </div>
-              );
-            })}
-          </Paperdoll>
-          <div className="section-row">
-            <span className="title-font section-title">Inventory</span>
-            <span className="mono sub">{state.inventory.length} items</span>
-          </div>
-          <ItemGrid
-            placed={state.inventory}
-            size={{ w: PROGRESSION.inventoryWidth, h: PROGRESSION.inventoryHeight }}
-            cell={38}
-            selected={itemId}
-            onSelect={pickItem}
-            label="Inventory"
+            }
+            right={<Wallet state={state} />}
+            onClose={props.onClose}
           />
-        </aside>
-      </div>
-    </section>
+        }
+      >
+        <div className="persona-body">
+          <aside className="persona-left">
+            <div className="persona-head">
+              <div
+                className="persona-portrait big title-font"
+                style={{ background: def.portrait, borderColor: def.accent }}
+              >
+                <PersonaPortrait id={props.persona} />
+              </div>
+              <div className="plaque-names">
+                <span className="title-font huge">{def.name}</span>
+                <span className="sub">{def.role}</span>
+              </div>
+            </div>
+            <blockquote className="persona-quote" style={{ borderColor: def.accent }}>
+              &ldquo;{def.quote}&rdquo;
+            </blockquote>
+            <div className="persona-actions">
+              {def.actions
+                .filter((a) => !a.endgame || state.legacy.finaleWon === true)
+                .filter(
+                  (a) =>
+                    !a.powers ||
+                    Object.keys(state.powerCodex ?? {}).length > 0 ||
+                    state.legacy.finaleWon === true,
+                )
+                .map((a) => (
+                  <button
+                    key={a.k}
+                    type="button"
+                    className={`persona-action ${kind === a.k ? "on" : ""}`}
+                    aria-pressed={kind === a.k}
+                    onClick={() => pickKind(a.k)}
+                  >
+                    <span className="title-font">{a.name}</span>
+                    <span className="sub">{a.desc}</span>
+                  </button>
+                ))}
+            </div>
+          </aside>
+
+          <main className="persona-center">
+            <div className="center-head">
+              <span className="title-font huge">{actionName}</span>
+              <span className="sub">{ACTION_HINT[kind]}</span>
+            </div>
+
+            {kind === "crucible" ? (
+              <CruciblePanel state={state} game={game} />
+            ) : kind === "combine" || kind === "codex" ? (
+              <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
+            ) : kind === "gamble" ? (
+              <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
+            ) : !itemCenter ? null : item ? (
+              <div className="now-after">
+                <div
+                  className={`craft-card panel-card ${rarityClass(item)}`}
+                  data-testid="craft-now"
+                >
+                  <ItemHead item={item} label={`NOW · ${equipped ? "EQUIPPED" : "INVENTORY"}`} />
+                  {(kind === "rune" || kind === "socket") && (
+                    <SocketRow sockets={item.sockets ?? 0} runes={item.runes ?? []} />
+                  )}
+                  {item.affixes.length === 0 && kind !== "rune" && kind !== "socket" && (
+                    <span className="sub">No affixes</span>
+                  )}
+                  {item.affixes.map((_, i) => {
+                    const t = affixText(item, i);
+                    const kindleMode = kind === "kindle";
+                    const pickable = kind === "temper" || kindleMode;
+                    const lockedOut = item.lockedAffix !== undefined && item.lockedAffix !== i;
+                    const disabled = kindleMode
+                      ? !targets.includes(i) || lockedOut
+                      : !pickable || lockedOut || t.trigger;
+                    return (
+                      <button
+                        key={i}
+                        type="button"
+                        className={`affix-line ${t.trigger ? "trigger" : ""} ${item.affixes[i]?.kindled ? "kindled" : ""} ${(kindleMode ? kindleIndex === i : affixIndex === i && pickable) ? "on" : ""}`}
+                        disabled={disabled}
+                        title={
+                          t.trigger && pickable && !kindleMode
+                            ? "Trigger Affixes cannot be changed"
+                            : lockedOut && pickable
+                              ? "Locked: only the locked-in affix can change"
+                              : undefined
+                        }
+                        onClick={() => setAffixIndex(i)}
+                      >
+                        <span className="grow">{t.text}</span>
+                        {item.greater?.index === i && (
+                          <span className="greater-mark">{greaterName(item.greater.rank)}</span>
+                        )}
+                        {lockedOut && <Icon name="lock" size={14} />}
+                        {item.lockedAffix === i && <span className="locked-in">LOCKED IN</span>}
+                      </button>
+                    );
+                  })}
+                </div>
+                <div className="arrow">→</div>
+                <AfterCard
+                  item={after}
+                  kind={kind}
+                  affixIndex={kind === "kindle" ? (kindleIndex ?? null) : affixIndex}
+                  runeId={runeId}
+                  learned={learned}
+                  power={teaches}
+                  kindle={
+                    conditionId && effectId && kindleIndex !== null
+                      ? {
+                          conditionId,
+                          effectId,
+                          index: kindleIndex ?? item.affixes.length,
+                        }
+                      : undefined
+                  }
+                />
+              </div>
+            ) : (
+              <div className="empty-pick panel-card sub">Choose an item on the right.</div>
+            )}
+
+            {kind === "rune" && <RunePouch state={state} selected={runeId} onSelect={setRuneId} />}
+
+            {kind === "kindle" && (
+              <KindleParts
+                state={state}
+                conditionId={conditionId}
+                effectId={effectId}
+                onCondition={setConditionId}
+                onEffect={setEffectId}
+              />
+            )}
+
+            <div className="grow" />
+            {last && (
+              <div className="craft-last panel-card" role="status">
+                {last}
+              </div>
+            )}
+            {kind !== "codex" && kind !== "crucible" && (
+              <div className="cost-bar panel-card">
+                <div className="cost-text">
+                  <span className="eyebrow">COST</span>
+                  <span className="mono strong">{cost}</span>
+                  <span className={block ? "block warn" : "block ok"}>
+                    {block ?? "Ready. There is no Undo."}
+                  </span>
+                </div>
+                <button type="button" className="btn big primary" disabled={!!block} onClick={run}>
+                  {actionName}
+                </button>
+              </div>
+            )}
+          </main>
+
+          <aside className="persona-right">
+            <span className="title-font section-title">Equipped</span>
+            <Paperdoll scale={SIDE_DOLL} className="side">
+              <WeaponSlot state={state} scale={SIDE_DOLL} />
+              {GAME_DATA.equipmentSlots.map((slot) => {
+                const it = state.hero.equipment[slot];
+                const pos = dollBox(slot, SIDE_DOLL);
+                return (
+                  <div key={slot} className="doll-slot" style={{ left: pos.x, top: pos.y }}>
+                    <ItemTile
+                      item={it}
+                      label={SLOT_NAMES[itemSlotFor(slot)]}
+                      width={pos.w}
+                      height={pos.h}
+                      selected={!!it && it.id === itemId}
+                      {...(it ? { onSelect: () => pickItem(it.id) } : {})}
+                    />
+                  </div>
+                );
+              })}
+            </Paperdoll>
+            <div className="section-row">
+              <span className="title-font section-title">Inventory</span>
+              <span className="mono sub">{state.inventory.length} items</span>
+            </div>
+            <ItemGrid
+              placed={state.inventory}
+              size={{ w: PROGRESSION.inventoryWidth, h: PROGRESSION.inventoryHeight }}
+              cell={38}
+              selected={itemId}
+              onSelect={pickItem}
+              label="Inventory"
+            />
+          </aside>
+        </div>
+      </Window>
+    </WindowLayer>
   );
 }

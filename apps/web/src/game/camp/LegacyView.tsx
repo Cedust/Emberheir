@@ -15,7 +15,7 @@ import { useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
-import { useTabKeys } from "../../ui/kit/hotkeys";
+import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import { collections } from "../collections";
 import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
 
@@ -46,7 +46,6 @@ export function LegacyView(props: {
   const { state } = props;
   const { legacy } = state;
   const [tab, setTab] = useState<"gear" | "trophies" | "collections">(props.initialTab ?? "gear");
-  useTabKeys(["gear", "trophies", "collections"], tab, (id) => setTab(id as typeof tab));
   const goals = collections(state);
   const full = goals.filter((g) => g.found >= g.total).length;
   const generation = legacy.prestige + 1;
@@ -92,181 +91,171 @@ export function LegacyView(props: {
     },
   ];
   return (
-    <section className="screen legacy" aria-label="Legacy">
-      <header className="persona-header bar-top">
-        <div className="run-title">
-          <span className="title-font">LEGACY</span>
-          <span className="sub">Everything that survives the fire</span>
-        </div>
-        <span className="gen-tag title-font">Generation {generation}</span>
-        <div className="tabs" role="tablist">
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "gear"}
-            className={`tab title-font ${tab === "gear" ? "on" : ""}`}
-            onClick={() => setTab("gear")}
-          >
-            Worn Gear
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "trophies"}
-            className={`tab title-font ${tab === "trophies" ? "on" : ""}`}
-            onClick={() => setTab("trophies")}
-          >
-            Trophy Wall · {legacy.trophies.length}/{TROPHY_COUNT}
-          </button>
-          <button
-            type="button"
-            role="tab"
-            aria-selected={tab === "collections"}
-            className={`tab title-font ${tab === "collections" ? "on" : ""}`}
-            onClick={() => setTab("collections")}
-          >
-            Collections · {full}/{goals.length}
-          </button>
-        </div>
-        <div className="grow" />
-        <button
-          type="button"
-          className="icon-button"
-          aria-label="Back to Camp"
-          title="Back to Camp (Esc)"
-          onClick={props.onClose}
-        >
-          <Icon name="close" size={20} />
-        </button>
-      </header>
-      {tab === "trophies" ? (
-        <TrophyWall state={state} />
-      ) : tab === "collections" ? (
-        <div className="collections-page">
-          <div className="collections" aria-label="Collections">
-            {goals.map((g) => {
-              const done = g.found >= g.total;
-              return (
-                <section
-                  key={g.id}
-                  className={`panel-card collection${done ? " done" : ""}`}
-                  aria-label={g.name}
-                >
-                  <span className="eyebrow">{g.name.toUpperCase()}</span>
-                  <span className="title-font big">
-                    {g.found} / {g.total}
-                  </span>
-                  <div
-                    className="collection-bar"
-                    role="progressbar"
-                    aria-valuemin={0}
-                    aria-valuemax={g.total}
-                    aria-valuenow={g.found}
-                  >
-                    <div style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
-                  </div>
-                  <span className="sub small">{g.how}</span>
-                  <span className={`collection-reward small${done ? " accent" : ""}`}>
-                    <Icon name={done ? "check" : "lock"} size={14} />
-                    {done ? `${g.reward.replace(/^A /, "The ")} is raised.` : g.reward}
-                  </span>
-                </section>
-              );
-            })}
-          </div>
-          <Lineage state={state} />
-        </div>
-      ) : (
-        <div className="legacy-body">
-          <aside className="legacy-facts">
-            {facts.map((f) => (
-              <div key={f.kind} className="legacy-fact panel-card">
-                <div className="section-row">
-                  <span className="eyebrow">{f.kind}</span>
-                  <span className="mono">{f.value}</span>
-                </div>
-                <span className="sub small">{f.desc}</span>
-              </div>
-            ))}
-          </aside>
-          <div className="legacy-ring">
-            <div className="ring-line" />
-            {RING.map((r, i) => {
-              const a = ((-90 + i * 36) * Math.PI) / 180;
-              const item = wornIn(r.slot);
-              return (
-                <button
-                  key={r.slot}
-                  type="button"
-                  className={`ring-slot${item ? ` worn rarity-${item.rarity}` : ""}${sel === r.slot ? " on" : ""}`}
-                  style={{ left: 360 + Math.cos(a) * 270 - 52, top: 400 + Math.sin(a) * 270 - 52 }}
-                  title={item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: empty`}
-                  aria-label={
-                    item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: empty`
-                  }
-                  onClick={() => setSel(r.slot)}
-                >
-                  {item ? (
-                    <span className="ring-art">
-                      <ItemArt baseId={item.baseId} slot={itemSlotFor(r.slot)} />
-                    </span>
-                  ) : (
-                    <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
-                  )}
-                  <span className="sub small">{item ? item.name : slotName(r.slot)}</span>
-                  <span className="seal">◆</span>
-                </button>
-              );
-            })}
-            <div className="ring-center">
-              <Icon name="fire" size={64} color="var(--accent)" />
-              <span className="title-font big">{worn} / 10 worn</span>
-              <span className="sub">Click a slot for details</span>
-            </div>
-          </div>
-          <aside className="legacy-side">
-            {selItem ? (
-              <ItemDetail
-                item={selItem}
-                where="WORN"
-                className="sealed"
-                footer={
-                  <span className="sub small">
-                    Survives every harvest. Thoric can raise its Tier with a Phoenix Feather.
-                  </span>
-                }
+    <WindowLayer mode="full">
+      <Window
+        label="Legacy"
+        mode="full"
+        className="legacy"
+        header={
+          <WindowHeader
+            title="Legacy"
+            sub="Everything that survives the fire"
+            medallion={<Medallion icon="fire" />}
+            tabs={
+              <Tabs
+                label="Legacy"
+                items={[
+                  { id: "gear", name: "Worn Gear", icon: "shield" },
+                  {
+                    id: "trophies",
+                    name: `Trophy Wall · ${legacy.trophies.length}/${TROPHY_COUNT}`,
+                    icon: "boss",
+                  },
+                  { id: "collections", name: `Collections · ${full}/${goals.length}`, icon: "box" },
+                ]}
+                active={tab}
+                onChange={setTab}
               />
-            ) : (
-              <section className="panel-card">
-                <span className="eyebrow">{slotName(sel).toUpperCase()}</span>
-                <p className="title-font">Empty slot</p>
-              </section>
-            )}
-            <section className="panel-card chronicle" aria-label="Chronicle">
-              <span className="title-font section-title">Chronicle</span>
-              {legacy.chronicle.map((c) => (
-                <div key={c.generation} className="chronicle-row">
-                  <span className="mono">Gen {c.generation}</span>
-                  <span>
-                    {c.title ? <strong className="accent">{c.title}</strong> : null}
-                    {c.title ? " · " : ""}
-                    {c.enemyName.split(",")[0]} fell at Level {c.level} after {c.deaths} death
-                    {c.deaths === 1 ? "" : "s"}.
-                  </span>
+            }
+            right={<span className="gen-tag title-font">Generation {generation}</span>}
+            onClose={props.onClose}
+          />
+        }
+      >
+        {tab === "trophies" ? (
+          <TrophyWall state={state} />
+        ) : tab === "collections" ? (
+          <div className="collections-page">
+            <div className="collections" aria-label="Collections">
+              {goals.map((g) => {
+                const done = g.found >= g.total;
+                return (
+                  <section
+                    key={g.id}
+                    className={`panel-card collection${done ? " done" : ""}`}
+                    aria-label={g.name}
+                  >
+                    <span className="eyebrow">{g.name.toUpperCase()}</span>
+                    <span className="title-font big">
+                      {g.found} / {g.total}
+                    </span>
+                    <div
+                      className="collection-bar"
+                      role="progressbar"
+                      aria-valuemin={0}
+                      aria-valuemax={g.total}
+                      aria-valuenow={g.found}
+                    >
+                      <div style={{ width: `${(100 * g.found) / Math.max(1, g.total)}%` }} />
+                    </div>
+                    <span className="sub small">{g.how}</span>
+                    <span className={`collection-reward small${done ? " accent" : ""}`}>
+                      <Icon name={done ? "check" : "lock"} size={14} />
+                      {done ? `${g.reward.replace(/^A /, "The ")} is raised.` : g.reward}
+                    </span>
+                  </section>
+                );
+              })}
+            </div>
+            <Lineage state={state} />
+          </div>
+        ) : (
+          <div className="legacy-body">
+            <aside className="legacy-facts">
+              {facts.map((f) => (
+                <div key={f.kind} className="legacy-fact panel-card">
+                  <div className="section-row">
+                    <span className="eyebrow">{f.kind}</span>
+                    <span className="mono">{f.value}</span>
+                  </div>
+                  <span className="sub small">{f.desc}</span>
                 </div>
               ))}
-              <div className="chronicle-row">
-                <span className="mono accent">Gen {generation}</span>
-                <span>
-                  <strong className="accent">{heroTitle(state, GAME_DATA)}</strong> · Now ·{" "}
-                  {state.hero.name} walks the Ashen Fields.
-                </span>
+            </aside>
+            <div className="legacy-ring">
+              <div className="ring-line" />
+              {RING.map((r, i) => {
+                const a = ((-90 + i * 36) * Math.PI) / 180;
+                const item = wornIn(r.slot);
+                return (
+                  <button
+                    key={r.slot}
+                    type="button"
+                    className={`ring-slot${item ? ` worn rarity-${item.rarity}` : ""}${sel === r.slot ? " on" : ""}`}
+                    style={{
+                      left: 360 + Math.cos(a) * 270 - 52,
+                      top: 400 + Math.sin(a) * 270 - 52,
+                    }}
+                    title={
+                      item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: empty`
+                    }
+                    aria-label={
+                      item ? `${slotName(r.slot)}: ${item.name}` : `${slotName(r.slot)}: empty`
+                    }
+                    onClick={() => setSel(r.slot)}
+                  >
+                    {item ? (
+                      <span className="ring-art">
+                        <ItemArt baseId={item.baseId} slot={itemSlotFor(r.slot)} />
+                      </span>
+                    ) : (
+                      <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
+                    )}
+                    <span className="sub small">{item ? item.name : slotName(r.slot)}</span>
+                    <span className="seal">◆</span>
+                  </button>
+                );
+              })}
+              <div className="ring-center">
+                <Icon name="fire" size={64} color="var(--accent)" />
+                <span className="title-font big">{worn} / 10 worn</span>
+                <span className="sub">Click a slot for details</span>
               </div>
-            </section>
-          </aside>
-        </div>
-      )}
-    </section>
+            </div>
+            <aside className="legacy-side">
+              {selItem ? (
+                <ItemDetail
+                  item={selItem}
+                  where="WORN"
+                  className="sealed"
+                  footer={
+                    <span className="sub small">
+                      Survives every harvest. Thoric can raise its Tier with a Phoenix Feather.
+                    </span>
+                  }
+                />
+              ) : (
+                <section className="panel-card">
+                  <span className="eyebrow">{slotName(sel).toUpperCase()}</span>
+                  <p className="title-font">Empty slot</p>
+                </section>
+              )}
+              <section className="panel-card chronicle" aria-label="Chronicle">
+                <span className="title-font section-title">Chronicle</span>
+                {legacy.chronicle.map((c) => (
+                  <div key={c.generation} className="chronicle-row">
+                    <span className="mono">Gen {c.generation}</span>
+                    <span>
+                      {c.title ? <strong className="accent">{c.title}</strong> : null}
+                      {c.title ? " · " : ""}
+                      {c.enemyName.split(",")[0]} fell at Level {c.level} after {c.deaths} death
+                      {c.deaths === 1 ? "" : "s"}.
+                    </span>
+                  </div>
+                ))}
+                <div className="chronicle-row">
+                  <span className="mono accent">Gen {generation}</span>
+                  <span>
+                    <strong className="accent">{heroTitle(state, GAME_DATA)}</strong> · Now ·{" "}
+                    {state.hero.name} walks the Ashen Fields.
+                  </span>
+                </div>
+              </section>
+            </aside>
+          </div>
+        )}
+      </Window>
+    </WindowLayer>
   );
 }
 

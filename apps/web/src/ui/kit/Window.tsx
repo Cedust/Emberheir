@@ -15,11 +15,14 @@ export function Window(props: {
   children: ReactNode;
   /** "panel": a window over the dimmed scene; "full": covers the scene (Skill Tree). */
   mode?: "panel" | "full";
+  /** "dialog" for windows that sit over another screen (Character, Kaelen). */
+  role?: "dialog" | "region";
   className?: string;
 }) {
   return (
     <section
       className={`k-window k-${props.mode ?? "panel"} ${props.className ?? ""}`}
+      role={props.role === "dialog" ? "dialog" : undefined}
       aria-label={props.label}
     >
       <span className="k-corner tl" aria-hidden="true" />
@@ -32,15 +35,30 @@ export function Window(props: {
   );
 }
 
+/**
+ * Where a window sits (ui-ux-plan-v1.md 3.2): a "panel" floats over the dimmed, blurred scene
+ * with a margin; a "full" window covers the stage (Skill Tree, Legacy ring need the room).
+ */
+export function WindowLayer(props: { mode?: "panel" | "full"; children: ReactNode }) {
+  return <div className={`k-layer k-layer-${props.mode ?? "panel"}`}>{props.children}</div>;
+}
+
 /** Portrait medallion: a painted portrait, or an icon until the art exists. */
-export function Medallion(props: { icon?: IconName; image?: string; tint?: string }) {
+export function Medallion(props: {
+  icon?: IconName;
+  image?: string;
+  tint?: string;
+  /** Drawn art (e.g. a code-drawn persona portrait). */
+  children?: ReactNode;
+}) {
   return (
     <span className="k-medallion" style={props.tint ? { background: props.tint } : undefined}>
-      {props.image ? (
-        <img src={props.image} alt="" />
-      ) : (
-        props.icon && <Icon name={props.icon} size={26} color="#fff6e4" />
-      )}
+      {props.children ??
+        (props.image ? (
+          <img src={props.image} alt="" />
+        ) : (
+          props.icon && <Icon name={props.icon} size={26} color="#fff6e4" />
+        ))}
     </span>
   );
 }
@@ -81,6 +99,8 @@ export interface TabItem<T extends string> {
   readonly id: T;
   readonly name: string;
   readonly icon?: IconName;
+  /** Small art instead of the icon, e.g. a persona's face. */
+  readonly art?: ReactNode;
   /** A number or "!" when something waits there. */
   readonly marker?: number | "!";
   /** Why the tab is closed; locked tabs are skipped by Q/E. */
@@ -133,7 +153,13 @@ function Tab<T extends string>(props: { item: TabItem<T>; on: boolean; onPick: (
       onClick={t.locked ? undefined : props.onPick}
       {...hover}
     >
-      {t.icon && <Icon name={t.locked ? "lock" : t.icon} size={16} />}
+      {t.locked ? (
+        <Icon name="lock" size={16} />
+      ) : t.art ? (
+        <span className="k-tab-art">{t.art}</span>
+      ) : (
+        t.icon && <Icon name={t.icon} size={16} />
+      )}
       <span>{t.name}</span>
       {t.marker !== undefined && <Marker value={t.marker} />}
     </button>

@@ -17,7 +17,7 @@ test("Marisha gambles a ring, Nyssa turns three Bark into Moss", async ({ page }
   await page.locator(".cost-bar").getByRole("button", { name: "Gamble" }).click();
   await expect(page.locator(".gamble-last")).toBeVisible();
 
-  await page.getByRole("tab", { name: /Nyssa · Runesmith/ }).click();
+  await page.getByRole("tab", { name: /Nyssa/ }).click();
   await page
     .getByRole("button", { name: /Combine Runes/ })
     .first()

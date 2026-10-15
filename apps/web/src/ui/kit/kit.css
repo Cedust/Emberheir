@@ -91,6 +91,60 @@
   flex: 1;
   min-height: 0;
   display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border-radius: 0 0 4px 4px;
+}
+
+.stage .k-window-body > * {
+  flex-grow: 1;
+  min-height: 0;
+}
+
+/* Where a window sits: over the dimmed scene (panel) or covering the stage (full). */
+.stage .k-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+}
+
+.stage .k-layer > .k-window {
+  flex: 1;
+}
+
+.stage .k-layer-panel {
+  align-items: center;
+  justify-content: center;
+  padding: 22px calc(var(--safe-x) + 26px);
+  background: rgb(14 10 6 / 0.58);
+  backdrop-filter: blur(2px);
+  animation: k-layer-in 0.16s ease-out;
+}
+
+.stage .k-layer-panel > .k-window {
+  align-self: stretch;
+  animation: k-window-in 0.18s ease-out;
+}
+
+@keyframes k-layer-in {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes k-window-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px) scale(0.99);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .k-layer-panel,
+  .stage .k-layer-panel > .k-window {
+    animation: none;
+  }
 }
 
 .stage .k-window-head {
@@ -107,6 +161,10 @@
   border-bottom: 2px solid var(--k-brass);
   box-shadow: 0 3px 10px rgb(0 0 0 / 0.3);
   border-radius: 4px 4px 0 0;
+}
+
+.stage .k-window-head .sub {
+  color: var(--k-on-wood-sub);
 }
 
 .stage .k-title {
@@ -206,6 +264,20 @@
 .stage .k-tab.locked {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
+.stage .k-tab-art {
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 1.5px solid var(--k-brass);
+  background: var(--k-wood-2);
+}
+
+.stage .k-tab-art svg {
+  display: block;
 }
 
 .stage .k-tab .k-marker {
@@ -602,6 +674,10 @@
   height: 100%;
 }
 
+.stage .kit-row-body {
+  display: flex;
+}
+
 .stage .kit-col {
   display: flex;
   flex-direction: column;
@@ -702,4 +778,35 @@
   min-width: 56px;
   height: 30px;
   font-size: 14px;
+}
+
+/* --- older overlays (Menu, Compendium, Trigger Codex, Cheats) wear the same frame -------------- */
+
+.stage .overlay {
+  background: rgb(14 10 6 / 0.58);
+  backdrop-filter: blur(2px);
+}
+
+.stage .overlay-panel {
+  border: 2px solid var(--k-brass);
+  border-radius: 6px;
+  box-shadow: var(--k-frame-shadow);
+}
+
+.stage .overlay-header {
+  color: var(--k-on-wood);
+  background:
+    linear-gradient(180deg, rgb(255 230 180 / 0.08), transparent 40%),
+    linear-gradient(180deg, var(--k-wood), var(--k-wood-2));
+  border-bottom: 2px solid var(--k-brass);
+}
+
+.stage .overlay-header .sub {
+  color: var(--k-on-wood-sub);
+}
+
+.stage .overlay-header .icon-button {
+  color: var(--k-on-wood);
+  background: linear-gradient(180deg, #4a3624, var(--k-wood-2));
+  border-color: var(--k-brass);
 }
