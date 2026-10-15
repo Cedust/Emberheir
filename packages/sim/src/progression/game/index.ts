@@ -68,6 +68,7 @@ export {
   wildfireLevel,
   wildfirePressure,
   prestigeRewards,
+  bossKnown,
 } from "./acts";
 export {
   weaponBase,

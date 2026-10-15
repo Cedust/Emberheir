@@ -4,7 +4,7 @@ import { Dialog } from "../../ui/kit/Dialog";
 import { WindowLayer } from "../../ui/kit/Window";
 import type { GameApi } from "../useGame";
 import { PersonaPortrait } from "./art/PersonaArt";
-import { NAN_LINES } from "./campPersonas";
+import { nanLines } from "./campPersonas";
 import { useNanResets } from "./NanResets";
 
 /**
@@ -18,7 +18,8 @@ export function NanWindow(props: {
   onClose: () => void;
 }) {
   // A new piece of advice every time she is visited, and on "Tell me more".
-  const [line, setLine] = useState(() => Math.floor(Math.random() * NAN_LINES.length));
+  const lines = nanLines(props.state);
+  const [line, setLine] = useState(() => Math.floor(Math.random() * lines.length));
   const resets = useNanResets(props.state, props.game);
   return (
     <WindowLayer>
@@ -35,7 +36,7 @@ export function NanWindow(props: {
             { label: "Farewell.", onPick: props.onClose },
           ]}
         >
-          “{NAN_LINES[line % NAN_LINES.length]}”
+          “{lines[line % lines.length]}”
         </Dialog>
       </div>
     </WindowLayer>

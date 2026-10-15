@@ -360,6 +360,8 @@ export interface LegacyState {
   readonly finaleWon?: boolean;
   /** Wildfire: the highest tier whose act boss fell (0 or missing = none yet). */
   readonly wildfire?: number;
+  /** Acts whose boss the hero has faced (missing in older saves): until then its name stays hidden. */
+  readonly bossesMet?: readonly string[];
 }
 
 /** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */

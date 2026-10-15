@@ -14,6 +14,7 @@ import { Marker } from "../../ui/kit/Marker";
 import { Presence } from "../../ui/kit/juice";
 import { useStageSize } from "../../ui/Stage";
 import { completedCollections } from "../collections";
+import { bossName } from "../labels";
 import type { GameApi } from "../useGame";
 import { CampLight } from "./art/CampLight";
 import { CampBackdrop, CampFx, campLights, SCENE_W } from "./art/CampScene";
@@ -94,7 +95,7 @@ export function CampView(props: {
             {state.legacy.prestige > 0 ? `Generation ${state.legacy.prestige + 1} · ` : ""}
             {cleared
               ? `Act ${act.number} cleared · farm it again`
-              : `Act ${act.number} · Boss: ${act.boss.name}`}
+              : `Act ${act.number} · Boss: ${bossName(state, act)}`}
             {state.progress.deathsInAct > 0 ? ` · Pity ${state.progress.deathsInAct}` : ""}
           </span>
         </div>
