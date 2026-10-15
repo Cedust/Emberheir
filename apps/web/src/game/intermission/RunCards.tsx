@@ -24,6 +24,7 @@ import {
   xpToNextLevel,
   tripOmenEffects,
 } from "@emberheir/sim";
+import { useEffect, useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
@@ -81,10 +82,6 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
         </div>
         <div className="plaque-names">
           <span className="plaque-name title-font">Heir of the Ember</span>
-          <span className="sub">
-            Level {hero.level}
-            {gained > 0 ? ` · +${fmt(gained)} XP` : ""}
-          </span>
         </div>
       </div>
       {(run.rewards?.waymark || hearth) && (
@@ -97,25 +94,20 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
             .join(" · ")}
         </div>
       )}
-      {run.rewards && run.rewards.levelsGained > 0 && (
-        <div className="level-up title-font" role="status">
-          Level up! More Life and Damage
-        </div>
-      )}
       {run.rewards?.ashbornLevels ? (
         <div className="level-up title-font" role="status">
           Ashborn {state.hero.ashborn?.level ?? ""}! A point for the Character Sheet
         </div>
       ) : null}
-      <div className="xp-line sub">
-        {Number.isFinite(next) ? (
-          <>
-            XP {fmt(hero.xp)} / {fmt(next)}
-          </>
-        ) : (
-          "Level cap reached"
-        )}
-      </div>
+      <XpBar
+        key={run.encounter?.seed ?? run.stage}
+        level={hero.level}
+        xp={hero.xp}
+        next={next}
+        gained={gained}
+        levels={run.rewards?.levelsGained ?? 0}
+        prevNext={xpToNextLevel(hero.level - 1, levelCap(state.legacy.prestige))}
+      />
       <BoonBar state={state} />
       <div className="life-head">
         <span className="title-font">Life</span>
@@ -157,6 +149,84 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
         </Button>
       </div>
     </section>
+  );
+}
+
+const reducedMotion = () =>
+  window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
+
+/**
+ * The XP bar fills up with the XP of the last fight. A level up runs it full, lets it flare and
+ * starts it over at the new level (no banner, Timo).
+ */
+function XpBar(props: {
+  level: number;
+  xp: number;
+  next: number;
+  gained: number;
+  levels: number;
+  /** XP the level before needed (where a level up starts from). */
+  prevNext: number;
+}) {
+  const { level, xp, next, gained, levels, prevNext } = props;
+  const capped = !Number.isFinite(next);
+  const target = capped ? 100 : Math.min(100, (xp / next) * 100);
+  // Before the fight: the old fill (a level up starts from somewhere on the old bar).
+  const before =
+    levels === 1
+      ? Math.max(0, ((prevNext - (gained - xp)) / prevNext) * 100)
+      : levels > 1
+        ? 0
+        : Math.max(0, ((xp - gained) / next) * 100);
+  const animate = gained > 0 && !capped && !reducedMotion();
+  const [shown, setShown] = useState({
+    pct: animate ? before : target,
+    level: animate && levels > 0 ? level - levels : level,
+    instant: true,
+  });
+  const [flare, setFlare] = useState(false);
+  useEffect(() => {
+    if (!animate) return;
+    const timers: number[] = [];
+    const at = (ms: number, f: () => void) => timers.push(window.setTimeout(f, ms));
+    if (levels > 0) {
+      at(150, () => setShown((s) => ({ ...s, pct: 100, instant: false })));
+      at(900, () => {
+        setFlare(true);
+        setShown({ pct: 0, level, instant: true });
+      });
+      at(980, () => setShown({ pct: target, level, instant: false }));
+      at(2200, () => setFlare(false));
+    } else {
+      at(150, () => setShown((s) => ({ ...s, pct: target, instant: false })));
+    }
+    return () => timers.forEach((t) => window.clearTimeout(t));
+    // Runs once per fight (the parent keys it by encounter).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  return (
+    <div className={`xp-block${flare ? " flare" : ""}`}>
+      <div className="xp-head">
+        <span className="title-font xp-level">Level {shown.level}</span>
+        <span className="mono small">
+          {capped ? "Max" : `${fmt(xp)} / ${fmt(next)}`}
+          {gained > 0 && <span className="xp-gain"> +{fmt(gained)}</span>}
+        </span>
+      </div>
+      <div
+        className="xp-bar-big"
+        role="meter"
+        aria-label="XP"
+        aria-valuemin={0}
+        aria-valuemax={100}
+        aria-valuenow={Math.round(target)}
+      >
+        <div
+          className={`fill${shown.instant ? " instant" : ""}`}
+          style={{ width: `${shown.pct}%` }}
+        />
+      </div>
+    </div>
   );
 }
 

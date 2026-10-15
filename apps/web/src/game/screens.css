@@ -869,8 +869,78 @@
   }
 }
 
-.stage .xp-line {
-  font-size: 13px;
+/* The XP bar: fills with the last fight's XP, flares on a level up. */
+.stage .xp-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.stage .xp-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.stage .xp-level {
+  font-size: 15px;
+  transition: color 0.3s;
+}
+
+.stage .xp-gain {
+  color: #ffd27a;
+}
+
+.stage .xp-bar-big {
+  position: relative;
+  height: 10px;
+  border-radius: 5px;
+  background: rgb(0 0 0 / 0.45);
+  border: 1px solid rgb(255 220 160 / 0.18);
+  overflow: hidden;
+}
+
+.stage .xp-bar-big .fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(90deg, #b9821f, #ffd27a);
+  box-shadow: 0 0 8px rgb(255 200 110 / 0.6);
+  transition: width 0.75s cubic-bezier(0.3, 0.7, 0.3, 1);
+}
+
+.stage .xp-bar-big .fill.instant {
+  transition: none;
+}
+
+.stage .xp-block.flare .xp-level {
+  color: #ffd27a;
+  text-shadow: 0 0 12px rgb(255 190 90 / 0.9);
+}
+
+.stage .xp-block.flare .xp-bar-big {
+  animation: xp-flare 1.2s ease-out;
+}
+
+@keyframes xp-flare {
+  0% {
+    box-shadow: 0 0 0 0 rgb(255 200 110 / 0.9);
+  }
+  40% {
+    box-shadow: 0 0 18px 4px rgb(255 200 110 / 0.6);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgb(255 200 110 / 0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .xp-bar-big .fill {
+    transition: none;
+  }
+  .stage .xp-block.flare .xp-bar-big {
+    animation: none;
+  }
 }
 
 .stage .life-head {
@@ -888,6 +958,25 @@
   align-items: center;
   gap: 14px;
   margin-top: 4px;
+}
+
+.stage .flask-pips {
+  display: flex;
+  gap: 5px;
+}
+
+.stage .flask-pips .flask-pip {
+  display: block;
+  width: 14px;
+  height: 22px;
+  border-radius: 3px 3px 8px 8px;
+  border: 1.5px solid #c9a063;
+  background: rgb(0 0 0 / 0.4);
+}
+
+.stage .flask-pips .flask-pip.full {
+  background: linear-gradient(180deg, #ff8a8a, #c9322a 70%);
+  box-shadow: 0 0 6px rgb(255 90 70 / 0.55);
 }
 
 .stage .up-next {
