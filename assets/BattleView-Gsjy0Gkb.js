@@ -1,4 +1,4 @@
-import{$ as e,At as t,Kr as n,Mt as r,Yr as i,ct as a,et as o,mt as s,n as c,ot as l,pt as u,r as d,sr as f,st as p,tt as m}from"./Stage-BbgXQHex.js";import{T as h,i as g}from"./src-CjzAJZp2.js";import{c as _,h as v,i as y,l as b,m as x,n as S,o as C,s as w}from"./index-B31GJ09m.js";import{a as T,c as E,f as D,h as O,m as k,o as A,p as j,r as M,s as N,u as P}from"./pixi-X4S2y8CV.js";import{a as ee,t as F}from"./fx-C86BYOTi.js";import{t as te}from"./ArenaScene-DwHkAzKR.js";var I=i(),ne=`
+import{$ as e,At as t,Kr as n,Mt as r,Yr as i,ct as a,et as o,mt as s,n as c,ot as l,pt as u,r as d,sr as f,st as p,tt as m}from"./Stage-BbgXQHex.js";import{T as h,i as g}from"./src-CjzAJZp2.js";import{c as _,h as v,i as y,l as b,m as x,n as S,o as C,s as w}from"./index-B-vtavg5.js";import{a as T,c as E,f as D,h as O,m as k,o as A,p as j,r as M,s as N,u as P}from"./pixi-X4S2y8CV.js";import{a as ee,t as F}from"./fx-C86BYOTi.js";import{t as te}from"./ArenaScene-CWhYBYJv.js";var I=i(),ne=`
 attribute vec2 aPosition;
 attribute vec2 aUV;
 varying vec2 vUV;
