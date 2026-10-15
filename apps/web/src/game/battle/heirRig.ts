@@ -34,11 +34,11 @@ const SRC = {
   /** Top left of each cut part's bounding box (the parts are stored at half size). */
   body: [50, 158],
   arm: [708, 697],
-  thumb: [860, 849],
+  thumb: [827, 840],
   /** Where the forearm turns, hidden in the sleeve. */
   elbow: [762, 750],
   /** Where the weapon's grip crosses the fist, under the thumb. */
-  grip: [882, 880],
+  grip: [846, 884],
   /** The sleeve's lower edge, cuff to cuff: the forearm never shows above this line. */
   sleeve: [
     [728, 772],

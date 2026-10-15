@@ -23,7 +23,7 @@ arm=Image.new('RGBA',im.size,(0,0,0,0)); arm.paste(im,(0,0),m)
 body=im.copy(); body.putalpha(ImageChops.subtract(im.getchannel('A'),m))
 # The thumb alone: drawn over the weapon, the rest of the fist behind it, so the grip passes
 # under the thumb.
-fm=Image.new('L',im.size,0); ImageDraw.Draw(fm).polygon([(861,858),(880,849),(904,855),(908,880),(902,901),(870,901),(860,886)],fill=255)
+fm=Image.new('L',im.size,0); ImageDraw.Draw(fm).polygon([(830,846),(858,840),(864,860),(863,906),(853,917),(837,917),(829,896),(827,860)],fill=255)
 fist=Image.new('RGBA',im.size,(0,0,0,0)); fist.paste(arm,(0,0),fm)
 # A stump under the sleeve: a clean band of the forearm repeated up into it, so a turned
 # arm shows no gap.
@@ -36,7 +36,7 @@ src=Image.new('RGBA',im.size,(0,0,0,0)); src.paste(arm,(0,0),bm)
 for k in range(1,3):
   sh=Image.new('RGBA',im.size,(0,0,0,0)); sh.paste(src,(round(-nx*28*k),round(-ny*28*k)))
   arm=Image.alpha_composite(sh,arm)
-elbow=(762,750); grip=(882,880)
+elbow=(762,750); grip=(846,884)
 # Crop to bounding boxes and halve the resolution.
 S=0.5
 def save(img,name):
