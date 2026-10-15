@@ -196,9 +196,9 @@ export const PROGRESSION = {
   /** Cards in the item pick. */
   itemChoices: 3,
   /**
-   * Item picks: weniger, aber schwerer (neuausrichtung-v1.md 6.3). From run 2 on a normal fight
+   * Item picks: weniger, aber schwerer (neuausrichtung-v1.md 6.3). In every run a normal fight
    * offers a pick only on every this many'th stage (the others give Ash and Acorns); Elites,
-   * Gatekeepers and bosses always do. Run 1 (the way in) has a pick after every fight.
+   * Gatekeepers and bosses always do (Timo 2026-10-15: run 1 too).
    */
   normalPickEvery: 3,
   /**

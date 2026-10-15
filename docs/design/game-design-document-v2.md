@@ -86,8 +86,8 @@ Endgame **Wildfire I–X**.
 - Jeder Kampf ist 1 gegen 1 und läuft automatisch. Keine Zeitraffer- oder Auto-Resolve-Funktion ✅ (Timo).
 
 ### 2.3 Nach jedem Kampf ✅ (`entschlackung-v1.md`)
-- XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe ab Run 2 nur **jede dritte Stage 1 aus 3**
-  (sonst werden die Karten sofort zu Ash; Run 1 hat als Einstieg einen Pick nach jedem Kampf), Elites, Gatekeeper und
+- XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe in jedem Run nur **jede dritte Stage 1 aus 3**
+  (sonst werden die Karten sofort zu Ash; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
   Bosse immer. Die DPS-Pfeile auf den Karten misst der
   Training Dummy.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 2–3 Ember Coal, Boss 4–6, normale Gegner 15 % auf 1).

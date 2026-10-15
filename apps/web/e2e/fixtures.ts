@@ -494,3 +494,15 @@ export function saveAtFork(): string {
   const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields", omens });
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }
+
+/**
+ * From the Intermission after a won Stage 1 without an item pick: wins Stages 2 and 3 with Skip.
+ * Normal fights offer an item pick only on every third stage, so Stage 3 shows one.
+ */
+export async function winUntilItemPick(page: Page): Promise<void> {
+  for (const stage of [2, 3]) {
+    await page.getByRole("button", { name: /NEXT STAGE/ }).click();
+    await page.getByRole("button", { name: "Skip fight" }).click();
+    await page.getByText(`Stage ${stage} cleared`).waitFor({ timeout: 30_000 });
+  }
+}

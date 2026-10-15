@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createHero } from "./fixtures";
+import { createHero, winUntilItemPick } from "./fixtures";
 
 test("a debug fight runs to the end and fills the log", async ({ page }) => {
   const errors: string[] = [];
@@ -72,6 +72,11 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await expect(page.getByTestId("fight-result")).toHaveText("VICTORY");
 
   // The rewards follow on their own after the banner.
+  // Normal fights offer an item pick only on every third stage; the others pay their cards as Ash.
+  await expect(page.getByText("Stage 1 cleared")).toBeVisible();
+  await expect(page.getByTestId("done-card")).toContainText("Ash from salvage");
+  await expect(page.getByTestId("item-card")).toHaveCount(0);
+  await winUntilItemPick(page);
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(3);
 

@@ -148,9 +148,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
   );
   // Fewer, weightier picks: most normal fights pay Ash for their cards at once.
-  // Run 1 is the way in: a pick after every fight; from run 2 on every third normal stage.
-  const every = state.legacy.prestige === 0 ? 1 : act.pickEvery;
-  const pick = itemPickAt(rank, run.stage, caught, every);
+  const pick = itemPickAt(rank, run.stage, caught, act.pickEvery);
   const items = pick ? rolled : [];
   const autoAsh = pick ? 0 : rolled.reduce((sum, it) => sum + salvageValue(it), 0);
   const runes = rollRuneDrops(

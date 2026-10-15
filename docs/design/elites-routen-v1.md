@@ -87,7 +87,7 @@ Elite-Aura, Champion-Aura und Gatekeeper-Tor gibt es schon.
 
 | Kampf | vorher | jetzt |
 |---|---|---|
-| normal | 1 aus 3 nach jedem Sieg | ab Run 2 **jede dritte Stage** 1 aus 3, sonst werden die Karten sofort zu Ash; Run 1 (der Einstieg) behält einen Pick nach jedem Kampf |
+| normal | 1 aus 3 nach jedem Sieg | **jede dritte Stage** 1 aus 3, sonst werden die Karten sofort zu Ash; gilt auch in Run 1 (Timo 15.10.2026; vorher hatte Run 1 einen Pick nach jedem Kampf) |
 | Elite, Gatekeeper | 1 aus 3 | 1 aus 3 mit Thema-Beute (1.1) |
 | Champion | – | Hoard aus 4 Karten, sicher Epic, 15 % Legendary |
 | Boss | Hoard 6 Karten, 2 Picks | wie vorher, dazu **eine Build-Karte**: ihre Affixe würfeln 4-mal so oft mit den Tags des Builds (physical/elemental, ailment ab 15 % Chance, crit ab 15 %) |
