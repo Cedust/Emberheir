@@ -29,7 +29,7 @@ import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
 import { BoonBar } from "../Boons";
 import { bountyView } from "../bounty";
-import { ShareBar } from "../camp/KaelenView";
+import { ShareBar } from "../camp/BattlePlanTab";
 import { finaleFoe, inFinale } from "../finale";
 import type { GameApi } from "../useGame";
 

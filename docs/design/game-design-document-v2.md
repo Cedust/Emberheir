@@ -159,6 +159,10 @@ Endgame **Wildfire I–X**.
   Mitte die Werkbank (Anvil, Altar, Rune Table) mit Now → After, rechts Paperdoll und Tasche. Ein Item kommt per Klick,
   Rechtsklick oder Ziehen auf die Werkbank; Kosten stehen als Währungs-Icons vor dem Knopf, Salvage wird gehalten.
   Jede Arbeit hat einen kurzen Effekt (Funken, Licht, Runenglühen, Münzen).
+- **Kaelen**: der Battle Plan sieht aus wie die Skill-Leiste im Kampf, ohne Dropdowns. Slot anklicken, rechts aus der
+  Bibliothek wählen (oder einen Skill auf den Slot ziehen); Modifier sitzen als Sockel unter dem Slot, „Fires at Heat“
+  ist ein Regler am Heat-Balken, Bedingungen sind kleine Schilder. Unten läuft „One rotation“ als dunkle Kampf-Leiste.
+  Respec und Forget werden gehalten.
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
