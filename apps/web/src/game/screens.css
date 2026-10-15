@@ -2376,13 +2376,6 @@
 
 /* --- character ------------------------------------------------------------------------------ */
 
-.stage .k-layer > .k-window.character {
-  flex: none;
-  align-self: center;
-  width: 1360px;
-  height: 820px;
-}
-
 .stage .xp-bar {
   position: relative;
   width: 180px;
@@ -2434,21 +2427,205 @@
 .stage .character-columns {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 420px 400px minmax(0, 1fr);
+  grid-template-columns: 600px minmax(0, 1fr) 480px;
   min-height: 0;
 }
 
 .stage .character-columns > section {
-  padding: 18px 20px;
+  padding: 16px 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   min-height: 0;
 }
 
-.stage .doll-column,
-.stage .attr-column {
+.stage .sheet-column {
+  border-left: 2px solid var(--edge);
   border-right: 2px solid var(--edge);
+}
+
+/* The hero (ui-ux-plan-v1.md 4.2): level on top, the painted Heir among the slots, four numbers. */
+.stage .hero-column {
+  align-items: center;
+}
+
+.stage .hero-level {
+  width: 560px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stage .hero-level-badge {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--k-on-wood, #f3e6c8);
+  background: radial-gradient(circle at 40% 35%, #5a3a22, #2a1a10);
+  border: 2px solid var(--k-brass, #b8893e);
+  box-shadow:
+    0 0 0 2px var(--k-brass-dark, #6e4f22),
+    0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+.stage .hero-level-bars {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .hero-level-line {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 15px;
+}
+
+.stage .hero-level-bars .xp-bar,
+.stage .hero-level-bars .level-track {
+  width: 100%;
+}
+
+.stage .hero-doll {
+  position: relative;
+  flex: none;
+}
+
+.stage .hero-glow {
+  position: absolute;
+  left: 110px;
+  right: 110px;
+  top: 30px;
+  bottom: 110px;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 150 60 / 0.28), transparent);
+  pointer-events: none;
+}
+
+.stage .hero-figure {
+  position: absolute;
+  left: 50%;
+  top: 6px;
+  height: 436px;
+  transform: translateX(-50%);
+  filter: drop-shadow(0 6px 10px rgb(40 20 0 / 0.35));
+  pointer-events: none;
+  user-select: none;
+}
+
+.stage .hero-numbers {
+  width: 560px;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.stage .hero-card {
+  min-height: 96px;
+  padding: 8px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+}
+
+.stage .hero-card-label {
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.stage .hero-big {
+  font-size: 27px;
+  line-height: 1.1;
+}
+
+.stage .hero-delta {
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stage .hero-delta.up {
+  color: var(--good);
+}
+
+.stage .hero-delta.down {
+  color: var(--warn);
+}
+
+.stage .hero-mini {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 14px;
+  color: var(--text);
+}
+
+.stage .hero-mini svg {
+  color: var(--text-sub);
+}
+
+.stage .hero-res {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px 8px;
+  margin-top: 2px;
+}
+
+.stage .hero-res-one {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
+/* The picked item: name, where it is and what can be done with it. */
+.stage .sel-bar {
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.stage .sel-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage .sel-name {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  font-size: 18px;
+}
+
+.stage .sel-name .sub {
+  font-size: 14px;
+}
+
+.stage .sel-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
 }
 
 .stage .paperdoll {
@@ -2545,12 +2722,6 @@
   gap: 8px;
 }
 
-.stage .small-tabs .tab {
-  min-height: 34px;
-  padding: 0 12px;
-  font-size: 14px;
-}
-
 .stage .stat-rows {
   margin: 0;
   display: flex;
@@ -2575,12 +2746,6 @@
   margin: 0;
   font-weight: 600;
   text-align: right;
-}
-
-.stage .character-detail {
-  flex-grow: 1;
-  min-height: 0;
-  overflow: auto;
 }
 
 /* --- kaelen --------------------------------------------------------------------------------- */

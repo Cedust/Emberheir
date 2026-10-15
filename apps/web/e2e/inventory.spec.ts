@@ -39,11 +39,22 @@ test("Rings aim at the other slot, items drag & drop, discard gives nothing", as
     .dragTo(dialog.getByRole("button", { name: "Ring: empty" }));
   await expect(dialog.getByRole("button", { name: "Ring: empty" })).toHaveCount(0);
 
-  // Discard asks once more and gives no Ash.
+  // Right-click equips from the bag and takes off from the hero.
+  await dialog
+    .getByRole("button", { name: /^Ring: / })
+    .first()
+    .click({ button: "right" });
+  await expect(dialog.getByRole("button", { name: "Ring: empty" })).toHaveCount(1);
+  await grid.getByRole("button", { name: /Ring/ }).click({ button: "right" });
+  await expect(dialog.getByRole("button", { name: "Ring: empty" })).toHaveCount(0);
+
+  // Discard is held, not clicked, and gives no Ash.
   const ash = await dialog.locator("[data-currency=ash] b").textContent();
   await grid.getByTestId("grid-item").first().click();
-  await dialog.getByRole("button", { name: "Discard" }).click();
-  await dialog.getByRole("button", { name: "Really discard?" }).click();
+  await dialog.getByRole("button", { name: "Discard" }).hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1200);
+  await page.mouse.up();
   await expect(grid.getByTestId("grid-item")).toHaveCount(0);
   await expect(dialog.locator("[data-currency=ash] b")).toHaveText(ash ?? "");
   expect(errors).toEqual([]);

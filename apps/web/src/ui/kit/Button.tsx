@@ -92,6 +92,8 @@ export function HoldButton(props: {
   blocked?: string | null;
   tip?: NoteHover;
   icon?: IconName;
+  /** The screen's main action (Confirm) instead of a destructive one (Salvage, Discard). */
+  primary?: boolean;
 }) {
   const [progress, setProgress] = useState(0);
   const raf = useRef(0);
@@ -134,7 +136,7 @@ export function HoldButton(props: {
   return (
     <button
       type="button"
-      className="k-btn k-secondary k-hold"
+      className={`k-btn ${props.primary ? "k-primary" : "k-secondary"} k-hold`}
       aria-disabled={blocked ? true : undefined}
       data-blocked={blocked ? "" : undefined}
       onPointerDown={begin}

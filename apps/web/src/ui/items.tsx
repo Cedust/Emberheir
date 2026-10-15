@@ -250,11 +250,13 @@ export function ItemTile(props: {
   drag?: { readonly source?: DragSource | undefined; readonly drop: SlotDrop };
   /** The Ring shortcut aims here. */
   aimed?: boolean;
+  /** Right-click: the window's default action for this item, named in the tooltip. */
+  context?: { readonly action: string; readonly run: () => void } | undefined;
 }) {
   const { item } = props;
   const w = props.width ?? props.size ?? 68;
   const h = props.height ?? props.size ?? 68;
-  const { active, ...hover } = useItemHover(item, props.equipped ?? true);
+  const { active, ...hover } = useItemHover(item, props.equipped ?? true, props.context?.action);
   const [over, setOver] = useState<"ok" | "no" | null>(null);
   const base = item ? getBase(ITEM_CATALOG, item.baseId) : undefined;
   const drag = props.drag;
@@ -295,6 +297,15 @@ export function ItemTile(props: {
       aria-label={item ? `${props.label}: ${item.name}` : `${props.label}: empty`}
       title={active ? undefined : item ? `${props.label}: ${item.name}` : props.label}
       onClick={props.onSelect}
+      onContextMenu={
+        props.context
+          ? (e) => {
+              e.preventDefault();
+              hover.onMouseLeave?.();
+              props.context?.run();
+            }
+          : undefined
+      }
       disabled={!props.onSelect && !drag}
       {...hover}
       {...dragProps}
@@ -318,11 +329,12 @@ function GridItem(props: {
   selected: boolean;
   onSelect: (itemId: string, event?: ReactMouseEvent) => void;
   grid?: "inventory" | "stash" | undefined;
+  context?: GridContext | undefined;
 }) {
-  const { placed: p, cell, grid } = props;
+  const { placed: p, cell, grid, context } = props;
   const base = getBase(ITEM_CATALOG, p.item.baseId);
   const s = itemSize(p.item, ITEM_CATALOG);
-  const { active, ...hover } = useItemHover(p.item);
+  const { active, ...hover } = useItemHover(p.item, false, context?.action(p.item));
   const dragProps = grid
     ? {
         draggable: true,
@@ -354,6 +366,15 @@ function GridItem(props: {
       aria-label={p.item.name}
       title={active ? undefined : p.item.name}
       onClick={(e) => props.onSelect(p.item.id, e)}
+      onContextMenu={
+        context
+          ? (e) => {
+              e.preventDefault();
+              hover.onMouseLeave?.();
+              context.run(p.item);
+            }
+          : undefined
+      }
       {...hover}
       {...dragProps}
     >
@@ -361,6 +382,13 @@ function GridItem(props: {
       <SocketDots sockets={p.item.sockets ?? 0} runes={p.item.runes ?? []} />
     </button>
   );
+}
+
+/** Right-click on a grid item: the window's default action (ui-ux-plan-v1.md 3.5). */
+export interface GridContext {
+  /** The action's name for the tooltip, or undefined when it cannot run for this item. */
+  readonly action: (item: Item) => string | undefined;
+  readonly run: (item: Item) => void;
 }
 
 /** D2-style grid: items take several cells; click selects, drag & drop moves (with `drop`). */
@@ -372,6 +400,7 @@ export function ItemGrid(props: {
   onSelect: (itemId: string, event?: ReactMouseEvent) => void;
   label: string;
   drop?: GridDrop | undefined;
+  context?: GridContext | undefined;
 }) {
   const { cell, drop } = props;
   const [preview, setPreview] = useState<{
@@ -439,6 +468,7 @@ export function ItemGrid(props: {
           selected={props.selected === p.item.id}
           onSelect={props.onSelect}
           grid={drop?.grid}
+          context={props.context}
         />
       ))}
       {preview && (
