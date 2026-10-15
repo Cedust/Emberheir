@@ -5,13 +5,15 @@ import { createHero, saveAfterHarvestBoss, seedSave } from "./fixtures";
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
  * show the same picture (positions scale exactly with the screen height).
  */
+// CI runs the @screens walks on two machines, split in half in this order (ci.yml): the slow
+// 4K walk shares its half with the two quickest ones.
 const SCREENS = [
   { name: "1080p", width: 1920, height: 1080 },
-  { name: "1440p", width: 2560, height: 1440 },
   { name: "4K", width: 3840, height: 2160 },
+  { name: "laptop", width: 1366, height: 768 },
+  { name: "1440p", width: 2560, height: 1440 },
   { name: "16:10", width: 1680, height: 1050 },
   { name: "21:9", width: 2560, height: 1080 },
-  { name: "laptop", width: 1366, height: 768 },
 ];
 
 /** Problems on the current screen: page scroll, a scrolling panel or a stage that misses the window. */
@@ -59,7 +61,7 @@ async function newGame(page: Page) {
 }
 
 for (const screen of SCREENS) {
-  test(`${screen.name}: every main view fits without scrolling`, async ({ page }) => {
+  test(`${screen.name}: every main view fits without scrolling @screens`, async ({ page }) => {
     // CI's software renderer keeps the live class preview busy while the six free points are
     // set, and 4K renders four times the pixels of 1080p (the battle runs at a few frames per
     // second there): this walk through every view needs more time.

@@ -4,6 +4,8 @@ const port = 4173;
 
 export default defineConfig({
   testDir: "e2e",
+  // Every test starts from its own page and save, so CI can split even one file across shards.
+  fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   reporter: process.env.CI ? [["github"], ["html", { open: "never" }]] : "list",
