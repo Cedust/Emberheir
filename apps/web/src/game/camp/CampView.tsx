@@ -11,6 +11,7 @@ import { KeyHint } from "../../ui/kit/Button";
 import { Wallet } from "../../ui/kit/Currency";
 import { HOTKEYS } from "../../ui/kit/hotkeys";
 import { Marker } from "../../ui/kit/Marker";
+import { Presence } from "../../ui/kit/juice";
 import { useStageSize } from "../../ui/Stage";
 import { completedCollections } from "../collections";
 import type { GameApi } from "../useGame";
@@ -49,6 +50,10 @@ export function CampView(props: {
   onOpen: (target: CampTarget) => void;
   onClosePanel: () => void;
   onMenu: () => void;
+  /** The persona whose window is open: the camera leans in on them. */
+  focus?: string | null;
+  /** Camera moves allowed (the Screen shake setting). */
+  zoom?: boolean;
 }) {
   const { state, game } = props;
   const size = useStageSize();
@@ -61,6 +66,14 @@ export function CampView(props: {
   const gear = heirGear(state);
   const cleared = state.progress.actsCleared.includes(act.id);
   const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
+  const focused = props.zoom !== false ? list.find((p) => p.id === props.focus) : undefined;
+  const sceneH = size.h - 64;
+  // Lean in on the focused persona: zoom around them, but never past the scene's edges.
+  const camera = focused
+    ? {
+        transformOrigin: `${Math.round(ox + focused.x)}px ${Math.round(Math.min(sceneH, Math.max(0, focused.y - 64 - FIG_H / 2)))}px`,
+      }
+    : undefined;
   const markers: Partial<Record<string, number | "!">> = {
     heir: state.hero.unspentAttributePoints,
     kaelen: state.hero.unspentSkillPoints + masteryPointsLeft(state, GAME_DATA),
@@ -98,60 +111,62 @@ export function CampView(props: {
       </header>
 
       <div className="camp-stage">
-        <PaintDefs />
-        <CampBackdrop
-          roadName={act.name}
-          w={size.w}
-          h={size.h - 64}
-          ox={ox}
-          banners={completedCollections(state)}
-          ancestor={(state.lineage ?? 0) >= LINEAGE_STEPS}
-        />
-        <CampFx w={size.w} h={size.h - 64} ox={ox} />
-        {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
-        {list.map((p, i) => {
-          const w = p.object ? p.object.w : 130;
-          const h = p.object ? p.object.h : Math.round(FIG_H * (p.figure?.fs ?? 1));
-          const target = targetOf(p);
-          const key = target ? CTA_KEY[target] : undefined;
-          const marker = markers[p.id] ?? 0;
-          return (
-            <button
-              key={p.id}
-              type="button"
-              className="camp-target"
-              style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
-              aria-label={`${p.name}, ${p.role}`}
-              onClick={() => {
-                if (target) props.onOpen(target);
-              }}
-            >
-              <Figure p={p} on={false} gear={gear} delay={i * 0.7} />
-              {marker !== 0 && (
-                <span
-                  className={`camp-marker${marker === "!" ? " quest" : ""}`}
-                  aria-label={p.id === "eldrin" ? "Bounty done" : `${marker} points waiting`}
-                >
-                  <Marker value={marker} />
+        <div className={`camp-camera${focused ? " focus" : ""}`} style={camera}>
+          <PaintDefs />
+          <CampBackdrop
+            roadName={act.name}
+            w={size.w}
+            h={size.h - 64}
+            ox={ox}
+            banners={completedCollections(state)}
+            ancestor={(state.lineage ?? 0) >= LINEAGE_STEPS}
+          />
+          <CampFx w={size.w} h={size.h - 64} ox={ox} />
+          {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
+          {list.map((p, i) => {
+            const w = p.object ? p.object.w : 130;
+            const h = p.object ? p.object.h : Math.round(FIG_H * (p.figure?.fs ?? 1));
+            const target = targetOf(p);
+            const key = target ? CTA_KEY[target] : undefined;
+            const marker = markers[p.id] ?? 0;
+            return (
+              <button
+                key={p.id}
+                type="button"
+                className="camp-target"
+                style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
+                aria-label={`${p.name}, ${p.role}`}
+                onClick={() => {
+                  if (target) props.onOpen(target);
+                }}
+              >
+                <Figure p={p} on={false} gear={gear} delay={i * 0.7} />
+                {marker !== 0 && (
+                  <span
+                    className={`camp-marker${marker === "!" ? " quest" : ""}`}
+                    aria-label={p.id === "eldrin" ? "Bounty done" : `${marker} points waiting`}
+                  >
+                    <Marker value={marker} />
+                  </span>
+                )}
+                <span className="camp-tip" role="tooltip">
+                  <span className="title-font">
+                    {p.name}
+                    {key && <KeyHint k={key} />}
+                  </span>
+                  <span className="sub">{p.role}</span>
                 </span>
-              )}
-              <span className="camp-tip" role="tooltip">
-                <span className="title-font">
-                  {p.name}
-                  {key && <KeyHint k={key} />}
-                </span>
-                <span className="sub">{p.role}</span>
-              </span>
-            </button>
-          );
-        })}
+              </button>
+            );
+          })}
 
-        <CampLight
-          w={size.w}
-          h={size.h - 64}
-          ox={ox}
-          lights={campLights({ orb: state.progress.trainerUnlocked })}
-        />
+          <CampLight
+            w={size.w}
+            h={size.h - 64}
+            ox={ox}
+            lights={campLights({ orb: state.progress.trainerUnlocked })}
+          />
+        </div>
 
         <div className="set-out">
           <RoadStrip state={state} plan={plan} />
@@ -164,17 +179,21 @@ export function CampView(props: {
           </button>
         </div>
       </div>
-      {props.panel === "road" && (
-        <RoadWindow state={state} game={game} plan={plan} onClose={props.onClosePanel} />
-      )}
-      {props.panel === "nan" && (
-        <NanWindow
-          state={state}
-          game={game}
-          onCompendium={() => props.onOpen("compendium")}
-          onClose={props.onClosePanel}
-        />
-      )}
+      <Presence>
+        {props.panel === "road" && (
+          <RoadWindow state={state} game={game} plan={plan} onClose={props.onClosePanel} />
+        )}
+      </Presence>
+      <Presence>
+        {props.panel === "nan" && (
+          <NanWindow
+            state={state}
+            game={game}
+            onCompendium={() => props.onOpen("compendium")}
+            onClose={props.onClosePanel}
+          />
+        )}
+      </Presence>
     </section>
   );
 }

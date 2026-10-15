@@ -5,6 +5,7 @@ import { ItemHoverLayer } from "../ui/ItemTooltip";
 import { Stage } from "../ui/Stage";
 import { useSettings } from "../ui/settings";
 import { isTypingTarget } from "../ui/kit/hotkeys";
+import { Presence, useUiSounds } from "../ui/kit/juice";
 import { CHEATS_ENABLED, CheatPanel } from "./CheatPanel";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
@@ -30,6 +31,7 @@ type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | "road" | "nan" | n
 export function GameApp() {
   const game = useGame();
   const settings = useSettings();
+  useUiSounds();
   const [overlay, setOverlay] = useState<Overlay>(null);
   const [campScreen, setCampScreen] = useState<CampScreen>(null);
   const [persona, setPersona] = useState<PersonaId>("thoric");
@@ -170,6 +172,19 @@ export function GameApp() {
     );
   } else if (!run) {
     const close = () => setCampScreen(null);
+    // The camera leans in on whoever's window is open (ui-ux-plan-v1.md 3.2).
+    const focus =
+      overlay === "character"
+        ? "heir"
+        : campScreen === "persona"
+          ? persona
+          : campScreen === "stash"
+            ? "wagon"
+            : campScreen === "road"
+              ? "eldrin"
+              : campScreen === "nan"
+                ? "nan"
+                : null;
     const camp = (
       <CampView
         state={state}
@@ -177,6 +192,8 @@ export function GameApp() {
         panel={campScreen === "road" || campScreen === "nan" ? campScreen : null}
         onOpen={openCamp}
         onClosePanel={close}
+        focus={focus}
+        zoom={settings.settings.screenShake}
         onMenu={() => setOverlay("menu")}
       />
     );
@@ -252,45 +269,51 @@ export function GameApp() {
         <div className="screen-host" data-covered={overlay || campWindow ? "" : undefined}>
           {screen}
         </div>
-        {campWindow}
+        <Presence>{campWindow}</Presence>
         {/* On the road, Character and Skill Tree are windows over the arena with the arena
             around them (ui-ux-plan-v1.md 3.4). */}
         <div className={run ? "road-windows" : "camp-windows"}>
-          {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
-            <CharacterOverlay
-              state={state}
-              game={game}
-              inFight={inFight}
-              onClose={() => setOverlay(null)}
-            />
-          )}
-          {state && (overlay === "tree" || overlay === "plan") && (
-            <KaelenView
-              key={overlay}
-              state={state}
-              game={game}
-              viewOnly
-              planEditable={!inFight}
-              initialTab={overlay === "plan" ? "plan" : "tree"}
-              onClose={() => setOverlay(null)}
-            />
-          )}
+          <Presence>
+            {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
+              <CharacterOverlay
+                state={state}
+                game={game}
+                inFight={inFight}
+                onClose={() => setOverlay(null)}
+              />
+            )}
+          </Presence>
+          <Presence>
+            {state && (overlay === "tree" || overlay === "plan") && (
+              <KaelenView
+                key={overlay}
+                state={state}
+                game={game}
+                viewOnly
+                planEditable={!inFight}
+                initialTab={overlay === "plan" ? "plan" : "tree"}
+                onClose={() => setOverlay(null)}
+              />
+            )}
+          </Presence>
         </div>
         {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
-        {state && overlay === "menu" && (
-          <MenuOverlay
-            settings={settings}
-            inFight={inFight}
-            onResume={() => setOverlay(null)}
-            onCompendium={() => setOverlay("compendium")}
-            onCheats={CHEATS_ENABLED ? () => setOverlay("cheats") : undefined}
-            onQuit={() => {
-              setOverlay(null);
-              setCampScreen(null);
-              game.quit();
-            }}
-          />
-        )}
+        <Presence>
+          {state && overlay === "menu" && (
+            <MenuOverlay
+              settings={settings}
+              inFight={inFight}
+              onResume={() => setOverlay(null)}
+              onCompendium={() => setOverlay("compendium")}
+              onCheats={CHEATS_ENABLED ? () => setOverlay("cheats") : undefined}
+              onQuit={() => {
+                setOverlay(null);
+                setCampScreen(null);
+                game.quit();
+              }}
+            />
+          )}
+        </Presence>
         {state && overlay === "cheats" && (
           <CheatPanel state={state} game={game} onClose={() => setOverlay(null)} />
         )}

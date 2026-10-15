@@ -1,5 +1,6 @@
 import type { GameState } from "@emberheir/sim";
 import { type NoteHover, useNoteHover } from "../ItemTooltip";
+import { useRollingNumber } from "./juice";
 
 /** Every currency the wallet shows, plus the Ember Flask charges in the Camp header. */
 export type CurrencyId = "acorns" | "ash" | "coal" | "feathers" | "runes" | "glass" | "flask";
@@ -150,15 +151,18 @@ export function CurrencyChip(props: {
   /** Gained since the last fight, shown as "+n". */
   gain?: number | undefined;
 }) {
-  const shown = typeof props.amount === "number" ? fmt(props.amount) : props.amount;
-  const hover = useNoteHover(currencyNote(props.id, shown));
+  const exact = typeof props.amount === "number" ? fmt(props.amount) : props.amount;
+  // Numbers count to their new value (Diablo gold); text like the Flask's "3/3" just changes.
+  const roll = useRollingNumber(typeof props.amount === "number" ? props.amount : 0);
+  const shown = typeof props.amount === "number" ? fmt(roll.value) : props.amount;
+  const hover = useNoteHover(currencyNote(props.id, exact));
   const name = CURRENCIES[props.id].name;
   return (
     <span
-      className="k-currency"
+      className={`k-currency${roll.trend ? ` k-${roll.trend}` : ""}`}
       data-currency={props.id}
       tabIndex={0}
-      aria-label={`${name}: ${shown}`}
+      aria-label={`${name}: ${exact}`}
       {...hover}
     >
       <CurrencyIcon id={props.id} />

@@ -1,4 +1,6 @@
 import type { SettingsApi } from "../ui/settings";
+import { useNoteHover } from "../ui/ItemTooltip";
+import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { useEffect, useState } from "react";
@@ -7,6 +9,7 @@ export function SettingsPanel(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
   return (
     <div className="settings">
+      <h3 className="settings-head title-font">Display</h3>
       <div className="setting-row">
         <span>Theme</span>
         <div className="segmented" role="radiogroup" aria-label="Theme">
@@ -24,58 +27,89 @@ export function SettingsPanel(props: { api: SettingsApi }) {
           ))}
         </div>
       </div>
-      <div className="setting-row">
-        <span>Damage numbers</span>
-        <div className="segmented" role="radiogroup" aria-label="Damage numbers">
-          {[true, false].map((v) => (
-            <button
-              key={String(v)}
-              type="button"
-              role="radio"
-              aria-checked={settings.damageNumbers === v}
-              className={settings.damageNumbers === v ? "on" : ""}
-              onClick={() => update({ damageNumbers: v })}
-            >
-              {v ? "On" : "Off"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="setting-row">
-        <span>Screen shake</span>
-        <div className="segmented" role="radiogroup" aria-label="Screen shake">
-          {[true, false].map((v) => (
-            <button
-              key={String(v)}
-              type="button"
-              role="radio"
-              aria-checked={settings.screenShake === v}
-              className={settings.screenShake === v ? "on" : ""}
-              onClick={() => update({ screenShake: v })}
-            >
-              {v ? "On" : "Off"}
-            </button>
-          ))}
-        </div>
-      </div>
-      <div className="setting-row">
-        <span>Sound</span>
-        <div className="segmented" role="radiogroup" aria-label="Sound">
-          {[true, false].map((v) => (
-            <button
-              key={String(v)}
-              type="button"
-              role="radio"
-              aria-checked={settings.sound === v}
-              className={settings.sound === v ? "on" : ""}
-              onClick={() => update({ sound: v })}
-            >
-              {v ? "On" : "Off"}
-            </button>
-          ))}
-        </div>
-      </div>
+      <OnOffRow
+        label="Damage numbers"
+        value={settings.damageNumbers}
+        onChange={(v) => update({ damageNumbers: v })}
+      />
+      <OnOffRow
+        label="Screen shake"
+        value={settings.screenShake}
+        onChange={(v) => update({ screenShake: v })}
+      />
       <FullscreenRow />
+
+      <h3 className="settings-head title-font">Sound</h3>
+      <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
+      <div className={`setting-row${settings.sound ? "" : " muted"}`}>
+        <span>Volume</span>
+        <span className="setting-volume">
+          <input
+            type="range"
+            min={0}
+            max={100}
+            step={5}
+            aria-label="Volume"
+            disabled={!settings.sound}
+            value={Math.round(settings.volume * 100)}
+            onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
+          />
+          <b className="mono">{Math.round(settings.volume * 100)}%</b>
+        </span>
+      </div>
+      {SOUND_GROUPS.map((g) => (
+        <OnOffRow
+          key={g}
+          label={GROUP_LABEL[g].name}
+          tip={GROUP_LABEL[g].explain}
+          sub
+          muted={!settings.sound}
+          value={settings.sounds[g]}
+          onChange={(v) => update({ sounds: { ...settings.sounds, [g]: v } })}
+        />
+      ))}
+    </div>
+  );
+}
+
+const GROUP_LABEL: Readonly<Record<SoundGroup, { name: string; explain: string }>> = {
+  hover: { name: "Hover", explain: "A soft tick when the pointer touches a button." },
+  click: { name: "Clicks", explain: "Buttons, tabs, and the knock of a blocked button." },
+  window: { name: "Windows", explain: "The rustle when a window opens or closes." },
+  coin: { name: "Coins", explain: "The ring when your currencies grow." },
+  loot: { name: "Loot", explain: "Item and Rune drops, Boons." },
+};
+
+/** One On/Off switch. `sub` rows sit indented under Sound; `muted` greys them out. */
+function OnOffRow(props: {
+  label: string;
+  value: boolean;
+  onChange: (v: boolean) => void;
+  tip?: string;
+  sub?: boolean;
+  muted?: boolean;
+}) {
+  const hover = useNoteHover(
+    props.tip ? { name: props.label, kind: "Sound", explain: props.tip } : undefined,
+  );
+  return (
+    <div className={`setting-row${props.sub ? " sub-row" : ""}${props.muted ? " muted" : ""}`}>
+      <span {...hover}>{props.label}</span>
+      <div className="segmented" role="radiogroup" aria-label={props.label}>
+        {[true, false].map((v) => (
+          <button
+            key={String(v)}
+            type="button"
+            role="radio"
+            aria-checked={props.value === v}
+            className={props.value === v ? "on" : ""}
+            disabled={props.muted}
+            onClick={() => props.onChange(v)}
+          >
+            {v ? "On" : "Off"}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

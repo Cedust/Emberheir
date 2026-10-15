@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { Icon, type IconName } from "../Icon";
 import { useNoteHover } from "../ItemTooltip";
 import { IconButton, KeyHint } from "./Button";
+import { playUiSound } from "../sound";
 import { HOTKEYS, useTabKeys } from "./hotkeys";
 import { Marker } from "./Marker";
 
@@ -120,6 +121,13 @@ export function Tabs<T extends string>(props: {
   const open = props.items.filter((t) => !t.locked).map((t) => t.id);
   useTabKeys(open, props.active, (id) => props.onChange(id as T), props.keys ?? true);
   const showKeys = (props.keys ?? true) && open.length > 1;
+  // A page turns whenever the tab changes, by click, Q/E or a dragged item.
+  const shown = useRef(props.active);
+  useEffect(() => {
+    if (shown.current === props.active) return;
+    shown.current = props.active;
+    playUiSound("tab");
+  }, [props.active]);
   return (
     <div className="k-tabs" role="tablist" aria-label={props.label}>
       {showKeys && <KeyHint k={HOTKEYS.prevTab} />}

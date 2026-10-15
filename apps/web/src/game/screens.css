@@ -1441,6 +1441,28 @@
 .stage .camp-stage {
   position: relative;
   flex-grow: 1;
+  overflow: hidden;
+}
+
+/* The camera: leans in on the persona whose window is open, eases back when it closes. */
+.stage .camp-camera {
+  position: absolute;
+  inset: 0;
+  transition: transform 0.55s cubic-bezier(0.25, 0.8, 0.3, 1);
+}
+
+.stage .camp-camera.focus {
+  transform: scale(1.12);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .camp-camera {
+    transition: none;
+  }
+
+  .stage .camp-camera.focus {
+    transform: none;
+  }
 }
 
 .stage .camp-scene {
@@ -4563,7 +4585,7 @@
 .stage .settings {
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 8px;
   padding: 0 24px;
 }
 
@@ -4572,6 +4594,44 @@
   justify-content: space-between;
   align-items: center;
   gap: 16px;
+}
+
+.stage .settings-head {
+  margin: 6px 0 -4px;
+  font-size: 15px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  border-bottom: 1px solid var(--edge);
+  padding-bottom: 4px;
+}
+
+.stage .setting-row.sub-row {
+  padding-left: 18px;
+}
+
+.stage .setting-row.muted {
+  opacity: 0.45;
+}
+
+.stage .setting-row.muted button {
+  cursor: not-allowed;
+}
+
+.stage .setting-volume {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage .setting-volume input {
+  width: 180px;
+  accent-color: var(--accent);
+}
+
+.stage .setting-volume b {
+  width: 44px;
+  text-align: right;
 }
 
 .stage .segmented {
