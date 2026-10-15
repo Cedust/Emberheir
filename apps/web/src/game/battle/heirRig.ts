@@ -6,8 +6,8 @@ import fistUrl from "./heir/heir-fist.webp";
 /**
  * The painted Heir (an otter) as a cutout rig: the body and the weapon forearm are two parts of
  * one painting (/mnt/project-files/art/heir/heir-master-v2.png), cut apart by
- * `tools/art/cut_heir.py`. The code-drawn weapon lies over the forearm, the fist is drawn again
- * on top so thumb and fingers close around the grip, and the forearm turns at the elbow.
+ * `tools/art/cut_heir.py`. The code-drawn weapon lies in front of the fist (Timo's pick; the
+ * fist part can go on top again to wrap the grip), and the forearm turns at the elbow.
  */
 
 export interface HeirTextures {
@@ -81,7 +81,7 @@ function part(texture: Texture, topLeft: readonly [number, number], origin: [num
 export interface HeirRig {
   /** The painted body (head, torso, legs, tail and the raised off-hand arm). */
   readonly body: Sprite;
-  /** Turns at the elbow: forearm, weapon and fist, in that order. */
+  /** Turns at the elbow: forearm and fist, the weapon in front. */
   readonly arm: Container;
   /** The weapon goes in here: its origin is the middle of the fist. */
   readonly grip: Container;
@@ -120,8 +120,8 @@ export function buildHeirRig(textures: HeirTextures): HeirRig {
     ])
     .fill(0xffffff);
   forearm.mask = sleeveMask;
-  // The weapon lies over the forearm; the fist on top closes around its grip.
-  arm.addChild(forearm, grip, part(textures.fist, SRC.fist, elbow));
+  // The weapon lies in front of forearm and fist.
+  arm.addChild(forearm, part(textures.fist, SRC.fist, elbow), grip);
   return { body, arm, grip, sleeveMask };
 }
 
