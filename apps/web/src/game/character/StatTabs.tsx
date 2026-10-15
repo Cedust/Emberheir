@@ -11,6 +11,7 @@ import {
 import { Icon, type IconName } from "../../ui/Icon";
 import { EmptyState } from "../../ui/kit/Marker";
 import { playUiSound } from "../../ui/sound";
+import type { PanelId } from "./pins";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { fmt } from "../../ui/items";
 import { type Element, Vitals, Medal, Plaque, Pill, Res, Row, pct } from "./HeroNumbers";
@@ -183,6 +184,10 @@ function BonusTable(props: { stats: DerivedStats }) {
   );
 }
 
+/** Which panels a page shows: all on its Stats page, the pinned ones on the Overview. */
+type Only = { readonly only?: readonly PanelId[] | undefined };
+const shows = (only: Only["only"]) => (id: PanelId) => !only || only.includes(id);
+
 /** The big Damage per Second number; its tooltip says what goes into it. */
 function Dps(props: { value: number }) {
   const hover = useNoteHover(NOTES.dps);
@@ -194,66 +199,81 @@ function Dps(props: { value: number }) {
   );
 }
 
-export function OffensePanel(props: { stats: DerivedStats; dps: number; weapon: WeaponNumbers }) {
+export function OffensePanel(
+  props: { stats: DerivedStats; dps: number; weapon: WeaponNumbers } & Only,
+) {
   const { stats, weapon } = props;
+  const show = shows(props.only);
+  if (!(["damage", "bonuses", "ailments"] as const).some(show)) return null;
   return (
     <div className="hero-numbers">
-      <Plaque className="hero-damage" label="Damage">
-        <span className="hero-damage-row">
-          <Dps value={props.dps} />
-          <span className="hero-pills hero-pills-stack">
-            <Pill icon="sword" label={weapon.name}>
-              {fmt(weapon.min)}–{fmt(weapon.max)}
-            </Pill>
-            <Pill icon="cycle" label="Speed" note={NOTES.speed}>
-              {speedValue(stats.attackSpeed)}
-            </Pill>
-            <Pill icon="target" label="Crit Chance" note={NOTES.critChance}>
-              {pct(stats.critChance)}
-            </Pill>
+      {show("damage") && (
+        <Plaque className="hero-damage" label="Damage" pin="damage">
+          <span className="hero-damage-row">
+            <Dps value={props.dps} />
+            <span className="hero-pills hero-pills-stack">
+              <Pill icon="sword" label={weapon.name}>
+                {fmt(weapon.min)}–{fmt(weapon.max)}
+              </Pill>
+              <Pill icon="cycle" label="Speed" note={NOTES.speed}>
+                {speedValue(stats.attackSpeed)}
+              </Pill>
+              <Pill icon="target" label="Crit Chance" note={NOTES.critChance}>
+                {pct(stats.critChance)}
+              </Pill>
+            </span>
           </span>
-        </span>
-      </Plaque>
-      <Plaque className="hero-bonus" label="Bonuses">
-        <BonusTable stats={stats} />
-      </Plaque>
-      <Plaque
-        className="hero-ailments"
-        label="Ailments"
-        aside={
-          <Pill icon="venom" label="Ailment Effect" note={NOTES.ailmentEffect}>
-            +{pct(stats.ailmentEffect)}
-          </Pill>
-        }
-      >
-        <div className="hero-res three">
-          {AILMENTS.map((a) => (
-            <Medal
-              key={a.name}
-              icon={a.icon}
-              label={a.name}
-              value={pct(stats[a.stat])}
-              tone={a.tone}
-              note={{
-                name: `${a.name} Chance`,
-                kind: "Offense",
-                explain: `Extra chance to ${a.verb} with every hit.`,
-              }}
-            />
-          ))}
-        </div>
-      </Plaque>
+        </Plaque>
+      )}
+      {show("bonuses") && (
+        <Plaque className="hero-bonus" label="Bonuses" pin="bonuses">
+          <BonusTable stats={stats} />
+        </Plaque>
+      )}
+      {show("ailments") && (
+        <Plaque
+          className="hero-ailments"
+          label="Ailments"
+          pin="ailments"
+          aside={
+            <Pill icon="venom" label="Ailment Effect" note={NOTES.ailmentEffect}>
+              +{pct(stats.ailmentEffect)}
+            </Pill>
+          }
+        >
+          <div className="hero-res three">
+            {AILMENTS.map((a) => (
+              <Medal
+                key={a.name}
+                icon={a.icon}
+                label={a.name}
+                value={pct(stats[a.stat])}
+                tone={a.tone}
+                note={{
+                  name: `${a.name} Chance`,
+                  kind: "Offense",
+                  explain: `Extra chance to ${a.verb} with every hit.`,
+                }}
+              />
+            ))}
+          </div>
+        </Plaque>
+      )}
     </div>
   );
 }
 
-export function DefensePanel(props: {
-  stats: DerivedStats;
-  penalty: number;
-  resNote: NoteHover;
-  flaskCharges: number;
-}) {
+export function DefensePanel(
+  props: {
+    stats: DerivedStats;
+    penalty: number;
+    resNote: NoteHover;
+    flaskCharges: number;
+  } & Only,
+) {
   const { stats } = props;
+  const show = shows(props.only);
+  if (!(["vitals", "avoidance", "resistances", "endurance"] as const).some(show)) return null;
   const res: Record<Element, number> = {
     fire: stats.fireResistance,
     cold: stats.coldResistance,
@@ -262,81 +282,95 @@ export function DefensePanel(props: {
   };
   return (
     <div className="hero-numbers">
-      <Plaque className="hero-vitals" label="Defense">
-        <Vitals life={stats.maxLife} barrier={stats.barrier} armor={stats.armor} />
-      </Plaque>
-      <Plaque className="hero-avoid" label="Avoidance">
-        <div className="hero-def-grid">
-          <table className="hero-table">
-            <tbody>
-              <Row
-                icon="boots"
-                label="Evasion"
-                value={pct(stats.evasion)}
-                note={DEFENSE_NOTES.evasion}
-              />
-            </tbody>
-          </table>
-          <table className="hero-table">
-            <tbody>
-              <Row
-                icon="shield"
-                label="Block"
-                value={pct(stats.blockChance)}
-                note={DEFENSE_NOTES.block}
-              />
-            </tbody>
-          </table>
-        </div>
-      </Plaque>
-      <Plaque
-        className="hero-resist"
-        label="Resistances"
-        aside={
-          props.penalty > 0 && (
-            <span className="hero-penalty">
-              Ember Penalty <b className="mono">−{pct(props.penalty)}</b>
-            </span>
-          )
-        }
-      >
-        <div className="hero-res">
-          {(Object.keys(res) as Element[]).map((el) => (
-            <Res key={el} element={el} value={res[el]} note={props.resNote} />
-          ))}
-        </div>
-      </Plaque>
-      <Plaque className="hero-endure" label="Endurance">
-        <div className="hero-def-grid">
-          <table className="hero-table">
-            <tbody>
-              <Row
-                icon="stone"
-                label="Tenacity"
-                value={pct(stats.tenacity)}
-                note={NOTES.tenacity}
-              />
-              <Row
-                icon="drop"
-                label="Lifesteal"
-                value={pct(stats.lifesteal)}
-                note={NOTES.lifesteal}
-              />
-            </tbody>
-          </table>
-          <table className="hero-table">
-            <tbody>
-              <Row icon="thornback" label="Thorns" value={fmt(stats.thorns)} note={NOTES.thorns} />
-              <Row
-                icon="flask"
-                label="Flask Charges"
-                value={String(props.flaskCharges)}
-                note={NOTES.flask}
-              />
-            </tbody>
-          </table>
-        </div>
-      </Plaque>
+      {show("vitals") && (
+        <Plaque className="hero-vitals" label="Defense" pin="vitals">
+          <Vitals life={stats.maxLife} barrier={stats.barrier} armor={stats.armor} />
+        </Plaque>
+      )}
+      {show("avoidance") && (
+        <Plaque className="hero-avoid" label="Avoidance" pin="avoidance">
+          <div className="hero-def-grid">
+            <table className="hero-table">
+              <tbody>
+                <Row
+                  icon="boots"
+                  label="Evasion"
+                  value={pct(stats.evasion)}
+                  note={DEFENSE_NOTES.evasion}
+                />
+              </tbody>
+            </table>
+            <table className="hero-table">
+              <tbody>
+                <Row
+                  icon="shield"
+                  label="Block"
+                  value={pct(stats.blockChance)}
+                  note={DEFENSE_NOTES.block}
+                />
+              </tbody>
+            </table>
+          </div>
+        </Plaque>
+      )}
+      {show("resistances") && (
+        <Plaque
+          className="hero-resist"
+          label="Resistances"
+          pin="resistances"
+          aside={
+            props.penalty > 0 && (
+              <span className="hero-penalty">
+                Ember Penalty <b className="mono">−{pct(props.penalty)}</b>
+              </span>
+            )
+          }
+        >
+          <div className="hero-res">
+            {(Object.keys(res) as Element[]).map((el) => (
+              <Res key={el} element={el} value={res[el]} note={props.resNote} />
+            ))}
+          </div>
+        </Plaque>
+      )}
+      {show("endurance") && (
+        <Plaque className="hero-endure" label="Endurance" pin="endurance">
+          <div className="hero-def-grid">
+            <table className="hero-table">
+              <tbody>
+                <Row
+                  icon="stone"
+                  label="Tenacity"
+                  value={pct(stats.tenacity)}
+                  note={NOTES.tenacity}
+                />
+                <Row
+                  icon="drop"
+                  label="Lifesteal"
+                  value={pct(stats.lifesteal)}
+                  note={NOTES.lifesteal}
+                />
+              </tbody>
+            </table>
+            <table className="hero-table">
+              <tbody>
+                <Row
+                  icon="thornback"
+                  label="Thorns"
+                  value={fmt(stats.thorns)}
+                  note={NOTES.thorns}
+                />
+                <Row
+                  icon="flask"
+                  label="Flask Charges"
+                  value={String(props.flaskCharges)}
+                  note={NOTES.flask}
+                />
+              </tbody>
+            </table>
+          </div>
+        </Plaque>
+      )}
     </div>
   );
 }
@@ -415,58 +449,66 @@ export function TriggersPanel(props: {
   );
 }
 
-export function HeatPanel(props: {
-  stats: DerivedStats;
-  weapon: WeaponNumbers;
-  perSecond: number;
-}) {
+export function HeatPanel(
+  props: {
+    stats: DerivedStats;
+    weapon: WeaponNumbers;
+    perSecond: number;
+  } & Only,
+) {
   const { stats, weapon } = props;
+  const show = shows(props.only);
+  if (!show("heat") && !show("heatSources")) return null;
   const behavior = BEHAVIOR[weapon.heatBehavior];
   const start = Math.max(0, Math.min(1, stats.startingHeat / COMBAT.maxHeat));
   // Seconds from the fight's start until the bar is full and the first skill fires.
   const fullIn = props.perSecond > 0 ? (COMBAT.maxHeat * (1 - start)) / props.perSecond : undefined;
   return (
     <div className="hero-numbers">
-      <Plaque className="hero-heat" label="Heat" note={NOTES.heatPerSecond}>
-        <span className="hero-dps">
-          <b className="mono">{props.perSecond.toFixed(1)}</b>
-          <span className="hero-unit">per Second</span>
-        </span>
-        <span className="hero-pills">
-          <Pill icon="flame" label={behavior.name} note={behavior} />
-        </span>
-        <span className="heat-gauge" aria-hidden="true">
-          <span className="heat-gauge-fill" style={{ width: `${start * 100}%` }} />
-          <span className="heat-gauge-text">
-            <span>
-              Starts at <b className="mono">{fmt(stats.startingHeat)}</b>
-            </span>
-            {fullIn !== undefined && (
-              <span>
-                <Icon name="flame" size={16} /> Full in{" "}
-                <b className="mono">{fullIn.toFixed(1)} s</b>
-              </span>
-            )}
+      {show("heat") && (
+        <Plaque className="hero-heat" label="Heat" note={NOTES.heatPerSecond} pin="heat">
+          <span className="hero-dps">
+            <b className="mono">{props.perSecond.toFixed(1)}</b>
+            <span className="hero-unit">per Second</span>
           </span>
-        </span>
-      </Plaque>
-      <Plaque className="hero-heat-src" label="Sources">
-        <table className="hero-table">
-          <tbody>
-            {weapon.heatBehavior !== "warming" && (
-              <Row icon="strike" label="Heat per Hit" value={fmt(weapon.heatPerHit)} />
-            )}
-            {weapon.heatBehavior === "cooling" && (
-              <Row
-                icon="shield"
-                label="Heat from Hits Taken"
-                value={pct(stats.heatFromHitsTaken)}
-              />
-            )}
-            <Row icon="flame" label="Heat Gain" value={`+${pct(stats.heatGain)}`} />
-          </tbody>
-        </table>
-      </Plaque>
+          <span className="hero-pills">
+            <Pill icon="flame" label={behavior.name} note={behavior} />
+          </span>
+          <span className="heat-gauge" aria-hidden="true">
+            <span className="heat-gauge-fill" style={{ width: `${start * 100}%` }} />
+            <span className="heat-gauge-text">
+              <span>
+                Starts at <b className="mono">{fmt(stats.startingHeat)}</b>
+              </span>
+              {fullIn !== undefined && (
+                <span>
+                  <Icon name="flame" size={16} /> Full in{" "}
+                  <b className="mono">{fullIn.toFixed(1)} s</b>
+                </span>
+              )}
+            </span>
+          </span>
+        </Plaque>
+      )}
+      {show("heatSources") && (
+        <Plaque className="hero-heat-src" label="Sources" pin="heatSources">
+          <table className="hero-table">
+            <tbody>
+              {weapon.heatBehavior !== "warming" && (
+                <Row icon="strike" label="Heat per Hit" value={fmt(weapon.heatPerHit)} />
+              )}
+              {weapon.heatBehavior === "cooling" && (
+                <Row
+                  icon="shield"
+                  label="Heat from Hits Taken"
+                  value={pct(stats.heatFromHitsTaken)}
+                />
+              )}
+              <Row icon="flame" label="Heat Gain" value={`+${pct(stats.heatGain)}`} />
+            </tbody>
+          </table>
+        </Plaque>
+      )}
     </div>
   );
 }

@@ -50,7 +50,7 @@ import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { HeroDoll, type HeroSlotProps } from "./character/HeroDoll";
-import { HeroNumbers } from "./character/HeroNumbers";
+import { PinContext, usePins } from "./character/pins";
 import {
   DefensePanel,
   type GearPower,
@@ -90,6 +90,7 @@ export function CharacterOverlay(props: {
     !inFight && state.hero.unspentAttributePoints > 0 ? "Attributes" : "Overview",
   );
   const [page, setPage] = useState<StatPage>("Offense");
+  const pins = usePins();
   // Ashborn opens at level 100 (neuausrichtung-v1.md 7.3).
   const ashbornOpen =
     state.hero.level >= ASHBORN.fromLevel && (GAME_DATA.ashbornValues?.length ?? 0) > 0;
@@ -344,91 +345,119 @@ export function CharacterOverlay(props: {
             <HeroDoll state={state} slot={slotProps} />
           </section>
 
-          <section className="sheet-column" aria-label={tab}>
-            {tab === "Attributes" && (
-              <>
-                <div className="section-row">
-                  <span className="title-font section-title">Attributes</span>
-                  <span
-                    className={`points ${left > 0 ? "has" : ""}`}
-                    data-testid="attribute-points"
-                  >
-                    {left} Attribute Points
-                  </span>
+          <PinContext.Provider value={pins}>
+            <section className="sheet-column" aria-label={tab}>
+              {tab === "Attributes" && (
+                <>
+                  <div className="section-row">
+                    <span className="title-font section-title">Attributes</span>
+                    <span
+                      className={`points ${left > 0 ? "has" : ""}`}
+                      data-testid="attribute-points"
+                    >
+                      {left} Attribute Points
+                    </span>
+                  </div>
+                  <AttributeStones
+                    perkBoard
+                    actions={
+                      !inFight &&
+                      state.hero.unspentAttributePoints > 0 && (
+                        <div className="attr-buttons">
+                          <Button
+                            blocked={spent === 0 ? "Nothing to undo" : null}
+                            onClick={() => setPending(NO_POINTS)}
+                          >
+                            Undo
+                          </Button>
+                          <HoldButton
+                            primary
+                            blocked={spent === 0 ? "Add a point first" : null}
+                            onConfirm={confirm}
+                            tip={{
+                              name: "Confirm",
+                              kind: "Hold to confirm",
+                              explain:
+                                "Attribute Points are for good. Old Nan can reset them for Acorns.",
+                            }}
+                          >
+                            Confirm
+                          </HoldButton>
+                        </div>
+                      )
+                    }
+                    base={state.hero.attributes}
+                    delta={pending}
+                    boon={boonAttributes}
+                    gear={gear.attributes}
+                    {...(inFight || state.hero.unspentAttributePoints === 0
+                      ? {}
+                      : {
+                          canAdd: (a: Attribute) =>
+                            left > 0 && state.hero.attributes[a] + pending[a] < ATTRIBUTE_RULES.max,
+                          onAdd: (a: Attribute) => setPending((p) => ({ ...p, [a]: p[a] + 1 })),
+                        })}
+                  />
+                </>
+              )}
+              {tab === "Overview" && (
+                <div className="hero-numbers hero-overview">
+                  {pins.pinned.length === 0 ? (
+                    <EmptyState icon="star" />
+                  ) : (
+                    <>
+                      <OffensePanel
+                        stats={stats}
+                        dps={dps}
+                        weapon={weaponNumbers}
+                        only={pins.pinned}
+                      />
+                      <DefensePanel
+                        stats={stats}
+                        penalty={penalty}
+                        resNote={resNote}
+                        flaskCharges={flaskCapacity(state, GAME_DATA)}
+                        only={pins.pinned}
+                      />
+                      <HeatPanel
+                        stats={stats}
+                        weapon={weaponNumbers}
+                        perSecond={heatPerSecond(setup, stats)}
+                        only={pins.pinned}
+                      />
+                    </>
+                  )}
                 </div>
-                <AttributeStones
-                  perkBoard
-                  actions={
-                    !inFight &&
-                    state.hero.unspentAttributePoints > 0 && (
-                      <div className="attr-buttons">
-                        <Button
-                          blocked={spent === 0 ? "Nothing to undo" : null}
-                          onClick={() => setPending(NO_POINTS)}
-                        >
-                          Undo
-                        </Button>
-                        <HoldButton
-                          primary
-                          blocked={spent === 0 ? "Add a point first" : null}
-                          onConfirm={confirm}
-                          tip={{
-                            name: "Confirm",
-                            kind: "Hold to confirm",
-                            explain:
-                              "Attribute Points are for good. Old Nan can reset them for Acorns.",
-                          }}
-                        >
-                          Confirm
-                        </HoldButton>
-                      </div>
-                    )
-                  }
-                  base={state.hero.attributes}
-                  delta={pending}
-                  boon={boonAttributes}
-                  gear={gear.attributes}
-                  {...(inFight || state.hero.unspentAttributePoints === 0
-                    ? {}
-                    : {
-                        canAdd: (a: Attribute) =>
-                          left > 0 && state.hero.attributes[a] + pending[a] < ATTRIBUTE_RULES.max,
-                        onAdd: (a: Attribute) => setPending((p) => ({ ...p, [a]: p[a] + 1 })),
-                      })}
-                />
-              </>
-            )}
-            {tab === "Overview" && (
-              <HeroNumbers stats={stats} dps={dps} weapon={weaponNumbers} resNote={resNote} />
-            )}
-            {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
-            {tab === "Stats" && (
-              <>
-                <StatPages active={page} onChange={setPage} />
-                {page === "Offense" && (
-                  <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />
-                )}
-                {page === "Defense" && (
-                  <DefensePanel
-                    stats={stats}
-                    penalty={penalty}
-                    resNote={resNote}
-                    flaskCharges={flaskCapacity(state, GAME_DATA)}
-                  />
-                )}
-                {page === "Heat" && (
-                  <HeatPanel
-                    stats={stats}
-                    weapon={weaponNumbers}
-                    perSecond={heatPerSecond(setup, stats)}
-                  />
-                )}
-                {page === "Triggers" && (
-                  <TriggersPanel stats={stats} triggers={gearTriggers} powers={gearPowers} />
-                )}
-              </>
-            )}
-          </section>
+              )}
+              {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
+              {tab === "Stats" && (
+                <>
+                  <StatPages active={page} onChange={setPage} />
+                  {page === "Offense" && (
+                    <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />
+                  )}
+                  {page === "Defense" && (
+                    <DefensePanel
+                      stats={stats}
+                      penalty={penalty}
+                      resNote={resNote}
+                      flaskCharges={flaskCapacity(state, GAME_DATA)}
+                    />
+                  )}
+                  {page === "Heat" && (
+                    <HeatPanel
+                      stats={stats}
+                      weapon={weaponNumbers}
+                      perSecond={heatPerSecond(setup, stats)}
+                    />
+                  )}
+                  {page === "Triggers" && (
+                    <TriggersPanel stats={stats} triggers={gearTriggers} powers={gearPowers} />
+                  )}
+                </>
+              )}
+            </section>
+          </PinContext.Provider>
 
           <section className="inv-column" aria-label="Inventory">
             <div className="section-row">

@@ -7722,3 +7722,61 @@
 .stage .hero-pills-stack .hero-pill b {
   margin-left: auto;
 }
+
+/* The label line's right end: an aside (Ember Penalty, a pill) and the pin star. */
+.stage .hero-card-aside {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.stage .hero-card-top {
+  align-items: center;
+}
+
+/* Pins a plaque to the Overview: an outline star, filled brass when pinned. */
+.stage .pin-star {
+  display: inline-grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  color: rgb(201 160 99 / 0.55);
+  background: transparent;
+  cursor: pointer;
+}
+
+.stage .pin-star:hover {
+  color: var(--k-brass, #c9a063);
+  background: rgb(201 160 99 / 0.12);
+}
+
+.stage .pin-star.on {
+  color: #ffc861;
+}
+
+.stage .pin-star.on svg {
+  fill: currentColor;
+  filter: drop-shadow(0 0 4px rgb(255 180 60 / 0.55));
+}
+
+.stage .pin-star[aria-disabled="true"] {
+  opacity: 0.35;
+  cursor: default;
+}
+
+.stage .pin-star[aria-disabled="true"]:hover {
+  background: transparent;
+}
+
+/* The Overview shows the pinned plaques of every page in one column. */
+.stage .hero-overview {
+  min-height: 0;
+  overflow: hidden;
+}
+
+.stage .hero-damage-row .hero-unit {
+  white-space: nowrap;
+}
