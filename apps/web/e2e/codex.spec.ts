@@ -17,7 +17,7 @@ test("The Trigger Codex at the Hearthfire shows learned parts, Liora kindles a t
   await card.click();
   const codex = page.getByRole("region", { name: "Trigger Codex" });
   await codex.getByRole("listitem", { name: "On Crit" }).click();
-  await expect(codex).toContainText("Liora can kindle it");
+  await expect(codex.locator(".codex-foot")).toContainText("Learned");
   // Unknown parts show where they live.
   await expect(codex.getByRole("listitem", { name: "Unknown, Rotwood" }).first()).toBeVisible();
   await page.keyboard.press("Escape");

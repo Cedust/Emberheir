@@ -14,6 +14,7 @@ import {
 } from "@emberheir/sim";
 import { useCallback, useEffect, useState } from "react";
 import { Icon } from "../../ui/Icon";
+import { Button } from "../../ui/kit/Button";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
@@ -127,15 +128,9 @@ function PickButtons(props: {
   return (
     <div className="card-buttons">
       <RingSwitch state={state} item={item} />
-      <button
-        type="button"
-        className="btn primary"
-        disabled={equipReason !== undefined}
-        title={
-          equipReason
-            ? EQUIP_BLOCK_TEXT[equipReason]
-            : "Swap in, the old item goes to the inventory"
-        }
+      <Button
+        variant="primary"
+        blocked={equipReason ? EQUIP_BLOCK_TEXT[equipReason] : null}
         onClick={() => {
           game.dispatch({
             type: "pickItem",
@@ -147,16 +142,13 @@ function PickButtons(props: {
         }}
       >
         {equipReason === "noRoom" ? "No room" : "Equip"}
-      </button>
-      <button
-        type="button"
-        className="btn"
-        disabled={takeReason !== undefined}
-        title={takeReason ? "This item does not fit into the inventory" : "Put into inventory"}
+      </Button>
+      <Button
+        blocked={takeReason ? "No room in the inventory" : null}
         onClick={() => game.dispatch({ type: "pickItem", index, mode: "take" })}
       >
         {takeReason ? "No room" : "Take"}
-      </button>
+      </Button>
     </div>
   );
 }
@@ -386,14 +378,14 @@ export function EquippedPanel(props: {
         focus && <p className="sub small equipped-hint">Empty slot</p>
       )}
       <div className="grow" />
-      <button
-        type="button"
-        className={`btn inventory-button${props.inventoryFull ? " inv-full" : ""}`}
+      <Button
+        icon="inventory"
+        hotkey="I"
+        className={`inventory-button${props.inventoryFull ? " inv-full" : ""}`}
         onClick={props.onInventory}
       >
-        <Icon name="inventory" size={16} />
         {props.inventoryFull ? "Inventory full" : "Open Inventory"} · {state.inventory.length}
-      </button>
+      </Button>
     </aside>
   );
 }

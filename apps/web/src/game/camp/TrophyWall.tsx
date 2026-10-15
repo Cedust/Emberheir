@@ -72,11 +72,7 @@ export function TrophyWall(props: { state: GameState }) {
             )}
             {unique.flavor && <p className="sub small flavor">&ldquo;{unique.flavor}&rdquo;</p>}
           </section>
-        ) : (
-          <section className="panel-card">
-            <p className="sub">Every Unique you find hangs here forever.</p>
-          </section>
-        )}
+        ) : null}
       </aside>
     </div>
   );

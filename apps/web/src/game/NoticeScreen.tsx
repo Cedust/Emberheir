@@ -8,6 +8,9 @@ import {
   isFinaleAct,
   wildfireName,
 } from "@emberheir/sim";
+import { Button } from "../ui/kit/Button";
+import { PersonaPortrait } from "./camp/art/PersonaArt";
+import { PaintDefs } from "./camp/art/paint";
 
 interface NoticeText {
   readonly title: string;
@@ -30,17 +33,18 @@ const camp = (act: ActData) => (isFinaleAct(GAME_DATA, act.id) ? "Camp" : `Camp 
 const TEXT: Record<NoticeKind, NoticeText> = {
   death: {
     title: "ASHBOUND",
-    sub: "You fell, and the ash gave you back. You keep everything: gear, Acorns, Ash and Inventory. Only the way through this Act starts over.",
+    sub: "You fell, and the ash gave you back.",
     nan: "The ash spat you back out. It does that. It likes you.",
     facts: (n, act) => [
       { k: "FELL AT", v: where(act, n.stage, n.wildfire), tone: "text" },
       { k: "BY", v: n.enemyName ?? "Unknown", tone: "rare" },
+      { k: "KEPT", v: "Everything", tone: "good" },
       { k: "BACK TO", v: camp(act), tone: "accent" },
     ],
   },
   retreat: {
     title: "RETREAT",
-    sub: "You left the fight and went back to camp. Same rules as a death: you keep everything, and the Act starts over.",
+    sub: "You left the fight and went back to camp.",
     nan: "Sensible. Dead heroes don't farm.",
     facts: (n, act) => [
       { k: "LEFT AT", v: where(act, n.stage, n.wildfire), tone: "text" },
@@ -50,7 +54,7 @@ const TEXT: Record<NoticeKind, NoticeText> = {
   },
   actCleared: {
     title: "ACT CLEARED",
-    sub: "The boss is down and the caravan moves on. The road ahead is open.",
+    sub: "The boss is down and the caravan moves on.",
     nan: "Gorrak is down. Liora finally agrees to see you.",
     facts: (_n, act, next) => [
       { k: "CLEARED", v: act.name, tone: "text" },
@@ -143,6 +147,7 @@ export function EndingScreen(props: { state: GameState; onDismiss: () => void })
   ];
   return (
     <section className="screen notice-screen notice-ending" aria-label="The End" role="status">
+      <PaintDefs />
       <Ash />
       <div className="ending-glow" aria-hidden />
       <div className="notice-content">
@@ -161,16 +166,18 @@ export function EndingScreen(props: { state: GameState; onDismiss: () => void })
           ))}
         </div>
         <div className="nan-line">
-          <span className="nan-portrait title-font">N</span>
+          <span className="nan-portrait">
+            <PersonaPortrait id="nan" />
+          </span>
           <span className="quote">
             Old Nan: &ldquo;No smoke. No ash. Just... quiet. Well. I suppose I&apos;ll need to
             remember my name after all.&rdquo;
           </span>
         </div>
         <p className="ending-credits sub">Emberheir · an idea by Timo · built by Claude</p>
-        <button type="button" className="btn big primary" onClick={props.onDismiss}>
+        <Button big variant="primary" onClick={props.onDismiss}>
           Back to the Hearthfire
-        </button>
+        </Button>
       </div>
     </section>
   );
@@ -194,6 +201,7 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
       aria-label={text.title}
       role="status"
     >
+      <PaintDefs />
       <Ash />
       <div className="notice-content">
         <h2 className="notice-title title-font">{text.title}</h2>
@@ -207,17 +215,14 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
           ))}
         </div>
         <div className="nan-line">
-          <span className="nan-portrait title-font">N</span>
+          <span className="nan-portrait">
+            <PersonaPortrait id="nan" />
+          </span>
           <span className="quote">Old Nan: &ldquo;{nan}&rdquo;</span>
         </div>
-        {notice.kind === "death" && (
-          <p className="recap-placeholder sub">
-            Death Recap (what killed you and three build hints) comes later.
-          </p>
-        )}
-        <button type="button" className="btn big primary" onClick={props.onDismiss}>
+        <Button big variant="primary" onClick={props.onDismiss}>
           Wake at the Hearthfire
-        </button>
+        </Button>
       </div>
     </section>
   );

@@ -16,9 +16,9 @@ import type { GameApi } from "../useGame";
  * Old Nan wakes the Heir from the ashes (neuausrichtung-v1.md 7.3): for Acorns every Attribute
  * Point above the Class Array, or every Ashborn Point, comes back. They are spent anew in the
  * Character Sheet.
+ * As dialog choices: a first click asks, the second one resets.
  */
-export function NanResets(props: { state: GameState; game: GameApi }) {
-  const { state, game } = props;
+export function useNanResets(state: GameState, game: GameApi) {
   const [sure, setSure] = useState<"attributes" | "ashborn" | null>(null);
   const floor = heroClassOf(state, GAME_DATA).startingAttributes;
   const above = sumAttributes(state.hero.attributes) - sumAttributes(floor);
@@ -44,35 +44,23 @@ export function NanResets(props: { state: GameState; game: GameApi }) {
         ]
       : []),
   ];
-  return (
-    <div className="nan-resets" aria-label="Reset">
-      {rows.map((r) => {
-        const can = r.points > 0 && state.wallet.acorns >= r.price;
-        return (
-          <button
-            key={r.id}
-            type="button"
-            className={`btn small ${sure === r.id ? "danger" : ""}`}
-            disabled={!can}
-            title={
-              r.points === 0
-                ? "No points spent"
-                : `${r.points} points come back · spend them anew in the Character Sheet`
-            }
-            onClick={() => {
-              if (sure !== r.id) {
-                setSure(r.id);
-                return;
-              }
-              r.act();
-              setSure(null);
-            }}
-          >
-            {sure === r.id ? `${r.points} points back?` : r.name} ·{" "}
-            <b className="mono">{fmt(r.price)}</b> Acorns
-          </button>
-        );
-      })}
-    </div>
-  );
+  return rows.map((r) => ({
+    label: sure === r.id ? `${r.points} points back?` : r.name,
+    note: `${fmt(r.price)} Acorns`,
+    warn: sure === r.id,
+    blocked:
+      r.points === 0
+        ? "No points spent"
+        : state.wallet.acorns < r.price
+          ? "Not enough Acorns"
+          : undefined,
+    onPick: () => {
+      if (sure !== r.id) {
+        setSure(r.id);
+        return;
+      }
+      r.act();
+      setSure(null);
+    },
+  }));
 }

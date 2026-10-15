@@ -12,13 +12,13 @@ export function Marker(props: { value: number | "!"; className?: string }) {
 }
 
 /** Instead of a grey box: a small drawing and one line. */
-export function EmptyState(props: { icon: IconName; children: ReactNode }) {
+export function EmptyState(props: { icon: IconName; children?: ReactNode }) {
   return (
     <div className="k-empty">
       <span className="k-empty-art">
         <Icon name={props.icon} size={34} />
       </span>
-      <span className="k-empty-text">{props.children}</span>
+      {props.children && <span className="k-empty-text">{props.children}</span>}
     </div>
   );
 }

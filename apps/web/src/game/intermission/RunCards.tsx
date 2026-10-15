@@ -25,6 +25,7 @@ import {
   tripOmenEffects,
 } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
+import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
 import { BoonBar } from "../Boons";
@@ -142,19 +143,18 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
             <span key={i} className={`flask-pip ${i < state.flaskCharges ? "full" : ""}`} />
           ))}
         </div>
-        <button
-          type="button"
-          className="btn primary"
-          disabled={!canDrink}
+        <Button
+          variant="primary"
+          icon="flask"
+          blocked={canDrink ? null : state.flaskCharges > 0 ? "Life full" : "Flask empty"}
           onClick={() => game.dispatch({ type: "useFlask" })}
         >
-          <Icon name="flask" size={16} />
           {canDrink
             ? `Drink +${Math.round(heal)}% Life`
             : state.flaskCharges > 0
               ? "Life full"
               : "Flask empty"}
-        </button>
+        </Button>
       </div>
     </section>
   );
@@ -191,10 +191,9 @@ export function PlanCard(props: { state: GameState; run: RunState; onPlan: () =>
           </li>
         ))}
       </ul>
-      <button type="button" className="btn" onClick={props.onPlan}>
-        <Icon name="cycle" size={16} />
+      <Button icon="cycle" onClick={props.onPlan}>
         Edit Battle Plan
-      </button>
+      </Button>
     </section>
   );
 }
@@ -407,7 +406,7 @@ export function DoneCard(props: { run: RunState }) {
       : boss
         ? `${act.boss.name} waits`
         : `Stage ${run.stage} ahead`;
-    sub = run.stage === 1 ? "The caravan watches you go." : "Catch your breath.";
+    sub = "";
   } else {
     const pick = rewards.itemPick;
     const item = pick && pick.kind !== "salvageAll" ? rewards.items[pick.index] : undefined;
@@ -427,7 +426,7 @@ export function DoneCard(props: { run: RunState }) {
     <div className="done-card panel-card" data-testid="done-card">
       <Icon name="fire" size={40} color="var(--accent)" />
       <strong className="title-font">{line}</strong>
-      <span className="sub">{sub}</span>
+      {sub && <span className="sub">{sub}</span>}
     </div>
   );
 }
