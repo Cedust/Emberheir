@@ -1,5 +1,5 @@
 import { GAME_DATA, ITEM_CATALOG, RUNEWORDS, SKILL_TREE } from "@emberheir/content";
-import type { Page } from "@playwright/test";
+import { type Page, expect } from "@playwright/test";
 import {
   type GameState,
   type Item,
@@ -496,13 +496,17 @@ export function saveAtFork(): string {
 }
 
 /**
- * From the Intermission after a won Stage 1 without an item pick: wins Stages 2 and 3 with Skip.
- * Normal fights offer an item pick only on every third stage, so Stage 3 shows one.
+ * From the Intermission after a won stage without an item pick: wins the next stages with Skip
+ * until an item pick shows. Normal fights offer one only on every third stage; an Elite earlier.
  */
 export async function winUntilItemPick(page: Page): Promise<void> {
-  for (const stage of [2, 3]) {
-    await page.getByRole("button", { name: /NEXT STAGE/ }).click();
+  const cards = page.getByTestId("item-card");
+  const next = page.locator(".next-stage:not([data-blocked])");
+  for (let i = 0; i < 3; i++) {
+    await next.click();
     await page.getByRole("button", { name: "Skip fight" }).click();
-    await page.getByText(`Stage ${stage} cleared`).waitFor({ timeout: 30_000 });
+    // Either the cards of a pick, or a free road on to the next stage.
+    await expect(cards.first().or(next)).toBeVisible({ timeout: 30_000 });
+    if ((await cards.count()) > 0) return;
   }
 }
