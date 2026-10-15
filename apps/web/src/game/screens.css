@@ -2427,7 +2427,7 @@
 .stage .character-columns {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 600px minmax(0, 1fr) 480px;
+  grid-template-columns: minmax(0, 600px) minmax(420px, 1fr) 464px;
   min-height: 0;
 }
 
@@ -2439,14 +2439,24 @@
   min-height: 0;
 }
 
+.stage .character-columns > .inv-column {
+  padding: 16px 12px;
+}
+
 .stage .sheet-column {
   border-left: 2px solid var(--edge);
   border-right: 2px solid var(--edge);
 }
 
+.stage .sheet-column > .attr-stones {
+  flex: 1 1 0;
+  min-height: 0;
+}
+
 /* The hero (ui-ux-plan-v1.md 4.2): level on top, the painted Heir among the slots, four numbers. */
 .stage .hero-column {
   align-items: center;
+  justify-content: center;
 }
 
 .stage .hero-level {
@@ -2511,8 +2521,8 @@
 .stage .hero-figure {
   position: absolute;
   left: 50%;
-  top: 6px;
-  height: 436px;
+  top: 4px;
+  height: 412px;
   transform: translateX(-50%);
   filter: drop-shadow(0 6px 10px rgb(40 20 0 / 0.35));
   pointer-events: none;
@@ -2522,33 +2532,67 @@
 .stage .hero-numbers {
   width: 560px;
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: 1.15fr 0.95fr 1fr 1fr;
   gap: 10px;
 }
 
+/* A plaque: dark inset with a brass top edge, like the Battle HUD's frames. */
 .stage .hero-card {
-  min-height: 96px;
-  padding: 8px 10px;
+  position: relative;
+  min-height: 104px;
+  padding: 8px 11px;
   display: flex;
   flex-direction: column;
-  gap: 3px;
-  border: 1.5px solid var(--edge);
+  gap: 4px;
+  border: 1.5px solid var(--k-brass-dark, #6e4f22);
+  border-top: 3px solid var(--k-brass, #c9a063);
   border-radius: 6px;
-  background: var(--panel);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.06);
+  color: #efe3cb;
+  background:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 170 90 / 0.12), transparent 60%),
+    linear-gradient(180deg, #3a2a1d, #241a12);
+  box-shadow:
+    inset 0 1px 0 rgb(255 230 180 / 0.12),
+    0 2px 6px rgb(0 0 0 / 0.25);
 }
 
 .stage .hero-card-label {
-  font-size: 12px;
+  font-family: var(--font-title);
+  font-size: 13px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--text-sub);
+  color: var(--k-brass, #c9a063);
 }
 
-.stage .hero-big {
-  font-size: 27px;
-  line-height: 1.1;
+.stage .hero-dps {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+
+.stage .hero-dps b {
+  font-size: 32px;
+  line-height: 1.05;
+  background: linear-gradient(180deg, #fff2c8, #ffb24a 70%, #e0702a);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 6px rgb(255 140 50 / 0.35));
+}
+
+.stage .hero-unit {
+  font-size: 12px;
+  color: #b9a888;
+}
+
+.stage .hero-hit {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 13px;
+  color: #cdbd9d;
 }
 
 .stage .hero-delta {
@@ -2558,38 +2602,291 @@
 }
 
 .stage .hero-delta.up {
-  color: var(--good);
+  color: #6fe39a;
 }
 
 .stage .hero-delta.down {
-  color: var(--warn);
+  color: #ff8a6a;
 }
 
-.stage .hero-mini {
-  display: inline-flex;
+/* Life: a red globe with a glassy highlight; Barrier wraps it in a blue ring. */
+.stage .hero-life {
   align-items: center;
-  gap: 5px;
-  font-size: 14px;
-  color: var(--text);
 }
 
-.stage .hero-mini svg {
-  color: var(--text-sub);
+.stage .hero-life .hero-card-label {
+  align-self: flex-start;
+}
+
+.stage .life-orb {
+  position: relative;
+  width: 74px;
+  height: 74px;
+  margin-top: -4px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 62%, #d8242e, #8a0d18 62%, #3e0409);
+  border: 2px solid #1a0d08;
+  box-shadow:
+    0 0 0 2px var(--k-brass, #c9a063),
+    0 0 14px rgb(220 30 40 / 0.45),
+    inset 0 -8px 14px rgb(0 0 0 / 0.45);
+}
+
+.stage .life-orb.has-barrier {
+  box-shadow:
+    0 0 0 2px var(--k-brass, #c9a063),
+    0 0 0 5px #4fa8ff,
+    0 0 16px rgb(80 170 255 / 0.55),
+    inset 0 -8px 14px rgb(0 0 0 / 0.45);
+}
+
+.stage .life-orb-glass {
+  position: absolute;
+  left: 16%;
+  top: 9%;
+  width: 46%;
+  height: 30%;
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(255 255 255 / 0.5), transparent);
+}
+
+.stage .life-orb b {
+  position: relative;
+  font-size: 20px;
+  color: #fff4ec;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+.stage .life-orb-barrier {
+  position: absolute;
+  bottom: -9px;
+  padding: 0 5px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e8f4ff;
+  background: #2a5f9a;
+}
+
+.stage .hero-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+}
+
+.stage .hero-table tr {
+  border-bottom: 1px solid rgb(201 160 99 / 0.18);
+}
+
+.stage .hero-table tr:last-child {
+  border-bottom: none;
+}
+
+.stage .hero-table th {
+  padding: 3px 4px;
+  text-align: left;
+  font-weight: 400;
+  color: #cdbd9d;
+}
+
+.stage .hero-table td {
+  padding: 3px 0;
+  text-align: right;
+  font-weight: 700;
+  color: #f6ead2;
+  white-space: nowrap;
+}
+
+.stage .hero-table td.hero-table-icon {
+  width: 16px;
+  text-align: left;
+  color: var(--k-brass, #c9a063);
 }
 
 .stage .hero-res {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 5px 8px;
-  margin-top: 2px;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .stage .hero-res-one {
-  display: inline-flex;
+  display: flex;
   align-items: center;
-  gap: 4px;
+  justify-content: space-between;
+  gap: 3px;
+  padding: 8px 6px;
+  border-radius: 5px;
+  font-size: 15px;
+  white-space: nowrap;
+  font-weight: 700;
+  color: var(--res);
+  background: color-mix(in srgb, var(--res) 14%, transparent);
+  border: 1px solid color-mix(in srgb, var(--res) 45%, transparent);
+}
+
+.stage .hero-res-one .mono {
+  color: #f6ead2;
+}
+
+.stage .hero-res-one.capped {
+  box-shadow: 0 0 8px color-mix(in srgb, var(--res) 60%, transparent);
+}
+
+.stage .res-fire {
+  --res: var(--dmg-fire);
+}
+
+.stage .res-cold {
+  --res: var(--dmg-cold);
+}
+
+.stage .res-lightning {
+  --res: var(--dmg-lightning);
+}
+
+.stage .res-void {
+  --res: var(--dmg-void);
+}
+
+/* Breakpoint Perks under the attributes: what each lit Perk does, then the next ones. */
+.stage .perk-board {
+  flex: 1 1 0;
+  margin-top: 4px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 0;
+}
+
+.stage .perk-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 0;
+  overflow: auto;
+}
+
+.stage .perk-card {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--edge);
+  background: var(--panel);
+  cursor: help;
+}
+
+.stage .perk-card.perk-active,
+.stage .perk-card.perk-gained {
+  border-color: var(--rarity-legendary);
+  background: color-mix(in srgb, var(--heat, #ff8a3a) 10%, var(--panel));
+}
+
+.stage .perk-card.perk-gained {
+  box-shadow: 0 0 10px color-mix(in srgb, var(--heat, #ff8a3a) 60%, transparent);
+}
+
+.stage .perk-card.perk-locked {
+  border-style: dashed;
+  opacity: 0.72;
+}
+
+.stage .perk-card.perk-lost {
+  border-color: var(--life);
+}
+
+/* The seal: an ember diamond with the attribute and the Breakpoint. */
+.stage .perk-card-seal {
+  flex: none;
+  width: 38px;
+  height: 38px;
+  margin-top: 2px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  border-radius: 8px;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  color: #fff3dc;
+  background: radial-gradient(circle at 50% 35%, #ffb24a, #c2410c 70%, #6a1e08);
+  border: 2px solid #ffd84a;
+  box-shadow: 0 0 8px rgb(255 138 58 / 0.5);
+}
+
+.stage .perk-card-seal b {
+  font-size: 16px;
+}
+
+.stage .perk-locked .perk-card-seal,
+.stage .perk-lost .perk-card-seal {
+  color: var(--text-sub);
+  background: var(--track);
+  border: 2px dashed var(--edge);
+  box-shadow: none;
+}
+
+.stage .perk-card-text {
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stage .perk-card-name {
+  display: flex;
+  align-items: center;
+  gap: 8px;
   font-size: 15px;
   font-weight: 700;
+}
+
+.stage .perk-card-tag {
+  margin-left: auto;
+  padding: 1px 7px;
+  border-radius: 999px;
+  font-family: var(--font-body);
+  font-style: normal;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: var(--accent);
+  border: 1px solid currentcolor;
+}
+
+.stage .perk-gained .perk-card-tag {
+  color: var(--good);
+}
+
+.stage .perk-lost .perk-card-tag {
+  color: var(--life);
+}
+
+.stage .perk-card-desc {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 13px;
+  line-height: 1.3;
+  color: var(--text-sub);
+}
+
+.stage .perk-cards.compact {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+}
+
+.stage .perk-cards.compact .perk-card-desc {
+  display: none;
 }
 
 /* The picked item: name, where it is and what can be done with it. */

@@ -44,6 +44,7 @@ import {
 import { Button, HoldButton } from "../ui/kit/Button";
 import { Wallet } from "../ui/kit/Currency";
 import { EmptyState } from "../ui/kit/Marker";
+import { useStageSize } from "../ui/Stage";
 import { Medallion, type TabItem, Tabs, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirFace } from "./camp/CampFigures";
 import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/ringSlot";
@@ -58,6 +59,8 @@ import { AttributeStones, NO_POINTS } from "./AttributeStones";
 type Tab = "Attributes" | "Offense" | "Defense" | "Heat" | "Ashborn";
 
 const pct = (v: number) => `${formatPercent(v)} %`;
+/** Stage width the window frame, the attributes (420) and the bag (464) take from the hero. */
+const HERO_ROOM = 960;
 const HEAT_TEXT = {
   cooling: "Cooling",
   steady: "Steady",
@@ -77,6 +80,7 @@ export function CharacterOverlay(props: {
   onClose: () => void;
 }) {
   const { state, game, inFight } = props;
+  const stageSize = useStageSize();
   const [pending, setPending] = useState<Record<Attribute, number>>(NO_POINTS);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Attributes");
@@ -257,6 +261,9 @@ export function CharacterOverlay(props: {
     );
   }
 
+  // Narrower screens (16:10) shrink the hero, so the attributes keep their room.
+  const heroZoom = Math.min(1, (stageSize.w - HERO_ROOM) / 600);
+
   const tabs: TabItem<Tab>[] = [
     {
       id: "Attributes",
@@ -343,7 +350,7 @@ export function CharacterOverlay(props: {
         }
       >
         <div className="character-columns">
-          <section className="hero-column" aria-label="Equipment">
+          <section className="hero-column" aria-label="Equipment" style={{ zoom: heroZoom }}>
             <div className="hero-level">
               <span
                 className="hero-level-badge title-font"
@@ -380,7 +387,17 @@ export function CharacterOverlay(props: {
               </div>
             </div>
             <HeroDoll state={state} slot={slotProps} />
-            <HeroNumbers stats={stats} dps={dps} before={before} resNote={resNote} />
+            <HeroNumbers
+              stats={stats}
+              dps={dps}
+              weapon={{
+                name: setup.weapon.name,
+                min: setup.weapon.damage.min,
+                max: setup.weapon.damage.max,
+              }}
+              before={before}
+              resNote={resNote}
+            />
           </section>
 
           <section className="sheet-column" aria-label={tab}>
@@ -396,6 +413,33 @@ export function CharacterOverlay(props: {
                   </span>
                 </div>
                 <AttributeStones
+                  perkBoard
+                  actions={
+                    !inFight &&
+                    state.hero.unspentAttributePoints > 0 && (
+                      <div className="attr-buttons">
+                        <Button
+                          blocked={spent === 0 ? "Nothing to undo" : null}
+                          onClick={() => setPending(NO_POINTS)}
+                        >
+                          Undo
+                        </Button>
+                        <HoldButton
+                          primary
+                          blocked={spent === 0 ? "Add a point first" : null}
+                          onConfirm={confirm}
+                          tip={{
+                            name: "Confirm",
+                            kind: "Hold to confirm",
+                            explain:
+                              "Attribute Points are for good. Old Nan can reset them for Acorns.",
+                          }}
+                        >
+                          Confirm
+                        </HoldButton>
+                      </div>
+                    )
+                  }
                   base={state.hero.attributes}
                   delta={pending}
                   boon={boonAttributes}
@@ -408,29 +452,6 @@ export function CharacterOverlay(props: {
                         onAdd: (a: Attribute) => setPending((p) => ({ ...p, [a]: p[a] + 1 })),
                       })}
                 />
-                {!inFight && state.hero.unspentAttributePoints > 0 && (
-                  <div className="attr-buttons">
-                    <Button
-                      blocked={spent === 0 ? "Nothing to undo" : null}
-                      onClick={() => setPending(NO_POINTS)}
-                    >
-                      Undo
-                    </Button>
-                    <HoldButton
-                      primary
-                      blocked={spent === 0 ? "Add a point first" : null}
-                      onConfirm={confirm}
-                      tip={{
-                        name: "Confirm",
-                        kind: "Hold to confirm",
-                        explain:
-                          "Attribute Points are for good. Old Nan can reset them for Acorns.",
-                      }}
-                    >
-                      Confirm
-                    </HoldButton>
-                  </div>
-                )}
               </>
             )}
             {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}

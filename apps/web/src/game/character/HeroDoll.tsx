@@ -14,25 +14,25 @@ import { WeaponSlot } from "../WeaponSlot";
 
 /** Size of the hero stage in stage pixels. */
 export const HERO_W = 560;
-export const HERO_H = 556;
+export const HERO_H = 520;
 
 /**
  * Diablo IV's character screen (ui-ux-plan-v1.md 4.2): the painted Heir in the middle, armor
  * down the left, jewelry down the right, weapon, Belt and off hand at the feet.
  */
 const HERO_SLOTS: Readonly<Record<EquipmentSlot, DollBox>> = {
-  helm: { x: 16, y: 8, w: 88, h: 88 },
-  body: { x: 16, y: 108, w: 88, h: 128 },
-  gloves: { x: 16, y: 248, w: 88, h: 88 },
-  boots: { x: 16, y: 348, w: 88, h: 88 },
-  amulet: { x: 456, y: 8, w: 88, h: 88 },
-  ring1: { x: 456, y: 118, w: 88, h: 88 },
-  ring2: { x: 456, y: 228, w: 88, h: 88 },
-  charm: { x: 456, y: 348, w: 88, h: 88 },
-  offHand: { x: 336, y: 452, w: 104, h: 100 },
-  belt: { x: 236, y: 472, w: 88, h: 60 },
+  helm: { x: 16, y: 4, w: 88, h: 88 },
+  body: { x: 16, y: 102, w: 88, h: 124 },
+  gloves: { x: 16, y: 236, w: 88, h: 88 },
+  boots: { x: 16, y: 334, w: 88, h: 88 },
+  amulet: { x: 456, y: 4, w: 88, h: 88 },
+  ring1: { x: 456, y: 114, w: 88, h: 88 },
+  ring2: { x: 456, y: 224, w: 88, h: 88 },
+  charm: { x: 456, y: 334, w: 88, h: 88 },
+  offHand: { x: 336, y: 424, w: 104, h: 96 },
+  belt: { x: 236, y: 442, w: 88, h: 60 },
 };
-const WEAPON: DollBox = { x: 120, y: 452, w: 104, h: 100 };
+const WEAPON: DollBox = { x: 120, y: 424, w: 104, h: 96 };
 
 export interface HeroSlotProps {
   readonly selected: boolean;
