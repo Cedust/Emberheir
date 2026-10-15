@@ -1,6 +1,7 @@
 import { ACTS, ITEM_CATALOG } from "@emberheir/content";
 import { type CodexHome, type CodexPartKind, type GameState, codexKnows } from "@emberheir/sim";
 import { useState } from "react";
+import { actVisible } from "../labels";
 
 const ARCHETYPE_NAMES: Record<string, string> = {
   brute: "Brutes",
@@ -12,10 +13,16 @@ const ARCHETYPE_NAMES: Record<string, string> = {
   harvester: "The Harvester",
 };
 
-/** Where a part drops more often, e.g. "Rotwood" or "Skirmishers · Bosses". */
-export function homeHint(home: CodexHome): string {
+/**
+ * Where a part drops more often, e.g. "Rotwood" or "Skirmishers · Bosses". An act the run cannot
+ * reach yet stays unnamed.
+ */
+export function homeHint(home: CodexHome, state: GameState): string {
   const parts: string[] = [];
-  if (home.actId) parts.push(ACTS.find((a) => a.id === home.actId)?.name ?? "?");
+  if (home.actId) {
+    const known = actVisible(state, home.actId);
+    parts.push(known ? (ACTS.find((a) => a.id === home.actId)?.name ?? "?") : "???");
+  }
   if (home.archetypes?.length) parts.push(ARCHETYPE_NAMES[home.archetypes[0] ?? ""] ?? "?");
   if (home.boss) parts.push("Bosses");
   return parts.join(" · ");
@@ -71,11 +78,11 @@ export function TriggerCodex(props: { state: GameState }) {
               type="button"
               role="listitem"
               className={`codex-part ${learned ? "known" : "unknown"} ${on ? "on" : ""}`}
-              aria-label={learned ? p.name : `Unknown, ${homeHint(p.home)}`}
+              aria-label={learned ? p.name : `Unknown, ${homeHint(p.home, props.state)}`}
               onClick={() => setPicked(p)}
             >
               <span className="codex-name">{learned ? p.name : "? ? ?"}</span>
-              <span className="codex-meta sub">{homeHint(p.home)}</span>
+              <span className="codex-meta sub">{homeHint(p.home, props.state)}</span>
             </button>
           );
         })}

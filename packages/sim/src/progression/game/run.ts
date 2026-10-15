@@ -247,6 +247,11 @@ export function startStage(state: GameState, data: GameData): GameState {
       ...omened,
       seed: rng.int(0, 0x7fffffff),
     };
+    const met = next.legacy.bossesMet ?? [];
+    if (!met.includes(act.id)) {
+      const legacy = { ...next.legacy, bossesMet: [...met, act.id] };
+      return { ...next, legacy, run: { ...run, phase: "fight", encounter } };
+    }
   } else {
     const enemy = act.enemies[rng.int(0, act.enemies.length - 1)];
     if (!enemy) return fail(`Act ${act.id} has no enemies`);

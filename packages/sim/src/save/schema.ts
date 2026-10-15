@@ -211,6 +211,7 @@ const legacy = z.object({
   finaleAttempts: opt(count),
   finaleWon: opt(z.boolean()),
   wildfire: opt(count),
+  bossesMet: opt(z.array(id)),
 });
 
 export const gameStateSchema: z.ZodType<GameState> = z.object({

@@ -11,11 +11,12 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   const camp = page.getByRole("region", { name: "Camp" });
   await expect(camp).toContainText("Camp at the Rotwood");
   const road = camp.getByRole("radiogroup", { name: "Road" });
-  await expect(road.getByRole("radio")).toHaveCount(7);
-  // Acts 3 to 7 open with later Prestiges.
-  for (const name of [/Ember Wastes/, /Frost Peaks/, /Storm Spires/, /Void Rift/, /Emberfall/]) {
-    await expect(road.getByRole("radio", { name })).toBeDisabled();
-  }
+  // Only the acts of this run: Acts 3 to 7 stay hidden until later Prestiges open them.
+  await expect(road.getByRole("radio")).toHaveCount(2);
+  await expect(camp).not.toContainText("Ember Wastes");
+  // The Rotwood's boss keeps its name until the Heir meets it.
+  await expect(camp).toContainText("Boss: ???");
+  await expect(camp).not.toContainText("Mother of Rot");
   await expect(road.getByRole("radio", { name: /Rotwood/ })).toBeChecked();
 
   // Revisit Act 1: an old act of the run burns under one of two Omens, chosen at Eldrin.

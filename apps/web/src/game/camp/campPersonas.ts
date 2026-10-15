@@ -1,6 +1,7 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
-import { type ActData, type GameState } from "@emberheir/sim";
+import { type ActData, type GameState, bossKnown } from "@emberheir/sim";
 import { type IconName } from "../../ui/Icon";
+import { actVisible, visibleActs } from "../labels";
 import { SIGNPOST_DX } from "./art/CampScene";
 
 /** The Camp's people: who stands where, what they say, where a click on them leads. */
@@ -18,15 +19,35 @@ export type CampTarget =
   | "road"
   | "nan";
 
-export const NAN_LINES = [
-  "Sit, child. The fire remembers every one of you, even the clumsy ones.",
-  "Heat is a fickle friend. Swords lose it when they rest, wands gather it while they wait.",
-  "Gorrak swings slow and hard. When his Heat runs high, be ready.",
-  "The Rotwood bleeds you slowly. Tenacity shortens whatever clings to you.",
-  "The Mother of Rot feeds whenever she can. Fire spoils her meal.",
-  "Dying costs you the road, not your things. Keep walking.",
-  "Thoric fixes steel. Liora fixes moods. Neither fixes you.",
+/** Old Nan's lines; one about an act or its boss only once the hero knows it (no spoilers). */
+const NAN_LINES: readonly {
+  readonly text: string;
+  readonly act?: string;
+  readonly boss?: string;
+}[] = [
+  { text: "Sit, child. The fire remembers every one of you, even the clumsy ones." },
+  {
+    text: "Heat is a fickle friend. Swords lose it when they rest, wands gather it while they wait.",
+  },
+  {
+    text: "Gorrak swings slow and hard. When his Heat runs high, be ready.",
+    boss: "ashen-fields",
+  },
+  {
+    text: "The Rotwood bleeds you slowly. Tenacity shortens whatever clings to you.",
+    act: "rotwood",
+  },
+  { text: "The Mother of Rot feeds whenever she can. Fire spoils her meal.", boss: "rotwood" },
+  { text: "Dying costs you the road, not your things. Keep walking." },
+  { text: "Thoric fixes steel. Liora fixes moods. Neither fixes you." },
 ];
+
+/** The lines Old Nan may say to this Heir. */
+export function nanLines(state: GameState): string[] {
+  return NAN_LINES.filter(
+    (l) => (!l.act || actVisible(state, l.act)) && (!l.boss || bossKnown(state, GAME_DATA, l.boss)),
+  ).map((l) => l.text);
+}
 
 export interface Persona {
   readonly id: string;
@@ -46,8 +67,12 @@ export interface Persona {
 export function personas(state: GameState, road: ActData): Persona[] {
   const trainer = state.progress.trainerUnlocked;
   const runesmith = state.progress.runesmithUnlocked;
-  const later = "Waits somewhere in the Rotwood.";
-  const afterBoss = `Joins the caravan once ${GAME_DATA.acts[0]?.boss.name ?? "the boss"} falls.`;
+  const later = "Waits further down the road.";
+  const first = visibleActs(state)[0];
+  const afterBoss =
+    first && bossKnown(state, GAME_DATA, first.id)
+      ? `Joins the caravan once ${first.boss.name} falls.`
+      : "Joins the caravan once the first boss falls.";
   const points = state.hero.unspentAttributePoints;
   return [
     {
@@ -160,7 +185,11 @@ export function personas(state: GameState, road: ActData): Persona[] {
       icon: "bow",
       cloak: "#3b5a2c",
       figure: { fs: 0.9 },
-      quote: `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. At its end: ${road.boss.name}. ${road.boss.description}”`,
+      quote: `“${road.name}. ${ACTS.find((a) => a.id === road.id)?.focus ?? ""}. ${
+        bossKnown(state, GAME_DATA, road.id)
+          ? `At its end: ${road.boss.name}. ${road.boss.description}`
+          : "At its end waits something nobody came back to name."
+      }”`,
     },
     {
       id: "wagon",

@@ -297,7 +297,9 @@ export function GameApp() {
             )}
           </Presence>
         </div>
-        {state && overlay === "compendium" && <Compendium onClose={() => setOverlay(null)} />}
+        {state && overlay === "compendium" && (
+          <Compendium state={state} onClose={() => setOverlay(null)} />
+        )}
         <Presence>
           {state && overlay === "menu" && (
             <MenuOverlay

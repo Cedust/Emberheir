@@ -59,10 +59,16 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Emberheir");
   await page.getByRole("button", { name: "New Game" }).click();
   await createHero(page);
-  await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
+  const camp = page.getByRole("region", { name: "Camp" });
+  await expect(camp).toBeVisible();
+  // No spoilers: run 1 shows only Act 1, and its boss has no name until the Heir meets it.
+  await expect(camp.getByRole("radiogroup", { name: "Road" }).getByRole("radio")).toHaveCount(1);
+  await expect(camp).toContainText("Boss: ???");
+  await expect(camp).not.toContainText("Gorrak");
 
   await page.getByRole("button", { name: /SET OUT/ }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
+  await expect(page.getByRole("region", { name: "Intermission" })).not.toContainText("Gorrak");
   await expect(page.getByTestId("done-card")).toContainText("Stage 1 ahead");
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
 

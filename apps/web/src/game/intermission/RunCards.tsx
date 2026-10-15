@@ -2,6 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import {
   type GameAction,
   type GameState,
+  bossKnown,
   type RunState,
   applyAction,
   damageShare,
@@ -34,6 +35,7 @@ import { HeirFace } from "../camp/CampFigures";
 import { bountyView } from "../bounty";
 import { ShareBar } from "../camp/BattlePlanTab";
 import { finaleFoe, inFinale } from "../finale";
+import { bossName } from "../labels";
 import type { GameApi } from "../useGame";
 
 /** The Intermission's side cards: the hero, the Battle Plan, what comes next, the bounty. */
@@ -315,7 +317,7 @@ function PathRow(props: { run: RunState; act: ActData; next: number }) {
   );
 }
 
-export function UpNext(props: { run: RunState; prestige: number }) {
+export function UpNext(props: { state: GameState; run: RunState; prestige: number }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const stages = act.stages;
@@ -401,7 +403,7 @@ export function UpNext(props: { run: RunState; prestige: number }) {
       )}
       <div className="up-row">
         <Icon name="boss" size={16} color="#ff8a1f" />
-        <span>Boss: {act.boss.name}</span>
+        <span>Boss: {bossName(props.state, act)}</span>
         <span className="sub">
           Stage {stages} · {stages === next ? "now" : `in ${stages - next}`}
         </span>
@@ -507,7 +509,7 @@ export function BountyDone() {
   );
 }
 
-export function DoneCard(props: { run: RunState }) {
+export function DoneCard(props: { state: GameState; run: RunState }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const rewards = run.rewards;
@@ -518,7 +520,7 @@ export function DoneCard(props: { run: RunState }) {
     line = inFinale(act)
       ? `${finaleFoe(run.stage)} waits`
       : boss
-        ? `${act.boss.name} waits`
+        ? `${bossKnown(props.state, GAME_DATA, act.id) ? act.boss.name : "The boss"} waits`
         : `Stage ${run.stage} ahead`;
     sub = "";
   } else {

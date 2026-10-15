@@ -6,6 +6,10 @@ import {
   type ForgetBlockReason,
   type LearnBlockReason,
   type UnequipBlockReason,
+  type ActData,
+  type GameState,
+  actsInRun,
+  bossKnown,
   harvestAct,
 } from "@emberheir/sim";
 
@@ -84,4 +88,19 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
 /** Short name of the boss whose fall brings The Harvest in a run (the newest act's boss). */
 export function harvestBoss(prestige: number): string {
   return harvestAct(GAME_DATA, prestige).boss.name.split(",")[0] ?? "";
+}
+
+/** A boss's full name once the hero has faced it, "???" before: no spoilers for the road ahead. */
+export function bossName(state: GameState, act: ActData): string {
+  return bossKnown(state, GAME_DATA, act.id) ? act.boss.name : "???";
+}
+
+/** The acts the current run can reach: later acts stay hidden until a Prestige opens them. */
+export function visibleActs(state: GameState): ActData[] {
+  return actsInRun(GAME_DATA, state.legacy.prestige);
+}
+
+/** Whether the run can reach this act at all (later acts are not even named). */
+export function actVisible(state: GameState, actId: string): boolean {
+  return visibleActs(state).some((a) => a.id === actId);
 }

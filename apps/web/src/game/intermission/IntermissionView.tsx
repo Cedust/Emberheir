@@ -166,7 +166,7 @@ export function IntermissionView(props: {
           )}
           {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
           {step === "path" && <PathCards state={state} run={run} game={game} />}
-          {(step === "ready" || step === "done") && <DoneCard run={run} />}
+          {(step === "ready" || step === "done") && <DoneCard state={state} run={run} />}
           {step === "items" && (
             <div className="inventory-line">
               <Button icon="hammer" onClick={() => game.dispatch({ type: "salvageAll" })}>
@@ -182,7 +182,7 @@ export function IntermissionView(props: {
         {/* During the item pick the paperdoll takes the road's place. */}
         {step !== "items" && (
           <aside className="intermission-right-road">
-            <UpNext run={run} prestige={state.legacy.prestige} />
+            <UpNext state={state} run={run} prestige={state.legacy.prestige} />
             {run.bounty && <BountyCard run={run} />}
           </aside>
         )}

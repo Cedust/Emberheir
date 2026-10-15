@@ -1,7 +1,10 @@
+import { GAME_DATA } from "@emberheir/content";
+import { type GameState, finaleOpen } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../ui/Icon";
 
-const ENTRIES: { title: string; text: string }[] = [
+/** `finale`: only once The Last Ember is in reach (it names how many acts there are). */
+const ENTRIES: { title: string; text: string; finale?: boolean }[] = [
   {
     title: "Heat",
     text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat fades all the time; the Skill Tree can make enemy hits build it too), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
@@ -32,6 +35,7 @@ const ENTRIES: { title: string; text: string }[] = [
   },
   {
     title: "The Last Ember",
+    finale: true,
     text: "After the seventh Prestige, when all seven Acts have fallen, the world no longer burns. One flame got away. Enter The Last Ember from the Camp: six Warden echoes, each one hotter than the last, then the Harvester's Core. There is no loot, only a Shrine after each echo. Fall, and you wake in the Camp with your Boons burned.",
   },
   {
@@ -77,9 +81,11 @@ const ENTRIES: { title: string; text: string }[] = [
 ];
 
 /** Old Nan's Compendium: short rules of the game. */
-export function Compendium(props: { onClose: () => void }) {
+export function Compendium(props: { state: GameState; onClose: () => void }) {
   const [open, setOpen] = useState(0);
-  const entry = ENTRIES[open];
+  const lastEmber = finaleOpen(props.state, GAME_DATA) || props.state.legacy.finaleWon === true;
+  const entries = ENTRIES.filter((e) => !e.finale || lastEmber);
+  const entry = entries[open];
   return (
     <div className="overlay" role="dialog" aria-label="Compendium">
       <div className="overlay-panel compendium">
@@ -95,7 +101,7 @@ export function Compendium(props: { onClose: () => void }) {
         </header>
         <div className="compendium-body">
           <ul className="compendium-list">
-            {ENTRIES.map((e, i) => (
+            {entries.map((e, i) => (
               <li key={e.title}>
                 <button
                   type="button"

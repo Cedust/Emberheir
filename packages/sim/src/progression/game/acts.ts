@@ -70,6 +70,17 @@ export function actUnlocked(state: GameState, data: GameData, actId: string): bo
   return !before || state.progress.actsCleared.includes(before.id);
 }
 
+/**
+ * Whether the hero knows the act's boss by name: it faced it once, or the act fell in this or an
+ * earlier generation (every Prestige so far cleared the acts before its newest one).
+ */
+export function bossKnown(state: GameState, data: GameData, actId: string): boolean {
+  if (state.legacy.bossesMet?.includes(actId)) return true;
+  if (state.progress.actsCleared.includes(actId)) return true;
+  const index = actsInOrder(data).findIndex((a) => a.id === actId);
+  return index >= 0 && index < state.legacy.prestige;
+}
+
 /** The act the journey continues with: the first unlocked act that has not fallen yet. */
 export function nextAct(state: GameState, data: GameData): ActData {
   const acts = actsInRun(data, state.legacy.prestige);

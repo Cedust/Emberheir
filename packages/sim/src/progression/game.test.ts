@@ -12,6 +12,7 @@ import {
   GameActionError,
   actUnlocked,
   applyAction,
+  bossKnown,
   isHarvestAct,
   levelBand,
   stageMonsterLevel,
@@ -122,6 +123,22 @@ describe("game loop", () => {
     s = act(s, { type: "resolveFight" });
     // Stage 1 of the 3-stage test act is its first Waymark.
     expect(s.run?.lifeFraction).toBeCloseTo(Math.min(1, left + PROGRESSION.hearthEmbers));
+  });
+
+  it("keeps a boss's name hidden until the hero faces it", () => {
+    let s = act(start(), { type: "setOut", actId: "test-act" });
+    expect(bossKnown(s, data, "test-act")).toBe(false);
+    for (let i = 0; i < 2; i++) s = clearStage(s);
+    expect(bossKnown(s, data, "test-act")).toBe(false);
+    s = act(s, { type: "startStage" });
+    expect(s.legacy.bossesMet).toEqual(["test-act"]);
+    expect(bossKnown(s, data, "test-act")).toBe(true);
+    expect(bossKnown(s, data, "deadly-act")).toBe(false);
+    // The save keeps it.
+    expect(deserializeGame(serializeGame(s), data).legacy.bossesMet).toEqual(["test-act"]);
+    // Acts before the newest one of the run fell in earlier generations.
+    expect(bossKnown(inRun(start(), 1), data, "test-act")).toBe(true);
+    expect(bossKnown(inRun(start(), 1), data, "deadly-act")).toBe(false);
   });
 
   it("clears the act after the boss: back to Camp, Kaelen joins, Pity resets", () => {

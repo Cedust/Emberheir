@@ -1,8 +1,8 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type ActData,
-  actsInOrder,
   actUnlocked,
+  bossKnown,
   brewedDraught,
   DRAUGHT_FLASK_COST,
   draughtsOpen,
@@ -22,6 +22,7 @@ import { Button } from "../../ui/kit/Button";
 import { Wallet } from "../../ui/kit/Currency";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import { bountyPreview } from "../bounty";
+import { bossName, visibleActs } from "../labels";
 import type { GameApi } from "../useGame";
 import { PersonaPortrait } from "./art/PersonaArt";
 import {
@@ -65,7 +66,8 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
   const [fire, setFire] = useState(0);
   const tier = Math.min(fire, top);
   const isOpen = (id: string) => tier > 0 || actUnlocked(state, GAME_DATA, id);
-  const acts = actsInOrder(GAME_DATA);
+  // Only the acts this run can reach: later ones are not even named (no spoilers).
+  const acts = visibleActs(state);
   // The road the Heir takes: the next act unless a cleared one is picked to farm it again.
   const act = acts.find((a) => a.id === road && isOpen(a.id)) ?? nextAct(state, GAME_DATA);
   // Omens (neuausrichtung-v1.md 5.2, 7.2): one of two for an old act, any for the Wildfire.
@@ -149,7 +151,7 @@ export function RoadStrip(props: { state: GameState; plan: RoadPlan; vertical?: 
               <span className="road-name title-font">{a.name}</span>
               <span className="sub">
                 {info?.focus}
-                {open ? ` · ${a.boss.name}` : ""}
+                {open && bossKnown(state, GAME_DATA, a.id) ? ` · ${a.boss.name}` : ""}
               </span>
             </span>
             {done ? (
@@ -218,9 +220,13 @@ export function RoadWindow(props: {
               </span>
               <span className="title-font road-brief-name">{act.name}</span>
               <span className="road-brief-boss">
-                <Icon name="boss" size={16} /> {act.boss.name}
+                <Icon name="boss" size={16} /> {bossName(state, act)}
               </span>
-              <span className="sub road-brief-text">{act.boss.description}</span>
+              <span className="sub road-brief-text">
+                {bossKnown(state, GAME_DATA, act.id)
+                  ? act.boss.description
+                  : "Nobody came back to tell what waits at its end."}
+              </span>
             </div>
             {finaleOpen(state, GAME_DATA) && (
               <Button
