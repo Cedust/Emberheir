@@ -22,7 +22,6 @@ import {
   levelCap,
   xpToNextLevel,
   DEFENSE_NOTES,
-  activeDraught,
   emberPenalty,
   emberPenaltyLine,
 } from "@emberheir/sim";
@@ -48,7 +47,7 @@ import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { HeroDoll, type HeroSlotProps } from "./character/HeroDoll";
-import { HeroNumbers, PendingGain, type StatsBefore } from "./character/HeroNumbers";
+import { HeroNumbers } from "./character/HeroNumbers";
 import { DefensePanel, HeatPanel, OffensePanel, type WeaponNumbers } from "./character/StatTabs";
 import { AshbornPanel } from "./AshbornPanel";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
@@ -98,13 +97,6 @@ export function CharacterOverlay(props: {
   const { setup, gear } = heroSetup(preview, GAME_DATA);
   const stats = deriveStats(setup);
   const dps = estimateDps(setup, stats);
-  // The numbers before the pending points, to show what Confirm changes.
-  let before: StatsBefore | undefined;
-  if (spent > 0) {
-    const now = heroSetup(state, GAME_DATA).setup;
-    const nowStats = deriveStats(now);
-    before = { stats: nowStats, dps: estimateDps(now, nowStats) };
-  }
 
   const equippedEntry = Object.entries(state.hero.equipment).find(([, it]) => it?.id === selected);
   const equippedSlot = equippedEntry?.[0] as EquipmentSlot | undefined;
@@ -128,7 +120,6 @@ export function CharacterOverlay(props: {
 
   const penalty = emberPenalty(state);
   const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
-  const draught = activeDraught(state, GAME_DATA);
   const weaponNumbers: WeaponNumbers = {
     name: setup.weapon.name,
     min: setup.weapon.damage.min,
@@ -136,9 +127,6 @@ export function CharacterOverlay(props: {
     heatBehavior: setup.weapon.heatBehavior,
     heatPerHit: setup.weapon.heatPerHit,
   };
-  const draughtNote: NoteHover | undefined = draught
-    ? { name: draught.name, kind: draught.description, explain: draught.explain }
-    : undefined;
 
   // Right-click: the default action of the Character Sheet (ui-ux-plan-v1.md 3.5).
   const equipNow = (item: Item) => {
@@ -209,25 +197,22 @@ export function CharacterOverlay(props: {
       id: "Overview",
       name: "Overview",
       icon: "eye",
-      explain: "Your key numbers at a glance.",
     },
     {
       id: "Attributes",
       name: "Attributes",
       icon: "user",
-      explain: "Spend Attribute Points. They are permanent.",
       ...(left > 0 && !inFight ? { marker: left } : {}),
     },
-    { id: "Offense", name: "Offense", icon: "sword", explain: "How hard and fast you hit." },
-    { id: "Defense", name: "Defense", icon: "shield", explain: "What keeps you alive." },
-    { id: "Heat", name: "Heat", icon: "flame", explain: "How your Heat fills." },
+    { id: "Offense", name: "Offense", icon: "sword" },
+    { id: "Defense", name: "Defense", icon: "shield" },
+    { id: "Heat", name: "Heat", icon: "flame" },
     ...(ashbornOpen
       ? [
           {
             id: "Ashborn" as const,
             name: "Ashborn",
             icon: "fire" as const,
-            explain: "Points past level 100.",
           },
         ]
       : []),
@@ -353,7 +338,6 @@ export function CharacterOverlay(props: {
                     !inFight &&
                     state.hero.unspentAttributePoints > 0 && (
                       <div className="attr-buttons">
-                        {before && <PendingGain stats={stats} dps={dps} before={before} />}
                         <Button
                           blocked={spent === 0 ? "Nothing to undo" : null}
                           onClick={() => setPending(NO_POINTS)}
@@ -396,12 +380,7 @@ export function CharacterOverlay(props: {
             {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
             {tab === "Offense" && <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />}
             {tab === "Defense" && (
-              <DefensePanel
-                stats={stats}
-                penalty={penalty}
-                resNote={resNote}
-                draught={draughtNote}
-              />
+              <DefensePanel stats={stats} penalty={penalty} resNote={resNote} />
             )}
             {tab === "Heat" && (
               <HeatPanel

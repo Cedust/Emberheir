@@ -8,7 +8,7 @@ import {
 import { Icon } from "../../ui/Icon";
 import type { NoteHover } from "../../ui/ItemTooltip";
 import { fmt } from "../../ui/items";
-import { type Element, LifeBar, Medal, Plaque, Pill, Res, Row, pct } from "./HeroNumbers";
+import { type Element, Vitals, Medal, Plaque, Pill, Res, Row, pct } from "./HeroNumbers";
 
 /**
  * The Offense, Defense and Heat tabs of the Character Sheet: the same plaques as the Overview,
@@ -147,12 +147,7 @@ export function OffensePanel(props: { stats: DerivedStats; dps: number; weapon: 
   );
 }
 
-export function DefensePanel(props: {
-  stats: DerivedStats;
-  penalty: number;
-  resNote: NoteHover;
-  draught: NoteHover | undefined;
-}) {
+export function DefensePanel(props: { stats: DerivedStats; penalty: number; resNote: NoteHover }) {
   const { stats } = props;
   const res: Record<Element, number> = {
     fire: stats.fireResistance,
@@ -162,22 +157,11 @@ export function DefensePanel(props: {
   };
   return (
     <div className="hero-numbers">
-      <Plaque className="hero-life" label="Life">
-        <LifeBar life={stats.maxLife} barrier={stats.barrier} />
+      <Plaque className="hero-vitals" label="Defense">
+        <Vitals life={stats.maxLife} barrier={stats.barrier} armor={stats.armor} />
       </Plaque>
-      <Plaque className="hero-defense" label="Defense">
+      <Plaque className="hero-avoid" label="Avoidance">
         <div className="hero-def-grid">
-          <table className="hero-table">
-            <tbody>
-              <Row icon="armor" label="Armor" value={fmt(stats.armor)} note={DEFENSE_NOTES.armor} />
-              <Row
-                icon="shell"
-                label="Barrier"
-                value={fmt(stats.barrier)}
-                note={DEFENSE_NOTES.barrier}
-              />
-            </tbody>
-          </table>
           <table className="hero-table">
             <tbody>
               <Row
@@ -186,6 +170,10 @@ export function DefensePanel(props: {
                 value={pct(stats.evasion)}
                 note={DEFENSE_NOTES.evasion}
               />
+            </tbody>
+          </table>
+          <table className="hero-table">
+            <tbody>
               <Row
                 icon="shield"
                 label="Block"
@@ -223,21 +211,15 @@ export function DefensePanel(props: {
                 value={pct(stats.tenacity)}
                 note={NOTES.tenacity}
               />
-              <Row
-                icon="drop"
-                label="Lifesteal"
-                value={pct(stats.lifesteal)}
-                note={NOTES.lifesteal}
-              />
             </tbody>
           </table>
           <table className="hero-table">
             <tbody>
               <Row
-                icon="flask"
-                label="Draught"
-                value={props.draught?.name ?? "None"}
-                note={props.draught}
+                icon="drop"
+                label="Lifesteal"
+                value={pct(stats.lifesteal)}
+                note={NOTES.lifesteal}
               />
             </tbody>
           </table>
@@ -296,7 +278,6 @@ export function HeatPanel(props: {
               />
             )}
             <Row icon="flame" label="Heat Gain" value={`+${pct(stats.heatGain)}`} />
-            <Row icon="fire" label="Starting Heat" value={fmt(stats.startingHeat)} />
           </tbody>
         </table>
       </Plaque>

@@ -74,7 +74,7 @@ const DIM = "linear-gradient(rgb(14 10 6 / 0.6), rgb(14 10 6 / 0.6))";
 type Page = "window" | "buttons" | "dialog" | "keys";
 
 const PAGES: readonly TabItem<Page>[] = [
-  { id: "window", name: "Window", icon: "box", explain: "The frame every screen will use." },
+  { id: "window", name: "Window", icon: "box" },
   { id: "buttons", name: "Buttons", icon: "strike", marker: 3 },
   { id: "dialog", name: "Dialog", icon: "nan", marker: "!" },
   { id: "keys", name: "Keys", icon: "menu" },

@@ -21,7 +21,7 @@ const DPS_NOTE: NoteHover = {
 const LIFE_NOTE: NoteHover = {
   name: "Life",
   kind: "Defense",
-  explain: "When it hits zero, the fight is lost. Barrier, if you have it, takes hits first.",
+  explain: "When it hits zero, the fight is lost.",
 };
 export const RES_NAMES = {
   fire: "Fire",
@@ -37,15 +37,9 @@ const RES_ICON: Record<Element, IconName> = {
   void: "void",
 };
 
-/** What the Attribute Points waiting for Confirm change, next to the Confirm button. */
-export interface StatsBefore {
-  readonly stats: DerivedStats;
-  readonly dps: number;
-}
-
 /**
- * The Overview tab (ui-ux-plan-v1.md 4.2): the hero's key numbers with room to grow. Damage per
- * second on top, then Life as a bar, Defense and the four Resistances, one row each.
+ * The Overview tab (ui-ux-plan-v1.md 4.2): the hero's key numbers with room to grow, one row each:
+ * Damage per Second, Defense (Armor, Life, Barrier) and the four Resistances.
  */
 export function HeroNumbers(props: {
   stats: DerivedStats;
@@ -79,39 +73,8 @@ export function HeroNumbers(props: {
           </Pill>
         </span>
       </Plaque>
-      <Plaque className="hero-life" label="Life" note={LIFE_NOTE}>
-        <LifeBar life={stats.maxLife} barrier={stats.barrier} />
-      </Plaque>
-      <Plaque className="hero-defense" label="Defense">
-        <div className="hero-def-grid">
-          <table className="hero-table">
-            <tbody>
-              <Row icon="armor" label="Armor" value={fmt(stats.armor)} note={DEFENSE_NOTES.armor} />
-              <Row
-                icon="shell"
-                label="Barrier"
-                value={fmt(stats.barrier)}
-                note={DEFENSE_NOTES.barrier}
-              />
-            </tbody>
-          </table>
-          <table className="hero-table">
-            <tbody>
-              <Row
-                icon="boots"
-                label="Evasion"
-                value={pct(stats.evasion)}
-                note={DEFENSE_NOTES.evasion}
-              />
-              <Row
-                icon="shield"
-                label="Block"
-                value={pct(stats.blockChance)}
-                note={DEFENSE_NOTES.block}
-              />
-            </tbody>
-          </table>
-        </div>
+      <Plaque className="hero-vitals" label="Defense">
+        <Vitals life={stats.maxLife} barrier={stats.barrier} armor={stats.armor} />
       </Plaque>
       <Plaque className="hero-resist" label="Resistances">
         <div className="hero-res">
@@ -121,28 +84,6 @@ export function HeroNumbers(props: {
         </div>
       </Plaque>
     </div>
-  );
-}
-
-/** One line under the Confirm button: what the pending points add. */
-export function PendingGain(props: { stats: DerivedStats; dps: number; before: StatsBefore }) {
-  const dps = Math.round(props.dps) - Math.round(props.before.dps);
-  const life = Math.round(props.stats.maxLife) - Math.round(props.before.stats.maxLife);
-  if (dps === 0 && life === 0) return null;
-  return (
-    <span className="pending-gain">
-      {dps !== 0 && <Gain label="Damage/s" value={dps} />}
-      {life !== 0 && <Gain label="Life" value={life} />}
-    </span>
-  );
-}
-
-function Gain(props: { label: string; value: number }) {
-  return (
-    <span className={props.value > 0 ? "up" : "down"}>
-      {props.label}{" "}
-      <b className="mono">{props.value > 0 ? `+${fmt(props.value)}` : fmt(props.value)}</b>
-    </span>
   );
 }
 
@@ -191,30 +132,47 @@ export function Pill(props: {
 }
 
 /**
- * Life as the Battle HUD draws it: a red bar, with Barrier as the blue layer in front that takes
- * hits first (its share of the bar is its share of Life plus Barrier).
+ * Armor as a riveted steel plate in front of Life as the Battle HUD draws it: a red bar, with
+ * Barrier as the blue layer that takes hits first (its share of the bar is its share of Life plus
+ * Barrier).
  */
-export function LifeBar(props: { life: number; barrier: number }) {
+export function Vitals(props: { life: number; barrier: number; armor: number }) {
   const total = props.life + props.barrier;
   const share = total > 0 ? (props.barrier / total) * 100 : 0;
+  const armor = useNoteHover(DEFENSE_NOTES.armor);
+  const life = useNoteHover(LIFE_NOTE);
+  const barrier = useNoteHover(DEFENSE_NOTES.barrier);
   return (
-    <span className="life-meter">
+    <span className="vitals">
+      <span className="armor-plate" tabIndex={0} {...armor}>
+        <Icon name="armor" size={18} />
+        <b className="mono">{fmt(props.armor)}</b>
+      </span>
       <span className="life-bar">
-        <span className="life-bar-life" style={{ flexBasis: `${100 - share}%` }}>
+        <span
+          className="life-bar-life"
+          style={{ flexBasis: `${100 - share}%` }}
+          tabIndex={0}
+          {...life}
+        >
           <b className="mono">{fmt(props.life)}</b>
         </span>
         {props.barrier > 0 && (
-          <span className="life-bar-barrier" style={{ flexBasis: `${share}%` }}>
+          <span
+            className="life-bar-barrier"
+            style={{ flexBasis: `${share}%` }}
+            tabIndex={0}
+            {...barrier}
+          >
             <b className="mono">{fmt(props.barrier)}</b>
           </span>
         )}
       </span>
-      {props.barrier > 0 && (
-        <span className="life-bar-legend">
-          <span className="life-bar-name">Life</span>
-          <span className="life-bar-name life-bar-name-barrier">Barrier</span>
-        </span>
-      )}
+      <span className="vitals-name vitals-armor">Armor</span>
+      <span className="vitals-names">
+        <span className="vitals-name vitals-life">Life</span>
+        {props.barrier > 0 && <span className="vitals-name vitals-barrier">Barrier</span>}
+      </span>
     </span>
   );
 }
