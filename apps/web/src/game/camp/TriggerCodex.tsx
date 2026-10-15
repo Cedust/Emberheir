@@ -101,9 +101,7 @@ export function TriggerCodex(props: { state: GameState }) {
             </span>
           </>
         ) : (
-          <span className="sub">
-            {count === 0 ? "Salvage items with triggers at Thoric." : "Choose a part."}
-          </span>
+          <span className="sub">{count === 0 ? "None" : "Choose a part."}</span>
         )}
       </footer>
     </section>

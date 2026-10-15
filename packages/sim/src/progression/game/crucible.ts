@@ -27,9 +27,7 @@ export const CRUCIBLE = {
 export function crucibleLock(state: GameState, slot: CrucibleSlot): string | null {
   switch (slot) {
     case "strike":
-      return Object.keys(state.powerCodex ?? {}).length > 0
-        ? null
-        : "Opens with the first Power in the Power Codex: salvage a Legendary";
+      return Object.keys(state.powerCodex ?? {}).length > 0 ? null : "Opens with the first Power";
     case "ward":
       return state.legacy.finaleWon ? null : "Opens once The Last Ember is won";
     case "ember":

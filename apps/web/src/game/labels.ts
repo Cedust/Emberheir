@@ -46,10 +46,10 @@ export const MOVE_BLOCK_TEXT: Record<MoveBlockReason, string> = {
 
 export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   camp: "Only in the Camp",
-  mystic: "Liora joins after the act boss falls",
+  mystic: "Liora is not here yet",
   noItem: "Choose an item",
   maxTier: "Already at the highest Tier",
-  requirements: "You would not meet the new requirements. Unequip it first.",
+  requirements: "Requirements not met",
   noAffixes: "This item has no affixes",
   noAffix: "Choose an affix",
   locked: "Locked: only the locked-in affix can change",
@@ -57,8 +57,8 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   acorns: "Not enough Acorns",
   ash: "Not enough Ash",
   emberCoal: "Not enough Ember Coal",
-  phoenixFeathers: "Needs a Phoenix Feather (bosses, sometimes Elites)",
-  runesmith: "Nyssa joins after your first trip into the Rotwood",
+  phoenixFeathers: "Not enough Phoenix Feathers",
+  runesmith: "Nyssa is not here yet",
   notNormal: "Only Normal items take Sockets and Runes",
   maxSockets: "No more Sockets fit this base",
   hasRunes: "Runes are already socketed",
@@ -70,15 +70,15 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   noStock: "Not in stock",
   noRoom: "No room in the inventory",
   runes: "Not enough Runes",
-  unknownPart: "Learn both parts first: salvage items with that trigger",
+  unknownPart: "Part not learned",
   kindled: "Only one kindled trigger per item",
   notTrigger: "Choose a trigger to replace",
   noTriggerPlace: "Normal items have no trigger place",
-  greater: "Already has its Greater Affix: Shift or Intensify it",
+  greater: "Already has a Greater Affix",
   noGreater: "Awaken a Greater Affix first",
   maxGreater: "Already Greater V",
   noTarget: "No affix here can become Greater",
-  cinderglass: "Not enough Cinderglass (Wildfire bosses)",
+  cinderglass: "Not enough Cinderglass",
 };
 
 /** Short name of the boss whose fall brings The Harvest in a run (the newest act's boss). */

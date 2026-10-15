@@ -34,7 +34,6 @@ import { PaintDefs } from "./art/paint";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { AfterCard, ItemHead, KindleParts, partName } from "./PersonaCards";
 import {
-  ACTION_HINT,
   type ActionKind,
   affixText,
   greaterName,
@@ -172,11 +171,7 @@ export function PersonaView(props: {
           ? CRAFT_BLOCK_TEXT.notTrigger
           : "Choose a Condition and an Effect";
   } else if (kind === "salvage") {
-    block = !item
-      ? "Choose an item"
-      : equipped
-        ? "Only from the inventory. Unequip it first."
-        : null;
+    block = !item ? "Choose an item" : equipped ? "Equipped" : null;
   } else if (!request) {
     price =
       kind === "temper"
@@ -365,7 +360,6 @@ export function PersonaView(props: {
             <WorkbenchFx persona={props.persona} pulse={pulse} anchor={bench} />
             <div className="center-head">
               <span className="title-font huge">{actionName}</span>
-              <span className="sub">{ACTION_HINT[kind]}</span>
             </div>
 
             {kind === "crucible" ? (
@@ -486,23 +480,11 @@ export function PersonaView(props: {
                     )
                   : price && <Price cost={price} state={state} />}
                 {kind === "salvage" ? (
-                  <HoldButton
-                    primary
-                    icon="trash"
-                    blocked={block}
-                    tip={{ name: "Salvage", kind: "Hold to confirm", explain: "There is no Undo." }}
-                    onConfirm={run}
-                  >
+                  <HoldButton primary icon="trash" blocked={block} onConfirm={run}>
                     {actionName}
                   </HoldButton>
                 ) : (
-                  <Button
-                    variant="primary"
-                    big
-                    blocked={block}
-                    tip={{ name: actionName, kind: def.name, explain: "There is no Undo." }}
-                    onClick={run}
-                  >
+                  <Button variant="primary" big blocked={block} onClick={run}>
                     {actionName}
                   </Button>
                 )}

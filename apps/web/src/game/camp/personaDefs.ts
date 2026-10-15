@@ -80,7 +80,7 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     role: "Mystic",
     portrait: "#3a2a5a",
     accent: "#b36bff",
-    quote: "Affixes are like moods, dear. I can change one. I cannot change all of them twice.",
+    quote: "One affix at a time, dear. All of them at once? Ask Thoric and his hammer.",
     actions: [
       { k: "temper", icon: "gear", name: "Temper", desc: "Reroll the value of one affix." },
       {
@@ -162,23 +162,6 @@ export function personaPresent(state: GameState, id: PersonaId): boolean {
   if (id === "nyssa") return state.progress.runesmithUnlocked;
   return true;
 }
-
-export const ACTION_HINT: Record<ActionKind, string> = {
-  upgrade: "Choose any item. Values grow with the Tier.",
-  socket: "Normal items only, before the first Rune.",
-  rune: "Choose an item with a free Socket, then a Rune.",
-  combine: "Choose a Rune you have three of.",
-  codex: "A Runeword shows itself once you have found all of its Runes.",
-  gamble: "Choose a slot.",
-  salvage: "Choose an item from your inventory.",
-  reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
-  temper: "Click the affix to reroll. It stays locked in afterwards.",
-  kindle: "Choose an item, then a Condition and an Effect you have learned.",
-  awaken: "One Greater Affix per item. The rank belongs to the item, not to the affix.",
-  shift: "Rerolls only which affix is Greater; the rank is never lost.",
-  intensify: "Greater I to V. Cinderglass drops only from Wildfire bosses.",
-  crucible: "Salvage a Legendary or Unique at Thoric: its Power joins the Power Codex.",
-};
 
 export { greaterName } from "@emberheir/sim";
 

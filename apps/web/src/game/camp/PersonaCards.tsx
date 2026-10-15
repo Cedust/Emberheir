@@ -85,7 +85,6 @@ export function AfterCard(props: {
       <div className="craft-card panel-card dashed">
         <span className="eyebrow">AFTER</span>
         <span className="title-font craft-item-name">Ash</span>
-        <span className="sub">The item is gone for good.</span>
         <div className="item-detail-rule" />
         <span className="after-line new">+{salvageValue(item)} Ash</span>
         {props.power && (
@@ -173,7 +172,6 @@ export function AfterCard(props: {
             ? new random affix
           </span>
         ))}
-        <span className="sub small">No lock afterwards.</span>
       </div>
     );
   }
@@ -231,7 +229,7 @@ export function KindleParts(props: {
     return (
       <div className="kindle-row" role="radiogroup" aria-label={label}>
         <span className="strong">{label}</span>
-        {parts.length === 0 && <span className="sub">Salvage triggers at Thoric.</span>}
+        {parts.length === 0 && <span className="sub">None</span>}
         {parts.map((p) => (
           <button
             key={p.id}

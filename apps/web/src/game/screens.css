@@ -2392,16 +2392,12 @@
   color: var(--text-sub);
 }
 
-/* The crafter's bench at the top of the Now card, with the item on it. */
+/* The crafter's bench above the Now and After cards, with the item on it. */
 .stage .workbench {
   position: relative;
   flex-shrink: 0;
-  height: 150px;
+  height: 200px;
   border-radius: 6px;
-  background: radial-gradient(ellipse at 50% 80%, rgb(255 138 58 / 0.18), transparent 65%);
-  display: flex;
-  align-items: flex-end;
-  justify-content: center;
 }
 
 .stage .workbench.over {
@@ -2411,35 +2407,26 @@
 
 .stage .bench-art {
   position: absolute;
-  left: calc(50% - 110px);
+  left: calc(50% - 160px);
   bottom: 0;
-  width: 220px;
-  height: 99px;
+  width: 320px;
+  height: 150px;
+  filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
 }
 
 .stage .bench-item {
   position: absolute;
-  left: calc(50% - 46px);
-  bottom: 64px;
-  width: 92px;
-  height: 92px;
-  filter: drop-shadow(0 0 10px var(--frame, transparent));
+  left: calc(50% - 50px);
+  bottom: 96px;
+  width: 100px;
+  height: 100px;
+  filter: drop-shadow(0 0 12px var(--frame, transparent));
 }
 
 .stage .bench-item .item-art {
   width: 100%;
   height: 100%;
-  filter: drop-shadow(0 3px 3px rgb(0 0 0 / 0.55));
-}
-
-.stage .bench-empty {
-  position: absolute;
-  top: 18px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 14px;
-  color: var(--text-sub);
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.55));
 }
 
 .stage .workbench-fx {
