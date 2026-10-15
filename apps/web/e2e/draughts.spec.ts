@@ -23,6 +23,7 @@ test("after the first Prestige a Draught is brewed for the trip and shows in the
   // The Character sheet explains the Ember Penalty of this run.
   await page.keyboard.press("c");
   const sheet = page.getByRole("dialog", { name: "Character" });
+  await sheet.getByRole("tab", { name: "Stats" }).click();
   await sheet.getByRole("tab", { name: "Defense" }).click();
   await expect(sheet).toContainText("Ember Penalty");
   await sheet.getByText("Ember Penalty").hover();

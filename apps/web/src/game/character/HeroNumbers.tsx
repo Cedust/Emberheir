@@ -1,23 +1,12 @@
-import {
-  COMBAT,
-  DEFENSE_NOTES,
-  type DerivedStats,
-  formatPercent,
-  speedValue,
-} from "@emberheir/sim";
+import { COMBAT, DEFENSE_NOTES, formatPercent } from "@emberheir/sim";
 import type { ReactNode } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { fmt } from "../../ui/items";
+import { MAX_PINS, type PanelId, usePinContext } from "./pins";
 
 export const pct = (v: number) => `${formatPercent(v)} %`;
 
-const DPS_NOTE: NoteHover = {
-  name: "Damage per second",
-  kind: "Offense",
-  explain:
-    "What you deal each second on average: weapon, Attack Speed, crits and your Battle Plan together. The best single number to compare builds.",
-};
 const LIFE_NOTE: NoteHover = {
   name: "Life",
   kind: "Defense",
@@ -37,81 +26,63 @@ const RES_ICON: Record<Element, IconName> = {
   void: "void",
 };
 
-/**
- * The Overview tab (ui-ux-plan-v1.md 4.2): the hero's key numbers with room to grow, one row each:
- * Damage per Second, Defense (Armor, Life, Barrier) and the four Resistances.
- */
-export function HeroNumbers(props: {
-  stats: DerivedStats;
-  dps: number;
-  weapon: { name: string; min: number; max: number };
-  resNote: NoteHover;
-}) {
-  const { stats, weapon } = props;
-  const res: Record<Element, number> = {
-    fire: stats.fireResistance,
-    cold: stats.coldResistance,
-    lightning: stats.lightningResistance,
-    void: stats.voidResistance,
-  };
-  return (
-    <div className="hero-numbers">
-      <Plaque className="hero-damage" label="Damage" note={DPS_NOTE}>
-        <span className="hero-dps">
-          <b className="mono">{fmt(props.dps)}</b>
-          <span className="hero-unit">per Second</span>
-        </span>
-        <span className="hero-pills">
-          <Pill icon="sword" label={weapon.name}>
-            {fmt(weapon.min)}–{fmt(weapon.max)}
-          </Pill>
-          <Pill icon="cycle" label="Speed">
-            {speedValue(stats.attackSpeed)}
-          </Pill>
-          <Pill icon="target" label="Crit">
-            {pct(stats.critChance)}
-          </Pill>
-        </span>
-      </Plaque>
-      <Plaque className="hero-vitals" label="Defense">
-        <Vitals life={stats.maxLife} barrier={stats.barrier} armor={stats.armor} />
-      </Plaque>
-      <Plaque className="hero-resist" label="Resistances">
-        <div className="hero-res">
-          {(Object.keys(res) as Element[]).map((el) => (
-            <Res key={el} element={el} value={res[el]} note={props.resNote} />
-          ))}
-        </div>
-      </Plaque>
-    </div>
-  );
-}
-
 export function Plaque(props: {
   label: string;
   className: string;
   note?: NoteHover | undefined;
   /** Shown at the right end of the label line, e.g. the Ember Penalty. */
   aside?: ReactNode;
+  /** The panel's id: a star pins it to the Overview. */
+  pin?: PanelId;
   children: ReactNode;
 }) {
   const hover = useNoteHover(props.note);
+  const star = props.pin && <PinStar id={props.pin} />;
   return (
     <div
       className={`hero-card ${props.className}`}
       tabIndex={props.note ? 0 : undefined}
       {...hover}
     >
-      {props.aside ? (
+      {props.aside || star ? (
         <span className="hero-card-top">
           <span className="hero-card-label">{props.label}</span>
-          {props.aside}
+          <span className="hero-card-aside">
+            {props.aside}
+            {star}
+          </span>
         </span>
       ) : (
         <span className="hero-card-label">{props.label}</span>
       )}
       {props.children}
     </div>
+  );
+}
+
+/** Pins a panel to the Overview, up to three. */
+function PinStar(props: { id: PanelId }) {
+  const pins = usePinContext();
+  const on = !!pins?.pinned.includes(props.id);
+  const full = !on && (pins?.pinned.length ?? 0) >= MAX_PINS;
+  const hover = useNoteHover(
+    full
+      ? { name: "Overview", kind: "", explain: "", status: `Up to ${MAX_PINS}` }
+      : { name: on ? "Unpin from Overview" : "Pin to Overview", kind: "", explain: "" },
+  );
+  if (!pins) return null;
+  return (
+    <button
+      type="button"
+      className={`pin-star${on ? " on" : ""}`}
+      aria-label={on ? "Unpin from Overview" : "Pin to Overview"}
+      aria-pressed={on}
+      aria-disabled={full || undefined}
+      onClick={full ? undefined : () => pins.toggle(props.id)}
+      {...hover}
+    >
+      <Icon name="star" size={16} />
+    </button>
   );
 }
 
@@ -212,10 +183,21 @@ export function Res(props: { element: Element; value: number; note: NoteHover })
 }
 
 /** A big number in a framed chip, like a Resistance but in brass. */
-export function Medal(props: { icon: IconName; label: string; value: string; note?: NoteHover }) {
+export function Medal(props: {
+  icon: IconName;
+  label: string;
+  value: string;
+  note?: NoteHover;
+  /** Colour of the chip, e.g. "fire" or "bleed" (brass by default). */
+  tone?: string;
+}) {
   const hover = useNoteHover(props.note);
   return (
-    <span className="hero-res-one res-brass" tabIndex={props.note ? 0 : undefined} {...hover}>
+    <span
+      className={`hero-res-one res-${props.tone ?? "brass"}`}
+      tabIndex={props.note ? 0 : undefined}
+      {...hover}
+    >
       <Icon name={props.icon} size={24} />
       <b className="mono">{props.value}</b>
       <span className="hero-res-name">{props.label}</span>
