@@ -439,7 +439,7 @@ export const SERRATED_EDGE: SkillDefinition = {
   effects: [{ kind: "buff", stat: "bleedChance", amount: 1, duration: 8 }],
 };
 
-/** Rupture: two quick poisoned cuts. */
+/** Rupture, and the Dagger's Innate: two quick poisoned cuts. */
 export const ENVENOM: SkillDefinition = {
   id: "envenom",
   name: "Envenom",
@@ -512,13 +512,15 @@ export const VOID_BOLT: SkillDefinition = {
 
 /**
  * Weapon Innates (klassen-v2.md): every weapon type brings one skill. It is not in the Skill
- * Tree; a Rotation Slot left on the Innate follows the weapon in hand.
+ * Tree; a Rotation Slot left on the Innate follows the weapon in hand. Every Innate spends Heat
+ * as it comes (an attack or a spell): the first run has one Rotation Slot, and a buff there
+ * could not spend Heat while it runs. The Dagger's Venom Coat lives on in its Innate Forms.
  */
 export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   sword: POWER_STRIKE,
   "fire-wand": FIREBOLT,
   axe: LACERATE,
-  dagger: VENOM_COAT,
+  dagger: ENVENOM,
   bow: BARBED_ARROW,
   crossbow: HEAVY_BOLT,
   mace: SKULL_CRACK,

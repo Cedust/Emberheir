@@ -28,6 +28,17 @@ describe("combat content", () => {
     }
   });
 
+  it("every Start Skill spends Heat as it comes: it hits, it is no buff that blocks its slot", () => {
+    // Run 1 has one Rotation Slot; a running buff is not cast again, so its Heat would pile up.
+    for (const [weapon, skill] of Object.entries(START_SKILLS)) {
+      expect(skill.hits.length, weapon).toBeGreaterThan(0);
+      expect(
+        skill.effects?.some((e) => e.kind === "buff" || e.kind === "curse"),
+        weapon,
+      ).not.toBe(true);
+    }
+  });
+
   it("hero weapons cover all three Heat behaviors", () => {
     expect(new Set(HERO_WEAPONS.map((w) => w.heatBehavior))).toEqual(
       new Set(["cooling", "steady", "warming"]),

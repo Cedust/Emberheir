@@ -9,6 +9,7 @@ import {
   equipBlockReason,
   itemSize,
   placeAt,
+  stashTab,
   unequipBlockReason,
 } from "@emberheir/sim";
 import type { DragSource, GridDrop, SlotDrop } from "../ui/dragItems";
@@ -29,12 +30,13 @@ export function itemDrops(
   state: GameState,
   game: GameApi,
 ): {
-  grid: (grid: "inventory" | "stash") => GridDrop;
+  grid: (grid: "inventory" | "stash", tab?: number) => GridDrop;
   slot: (slot: EquipmentSlot) => { source: DragSource | undefined; drop: SlotDrop };
 } {
   const inFight = state.run?.phase === "fight";
-  const grid = (target: "inventory" | "stash"): GridDrop => {
-    const placed = target === "stash" ? state.stash : state.inventory;
+  // The stash shows one tab at a time (`tab`); drops land in that tab.
+  const grid = (target: "inventory" | "stash", tab = 0): GridDrop => {
+    const placed = target === "stash" ? stashTab(state.stash, tab) : state.inventory;
     const size = target === "stash" ? STASH_SIZE : INVENTORY_SIZE;
     const fits = (item: Item, at: GridPosition) =>
       !!placeAt(placed, item, at.x, at.y, GAME_DATA.items, size);
@@ -57,9 +59,20 @@ export function itemDrops(
         if (source.kind === "slot") {
           game.dispatch({ type: "unequip", slot: source.slot, at });
         } else if (source.grid === target) {
-          game.dispatch({ type: "placeItem", itemId: source.itemId, at });
+          game.dispatch({
+            type: "placeItem",
+            itemId: source.itemId,
+            at,
+            ...(target === "stash" ? { tab } : {}),
+          });
         } else {
-          game.dispatch({ type: "moveItem", itemId: source.itemId, to: target, at });
+          game.dispatch({
+            type: "moveItem",
+            itemId: source.itemId,
+            to: target,
+            at,
+            ...(target === "stash" ? { tab } : {}),
+          });
         }
       },
     };

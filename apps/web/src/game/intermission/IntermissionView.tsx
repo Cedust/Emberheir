@@ -4,17 +4,21 @@ import {
   type GameState,
   type RunState,
   getAct,
+  openFork,
   rewardsDone,
+  routeAt,
   salvageValue,
   takeBlockReason,
   targetSlot,
 } from "@emberheir/sim";
-import { useState } from "react";
+import { Suspense, useState } from "react";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { type CurrencyId, Wallet } from "../../ui/kit/Currency";
-import { ShrineCards } from "../Boons";
+import { BoonPanel, ShrineCards } from "../Boons";
 import { inFinale } from "../finale";
+import { IdleArena } from "../lazyViews";
+import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { EquippedPanel, ItemCards, RuneDrops } from "./RewardCards";
@@ -24,7 +28,9 @@ import {
   DoneCard,
   HeroCard,
   nextStageActions,
+  PathCards,
   PlanCard,
+  RunMoments,
   UpNext,
 } from "./RunCards";
 
@@ -36,6 +42,9 @@ export function IntermissionView(props: {
   state: GameState;
   run: RunState;
   game: GameApi;
+  settings: Settings;
+  /** A window is open over the arena: it holds still. */
+  covered: boolean;
   onCharacter: () => void;
   onTree: () => void;
   onPlan: () => void;
@@ -45,30 +54,47 @@ export function IntermissionView(props: {
   const act = getAct(GAME_DATA, run.actId);
   const rewards = run.rewards;
   const [focus, setFocus] = useState<EquipmentSlot | undefined>(undefined);
+  const nextStage = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  // An act boss ends the run; a finale echo does not.
+  const boss = run.encounter?.boss === true && run.phase === "rewards" && !inFinale(act);
+  // A fork of the road ahead: after the rewards the path is chosen in the middle.
+  const fork = boss ? null : routeAt(run, act, nextStage);
+  const forkAhead = fork !== null && !fork.second;
+  const pathOpen = forkAhead && openFork(run, act, nextStage) !== null;
   const step = !rewards
-    ? "ready"
+    ? forkAhead
+      ? "path"
+      : "ready"
     : rewards.itemPick === null
       ? "items"
       : rewards.boonOffer?.length && rewards.boonPick == null
         ? "shrine"
-        : "done";
-  const done = step === "ready" || step === "done";
-  const nextStage = run.phase === "rewards" ? run.stage + 1 : run.stage;
-  // An act boss ends the run; a finale echo does not.
-  const boss = run.encounter?.boss === true && run.phase === "rewards" && !inFinale(act);
-  const title = step === "shrine" ? "EMBER SHRINE" : step === "ready" ? "READY" : "VICTORY";
+        : forkAhead
+          ? "path"
+          : "done";
+  const done = step === "ready" || step === "done" || step === "path";
+  const title =
+    step === "shrine"
+      ? "EMBER SHRINE"
+      : step === "path"
+        ? "CHOOSE A PATH"
+        : step === "ready"
+          ? "READY"
+          : "VICTORY";
   const subtitle =
-    step === "items"
-      ? rewards && rewards.items.length > 3
-        ? `${rewards.thief === "caught" ? "Ember Thief caught" : "Boss Hoard"} · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
-        : rewards?.thief === "escaped"
-          ? "The thief got away · choose 1 of 3 items"
-          : "Choose 1 of 3 items"
-      : step === "shrine"
-        ? "Steal 1 of 3 sparks"
-        : boss
-          ? `${act.name} cleared`
-          : "";
+    step === "path" && fork
+      ? `Stages ${fork.fork}–${fork.fork + 1}`
+      : step === "items"
+        ? rewards && rewards.items.length > 3
+          ? `${rewards.thief === "caught" ? "Ember Thief caught" : "Boss Hoard"} · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
+          : rewards?.thief === "escaped"
+            ? "The thief got away · choose 1 of 3 items"
+            : "Choose 1 of 3 items"
+        : step === "shrine"
+          ? "Steal 1 of 3 sparks"
+          : boss
+            ? `${act.name} cleared`
+            : "";
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
@@ -83,6 +109,9 @@ export function IntermissionView(props: {
 
   return (
     <section className="screen intermission" aria-label="Intermission">
+      <Suspense fallback={null}>
+        <IdleArena state={state} run={run} settings={props.settings} paused={props.covered} />
+      </Suspense>
       <RunHeader
         act={act}
         stage={run.stage}
@@ -98,10 +127,10 @@ export function IntermissionView(props: {
         onMenu={props.onMenu}
       />
       <div className="intermission-body">
+        {/* Left: the hero as it stands. Middle: the choice of the moment. Right: the road. */}
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
-          <UpNext run={run} prestige={state.legacy.prestige} state={state} game={game} />
-          {run.bounty && <BountyCard run={run} />}
+          <BoonPanel state={state} />
           <PlanCard state={state} run={run} onPlan={props.onPlan} />
         </aside>
         <main className="intermission-center">
@@ -117,7 +146,12 @@ export function IntermissionView(props: {
               {rewards.cinderglass ? ` · +${rewards.cinderglass} Cinderglass` : ""}
             </p>
           )}
-          {rewards?.bountyDone && step !== "ready" && <BountyDone />}
+          {rewards && step !== "ready" && (
+            <div className="moment-row">
+              <RunMoments state={state} run={run} />
+              {rewards.bountyDone && <BountyDone />}
+            </div>
+          )}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
             <RuneDrops key={`runes-${run.encounter?.seed ?? run.stage}`} runes={rewards.runes} />
           )}
@@ -131,7 +165,8 @@ export function IntermissionView(props: {
             />
           )}
           {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
-          {done && <DoneCard run={run} />}
+          {step === "path" && <PathCards state={state} run={run} game={game} />}
+          {(step === "ready" || step === "done") && <DoneCard run={run} />}
           {step === "items" && (
             <div className="inventory-line">
               <Button icon="hammer" onClick={() => game.dispatch({ type: "salvageAll" })}>
@@ -144,18 +179,27 @@ export function IntermissionView(props: {
             </div>
           )}
         </main>
-        <EquippedPanel
-          state={state}
-          focus={
-            focus ??
-            (step === "items" && rewards?.items[0]
-              ? targetSlot(rewards.items[0], GAME_DATA, state.hero.equipment)
-              : undefined)
-          }
-          onFocus={setFocus}
-          inventoryFull={anyBlocked}
-          onInventory={props.onCharacter}
-        />
+        {/* During the item pick the paperdoll takes the road's place. */}
+        {step !== "items" && (
+          <aside className="intermission-right-road">
+            <UpNext run={run} prestige={state.legacy.prestige} />
+            {run.bounty && <BountyCard run={run} />}
+          </aside>
+        )}
+        {step === "items" && (
+          <EquippedPanel
+            state={state}
+            focus={
+              focus ??
+              (step === "items" && rewards?.items[0]
+                ? targetSlot(rewards.items[0], GAME_DATA, state.hero.equipment)
+                : undefined)
+            }
+            onFocus={setFocus}
+            inventoryFull={anyBlocked}
+            onInventory={props.onCharacter}
+          />
+        )}
       </div>
       <footer className="intermission-footer bar-bottom">
         <Wallet state={state} named gains={gains} />
@@ -181,7 +225,11 @@ export function IntermissionView(props: {
           icon="strike"
           className="next-stage"
           blocked={
-            !done || (rewards !== null && !rewardsDone(rewards)) ? "Pick your rewards first" : null
+            !done || (rewards !== null && !rewardsDone(rewards))
+              ? "Pick your rewards first"
+              : pathOpen
+                ? "Choose a path first"
+                : null
           }
           onClick={() => game.dispatchAll(nextStageActions(state))}
         >

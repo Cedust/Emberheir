@@ -21,4 +21,14 @@ describe("stored settings", () => {
     expect(parseSettings("{oops")).toEqual(DEFAULT_SETTINGS);
     expect(parseSettings("[1,2]")).toEqual(DEFAULT_SETTINGS);
   });
+
+  it("keeps each sound switch on its own and clamps nothing silently", () => {
+    const json = JSON.stringify({ volume: 0.3, sounds: { hover: false, coin: "loud" } });
+    expect(parseSettings(json)).toEqual({
+      ...DEFAULT_SETTINGS,
+      volume: 0.3,
+      sounds: { ...DEFAULT_SETTINGS.sounds, hover: false },
+    });
+    expect(parseSettings(JSON.stringify({ volume: 7 })).volume).toBe(DEFAULT_SETTINGS.volume);
+  });
 });

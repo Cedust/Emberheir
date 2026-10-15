@@ -122,9 +122,22 @@
   animation: k-layer-in 0.16s ease-out;
 }
 
+/* GameApp groups the windows; the group itself takes no room. */
+.stage .road-windows,
+.stage .camp-windows {
+  display: contents;
+}
+
+/* On the road the arena stays in sight around the window. */
+.stage .road-windows > .k-layer-panel {
+  padding: 36px calc(var(--safe-x) + 44px);
+  background: rgb(14 10 6 / 0.4);
+}
+
 .stage .k-layer-panel > .k-window {
   align-self: stretch;
-  animation: k-window-in 0.18s ease-out;
+  /* Unfolds with a small overshoot, like a map pulled open. */
+  animation: k-window-in 0.24s cubic-bezier(0.2, 0.9, 0.3, 1.15);
 }
 
 @keyframes k-layer-in {
@@ -136,13 +149,42 @@
 @keyframes k-window-in {
   from {
     opacity: 0;
-    transform: translateY(10px) scale(0.99);
+    transform: translateY(16px) scale(0.95);
+  }
+}
+
+/* A closed window folds away for a moment (juice.tsx `Presence`) and takes no clicks. */
+.stage .k-presence {
+  display: contents;
+}
+
+.stage .k-presence[data-leaving] .k-layer {
+  pointer-events: none;
+  animation: k-layer-out 0.15s ease-in forwards;
+}
+
+.stage .k-presence[data-leaving] .k-layer > .k-window {
+  animation: k-window-out 0.15s ease-in forwards;
+}
+
+@keyframes k-layer-out {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes k-window-out {
+  to {
+    opacity: 0;
+    transform: translateY(8px) scale(0.97);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .stage .k-layer-panel,
-  .stage .k-layer-panel > .k-window {
+  .stage .k-layer-panel > .k-window,
+  .stage .k-presence[data-leaving] .k-layer,
+  .stage .k-presence[data-leaving] .k-layer > .k-window {
     animation: none;
   }
 }
@@ -448,6 +490,38 @@
 .stage .k-currency .sub {
   font-size: 13px;
   opacity: 0.8;
+}
+
+/* Juice: a counting number glows the way it moves, the coin hops on a gain. */
+.stage .k-currency b {
+  transition:
+    color 0.25s,
+    text-shadow 0.25s;
+}
+
+.stage .k-currency.k-up b {
+  color: var(--heal);
+  text-shadow: 0 0 8px rgb(255 200 90 / 0.65);
+}
+
+.stage .k-currency.k-down b {
+  color: var(--k-short);
+}
+
+.stage .k-currency.k-up .k-coin {
+  animation: k-coin-hop 0.45s ease-out;
+}
+
+@keyframes k-coin-hop {
+  40% {
+    transform: translateY(-4px) scale(1.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .k-currency.k-up .k-coin {
+    animation: none;
+  }
 }
 
 .stage .k-coin {

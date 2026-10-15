@@ -66,7 +66,7 @@ Endgame **Wildfire I–X**.
 - **Waymarks:** Stage 5, 10 und 15 jedes Acts. Der erste Sieg dort in einem Run gibt einen Skill Point.
 - **Routen** (`elites-routen-v1.md`): Vor jedem Waymark vor dem Boss gabelt sich der Weg für zwei Stages (3–4 und 8–9):
   **Elite-Pfad** (zwei sichere Elites), **Shrine-Pfad** (danach eine Shrine), **Hearth-Pfad** (danach +25 % Life),
-  mit offener Thief-Bounty auch die **Thief's Trail**. Gewählt in der Intermission, ohne Wahl gilt der Shrine-Pfad.
+  mit offener Thief-Bounty auch die **Thief's Trail**. Gewählt in der Intermission als große Karten in der Mitte; es gibt keinen Default, NEXT STAGE wartet auf die Wahl.
 - **Omens** (`neuausrichtung-v1.md` 5.2): Wer in einen **alten** Act des Runs aufbricht (jeder Act vor dem neuesten),
   wählt bei Eldrin **eins von zwei Omens**. Das Angebot ist pro Act und Run fest, das nächste Prestige würfelt neu.
   Jedes Run-Omen hat einen **Preis und einen Lohn** und nimmt keiner Defense- oder Heil-Schicht mehr als die Hälfte:
@@ -170,6 +170,11 @@ Endgame **Wildfire I–X**.
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter. Großer Stash links,
   Paperdoll und Tasche rechts (wie PoE); Details beim Hovern, Rechtsklick oder Ctrl+Klick schiebt ein Item hinüber.
+  Der Stash hat **4 Tabs** (I-IV, je 10×10): Q/E oder Klick wechselt, ein gezogenes Item öffnet den Tab, über dem es
+  schwebt; Rechtsklick legt in den offenen Tab, Sort ordnet nur diesen.
+- **Intermission:** steht in der Arena des Acts (der Heir wartet dort, Wetter läuft weiter). Links der Heir (Life,
+  Flask, Battle Plan), in der Mitte die Wahl des Moments (Beute, Shrine, Pfad), rechts der Weg (Up Next, Bounty); bei
+  der Item-Wahl steht dort die Paperdoll. Character und Skill Tree öffnen als Fenster über der Arena.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
   (Iron +25 % Armor, Ward +25 % Barrier, Vigor +10 % Life, Fire/Frost/Storm/Void +20 % Resistance und +5 % max).
 - **Bounties:** Elite Hunt, Culling, Thief Chase (ab Act 2), Dry Throat, Hale and Whole. Einreichen bei Eldrin,
@@ -318,8 +323,10 @@ Endgame **Wildfire I–X**.
   aus), Battle Plan (Master of Tempo, Reload, Quake, Channel), Ailments (Master of Venom, Hollow, Smolder) oder Attribute
   (Master of the Edge: Precision über 85 % wird Crit Chance).
 - Am Ende ~20 von 41 möglichen Punkten: ein voller Pfad und ein halber, oder zwei Pfade bis zur ersten Gabel.
-- **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Venom Coat (Dagger), Barbed Arrow (Bow),
-  Heavy Bolt (Crossbow), Firebolt (Wand), Void Bolt (Staff).
+- **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
+  Heavy Bolt (Crossbow), Firebolt (Wand), Void Bolt (Staff). Jeder Innate gibt Heat laufend aus (Angriff oder Spell):
+  Run 1 hat nur einen Rotation Slot, ein Buff dort liesse die Heat bei 100 stehen (Timo 15.10.2026: Dagger-Innate
+  war Venom Coat, jetzt Envenom; die Coats bleiben als Innate Forms).
 
 ### 5.2 Skill Web v3 ✅ (`level-v2.md` Abschnitt 7, `neuausrichtung-v1.md` 4)
 - Ein **Netz aus acht Regionen**: vier Äste (Might, Rupture, Arcana, Affliction) und vier Brücken. Jede Klasse startet

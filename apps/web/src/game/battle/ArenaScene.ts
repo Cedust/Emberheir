@@ -255,6 +255,11 @@ export class ArenaScene {
     return app;
   }
 
+  /** Between fights (Intermission): the hero waits alone in the act's air. */
+  hideEnemy(): void {
+    if (this.enemy) this.enemy.root.visible = false;
+  }
+
   destroy(): void {
     this.destroyed = true;
     this.fx?.destroy();

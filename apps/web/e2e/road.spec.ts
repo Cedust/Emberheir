@@ -10,17 +10,17 @@ test("a fork of the road: the path is chosen in the Intermission", async ({ page
 
   const paths = page.getByRole("radiogroup", { name: "Choose a path" });
   await expect(paths).toBeVisible();
-  // The Shrine path is taken when none is chosen.
-  await expect(paths.getByRole("radio", { name: "Shrine" })).toHaveAttribute(
+  // No path is taken by default: NEXT STAGE waits for a choice.
+  await expect(paths.getByRole("radio", { checked: true })).toHaveCount(0);
+  const next = page.getByRole("button", { name: /NEXT STAGE/ });
+  await expect(next).toHaveAttribute("aria-disabled", "true");
+  await paths.getByRole("radio", { name: "Hearth Path" }).click();
+  await expect(paths.getByRole("radio", { name: "Hearth Path" })).toHaveAttribute(
     "aria-checked",
     "true",
   );
-  await paths.getByRole("radio", { name: "Hearth" }).click();
-  await expect(paths.getByRole("radio", { name: "Hearth" })).toHaveAttribute(
-    "aria-checked",
-    "true",
-  );
-  await expect(page.getByLabel("Up next")).toContainText("+25 % Life");
+  await expect(page.getByLabel("Up next")).toContainText("Hearth Path");
+  await expect(next).not.toHaveAttribute("aria-disabled", "true");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/route-choice.png` });
   expect(errors).toEqual([]);
 });

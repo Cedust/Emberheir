@@ -1,7 +1,8 @@
-import type { ReactNode } from "react";
+import { type ReactNode, useEffect, useRef } from "react";
 import { Icon, type IconName } from "../Icon";
 import { useNoteHover } from "../ItemTooltip";
 import { IconButton, KeyHint } from "./Button";
+import { playUiSound } from "../sound";
 import { HOTKEYS, useTabKeys } from "./hotkeys";
 import { Marker } from "./Marker";
 
@@ -114,22 +115,44 @@ export function Tabs<T extends string>(props: {
   onChange: (id: T) => void;
   label: string;
   keys?: boolean;
+  /** An item dragged over a tab opens it (PoE stash tabs). */
+  onDragHover?: (id: T) => void;
 }) {
   const open = props.items.filter((t) => !t.locked).map((t) => t.id);
   useTabKeys(open, props.active, (id) => props.onChange(id as T), props.keys ?? true);
   const showKeys = (props.keys ?? true) && open.length > 1;
+  // A page turns whenever the tab changes, by click, Q/E or a dragged item.
+  const shown = useRef(props.active);
+  useEffect(() => {
+    if (shown.current === props.active) return;
+    shown.current = props.active;
+    playUiSound("tab");
+  }, [props.active]);
   return (
     <div className="k-tabs" role="tablist" aria-label={props.label}>
       {showKeys && <KeyHint k={HOTKEYS.prevTab} />}
       {props.items.map((t) => (
-        <Tab key={t.id} item={t} on={t.id === props.active} onPick={() => props.onChange(t.id)} />
+        <Tab
+          key={t.id}
+          item={t}
+          on={t.id === props.active}
+          onPick={() => props.onChange(t.id)}
+          {...(props.onDragHover && !t.locked
+            ? { onDragHover: () => props.onDragHover?.(t.id) }
+            : {})}
+        />
       ))}
       {showKeys && <KeyHint k={HOTKEYS.nextTab} />}
     </div>
   );
 }
 
-function Tab<T extends string>(props: { item: TabItem<T>; on: boolean; onPick: () => void }) {
+function Tab<T extends string>(props: {
+  item: TabItem<T>;
+  on: boolean;
+  onPick: () => void;
+  onDragHover?: () => void;
+}) {
   const t = props.item;
   // Only a closed tab explains itself; open tabs need no tooltip (Timo).
   const hover = useNoteHover(
@@ -143,6 +166,7 @@ function Tab<T extends string>(props: { item: TabItem<T>; on: boolean; onPick: (
       aria-disabled={t.locked ? true : undefined}
       className={`k-tab${props.on ? " on" : ""}${t.locked ? " locked" : ""}`}
       onClick={t.locked ? undefined : props.onPick}
+      onDragEnter={props.onDragHover}
       {...hover}
     >
       {t.locked ? (

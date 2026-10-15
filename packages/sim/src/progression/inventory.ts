@@ -7,6 +7,8 @@ export interface PlacedItem {
   readonly item: Item;
   readonly x: number;
   readonly y: number;
+  /** Stash tab in the Supply Wagon (`progression/stash.ts`); absent = the first tab. */
+  readonly tab?: number;
 }
 
 /** A grid cell (drop target). */

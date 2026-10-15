@@ -14,6 +14,7 @@ import {
 import { GAME_DATA } from "@emberheir/content";
 import { useEffect } from "react";
 import { Icon, type IconName } from "../ui/Icon";
+import { useNoteHover } from "../ui/ItemTooltip";
 import { playSound } from "../ui/sound";
 import type { GameApi } from "./useGame";
 
@@ -152,5 +153,49 @@ export function BoonBar(props: {
         </span>
       ))}
     </div>
+  );
+}
+
+/** One Boon of the panel: its sigil, its rank, the effect in the game tooltip. */
+function BoonTile(props: { boon: ActiveBoon; fresh: boolean }) {
+  const { boon: b, fresh } = props;
+  const family = familyOf(b.def.family);
+  const hover = useNoteHover({
+    name: `${b.def.name} ${ROMAN[b.rank]}`,
+    kind: `${family?.name ?? SLOT_NAME[b.def.slot]} Boon`,
+    explain: boonText(b.def, b.scale, b.rank),
+    ...(fresh ? { status: "Stolen in this act" } : {}),
+  });
+  return (
+    <span
+      className={`boon-tile${fresh ? " fresh" : ""}`}
+      style={{ "--boon": family?.color ?? "#c9a063" } as React.CSSProperties}
+      tabIndex={0}
+      aria-label={`${b.def.name} ${ROMAN[b.rank]}`}
+      {...hover}
+    >
+      <span className="boon-sigil tile">
+        <Icon name={SLOT_ICON[b.def.slot]} size={18} color="#fff6e4" />
+      </span>
+      <i>{ROMAN[b.rank]}</i>
+    </span>
+  );
+}
+
+/** The Boons of this trip as their own panel in the Intermission (Timo): sigils, effect on hover. */
+export function BoonPanel(props: { state: GameState }) {
+  const active = heroBoons(props.state, GAME_DATA);
+  if (!active.length) return null;
+  const fresh = new Set(props.state.boons.fresh.map((p) => p.id));
+  const kept = new Set(props.state.boons.kept.map((p) => p.id));
+  return (
+    <section className="panel-card boon-panel" aria-label="Boons" data-testid="boon-bar">
+      <span className="eyebrow">Boons</span>
+      <div className="boon-tiles">
+        {active.map((b) => (
+          <BoonTile key={b.def.id} boon={b} fresh={fresh.has(b.def.id) && !kept.has(b.def.id)} />
+        ))}
+      </div>
+    </section>
   );
 }

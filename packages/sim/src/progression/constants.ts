@@ -395,9 +395,10 @@ export const PROGRESSION = {
   /** Inventory grid (D2 style). */
   inventoryWidth: 10,
   inventoryHeight: 4,
-  /** Stash in the Supply Wagon: fixed size, no tabs. */
+  /** Stash in the Supply Wagon: `stashTabs` tabs (PoE), each a grid of this size. */
   stashWidth: 10,
   stashHeight: 10,
+  stashTabs: 4,
   /** Default item size per slot in grid cells (bases can override). */
   itemSizes: {
     mainHand: { w: 1, h: 3 },

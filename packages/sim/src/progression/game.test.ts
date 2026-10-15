@@ -355,15 +355,22 @@ describe("game loop", () => {
     s = act(s, { type: "pickItem", index, mode: "take" }, { type: "retreat" });
     const loot = items[index] ?? fail();
     expect(moveBlockReason(s, data, loot.id, "stash")).toBeUndefined();
-    s = act(s, { type: "moveItem", itemId: loot.id, to: "stash" });
+    s = act(s, { type: "moveItem", itemId: loot.id, to: "stash", tab: 2 });
     expect(s.inventory).toHaveLength(0);
-    expect(s.stash.map((p) => p.item.id)).toEqual([loot.id]);
+    expect(s.stash.map((p) => [p.item.id, p.tab])).toEqual([[loot.id, 2]]);
 
+    // The old ring goes back into the tab the new one came from.
     const old = s.hero.equipment.ring1 ?? fail();
     s = act(s, { type: "equip", itemId: loot.id });
     expect(s.hero.equipment.ring1?.id).toBe(loot.id);
-    expect(s.stash.map((p) => p.item.id)).toEqual([old.id]);
-    s = act(s, { type: "sortStash" }, { type: "moveItem", itemId: old.id, to: "inventory" });
+    expect(s.stash.map((p) => [p.item.id, p.tab])).toEqual([[old.id, 2]]);
+    s = act(s, { type: "placeItem", itemId: old.id, tab: 0 });
+    expect(s.stash.map((p) => [p.item.id, p.tab])).toEqual([[old.id, undefined]]);
+    s = act(
+      s,
+      { type: "sortStash", tab: 0 },
+      { type: "moveItem", itemId: old.id, to: "inventory" },
+    );
     expect(s.inventory.map((p) => p.item.id)).toEqual([old.id]);
 
     const inRun = act(s, { type: "setOut", actId: "test-act" });
