@@ -282,6 +282,8 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
       strength: 0.4,
       flicker: "soft",
     },
+    // Thoric at his anvil.
+    { x: 1205, y: 450, rx: 130, ry: 130, color: "#ffb060", strength: 0.4, flicker: "soft" },
     // The anvil by Thoric's forge wagon.
     { x: 1290, y: 450, rx: 90, ry: 70, color: "#ff7a2a", strength: 0.45, flicker: "soft" },
     ...LANTERNS.map(([x, y]) => ({ x, y, rx: 46, ry: 40, color: "#ffc070", strength: 0.4 })),
