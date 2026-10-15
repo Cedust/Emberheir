@@ -28,6 +28,7 @@ import { CampBackdrop, CampFx, campLights, SCENE_W } from "./art/CampScene";
 import { PaintDefs } from "./art/paint";
 import { FIG_H, Figure, heirGear, Portrait } from "./CampFigures";
 import { type CampTarget, NAN_LINES, personas } from "./campPersonas";
+import { NanResets } from "./NanResets";
 import {
   BountyNote,
   BountyTurnIn,
@@ -208,6 +209,7 @@ export function CampView(props: {
             </div>
           </div>
           <p className="quote">{quote}</p>
+          {sel.id === "nan" && <NanResets state={state} game={game} />}
           {sel.id === "eldrin" &&
             (state.bountyDone || paid ? (
               <BountyTurnIn state={state} paid={paid} onTurnIn={turnIn} />

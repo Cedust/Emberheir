@@ -2,6 +2,7 @@ import { withStatAilmentChances } from "../../combat/fighter";
 import { type FightOutcome, outcomeOf } from "../../combat/outcome";
 import { deriveStats } from "../../combat/stats";
 import type { CombatantSetup } from "../../combat/types";
+import { ASHBORN, EMPTY_ASHBORN, gainAshbornXp } from "../ashborn";
 import { battlePlanUnlocks } from "../battle-plan";
 import { EMPTY_BOONS, rollBoonOffer } from "../boons";
 import { bountyAfterWin } from "../bounties";
@@ -104,6 +105,11 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         ? 1
         : 0;
   const leveled = gainXp(state.hero.level, state.hero.xp, xp, levelCap(state.legacy.prestige));
+  // From level 100 on XP flows into Ashborn (neuausrichtung-v1.md 7.3).
+  const ashborn =
+    state.hero.level >= ASHBORN.fromLevel && data.ashbornValues?.length
+      ? gainAshbornXp(state.hero.ashborn ?? EMPTY_ASHBORN, xp)
+      : undefined;
   const tier = run.wildfire ?? 0;
   const waymark =
     !tier &&
@@ -218,6 +224,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         : {}),
       level: leveled.level,
       xp: leveled.xp,
+      ...(ashborn ? { ashborn: ashborn.ashborn } : {}),
       unspentSkillPoints: state.hero.unspentSkillPoints + (waymark ? 1 : 0),
     },
     ...(waymark
@@ -263,6 +270,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         phoenixFeathers: feathers,
         runes,
         levelsGained: leveled.levelsGained,
+        ...(ashborn?.levelsGained ? { ashbornLevels: ashborn.levelsGained } : {}),
         ...(waymark ? { waymark: true } : {}),
         report: outcome.report,
         items,

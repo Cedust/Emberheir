@@ -1,6 +1,8 @@
 import {
   type ActData,
   applyAction,
+  ashbornBlockReason,
+  ashbornUnspent,
   ATTRIBUTE_RULES,
   ATTRIBUTES,
   type Attributes,
@@ -12,6 +14,7 @@ import {
   routeAt,
   type GameData,
   type GameState,
+  heroAshborn,
   heroBoons,
   heroSetup,
   masteryPointsLeft,
@@ -160,6 +163,27 @@ export function spendPoints(state: GameState, data: GameData, weaponId: string):
     for (const attribute of order) {
       if (s.hero.attributes[attribute] >= ATTRIBUTE_RULES.max) continue;
       const next = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: 1 } });
+      const value = gearValue(next, data);
+      if (value > bestValue + 1e-6) {
+        best = next;
+        bestValue = value;
+      }
+    }
+    if (!best) break;
+    s = best;
+  }
+  return spendAshborn(s, data);
+}
+
+/** Ashborn Points (neuausrichtung-v1.md 7.3) one by one where they add the most value. */
+function spendAshborn(state: GameState, data: GameData): GameState {
+  let s = state;
+  while (ashbornUnspent(heroAshborn(s)) > 0) {
+    let best: GameState | null = null;
+    let bestValue = -Infinity;
+    for (const v of data.ashbornValues ?? []) {
+      if (ashbornBlockReason(heroAshborn(s), data.ashbornValues ?? [], v.id)) continue;
+      const next = applyAction(s, data, { type: "spendAshborn", valueId: v.id });
       const value = gearValue(next, data);
       if (value > bestValue + 1e-6) {
         best = next;

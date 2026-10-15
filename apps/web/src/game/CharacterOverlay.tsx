@@ -1,5 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
+  ASHBORN,
   ATTRIBUTES,
   ATTRIBUTE_RULES,
   type Attribute,
@@ -40,10 +41,11 @@ import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { Paperdoll, dollBox } from "../ui/Paperdoll";
 import { WeaponSlot } from "./WeaponSlot";
+import { AshbornPanel } from "./AshbornPanel";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 import { compareWithEquipped } from "../ui/itemCompare";
 
-const TABS = ["Offense", "Defense", "Heat"] as const;
+const TABS = ["Offense", "Defense", "Heat", "Ashborn"] as const;
 type Tab = (typeof TABS)[number];
 
 const pct = (v: number) => `${formatPercent(v)} %`;
@@ -70,6 +72,10 @@ export function CharacterOverlay(props: {
   const [locking, setLocking] = useState(false);
   const [selected, setSelected] = useState<string | null>(null);
   const [tab, setTab] = useState<Tab>("Offense");
+  // Ashborn opens at level 100 (neuausrichtung-v1.md 7.3).
+  const ashbornOpen =
+    state.hero.level >= ASHBORN.fromLevel && (GAME_DATA.ashbornValues?.length ?? 0) > 0;
+  const tabs = TABS.filter((t) => t !== "Ashborn" || ashbornOpen);
   const [discarding, setDiscarding] = useState<string | null>(null);
   useRingSlot();
   const drops = itemDrops(state, game);
@@ -118,7 +124,10 @@ export function CharacterOverlay(props: {
   const penalty = emberPenalty(state);
   const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
   const draught = activeDraught(state, GAME_DATA);
-  const rows: Record<Tab, { label: string; value: string; note?: NoteHover }[]> = {
+  const rows: Record<
+    Exclude<Tab, "Ashborn">,
+    { label: string; value: string; note?: NoteHover }[]
+  > = {
     Offense: [
       { label: "Damage per second (estimate)", value: fmt(dps) },
       {
@@ -328,47 +337,52 @@ export function CharacterOverlay(props: {
                 {left} Attribute Points
               </span>
             </div>
-            <AttributeStones
-              base={state.hero.attributes}
-              delta={pending}
-              boon={boonAttributes}
-              gear={gear.attributes}
-              {...(inFight || state.hero.unspentAttributePoints === 0
-                ? {}
-                : {
-                    canAdd: (a: Attribute) =>
-                      left > 0 && state.hero.attributes[a] + pending[a] < ATTRIBUTE_RULES.max,
-                    onAdd: (a: Attribute) => {
-                      setPending((p) => ({ ...p, [a]: p[a] + 1 }));
-                      setLocking(false);
-                    },
-                  })}
-            />
-            {!inFight && state.hero.unspentAttributePoints > 0 && (
-              <div className="attr-buttons">
-                <button
-                  type="button"
-                  className={`btn ${locking ? "danger" : "primary"}`}
-                  disabled={spent === 0}
-                  onClick={confirm}
-                >
-                  {locking ? "Lock in for good?" : "Confirm"}
-                </button>
-                <button
-                  type="button"
-                  className="btn"
-                  disabled={spent === 0}
-                  onClick={() => {
-                    setPending(NO_POINTS);
-                    setLocking(false);
-                  }}
-                >
-                  Undo
-                </button>
-              </div>
+            {/* The Ashborn boards need the whole column: the attributes wait on the other tabs. */}
+            {tab !== "Ashborn" && (
+              <>
+                <AttributeStones
+                  base={state.hero.attributes}
+                  delta={pending}
+                  boon={boonAttributes}
+                  gear={gear.attributes}
+                  {...(inFight || state.hero.unspentAttributePoints === 0
+                    ? {}
+                    : {
+                        canAdd: (a: Attribute) =>
+                          left > 0 && state.hero.attributes[a] + pending[a] < ATTRIBUTE_RULES.max,
+                        onAdd: (a: Attribute) => {
+                          setPending((p) => ({ ...p, [a]: p[a] + 1 }));
+                          setLocking(false);
+                        },
+                      })}
+                />
+                {!inFight && state.hero.unspentAttributePoints > 0 && (
+                  <div className="attr-buttons">
+                    <button
+                      type="button"
+                      className={`btn ${locking ? "danger" : "primary"}`}
+                      disabled={spent === 0}
+                      onClick={confirm}
+                    >
+                      {locking ? "Lock in for good?" : "Confirm"}
+                    </button>
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={spent === 0}
+                      onClick={() => {
+                        setPending(NO_POINTS);
+                        setLocking(false);
+                      }}
+                    >
+                      Undo
+                    </button>
+                  </div>
+                )}
+              </>
             )}
             <div className="tabs small-tabs" role="tablist">
-              {TABS.map((t) => (
+              {tabs.map((t) => (
                 <button
                   key={t}
                   type="button"
@@ -381,11 +395,15 @@ export function CharacterOverlay(props: {
                 </button>
               ))}
             </div>
-            <dl className="stat-rows">
-              {rows[tab].map((r) => (
-                <StatRow key={r.label} {...r} />
-              ))}
-            </dl>
+            {tab === "Ashborn" ? (
+              <AshbornPanel state={state} game={game} inFight={inFight} />
+            ) : (
+              <dl className="stat-rows">
+                {rows[tab].map((r) => (
+                  <StatRow key={r.label} {...r} />
+                ))}
+              </dl>
+            )}
           </section>
 
           <section className="inv-column" aria-label="Inventory">

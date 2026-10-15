@@ -104,6 +104,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
         { name: "Compendium" },
         { name: "Trigger Codex" },
         { name: "Ember Flask" },
+        { name: "Reset" },
       ],
       cta: "Talk",
     },

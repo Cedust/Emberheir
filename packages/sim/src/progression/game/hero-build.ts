@@ -19,6 +19,7 @@ import {
   slotCondition,
   slotModifiers,
 } from "../battle-plan";
+import { ashbornEffects } from "../ashborn";
 import { activeBoons, boonEffects } from "../boons";
 import { classTitle, getClass, LINEAGE_STEPS, lineageEffect, type HeroClass } from "../classes";
 import { buildHeroSetup } from "../hero";
@@ -271,6 +272,7 @@ export function heroSetup(
   const draught = activeDraught(state, data);
   const sockets = webRuneEffects(hero, data);
   const omens = tripOmenEffects(state, data);
+  const ashborn = ashbornEffects(hero.ashborn, data.ashbornValues ?? []);
   const built = buildHeroSetup(
     {
       level: hero.level,
@@ -293,6 +295,7 @@ export function heroSetup(
           draught?.bonuses,
           sockets.bonuses,
           omens.hero.bonuses,
+          ashborn.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
@@ -309,6 +312,7 @@ export function heroSetup(
         draught?.rules,
         sockets.rules,
         omens.hero.rules,
+        ashborn.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
       resistancePenalty: emberPenalty(state),

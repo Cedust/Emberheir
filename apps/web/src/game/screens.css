@@ -1747,6 +1747,12 @@
   align-items: flex-end;
   gap: 14px;
   z-index: 6;
+  /* The box is as tall as the Omen column; the camp under its empty corner stays clickable. */
+  pointer-events: none;
+}
+
+.stage .set-out > * {
+  pointer-events: auto;
 }
 
 .stage .finale-button {
@@ -1867,6 +1873,11 @@
   flex-direction: column;
   align-items: flex-end;
   gap: 8px;
+  pointer-events: none;
+}
+
+.stage .set-out-go > * {
+  pointer-events: auto;
 }
 
 /* The road: one card per act, painted in the act's arena colors. */
@@ -5583,9 +5594,8 @@
   text-decoration: line-through;
 }
 
-/* The Harvest's Attribute Points (Prestige) and the attribute respec (Kaelen). */
-.stage .harvest-stones,
-.stage .attr-respec-stones {
+/* The Harvest's Attribute Points (Prestige). */
+.stage .harvest-stones {
   width: 760px;
   padding: 20px 24px;
   display: flex;
@@ -5603,39 +5613,6 @@
 
 .stage .harvest-left {
   text-align: right;
-}
-
-.stage .attr-respec-tab {
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 16px;
-  padding: 32px var(--safe-x, 32px);
-}
-
-.stage .attr-respec-head {
-  width: 760px;
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-}
-
-.stage .attr-respec-head h2 {
-  margin: 0;
-  letter-spacing: 0.08em;
-}
-
-.stage .attr-respec-footer {
-  width: 760px;
-  display: flex;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 12px;
-}
-
-.stage .attr-respec-footer .sub {
-  margin-right: auto;
 }
 
 /* Breakpoint Perk tooltip: the item tooltip's dark plate with an ember seal on top. */
@@ -6058,4 +6035,81 @@
   color: #ff8a1f;
   font-size: 10px;
   letter-spacing: 1px;
+}
+
+/* Old Nan resets attributes and Ashborn (neuausrichtung-v1.md 7.3). */
+.stage .nan-resets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.stage .nan-resets .btn {
+  padding: 4px 10px;
+  font-size: 13px;
+}
+
+/* Ashborn in the Character Sheet (neuausrichtung-v1.md 7.3). */
+.stage .ashborn-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .ashborn-head {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+}
+
+.stage .ashborn-head .points {
+  margin-left: auto;
+}
+
+.stage .ashborn-boards {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 12px;
+}
+
+.stage .ashborn-board {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage .ashborn-value {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: help;
+}
+
+.stage .ashborn-value.some .ashborn-name {
+  color: var(--accent);
+}
+
+.stage .ashborn-name {
+  flex-grow: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.stage .ashborn-add {
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.stage .ashborn-add:disabled {
+  opacity: 0.35;
+  cursor: default;
 }

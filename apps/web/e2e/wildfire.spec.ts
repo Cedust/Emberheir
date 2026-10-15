@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveWildfire, seedSave } from "./fixtures";
+import { saveAshborn, saveWildfire, seedSave } from "./fixtures";
 
 test("after The Last Ember any act burns again in the Wildfire", async ({ page }) => {
   const errors: string[] = [];
@@ -49,5 +49,33 @@ test("above Wildfire V the tier asks for Peril: Omens are chosen before setting 
   await page.screenshot({ path: "test-results/wildfire-omens.png" });
   await page.getByRole("button", { name: "WILDFIRE VI · ACT 2" }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
+  expect(errors).toEqual([]);
+});
+
+test("after level 100 XP becomes Ashborn: points in the Character Sheet, reset at Old Nan", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveAshborn());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  await page.keyboard.press("c");
+  await page.getByRole("tab", { name: "Ashborn" }).click();
+  await expect(page.getByTestId("ashborn-points")).toContainText("2 Ashborn Points");
+  await page.getByRole("button", { name: "Add Damage" }).click();
+  await page.getByRole("button", { name: "Add Resistances" }).click();
+  await expect(page.getByTestId("ashborn-points")).toContainText("0 Ashborn Points");
+  await expect(page.getByRole("button", { name: "Add Life", exact: true })).toBeDisabled();
+  await page.screenshot({ path: "test-results/ashborn.png" });
+  await page.keyboard.press("Escape");
+
+  await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
+  await page.getByRole("button", { name: /Reset Ashborn/ }).click();
+  await page.getByRole("button", { name: /5 points back\?/ }).click();
+  await page.keyboard.press("c");
+  await page.getByRole("tab", { name: "Ashborn" }).click();
+  await expect(page.getByTestId("ashborn-points")).toContainText("5 Ashborn Points");
   expect(errors).toEqual([]);
 });

@@ -69,11 +69,15 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
   await expect(page.getByTestId("reaction-slot-0")).toBeVisible();
 
-  // Kaelen sets every point above the Class Array anew, for Acorns.
-  await page.getByRole("tab", { name: "Attributes" }).click();
-  await expect(page.getByTestId("attribute-respec-price")).toContainText("336 Acorns");
-  await page.getByRole("button", { name: "Reset All" }).click();
-  await expect(page.getByText("8 points free")).toBeVisible();
+  // Old Nan gives every point above the Class Array back, for Acorns (neuausrichtung-v1.md 7.3).
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
+  const reset = page.getByRole("button", { name: /Reset Attributes · 336 Acorns/ });
+  await reset.click();
+  await page.getByRole("button", { name: /8 points back\?/ }).click();
+  // They are spent anew in the Character Sheet.
+  await page.keyboard.press("c");
+  await expect(page.getByTestId("attribute-points")).toContainText("8 Attribute Points");
   for (const a of ["Dexterity", "Dexterity", "Intelligence"]) {
     await page.getByRole("button", { name: `Add ${a}` }).click();
   }

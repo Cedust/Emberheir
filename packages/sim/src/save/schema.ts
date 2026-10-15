@@ -89,6 +89,7 @@ const hero = z.object({
   rotation: z.array(z.string().nullable()),
   plan: battlePlan,
   webRunes: opt(z.record(z.string(), id)),
+  ashborn: opt(z.object({ level: count, xp: num, points: z.record(z.string(), count) })),
 });
 
 const wallet = z.object({
@@ -135,6 +136,7 @@ const rewards = z.object({
   phoenixFeathers: num,
   runes: z.array(id),
   levelsGained: count,
+  ashbornLevels: opt(count),
   waymark: opt(z.boolean()),
   items: z.array(itemSchema),
   picks: opt(count),

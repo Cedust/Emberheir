@@ -431,6 +431,16 @@ export function saveWildfire(best = 3): string {
   });
 }
 
+/** Level 100 with 5 Ashborn Levels, 3 points spent on Life (neuausrichtung-v1.md 7.3). */
+export function saveAshborn(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  return serializeGame({
+    ...camp,
+    hero: { ...camp.hero, ashborn: { level: 5, xp: 4000, points: { life: 3 } } },
+    wallet: { ...camp.wallet, acorns: 5000 },
+  });
+}
+
 /** On the road in the Ashen Fields (second run), right before the fork of Stages 3–4. */
 export function saveAtFork(): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;

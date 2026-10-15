@@ -1,3 +1,4 @@
+import { ashbornEffects } from "../ashborn";
 import { EMPTY_BOONS } from "../boons";
 import { bountyAfterFlask, rollBounty } from "../bounties";
 import { PROGRESSION } from "../constants";
@@ -399,7 +400,10 @@ export function continueRun(state: GameState, data: GameData): GameState {
 
 export function useFlask(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission", "rewards");
-  const heal = PROGRESSION.flaskHeal * tripOmenEffects(state, data).flaskHeal;
+  const heal =
+    PROGRESSION.flaskHeal *
+    tripOmenEffects(state, data).flaskHeal *
+    ashbornEffects(state.hero.ashborn, data.ashbornValues ?? []).flaskHeal;
   if (heal <= 0) return fail("Parched: the Ember Flask stays dry on this trip");
   if (state.flaskCharges <= 0) return fail("The Ember Flask is empty");
   if (run.lifeFraction >= 1) return fail("Life is already full");

@@ -112,6 +112,7 @@ export {
 } from "./item-rules";
 export { applyAction, type GameAction } from "./actions";
 export { requireCamp } from "./guards";
+export { heroAshborn, spendAshborn, resetAshborn } from "./ashborn";
 export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
 export {
   getOmen,

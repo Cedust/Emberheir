@@ -3,6 +3,7 @@ import { type FightReport } from "../../combat/report";
 import { type Attributes, type SkillDefinition } from "../../combat/types";
 import { type Equipment, type EquipmentSlot, type Item, type ItemCatalog } from "../../items/types";
 import { Rng } from "../../rng";
+import { type AshbornState, type AshbornValue } from "../ashborn";
 import { type BattlePlanState } from "../battle-plan";
 import {
   type BoonDefinition,
@@ -119,6 +120,8 @@ export interface GameData {
   readonly draughts?: readonly DraughtDefinition[];
   /** Omens (neuausrichtung-v1.md 5.2 and 7.2); old acts and the Wildfire have none without them. */
   readonly omens?: readonly OmenDefinition[];
+  /** The values of the Ashborn Boards (neuausrichtung-v1.md 7.3); no Ashborn without them. */
+  readonly ashbornValues?: readonly AshbornValue[];
 }
 
 export interface Wallet {
@@ -158,6 +161,8 @@ export interface HeroState {
   readonly plan: BattlePlanState;
   /** Runes in the Rune Sockets of the Skill Web: socket node id → Rune id. */
   readonly webRunes?: Readonly<Record<string, string>>;
+  /** Ashborn (neuausrichtung-v1.md 7.3): XP after level 100, its levels and spent points. */
+  readonly ashborn?: AshbornState;
 }
 
 export interface Encounter {
@@ -213,6 +218,8 @@ export interface Rewards {
   /** Runes that dropped (straight into the pouch). */
   readonly runes: readonly string[];
   readonly levelsGained: number;
+  /** Ashborn Levels this fight gave (after level 100). */
+  readonly ashbornLevels?: number;
   /** The stage was a Waymark reached for the first time this run: +1 Skill Point. */
   readonly waymark?: boolean;
   /** Item pick: `picks` (default 1) of these. */

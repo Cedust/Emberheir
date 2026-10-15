@@ -1,3 +1,4 @@
+import { resetAshborn, spendAshborn } from "./ashborn";
 import { type Attributes } from "../../combat/types";
 import { type EquipmentSlot } from "../../items/types";
 import { type BattlePlanState } from "../battle-plan";
@@ -129,6 +130,10 @@ export type GameAction =
     }
   /** Kaelen (Camp only): every Attribute Point anew, for Acorns like the trees. */
   | { readonly type: "respecAttributes"; readonly attributes: Attributes }
+  /** Character Sheet: Ashborn Points into one value (neuausrichtung-v1.md 7.3). */
+  | { readonly type: "spendAshborn"; readonly valueId: string; readonly count?: number }
+  /** Old Nan (Camp only): every Ashborn Point back, for Acorns. */
+  | { readonly type: "resetAshborn" }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -202,6 +207,10 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return doPrestige(state, data, action.branchId, action.attributes);
     case "respecAttributes":
       return respecAttributes(state, data, action.attributes);
+    case "spendAshborn":
+      return spendAshborn(state, data, action.valueId, action.count);
+    case "resetAshborn":
+      return resetAshborn(state);
     case "dismissNotice":
       return { ...state, notice: null };
   }
