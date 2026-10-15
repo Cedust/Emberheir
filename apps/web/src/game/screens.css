@@ -960,23 +960,34 @@
   margin-top: 4px;
 }
 
-.stage .flask-pips {
-  display: flex;
-  gap: 5px;
+.stage .flask-stock {
+  position: relative;
+  flex-shrink: 0;
+  width: 46px;
+  height: 56px;
 }
 
-.stage .flask-pips .flask-pip {
-  display: block;
-  width: 14px;
-  height: 22px;
-  border-radius: 3px 3px 8px 8px;
-  border: 1.5px solid #c9a063;
-  background: rgb(0 0 0 / 0.4);
+.stage .flask-potion {
+  width: 40px;
+  height: 55px;
+  filter: drop-shadow(0 2px 3px #000);
 }
 
-.stage .flask-pips .flask-pip.full {
-  background: linear-gradient(180deg, #ff8a8a, #c9322a 70%);
-  box-shadow: 0 0 6px rgb(255 90 70 / 0.55);
+.stage .flask-potion.full {
+  filter: drop-shadow(0 2px 3px #000) drop-shadow(0 0 7px rgb(229 72 77 / 0.6));
+}
+
+/* The charges sit on the bulb like a stack count on an item. */
+.stage .flask-count {
+  position: absolute;
+  right: -6px;
+  bottom: -2px;
+  padding: 0 4px;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #ffe2a8;
+  background: rgb(20 12 8 / 0.85);
+  border: 1px solid #b8893e;
 }
 
 .stage .up-next {

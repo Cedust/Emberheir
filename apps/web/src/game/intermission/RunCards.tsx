@@ -26,6 +26,7 @@ import {
 } from "@emberheir/sim";
 import { useEffect, useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
+import { Potion } from "../../ui/Potion";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
@@ -130,10 +131,16 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
         <span className="bar-label">{lifePct}%</span>
       </div>
       <div className="flask-row">
-        <div className="flask-pips">
-          {Array.from({ length: flaskMax }, (_, i) => (
-            <span key={i} className={`flask-pip ${i < state.flaskCharges ? "full" : ""}`} />
-          ))}
+        {/* One potion with its charges as a number: grows with the Flask without crowding. */}
+        <div
+          className="flask-stock"
+          role="img"
+          aria-label={`Ember Flask ${state.flaskCharges} of ${flaskMax}`}
+        >
+          <Potion full={state.flaskCharges > 0} className="flask-potion" />
+          <span className="flask-count mono">
+            {state.flaskCharges}/{flaskMax}
+          </span>
         </div>
         <Button
           variant="primary"
