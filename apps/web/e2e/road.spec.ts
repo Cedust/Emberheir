@@ -21,7 +21,7 @@ test("a fork of the road: the path is chosen in the Intermission", async ({ page
     "true",
   );
   await expect(page.getByLabel("Up next")).toContainText("+25 % Life");
-  await page.screenshot({ path: "test-results/route-choice.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/route-choice.png` });
   expect(errors).toEqual([]);
 });
 
@@ -36,6 +36,6 @@ test("Kaelen's Training Dummy measures the build", async ({ page }) => {
   await expect(page.getByTestId("dummy-dps")).toHaveText(/\d/);
   await page.getByRole("radio", { name: "Striking" }).click();
   await expect(page.getByRole("region", { name: "Dummy numbers" })).toContainText("Damage taken");
-  await page.screenshot({ path: "test-results/training-dummy.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/training-dummy.png` });
   expect(errors).toEqual([]);
 });

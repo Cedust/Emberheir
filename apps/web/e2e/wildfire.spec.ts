@@ -18,15 +18,17 @@ test("after The Last Ember any act burns again in the Wildfire", async ({ page }
   await expect(picker.getByRole("button", { name: "Raise Wildfire" })).toBeDisabled();
   // Every act is open in the Wildfire.
   await trip.getByRole("radio", { name: /Act 7/ }).click();
-  await page.screenshot({ path: "test-results/wildfire-camp.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/wildfire-camp.png` });
   await trip.getByRole("button", { name: "WILDFIRE IV · ACT 7" }).click();
 
   const intermission = page.getByRole("region", { name: "Intermission" });
   await expect(intermission.getByLabel("Up next")).toContainText("Wildfire IV");
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
-  await page.waitForTimeout(1200);
-  await page.screenshot({ path: "test-results/wildfire-battle.png" });
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${process.env.SHOTS}/wildfire-battle.png` });
+  }
   expect(errors).toEqual([]);
 });
 
@@ -50,7 +52,7 @@ test("above Wildfire V the tier asks for Peril: Omens are chosen before setting 
   await omens.getByRole("button", { name: "Parched" }).click();
   await omens.getByRole("button", { name: "Stoneflesh" }).click();
   await expect(omens).toContainText("Peril 3 / 2");
-  await page.screenshot({ path: "test-results/wildfire-omens.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/wildfire-omens.png` });
   await trip.getByRole("button", { name: "WILDFIRE VI · ACT 2" }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
   expect(errors).toEqual([]);
@@ -72,7 +74,7 @@ test("after level 100 XP becomes Ashborn: points in the Character Sheet, reset a
   await page.getByRole("button", { name: "Add Resistances" }).click();
   await expect(page.getByTestId("ashborn-points")).toContainText("0 Ashborn Points");
   await expect(page.getByRole("button", { name: "Add Life", exact: true })).toBeDisabled();
-  await page.screenshot({ path: "test-results/ashborn.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/ashborn.png` });
   await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
@@ -102,7 +104,7 @@ test("Liora awakens a Greater Affix with Cinderglass and intensifies it", async 
   await page.locator(".cost-bar").getByRole("button", { name: "Intensify" }).click();
   await expect(page.getByRole("status")).toContainText("Greater II:");
   await expect(page.getByTestId("craft-now")).toContainText("Greater II");
-  await page.screenshot({ path: "test-results/greater-affix.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/greater-affix.png` });
   expect(errors).toEqual([]);
 });
 
@@ -134,6 +136,6 @@ test("salvaging a Legendary teaches its Power; Liora binds it in the Ember Cruci
     .getByRole("button", { name: "Leech Bloom" })
     .click();
   await expect(page.getByRole("region", { name: "Ember slot" })).toContainText("Wildfire V");
-  await page.screenshot({ path: "test-results/crucible.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/crucible.png` });
   expect(errors).toEqual([]);
 });

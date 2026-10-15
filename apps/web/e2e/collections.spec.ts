@@ -11,7 +11,7 @@ test("full collections raise their banners in the Camp", async ({ page }) => {
   await expect(page.getByTestId("banner-trophies")).toBeAttached();
   await expect(page.getByTestId("banner-runewords")).toBeAttached();
   await expect(page.getByTestId("banner-codex")).toHaveCount(0);
-  await page.screenshot({ path: "test-results/camp-banners.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/camp-banners.png` });
 
   await page
     .getByRole("button", { name: /Hearthfire/ })
@@ -21,7 +21,7 @@ test("full collections raise their banners in the Camp", async ({ page }) => {
   const goals = page.getByLabel("Collections");
   await expect(goals.getByLabel("Trophy Wall")).toContainText("is raised");
   await expect(goals.getByLabel("Trigger Codex")).toContainText("0 /");
-  await page.screenshot({ path: "test-results/collections.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/collections.png` });
   expect(errors).toEqual([]);
 });
 
@@ -36,7 +36,7 @@ test("a full Lineage hangs the ancestor portrait", async ({ page }) => {
   await page.getByRole("button", { name: /Continue/ }).click();
 
   await expect(page.getByTestId("ancestor-portrait")).toBeAttached();
-  await page.screenshot({ path: "test-results/camp-ancestor.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/camp-ancestor.png` });
   await page
     .getByRole("button", { name: /Hearthfire/ })
     .first()
@@ -45,6 +45,6 @@ test("a full Lineage hangs the ancestor portrait", async ({ page }) => {
   const lineage = page.getByLabel("Lineage", { exact: true });
   await expect(lineage).toContainText("Step 5 of 5");
   await expect(lineage).toContainText("+10 % Life");
-  await page.screenshot({ path: "test-results/lineage.png" });
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/lineage.png` });
   expect(errors).toEqual([]);
 });

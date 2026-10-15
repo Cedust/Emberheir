@@ -45,7 +45,9 @@ test("after the first Prestige a Draught is brewed for the trip and shows in the
   await expect(page.getByRole("region", { name: "Intermission" })).toContainText("Rotwood");
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
-  await page.waitForTimeout(1200);
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/draught-battle.png` });
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1200);
+    await page.screenshot({ path: `${process.env.SHOTS}/draught-battle.png` });
+  }
   expect(errors).toEqual([]);
 });
