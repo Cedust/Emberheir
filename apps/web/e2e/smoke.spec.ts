@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { createHero, winUntilItemPick } from "./fixtures";
+import { createHero, saveRun1Stage3, seedSave } from "./fixtures";
 
 test("a debug fight runs to the end and fills the log", async ({ page }) => {
   const errors: string[] = [];
@@ -74,7 +74,15 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // The rewards follow on their own after the banner.
   // Normal fights offer an item pick only on every third stage; the others pay their cards as Ash.
   await expect(page.getByText("Stage 1 cleared")).toBeVisible();
-  await winUntilItemPick(page);
+  await expect(page.getByTestId("done-card")).toContainText("Ash from salvage");
+  await expect(page.getByTestId("item-card")).toHaveCount(0);
+
+  // On to a stage with an item pick: a hero of the same class with Stage 3 ahead.
+  await seedSave(page, saveRun1Stage3());
+  await page.goto("/?dev");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByRole("button", { name: /NEXT STAGE/ }).click();
+  await page.getByRole("button", { name: "Skip fight" }).click();
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(3);
 

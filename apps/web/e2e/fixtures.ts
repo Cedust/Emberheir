@@ -1,5 +1,5 @@
 import { GAME_DATA, ITEM_CATALOG, RUNEWORDS, SKILL_TREE } from "@emberheir/content";
-import { type Page, expect } from "@playwright/test";
+import type { Page } from "@playwright/test";
 import {
   type GameState,
   type Item,
@@ -495,19 +495,9 @@ export function saveAtFork(): string {
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }
 
-/**
- * From the Intermission after a won stage: wins the next stages with Skip until an item pick
- * shows. Normal fights offer one only on every third stage; an Elite may bring one earlier.
- */
-export async function winUntilItemPick(page: Page): Promise<void> {
-  const cards = page.getByTestId("item-card");
-  const next = page.locator(".next-stage:not([data-blocked])");
-  for (let i = 0; i < 3; i++) {
-    // Either the cards of a pick, or a free road on to the next stage.
-    await expect(cards.first().or(next)).toBeVisible({ timeout: 30_000 });
-    if ((await cards.count()) > 0) return;
-    await next.click();
-    await page.getByRole("button", { name: "Skip fight" }).click();
-  }
-  await expect(cards.first()).toBeVisible({ timeout: 30_000 });
+/** A new hero on the road through the Ashen Fields (run 1), Stage 3 ahead: it ends in an item pick. */
+export function saveRun1Stage3(): string {
+  const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });
+  const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
+  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }

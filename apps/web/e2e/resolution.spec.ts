@@ -1,5 +1,5 @@
 import { type Page, expect, test } from "@playwright/test";
-import { createHero, saveAfterHarvestBoss, seedSave, winUntilItemPick } from "./fixtures";
+import { createHero, saveAfterHarvestBoss, saveRun1Stage3, seedSave } from "./fixtures";
 
 /**
  * Resolution independence: the game fills the whole window, nothing scrolls, and 1080p and 4K
@@ -64,9 +64,8 @@ for (const screen of SCREENS) {
   test(`${screen.name}: every main view fits without scrolling @screens`, async ({ page }) => {
     // CI's software renderer keeps the live class preview busy while the six free points are
     // set, and 4K renders four times the pixels of 1080p (the battle runs at a few frames per
-    // second there): this walk through every view, with three fights up to the item pick of
-    // Stage 3, needs more time.
-    test.setTimeout(240_000);
+    // second there): this walk through every view needs more time.
+    test.slow();
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
@@ -105,7 +104,13 @@ for (const screen of SCREENS) {
     await check("battle");
     await page.getByRole("button", { name: "Skip fight" }).click();
     await expect(page.getByText("Stage 1 cleared")).toBeVisible({ timeout: 30_000 });
-    await winUntilItemPick(page);
+    await check("salvaged");
+    // Normal fights offer an item pick only on every third stage: on to Stage 3.
+    await seedSave(page, saveRun1Stage3());
+    await page.goto("/?dev");
+    await page.getByRole("button", { name: /Continue/ }).click();
+    await page.getByRole("button", { name: /NEXT STAGE/ }).click();
+    await page.getByRole("button", { name: "Skip fight" }).click();
     // The cards turn over one after another on timers, which lag behind on a slow renderer.
     await expect(page.getByTestId("item-card")).toHaveCount(3, { timeout: 15_000 });
     await check("rewards");
