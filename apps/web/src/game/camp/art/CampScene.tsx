@@ -33,6 +33,9 @@ const IMG_W = 1916;
 const IMG_H = 821;
 const IMG_RING_X = 945;
 
+/** How far the signpost (drawn at x = 1300) moves right; Eldrin perches on it. */
+export const SIGNPOST_DX = 100;
+
 /** Collection banners (spielzeit-v1.md, E): one per full collection, on the palisade. */
 const BANNERS: Record<CollectionId, { x: number; cloth: string; emblem: string }> = {
   trophies: {
@@ -182,8 +185,8 @@ export function CampBackdrop(props: {
       ))}
       {props.ancestor && <AncestorPortrait />}
 
-      {/* Signpost to the Act */}
-      <g>
+      {/* Signpost to the Act, right of Thoric's anvil */}
+      <g transform={`translate(${SIGNPOST_DX} 0)`}>
         <S d="M1296 560 L1306 560 L1306 676 L1296 676 Z" fill="#7a5a24" w={2.2} />
         <S d="M1220 574 L1370 574 L1392 596 L1370 618 L1220 618 Z" fill="#e6d6b4" w={2.5} />
         <text
@@ -308,6 +311,16 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
     })),
     // Marisha's corner by the Supply Wagon.
     { x: 200, y: 430, rx: 110, ry: 90, color: "#ffb060", strength: 0.35, flicker: "soft" },
+    // Eldrin on the signpost.
+    {
+      x: 1300 + SIGNPOST_DX,
+      y: 560,
+      rx: 90,
+      ry: 90,
+      color: "#ffb060",
+      strength: 0.3,
+      flicker: "soft",
+    },
     // The anvil by Thoric's forge wagon.
     { x: 1290, y: 450, rx: 90, ry: 70, color: "#ff7a2a", strength: 0.45, flicker: "soft" },
     ...LANTERNS.map(([x, y]) => ({ x, y, rx: 46, ry: 40, color: "#ffc070", strength: 0.4 })),

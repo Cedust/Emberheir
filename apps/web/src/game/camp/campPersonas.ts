@@ -1,6 +1,7 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
 import { type ActData, type GameState } from "@emberheir/sim";
 import { type IconName } from "../../ui/Icon";
+import { SIGNPOST_DX } from "./art/CampScene";
 
 /** The Camp's people: who stands where, what they say, where a click on them leads. */
 
@@ -191,7 +192,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       name: "Eldrin",
       role: "Scout",
       // Perched on the signpost to the next act: he has seen what's ahead.
-      x: 1300,
+      x: 1300 + SIGNPOST_DX,
       y: 647,
       icon: "bow",
       cloak: "#3b5a2c",
