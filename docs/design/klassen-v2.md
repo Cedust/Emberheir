@@ -59,7 +59,7 @@ Jeder Waffentyp bringt einen eigenen Skill als **Innate** mit (Timo, 2026-10-05)
 | Warrior | Sword | **Power Strike** (220 % Weapon Damage) | vorhanden, wandert aus dem Baum |
 | Warrior | Mace | **Skull Crack**: 180 % Weapon Damage, stunnt 0,5 s | neu ✅ |
 | Reaver | Axe | **Lacerate** (100 %, blutet immer) | vorhanden, wandert aus dem Baum |
-| Reaver | Dagger | **Venom Coat** (8 s jeder Treffer poisont) | vorhanden, wandert aus dem Baum |
+| Reaver | Dagger | **Envenom** (2 Stiche à 50 %, beide poisonen, 30 Heat) | 15.10.2026: ersetzt Venom Coat ✅ |
 | Hunter | Bow | **Barbed Arrow**: 100 % Weapon Damage, Bleed oder Poison | neu ✅ |
 | Hunter | Crossbow | **Heavy Bolt**: 240 % Weapon Damage, ignoriert 30 % Armor | neu ✅ |
 | Sorcerer | Fire Wand | **Firebolt** (Fire-Hit, 25 % Burn) | vorhanden, wandert aus dem Baum |
@@ -68,6 +68,8 @@ Jeder Waffentyp bringt einen eigenen Skill als **Innate** mit (Timo, 2026-10-05)
 **Regel im Battle Plan** 💡: Der Innate ist ein normaler Skill in der Bibliothek, solange eine Waffe dieses Typs ausgerüstet ist.
 Liegt er in einem Slot und man wechselt den Waffentyp, übernimmt der Slot den Innate der neuen Waffe (der Slot ist als „Innate“ markiert).
 Neue Charaktere starten wie heute mit dem Innate im ersten Rotation Slot. Ränge/Skill-Level des Innate kommen nur über Items.
+
+**Innate gibt Heat aus** (15.10.2026): Jeder Innate ist ein Angriff oder Spell. Run 1 hat nur einen Rotation Slot, und ein laufender Buff wird nicht neu gezündet: Mit Venom Coat als Innate stand die Heat des Daggers ab Sekunde ~12 auf 100 und rund zwei Drittel verpufften. Darum startet der Dagger mit **Envenom** (wie die Axe mit Lacerate); die Coats bleiben als Innate Forms ab Weapon Rank 5.
 
 **Ersatz im Skill Tree** 💡: Vier Skill-Nodes sind heute Start Skills. Sie bekommen neue Skills an derselben Stelle (gleiche Kosten-Klasse, gleicher Ast-Fokus):
 
@@ -85,7 +87,7 @@ Bestehende Spielstände: Wer Power Strike, Firebolt, Lacerate oder Venom Coat im
 | Warrior | Sword | Power Strike (220 % Weapon Damage) | bleibt |
 | Warrior | Mace | Power Strike | **Skull Crack**: 180 % Weapon Damage, stunnt 0,5 s |
 | Reaver | Axe | Lacerate (100 %, blutet immer) | bleibt |
-| Reaver | Dagger | Venom Coat (8 s jeder Treffer poisont) | bleibt |
+| Reaver | Dagger | Venom Coat (8 s jeder Treffer poisont) | **Envenom** (15.10.2026) |
 | Hunter | Bow | Lacerate | **Barbed Arrow**: 100 % Weapon Damage, Bleed oder Poison |
 | Hunter | Crossbow | Power Strike | **Heavy Bolt**: 240 % Weapon Damage, ignoriert 30 % Armor |
 | Sorcerer | Fire Wand | Firebolt (Fire-Hit, 25 % Burn) | bleibt |

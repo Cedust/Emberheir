@@ -1159,29 +1159,44 @@ const DAGGER = buildTree({
     },
   ],
   innateForms: [
-    form("virulent-coat", "Virulent Coat", "For 6 s, every hit Poisons. Costs 10 less Heat.", {
-      ...VENOM_COAT,
-      id: "virulent-coat",
-      name: "Virulent Coat",
-      heatCost: VENOM_COAT.heatCost - 10,
-      effects: [{ kind: "buff", stat: "poisonChance", amount: 1, duration: 6 }],
-    }),
-    form("paralytic-coat", "Paralytic Coat", "For 8 s, every hit Poisons and often Chills.", {
-      ...VENOM_COAT,
-      id: "paralytic-coat",
-      name: "Paralytic Coat",
-      effects: [
-        { kind: "buff", stat: "poisonChance", amount: 1, duration: 8 },
-        { kind: "buff", stat: "chillChance", amount: 0.5, duration: 8 },
-      ],
-    }),
-    form("lingering-coat", "Lingering Coat", "For 12 s, every hit Poisons. Costs 5 more Heat.", {
-      ...VENOM_COAT,
-      id: "lingering-coat",
-      name: "Lingering Coat",
-      heatCost: VENOM_COAT.heatCost + 5,
-      effects: [{ kind: "buff", stat: "poisonChance", amount: 1, duration: 12 }],
-    }),
+    form(
+      "virulent-coat",
+      "Virulent Coat",
+      "A coat instead of a cut: for 6 s, every hit Poisons. 30 Heat.",
+      {
+        ...VENOM_COAT,
+        id: "virulent-coat",
+        name: "Virulent Coat",
+        heatCost: VENOM_COAT.heatCost - 10,
+        effects: [{ kind: "buff", stat: "poisonChance", amount: 1, duration: 6 }],
+      },
+    ),
+    form(
+      "paralytic-coat",
+      "Paralytic Coat",
+      "A coat instead of a cut: for 8 s, every hit Poisons and often Chills. 40 Heat.",
+      {
+        ...VENOM_COAT,
+        id: "paralytic-coat",
+        name: "Paralytic Coat",
+        effects: [
+          { kind: "buff", stat: "poisonChance", amount: 1, duration: 8 },
+          { kind: "buff", stat: "chillChance", amount: 0.5, duration: 8 },
+        ],
+      },
+    ),
+    form(
+      "lingering-coat",
+      "Lingering Coat",
+      "A coat instead of a cut: for 12 s, every hit Poisons. 45 Heat.",
+      {
+        ...VENOM_COAT,
+        id: "lingering-coat",
+        name: "Lingering Coat",
+        heatCost: VENOM_COAT.heatCost + 5,
+        effects: [{ kind: "buff", stat: "poisonChance", amount: 1, duration: 12 }],
+      },
+    ),
   ],
   keystones: [
     {
