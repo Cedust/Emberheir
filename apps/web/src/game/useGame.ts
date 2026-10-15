@@ -9,7 +9,7 @@ import {
   newGame,
 } from "@emberheir/sim";
 import { useCallback, useMemo, useRef, useState } from "react";
-import { lineageFor, loadSlot, saveSlot, sharedStashFor } from "./saves";
+import { accountFor, loadSlot, saveSlot, sharedStashFor } from "./saves";
 
 /** What the class select hands over for a new character. */
 export interface NewCharacter {
@@ -32,8 +32,9 @@ export function useGame() {
   const slotRef = useRef(0);
 
   const replace = useCallback((raw: GameState | null) => {
-    // The account's Lineage rides along; a finale win adds this character to it.
-    const next = raw && lineageFor(raw);
+    // The account's Lineage and Power Codex ride along: a finale win adds this character to
+    // the Lineage, a Power it learned joins the Codex of every character.
+    const next = raw && accountFor(raw);
     ref.current = next;
     setState(next);
     if (next) saveSlot(slotRef.current, next);

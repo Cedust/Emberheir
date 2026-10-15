@@ -360,11 +360,16 @@ export const PROGRESSION = {
     life: 0.08,
     damage: 0.06,
     /** Above V the hero is capped at level 100 while Monster Levels keep rising: Life only. */
-    steep: { from: 5, life: 0.2, damage: 0 },
+    steep: { from: 5, life: 0.35, damage: 0.08 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,
     runeTiersPerTier: 1,
+    /**
+     * Cinderglass (neuausrichtung-v1.md 7.5): every Wildfire boss drops `boss` (min–max), one more
+     * per `perPeril` Peril and `pinnacle` more from tier `pinnacleFrom` on (VIII–X).
+     */
+    cinderglass: { boss: [1, 2] as const, perPeril: 3, pinnacleFrom: 8, pinnacle: 1 },
   },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
@@ -413,6 +418,11 @@ export const PROGRESSION = {
  * run brings roughly 100–150 Acorns and a few hundred Ash.
  */
 export const CRAFTING = {
+  /**
+   * Greater Affixes at Liora (neuausrichtung-v1.md 7.5), in Cinderglass: Awaken (Greater I),
+   * Shift (to another affix, the rank stays), Intensify from rank I, II, III, IV to the next.
+   */
+  greater: { awaken: 3, shift: 1, intensify: [2, 4, 8, 16] },
   /** Upgrade (+1 Tier) at Thoric: 1 Phoenix Feather + this much Acorns × current Tier. */
   upgradeAcornsPerTier: 60,
   upgradeFeathers: 1,

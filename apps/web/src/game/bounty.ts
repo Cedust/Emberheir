@@ -7,6 +7,7 @@ import {
   bountyTarget,
   bountyText,
   getBounty,
+  omenOffer,
 } from "@emberheir/sim";
 
 export interface BountyView {
@@ -43,7 +44,9 @@ export function bountyView(state: BountyState): BountyView {
  */
 export function bountyPreview(state: GameState, actId: string): BountyView | undefined {
   try {
-    const bounty = applyAction(state, GAME_DATA, { type: "setOut", actId }).run?.bounty;
+    // The Omen does not change the bounty; an old act just needs one to set out.
+    const omens = omenOffer(state, GAME_DATA, actId).slice(0, 1);
+    const bounty = applyAction(state, GAME_DATA, { type: "setOut", actId, omens }).run?.bounty;
     return bounty ? bountyView(bounty) : undefined;
   } catch {
     return undefined;

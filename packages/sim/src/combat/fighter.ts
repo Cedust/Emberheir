@@ -155,8 +155,11 @@ interface ReactionState {
 export const REACTION_PATIENCE = 4;
 
 /** Most damage one hit of a telegraphed Heavy Attack can deal (`COMBAT.heavyHitCap`). */
-export function heavyHitCap(stats: { readonly maxLife: number; readonly barrier: number }): number {
-  return Math.max(1, Math.round(COMBAT.heavyHitCap * (stats.maxLife + stats.barrier)));
+export function heavyHitCap(
+  stats: { readonly maxLife: number; readonly barrier: number },
+  share: number = COMBAT.heavyHitCap,
+): number {
+  return Math.max(1, Math.round(share * (stats.maxLife + stats.barrier)));
 }
 
 export const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");

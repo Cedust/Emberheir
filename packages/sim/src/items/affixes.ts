@@ -4,6 +4,7 @@ import { ITEMS } from "./constants";
 import type {
   AffixDefinition,
   AffixStat,
+  Item,
   ItemBaseDefinition,
   ItemSlot,
   Rarity,
@@ -119,11 +120,32 @@ export function statAffixValue(
   tier: number,
   quality: number,
   rarity?: Rarity,
+  /** Greater Affix rank (0 = none): the best roll of the tier, 10 % more per rank. */
+  greater = 0,
 ): number {
   if (def.epicValue !== undefined && (rarity === "epic" || rarity === "legendary")) {
     return def.epicValue;
   }
-  return roundStat(def.stat, rawAffixValue(def, tier, quality));
+  return roundStat(def.stat, greaterValue(def, tier, quality, greater));
+}
+
+/** Greater Affixes (neuausrichtung-v1.md 7.5): Greater I = 110 % of the tier's best roll, V = 150 %. */
+export const GREATER = { maxRank: 5, perRank: 0.1 } as const;
+
+/** The affix value, as a Greater Affix of `rank` if it is one. */
+function greaterValue(def: AffixDefinition, tier: number, quality: number, rank: number): number {
+  return rank > 0
+    ? rawAffixValue(def, tier, 1) * (1 + GREATER.perRank * Math.min(rank, GREATER.maxRank))
+    : rawAffixValue(def, tier, quality);
+}
+
+const GREATER_NAMES = ["", "I", "II", "III", "IV", "V"];
+/** "Greater III". */
+export const greaterName = (rank: number) => `Greater ${GREATER_NAMES[rank] ?? rank}`;
+
+/** The Greater rank of the affix at `index` of an item (0 = not Greater). */
+export function greaterRank(item: Item, index: number): number {
+  return item.greater?.index === index ? item.greater.rank : 0;
 }
 
 const isPercentBuff = (stat: BuffStat) => isPercentStat(stat);
@@ -133,8 +155,9 @@ export function resolveTrigger(
   def: TriggerAffixDefinition,
   tier: number,
   quality: number,
+  greater = 0,
 ): TriggerSpec {
-  const value = rawAffixValue(def, tier, quality);
+  const value = greaterValue(def, tier, quality, greater);
   const magnitude = def.rolls === "magnitude" ? value : 1;
   const effect = resolveEffect(def, magnitude);
   return {

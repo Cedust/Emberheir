@@ -19,9 +19,12 @@ import {
   slotCondition,
   slotModifiers,
 } from "../battle-plan";
+import { ashbornEffects } from "../ashborn";
 import { activeBoons, boonEffects } from "../boons";
 import { classTitle, getClass, LINEAGE_STEPS, lineageEffect, type HeroClass } from "../classes";
 import { buildHeroSetup } from "../hero";
+import { crucibleEffects } from "./crucible";
+import { tripOmenEffects } from "./omens";
 import { webRuneEffects } from "./web-runes";
 import { keystoneRules, treeBonuses, treeSkills, treeTriggers } from "../skill-tree";
 import {
@@ -147,7 +150,10 @@ function heroRotationSlots(
   const unlocks = battlePlanUnlocks(state.legacy.prestige);
   const { plan } = state.hero;
   const slots: { slot: RotationSlot; index: number }[] = [];
+  // Silenced Ember: the first Rotation Slot stays empty on this trip.
+  const silenced = tripOmenEffects(state, data).lockFirstSlot;
   state.hero.rotation.slice(0, state.progress.rotationSlots).forEach((id, index) => {
+    if (silenced && index === 0) return;
     const entry = id === null ? start : known.find((k) => k.skill.id === id);
     if (!entry || slots.some((s) => s.slot.skill.id === entry.skill.id)) return;
     const threshold = unlocks.thresholds ? plan.thresholds[index] : null;
@@ -164,7 +170,7 @@ function heroRotationSlots(
       },
     });
   });
-  if (slots.length === 0 && start) {
+  if (slots.length === 0 && start && !silenced) {
     slots.push({ index: 0, slot: { skill: start.skill, level: start.level } });
   }
   return slots;
@@ -266,7 +272,10 @@ export function heroSetup(
   const mastery = heroWeapon(state, data);
   const draught = activeDraught(state, data);
   const sockets = webRuneEffects(hero, data);
-  return buildHeroSetup(
+  const omens = tripOmenEffects(state, data);
+  const ashborn = ashbornEffects(hero.ashborn, data.ashbornValues ?? []);
+  const crucible = crucibleEffects(state, data);
+  const built = buildHeroSetup(
     {
       level: hero.level,
       attributes: hero.attributes,
@@ -287,11 +296,16 @@ export function heroSetup(
           mastery.bonuses,
           draught?.bonuses,
           sockets.bonuses,
+          omens.hero.bonuses,
+          ashborn.bonuses,
+          ...crucible.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
         ...boons.triggers,
         ...mastery.triggers,
+        ...omens.hero.triggers,
+        ...crucible.triggers,
       ],
       rules: mergeRules(
         keystoneRules(data.skillTree, hero.learned),
@@ -301,10 +315,17 @@ export function heroSetup(
         mastery.rules,
         draught?.rules,
         sockets.rules,
+        omens.hero.rules,
+        ashborn.rules,
+        ...crucible.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
       resistancePenalty: emberPenalty(state),
     },
     data.items,
   );
+  // Short Fuse: a fight that lasts too long is lost.
+  return omens.fightSeconds !== undefined
+    ? { ...built, setup: { ...built.setup, timeLimit: omens.fightSeconds } }
+    : built;
 }

@@ -18,10 +18,17 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   }
   await expect(road.getByRole("radio", { name: /Rotwood/ })).toBeChecked();
 
-  // Revisit Act 1, then go on to the Rotwood.
+  // Revisit Act 1: an old act of the run burns under one of two Omens.
   await road.getByRole("radio", { name: /Ashen Fields/ }).click();
-  await expect(page.getByRole("button", { name: /SET OUT · ACT 1/i })).toBeVisible();
+  await expect(page.getByRole("button", { name: "CHOOSE AN OMEN" })).toBeDisabled();
+  const omens = page.getByRole("radiogroup", { name: "Omen" });
+  await expect(omens.getByRole("radio")).toHaveCount(2);
+  await omens.getByRole("radio").first().click();
+  await expect(page.getByRole("button", { name: /SET OUT · ACT 1/i })).toBeEnabled();
+  await page.screenshot({ path: "test-results/omen-choice.png" });
+  // The newest act has no Omen: go on to the Rotwood.
   await road.getByRole("radio", { name: /Rotwood/ }).click();
+  await expect(page.getByRole("radiogroup", { name: "Omen" })).toHaveCount(0);
   await page.getByRole("button", { name: /SET OUT · ACT 2/i }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toContainText("Rotwood");
   expect(errors).toEqual([]);

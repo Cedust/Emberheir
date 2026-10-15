@@ -35,7 +35,6 @@ import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
-import { AttributeRespecTab } from "./AttributeRespecTab";
 import { TrainingDummyTab } from "./TrainingDummyTab";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
@@ -506,9 +505,7 @@ export function KaelenView(props: {
 }) {
   const { state, game, viewOnly } = props;
   const planEditable = props.planEditable ?? !viewOnly;
-  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "attributes" | "dummy">(
-    props.initialTab ?? "tree",
-  );
+  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "dummy">(props.initialTab ?? "tree");
   const [respec, setRespec] = useState(false);
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
@@ -556,17 +553,6 @@ export function KaelenView(props: {
                 onClick={() => setTab("plan")}
               >
                 Battle Plan
-              </button>
-            )}
-            {!viewOnly && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === "attributes"}
-                className={`tab title-font ${tab === "attributes" ? "on" : ""}`}
-                onClick={() => setTab("attributes")}
-              >
-                Attributes
               </button>
             )}
             {!viewOnly && (
@@ -640,9 +626,7 @@ export function KaelenView(props: {
           </button>
         </header>
         <Suspense fallback={null}>
-          {tab === "attributes" && !viewOnly ? (
-            <AttributeRespecTab state={state} game={game} />
-          ) : tab === "dummy" && !viewOnly ? (
+          {tab === "dummy" && !viewOnly ? (
             <TrainingDummyTab state={state} game={game} />
           ) : tab === "mastery" ? (
             <MasteryTab state={state} game={game} viewOnly={viewOnly} />

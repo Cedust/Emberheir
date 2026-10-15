@@ -38,6 +38,7 @@ export const itemSchema: z.ZodType<Item> = z.object({
   tier: count,
   affixes: z.array(affixRoll),
   lockedAffix: opt(count),
+  greater: opt(z.object({ index: count, rank: int.positive() })),
   sockets: opt(count),
   runes: opt(z.array(id)),
   powerId: opt(id),
@@ -89,6 +90,8 @@ const hero = z.object({
   rotation: z.array(z.string().nullable()),
   plan: battlePlan,
   webRunes: opt(z.record(z.string(), id)),
+  crucible: opt(z.object({ strike: opt(id), ward: opt(id), ember: opt(id) })),
+  ashborn: opt(z.object({ level: count, xp: num, points: z.record(z.string(), count) })),
 });
 
 const wallet = z.object({
@@ -97,6 +100,7 @@ const wallet = z.object({
   emberCoal: num,
   phoenixFeathers: num,
   runes: z.record(z.string(), count),
+  cinderglass: opt(count),
 });
 
 const boonPick = z.object({ id: id, grade: z.enum(["spark", "flame", "blaze"]) });
@@ -121,6 +125,7 @@ const encounter = z.object({
   thief: opt(z.boolean()),
   echo: opt(id),
   champion: opt(z.boolean()),
+  omens: opt(z.array(id)),
 });
 
 const pickKind = z.enum(["equip", "take"]);
@@ -134,6 +139,8 @@ const rewards = z.object({
   phoenixFeathers: num,
   runes: z.array(id),
   levelsGained: count,
+  ashbornLevels: opt(count),
+  cinderglass: opt(count),
   waymark: opt(z.boolean()),
   items: z.array(itemSchema),
   picks: opt(count),
@@ -172,6 +179,7 @@ const run = z.object({
   wildfire: opt(int.positive()),
   draught: opt(id),
   routes: opt(z.record(z.string(), z.enum(ROUTE_KINDS))),
+  omens: opt(z.array(id)),
 });
 
 const notice = z.object({
@@ -236,6 +244,7 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
   bountyDone: opt(z.object({ id: id, enemyId: opt(id), actId: id })),
   lineage: opt(count),
   draught: opt(id.nullable()),
+  powerCodex: opt(z.record(z.string(), int.positive())),
 });
 
 /** The shared stash (Supply Wagon) as the UI stores it next to the slots. */

@@ -97,6 +97,7 @@ export const TEST_POWERS: readonly LegendaryPowerDefinition[] = [
     slots: ["ring", "mainHand"],
     rules: { ailmentEcho: [{ from: "bleed", to: "poison" }] },
     bonuses: { life: 7 },
+    crucible: "ember",
   },
 ];
 

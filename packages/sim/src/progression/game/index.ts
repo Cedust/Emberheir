@@ -112,7 +112,26 @@ export {
 } from "./item-rules";
 export { applyAction, type GameAction } from "./actions";
 export { requireCamp } from "./guards";
+export { heroAshborn, spendAshborn, resetAshborn } from "./ashborn";
+export {
+  CRUCIBLE,
+  CRUCIBLE_SLOTS,
+  type CrucibleSlot,
+  crucibleLock,
+  learnPower,
+  bindPower,
+  crucibleEffects,
+} from "./crucible";
 export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
+export {
+  getOmen,
+  isOldAct,
+  omenOffer,
+  checkOmens,
+  tripOmens,
+  tripOmenEffects,
+  omenEffectsOf,
+} from "./omens";
 export { getBounty, bountyReward } from "./bounty";
 export {
   lootGate,

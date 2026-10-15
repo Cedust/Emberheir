@@ -232,6 +232,11 @@ export interface Item {
   readonly powerId?: string;
   /** Unique items: hand-made, fixed affixes. */
   readonly uniqueId?: string;
+  /**
+   * Greater Affix (neuausrichtung-v1.md 7.5): the affix at `index` counts at its tier's best roll
+   * times `1 + 0.1 × rank` (Greater I–V). The rank belongs to the item: Shift moves it along.
+   */
+  readonly greater?: { readonly index: number; readonly rank: number };
 }
 
 /** Which bonus of a Rune applies: in a weapon, or in armor (Off Hand, Helm, Body Armor). */
@@ -284,6 +289,11 @@ export interface LegendaryPowerDefinition {
   readonly trigger?: AffixRoll;
   /** Only its Unique carries it; random Legendary items never roll it (boss trophies). */
   readonly uniqueOnly?: boolean;
+  /**
+   * Its Ember Crucible slot (neuausrichtung-v1.md 8.3): Strike (hits, Crits, extra attacks,
+   * Execute), Ward (defense, healing, Barrier, Block), Ember (ailments, Heat, triggers, rules).
+   */
+  readonly crucible: "strike" | "ward" | "ember";
 }
 
 /** A Unique item: fixed base, name, affixes and maybe a Legendary Power. */

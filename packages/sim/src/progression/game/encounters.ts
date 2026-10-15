@@ -1,12 +1,16 @@
 import { createEnemySetup, type EnemyDefinition } from "../../combat/monsters";
 import { Fight } from "../../combat/fight";
+import { mergeRules } from "../../combat/rules";
+import { sumBonuses } from "../../combat/stats";
 import { type CombatantSetup } from "../../combat/types";
 import { Rng } from "../../rng";
 import { PROGRESSION } from "../constants";
 import { applyEliteModifiers, type EliteModifier } from "../elites";
+import { type OmenEffects } from "../omens";
 import { type EnemyRank } from "../leveling";
 import { finaleEchoes, getAct, harvestAct, stageMonsterLevel } from "./acts";
 import { heroSetup } from "./hero-build";
+import { omenEffectsOf } from "./omens";
 import {
   fail,
   GameActionError,
@@ -99,7 +103,22 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
     : setup;
   const mods = eliteModifiersOf(encounter, data);
   // A Gatekeeper is already half the wall: its modifiers, but no Elite Life and damage on top.
-  return mods.length ? applyEliteModifiers(walled, mods, { plain: encounter.gate }) : walled;
+  const elite = mods.length ? applyEliteModifiers(walled, mods, { plain: encounter.gate }) : walled;
+  return encounter.omens?.length ? withOmens(elite, omenEffectsOf(data, encounter.omens)) : elite;
+}
+
+/** The enemy side of the trip's Omens: Life, damage, stats, rules and triggers. */
+function withOmens(setup: CombatantSetup, omens: OmenEffects): CombatantSetup {
+  const { enemy } = omens;
+  const triggers = [...(setup.triggers ?? []), ...enemy.triggers];
+  return {
+    ...setup,
+    baseLife: (setup.baseLife ?? 100) * enemy.life,
+    damageMultiplier: (setup.damageMultiplier ?? 1) * enemy.damage,
+    bonuses: sumBonuses(setup.bonuses, enemy.bonuses),
+    rules: mergeRules(setup.rules, enemy.rules),
+    ...(triggers.length ? { triggers } : {}),
+  };
 }
 
 export function encounterName(encounter: Encounter, actId: string, data: GameData): string {

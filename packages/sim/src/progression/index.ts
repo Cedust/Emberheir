@@ -10,6 +10,8 @@ export * from "./boons";
 export * from "./classes";
 export * from "./game";
 export * from "./draughts";
+export * from "./omens";
+export * from "./ashborn";
 export * from "./notes";
 export * from "./crafting";
 export * from "./codex";

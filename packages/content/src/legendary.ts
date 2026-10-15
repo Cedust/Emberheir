@@ -416,6 +416,7 @@ export const POWER_TRIGGERS: readonly TriggerAffixDefinition[] = [
 export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   {
     id: "blood-echo",
+    crucible: "ember",
     name: "Blood Echo",
     description: "Your Bleed also Poisons.",
     slots: ["gloves"],
@@ -423,6 +424,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "wildfire",
+    crucible: "ember",
     name: "Wildfire",
     description: "Your Burn also Shocks.",
     slots: ["offHand", "amulet"],
@@ -430,6 +432,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "frostbrand",
+    crucible: "ember",
     name: "Frostbrand",
     description: "Your Shock also Chills.",
     slots: ["gloves"],
@@ -437,6 +440,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "executioner",
+    crucible: "strike",
     name: "Executioner",
     description: "+40 % damage to enemies below 30 % Life.",
     slots: ["gloves", "ring"],
@@ -444,6 +448,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "leech-bloom",
+    crucible: "ward",
     name: "Leech Bloom",
     description: "Your Bleed, Poison and Burn heal you for 20 % of their damage.",
     slots: ["body", "amulet", "ring"],
@@ -451,6 +456,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "undying-heat",
+    crucible: "ember",
     name: "Undying Heat",
     description: "Cooling Heat no longer cools down.",
     slots: ["helm", "belt"],
@@ -458,6 +464,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "smoldering-focus",
+    crucible: "ember",
     name: "Smoldering Focus",
     description: "Skills cost 20 % less Heat.",
     slots: ["offHand", "helm", "amulet"],
@@ -465,6 +472,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "heavy-hand",
+    crucible: "strike",
     name: "Heavy Hand",
     description: "Your Default Attack deals 30 % more damage.",
     slots: ["gloves"],
@@ -472,6 +480,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "sanguine-crit",
+    crucible: "strike",
     name: "Sanguine Crit",
     description: "Every Crit makes the enemy Bleed.",
     slots: ["ring", "amulet"],
@@ -479,6 +488,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "ember-shell",
+    crucible: "ward",
     name: "Ember Shell",
     description: "Every fight starts with a Barrier of 25 % of your Life.",
     slots: ["body", "offHand", "belt"],
@@ -486,6 +496,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "storm-step",
+    crucible: "ward",
     name: "Storm Step",
     description: "Every evade strikes the enemy with lightning.",
     slots: ["boots"],
@@ -494,6 +505,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "last-stand",
+    crucible: "ward",
     name: "Last Stand",
     description: "Once per fight, below 35 % Life: a Barrier of 40 % of your Life.",
     slots: ["belt", "body"],
@@ -501,6 +513,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "quickened-heat",
+    crucible: "ember",
     name: "Quickened Heat",
     description: "+15 % Heat Gain and +10 % Attack Speed.",
     slots: ["boots", "gloves"],
@@ -509,6 +522,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   // --- Boss trophies (Teil 3 "Boss-Trophäen") ---
   {
     id: "counter-slam",
+    crucible: "strike",
     uniqueOnly: true,
     name: "Counter Slam",
     description: "Every 5th hit taken: a Counter Slam for 200 % weapon damage.",
@@ -517,6 +531,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "mothers-brood",
+    crucible: "ember",
     uniqueOnly: true,
     name: "Mother's Brood",
     description: "Your Bleed, Poison, Burn and Corruption deal 30 % more damage.",
@@ -525,6 +540,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "thorn-flurry",
+    crucible: "strike",
     uniqueOnly: true,
     name: "Thorn Flurry",
     description: "Every 3rd attack strikes again.",
@@ -533,6 +549,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "tyrants-wrath",
+    crucible: "ward",
     uniqueOnly: true,
     name: "Tyrant's Wrath",
     description: "Below 30 % Life: +50 % Attack Speed for 6 s.",
@@ -542,6 +559,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "eruption",
+    crucible: "ember",
     uniqueOnly: true,
     name: "Eruption",
     description: "Every 12 s: an Eruption of fire.",
@@ -550,6 +568,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "ice-barrier",
+    crucible: "ward",
     uniqueOnly: true,
     name: "Ice Barrier",
     description: "Below 50 % Life: a Barrier of 30 % of your Life (every 10 s at most).",
@@ -558,6 +577,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "avalanche",
+    crucible: "strike",
     uniqueOnly: true,
     name: "Avalanche",
     description: "Every 10th attack is an Avalanche for 300 % weapon damage.",
@@ -567,6 +587,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "heralds-bolt",
+    crucible: "strike",
     uniqueOnly: true,
     name: "Herald's Bolt",
     description: "Every Crit calls down a bolt of lightning.",
@@ -575,6 +596,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "tailwind",
+    crucible: "ward",
     uniqueOnly: true,
     name: "Tailwind",
     description: "Every evade: +8 % Attack Speed for 4 s, up to 3 times.",
@@ -584,6 +606,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "endless-hunger",
+    crucible: "ember",
     uniqueOnly: true,
     name: "Endless Hunger",
     description: "Your Corruption also Poisons; your ailments heal you for 10 % of their damage.",
@@ -592,6 +615,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "rift-pulse",
+    crucible: "ember",
     uniqueOnly: true,
     name: "Rift Pulse",
     description: "Skills have a 40 % chance to send out a Rift Pulse.",
@@ -600,6 +624,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "last-harvest",
+    crucible: "strike",
     uniqueOnly: true,
     name: "Last Harvest",
     description: "+60 % damage to enemies below 35 % Life.",
@@ -608,6 +633,7 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
   },
   {
     id: "stolen-fire",
+    crucible: "ember",
     uniqueOnly: true,
     name: "Stolen Fire",
     description: "Skills cost 25 % less Heat; your ailments deal 20 % more damage.",

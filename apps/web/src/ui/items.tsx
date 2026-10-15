@@ -12,6 +12,7 @@ import {
   itemSize,
   slotsFor,
   speedValue,
+  greaterName,
 } from "@emberheir/sim";
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useState } from "react";
 import {
@@ -95,7 +96,12 @@ export function itemLines(
     kind: "stat" | "trigger" | "kindled" | "implicit" | "req" | "unmet" | "power";
   }[] = [];
   for (const l of tip.implicitLines) lines.push({ text: l, kind: "implicit" });
-  for (const l of tip.affixLines) lines.push({ text: l.text, kind: l.kind });
+  for (const l of tip.affixLines) {
+    lines.push({
+      text: l.greater ? `${l.text} (${greaterName(l.greater)})` : l.text,
+      kind: l.kind,
+    });
+  }
   if (tip.power) lines.push({ text: `${tip.power.name}: ${tip.power.text}`, kind: "power" });
   if (tip.sockets) {
     const runes = tip.sockets.runes.length ? `: ${tip.sockets.runes.join(" · ")}` : "";
@@ -446,6 +452,7 @@ export function walletEntries(state: GameState): { name: string; value: number; 
     { key: "coal", name: "Ember Coal", value: w.emberCoal },
     { key: "feathers", name: "Feathers", value: w.phoenixFeathers },
     ...(runes > 0 ? [{ key: "runes", name: "Runes", value: runes }] : []),
+    ...(w.cinderglass ? [{ key: "glass", name: "Cinderglass", value: w.cinderglass }] : []),
   ];
 }
 

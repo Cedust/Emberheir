@@ -3,6 +3,8 @@ import { type ActData, EQUIPMENT_SLOTS, type GameData } from "@emberheir/sim";
 import { STAGES_PER_ACT } from "./acts";
 import { BOUNTIES } from "./bounties";
 import { DRAUGHTS } from "./draughts";
+import { OMENS } from "./omens";
+import { ASHBORN_VALUES } from "./ashborn";
 import { BOSS_ABILITIES, ELITE_MODIFIERS } from "./elites";
 import {
   ACT1_ENEMIES,
@@ -168,6 +170,8 @@ export const GAME_DATA: GameData = {
   boons: BOONS_CONTENT,
   bounties: BOUNTIES,
   draughts: DRAUGHTS,
+  omens: OMENS,
+  ashbornValues: ASHBORN_VALUES,
   thief: EMBER_THIEF,
   finale: LAST_EMBER,
   boonFamilies: BOON_FAMILIES,

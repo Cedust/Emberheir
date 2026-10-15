@@ -308,8 +308,18 @@ function stepFight(core: FightCore): readonly CombatEvent[] {
       }
     }
   }
-  if (!core.result && fightTime(core) >= COMBAT.maxFightSeconds) endFight(core, null);
+  if (!core.result && fightTime(core) >= fightLimit(core)) endFight(core, null);
   return core.log.slice(start);
+}
+
+/** When the fight ends without a winner: `COMBAT.maxFightSeconds` or a fighter's `timeLimit`. */
+function fightLimit(core: FightCore): number {
+  const { hero, enemy } = core.fighters;
+  return Math.min(
+    COMBAT.maxFightSeconds,
+    hero.setup.timeLimit ?? Infinity,
+    enemy.setup.timeLimit ?? Infinity,
+  );
 }
 
 /**

@@ -3,6 +3,7 @@ import {
   affixRollRange,
   describeStat,
   describeTrigger,
+  greaterRank,
   resolveTrigger,
   statAffixValue,
   type CraftCost,
@@ -29,7 +30,11 @@ export type ActionKind =
   | "rune"
   | "combine"
   | "codex"
-  | "gamble";
+  | "gamble"
+  | "awaken"
+  | "shift"
+  | "intensify"
+  | "crucible";
 
 interface PersonaDef {
   readonly name: string;
@@ -37,7 +42,15 @@ interface PersonaDef {
   readonly portrait: string;
   readonly accent: string;
   readonly quote: string;
-  readonly actions: readonly { k: ActionKind; name: string; desc: string }[];
+  readonly actions: readonly {
+    k: ActionKind;
+    name: string;
+    desc: string;
+    /** Only after The Last Ember (Greater Affixes need Cinderglass from the Wildfire). */
+    endgame?: boolean;
+    /** Only once the account knows a Legendary Power (Ember Crucible). */
+    powers?: boolean;
+  }[];
 }
 
 export const PERSONAS: Record<PersonaId, PersonaDef> = {
@@ -62,6 +75,30 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     actions: [
       { k: "temper", name: "Temper", desc: "Reroll the value of one affix." },
       { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
+      {
+        k: "awaken",
+        name: "Awaken",
+        desc: "A random affix becomes Greater I: 110 % of its best roll.",
+        endgame: true,
+      },
+      {
+        k: "shift",
+        name: "Shift",
+        desc: "The Greater moves to another random affix. Its rank stays.",
+        endgame: true,
+      },
+      {
+        k: "intensify",
+        name: "Intensify",
+        desc: "Greater one rank higher: +10 % up to Greater V (150 %).",
+        endgame: true,
+      },
+      {
+        k: "crucible",
+        name: "Ember Crucible",
+        desc: "Bind Legendary Powers you learned by salvaging.",
+        powers: true,
+      },
     ],
   },
   nyssa: {
@@ -114,20 +151,30 @@ export const ACTION_HINT: Record<ActionKind, string> = {
   reforge: "Base, Tier and Rarity stay. All affixes are rolled anew.",
   temper: "Click the affix to reroll. It stays locked in afterwards.",
   kindle: "Choose an item, then a Condition and an Effect you have learned.",
+  awaken: "One Greater Affix per item. The rank belongs to the item, not to the affix.",
+  shift: "Rerolls only which affix is Greater; the rank is never lost.",
+  intensify: "Greater I to V. Cinderglass drops only from Wildfire bosses.",
+  crucible: "Salvage a Legendary or Unique at Thoric: its Power joins the Power Codex.",
 };
+
+export { greaterName } from "@emberheir/sim";
 
 export function affixText(item: Item, index: number): { text: string; trigger: boolean } {
   const roll = item.affixes[index];
   const affix = roll ? ITEM_CATALOG.affixes.get(roll.affixId) : undefined;
   if (!roll || !affix) return { text: "?", trigger: false };
+  const greater = greaterRank(item, index);
   if (affix.kind === "trigger") {
     return {
-      text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
+      text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality, greater)),
       trigger: true,
     };
   }
   return {
-    text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality, item.rarity)),
+    text: describeStat(
+      affix.stat,
+      statAffixValue(affix, item.tier, roll.quality, item.rarity, greater),
+    ),
     trigger: false,
   };
 }
@@ -158,5 +205,6 @@ export function costText(cost: CraftCost): string {
     parts.push(`${cost.phoenixFeathers} Phoenix Feather${cost.phoenixFeathers > 1 ? "s" : ""}`);
   }
   for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
+  if (cost.cinderglass) parts.push(`${cost.cinderglass} Cinderglass`);
   return parts.join(" · ") || "Free";
 }

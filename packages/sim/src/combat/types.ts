@@ -447,6 +447,11 @@ export interface CombatRules {
   readonly barrierRecharge?: number;
   /** Raises the Resistance cap of single elements (Fire Draught: +5 %). */
   readonly maxResistance?: Readonly<Partial<Record<Element, number>>>;
+  /**
+   * Share of Life + Barrier a telegraphed Heavy Attack can take at most, instead of
+   * `COMBAT.heavyHitCap` (Crushing Weight Omen: 0.5). The highest one counts.
+   */
+  readonly heavyHitCap?: number;
   // Skill Web v3 (neuausrichtung-v1.md 4): Notables are "if, then", not plain numbers.
   /** Your hits deal `amount` more damage while the condition holds; each one multiplies. */
   readonly conditionalDamage?: readonly RuleBonus[];
@@ -793,6 +798,8 @@ export interface CombatantSetup {
   readonly capstone?: Capstone;
   /** Runs away after this many seconds of fight time (the Ember Thief). */
   readonly fleeAfter?: number;
+  /** The fight ends without a winner after this many seconds (Short Fuse Omen: a lost fight). */
+  readonly timeLimit?: number;
   /** Opening Move: cast for free right when the fight starts. */
   readonly openingMove?: { readonly skill: SkillDefinition; readonly level?: number };
   /** Weapon Mastery mechanics of the hero's weapon. */

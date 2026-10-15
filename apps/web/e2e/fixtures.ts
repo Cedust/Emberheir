@@ -7,6 +7,7 @@ import {
   learnBlockReason,
   learnNodes,
   newGame,
+  omenOffer,
   rollItem,
   rollUnique,
   Rng,
@@ -112,6 +113,51 @@ export function saveWithCodex(): string {
     },
   };
   return serializeGame(state);
+}
+
+/** After The Last Ember: a two-affix ring and Cinderglass for Liora's Greater Affixes. */
+export function saveGreater(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  const ring: Item = {
+    id: "greater-ring",
+    baseId: "iron-ring",
+    name: "Glowing Iron Ring",
+    rarity: "rare",
+    itemLevel: 98,
+    tier: 10,
+    affixes: [
+      { affixId: "life", quality: 0.4 },
+      { affixId: "life", quality: 0.2 },
+    ],
+  };
+  return serializeGame({
+    ...camp,
+    progress: { ...camp.progress, trainerUnlocked: true },
+    wallet: { ...camp.wallet, cinderglass: 10 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+  });
+}
+
+/** After The Last Ember: a Legendary ring to salvage, Leech Bloom already in the Power Codex. */
+export function saveCrucible(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  const ring: Item = {
+    id: "crucible-ring",
+    baseId: "iron-ring",
+    name: "Headsman's Band",
+    rarity: "legendary",
+    itemLevel: 98,
+    tier: 10,
+    affixes: [{ affixId: "life", quality: 0.4 }],
+    powerId: "executioner",
+  };
+  return serializeGame({
+    ...camp,
+    progress: { ...camp.progress, trainerUnlocked: true },
+    wallet: { ...camp.wallet, ash: 2000, emberCoal: 20 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+    powerCodex: { "leech-bloom": 7 },
+  });
 }
 
 /** The Rotwood's boss just fell in run 3: a Boss Hoard of six cards, one of them a new trophy. */
@@ -420,19 +466,31 @@ export function saveCollector(): string {
   });
 }
 
-/** After The Last Ember with Wildfire III cleared: Wildfire IV is the next tier. */
-export function saveWildfire(): string {
+/** After The Last Ember with Wildfire `best` cleared (III by default): the next tier is open. */
+export function saveWildfire(best = 3): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
   return serializeGame({
     ...camp,
     hero: { ...camp.hero, level: 100, xp: 0 },
-    legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: 3 },
+    legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: best },
+  });
+}
+
+/** Level 100 with 5 Ashborn Levels, 3 points spent on Life (neuausrichtung-v1.md 7.3). */
+export function saveAshborn(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  return serializeGame({
+    ...camp,
+    hero: { ...camp.hero, ashborn: { level: 5, xp: 4000, points: { life: 3 } } },
+    wallet: { ...camp.wallet, acorns: 5000 },
   });
 }
 
 /** On the road in the Ashen Fields (second run), right before the fork of Stages 3–4. */
 export function saveAtFork(): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
-  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
+  // The Ashen Fields are an old act in the second run: they burn under an Omen.
+  const omens = omenOffer(camp, GAME_DATA, "ashen-fields").slice(0, 1);
+  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields", omens });
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }

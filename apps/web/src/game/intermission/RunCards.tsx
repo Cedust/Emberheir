@@ -22,6 +22,7 @@ import {
   PROGRESSION,
   wildfireName,
   xpToNextLevel,
+  tripOmenEffects,
 } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
 import { fmt } from "../../ui/items";
@@ -61,7 +62,9 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
   const hero = state.hero;
   const maxLife = deriveStats(heroSetup(state, GAME_DATA).setup).maxLife;
   const lifePct = Math.round(run.lifeFraction * 100);
-  const canDrink = state.flaskCharges > 0 && run.lifeFraction < 1;
+  // Parched (a Wildfire Omen) takes the Flask for the whole trip.
+  const parched = tripOmenEffects(state, GAME_DATA).flaskHeal <= 0;
+  const canDrink = !parched && state.flaskCharges > 0 && run.lifeFraction < 1;
   const heal = canDrink ? Math.min(PROGRESSION.flaskHeal * 100, 100 - lifePct) : 0;
   const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
@@ -98,6 +101,11 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
           Level up! More Life and Damage
         </div>
       )}
+      {run.rewards?.ashbornLevels ? (
+        <div className="level-up title-font" role="status">
+          Ashborn {state.hero.ashborn?.level ?? ""}! A point for the Character Sheet
+        </div>
+      ) : null}
       <div className="xp-line sub">
         {Number.isFinite(next) ? (
           <>
@@ -296,6 +304,20 @@ export function UpNext(props: {
           {run.wildfire ? ` · ${wildfireName(run.wildfire)}` : ""}
         </span>
       </div>
+      {(run.omens ?? []).map((id) => {
+        const omen = GAME_DATA.omens?.find((o) => o.id === id);
+        return omen ? (
+          <div
+            key={id}
+            className="up-row omen-row"
+            title={`${omen.price}${omen.reward ? ` ${omen.reward}` : ""}`}
+          >
+            <span className="omen-mark" />
+            <span>Omen: {omen.name}</span>
+            <span className="sub">{omen.peril ? `Peril ${omen.peril}` : omen.price}</span>
+          </div>
+        ) : null;
+      })}
       {props.state && props.game && (
         <RouteChoice state={props.state} run={run} act={act} next={next} game={props.game} />
       )}

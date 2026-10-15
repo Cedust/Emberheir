@@ -1,3 +1,5 @@
+import { resetAshborn, spendAshborn } from "./ashborn";
+import { bindPower, type CrucibleSlot } from "./crucible";
 import { type Attributes } from "../../combat/types";
 import { type EquipmentSlot } from "../../items/types";
 import { type BattlePlanState } from "../battle-plan";
@@ -46,7 +48,13 @@ import {
 
 export type GameAction =
   /** Leave the Camp and start an act at stage 1. */
-  | { readonly type: "setOut"; readonly actId: string; readonly wildfire?: number }
+  | {
+      readonly type: "setOut";
+      readonly actId: string;
+      readonly wildfire?: number;
+      /** One of the two Run Omens of an old act, or the Wildfire Omens. */
+      readonly omens?: readonly string[];
+    }
   /** Turn in a done bounty at the Scout. */
   | { readonly type: "turnInBounty" }
   /** Camp: the Draught to brew at every set-out (`null` = none). */
@@ -123,6 +131,12 @@ export type GameAction =
     }
   /** Kaelen (Camp only): every Attribute Point anew, for Acorns like the trees. */
   | { readonly type: "respecAttributes"; readonly attributes: Attributes }
+  /** Character Sheet: Ashborn Points into one value (neuausrichtung-v1.md 7.3). */
+  | { readonly type: "spendAshborn"; readonly valueId: string; readonly count?: number }
+  /** Old Nan (Camp only): every Ashborn Point back, for Acorns. */
+  | { readonly type: "resetAshborn" }
+  /** Liora, Ember Crucible: a learned Power into its slot, or the slot emptied (`null`). */
+  | { readonly type: "bindPower"; readonly slot: CrucibleSlot; readonly powerId: string | null }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -130,8 +144,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
   switch (action.type) {
     case "setOut":
       return action.wildfire
-        ? setOutWildfire(state, data, action.actId, action.wildfire)
-        : setOut(state, data, action.actId);
+        ? setOutWildfire(state, data, action.actId, action.wildfire, action.omens)
+        : setOut(state, data, action.actId, action.omens);
     case "turnInBounty":
       return turnInBounty(state, data);
     case "chooseDraught":
@@ -196,6 +210,12 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return doPrestige(state, data, action.branchId, action.attributes);
     case "respecAttributes":
       return respecAttributes(state, data, action.attributes);
+    case "spendAshborn":
+      return spendAshborn(state, data, action.valueId, action.count);
+    case "resetAshborn":
+      return resetAshborn(state);
+    case "bindPower":
+      return bindPower(state, data, action.slot, action.powerId);
     case "dismissNotice":
       return { ...state, notice: null };
   }

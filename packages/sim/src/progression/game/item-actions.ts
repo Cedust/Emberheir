@@ -1,3 +1,4 @@
+import { learnPower } from "./crucible";
 import { type Equipment, type EquipmentSlot } from "../../items/types";
 import { learnFromItem } from "../codex";
 import {
@@ -97,11 +98,14 @@ export function salvage(state: GameState, data: GameData, itemId: string): GameS
   requireCamp(state);
   const placed = findInInventory(state, itemId);
   const { codex } = learnFromItem(state.legacy.codex, placed.item, data.items);
+  // Ember Crucible: the item's Legendary Power goes into the Power Codex.
+  const powers = learnPower(state.powerCodex, placed.item.powerId, placed.item.tier);
   return {
     ...state,
     inventory: state.inventory.filter((p) => p !== placed),
     wallet: { ...state.wallet, ash: state.wallet.ash + salvageValue(placed.item) },
     legacy: codex === state.legacy.codex ? state.legacy : { ...state.legacy, codex },
+    ...(powers && powers !== state.powerCodex ? { powerCodex: powers } : {}),
   };
 }
 

@@ -3,6 +3,7 @@ import { type FightReport } from "../../combat/report";
 import { type Attributes, type SkillDefinition } from "../../combat/types";
 import { type Equipment, type EquipmentSlot, type Item, type ItemCatalog } from "../../items/types";
 import { Rng } from "../../rng";
+import { type AshbornState, type AshbornValue } from "../ashborn";
 import { type BattlePlanState } from "../battle-plan";
 import {
   type BoonDefinition,
@@ -17,6 +18,7 @@ import { type DraughtDefinition } from "../draughts";
 import { type EliteModifier } from "../elites";
 import { type PlacedItem } from "../inventory";
 import { type EnemyRank } from "../leveling";
+import { type OmenDefinition } from "../omens";
 import { type LearnedNodes, type SkillTreeDefinition } from "../skill-tree";
 import {
   type EchoDefinition,
@@ -38,7 +40,7 @@ import {
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 1 in the Early Dev Preview.
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -116,6 +118,10 @@ export interface GameData {
   readonly startingAttributes: Attributes;
   /** Draughts brewed from a Flask charge before setting out; none without them. */
   readonly draughts?: readonly DraughtDefinition[];
+  /** Omens (neuausrichtung-v1.md 5.2 and 7.2); old acts and the Wildfire have none without them. */
+  readonly omens?: readonly OmenDefinition[];
+  /** The values of the Ashborn Boards (neuausrichtung-v1.md 7.3); no Ashborn without them. */
+  readonly ashbornValues?: readonly AshbornValue[];
 }
 
 export interface Wallet {
@@ -126,6 +132,8 @@ export interface Wallet {
   readonly phoenixFeathers: number;
   /** Rune pouch: loose Runes by id. They take no inventory space and burn at the Prestige. */
   readonly runes: Readonly<Record<string, number>>;
+  /** Cinderglass (neuausrichtung-v1.md 7.5): only from the Wildfire, for Greater Affixes. */
+  readonly cinderglass?: number;
 }
 
 export interface HeroState {
@@ -155,6 +163,10 @@ export interface HeroState {
   readonly plan: BattlePlanState;
   /** Runes in the Rune Sockets of the Skill Web: socket node id → Rune id. */
   readonly webRunes?: Readonly<Record<string, string>>;
+  /** Ashborn (neuausrichtung-v1.md 7.3): XP after level 100, its levels and spent points. */
+  readonly ashborn?: AshbornState;
+  /** Ember Crucible (neuausrichtung-v1.md 8): the Power bound into each opened slot. */
+  readonly crucible?: Readonly<Partial<Record<"strike" | "ward" | "ember", string>>>;
 }
 
 export interface Encounter {
@@ -177,6 +189,8 @@ export interface Encounter {
   readonly echo?: string;
   /** A named Champion (neuausrichtung-v1.md 6.1): three modifiers and its own hoard. */
   readonly champion?: boolean;
+  /** The Omens of the trip that change the enemy (copied from the run). */
+  readonly omens?: readonly string[];
 }
 
 export type ItemPick =
@@ -208,6 +222,10 @@ export interface Rewards {
   /** Runes that dropped (straight into the pouch). */
   readonly runes: readonly string[];
   readonly levelsGained: number;
+  /** Ashborn Levels this fight gave (after level 100). */
+  readonly ashbornLevels?: number;
+  /** Cinderglass from a Wildfire boss. */
+  readonly cinderglass?: number;
   /** The stage was a Waymark reached for the first time this run: +1 Skill Point. */
   readonly waymark?: boolean;
   /** Item pick: `picks` (default 1) of these. */
@@ -254,6 +272,8 @@ export interface RunState {
   readonly wildfire?: number;
   /** The Draught brewed for this trip (it lasts until the Camp). */
   readonly draught?: string;
+  /** The Omens of this trip: one Run Omen in an old act, any Wildfire Omens in the Wildfire. */
+  readonly omens?: readonly string[];
   /**
    * Routes chosen on this trip (neuausrichtung-v1.md 6.2): by the first stage of each fork
    * (`routeForks`). A fork without a choice takes the Shrine path.
@@ -405,6 +425,12 @@ export interface GameState {
   readonly lineage?: number;
   /** The Draught chosen in the Camp: brewed from a Flask charge at every set-out. */
   readonly draught?: string | null;
+  /**
+   * Power Codex (neuausrichtung-v1.md 8): Legendary Powers learned by salvaging, with the best
+   * tier learned. It belongs to the account: the UI keeps one for all characters (like the
+   * Lineage) and puts it into the state it loads.
+   */
+  readonly powerCodex?: Readonly<Record<string, number>>;
 }
 
 export class GameActionError extends Error {}

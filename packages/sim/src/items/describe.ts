@@ -8,7 +8,7 @@ import type {
   TriggerEffect,
   TriggerSpec,
 } from "../combat/types";
-import { isPercentStat, resolveTrigger, statAffixValue } from "./affixes";
+import { greaterRank, isPercentStat, resolveTrigger, statAffixValue } from "./affixes";
 import {
   addedDamageRange,
   itemWeapon,
@@ -224,6 +224,8 @@ export interface ItemTooltip {
   readonly affixLines: readonly {
     readonly text: string;
     readonly kind: "stat" | "trigger" | "kindled";
+    /** Greater Affix rank (I–V), neuausrichtung-v1.md 7.5. */
+    readonly greater?: number;
   }[];
   /** "unique" and "runeword" items show their own label and color. */
   readonly special?: "unique" | "runeword";
@@ -294,24 +296,33 @@ export function describeItem(
     ...item.affixes,
     ...(word?.triggers ?? []),
     ...(power?.trigger ? [power.trigger] : []),
-  ].flatMap((roll): { text: string; kind: "stat" | "trigger" | "kindled" }[] => {
-    const affix = catalog.affixes.get(roll.affixId);
-    if (!affix) return [];
-    if (affix.kind === "trigger") {
+  ].flatMap(
+    (roll, i): { text: string; kind: "stat" | "trigger" | "kindled"; greater?: number }[] => {
+      const affix = catalog.affixes.get(roll.affixId);
+      if (!affix) return [];
+      const rank = greaterRank(item, i);
+      const greater = rank > 0 ? { greater: rank } : {};
+      if (affix.kind === "trigger") {
+        return [
+          {
+            text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality, rank)),
+            kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
+            ...greater,
+          },
+        ];
+      }
       return [
         {
-          text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality)),
-          kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
+          text: describeStat(
+            affix.stat,
+            statAffixValue(affix, item.tier, roll.quality, item.rarity, rank),
+          ),
+          kind: "stat" as const,
+          ...greater,
         },
       ];
-    }
-    return [
-      {
-        text: describeStat(affix.stat, statAffixValue(affix, item.tier, roll.quality, item.rarity)),
-        kind: "stat" as const,
-      },
-    ];
-  });
+    },
+  );
   // Runeword and Rune bonuses read like affixes.
   const extra = scaledFlatBonuses(
     sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses),

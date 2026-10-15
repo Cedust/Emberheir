@@ -1,3 +1,4 @@
+import { ashbornEffects } from "../ashborn";
 import { EMPTY_BOONS } from "../boons";
 import { bountyAfterFlask, rollBounty } from "../bounties";
 import { PROGRESSION } from "../constants";
@@ -25,6 +26,7 @@ import { getBounty } from "./bounty";
 import { bossAbilities, encounterName, finaleEncounter, wildfireBossAbilities } from "./encounters";
 import { brewedDraught, draughtsOpen, flaskCapacity, getDraught } from "./flask";
 import { requireCamp, requireRun } from "./guards";
+import { checkOmens, tripOmenEffects } from "./omens";
 import { requireRewards, rewardsDone } from "./rewards";
 import {
   type ActData,
@@ -39,10 +41,17 @@ import {
 
 /** A trip out of the Camp: set out, stages, drinking from the Ember Flask, back to the Camp. */
 
-export function setOut(state: GameState, data: GameData, actId: string): GameState {
+export function setOut(
+  state: GameState,
+  data: GameData,
+  actId: string,
+  omenIds: readonly string[] = [],
+): GameState {
   requireCamp(state);
   const act = getAct(data, actId);
   if (!actUnlocked(state, data, actId)) fail("The road there is still closed");
+  // An old act of the run burns under one of the two Omens Eldrin shows (neuausrichtung-v1.md 5.2).
+  const omens = checkOmens(state, data, actId, omenIds);
   // The Scout hands out a bounty for this trip.
   const [rng, next] = nextRng(state);
   const bounty =
@@ -69,6 +78,7 @@ export function setOut(state: GameState, data: GameData, actId: string): GameSta
       rewards: null,
       ...(bounty ? { bounty } : {}),
       ...(draught ? { draught: draught.id } : {}),
+      ...(omens.length ? { omens } : {}),
     },
   };
 }
@@ -88,6 +98,7 @@ export function setOutWildfire(
   data: GameData,
   actId: string,
   tier: number,
+  omenIds: readonly string[] = [],
 ): GameState {
   requireCamp(state);
   if (!wildfireOpen(state)) return fail("Wildfire opens after The Last Ember");
@@ -96,6 +107,8 @@ export function setOutWildfire(
   }
   if (isFinaleAct(data, actId)) return fail("The Last Ember does not burn again");
   getAct(data, actId);
+  // Wildfire Omens: as many as the hero likes, at least the tier's Peril (neuausrichtung-v1.md 7.2).
+  const omens = checkOmens(state, data, actId, omenIds, tier);
   const draught = brewedDraught(state, data);
   return {
     ...state,
@@ -110,6 +123,7 @@ export function setOutWildfire(
       rewards: null,
       wildfire: tier,
       ...(draught ? { draught: draught.id } : {}),
+      ...(omens.length ? { omens } : {}),
     },
   };
 }
@@ -209,6 +223,8 @@ export function startStage(state: GameState, data: GameData): GameState {
         atBoss && act.boss.archetype === "harvester",
       );
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
+  const omens = tripOmenEffects(state, data);
+  const omened = run.omens?.length ? { omens: run.omens } : {};
   // Longer fights over more enemy Life (neuausrichtung-v1.md 5.5), not in the Wildfire.
   const length = (kind: keyof typeof PROGRESSION.fightLength.life) => {
     const life = p.life * (tier ? 1 : PROGRESSION.fightLength.life[kind]);
@@ -228,6 +244,7 @@ export function startStage(state: GameState, data: GameData): GameState {
       ).map((m) => m.id),
       ...length("boss"),
       ...walled,
+      ...omened,
       seed: rng.int(0, 0x7fffffff),
     };
   } else {
@@ -250,7 +267,9 @@ export function startStage(state: GameState, data: GameData): GameState {
     let champion = false;
     if (
       !thief &&
-      (wall?.gate || route?.kind === "elite" || rng.chance(eliteChance(act.number, run.stage)))
+      (wall?.gate ||
+        route?.kind === "elite" ||
+        rng.chance(eliteChance(act.number, run.stage) * omens.eliteChance))
     ) {
       // From run 3 an Elite may be a named Champion: three modifiers and its own hoard.
       const c = PROGRESSION.champion;
@@ -275,6 +294,7 @@ export function startStage(state: GameState, data: GameData): GameState {
           }
         : sized),
       ...walled,
+      ...omened,
       ...(wall?.gate ? { gate: true } : {}),
       seed: rng.int(0, 0x7fffffff),
       ...(thief ? { thief: true } : {}),
@@ -380,6 +400,11 @@ export function continueRun(state: GameState, data: GameData): GameState {
 
 export function useFlask(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission", "rewards");
+  const heal =
+    PROGRESSION.flaskHeal *
+    tripOmenEffects(state, data).flaskHeal *
+    ashbornEffects(state.hero.ashborn, data.ashbornValues ?? []).flaskHeal;
+  if (heal <= 0) return fail("Parched: the Ember Flask stays dry on this trip");
   if (state.flaskCharges <= 0) return fail("The Ember Flask is empty");
   if (run.lifeFraction >= 1) return fail("Life is already full");
   const bounty = run.bounty
@@ -390,7 +415,7 @@ export function useFlask(state: GameState, data: GameData): GameState {
     flaskCharges: state.flaskCharges - 1,
     run: {
       ...run,
-      lifeFraction: Math.min(1, run.lifeFraction + PROGRESSION.flaskHeal),
+      lifeFraction: Math.min(1, run.lifeFraction + heal),
       ...(bounty ? { bounty } : {}),
     },
   };

@@ -22,6 +22,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   const maxResistance: Partial<Record<Element, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
   let execute: CombatRules["execute"];
+  let heavyHitCap: number | undefined;
   const conditionalDamage: NonNullable<CombatRules["conditionalDamage"]>[number][] = [];
   const conditionalCrit: NonNullable<CombatRules["conditionalCrit"]>[number][] = [];
   const ailmentDamageWhen: NonNullable<CombatRules["ailmentDamageWhen"]>[number][] = [];
@@ -74,6 +75,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     conditionalCrit.push(...(r.conditionalCrit ?? []));
     ailmentDamageWhen.push(...(r.ailmentDamageWhen ?? []));
     conversion.push(...(r.conversion ?? []));
+    if (r.heavyHitCap !== undefined) heavyHitCap = Math.max(heavyHitCap ?? 0, r.heavyHitCap);
     if (r.execute && (!execute || r.execute.bonus > execute.bonus)) execute = r.execute;
   }
   return {
@@ -93,6 +95,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
     ...(execute ? { execute } : {}),
+    ...(heavyHitCap !== undefined ? { heavyHitCap } : {}),
     ...(conditionalDamage.length ? { conditionalDamage } : {}),
     ...(conditionalCrit.length ? { conditionalCrit } : {}),
     ...(ailmentDamageWhen.length ? { ailmentDamageWhen } : {}),

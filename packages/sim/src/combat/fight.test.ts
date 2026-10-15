@@ -45,6 +45,12 @@ describe("Fight", () => {
     expect(result.duration).toBeCloseTo(COMBAT.maxFightSeconds, 5);
   });
 
+  it("a fighter's own time limit ends it sooner (Short Fuse)", () => {
+    const result = runFight(dummy({ timeLimit: 90 }), dummy(), 1);
+    expect(result.winner).toBeNull();
+    expect(result.duration).toBeCloseTo(90, 5);
+  });
+
   it("plays in real time when advanced in frame-sized steps", () => {
     // One call per rendered frame, shorter than a tick: 10 s at 60 and at 144 frames per second.
     for (const fps of [60, 144]) {
@@ -370,6 +376,20 @@ describe("Fight", () => {
       fight.advance(5.6);
       const slam = ofType(fight.events, "hit").find((h) => h.source === "Slam");
       expect(slam?.damage).toBe(cap);
+    });
+
+    it("a higher Heavy Attack cap lets more through (Crushing Weight)", () => {
+      const huge = { ...SLAM, hits: [{ kind: "weapon" as const, multiplier: 500 }] };
+      const target = dummy({ baseLife: 400, rules: { heavyHitCap: 0.5 } });
+      const fight = new Fight(
+        target,
+        { ...boss(), telegraphs: [{ skill: huge, interval: 4, windup: 1.5 }] },
+        1,
+      );
+      fight.advance(5.6);
+      const slam = ofType(fight.events, "hit").find((h) => h.source === "Slam");
+      expect(slam?.damage).toBe(heavyHitCap(deriveStats(target), 0.5));
+      expect(slam?.damage).toBeGreaterThan(heavyHitCap(deriveStats(target)));
     });
 
     it("repeats every interval after the wind-up", () => {

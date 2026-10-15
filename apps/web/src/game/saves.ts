@@ -35,6 +35,13 @@ export const STASH_KEY = storageKey("stash");
  */
 export const LINEAGE_KEY = storageKey("lineage");
 
+/**
+ * Power Codex (neuausrichtung-v1.md 8): Legendary Powers learned by any character, with the best
+ * tier. Shared by every slot like the stash.
+ */
+export const POWER_CODEX_KEY = storageKey("powerCodex");
+const powerCodexSchema = z.record(z.string(), z.number().int().positive());
+
 /** The seeds of the finishers; a broken list reads as empty. */
 const lineageSchema = z.object({ finishers: z.array(z.number().int()) });
 type SharedLineage = z.infer<typeof lineageSchema>;
@@ -57,6 +64,7 @@ export class SaveStore {
   private readonly written = new Map<number, GameState>();
   private stash: readonly PlacedItem[] | null = null;
   private finishers: readonly number[] | null = null;
+  private powers: Readonly<Record<string, number>> | null = null;
 
   constructor(private readonly kv: KeyValueStore) {}
 
@@ -66,6 +74,7 @@ export class SaveStore {
     this.written.clear();
     this.stash = null;
     this.finishers = null;
+    this.powers = null;
   }
 
   /** One slot's own save game, without the shared stash. */
@@ -168,6 +177,34 @@ export class SaveStore {
     const step = Math.min(LINEAGE_STEPS, finishers.length);
     return (state.lineage ?? 0) === step ? state : { ...state, lineage: step };
   }
+
+  /**
+   * The state with the account's Power Codex: what this character learned joins it (the best
+   * tier per Power), and it learns what the others did.
+   */
+  syncPowerCodex(state: GameState): GameState {
+    if (this.powers === null) {
+      this.powers = parseStored(this.kv.getItem(POWER_CODEX_KEY), powerCodexSchema, {});
+    }
+    const merged: Record<string, number> = { ...this.powers };
+    for (const [id, tier] of Object.entries(state.powerCodex ?? {})) {
+      merged[id] = Math.max(merged[id] ?? 0, tier);
+    }
+    const ids = Object.keys(merged);
+    // Only Powers this game knows (content may drop one).
+    const known = Object.fromEntries(
+      ids.filter((id) => GAME_DATA.items.powers.has(id)).map((id) => [id, merged[id] ?? 1]),
+    );
+    const same = (a: Readonly<Record<string, number>>, b: Readonly<Record<string, number>>) =>
+      Object.keys(a).length === Object.keys(b).length &&
+      Object.entries(a).every(([id, t]) => b[id] === t);
+    if (!same(known, this.powers)) {
+      this.kv.setItem(POWER_CODEX_KEY, JSON.stringify(known));
+      this.powers = known;
+    }
+    if (Object.keys(known).length === 0) return state;
+    return same(known, state.powerCodex ?? {}) ? state : { ...state, powerCodex: this.powers };
+  }
 }
 
 // The browser's storage; private windows can block it, then nothing is saved.
@@ -209,5 +246,6 @@ export const sharedStashFor = (state: GameState) =>
 /** Full or blocked storage: the game still runs, it just is not saved. */
 export const saveSlot = (slot: number, state: GameState | null) =>
   withStore((s) => s.write(slot, state), undefined);
-/** The state with the account's Lineage; without storage it stays as it is. */
-export const lineageFor = (state: GameState) => withStore((s) => s.syncLineage(state), state);
+/** The state with the account's Lineage and Power Codex; without storage it stays as it is. */
+export const accountFor = (state: GameState) =>
+  withStore((s) => s.syncPowerCodex(s.syncLineage(state)), state);

@@ -67,6 +67,22 @@ Endgame **Wildfire I–X**.
 - **Routen** (`elites-routen-v1.md`): Vor jedem Waymark vor dem Boss gabelt sich der Weg für zwei Stages (3–4 und 8–9):
   **Elite-Pfad** (zwei sichere Elites), **Shrine-Pfad** (danach eine Shrine), **Hearth-Pfad** (danach +25 % Life),
   mit offener Thief-Bounty auch die **Thief's Trail**. Gewählt in der Intermission, ohne Wahl gilt der Shrine-Pfad.
+- **Omens** (`neuausrichtung-v1.md` 5.2): Wer in einen **alten** Act des Runs aufbricht (jeder Act vor dem neuesten),
+  wählt bei Eldrin **eins von zwei Omens**. Das Angebot ist pro Act und Run fest, das nächste Prestige würfelt neu.
+  Jedes Run-Omen hat einen **Preis und einen Lohn** und nimmt keiner Defense- oder Heil-Schicht mehr als die Hälfte:
+
+  | Omen | Preis | Lohn |
+  |---|---|---|
+  | Stoneflesh | Gegner +50 % Armor | +50 % Ember Coal |
+  | Blight Bloom | Gegner-Treffer vergiften, Gegner heilen sich an ihrem Poison | Runes einen Rang höher |
+  | Cinder Rain | Gegner-Treffer setzen Burn | +20 % XP |
+  | Dry Season | Flask heilt 40 % weniger | Hearth Embers und Feuer der Gabelung heilen 60 % mehr |
+  | Restless Dead | Elites 60 % häufiger | +30 % Legendary-Chance |
+  | Thin Veil | Gegner-Treffer lassen bluten, Gegner-Ailments +30 % | eigene Ailments +20 % |
+  | Blood Moon | Gegner +15 % Attack Speed | eigene +10 % Attack Speed |
+  | Hollow Wind | −10 % alle Resistances | +40 % Ember Coal, +10 % XP |
+
+  Der neueste Act hat kein Omen. Das gewählte Omen steht während des Zugs im „Up next“-Kasten.
 - Jeder Kampf ist 1 gegen 1 und läuft automatisch. Keine Zeitraffer- oder Auto-Resolve-Funktion ✅ (Timo).
 
 ### 2.3 Nach jedem Kampf ✅ (`entschlackung-v1.md`)
@@ -102,19 +118,36 @@ Endgame **Wildfire I–X**.
   härtester Kampf). Nach jedem Echo 1 aus 3 Boons. Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe.
 - **Wildfire I–X** (nach dem Finale): Ein gewählter Act brennt erneut auf einer Stufe. Monster Level 92 (I) bis 110 (X).
   Mehr Legendaries und Runes, keine Shrines. Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
-  Min-Maxing (`endgame-balance-v1.md`). Umbau mit Omens und Ashborn: siehe `neuausrichtung-v1.md` 💡.
+  Min-Maxing (`endgame-balance-v1.md`).
+- **Wildfire-Omens** (`neuausrichtung-v1.md` 7.2): Vor jedem Wildfire-Zug wählt man beliebig viele aus 20 Omens, jedes mit
+  **Peril 1–3**. Mindest-Peril: I–V 0, VI 2, VII 4, VIII 6, IX 8, X 10. **Jeder Punkt Peril** gibt +8 % XP und +5 %
+  Legendary-Chance, je 4 Peril einen Rune-Rang mehr, je 3 Peril ein Cinderglass mehr am Boss.
+  - Peril 1: Searing Touch (Treffer setzen Burn), Stoneflesh (+50 % Armor), Frostbite (Chill), Venom (Poison),
+    Swollen (+25 % Life), Dry Season (Flask halb), Iron Will (Gegner +40 % Tenacity).
+  - Peril 2: Hexed Ground (−15 % Resistances), Bloodfever (+25 % Attack Speed), Parched (keine Flask), Short Fuse
+    (Kampf über 90 s ist verloren), Fury (+20 % Schaden), Warded Foes (+20 % Resistances), Restless Dead (doppelt so
+    viele Elites), Leeches (Gegner 8 % Lifesteal), Ember Tax (Skills +30 % Heat).
+  - Peril 3: Silenced Ember (erster Rotation Slot leer), Crushing Weight (Heavy-Hit-Deckel 50 % statt 35 %), Giants
+    (+50 % Life), Brittle Bones (−20 % max Life).
+- **Ashborn** (`neuausrichtung-v1.md` 7.3): Ab Level 100 fließt XP in **Ashborn-Level** (das erste kostet 12.000 XP,
+  jedes weitere 4 % des ersten mehr). Jedes gibt einen Punkt, höchstens **100**, höchstens **15 pro Wert**, auf vier
+  Boards: **Onslaught** (Damage, Crit Chance, Attack Speed, Ailment Effect, Penetration), **Aegis** (Life, Defenses,
+  Resistances, Max Resistance bis +5 %, Tenacity, Block), **Mending** (Lifesteal, Ailment Healing, Barrier Recharge,
+  Flask) und **Ignite** (Heat Gain, Starting Heat, Trigger Chance, Skill Cost). Verteilt im **Character Sheet**
+  (Tab „Ashborn“), zurückgesetzt bei **Old Nan** für 2.000 Acorns.
+- **Greater Affixes** und **Cinderglass**: siehe 5.3. **Ember Crucible**: siehe 5.3.
 
 ### 2.7 Camp ✅
 
 | Persona | Rolle | Aufgaben |
 |---|---|---|
-| **Kaelen** | Trainer | Skill Web, Weapon Mastery, Battle Plan, Attribute (jeder Respec kostet Acorns), **Training Dummy** (Schaden/s nach Quelle, Items live anprobieren) |
-| **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers), Reforge (Ember Coal), Salvage (→ Ash, lehrt den Trigger Codex) |
-| **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen) |
+| **Kaelen** | Trainer | Skill Web, Weapon Mastery, Battle Plan (jeder Respec kostet Acorns), **Training Dummy** (Schaden/s nach Quelle, Items live anprobieren) |
+| **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers), Reforge (Ember Coal), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
+| **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
 | **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot) |
 | **Eldrin** | Scout | Act Preview, **Bounties** (ein optionaler Auftrag pro Zug) |
-| **Old Nan** | Hearthfire | Geschichte, Compendium, Legacy |
+| **Old Nan** | Hearthfire | Geschichte, Compendium, Legacy, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
@@ -131,6 +164,7 @@ Endgame **Wildfire I–X**.
 | **Ember Coal** | Reforge, Kindle |
 | **Phoenix Feathers** | Item-Upgrade um ein Tier (Bosse) |
 | **Runes** | Sockets und Runewords |
+| **Cinderglass** | nur aus dem Wildfire (Boss 1–2, +1 je 3 Peril, +1 ab VIII): Greater Affixes |
 
 ---
 
@@ -148,7 +182,7 @@ Endgame **Wildfire I–X**.
 
 ### 3.2 Attribute ✅ (`attribute-v1.md`)
 - Sechs Attribute, Skala **1–10** (Gear hebt bis 12). Bei der Erstellung: Klassen-Array + 6 freie Punkte (max. 7).
-  Jede Harvest: +2 Punkte. Respec bei Kaelen für Acorns.
+  Jede Harvest: +2 Punkte. Zurücksetzen bei Old Nan für Acorns, neu verteilt im Character Sheet.
 - **Breakpoints bei 4, 7 und 10** schalten je einen Perk frei (nur eigene Punkte zählen).
 
 | Attribut | Wirkung pro Punkt | Perks 4 / 7 / 10 |
@@ -309,6 +343,17 @@ Endgame **Wildfire I–X**.
 - **Crafting-Grenzen:** Reforge löst den Affix-Lock, Legendary Powers und Runewords sind unveränderbar,
   Uniques können nicht reforged/tempered werden.
 - **Trophy Wall:** Sammlung aller gefundenen Uniques.
+- **Greater Affixes** (`neuausrichtung-v1.md` 7.5, bei Liora nach The Last Ember): **Awaken** (3 Cinderglass) macht ein
+  zufälliges Affix zu **Greater I** = 110 % des Höchstwerts seines Tiers, **Shift** (1) setzt es auf ein anderes
+  zufälliges Affix, **Intensify** (2/4/8/16) hebt es bis **Greater V** = 150 %. Ein Greater pro Item, die **Stufe gehört
+  dem Item** (Shift und Reforge behalten sie). Uniques dürfen eins bekommen, die feste Zahl von Epic/Legendary-Affixen
+  (`epicValue`) nicht.
+- **Ember Crucible** (`neuausrichtung-v1.md` 8): Salvage eines Legendary oder Unique lehrt seine Power den **Power
+  Codex** (gehört dem ganzen Account, der höchste Tier zählt). Liora bindet gelernte Powers in drei Slots nach Art:
+  **Strike** (Treffer, Crits, Execute; offen mit der ersten Power), **Ward** (Defense, Heilung; offen nach The Last
+  Ember), **Ember** (Ailments, Heat, Trigger, Regeln; offen nach Wildfire V). Binden kostet 300 Ash und 3 Ember Coal,
+  jeder Wechsel erneut. Eine Power wirkt nur einmal: Steckt sie auch auf einem getragenen Item, ruht die Kopie im
+  Crucible.
 
 ### 5.4 Stolen Fire Boons ✅
 - Funken aus dem Feuer der Wardens: eine Familie pro Boss (Ash, Rot, Cinder, Rime, Storm, Void) plus Hearth.
@@ -370,10 +415,12 @@ Endgame **Wildfire I–X**.
   (Messwerkzeug), Phase 2 (Welt-Band, Sägezahn, Kampfdauer, Hearth Embers), Phase 3 (Ailments v2, Class Traits) und
   Phase 4 (Elites, Routen, Item-Picks, Training Dummy) sind gebaut. Von Phase 5 ist **Weapon Mastery v2** gebaut
   (mit Mighty Hits, Parry und dem Freeze des Rime-Pfads), dazu **Skill Web v3**, die Hoheitsgebiete in Web und
-  Prestige-Ästen, mehr Affixe auf Rare/Epic/Legendary, die Rune Sockets im Web und die Umbenennungen aus 1.3. Offen:
-  Phase 6.
+  Prestige-Ästen, mehr Affixe auf Rare/Epic/Legendary, die Rune Sockets im Web und die Umbenennungen aus 1.3. Phase 6
+  ist gebaut: Omens (Run und Wildfire), Ashborn, Greater Affixes mit Cinderglass, Ember Crucible mit Power Codex.
+  Offen aus Phase 6: mehr Legendary Powers (heute 26, Ziel ~36), Wildfire-Uniques ab VI, Pixi-Looks der Omens.
 - Später: Ancestor Duels, Battle Plan Presets, Death Recap, Fight Stats: `merkliste-spaeter.md`
-- Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch.
+- Autopilot nutzt kein Crafting (Reforge, Temper, Kindle): Die Balance-Zahlen sind bewusst etwas pessimistisch. Im
+  Endgame nutzt er Greater Affixes, Ashborn und das Crucible.
 
 ---
 

@@ -1,17 +1,24 @@
 import {
   type ActData,
   applyAction,
+  ashbornBlockReason,
+  ashbornUnspent,
   ATTRIBUTE_RULES,
   ATTRIBUTES,
   type Attributes,
   BOON_GRADES,
   type BoonPick,
+  craftBlockReason,
+  craftCost,
+  CRUCIBLE_SLOTS,
+  crucibleLock,
   draughtsOpen,
   equipBlockReason,
   getAct,
   routeAt,
   type GameData,
   type GameState,
+  heroAshborn,
   heroBoons,
   heroSetup,
   masteryPointsLeft,
@@ -169,6 +176,27 @@ export function spendPoints(state: GameState, data: GameData, weaponId: string):
     if (!best) break;
     s = best;
   }
+  return spendAshborn(s, data);
+}
+
+/** Ashborn Points (neuausrichtung-v1.md 7.3) one by one where they add the most value. */
+function spendAshborn(state: GameState, data: GameData): GameState {
+  let s = state;
+  while (ashbornUnspent(heroAshborn(s)) > 0) {
+    let best: GameState | null = null;
+    let bestValue = -Infinity;
+    for (const v of data.ashbornValues ?? []) {
+      if (ashbornBlockReason(heroAshborn(s), data.ashbornValues ?? [], v.id)) continue;
+      const next = applyAction(s, data, { type: "spendAshborn", valueId: v.id });
+      const value = gearValue(next, data);
+      if (value > bestValue + 1e-6) {
+        best = next;
+        bestValue = value;
+      }
+    }
+    if (!best) break;
+    s = best;
+  }
   return s;
 }
 
@@ -229,4 +257,66 @@ export function autopilotPrestige(
     ...(preferred ? { branchId: preferred } : {}),
   });
   return applyAction(s, data, { type: "dismissNotice" });
+}
+
+/**
+ * Liora's Greater Affixes (neuausrichtung-v1.md 7.5): Cinderglass goes where it adds the most
+ * value per glass on the worn items: Awaken, Intensify, or Shift a Greater that sits on an affix
+ * the build does not use.
+ */
+export function spendCinderglass(state: GameState, data: GameData): GameState {
+  let s = state;
+  for (let guard = 0; guard < 64 && (s.wallet.cinderglass ?? 0) > 0; guard++) {
+    const base = gearValue(s, data);
+    let best: GameState | null = null;
+    let bestGain = 1e-6;
+    for (const item of Object.values(s.hero.equipment)) {
+      if (!item) continue;
+      for (const kind of ["awaken", "intensify", "shift"] as const) {
+        const request = { kind, itemId: item.id };
+        if (craftBlockReason(s, data, request)) continue;
+        const next = applyAction(s, data, { type: "craft", request });
+        const glass = craftCost(request, item, data, s).cinderglass ?? 1;
+        const gain = (gearValue(next, data) - base) / glass;
+        if (gain > bestGain) {
+          best = next;
+          bestGain = gain;
+        }
+      }
+    }
+    if (!best) break;
+    s = best;
+  }
+  return s;
+}
+
+/**
+ * Ember Crucible (neuausrichtung-v1.md 8): each open slot gets the learned Power that adds the
+ * most value; a bound Power is only swapped for a clearly better one (binding costs).
+ */
+export function bindPowers(state: GameState, data: GameData): GameState {
+  let s = state;
+  for (const slot of CRUCIBLE_SLOTS) {
+    if (crucibleLock(s, slot)) continue;
+    const base = gearValue(s, data);
+    let best: GameState | null = null;
+    let bestValue = base + 0.01;
+    for (const power of data.items.powers.values()) {
+      if (power.crucible !== slot || !s.powerCodex?.[power.id]) continue;
+      if (s.hero.crucible?.[slot] === power.id) continue;
+      let next: GameState;
+      try {
+        next = applyAction(s, data, { type: "bindPower", slot, powerId: power.id });
+      } catch {
+        continue;
+      }
+      const value = gearValue(next, data);
+      if (value > bestValue) {
+        best = next;
+        bestValue = value;
+      }
+    }
+    if (best) s = best;
+  }
+  return s;
 }

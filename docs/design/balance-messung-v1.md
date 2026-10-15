@@ -394,3 +394,33 @@ Messungen. 3 von 525 Läufen bleiben nach 30 Anläufen hängen (Unbroken Run 6, 
 3. **Class Traits:** Spark +10 % (statt 50 % vor Phase 5), Iron Blood −50 % Schaden durch Heavy Attacks.
 
 **Offen:** Elites tragen 24 % der Tode (Ziel 10–20 %), normale Stages nur 3 % (Ziel 5–15 %).
+
+## 12. Phase 6: Omens, Ashborn, Greater Affixes, Ember Crucible (15.10.)
+
+**Neueste Acts** (15 Builds × 5 Läufe, Seed 31): Die Run-Omens in den alten Acts und das Crucible ändern die Wände kaum.
+
+| Lauf | Stand | Anläufe | Builds | geschafft |
+|---|---|---|---|---|
+| R8 | Ende Phase 5 | 3,5 | 2,7 – 5,3 | 99 % |
+| O1 | + Omens (Autopilot wählt per Probekampf gegen den Act-Boss) | 3,3 | 2,4 – 4,8 | 99 % |
+| C1 | + Ashborn, Greater Affixes, Ember Crucible | 3,2 | 2,4 – 4,8 | 99 % |
+
+Run 2–7 bei C1: 4,4 / 3,5 / 3,5 / 3,9 / 3,2 / 3,0. Tode normal / Elite / Gate / Boss: 4 / 26 / 20 / 50 %. Die Staffs
+liegen bei 2,4–2,8 Anläufen, knapp unter dem Ziel.
+
+**Wildfire I–X** (15 Builds × 2 Läufe, `--wildfire 10`, Autopilot nimmt nur den Mindest-Peril):
+
+| Stufe | W1: Tode bis zum Sieg | geschafft | W2: Tode | geschafft |
+|---|---|---|---|---|
+| I–V | 0,0 – 0,3 | 100 % | 0,0 – 0,3 | 100 % |
+| VI | 0,7 | 100 % | 1,1 | 100 % |
+| VII | 0,4 | 100 % | 1,7 | 100 % |
+| VIII | 2,5 | 100 % | 5,1 | 93 % |
+| IX | 1,1 | 100 % | 2,2 | 100 % |
+| X | 5,1 | 83 % | 8,3 | 57 % |
+
+W1 war mit Ashborn, Greater Affixes und Crucible zu leicht. **W2** (im Code): oberhalb von V wächst die Gegner-Life um
+35 % statt 20 % pro Stufe, der Schaden um 8 % statt 0. Damit passt das Ziel aus 7.1: I–V schafft jeder Build ohne
+Tod, VI–VII kosten ein, zwei Anläufe, VIII und X sind Pinnacles (X schaffen 57 % der Läufe in 30 Anläufen, die
+Bleed-Builds, Fire Wand und Rot brauchen dort 14–29 Tode). IX liegt im Rotwood und ist leichter als VIII in den Ashen
+Fields.

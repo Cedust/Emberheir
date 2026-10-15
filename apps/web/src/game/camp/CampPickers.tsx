@@ -5,6 +5,10 @@ import {
   type Item,
   applyAction,
   DRAUGHT_FLASK_COST,
+  minPeril,
+  type OmenDefinition,
+  omenPeril,
+  perilReward,
   wildfireLevel,
   wildfireName,
 } from "@emberheir/sim";
@@ -66,7 +70,7 @@ function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: (
 }
 
 const WILDFIRE_HINT =
-  "Wildfire: any act burns again, harder each tier. Monster Level 92 at I up to 110 at X (above V the foes outlevel you), only T10 items, more Legendaries and higher Runes. Clear an act boss to open the next tier.";
+  "Wildfire: any act burns again, harder each tier. Monster Level 92 at I up to 110 at X (above V the foes outlevel you), only T10 items, more Legendaries and higher Runes. Choose Omens for Peril: VI asks for 2, up to 10 at X, and every point pays more XP and Legendaries. Bosses drop Cinderglass. Clear an act boss to open the next tier.";
 
 /** Wildfire tier for the next trip (spielzeit-v1.md, C): Off, then I up to one above the best. */
 export function WildfirePicker(props: {
@@ -192,5 +196,115 @@ export function BountyTurnIn(props: {
         <Icon name="target" size={14} /> Turn In
       </button>
     </div>
+  );
+}
+
+const omenOf = (id: string): OmenDefinition | undefined =>
+  GAME_DATA.omens?.find((o) => o.id === id);
+
+/**
+ * Run Omens (neuausrichtung-v1.md 5.2): an old act burns under one of two Omens. Eldrin shows
+ * both with their price, their reward and the Scout's question to the build; the hero picks one.
+ */
+export function OmenChoice(props: {
+  offer: readonly string[];
+  chosen: string | null;
+  onPick: (id: string) => void;
+}) {
+  return (
+    <div className="omen-choice" role="radiogroup" aria-label="Omen">
+      <span className="eyebrow">OMEN · CHOOSE ONE</span>
+      <div className="omen-cards">
+        {props.offer.map((id) => {
+          const o = omenOf(id);
+          if (!o) return null;
+          const on = props.chosen === id;
+          return (
+            <button
+              key={id}
+              type="button"
+              role="radio"
+              aria-checked={on}
+              aria-label={o.name}
+              className={`omen-card${on ? " on" : ""}`}
+              onClick={() => props.onPick(id)}
+            >
+              <span className="omen-name title-font">{o.name}</span>
+              <span className="omen-price">{o.price}</span>
+              {o.reward && <span className="omen-reward">{o.reward}</span>}
+              <span className="omen-question sub small">{o.question}</span>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Wildfire Omens (neuausrichtung-v1.md 7.2): any number, each adds its Peril. Tiers above V ask
+ * for a minimum; every point pays more XP and Legendaries, every four a Rune rank.
+ */
+export function WildfireOmens(props: {
+  tier: number;
+  chosen: readonly string[];
+  onToggle: (id: string) => void;
+}) {
+  const pool = (GAME_DATA.omens ?? []).filter((o) => o.kind === "wildfire");
+  const peril = omenPeril(props.chosen.flatMap((id) => omenOf(id) ?? []));
+  const need = minPeril(props.tier);
+  const pay = perilReward(peril);
+  return (
+    <div className="wildfire-omens" role="group" aria-label="Wildfire Omens">
+      <div className="omen-peril">
+        <span className="eyebrow">OMENS</span>
+        <b className={`mono${peril < need ? " short" : ""}`}>
+          Peril {peril}
+          {need > 0 ? ` / ${need}` : ""}
+        </b>
+        <span className="sub small">
+          {peril > 0
+            ? `+${Math.round(pay.xp * 100)} % XP · +${Math.round(pay.legendary * 100)} % Legendary${pay.runeTiers ? ` · Runes +${pay.runeTiers} rank` : ""}`
+            : need > 0
+              ? `${wildfireName(props.tier)} asks for ${need} Peril`
+              : "Optional: more Peril, more loot"}
+        </span>
+      </div>
+      <div className="omen-grid">
+        {pool.map((o) => (
+          <OmenToggle
+            key={o.id}
+            omen={o}
+            on={props.chosen.includes(o.id)}
+            onToggle={() => props.onToggle(o.id)}
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+function OmenToggle(props: { omen: OmenDefinition; on: boolean; onToggle: () => void }) {
+  const o = props.omen;
+  const hover = useNoteHover({
+    name: o.name,
+    kind: `Wildfire Omen · Peril ${o.peril ?? 0}`,
+    explain: `${o.price} ${o.question}`,
+    status: props.on ? "Burns on this trip · click to drop it" : "Click to take it",
+  });
+  return (
+    <button
+      type="button"
+      aria-pressed={props.on}
+      aria-label={o.name}
+      className={`omen-toggle${props.on ? " on" : ""}`}
+      onClick={props.onToggle}
+      {...hover}
+    >
+      <span className="omen-name">{o.name}</span>
+      <span className="omen-pips" aria-hidden="true">
+        {"◆".repeat(o.peril ?? 0)}
+      </span>
+    </button>
   );
 }

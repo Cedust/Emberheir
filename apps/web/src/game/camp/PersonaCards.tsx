@@ -17,7 +17,7 @@ import {
   upgradedItem,
 } from "@emberheir/sim";
 import { baseSummary, rarityClass, rarityName } from "../../ui/items";
-import { type ActionKind, affixText, rangeText } from "./personaDefs";
+import { type ActionKind, affixText, greaterName, rangeText } from "./personaDefs";
 import { SocketRow } from "./RuneViews";
 
 /** Cards of the persona screens: the item in work, the item afterwards, kindled parts. */
@@ -44,6 +44,8 @@ export function AfterCard(props: {
   runeId: string | null;
   learned: readonly LearnedPart[];
   kindle: { conditionId: string; effectId: string; index: number } | undefined;
+  /** Salvage: the Legendary Power this item teaches the Power Codex (a new one or a better tier). */
+  power?: { name: string; tier: number } | undefined;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
@@ -86,6 +88,11 @@ export function AfterCard(props: {
         <span className="sub">The item is gone for good.</span>
         <div className="item-detail-rule" />
         <span className="after-line new">+{salvageValue(item)} Ash</span>
+        {props.power && (
+          <span className="after-line new kindled">
+            Power Codex: {props.power.name} · T{props.power.tier}
+          </span>
+        )}
         {props.learned.map((l) => (
           <span key={`${l.kind}-${l.id}`} className="after-line new kindled">
             Codex: {partName(l.kind, l.id)} · new
@@ -132,6 +139,28 @@ export function AfterCard(props: {
             </span>
           );
         })}
+      </div>
+    );
+  }
+  if (kind === "awaken" || kind === "shift" || kind === "intensify") {
+    const g = item.greater;
+    const rank = kind === "intensify" && g ? Math.min(5, g.rank + 1) : (g?.rank ?? 1);
+    const raised = kind === "intensify" && g ? { ...item, greater: { ...g, rank } } : item;
+    return (
+      <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
+        <ItemHead item={item} label="AFTER" />
+        {item.affixes.map((_, i) => {
+          const sure = kind === "intensify" && g?.index === i;
+          return (
+            <span key={i} className={`after-line ${sure ? "new" : ""}`}>
+              {affixText(sure ? raised : item, i).text}
+              {sure && <span className="greater-mark">{greaterName(rank)}</span>}
+            </span>
+          );
+        })}
+        {kind !== "intensify" && (
+          <span className="after-line new">? a random affix becomes {greaterName(rank)}</span>
+        )}
       </div>
     );
   }

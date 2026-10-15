@@ -16,6 +16,7 @@ import {
   resolveTrigger,
   statAffixValue,
   tierGrowth,
+  greaterRank,
 } from "./affixes";
 import { ITEMS } from "./constants";
 import { getBase } from "./generate";
@@ -66,10 +67,10 @@ export function requiredLevel(item: Item): number {
 /** Extra Ember Flask charges an item gives (the Belt affix "+1–2 Flask Charges"). */
 export function itemFlaskCharges(item: Item, catalog: ItemCatalog): number {
   let charges = 0;
-  for (const roll of item.affixes) {
+  for (const [i, roll] of item.affixes.entries()) {
     const affix = catalog.affixes.get(roll.affixId);
     if (affix?.kind === "stat" && affix.stat === "flaskCharges") {
-      charges += statAffixValue(affix, item.tier, roll.quality, item.rarity);
+      charges += statAffixValue(affix, item.tier, roll.quality, item.rarity, greaterRank(item, i));
     }
   }
   return charges;
@@ -110,10 +111,10 @@ export function itemWeapon(item: Item, catalog: ItemCatalog): WeaponDefinition |
   if (!base.weapon) return undefined;
   const growth = tierGrowth(ITEMS.baseScalePerTier, item.tier);
   let added = 0;
-  for (const roll of item.affixes) {
+  for (const [i, roll] of item.affixes.entries()) {
     const affix = catalog.affixes.get(roll.affixId);
     if (affix?.kind === "stat" && affix.stat === "addedWeaponDamage") {
-      added += statAffixValue(affix, item.tier, roll.quality, item.rarity);
+      added += statAffixValue(affix, item.tier, roll.quality, item.rarity, greaterRank(item, i));
     }
   }
   const { min, max } = addedDamageRange(added);
@@ -161,15 +162,17 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
     if (word?.attributes?.[a]) attributes[a] = word.attributes[a];
   }
 
-  for (const roll of rolls) {
+  for (const [i, roll] of rolls.entries()) {
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) continue;
+    // Only the item's own affixes can be Greater (not a Runeword's or a Power's trigger).
+    const greater = greaterRank(item, i);
     if (affix.kind === "trigger") {
-      triggers.push(resolveTrigger(affix, item.tier, roll.quality));
+      triggers.push(resolveTrigger(affix, item.tier, roll.quality, greater));
       continue;
     }
     if (affix.stat === "addedWeaponDamage" || affix.stat === "flaskCharges") continue;
-    const value = statAffixValue(affix, item.tier, roll.quality, item.rarity);
+    const value = statAffixValue(affix, item.tier, roll.quality, item.rarity, greater);
     if (isAttribute(affix.stat)) attributes[affix.stat] = (attributes[affix.stat] ?? 0) + value;
     else bonuses[affix.stat] = (bonuses[affix.stat] ?? 0) + value;
   }

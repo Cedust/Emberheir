@@ -514,7 +514,7 @@ Weniger Picks, aber jeder auf aktuellem Item Level, mit Thema und mit sichtbarem
 
 ---
 
-## 7. Endgame: Wildfire mit Omens und Ashborn 💡
+## 7. Endgame: Wildfire mit Omens und Ashborn ✅
 
 ### 7.1 Ziel (Timo)
 
@@ -523,7 +523,7 @@ Weniger Picks, aber jeder auf aktuellem Item Level, mit Thema und mit sichtbarem
 - **VIII–X: Pinnacles**, kaum oder gar nicht ohne Min-Maxing.
 - Es braucht etwas zum **Farmen, wenn Gear und Tree fertig sind**, damit auch ein schwächerer Build irgendwann X schafft.
 
-### 7.2 Omens als Wildfire-Mods (wie Map-Mods und Heat in Hades)
+### 7.2 Omens als Wildfire-Mods (wie Map-Mods und Heat in Hades) ✅
 
 Vor jedem Wildfire-Zug wählt man **Omens** aus einem Pool von ~20. Jedes Omen hat einen **Peril**-Wert (1–3). (Vorher „Glut“, Timo: deutsches Wort, also englischer Spielbegriff.)
 
@@ -551,7 +551,7 @@ Beispiele:
 Min-Maxing heißt dann auch: **die Omens wählen, die zum Build passen.** Dieselben Omens erscheinen in den Runs als
 feste Act-Twists (Abschnitt 5.2), man lernt sie also schon vorher kennen.
 
-### 7.3 Levelkurve oder Paragon? Meine Empfehlung: Ashborn (Paragon)
+### 7.3 Levelkurve oder Paragon? Meine Empfehlung: Ashborn (Paragon) ✅
 
 | | A: Levelkurve strecken (Ankunft mit 80–90) | B: Ashborn nach Level 100 |
 |---|---|---|
@@ -779,3 +779,25 @@ Messung: `balance-messung-v1.md` 8 und 9.
 
 Alte Saves (Version 4 → 5) bekommen alle Skill Points zurück und behalten ihren Klassenstart.
 
+
+---
+
+## 14. Umsetzung Phase 6 (15.10.)
+
+Gebaut: Omens (5.2, 7.2) mit dem neuen Wildfire, Ashborn (7.3), Greater Affixes mit Cinderglass (7.5), Ember Crucible mit
+Power Codex (8). Regeln im Detail: `game-design-document-v2.md` 2.2, 2.6, 2.7, 2.8 und 5.3. Messung:
+`balance-messung-v1.md` 12.
+
+| Teil | gebaut | Abweichung vom Konzept |
+|---|---|---|
+| Run-Omens (5.2) | 8 Omens mit Preis und Lohn; ein alter Act zeigt beim Aufbruch 2, eins muss gewählt werden; das Angebot ist pro Act und Run fest | Cinder Rain ohne Telegraph (Gegner-Treffer setzen Burn, Lohn +20 % XP); Restless Dead als häufigere Elites statt Paare (Lohn +30 % Legendary); Blight Bloom belohnt mit einem Rune-Rang; Thin Veil als +30 % Gegner-Ailments und Bleed statt doppelter Dauer; dazu Blood Moon und Hollow Wind |
+| Wildfire-Omens (7.2) | 20 Omens mit Peril 1–3, Mindest-Peril I–V 0, VI 2 … X 10; pro Peril +8 % XP und +5 % Legendary, je 4 Peril ein Rune-Rang | Ashborn-XP ist die normale XP (ab Level 100 fließt sie in Ashborn) |
+| Neue Kampf-Bausteine | Zeitlimit pro Kämpfer (Short Fuse), Heavy-Hit-Deckel als Regel (Crushing Weight) | – |
+| Ashborn (7.3) | 19 Werte auf 4 Boards, max 100 Punkte und 15 pro Wert; Character Sheet verteilt, Old Nan setzt zurück (2.000 Acorns) | XP pro Level steigt **linear** um 4 % des ersten (12.000 XP), sonst wäre Level 100 50-mal so teuer wie Level 1; Skill Damage fehlt (kein eigener Wert im Kampf), dafür hat Aegis Block |
+| Attribute zurücksetzen | bei Old Nan (alle Punkte über dem Klassen-Array frei), verteilt im Character Sheet; Kaelens Attribut-Tab ist weg | – |
+| Greater Affixes (7.5) | Awaken 3 / Shift 1 / Intensify 2-4-8-16 Cinderglass, Greater I–V = 110–150 % des Höchstwerts; Reforge behält die Stufe | Affixe mit fester Epic-Zahl (`epicValue`) können nicht Greater werden |
+| Cinderglass | Wildfire-Boss 1–2, +1 je 3 Peril, +1 ab VIII | – |
+| Ember Crucible (8) | Salvage lehrt die Power (bester Tier zählt), Power Codex fürs ganze Konto, 3 Slots nach Art, Binden 300 Ash + 3 Ember Coal | Ember-Slot öffnet mit Wildfire V; die „Roll“-Stufe einer Power ist der Tier des Items (Powers haben keinen eigenen Roll); noch 26 Powers statt ~36 |
+| Autopilot | wählt Omens über einen Probekampf gegen den Act-Boss, nimmt im Wildfire nur den Mindest-Peril, verteilt Ashborn, Cinderglass und bindet Powers | – |
+
+Alte Saves (Version 5 → 6) brauchen keine Umstellung: alle neuen Felder sind optional.
