@@ -132,54 +132,56 @@ function WindowPage(props: { state: GameState }) {
           />
         }
       >
-        <aside className="kit-col kit-left">
-          <p className="kit-quote">
-            &ldquo;Bring it here. If it&rsquo;s bent, I straighten it. If it&rsquo;s broken, I
-            charge extra.&rdquo;
-          </p>
-        </aside>
-        <main className="kit-col kit-center">
-          <EmptyState icon="hammer">Right-click an item to lay it on the anvil.</EmptyState>
-          <div className="kit-cost-bar">
-            <Cost
-              parts={[
-                { id: "acorns", amount: 60, have: props.state.wallet.acorns },
-                { id: "feathers", amount: 2, have: props.state.wallet.phoenixFeathers },
-              ]}
-            />
-            <div className="k-grow" />
-            <Button variant="secondary">Undo</Button>
-            <Button variant="primary" big blocked={short ? "Needs 2 Phoenix Feathers" : null}>
-              Upgrade
-            </Button>
-          </div>
-        </main>
-        <aside className="kit-col kit-right">
-          <Paperdoll scale={0.62}>
-            {(
-              [
-                "charm",
-                "helm",
-                "amulet",
-                "body",
-                "offHand",
-                "gloves",
-                "ring1",
-                "belt",
-                "ring2",
-                "boots",
-              ] as const
-            ).map((slot) => {
-              const b = dollBox(slot, 0.62);
-              return (
-                <div key={slot} className="doll-slot" style={{ left: b.x, top: b.y }}>
-                  <ItemTile item={undefined} label={SLOT_LABEL[slot]} width={b.w} height={b.h} />
-                </div>
-              );
-            })}
-          </Paperdoll>
-          <EmptyState icon="box">Your bag is empty.</EmptyState>
-        </aside>
+        <div className="kit-row-body">
+          <aside className="kit-col kit-left">
+            <p className="kit-quote">
+              &ldquo;Bring it here. If it&rsquo;s bent, I straighten it. If it&rsquo;s broken, I
+              charge extra.&rdquo;
+            </p>
+          </aside>
+          <main className="kit-col kit-center">
+            <EmptyState icon="hammer">Right-click an item to lay it on the anvil.</EmptyState>
+            <div className="kit-cost-bar">
+              <Cost
+                parts={[
+                  { id: "acorns", amount: 60, have: props.state.wallet.acorns },
+                  { id: "feathers", amount: 2, have: props.state.wallet.phoenixFeathers },
+                ]}
+              />
+              <div className="k-grow" />
+              <Button variant="secondary">Undo</Button>
+              <Button variant="primary" big blocked={short ? "Needs 2 Phoenix Feathers" : null}>
+                Upgrade
+              </Button>
+            </div>
+          </main>
+          <aside className="kit-col kit-right">
+            <Paperdoll scale={0.62}>
+              {(
+                [
+                  "charm",
+                  "helm",
+                  "amulet",
+                  "body",
+                  "offHand",
+                  "gloves",
+                  "ring1",
+                  "belt",
+                  "ring2",
+                  "boots",
+                ] as const
+              ).map((slot) => {
+                const b = dollBox(slot, 0.62);
+                return (
+                  <div key={slot} className="doll-slot" style={{ left: b.x, top: b.y }}>
+                    <ItemTile item={undefined} label={SLOT_LABEL[slot]} width={b.w} height={b.h} />
+                  </div>
+                );
+              })}
+            </Paperdoll>
+            <EmptyState icon="box">Your bag is empty.</EmptyState>
+          </aside>
+        </div>
       </Window>
     </div>
   );

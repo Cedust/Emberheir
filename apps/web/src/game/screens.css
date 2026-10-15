@@ -2284,12 +2284,12 @@
 .stage .stash-body {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 430px 560px minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) 560px 430px;
   min-height: 0;
 }
 
-.stage .stash-left,
-.stage .stash-right {
+.stage .stash-bag,
+.stage .stash-detail {
   padding: 20px;
   display: flex;
   flex-direction: column;
@@ -2297,11 +2297,11 @@
   background: var(--side);
 }
 
-.stage .stash-left {
+.stage .stash-detail {
   border-right: 2px solid var(--edge);
 }
 
-.stage .stash-right {
+.stage .stash-bag {
   border-left: 2px solid var(--edge);
 }
 
@@ -2376,7 +2376,9 @@
 
 /* --- character ------------------------------------------------------------------------------ */
 
-.stage .character {
+.stage .k-layer > .k-window.character {
+  flex: none;
+  align-self: center;
   width: 1360px;
   height: 820px;
 }
@@ -3225,16 +3227,16 @@
 
 /* --- legacy --------------------------------------------------------------------------------- */
 
-.stage .legacy {
+.stage .k-window.legacy {
   background: radial-gradient(circle at 35% 52%, #f0c890 0%, #e2cfa8 40%, #d9c6a0 75%);
 }
 
-:root[data-theme="dark"] .stage .legacy {
+:root[data-theme="dark"] .stage .k-window.legacy {
   background: radial-gradient(circle at 35% 52%, #4a2a16 0%, #241a14 40%, #1c1a18 75%);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .stage .legacy {
+  :root:not([data-theme="light"]) .stage .k-window.legacy {
     background: radial-gradient(circle at 35% 52%, #4a2a16 0%, #241a14 40%, #1c1a18 75%);
   }
 }

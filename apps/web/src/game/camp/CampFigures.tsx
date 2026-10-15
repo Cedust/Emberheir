@@ -62,18 +62,21 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
   );
 }
 
+/** The painted Heir's head, cropped round (persona card, Character medallion). */
+export function HeirFace() {
+  return (
+    <span
+      className="painted-portrait"
+      style={{ backgroundImage: `url(${heirCampUrl})` }}
+      aria-hidden="true"
+    />
+  );
+}
+
 /** The persona's head as a round portrait for the persona card. */
 export function Portrait(props: { p: Persona; gear: HeirGear }) {
   const { p } = props;
-  if (p.id === "heir") {
-    return (
-      <span
-        className="painted-portrait"
-        style={{ backgroundImage: `url(${heirCampUrl})` }}
-        aria-hidden="true"
-      />
-    );
-  }
+  if (p.id === "heir") return <HeirFace />;
   const box = PORTRAIT[p.id];
   if (!p.figure || !box) return <Icon name={p.icon} size={28} color="#f3e6c8" />;
   return (

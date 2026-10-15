@@ -130,6 +130,7 @@ export function GameApp() {
   };
 
   let screen: React.ReactNode;
+  let campWindow: React.ReactNode = null;
   if (!state) {
     screen = (
       <TitleScreen
@@ -173,8 +174,14 @@ export function GameApp() {
     );
   } else if (!run) {
     const close = () => setCampScreen(null);
+    const camp = (
+      <CampView state={state} game={game} onOpen={openCamp} onMenu={() => setOverlay("menu")} />
+    );
+    // Persona and Supply Wagon windows float over the dimmed Camp (ui-ux-plan-v1.md 3.2);
+    // Kaelen and the Legacy need the whole stage and cover it.
     if (campScreen === "persona") {
-      screen = (
+      screen = camp;
+      campWindow = (
         <PersonaView
           state={state}
           game={game}
@@ -184,7 +191,8 @@ export function GameApp() {
         />
       );
     } else if (campScreen === "stash") {
-      screen = <StashView state={state} game={game} onClose={close} />;
+      screen = camp;
+      campWindow = <StashView state={state} game={game} onClose={close} />;
     } else if (campScreen === "kaelen") {
       screen = (
         <KaelenView
@@ -199,9 +207,7 @@ export function GameApp() {
     } else if (campScreen === "legacy") {
       screen = <LegacyView state={state} onClose={close} />;
     } else {
-      screen = (
-        <CampView state={state} game={game} onOpen={openCamp} onMenu={() => setOverlay("menu")} />
-      );
+      screen = camp;
     }
   } else if (run.phase === "fight") {
     screen = (
@@ -238,9 +244,10 @@ export function GameApp() {
       <ItemArtDefs />
       <ItemHoverLayer state={state}>
         {/* Under an open overlay the screen's idle animations wait (screens.css). */}
-        <div className="screen-host" data-covered={overlay ? "" : undefined}>
+        <div className="screen-host" data-covered={overlay || campWindow ? "" : undefined}>
           {screen}
         </div>
+        {campWindow}
         {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
           <CharacterOverlay
             state={state}

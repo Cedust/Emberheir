@@ -29,7 +29,14 @@ import {
 } from "@emberheir/sim";
 import { Suspense, useState } from "react";
 import { Icon } from "../../ui/Icon";
-import { useTabKeys } from "../../ui/kit/hotkeys";
+import {
+  type TabItem,
+  Medallion,
+  Tabs,
+  Window,
+  WindowHeader,
+  WindowLayer,
+} from "../../ui/kit/Window";
 import { CurrencyChip } from "../../ui/kit/Currency";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { skillIcon, skillTint } from "../battle/skills";
@@ -512,127 +519,89 @@ export function KaelenView(props: {
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
   const canRespec = !viewOnly && spent > 0 && state.wallet.acorns >= respecPrice;
-  useTabKeys(
-    ["tree", "mastery", ...(planEditable ? ["plan"] : []), ...(viewOnly ? [] : ["dummy"])],
-    tab,
-    (id) => setTab(id as typeof tab),
-  );
+  const tabs: TabItem<typeof tab>[] = [
+    { id: "tree", name: "Skill Tree", icon: "tree" },
+    { id: "mastery", name: "Weapon Mastery", icon: "sword" },
+    ...(planEditable
+      ? [{ id: "plan" as const, name: "Battle Plan", icon: "strike" as const }]
+      : []),
+    ...(viewOnly ? [] : [{ id: "dummy" as const, name: "Training Dummy", icon: "eye" as const }]),
+  ];
 
   return (
-    <div className={viewOnly ? "overlay" : "screen-wrap"} role="dialog" aria-label="Kaelen">
-      <section className="screen kaelen">
-        <header className="kaelen-header bar-top">
-          <div className="persona-portrait title-font" style={{ background: "#6a2a20" }}>
-            <PaintDefs />
-            <PersonaPortrait id="kaelen" />
-          </div>
-          <div className="run-title">
-            <span className="title-font">KAELEN</span>
-            <span className="sub">
-              Trainer · &ldquo;Point by point, Heir. Fire learns patience too.&rdquo;
-            </span>
-          </div>
-          <div className="tabs" role="tablist">
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "tree"}
-              className={`tab title-font ${tab === "tree" ? "on" : ""}`}
-              onClick={() => setTab("tree")}
-            >
-              Skill Tree
-            </button>
-            <button
-              type="button"
-              role="tab"
-              aria-selected={tab === "mastery"}
-              className={`tab title-font ${tab === "mastery" ? "on" : ""}`}
-              onClick={() => setTab("mastery")}
-            >
-              Weapon Mastery
-            </button>
-            {planEditable && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === "plan"}
-                className={`tab title-font ${tab === "plan" ? "on" : ""}`}
-                onClick={() => setTab("plan")}
-              >
-                Battle Plan
-              </button>
-            )}
-            {!viewOnly && (
-              <button
-                type="button"
-                role="tab"
-                aria-selected={tab === "dummy"}
-                className={`tab title-font ${tab === "dummy" ? "on" : ""}`}
-                onClick={() => setTab("dummy")}
-              >
-                Training Dummy
-              </button>
-            )}
-          </div>
-          <div className="grow" />
-          <div className="wallet-row small-wallet k-wallet">
-            <PointChip
-              testId="skill-points"
-              value={state.hero.unspentSkillPoints}
-              name="Skill Points"
-              explain="Learn nodes in the Skill Tree. You earn them at Waymarks on the road."
-            />
-            <PointChip
-              value={masteryPointsLeft(state, GAME_DATA)}
-              name="Mastery Points"
-              explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
-            />
-            <CurrencyChip id="acorns" amount={state.wallet.acorns} named />
-          </div>
-          {!viewOnly &&
-            (tab === "tree" || tab === "plan") &&
-            (respec ? (
-              <span className="respec-confirm">
-                <span className="sub small">Forget all nodes?</span>
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() => {
-                    game.dispatch({ type: "respecTree" });
-                    setRespec(false);
-                  }}
-                >
-                  Yes, respec
-                </button>
-                <button type="button" className="btn" onClick={() => setRespec(false)}>
-                  No
-                </button>
-              </span>
-            ) : (
-              <button
-                type="button"
-                className="btn"
-                disabled={!canRespec}
-                title={
-                  spent === 0
-                    ? "Nothing learned yet"
-                    : "All Skill Points come back. The Battle Plan resets."
-                }
-                onClick={() => setRespec(true)}
-              >
-                Respec · {respecPrice} Acorns
-              </button>
-            ))}
-          <button
-            type="button"
-            className="icon-button"
-            aria-label={viewOnly ? "Close" : "Back to Camp"}
-            title={viewOnly ? "Close (T or Esc)" : "Back to Camp (Esc)"}
-            onClick={props.onClose}
-          >
-            <Icon name="close" size={20} />
-          </button>
-        </header>
+    <WindowLayer mode="full">
+      <PaintDefs />
+      <Window
+        label="Kaelen"
+        role="dialog"
+        mode="full"
+        className="kaelen"
+        header={
+          <WindowHeader
+            title="Kaelen"
+            sub="Trainer"
+            medallion={
+              <Medallion tint="#6a2a20">
+                <PersonaPortrait id="kaelen" />
+              </Medallion>
+            }
+            tabs={<Tabs label="Trainer" items={tabs} active={tab} onChange={setTab} />}
+            right={
+              <>
+                <div className="wallet-row small-wallet k-wallet">
+                  <PointChip
+                    testId="skill-points"
+                    value={state.hero.unspentSkillPoints}
+                    name="Skill Points"
+                    explain="Learn nodes in the Skill Tree. You earn them at Waymarks on the road."
+                  />
+                  <PointChip
+                    value={masteryPointsLeft(state, GAME_DATA)}
+                    name="Mastery Points"
+                    explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
+                  />
+                  <CurrencyChip id="acorns" amount={state.wallet.acorns} named />
+                </div>
+                {!viewOnly &&
+                  (tab === "tree" || tab === "plan") &&
+                  (respec ? (
+                    <span className="respec-confirm">
+                      <span className="sub small">Forget all nodes?</span>
+                      <button
+                        type="button"
+                        className="btn primary"
+                        onClick={() => {
+                          game.dispatch({ type: "respecTree" });
+                          setRespec(false);
+                        }}
+                      >
+                        Yes, respec
+                      </button>
+                      <button type="button" className="btn" onClick={() => setRespec(false)}>
+                        No
+                      </button>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      className="btn"
+                      disabled={!canRespec}
+                      title={
+                        spent === 0
+                          ? "Nothing learned yet"
+                          : "All Skill Points come back. The Battle Plan resets."
+                      }
+                      onClick={() => setRespec(true)}
+                    >
+                      Respec · {respecPrice} Acorns
+                    </button>
+                  ))}
+              </>
+            }
+            onClose={props.onClose}
+          />
+        }
+      >
         <Suspense fallback={null}>
           {tab === "dummy" && !viewOnly ? (
             <TrainingDummyTab state={state} game={game} />
@@ -644,8 +613,8 @@ export function KaelenView(props: {
             <BattlePlanTab state={state} game={game} />
           )}
         </Suspense>
-      </section>
-    </div>
+      </Window>
+    </WindowLayer>
   );
 }
 
