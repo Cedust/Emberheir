@@ -69,7 +69,7 @@ Jeder Waffentyp bringt einen eigenen Skill als **Innate** mit (Timo, 2026-10-05)
 Liegt er in einem Slot und man wechselt den Waffentyp, übernimmt der Slot den Innate der neuen Waffe (der Slot ist als „Innate“ markiert).
 Neue Charaktere starten wie heute mit dem Innate im ersten Rotation Slot. Ränge/Skill-Level des Innate kommen nur über Items.
 
-**Innate gibt Heat aus** (15.10.2026): Jeder Innate ist ein Angriff oder Spell. Run 1 hat nur einen Rotation Slot, und ein laufender Buff wird nicht neu gezündet: Mit Venom Coat als Innate stand die Heat des Daggers ab Sekunde ~12 auf 100 und rund zwei Drittel verpufften. Darum startet der Dagger mit **Envenom** (wie die Axe mit Lacerate); die Coats bleiben als Innate Forms ab Weapon Rank 5.
+**Innate gibt Heat aus** (Timo, 15.10.2026): Jeder Innate ist ein Angriff oder Spell. Run 1 hat nur einen Rotation Slot, und ein laufender Buff wird nicht neu gezündet: Mit Venom Coat als Innate stand die Heat des Daggers ab Sekunde ~12 auf 100 und rund zwei Drittel verpufften. Darum startet der Dagger mit **Envenom** (wie die Axe mit Lacerate); die Coats bleiben als Innate Forms ab Weapon Rank 5.
 
 **Ersatz im Skill Tree** 💡: Vier Skill-Nodes sind heute Start Skills. Sie bekommen neue Skills an derselben Stelle (gleiche Kosten-Klasse, gleicher Ast-Fokus):
 

@@ -325,7 +325,7 @@ Endgame **Wildfire I–X**.
 - Am Ende ~20 von 41 möglichen Punkten: ein voller Pfad und ein halber, oder zwei Pfade bis zur ersten Gabel.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
   Heavy Bolt (Crossbow), Firebolt (Wand), Void Bolt (Staff). Jeder Innate gibt Heat laufend aus (Angriff oder Spell):
-  Run 1 hat nur einen Rotation Slot, ein Buff dort liesse die Heat bei 100 stehen (15.10.2026: Dagger-Innate
+  Run 1 hat nur einen Rotation Slot, ein Buff dort liesse die Heat bei 100 stehen (Timo 15.10.2026: Dagger-Innate
   war Venom Coat, jetzt Envenom; die Coats bleiben als Innate Forms).
 
 ### 5.2 Skill Web v3 ✅ (`level-v2.md` Abschnitt 7, `neuausrichtung-v1.md` 4)
