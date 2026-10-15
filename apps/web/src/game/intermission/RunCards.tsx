@@ -30,7 +30,7 @@ import { Potion } from "../../ui/Potion";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
-import { BoonBar } from "../Boons";
+import { HeirFace } from "../camp/CampFigures";
 import { bountyView } from "../bounty";
 import { ShareBar } from "../camp/BattlePlanTab";
 import { finaleFoe, inFinale } from "../finale";
@@ -72,34 +72,16 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
   const flaskMax = Math.max(flaskCapacity(state, GAME_DATA), state.flaskCharges);
   const gained = run.rewards?.xp ?? 0;
   const next = xpToNextLevel(hero.level, levelCap(state.legacy.prestige));
-  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
-  const hearth =
-    run.rewards !== null && hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
   return (
     <section className="panel-card hero-card" aria-label="Hero">
       <div className="hero-card-head">
         <div className="plaque-portrait">
-          <Icon name="user" size={24} color="#f3e6c8" />
+          <HeirFace />
         </div>
         <div className="plaque-names">
           <span className="plaque-name title-font">Heir of the Ember</span>
         </div>
       </div>
-      {(run.rewards?.waymark || hearth) && (
-        <div className="waymark-moment title-font" role="status">
-          {[
-            run.rewards?.waymark ? "Waymark! +1 Skill Point" : "",
-            hearth ? `Hearth Embers: +${Math.round(PROGRESSION.hearthEmbers * 100)} % Life` : "",
-          ]
-            .filter(Boolean)
-            .join(" · ")}
-        </div>
-      )}
-      {run.rewards?.ashbornLevels ? (
-        <div className="level-up title-font" role="status">
-          Ashborn {state.hero.ashborn?.level ?? ""}! A point for the Character Sheet
-        </div>
-      ) : null}
       <XpBar
         key={run.encounter?.seed ?? run.stage}
         level={hero.level}
@@ -109,7 +91,6 @@ export function HeroCard(props: { state: GameState; run: RunState; game: GameApi
         levels={run.rewards?.levelsGained ?? 0}
         prevNext={xpToNextLevel(hero.level - 1, levelCap(state.legacy.prestige))}
       />
-      <BoonBar state={state} />
       <div className="life-head">
         <span className="title-font">Life</span>
         <span className="mono">
@@ -457,6 +438,59 @@ export function BountyCard(props: { run: RunState }) {
       </div>
       <span className="small">{view.text}</span>
     </section>
+  );
+}
+
+/**
+ * The big moments of the last fight, in the middle under the title (Timo: not hidden in the
+ * hero card): a Waymark, the Hearth Embers before the boss, an Ashborn level.
+ */
+export function RunMoments(props: { state: GameState; run: RunState }) {
+  const { state, run } = props;
+  const rewards = run.rewards;
+  if (!rewards) return null;
+  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
+  const hearth = hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
+  const moments: { key: string; icon: IconName; name: string; sub: string }[] = [
+    ...(rewards.waymark
+      ? [{ key: "waymark", icon: "tree" as const, name: "Waymark!", sub: "+1 Skill Point" }]
+      : []),
+    ...(hearth
+      ? [
+          {
+            key: "hearth",
+            icon: "fire" as const,
+            name: "Hearth Embers",
+            sub: `+${Math.round(PROGRESSION.hearthEmbers * 100)} % Life`,
+          },
+        ]
+      : []),
+    ...(rewards.ashbornLevels
+      ? [
+          {
+            key: "ashborn",
+            icon: "flame" as const,
+            name: `Ashborn ${state.hero.ashborn?.level ?? ""}!`,
+            sub: "+1 Ashborn point",
+          },
+        ]
+      : []),
+  ];
+  if (!moments.length) return null;
+  return (
+    <div className="run-moments" role="status">
+      {moments.map((m) => (
+        <div key={m.key} className={`run-moment panel-card moment-${m.key}`}>
+          <span className="moment-sigil">
+            <Icon name={m.icon} size={26} />
+          </span>
+          <div className="bounty-paid-text">
+            <strong className="title-font">{m.name}</strong>
+            <span className="sub">{m.sub}</span>
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 

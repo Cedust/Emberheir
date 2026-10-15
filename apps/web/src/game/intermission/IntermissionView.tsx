@@ -15,7 +15,7 @@ import { Suspense, useState } from "react";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { type CurrencyId, Wallet } from "../../ui/kit/Currency";
-import { ShrineCards } from "../Boons";
+import { BoonPanel, ShrineCards } from "../Boons";
 import { inFinale } from "../finale";
 import { IdleArena } from "../lazyViews";
 import type { Settings } from "../../ui/settings";
@@ -30,6 +30,7 @@ import {
   nextStageActions,
   PathCards,
   PlanCard,
+  RunMoments,
   UpNext,
 } from "./RunCards";
 
@@ -129,6 +130,7 @@ export function IntermissionView(props: {
         {/* Left: the hero as it stands. Middle: the choice of the moment. Right: the road. */}
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
+          <BoonPanel state={state} />
           <PlanCard state={state} run={run} onPlan={props.onPlan} />
         </aside>
         <main className="intermission-center">
@@ -144,7 +146,12 @@ export function IntermissionView(props: {
               {rewards.cinderglass ? ` · +${rewards.cinderglass} Cinderglass` : ""}
             </p>
           )}
-          {rewards?.bountyDone && step !== "ready" && <BountyDone />}
+          {rewards && step !== "ready" && (
+            <div className="moment-row">
+              <RunMoments state={state} run={run} />
+              {rewards.bountyDone && <BountyDone />}
+            </div>
+          )}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
             <RuneDrops key={`runes-${run.encounter?.seed ?? run.stage}`} runes={rewards.runes} />
           )}
