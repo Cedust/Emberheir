@@ -2426,39 +2426,37 @@
 .stage .stash-body {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: minmax(0, 1fr) 560px 430px;
+  grid-template-columns: minmax(0, 1fr) 470px;
   min-height: 0;
 }
 
-.stage .stash-bag,
-.stage .stash-detail {
+.stage .stash-bag {
   padding: 20px;
   display: flex;
   flex-direction: column;
   gap: 12px;
   background: var(--side);
-}
-
-.stage .stash-detail {
-  border-right: 2px solid var(--edge);
-}
-
-.stage .stash-bag {
   border-left: 2px solid var(--edge);
 }
 
+/* The big stash in the middle of its side, its header as wide as the grid. */
 .stage .stash-center {
   padding: 20px 26px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+}
+
+.stage .stash-pane {
   display: flex;
   flex-direction: column;
   gap: 12px;
 }
 
-.stage .stash-detail .detail-buttons,
-.stage .stash-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 8px;
+.stage .stash-pane .section-row {
+  align-items: center;
 }
 
 /* --- overlays ------------------------------------------------------------------------------- */
