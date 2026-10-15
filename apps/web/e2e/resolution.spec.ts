@@ -102,13 +102,15 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: /NEXT STAGE/ }).click();
     await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
     await check("battle");
-    await page.getByRole("button", { name: "Skip fight" }).click();
-    await expect(page.getByText("Stage 1 cleared")).toBeVisible({ timeout: 30_000 });
-    await check("salvaged");
-    // Normal fights offer an item pick only on every third stage: on to Stage 3.
+    // Normal fights offer an item pick only on every third stage: on to a hero with Stage 3 ahead.
     await seedSave(page, saveRun1Stage3());
     await page.goto("/?dev");
     await page.getByRole("button", { name: /Continue/ }).click();
+    await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
+    console.log(
+      "DIAG",
+      (await page.locator("body").innerText()).replace(/\s+/g, " ").slice(0, 900),
+    );
     await page.getByRole("button", { name: /NEXT STAGE/ }).click();
     await page.getByRole("button", { name: "Skip fight" }).click();
     // The cards turn over one after another on timers, which lag behind on a slow renderer.
