@@ -136,7 +136,7 @@ Innate Forms: **Gutting Lacerate** (Bleed +60 %) · **Rending Lacerate** (setzt 
 | **Executioner** | saubere Hacks gegen Gegner unter 25 % Life +100 % Schaden | Crit Chance −5 % | Headsman's Axe |
 | **Gore** | Max der Range +60 | Min der Range sinkt auf 20 % | Gore Cleaver |
 
-### Dagger (Reaver) · *Stab* · *Venom Coat*
+### Dagger (Reaver) · *Stab* · *Envenom*
 
 | Pfad | Thema | Notables |
 | --- | --- | --- |
@@ -144,7 +144,7 @@ Innate Forms: **Gutting Lacerate** (Bleed +60 %) · **Rending Lacerate** (setzt 
 | **Assassin** | Crit | **Find the Gap**: +8 % Crit Chance · **Twist the Blade**: Crits setzen 2 Poison-Stacks |
 | **Flurry** | Tempo | **Quick Hands**: +12 % Attack Speed · **Double Stab**: 15 % Chance, sofort ein zweites Mal zu stechen |
 
-Innate Forms: **Virulent Coat** (+1 Stack pro Treffer, 6 s statt 8 s) · **Paralytic Coat** (Poison verlangsamt den Gegner um 15 %) · **Lingering Coat** (12 s, Poison +20 %)
+Innate Forms (statt Envenom ein Coat, seit 15.10.2026): **Virulent Coat** (+1 Stack pro Treffer, 6 s statt 8 s) · **Paralytic Coat** (Poison verlangsamt den Gegner um 15 %) · **Lingering Coat** (12 s, Poison +20 %)
 
 | Keystone | Vorteil | Nachteil | Form-Wort |
 | --- | --- | --- | --- |
@@ -334,7 +334,7 @@ Abweichungen von diesem Entwurf: Rank-Leiste und Namensschild sitzen **oben**, L
 | Endless Night | Corruption hält zehnmal so lange |
 | Hemorrhage | verbraucht Bleed komplett |
 | Draining Bolt | heilt 4 % Life |
-| Venom Coat (Forms) | Formen ändern Dauer und Kosten |
+| Envenom → Coats (Forms) | Formen tauschen den Schnitt gegen einen Coat mit eigener Dauer und Kosten |
 | Paralytic | +50 % Chill-Chance |
 | Concussion | 126 % Schaden, 1 s Stun |
 | Barrage | 3 × 45 % |
