@@ -1,6 +1,7 @@
 import { BlurFilter, Container, Graphics } from "pixi.js";
 import { drawWeapon, type WeaponLook } from "../camp/weaponArt";
 import { INK } from "./arenaLayout";
+import { HEIR_OFF_HAND, type HeirTextures, buildHeirRig } from "./heirRig";
 
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
 
@@ -76,12 +77,21 @@ function heldWeapon(look: HeroLook): Container {
   const pose = WEAPON_POSES[look.weapon];
   const [x0, y0] = pose.from;
   const [x1, y1] = pose.to;
-  const length = 520;
-  const art = drawWeapon(look.weaponId, length, look.weaponLook);
-  const holder = new Container();
+  const holder = weaponArt(look);
   holder.position.set(x0, y0);
   holder.rotation = Math.atan2(y1 - y0, x1 - x0);
-  holder.scale.set(Math.hypot(x1 - x0, y1 - y0) / length);
+  holder.scale.set(Math.hypot(x1 - x0, y1 - y0) / WEAPON_LENGTH);
+  return holder;
+}
+
+/** The weapon is drawn this long, pommel at 0, tip at +x; holders scale it. */
+const WEAPON_LENGTH = 520;
+
+/** The weapon art with its grade light, Echo aura and tip marker, pommel at 0/0. */
+function weaponArt(look: HeroLook): Container {
+  const length = WEAPON_LENGTH;
+  const art = drawWeapon(look.weaponId, length, look.weaponLook);
+  const holder = new Container();
   const grade = Math.max(0, Math.min(4, look.weaponLook.grade));
   art.edge.tint = GRADE_LIGHT[grade] ?? 0xffffff;
   art.edge.alpha = GRADE_LIGHT_ALPHA[grade] ?? 0;
@@ -107,7 +117,79 @@ function heldWeapon(look: HeroLook): Container {
   return holder;
 }
 
-export function drawHero(look: HeroLook): Container {
+/**
+ * How the painted Heir holds each weapon in the fist: angle at rest (radians, 0 = pointing at
+ * the enemy, negative = up), drawn length in figure units, and where along it the fist grips.
+ */
+const HEIR_GRIPS: Record<HeroLook["weapon"], { angle: number; length: number; at: number }> = {
+  sword: { angle: -1.05, length: 210, at: 0.1 },
+  axe: { angle: -1.15, length: 200, at: 0.14 },
+  dagger: { angle: -0.9, length: 120, at: 0.2 },
+  mace: { angle: -1.1, length: 190, at: 0.14 },
+  staff: { angle: -1.42, length: 380, at: 0.42 },
+  bow: { angle: Math.PI / 2, length: 280, at: 0.5 },
+  crossbow: { angle: -0.08, length: 200, at: 0.36 },
+  wand: { angle: -1.0, length: 120, at: 0.14 },
+};
+
+/**
+ * The Heir in the arena. With the painted parts loaded it is the otter cutout rig, the weapon in
+ * its fist; without them the old placeholder figure.
+ */
+export function drawHero(look: HeroLook, heir?: HeirTextures | null): Container {
+  return heir ? drawPaintedHero(look, heir) : drawPlaceholderHero(look);
+}
+
+function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
+  const c = new Container();
+  const rig = buildHeirRig(heir);
+  const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
+  // A quiver rides on the back, behind everything.
+  if (look.offHand === "quiver" || look.heroClass === "hunter") {
+    c.addChild(
+      new Graphics().roundRect(-74, -300, 30, 120, 8).fill(0x7a5a34).stroke(line),
+      new Graphics()
+        .poly([-70, -300, -66, -330, -62, -300])
+        .poly([-58, -300, -54, -336, -50, -300])
+        .fill(0xe8e2d6)
+        .stroke({ color: INK, width: 2 }),
+    );
+  }
+  const grip = HEIR_GRIPS[look.weapon];
+  const weapon = weaponArt(look);
+  weapon.rotation = grip.angle;
+  weapon.scale.set(grip.length / WEAPON_LENGTH);
+  weapon.pivot.set(grip.at * WEAPON_LENGTH, 0);
+  rig.fist.addChild(weapon);
+  // The forearm comes out of the sleeve, so it and the weapon sit behind the body.
+  c.addChild(rig.arm, rig.body);
+  // The off hand is held in the raised fist, in front of the chest.
+  const [ox, oy] = HEIR_OFF_HAND;
+  const off = new Container({ label: "heir-off-hand" });
+  off.position.set(ox, oy);
+  if (look.offHand === "shield") {
+    off.addChild(
+      new Graphics().ellipse(4, 6, 40, 52).fill(0x6b5a3e).stroke(line),
+      new Graphics().ellipse(4, 6, 21, 29).fill(0xc9a063).stroke(line),
+    );
+  } else if (look.offHand === "focus") {
+    off.addChild(new Graphics().circle(0, -30, 20).fill(0x5b8cff).stroke(line));
+  } else if (look.offHand === "talisman") {
+    off.addChild(
+      new Graphics().moveTo(0, 6).lineTo(0, 24).stroke({ color: INK, width: 2 }),
+      new Graphics().poly([0, 24, 13, 40, 0, 60, -13, 40]).fill(0xc8202f).stroke(line),
+    );
+  } else if (look.offHand === "grimoire") {
+    off.addChild(
+      new Graphics().roundRect(-30, -20, 52, 62, 6).fill(0x3a1f4a).stroke(line),
+      new Graphics().circle(-4, 11, 10).fill(0xa35cff).stroke({ color: INK, width: 2 }),
+    );
+  }
+  c.addChild(off);
+  return c;
+}
+
+function drawPlaceholderHero(look: HeroLook): Container {
   const c = new Container();
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const colors = CLASS_LOOKS[look.heroClass];
