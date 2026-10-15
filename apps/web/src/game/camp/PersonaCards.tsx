@@ -44,6 +44,8 @@ export function AfterCard(props: {
   runeId: string | null;
   learned: readonly LearnedPart[];
   kindle: { conditionId: string; effectId: string; index: number } | undefined;
+  /** Salvage: the Legendary Power this item teaches the Power Codex (a new one or a better tier). */
+  power?: { name: string; tier: number } | undefined;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
@@ -86,6 +88,11 @@ export function AfterCard(props: {
         <span className="sub">The item is gone for good.</span>
         <div className="item-detail-rule" />
         <span className="after-line new">+{salvageValue(item)} Ash</span>
+        {props.power && (
+          <span className="after-line new kindled">
+            Power Codex: {props.power.name} · T{props.power.tier}
+          </span>
+        )}
         {props.learned.map((l) => (
           <span key={`${l.kind}-${l.id}`} className="after-line new kindled">
             Codex: {partName(l.kind, l.id)} · new

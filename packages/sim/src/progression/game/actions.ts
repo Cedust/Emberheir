@@ -1,4 +1,5 @@
 import { resetAshborn, spendAshborn } from "./ashborn";
+import { bindPower, type CrucibleSlot } from "./crucible";
 import { type Attributes } from "../../combat/types";
 import { type EquipmentSlot } from "../../items/types";
 import { type BattlePlanState } from "../battle-plan";
@@ -134,6 +135,8 @@ export type GameAction =
   | { readonly type: "spendAshborn"; readonly valueId: string; readonly count?: number }
   /** Old Nan (Camp only): every Ashborn Point back, for Acorns. */
   | { readonly type: "resetAshborn" }
+  /** Liora, Ember Crucible: a learned Power into its slot, or the slot emptied (`null`). */
+  | { readonly type: "bindPower"; readonly slot: CrucibleSlot; readonly powerId: string | null }
   | { readonly type: "dismissNotice" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
@@ -211,6 +214,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return spendAshborn(state, data, action.valueId, action.count);
     case "resetAshborn":
       return resetAshborn(state);
+    case "bindPower":
+      return bindPower(state, data, action.slot, action.powerId);
     case "dismissNotice":
       return { ...state, notice: null };
   }

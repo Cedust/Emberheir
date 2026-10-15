@@ -10,6 +10,8 @@ import {
   type BoonPick,
   craftBlockReason,
   craftCost,
+  CRUCIBLE_SLOTS,
+  crucibleLock,
   draughtsOpen,
   equipBlockReason,
   getAct,
@@ -284,6 +286,37 @@ export function spendCinderglass(state: GameState, data: GameData): GameState {
     }
     if (!best) break;
     s = best;
+  }
+  return s;
+}
+
+/**
+ * Ember Crucible (neuausrichtung-v1.md 8): each open slot gets the learned Power that adds the
+ * most value; a bound Power is only swapped for a clearly better one (binding costs).
+ */
+export function bindPowers(state: GameState, data: GameData): GameState {
+  let s = state;
+  for (const slot of CRUCIBLE_SLOTS) {
+    if (crucibleLock(s, slot)) continue;
+    const base = gearValue(s, data);
+    let best: GameState | null = null;
+    let bestValue = base + 0.01;
+    for (const power of data.items.powers.values()) {
+      if (power.crucible !== slot || !s.powerCodex?.[power.id]) continue;
+      if (s.hero.crucible?.[slot] === power.id) continue;
+      let next: GameState;
+      try {
+        next = applyAction(s, data, { type: "bindPower", slot, powerId: power.id });
+      } catch {
+        continue;
+      }
+      const value = gearValue(next, data);
+      if (value > bestValue) {
+        best = next;
+        bestValue = value;
+      }
+    }
+    if (best) s = best;
   }
   return s;
 }

@@ -137,6 +137,12 @@ export function contentProblems(state: GameState, data: GameData): string[] {
     if (!data.ashbornValues?.some((v) => v.id === id))
       problems.push(`Unknown Ashborn value "${id}"`);
   }
+  for (const id of [
+    ...Object.keys(state.powerCodex ?? {}),
+    ...Object.values(state.hero.crucible ?? {}),
+  ]) {
+    if (!data.items.powers.has(id)) problems.push(`Unknown Power "${id}"`);
+  }
   for (const omen of state.run?.omens ?? []) {
     if (!data.omens?.some((o) => o.id === omen)) problems.push(`Unknown Omen "${omen}"`);
   }

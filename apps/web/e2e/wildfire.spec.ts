@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveAshborn, saveGreater, saveWildfire, seedSave } from "./fixtures";
+import { saveAshborn, saveCrucible, saveGreater, saveWildfire, seedSave } from "./fixtures";
 
 test("after The Last Ember any act burns again in the Wildfire", async ({ page }) => {
   const errors: string[] = [];
@@ -100,5 +100,38 @@ test("Liora awakens a Greater Affix with Cinderglass and intensifies it", async 
   await expect(page.getByRole("status")).toContainText("Greater II:");
   await expect(page.getByTestId("craft-now")).toContainText("Greater II");
   await page.screenshot({ path: "test-results/greater-affix.png" });
+  expect(errors).toEqual([]);
+});
+
+test("salvaging a Legendary teaches its Power; Liora binds it in the Ember Crucible", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveCrucible());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  await page.getByRole("button", { name: "Thoric, Blacksmith" }).click();
+  await page.getByRole("button", { name: /Open/ }).click();
+  await page.getByRole("button", { name: /^Salvage/ }).click();
+  await page.getByRole("button", { name: "Headsman's Band" }).click();
+  await expect(page.locator(".after-line.kindled")).toContainText("Power Codex: Executioner · T10");
+  await page.locator(".cost-bar").getByRole("button", { name: "Salvage" }).click();
+
+  await page.getByRole("tab", { name: /Liora/ }).click();
+  await page.getByRole("button", { name: /^Ember Crucible/ }).click();
+  const strike = page.getByRole("region", { name: "Strike slot" });
+  await strike.getByRole("button", { name: "Executioner" }).click();
+  await expect(strike.getByRole("button", { name: "Executioner" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  await page
+    .getByRole("region", { name: "Ward slot" })
+    .getByRole("button", { name: "Leech Bloom" })
+    .click();
+  await expect(page.getByRole("region", { name: "Ember slot" })).toContainText("Wildfire V");
+  await page.screenshot({ path: "test-results/crucible.png" });
   expect(errors).toEqual([]);
 });

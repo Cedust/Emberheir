@@ -23,6 +23,7 @@ import { ashbornEffects } from "../ashborn";
 import { activeBoons, boonEffects } from "../boons";
 import { classTitle, getClass, LINEAGE_STEPS, lineageEffect, type HeroClass } from "../classes";
 import { buildHeroSetup } from "../hero";
+import { crucibleEffects } from "./crucible";
 import { tripOmenEffects } from "./omens";
 import { webRuneEffects } from "./web-runes";
 import { keystoneRules, treeBonuses, treeSkills, treeTriggers } from "../skill-tree";
@@ -273,6 +274,7 @@ export function heroSetup(
   const sockets = webRuneEffects(hero, data);
   const omens = tripOmenEffects(state, data);
   const ashborn = ashbornEffects(hero.ashborn, data.ashbornValues ?? []);
+  const crucible = crucibleEffects(state, data);
   const built = buildHeroSetup(
     {
       level: hero.level,
@@ -296,12 +298,14 @@ export function heroSetup(
           sockets.bonuses,
           omens.hero.bonuses,
           ashborn.bonuses,
+          ...crucible.bonuses,
         ),
       triggers: (weapon) => [
         ...treeTriggers(data.skillTree, hero.learned, weapon.range),
         ...boons.triggers,
         ...mastery.triggers,
         ...omens.hero.triggers,
+        ...crucible.triggers,
       ],
       rules: mergeRules(
         keystoneRules(data.skillTree, hero.learned),
@@ -313,6 +317,7 @@ export function heroSetup(
         sockets.rules,
         omens.hero.rules,
         ashborn.rules,
+        ...crucible.rules,
       ),
       ...(state.run ? { lifeFraction: state.run.lifeFraction } : {}),
       resistancePenalty: emberPenalty(state),

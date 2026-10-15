@@ -90,6 +90,7 @@ const hero = z.object({
   rotation: z.array(z.string().nullable()),
   plan: battlePlan,
   webRunes: opt(z.record(z.string(), id)),
+  crucible: opt(z.object({ strike: opt(id), ward: opt(id), ember: opt(id) })),
   ashborn: opt(z.object({ level: count, xp: num, points: z.record(z.string(), count) })),
 });
 
@@ -243,6 +244,7 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
   bountyDone: opt(z.object({ id: id, enemyId: opt(id), actId: id })),
   lineage: opt(count),
   draught: opt(id.nullable()),
+  powerCodex: opt(z.record(z.string(), int.positive())),
 });
 
 /** The shared stash (Supply Wagon) as the UI stores it next to the slots. */

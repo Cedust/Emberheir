@@ -3,6 +3,7 @@ import { type GameState, newGame, rollItem, Rng, serializeStash } from "@emberhe
 import { describe, expect, it } from "vitest";
 import {
   LINEAGE_KEY,
+  POWER_CODEX_KEY,
   SLOT_COUNT,
   STASH_KEY,
   SaveStore,
@@ -168,5 +169,23 @@ describe("Lineage storage", () => {
     const winner = { ...won, legacy: { ...won.legacy, finaleWon: true } };
     expect(store.syncLineage(winner).lineage).toBe(1);
     expect(JSON.parse(kv.getItem(LINEAGE_KEY) ?? "")).toEqual({ finishers: [9] });
+  });
+});
+
+describe("Power Codex", () => {
+  it("belongs to the account: what one character learns, all know (the best tier counts)", () => {
+    const kv = memory();
+    const store = new SaveStore(kv);
+    const a = newGame(GAME_DATA, { seed: 1, classId: "warrior" });
+    const b = newGame(GAME_DATA, { seed: 2, classId: "sorcerer" });
+    expect(store.syncPowerCodex(a).powerCodex).toBeUndefined();
+    store.syncPowerCodex({ ...a, powerCodex: { executioner: 3 } });
+    expect(store.syncPowerCodex(b).powerCodex).toEqual({ executioner: 3 });
+    store.syncPowerCodex({ ...b, powerCodex: { executioner: 2, "leech-bloom": 5 } });
+    expect(store.syncPowerCodex(a).powerCodex).toEqual({ executioner: 3, "leech-bloom": 5 });
+    expect(JSON.parse(kv.getItem(POWER_CODEX_KEY) ?? "")).toEqual({
+      executioner: 3,
+      "leech-bloom": 5,
+    });
   });
 });

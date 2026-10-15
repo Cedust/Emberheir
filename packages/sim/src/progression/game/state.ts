@@ -165,6 +165,8 @@ export interface HeroState {
   readonly webRunes?: Readonly<Record<string, string>>;
   /** Ashborn (neuausrichtung-v1.md 7.3): XP after level 100, its levels and spent points. */
   readonly ashborn?: AshbornState;
+  /** Ember Crucible (neuausrichtung-v1.md 8): the Power bound into each opened slot. */
+  readonly crucible?: Readonly<Partial<Record<"strike" | "ward" | "ember", string>>>;
 }
 
 export interface Encounter {
@@ -423,6 +425,12 @@ export interface GameState {
   readonly lineage?: number;
   /** The Draught chosen in the Camp: brewed from a Flask charge at every set-out. */
   readonly draught?: string | null;
+  /**
+   * Power Codex (neuausrichtung-v1.md 8): Legendary Powers learned by salvaging, with the best
+   * tier learned. It belongs to the account: the UI keeps one for all characters (like the
+   * Lineage) and puts it into the state it loads.
+   */
+  readonly powerCodex?: Readonly<Record<string, number>>;
 }
 
 export class GameActionError extends Error {}

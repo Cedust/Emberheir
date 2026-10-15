@@ -289,6 +289,11 @@ export interface LegendaryPowerDefinition {
   readonly trigger?: AffixRoll;
   /** Only its Unique carries it; random Legendary items never roll it (boss trophies). */
   readonly uniqueOnly?: boolean;
+  /**
+   * Its Ember Crucible slot (neuausrichtung-v1.md 8.3): Strike (hits, Crits, extra attacks,
+   * Execute), Ward (defense, healing, Barrier, Block), Ember (ailments, Heat, triggers, rules).
+   */
+  readonly crucible: "strike" | "ward" | "ember";
 }
 
 /** A Unique item: fixed base, name, affixes and maybe a Legendary Power. */

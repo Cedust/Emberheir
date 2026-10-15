@@ -113,6 +113,15 @@ export {
 export { applyAction, type GameAction } from "./actions";
 export { requireCamp } from "./guards";
 export { heroAshborn, spendAshborn, resetAshborn } from "./ashborn";
+export {
+  CRUCIBLE,
+  CRUCIBLE_SLOTS,
+  type CrucibleSlot,
+  crucibleLock,
+  learnPower,
+  bindPower,
+  crucibleEffects,
+} from "./crucible";
 export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
 export {
   getOmen,

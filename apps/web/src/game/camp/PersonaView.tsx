@@ -40,6 +40,7 @@ import {
   PERSONAS,
   SIDE_DOLL,
 } from "./personaDefs";
+import { CruciblePanel } from "./CruciblePanel";
 import { GamblePanel, RuneBoard, RunePouch, SocketRow } from "./RuneViews";
 
 /**
@@ -85,6 +86,12 @@ export function PersonaView(props: {
         ? targets[0]
         : null;
   const learned = item ? learnFromItem(state.legacy.codex, item, ITEM_CATALOG).learned : [];
+  // Ember Crucible: a Legendary or Unique teaches its Power (neuausrichtung-v1.md 8).
+  const power = item?.powerId ? ITEM_CATALOG.powers.get(item.powerId) : undefined;
+  const teaches =
+    power && item && (state.powerCodex?.[power.id] ?? 0) < item.tier
+      ? { name: power.name, tier: item.tier }
+      : undefined;
 
   const pickItem = (id: string) => {
     setItemId(id);
@@ -124,7 +131,7 @@ export function PersonaView(props: {
 
   let cost = "";
   let block: string | null = null;
-  if (kind === "codex") {
+  if (kind === "codex" || kind === "crucible") {
     block = null;
   } else if (
     !request &&
@@ -175,7 +182,7 @@ export function PersonaView(props: {
     if (kind === "salvage" && item) {
       const names = learned.map((l) => partName(l.kind, l.id)).join(", ");
       setLast(
-        `Salvaged ${item.name}: +${salvageValue(item)} Ash${names ? ` · Codex: ${names}` : ""}`,
+        `Salvaged ${item.name}: +${salvageValue(item)} Ash${names ? ` · Codex: ${names}` : ""}${teaches ? ` · Power Codex: ${teaches.name} T${teaches.tier}` : ""}`,
       );
       game.dispatch({ type: "salvage", itemId: item.id });
       setItemId(null);
@@ -329,6 +336,12 @@ export function PersonaView(props: {
           <div className="persona-actions">
             {def.actions
               .filter((a) => !a.endgame || state.legacy.finaleWon === true)
+              .filter(
+                (a) =>
+                  !a.powers ||
+                  Object.keys(state.powerCodex ?? {}).length > 0 ||
+                  state.legacy.finaleWon === true,
+              )
               .map((a) => (
                 <button
                   key={a.k}
@@ -350,7 +363,9 @@ export function PersonaView(props: {
             <span className="sub">{ACTION_HINT[kind]}</span>
           </div>
 
-          {kind === "combine" || kind === "codex" ? (
+          {kind === "crucible" ? (
+            <CruciblePanel state={state} game={game} />
+          ) : kind === "combine" || kind === "codex" ? (
             <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
           ) : kind === "gamble" ? (
             <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
@@ -404,6 +419,7 @@ export function PersonaView(props: {
                 affixIndex={kind === "kindle" ? (kindleIndex ?? null) : affixIndex}
                 runeId={runeId}
                 learned={learned}
+                power={teaches}
                 kindle={
                   conditionId && effectId && kindleIndex !== null
                     ? {
@@ -437,7 +453,7 @@ export function PersonaView(props: {
               {last}
             </div>
           )}
-          {kind !== "codex" && (
+          {kind !== "codex" && kind !== "crucible" && (
             <div className="cost-bar panel-card">
               <div className="cost-text">
                 <span className="eyebrow">COST</span>

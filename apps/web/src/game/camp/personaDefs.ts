@@ -33,7 +33,8 @@ export type ActionKind =
   | "gamble"
   | "awaken"
   | "shift"
-  | "intensify";
+  | "intensify"
+  | "crucible";
 
 interface PersonaDef {
   readonly name: string;
@@ -47,6 +48,8 @@ interface PersonaDef {
     desc: string;
     /** Only after The Last Ember (Greater Affixes need Cinderglass from the Wildfire). */
     endgame?: boolean;
+    /** Only once the account knows a Legendary Power (Ember Crucible). */
+    powers?: boolean;
   }[];
 }
 
@@ -89,6 +92,12 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
         name: "Intensify",
         desc: "Greater one rank higher: +10 % up to Greater V (150 %).",
         endgame: true,
+      },
+      {
+        k: "crucible",
+        name: "Ember Crucible",
+        desc: "Bind Legendary Powers you learned by salvaging.",
+        powers: true,
       },
     ],
   },
@@ -145,6 +154,7 @@ export const ACTION_HINT: Record<ActionKind, string> = {
   awaken: "One Greater Affix per item. The rank belongs to the item, not to the affix.",
   shift: "Rerolls only which affix is Greater; the rank is never lost.",
   intensify: "Greater I to V. Cinderglass drops only from Wildfire bosses.",
+  crucible: "Salvage a Legendary or Unique at Thoric: its Power joins the Power Codex.",
 };
 
 export { greaterName } from "@emberheir/sim";

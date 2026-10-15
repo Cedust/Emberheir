@@ -6129,3 +6129,58 @@
 .stage .w-glass .dot {
   background: #ff8a1f;
 }
+
+/* Ember Crucible at Liora (neuausrichtung-v1.md 8). */
+.stage .crucible {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.stage .crucible-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+
+.stage .crucible-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 12px;
+  min-height: 300px;
+}
+
+.stage .crucible-slot.locked {
+  opacity: 0.6;
+}
+
+.stage .crucible-powers {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  overflow-y: auto;
+  max-height: 360px;
+}
+
+.stage .crucible-power {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 6px 8px;
+  border: 1.5px solid var(--edge);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .crucible-power.on {
+  border-color: #ff8a1f;
+  box-shadow: 0 0 10px rgb(255 138 31 / 0.4);
+}
+
+.stage .crucible-power-name {
+  font-weight: 700;
+}

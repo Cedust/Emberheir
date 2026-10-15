@@ -138,6 +138,28 @@ export function saveGreater(): string {
   });
 }
 
+/** After The Last Ember: a Legendary ring to salvage, Leech Bloom already in the Power Codex. */
+export function saveCrucible(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  const ring: Item = {
+    id: "crucible-ring",
+    baseId: "iron-ring",
+    name: "Headsman's Band",
+    rarity: "legendary",
+    itemLevel: 98,
+    tier: 10,
+    affixes: [{ affixId: "life", quality: 0.4 }],
+    powerId: "executioner",
+  };
+  return serializeGame({
+    ...camp,
+    progress: { ...camp.progress, trainerUnlocked: true },
+    wallet: { ...camp.wallet, ash: 2000, emberCoal: 20 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+    powerCodex: { "leech-bloom": 7 },
+  });
+}
+
 /** The Rotwood's boss just fell in run 3: a Boss Hoard of six cards, one of them a new trophy. */
 export function saveBossHoard(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "warrior" });

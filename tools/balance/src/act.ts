@@ -18,6 +18,7 @@ import {
   autopilotRewards,
   bestBoon,
   brewDraught,
+  bindPowers,
   chooseRoute,
   spendCinderglass,
   spendPoints,
@@ -65,6 +66,7 @@ function prepare(
   s = spendSkillPoints(s, data, build);
   if (runes) s = autopilotRunes(s, data, act, memo);
   s = spendCinderglass(s, data);
+  s = bindPowers(s, data);
   return brewDraught(s, data, act);
 }
 
