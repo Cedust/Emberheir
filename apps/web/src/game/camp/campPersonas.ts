@@ -13,7 +13,6 @@ export type CampTarget =
   | "kaelen"
   | "stash"
   | "compendium"
-  | "codex"
   | "shop"
   | "runes"
   | "road"

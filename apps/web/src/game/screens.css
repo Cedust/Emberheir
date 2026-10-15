@@ -4076,8 +4076,11 @@
 /* --- Trigger Codex ------------------------------------------------------------------------ */
 
 .stage .trigger-codex {
-  width: 1180px;
-  height: 720px;
+  flex-grow: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  padding: 16px var(--safe-x) 0;
 }
 
 .stage .codex-body {

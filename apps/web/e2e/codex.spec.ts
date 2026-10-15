@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveWithCodex, seedSave } from "./fixtures";
 
-test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto a ring", async ({
+test("The Trigger Codex at the Hearthfire shows learned parts, Liora kindles a trigger onto a ring", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -10,16 +10,13 @@ test("Old Nan's Trigger Codex shows learned parts, Liora kindles a trigger onto 
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
-  await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
-  await page.getByRole("button", { name: "Trigger Codex" }).click();
-  const codex = page.getByRole("dialog", { name: "Trigger Codex" });
-  await expect(codex).toContainText("4 / 26");
+  await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
+  await page.getByRole("tab", { name: /Trigger Codex · 4\/26/ }).click();
+  const codex = page.getByRole("region", { name: "Trigger Codex" });
   await codex.getByRole("listitem", { name: "On Crit" }).click();
   await expect(codex).toContainText("Liora can kindle it");
   // Unknown parts show where they live.
   await expect(codex.getByRole("listitem", { name: "Unknown, Rotwood" }).first()).toBeVisible();
-  // Esc closes the Codex, then Old Nan.
-  await page.keyboard.press("Escape");
   await page.keyboard.press("Escape");
 
   await page.getByRole("button", { name: "Liora, Mystic" }).click();

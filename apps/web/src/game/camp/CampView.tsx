@@ -56,7 +56,8 @@ export function CampView(props: {
   const plan = useRoadPlan(state, game);
   const { act } = plan;
   const next = nextAct(state, GAME_DATA);
-  const list = personas(state, act);
+  // Personas who have not joined the caravan yet are not in the Camp at all.
+  const list = personas(state, act).filter((p) => !p.locked);
   const gear = heirGear(state);
   const cleared = state.progress.actsCleared.includes(act.id);
   const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
@@ -112,20 +113,17 @@ export function CampView(props: {
           const w = p.object ? p.object.w : 130;
           const h = p.object ? p.object.h : Math.round(FIG_H * (p.figure?.fs ?? 1));
           const target = targetOf(p);
-          const hardLocked = p.locked === "later";
-          const key = target && !p.locked ? CTA_KEY[target] : undefined;
-          const marker = p.locked ? 0 : (markers[p.id] ?? 0);
+          const key = target ? CTA_KEY[target] : undefined;
+          const marker = markers[p.id] ?? 0;
           return (
             <button
               key={p.id}
               type="button"
-              className={`camp-target ${p.locked ? "locked" : ""}`}
+              className="camp-target"
               style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
               aria-label={`${p.name}, ${p.role}`}
-              aria-disabled={p.locked ? true : undefined}
-              disabled={hardLocked}
               onClick={() => {
-                if (target && !p.locked) props.onOpen(target);
+                if (target) props.onOpen(target);
               }}
             >
               <Figure p={p} on={false} gear={gear} delay={i * 0.7} />
@@ -139,11 +137,10 @@ export function CampView(props: {
               )}
               <span className="camp-tip" role="tooltip">
                 <span className="title-font">
-                  {p.locked && <Icon name="lock" size={12} />}
                   {p.name}
                   {key && <KeyHint k={key} />}
                 </span>
-                <span className="sub">{p.locked ? p.quote : p.role}</span>
+                <span className="sub">{p.role}</span>
               </span>
             </button>
           );
@@ -175,7 +172,6 @@ export function CampView(props: {
           state={state}
           game={game}
           onCompendium={() => props.onOpen("compendium")}
-          onCodex={() => props.onOpen("codex")}
           onClose={props.onClosePanel}
         />
       )}

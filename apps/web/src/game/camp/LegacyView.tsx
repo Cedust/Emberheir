@@ -18,6 +18,9 @@ import { ItemDetail } from "../../ui/items";
 import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import { collections } from "../collections";
 import { TROPHY_COUNT, TrophyWall } from "./TrophyWall";
+import { codexProgress, TriggerCodex } from "./TriggerCodex";
+
+type LegacyTab = "gear" | "trophies" | "collections" | "codex";
 
 const RING: { slot: EquipmentSlot; icon: IconName }[] = [
   { slot: "helm", icon: "helm" },
@@ -41,13 +44,14 @@ const slotName = (slot: EquipmentSlot) => SLOT_NAMES[itemSlotFor(slot)];
 export function LegacyView(props: {
   state: GameState;
   onClose: () => void;
-  initialTab?: "gear" | "trophies" | "collections";
+  initialTab?: LegacyTab;
 }) {
   const { state } = props;
   const { legacy } = state;
-  const [tab, setTab] = useState<"gear" | "trophies" | "collections">(props.initialTab ?? "gear");
+  const [tab, setTab] = useState<LegacyTab>(props.initialTab ?? "gear");
   const goals = collections(state);
   const full = goals.filter((g) => g.found >= g.total).length;
+  const codex = codexProgress(state);
   const generation = legacy.prestige + 1;
   const [sel, setSel] = useState<EquipmentSlot>("body");
   const wornIn = (slot: EquipmentSlot) => state.hero.equipment[slot];
@@ -112,6 +116,11 @@ export function LegacyView(props: {
                     icon: "boss",
                   },
                   { id: "collections", name: `Collections · ${full}/${goals.length}`, icon: "box" },
+                  {
+                    id: "codex",
+                    name: `Trigger Codex · ${codex.known}/${codex.total}`,
+                    icon: "rune",
+                  },
                 ]}
                 active={tab}
                 onChange={setTab}
@@ -124,6 +133,8 @@ export function LegacyView(props: {
       >
         {tab === "trophies" ? (
           <TrophyWall state={state} />
+        ) : tab === "codex" ? (
+          <TriggerCodex state={state} />
         ) : tab === "collections" ? (
           <div className="collections-page">
             <div className="collections" aria-label="Collections">

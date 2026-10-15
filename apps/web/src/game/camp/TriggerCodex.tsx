@@ -1,7 +1,6 @@
 import { ACTS, ITEM_CATALOG } from "@emberheir/content";
 import { type CodexHome, type CodexPartKind, type GameState, codexKnows } from "@emberheir/sim";
 import { useState } from "react";
-import { Icon } from "../../ui/Icon";
 
 const ARCHETYPE_NAMES: Record<string, string> = {
   brute: "Brutes",
@@ -42,16 +41,22 @@ const EFFECTS: Part[] = [...ITEM_CATALOG.effects.values()].map((e) => ({
   home: e.home,
 }));
 
-/**
- * Old Nan's Trigger Codex: every Condition and Effect, learned ones by name, the rest as
- * silhouettes with their home. Liora kindles learned pairs at the item's tier.
- */
-export function TriggerCodex(props: { state: GameState; onClose: () => void }) {
-  const { state } = props;
+/** Learned parts and all parts, e.g. for the Legacy tab "Trigger Codex · 4/26". */
+export function codexProgress(state: GameState): { known: number; total: number } {
   const codex = state.legacy.codex;
+  const known = [...CONDITIONS, ...EFFECTS].filter((p) => codexKnows(codex, p.kind, p.id)).length;
+  return { known, total: CONDITIONS.length + EFFECTS.length };
+}
+
+/**
+ * The Trigger Codex at the Hearthfire: every Condition and Effect, learned ones by name, the
+ * rest as silhouettes with their home. Liora kindles learned pairs at the item's tier.
+ */
+export function TriggerCodex(props: { state: GameState }) {
+  const codex = props.state.legacy.codex;
   const [picked, setPicked] = useState<Part | null>(null);
   const known = (p: Part) => codexKnows(codex, p.kind, p.id);
-  const count = [...CONDITIONS, ...EFFECTS].filter(known).length;
+  const { known: count } = codexProgress(props.state);
 
   const column = (title: string, parts: Part[]) => (
     <div className="codex-column">
@@ -80,41 +85,27 @@ export function TriggerCodex(props: { state: GameState; onClose: () => void }) {
 
   const pickedKnown = picked ? known(picked) : false;
   return (
-    <div className="overlay" role="dialog" aria-label="Trigger Codex">
-      <div className="overlay-panel trigger-codex">
-        <header className="overlay-header">
-          <div className="run-title">
-            <span className="title-font big">TRIGGER CODEX</span>
-            <span className="sub mono">
-              {count} / {CONDITIONS.length + EFFECTS.length}
-            </span>
-          </div>
-          <div className="grow" />
-          <button type="button" className="icon-button" aria-label="Close" onClick={props.onClose}>
-            <Icon name="close" size={20} />
-          </button>
-        </header>
-        <div className="codex-body">
-          {column("Conditions", CONDITIONS)}
-          {column("Effects", EFFECTS)}
-        </div>
-        <footer className="codex-foot">
-          {picked ? (
-            <>
-              <span className="title-font big">{pickedKnown ? picked.name : "? ? ?"}</span>
-              <span className="sub">
-                {pickedKnown
-                  ? "Learned · Liora can kindle it"
-                  : `Drops more often: ${homeHint(picked.home)}`}
-              </span>
-            </>
-          ) : (
-            <span className="sub">
-              {count === 0 ? "Salvage items with triggers at Thoric." : "Choose a part."}
-            </span>
-          )}
-        </footer>
+    <section className="trigger-codex" aria-label="Trigger Codex">
+      <div className="codex-body">
+        {column("Conditions", CONDITIONS)}
+        {column("Effects", EFFECTS)}
       </div>
-    </div>
+      <footer className="codex-foot">
+        {picked ? (
+          <>
+            <span className="title-font big">{pickedKnown ? picked.name : "? ? ?"}</span>
+            <span className="sub">
+              {pickedKnown
+                ? "Learned · Liora can kindle it"
+                : `Drops more often: ${homeHint(picked.home)}`}
+            </span>
+          </>
+        ) : (
+          <span className="sub">
+            {count === 0 ? "Salvage items with triggers at Thoric." : "Choose a part."}
+          </span>
+        )}
+      </footer>
+    </section>
   );
 }

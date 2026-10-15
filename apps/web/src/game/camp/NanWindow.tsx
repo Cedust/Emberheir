@@ -8,12 +8,11 @@ import { PersonaPortrait } from "./art/PersonaArt";
 import { NAN_LINES } from "./campPersonas";
 import { NanResets } from "./NanResets";
 
-/** Old Nan by the fire: a word of advice, the Compendium and the Codex, and her resets. */
+/** Old Nan by the fire: a word of advice, the Compendium and her resets. */
 export function NanWindow(props: {
   state: GameState;
   game: GameApi;
   onCompendium: () => void;
-  onCodex: () => void;
   onClose: () => void;
 }) {
   // A new piece of advice every time she is visited, and on "Talk".
@@ -53,17 +52,6 @@ export function NanWindow(props: {
               onClick={props.onCompendium}
             >
               Compendium
-            </Button>
-            <Button
-              icon="rune"
-              tip={{
-                name: "Trigger Codex",
-                kind: "Old Nan",
-                explain: "The trigger parts you learned from salvaged items.",
-              }}
-              onClick={props.onCodex}
-            >
-              Trigger Codex
             </Button>
           </div>
           <section className="nan-resets-box" aria-label="Wake from the ashes">

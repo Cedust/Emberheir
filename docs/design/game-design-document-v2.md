@@ -147,9 +147,11 @@ Endgame **Wildfire I–X**.
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
 | **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot) |
 | **Eldrin** | Scout | **The Road**: Act-Wahl, Omen, Wildfire, Draught, **Bounties** (ein optionaler Auftrag pro Zug), The Last Ember, Set Out |
-| **Old Nan** | Hearthfire | Ratschläge, Compendium, Trigger Codex, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
+| **Old Nan** | Hearthkeeper | Ratschläge, Compendium, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
 
-- **Bedienung:** Ein Klick auf eine Persona öffnet ihr Fenster; Hover zeigt ein Namensschild. Marker über den Köpfen
+- **Hearthfire** (Legacy): Worn Gear, Trophy Wall, Collections und der **Trigger Codex**, alles, was das Feuer übersteht.
+- **Bedienung:** Ein Klick auf eine Persona öffnet ihr Fenster; Hover zeigt ein Namensschild. Personas, die noch nicht
+  zur Karawane gestoßen sind (Liora, Nyssa), stehen erst im Camp, wenn sie da sind. Marker über den Köpfen
   zeigen wartende Punkte (Heir: Attribute Points, Kaelen: Skill/Mastery Points) und eine fertige Bounty (Eldrin „!“).
   Unten im Camp stehen nur die Act-Leiste und Set Out; braucht der Zug noch ein Omen, öffnet Set Out Eldrins Fenster.
 
