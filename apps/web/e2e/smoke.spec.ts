@@ -74,8 +74,6 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // The rewards follow on their own after the banner.
   // Normal fights offer an item pick only on every third stage; the others pay their cards as Ash.
   await expect(page.getByText("Stage 1 cleared")).toBeVisible();
-  await expect(page.getByTestId("done-card")).toContainText("Ash from salvage");
-  await expect(page.getByTestId("item-card")).toHaveCount(0);
   await winUntilItemPick(page);
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(3);

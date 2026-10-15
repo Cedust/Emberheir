@@ -496,17 +496,18 @@ export function saveAtFork(): string {
 }
 
 /**
- * From the Intermission after a won stage without an item pick: wins the next stages with Skip
- * until an item pick shows. Normal fights offer one only on every third stage; an Elite earlier.
+ * From the Intermission after a won stage: wins the next stages with Skip until an item pick
+ * shows. Normal fights offer one only on every third stage; an Elite may bring one earlier.
  */
 export async function winUntilItemPick(page: Page): Promise<void> {
   const cards = page.getByTestId("item-card");
   const next = page.locator(".next-stage:not([data-blocked])");
   for (let i = 0; i < 3; i++) {
-    await next.click();
-    await page.getByRole("button", { name: "Skip fight" }).click();
     // Either the cards of a pick, or a free road on to the next stage.
     await expect(cards.first().or(next)).toBeVisible({ timeout: 30_000 });
     if ((await cards.count()) > 0) return;
+    await next.click();
+    await page.getByRole("button", { name: "Skip fight" }).click();
   }
+  await expect(cards.first()).toBeVisible({ timeout: 30_000 });
 }
