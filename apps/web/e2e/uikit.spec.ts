@@ -10,7 +10,7 @@ test("the UI kit preview shows every piece and Q/E flip its tabs", async ({ page
   await page.keyboard.press("e");
   await expect(tabs.getByRole("tab", { name: /Buttons/ })).toHaveAttribute("aria-selected", "true");
   await page.getByLabel("Ash: 380").hover();
-  await expect(page.getByTestId("note-tooltip")).toContainText("Salvage");
+  await expect(page.getByTestId("note-tooltip")).toContainText("craft with it");
   await page.keyboard.press("q");
   await page.keyboard.press("q");
   await expect(tabs.getByRole("tab", { name: /Keys/ })).toHaveAttribute("aria-selected", "true");

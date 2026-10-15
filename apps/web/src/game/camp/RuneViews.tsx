@@ -6,13 +6,12 @@ import {
   type ItemSlot,
   SLOT_NAMES,
   describeBonuses,
-  gamblePrice,
   getBase,
   merchantItemLevel,
   merchantSlots,
 } from "@emberheir/sim";
 import { ItemArt } from "../../ui/ItemArt";
-import { ItemTile, fmt } from "../../ui/items";
+import { ItemTile } from "../../ui/items";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 
 /** Nyssa's and Marisha's center panels: Rune pouch, Codex, stock and gamble slots. */
@@ -50,7 +49,7 @@ export function RunePouch(props: {
   const owned = RUNES.filter((r) => (props.state.wallet.runes[r.id] ?? 0) > 0);
   return (
     <div className="rune-pouch" role="radiogroup" aria-label="Rune pouch">
-      {owned.length === 0 && <span className="sub">No Runes. Elites and bosses drop them.</span>}
+      {owned.length === 0 && <span className="sub">No Runes</span>}
       {owned.map((r) => (
         <button
           key={r.id}
@@ -154,14 +153,13 @@ export function RuneBoard(props: {
   );
 }
 
-/** Gamble: one card per slot with its price; the last gambled item below. */
+/** Gamble: one card per slot; the last gambled item below. */
 export function GamblePanel(props: {
   state: GameState;
   selected: ItemSlot | null;
   onSelect: (slot: ItemSlot) => void;
   last: Item | null;
 }) {
-  const price = gamblePrice(merchantItemLevel(props.state, GAME_DATA));
   const slots = merchantSlots(GAME_DATA);
   return (
     <div className="gamble">
@@ -186,9 +184,7 @@ export function GamblePanel(props: {
           );
         })}
       </div>
-      <span className="sub small">
-        {fmt(price)} Acorns each · Item Level {merchantItemLevel(props.state, GAME_DATA)}
-      </span>
+      <span className="sub small">Item Level {merchantItemLevel(props.state, GAME_DATA)}</span>
       {props.last && (
         <div className="gamble-last">
           <ItemTile item={props.last} label="Gambled" size={76} equipped={false} />

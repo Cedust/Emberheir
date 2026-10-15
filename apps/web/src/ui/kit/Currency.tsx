@@ -6,7 +6,7 @@ export type CurrencyId = "acorns" | "ash" | "coal" | "feathers" | "runes" | "gla
 
 interface CurrencyDef {
   readonly name: string;
-  /** Where it comes from and what it buys, in plain words (tooltip). */
+  /** What it buys, in plain words (tooltip). Never where it drops (Timo). */
   readonly explain: string;
   readonly kind: string;
 }
@@ -14,33 +14,33 @@ interface CurrencyDef {
 export const CURRENCIES: Readonly<Record<CurrencyId, CurrencyDef>> = {
   acorns: {
     name: "Acorns",
-    kind: "Currency · every fight",
+    kind: "Currency",
     explain: "The caravan's coin. Pays for Respecs, Sockets, Runes and Marisha's gambles.",
   },
   ash: {
     name: "Ash",
-    kind: "Currency · Salvage",
-    explain: "What is left of salvaged items and the loot you leave behind. Crafting needs it.",
+    kind: "Currency",
+    explain: "Thoric and Liora craft with it.",
   },
   coal: {
     name: "Ember Coal",
-    kind: "Currency · Elites and bosses",
-    explain: "Falls into your pouch on its own. Thoric reforges with it, Liora kindles with it.",
+    kind: "Currency",
+    explain: "Thoric reforges with it, Liora kindles with it.",
   },
   feathers: {
     name: "Phoenix Feathers",
-    kind: "Currency · bosses",
-    explain: "Rare. Thoric needs one to raise an item by a Tier.",
+    kind: "Currency",
+    explain: "Thoric needs one to raise an item by a Tier.",
   },
   runes: {
     name: "Runes",
-    kind: "Currency · Act drops",
+    kind: "Currency",
     explain: "Nyssa sets them into Sockets. The right Runes in the right order make a Runeword.",
   },
   glass: {
     name: "Cinderglass",
-    kind: "Currency · Wildfire",
-    explain: "Only Wildfire bosses drop it. Liora awakens Greater Affixes with it.",
+    kind: "Currency",
+    explain: "Liora awakens Greater Affixes with it.",
   },
   flask: {
     name: "Ember Flask",
@@ -207,7 +207,12 @@ export function Cost(props: {
   return (
     <span className="k-cost">
       {props.parts.map((p) => (
-        <span key={p.id} className={`k-cost-part${p.have < p.amount ? " short" : ""}`}>
+        <span
+          key={p.id}
+          className={`k-cost-part${p.have < p.amount ? " short" : ""}`}
+          aria-label={`${fmt(p.amount)} ${CURRENCIES[p.id].name}`}
+          title={`${fmt(p.amount)} ${CURRENCIES[p.id].name}`}
+        >
           <CurrencyIcon id={p.id} size={20} />
           <b className="mono">{fmt(p.amount)}</b>
         </span>

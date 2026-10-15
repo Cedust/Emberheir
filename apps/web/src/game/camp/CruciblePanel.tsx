@@ -6,7 +6,7 @@ import {
   crucibleLock,
   type GameState,
 } from "@emberheir/sim";
-import { fmt } from "../../ui/items";
+import { Cost } from "../../ui/kit/Currency";
 import type { GameApi } from "../useGame";
 
 const SLOT_TEXT: Record<CrucibleSlot, { name: string; text: string }> = {
@@ -30,11 +30,12 @@ export function CruciblePanel(props: { state: GameState; game: GameApi }) {
   );
   return (
     <div className="crucible" aria-label="Ember Crucible">
-      <span className="sub">
-        Bind · <b className="mono">{fmt(CRUCIBLE.bindAsh)}</b> Ash ·{" "}
-        <b className="mono">{CRUCIBLE.bindEmberCoal}</b> Ember Coal. The Power Codex is shared by
-        all your characters.
-      </span>
+      <Cost
+        parts={[
+          { id: "ash", amount: CRUCIBLE.bindAsh, have: state.wallet.ash },
+          { id: "coal", amount: CRUCIBLE.bindEmberCoal, have: state.wallet.emberCoal },
+        ]}
+      />
       <div className="crucible-slots">
         {CRUCIBLE_SLOTS.map((slot) => {
           const lock = crucibleLock(state, slot);
@@ -53,7 +54,7 @@ export function CruciblePanel(props: { state: GameState; game: GameApi }) {
               {lock ? (
                 <span className="sub small crucible-lock">{lock}</span>
               ) : powers.length === 0 ? (
-                <span className="sub small">No {SLOT_TEXT[slot].name} Power learned yet.</span>
+                <span className="sub small">Empty</span>
               ) : (
                 <div className="crucible-powers">
                   {powers.map((p) => {
