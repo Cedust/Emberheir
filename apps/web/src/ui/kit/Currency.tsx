@@ -207,7 +207,12 @@ export function Cost(props: {
   return (
     <span className="k-cost">
       {props.parts.map((p) => (
-        <span key={p.id} className={`k-cost-part${p.have < p.amount ? " short" : ""}`}>
+        <span
+          key={p.id}
+          className={`k-cost-part${p.have < p.amount ? " short" : ""}`}
+          aria-label={`${fmt(p.amount)} ${CURRENCIES[p.id].name}`}
+          title={`${fmt(p.amount)} ${CURRENCIES[p.id].name}`}
+        >
           <CurrencyIcon id={p.id} size={20} />
           <b className="mono">{fmt(p.amount)}</b>
         </span>

@@ -94,11 +94,11 @@ test("Liora awakens a Greater Affix with Cinderglass and intensifies it", async 
   await page.getByRole("button", { name: "Liora, Mystic" }).click();
   await page.getByRole("button", { name: /^Awaken/ }).click();
   await page.getByRole("button", { name: "Glowing Iron Ring" }).click();
-  await expect(page.locator(".cost-bar")).toContainText("3 Cinderglass");
+  await expect(page.locator(".cost-bar").getByLabel("3 Cinderglass")).toBeVisible();
   await page.locator(".cost-bar").getByRole("button", { name: "Awaken" }).click();
   await expect(page.getByRole("status")).toContainText("Greater I:");
   await page.getByRole("button", { name: /^Intensify/ }).click();
-  await expect(page.locator(".cost-bar")).toContainText("2 Cinderglass");
+  await expect(page.locator(".cost-bar").getByLabel("2 Cinderglass")).toBeVisible();
   await page.locator(".cost-bar").getByRole("button", { name: "Intensify" }).click();
   await expect(page.getByRole("status")).toContainText("Greater II:");
   await expect(page.getByTestId("craft-now")).toContainText("Greater II");
@@ -119,7 +119,11 @@ test("salvaging a Legendary teaches its Power; Liora binds it in the Ember Cruci
   await page.getByRole("button", { name: /^Salvage/ }).click();
   await page.getByRole("button", { name: "Headsman's Band" }).click();
   await expect(page.locator(".after-line.kindled")).toContainText("Power Codex: Executioner · T10");
-  await page.locator(".cost-bar").getByRole("button", { name: "Salvage" }).click();
+  // Salvage is held, not clicked.
+  await page.locator(".cost-bar").getByRole("button", { name: "Salvage" }).hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1100);
+  await page.mouse.up();
 
   await page.getByRole("tab", { name: /Liora/ }).click();
   await page.getByRole("button", { name: /^Ember Crucible/ }).click();

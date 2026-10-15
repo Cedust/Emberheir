@@ -6,12 +6,10 @@ import {
   greaterRank,
   resolveTrigger,
   statAffixValue,
-  type CraftCost,
   type GameState,
   type Item,
 } from "@emberheir/sim";
-import { fmt } from "../../ui/items";
-import { runeName } from "../../ui/RuneArt";
+import type { IconName } from "../../ui/Icon";
 
 /** The Camp's traders and trainers: their names, actions and the texts of their offers. */
 
@@ -44,6 +42,7 @@ interface PersonaDef {
   readonly quote: string;
   readonly actions: readonly {
     k: ActionKind;
+    icon: IconName;
     name: string;
     desc: string;
     /** Only after The Last Ember (Greater Affixes need Cinderglass from the Wildfire). */
@@ -61,9 +60,19 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     accent: "#c9c2b8",
     quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
     actions: [
-      { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
-      { k: "reforge", name: "Reforge", desc: "Reroll all affixes. Removes the lock." },
-      { k: "salvage", name: "Salvage", desc: "Break an inventory item down into Ash." },
+      { k: "upgrade", icon: "hammer", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
+      {
+        k: "reforge",
+        icon: "cycle",
+        name: "Reforge",
+        desc: "Reroll all affixes. Removes the lock.",
+      },
+      {
+        k: "salvage",
+        icon: "trash",
+        name: "Salvage",
+        desc: "Break an inventory item down into Ash.",
+      },
     ],
   },
   liora: {
@@ -73,28 +82,37 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     accent: "#b36bff",
     quote: "Affixes are like moods, dear. I can change one. I cannot change all of them twice.",
     actions: [
-      { k: "temper", name: "Temper", desc: "Reroll the value of one affix." },
-      { k: "kindle", name: "Kindle", desc: "Build a trigger from the Trigger Codex." },
+      { k: "temper", icon: "gear", name: "Temper", desc: "Reroll the value of one affix." },
+      {
+        k: "kindle",
+        icon: "fire",
+        name: "Kindle",
+        desc: "Build a trigger from the Trigger Codex.",
+      },
       {
         k: "awaken",
+        icon: "eye",
         name: "Awaken",
         desc: "A random affix becomes Greater I: 110 % of its best roll.",
         endgame: true,
       },
       {
         k: "shift",
+        icon: "next",
         name: "Shift",
         desc: "The Greater moves to another random affix. Its rank stays.",
         endgame: true,
       },
       {
         k: "intensify",
+        icon: "flame",
         name: "Intensify",
         desc: "Greater one rank higher: +10 % up to Greater V (150 %).",
         endgame: true,
       },
       {
         k: "crucible",
+        icon: "flask",
         name: "Ember Crucible",
         desc: "Bind Legendary Powers you learned by salvaging.",
         powers: true,
@@ -108,10 +126,15 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     accent: "#8fd06a",
     quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
     actions: [
-      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
-      { k: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
-      { k: "combine", name: "Combine Runes", desc: "Three of a kind make the next Rune." },
-      { k: "codex", name: "Runeword Codex", desc: "Every Runeword you know." },
+      { k: "socket", icon: "shell", name: "Add Socket", desc: "+1 Socket on a Normal item." },
+      { k: "rune", icon: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
+      {
+        k: "combine",
+        icon: "stone",
+        name: "Combine Runes",
+        desc: "Three of a kind make the next Rune.",
+      },
+      { k: "codex", icon: "book", name: "Runeword Codex", desc: "Every Runeword you know." },
     ],
   },
   marisha: {
@@ -121,7 +144,12 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     accent: "#e0c27a",
     quote: "Gamble? Of course. The house always wins. I am the house.",
     actions: [
-      { k: "gamble", name: "Gamble", desc: "A random item for a slot. Better odds than loot." },
+      {
+        k: "gamble",
+        icon: "coins",
+        name: "Gamble",
+        desc: "A random item for a slot. Better odds than loot.",
+      },
     ],
   },
 };
@@ -134,11 +162,6 @@ export function personaPresent(state: GameState, id: PersonaId): boolean {
   if (id === "nyssa") return state.progress.runesmithUnlocked;
   return true;
 }
-
-export const PERSONA_LOCKED: Partial<Record<PersonaId, string>> = {
-  liora: "Liora joins after the act boss falls",
-  nyssa: "Nyssa waits somewhere in the Rotwood",
-};
 
 export const ACTION_HINT: Record<ActionKind, string> = {
   upgrade: "Choose any item. Values grow with the Tier.",
@@ -192,19 +215,4 @@ export function rangeText(item: Item, affixId: string): string {
     return m1[1] === m2[1] ? lo : `${m1[1]}–${(m2[1] ?? "").replace("+", "")}${m1[2]}`;
   }
   return `${lo} to ${hi}`;
-}
-
-export function costText(cost: CraftCost): string {
-  const parts: string[] = [];
-  if (cost.acorns) parts.push(`${fmt(cost.acorns)} Acorns`);
-  if (cost.ash) parts.push(`${fmt(cost.ash)} Ash`);
-  if (cost.emberCoal) {
-    parts.push(`${cost.emberCoal} Ember Coal`);
-  }
-  if (cost.phoenixFeathers) {
-    parts.push(`${cost.phoenixFeathers} Phoenix Feather${cost.phoenixFeathers > 1 ? "s" : ""}`);
-  }
-  for (const [id, n] of Object.entries(cost.runes)) parts.push(`${n} ${runeName(id)}`);
-  if (cost.cinderglass) parts.push(`${cost.cinderglass} Cinderglass`);
-  return parts.join(" · ") || "Free";
 }
