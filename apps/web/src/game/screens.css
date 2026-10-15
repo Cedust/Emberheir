@@ -1610,6 +1610,39 @@
   overflow: visible;
 }
 
+/* The painted Heir's head, cut from the camp figure for the round portrait. */
+.stage .painted-portrait {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  background-size: 277% auto;
+  background-position: 66% 2%;
+  background-repeat: no-repeat;
+}
+
+/* A painted figure (an image instead of SVG art), standing on a soft contact shadow. */
+.stage .figure.painted {
+  position: relative;
+  display: block;
+}
+
+.stage .figure.painted img {
+  display: block;
+  height: 100%;
+  width: auto;
+}
+
+.stage .figure-shadow {
+  position: absolute;
+  left: 50%;
+  bottom: -4px;
+  width: 70%;
+  height: 14px;
+  transform: translateX(-50%);
+  border-radius: 50%;
+  background: radial-gradient(closest-side, rgb(0 0 0 / 0.5), transparent);
+}
+
 .stage .figure.on {
   filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
 }

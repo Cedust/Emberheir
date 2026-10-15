@@ -1,4 +1,5 @@
 import { type GameState } from "@emberheir/sim";
+import heirCampUrl from "../../assets/camp/heir-camp.webp";
 import { Icon } from "../../ui/Icon";
 import { HEARTH_X } from "./art/CampScene";
 import { type HeirGear, FIGURE_H, FIGURE_W, PersonaArt, PORTRAIT } from "./art/PersonaArt";
@@ -24,6 +25,22 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
   const { p } = props;
   const f = p.figure;
   if (!f) return null;
+  if (p.id === "heir") {
+    // The painted Heir (art/heir/heir-master-v1.png, the camp pose looking at the player).
+    const h = Math.round(FIG_H * f.fs);
+    return (
+      <span className={props.on ? "figure painted on" : "figure painted"} style={{ height: h }}>
+        <span className="figure-shadow" />
+        <img
+          className="figure-body"
+          src={heirCampUrl}
+          alt=""
+          height={h}
+          style={{ animationDelay: `${-props.delay}s` }}
+        />
+      </span>
+    );
+  }
   // Everybody faces the Hearthfire.
   const mirror = p.x > HEARTH_X;
   return (
@@ -48,6 +65,15 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
 /** The persona's head as a round portrait for the persona card. */
 export function Portrait(props: { p: Persona; gear: HeirGear }) {
   const { p } = props;
+  if (p.id === "heir") {
+    return (
+      <span
+        className="painted-portrait"
+        style={{ backgroundImage: `url(${heirCampUrl})` }}
+        aria-hidden="true"
+      />
+    );
+  }
   const box = PORTRAIT[p.id];
   if (!p.figure || !box) return <Icon name={p.icon} size={28} color="#f3e6c8" />;
   return (
