@@ -188,12 +188,12 @@ function BonusTable(props: { stats: DerivedStats }) {
 type Only = { readonly only?: readonly PanelId[] | undefined };
 const shows = (only: Only["only"]) => (id: PanelId) => !only || only.includes(id);
 
-/** The big Damage per Second number; its tooltip says what goes into it. */
-function Dps(props: { value: number }) {
-  const hover = useNoteHover(NOTES.dps);
+/** A big "per Second" number (Damage, Heat); its tooltip says what goes into it. */
+function PerSecond(props: { value: string; note: NoteHover }) {
+  const hover = useNoteHover(props.note);
   return (
     <span className="hero-dps" tabIndex={0} {...hover}>
-      <b className="mono">{fmt(props.value)}</b>
+      <b className="mono">{props.value}</b>
       <span className="hero-unit">per Second</span>
     </span>
   );
@@ -210,7 +210,7 @@ export function OffensePanel(
       {show("damage") && (
         <Plaque className="hero-damage" label="Damage" pin="damage">
           <span className="hero-damage-row">
-            <Dps value={props.dps} />
+            <PerSecond value={fmt(props.dps)} note={NOTES.dps} />
             <span className="hero-pills hero-pills-stack">
               <Pill icon="sword" label={weapon.name}>
                 {fmt(weapon.min)}–{fmt(weapon.max)}
@@ -461,18 +461,15 @@ export function HeatPanel(
   if (!show("heat") && !show("heatSources")) return null;
   const behavior = BEHAVIOR[weapon.heatBehavior];
   const start = Math.max(0, Math.min(1, stats.startingHeat / COMBAT.maxHeat));
-  // Seconds from the fight's start until the bar is full and the first skill fires.
-  const fullIn = props.perSecond > 0 ? (COMBAT.maxHeat * (1 - start)) / props.perSecond : undefined;
   return (
     <div className="hero-numbers">
       {show("heat") && (
-        <Plaque className="hero-heat" label="Heat" note={NOTES.heatPerSecond} pin="heat">
-          <span className="hero-dps">
-            <b className="mono">{props.perSecond.toFixed(1)}</b>
-            <span className="hero-unit">per Second</span>
-          </span>
-          <span className="hero-pills">
-            <Pill icon="flame" label={behavior.name} note={behavior} />
+        <Plaque className="hero-heat" label="Heat" pin="heat">
+          <span className="hero-damage-row">
+            <PerSecond value={props.perSecond.toFixed(1)} note={NOTES.heatPerSecond} />
+            <span className="hero-pills hero-pills-stack">
+              <Pill icon="flame" label={behavior.name} note={behavior} />
+            </span>
           </span>
           <span className="heat-gauge" aria-hidden="true">
             <span className="heat-gauge-fill" style={{ width: `${start * 100}%` }} />
@@ -480,12 +477,6 @@ export function HeatPanel(
               <span>
                 Starts at <b className="mono">{fmt(stats.startingHeat)}</b>
               </span>
-              {fullIn !== undefined && (
-                <span>
-                  <Icon name="flame" size={16} /> Full in{" "}
-                  <b className="mono">{fullIn.toFixed(1)} s</b>
-                </span>
-              )}
             </span>
           </span>
         </Plaque>

@@ -7715,7 +7715,6 @@
 
 .stage .hero-pills-stack .hero-pill {
   min-width: 190px;
-  justify-content: space-between;
   gap: 10px;
 }
 
