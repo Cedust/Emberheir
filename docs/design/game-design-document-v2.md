@@ -171,7 +171,8 @@ Endgame **Wildfire I–X**.
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter. Großer Stash links,
   Paperdoll und Tasche rechts (wie PoE); Details beim Hovern, Rechtsklick oder Ctrl+Klick schiebt ein Item hinüber.
   Der Stash hat **4 Tabs** (I-IV, je 10×10): Q/E oder Klick wechselt, ein gezogenes Item öffnet den Tab, über dem es
-  schwebt; Rechtsklick legt in den offenen Tab, Sort ordnet nur diesen.
+  schwebt; Rechtsklick legt in den offenen Tab, Sort ordnet nur diesen. Getragene Ausrüstung geht per Rechtsklick,
+  Ctrl+Klick oder Ziehen direkt in den Stash (ist der offene Tab voll, zieht Rechtsklick sie in die Tasche aus).
 - **Intermission:** steht in der Arena des Acts (der Heir wartet dort, Wetter läuft weiter). Links der Heir (Life,
   Flask, Battle Plan), in der Mitte die Wahl des Moments (Beute, Shrine, Pfad), rechts der Weg (Up Next, Bounty); bei
   der Item-Wahl steht dort die Paperdoll. Character und Skill Tree öffnen als Fenster über der Arena.

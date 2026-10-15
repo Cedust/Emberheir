@@ -26,6 +26,7 @@ export const UNEQUIP_BLOCK_TEXT: Record<UnequipBlockReason, string> = {
   fight: "Not during a fight",
   noRoom: "No room",
   empty: "Empty",
+  camp: "Camp only",
 };
 
 export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
