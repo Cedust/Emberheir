@@ -275,11 +275,11 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
     // Eldrin on the signpost.
     {
       x: 1300 + SIGNPOST_DX,
-      y: 560,
-      rx: 90,
-      ry: 90,
+      y: 520,
+      rx: 130,
+      ry: 130,
       color: "#ffb060",
-      strength: 0.3,
+      strength: 0.4,
       flicker: "soft",
     },
     // The anvil by Thoric's forge wagon.
