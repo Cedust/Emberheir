@@ -97,7 +97,7 @@ export const COMBAT = {
    * Monster Armor × (this × Monster Level): an armored monster (about 30 Armor) stops about a
    * third of a Physical hit at every level, a plain one about a tenth.
    */
-  monsterArmorPerLevel: 0.3,
+  monsterArmorPerLevel: 0.27,
   /**
    * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10):
    * Elemental builds had it far easier than Physical ones against the same walls.
