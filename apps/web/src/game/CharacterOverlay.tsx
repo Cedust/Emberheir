@@ -12,13 +12,11 @@ import {
   deriveStats,
   equipBlockReason,
   estimateDps,
-  formatPercent,
   heatPerSecond,
   boonEffects,
   heroBoons,
   heroSetup,
   heroTitle,
-  speedValue,
   unequipBlockReason,
   bossLevel,
   levelCap,
@@ -28,7 +26,7 @@ import {
   emberPenalty,
   emberPenaltyLine,
 } from "@emberheir/sim";
-import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
+import type { NoteHover } from "../ui/ItemTooltip";
 import { useState } from "react";
 import { ClassEmblem } from "./ClassEmblem";
 import {
@@ -36,7 +34,6 @@ import {
   ItemGrid,
   ItemTile,
   RingSwitch,
-  fmt,
   rarityClass,
   slotLabel,
 } from "../ui/items";
@@ -52,20 +49,14 @@ import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
 import { HeroDoll, type HeroSlotProps } from "./character/HeroDoll";
 import { HeroNumbers, PendingGain, type StatsBefore } from "./character/HeroNumbers";
+import { DefensePanel, HeatPanel, OffensePanel, type WeaponNumbers } from "./character/StatTabs";
 import { AshbornPanel } from "./AshbornPanel";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 
 type Tab = "Overview" | "Attributes" | "Offense" | "Defense" | "Heat" | "Ashborn";
 
-const pct = (v: number) => `${formatPercent(v)} %`;
 /** Stage width the window frame, the attributes (420) and the bag (464) take from the hero. */
 const HERO_ROOM = 960;
-const HEAT_TEXT = {
-  cooling: "Cooling",
-  steady: "Steady",
-  warming: "Warming",
-  smoldering: "Smoldering",
-};
 
 /**
  * Character (Character mock): paperdoll, attributes with pending points (Confirm / Undo),
@@ -138,69 +129,16 @@ export function CharacterOverlay(props: {
   const penalty = emberPenalty(state);
   const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
   const draught = activeDraught(state, GAME_DATA);
-  const rows: Record<
-    Exclude<Tab, "Overview" | "Attributes" | "Ashborn">,
-    { label: string; value: string; note?: NoteHover }[]
-  > = {
-    Offense: [
-      { label: "Damage per second (estimate)", value: fmt(dps) },
-      {
-        label: `${setup.weapon.name} damage`,
-        value: `${Math.round(setup.weapon.damage.min)}–${Math.round(setup.weapon.damage.max)}`,
-      },
-      {
-        label: "Speed (Attack Speed)",
-        value: String(speedValue(stats.attackSpeed)),
-      },
-      { label: "Physical Damage", value: `+${pct(stats.physicalDamage)}` },
-      { label: "Elemental Damage", value: `+${pct(stats.elementalDamage)}` },
-      { label: "Crit Chance", value: pct(stats.critChance) },
-      { label: "Crit Damage", value: "150 %" },
-      { label: "Trigger Chance", value: `+${pct(stats.triggerChance)}` },
-    ],
-    Defense: [
-      { label: "Life", value: fmt(stats.maxLife) },
-      { label: "Barrier", value: fmt(stats.barrier), note: DEFENSE_NOTES.barrier },
-      { label: "Armor", value: fmt(stats.armor), note: DEFENSE_NOTES.armor },
-      { label: "Evasion", value: pct(stats.evasion), note: DEFENSE_NOTES.evasion },
-      { label: "Block (Physical)", value: pct(stats.blockChance), note: DEFENSE_NOTES.block },
-      ...(penalty > 0
-        ? [{ label: "Ember Penalty", value: `−${pct(penalty)}`, note: resNote }]
-        : []),
-      { label: "Fire Resistance", value: pct(stats.fireResistance), note: resNote },
-      { label: "Cold Resistance", value: pct(stats.coldResistance), note: resNote },
-      { label: "Lightning Resistance", value: pct(stats.lightningResistance), note: resNote },
-      { label: "Void Resistance", value: pct(stats.voidResistance), note: resNote },
-      { label: "Tenacity", value: pct(stats.tenacity) },
-      { label: "Lifesteal", value: pct(stats.lifesteal) },
-      ...(draught
-        ? [
-            {
-              label: "Draught",
-              value: draught.name,
-              note: { name: draught.name, kind: draught.description, explain: draught.explain },
-            },
-          ]
-        : []),
-    ],
-    Heat: [
-      { label: "Heat behavior", value: HEAT_TEXT[setup.weapon.heatBehavior] },
-      ...(setup.weapon.heatBehavior === "warming"
-        ? []
-        : [{ label: "Heat per Hit", value: fmt(setup.weapon.heatPerHit) }]),
-      ...(setup.weapon.heatBehavior === "cooling"
-        ? [{ label: "Heat from Hits Taken", value: pct(stats.heatFromHitsTaken) }]
-        : []),
-      { label: "Heat per second (estimate)", value: heatPerSecond(setup, stats).toFixed(1) },
-      { label: "Heat Gain", value: `+${pct(stats.heatGain)}` },
-      { label: "Starting Heat", value: fmt(stats.startingHeat) },
-      { label: "Ailment Effect", value: `+${pct(stats.ailmentEffect)}` },
-      {
-        label: "Battle Plan",
-        value: setup.rotation.map((r) => `${r.skill.name} ${r.level ?? 1}`).join(" · "),
-      },
-    ],
+  const weaponNumbers: WeaponNumbers = {
+    name: setup.weapon.name,
+    min: setup.weapon.damage.min,
+    max: setup.weapon.damage.max,
+    heatBehavior: setup.weapon.heatBehavior,
+    heatPerHit: setup.weapon.heatPerHit,
   };
+  const draughtNote: NoteHover | undefined = draught
+    ? { name: draught.name, kind: draught.description, explain: draught.explain }
+    : undefined;
 
   // Right-click: the default action of the Character Sheet (ui-ux-plan-v1.md 3.5).
   const equipNow = (item: Item) => {
@@ -282,7 +220,7 @@ export function CharacterOverlay(props: {
     },
     { id: "Offense", name: "Offense", icon: "sword", explain: "How hard and fast you hit." },
     { id: "Defense", name: "Defense", icon: "shield", explain: "What keeps you alive." },
-    { id: "Heat", name: "Heat", icon: "flame", explain: "How your Heat fills and what it fires." },
+    { id: "Heat", name: "Heat", icon: "flame", explain: "How your Heat fills." },
     ...(ashbornOpen
       ? [
           {
@@ -453,27 +391,24 @@ export function CharacterOverlay(props: {
               </>
             )}
             {tab === "Overview" && (
-              <HeroNumbers
-                stats={stats}
-                dps={dps}
-                weapon={{
-                  name: setup.weapon.name,
-                  min: setup.weapon.damage.min,
-                  max: setup.weapon.damage.max,
-                }}
-                resNote={resNote}
-              />
+              <HeroNumbers stats={stats} dps={dps} weapon={weaponNumbers} resNote={resNote} />
             )}
             {tab === "Ashborn" && <AshbornPanel state={state} game={game} inFight={inFight} />}
-            {tab !== "Overview" && tab !== "Attributes" && tab !== "Ashborn" && (
-              <>
-                <span className="title-font section-title">{tab}</span>
-                <dl className="stat-rows">
-                  {rows[tab].map((r) => (
-                    <StatRow key={r.label} {...r} />
-                  ))}
-                </dl>
-              </>
+            {tab === "Offense" && <OffensePanel stats={stats} dps={dps} weapon={weaponNumbers} />}
+            {tab === "Defense" && (
+              <DefensePanel
+                stats={stats}
+                penalty={penalty}
+                resNote={resNote}
+                draught={draughtNote}
+              />
+            )}
+            {tab === "Heat" && (
+              <HeatPanel
+                stats={stats}
+                weapon={weaponNumbers}
+                perSecond={heatPerSecond(setup, stats)}
+              />
             )}
           </section>
 
@@ -518,20 +453,5 @@ export function CharacterOverlay(props: {
         </div>
       </Window>
     </WindowLayer>
-  );
-}
-
-/** One stat line; a hover explains the mechanic in plain words where it has a note. */
-function StatRow(props: { label: string; value: string; note?: NoteHover | undefined }) {
-  const hover = useNoteHover(props.note);
-  return (
-    <div
-      className={`stat-row${props.note ? " has-note" : ""}`}
-      {...hover}
-      tabIndex={props.note ? 0 : undefined}
-    >
-      <dt>{props.label}</dt>
-      <dd className="mono">{props.value}</dd>
-    </div>
   );
 }

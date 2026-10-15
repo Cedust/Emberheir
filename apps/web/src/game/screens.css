@@ -1835,10 +1835,6 @@
   fill: var(--vial);
 }
 
-.stage .stat-row.has-note {
-  cursor: help;
-}
-
 .stage .set-out-go {
   display: flex;
   flex-direction: column;
@@ -2533,30 +2529,9 @@
 }
 
 .stage .hero-numbers {
-  display: grid;
-  grid-template-columns: 1fr;
-  grid-template-areas:
-    "damage"
-    "life"
-    "defense"
-    "resist";
+  display: flex;
+  flex-direction: column;
   gap: 12px;
-}
-
-.stage .hero-damage {
-  grid-area: damage;
-}
-
-.stage .hero-life {
-  grid-area: life;
-}
-
-.stage .hero-defense {
-  grid-area: defense;
-}
-
-.stage .hero-resist {
-  grid-area: resist;
 }
 
 /* A plaque: dark inset with a brass top edge, like the Battle HUD's frames. */
@@ -2702,6 +2677,7 @@
 .stage .hero-def-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
+  align-items: start;
   gap: 28px;
 }
 
@@ -2789,6 +2765,67 @@
 
 .stage .res-void {
   --res: var(--dmg-void);
+}
+
+.stage .res-brass {
+  --res: var(--k-brass, #c9a063);
+}
+
+.stage .hero-res.three {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.stage .hero-card-top {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stage .hero-penalty {
+  font-size: 13px;
+  color: #ff8a7a;
+}
+
+.stage .hero-pill[tabindex] {
+  cursor: help;
+}
+
+/* Heat tab: the bar the fight starts with, filled to Starting Heat. */
+.stage .heat-gauge-text > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.stage .heat-gauge {
+  position: relative;
+  height: 32px;
+  margin-top: 8px;
+  overflow: hidden;
+  border-radius: 6px;
+  border: 2px solid #1a0d08;
+  box-shadow: 0 0 0 1.5px var(--k-brass, #c9a063);
+  background: linear-gradient(180deg, #1c130c, #2a1c12);
+}
+
+.stage .heat-gauge-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: linear-gradient(180deg, #ffcf6a, #ff8a3a 55%, #c4431c);
+}
+
+.stage .heat-gauge-text {
+  position: relative;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 0 10px;
+  font-size: 14px;
+  color: #f6ead2;
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
 }
 
 /* Breakpoint Perks under the attributes: what each lit Perk does, then the next ones. */
@@ -3074,32 +3111,6 @@
 
 .stage .pending-gain .down b {
   color: var(--warn);
-}
-
-.stage .stat-rows {
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-}
-
-.stage .stat-row {
-  display: flex;
-  justify-content: space-between;
-  gap: 12px;
-  padding: 4px 0;
-  border-bottom: 1px solid var(--grid-line);
-  font-size: 15px;
-}
-
-.stage .stat-row dt {
-  color: var(--text-sub);
-}
-
-.stage .stat-row dd {
-  margin: 0;
-  font-weight: 600;
-  text-align: right;
 }
 
 /* --- kaelen --------------------------------------------------------------------------------- */
@@ -6114,6 +6125,14 @@
   padding-top: 26px;
   border-color: #7a4a1c;
   position: relative;
+}
+
+/* Plain notes (tabs, stats): only as big as their text. */
+.stage .perk-tooltip.note-tooltip {
+  width: max-content;
+  min-width: 160px;
+  max-width: 280px;
+  padding-top: 10px;
 }
 
 .stage .perk-tooltip.perk-locked {
