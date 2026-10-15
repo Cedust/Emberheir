@@ -254,7 +254,7 @@ function Brazier(props: { x: number; y: number }) {
 
 /** Where the braziers stand, in scene coordinates. */
 const BRAZIERS = [
-  { x: 200, y: 560 },
+  { x: 300, y: 572 },
   { x: 1150, y: 640 },
 ];
 
@@ -306,14 +306,16 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
       strength: 0.5,
       flicker: "fire" as const,
     })),
+    // Marisha's corner by the Supply Wagon.
+    { x: 200, y: 430, rx: 110, ry: 90, color: "#ffb060", strength: 0.35, flicker: "soft" },
     // The anvil by Thoric's forge wagon.
     { x: 1290, y: 450, rx: 90, ry: 70, color: "#ff7a2a", strength: 0.45, flicker: "soft" },
     ...LANTERNS.map(([x, y]) => ({ x, y, rx: 46, ry: 40, color: "#ffc070", strength: 0.4 })),
     ...(opts.orb
       ? [
           {
-            x: 580,
-            y: 302,
+            x: 420,
+            y: 350,
             rx: 80,
             ry: 80,
             color: "#6fd3ff",
@@ -335,8 +337,8 @@ const SPARKS = [
   { x: 710, d: 2.3, dx: 16 },
 ];
 
-/** Moves the fire (drawn with its feet at y = 614) into the painted stone ring, slightly larger. */
-const HEARTH_FIT = `translate(${HEARTH_X} ${HEARTH_Y}) scale(1.05) translate(-${HEARTH_X} -614)`;
+/** Moves the fire (drawn with its feet at y = 614) into the painted stone ring, a bit smaller. */
+const HEARTH_FIT = `translate(${HEARTH_X} ${HEARTH_Y}) scale(0.85) translate(-${HEARTH_X} -614)`;
 
 /** The moving part of the camp: the Hearthfire with its glow and sparks, and drifting ash. */
 export function CampFx(props: { w: number; h: number; ox: number }) {

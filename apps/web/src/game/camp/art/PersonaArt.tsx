@@ -31,7 +31,7 @@ export interface HeirGear {
 }
 
 const shadow = (rx: number) => (
-  <ellipse cx="50" cy="167" rx={rx} ry="5" fill="#000" opacity="0.32" />
+  <ellipse cx="50" cy="168" rx={rx * 1.2} ry="7" fill="#000" opacity="0.45" />
 );
 
 /** A part that moves on its own (tail, ear, glow), turning around `origin` in figure units. */
