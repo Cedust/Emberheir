@@ -121,6 +121,7 @@ const encounter = z.object({
   thief: opt(z.boolean()),
   echo: opt(id),
   champion: opt(z.boolean()),
+  omens: opt(z.array(id)),
 });
 
 const pickKind = z.enum(["equip", "take"]);
@@ -172,6 +173,7 @@ const run = z.object({
   wildfire: opt(int.positive()),
   draught: opt(id),
   routes: opt(z.record(z.string(), z.enum(ROUTE_KINDS))),
+  omens: opt(z.array(id)),
 });
 
 const notice = z.object({

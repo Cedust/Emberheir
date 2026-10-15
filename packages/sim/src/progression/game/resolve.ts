@@ -20,6 +20,7 @@ import {
 } from "./encounters";
 import { salvageValue } from "./item-rules";
 import { requireRun } from "./guards";
+import { tripOmenEffects } from "./omens";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
 import {
   actAffixFactor,
@@ -82,9 +83,12 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   const [rng, next] = nextRng(state);
   const act = getAct(data, run.actId);
   const rank = encounterRank(encounter);
-  const xp = xpForKill(encounter.level, rank, state.hero.level);
-  const auto = autoRewards(encounter.level, rank);
-  const stones =
+  // The trip's Omens: a Run Omen's reward, the Wildfire's pay per Peril.
+  const omen = tripOmenEffects(state, data);
+  const xp = Math.round(xpForKill(encounter.level, rank, state.hero.level) * (1 + omen.bonus.xp));
+  const plain = autoRewards(encounter.level, rank);
+  const auto = { ...plain, ash: Math.round(plain.ash * (1 + omen.bonus.ash)) };
+  const coal =
     rank === "boss"
       ? rng.int(...PROGRESSION.bossEmberCoal)
       : rank === "elite"
@@ -92,6 +96,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         : rng.chance(PROGRESSION.normalEmberCoalChance)
           ? 1
           : 0;
+  const stones = Math.ceil(coal * (1 + omen.bonus.emberCoal));
   const feathers =
     rank === "boss"
       ? PROGRESSION.bossPhoenixFeathers
@@ -124,7 +129,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     state.legacy.prestige,
     rng,
     (affix) => codex(affix) * theme(affix),
-    1 + PROGRESSION.wildfire.legendaryPerTier * tier,
+    (1 + PROGRESSION.wildfire.legendaryPerTier * tier) * (1 + omen.bonus.legendary),
     rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
   );
   // Fewer, weightier picks: most normal fights pay Ash for their cards at once.
@@ -136,7 +141,10 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   const runes = rollRuneDrops(
     data,
     rank,
-    act.number + state.legacy.prestige + PROGRESSION.wildfire.runeTiersPerTier * tier,
+    act.number +
+      state.legacy.prestige +
+      PROGRESSION.wildfire.runeTiersPerTier * tier +
+      omen.bonus.runeTiers,
     rng,
   );
   const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
@@ -156,8 +164,9 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       act.shrineStages.includes(run.stage) ||
       (route?.kind === "shrine" && route.second));
   const rest =
-    (hearthEmbers(act, run.stage, tier) ? PROGRESSION.hearthEmbers : 0) +
-    (route?.kind === "hearth" && route.second ? PROGRESSION.hearthPath : 0);
+    ((hearthEmbers(act, run.stage, tier) ? PROGRESSION.hearthEmbers : 0) +
+      (route?.kind === "hearth" && route.second ? PROGRESSION.hearthPath : 0)) *
+    omen.restHeal;
   // The act boss leaves its Echo, one stage stronger once per run (Weapon Mastery).
   const echoDef = rank === "boss" ? data.echoes.find((e) => e.actId === act.id) : undefined;
   const echoBefore = echoDef ? state.legacy.echoes[echoDef.id] : undefined;

@@ -51,6 +51,8 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Skill Web v3 and the Prestige branches' travel nodes (neuausrichtung-v1.md 4): nodes were
   // rebuilt and renamed, so every Skill Point comes back and the hero keeps the class start.
   4: { state: refundSkillTree },
+  // Omens (neuausrichtung-v1.md 5.2 and 7.2): new optional fields, nothing to move.
+  5: {},
 };
 
 /** Class start nodes of Skill Web v3 (the Sorcerer's was renamed). */

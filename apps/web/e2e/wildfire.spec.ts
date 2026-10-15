@@ -27,3 +27,27 @@ test("after The Last Ember any act burns again in the Wildfire", async ({ page }
   await page.screenshot({ path: "test-results/wildfire-battle.png" });
   expect(errors).toEqual([]);
 });
+
+test("above Wildfire V the tier asks for Peril: Omens are chosen before setting out", async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveWildfire(5));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  const picker = page.getByLabel("Wildfire", { exact: true });
+  for (let i = 0; i < 6; i++) await picker.getByRole("button", { name: "Raise Wildfire" }).click();
+  await expect(picker).toContainText("Wildfire VI");
+  const omens = page.getByRole("group", { name: "Wildfire Omens" });
+  await expect(omens).toContainText("Peril 0 / 2");
+  await expect(page.getByRole("button", { name: "NEEDS 2 PERIL" })).toBeDisabled();
+  await omens.getByRole("button", { name: "Parched" }).click();
+  await omens.getByRole("button", { name: "Stoneflesh" }).click();
+  await expect(omens).toContainText("Peril 3 / 2");
+  await page.screenshot({ path: "test-results/wildfire-omens.png" });
+  await page.getByRole("button", { name: "WILDFIRE VI · ACT 2" }).click();
+  await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
+  expect(errors).toEqual([]);
+});

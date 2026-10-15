@@ -7,6 +7,7 @@ import {
   learnBlockReason,
   learnNodes,
   newGame,
+  omenOffer,
   rollItem,
   rollUnique,
   Rng,
@@ -420,19 +421,21 @@ export function saveCollector(): string {
   });
 }
 
-/** After The Last Ember with Wildfire III cleared: Wildfire IV is the next tier. */
-export function saveWildfire(): string {
+/** After The Last Ember with Wildfire `best` cleared (III by default): the next tier is open. */
+export function saveWildfire(best = 3): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
   return serializeGame({
     ...camp,
     hero: { ...camp.hero, level: 100, xp: 0 },
-    legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: 3 },
+    legacy: { ...camp.legacy, prestige: 7, finaleWon: true, wildfire: best },
   });
 }
 
 /** On the road in the Ashen Fields (second run), right before the fork of Stages 3–4. */
 export function saveAtFork(): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
-  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
+  // The Ashen Fields are an old act in the second run: they burn under an Omen.
+  const omens = omenOffer(camp, GAME_DATA, "ashen-fields").slice(0, 1);
+  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields", omens });
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }

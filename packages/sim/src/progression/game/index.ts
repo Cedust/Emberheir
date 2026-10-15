@@ -113,6 +113,15 @@ export {
 export { applyAction, type GameAction } from "./actions";
 export { requireCamp } from "./guards";
 export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
+export {
+  getOmen,
+  isOldAct,
+  omenOffer,
+  checkOmens,
+  tripOmens,
+  tripOmenEffects,
+  omenEffectsOf,
+} from "./omens";
 export { getBounty, bountyReward } from "./bounty";
 export {
   lootGate,

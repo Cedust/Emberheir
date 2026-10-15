@@ -417,7 +417,9 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   // Hunter's Mark: until the first clean hit, Glancing Blows deal nothing.
   const dealt = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
   const damage =
-    core.heavyFrom === attacker.side ? Math.min(dealt, heavyHitCap(defender.stats)) : dealt;
+    core.heavyFrom === attacker.side
+      ? Math.min(dealt, heavyHitCap(defender.stats, defender.setup.rules?.heavyHitCap))
+      : dealt;
   emit(core, {
     t: fightTime(core),
     type: "hit",

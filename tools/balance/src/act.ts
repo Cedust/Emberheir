@@ -22,6 +22,7 @@ import {
   spendPoints,
 } from "./autopilot";
 import { type BuildPlan, findBuild } from "./builds";
+import { chooseRunOmen, chooseWildfireOmens, flaskWorks } from "./omens";
 import { autopilotRunes, campSalvage, type RuneMemo } from "./runes";
 import { spendSkillPoints } from "./skill-path";
 
@@ -172,10 +173,14 @@ export function playGenerations(
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
         s = prepare(s, data, build, act, runes, memo);
-        s = applyAction(s, data, { type: "setOut", actId: act.id });
+        s = applyAction(s, data, {
+          type: "setOut",
+          actId: act.id,
+          omens: chooseRunOmen(s, data, act.id),
+        });
         while (s.run) {
           s = spendPoints(s, data, options.starterWeapon);
-          if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+          if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
             s = applyAction(s, data, { type: "useFlask" });
           }
           s = chooseRoute(s, data);
@@ -295,10 +300,15 @@ export function playWildfire(
   let cleared = false;
   for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
     s = prepare(s, data, build, act, runes, memo);
-    s = applyAction(s, data, { type: "setOut", actId: act.id, wildfire: tier });
+    s = applyAction(s, data, {
+      type: "setOut",
+      actId: act.id,
+      wildfire: tier,
+      omens: chooseWildfireOmens(s, data, act.id, tier),
+    });
     while (s.run) {
       s = spendPoints(s, data, options.starterWeapon);
-      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
         s = applyAction(s, data, { type: "useFlask" });
       }
       s = applyAction(s, data, { type: "startStage" });
@@ -361,10 +371,14 @@ function farmLastAct(
   const act = actsInOrder(data).at(-1);
   if (!act) return state;
   let s = prepare(state, data, build, act, runes, memo);
-  s = applyAction(s, data, { type: "setOut", actId: act.id });
+  s = applyAction(s, data, {
+    type: "setOut",
+    actId: act.id,
+    omens: chooseRunOmen(s, data, act.id),
+  });
   while (s.run) {
     s = spendPoints(s, data, starterWeapon);
-    if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+    if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
       s = applyAction(s, data, { type: "useFlask" });
     }
     s = applyAction(s, data, { type: "startStage" });
@@ -400,7 +414,7 @@ export function playFinale(
     s = brewDraught(s, data, data.finale);
     s = applyAction(s, data, { type: "enterFinale" });
     while (s.run) {
-      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0) {
+      if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
         s = applyAction(s, data, { type: "useFlask" });
       }
       s = applyAction(s, data, { type: "startStage" });

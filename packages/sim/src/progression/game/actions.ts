@@ -46,7 +46,13 @@ import {
 
 export type GameAction =
   /** Leave the Camp and start an act at stage 1. */
-  | { readonly type: "setOut"; readonly actId: string; readonly wildfire?: number }
+  | {
+      readonly type: "setOut";
+      readonly actId: string;
+      readonly wildfire?: number;
+      /** One of the two Run Omens of an old act, or the Wildfire Omens. */
+      readonly omens?: readonly string[];
+    }
   /** Turn in a done bounty at the Scout. */
   | { readonly type: "turnInBounty" }
   /** Camp: the Draught to brew at every set-out (`null` = none). */
@@ -130,8 +136,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
   switch (action.type) {
     case "setOut":
       return action.wildfire
-        ? setOutWildfire(state, data, action.actId, action.wildfire)
-        : setOut(state, data, action.actId);
+        ? setOutWildfire(state, data, action.actId, action.wildfire, action.omens)
+        : setOut(state, data, action.actId, action.omens);
     case "turnInBounty":
       return turnInBounty(state, data);
     case "chooseDraught":

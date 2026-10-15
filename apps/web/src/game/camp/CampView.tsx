@@ -9,7 +9,10 @@ import {
   flaskCapacity,
   type GameState,
   LINEAGE_STEPS,
+  minPeril,
   nextAct,
+  omenOffer,
+  omenPeril,
   wildfireName,
   wildfireTop,
 } from "@emberheir/sim";
@@ -30,7 +33,9 @@ import {
   BountyTurnIn,
   DraughtPicker,
   turnInPreview,
+  OmenChoice,
   type TurnInReward,
+  WildfireOmens,
   WildfirePicker,
 } from "./CampPickers";
 
@@ -58,12 +63,25 @@ export function CampView(props: {
   const next = nextAct(state, GAME_DATA);
   // The road the Heir takes: the next act unless a cleared one is picked to farm it again.
   const act = acts.find((a) => a.id === road && roadOpen(a.id)) ?? next;
-  const setOut = () =>
+  // Omens (neuausrichtung-v1.md 5.2, 7.2): one of two for an old act, any for the Wildfire.
+  const [omen, setOmen] = useState<string | null>(null);
+  const [wildOmens, setWildOmens] = useState<readonly string[]>([]);
+  const offer = tier > 0 ? [] : omenOffer(state, GAME_DATA, act.id);
+  const runOmen = omen && offer.includes(omen) ? omen : null;
+  const peril = omenPeril(
+    wildOmens.flatMap((id) => GAME_DATA.omens?.find((o) => o.id === id) ?? []),
+  );
+  const ready = tier > 0 ? peril >= minPeril(tier) : offer.length === 0 || runOmen !== null;
+  const toggleOmen = (id: string) =>
+    setWildOmens((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id]));
+  const setOut = () => {
+    if (!ready) return;
     game.dispatch(
       tier > 0
-        ? { type: "setOut", actId: act.id, wildfire: tier }
-        : { type: "setOut", actId: act.id },
+        ? { type: "setOut", actId: act.id, wildfire: tier, omens: wildOmens }
+        : { type: "setOut", actId: act.id, ...(runOmen ? { omens: [runOmen] } : {}) },
     );
+  };
   const list = personas(state, act);
   const gear = heirGear(state);
   const sel = list.find((p) => p.id === picked) ?? list[0];
@@ -281,6 +299,8 @@ export function CampView(props: {
                 THE LAST EMBER
               </button>
             )}
+            {tier > 0 && <WildfireOmens tier={tier} chosen={wildOmens} onToggle={toggleOmen} />}
+            {offer.length > 0 && <OmenChoice offer={offer} chosen={runOmen} onPick={setOmen} />}
             {top > 0 && (
               <WildfirePicker
                 tier={tier}
@@ -314,11 +334,16 @@ export function CampView(props: {
             <button
               type="button"
               className={`btn big primary glow${tier > 0 ? " wildfire-go" : ""}`}
+              disabled={!ready}
               onClick={setOut}
             >
-              {tier > 0
-                ? `${wildfireName(tier).toUpperCase()} · ACT ${act.number}`
-                : `SET OUT · ACT ${act.number}`}
+              {!ready
+                ? tier > 0
+                  ? `NEEDS ${minPeril(tier)} PERIL`
+                  : "CHOOSE AN OMEN"
+                : tier > 0
+                  ? `${wildfireName(tier).toUpperCase()} · ACT ${act.number}`
+                  : `SET OUT · ACT ${act.number}`}
             </button>
           </div>
         </div>

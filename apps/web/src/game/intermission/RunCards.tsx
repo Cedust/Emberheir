@@ -296,6 +296,20 @@ export function UpNext(props: {
           {run.wildfire ? ` · ${wildfireName(run.wildfire)}` : ""}
         </span>
       </div>
+      {(run.omens ?? []).map((id) => {
+        const omen = GAME_DATA.omens?.find((o) => o.id === id);
+        return omen ? (
+          <div
+            key={id}
+            className="up-row omen-row"
+            title={`${omen.price}${omen.reward ? ` ${omen.reward}` : ""}`}
+          >
+            <span className="omen-mark" />
+            <span>Omen: {omen.name}</span>
+            <span className="sub">{omen.peril ? `Peril ${omen.peril}` : omen.price}</span>
+          </div>
+        ) : null;
+      })}
       {props.state && props.game && (
         <RouteChoice state={props.state} run={run} act={act} next={next} game={props.game} />
       )}

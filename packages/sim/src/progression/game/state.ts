@@ -17,6 +17,7 @@ import { type DraughtDefinition } from "../draughts";
 import { type EliteModifier } from "../elites";
 import { type PlacedItem } from "../inventory";
 import { type EnemyRank } from "../leveling";
+import { type OmenDefinition } from "../omens";
 import { type LearnedNodes, type SkillTreeDefinition } from "../skill-tree";
 import {
   type EchoDefinition,
@@ -38,7 +39,7 @@ import {
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 1 in the Early Dev Preview.
  */
-export const SAVE_VERSION = 5;
+export const SAVE_VERSION = 6;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -116,6 +117,8 @@ export interface GameData {
   readonly startingAttributes: Attributes;
   /** Draughts brewed from a Flask charge before setting out; none without them. */
   readonly draughts?: readonly DraughtDefinition[];
+  /** Omens (neuausrichtung-v1.md 5.2 and 7.2); old acts and the Wildfire have none without them. */
+  readonly omens?: readonly OmenDefinition[];
 }
 
 export interface Wallet {
@@ -177,6 +180,8 @@ export interface Encounter {
   readonly echo?: string;
   /** A named Champion (neuausrichtung-v1.md 6.1): three modifiers and its own hoard. */
   readonly champion?: boolean;
+  /** The Omens of the trip that change the enemy (copied from the run). */
+  readonly omens?: readonly string[];
 }
 
 export type ItemPick =
@@ -254,6 +259,8 @@ export interface RunState {
   readonly wildfire?: number;
   /** The Draught brewed for this trip (it lasts until the Camp). */
   readonly draught?: string;
+  /** The Omens of this trip: one Run Omen in an old act, any Wildfire Omens in the Wildfire. */
+  readonly omens?: readonly string[];
   /**
    * Routes chosen on this trip (neuausrichtung-v1.md 6.2): by the first stage of each fork
    * (`routeForks`). A fork without a choice takes the Shrine path.
