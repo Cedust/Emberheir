@@ -360,7 +360,7 @@ export const PROGRESSION = {
     life: 0.08,
     damage: 0.06,
     /** Above V the hero is capped at level 100 while Monster Levels keep rising: Life only. */
-    steep: { from: 5, life: 0.2, damage: 0 },
+    steep: { from: 5, life: 0.35, damage: 0.08 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,
