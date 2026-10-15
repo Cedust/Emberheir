@@ -351,3 +351,46 @@ Pro Build (Run 2–7): unbroken 6,6 · smasher 5,5 · bleeder 4,9 · axe 5,5 · 
 schon gemilderten Treffer (Resistenz zählt also einmal, wie in PoE), aber der Perk Attuned (+10 % Elemental Penetration)
 und Penetration vom Gear heben 10 % Resistenz ganz auf. Idee für die nächste Runde: 20–25 % Grundresistenz, eventuell
 mit dem Monster Level wachsend wie die Armor. Run 7 (2,2) könnte noch eine höhere Wand vertragen.
+
+---
+
+## 11. Phase 5, Teil 4: Feinschliff für alle Builds (15.10.)
+
+Timo (14.10.): „Miss so lange, bis es gut passt für alle.“ Ab R5 mit **5 Läufen pro Build** (Seeds 31–35), weil 3 Läufe
+um ±0,7 Anläufe streuen.
+
+| Lauf | was | Anläufe | Builds (Run 2–7) | Clear |
+| --- | --- | --- | --- | --- |
+| B3 | vorher (Abschnitt 10) | 2,9 | 1,7 – 6,6 | 99 % |
+| R1 | Gegner 20 % Resistance | 3,0 | 1,8 – 6,6 | 99 % |
+| R2 | DoTs schwächer (Poison 15 %, Burn 22 %, Corruption 9 %/s), Spark +20 %, Iron Blood −45 % | 3,1 | 1,6 – 6,3 | 99 % |
+| R3 | Chill −25 % (max −40 %), Bleed-Techniken +16 %, Exsanguinate 40 %, Wand Run 7 8,4 | 3,2 | 2,4 – 5,5 | 100 % |
+| R4 | Gegner 30 % Resistance, Poison 14 %/s | 3,7 | 2,5 – 5,5 | 99 % |
+| R5 | Wand Run 6 7,8, Monster-Armor ×0,27 pro Level (5 Läufe ab hier) | 3,6 | 2,5 – 7,3 | 99 % |
+| R6 | Unbroken ab 50 Heat, Open Wounds +40 %, Glacier +15 % | 3,5 | 2,7 – 5,5 | 100 % |
+| R7 | Spark +10 %, Bloodletter Bleed +25 %, Iron Blood −50 % | 3,7 | 2,8 – 5,7 | 100 % |
+| **R8** | **Unbroken +40 %, Gash +20 %, Kindled Mind 10 %, Wand Run 7 8,0 (im Code)** | **3,5** | **2,7 – 5,3** | **99 %** |
+
+**R8 im Detail:** Run 2–7: 4,4 / 4,4 / 4,0 / 3,5 / 3,6 / 3,5, alle im Ziel 3–5. Tode normal / Elite / Gate / Boss:
+3 / 24 / 24 / 49 %.
+
+| Build | Anläufe | | Build | Anläufe | | Build | Anläufe |
+| --- | --- | --- | --- | --- | --- | --- | --- |
+| sword (unbroken) | 5,3 | | dagger (assassin) | 3,2 | | wand (frost) | 2,7 |
+| mace (smasher) | 3,8 | | crossbow (marksman) | 4,2 | | wand (fire) | 3,9 |
+| sword (bleeder) | 4,4 | | bow (venom) | 4,9 | | staff (void) | 3,3 |
+| axe (bleed) | 5,1 | | bow (barbs) | 4,4 | | staff (pyre) | 3,1 |
+| dagger (poison) | 3,7 | | wand (storm) | 3,1 | | staff (rot) | 2,9 |
+
+12 von 15 Builds liegen im Ziel, die anderen drei höchstens 0,3 daneben, also innerhalb der Streuung zwischen zwei
+Messungen. 3 von 525 Läufen bleiben nach 30 Anläufen hängen (Unbroken Run 6, Marksman Run 7, Frost Run 4).
+
+**Was gewirkt hat:**
+
+1. **Monster-Resistance 30 %**, weil Penetration (Attuned +10 %, Gear) kleinere Werte ganz aufhebt. DoTs rechnen mit dem
+   gemilderten Treffer, also trifft die Resistance auch Burn und Corruption.
+2. **DoT-Grundwerte** etwas kleiner (Poison, Burn, Corruption), **Chill** bremst weniger. Bleed bleibt und wird über
+   Inhalte stärker (Techniken, Exsanguinate, Open Wounds, Bloodletter), weil die Bleed-Builds am schwersten waren.
+3. **Class Traits:** Spark +10 % (statt 50 % vor Phase 5), Iron Blood −50 % Schaden durch Heavy Attacks.
+
+**Offen:** Elites tragen 24 % der Tode (Ziel 10–20 %), normale Stages nur 3 % (Ziel 5–15 %).

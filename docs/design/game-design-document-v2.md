@@ -35,10 +35,10 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Achsen | Waffe (eine wählen) | Class Trait | Klassenpfade (Prestige-Äste) |
 |---|---|---|---|---|
-| **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −35 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
-| **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: +15 % Ailment Effect für Bleed und Poison | Butcher, Venomancer, Duelist, Tactician |
+| **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −50 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
+| **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: Bleed +25 %, Poison +15 % Schaden | Butcher, Venomancer, Duelist, Tactician |
 | **Hunter** | Physical · Ranged | Bow, Crossbow | Keen Eye: erster Treffer jedes Kampfes und Treffer ins Ausholen des Gegners sind saubere Crits | Marksman, Venomancer, Warden, Tactician |
-| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +20 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
+| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +10 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
 | **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +1 % Schaden pro Sekunde Kampf (bis +25 %) | Pyromancer, Void Lord, Warden, Tactician |
 
 - Class Traits seit Phase 3 der Neuausrichtung (`neuausrichtung-v1.md` 2.1): Ein Trait beschreibt, **wie** die Klasse
@@ -194,10 +194,10 @@ Endgame **Wildfire I–X**.
 | Damage Type | Ailment | Mechanik | Eingebauter Payoff |
 |---|---|---|---|
 | Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert | Rend (Skill) |
-| Physical | **Poison** | 17 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
-| Fire | **Burn** | 25 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus |
-| Void | **Corruption** | 10 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
-| Cold | **Chill** | −30 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −50 %) | – |
+| Physical | **Poison** | 14 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
+| Fire | **Burn** | 22 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus |
+| Void | **Corruption** | 9 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
+| Cold | **Chill** | −25 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −40 %) | – |
 | Lightning | **Shock** | +10 % erlittener Schaden pro Stack, bis 3 Stacks, 3 s (mit Ailment Effect bis +50 %) | – |
 
 - **Ailment Effect** (statt Ailment Duration, `ailments-v2.md`): stärkere DoTs, stärkeres Chill und Shock, nicht
@@ -326,9 +326,11 @@ Endgame **Wildfire I–X**.
 - **Champions** (ab Run 3, 4 % pro Elite): drei Modifier, +30 % Life, eigener Hoard (sicher Epic, 15 % Legendary).
 - **Ember Thief:** seltener Gegner, der wegläuft; fängt man ihn, gibt es Beute.
 - **Bosse:** pro Act einer mit Phasen und Signatur-Mechanik. Jedes Prestige gibt jedem Boss eine Fähigkeit dazu.
+- **Defense der Gegner:** Armor wächst mit dem Monster Level (×0,27 pro Level), dazu **30 % All Resistance** für
+  jeden Gegner, damit Physical und Elemental gleich schwer durchkommen (`balance-messung-v1.md` 11).
 - **Skalierung:** Das Monster Level bestimmt die Grundwerte. Dazu:
   - **Run Pressure:** Life +80 %, Schaden +35 % pro Act nach dem ersten (der neueste Act bleibt der härteste).
-  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7 / 8 / 8 / 6,6 / 5,4),
+  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7,6 / 9 / 8,8 / 7,8 / 8),
     Life nur mit deren Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3, Startwerte aus
     `balance-messung-v1.md`): normale Stages 15 → 30 %, 25 → 35 %, 30 → 40 % der Wand, die **Gatekeeper** auf
     Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Jede Wand mit höchstens +10 Level schaffbar.
