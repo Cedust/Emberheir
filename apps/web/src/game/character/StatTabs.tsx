@@ -3,10 +3,14 @@ import {
   DEFENSE_NOTES,
   type DerivedStats,
   type HeatBehavior,
+  type TriggerSpec,
+  describeTrigger,
   speedValue,
+  triggerChance,
 } from "@emberheir/sim";
-import { Icon } from "../../ui/Icon";
-import type { NoteHover } from "../../ui/ItemTooltip";
+import { Icon, type IconName } from "../../ui/Icon";
+import { EmptyState } from "../../ui/kit/Marker";
+import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { fmt } from "../../ui/items";
 import { type Element, Vitals, Medal, Plaque, Pill, Res, Row, pct } from "./HeroNumbers";
 
@@ -61,6 +65,21 @@ const NOTES = {
     kind: "Defense",
     explain: "Your hits heal you by a share of their damage. Ailments do not.",
   },
+  penetration: {
+    name: "Penetration",
+    kind: "Offense",
+    explain: "Your hits ignore this much of the enemy's Armor or Resistance.",
+  },
+  thorns: {
+    name: "Thorns",
+    kind: "Defense",
+    explain: "Every hit you take deals this much damage back to the attacker.",
+  },
+  flask: {
+    name: "Ember Flask",
+    kind: "Defense",
+    explain: "How many sips the Ember Flask holds for a trip. Each sip heals you.",
+  },
   heatPerSecond: {
     name: "Heat per Second",
     kind: "Heat",
@@ -90,6 +109,79 @@ const BEHAVIOR: Record<HeatBehavior, NoteHover> = {
     explain: "Heat comes mostly from the hits you take. It never cools down.",
   },
 };
+
+const AILMENTS: readonly {
+  readonly name: string;
+  readonly verb: string;
+  readonly stat:
+    | "burnChance"
+    | "chillChance"
+    | "shockChance"
+    | "corruptionChance"
+    | "bleedChance"
+    | "poisonChance";
+  readonly icon: IconName;
+  readonly tone: string;
+}[] = [
+  { name: "Burn", verb: "Burn the enemy", stat: "burnChance", icon: "fire", tone: "fire" },
+  { name: "Chill", verb: "Chill the enemy", stat: "chillChance", icon: "snow", tone: "cold" },
+  { name: "Shock", verb: "Shock the enemy", stat: "shockChance", icon: "bolt", tone: "lightning" },
+  {
+    name: "Corruption",
+    verb: "Corrupt the enemy",
+    stat: "corruptionChance",
+    icon: "void",
+    tone: "void",
+  },
+  { name: "Bleed", verb: "make the enemy Bleed", stat: "bleedChance", icon: "drop", tone: "bleed" },
+  { name: "Poison", verb: "Poison the enemy", stat: "poisonChance", icon: "venom", tone: "poison" },
+];
+
+/** Damage and Penetration per damage kind: two rows, two columns. */
+function BonusTable(props: { stats: DerivedStats }) {
+  const { stats } = props;
+  const pen = useNoteHover(NOTES.penetration);
+  const rows = [
+    {
+      icon: "strike" as const,
+      label: "Physical",
+      damage: stats.physicalDamage,
+      pen: stats.physicalPenetration,
+    },
+    {
+      icon: "meteor" as const,
+      label: "Elemental",
+      damage: stats.elementalDamage,
+      pen: stats.elementalPenetration,
+    },
+  ];
+  return (
+    <table className="hero-table hero-matrix">
+      <thead>
+        <tr>
+          <td />
+          <td />
+          <th scope="col">Damage</th>
+          <th scope="col" tabIndex={0} {...pen}>
+            Penetration
+          </th>
+        </tr>
+      </thead>
+      <tbody>
+        {rows.map((r) => (
+          <tr key={r.label}>
+            <td className="hero-table-icon">
+              <Icon name={r.icon} size={16} />
+            </td>
+            <th scope="row">{r.label}</th>
+            <td className="mono">+{pct(r.damage)}</td>
+            <td className="mono">{pct(r.pen)}</td>
+          </tr>
+        ))}
+      </tbody>
+    </table>
+  );
+}
 
 export function OffensePanel(props: { stats: DerivedStats; dps: number; weapon: WeaponNumbers }) {
   const { stats, weapon } = props;
@@ -124,30 +216,44 @@ export function OffensePanel(props: { stats: DerivedStats; dps: number; weapon: 
         </div>
       </Plaque>
       <Plaque className="hero-bonus" label="Bonuses">
-        <table className="hero-table">
-          <tbody>
-            <Row icon="strike" label="Physical Damage" value={`+${pct(stats.physicalDamage)}`} />
-            <Row icon="meteor" label="Elemental Damage" value={`+${pct(stats.elementalDamage)}`} />
-            <Row
-              icon="venom"
-              label="Ailment Effect"
-              value={`+${pct(stats.ailmentEffect)}`}
-              note={NOTES.ailmentEffect}
+        <BonusTable stats={stats} />
+      </Plaque>
+      <Plaque
+        className="hero-ailments"
+        label="Ailments"
+        aside={
+          <Pill icon="venom" label="Ailment Effect" note={NOTES.ailmentEffect}>
+            +{pct(stats.ailmentEffect)}
+          </Pill>
+        }
+      >
+        <div className="hero-res three">
+          {AILMENTS.map((a) => (
+            <Medal
+              key={a.name}
+              icon={a.icon}
+              label={a.name}
+              value={pct(stats[a.stat])}
+              tone={a.tone}
+              note={{
+                name: `${a.name} Chance`,
+                kind: "Offense",
+                explain: `Extra chance to ${a.verb} with every hit.`,
+              }}
             />
-            <Row
-              icon="rune"
-              label="Trigger Chance"
-              value={`+${pct(stats.triggerChance)}`}
-              note={NOTES.triggerChance}
-            />
-          </tbody>
-        </table>
+          ))}
+        </div>
       </Plaque>
     </div>
   );
 }
 
-export function DefensePanel(props: { stats: DerivedStats; penalty: number; resNote: NoteHover }) {
+export function DefensePanel(props: {
+  stats: DerivedStats;
+  penalty: number;
+  resNote: NoteHover;
+  flaskCharges: number;
+}) {
   const { stats } = props;
   const res: Record<Element, number> = {
     fire: stats.fireResistance,
@@ -211,10 +317,6 @@ export function DefensePanel(props: { stats: DerivedStats; penalty: number; resN
                 value={pct(stats.tenacity)}
                 note={NOTES.tenacity}
               />
-            </tbody>
-          </table>
-          <table className="hero-table">
-            <tbody>
               <Row
                 icon="drop"
                 label="Lifesteal"
@@ -223,8 +325,93 @@ export function DefensePanel(props: { stats: DerivedStats; penalty: number; resN
               />
             </tbody>
           </table>
+          <table className="hero-table">
+            <tbody>
+              <Row icon="thornback" label="Thorns" value={fmt(stats.thorns)} note={NOTES.thorns} />
+              <Row
+                icon="flask"
+                label="Flask Charges"
+                value={String(props.flaskCharges)}
+                note={NOTES.flask}
+              />
+            </tbody>
+          </table>
         </div>
       </Plaque>
+    </div>
+  );
+}
+
+/** A trigger from the worn gear, with the item it sits on. */
+export interface GearTrigger {
+  readonly spec: TriggerSpec;
+  readonly item: string;
+}
+
+/** A Legendary Power of a worn item. */
+export interface GearPower {
+  readonly name: string;
+  readonly text: string;
+  readonly item: string;
+}
+
+/**
+ * The Triggers tab: every trigger the worn gear gives, with its chance after Trigger Chance, and
+ * the Legendary Powers.
+ */
+export function TriggersPanel(props: {
+  stats: DerivedStats;
+  triggers: readonly GearTrigger[];
+  powers: readonly GearPower[];
+}) {
+  const { stats } = props;
+  return (
+    <div className="hero-numbers hero-effects">
+      <Plaque
+        className="hero-triggers"
+        label="Triggers"
+        aside={
+          <Pill icon="rune" label="Trigger Chance" note={NOTES.triggerChance}>
+            +{pct(stats.triggerChance)}
+          </Pill>
+        }
+      >
+        {props.triggers.length > 0 ? (
+          <ul className="hero-effect-list">
+            {props.triggers.map((t, i) => (
+              <li key={i}>
+                <span className="hero-effect-head">
+                  <b>{t.spec.name}</b>
+                  <span className="hero-effect-item">{t.item}</span>
+                </span>
+                <span className="hero-effect-text">
+                  {describeTrigger({
+                    ...t.spec,
+                    chance: triggerChance(t.spec.chance ?? 1, stats.triggerChance),
+                  })}
+                </span>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <EmptyState icon="rune" />
+        )}
+      </Plaque>
+      {props.powers.length > 0 && (
+        <Plaque className="hero-powers" label="Legendary Powers">
+          <ul className="hero-effect-list">
+            {props.powers.map((p, i) => (
+              <li key={i}>
+                <span className="hero-effect-head">
+                  <b className="hero-power-name">{p.name}</b>
+                  <span className="hero-effect-item">{p.item}</span>
+                </span>
+                <span className="hero-effect-text">{p.text}</span>
+              </li>
+            ))}
+          </ul>
+        </Plaque>
+      )}
     </div>
   );
 }

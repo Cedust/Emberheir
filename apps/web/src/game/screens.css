@@ -3299,6 +3299,14 @@
   --res: var(--dmg-void);
 }
 
+.stage .res-bleed {
+  --res: var(--dmg-bleed);
+}
+
+.stage .res-poison {
+  --res: var(--dmg-poison);
+}
+
 .stage .res-brass {
   --res: var(--k-brass, #c9a063);
 }
@@ -7563,4 +7571,79 @@
 
 .stage .crucible-power-name {
   font-weight: 700;
+}
+
+/* The Triggers tab: one line per trigger or Legendary Power, the item it sits on at the right. */
+.stage .hero-effects {
+  min-height: 0;
+}
+
+.stage .hero-effects .hero-card {
+  min-height: 0;
+}
+
+.stage .hero-effect-list {
+  margin: 4px 0 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+}
+
+.stage .hero-effect-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 2px;
+  border-bottom: 1px solid rgb(201 160 99 / 0.18);
+}
+
+.stage .hero-effect-list li:last-child {
+  border-bottom: none;
+}
+
+.stage .hero-effect-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.stage .hero-effect-head b {
+  font-size: 16px;
+  color: #f6ead2;
+}
+
+.stage .hero-effect-item {
+  font-size: 13px;
+  color: #9d8e72;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage .hero-effect-text {
+  font-size: 14px;
+  color: #cdbd9d;
+}
+
+.stage .hero-effect-head b.hero-power-name {
+  color: #ff9a3c;
+}
+
+/* Offense: Damage and Penetration side by side, one row per damage kind. */
+.stage .hero-matrix thead th {
+  padding: 2px 0 4px;
+  text-align: right;
+  font-size: 12px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #9d8e72;
+}
+
+.stage .hero-matrix thead th[tabindex] {
+  cursor: help;
+}
+
+.stage .hero-matrix td.mono {
+  width: 120px;
 }

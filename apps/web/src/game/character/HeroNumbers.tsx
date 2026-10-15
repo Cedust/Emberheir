@@ -212,10 +212,21 @@ export function Res(props: { element: Element; value: number; note: NoteHover })
 }
 
 /** A big number in a framed chip, like a Resistance but in brass. */
-export function Medal(props: { icon: IconName; label: string; value: string; note?: NoteHover }) {
+export function Medal(props: {
+  icon: IconName;
+  label: string;
+  value: string;
+  note?: NoteHover;
+  /** Colour of the chip, e.g. "fire" or "bleed" (brass by default). */
+  tone?: string;
+}) {
   const hover = useNoteHover(props.note);
   return (
-    <span className="hero-res-one res-brass" tabIndex={props.note ? 0 : undefined} {...hover}>
+    <span
+      className={`hero-res-one res-${props.tone ?? "brass"}`}
+      tabIndex={props.note ? 0 : undefined}
+      {...hover}
+    >
       <Icon name={props.icon} size={24} />
       <b className="mono">{props.value}</b>
       <span className="hero-res-name">{props.label}</span>
