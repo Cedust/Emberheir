@@ -11,7 +11,10 @@ test("The Trigger Codex at the Hearthfire shows learned parts, Liora kindles a t
   await page.getByRole("button", { name: /Continue/ }).click();
 
   await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
-  await page.getByRole("tab", { name: /Trigger Codex · 4\/26/ }).click();
+  await page.getByRole("tab", { name: /Collections/ }).click();
+  const card = page.getByRole("radio", { name: "Trigger Codex" });
+  await expect(card).toContainText("4 / 26");
+  await card.click();
   const codex = page.getByRole("region", { name: "Trigger Codex" });
   await codex.getByRole("listitem", { name: "On Crit" }).click();
   await expect(codex).toContainText("Liora can kindle it");

@@ -5649,10 +5649,6 @@
   margin: 6px 0 0;
 }
 
-.stage .trophy-count .big {
-  font-size: 34px;
-}
-
 /* A Unique seen for the first time flies up to the Trophy Wall. */
 .stage .loot-cards {
   position: relative;
@@ -6302,28 +6298,80 @@
 .stage .collections-page {
   flex-grow: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  padding: 32px calc(var(--safe-x) + 36px);
+  display: grid;
+  grid-template-columns: 340px minmax(0, 1fr);
+  gap: 28px;
+  padding: 24px calc(var(--safe-x) + 32px);
 }
 
 .stage .collections {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
 }
 
 .stage .collection {
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  padding: 20px 22px;
+  gap: 8px;
+  padding: 16px 18px;
+  text-align: left;
+  font: inherit;
+  color: inherit;
+  cursor: pointer;
+}
+
+.stage .collection.on {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px var(--accent) inset;
+}
+
+.stage .collection-count {
+  margin-left: auto;
+  font-size: 20px;
+}
+
+/* The chosen collection fills the right side; its own page padding is not needed here. */
+.stage .collection-detail {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .collection-detail > .trophy-layout,
+.stage .collection-detail > .trigger-codex {
+  padding: 0;
+}
+
+.stage .collection-detail .codex-body {
+  padding: 0 0 16px;
+}
+
+.stage .collection-detail .codex-foot {
+  padding: 12px 0 0;
+}
+
+.stage .collection-detail > .codex {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-content: start;
+  gap: 8px;
+}
+
+.stage .lineage-page {
+  flex-grow: 1;
+  padding: 32px calc(var(--safe-x) + 36px);
 }
 
 .stage .collection.done {
-  border-color: var(--accent);
   box-shadow: 0 0 18px rgb(255 138 31 / 0.25);
+}
+
+.stage .collection.done.on {
+  box-shadow:
+    0 0 0 2px var(--accent) inset,
+    0 0 18px rgb(255 138 31 / 0.25);
 }
 
 .stage .collection-bar {
@@ -6334,7 +6382,8 @@
   overflow: hidden;
 }
 
-.stage .collection-bar > div {
+.stage .collection-bar > span {
+  display: block;
   height: 100%;
   background: var(--accent);
 }

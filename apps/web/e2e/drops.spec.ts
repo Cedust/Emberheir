@@ -30,7 +30,7 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   await page.getByRole("button", { name: /RETURN TO CAMP/ }).click();
   await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
   await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
-  await page.getByRole("tab", { name: /Trophy Wall/ }).click();
+  await page.getByRole("tab", { name: /Collections/ }).click();
   await expect(page.getByTestId("trophy-thornsong")).toBeEnabled();
   await expect(page.getByTestId("trophy-tyrants-crown")).toBeDisabled();
   expect(errors).toEqual([]);
