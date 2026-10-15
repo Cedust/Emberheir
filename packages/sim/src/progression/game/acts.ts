@@ -166,6 +166,19 @@ export function routeAt(
   };
 }
 
+/**
+ * The fork whose path is still to choose before `stage` starts (its first stage, nothing chosen
+ * yet), or null. The UI asks for a path there; the sim falls back to the Shrine path.
+ */
+export function openFork(
+  run: { readonly routes?: Readonly<Record<string, RouteKind>>; readonly wildfire?: number },
+  act: ActData,
+  stage: number,
+): number | null {
+  const at = routeAt(run, act, stage);
+  return at && !at.second && !run.routes?.[String(at.fork)] ? at.fork : null;
+}
+
 export const waymarkKey = (actId: string, stage: number) => `${actId}:${stage}`;
 
 /**

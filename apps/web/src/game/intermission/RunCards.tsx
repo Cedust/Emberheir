@@ -24,7 +24,7 @@ import {
   xpToNextLevel,
   tripOmenEffects,
 } from "@emberheir/sim";
-import { Icon } from "../../ui/Icon";
+import { Icon, type IconName } from "../../ui/Icon";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
@@ -199,60 +199,65 @@ export function PlanCard(props: { state: GameState; run: RunState; onPlan: () =>
 }
 
 /** The paths of a fork (neuausrichtung-v1.md 6.2): what each one holds. */
-const ROUTE_TEXT: Record<RouteKind, { name: string; text: string }> = {
-  elite: { name: "Elite Path", text: "Two Elites in a row: harder, with their themed loot." },
-  shrine: { name: "Shrine Path", text: "Two fights, then an Ember Shrine (a Boon)." },
-  hearth: { name: "Hearth Path", text: "Two fights, then a fire to rest at: +25 % Life." },
-  thief: { name: "Thief's Trail", text: "The Ember Thief waits on it for sure." },
+const ROUTE_TEXT: Record<RouteKind, { name: string; text: string; icon: IconName }> = {
+  elite: { name: "Elite Path", text: "Two Elites in a row, with their themed loot.", icon: "boss" },
+  shrine: { name: "Shrine Path", text: "Two fights, then an Ember Shrine.", icon: "flame" },
+  hearth: { name: "Hearth Path", text: "Two fights, then a fire: +25 % Life.", icon: "fire" },
+  thief: { name: "Thief's Trail", text: "The Ember Thief waits on it.", icon: "target" },
 };
 
-/** The choice at a fork of the road: two stages, one path. */
-function RouteChoice(props: {
-  state: GameState;
-  run: RunState;
-  act: ActData;
-  next: number;
-  game: GameApi;
-}) {
-  const { state, run, act, next, game } = props;
+/**
+ * A fork of the road, in the middle of the Intermission: one big card per path. There is no
+ * default; NEXT STAGE waits until one is chosen (Timo).
+ */
+export function PathCards(props: { state: GameState; run: RunState; game: GameApi }) {
+  const { state, run, game } = props;
+  const act = getAct(GAME_DATA, run.actId);
+  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
   const at = routeAt(run, act, next);
-  if (!at) return null;
+  if (!at || at.second) return null;
+  const chosen = run.routes?.[String(at.fork)];
   const kinds = ROUTE_KINDS.filter((k) => k !== "thief" || thiefTrailOpen(state, GAME_DATA));
   return (
-    <div className="route-choice" aria-label="Route">
-      <span className="small">
-        {at.second
-          ? `On the ${ROUTE_TEXT[at.kind].name}`
-          : `A fork: your path for Stages ${at.fork}–${at.fork + 1}`}
-      </span>
-      {!at.second && (
-        <div className="route-options" role="radiogroup" aria-label="Choose a path">
-          {kinds.map((k) => (
-            <button
-              key={k}
-              type="button"
-              role="radio"
-              aria-checked={at.kind === k}
-              className={`route-option title-font${at.kind === k ? " chosen" : ""}`}
-              title={ROUTE_TEXT[k].text}
-              onClick={() => game.dispatch({ type: "chooseRoute", route: k })}
-            >
-              {ROUTE_TEXT[k].name.split(" ")[0]}
-            </button>
-          ))}
-        </div>
-      )}
-      <span className="sub small">{ROUTE_TEXT[at.kind].text}</span>
+    <div className="path-cards" role="radiogroup" aria-label="Choose a path">
+      {kinds.map((k) => (
+        <button
+          key={k}
+          type="button"
+          role="radio"
+          aria-checked={chosen === k}
+          aria-label={ROUTE_TEXT[k].name}
+          className={`path-card panel-card path-${k}${chosen === k ? " chosen" : ""}`}
+          onClick={() => game.dispatch({ type: "chooseRoute", route: k })}
+        >
+          <span className="path-sigil">
+            <Icon name={ROUTE_TEXT[k].icon} size={34} />
+          </span>
+          <strong className="title-font">{ROUTE_TEXT[k].name}</strong>
+          <span className="sub">{ROUTE_TEXT[k].text}</span>
+        </button>
+      ))}
     </div>
   );
 }
 
-export function UpNext(props: {
-  run: RunState;
-  prestige: number;
-  state?: GameState;
-  game?: GameApi;
-}) {
+/** The path taken at a fork, while it lasts. */
+function PathRow(props: { run: RunState; act: ActData; next: number }) {
+  const at = routeAt(props.run, props.act, props.next);
+  const chosen = at && props.run.routes?.[String(at.fork)];
+  if (!at || !chosen) return null;
+  return (
+    <div className="up-row" title={ROUTE_TEXT[chosen].text}>
+      <Icon name={ROUTE_TEXT[chosen].icon} size={16} color="var(--heat)" />
+      <span>{ROUTE_TEXT[chosen].name}</span>
+      <span className="sub">
+        Stages {at.fork}–{at.fork + 1}
+      </span>
+    </div>
+  );
+}
+
+export function UpNext(props: { run: RunState; prestige: number }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const stages = act.stages;
@@ -317,9 +322,7 @@ export function UpNext(props: {
           </div>
         ) : null;
       })}
-      {props.state && props.game && (
-        <RouteChoice state={props.state} run={run} act={act} next={next} game={props.game} />
-      )}
+      <PathRow run={run} act={act} next={next} />
       {shrine !== undefined && (
         <div className="up-row">
           <span className="shrine-mark" />

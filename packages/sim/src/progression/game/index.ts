@@ -53,6 +53,7 @@ export {
   hearthEmbers,
   routeForks,
   routeAt,
+  openFork,
   waymarkKey,
   earnedSkillPoints,
   stagePressure,

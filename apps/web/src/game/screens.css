@@ -737,12 +737,17 @@
 .stage .intermission-body {
   flex-grow: 1;
   display: grid;
-  grid-template-columns: 340px minmax(0, 1fr);
+  grid-template-columns: 340px minmax(0, 1fr) 320px;
   min-height: 0;
 }
 
-.stage .intermission-body.with-doll {
-  grid-template-columns: 340px minmax(0, 1fr) 300px;
+/* The road ahead and the trip's bounty, on the enemy's side of the arena. */
+.stage .intermission-right-road {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-height: 0;
 }
 
 .stage .intermission-left {
@@ -892,16 +897,85 @@
   gap: 8px;
 }
 
-/* A fork of the road (neuausrichtung-v1.md 6.2): one small button per path. */
-.stage .route-choice {
+/* A fork of the road (neuausrichtung-v1.md 6.2): one big card per path, no default. */
+.stage .path-cards {
   display: flex;
-  flex-direction: column;
-  gap: 4px;
-  padding: 6px 8px;
-  border: 1px dashed var(--edge);
-  border-radius: 4px;
+  justify-content: center;
+  gap: 18px;
+  margin-top: 18px;
 }
 
+.stage .path-card {
+  width: 230px;
+  min-height: 250px;
+  padding: 26px 18px 22px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  text-align: center;
+  font: inherit;
+  color: var(--text);
+  cursor: pointer;
+  transition:
+    transform 0.12s ease-out,
+    box-shadow 0.12s ease-out;
+}
+
+.stage .path-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgb(0 0 0 / 0.35);
+}
+
+.stage .path-card strong {
+  font-size: 21px;
+}
+
+.stage .path-sigil {
+  width: 72px;
+  height: 72px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffd27a;
+  background: radial-gradient(circle at 40% 35%, #5a3c22, var(--k-wood-2, #22170f));
+  border: 2px solid var(--k-brass, #b8893e);
+  box-shadow: inset 0 0 12px rgb(0 0 0 / 0.6);
+}
+
+.stage .path-elite .path-sigil {
+  color: #ffb13b;
+}
+
+.stage .path-hearth .path-sigil {
+  color: #ff7a3c;
+}
+
+.stage .path-thief .path-sigil {
+  color: #9fd8ff;
+}
+
+.stage .path-card.chosen {
+  border-color: var(--heat);
+  box-shadow:
+    0 0 0 3px var(--heat),
+    0 0 28px rgb(255 154 60 / 0.55);
+  transform: translateY(-4px);
+}
+
+.stage .path-card.chosen .path-sigil {
+  box-shadow:
+    inset 0 0 12px rgb(0 0 0 / 0.6),
+    0 0 18px rgb(255 160 60 / 0.8);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .path-card {
+    transition: none;
+  }
+}
+
+/* Small radio buttons in a row (Training Dummy profiles). */
 .stage .route-options {
   display: flex;
   gap: 4px;
