@@ -1,27 +1,27 @@
 import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import armUrl from "./heir/heir-arm.webp";
 import bodyUrl from "./heir/heir-body.webp";
-import fistUrl from "./heir/heir-fist.webp";
+import thumbUrl from "./heir/heir-thumb.webp";
 
 /**
  * The painted Heir (an otter) as a cutout rig: the body and the weapon forearm are two parts of
  * one painting (/mnt/project-files/art/heir/heir-master-v2.png), cut apart by
- * `tools/art/cut_heir.py`. The code-drawn weapon lies in front of the fist (Timo's pick; the
- * fist part can go on top again to wrap the grip), and the forearm turns at the elbow.
+ * `tools/art/cut_heir.py`. The code-drawn weapon lies over the fist and under the thumb, which
+ * is cut out once more and drawn on top, and the forearm turns at the elbow.
  */
 
 export interface HeirTextures {
   readonly body: Texture;
   readonly arm: Texture;
-  readonly fist: Texture;
+  readonly thumb: Texture;
 }
 
 let loading: Promise<HeirTextures | null> | null = null;
 
 /** Loads the painted parts once; null when they cannot be loaded (the placeholder is drawn). */
 export function loadHeirTextures(): Promise<HeirTextures | null> {
-  loading ??= Promise.all([bodyUrl, armUrl, fistUrl].map((u) => Assets.load<Texture>(u))).then(
-    ([body, arm, fist]) => (body && arm && fist ? { body, arm, fist } : null),
+  loading ??= Promise.all([bodyUrl, armUrl, thumbUrl].map((u) => Assets.load<Texture>(u))).then(
+    ([body, arm, thumb]) => (body && arm && thumb ? { body, arm, thumb } : null),
     () => null,
   );
   return loading;
@@ -34,11 +34,11 @@ const SRC = {
   /** Top left of each cut part's bounding box (the parts are stored at half size). */
   body: [50, 158],
   arm: [708, 697],
-  fist: [819, 834],
+  thumb: [860, 849],
   /** Where the forearm turns, hidden in the sleeve. */
   elbow: [762, 750],
-  /** The middle of the weapon fist. */
-  grip: [866, 884],
+  /** Where the weapon's grip crosses the fist, under the thumb. */
+  grip: [882, 880],
   /** The sleeve's lower edge, cuff to cuff: the forearm never shows above this line. */
   sleeve: [
     [728, 772],
@@ -81,7 +81,7 @@ function part(texture: Texture, topLeft: readonly [number, number], origin: [num
 export interface HeirRig {
   /** The painted body (head, torso, legs, tail and the raised off-hand arm). */
   readonly body: Sprite;
-  /** Turns at the elbow: forearm and fist, the weapon in front. */
+  /** Turns at the elbow: forearm and fist, the weapon, then the thumb on top. */
   readonly arm: Container;
   /** The weapon goes in here: its origin is the middle of the fist. */
   readonly grip: Container;
@@ -120,8 +120,8 @@ export function buildHeirRig(textures: HeirTextures): HeirRig {
     ])
     .fill(0xffffff);
   forearm.mask = sleeveMask;
-  // The weapon lies in front of forearm and fist.
-  arm.addChild(forearm, part(textures.fist, SRC.fist, elbow), grip);
+  // The weapon lies over the fist; the thumb on top holds it down.
+  arm.addChild(forearm, grip, part(textures.thumb, SRC.thumb, elbow));
   return { body, arm, grip, sleeveMask };
 }
 
