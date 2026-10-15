@@ -27,6 +27,7 @@ import {
   nodeMaxRanks,
   nodeRanks,
 } from "@emberheir/sim";
+import { Button, HoldButton } from "../../ui/kit/Button";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
 import { FORGET_BLOCK_TEXT, LEARN_BLOCK_TEXT } from "../labels";
@@ -49,8 +50,7 @@ function WebSocketPanel(props: {
   const current = state.hero.webRunes?.[nodeId];
   const pouch = Object.entries(state.wallet.runes).filter(([, n]) => n > 0);
   const web = (id: string) => ITEM_CATALOG.runes.get(id)?.web?.description ?? "";
-  if (!learned)
-    return <p className="sub small">Learn the socket, then set a Rune from your pouch.</p>;
+  if (!learned) return <p className="sub small">Rune Socket</p>;
   return (
     <div className="web-socket" aria-label="Rune Socket">
       {current ? (
@@ -70,7 +70,7 @@ function WebSocketPanel(props: {
           )}
         </div>
       ) : (
-        <p className="sub small">Empty. A Rune here gives its web effect.</p>
+        <p className="sub small">Empty</p>
       )}
       {!viewOnly && pouch.length === 0 && <p className="sub small">No Runes in the pouch.</p>}
       {!viewOnly &&
@@ -171,7 +171,6 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   const startId = classStartNode(SKILL_TREE, state.hero.classId) ?? "";
   const [selectedId, setSelectedId] = useState(startId);
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
-  const [forget, setForget] = useState(false);
   const [failed, setFailed] = useState(false);
   const stage = useStageSize();
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -341,7 +340,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                 {hoverPath.steps.length > 1 ? ` · ${hoverPath.steps.length} nodes away` : ""}
               </span>
             )}
-            {hovered.fork && <span className="small sub">Fork: only one side can be learned.</span>}
+            {hovered.fork && <span className="small sub">Fork</span>}
           </div>
         )}
         <div className="tree-controls">
@@ -516,32 +515,19 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                 )}
                 {committed && pending.length === 0 && forgetReason !== "start" && (
                   <>
-                    {forget ? (
-                      <span className="respec-confirm">
-                        <button
-                          type="button"
-                          className="btn danger"
-                          onClick={() => {
-                            game.dispatch({ type: "forgetNode", nodeId: selected.id });
-                            setForget(false);
-                          }}
-                        >
-                          Yes, forget
-                        </button>
-                        <button type="button" className="btn" onClick={() => setForget(false)}>
-                          Cancel
-                        </button>
-                      </span>
-                    ) : (
-                      <button
-                        type="button"
-                        className="btn"
-                        disabled={forgetReason !== undefined || state.wallet.acorns < forgetPrice}
-                        onClick={() => setForget(true)}
-                      >
-                        Forget · {forgetPrice} Acorns
-                      </button>
-                    )}
+                    <HoldButton
+                      icon="cycle"
+                      blocked={
+                        forgetReason
+                          ? FORGET_BLOCK_TEXT[forgetReason]
+                          : state.wallet.acorns < forgetPrice
+                            ? "Not enough Acorns"
+                            : null
+                      }
+                      onConfirm={() => game.dispatch({ type: "forgetNode", nodeId: selected.id })}
+                    >
+                      Forget · {forgetPrice} Acorns
+                    </HoldButton>
                     {forgetReason && (
                       <p className="block sub small">{FORGET_BLOCK_TEXT[forgetReason]}</p>
                     )}
@@ -557,25 +543,22 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
               {pending.length} new node{pending.length === 1 ? "" : "s"} pending
             </span>
             <div className="grow" />
-            <button
-              type="button"
-              className="btn"
-              disabled={pending.length === 0}
+            <Button
+              blocked={pending.length === 0 ? "Nothing pending" : null}
               onClick={() => setPending([])}
             >
               Undo
-            </button>
-            <button
-              type="button"
-              className="btn primary"
-              disabled={pending.length === 0}
+            </Button>
+            <Button
+              variant="primary"
+              blocked={pending.length === 0 ? "Nothing pending" : null}
               onClick={() => {
                 game.dispatch({ type: "learnNodes", nodeIds: pending });
                 setPending([]);
               }}
             >
               Confirm
-            </button>
+            </Button>
           </section>
         )}
         {viewOnly && <p className="sub small view-only-hint">View only</p>}

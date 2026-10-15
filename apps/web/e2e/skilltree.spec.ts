@@ -119,12 +119,15 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
 
   // The other side of the fork is sealed.
   await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
-  await expect(detail).toContainText("The other path of this fork is learned");
+  await expect(detail).toContainText("The other side is learned");
 
   // Colossus is forgotten for Acorns: the fork opens again.
   await tree.getByRole("button", { name: "Colossus" }).press("Enter");
-  await detail.getByRole("button", { name: /Forget · \d+ Acorns/ }).click();
-  await detail.getByRole("button", { name: "Yes, forget" }).click();
+  // Forget is held, not clicked.
+  await detail.getByRole("button", { name: /Forget · \d+ Acorns/ }).hover();
+  await page.mouse.down();
+  await page.waitForTimeout(1100);
+  await page.mouse.up();
   await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
   await expect(detail.getByRole("button", { name: "Learn · 1 Point" })).toBeEnabled();
   if (process.env.SHOTS) {

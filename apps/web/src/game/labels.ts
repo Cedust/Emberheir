@@ -28,9 +28,9 @@ export const LEARN_BLOCK_TEXT: Record<LearnBlockReason, string> = {
   maxed: "Fully learned",
   notConnected: "Learn a connected node first",
   noSkillPoints: "No Skill Points left",
-  keystoneLimit: "All Keystone places are taken. More open at Prestige 2, 4 and 6",
+  keystoneLimit: "All Keystone places are taken",
   branchLocked: "Unlock this branch at a Prestige",
-  forkTaken: "The other path of this fork is learned",
+  forkTaken: "The other side is learned",
 };
 
 export const FORGET_BLOCK_TEXT: Record<ForgetBlockReason, string> = {

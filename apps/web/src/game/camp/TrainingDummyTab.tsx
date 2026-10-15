@@ -58,7 +58,6 @@ export function TrainingDummyTab(props: { state: GameState; game: GameApi }) {
             </button>
           ))}
         </div>
-        <span className="sub">{PROFILE_TEXT[profile].text}</span>
       </div>
       <div className="dummy-body">
         <section className="panel-card dummy-numbers" aria-label="Dummy numbers">
@@ -112,7 +111,7 @@ export function TrainingDummyTab(props: { state: GameState; game: GameApi }) {
           </ul>
         </section>
         <section className="panel-card dummy-items" aria-label="Try on">
-          <span className="eyebrow">Try on · from the bag and the Supply Wagon</span>
+          <span className="eyebrow">Try on</span>
           {items.length === 0 && <span className="sub">Nothing to try on.</span>}
           <div className="dummy-item-list">
             {items.slice(0, 12).map((item) => (
@@ -145,7 +144,7 @@ function DummyItem(props: { state: GameState; game: GameApi; item: Item; profile
         type="button"
         className="btn"
         disabled={!!blocked}
-        title={blocked ? `Cannot wear it: ${blocked}` : "Put it on: the numbers update at once"}
+        title={blocked ? `Cannot wear it: ${blocked}` : "Try on"}
         onClick={() => game.dispatch({ type: "equip", itemId: item.id })}
       >
         Wear

@@ -17,6 +17,7 @@ import {
   pointsSpent,
   weaponGrade,
 } from "@emberheir/sim";
+import { Button, HoldButton } from "../../ui/kit/Button";
 import { useEffect, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
 import { useSettings } from "../../ui/settings";
@@ -44,11 +45,11 @@ const KIND_LABEL: Record<MasteryNode["kind"], string> = {
 
 const BLOCK_TEXT: Record<MasteryBlockReason, string> = {
   maxed: "Fully learned",
-  noPoints: "No Mastery Points left. Every Weapon Rank gives one",
+  noPoints: "No Mastery Points left",
   notConnected: "Learn the node before it first",
   rankLocked: "Weapon Rank too low",
   keystoneLocked: `Opens after ${MASTERY.keystonePoints} points`,
-  forkTaken: "The other side of this fork is learned. Respec to switch",
+  forkTaken: "The other side is learned",
   chosen: "Chosen",
 };
 
@@ -84,7 +85,6 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
   const [selectedId, setSelectedId] = useState("precision");
   const [hover, setHover] = useState<{ id: string; x: number; y: number } | null>(null);
   const [failed, setFailed] = useState(false);
-  const [respec, setRespec] = useState(false);
   const stage = useStageSize();
   const { settings } = useSettings();
   const hostRef = useRef<HTMLDivElement | null>(null);
@@ -342,9 +342,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             <h3 className="title-font">{selected.name}</h3>
             <p>{selected.description}</p>
             {selected.form && <p className="sub small">Names the weapon: {selected.form}.</p>}
-            {selected.fork && (
-              <p className="sub small">Fork: only one of its two Notables can be learned.</p>
-            )}
+            {selected.fork && <p className="sub small">Fork</p>}
             {!viewOnly && (
               <>
                 <button
@@ -379,7 +377,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
         )}
         <section className="panel-card echo-picker" aria-label="Echo">
           <span className="eyebrow">ECHO</span>
-          {earned.length === 0 && <p className="sub small">Act bosses leave Echoes.</p>}
+          {earned.length === 0 && <p className="sub small">None</p>}
           <div className="echo-list">
             {earned.map((e) => {
               const stageNo = state.legacy.echoes[e.id]?.stage ?? 1;
@@ -408,31 +406,11 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
           <section className="pending-bar panel-card">
             <span className={pending.length ? "strong" : "sub"}>{pending.length} pending</span>
             <div className="grow" />
-            {respec ? (
+            {pending.length ? (
               <>
-                <button
-                  type="button"
-                  className="btn primary"
-                  onClick={() => {
-                    game.dispatch({ type: "respecMastery" });
-                    setPending([]);
-                    setRespec(false);
-                  }}
-                >
-                  Yes, respec
-                </button>
-                <button type="button" className="btn" onClick={() => setRespec(false)}>
-                  No
-                </button>
-              </>
-            ) : pending.length ? (
-              <>
-                <button type="button" className="btn" onClick={() => setPending([])}>
-                  Undo
-                </button>
-                <button
-                  type="button"
-                  className="btn primary"
+                <Button onClick={() => setPending([])}>Undo</Button>
+                <Button
+                  variant="primary"
                   onClick={() => {
                     game.dispatchAll(
                       pending.map((nodeId) => ({ type: "learnMastery" as const, nodeId })),
@@ -441,18 +419,30 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                   }}
                 >
                   Confirm
-                </button>
+                </Button>
               </>
             ) : (
-              <button
-                type="button"
-                className="btn"
-                disabled={!hasSpent || state.wallet.acorns < MASTERY.respecAcorns}
-                title="All Mastery Points come back. The Echo stays."
-                onClick={() => setRespec(true)}
+              <HoldButton
+                icon="cycle"
+                blocked={
+                  !hasSpent
+                    ? "Nothing learned yet"
+                    : state.wallet.acorns < MASTERY.respecAcorns
+                      ? "Not enough Acorns"
+                      : null
+                }
+                tip={{
+                  name: "Respec",
+                  kind: "Hold to confirm",
+                  explain: "All Mastery Points come back. The Echo stays.",
+                }}
+                onConfirm={() => {
+                  game.dispatch({ type: "respecMastery" });
+                  setPending([]);
+                }}
               >
                 Respec · {MASTERY.respecAcorns} Acorns
-              </button>
+              </HoldButton>
             )}
           </section>
         )}
