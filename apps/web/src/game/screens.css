@@ -7849,3 +7849,15 @@
 .stage .hero-damage-row .hero-dps b {
   font-size: 58px;
 }
+
+.stage .hero-heat-form {
+  cursor: help;
+}
+
+.stage .hero-heat .hero-damage-numbers {
+  flex: 1;
+}
+
+.stage .hero-heat .heat-gauge {
+  margin-top: 0;
+}

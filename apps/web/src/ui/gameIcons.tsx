@@ -1,3 +1,4 @@
+import type { HeatBehavior } from "@emberheir/sim";
 import bleedUrl from "../assets/ailments/bleed.webp";
 import burnUrl from "../assets/ailments/burn.webp";
 import chillUrl from "../assets/ailments/chill.webp";
@@ -27,6 +28,11 @@ import heatPerHitUrl from "../assets/stats/heat-per-hit.webp";
 import heatFromHitsUrl from "../assets/stats/heat-from-hits.webp";
 import triggerUrl from "../assets/stats/trigger.webp";
 import flaskUrl from "../assets/currency/flask.webp";
+import heatUrl from "../assets/heat/heat.webp";
+import steadyUrl from "../assets/heat/steady.webp";
+import coolingUrl from "../assets/heat/cooling.webp";
+import warmingUrl from "../assets/heat/warming.webp";
+import smolderingUrl from "../assets/heat/smoldering.webp";
 import swordUrl from "../assets/weapons/sword.webp";
 import maceUrl from "../assets/weapons/mace.webp";
 import axeUrl from "../assets/weapons/axe.webp";
@@ -38,7 +44,7 @@ import staffUrl from "../assets/weapons/staff.webp";
 
 /**
  * Painted damage type, ailment and stat icons (Timo's sheets, tools/art/cut_elements_ailments.py
- * and cut_stats.py). The Ember Flask comes from the currency sheet.
+ * and cut_stats.py). The Ember Flask comes from the currency sheet, Heat from the Heat sheet.
  */
 export const GAME_ICONS = {
   physical: physicalUrl,
@@ -70,6 +76,7 @@ export const GAME_ICONS = {
   "heat-from-hits": heatFromHitsUrl,
   trigger: triggerUrl,
   flask: flaskUrl,
+  heat: heatUrl,
 } as const;
 
 export type GameIconId = keyof typeof GAME_ICONS;
@@ -101,3 +108,11 @@ const WEAPON_ICONS: Readonly<Record<string, string>> = {
 };
 
 export const weaponIconUrl = (weaponId: string): string | undefined => WEAPON_ICONS[weaponId];
+
+/** Painted Heat Forms (Timo's Heat sheet, tools/art/cut_heat.py). */
+export const HEAT_FORM_ICONS: Readonly<Record<HeatBehavior, string>> = {
+  steady: steadyUrl,
+  cooling: coolingUrl,
+  warming: warmingUrl,
+  smoldering: smolderingUrl,
+};
