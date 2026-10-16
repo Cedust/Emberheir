@@ -18,6 +18,9 @@ export interface PaintedPersona {
   readonly h: number;
   /** Round portrait: CSS background-size and background-position over the head. */
   readonly face: { readonly size: string; readonly pos: string };
+  /** Where the head sits left or right of the figure's middle at fs = 1 (stage px, facing right):
+   * the camp marker floats above it. */
+  readonly head: number;
   /** A perch the figure brings along (Eldrin's plank): no ground shadow, and the image shifts
    * by this share of its width so the perch sits on the persona's spot (the signpost). */
   readonly perch?: number;
@@ -28,13 +31,14 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     url: eldrinUrl,
     h: 150,
     face: { size: "330% auto", pos: "80% 4%" },
+    head: 20,
     perch: -0.19,
   },
-  heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" } },
-  nan: { url: nanUrl, h: 155, face: { size: "245% auto", pos: "51% 0%" } },
-  kaelen: { url: kaelenUrl, h: 210, face: { size: "360% auto", pos: "76% 4%" } },
-  liora: { url: lioraUrl, h: 195, face: { size: "320% auto", pos: "66% 16%" } },
-  marisha: { url: marishaUrl, h: 185, face: { size: "290% auto", pos: "68% 0%" } },
-  nyssa: { url: nyssaUrl, h: 175, face: { size: "280% auto", pos: "72% 13%" } },
-  thoric: { url: thoricUrl, h: 195, face: { size: "240% auto", pos: "49% 0%" } },
+  heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
+  nan: { url: nanUrl, h: 155, face: { size: "245% auto", pos: "51% 0%" }, head: 0 },
+  kaelen: { url: kaelenUrl, h: 210, face: { size: "360% auto", pos: "76% 4%" }, head: 32 },
+  liora: { url: lioraUrl, h: 195, face: { size: "320% auto", pos: "66% 16%" }, head: 15 },
+  marisha: { url: marishaUrl, h: 185, face: { size: "290% auto", pos: "68% 0%" }, head: 18 },
+  nyssa: { url: nyssaUrl, h: 175, face: { size: "280% auto", pos: "72% 13%" }, head: 20 },
+  thoric: { url: thoricUrl, h: 195, face: { size: "240% auto", pos: "49% 0%" }, head: 0 },
 };

@@ -19,7 +19,7 @@ import type { GameApi } from "../useGame";
 import { CampLight } from "./art/CampLight";
 import { CampBackdrop, CampFx, campLights, SCENE_W } from "./art/CampScene";
 import { PaintDefs } from "./art/paint";
-import { FIG_H, Figure, heirGear } from "./CampFigures";
+import { FIG_H, Figure, heirGear, markerSpot } from "./CampFigures";
 import { type CampTarget, type Persona, personas } from "./campPersonas";
 import { NanWindow } from "./NanWindow";
 import { RoadStrip, RoadWindow, useRoadPlan } from "./RoadWindow";
@@ -140,6 +140,7 @@ export function CampView(props: {
                 {marker !== 0 && (
                   <span
                     className={`camp-marker${marker === "!" ? " quest" : ""}`}
+                    style={markerSpot(p, w, h)}
                     aria-label={p.id === "eldrin" ? "Bounty done" : `${marker} points waiting`}
                   >
                     <Marker value={marker} />

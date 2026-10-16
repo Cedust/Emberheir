@@ -74,6 +74,18 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
   );
 }
 
+/**
+ * Where a camp marker floats over a persona, relative to its button (bottom-aligned, `w` wide and
+ * `h` tall): above the painted head, which can stand taller and off-centre; else above the box.
+ */
+export function markerSpot(p: Persona, w: number, h: number): { left: number; top: number } {
+  const painted = PAINTED[p.id];
+  const fs = p.figure?.fs ?? 1;
+  if (!painted || !p.figure) return { left: w / 2, top: -16 };
+  const dx = painted.head * fs * (p.x > HEARTH_X ? -1 : 1);
+  return { left: w / 2 + dx, top: h - painted.h * fs - 24 };
+}
+
 /** The painted Heir's head, cropped round (persona card, Character medallion). */
 export function HeirFace() {
   return <PaintedFace id="heir" />;
