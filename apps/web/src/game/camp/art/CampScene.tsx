@@ -1,9 +1,10 @@
+import { INK, L, S } from "./paint";
+
 import type { CSSProperties } from "react";
+import type { CampLightSource } from "./CampLight";
 import type { CollectionId } from "../../collections";
 import campAshenFields from "../../../assets/camp/camp-ashen-fields.webp";
 import hearthBowl from "../../../assets/camp/hearthfire-bowl.webp";
-import type { CampLightSource } from "./CampLight";
-import { INK, L, S } from "./paint";
 
 /**
  * The camp scene: a painted backdrop with code-drawn fire, braziers and lights on top.
@@ -11,9 +12,9 @@ import { INK, L, S } from "./paint";
  * more of the painting at the sides. The Hearthfire stands at x = 720; everything is lit from there.
  */
 export const SCENE_W = 1440;
-export const HEARTH_X = 720;
+export const HEARTH_X = 725;
 /** Where the Hearthfire stands in the painting's stone ring. */
-const HEARTH_Y = 568;
+const HEARTH_Y = 580;
 
 /** A tiny deterministic random source, so the scene looks the same on every load. */
 function rand(seed: number) {
