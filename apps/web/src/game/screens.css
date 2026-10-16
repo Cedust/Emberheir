@@ -7949,6 +7949,20 @@
   color: var(--ib-sub);
 }
 
+.stage .ib-base.inactive,
+.stage .ib-lines.inactive {
+  opacity: 0.45;
+}
+
+.stage .ib-inactive-tag {
+  margin-left: 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  font-weight: 700;
+  color: var(--ib-unmet);
+}
+
 .stage .ib-foot .unmet {
   color: var(--ib-unmet);
   font-weight: 700;

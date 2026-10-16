@@ -125,10 +125,12 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
   const stats = tip.affixLines.filter((l) => l.kind === "stat");
   const triggers = tip.affixLines.filter((l) => l.kind !== "stat");
   const noAffixes = tip.affixLines.length === 0 && !tip.power && !tip.sockets;
+  // Gear whose Attribute requirements are not met does nothing (D2 rule): its stats fade.
+  const inactive = tip.requirements.some((r) => r.met === false);
   return (
     <>
       {big.length > 0 && (
-        <div className="ib-base">
+        <div className={`ib-base${inactive ? " inactive" : ""}`}>
           {big.map(({ line, split }) =>
             split ? (
               <span key={line} className="ib-big">
@@ -147,14 +149,14 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
         </div>
       )}
       {tip.implicitLines.length > 0 && (
-        <ul className="ib-lines ib-implicit">
+        <ul className={`ib-lines ib-implicit${inactive ? " inactive" : ""}`}>
           {tip.implicitLines.map((l) => (
             <li key={l}>{l}</li>
           ))}
         </ul>
       )}
       {stats.length > 0 && (
-        <ul className="ib-lines ib-affixes">
+        <ul className={`ib-lines ib-affixes${inactive ? " inactive" : ""}`}>
           {stats.map((l, i) => (
             <li key={`${i}-${l.text}`} className={l.greater ? "greater" : undefined}>
               {l.text}
@@ -164,7 +166,7 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
         </ul>
       )}
       {triggers.length > 0 && (
-        <ul className="ib-lines ib-triggers">
+        <ul className={`ib-lines ib-triggers${inactive ? " inactive" : ""}`}>
           {triggers.map((l, i) => (
             <li key={`${i}-${l.text}`} className={l.kind === "kindled" ? "kindled" : undefined}>
               {l.text}
@@ -207,6 +209,11 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
               {r.text}
             </span>
           ))}
+          {inactive && (
+            <span className="ib-inactive-tag">
+              <Icon name="lock" size={12} /> Inactive
+            </span>
+          )}
         </div>
       )}
     </>
