@@ -1,4 +1,9 @@
 import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import talismanUrl from "../../assets/items/blood-talisman.webp";
+import focusUrl from "../../assets/items/ember-focus.webp";
+import grimoireUrl from "../../assets/items/grimoire.webp";
+import quiverUrl from "../../assets/items/quiver.webp";
+import shieldUrl from "../../assets/items/round-shield.webp";
 import armUrl from "./heir/heir-arm.webp";
 import bodyUrl from "./heir/heir-body.webp";
 import thumbUrl from "./heir/heir-thumb.webp";
@@ -10,21 +15,52 @@ import thumbUrl from "./heir/heir-thumb.webp";
  * is cut out once more and drawn on top, and the forearm turns at the elbow.
  */
 
+/** The off hands the Heir can carry: the painted item bases of the inventory (PR #58). */
+export type HeirOffHand = "shield" | "focus" | "quiver" | "talisman" | "grimoire";
+
+const OFF_HAND_URLS: Record<HeirOffHand, string> = {
+  shield: shieldUrl,
+  focus: focusUrl,
+  quiver: quiverUrl,
+  talisman: talismanUrl,
+  grimoire: grimoireUrl,
+};
+
 export interface HeirTextures {
   readonly body: Texture;
   readonly arm: Texture;
   readonly thumb: Texture;
+  /** The painted off-hand items; one that fails to load is simply not drawn. */
+  readonly offHands: Partial<Record<HeirOffHand, Texture>>;
 }
 
 let loading: Promise<HeirTextures | null> | null = null;
 
 /** Loads the painted parts once; null when they cannot be loaded (the placeholder is drawn). */
 export function loadHeirTextures(): Promise<HeirTextures | null> {
-  loading ??= Promise.all([bodyUrl, armUrl, thumbUrl].map((u) => Assets.load<Texture>(u))).then(
-    ([body, arm, thumb]) => (body && arm && thumb ? { body, arm, thumb } : null),
+  loading ??= Promise.all([
+    Promise.all([bodyUrl, armUrl, thumbUrl].map((u) => Assets.load<Texture>(u))),
+    loadOffHands(),
+  ]).then(
+    ([[body, arm, thumb], offHands]) =>
+      body && arm && thumb ? { body, arm, thumb, offHands } : null,
     () => null,
   );
   return loading;
+}
+
+async function loadOffHands(): Promise<HeirTextures["offHands"]> {
+  const loaded = await Promise.all(
+    (Object.keys(OFF_HAND_URLS) as HeirOffHand[]).map((kind) =>
+      Assets.load<Texture>(OFF_HAND_URLS[kind]).then(
+        (t) => [kind, t] as const,
+        () => [kind, null] as const,
+      ),
+    ),
+  );
+  const out: Partial<Record<HeirOffHand, Texture>> = {};
+  for (const [kind, t] of loaded) if (t) out[kind] = t;
+  return out;
 }
 
 /** Points in the source painting (1024 × 1536 px). */
@@ -46,6 +82,8 @@ const SRC = {
   ],
   /** The middle of the raised off-hand fist. */
   offGrip: [520, 645],
+  /** Between the shoulder blades, where a quiver's strap sits. */
+  back: [372, 612],
 } as const;
 
 /** The parts are stored at half the painting's size. */
@@ -61,6 +99,9 @@ function at(p: readonly [number, number]): [number, number] {
 
 /** Where the off hand (Shield, Focus, Talisman, Grimoire) is held, in figure coordinates. */
 export const HEIR_OFF_HAND = at(SRC.offGrip);
+
+/** Where a quiver hangs on the back, in figure coordinates. */
+export const HEIR_BACK = at(SRC.back);
 
 /** The weapon fist relative to the elbow, in figure units. */
 export const HEIR_GRIP_FROM_ELBOW: [number, number] = [

@@ -1,14 +1,20 @@
-import { BlurFilter, Container, Graphics } from "pixi.js";
+import { BlurFilter, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import { drawWeapon, type WeaponLook } from "../camp/weaponArt";
 import { INK } from "./arenaLayout";
-import { HEIR_OFF_HAND, type HeirTextures, buildHeirRig } from "./heirRig";
+import {
+  HEIR_BACK,
+  HEIR_OFF_HAND,
+  type HeirOffHand,
+  type HeirTextures,
+  buildHeirRig,
+} from "./heirRig";
 
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
 
 export interface HeroLook {
   readonly heroClass: "warrior" | "reaver" | "hunter" | "sorcerer" | "warlock";
   readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow" | "mace" | "staff";
-  readonly offHand: "shield" | "focus" | "quiver" | "talisman" | "grimoire" | null;
+  readonly offHand: HeirOffHand | null;
   /** The weapon's id (Weapon Mastery): the painted weapon of the Mastery view is in hand. */
   readonly weaponId: string;
   /** Its build: grade metal, path runes, Keystone shape. */
@@ -144,21 +150,62 @@ export function drawHero(look: HeroLook, heir?: HeirTextures | null): Container 
   return heir ? drawPaintedHero(look, heir) : drawPlaceholderHero(look);
 }
 
+/**
+ * How the Heir carries each painted off hand: drawn size (longest side, figure units), the point
+ * of the picture (0..1) that sits on the fist or the back, an offset from there, a tilt
+ * (radians) and a squash of its width (a shield turned towards the enemy is seen at an angle).
+ */
+const OFF_HAND_HOLDS: Record<
+  HeirOffHand,
+  {
+    size: number;
+    anchor: [number, number];
+    offset: [number, number];
+    tilt: number;
+    squash?: number;
+  }
+> = {
+  shield: { size: 112, anchor: [0.5, 0.5], offset: [8, 10], tilt: 0.06, squash: 0.84 },
+  focus: { size: 74, anchor: [0.36, 0.74], offset: [0, 4], tilt: 0.1 },
+  talisman: { size: 66, anchor: [0.5, 0.1], offset: [2, 2], tilt: 0.08 },
+  grimoire: { size: 78, anchor: [0.5, 0.55], offset: [4, 6], tilt: -0.12 },
+  quiver: { size: 150, anchor: [0.5, 0.42], offset: [0, 0], tilt: -0.5 },
+};
+
+/** The painted off-hand item in its hold; the Ember Focus' orb gets a glow the scene breathes. */
+function paintedOffHand(kind: HeirOffHand, texture: Texture): Container {
+  const hold = OFF_HAND_HOLDS[kind];
+  const [x, y] = kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND;
+  const c = new Container({ label: kind === "quiver" ? "heir-quiver" : "heir-off-hand" });
+  c.position.set(x + hold.offset[0], y + hold.offset[1]);
+  c.rotation = hold.tilt;
+  const sprite = new Sprite(texture);
+  sprite.anchor.set(hold.anchor[0], hold.anchor[1]);
+  const scale = hold.size / Math.max(texture.width, texture.height);
+  sprite.scale.set(scale * (hold.squash ?? 1), scale);
+  c.addChild(sprite);
+  if (kind === "focus") {
+    // The ember in the orb (the picture's upper right) glows over the painting.
+    const w = texture.width * scale;
+    const h = texture.height * scale;
+    const orb = new Graphics()
+      .circle((0.58 - hold.anchor[0]) * w, (0.27 - hold.anchor[1]) * h, w * 0.2)
+      .fill(0xff8a2a);
+    const glow = bakedGlow([orb], 8);
+    glow.label = "off-hand-glow";
+    glow.alpha = 0.45;
+    c.addChild(glow);
+  }
+  return c;
+}
+
 function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   const c = new Container();
   const rig = buildHeirRig(heir);
-  const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
-  // A quiver rides on the back, behind everything.
-  if (look.offHand === "quiver" || look.heroClass === "hunter") {
-    c.addChild(
-      new Graphics().roundRect(-74, -300, 30, 120, 8).fill(0x7a5a34).stroke(line),
-      new Graphics()
-        .poly([-70, -300, -66, -330, -62, -300])
-        .poly([-58, -300, -54, -336, -50, -300])
-        .fill(0xe8e2d6)
-        .stroke({ color: INK, width: 2 }),
-    );
-  }
+  // A quiver rides on the back, behind everything (a Hunter always wears one).
+  const quiver = look.offHand === "quiver" || look.heroClass === "hunter";
+  const quiverArt = heir.offHands.quiver;
+  if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
   const grip = HEIR_GRIPS[look.weapon];
   const weapon = weaponArt(look);
   weapon.rotation = grip.angle;
@@ -169,28 +216,9 @@ function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   // The forearm comes out of the sleeve, so it and the weapon sit behind the body.
   c.addChild(rig.sleeveMask, rig.arm, rig.body);
   // The off hand is held in the raised fist, in front of the chest.
-  const [ox, oy] = HEIR_OFF_HAND;
-  const off = new Container({ label: "heir-off-hand" });
-  off.position.set(ox, oy);
-  if (look.offHand === "shield") {
-    off.addChild(
-      new Graphics().ellipse(4, 6, 40, 52).fill(0x6b5a3e).stroke(line),
-      new Graphics().ellipse(4, 6, 21, 29).fill(0xc9a063).stroke(line),
-    );
-  } else if (look.offHand === "focus") {
-    off.addChild(new Graphics().circle(0, -30, 20).fill(0x5b8cff).stroke(line));
-  } else if (look.offHand === "talisman") {
-    off.addChild(
-      new Graphics().moveTo(0, 6).lineTo(0, 24).stroke({ color: INK, width: 2 }),
-      new Graphics().poly([0, 24, 13, 40, 0, 60, -13, 40]).fill(0xc8202f).stroke(line),
-    );
-  } else if (look.offHand === "grimoire") {
-    off.addChild(
-      new Graphics().roundRect(-30, -20, 52, 62, 6).fill(0x3a1f4a).stroke(line),
-      new Graphics().circle(-4, 11, 10).fill(0xa35cff).stroke({ color: INK, width: 2 }),
-    );
-  }
-  c.addChild(off);
+  const held = look.offHand && look.offHand !== "quiver" ? look.offHand : null;
+  const heldArt = held ? heir.offHands[held] : undefined;
+  if (held && heldArt) c.addChild(paintedOffHand(held, heldArt));
   return c;
 }
 
