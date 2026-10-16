@@ -1597,6 +1597,20 @@
   animation-duration: 0.8s;
 }
 
+.stage .camp-fx .f4 {
+  animation-duration: 1.3s;
+  animation-delay: -0.7s;
+}
+
+.stage .camp-fx .f5 {
+  animation-duration: 0.95s;
+  animation-delay: -0.2s;
+}
+
+.stage .camp-fx .coal-glow {
+  animation: glow-pulse 1.9s ease-in-out infinite alternate;
+}
+
 .stage .camp-fx .hearth-glow {
   animation: glow-pulse 3.2s ease-in-out infinite alternate;
 }

@@ -1,6 +1,7 @@
 import type { CSSProperties } from "react";
 import type { CollectionId } from "../../collections";
 import campAshenFields from "../../../assets/camp/camp-ashen-fields.webp";
+import hearthBowl from "../../../assets/camp/hearthfire-bowl.webp";
 import type { CampLightSource } from "./CampLight";
 import { INK, L, S } from "./paint";
 
@@ -196,20 +197,56 @@ const FLAME_MID =
 const FLAME_CORE =
   "M704 548 C700 534 708 522 714 510 C718 520 722 522 724 514 C732 526 736 538 732 548 Z";
 
-/** The Hearthfire's flames (base center at 720, 548). */
-function Flames(props: { transform?: string }) {
+/** The Hearthfire's flames (base center at 720, 548), painted to match the bowl: saturated
+ * tongues with a thin dark-red ink edge, hot yellow at the root and deep red at the tips. Only
+ * the blurred halo is added onto the scene, so the flames keep their color on the bright tents. */
+function Flames() {
+  const side = (dx: number, k: number) =>
+    `translate(${720 + dx} 548) scale(${k}) translate(-720 -548)`;
+  const ink = {
+    stroke: "#5a1606",
+    strokeWidth: 1.6,
+    strokeOpacity: 0.55,
+    strokeLinejoin: "round",
+  } as const;
   return (
-    <g className="flames" transform={props.transform}>
+    <g className="flames">
+      <defs>
+        <linearGradient id="hf-outer" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#ffb13c" />
+          <stop offset="0.4" stopColor="#f2621c" />
+          <stop offset="1" stopColor="#a8230d" />
+        </linearGradient>
+        <linearGradient id="hf-mid" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#ffe27a" />
+          <stop offset="0.65" stopColor="#ffa531" />
+          <stop offset="1" stopColor="#f2621c" />
+        </linearGradient>
+        <linearGradient id="hf-core" x1="0" y1="1" x2="0" y2="0">
+          <stop offset="0" stopColor="#fffbe6" />
+          <stop offset="1" stopColor="#ffe48a" />
+        </linearGradient>
+        <filter id="hf-halo" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="10" />
+        </filter>
+      </defs>
       <path
         className="flame f1"
         d={FLAME_OUTER}
-        fill="#ff6a2b"
-        stroke={INK}
-        strokeWidth="2.5"
-        strokeLinejoin="round"
+        fill="#ff7a2a"
+        opacity="0.6"
+        filter="url(#hf-halo)"
+        style={{ mixBlendMode: "screen" }}
       />
-      <path className="flame f2" d={FLAME_MID} fill="#ffb13b" />
-      <path className="flame f3" d={FLAME_CORE} fill="#fff0c0" />
+      <g transform={side(-28, 0.52)}>
+        <path className="flame f4" d={FLAME_OUTER} fill="url(#hf-outer)" {...ink} />
+      </g>
+      <g transform={side(32, 0.46)}>
+        <path className="flame f5" d={FLAME_OUTER} fill="url(#hf-outer)" {...ink} />
+      </g>
+      <path className="flame f1" d={FLAME_OUTER} fill="url(#hf-outer)" {...ink} />
+      <path className="flame f2" d={FLAME_MID} fill="url(#hf-mid)" />
+      <path className="flame f3" d={FLAME_CORE} fill="url(#hf-core)" />
     </g>
   );
 }
@@ -334,25 +371,19 @@ export function CampFx(props: { w: number; h: number; ox: number }) {
         ))}
       </g>
 
-      {/* The tripod, the iron bowl and the fire, standing in the painted stone ring. */}
+      {/* Timo's painted iron bowl with its glowing coals; the flames rise from behind the coals. */}
       <g transform={HEARTH_FIT}>
-        <L d="M686 612 L702 566 M754 612 L738 566 M720 616 L720 570" color="#2a2622" w={6} />
-        <L d="M686 612 L702 566 M754 612 L738 566 M720 616 L720 570" color="#5a5a62" w={3} />
         <Flames />
-        <S d="M650 546 Q720 612 790 546 Z" fill="#4a4a52" w={2.5} />
+        <image href={hearthBowl} x="635" y="517" width="170" height="98" />
         <ellipse
+          className="coal-glow"
           cx={HEARTH_X}
-          cy="547"
-          rx="70"
-          ry="7"
-          fill="#ff8a3a"
-          stroke={INK}
-          strokeWidth="2.5"
+          cy="538"
+          rx="62"
+          ry="14"
+          fill="url(#ember-glow)"
+          style={{ mixBlendMode: "screen" }}
         />
-        <L d="M656 556 Q720 600 784 556" color="#8a8a92" w={1.6} op={0.7} />
-        {[668, 694, 746, 772].map((x) => (
-          <circle key={x} cx={x} cy={x < 700 || x > 740 ? 562 : 574} r="2.2" fill="#2a2622" />
-        ))}
         <g fill="#ffcf6a">
           {SPARKS.map((s) => (
             <circle
