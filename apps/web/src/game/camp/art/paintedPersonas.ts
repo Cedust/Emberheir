@@ -1,3 +1,4 @@
+import eldrinUrl from "../../../assets/camp/personas/eldrin.webp";
 import heirUrl from "../../../assets/camp/heir-camp.webp";
 import kaelenUrl from "../../../assets/camp/personas/kaelen.webp";
 import lioraUrl from "../../../assets/camp/personas/liora.webp";
@@ -17,9 +18,18 @@ export interface PaintedPersona {
   readonly h: number;
   /** Round portrait: CSS background-size and background-position over the head. */
   readonly face: { readonly size: string; readonly pos: string };
+  /** A perch the figure brings along (Eldrin's plank): no ground shadow, and the image shifts
+   * by this share of its width so the perch sits on the persona's spot (the signpost). */
+  readonly perch?: number;
 }
 
 export const PAINTED: Partial<Record<string, PaintedPersona>> = {
+  eldrin: {
+    url: eldrinUrl,
+    h: 150,
+    face: { size: "330% auto", pos: "80% 4%" },
+    perch: -0.19,
+  },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" } },
   nan: { url: nanUrl, h: 155, face: { size: "245% auto", pos: "51% 0%" } },
   kaelen: { url: kaelenUrl, h: 210, face: { size: "360% auto", pos: "76% 4%" } },

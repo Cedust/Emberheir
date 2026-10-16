@@ -41,13 +41,16 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
     const cls = `figure painted${mirror ? " mirror" : ""}${props.on ? " on" : ""}`;
     return (
       <span className={cls} style={{ height: h }}>
-        <span className="figure-shadow" />
+        {painted.perch === undefined && <span className="figure-shadow" />}
         <img
           className="figure-body"
           src={painted.url}
           alt=""
           height={h}
-          style={{ animationDelay: `${-props.delay}s` }}
+          style={{
+            animationDelay: `${-props.delay}s`,
+            ...(painted.perch ? { translate: `${painted.perch * 100}% 0` } : {}),
+          }}
         />
       </span>
     );
