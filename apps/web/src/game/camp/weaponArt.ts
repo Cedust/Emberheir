@@ -1430,34 +1430,36 @@ function staff(L: number, P: Palette, look: WeaponLook): Build {
   };
 }
 
+function buildFor(weaponId: string, length: number, look: WeaponLook): Build {
+  const P = PALETTES[Math.max(0, Math.min(PALETTES.length - 1, look.grade))] ?? PALETTES[1];
+  if (!P) throw new Error("No palette");
+  switch (weaponId) {
+    case "dagger":
+      return dagger(length, P, look);
+    case "mace":
+      return mace(length, P, look);
+    case "axe":
+      return axe(length, P, look);
+    case "bow":
+      return bow(length, P, look);
+    case "crossbow":
+      return crossbow(length, P, look);
+    case "fire-wand":
+      return wand(length, P, look);
+    case "staff":
+      return staff(length, P, look);
+    default:
+      return sword(length, P, look);
+  }
+}
+
 /** The painted weapon of a weapon id, `length` pixels long, in the build's look. */
 export function drawWeapon(
   weaponId: string,
   length: number,
   look: WeaponLook = PLAIN_LOOK,
 ): WeaponArt {
-  const P = PALETTES[Math.max(0, Math.min(PALETTES.length - 1, look.grade))] ?? PALETTES[1];
-  if (!P) throw new Error("No palette");
-  const build = (() => {
-    switch (weaponId) {
-      case "dagger":
-        return dagger(length, P, look);
-      case "mace":
-        return mace(length, P, look);
-      case "axe":
-        return axe(length, P, look);
-      case "bow":
-        return bow(length, P, look);
-      case "crossbow":
-        return crossbow(length, P, look);
-      case "fire-wand":
-        return wand(length, P, look);
-      case "staff":
-        return staff(length, P, look);
-      default:
-        return sword(length, P, look);
-    }
-  })();
+  const build = buildFor(weaponId, length, look);
   const details = build.details;
   return assemble(
     {
@@ -1469,4 +1471,25 @@ export function drawWeapon(
     },
     look,
   );
+}
+
+/**
+ * The build's marks without the weapon (for a painted weapon of the same length): the path
+ * runes carved into `paint` with their light in `glow`, the grade's rust or filigree, and the
+ * weapon's centre line for the Refine hotspots. `centre` replaces the build's centre line when the
+ * painting's shape differs from the code-drawn one (the Bow).
+ */
+export function weaponMarks(
+  weaponId: string,
+  length: number,
+  look: WeaponLook,
+  paint: Graphics,
+  glow: Graphics,
+  centre?: (t: number) => number,
+): (t: number) => number {
+  const build = buildFor(weaponId, length, look);
+  const track: RuneTrack = centre ? { ...build.track, y: (x) => centre(x / length) } : build.track;
+  gradeMarks(paint, look, track);
+  carveRunes(paint, glow, track, look);
+  return centre ?? build.anchorY;
 }

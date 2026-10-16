@@ -11,7 +11,8 @@ import {
   Text,
 } from "pixi.js";
 import { Fx } from "../battle/fx";
-import { type WeaponArt, type WeaponLook, drawWeapon } from "./weaponArt";
+import { type WeaponLook, drawWeapon } from "./weaponArt";
+import { type SceneWeaponArt, drawPaintedWeapon, paintedTextures } from "./paintedWeapon";
 import { ELEMENT_COLOR } from "../weaponLook";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
 import { arcPath } from "../pixiShapes";
@@ -133,7 +134,7 @@ export class MasteryScene {
   private readonly labelLayer = new Container();
   private fx: Fx | null = null;
   private pacer: FramePacer | null = null;
-  private art: WeaponArt | null = null;
+  private art: SceneWeaponArt | null = null;
   private artKey = "";
   private echoAura: Container | null = null;
   private echoRing: Container | null = null;
@@ -270,7 +271,9 @@ export class MasteryScene {
       const ay = v.tip.y - v.pommel.y;
       const len = Math.hypot(ax, ay);
       // t along the weapon from the node's projection, the art's centre line as offset.
-      const t = ((n.x - v.pommel.x) * ax + (n.y - v.pommel.y) * ay) / (len * len);
+      const t =
+        this.art.refineT?.[n.id] ??
+        ((n.x - v.pommel.x) * ax + (n.y - v.pommel.y) * ay) / (len * len);
       const off = this.art.anchorY(t) * ART_SCALE;
       return {
         x: (v.pommel.x + ax * t) * U + (-ay / len) * off,
@@ -490,9 +493,19 @@ export class MasteryScene {
     const ay = (v.tip.y - v.pommel.y) * U;
     const length = Math.hypot(ax, ay);
     if (key !== this.artKey) {
+      // A painted weapon draws once its painting is loaded; until then the old one stays.
+      const painted = paintedTextures(v.weaponId, v.look);
+      if (painted instanceof Promise) {
+        void painted.then(() => {
+          if (this.app && this.view) this.rebuild();
+        });
+        return;
+      }
       this.artKey = key;
       this.weaponLayer.removeChildren().forEach((c) => c.destroy({ children: true }));
-      const art = drawWeapon(v.weaponId, length / ART_SCALE, v.look);
+      const art: SceneWeaponArt = painted
+        ? drawPaintedWeapon(v.weaponId, length / ART_SCALE, v.look, painted)
+        : drawWeapon(v.weaponId, length / ART_SCALE, v.look);
       this.art = art;
       const holder = new Container();
       holder.position.set(v.pommel.x * U, v.pommel.y * U);
@@ -549,7 +562,8 @@ export class MasteryScene {
       runeBlur.blendMode = "add";
       this.runeLight = runeBlur;
       holder.addChildAt(shadow, 0);
-      holder.addChild(art.body, glow, runeBlur);
+      if (art.glowBehind) holder.addChild(glow, art.body, runeBlur);
+      else holder.addChild(art.body, glow, runeBlur);
       this.weaponLayer.addChild(holder);
     }
   }
