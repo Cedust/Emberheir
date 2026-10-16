@@ -15,6 +15,8 @@ import {
   heroTitle,
   isFinaleAct,
   activeDraught,
+  DRAUGHT_FLASK_COST,
+  flaskCapacity,
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../ui/Icon";
@@ -290,7 +292,12 @@ export function BattleView(props: {
   const thiefLeft = run.encounter?.thief
     ? Math.max(0, Math.ceil(PROGRESSION.thiefFleeSeconds - snapshot.time))
     : null;
-  const flaskMax = Math.max(PROGRESSION.flaskStartCharges, state.flaskCharges);
+  // A brewed Draught takes the Flask charges it cost for this trip.
+  const flaskDraught = activeDraught(state, GAME_DATA);
+  const flaskMax = Math.max(
+    flaskCapacity(state, GAME_DATA) - (flaskDraught ? DRAUGHT_FLASK_COST : 0),
+    state.flaskCharges,
+  );
   const stages = looks.act.stages;
 
   return (
@@ -343,6 +350,7 @@ export function BattleView(props: {
         weaponIcon={WEAPON_ICON[looks.heroLook.weapon] ?? "strike"}
         flaskCharges={state.flaskCharges}
         flaskMax={flaskMax}
+        draught={flaskDraught}
         flash={flash}
         stageW={stage.w}
         stageH={stage.h}

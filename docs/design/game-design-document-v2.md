@@ -438,7 +438,9 @@ Endgame **Wildfire I–X**.
   Effekte sind rein visuell, respektieren Screen Shake und `prefers-reduced-motion`.
 - Fabelwelt: Der Heir ist ein Otter, Personas sind Tiere (`fabelwelt-v1.md`, `story-theme-v1.md`).
 - **Gemalte Icons** (Timo generiert Sheets, `tools/art/cut_*.py` schneidet sie): Klassen, Attribute, Elemente,
-  Ailments, Stats, Heat Forms, Waffen, alle Item-Grundtypen und leere Slots. Seltenheit zeigt der Rahmen, nicht das Bild.
+  Ailments, Stats, Heat Forms, Waffen, alle Item-Grundtypen, leere Slots, die Ember Flask (voll und leer) und die
+  sieben Draughts. Im Kampf steht der gebraute Draught an der Stelle der Flask-Ladung, die er kostet. Seltenheit
+  zeigt der Rahmen, nicht das Bild.
 
 ---
 

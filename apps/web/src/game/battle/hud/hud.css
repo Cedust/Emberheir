@@ -493,13 +493,20 @@
 }
 
 .stage .hud-flask {
-  width: 30px;
+  width: 32px;
   height: 42px;
+  object-fit: contain;
   filter: drop-shadow(0 2px 3px #000);
 }
 
 .stage .hud-flask.full {
   filter: drop-shadow(0 2px 3px #000) drop-shadow(0 0 6px rgb(229 72 77 / 0.6));
+}
+
+/* The brewed Draught takes the Flask charge it cost, glowing in its own color. */
+.stage .hud-draught {
+  height: 42px;
+  filter: drop-shadow(0 2px 3px #000) drop-shadow(0 0 6px var(--vial));
 }
 
 .stage .hud-flask-count {
