@@ -83,6 +83,8 @@ function PinStar(props: { id: PanelId }) {
 
 export function Pill(props: {
   icon: IconName;
+  /** A painted icon instead of the line icon. */
+  painted?: GameIconId;
   label: string;
   note?: NoteHover;
   children?: ReactNode;
@@ -90,7 +92,11 @@ export function Pill(props: {
   const hover = useNoteHover(props.note);
   return (
     <span className="hero-pill" tabIndex={props.note ? 0 : undefined} {...hover}>
-      <Icon name={props.icon} size={14} />
+      {props.painted ? (
+        <GameIcon id={props.painted} size={20} />
+      ) : (
+        <Icon name={props.icon} size={14} />
+      )}
       <span>{props.label}</span>
       {props.children !== undefined && <b className="mono">{props.children}</b>}
     </span>
@@ -117,6 +123,7 @@ export function Vitals(props: { life: number; barrier: number; armor: number }) 
           tabIndex={0}
           {...life}
         >
+          <GameIcon id="life" size={28} />
           <b className="mono">{fmt(props.life)}</b>
         </span>
         {props.barrier > 0 && (
@@ -126,6 +133,7 @@ export function Vitals(props: { life: number; barrier: number; armor: number }) 
             tabIndex={0}
             {...barrier}
           >
+            <GameIcon id="barrier" size={28} />
             <b className="mono">{fmt(props.barrier)}</b>
           </span>
         )}
@@ -135,7 +143,7 @@ export function Vitals(props: { life: number; barrier: number; armor: number }) 
         {props.barrier > 0 && <span className="vitals-name vitals-barrier">Barrier</span>}
       </span>
       <span className="armor-plate" tabIndex={0} {...armor}>
-        <Icon name="armor" size={18} />
+        <GameIcon id="armor" size={28} />
         <b className="mono">{fmt(props.armor)}</b>
       </span>
       <span className="vitals-name vitals-armor">Armor</span>

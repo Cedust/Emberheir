@@ -10,8 +10,28 @@ import fireUrl from "../assets/elements/fire.webp";
 import lightningUrl from "../assets/elements/lightning.webp";
 import physicalUrl from "../assets/elements/physical.webp";
 import voidUrl from "../assets/elements/void.webp";
+import lifeUrl from "../assets/stats/life.webp";
+import barrierUrl from "../assets/stats/barrier.webp";
+import armorUrl from "../assets/stats/armor.webp";
+import evasionUrl from "../assets/stats/evasion.webp";
+import blockUrl from "../assets/stats/block.webp";
+import tenacityUrl from "../assets/stats/tenacity.webp";
+import lifestealUrl from "../assets/stats/lifesteal.webp";
+import thornsUrl from "../assets/stats/thorns.webp";
+import elementalUrl from "../assets/stats/elemental.webp";
+import speedUrl from "../assets/stats/speed.webp";
+import critUrl from "../assets/stats/crit.webp";
+import ailmentEffectUrl from "../assets/stats/ailment-effect.webp";
+import heatGainUrl from "../assets/stats/heat-gain.webp";
+import heatPerHitUrl from "../assets/stats/heat-per-hit.webp";
+import heatFromHitsUrl from "../assets/stats/heat-from-hits.webp";
+import triggerUrl from "../assets/stats/trigger.webp";
+import flaskUrl from "../assets/currency/flask.webp";
 
-/** Painted damage type and ailment icons (Timo's sheet, tools/art/cut_elements_ailments.py). */
+/**
+ * Painted damage type, ailment and stat icons (Timo's sheets, tools/art/cut_elements_ailments.py
+ * and cut_stats.py). The Ember Flask comes from the currency sheet.
+ */
 export const GAME_ICONS = {
   physical: physicalUrl,
   fire: fireUrl,
@@ -25,6 +45,23 @@ export const GAME_ICONS = {
   bleed: bleedUrl,
   poison: poisonUrl,
   stun: stunUrl,
+  life: lifeUrl,
+  barrier: barrierUrl,
+  armor: armorUrl,
+  evasion: evasionUrl,
+  block: blockUrl,
+  tenacity: tenacityUrl,
+  lifesteal: lifestealUrl,
+  thorns: thornsUrl,
+  elemental: elementalUrl,
+  speed: speedUrl,
+  crit: critUrl,
+  "ailment-effect": ailmentEffectUrl,
+  "heat-gain": heatGainUrl,
+  "heat-per-hit": heatPerHitUrl,
+  "heat-from-hits": heatFromHitsUrl,
+  trigger: triggerUrl,
+  flask: flaskUrl,
 } as const;
 
 export type GameIconId = keyof typeof GAME_ICONS;

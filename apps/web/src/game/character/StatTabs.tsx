@@ -157,13 +157,13 @@ function BonusTable(props: { stats: DerivedStats }) {
   const pen = useNoteHover(NOTES.penetration);
   const rows = [
     {
-      icon: "strike" as const,
+      painted: "physical" as const,
       label: "Physical",
       damage: stats.physicalDamage,
       pen: stats.physicalPenetration,
     },
     {
-      icon: "meteor" as const,
+      painted: "elemental" as const,
       label: "Elemental",
       damage: stats.elementalDamage,
       pen: stats.elementalPenetration,
@@ -185,11 +185,7 @@ function BonusTable(props: { stats: DerivedStats }) {
         {rows.map((r) => (
           <tr key={r.label}>
             <td className="hero-table-icon">
-              {r.label === "Physical" ? (
-                <GameIcon id="physical" size={20} />
-              ) : (
-                <Icon name={r.icon} size={16} />
-              )}
+              <GameIcon id={r.painted} size={20} />
             </td>
             <th scope="row">{r.label}</th>
             <td className="mono">+{pct(r.damage)}</td>
@@ -232,10 +228,10 @@ export function OffensePanel(
               <Pill icon="sword" label={weapon.name}>
                 {fmt(weapon.min)}–{fmt(weapon.max)}
               </Pill>
-              <Pill icon="cycle" label="Speed" note={NOTES.speed}>
+              <Pill icon="cycle" painted="speed" label="Speed" note={NOTES.speed}>
                 {speedValue(stats.attackSpeed)}
               </Pill>
-              <Pill icon="target" label="Crit Chance" note={NOTES.critChance}>
+              <Pill icon="target" painted="crit" label="Crit Chance" note={NOTES.critChance}>
                 {pct(stats.critChance)}
               </Pill>
             </span>
@@ -253,7 +249,12 @@ export function OffensePanel(
           label="Ailments"
           pin="ailments"
           aside={
-            <Pill icon="venom" label="Ailment Effect" note={NOTES.ailmentEffect}>
+            <Pill
+              icon="venom"
+              painted="ailment-effect"
+              label="Ailment Effect"
+              note={NOTES.ailmentEffect}
+            >
               +{pct(stats.ailmentEffect)}
             </Pill>
           }
@@ -312,6 +313,7 @@ export function DefensePanel(
               <tbody>
                 <Row
                   icon="boots"
+                  painted="evasion"
                   label="Evasion"
                   value={pct(stats.evasion)}
                   note={DEFENSE_NOTES.evasion}
@@ -322,6 +324,7 @@ export function DefensePanel(
               <tbody>
                 <Row
                   icon="shield"
+                  painted="block"
                   label="Block"
                   value={pct(stats.blockChance)}
                   note={DEFENSE_NOTES.block}
@@ -358,12 +361,14 @@ export function DefensePanel(
               <tbody>
                 <Row
                   icon="stone"
+                  painted="tenacity"
                   label="Tenacity"
                   value={pct(stats.tenacity)}
                   note={NOTES.tenacity}
                 />
                 <Row
                   icon="drop"
+                  painted="lifesteal"
                   label="Lifesteal"
                   value={pct(stats.lifesteal)}
                   note={NOTES.lifesteal}
@@ -374,12 +379,14 @@ export function DefensePanel(
               <tbody>
                 <Row
                   icon="thornback"
+                  painted="thorns"
                   label="Thorns"
                   value={fmt(stats.thorns)}
                   note={NOTES.thorns}
                 />
                 <Row
                   icon="flask"
+                  painted="flask"
                   label="Flask Charges"
                   value={String(props.flaskCharges)}
                   note={NOTES.flask}
@@ -422,7 +429,7 @@ export function TriggersPanel(props: {
         className="hero-triggers"
         label="Triggers"
         aside={
-          <Pill icon="rune" label="Trigger Chance" note={NOTES.triggerChance}>
+          <Pill icon="rune" painted="trigger" label="Trigger Chance" note={NOTES.triggerChance}>
             +{pct(stats.triggerChance)}
           </Pill>
         }
@@ -504,16 +511,27 @@ export function HeatPanel(
           <table className="hero-table">
             <tbody>
               {weapon.heatBehavior !== "warming" && (
-                <Row icon="strike" label="Heat per Hit" value={fmt(weapon.heatPerHit)} />
+                <Row
+                  icon="strike"
+                  painted="heat-per-hit"
+                  label="Heat per Hit"
+                  value={fmt(weapon.heatPerHit)}
+                />
               )}
               {weapon.heatBehavior === "cooling" && (
                 <Row
                   icon="shield"
+                  painted="heat-from-hits"
                   label="Heat from Hits Taken"
                   value={pct(stats.heatFromHitsTaken)}
                 />
               )}
-              <Row icon="flame" label="Heat Gain" value={`+${pct(stats.heatGain)}`} />
+              <Row
+                icon="flame"
+                painted="heat-gain"
+                label="Heat Gain"
+                value={`+${pct(stats.heatGain)}`}
+              />
             </tbody>
           </table>
         </Plaque>
