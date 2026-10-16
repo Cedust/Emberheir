@@ -1,5 +1,6 @@
 import { COMBAT, DEFENSE_NOTES, formatPercent } from "@emberheir/sim";
 import type { ReactNode } from "react";
+import { GameIcon, type GameIconId } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { fmt } from "../../ui/items";
@@ -19,12 +20,6 @@ export const RES_NAMES = {
   void: "Void",
 } as const;
 export type Element = keyof typeof RES_NAMES;
-const RES_ICON: Record<Element, IconName> = {
-  fire: "fire",
-  cold: "snow",
-  lightning: "bolt",
-  void: "void",
-};
 
 export function Plaque(props: {
   label: string;
@@ -150,6 +145,8 @@ export function Vitals(props: { life: number; barrier: number; armor: number }) 
 
 export function Row(props: {
   icon: IconName;
+  /** A painted icon instead of the line icon. */
+  painted?: GameIconId;
   label: string;
   value: string;
   note?: NoteHover | undefined;
@@ -158,7 +155,11 @@ export function Row(props: {
   return (
     <tr tabIndex={props.note ? 0 : undefined} {...hover}>
       <td className="hero-table-icon">
-        <Icon name={props.icon} size={16} />
+        {props.painted ? (
+          <GameIcon id={props.painted} size={20} />
+        ) : (
+          <Icon name={props.icon} size={16} />
+        )}
       </td>
       <th scope="row">{props.label}</th>
       <td className="mono">{props.value}</td>
@@ -175,7 +176,7 @@ export function Res(props: { element: Element; value: number; note: NoteHover })
       tabIndex={0}
       {...hover}
     >
-      <Icon name={RES_ICON[props.element]} size={24} />
+      <GameIcon id={props.element} size={30} />
       <b className="mono">{pct(props.value)}</b>
       <span className="hero-res-name">{RES_NAMES[props.element]}</span>
     </span>
@@ -185,6 +186,8 @@ export function Res(props: { element: Element; value: number; note: NoteHover })
 /** A big number in a framed chip, like a Resistance but in brass. */
 export function Medal(props: {
   icon: IconName;
+  /** A painted icon instead of the line icon. */
+  painted?: GameIconId;
   label: string;
   value: string;
   note?: NoteHover;
@@ -198,7 +201,11 @@ export function Medal(props: {
       tabIndex={props.note ? 0 : undefined}
       {...hover}
     >
-      <Icon name={props.icon} size={24} />
+      {props.painted ? (
+        <GameIcon id={props.painted} size={30} />
+      ) : (
+        <Icon name={props.icon} size={24} />
+      )}
       <b className="mono">{props.value}</b>
       <span className="hero-res-name">{props.label}</span>
     </span>

@@ -8,6 +8,7 @@ import {
   speedValue,
   triggerChance,
 } from "@emberheir/sim";
+import { GameIcon, type GameIconId } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { EmptyState } from "../../ui/kit/Marker";
 import { playUiSound } from "../../ui/sound";
@@ -121,21 +122,33 @@ const AILMENTS: readonly {
     | "corruptionChance"
     | "bleedChance"
     | "poisonChance";
-  readonly icon: IconName;
+  readonly icon: GameIconId;
   readonly tone: string;
 }[] = [
-  { name: "Burn", verb: "Burn the enemy", stat: "burnChance", icon: "fire", tone: "fire" },
-  { name: "Chill", verb: "Chill the enemy", stat: "chillChance", icon: "snow", tone: "cold" },
-  { name: "Shock", verb: "Shock the enemy", stat: "shockChance", icon: "bolt", tone: "lightning" },
+  { name: "Burn", verb: "Burn the enemy", stat: "burnChance", icon: "burn", tone: "fire" },
+  { name: "Chill", verb: "Chill the enemy", stat: "chillChance", icon: "chill", tone: "cold" },
+  { name: "Shock", verb: "Shock the enemy", stat: "shockChance", icon: "shock", tone: "lightning" },
   {
     name: "Corruption",
     verb: "Corrupt the enemy",
     stat: "corruptionChance",
-    icon: "void",
+    icon: "corruption",
     tone: "void",
   },
-  { name: "Bleed", verb: "make the enemy Bleed", stat: "bleedChance", icon: "drop", tone: "bleed" },
-  { name: "Poison", verb: "Poison the enemy", stat: "poisonChance", icon: "venom", tone: "poison" },
+  {
+    name: "Bleed",
+    verb: "make the enemy Bleed",
+    stat: "bleedChance",
+    icon: "bleed",
+    tone: "bleed",
+  },
+  {
+    name: "Poison",
+    verb: "Poison the enemy",
+    stat: "poisonChance",
+    icon: "poison",
+    tone: "poison",
+  },
 ];
 
 /** Damage and Penetration per damage kind: two rows, two columns. */
@@ -172,7 +185,11 @@ function BonusTable(props: { stats: DerivedStats }) {
         {rows.map((r) => (
           <tr key={r.label}>
             <td className="hero-table-icon">
-              <Icon name={r.icon} size={16} />
+              {r.label === "Physical" ? (
+                <GameIcon id="physical" size={20} />
+              ) : (
+                <Icon name={r.icon} size={16} />
+              )}
             </td>
             <th scope="row">{r.label}</th>
             <td className="mono">+{pct(r.damage)}</td>
@@ -245,7 +262,8 @@ export function OffensePanel(
             {AILMENTS.map((a) => (
               <Medal
                 key={a.name}
-                icon={a.icon}
+                icon="target"
+                painted={a.icon}
                 label={a.name}
                 value={pct(stats[a.stat])}
                 tone={a.tone}
