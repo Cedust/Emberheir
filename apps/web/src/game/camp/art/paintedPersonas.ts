@@ -3,6 +3,7 @@ import kaelenUrl from "../../../assets/camp/personas/kaelen.webp";
 import lioraUrl from "../../../assets/camp/personas/liora.webp";
 import marishaUrl from "../../../assets/camp/personas/marisha.webp";
 import nanUrl from "../../../assets/camp/personas/nan.webp";
+import nyssaUrl from "../../../assets/camp/personas/nyssa.webp";
 import thoricUrl from "../../../assets/camp/personas/thoric.webp";
 
 /**
@@ -24,5 +25,6 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
   kaelen: { url: kaelenUrl, h: 210, face: { size: "360% auto", pos: "76% 4%" } },
   liora: { url: lioraUrl, h: 195, face: { size: "320% auto", pos: "66% 16%" } },
   marisha: { url: marishaUrl, h: 185, face: { size: "290% auto", pos: "68% 0%" } },
+  nyssa: { url: nyssaUrl, h: 175, face: { size: "280% auto", pos: "72% 13%" } },
   thoric: { url: thoricUrl, h: 195, face: { size: "240% auto", pos: "49% 0%" } },
 };
