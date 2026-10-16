@@ -210,7 +210,7 @@ function Flames() {
     strokeLinejoin: "round",
   } as const;
   return (
-    <g className="flames">
+    <g className="flames" transform="translate(720 548) scale(0.95 0.7) translate(-720 -548)">
       <defs>
         <linearGradient id="hf-outer" x1="0" y1="1" x2="0" y2="0">
           <stop offset="0" stopColor="#ffb13c" />
