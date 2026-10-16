@@ -19,7 +19,7 @@ import type { GameApi } from "../useGame";
 import { CampLight } from "./art/CampLight";
 import { CampBackdrop, CampFx, campLights, SCENE_W } from "./art/CampScene";
 import { PaintDefs } from "./art/paint";
-import { FIG_H, Figure, heirGear } from "./CampFigures";
+import { FIG_H, Figure, heirGear, markerSpot } from "./CampFigures";
 import { type CampTarget, type Persona, personas } from "./campPersonas";
 import { NanWindow } from "./NanWindow";
 import { RoadStrip, RoadWindow, useRoadPlan } from "./RoadWindow";
@@ -110,7 +110,6 @@ export function CampView(props: {
         <div className={`camp-camera${focused ? " focus" : ""}`} style={camera}>
           <PaintDefs />
           <CampBackdrop
-            roadName={act.name}
             w={size.w}
             h={size.h - 64}
             ox={ox}
@@ -136,10 +135,17 @@ export function CampView(props: {
                   if (target) props.onOpen(target);
                 }}
               >
-                <Figure p={p} on={false} gear={gear} delay={i * 0.7} />
+                <Figure
+                  p={p}
+                  on={false}
+                  gear={gear}
+                  delay={i * 0.7}
+                  {...(p.id === "eldrin" ? { sign: act.name } : {})}
+                />
                 {marker !== 0 && (
                   <span
                     className={`camp-marker${marker === "!" ? " quest" : ""}`}
+                    style={markerSpot(p, w, h)}
                     aria-label={p.id === "eldrin" ? "Bounty done" : `${marker} points waiting`}
                   >
                     <Marker value={marker} />

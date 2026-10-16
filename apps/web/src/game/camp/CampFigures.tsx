@@ -1,8 +1,15 @@
 import { type GameState } from "@emberheir/sim";
-import heirCampUrl from "../../assets/camp/heir-camp.webp";
 import { Icon } from "../../ui/Icon";
 import { HEARTH_X } from "./art/CampScene";
-import { type HeirGear, FIGURE_H, FIGURE_W, PersonaArt, PORTRAIT } from "./art/PersonaArt";
+import { PAINTED } from "./art/paintedPersonas";
+import {
+  type HeirGear,
+  FIGURE_H,
+  FIGURE_W,
+  PaintedFace,
+  PersonaArt,
+  PORTRAIT,
+} from "./art/PersonaArt";
 import { type Persona } from "./campPersonas";
 
 /** The heir as a small figure and portrait in the Camp. */
@@ -21,28 +28,56 @@ export function heirGear(state: GameState): HeirGear {
   };
 }
 
-export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: number }) {
+export function Figure(props: {
+  p: Persona;
+  on: boolean;
+  gear: HeirGear;
+  delay: number;
+  /** Text on a painted sign board (Eldrin's signpost: the act ahead). */
+  sign?: string;
+}) {
   const { p } = props;
   const f = p.figure;
   if (!f) return null;
-  if (p.id === "heir") {
-    // The painted Heir (art/heir/heir-master-v1.png, the camp pose looking at the player).
-    const h = Math.round(FIG_H * f.fs);
+  // Everybody faces the Hearthfire.
+  const mirror = p.x > HEARTH_X;
+  const painted = PAINTED[p.id];
+  if (painted) {
+    const flip = mirror && !painted.fixed;
+    // A painted figure (art/personas/, the Heir from art/heir/heir-master-v1.png).
+    const h = Math.round(painted.h * f.fs);
+    const cls = `figure painted${flip ? " mirror" : ""}${props.on ? " on" : ""}`;
+    const board = painted.sign;
     return (
-      <span className={props.on ? "figure painted on" : "figure painted"} style={{ height: h }}>
+      <span
+        className={cls}
+        style={{ height: h, ...(painted.shift ? { translate: `${painted.shift * 100}% 0` } : {}) }}
+      >
         <span className="figure-shadow" />
         <img
           className="figure-body"
-          src={heirCampUrl}
+          src={painted.url}
           alt=""
           height={h}
           style={{ animationDelay: `${-props.delay}s` }}
         />
+        {board && props.sign && (
+          <span
+            className="sign-label title-font"
+            style={{
+              left: `${board[0]}%`,
+              top: `${board[1]}%`,
+              width: `${board[2]}%`,
+              height: `${board[3]}%`,
+              rotate: `${board[4]}deg`,
+            }}
+          >
+            {props.sign}
+          </span>
+        )}
       </span>
     );
   }
-  // Everybody faces the Hearthfire.
-  const mirror = p.x > HEARTH_X;
   return (
     <svg
       width={Math.round(FIG_W * f.fs)}
@@ -62,21 +97,27 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
   );
 }
 
+/**
+ * Where a camp marker floats over a persona, relative to its button (bottom-aligned, `w` wide and
+ * `h` tall): above the painted head, which can stand taller and off-centre; else above the box.
+ */
+export function markerSpot(p: Persona, w: number, h: number): { left: number; top: number } {
+  const painted = PAINTED[p.id];
+  const fs = p.figure?.fs ?? 1;
+  if (!painted || !p.figure) return { left: w / 2, top: -16 };
+  const dx = painted.head * fs * (p.x > HEARTH_X && !painted.fixed ? -1 : 1);
+  return { left: w / 2 + dx, top: h - painted.h * fs - 24 };
+}
+
 /** The painted Heir's head, cropped round (persona card, Character medallion). */
 export function HeirFace() {
-  return (
-    <span
-      className="painted-portrait"
-      style={{ backgroundImage: `url(${heirCampUrl})` }}
-      aria-hidden="true"
-    />
-  );
+  return <PaintedFace id="heir" />;
 }
 
 /** The persona's head as a round portrait for the persona card. */
 export function Portrait(props: { p: Persona; gear: HeirGear }) {
   const { p } = props;
-  if (p.id === "heir") return <HeirFace />;
+  if (PAINTED[p.id]) return <PaintedFace id={p.id} />;
   const box = PORTRAIT[p.id];
   if (!p.figure || !box) return <Icon name={p.icon} size={28} color="#f3e6c8" />;
   return (

@@ -1597,6 +1597,20 @@
   animation-duration: 0.8s;
 }
 
+.stage .camp-fx .f4 {
+  animation-duration: 1.3s;
+  animation-delay: -0.7s;
+}
+
+.stage .camp-fx .f5 {
+  animation-duration: 0.95s;
+  animation-delay: -0.2s;
+}
+
+.stage .camp-fx .coal-glow {
+  animation: glow-pulse 1.9s ease-in-out infinite alternate;
+}
+
 .stage .camp-fx .hearth-glow {
   animation: glow-pulse 3.2s ease-in-out infinite alternate;
 }
@@ -1789,13 +1803,12 @@
   overflow: visible;
 }
 
-/* The painted Heir's head, cut from the camp figure for the round portrait. */
+/* A painted persona's head, cut from the camp figure for the round portrait (crop per persona). */
 .stage .painted-portrait {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background-size: 277% auto;
-  background-position: 66% 2%;
   background-repeat: no-repeat;
 }
 
@@ -1803,6 +1816,25 @@
 .stage .figure.painted {
   position: relative;
   display: block;
+}
+
+/* The act's name on Eldrin's painted signpost. */
+.stage .figure.painted .sign-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2a1f17;
+  text-shadow: 0 1px 0 rgb(255 232 190 / 0.35);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* Right of the Hearthfire a painted figure turns to face it. */
+.stage .figure.painted.mirror {
+  transform: scaleX(-1);
 }
 
 .stage .figure.painted img {

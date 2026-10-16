@@ -33,7 +33,7 @@ function TitleScene() {
   return (
     <div className="title-scene" aria-hidden="true">
       <PaintDefs />
-      <CampBackdrop roadName="" w={size.w} h={size.h} ox={ox} />
+      <CampBackdrop w={size.w} h={size.h} ox={ox} />
       <CampFx w={size.w} h={size.h} ox={ox} />
       <CampLight w={size.w} h={size.h} ox={ox} lights={campLights({ orb: false })} />
       <div className="title-veil" />
