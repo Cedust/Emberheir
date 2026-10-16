@@ -1,4 +1,5 @@
 import { BlurFilter, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import { type PaintedTextures, drawPaintedWeapon, paintedTextures } from "../camp/paintedWeapon";
 import { drawWeapon, type WeaponLook } from "../camp/weaponArt";
 import { INK } from "./arenaLayout";
 import {
@@ -80,11 +81,11 @@ function bakedGlow(children: readonly Container[], blur: number): Container {
  * The painted weapon of Weapon Mastery in the hero's hand, in the build's look: grade metal,
  * glowing path runes and the Keystone's shape. Its light is baked once into a texture.
  */
-function heldWeapon(look: HeroLook): Container {
+function heldWeapon(look: HeroLook, painted: PaintedTextures | null): Container {
   const pose = WEAPON_POSES[look.weapon];
   const [x0, y0] = pose.from;
   const [x1, y1] = pose.to;
-  const holder = weaponArt(look);
+  const holder = weaponArt(look, painted);
   holder.position.set(x0, y0);
   holder.rotation = Math.atan2(y1 - y0, x1 - x0);
   holder.scale.set(Math.hypot(x1 - x0, y1 - y0) / WEAPON_LENGTH);
@@ -94,17 +95,26 @@ function heldWeapon(look: HeroLook): Container {
 /** The weapon is drawn this long, pommel at 0, tip at +x; holders scale it. */
 const WEAPON_LENGTH = 520;
 
-/** The weapon art with its grade light, Echo aura and tip marker, pommel at 0/0. */
-function weaponArt(look: HeroLook): Container {
+/**
+ * The weapon art with its grade light, Echo aura and tip marker, pommel at 0/0: Timo's painting
+ * of the build's Keystone form when it is loaded (the same one Weapon Mastery shows), else the
+ * code-drawn weapon.
+ */
+function weaponArt(look: HeroLook, painted: PaintedTextures | null): Container {
   const length = WEAPON_LENGTH;
-  const art = drawWeapon(look.weaponId, length, look.weaponLook);
+  const art = painted
+    ? drawPaintedWeapon(look.weaponId, length, look.weaponLook, painted)
+    : drawWeapon(look.weaponId, length, look.weaponLook);
   const holder = new Container();
   const grade = Math.max(0, Math.min(4, look.weaponLook.grade));
   art.edge.tint = GRADE_LIGHT[grade] ?? 0xffffff;
   art.edge.alpha = GRADE_LIGHT_ALPHA[grade] ?? 0;
-  const light = bakedGlow([art.edge, art.runeGlow], 6);
+  const edge = bakedGlow([art.edge], 6);
+  const runes = bakedGlow([art.runeGlow], 6);
   // A dark outline keeps the painted weapon readable on the bright arena.
-  const outline = art.silhouette();
+  // In its own container: a painting's silhouette is a sprite that carries its own scale.
+  const outline = new Container();
+  outline.addChild(art.silhouette());
   outline.tint = INK;
   outline.scale.set(1.02);
   holder.addChild(outline);
@@ -117,7 +127,9 @@ function weaponArt(look: HeroLook): Container {
     aura.alpha = 0.55;
     holder.addChild(aura);
   }
-  holder.addChild(art.body, light);
+  // A painting's edge is its whole silhouette: its light shines from behind the weapon.
+  if ("glowBehind" in art && art.glowBehind) holder.addChild(edge, art.body, runes);
+  else holder.addChild(art.body, edge, runes);
   const tip = new Container({ label: "weapon-tip" });
   tip.position.set(length * 0.8, 0);
   holder.addChild(tip);
@@ -147,8 +159,21 @@ const HEIR_GRIPS: Record<
  * The Heir in the arena. With the painted parts loaded it is the otter cutout rig, the weapon in
  * its fist; without them the old placeholder figure.
  */
-export function drawHero(look: HeroLook, heir?: HeirTextures | null): Container {
-  return heir ? drawPaintedHero(look, heir) : drawPlaceholderHero(look);
+export function drawHero(
+  look: HeroLook,
+  heir?: HeirTextures | null,
+  weapon: PaintedTextures | null = null,
+): Container {
+  return heir ? drawPaintedHero(look, heir, weapon) : drawPlaceholderHero(look, weapon);
+}
+
+/** Loads the painting of the hero's weapon in its Keystone form; null when it has none. */
+export async function loadHeroWeapon(look: HeroLook): Promise<PaintedTextures | null> {
+  try {
+    return await paintedTextures(look.weaponId, look.weaponLook);
+  } catch {
+    return null;
+  }
 }
 
 /**
@@ -228,7 +253,11 @@ function paintedOffHand(kind: HeirOffHand, texture: Texture, front = false): Con
   return c;
 }
 
-function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
+function drawPaintedHero(
+  look: HeroLook,
+  heir: HeirTextures,
+  painted: PaintedTextures | null,
+): Container {
   const c = new Container();
   const rig = buildHeirRig(heir);
   // A quiver rides on the back, behind everything (a Hunter always wears one).
@@ -236,7 +265,7 @@ function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   const quiverArt = heir.offHands.quiver;
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
   const grip = HEIR_GRIPS[look.weapon];
-  const weapon = weaponArt(look);
+  const weapon = weaponArt(look, painted);
   weapon.rotation = grip.angle;
   weapon.scale.set(grip.length / WEAPON_LENGTH);
   weapon.pivot.set(grip.at * WEAPON_LENGTH, 0);
@@ -256,7 +285,7 @@ function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   return c;
 }
 
-function drawPlaceholderHero(look: HeroLook): Container {
+function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): Container {
   const c = new Container();
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const colors = CLASS_LOOKS[look.heroClass];
@@ -392,7 +421,7 @@ function drawPlaceholderHero(look: HeroLook): Container {
       break;
   }
   c.addChild(head);
-  c.addChild(heldWeapon(look));
+  c.addChild(heldWeapon(look, painted));
   c.y = 150;
   return c;
 }
