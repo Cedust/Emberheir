@@ -126,16 +126,7 @@ const AILMENTS: readonly {
   readonly icon: GameIconId;
   readonly tone: string;
 }[] = [
-  { name: "Burn", verb: "Burn the enemy", stat: "burnChance", icon: "burn", tone: "fire" },
-  { name: "Chill", verb: "Chill the enemy", stat: "chillChance", icon: "chill", tone: "cold" },
-  { name: "Shock", verb: "Shock the enemy", stat: "shockChance", icon: "shock", tone: "lightning" },
-  {
-    name: "Corruption",
-    verb: "Corrupt the enemy",
-    stat: "corruptionChance",
-    icon: "corruption",
-    tone: "void",
-  },
+  // Three columns, read top to bottom: Bleed + Poison, Chill + Shock, Burn + Corruption.
   {
     name: "Bleed",
     verb: "make the enemy Bleed",
@@ -143,12 +134,22 @@ const AILMENTS: readonly {
     icon: "bleed",
     tone: "bleed",
   },
+  { name: "Chill", verb: "Chill the enemy", stat: "chillChance", icon: "chill", tone: "cold" },
+  { name: "Burn", verb: "Burn the enemy", stat: "burnChance", icon: "burn", tone: "fire" },
   {
     name: "Poison",
     verb: "Poison the enemy",
     stat: "poisonChance",
     icon: "poison",
     tone: "poison",
+  },
+  { name: "Shock", verb: "Shock the enemy", stat: "shockChance", icon: "shock", tone: "lightning" },
+  {
+    name: "Corruption",
+    verb: "Corrupt the enemy",
+    stat: "corruptionChance",
+    icon: "corruption",
+    tone: "void",
   },
 ];
 
