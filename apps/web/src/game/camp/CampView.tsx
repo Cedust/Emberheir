@@ -110,7 +110,6 @@ export function CampView(props: {
         <div className={`camp-camera${focused ? " focus" : ""}`} style={camera}>
           <PaintDefs />
           <CampBackdrop
-            roadName={act.name}
             w={size.w}
             h={size.h - 64}
             ox={ox}
@@ -136,7 +135,13 @@ export function CampView(props: {
                   if (target) props.onOpen(target);
                 }}
               >
-                <Figure p={p} on={false} gear={gear} delay={i * 0.7} />
+                <Figure
+                  p={p}
+                  on={false}
+                  gear={gear}
+                  delay={i * 0.7}
+                  {...(p.id === "eldrin" ? { sign: act.name } : {})}
+                />
                 {marker !== 0 && (
                   <span
                     className={`camp-marker${marker === "!" ? " quest" : ""}`}

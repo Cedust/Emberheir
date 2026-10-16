@@ -28,7 +28,14 @@ export function heirGear(state: GameState): HeirGear {
   };
 }
 
-export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: number }) {
+export function Figure(props: {
+  p: Persona;
+  on: boolean;
+  gear: HeirGear;
+  delay: number;
+  /** Text on a painted sign board (Eldrin's signpost: the act ahead). */
+  sign?: string;
+}) {
   const { p } = props;
   const f = p.figure;
   if (!f) return null;
@@ -36,22 +43,37 @@ export function Figure(props: { p: Persona; on: boolean; gear: HeirGear; delay: 
   const mirror = p.x > HEARTH_X;
   const painted = PAINTED[p.id];
   if (painted) {
+    const flip = mirror && !painted.fixed;
     // A painted figure (art/personas/, the Heir from art/heir/heir-master-v1.png).
     const h = Math.round(painted.h * f.fs);
-    const cls = `figure painted${mirror ? " mirror" : ""}${props.on ? " on" : ""}`;
+    const cls = `figure painted${flip ? " mirror" : ""}${props.on ? " on" : ""}`;
+    const board = painted.sign;
     return (
-      <span className={cls} style={{ height: h }}>
-        {painted.perch === undefined && <span className="figure-shadow" />}
+      <span
+        className={cls}
+        style={{ height: h, ...(painted.shift ? { translate: `${painted.shift * 100}% 0` } : {}) }}
+      >
+        <span className="figure-shadow" />
         <img
           className="figure-body"
           src={painted.url}
           alt=""
           height={h}
-          style={{
-            animationDelay: `${-props.delay}s`,
-            ...(painted.perch ? { translate: `${painted.perch * 100}% 0` } : {}),
-          }}
+          style={{ animationDelay: `${-props.delay}s` }}
         />
+        {board && props.sign && (
+          <span
+            className="sign-label title-font"
+            style={{
+              left: `${board[0]}%`,
+              top: `${board[1]}%`,
+              width: `${board[2]}%`,
+              height: `${board[3]}%`,
+            }}
+          >
+            {props.sign}
+          </span>
+        )}
       </span>
     );
   }
@@ -82,7 +104,7 @@ export function markerSpot(p: Persona, w: number, h: number): { left: number; to
   const painted = PAINTED[p.id];
   const fs = p.figure?.fs ?? 1;
   if (!painted || !p.figure) return { left: w / 2, top: -16 };
-  const dx = painted.head * fs * (p.x > HEARTH_X ? -1 : 1);
+  const dx = painted.head * fs * (p.x > HEARTH_X && !painted.fixed ? -1 : 1);
   return { left: w / 2 + dx, top: h - painted.h * fs - 24 };
 }
 

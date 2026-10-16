@@ -21,18 +21,23 @@ export interface PaintedPersona {
   /** Where the head sits left or right of the figure's middle at fs = 1 (stage px, facing right):
    * the camp marker floats above it. */
   readonly head: number;
-  /** A perch the figure brings along (Eldrin's plank): no ground shadow, and the image shifts
-   * by this share of its width so the perch sits on the persona's spot (the signpost). */
-  readonly perch?: number;
+  /** The image shifts by this share of its width, so an off-centre post stands on the spot. */
+  readonly shift?: number;
+  /** Already faces the right way: never mirrored (Eldrin looks left at the fire). */
+  readonly fixed?: boolean;
+  /** An empty board in the painting the camp writes on, in % of the image (left, top, w, h). */
+  readonly sign?: readonly [number, number, number, number];
 }
 
 export const PAINTED: Partial<Record<string, PaintedPersona>> = {
   eldrin: {
     url: eldrinUrl,
-    h: 150,
-    face: { size: "330% auto", pos: "80% 4%" },
-    head: 20,
-    perch: -0.19,
+    h: 340,
+    face: { size: "425% auto", pos: "2% 1.5%" },
+    head: -37,
+    shift: 0.136,
+    fixed: true,
+    sign: [3, 38.9, 82, 11.9],
   },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
   nan: { url: nanUrl, h: 155, face: { size: "245% auto", pos: "51% 0%" }, head: 0 },

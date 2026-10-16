@@ -33,7 +33,7 @@ const IMG_W = 1916;
 const IMG_H = 821;
 const IMG_RING_X = 945;
 
-/** How far the signpost (drawn at x = 1300) moves right; Eldrin perches on it. */
+/** How far right of x = 1300 Eldrin's painted signpost stands. */
 export const SIGNPOST_DX = 100;
 
 /** Collection banners (spielzeit-v1.md, E): one per full collection, on the palisade. */
@@ -119,7 +119,6 @@ function AncestorPortrait() {
 }
 
 export function CampBackdrop(props: {
-  roadName: string;
   w: number;
   h: number;
   ox: number;
@@ -184,24 +183,6 @@ export function CampBackdrop(props: {
         <Banner key={id} id={id} />
       ))}
       {props.ancestor && <AncestorPortrait />}
-
-      {/* Signpost to the Act, right of Thoric's anvil (not on the Title Screen) */}
-      {props.roadName && (
-        <g transform={`translate(${SIGNPOST_DX} 0)`}>
-          <S d="M1296 560 L1306 560 L1306 676 L1296 676 Z" fill="#7a5a24" w={2.2} />
-          <S d="M1220 574 L1370 574 L1392 596 L1370 618 L1220 618 Z" fill="#e6d6b4" w={2.5} />
-          <text
-            x="1300"
-            y="602"
-            textAnchor="middle"
-            fill={INK}
-            className="title-font"
-            style={{ fontSize: 16, fontWeight: 700 }}
-          >
-            {props.roadName}
-          </text>
-        </g>
-      )}
 
       <rect x={-ox} y="0" width={w} height={h} fill="url(#camp-vignette)" />
     </svg>

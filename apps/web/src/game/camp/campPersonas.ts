@@ -181,7 +181,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       role: "Scout",
       // Perched on the signpost to the next act: he has seen what's ahead.
       x: 1300 + SIGNPOST_DX,
-      y: 647,
+      y: 725,
       icon: "bow",
       cloak: "#3b5a2c",
       figure: { fs: 0.9 },

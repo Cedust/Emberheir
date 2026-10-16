@@ -1804,6 +1804,20 @@
   display: block;
 }
 
+/* The act's name on Eldrin's painted signpost. */
+.stage .figure.painted .sign-label {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #2a1f17;
+  text-shadow: 0 1px 0 rgb(255 232 190 / 0.35);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
 /* Right of the Hearthfire a painted figure turns to face it. */
 .stage .figure.painted.mirror {
   transform: scaleX(-1);
