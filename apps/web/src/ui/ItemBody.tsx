@@ -35,11 +35,26 @@ export function rarityClass(item: Item): string {
 /** "Rare Iron Helm", "Unique Gauntlets", or just "Helm" for a plain Normal item. */
 function kindLine(item: Item, tip: ItemTooltip): string {
   const base = getBase(ITEM_CATALOG, item.baseId);
-  if (item.rarity === "normal" && !tip.special) {
-    return item.name === base.name ? tip.slotName : base.name;
-  }
+  // A name that holds the base (Normal, Magic) already says it: the kind line names the slot.
+  const named = item.name.includes(base.name);
+  if (item.rarity === "normal" && !tip.special) return named ? tip.slotName : base.name;
   const rarity = tip.special ? tip.rarityName : RARITY_NAMES[item.rarity];
-  return `${rarity} ${item.name === base.name ? tip.slotName : base.name}`;
+  return `${rarity} ${named ? tip.slotName : base.name}`;
+}
+
+/**
+ * A Magic name split around its base: "Smoldering" / "Silk Wraps" / "of Lingering". The prefix
+ * and suffix get their own smaller lines; other names stay whole.
+ */
+export function splitName(item: Item): { prefix: string; main: string; suffix: string } {
+  const base = getBase(ITEM_CATALOG, item.baseId).name;
+  const at = item.name.indexOf(base);
+  if (at < 0 || item.name === base) return { prefix: "", main: item.name, suffix: "" };
+  return {
+    prefix: item.name.slice(0, at).trim(),
+    main: base,
+    suffix: item.name.slice(at + base.length).trim(),
+  };
 }
 
 /** Painted icon for a base value, by the stat it names. */
@@ -94,7 +109,7 @@ export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
         </span>
       </span>
       <span className="ib-title">
-        <span className="ib-name rarity-text">{item.name}</span>
+        <ItemName item={item} />
         <span className="ib-kind-row">
           <span className="ib-kind">{kindLine(item, tip)}</span>
           <span className="ib-ilvl" title="Item Level">
@@ -104,6 +119,18 @@ export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
         {tip.runewordRecipe && <span className="ib-recipe">{tip.runewordRecipe}</span>}
       </span>
     </div>
+  );
+}
+
+/** The item's name; a Magic prefix and suffix sit small above and below it. */
+function ItemName(props: { item: Item }) {
+  const { prefix, main, suffix } = splitName(props.item);
+  return (
+    <span className="ib-name-block rarity-text">
+      {prefix && <span className="ib-affix-name">{prefix}</span>}
+      <span className="ib-name">{main}</span>
+      {suffix && <span className="ib-affix-name">{suffix}</span>}
+    </span>
   );
 }
 

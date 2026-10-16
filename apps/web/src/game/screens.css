@@ -7777,6 +7777,24 @@
   line-height: 1.12;
 }
 
+.stage .ib-name-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .ib-affix-name {
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  opacity: 0.85;
+}
+
+.stage .item-tip .ib-name-block {
+  color: var(--tip-name);
+}
+
 .stage .item-tip .ib-name {
   color: var(--tip-name);
   text-shadow: 0 1px 6px rgb(0 0 0 / 0.9);
