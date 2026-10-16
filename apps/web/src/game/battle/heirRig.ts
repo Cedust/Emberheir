@@ -1,7 +1,14 @@
 import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import talismanUrl from "../../assets/items/blood-talisman.webp";
+import focusUrl from "../../assets/items/ember-focus.webp";
+import grimoireUrl from "../../assets/items/grimoire.webp";
+import shieldUrl from "../../assets/items/round-shield.webp";
 import armUrl from "./heir/heir-arm.webp";
 import bodyUrl from "./heir/heir-body.webp";
+import offFistUrl from "./heir/heir-off-fist.webp";
 import thumbUrl from "./heir/heir-thumb.webp";
+import focusFrontUrl from "./heir/offhand-focus-front.webp";
+import quiverUrl from "./heir/offhand-quiver.webp";
 
 /**
  * The painted Heir (an otter) as a cutout rig: the body and the weapon forearm are two parts of
@@ -10,21 +17,63 @@ import thumbUrl from "./heir/heir-thumb.webp";
  * is cut out once more and drawn on top, and the forearm turns at the elbow.
  */
 
+/**
+ * The off hands the Heir can carry: the painted item bases of the inventory. The Quiver (without
+ * its strap) and the front half of the Ember Focus' root ring are cut for the arena by
+ * `tools/art/cut_offhands.py`.
+ */
+export type HeirOffHand = "shield" | "focus" | "quiver" | "talisman" | "grimoire";
+
+const OFF_HAND_URLS: Record<HeirOffHand, string> = {
+  shield: shieldUrl,
+  focus: focusUrl,
+  quiver: quiverUrl,
+  talisman: talismanUrl,
+  grimoire: grimoireUrl,
+};
+
 export interface HeirTextures {
   readonly body: Texture;
   readonly arm: Texture;
   readonly thumb: Texture;
+  /** The raised off-hand fist once more, drawn over a held item so the fist grips it. */
+  readonly offFist: Texture;
+  /** The painted off-hand items; one that fails to load is simply not drawn. */
+  readonly offHands: Partial<Record<HeirOffHand, Texture>>;
+  /** The left half of the Ember Focus' root ring, drawn over the fist (the hand goes through). */
+  readonly focusFront: Texture | null;
 }
 
 let loading: Promise<HeirTextures | null> | null = null;
 
 /** Loads the painted parts once; null when they cannot be loaded (the placeholder is drawn). */
 export function loadHeirTextures(): Promise<HeirTextures | null> {
-  loading ??= Promise.all([bodyUrl, armUrl, thumbUrl].map((u) => Assets.load<Texture>(u))).then(
-    ([body, arm, thumb]) => (body && arm && thumb ? { body, arm, thumb } : null),
+  loading ??= Promise.all([
+    Promise.all([bodyUrl, armUrl, thumbUrl, offFistUrl].map((u) => Assets.load<Texture>(u))),
+    loadOffHands(),
+    Assets.load<Texture>(focusFrontUrl).catch(() => null),
+  ]).then(
+    ([[body, arm, thumb, offFist], offHands, focusFront]) =>
+      body && arm && thumb && offFist
+        ? { body, arm, thumb, offFist, offHands, focusFront: focusFront ?? null }
+        : null,
     () => null,
   );
   return loading;
+}
+
+async function loadOffHands(): Promise<HeirTextures["offHands"]> {
+  const loaded = await Promise.all(
+    (Object.keys(OFF_HAND_URLS) as HeirOffHand[]).map((kind) =>
+      Assets.load<Texture>(OFF_HAND_URLS[kind]).then(
+        (t) => [kind, t] as const,
+        () => [kind, null] as const,
+      ),
+    ),
+  );
+  const out: Partial<Record<HeirOffHand, Texture>> = {};
+  for (const [kind, t] of loaded) if (t) out[kind] = t;
+  return out;
 }
 
 /** Points in the source painting (1024 × 1536 px). */
@@ -46,6 +95,10 @@ const SRC = {
   ],
   /** The middle of the raised off-hand fist. */
   offGrip: [520, 645],
+  /** Top left of the cut off-hand fist. */
+  offFist: [427, 608],
+  /** Between the shoulder blades, where a quiver's strap sits. */
+  back: [372, 612],
 } as const;
 
 /** The parts are stored at half the painting's size. */
@@ -62,11 +115,19 @@ function at(p: readonly [number, number]): [number, number] {
 /** Where the off hand (Shield, Focus, Talisman, Grimoire) is held, in figure coordinates. */
 export const HEIR_OFF_HAND = at(SRC.offGrip);
 
+/** Where a quiver hangs on the back, in figure coordinates. */
+export const HEIR_BACK = at(SRC.back);
+
 /** The weapon fist relative to the elbow, in figure units. */
 export const HEIR_GRIP_FROM_ELBOW: [number, number] = [
   (SRC.grip[0] - SRC.elbow[0]) * HEIR_SCALE,
   (SRC.grip[1] - SRC.elbow[1]) * HEIR_SCALE,
 ];
+
+/** The off-hand fist, placed over the body in figure coordinates: a held item goes under it. */
+export function heirOffFist(textures: HeirTextures): Sprite {
+  return part(textures.offFist, SRC.offFist, [0, 0]);
+}
 
 function part(texture: Texture, topLeft: readonly [number, number], origin: [number, number]) {
   const s = new Sprite(texture);
