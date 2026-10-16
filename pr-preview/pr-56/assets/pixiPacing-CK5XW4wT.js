@@ -1,1 +1,0 @@
-function e(e){return Math.min(2.5,(window.devicePixelRatio||1)*e)}function t(e){return e<2}var n=class{ticker;calm=0;constructor(e){this.ticker=e,e.maxFPS=60}update(e,t){if(t){this.calm=0,this.ticker.maxFPS=60;return}this.calm+=e,this.calm>=1.5&&(this.ticker.maxFPS=30)}};export{e as n,t as r,n as t};
