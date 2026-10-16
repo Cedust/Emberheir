@@ -703,7 +703,28 @@ export function hasItemArt(baseId: string): boolean {
 }
 
 /** The painted icon of a base item, scaled to fit its box. */
+/**
+ * Painted base items (Timo's item sheets, cut by tools/art/cut_items.py into one webp per base
+ * id). A base with a painted icon shows it; the others keep their code-drawn icon.
+ */
+const PAINTED: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>("../assets/items/*.webp", { eager: true, import: "default" }),
+  ).map(([path, url]) => [path.slice(path.lastIndexOf("/") + 1, -".webp".length), url]),
+);
+
 export function ItemArt(props: { baseId: string; slot: ItemSlot; className?: string }) {
+  const painted = PAINTED[props.baseId];
+  if (painted) {
+    return (
+      <img
+        className={`item-art painted ${props.className ?? ""}`}
+        src={painted}
+        alt=""
+        draggable={false}
+      />
+    );
+  }
   const art = ART[props.baseId] ?? ART[SLOT_FALLBACK[props.slot]];
   if (!art) return null;
   return (
