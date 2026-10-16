@@ -5,7 +5,7 @@
 #  - the Quiver without its shoulder strap (it rides on the back).
 # Run from the repo root: python3 tools/art/cut_offhands.py [painting.png]  (needs Pillow)
 # The fist's box matches SRC.offFist in apps/web/src/game/battle/heirRig.ts.
-from PIL import Image, ImageDraw
+from PIL import Image, ImageChops, ImageDraw, ImageFilter
 import json
 import sys
 SRC = sys.argv[1] if len(sys.argv) > 1 else '/mnt/project-files/art/heir/heir-master-v2.png'
@@ -30,6 +30,8 @@ for y in range(600, 730):
         lum = (r + g + b) / 3
         if not (lum < 70 or g < r * 0.75):
             mp[x, y] = 0
+# The curled fingers start right of this painting column; the wrist is left of it.
+FINGERS_FROM = 488
 fist = Image.new('RGBA', im.size, (0, 0, 0, 0))
 fist.paste(im, (0, 0), m)
 bb = fist.getchannel('A').getbbox()
@@ -51,7 +53,22 @@ def cut(name, keep, out, crop=True):
     return box
 
 
-# Same canvas as the icon, so it lies exactly on the whole Focus drawn under the fist.
-focus = cut('ember-focus', [(0, 96), (62, 96), (54, 150), (34, 176), (0, 176)], 'offhand-focus-front.webp', crop=False)
+# Same canvas as the icon, so it lies exactly on the whole Focus drawn under the fist. Where the
+# ring would cover the curled fingers it stays behind them. The Focus' hold in heroArt.ts
+# (size 84, anchor 0.44/0.7, offset -4/2, no tilt) maps icon pixels onto the painting.
+focus = cut('ember-focus', [(0, 96), (85, 96), (85, 192), (0, 192)], 'offhand-focus-front.webp', crop=False)
+front = Image.open(OUT + 'offhand-focus-front.webp').convert('RGBA')
+behind = Image.new('L', front.size, 0)
+bp = behind.load()
+S = 84 / 192 / 0.3
+for y in range(front.height):
+    for x in range(front.width):
+        px_, py_ = 520 + (-4 / 0.3) + (x - 0.44 * 192) * S, 645 + (2 / 0.3) + (y - 0.7 * 192) * S
+        if px_ > FINGERS_FROM and mp[int(px_), int(py_)]:
+            bp[x, y] = 255
+# A soft edge where the ring slips behind the fingers.
+behind = behind.filter(ImageFilter.GaussianBlur(0.8))
+front.putalpha(ImageChops.multiply(front.getchannel('A'), ImageChops.invert(behind)))
+front.save(OUT + 'offhand-focus-front.webp', 'WEBP', quality=92, method=6)
 quiver = cut('quiver', [(0, 0), (188, 0), (188, 288), (44, 288), (44, 250), (66, 82), (60, 0)], 'offhand-quiver.webp')
 print(json.dumps({'offFist': bb, 'focus': focus, 'quiver': quiver}))

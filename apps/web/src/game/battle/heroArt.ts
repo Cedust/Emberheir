@@ -178,8 +178,8 @@ const OFF_HAND_HOLDS: Record<
   grimoire: {
     size: 70,
     anchor: [0.5, 0.5],
-    offset: [28, -20],
-    tilt: 0.44,
+    offset: [40, -10],
+    tilt: 0.62,
     squash: -1,
     floating: true,
   },
