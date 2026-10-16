@@ -42,7 +42,7 @@ import {
 import { type EnemyLook, drawEnemy } from "./enemyArt";
 import { Fx } from "./fx";
 import { armSwing, loadHeirTextures } from "./heirRig";
-import { type HeroLook, RANGED_WEAPONS, drawHero } from "./heroArt";
+import { type HeroLook, RANGED_WEAPONS, drawHero, loadHeroWeapon } from "./heroArt";
 import { type View, Weather } from "./weather";
 
 /** A Skip resolves the rest of the fight at once: then only the outcome is shown. */
@@ -173,7 +173,7 @@ export class ArenaScene {
       app.destroy(true, { children: true });
       return null;
     }
-    const heir = await loadHeirTextures();
+    const [heir, weapon] = await Promise.all([loadHeirTextures(), loadHeroWeapon(hero)]);
     if (this.destroyed) {
       app.destroy(true, { children: true });
       return null;
@@ -238,7 +238,7 @@ export class ArenaScene {
     this.telegraph.alpha = 0;
     this.world.addChild(this.telegraph);
 
-    this.hero = makeFigure("hero", drawHero(hero, heir), HERO_X);
+    this.hero = makeFigure("hero", drawHero(hero, heir, weapon), HERO_X);
     this.heroArm = this.hero.body.getChildByLabel("heir-arm", true) ?? null;
     this.heroFist = this.hero.body.getChildByLabel("heir-fist", true) ?? null;
     this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
