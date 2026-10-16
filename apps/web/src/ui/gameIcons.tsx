@@ -27,6 +27,14 @@ import heatPerHitUrl from "../assets/stats/heat-per-hit.webp";
 import heatFromHitsUrl from "../assets/stats/heat-from-hits.webp";
 import triggerUrl from "../assets/stats/trigger.webp";
 import flaskUrl from "../assets/currency/flask.webp";
+import swordUrl from "../assets/weapons/sword.webp";
+import maceUrl from "../assets/weapons/mace.webp";
+import axeUrl from "../assets/weapons/axe.webp";
+import daggerUrl from "../assets/weapons/dagger.webp";
+import bowUrl from "../assets/weapons/bow.webp";
+import crossbowUrl from "../assets/weapons/crossbow.webp";
+import wandUrl from "../assets/weapons/wand.webp";
+import staffUrl from "../assets/weapons/staff.webp";
 
 /**
  * Painted damage type, ailment and stat icons (Timo's sheets, tools/art/cut_elements_ailments.py
@@ -79,3 +87,17 @@ export function GameIcon(props: { id: GameIconId; size?: number; className?: str
     />
   );
 }
+
+/** Painted hero weapons by weapon id (Timo's sheet, tools/art/cut_weapons.py). */
+const WEAPON_ICONS: Readonly<Record<string, string>> = {
+  sword: swordUrl,
+  mace: maceUrl,
+  axe: axeUrl,
+  dagger: daggerUrl,
+  bow: bowUrl,
+  crossbow: crossbowUrl,
+  "fire-wand": wandUrl,
+  staff: staffUrl,
+};
+
+export const weaponIconUrl = (weaponId: string): string | undefined => WEAPON_ICONS[weaponId];

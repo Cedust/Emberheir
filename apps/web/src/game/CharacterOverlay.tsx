@@ -136,6 +136,7 @@ export function CharacterOverlay(props: {
   const penalty = emberPenalty(state);
   const resNote: NoteHover = { ...DEFENSE_NOTES.resistance, status: emberPenaltyLine(penalty) };
   const weaponNumbers: WeaponNumbers = {
+    id: setup.weapon.id,
     name: setup.weapon.name,
     min: setup.weapon.damage.min,
     max: setup.weapon.damage.max,

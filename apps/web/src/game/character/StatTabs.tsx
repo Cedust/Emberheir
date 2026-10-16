@@ -8,7 +8,7 @@ import {
   speedValue,
   triggerChance,
 } from "@emberheir/sim";
-import { GameIcon, type GameIconId } from "../../ui/gameIcons";
+import { GameIcon, type GameIconId, weaponIconUrl } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { EmptyState } from "../../ui/kit/Marker";
 import { playUiSound } from "../../ui/sound";
@@ -23,6 +23,7 @@ import { type Element, Vitals, Medal, Plaque, Pill, Res, Row, pct } from "./Hero
  */
 
 export interface WeaponNumbers {
+  readonly id: string;
   readonly name: string;
   readonly min: number;
   readonly max: number;
@@ -201,6 +202,27 @@ function BonusTable(props: { stats: DerivedStats }) {
 type Only = { readonly only?: readonly PanelId[] | undefined };
 const shows = (only: Only["only"]) => (id: PanelId) => !only || only.includes(id);
 
+/** The hero's weapon, painted big on an ember plaque, with its damage below. */
+function WeaponMedallion(props: { weapon: WeaponNumbers }) {
+  const { weapon } = props;
+  const url = weaponIconUrl(weapon.id);
+  return (
+    <span className="hero-weapon">
+      <span className="hero-weapon-plaque">
+        {url ? (
+          <img src={url} width={92} height={92} alt="" draggable={false} />
+        ) : (
+          <Icon name="sword" size={44} />
+        )}
+      </span>
+      <span className="hero-weapon-name">{weapon.name}</span>
+      <b className="mono hero-weapon-damage">
+        {fmt(weapon.min)}–{fmt(weapon.max)}
+      </b>
+    </span>
+  );
+}
+
 /** A big "per Second" number (Damage, Heat); its tooltip says what goes into it. */
 function PerSecond(props: { value: string; note: NoteHover }) {
   const hover = useNoteHover(props.note);
@@ -223,17 +245,17 @@ export function OffensePanel(
       {show("damage") && (
         <Plaque className="hero-damage" label="Damage" pin="damage">
           <span className="hero-damage-row">
-            <PerSecond value={fmt(props.dps)} note={NOTES.dps} />
-            <span className="hero-pills hero-pills-stack">
-              <Pill icon="sword" label={weapon.name}>
-                {fmt(weapon.min)}–{fmt(weapon.max)}
-              </Pill>
-              <Pill icon="cycle" painted="speed" label="Speed" note={NOTES.speed}>
-                {speedValue(stats.attackSpeed)}
-              </Pill>
-              <Pill icon="target" painted="crit" label="Crit Chance" note={NOTES.critChance}>
-                {pct(stats.critChance)}
-              </Pill>
+            <WeaponMedallion weapon={weapon} />
+            <span className="hero-damage-numbers">
+              <PerSecond value={fmt(props.dps)} note={NOTES.dps} />
+              <span className="hero-pills">
+                <Pill icon="cycle" painted="speed" label="Speed" note={NOTES.speed}>
+                  {speedValue(stats.attackSpeed)}
+                </Pill>
+                <Pill icon="target" painted="crit" label="Crit Chance" note={NOTES.critChance}>
+                  {pct(stats.critChance)}
+                </Pill>
+              </span>
             </span>
           </span>
         </Plaque>
