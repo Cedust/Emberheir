@@ -529,7 +529,7 @@ export function HeatPanel(
         </Plaque>
       )}
       {show("heatSources") && (
-        <Plaque className="hero-heat-src" label="Sources" pin="heatSources">
+        <Plaque className="hero-heat-src" label="Heat Sources" pin="heatSources">
           <table className="hero-table">
             <tbody>
               {weapon.heatBehavior !== "warming" && (
@@ -540,14 +540,12 @@ export function HeatPanel(
                   value={fmt(weapon.heatPerHit)}
                 />
               )}
-              {weapon.heatBehavior === "cooling" && (
-                <Row
-                  icon="shield"
-                  painted="heat-from-hits"
-                  label="Heat from Hits Taken"
-                  value={pct(stats.heatFromHitsTaken)}
-                />
-              )}
+              <Row
+                icon="shield"
+                painted="heat-from-hits"
+                label="Heat from Hits Taken"
+                value={pct(stats.heatFromHitsTaken)}
+              />
               <Row
                 icon="flame"
                 painted="heat-gain"
