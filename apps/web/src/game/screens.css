@@ -66,90 +66,6 @@
     var(--card-shadow);
 }
 
-.stage .item-detail-top {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  font-weight: 800;
-  letter-spacing: 1.5px;
-  color: var(--text-sub);
-}
-
-.stage .item-detail-top .rarity-text {
-  font-weight: 800;
-}
-
-.stage .item-detail-head {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-}
-
-.stage .item-detail-title {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  min-width: 0;
-}
-
-.stage .item-detail-art {
-  --glow: transparent;
-  position: relative;
-  flex-shrink: 0;
-  width: 64px;
-  height: 64px;
-  border-radius: 6px;
-  border: 2px solid var(--frame, var(--slot-edge));
-  background: radial-gradient(ellipse at 50% 55%, var(--glow) 0%, transparent 70%), var(--slot-bg);
-  box-shadow: var(--slot-inset);
-}
-
-.stage .item-detail-art.rarity-magic {
-  --glow: rgb(91 140 255 / 0.35);
-}
-
-.stage .item-detail-art.rarity-rare {
-  --glow: rgb(255 216 74 / 0.32);
-}
-
-.stage .item-detail-art.rarity-epic {
-  --glow: rgb(179 107 255 / 0.42);
-}
-
-.stage .equipped-detail .item-detail-art {
-  width: 48px;
-  height: 48px;
-}
-
-.stage .item-detail-art .item-art {
-  position: absolute;
-  inset: 6px;
-  width: calc(100% - 12px);
-  height: calc(100% - 12px);
-  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
-}
-
-.stage .item-detail-name {
-  font-family: var(--font-title);
-  font-size: 22px;
-  font-weight: 700;
-  line-height: 1.15;
-}
-
-.stage .item-detail-base {
-  font-size: 14px;
-  color: var(--text-sub);
-}
-
-.stage .item-detail-speed {
-  font-size: 14px;
-  color: var(--text-sub);
-}
-
-.stage .item-detail-speed strong {
-  color: var(--text);
-}
-
 .stage .item-detail-rule {
   height: 1px;
   background: var(--edge);
@@ -157,59 +73,8 @@
   flex-shrink: 0;
 }
 
-.stage .item-detail-lines {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  font-size: 15px;
-}
-
-.stage .line-trigger,
-.stage .line-kindled {
-  color: var(--trigger-text);
-  font-weight: 700;
-}
-
-.stage .line-kindled::before {
-  content: "✦ ";
-  color: #e0782a;
-}
-
-.stage .line-implicit {
-  color: var(--text-sub);
-  font-style: italic;
-}
-
-.stage .line-req {
-  color: var(--text-sub);
-  font-size: 13px;
-}
-
-.stage .line-unmet {
-  color: #e5484d;
-  font-size: 13px;
-  font-weight: 700;
-}
-
 .stage .item-detail-spacer {
   flex-grow: 1;
-}
-
-.stage .item-compare {
-  font-size: 14px;
-  font-weight: 700;
-  margin-top: 6px;
-}
-
-.stage .item-compare.better {
-  color: #3fa56a;
-}
-
-.stage .item-compare.worse {
-  color: var(--warn);
 }
 
 .stage .card-buttons,
@@ -542,49 +407,6 @@
     inset 0 0 24px rgb(0 0 0 / 0.6);
 }
 
-.stage .tip-recipe {
-  font-family: var(--font-title);
-  font-size: 14px;
-  letter-spacing: 1px;
-  color: #c9a063;
-}
-
-.stage .tip-power {
-  margin-top: 4px;
-  color: #ff9a3a;
-  font-style: italic;
-}
-
-.stage .tip-power b {
-  font-family: var(--font-title);
-  font-style: normal;
-  display: block;
-}
-
-.stage .tip-sockets {
-  display: flex;
-  gap: 6px;
-  margin-top: 6px;
-  align-items: center;
-}
-
-.stage .tip-socket {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
-  background: #050403;
-  border: 1px solid #4a3a2c;
-  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.95);
-}
-
-.stage .tip-flavor {
-  margin-top: 6px;
-  font-size: 13px;
-  font-style: italic;
-  color: #c9a063;
-  opacity: 0.85;
-}
-
 .stage .tip-tag {
   align-self: stretch;
   margin: -12px -16px 6px;
@@ -606,13 +428,6 @@
   text-shadow: 0 0 10px rgb(0 0 0 / 0.9);
 }
 
-.stage .tip-base {
-  font-family: var(--font-title);
-  font-size: 15px;
-  color: var(--tip-name);
-  opacity: 0.85;
-}
-
 .stage .tip-kind {
   font-size: 13px;
   color: #8f8170;
@@ -623,70 +438,6 @@
   height: 1px;
   margin: 6px 12px;
   background: linear-gradient(90deg, transparent, #6a4a2c, transparent);
-}
-
-.stage .tip-basic {
-  color: #ece4d4;
-}
-
-.stage .tip-implicit {
-  color: #b9ad98;
-  font-style: italic;
-}
-
-.stage .tip-stat {
-  color: #7fa6ff;
-}
-
-.stage .tip-trigger,
-.stage .tip-kindled {
-  color: #ffb070;
-  font-weight: 700;
-}
-
-.stage .tip-kindled::before {
-  content: "✦ ";
-  color: #ff7a2a;
-}
-
-.stage .tip-source {
-  font-size: 13px;
-  font-style: italic;
-  color: #c9a063;
-}
-
-.stage .tip-req {
-  font-size: 13px;
-  color: #a89a84;
-}
-
-.stage .tip-req.unmet {
-  color: #ff5a5a;
-  font-weight: 700;
-}
-
-.stage .tip-ilvl {
-  margin-top: 6px;
-  font-family: var(--font-mono);
-  font-size: 11px;
-  color: #6f6455;
-}
-
-.stage .tip-verdict {
-  align-self: stretch;
-  margin: 8px -16px -10px;
-  padding: 6px 10px;
-  border-top: 1px solid #3a2c20;
-  font-size: 13px;
-  font-weight: 700;
-}
-
-.stage .tip-verdict.better {
-  color: #4fd88a;
-}
-
-.stage .tip-verdict.worse {
-  color: #ff7a5a;
 }
 
 .stage .equipped-row {
@@ -6219,7 +5970,7 @@
   max-height: 464px;
 }
 
-.stage .hoard-detail .item-detail-lines {
+.stage .hoard-detail .item-detail-scroll {
   flex-shrink: 1;
   min-height: 0;
   overflow-y: auto;
@@ -7903,4 +7654,510 @@
 /* Painted item icons (ItemArt.tsx) keep their proportions in any cell. */
 .stage .item-art.painted {
   object-fit: contain;
+}
+
+/* --- item views: name plate, values, affixes, comparison (ui/ItemBody.tsx) ------------------- */
+
+/* Colors per surface: the dark tooltip plate and the parchment cards. */
+.stage .item-tooltip.item-tip {
+  --ib-text: #ece4d4;
+  --ib-sub: #9a8b76;
+  --ib-affix: #8fb0ff;
+  --ib-implicit: #b9ad98;
+  --ib-trigger: #ffb070;
+  --ib-power: #ff9a3a;
+  --ib-flavor: #c9a063;
+  --ib-rule: rgb(255 220 170 / 0.12);
+  --ib-well: rgb(255 255 255 / 0.045);
+  --ib-up: #4fd88a;
+  --ib-down: #ff6a5a;
+  --ib-unmet: #ff5a5a;
+  width: 340px;
+  padding: 0 16px 12px;
+  align-items: stretch;
+  gap: 0;
+  text-align: left;
+  border-top: 3px solid var(--tip-name);
+}
+
+.stage .item-detail {
+  --ib-text: var(--text);
+  --ib-sub: var(--text-sub);
+  --ib-affix: var(--r-magic);
+  --ib-implicit: var(--text-sub);
+  --ib-trigger: var(--trigger-text);
+  --ib-power: var(--trigger-text);
+  --ib-flavor: var(--text-sub);
+  --ib-rule: rgb(120 90 50 / 0.28);
+  --ib-well: rgb(0 0 0 / 0.06);
+  --ib-up: #2f8f57;
+  --ib-down: #c4452f;
+  --ib-unmet: #d63a3a;
+  gap: 0;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stage .item-detail {
+    --ib-up: #4fd88a;
+    --ib-down: #ff7a5a;
+    --ib-well: rgb(255 255 255 / 0.05);
+    --ib-rule: rgb(255 220 170 / 0.14);
+  }
+}
+
+:root[data-theme="dark"] .stage .item-detail {
+  --ib-up: #4fd88a;
+  --ib-down: #ff7a5a;
+  --ib-well: rgb(255 255 255 / 0.05);
+  --ib-rule: rgb(255 220 170 / 0.14);
+}
+
+/* Name plate: painted item, name, kind, Tier. The tooltip washes it in its rarity color. */
+.stage .ib-head {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage .item-tip .ib-head {
+  margin: 0 -16px;
+  padding: 12px 16px 14px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--tip-name) 20%, transparent),
+    color-mix(in srgb, var(--tip-name) 4%, transparent)
+  );
+  border-bottom: 1px solid color-mix(in srgb, var(--tip-name) 30%, transparent);
+}
+
+.stage .ib-art {
+  --glow: transparent;
+  position: relative;
+  flex-shrink: 0;
+  width: 60px;
+  height: 60px;
+  border-radius: 6px;
+  border: 2px solid var(--frame, var(--slot-edge));
+  background: radial-gradient(ellipse at 50% 55%, var(--glow) 0%, transparent 72%), var(--slot-bg);
+  box-shadow: var(--slot-inset);
+}
+
+.stage .ib-art.rarity-magic {
+  --glow: rgb(91 140 255 / 0.4);
+}
+
+.stage .ib-art.rarity-rare {
+  --glow: rgb(255 216 74 / 0.36);
+}
+
+.stage .ib-art.rarity-epic {
+  --glow: rgb(179 107 255 / 0.45);
+}
+
+.stage .ib-art.rarity-legendary,
+.stage .ib-art.special-unique,
+.stage .ib-art.special-runeword {
+  --glow: rgb(255 154 58 / 0.42);
+}
+
+.stage .ib-art .item-art {
+  position: absolute;
+  inset: 5px;
+  width: calc(100% - 10px);
+  height: calc(100% - 10px);
+  filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
+}
+
+.stage .ib-title {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage .ib-name {
+  font-family: var(--font-title);
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.12;
+}
+
+.stage .ib-name-block {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .ib-affix-name {
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  line-height: 1.2;
+  opacity: 0.85;
+}
+
+.stage .item-tip .ib-name-block {
+  color: var(--tip-name);
+}
+
+.stage .item-tip .ib-name {
+  color: var(--tip-name);
+  text-shadow: 0 1px 6px rgb(0 0 0 / 0.9);
+}
+
+.stage .ib-kind {
+  font-size: 13px;
+  color: var(--ib-sub);
+}
+
+.stage .ib-recipe {
+  font-family: var(--font-title);
+  font-size: 13px;
+  letter-spacing: 1px;
+  color: var(--ib-flavor);
+}
+
+/* Base values: big numbers with their painted stat. */
+.stage .ib-base {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 0 6px;
+}
+
+.stage .ib-big {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .ib-big-value {
+  font-family: var(--font-title);
+  font-size: 24px;
+  line-height: 1.1;
+  color: var(--ib-text);
+}
+
+.stage .ib-big-label {
+  font-size: 15px;
+  color: var(--ib-sub);
+}
+
+.stage .ib-base-line {
+  font-size: 14px;
+  color: var(--ib-sub);
+}
+
+/* Affix lists: one bullet style per kind. */
+.stage .ib-lines {
+  list-style: none;
+  margin: 0;
+  padding: 7px 0 2px;
+  border-top: 1px solid var(--ib-rule);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 15px;
+  line-height: 1.3;
+}
+
+.stage .ib-implicit + .ib-affixes,
+.stage .ib-affixes + .ib-triggers {
+  border-top: 0;
+  padding-top: 3px;
+}
+
+.stage .ib-lines li {
+  position: relative;
+  padding-left: 16px;
+}
+
+.stage .ib-lines li::before {
+  content: "";
+  position: absolute;
+  left: 2px;
+  top: 0.48em;
+  width: 6px;
+  height: 6px;
+  transform: rotate(45deg);
+  background: currentColor;
+  opacity: 0.85;
+}
+
+.stage .ib-affixes li {
+  color: var(--ib-affix);
+}
+
+.stage .ib-triggers li {
+  color: var(--ib-trigger);
+  font-weight: 600;
+}
+
+.stage .ib-triggers li.kindled::before {
+  box-shadow: 0 0 5px 1px #ff7a2a;
+}
+
+.stage .ib-implicit li {
+  color: var(--ib-implicit);
+  font-style: italic;
+}
+
+.stage .ib-implicit li::before {
+  background: none;
+  border: 1px solid currentColor;
+  width: 5px;
+  height: 5px;
+}
+
+.stage .ib-power {
+  margin-top: 8px;
+  padding: 6px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  border-left: 3px solid var(--ib-power);
+  border-radius: 0 4px 4px 0;
+  background: var(--ib-well);
+  color: var(--ib-power);
+  font-size: 14px;
+  font-style: italic;
+  line-height: 1.3;
+}
+
+.stage .ib-power b {
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-style: normal;
+}
+
+.stage .ib-sockets {
+  display: flex;
+  gap: 6px;
+  margin-top: 8px;
+  align-items: center;
+}
+
+.stage .ib-socket {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #050403;
+  border: 1px solid #4a3a2c;
+  box-shadow: inset 0 2px 3px rgb(0 0 0 / 0.95);
+}
+
+.stage .ib-none {
+  padding-top: 6px;
+  border-top: 1px solid var(--ib-rule);
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ib-sub);
+}
+
+.stage .ib-flavor {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: 13px;
+  font-style: italic;
+  color: var(--ib-flavor);
+}
+
+.stage .ib-foot {
+  margin-top: 8px;
+  padding-top: 6px;
+  border-top: 1px solid var(--ib-rule);
+  font-size: 13px;
+  color: var(--ib-sub);
+}
+
+.stage .ib-foot .unmet {
+  color: var(--ib-unmet);
+  font-weight: 700;
+}
+
+.stage .ib-kind-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+}
+
+.stage .ib-ilvl {
+  flex-shrink: 0;
+  font-size: 12px;
+  color: var(--ib-sub);
+  white-space: nowrap;
+}
+
+.stage .ib-ilvl b {
+  font-family: var(--font-title);
+  font-size: 14px;
+  color: var(--ib-text);
+}
+
+/* Tier: a Roman numeral on a small brass plaque over the item's frame. */
+.stage .ib-tier {
+  position: absolute;
+  left: 50%;
+  bottom: -9px;
+  transform: translateX(-50%);
+  min-width: 18px;
+  padding: 1px 5px;
+  border: 1px solid #3a2410;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #e7c47a, #a8752e 60%, #7a5420);
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.6);
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: center;
+  color: #2a1808;
+}
+
+.stage .ib-compare-hint {
+  align-self: flex-start;
+}
+
+.stage .item-detail .ib-compare-hint {
+  margin-top: 10px;
+  color: var(--text-sub);
+}
+
+.stage .item-detail .ib-compare-hint .k-key {
+  color: var(--text);
+}
+
+/* Comparison: arrow, signed change, painted stat, name. One row per stat. */
+.stage .ib-compare {
+  margin-top: 10px;
+  padding: 8px 10px;
+  display: grid;
+  grid-template-columns: auto auto auto 1fr;
+  align-items: center;
+  column-gap: 7px;
+  row-gap: 3px;
+  border-left: 3px solid var(--ib-up);
+  border-radius: 0 4px 4px 0;
+  background: var(--ib-well);
+}
+
+.stage .ib-compare.worse {
+  border-left-color: var(--ib-down);
+}
+
+.stage .ib-compare.inactive {
+  border-left-color: var(--ib-unmet);
+}
+
+.stage .ib-row {
+  display: contents;
+}
+
+.stage .ib-arrow {
+  font-size: 10px;
+}
+
+.stage .ib-delta {
+  justify-self: end;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.stage .ib-row.up .ib-arrow,
+.stage .ib-row.up .ib-delta {
+  color: var(--ib-up);
+}
+
+.stage .ib-row.down .ib-arrow,
+.stage .ib-row.down .ib-delta {
+  color: var(--ib-down);
+}
+
+.stage .ib-row-icon {
+  display: flex;
+  justify-content: center;
+  min-width: 22px;
+}
+
+.stage .ib-row-label {
+  font-size: 14px;
+  color: var(--ib-text);
+}
+
+.stage .ib-compare-note {
+  grid-column: 1 / -1;
+  font-size: 11px;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ib-sub);
+}
+
+.stage .ib-compare-note.ib-inactive {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  letter-spacing: 0;
+  text-transform: none;
+  font-weight: 700;
+  color: var(--ib-unmet);
+}
+
+.stage .item-tip .tip-hotkey {
+  margin-top: 8px;
+}
+
+.stage .item-tip .tip-tag {
+  margin: 0 -16px;
+  padding: 4px 16px;
+  text-align: left;
+}
+
+/* Parchment cards: a small ribbon line for where the item sits. */
+.stage .item-detail-tag {
+  margin-bottom: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.stage .item-detail-scroll {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .equipped-detail .ib-art {
+  width: 48px;
+  height: 48px;
+}
+
+/* Loot cards stay compact: three side by side above Salvage All. */
+.stage .loot-card {
+  max-height: 600px;
+}
+
+.stage .loot-card .item-detail-scroll {
+  flex-shrink: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.stage .loot-card .ib-name {
+  font-size: 16px;
+}
+
+.stage .loot-card .ib-art {
+  width: 52px;
+  height: 52px;
+}
+
+.stage .loot-card .ib-lines {
+  font-size: 14px;
 }

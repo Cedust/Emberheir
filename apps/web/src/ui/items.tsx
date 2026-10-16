@@ -11,7 +11,6 @@ import {
   getBase,
   itemSize,
   slotsFor,
-  speedValue,
   greaterName,
 } from "@emberheir/sim";
 import { type MouseEvent as ReactMouseEvent, type ReactNode, useState } from "react";
@@ -34,6 +33,8 @@ import offHandUrl from "../assets/slots/offhand.webp";
 import ringUrl from "../assets/slots/ring.webp";
 import { Icon, type IconName } from "./Icon";
 import { ItemArt } from "./ItemArt";
+import { CompareList, ItemBody, ItemHead, rarityClass } from "./ItemBody";
+import type { CompareView } from "./itemCompare";
 import { useItemHover } from "./ItemTooltip";
 import { SocketDots } from "./RuneArt";
 import { aimedSlot, switchSlot, useRingSlot } from "./ringSlot";
@@ -75,15 +76,7 @@ const EMPTY_SLOT_ART: Readonly<Record<string, string>> = {
   Charm: charmUrl,
 };
 
-/** Rarity classes of an item: Uniques and Runewords get their own golden frame and name. */
-export function rarityClass(item: Item): string {
-  const special = item.uniqueId
-    ? " special-unique"
-    : item.runes?.length && activeRuneword(item, ITEM_CATALOG)
-      ? " special-runeword"
-      : "";
-  return `rarity-${item.rarity}${special}`;
-}
+export { rarityClass };
 
 /** "UNIQUE", "RUNEWORD" or the rarity name. */
 export function rarityName(item: Item): string {
@@ -177,67 +170,33 @@ export function RingSwitch(props: { state: GameState; item: Item }) {
   );
 }
 
-/** Item card: slot, rarity, name, base, affix lines and an optional compare line. */
+/** Item card: the same name plate, values and comparison rows as the hover tooltip. */
 export function ItemDetail(props: {
   item: Item;
   heroAttributes?: GameState["hero"]["attributes"];
   heroLevel?: number;
+  /** Ribbon over the card, e.g. "EQUIPPED". */
   where?: string;
-  compare?: { text: string; better: boolean } | undefined;
+  compare?: CompareView | undefined;
   footer?: ReactNode;
   className?: string;
   testId?: string;
 }) {
   const { item } = props;
-  const base = getBase(ITEM_CATALOG, item.baseId);
-  const weapon = base.weapon;
+  const tip = describeItem(item, ITEM_CATALOG, props.heroAttributes, props.heroLevel);
   return (
     <article
       className={`item-detail ${rarityClass(item)} ${props.className ?? ""}`}
       aria-label={item.name}
       data-testid={props.testId}
     >
-      <div className="item-detail-top">
-        <span>
-          {props.where ? `${props.where} · ` : ""}
-          {slotLabel(item).toUpperCase()}
-        </span>
-        <span className="rarity-text">
-          {rarityName(item)} · T{item.tier}
-        </span>
+      {props.where && <span className="item-detail-tag">{props.where}</span>}
+      <ItemHead item={item} tip={tip} />
+      <div className="item-detail-scroll">
+        <ItemBody item={item} tip={tip} />
       </div>
-      <div className="item-detail-head">
-        <div className={`item-detail-art ${rarityClass(item)}`}>
-          <ItemArt baseId={item.baseId} slot={base.slot} />
-          <SocketDots sockets={item.sockets ?? 0} runes={item.runes ?? []} />
-        </div>
-        <div className="item-detail-title">
-          <h3 className="item-detail-name rarity-text">{item.name}</h3>
-          <span className="item-detail-base">{baseSummary(item)}</span>
-          {weapon && (
-            <span
-              className="item-detail-speed"
-              title="Attack Speed. Speed 100 is the Sword's speed."
-            >
-              Speed <strong className="mono">{speedValue(weapon.attacksPerSecond)}</strong>
-            </span>
-          )}
-        </div>
-      </div>
-      <div className="item-detail-rule" />
-      <ul className="item-detail-lines">
-        {itemLines(item, props.heroAttributes, props.heroLevel).map((l, i) => (
-          <li key={`${i}-${l.text}`} className={`line-${l.kind}`}>
-            {l.text}
-          </li>
-        ))}
-      </ul>
       <div className="item-detail-spacer" />
-      {props.compare && (
-        <span className={`item-compare ${props.compare.better ? "better" : "worse"}`}>
-          {props.compare.text}
-        </span>
-      )}
+      {props.compare && <CompareList view={props.compare} />}
       {props.footer}
     </article>
   );
