@@ -10,6 +10,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { useCompareKey } from "./compareToggle";
 import { CompareList, ItemBody, ItemHead, itemTip, rarityClass } from "./ItemBody";
 import { aimedSlot, useRingSlot } from "./ringSlot";
 import { useStageSize } from "./Stage";
@@ -195,6 +196,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
 
   const state = props.state;
   useRingSlot();
+  useCompareKey();
   let worn: Item | undefined;
   if (hover?.item && state && !hover.equipped) {
     const slot = aimedSlot(state, hover.item);
@@ -310,7 +312,7 @@ export function ItemTooltipCard(props: {
       {props.tag && <span className="tip-tag">{props.tag}</span>}
       <ItemHead item={item} tip={tip} />
       <ItemBody item={item} tip={tip} />
-      {props.compare && <CompareList view={props.compare} state={props.state} />}
+      {props.compare && <CompareList view={props.compare} />}
       {props.action && (
         <span className="tip-hotkey">
           <kbd className="k-key">Right-click</kbd> {props.action}

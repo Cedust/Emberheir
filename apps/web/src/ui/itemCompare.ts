@@ -6,7 +6,6 @@ import {
   type ItemComparison,
   compareItem,
   formatPercent,
-  gearDelta,
   missingRequirements,
 } from "@emberheir/sim";
 import type { GameIconId } from "./gameIcons";
@@ -62,10 +61,8 @@ export interface CompareRow {
   /** Signed change, e.g. "+12 %" or "−40". */
   readonly value: string;
   readonly label: string;
-  /** Painted stat icon; DPS uses the hero's weapon instead. */
-  readonly icon?: GameIconId;
-  /** DPS leads the list in bigger type. */
-  readonly lead?: boolean;
+  /** Painted stat icon. */
+  readonly icon: GameIconId;
 }
 
 /** What equipping an item changes, ready to draw: gains first, then losses. */
@@ -79,31 +76,18 @@ export interface CompareView {
   readonly better: boolean;
 }
 
-/** At most this many stat rows below the DPS row: hover tooltips, loot cards. */
+/** At most this many stat rows: hover tooltips, loot cards. */
 const MAX_ROWS = 6;
 const CARD_ROWS = 4;
 
 const signed = (delta: number, text: string) => `${delta > 0 ? "+" : "−"}${text}`;
 
-/** The comparison as rows: DPS first, then the stats that change, gains before losses. */
+/** The comparison as rows: the stats that change most, gains before losses. */
 export function compareRows(cmp: ItemComparison, maxRows = MAX_ROWS): CompareView {
-  const rows: CompareRow[] = [];
-  const dpsDelta = cmp.dps.before > 0 ? cmp.dps.after / cmp.dps.before - 1 : 0;
-  let score = dpsDelta * 3;
-  if (Math.abs(dpsDelta) >= 0.005) {
-    rows.push({
-      key: "dps",
-      up: dpsDelta > 0,
-      value: signed(dpsDelta, `${Math.abs(Math.round(dpsDelta * 100))} %`),
-      label: "DPS",
-      lead: true,
-    });
-  }
+  let score = 0;
   const stats: CompareRow[] = [];
   for (const c of cmp.changes) {
     const stat = c.stat as keyof DerivedStats;
-    // Attack Speed is part of DPS; the row would say the same thing twice.
-    if (stat === "attackSpeed") continue;
     const row = STAT_ROW[stat];
     if (!row) continue;
     const delta = c.after - c.before;
@@ -127,7 +111,7 @@ export function compareRows(cmp: ItemComparison, maxRows = MAX_ROWS): CompareVie
   }
   // The biggest changes (compareItem's order), then gains above losses.
   const kept = stats.slice(0, maxRows);
-  rows.push(...kept.filter((r) => r.up), ...kept.filter((r) => !r.up));
+  const rows = [...kept.filter((r) => r.up), ...kept.filter((r) => !r.up)];
   return {
     rows,
     empty: !cmp.replaces,
@@ -139,30 +123,11 @@ export function compareRows(cmp: ItemComparison, maxRows = MAX_ROWS): CompareVie
 const INACTIVE: CompareView = { rows: [], empty: false, inactive: true, better: false };
 
 /** Compare with the item in the slot it would go to (the Ring shortcut picks the Ring). */
-export function compareWithEquipped(state: GameState, item: Item): CompareView {
+export function compareWithEquipped(state: GameState, item: Item, card = false): CompareView {
   // Gear with unmet requirements does nothing, so a stat comparison would read "same".
   if (missingRequirements(item, ITEM_CATALOG, state.hero.attributes).length > 0) return INACTIVE;
-  return compareRows(compareItem(state, GAME_DATA, item, preferredSlotFor(item)));
-}
-
-/** Dummy measurements per item, for the state they were made in (render reuses them). */
-const DUMMY_CACHE = new WeakMap<Item, { state: GameState; dps: number | null }>();
-
-/**
- * Like `compareWithEquipped`, but the DPS arrow comes from the Training Dummy (a real fight
- * against the next act's boss hide: ailments, triggers and the Battle Plan all count,
- * neuausrichtung-v1.md 6.3). For the loot cards.
- */
-export function compareWithDummy(state: GameState, item: Item): CompareView {
-  if (missingRequirements(item, ITEM_CATALOG, state.hero.attributes).length > 0) return INACTIVE;
-  let cached = DUMMY_CACHE.get(item);
-  if (!cached || cached.state !== state) {
-    cached = { state, dps: gearDelta(state, GAME_DATA, item)?.dps ?? null };
-    DUMMY_CACHE.set(item, cached);
-  }
-  const cmp = compareItem(state, GAME_DATA, item, preferredSlotFor(item));
   return compareRows(
-    cached.dps === null ? cmp : { ...cmp, dps: { before: 1, after: 1 + cached.dps } },
-    CARD_ROWS,
+    compareItem(state, GAME_DATA, item, preferredSlotFor(item)),
+    card ? CARD_ROWS : MAX_ROWS,
   );
 }

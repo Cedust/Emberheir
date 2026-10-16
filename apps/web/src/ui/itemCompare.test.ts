@@ -20,7 +20,7 @@ const cmp = (over: Partial<ItemComparison>): ItemComparison => ({
 });
 
 describe("compareRows", () => {
-  it("leads with DPS, then gains above losses, one row per stat", () => {
+  it("shows gains above losses, one row per stat, no DPS", () => {
     const view = compareRows(
       cmp({
         dps: { before: 100, after: 111 },
@@ -32,11 +32,10 @@ describe("compareRows", () => {
       }),
     );
     expect(view.rows.map((r) => `${r.value} ${r.label}`)).toEqual([
-      "+11 % DPS",
       "+29 Armor",
+      "+10 % Attack Speed",
       "−4 % Cold Resistance",
     ]);
-    expect(view.rows[0]?.lead).toBe(true);
     expect(view.empty).toBe(false);
   });
 

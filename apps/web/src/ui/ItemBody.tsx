@@ -9,7 +9,8 @@ import {
   getBase,
   greaterName,
 } from "@emberheir/sim";
-import { GameIcon, type GameIconId, weaponIconUrl } from "./gameIcons";
+import { COMPARE_KEY, useCompareShown } from "./compareToggle";
+import { GameIcon, type GameIconId } from "./gameIcons";
 import { Icon } from "./Icon";
 import { ItemArt } from "./ItemArt";
 import type { CompareView } from "./itemCompare";
@@ -64,7 +65,24 @@ function splitBase(line: string): { value: string; label: string } | null {
   return m?.[1] && m[2] ? { value: m[1], label: m[2] } : null;
 }
 
-/** Name plate: the painted item in its rarity frame, name and kind. */
+const TIER_NUMERALS: Readonly<Record<number, string>> = {
+  1: "I",
+  2: "II",
+  3: "III",
+  4: "IV",
+  5: "V",
+  6: "VI",
+  7: "VII",
+  8: "VIII",
+  9: "IX",
+  10: "X",
+};
+
+/**
+ * Name plate: the painted item in its rarity frame with its Tier as a Roman numeral on a
+ * brass plaque, name and kind, and the Item Level as the big number on the right (Diablo 4's
+ * Item Power spot).
+ */
 export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
   const { item, tip } = props;
   const base = getBase(ITEM_CATALOG, item.baseId);
@@ -72,11 +90,18 @@ export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
     <div className="ib-head">
       <span className={`ib-art ${rarityClass(item)}`}>
         <ItemArt baseId={item.baseId} slot={base.slot} />
+        <span className="ib-tier" title={`Tier ${item.tier}`}>
+          {TIER_NUMERALS[item.tier] ?? item.tier}
+        </span>
       </span>
       <span className="ib-title">
         <span className="ib-name rarity-text">{item.name}</span>
         <span className="ib-kind">{kindLine(item, tip)}</span>
         {tip.runewordRecipe && <span className="ib-recipe">{tip.runewordRecipe}</span>}
+      </span>
+      <span className="ib-ilvl" title="Item Level">
+        <b>{item.itemLevel}</b>
+        <span>Item Level</span>
       </span>
     </div>
   );
@@ -142,11 +167,8 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
         <ul className="ib-lines ib-triggers">
           {triggers.map((l, i) => (
             <li key={`${i}-${l.text}`} className={l.kind === "kindled" ? "kindled" : undefined}>
-              <GameIcon id="trigger" size={18} className="ib-bullet-icon" />
-              <span>
-                {l.text}
-                {l.greater ? <span className="greater-mark">{greaterName(l.greater)}</span> : null}
-              </span>
+              {l.text}
+              {l.greater ? <span className="greater-mark">{greaterName(l.greater)}</span> : null}
             </li>
           ))}
         </ul>
@@ -176,35 +198,35 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
           {tip.droppedBy && <span className="ib-source">Dropped by {tip.droppedBy}</span>}
         </div>
       )}
-      <div className="ib-foot">
-        {reqs.length > 0 ? (
-          <span className="ib-reqs">
-            Requires{" "}
-            {reqs.map((r, i) => (
-              <span key={r.key} className={r.met === false ? "unmet" : undefined}>
-                {i > 0 ? " · " : ""}
-                {r.text}
-              </span>
-            ))}
-          </span>
-        ) : (
-          <span />
-        )}
-        <span className="ib-ilvl">
-          Item Level {item.itemLevel} · Tier {item.tier}
-        </span>
-      </div>
+      {reqs.length > 0 && (
+        <div className="ib-foot">
+          Requires{" "}
+          {reqs.map((r, i) => (
+            <span key={r.key} className={r.met === false ? "unmet" : undefined}>
+              {i > 0 ? " · " : ""}
+              {r.text}
+            </span>
+          ))}
+        </div>
+      )}
     </>
   );
 }
 
 /**
  * What equipping changes, one row per stat: arrow, signed amount, painted stat icon, name.
- * DPS leads with the hero's own weapon as its icon.
+ * Hidden until Shift turns it on; then only the key cap shows.
  */
-export function CompareList(props: { view: CompareView; state: GameState | null }) {
+export function CompareList(props: { view: CompareView }) {
   const { view } = props;
-  const weaponUrl = props.state ? weaponIconUrl(props.state.hero.weaponId) : undefined;
+  const shown = useCompareShown();
+  if (!shown) {
+    return (
+      <span className="tip-hotkey ib-compare-hint" data-testid="compare-hint">
+        <kbd className="k-key">{COMPARE_KEY}</kbd> Compare
+      </span>
+    );
+  }
   return (
     <div
       className={`ib-compare ${view.inactive ? "inactive" : view.better ? "better" : "worse"}`}
@@ -219,17 +241,13 @@ export function CompareList(props: { view: CompareView; state: GameState | null 
         <span className="ib-compare-note">Same as equipped</span>
       ) : (
         view.rows.map((r) => (
-          <span key={r.key} className={`ib-row ${r.up ? "up" : "down"}${r.lead ? " lead" : ""}`}>
+          <span key={r.key} className={`ib-row ${r.up ? "up" : "down"}`}>
             <span className="ib-arrow" aria-hidden="true">
               {r.up ? "▲" : "▼"}
             </span>
             <span className="ib-delta">{r.value}</span>
             <span className="ib-row-icon">
-              {r.icon ? (
-                <GameIcon id={r.icon} size={r.lead ? 22 : 18} />
-              ) : weaponUrl ? (
-                <img src={weaponUrl} width={22} height={22} alt="" draggable={false} />
-              ) : null}
+              <GameIcon id={r.icon} size={18} />
             </span>
             <span className="ib-row-label">{r.label}</span>
           </span>

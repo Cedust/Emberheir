@@ -24,7 +24,7 @@ import { type DropSound, playSound } from "../../ui/sound";
 import { EQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { WeaponSlot } from "../WeaponSlot";
-import { compareWithDummy } from "../../ui/itemCompare";
+import { compareWithEquipped } from "../../ui/itemCompare";
 
 /** The rewards after a won fight: Rune drops, the item cards with their reveal, the worn gear. */
 
@@ -267,8 +267,7 @@ export function ItemCards(props: {
               item={detail}
               heroAttributes={state.hero.attributes}
               heroLevel={state.hero.level}
-              compare={taken.has(pick) ? undefined : compareWithDummy(state, detail)}
-              state={state}
+              compare={taken.has(pick) ? undefined : compareWithEquipped(state, detail, true)}
               className="loot-card"
               testId="item-card"
               footer={
@@ -313,8 +312,7 @@ export function ItemCards(props: {
               item={item}
               heroAttributes={state.hero.attributes}
               heroLevel={state.hero.level}
-              compare={compareWithDummy(state, item)}
-              state={state}
+              compare={compareWithEquipped(state, item, true)}
               className="loot-card"
               testId="item-card"
               footer={<PickButtons state={state} game={game} item={item} index={i} taken={false} />}

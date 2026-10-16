@@ -178,8 +178,6 @@ export function ItemDetail(props: {
   /** Ribbon over the card, e.g. "EQUIPPED". */
   where?: string;
   compare?: CompareView | undefined;
-  /** Needed for the DPS row's weapon icon. */
-  state?: GameState;
   footer?: ReactNode;
   className?: string;
   testId?: string;
@@ -198,7 +196,7 @@ export function ItemDetail(props: {
         <ItemBody item={item} tip={tip} />
       </div>
       <div className="item-detail-spacer" />
-      {props.compare && <CompareList view={props.compare} state={props.state ?? null} />}
+      {props.compare && <CompareList view={props.compare} />}
       {props.footer}
     </article>
   );
