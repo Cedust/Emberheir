@@ -1476,7 +1476,8 @@ export function drawWeapon(
 /**
  * The build's marks without the weapon (for a painted weapon of the same length): the path
  * runes carved into `paint` with their light in `glow`, the grade's rust or filigree, and the
- * weapon's centre line for the Refine hotspots.
+ * weapon's centre line for the Refine hotspots. `centre` replaces the build's centre line when the
+ * painting's shape differs from the code-drawn one (the Bow).
  */
 export function weaponMarks(
   weaponId: string,
@@ -1484,9 +1485,11 @@ export function weaponMarks(
   look: WeaponLook,
   paint: Graphics,
   glow: Graphics,
+  centre?: (t: number) => number,
 ): (t: number) => number {
   const build = buildFor(weaponId, length, look);
-  gradeMarks(paint, look, build.track);
-  carveRunes(paint, glow, build.track, look);
-  return build.anchorY;
+  const track: RuneTrack = centre ? { ...build.track, y: (x) => centre(x / length) } : build.track;
+  gradeMarks(paint, look, track);
+  carveRunes(paint, glow, track, look);
+  return centre ?? build.anchorY;
 }

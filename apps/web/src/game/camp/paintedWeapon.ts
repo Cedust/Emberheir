@@ -23,6 +23,8 @@ export interface PaintedTextures {
   readonly gem: Texture | null;
   /** The loose arrow the Bow nocks. */
   readonly arrow: Texture | null;
+  /** Per pixel column, the middle row of the painting's thickest part (null where empty). */
+  readonly centre: readonly (number | null)[];
 }
 
 /** A weapon as the Mastery scene draws it: painted or drawn in code (weaponArt.ts). */
@@ -55,19 +57,45 @@ export function hasPainting(weaponId: string, look: WeaponLook): boolean {
 const loaded = new Map<string, PaintedTextures>();
 const loading = new Map<string, Promise<PaintedTextures>>();
 
-function whiteMask(texture: Texture): Texture {
+/** The middle of the longest opaque run in each column (a bow's limb, not its thin string). */
+function centreLine(alpha: Uint8ClampedArray, w: number, h: number): (number | null)[] {
+  const out: (number | null)[] = [];
+  for (let x = 0; x < w; x++) {
+    let best = 0;
+    let mid: number | null = null;
+    let start = -1;
+    for (let y = 0; y <= h; y++) {
+      const on = y < h && (alpha[(y * w + x) * 4 + 3] ?? 0) > 128;
+      if (on && start < 0) start = y;
+      if (!on && start >= 0) {
+        if (y - start > best) {
+          best = y - start;
+          mid = (start + y) / 2;
+        }
+        start = -1;
+      }
+    }
+    out.push(mid);
+  }
+  return out;
+}
+
+function whiteMask(texture: Texture): { mask: Texture; centre: (number | null)[] } {
   const canvas = document.createElement("canvas");
   canvas.width = texture.width;
   canvas.height = texture.height;
-  const ctx = canvas.getContext("2d");
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
   const image = texture.source.resource as CanvasImageSource;
+  let centre: (number | null)[] = [];
   if (ctx) {
     ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    const pixels = ctx.getImageData(0, 0, canvas.width, canvas.height).data;
+    centre = centreLine(pixels, canvas.width, canvas.height);
     ctx.globalCompositeOperation = "source-in";
     ctx.fillStyle = "#ffffff";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
   }
-  return Texture.from(canvas);
+  return { mask: Texture.from(canvas), centre };
 }
 
 /** The painting of the build's form if it is loaded, else a promise that loads it. */
@@ -88,7 +116,7 @@ export function paintedTextures(
       extra(urlOf(weaponId, `${form}-gem`)),
       extra(weaponId === "bow" ? urlOf(weaponId, "arrow") : undefined),
     ]).then(([body, gem, arrow]) => {
-      const textures = { body, mask: whiteMask(body), gem, arrow };
+      const textures = { body, ...whiteMask(body), gem, arrow };
       loaded.set(url, textures);
       return textures;
     });
@@ -116,6 +144,34 @@ function gradeFilter(grade: number): ColorMatrixFilter | null {
     f.brightness(1.16, true);
   }
   return f;
+}
+
+/** Weapons whose painting is shaped unlike the code build: runes and Refine hotspots follow it. */
+const PAINTED_CENTRE = new Set(["bow"]);
+
+/** The painting's centre line as an offset from its axis, `t` from the pommel (0) to the tip (1). */
+function paintedCentre(
+  centre: readonly (number | null)[],
+  axis: number,
+  scale: number,
+  plainW: number,
+): (t: number) => number {
+  const at = (x: number): number | null =>
+    centre[Math.min(centre.length - 1, Math.max(0, x))] ?? null;
+  return (t) => {
+    const x = Math.round(t * plainW);
+    // Average a few columns either side: the limb's bands and wraps make single columns jumpy.
+    let sum = 0;
+    let n = 0;
+    for (let d = -12; d <= 12; d++) {
+      const c = at(x + d);
+      if (c !== null) {
+        sum += c;
+        n++;
+      }
+    }
+    return n ? (sum / n - axis) * scale : 0;
+  };
 }
 
 /** The painted weapon, `length` pixels from the pommel to the plain form's tip. */
@@ -175,7 +231,16 @@ export function drawPaintedWeapon(
   }
   const marks = new Graphics();
   const runeGlow = new Graphics();
-  const anchorY = weaponMarks(weaponId, length, look, marks, runeGlow);
+  const anchorY = weaponMarks(
+    weaponId,
+    length,
+    look,
+    marks,
+    runeGlow,
+    PAINTED_CENTRE.has(weaponId)
+      ? paintedCentre(textures.centre, size.axis, scale, plain.w)
+      : undefined,
+  );
   body.addChild(marks);
   return {
     body,
