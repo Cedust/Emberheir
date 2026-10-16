@@ -113,6 +113,8 @@ export class ArenaScene {
   private echoAura: Container | null = null;
   /** The ember glowing in a carried Ember Focus. */
   private offHandGlow: Container | null = null;
+  /** A hovering Grimoire, bobbing over the fist. */
+  private offHandFloat: Container | null = null;
   /** Exalted weapons shed golden sparks from this point of the hero figure. */
   private exaltedTip: Container | null = null;
   private exaltedCarry = 0;
@@ -241,6 +243,7 @@ export class ArenaScene {
     this.heroFist = this.hero.body.getChildByLabel("heir-fist", true) ?? null;
     this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
     this.offHandGlow = this.hero.body.getChildByLabel("off-hand-glow", true) ?? null;
+    this.offHandFloat = this.hero.body.getChildByLabel("off-hand-float", true) ?? null;
     this.exaltedTip =
       hero.weaponLook.grade >= 4
         ? (this.hero.body.getChildByLabel("weapon-tip", true) ?? null)
@@ -1250,6 +1253,9 @@ export class ArenaScene {
     }
     if (this.offHandGlow && this.motion) {
       this.offHandGlow.alpha = 0.4 + 0.2 * Math.sin(this.clock * 2.1);
+    }
+    if (this.offHandFloat && this.motion) {
+      this.offHandFloat.y = -4 * Math.sin(this.clock * 1.6);
     }
     if (this.fx && this.echoColor !== null && this.hero && this.hero.root.alpha === 1) {
       this.echoCarry += 7 * dt;

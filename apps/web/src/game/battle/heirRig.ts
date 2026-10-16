@@ -1,12 +1,13 @@
 import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import talismanUrl from "../../assets/items/blood-talisman.webp";
+import focusUrl from "../../assets/items/ember-focus.webp";
 import grimoireUrl from "../../assets/items/grimoire.webp";
 import shieldUrl from "../../assets/items/round-shield.webp";
 import armUrl from "./heir/heir-arm.webp";
 import bodyUrl from "./heir/heir-body.webp";
 import offFistUrl from "./heir/heir-off-fist.webp";
 import thumbUrl from "./heir/heir-thumb.webp";
-import focusUrl from "./heir/offhand-focus.webp";
+import focusFrontUrl from "./heir/offhand-focus-front.webp";
 import quiverUrl from "./heir/offhand-quiver.webp";
 
 /**
@@ -17,9 +18,9 @@ import quiverUrl from "./heir/offhand-quiver.webp";
  */
 
 /**
- * The off hands the Heir can carry: the painted item bases of the inventory. The Ember Focus
- * (without its root ring, which lies in the fist) and the Quiver (without its strap) are cut
- * for the arena by `tools/art/cut_offhands.py`.
+ * The off hands the Heir can carry: the painted item bases of the inventory. The Quiver (without
+ * its strap) and the front half of the Ember Focus' root ring are cut for the arena by
+ * `tools/art/cut_offhands.py`.
  */
 export type HeirOffHand = "shield" | "focus" | "quiver" | "talisman" | "grimoire";
 
@@ -39,6 +40,8 @@ export interface HeirTextures {
   readonly offFist: Texture;
   /** The painted off-hand items; one that fails to load is simply not drawn. */
   readonly offHands: Partial<Record<HeirOffHand, Texture>>;
+  /** The left half of the Ember Focus' root ring, drawn over the fist (the hand goes through). */
+  readonly focusFront: Texture | null;
 }
 
 let loading: Promise<HeirTextures | null> | null = null;
@@ -48,9 +51,12 @@ export function loadHeirTextures(): Promise<HeirTextures | null> {
   loading ??= Promise.all([
     Promise.all([bodyUrl, armUrl, thumbUrl, offFistUrl].map((u) => Assets.load<Texture>(u))),
     loadOffHands(),
+    Assets.load<Texture>(focusFrontUrl).catch(() => null),
   ]).then(
-    ([[body, arm, thumb, offFist], offHands]) =>
-      body && arm && thumb && offFist ? { body, arm, thumb, offFist, offHands } : null,
+    ([[body, arm, thumb, offFist], offHands, focusFront]) =>
+      body && arm && thumb && offFist
+        ? { body, arm, thumb, offFist, offHands, focusFront: focusFront ?? null }
+        : null,
     () => null,
   );
   return loading;

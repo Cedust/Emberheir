@@ -1,6 +1,7 @@
 # Cuts what the painted Heir needs to really hold its off hand in the arena:
 #  - the raised off-hand fist out of the painting, drawn over the held item so it grips it;
-#  - the Ember Focus without its root ring (that part lies in the fist);
+#  - the left half of the Ember Focus' root ring, drawn over the fist: the hand goes through the
+#    ring, its right side disappears in the fist, its left side runs over the arm;
 #  - the Quiver without its shoulder strap (it rides on the back).
 # Run from the repo root: python3 tools/art/cut_offhands.py [painting.png]  (needs Pillow)
 # The fist's box matches SRC.offFist in apps/web/src/game/battle/heirRig.ts.
@@ -37,7 +38,7 @@ c = c.resize((round(c.width / 2), round(c.height / 2)), Image.LANCZOS)
 c.save(OUT + 'heir-off-fist.webp', 'WEBP', quality=90, method=6)
 
 
-def cut(name, keep, out):
+def cut(name, keep, out, crop=True):
     """Keeps the item's pixels inside the polygon `keep` (icon pixels, 192 wide)."""
     item = Image.open(ITEMS + name + '.webp').convert('RGBA')
     k = Image.new('L', item.size, 0)
@@ -45,11 +46,12 @@ def cut(name, keep, out):
     a = Image.new('L', item.size, 0)
     a.paste(item.getchannel('A'), (0, 0), k)
     item.putalpha(a)
-    box = a.getbbox()
+    box = a.getbbox() if crop else (0, 0, item.width, item.height)
     item.crop(box).save(OUT + out, 'WEBP', quality=92, method=6)
     return box
 
 
-focus = cut('ember-focus', [(0, 0), (192, 0), (192, 95), (140, 100), (138, 114), (52, 114), (50, 98), (0, 96)], 'offhand-focus.webp')
+# Same canvas as the icon, so it lies exactly on the whole Focus drawn under the fist.
+focus = cut('ember-focus', [(0, 96), (85, 96), (85, 192), (0, 192)], 'offhand-focus-front.webp', crop=False)
 quiver = cut('quiver', [(0, 0), (188, 0), (188, 288), (44, 288), (44, 250), (66, 82), (60, 0)], 'offhand-quiver.webp')
 print(json.dumps({'offFist': bb, 'focus': focus, 'quiver': quiver}))

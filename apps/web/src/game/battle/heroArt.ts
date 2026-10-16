@@ -155,7 +155,8 @@ export function drawHero(look: HeroLook, heir?: HeirTextures | null): Container 
  * How the Heir carries each painted off hand: drawn size (longest side, figure units), the point
  * of the picture (0..1) that sits on the fist or the back, an offset from there, a tilt
  * (radians), a squash of its width (a shield turned towards the enemy is seen at an angle) and
- * whether it is mirrored. Held items (`gripped`) go under the fist, which is drawn again on top.
+ * whether it is mirrored. Held items (`gripped`) go under the fist, which is drawn again on top;
+ * a `floating` one hovers over the fist, bobbing in the scene.
  */
 const OFF_HAND_HOLDS: Record<
   HeirOffHand,
@@ -166,42 +167,51 @@ const OFF_HAND_HOLDS: Record<
     tilt: number;
     squash?: number;
     gripped?: boolean;
+    floating?: boolean;
   }
 > = {
   shield: { size: 112, anchor: [0.5, 0.5], offset: [8, 10], tilt: 0.06, squash: 0.84 },
-  // The cut end of the root sits in the fist.
-  focus: { size: 52, anchor: [0.437, 0.92], offset: [-3, 4], tilt: 0, gripped: true },
-  // The knot comes out of the bottom of the fist, the loops behind it.
-  talisman: { size: 62, anchor: [0.585, 0.2], offset: [-4, 16], tilt: -0.2, gripped: true },
-  grimoire: {
-    size: 76,
-    anchor: [0.5, 0.78],
-    offset: [0, 12],
-    tilt: -0.18,
-    squash: -1,
-    gripped: true,
-  },
+  // The hand goes through the root ring: its right side in the fist, its left over the arm.
+  focus: { size: 84, anchor: [0.44, 0.7], offset: [-4, 2], tilt: 0, gripped: true },
+  // In front of the hand, the knot just under the fist.
+  talisman: { size: 62, anchor: [0.6, 0.18], offset: [0, 20], tilt: -0.1 },
+  grimoire: { size: 70, anchor: [0.5, 0.5], offset: [-6, -40], tilt: -0.44, floating: true },
   quiver: { size: 147, anchor: [0.55, 0.42], offset: [0, 0], tilt: -0.5 },
 };
 
 /** The painted off-hand item in its hold; the Ember Focus' orb gets a glow the scene breathes. */
-function paintedOffHand(kind: HeirOffHand, texture: Texture): Container {
+function paintedOffHand(kind: HeirOffHand, texture: Texture, front = false): Container {
   const hold = OFF_HAND_HOLDS[kind];
   const [x, y] = kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND;
   const c = new Container({ label: kind === "quiver" ? "heir-quiver" : "heir-off-hand" });
   c.position.set(x + hold.offset[0], y + hold.offset[1]);
-  c.rotation = hold.tilt;
+  // A hovering book tilts on its own; the light under it stays level.
+  if (!hold.floating) c.rotation = hold.tilt;
   const sprite = new Sprite(texture);
   sprite.anchor.set(hold.anchor[0], hold.anchor[1]);
   const scale = hold.size / Math.max(texture.width, texture.height);
   sprite.scale.set(scale * (hold.squash ?? 1), scale);
-  c.addChild(sprite);
-  if (kind === "focus") {
+  const w = texture.width * scale;
+  const h = texture.height * scale;
+  if (hold.floating) {
+    // Void light under the hovering book; the scene lets the book bob and the light breathe.
+    const glow = bakedGlow(
+      [new Graphics().ellipse(0, h * 0.55, w * 0.3, h * 0.07).fill(0x7a3cd0)],
+      8,
+    );
+    glow.label = "off-hand-glow";
+    glow.alpha = 0.45;
+    const book = new Container({ label: "off-hand-float" });
+    sprite.rotation = hold.tilt;
+    book.addChild(sprite);
+    c.addChild(glow, book);
+  } else {
+    c.addChild(sprite);
+  }
+  if (kind === "focus" && !front) {
     // The ember in the orb glows over the painting.
-    const w = texture.width * scale;
-    const h = texture.height * scale;
     const orb = new Graphics()
-      .circle((0.46 - hold.anchor[0]) * w, (0.474 - hold.anchor[1]) * h, w * 0.22)
+      .circle((0.57 - hold.anchor[0]) * w, (0.25 - hold.anchor[1]) * h, w * 0.16)
       .fill(0xff8a2a);
     const glow = bakedGlow([orb], 8);
     glow.label = "off-hand-glow";
@@ -233,6 +243,8 @@ function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   if (held && heldArt) {
     c.addChild(paintedOffHand(held, heldArt));
     if (OFF_HAND_HOLDS[held].gripped) c.addChild(heirOffFist(heir));
+    if (held === "focus" && heir.focusFront)
+      c.addChild(paintedOffHand(held, heir.focusFront, true));
   }
   return c;
 }
