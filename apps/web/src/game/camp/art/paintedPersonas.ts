@@ -25,8 +25,9 @@ export interface PaintedPersona {
   readonly shift?: number;
   /** Already faces the right way: never mirrored (Eldrin looks left at the fire). */
   readonly fixed?: boolean;
-  /** An empty board in the painting the camp writes on, in % of the image (left, top, w, h). */
-  readonly sign?: readonly [number, number, number, number];
+  /** An empty board in the painting the camp writes on: % of the image (left, top, w, h) and
+   * the board's tilt in degrees. */
+  readonly sign?: readonly [number, number, number, number, number];
 }
 
 export const PAINTED: Partial<Record<string, PaintedPersona>> = {
@@ -37,7 +38,7 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     head: -37,
     shift: 0.136,
     fixed: true,
-    sign: [3, 38.9, 82, 11.9],
+    sign: [3, 38.9, 82, 11.9, 2.6],
   },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
   nan: { url: nanUrl, h: 155, face: { size: "245% auto", pos: "51% 0%" }, head: 0 },

@@ -69,6 +69,7 @@ export function Figure(props: {
               top: `${board[1]}%`,
               width: `${board[2]}%`,
               height: `${board[3]}%`,
+              rotate: `${board[4]}deg`,
             }}
           >
             {props.sign}
