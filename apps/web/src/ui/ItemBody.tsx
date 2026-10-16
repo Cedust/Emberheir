@@ -80,8 +80,7 @@ const TIER_NUMERALS: Readonly<Record<number, string>> = {
 
 /**
  * Name plate: the painted item in its rarity frame with its Tier as a Roman numeral on a
- * brass plaque, name and kind, and the Item Level as the big number on the right (Diablo 4's
- * Item Power spot).
+ * brass plaque, the name over the full width, and the kind line with the Item Level.
  */
 export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
   const { item, tip } = props;
@@ -96,12 +95,13 @@ export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
       </span>
       <span className="ib-title">
         <span className="ib-name rarity-text">{item.name}</span>
-        <span className="ib-kind">{kindLine(item, tip)}</span>
+        <span className="ib-kind-row">
+          <span className="ib-kind">{kindLine(item, tip)}</span>
+          <span className="ib-ilvl" title="Item Level">
+            iLvl <b>{item.itemLevel}</b>
+          </span>
+        </span>
         {tip.runewordRecipe && <span className="ib-recipe">{tip.runewordRecipe}</span>}
-      </span>
-      <span className="ib-ilvl" title="Item Level">
-        <b>{item.itemLevel}</b>
-        <span>Item Level</span>
       </span>
     </div>
   );
