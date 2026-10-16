@@ -7772,7 +7772,7 @@
 
 .stage .ib-name {
   font-family: var(--font-title);
-  font-size: 19px;
+  font-size: 17px;
   font-weight: 700;
   line-height: 1.12;
 }
@@ -8126,7 +8126,7 @@
 }
 
 .stage .loot-card .ib-name {
-  font-size: 18px;
+  font-size: 16px;
 }
 
 .stage .loot-card .ib-art {
