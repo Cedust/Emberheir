@@ -1789,13 +1789,12 @@
   overflow: visible;
 }
 
-/* The painted Heir's head, cut from the camp figure for the round portrait. */
+/* A painted persona's head, cut from the camp figure for the round portrait (crop per persona). */
 .stage .painted-portrait {
+  display: block;
   width: 100%;
   height: 100%;
   border-radius: 50%;
-  background-size: 277% auto;
-  background-position: 66% 2%;
   background-repeat: no-repeat;
 }
 
@@ -1803,6 +1802,11 @@
 .stage .figure.painted {
   position: relative;
   display: block;
+}
+
+/* Right of the Hearthfire a painted figure turns to face it. */
+.stage .figure.painted.mirror {
+  transform: scaleX(-1);
 }
 
 .stage .figure.painted img {

@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import { Eye, F, INK, L, S, circ } from "./paint";
+import { PAINTED } from "./paintedPersonas";
 
 /**
  * The camp personas as animals of a fable forest (Humblewood style, design/fabelwelt-v1.md):
@@ -1041,11 +1042,29 @@ export function PersonaArt(props: { id: string; gear?: HeirGear }) {
 
 /** A persona's painted head for a round portrait (the screen must render `PaintDefs` once). */
 export function PersonaPortrait(props: { id: string; gear?: HeirGear }) {
+  if (PAINTED[props.id]) return <PaintedFace id={props.id} />;
   const box = PORTRAIT[props.id];
   if (!box) return null;
   return (
     <svg viewBox={box} width="100%" height="100%" aria-hidden="true">
       <PersonaArt id={props.id} {...(props.gear ? { gear: props.gear } : {})} />
     </svg>
+  );
+}
+
+/** A painted persona's head, cropped round from its camp figure. */
+export function PaintedFace(props: { id: string }) {
+  const art = PAINTED[props.id];
+  if (!art) return null;
+  return (
+    <span
+      className="painted-portrait"
+      style={{
+        backgroundImage: `url(${art.url})`,
+        backgroundSize: art.face.size,
+        backgroundPosition: art.face.pos,
+      }}
+      aria-hidden="true"
+    />
   );
 }
