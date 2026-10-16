@@ -52,6 +52,6 @@ def cut(name, keep, out, crop=True):
 
 
 # Same canvas as the icon, so it lies exactly on the whole Focus drawn under the fist.
-focus = cut('ember-focus', [(0, 96), (85, 96), (85, 192), (0, 192)], 'offhand-focus-front.webp', crop=False)
+focus = cut('ember-focus', [(0, 96), (62, 96), (54, 150), (34, 176), (0, 176)], 'offhand-focus-front.webp', crop=False)
 quiver = cut('quiver', [(0, 0), (188, 0), (188, 288), (44, 288), (44, 250), (66, 82), (60, 0)], 'offhand-quiver.webp')
 print(json.dumps({'offFist': bb, 'focus': focus, 'quiver': quiver}))

@@ -175,7 +175,14 @@ const OFF_HAND_HOLDS: Record<
   focus: { size: 84, anchor: [0.44, 0.7], offset: [-4, 2], tilt: 0, gripped: true },
   // In front of the hand, the knot just under the fist.
   talisman: { size: 62, anchor: [0.6, 0.18], offset: [0, 20], tilt: -0.1 },
-  grimoire: { size: 70, anchor: [0.5, 0.5], offset: [-6, -40], tilt: -0.44, floating: true },
+  grimoire: {
+    size: 70,
+    anchor: [0.5, 0.5],
+    offset: [28, -20],
+    tilt: 0.44,
+    squash: -1,
+    floating: true,
+  },
   quiver: { size: 147, anchor: [0.55, 0.42], offset: [0, 0], tilt: -0.5 },
 };
 
