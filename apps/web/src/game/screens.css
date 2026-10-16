@@ -7747,16 +7747,54 @@
   box-shadow: inset 0 1px 0 rgb(255 255 255 / 0.45);
 }
 
-/* Offense: the big number left, weapon, Speed and Crit Chance stacked on the right. */
+/* Offense: the painted weapon on an ember plaque left, the big number and Speed / Crit right. */
 .stage .hero-damage-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  gap: 16px;
+  gap: 22px;
 }
 
 .stage .hero-damage-row .hero-dps {
   cursor: help;
+}
+
+.stage .hero-weapon {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+  min-width: 112px;
+  line-height: 1.15;
+}
+
+.stage .hero-weapon-plaque {
+  display: grid;
+  place-items: center;
+  width: 108px;
+  height: 108px;
+  margin-bottom: 6px;
+  border-radius: 50%;
+  background:
+    radial-gradient(circle at 50% 60%, rgb(255 150 60 / 0.32), transparent 62%),
+    radial-gradient(circle at 50% 40%, #4a3424, #24170f 72%);
+  border: 2px solid rgb(201 160 99 / 0.55);
+  box-shadow:
+    inset 0 0 14px rgb(0 0 0 / 0.6),
+    0 0 12px rgb(255 140 50 / 0.18);
+}
+
+.stage .hero-weapon-plaque img {
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.55));
+}
+
+.stage .hero-weapon-name {
+  font-size: 14px;
+  color: #cdbd9d;
+}
+
+.stage .hero-weapon-damage {
+  font-size: 18px;
+  color: #f6ead2;
 }
 
 .stage .hero-pills-stack {
@@ -7773,6 +7811,13 @@
 
 .stage .hero-pills-stack .hero-pill b {
   margin-left: auto;
+}
+
+.stage .hero-damage-numbers {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
 }
 
 /* The label line's right end: an aside (Ember Penalty, a pill) and the pin star. */
@@ -7831,4 +7876,20 @@
 
 .stage .hero-damage-row .hero-unit {
   white-space: nowrap;
+}
+
+.stage .hero-damage-row .hero-dps b {
+  font-size: 58px;
+}
+
+.stage .hero-heat-form {
+  cursor: help;
+}
+
+.stage .hero-heat .hero-damage-numbers {
+  flex: 1;
+}
+
+.stage .hero-heat .heat-gauge {
+  margin-top: 0;
 }
