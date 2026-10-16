@@ -1,6 +1,6 @@
 # Cuts Timo's painted item sheets (base items on a transparent background, in rows) into one
 # square icon per base item for apps/web/src/ui/ItemArt.tsx, named by the base id.
-# Run from the repo root: python3 tools/art/cut_items.py [a]  (needs Pillow)
+# Run from the repo root: python3 tools/art/cut_items.py [a|b]  (needs Pillow)
 # Sheet A (art/items/item-sheet-a-v1.png): the square bases, 5 + 4 + 4 in three rows. Each icon is the biggest blob in its spot;
 # loose bits next to it stay with it.
 from collections import deque
@@ -13,7 +13,15 @@ SHEETS = {
     ['silk-wraps', 'leather-boots', 'greaves', 'silk-slippers'],
     ['round-shield', 'ember-focus', 'blood-talisman', 'grimoire'],
   ]),
+  # Sheet B: tall (Body Armor, Quiver), wide (Belts) and small items, 4 + 4 + 5. These keep their
+  # own proportions so a Body Armor fills its 2x3 cell and a Belt its 2x1 cell.
+  'b': ('/mnt/project-files/art/items/item-sheet-b-v1.png', [
+    ['leather-jerkin', 'chain-mail', 'silk-robe', 'quiver'],
+    ['sash', 'heavy-belt', 'bone-amulet', 'ember-pendant'],
+    ['iron-ring', 'garnet-ring', 'war-charm', 'ward-charm', 'ember-charm'],
+  ]),
 }
+KEEP_SHAPE = sys.argv[1:2] == ['b']
 SRC, ROWS = SHEETS[sys.argv[1] if len(sys.argv) > 1 else 'a']
 OUT = 'apps/web/src/assets/items/'
 SIZE = 192  # a 2x2 item cell is about 80 stage px, up to 2.4x on 4K stay sharp on 4K (the stage scales up to 2.4x)
@@ -95,7 +103,7 @@ def drop_crumbs(part):
   biggest = max(len(cells) for cells in comps)
   alpha = part.getchannel('A')
   for cells in comps:
-    if len(cells) < biggest * 0.02:
+    if len(cells) < biggest * 0.05:
       for cx, cy in cells:
         alpha.paste(0, (cx * c, cy * c, min(w, cx * c + c), min(h, cy * c + c)))
   part.putalpha(alpha)
@@ -114,8 +122,16 @@ for name, b in [(n, b) for names, row in zip(ROWS, rows) for n, b in zip(names, 
   x0, y0, x1, y1 = b['box']
   part = drop_crumbs(im.crop((max(0, x0), max(0, y0), min(W, x1), min(H, y1))))
   part = part.crop(part.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox())
-  side = round(max(part.size) * (1 + 2 * PAD))
-  sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
-  sq.paste(part, ((side - part.width) // 2, (side - part.height) // 2))
-  sq.resize((SIZE, SIZE), Image.Resampling.LANCZOS).save(f'{OUT}{name}.webp', quality=90, method=6)
+  if KEEP_SHAPE:
+    pad = round(max(part.size) * PAD)
+    sq = Image.new('RGBA', (part.width + 2 * pad, part.height + 2 * pad), (0, 0, 0, 0))
+    sq.paste(part, (pad, pad))
+    scale = 288 / max(sq.size)  # a 2x3 Body Armor is about 120 stage px tall, up to 2.4x on 4K
+    out = sq.resize((round(sq.width * scale), round(sq.height * scale)), Image.Resampling.LANCZOS)
+  else:
+    side = round(max(part.size) * (1 + 2 * PAD))
+    sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
+    sq.paste(part, ((side - part.width) // 2, (side - part.height) // 2))
+    out = sq.resize((SIZE, SIZE), Image.Resampling.LANCZOS)
+  out.save(f'{OUT}{name}.webp', quality=90, method=6)
   print(name, b['box'])
