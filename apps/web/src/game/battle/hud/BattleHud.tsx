@@ -1,5 +1,6 @@
 import { Potion } from "../../../ui/Potion";
 import { COMBAT, type FighterSnapshot } from "@emberheir/sim";
+import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { fmt } from "../../../ui/items";
 import { skillIcon, skillTint } from "../skills";
@@ -17,13 +18,13 @@ const heavyTitle = (skill: string) =>
 /** Seconds of future shown on a rhythm track. */
 const RHYTHM_WINDOW = 4;
 
-const AILMENT_ICON: Record<string, IconName> = {
-  burn: "fire",
-  chill: "snow",
-  shock: "bolt",
-  bleed: "drop",
-  poison: "venom",
-  corruption: "void",
+const AILMENT_ICON: Record<string, GameIconId> = {
+  burn: "burn",
+  chill: "chill",
+  shock: "shock",
+  bleed: "bleed",
+  poison: "poison",
+  corruption: "corruption",
 };
 
 const AILMENT_NAME: Record<string, string> = {
@@ -65,6 +66,8 @@ export const WEAPON_ICON: Record<string, IconName> = {
 type Status = {
   key: string;
   icon: IconName;
+  /** Ailments and stun use painted icons. */
+  painted?: GameIconId;
   name: string;
   kind: "buff" | "curse" | "stun" | `ailment-${string}`;
   stacks?: number;
@@ -74,11 +77,19 @@ type Status = {
 function statusesOf(f: FighterSnapshot): Status[] {
   const out: Status[] = [];
   if (f.stunned > 0)
-    out.push({ key: "stun", icon: "stun", name: "Stunned", kind: "stun", remaining: f.stunned });
+    out.push({
+      key: "stun",
+      icon: "stun",
+      painted: "stun",
+      name: "Stunned",
+      kind: "stun",
+      remaining: f.stunned,
+    });
   for (const a of f.ailments)
     out.push({
       key: a.type,
-      icon: AILMENT_ICON[a.type] ?? "warning",
+      icon: "warning",
+      ...(AILMENT_ICON[a.type] ? { painted: AILMENT_ICON[a.type] } : {}),
       name: AILMENT_NAME[a.type] ?? a.type,
       kind: `ailment-${a.type}`,
       ...(a.stacks && a.stacks > 1 ? { stacks: a.stacks } : {}),
@@ -119,7 +130,11 @@ export function StatusIcons(props: {
           className={`hud-status-icon ${s.kind}${s.remaining < 1.5 ? " fading" : ""}`}
           title={s.name}
         >
-          <Icon name={s.icon} size={18} color="#fff6e4" />
+          {s.painted ? (
+            <GameIcon id={s.painted} size={28} />
+          ) : (
+            <Icon name={s.icon} size={18} color="#fff6e4" />
+          )}
           {s.stacks && <b className="mono">{s.stacks}</b>}
           <i className="mono">
             {s.remaining < 10 ? s.remaining.toFixed(1) : Math.ceil(s.remaining)}
