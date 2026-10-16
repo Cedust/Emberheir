@@ -375,6 +375,12 @@
   opacity: 0.55;
 }
 
+/* Painted placeholders read as a faded shape, like Diablo's empty slots. */
+.stage .item-tile-empty img {
+  filter: grayscale(1) brightness(1.6);
+  opacity: 0.45;
+}
+
 .stage .item-tile:hover .item-tile-empty {
   opacity: 0.85;
 }

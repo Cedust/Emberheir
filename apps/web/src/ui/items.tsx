@@ -23,6 +23,15 @@ import {
   endDrag,
   startDrag,
 } from "./dragItems";
+import amuletUrl from "../assets/slots/amulet.webp";
+import beltUrl from "../assets/slots/belt.webp";
+import bodyUrl from "../assets/slots/body.webp";
+import bootsUrl from "../assets/slots/boots.webp";
+import charmUrl from "../assets/slots/charm.webp";
+import glovesUrl from "../assets/slots/gloves.webp";
+import helmUrl from "../assets/slots/helm.webp";
+import offHandUrl from "../assets/slots/offhand.webp";
+import ringUrl from "../assets/slots/ring.webp";
 import { Icon, type IconName } from "./Icon";
 import { ItemArt } from "./ItemArt";
 import { useItemHover } from "./ItemTooltip";
@@ -53,17 +62,17 @@ export function itemIcon(item: Item): IconName {
   }
 }
 
-/** Silhouettes for empty slots (Diablo): the slot's shape instead of its name. */
-const EMPTY_SLOT_ICON: Readonly<Record<string, IconName>> = {
-  Helm: "helm",
-  "Body Armor": "armor",
-  "Off Hand": "shield",
-  Gloves: "gloves",
-  Boots: "boots",
-  Belt: "belt",
-  Amulet: "amulet",
-  Ring: "ring",
-  Charm: "charm",
+/** Painted placeholders for empty slots (Diablo): the slot's shape instead of its name. */
+const EMPTY_SLOT_ART: Readonly<Record<string, string>> = {
+  Helm: helmUrl,
+  "Body Armor": bodyUrl,
+  "Off Hand": offHandUrl,
+  Gloves: glovesUrl,
+  Boots: bootsUrl,
+  Belt: beltUrl,
+  Amulet: amuletUrl,
+  Ring: ringUrl,
+  Charm: charmUrl,
 };
 
 /** Rarity classes of an item: Uniques and Runewords get their own golden frame and name. */
@@ -314,7 +323,17 @@ export function ItemTile(props: {
         <ItemArt baseId={item.baseId} slot={base.slot} />
       ) : (
         <span className="item-tile-empty" aria-hidden="true">
-          <Icon name={EMPTY_SLOT_ICON[props.label] ?? "box"} size={Math.min(w, h, 90) * 0.42} />
+          {EMPTY_SLOT_ART[props.label] ? (
+            <img
+              src={EMPTY_SLOT_ART[props.label]}
+              width={Math.min(w, h, 90) * 0.62}
+              height={Math.min(w, h, 90) * 0.62}
+              alt=""
+              draggable={false}
+            />
+          ) : (
+            <Icon name="box" size={Math.min(w, h, 90) * 0.42} />
+          )}
         </span>
       )}
       {item && <SocketDots sockets={item.sockets ?? 0} runes={item.runes ?? []} />}
