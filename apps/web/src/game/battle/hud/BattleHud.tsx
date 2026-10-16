@@ -1,5 +1,6 @@
-import { Potion } from "../../../ui/Potion";
-import { COMBAT, type FighterSnapshot } from "@emberheir/sim";
+import { Potion, draughtIconUrl } from "../../../ui/Potion";
+import { useNoteHover } from "../../../ui/ItemTooltip";
+import { COMBAT, type DraughtDefinition, type FighterSnapshot } from "@emberheir/sim";
 import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { fmt } from "../../../ui/items";
@@ -244,11 +245,34 @@ export interface HeroBarProps {
   weaponIcon: IconName;
   flaskCharges: number;
   flaskMax: number;
+  /** The Draught brewed for this trip, shown in place of the Flask charge it took. */
+  draught?: DraughtDefinition | undefined;
   flash: { slot: number; n: number } | null;
   stageW: number;
   stageH: number;
   boons: React.ReactNode;
   right: React.ReactNode;
+}
+
+function HudDraught(props: { draught: DraughtDefinition }) {
+  const d = props.draught;
+  const hover = useNoteHover({
+    name: d.name,
+    kind: "Draught · until the Camp",
+    explain: `${d.description}. ${d.explain}`,
+  });
+  const icon = draughtIconUrl(d.id);
+  const color = `#${d.color.toString(16).padStart(6, "0")}`;
+  return icon ? (
+    <img
+      className="hud-draught"
+      src={icon}
+      alt={d.name}
+      draggable={false}
+      style={{ "--vial": color } as React.CSSProperties}
+      {...hover}
+    />
+  ) : null;
 }
 
 /** The bottom bar: orb readouts, flasks, the skill bar with the Default Attack, statuses, Boons. */
@@ -301,6 +325,7 @@ export function HeroBar(props: HeroBarProps) {
         {Array.from({ length: props.flaskMax }, (_, i) => (
           <Potion key={i} full={i < props.flaskCharges} className="hud-flask" />
         ))}
+        {props.draught && <HudDraught draught={props.draught} />}
         <span className="hud-flask-count mono">
           {props.flaskCharges}/{props.flaskMax}
         </span>

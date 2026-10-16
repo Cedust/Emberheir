@@ -15,6 +15,7 @@ import {
 import { Icon } from "../../ui/Icon";
 import { rarityClass } from "../../ui/items";
 import { useItemHover, useNoteHover } from "../../ui/ItemTooltip";
+import { draughtIconUrl } from "../../ui/Potion";
 import { type BountyView, bountyView } from "../bounty";
 import { Price } from "../../ui/kit/Currency";
 
@@ -52,6 +53,7 @@ function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: (
     status: props.on ? "Brewed at every set-out · click to pour it back" : "Click to brew it",
   });
   const color = `#${d.color.toString(16).padStart(6, "0")}`;
+  const icon = draughtIconUrl(d.id);
   return (
     <button
       type="button"
@@ -62,10 +64,14 @@ function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: (
       onClick={props.onPick}
       {...hover}
     >
-      <svg viewBox="0 0 20 28" width="18" height="26" aria-hidden="true">
-        <path d="M7 1h6v6l5 8v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9l5-8z" className="vial-glass" />
-        <path d="M3.5 16h13v8a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2z" className="vial-brew" />
-      </svg>
+      {icon ? (
+        <img src={icon} alt="" draggable={false} />
+      ) : (
+        <svg viewBox="0 0 20 28" width="18" height="26" aria-hidden="true">
+          <path d="M7 1h6v6l5 8v9a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3v-9l5-8z" className="vial-glass" />
+          <path d="M3.5 16h13v8a2 2 0 0 1-2 2h-9a2 2 0 0 1-2-2z" className="vial-brew" />
+        </svg>
+      )}
     </button>
   );
 }

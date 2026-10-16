@@ -44,8 +44,11 @@ test("after the first Prestige a Draught is brewed for the trip and shows in the
 
   await page.getByRole("button", { name: /SET OUT · ACT 2/i }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toContainText("Rotwood");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/flask-road.png` });
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
+  // The brewed Draught's vial takes the Flask charge it cost.
+  await expect(page.getByRole("img", { name: "Iron Draught" })).toBeVisible();
   if (process.env.SHOTS) {
     await page.waitForTimeout(1200);
     await page.screenshot({ path: `${process.env.SHOTS}/draught-battle.png` });

@@ -981,6 +981,7 @@
 .stage .flask-potion {
   width: 40px;
   height: 55px;
+  object-fit: contain;
   filter: drop-shadow(0 2px 3px #000);
 }
 
@@ -2087,7 +2088,7 @@
   display: grid;
   place-items: center;
   width: 30px;
-  height: 34px;
+  height: 44px;
   padding: 0;
   border: 1.5px solid transparent;
   border-radius: 8px;
@@ -2109,6 +2110,11 @@
   border-color: var(--vial);
   opacity: 1;
   box-shadow: 0 0 10px var(--vial);
+}
+
+.stage .draught-vial img {
+  height: 38px;
+  filter: drop-shadow(0 1px 2px #000);
 }
 
 .stage .draught-vial .vial-glass {
