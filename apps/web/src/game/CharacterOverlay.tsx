@@ -316,7 +316,7 @@ export function CharacterOverlay(props: {
               </span>
               <div className="hero-level-bars">
                 <div className="hero-level-line">
-                  <ClassEmblem classId={state.hero.classId} size={18} />
+                  <ClassEmblem classId={state.hero.classId} size={26} />
                   <span className="title-font">{heroTitle(state, GAME_DATA)}</span>
                   <span className="k-grow" />
                   <span className="sub">{xpText}</span>
