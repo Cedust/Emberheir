@@ -19,7 +19,7 @@ import type { GameApi } from "../useGame";
 import { CampLight } from "./art/CampLight";
 import { CampBackdrop, CampFx, campLights, SCENE_W } from "./art/CampScene";
 import { PaintDefs } from "./art/paint";
-import { FIG_H, Figure, heirGear, markerSpot } from "./CampFigures";
+import { FIG_H, Figure, heirGear, markerSpot, tipSpot } from "./CampFigures";
 import { type CampTarget, type Persona, personas } from "./campPersonas";
 import { NanWindow } from "./NanWindow";
 import { RoadStrip, RoadWindow, useRoadPlan } from "./RoadWindow";
@@ -151,7 +151,7 @@ export function CampView(props: {
                     <Marker value={marker} />
                   </span>
                 )}
-                <span className="camp-tip" role="tooltip">
+                <span className="camp-tip" role="tooltip" style={tipSpot(p, w, h)}>
                   <span className="title-font">
                     {p.name}
                     {key && <KeyHint k={key} />}

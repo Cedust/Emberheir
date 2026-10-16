@@ -109,6 +109,21 @@ export function markerSpot(p: Persona, w: number, h: number): { left: number; to
   return { left: w / 2 + dx, top: h - painted.h * fs - 24 };
 }
 
+/**
+ * Where the name plate (`.camp-tip`, anchored by its bottom centre) sits over a painted persona:
+ * just above the head, in the marker's place (the marker hides on hover), so it never covers the
+ * painting. Unpainted figures keep the plate on top of their box.
+ */
+export function tipSpot(
+  p: Persona,
+  w: number,
+  h: number,
+): { left: number; top: number } | undefined {
+  if (!PAINTED[p.id] || !p.figure) return undefined;
+  const spot = markerSpot(p, w, h);
+  return { left: spot.left, top: spot.top + 20 };
+}
+
 /** The painted Heir's head, cropped round (persona card, Character medallion). */
 export function HeirFace() {
   return <PaintedFace id="heir" />;
