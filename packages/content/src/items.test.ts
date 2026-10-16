@@ -93,7 +93,8 @@ describe("item content", () => {
       const needs = basesForSlot(ITEM_CATALOG, slot).map((b) =>
         Object.keys(b.requirements ?? {}).join(),
       );
-      expect(needs.sort(), slot).toEqual(["agility", "intelligence", "strength"]);
+      // Hybrid bases (Leather Cuirass: strength + agility) come on top of the three.
+      expect(needs, slot).toEqual(expect.arrayContaining(["agility", "intelligence", "strength"]));
     }
   });
 

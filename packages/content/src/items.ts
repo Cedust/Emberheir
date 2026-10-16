@@ -222,6 +222,18 @@ export const SILK_ROBE: ItemBaseDefinition = {
   maxSockets: 3,
 };
 
+/** Between Leather Jerkin and Chain Mail: some Armor and some Evasion for STR/AGI builds. */
+export const LEATHER_CUIRASS: ItemBaseDefinition = {
+  id: "leather-cuirass",
+  name: "Leather Cuirass",
+  slot: "body",
+  baseStats: { armor: 10 },
+  implicit: { evasion: 0.02 },
+  requirements: { strength: 3, agility: 3 },
+  affixWeights: { defense: 1.2, speed: 1.2 },
+  maxSockets: 3,
+};
+
 export const LEATHER_CAP: ItemBaseDefinition = {
   id: "leather-cap",
   name: "Leather Cap",
@@ -346,6 +358,13 @@ export const EMBER_PENDANT: ItemBaseDefinition = {
   implicit: { heatGain: 0.04 },
 };
 
+export const GOLD_MEDALLION: ItemBaseDefinition = {
+  id: "gold-medallion",
+  name: "Gold Medallion",
+  slot: "amulet",
+  implicit: { physicalDamage: 0.05 },
+};
+
 export const IRON_RING: ItemBaseDefinition = {
   id: "iron-ring",
   name: "Iron Ring",
@@ -358,6 +377,14 @@ export const GARNET_RING: ItemBaseDefinition = {
   name: "Garnet Ring",
   slot: "ring",
   implicit: { life: 6 },
+};
+
+/** The caster's counterpart to the Iron Ring. */
+export const GOLD_RING: ItemBaseDefinition = {
+  id: "gold-ring",
+  name: "Gold Ring",
+  slot: "ring",
+  implicit: { elementalDamage: 0.04 },
 };
 
 /**
@@ -388,6 +415,14 @@ export const EMBER_CHARM: ItemBaseDefinition = {
   affixWeights: { heat: 1.6, elemental: 1.3 },
 };
 
+export const LEAF_CHARM: ItemBaseDefinition = {
+  id: "leaf-charm",
+  name: "Leaf Charm",
+  slot: "charm",
+  implicit: { triggerChance: 0.03 },
+  affixWeights: { ailment: 1.6 },
+};
+
 export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   SWORD_BASE,
   FIRE_WAND_BASE,
@@ -405,6 +440,7 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   LEATHER_JERKIN,
   CHAIN_MAIL,
   SILK_ROBE,
+  LEATHER_CUIRASS,
   LEATHER_CAP,
   IRON_HELM,
   CIRCLET,
@@ -418,11 +454,14 @@ export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   HEAVY_BELT,
   BONE_AMULET,
   EMBER_PENDANT,
+  GOLD_MEDALLION,
   IRON_RING,
   GARNET_RING,
+  GOLD_RING,
   WAR_CHARM,
   WARD_CHARM,
   EMBER_CHARM,
+  LEAF_CHARM,
 ];
 
 // --- Stat affixes ----------------------------------------------------------------------------
