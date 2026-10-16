@@ -7,6 +7,7 @@ import {
   type HeirOffHand,
   type HeirTextures,
   buildHeirRig,
+  heirOffFist,
 } from "./heirRig";
 
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
@@ -153,7 +154,8 @@ export function drawHero(look: HeroLook, heir?: HeirTextures | null): Container 
 /**
  * How the Heir carries each painted off hand: drawn size (longest side, figure units), the point
  * of the picture (0..1) that sits on the fist or the back, an offset from there, a tilt
- * (radians) and a squash of its width (a shield turned towards the enemy is seen at an angle).
+ * (radians), a squash of its width (a shield turned towards the enemy is seen at an angle) and
+ * whether it is mirrored. Held items (`gripped`) go under the fist, which is drawn again on top.
  */
 const OFF_HAND_HOLDS: Record<
   HeirOffHand,
@@ -163,13 +165,23 @@ const OFF_HAND_HOLDS: Record<
     offset: [number, number];
     tilt: number;
     squash?: number;
+    gripped?: boolean;
   }
 > = {
   shield: { size: 112, anchor: [0.5, 0.5], offset: [8, 10], tilt: 0.06, squash: 0.84 },
-  focus: { size: 74, anchor: [0.36, 0.74], offset: [0, 4], tilt: 0.1 },
-  talisman: { size: 66, anchor: [0.5, 0.1], offset: [2, 2], tilt: 0.08 },
-  grimoire: { size: 78, anchor: [0.5, 0.55], offset: [4, 6], tilt: -0.12 },
-  quiver: { size: 150, anchor: [0.5, 0.42], offset: [0, 0], tilt: -0.5 },
+  // The cut end of the root sits in the fist.
+  focus: { size: 52, anchor: [0.437, 0.92], offset: [-3, 4], tilt: 0, gripped: true },
+  // The knot comes out of the bottom of the fist, the loops behind it.
+  talisman: { size: 62, anchor: [0.585, 0.2], offset: [-4, 16], tilt: -0.2, gripped: true },
+  grimoire: {
+    size: 76,
+    anchor: [0.5, 0.78],
+    offset: [0, 12],
+    tilt: -0.18,
+    squash: -1,
+    gripped: true,
+  },
+  quiver: { size: 147, anchor: [0.55, 0.42], offset: [0, 0], tilt: -0.5 },
 };
 
 /** The painted off-hand item in its hold; the Ember Focus' orb gets a glow the scene breathes. */
@@ -185,11 +197,11 @@ function paintedOffHand(kind: HeirOffHand, texture: Texture): Container {
   sprite.scale.set(scale * (hold.squash ?? 1), scale);
   c.addChild(sprite);
   if (kind === "focus") {
-    // The ember in the orb (the picture's upper right) glows over the painting.
+    // The ember in the orb glows over the painting.
     const w = texture.width * scale;
     const h = texture.height * scale;
     const orb = new Graphics()
-      .circle((0.58 - hold.anchor[0]) * w, (0.27 - hold.anchor[1]) * h, w * 0.2)
+      .circle((0.46 - hold.anchor[0]) * w, (0.474 - hold.anchor[1]) * h, w * 0.22)
       .fill(0xff8a2a);
     const glow = bakedGlow([orb], 8);
     glow.label = "off-hand-glow";
@@ -218,7 +230,10 @@ function drawPaintedHero(look: HeroLook, heir: HeirTextures): Container {
   // The off hand is held in the raised fist, in front of the chest.
   const held = look.offHand && look.offHand !== "quiver" ? look.offHand : null;
   const heldArt = held ? heir.offHands[held] : undefined;
-  if (held && heldArt) c.addChild(paintedOffHand(held, heldArt));
+  if (held && heldArt) {
+    c.addChild(paintedOffHand(held, heldArt));
+    if (OFF_HAND_HOLDS[held].gripped) c.addChild(heirOffFist(heir));
+  }
   return c;
 }
 
