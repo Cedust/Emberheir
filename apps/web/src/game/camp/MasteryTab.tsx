@@ -31,6 +31,7 @@ import {
   type MasteryView,
 } from "./MasteryScene";
 import { canvasResolution } from "../pixiPacing";
+import { Price } from "../../ui/kit/Currency";
 
 const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   refine: "Refine",
@@ -441,7 +442,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                   setPending([]);
                 }}
               >
-                Respec · {MASTERY.respecAcorns} Acorns
+                Respec · <Price id="acorns" amount={MASTERY.respecAcorns} />
               </HoldButton>
             )}
           </section>

@@ -247,7 +247,7 @@ function ButtonsPage(props: { state: GameState }) {
       </section>
       <section className="kit-row">
         <span className="kit-label">Wallet · hover a coin</span>
-        <Wallet state={props.state} named extra={[{ id: "flask", amount: "3/3" }]} />
+        <Wallet state={props.state} extra={[{ id: "flask", amount: "3/3" }]} />
       </section>
       <section className="kit-row">
         <span className="kit-label">Price</span>

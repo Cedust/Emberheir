@@ -16,7 +16,7 @@ export function Dialog(props: {
   answers: readonly {
     label: string;
     onPick: () => void;
-    note?: string;
+    note?: ReactNode;
     /** Why the answer cannot be picked right now. */
     blocked?: string | undefined;
     /** A second click confirms (Old Nan's resets). */

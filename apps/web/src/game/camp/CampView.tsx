@@ -100,12 +100,7 @@ export function CampView(props: {
           </span>
         </div>
         <div className="grow" />
-        <Wallet
-          state={state}
-          named
-          className="camp-wallet"
-          extra={[{ id: "flask", amount: flask }]}
-        />
+        <Wallet state={state} className="camp-wallet" extra={[{ id: "flask", amount: flask }]} />
         <button type="button" className="icon-button" aria-label="Menu" onClick={props.onMenu}>
           <Icon name="menu" size={20} />
         </button>

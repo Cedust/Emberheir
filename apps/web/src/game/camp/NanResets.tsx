@@ -9,8 +9,8 @@ import {
   sumAttributes,
 } from "@emberheir/sim";
 import { useState } from "react";
-import { fmt } from "../../ui/items";
 import type { GameApi } from "../useGame";
+import { Price } from "../../ui/kit/Currency";
 
 /**
  * Old Nan wakes the Heir from the ashes (neuausrichtung-v1.md 7.3): for Acorns every Attribute
@@ -46,7 +46,7 @@ export function useNanResets(state: GameState, game: GameApi) {
   ];
   return rows.map((r) => ({
     label: sure === r.id ? `${r.points} points back?` : r.name,
-    note: `${fmt(r.price)} Acorns`,
+    note: <Price id="acorns" amount={r.price} />,
     warn: sure === r.id,
     blocked:
       r.points === 0

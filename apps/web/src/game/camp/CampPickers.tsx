@@ -13,9 +13,10 @@ import {
   wildfireName,
 } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
-import { fmt, rarityClass } from "../../ui/items";
+import { rarityClass } from "../../ui/items";
 import { useItemHover, useNoteHover } from "../../ui/ItemTooltip";
 import { type BountyView, bountyView } from "../bounty";
+import { Price } from "../../ui/kit/Currency";
 
 /** The Camp's choices before setting out: the Draught, the Wildfire tier, the Scout's bounty. */
 
@@ -160,7 +161,8 @@ export function BountyTurnIn(props: {
       <div className="bounty-note paid" aria-label="Bounty" role="status">
         <span className="eyebrow">BOUNTY PAID</span>
         <span>
-          +{fmt(paid.acorns)} Acorns · +{paid.emberCoal} Ember Coal
+          <Price id="acorns" amount={paid.acorns} plus />{" "}
+          <Price id="coal" amount={paid.emberCoal} plus />
         </span>
         <span className={`bounty-item ${rarityClass(paid.item)}`} {...(active ? hover : {})}>
           <span className="rarity-text">{paid.item.name}</span>

@@ -550,6 +550,17 @@
   font-size: 17px;
 }
 
+.stage .k-price {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  vertical-align: middle;
+}
+
+.stage .k-price b {
+  font-weight: inherit;
+}
+
 .stage .k-cost-part.short b {
   color: var(--k-short);
 }

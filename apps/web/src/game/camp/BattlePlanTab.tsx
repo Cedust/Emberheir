@@ -29,6 +29,7 @@ import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { WEAPON_ICON } from "../battle/hud/BattleHud";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
+import { Price } from "../../ui/kit/Currency";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -733,7 +734,7 @@ function Capstones(props: {
     <section className="panel-card capstones" aria-label="Capstone">
       <div className="section-row">
         <span className="title-font section-title">Capstone</span>
-        {cost > 0 && <span className="sub small mono">{cost} Acorns</span>}
+        {cost > 0 && <Price id="acorns" amount={cost} />}
       </div>
       <ul>
         {CAPSTONES.map((c) => {
