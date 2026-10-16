@@ -271,7 +271,9 @@ export class MasteryScene {
       const ay = v.tip.y - v.pommel.y;
       const len = Math.hypot(ax, ay);
       // t along the weapon from the node's projection, the art's centre line as offset.
-      const t = ((n.x - v.pommel.x) * ax + (n.y - v.pommel.y) * ay) / (len * len);
+      const t =
+        this.art.refineT?.[n.id] ??
+        ((n.x - v.pommel.x) * ax + (n.y - v.pommel.y) * ay) / (len * len);
       const off = this.art.anchorY(t) * ART_SCALE;
       return {
         x: (v.pommel.x + ax * t) * U + (-ay / len) * off,

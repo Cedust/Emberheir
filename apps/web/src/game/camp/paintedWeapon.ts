@@ -36,6 +36,8 @@ export interface SceneWeaponArt {
   readonly anchorY: (t: number) => number;
   /** The grade's light shines from behind the weapon instead of over it. */
   readonly glowBehind?: boolean;
+  /** Refine hotspots moved along the weapon to sit on a painted part (node id -> t). */
+  readonly refineT?: Readonly<Record<string, number>>;
 }
 
 function formOf(weaponId: string, look: WeaponLook): string | null {
@@ -146,6 +148,18 @@ function gradeFilter(grade: number): ColorMatrixFilter | null {
   return f;
 }
 
+/**
+ * Refine hotspots moved onto the painted Bow's parts, per form: Steady Hand on the right grip
+ * ring (clear of the nocked arrow), Full Swing lower on the right limb (clear of the Volley path).
+ */
+const BOW_REFINE: Readonly<Record<string, Readonly<Record<string, number>>>> = {
+  plain: { "steady-hand": 0.57, "full-swing": 0.737 },
+  "rain-of-arrows": { "steady-hand": 0.573, "full-swing": 0.72 },
+  "patient-draw": { "steady-hand": 0.6, "full-swing": 0.72 },
+  "hunters-mark": { "steady-hand": 0.571, "full-swing": 0.737 },
+  "wild-shot": { "steady-hand": 0.586, "full-swing": 0.72 },
+};
+
 /** Weapons whose painting is shaped unlike the code build: runes and Refine hotspots follow it. */
 const PAINTED_CENTRE = new Set(["bow"]);
 
@@ -249,5 +263,6 @@ export function drawPaintedWeapon(
     silhouette: () => place(new Sprite(textures.mask)),
     anchorY,
     glowBehind: true,
+    ...(weaponId === "bow" ? { refineT: BOW_REFINE[formOf(weaponId, look) ?? "plain"] ?? {} } : {}),
   };
 }
