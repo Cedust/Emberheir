@@ -100,7 +100,7 @@ export function ClassSelect(props: {
             className={`class-card panel-card ${c.id === classId ? "on" : ""}`}
             onClick={() => pick(c.id)}
           >
-            <ClassEmblem classId={c.id} size={34} />
+            <ClassEmblem classId={c.id} size={52} />
             <strong className="title-font">{c.name}</strong>
             <span className="axes">{(AXES[c.id] ?? []).join(" · ")}</span>
           </button>
@@ -144,7 +144,7 @@ export function ClassSelect(props: {
         {step === "attributes" ? (
           <div className="class-info panel-card class-attributes" aria-label="Attributes">
             <div className="class-name-row">
-              <ClassEmblem classId={classId} size={30} />
+              <ClassEmblem classId={classId} size={40} />
               <span className="title-font class-name">{name.trim() || heroClass.name}</span>
               <div className="grow" />
               <span className={`points ${freeLeft > 0 ? "has" : ""}`} data-testid="free-points">
@@ -188,7 +188,7 @@ export function ClassSelect(props: {
         ) : (
           <div className="class-info panel-card">
             <div className="class-name-row">
-              <ClassEmblem classId={classId} size={30} />
+              <ClassEmblem classId={classId} size={40} />
               <span className="title-font class-name">{heroClass.name}</span>
             </div>
             <p className="class-text">{heroClass.text}</p>
@@ -227,7 +227,7 @@ export function ClassSelect(props: {
                   className="path-chip"
                   title={`${PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id} → ${heroClass.titles[id] ?? ""}`}
                 >
-                  <ClassEmblem classId={classId} size={14} />
+                  <ClassEmblem classId={classId} size={18} />
                   {PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id}
                 </span>
               ))}

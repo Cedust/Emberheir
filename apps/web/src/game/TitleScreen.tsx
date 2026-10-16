@@ -146,7 +146,7 @@ export function TitleScreen(props: {
                     }}
                     onDoubleClick={() => props.onContinue(i)}
                   >
-                    <ClassEmblem classId={save.hero.classId} size={40} />
+                    <ClassEmblem classId={save.hero.classId} size={48} />
                     <span className="slot-text">
                       <strong className="title-font">{save.hero.name}</strong>
                       <span className="accent">{heroTitle(save, GAME_DATA)}</span>

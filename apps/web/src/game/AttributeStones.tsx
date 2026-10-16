@@ -11,6 +11,12 @@ import {
   heroPerks,
 } from "@emberheir/sim";
 import type { ReactNode } from "react";
+import agilityUrl from "../assets/attributes/agility.webp";
+import dexterityUrl from "../assets/attributes/dexterity.webp";
+import intelligenceUrl from "../assets/attributes/intelligence.webp";
+import strengthUrl from "../assets/attributes/strength.webp";
+import vitalityUrl from "../assets/attributes/vitality.webp";
+import wisdomUrl from "../assets/attributes/wisdom.webp";
 import { type PerkStatus, usePerkHover } from "../ui/ItemTooltip";
 
 export const ATTRIBUTE_INFO: Record<Attribute, { name: string; short: string; effects: string }> = {
@@ -24,6 +30,16 @@ export const ATTRIBUTE_INFO: Record<Attribute, { name: string; short: string; ef
   agility: { name: "Agility", short: "AGI", effects: "Attack Speed · Evasion" },
   wisdom: { name: "Wisdom", short: "WIS", effects: "Heat Gain · Ailment Effect" },
   vitality: { name: "Vitality", short: "VIT", effects: "Life · Tenacity" },
+};
+
+/** Painted attribute icons (Timo's class + attribute sheet, tools/art/cut_class_attributes.py). */
+export const ATTRIBUTE_ICONS: Record<Attribute, string> = {
+  strength: strengthUrl,
+  dexterity: dexterityUrl,
+  intelligence: intelligenceUrl,
+  agility: agilityUrl,
+  wisdom: wisdomUrl,
+  vitality: vitalityUrl,
 };
 
 export const NO_POINTS: Record<Attribute, number> = {
@@ -102,6 +118,14 @@ export function AttributeStones(props: {
           );
           return (
             <li key={a} data-testid={`attr-${a}`}>
+              <img
+                className="attr-icon"
+                src={ATTRIBUTE_ICONS[a]}
+                width={34}
+                height={34}
+                alt=""
+                draggable={false}
+              />
               <div className="attr-text" title={ATTRIBUTE_INFO[a].effects}>
                 <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
                 <span className="sub small">{ATTRIBUTE_INFO[a].effects}</span>
