@@ -495,7 +495,7 @@ export function CharacterOverlay(props: {
               </EmptyState>
             )}
             <div className="k-grow" />
-            <Wallet state={state} named />
+            <Wallet state={state} />
           </section>
         </div>
       </Window>

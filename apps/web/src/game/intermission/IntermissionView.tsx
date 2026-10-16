@@ -14,7 +14,7 @@ import {
 import { Suspense, useState } from "react";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
-import { type CurrencyId, Wallet } from "../../ui/kit/Currency";
+import { type CurrencyId, Price, Wallet } from "../../ui/kit/Currency";
 import { BoonPanel, ShrineCards } from "../Boons";
 import { inFinale } from "../finale";
 import { IdleArena } from "../lazyViews";
@@ -138,12 +138,26 @@ export function IntermissionView(props: {
           {subtitle && <p className="screen-sub">{subtitle}</p>}
           {rewards && step !== "ready" && !inFinale(act) && (
             <p className="auto-rewards sub" data-testid="auto-rewards">
-              +{fmt(rewards.xp)} XP · +{fmt(rewards.acorns)} Acorns · +{fmt(rewards.ash)} Ash
-              {rewards.emberCoal > 0 ? ` · +${rewards.emberCoal} Ember Coal` : ""}
-              {rewards.phoenixFeathers > 0
-                ? ` · +${rewards.phoenixFeathers} Phoenix Feather${rewards.phoenixFeathers > 1 ? "s" : ""}`
-                : ""}
-              {rewards.cinderglass ? ` · +${rewards.cinderglass} Cinderglass` : ""}
+              +{fmt(rewards.xp)} XP <Price id="acorns" amount={rewards.acorns} plus />{" "}
+              <Price id="ash" amount={rewards.ash} plus />
+              {rewards.emberCoal > 0 && (
+                <>
+                  {" "}
+                  <Price id="coal" amount={rewards.emberCoal} plus />
+                </>
+              )}
+              {rewards.phoenixFeathers > 0 && (
+                <>
+                  {" "}
+                  <Price id="feathers" amount={rewards.phoenixFeathers} plus />
+                </>
+              )}
+              {!!rewards.cinderglass && (
+                <>
+                  {" "}
+                  <Price id="glass" amount={rewards.cinderglass} plus />
+                </>
+              )}
             </p>
           )}
           {rewards && step !== "ready" && (
@@ -202,7 +216,7 @@ export function IntermissionView(props: {
         )}
       </div>
       <footer className="intermission-footer bar-bottom">
-        <Wallet state={state} named gains={gains} />
+        <Wallet state={state} gains={gains} />
         <div className="grow" />
         {!boss && (
           <Button

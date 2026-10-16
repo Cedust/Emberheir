@@ -10,7 +10,7 @@ import {
   WindowLayer,
 } from "../../ui/kit/Window";
 import { HoldButton } from "../../ui/kit/Button";
-import { CurrencyChip } from "../../ui/kit/Currency";
+import { CurrencyChip, Price } from "../../ui/kit/Currency";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
@@ -81,7 +81,7 @@ export function KaelenView(props: {
                     name="Mastery Points"
                     explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
                   />
-                  <CurrencyChip id="acorns" amount={state.wallet.acorns} named />
+                  <CurrencyChip id="acorns" amount={state.wallet.acorns} />
                 </div>
                 {!viewOnly && (tab === "tree" || tab === "plan") && (
                   <HoldButton
@@ -100,7 +100,7 @@ export function KaelenView(props: {
                     }}
                     onConfirm={() => game.dispatch({ type: "respecTree" })}
                   >
-                    Respec · {respecPrice} Acorns
+                    Respec · <Price id="acorns" amount={respecPrice} />
                   </HoldButton>
                 )}
               </>

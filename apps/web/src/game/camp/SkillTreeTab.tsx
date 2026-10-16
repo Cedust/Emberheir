@@ -35,6 +35,7 @@ import type { GameApi } from "../useGame";
 import { type TreeLabel, type TreeNodeView, TreeScene, type TreeView } from "./TreeScene";
 import { canvasResolution } from "../pixiPacing";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
+import { Price } from "../../ui/kit/Currency";
 
 const hexColor = (css: string) => Number.parseInt(css.replace("#", ""), 16);
 
@@ -526,7 +527,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                       }
                       onConfirm={() => game.dispatch({ type: "forgetNode", nodeId: selected.id })}
                     >
-                      Forget · {forgetPrice} Acorns
+                      Forget · <Price id="acorns" amount={forgetPrice} />
                     </HoldButton>
                     {forgetReason && (
                       <p className="block sub small">{FORGET_BLOCK_TEXT[forgetReason]}</p>
