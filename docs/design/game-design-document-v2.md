@@ -357,6 +357,10 @@ Endgame **Wildfire I–X**.
 ### 5.3 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
 - **Slots:** Off Hand, Helm, Body Armor, Gloves, Boots, Belt, Amulet, 2× Ring, **Charm** (nur Trigger-Affixe).
   Off Hand passt zur Waffe: Shield (Melee), Quiver (Bow/Crossbow), Focus (Wand/Staff).
+- **Grundtypen (Bases):** 30 ohne Waffen, jeder mit festem Bonus (Implicit) und eigenem gemalten Icon. Armor-Slots haben
+  je eine leichte (AGI), schwere (STR) und Caster-Variante (INT), Body zusätzlich den **Leather Cuirass** (STR + AGI).
+  Schmuck: Bone Amulet, Ember Pendant, **Gold Medallion** (+5 % Physical Damage); Iron Ring, Garnet Ring, **Gold Ring**
+  (+4 % Elemental Damage). Charms: War, Ward, Ember und **Leaf Charm** (würfelt bevorzugt Ailment-Trigger).
 - **Item Level = Monster Level**, daraus das **Item Tier** (T1–T10). **Required Level** = Item Level − 5.
 - **Rarities:** Normal (Sockets, Basis für Runewords) · Magic (1 Prefix + 1 Suffix) · Rare (4–5 Stat-Affixe) · Epic
   (5–6 und garantiert Trigger) · Legendary (4–5 Affixe + Legendary Power) · Unique (fest, oft mit Power; Boss-Uniques
@@ -433,6 +437,8 @@ Endgame **Wildfire I–X**.
 - **Alles, was im Kampf passiert, ist in der Arena sichtbar** (PixiJS: `fx.ts`, `weather.ts`, `SKILL_FX`, `AILMENT_FX`).
   Effekte sind rein visuell, respektieren Screen Shake und `prefers-reduced-motion`.
 - Fabelwelt: Der Heir ist ein Otter, Personas sind Tiere (`fabelwelt-v1.md`, `story-theme-v1.md`).
+- **Gemalte Icons** (Timo generiert Sheets, `tools/art/cut_*.py` schneidet sie): Klassen, Attribute, Elemente,
+  Ailments, Stats, Heat Forms, Waffen, alle Item-Grundtypen und leere Slots. Seltenheit zeigt der Rahmen, nicht das Bild.
 
 ---
 

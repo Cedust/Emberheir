@@ -7893,3 +7893,8 @@
 .stage .hero-heat .heat-gauge {
   margin-top: 0;
 }
+
+/* Painted item icons (ItemArt.tsx) keep their proportions in any cell. */
+.stage .item-art.painted {
+  object-fit: contain;
+}
