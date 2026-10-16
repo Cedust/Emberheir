@@ -1,13 +1,4 @@
-import { ITEM_CATALOG } from "@emberheir/content";
-import {
-  type GameState,
-  type Item,
-  type PerkId,
-  describeItem,
-  getBase,
-  getPerk,
-  greaterName,
-} from "@emberheir/sim";
+import { type GameState, type Item, type PerkId, getPerk } from "@emberheir/sim";
 import {
   type ReactNode,
   createContext,
@@ -19,10 +10,10 @@ import {
   useRef,
   useState,
 } from "react";
-import { RuneStone } from "./RuneArt";
+import { CompareList, ItemBody, ItemHead, itemTip, rarityClass } from "./ItemBody";
 import { aimedSlot, useRingSlot } from "./ringSlot";
 import { useStageSize } from "./Stage";
-import { compareWithEquipped } from "./itemCompare";
+import { type CompareView, compareWithEquipped } from "./itemCompare";
 
 /**
  * Diablo-style item tooltips: hovering an item tile or a grid item shows its full tooltip next
@@ -228,7 +219,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
               <ItemTooltipCard
                 item={hover.item}
                 state={state}
-                verdict={
+                compare={
                   !hover.equipped && state ? compareWithEquipped(state, hover.item) : undefined
                 }
                 action={hover.action}
@@ -303,88 +294,23 @@ function NoteTooltipCard(props: NoteHover) {
   );
 }
 
-/** One Diablo-style tooltip: name, type, base values, affixes, requirements. */
+/** One Diablo-style tooltip: name plate, base values, affixes, requirements, comparison. */
 export function ItemTooltipCard(props: {
   item: Item;
   state: GameState | null;
   tag?: string;
-  verdict?: { text: string; better: boolean } | undefined;
+  compare?: CompareView | undefined;
   /** What a right-click does where the item sits. */
   action?: string | undefined;
 }) {
   const { item } = props;
-  const tip = describeItem(
-    item,
-    ITEM_CATALOG,
-    props.state?.hero.attributes,
-    props.state?.hero.level,
-  );
-  const needsLevel = tip.requiredLevel.value > 1;
-  const base = getBase(ITEM_CATALOG, item.baseId);
-  const kind =
-    item.rarity === "normal" && !tip.special ? tip.slotName : `${tip.rarityName} ${tip.slotName}`;
+  const tip = itemTip(item, props.state);
   return (
-    <div className={`item-tooltip tip-${tip.special ?? item.rarity}`}>
+    <div className={`item-tooltip item-tip ${rarityClass(item)} tip-${tip.special ?? item.rarity}`}>
       {props.tag && <span className="tip-tag">{props.tag}</span>}
-      <span className="tip-name">{item.name}</span>
-      {item.name !== base.name && <span className="tip-base">{base.name}</span>}
-      <span className="tip-kind">{kind}</span>
-      {tip.runewordRecipe && <span className="tip-recipe">&lsquo;{tip.runewordRecipe}&rsquo;</span>}
-      <span className="tip-rule" />
-      {tip.baseLines.map((l) => (
-        <span key={l} className="tip-line tip-basic">
-          {l}
-        </span>
-      ))}
-      {tip.implicitLines.map((l) => (
-        <span key={l} className="tip-line tip-implicit">
-          {l}
-        </span>
-      ))}
-      {tip.affixLines.map((l, i) => (
-        <span key={`${i}-${l.text}`} className={`tip-line tip-${l.kind}`}>
-          {l.text}
-          {l.greater ? <span className="greater-mark">{greaterName(l.greater)}</span> : null}
-        </span>
-      ))}
-      {tip.power && (
-        <span className="tip-line tip-power">
-          <b>{tip.power.name}</b> {tip.power.text}
-        </span>
-      )}
-      {tip.sockets && (
-        <span className="tip-sockets">
-          {Array.from({ length: tip.sockets.total }, (_, i) => {
-            const id = item.runes?.[i];
-            return id ? (
-              <RuneStone key={i} runeId={id} size={22} />
-            ) : (
-              <span key={i} className="tip-socket" />
-            );
-          })}
-        </span>
-      )}
-      {tip.flavor && <span className="tip-flavor">{tip.flavor}</span>}
-      {tip.droppedBy && <span className="tip-line tip-source">Dropped by {tip.droppedBy}</span>}
-      {(tip.requirements.length > 0 || needsLevel) && <span className="tip-rule" />}
-      {needsLevel && (
-        <span className={`tip-line tip-req${tip.requiredLevel.met === false ? " unmet" : ""}`}>
-          Requires Level {tip.requiredLevel.value}
-        </span>
-      )}
-      {tip.requirements.map((r) => (
-        <span key={r.attribute} className={`tip-line tip-req${r.met === false ? " unmet" : ""}`}>
-          Requires {r.value} {r.name}
-        </span>
-      ))}
-      <span className="tip-ilvl">
-        Item Level {item.itemLevel} · Tier {item.tier}
-      </span>
-      {props.verdict && (
-        <span className={`tip-verdict ${props.verdict.better ? "better" : "worse"}`}>
-          {props.verdict.text}
-        </span>
-      )}
+      <ItemHead item={item} tip={tip} />
+      <ItemBody item={item} tip={tip} />
+      {props.compare && <CompareList view={props.compare} state={props.state} />}
       {props.action && (
         <span className="tip-hotkey">
           <kbd className="k-key">Right-click</kbd> {props.action}

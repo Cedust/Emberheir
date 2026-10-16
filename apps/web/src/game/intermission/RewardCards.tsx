@@ -268,6 +268,7 @@ export function ItemCards(props: {
               heroAttributes={state.hero.attributes}
               heroLevel={state.hero.level}
               compare={taken.has(pick) ? undefined : compareWithDummy(state, detail)}
+              state={state}
               className="loot-card"
               testId="item-card"
               footer={
@@ -313,6 +314,7 @@ export function ItemCards(props: {
               heroAttributes={state.hero.attributes}
               heroLevel={state.hero.level}
               compare={compareWithDummy(state, item)}
+              state={state}
               className="loot-card"
               testId="item-card"
               footer={<PickButtons state={state} game={game} item={item} index={i} taken={false} />}
