@@ -611,7 +611,7 @@ export interface WeaponRules {
     readonly amount: number;
     readonly condition?: MasteryCondition;
   }[];
-  /** The Default Attack cycles Fire, Cold and Lightning and carries their ailments (Prism). */
+  /** The Default Attack alternates Lightning and Cold and carries their ailments (Prism). */
   readonly prism?: boolean;
   /** Skills cost `discount` less while Heat is at least `above` (Overflow). */
   readonly overflow?: { readonly above: number; readonly discount: number };
@@ -712,10 +712,6 @@ export interface WeaponRules {
   readonly slotDiscount?: { readonly slot: number; readonly discount: number };
   /** Skills cost `amount` less while the condition holds (Master of Storm). */
   readonly skillDiscountWhen?: readonly MasteryBonus[];
-  /** Combust sets off this much more (Flare: 2 = 50 % instead of 25 %). */
-  readonly combustMultiplier?: number;
-  /** Burning enemies cannot heal (Smother). */
-  readonly noHealWhileBurning?: boolean;
   /** `chills` Chills within `seconds` freeze the enemy for `freeze` s (Frozen Solid). */
   readonly frozenSolid?: {
     readonly chills: number;
@@ -726,10 +722,20 @@ export interface WeaponRules {
   readonly coldSnap?: number;
   /** A Chill during a wind-up delays the Heavy Attack by this many seconds, once per wind-up. */
   readonly chillDelay?: number;
-  /** Crits against a Shocked enemy arc for this share of their damage (Arc Chain). */
-  readonly arcChain?: number;
+  /** Hits against an enemy with at least `stacks` Shock stacks arc for `share` of their damage (Arc Chain). */
+  readonly arcChain?: { readonly share: number; readonly stacks: number };
   /** Extra Shock stacks (Static Build). */
   readonly shockMaxStacks?: number;
+  /** Every Shock stack you add gives this much Heat (Conduction). */
+  readonly heatPerShockStack?: number;
+  /** The charged Spark (Sorcerer) is always a clean Crit (Flashpoint). */
+  readonly sparkCrit?: boolean;
+  /** Every Default Attack without a Crit adds this much Crit Chance until the next Crit (Critical Mass). */
+  readonly critBuildup?: number;
+  /** Crits get this much extra Elemental Penetration (Overwhelm). */
+  readonly critElementalPenetration?: number;
+  /** A skill that crits charges the Spark for this many Default Attacks (Master of the Arcane). */
+  readonly skillCritSparks?: number;
   /** Burning enemies deal this much less damage (Ashen Veil). */
   readonly ashenVeil?: number;
   /** Corruption grows this many extra steps per tick (Hollow). */

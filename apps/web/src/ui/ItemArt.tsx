@@ -100,7 +100,7 @@ const ART: Readonly<Record<string, Art>> = {
       </>
     ),
   },
-  "fire-wand": {
+  wand: {
     w: 32,
     h: 64,
     draw: () => (

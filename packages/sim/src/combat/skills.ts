@@ -81,7 +81,7 @@ export function castSkill(
   fireTriggers(core, f, "onSkillUse");
   if (core.result) return;
   // Spark (Sorcerer): the Default Attack after a skill is charged.
-  if (f.setup.rules?.spark) f.sparkReady = true;
+  if (f.setup.rules?.spark) f.sparkCharges = Math.max(f.sparkCharges, 1);
   const target = core.fighters[other(f.side)];
   let landed = false;
   let clean = false;

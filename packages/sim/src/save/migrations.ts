@@ -57,7 +57,54 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Stash tabs (ui-ux-plan-v1.md 3.4): stashed items name their tab; without one they sit in the
   // first, so nothing moves.
   6: {},
+  // Sorcerer without Fire (sorcerer-ohne-fire-v1.md): the Fire Wand is just the Wand, Lightning
+  // or Cold. Fire Attunement falls back to Lightning, Blaze and Storm give their points back
+  // (Arcane replaced Blaze, Storm's Notables changed), and Firebolt becomes Shockbolt.
+  7: { item: renameWandItem, state: wandWithoutFire },
 };
+
+const OLD_WAND = "fire-wand";
+const WAND = "wand";
+/** Firebolt and its Innate Forms, attuned or not (`firebolt@cold`). */
+const OLD_WAND_INNATE = /^(firebolt|fire-lance|fire-barrage|seeking-firebolt)(@[a-z]+)?$/;
+
+function renameWandItem(item: RawSave): RawSave {
+  return item["baseId"] === OLD_WAND ? { ...item, baseId: WAND } : item;
+}
+
+function wandWithoutFire(save: RawSave): RawSave {
+  const hero = save["hero"];
+  if (!isRecord(hero) || hero["weaponId"] !== OLD_WAND) return save;
+  const out: RawSave = { ...hero, weaponId: WAND };
+  const mastery = hero["mastery"];
+  if (isRecord(mastery)) {
+    const learned = isRecord(mastery["learned"])
+      ? Object.fromEntries(
+          Object.entries(mastery["learned"]).filter(
+            ([id]) => !id.startsWith("blaze-") && !id.startsWith("storm-"),
+          ),
+        )
+      : mastery["learned"];
+    const choices = isRecord(mastery["choices"]) ? { ...mastery["choices"] } : mastery["choices"];
+    if (isRecord(choices) && choices["attunement"] === "attune-fire") delete choices["attunement"];
+    out["mastery"] = { ...mastery, learned, choices };
+  }
+  // The Innate is the empty slot (null), so a Battle Plan that named Firebolt keeps it.
+  const innate = (id: unknown) => typeof id === "string" && OLD_WAND_INNATE.test(id);
+  if (Array.isArray(hero["rotation"])) {
+    out["rotation"] = hero["rotation"].map((id: unknown) => (innate(id) ? null : id));
+  }
+  const plan = hero["plan"];
+  if (isRecord(plan) && Array.isArray(plan["reactions"])) {
+    out["plan"] = {
+      ...plan,
+      reactions: plan["reactions"].map((r: unknown) =>
+        isRecord(r) && innate(r["skillId"]) ? null : r,
+      ),
+    };
+  }
+  return { ...save, hero: out };
+}
 
 /** Class start nodes of Skill Web v3 (the Sorcerer's was renamed). */
 const WEB_V3_STARTS: Readonly<Record<string, string>> = {

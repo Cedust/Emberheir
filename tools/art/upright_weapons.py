@@ -5,7 +5,7 @@ from PIL import Image
 
 WEAPONS = {
   'sword': 'sword', 'mace': 'mace', 'axe': 'axe', 'dagger': 'dagger',
-  'bow': 'bow', 'crossbow': 'crossbow', 'wand': 'fire-wand', 'staff': 'staff',
+  'bow': 'bow', 'crossbow': 'crossbow', 'wand': 'wand', 'staff': 'staff',
 }
 HEIGHT = 288  # a 1x3 weapon is about 120 stage px tall, up to 2.4x on 4K
 

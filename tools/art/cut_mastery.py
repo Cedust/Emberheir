@@ -28,14 +28,14 @@ FORMS = {
   # The bow sheet has a sixth row: one loose arrow, which the scene lays on the string.
   'bow': ['plain', 'rain-of-arrows', 'patient-draw', 'hunters-mark', 'wild-shot', 'arrow'],
   'crossbow': ['plain', 'deadeye', 'siege-engine', 'repeater', 'harpoon'],
-  'fire-wand': ['plain', 'prism', 'glass-cannon', 'focused-will', 'wild-magic'],
+  'wand': ['plain', 'prism', 'glass-cannon', 'focused-will', 'wild-magic'],
   'staff': ['plain', 'endless-night', 'pyre', 'siphon', 'eclipse'],
 }
-SHEET = {'fire-wand': 'wand'}
+SHEET = {}
 # Attunement weapons: the crystal (Wand) and the orb (Staff) are painted pale icy blue. Those
 # pixels also go to <weapon>-<form>-gem.webp as grey light, which the scene tints in the
 # element's colour.
-GEMS = {'fire-wand', 'staff'}
+GEMS = {'wand', 'staff'}
 # Rows that touch (crossguards) are split on a mask eroded by this many pixels; a bow's thin
 # string would vanish, and its rows never touch.
 ERODE = {'bow': 0, 'crossbow': 0}

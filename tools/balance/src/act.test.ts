@@ -19,7 +19,7 @@ describe("act autopilot", () => {
   it("each run is one act longer: prestiges after the newest act's boss and starts again", () => {
     const reports = playGenerations(GAME_DATA, {
       seed: 2,
-      starterWeapon: "fire-wand",
+      starterWeapon: "wand",
       upToAct: 2,
       maxAttempts: 30,
       generations: 2,

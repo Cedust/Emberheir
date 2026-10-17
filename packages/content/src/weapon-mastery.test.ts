@@ -174,7 +174,7 @@ describe("Weapon Mastery content", () => {
     }
   });
 
-  it("Wand Attunement turns Spark and Firebolt into Cold", () => {
+  it("Wand Attunement turns Spark and Shockbolt into Cold", () => {
     let s = newGame(GAME_DATA, { seed: 2, classId: "sorcerer" });
     s = applyAction(s, GAME_DATA, { type: "learnMastery", nodeId: "attune-cold" });
     const { setup } = heroSetup(s, GAME_DATA);

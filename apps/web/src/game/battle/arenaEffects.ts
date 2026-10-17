@@ -36,7 +36,6 @@ export type Delivery = "slash" | "arrow" | "orb" | "bolt" | "fall" | "nova";
 
 /** Skills with their own look; everything else follows the attacker's weapon. */
 export const SKILL_FX: Record<string, Delivery> = {
-  Firebolt: "orb",
   "Ice Lance": "orb",
   "Chain Lightning": "bolt",
   Meteor: "fall",
@@ -118,8 +117,10 @@ export const PAYOFF_FX: Record<
   {
     color: readonly number[];
     on: "self" | "foe";
-    look: "pop" | "flare" | "implode" | "ring" | "star";
+    look: "pop" | "flare" | "implode" | "ring" | "star" | "rift" | "arc";
     shake?: number;
+    /** No floating name: it happens too often (Conduction). */
+    quiet?: boolean;
   }
 > = {
   overflow: { color: [0xb5d82c, 0xe8ff7a, 0x6f9a10], on: "foe", look: "pop", shake: 0.15 },
@@ -128,6 +129,11 @@ export const PAYOFF_FX: Record<
   ironBlood: { color: [0xc9c2b8, 0xff8a3a], on: "self", look: "ring" },
   keenEye: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star" },
   spark: { color: [0x5b8cff, 0xffe14d], on: "foe", look: "star" },
+  // Arcane: a white-violet tear of light where the Spark crits; built-up Crits break the same way.
+  flashpoint: { color: [0xd2b8ff, 0xffffff, 0x8a5cff], on: "foe", look: "rift", shake: 0.15 },
+  criticalMass: { color: [0xb48cff, 0xffffff, 0xd2b8ff], on: "foe", look: "rift", shake: 0.1 },
+  // Storm: a small arc of lightning runs from the Shocked enemy back into the Wand.
+  conduction: { color: [0xfff08a, 0xffffff], on: "foe", look: "arc", quiet: true },
 };
 
 /** Floating names of the payoffs. */
@@ -138,6 +144,9 @@ export const PAYOFF_NAMES: Record<PayoffKind, string> = {
   ironBlood: "Iron Blood",
   keenEye: "Keen Eye",
   spark: "Spark",
+  flashpoint: "Flashpoint",
+  criticalMass: "Critical Mass",
+  conduction: "Conduction",
 };
 
 const FALL = Math.PI / 2;

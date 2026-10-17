@@ -15,6 +15,10 @@ export const PAYOFF_KINDS = [
   "ironBlood",
   "keenEye",
   "spark",
+  // Wand Mastery (sorcerer-ohne-fire-v1.md): the Spark that crits, built-up Crits, Shock as Heat.
+  "flashpoint",
+  "criticalMass",
+  "conduction",
 ] as const;
 export type PayoffKind = (typeof PAYOFF_KINDS)[number];
 

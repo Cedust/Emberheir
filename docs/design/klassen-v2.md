@@ -46,6 +46,7 @@ Warden und Tactician (Core) passen zu allem; jede Klasse bekommt höchstens eine
 - **Reaver**: *Fights up close with Axe or Dagger and wins with dirty tricks: every cut bleeds, every stab poisons. The wounds do the killing while the Reaver keeps striking.*
 - **Hunter**: *Fights from range with Bow or Crossbow. Bolts punch through armor in single heavy shots, arrows leave bleeding and poisoned wounds. Patient, precise, deadly on a critical hit.*
 - **Sorcerer**: *Fights from range with a Wand and wins with raw elements: fire, frost and lightning in big, sudden bursts. The Heat builds on its own, so the next spell is always coming.*
+  Stand 17.10.2026 (`sorcerer-ohne-fire-v1.md`): Fire gehört dem Warlock, die Wand ist Lightning oder Cold, Firebolt heißt Shockbolt. Neuer Text: *Fights from range with a Wand and wins with frost and lightning in big, sudden bursts. Every skill charges the next Spark, and the Heat builds on its own, so the next spell is always coming.*
 - **Warlock**: *Fights from range with a Staff and wins with curses: lingering fire, creeping Void and slow decay. The longer the fight lasts, the surer the enemy dies.*
 
 ---

@@ -96,7 +96,7 @@ export const CLASSES: readonly HeroClass[] = [
   {
     id: "sorcerer",
     name: "Sorcerer",
-    weapons: ["fire-wand"],
+    weapons: ["wand"],
     offHand: "ember-focus",
     startingAttributes: {
       strength: 1,
@@ -125,7 +125,7 @@ export const CLASSES: readonly HeroClass[] = [
       warden: "Battlemage",
       tactician: "Archmage",
     },
-    text: "Fights from range with a Wand and wins with raw elements: fire, frost and lightning in big, sudden bursts. The Heat builds on its own, so the next spell is always coming.",
+    text: "Fights from range with a Wand and wins with frost and lightning in big, sudden bursts. Every skill charges the next Spark, and the Heat builds on its own, so the next spell is always coming.",
   },
   {
     id: "warlock",

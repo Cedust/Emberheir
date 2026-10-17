@@ -36,7 +36,7 @@ interface SlotConfig {
 }
 
 /** Second slot suggestion per weapon, so both PoC builds start with a sensible Battle Plan. */
-const SECOND_SKILL: Record<string, string> = { sword: "flurry", "fire-wand": "chain-lightning" };
+const SECOND_SKILL: Record<string, string> = { sword: "flurry", wand: "chain-lightning" };
 
 const defaultSlots = (weaponId: string): SlotConfig[] => [
   { skillId: START_SKILLS[weaponId]?.id ?? "", threshold: "" },

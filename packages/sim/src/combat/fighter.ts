@@ -92,8 +92,10 @@ export interface Fighter {
   // Class Traits.
   /** Keen Eye: the first hit of the fight has been a clean Crit. */
   keenOpened: boolean;
-  /** Spark: a skill was cast, the next Default Attack is charged. */
-  sparkReady: boolean;
+  /** Spark: Default Attacks still charged by a skill (one, two after Master of the Arcane). */
+  sparkCharges: number;
+  /** Crit Chance built up by Default Attacks without a Crit (Critical Mass). */
+  critBuildup: number;
   // Weapon Mastery v2 state.
   /** Clean hits in a row (Clean Line); the bonus is ready when it reaches its count. */
   cleanStreak: number;
@@ -137,9 +139,8 @@ export const STREAK_ID = "mastery-streak";
 
 /** Prism: the Default Attack cycles these elements with their ailments. */
 export const PRISM = [
-  { type: "fire", ailment: "burn" },
-  { type: "cold", ailment: "chill" },
   { type: "lightning", ailment: "shock" },
+  { type: "cold", ailment: "chill" },
 ] as const;
 
 interface ReactionState {
@@ -234,7 +235,8 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     titanReadyAt: 0,
     perksUsed: new Set(),
     keenOpened: false,
-    sparkReady: false,
+    sparkCharges: 0,
+    critBuildup: 0,
     cleanStreak: 0,
     cleanLineReady: false,
     extraDepth: 0,
