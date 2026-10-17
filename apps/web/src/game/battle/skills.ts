@@ -5,7 +5,6 @@ const SKILL_ICONS: Record<string, IconName> = {
   "power-strike": "strike",
   flurry: "flurry",
   execute: "execute",
-  firebolt: "fire",
   "ice-lance": "snow",
   "chain-lightning": "bolt",
   meteor: "meteor",
@@ -63,7 +62,12 @@ const SKILL_ICONS: Record<string, IconName> = {
   envenom: "venom",
 };
 
+/** The Wand's Innate and its Forms: Lightning, or Cold after Attunement ("shock-lance@cold"). */
+const WAND_INNATE = /^(shockbolt|shock-lance|shock-barrage|seeking-shockbolt)(@cold)?$/;
+
 export function skillIcon(skillId: string): IconName {
+  const wand = WAND_INNATE.exec(skillId);
+  if (wand) return wand[2] ? "snow" : "bolt";
   return SKILL_ICONS[skillId] ?? (skillId.includes("slam") ? "slam" : "strike");
 }
 
@@ -71,7 +75,6 @@ const SKILL_TINTS: Record<string, string> = {
   "power-strike": "#8a6a4a",
   flurry: "#7a5a24",
   execute: "#6a2a20",
-  firebolt: "#a8401a",
   "ice-lance": "#2d6a8a",
   "chain-lightning": "#8a7a20",
   meteor: "#a8401a",
@@ -103,5 +106,7 @@ const SKILL_TINTS: Record<string, string> = {
 };
 
 export function skillTint(skillId: string): string {
+  const wand = WAND_INNATE.exec(skillId);
+  if (wand) return wand[2] ? "#2d6a8a" : "#8a7a20";
   return SKILL_TINTS[skillId] ?? "#6b5a3e";
 }

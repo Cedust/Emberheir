@@ -586,8 +586,8 @@ const ELEMENT_WORD: Partial<Record<DamageType, string>> = {
 };
 
 /**
- * Attunement: an elemental Innate takes the weapon's element and its ailment. "Firebolt" becomes
- * "Frostbolt", "Fire Lance" becomes "Frost Lance".
+ * Attunement: an elemental Innate takes the weapon's element and its ailment. "Shockbolt" becomes
+ * "Frostbolt", "Shock Lance" becomes "Frost Lance".
  */
 export function attuneSkill(
   skill: SkillDefinition,

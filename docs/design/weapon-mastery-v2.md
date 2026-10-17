@@ -198,22 +198,25 @@ Format pro Pfad: **Build-Idee** · Technik I · Gabel 1 · Technik II · Gabel 2
 | Payload | +25 % Max der Damage Range | **Heavy Draw**: Mighty Hits +30 % ◇ **Killshot**: Crits ignorieren 50 % Armor | +8 % Mighty-Hit-Schaden | **Deadeye**: jeder 5. Bolzen trifft sauber und crittet ◇ **Recoil**: Mighty Hits nehmen dem Gegner 15 Heat | **Master of Payload**: der Heavy Bolt ist immer ein Mighty Hit |
 | Reload | +8 % Heat per Hit | **Quick Crank**: +10 % Attack Speed ◇ **Loaded Spring**: Glancing Blows geben 10 Heat | −4 Heat Cost des Innate | **Drum Magazine**: nach einem Skill 3 s +30 % Attack Speed ◇ **Spring Trap**: jeder 5. Glancing Blow feuert einen Gratis-Bolzen | **Master of Reload**: Rotation Slot 1 kostet 20 % weniger Heat |
 
-### 3.7 Wand (Sorcerer) – „Die Elemente“
+### 3.7 Wand (Sorcerer) – „Blitz, Frost und der Funke“
 
-Die Attunement (Fire/Cold/Lightning) bleibt. Jeder Pfad gehört zu einem Element, passt aber zu jeder Attunement, weil
-die Skills im Web andere Elemente bringen. Der Pfad „Pyre“ heißt neu **Blaze** (Pyre ist auch ein Staff-Keystone).
+Stand 17.10.2026 (`sorcerer-ohne-fire-v1.md`): Fire gehört dem Warlock. Die Attunement ist nur noch **Lightning**
+(Start) oder **Cold**, der Innate heißt Shockbolt bzw. Frostbolt. **Arcane** ersetzt Blaze; Storm gibt seine Crits an
+Arcane ab und ist ein reiner Shock-Pfad.
 
 | Pfad | Build-Idee |
 |---|---|
-| **Blaze** | Fire: Burn setzen und mit Fire-Treffern einlösen |
+| **Arcane** | Crits über den Spark-Rhythmus: ein Skill lädt den Spark, der Spark crittet (jede Attunement) |
 | **Rime** | Cold: Kontrolle, Chill bis zum Freeze |
-| **Storm** | Lightning: Shock und Crit-Ketten |
+| **Storm** | Lightning: Shock-Stacks als Schaden und Heat |
 
 | Pfad | Technik I | Gabel 1 | Technik II | Gabel 2 | Meister |
 |---|---|---|---|---|---|
-| Blaze | +12 % Burn-Wirkung der Wand | **Kindle**: +20 % Burn Chance ◇ **Wildfire**: Burn +30 % | +4 % Burn Chance | **Flare**: Combust (siehe `ailments-v2.md`) löst 50 % statt 25 % aus ◇ **Smother**: brennende Gegner heilen gar nicht | **Master of Flame**: jeder Burn-Tick gibt 2 Heat |
+| Arcane | +3 % Precision | **Flashpoint**: der geladene Spark ist immer ein sauberer Crit ◇ **Critical Mass**: jeder Spark ohne Crit gibt +6 % Crit Chance bis zum nächsten Crit | +8 % Innate-Schaden | **Arc**: jeder Crit gibt 8 Heat ◇ **Overwhelm**: Crits haben +20 % Elemental Penetration | **Master of the Arcane**: crittet ein Skill, lädt er den Spark für zwei Default Attacks |
 | Rime | +10 % Chill-Wirkung | **Bitter Cold**: Chill hält 40 % länger ◇ **Shatterpoint**: +25 % Schaden gegen Chilled | +4 % Chill Chance | **Frozen Solid**: 3 Chills in 6 s frieren 1 s ein ◇ **Cold Snap**: Telegraphs Chilled Gegner brauchen 30 % länger | **Master of Rime**: Chill während eines Telegraphs verschiebt die Heavy Attack um 1 s |
-| Storm | +10 % Shock-Wirkung | **Static Field**: +20 % Shock Chance ◇ **Arc**: jeder Crit gibt 8 Heat | +3 % Precision | **Arc Chain**: Crits gegen Shocked springen für 30 % nach ◇ **Static Build**: Shock stapelt bis 3 | **Master of Storm**: solange Shock läuft, kosten Skills 10 % weniger |
+| Storm | +10 % Shock-Wirkung | **Static Field**: +20 % Shock Chance ◇ **Conduction**: jeder neue Shock-Stack gibt 4 Heat | +4 % Shock Chance | **Arc Chain**: Treffer gegen 3 Shock-Stacks springen für 15 % über ◇ **Static Build**: Shock stapelt bis 5 | **Master of Storm**: solange Shock läuft, kosten Skills 10 % weniger |
+
+Keystone **Prism**: der Spark wechselt zwischen Lightning und Cold, −10 % Schaden (vorher drei Elemente, −15 %).
 
 ### 3.8 Staff (Warlock) – „Das lange Sterben“
 

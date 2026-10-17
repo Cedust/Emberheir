@@ -1444,7 +1444,7 @@ function buildFor(weaponId: string, length: number, look: WeaponLook): Build {
       return bow(length, P, look);
     case "crossbow":
       return crossbow(length, P, look);
-    case "fire-wand":
+    case "wand":
       return wand(length, P, look);
     case "staff":
       return staff(length, P, look);

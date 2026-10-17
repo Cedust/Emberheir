@@ -168,7 +168,7 @@ export const MASTERY_ART: Record<string, Record<string, { w: number; h: number; 
       axis: 172,
     },
   },
-  "fire-wand": {
+  wand: {
     plain: {
       w: 900,
       h: 89,

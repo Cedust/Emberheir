@@ -34,19 +34,20 @@ export const EXECUTE: SkillDefinition = {
   hits: [{ kind: "weapon", multiplier: 4, lowLifeBonus: { threshold: 0.3, multiplier: 2 } }],
 };
 
-export const FIREBOLT: SkillDefinition = {
-  id: "firebolt",
-  name: "Firebolt",
+/** The Wand's Innate. Attunement can turn it into Frostbolt (Sorcerer without Fire, 2026-10-17). */
+export const SHOCKBOLT: SkillDefinition = {
+  id: "shockbolt",
+  name: "Shockbolt",
   type: "spell",
   heatCost: 30,
-  tags: ["fire", "direct", "any"],
-  description: "A cheap Fire hit. 25 % chance to Burn.",
+  tags: ["lightning", "direct", "any"],
+  description: "A cheap bolt of the Wand's element. 25 % chance for its ailment.",
   hits: [
     {
       kind: "spell",
       damage: { min: 21, max: 29 },
-      damageType: "fire",
-      ailmentChances: [{ ailment: "burn", chance: 0.25 }],
+      damageType: "lightning",
+      ailmentChances: [{ ailment: "shock", chance: 0.25 }],
     },
   ],
 };
@@ -468,7 +469,7 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   ENVENOM,
   FLURRY,
   EXECUTE,
-  FIREBOLT,
+  SHOCKBOLT,
   ICE_LANCE,
   CHAIN_LIGHTNING,
   METEOR,
@@ -518,7 +519,7 @@ export const VOID_BOLT: SkillDefinition = {
  */
 export const START_SKILLS: Readonly<Record<string, SkillDefinition>> = {
   sword: POWER_STRIKE,
-  "fire-wand": FIREBOLT,
+  wand: SHOCKBOLT,
   axe: LACERATE,
   dagger: ENVENOM,
   bow: BARBED_ARROW,

@@ -29,9 +29,9 @@ describe("formatEvent", () => {
 
   it("describes skills, ailments and the end of the fight", () => {
     expect(
-      formatEvent({ t: 3, type: "skill", side: "hero", skill: "Firebolt", heatCost: 20 }, names)
+      formatEvent({ t: 3, type: "skill", side: "hero", skill: "Shockbolt", heatCost: 20 }, names)
         .text,
-    ).toBe("Heir uses Firebolt (−20 Heat)");
+    ).toBe("Heir uses Shockbolt (−20 Heat)");
     expect(formatEvent({ t: 3, type: "ailment", side: "enemy", ailment: "burn" }, names).text).toBe(
       "Ashen Brute suffers Burn",
     );
