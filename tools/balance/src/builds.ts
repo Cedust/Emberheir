@@ -1,12 +1,13 @@
 import { type GameData } from "@emberheir/sim";
 
-/** The autopilot's builds: three per class, each a Skill Tree goal and a Weapon Mastery order. */
-
 /**
- * Autopilot builds (level-v2.md section 7): three clearly different builds per class, each with
- * its weapon, Skill Tree goals in order ("@branches" = the owned Prestige branches at that point),
- * Rotation skills (slot 1 is the weapon's Innate), Prestige branches by preference and a Reaction
- * skill once one is unlocked. Tree Keystones are left out (their pick is a player's call).
+ * Autopilot builds (klassengeruest-v1.md 9, step 5): one per Heirloom path, so 24 in all. The
+ * path sets the damage type and the ailment; the build heads for the Ash Tree region of that
+ * ailment ("@branches" = the owned Masteries at that point), fills its Battle Plan with that
+ * region's skills (slot 1 is the weapon's Innate) and takes Iron Bastion as a Reaction. Weapon
+ * fighters with an elemental path swing their infused weapon (Steel skills), casters cast. The
+ * main Mastery follows the path: ailment paths take the class's Ailment Mastery, the others its
+ * Burst Mastery; `--mastery` tries the other two. Tree Keystones are left out (a player's call).
  */
 export interface BuildPlan {
   readonly id: string;
@@ -14,164 +15,127 @@ export interface BuildPlan {
   readonly weapon: string;
   readonly nodes: readonly string[];
   readonly rotation: readonly string[];
+  /** Masteries by preference: the first is the main one, deepened at every Harvest. */
   readonly branches: readonly string[];
   readonly reaction?: { readonly skillId: string; readonly conditionId: string };
-  /** Weapon Mastery choices that differ from the weapon's plan (`MASTERY_PLAN`). */
+  /** Heirloom choices that differ from the weapon's plan (`MASTERY_PLAN`). */
   readonly mastery?: Partial<MasteryPlan>;
 }
 
 const GUARD = { skillId: "iron-bastion", conditionId: "life-50" };
 
-const NOVA = { skillId: "frost-nova", conditionId: "enemy-windup" };
+type Style = "bleed" | "stun" | "poison" | "fire" | "lightning" | "cold" | "void";
 
-export const BUILDS: readonly BuildPlan[] = [
-  {
-    id: "unbroken",
-    classId: "cinderguard",
-    weapon: "sword",
-    nodes: ["roots-unbroken", "steel-brutal-force", "steel-execute", "@branches"],
-    rotation: ["flurry", "feint", "execute"],
-    branches: ["vanquisher", "berserker", "ravager"],
-    reaction: GUARD,
-  },
-  {
-    id: "smasher",
-    classId: "cinderguard",
-    weapon: "mace",
-    nodes: ["steel-brutal-force", "steel-colossus", "@branches", "storm-arcane-edge"],
-    rotation: ["crushing-blow", "feint", "flurry"],
-    branches: ["vanquisher", "berserker", "ravager"],
-    reaction: GUARD,
-  },
-  {
-    id: "bleeder",
-    classId: "cinderguard",
-    weapon: "sword",
-    nodes: ["steel-brutal-force", "blood-flayer", "blood-exsanguinate", "@branches"],
-    rotation: ["rend", "cleave", "feint"],
-    branches: ["vanquisher", "berserker", "ravager"],
-    reaction: GUARD,
-  },
-  {
-    id: "bleed",
-    classId: "cinderguard",
-    weapon: "axe",
-    nodes: ["blood-exsanguinate", "blood-flayer", "@branches", "trunk-iron-will"],
-    rotation: ["rend", "cleave", "serrated-edge"],
-    branches: ["vanquisher", "berserker", "ravager"],
-    reaction: GUARD,
-  },
-  {
-    id: "poison",
-    classId: "ashstrider",
-    weapon: "dagger",
-    nodes: ["venom-venom-heart", "blood-bloodthirst", "@branches", "venom-leeching-rot"],
-    rotation: ["toxic-burst", "envenom", "wither"],
-    branches: ["deadeye", "skirmisher", "trickster"],
-    reaction: GUARD,
-  },
-  {
-    id: "assassin",
-    classId: "ashstrider",
-    weapon: "dagger",
-    nodes: ["steel-killer-instinct", "steel-execute", "@branches", "steel-coup-de-grace"],
-    rotation: ["execute", "feint", "flurry"],
-    branches: ["deadeye", "skirmisher", "trickster"],
-    reaction: GUARD,
-  },
-  {
-    id: "marksman",
-    classId: "ashstrider",
-    weapon: "crossbow",
-    nodes: [
-      "steel-killer-instinct",
-      "steel-execute",
-      "@branches",
-      "frost-deep-freeze",
-      "steel-coup-de-grace",
-    ],
-    rotation: ["piercing-shot", "execute"],
-    branches: ["deadeye", "skirmisher", "trickster"],
-    reaction: GUARD,
-  },
-  {
-    id: "venom",
-    classId: "ashstrider",
-    weapon: "bow",
-    nodes: ["venom-venom-heart", "@branches", "venom-toxic-burst"],
-    rotation: ["envenom", "toxic-burst", "wither"],
-    branches: ["deadeye", "skirmisher", "trickster"],
-    reaction: GUARD,
-    // A Poison bow: the Poison innate and the Toxin path, not the Bleed ones of the bow's plan.
-    mastery: { innate: "toxic-arrow", path: "toxin" },
-  },
-  {
-    id: "barbs",
-    classId: "ashstrider",
-    weapon: "bow",
-    nodes: ["blood-exsanguinate", "blood-serrated-edge", "@branches", "blood-bloodthirst"],
-    rotation: ["rend", "serrated-edge", "piercing-shot"],
-    branches: ["deadeye", "skirmisher", "trickster"],
-    reaction: GUARD,
-  },
-  {
-    id: "storm",
-    classId: "emberseer",
-    weapon: "wand",
-    nodes: ["storm-tempest", "storm-storm-weaver", "@branches", "frost-kindled-mind"],
-    rotation: ["chain-lightning", "thunderstrike", "meteor"],
-    branches: ["archmage", "spellweaver", "warlock"],
-    reaction: NOVA,
-  },
-  {
-    id: "frost",
-    classId: "emberseer",
-    weapon: "wand",
-    nodes: ["frost-kindled-mind", "frost-glacier", "@branches", "frost-heart-of-winter"],
-    rotation: ["ice-lance", "chain-lightning"],
-    branches: ["archmage", "spellweaver", "warlock"],
-    reaction: NOVA,
-    mastery: { path: "rime" },
-  },
-  {
-    // Crits by rhythm (sorcerer-ohne-fire-v1.md): skills charge the Spark, the Spark crits.
-    id: "starfall",
-    classId: "emberseer",
-    weapon: "wand",
-    nodes: ["storm-tempest", "frost-ever-ward", "@branches", "frost-kindled-mind"],
-    rotation: ["chain-lightning", "ice-lance", "thunderstrike"],
-    branches: ["archmage", "spellweaver", "warlock"],
-    reaction: NOVA,
-    mastery: { path: "starfall" },
-  },
-  {
-    id: "void",
-    classId: "emberseer",
-    weapon: "staff",
-    nodes: ["void-hollow-crown", "void-hungering-void", "@branches"],
-    rotation: ["corrupt", "void-rift", "soul-harvest"],
-    branches: ["archmage", "spellweaver", "warlock"],
-    reaction: NOVA,
-  },
-  {
-    id: "pyre",
-    classId: "emberseer",
-    weapon: "staff",
-    nodes: ["void-pyre-heart", "flame-cinder-heart", "@branches", "flame-firestarter"],
-    rotation: ["immolate", "inferno", "soul-harvest"],
-    branches: ["archmage", "spellweaver", "warlock"],
-    reaction: NOVA,
-  },
-  {
-    id: "rot",
-    classId: "emberseer",
-    weapon: "staff",
-    nodes: ["venom-leeching-rot", "trunk-iron-will", "@branches", "void-hollow-crown"],
-    rotation: ["wither", "corrupt", "void-rift"],
-    branches: ["archmage", "spellweaver", "warlock"],
-    reaction: NOVA,
-  },
+/** Ash Tree goals per style; Iron Bastion from the trunk comes last. */
+const GOALS: Record<Style, readonly string[]> = {
+  bleed: ["blood-flayer", "blood-exsanguinate", "@branches", "steel-brutal-force"],
+  stun: ["steel-brutal-force", "steel-colossus", "@branches", "steel-coup-de-grace"],
+  poison: ["venom-venom-heart", "venom-creeping-death", "@branches", "venom-leeching-rot"],
+  fire: ["flame-firestarter", "flame-pyroclasm", "@branches", "flame-cinder-heart"],
+  lightning: ["storm-storm-weaver", "storm-tempest", "@branches", "storm-thunderhead"],
+  cold: ["frost-glacier", "frost-kindled-mind", "@branches", "frost-heart-of-winter"],
+  void: ["void-hollow-crown", "void-hungering-void", "@branches", "void-entropy"],
+};
+
+/** Battle Plan skills per style: weapon fighters (attacks) and casters (spells). */
+const FIGHTER: Record<Style, readonly string[]> = {
+  bleed: ["rend", "serrated-edge", "cleave"],
+  stun: ["crushing-blow", "flurry", "execute"],
+  poison: ["envenom", "toxic-burst", "wither"],
+  fire: ["flurry", "crushing-blow", "execute"],
+  lightning: ["flurry", "crushing-blow", "execute"],
+  cold: ["flurry", "crushing-blow", "execute"],
+  void: ["flurry", "crushing-blow", "execute"],
+};
+const CASTER: Record<Style, readonly string[]> = {
+  ...FIGHTER,
+  fire: ["immolate", "meteor", "inferno"],
+  lightning: ["chain-lightning", "thunderstrike", "frost-nova"],
+  cold: ["ice-lance", "frost-nova", "chain-lightning"],
+  void: ["corrupt", "void-rift", "soul-harvest"],
+};
+
+/**
+ * A Cinderguard with an elemental path starts at Steel, far from its element's region: like a
+ * player, it takes the Steel Notables that work for every damage type first.
+ */
+const STEEL_FIRST = ["steel-brutal-force", "steel-colossus", "@branches"];
+
+/** Every Heirloom path: weapon, path id and the style it fights in. */
+const PATHS: readonly (readonly [string, string, Style])[] = [
+  ["sword", "edge", "bleed"],
+  ["sword", "thunder", "lightning"],
+  ["sword", "winter", "cold"],
+  ["axe", "butcher", "bleed"],
+  ["axe", "blaze", "fire"],
+  ["axe", "glacier", "cold"],
+  ["mace", "quake", "stun"],
+  ["mace", "forge", "fire"],
+  ["mace", "stormwall", "lightning"],
+  ["bow", "toxin", "poison"],
+  ["bow", "fire-arrows", "fire"],
+  ["bow", "storm", "lightning"],
+  ["crossbow", "venom-bolts", "poison"],
+  ["crossbow", "incendiary", "fire"],
+  ["crossbow", "frost", "cold"],
+  ["dagger", "venom", "poison"],
+  ["dagger", "cutthroat", "bleed"],
+  ["dagger", "static", "lightning"],
+  ["wand", "starfall", "void"],
+  ["wand", "storm", "lightning"],
+  ["wand", "rime", "cold"],
+  ["staff", "hollow", "void"],
+  ["staff", "smolder", "fire"],
+  ["staff", "glacial", "cold"],
 ];
+
+const CASTERS = new Set(["wand", "staff"]);
+const AILMENT_STYLES = new Set<Style>(["bleed", "poison", "void"]);
+
+/** Masteries per class: Burst, Tempo, Ailment (classes.ts order). */
+const CLASS_MASTERIES: Record<string, readonly [string, string, string]> = {
+  cinderguard: ["vanquisher", "berserker", "ravager"],
+  ashstrider: ["deadeye", "skirmisher", "trickster"],
+  emberseer: ["archmage", "spellweaver", "warlock"],
+};
+
+const CLASS_OF: Record<string, string> = {
+  sword: "cinderguard",
+  axe: "cinderguard",
+  mace: "cinderguard",
+  bow: "ashstrider",
+  crossbow: "ashstrider",
+  dagger: "ashstrider",
+  wand: "emberseer",
+  staff: "emberseer",
+};
+
+export const BUILDS: readonly BuildPlan[] = PATHS.map(([weapon, path, style]) => {
+  const classId = CLASS_OF[weapon] ?? "cinderguard";
+  const [burst, tempo, ailment] = CLASS_MASTERIES[classId] ?? ["", "", ""];
+  const caster = CASTERS.has(weapon);
+  const melee = !caster && FIGHTER[style][0] === "flurry";
+  return {
+    id: `${weapon}-${path}`,
+    classId,
+    weapon,
+    nodes: [
+      ...(melee && classId === "cinderguard"
+        ? [...STEEL_FIRST, ...GOALS[style].filter((n) => n !== "@branches").slice(0, 2)]
+        : GOALS[style]),
+      "trunk-iron-bastion",
+    ],
+    rotation: (caster ? CASTER : FIGHTER)[style],
+    branches: AILMENT_STYLES.has(style) ? [ailment, burst, tempo] : [burst, ailment, tempo],
+    reaction: GUARD,
+    mastery: { path },
+  };
+});
+
+/** The build with another main Mastery (`--mastery`); the rest keep their order. */
+export function withMainMastery(build: BuildPlan, mastery: string): BuildPlan {
+  return { ...build, branches: [mastery, ...build.branches.filter((b) => b !== mastery)] };
+}
 
 /** A build by id, or the first build that starts with the weapon. */
 export function findBuild(weaponId: string, buildId?: string): BuildPlan | undefined {

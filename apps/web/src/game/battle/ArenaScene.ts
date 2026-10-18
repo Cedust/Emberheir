@@ -960,6 +960,25 @@ export class ArenaScene {
         fx.ring(at.x, at.y, 0xc9c2b8, 30, 140, 0.35, 6, 1);
         this.shake(0.25);
         break;
+      case "Earthsplitter":
+        // The Vanquisher's blow splits the ground under the foe.
+        fx.ring(at.x, GROUND_Y - 4, 0xc9c2b8, 30, 240, 0.55, 9);
+        fx.burst({
+          x: at.x,
+          y: GROUND_Y - 6,
+          count: 18,
+          kind: "bit",
+          color: [0x6b625a, 0x9a9088, 0x3a332c],
+          angle: [RISE - 0.9, RISE + 0.9],
+          speed: [180, 420],
+          gravity: 1100,
+          life: [0.5, 0.9],
+          size: [6, 12],
+          spin: 6,
+        });
+        this.shake(0.35);
+        this.hitStop(0.06);
+        break;
       case "Skull Crack":
         fx.ring(at.x, at.y - 120, 0xffe14d, 20, 120, 0.4, 7, 1);
         fx.ring(at.x, GROUND_Y - 4, 0xc9c2b8, 40, 200, 0.5, 8);

@@ -232,7 +232,7 @@ export const CINDER_IMP: EnemyDefinition = {
   weapon: EMBER_CLAWS,
   skills: [FLAME_DASH],
   baseLife: 265,
-  bonuses: { evasion: 0.1, fireResistance: 0.3 },
+  bonuses: { evasion: 0.1, fireResistance: 0.2 },
 };
 
 export const MAGMA_BRUTE: EnemyDefinition = {
@@ -244,7 +244,7 @@ export const MAGMA_BRUTE: EnemyDefinition = {
   weapon: MAGMA_FIST,
   skills: [HEAVY_SWING],
   baseLife: 360,
-  bonuses: { armor: 20, fireResistance: 0.4 },
+  bonuses: { armor: 20, fireResistance: 0.25 },
 };
 
 export const FLAME_CALLER: EnemyDefinition = {
@@ -256,7 +256,7 @@ export const FLAME_CALLER: EnemyDefinition = {
   weapon: PYRE_STAFF,
   skills: [FIREBALL],
   baseLife: 240,
-  bonuses: { fireResistance: 0.3 },
+  bonuses: { fireResistance: 0.2 },
 };
 
 export const OBSIDIAN_GUARD: EnemyDefinition = {
@@ -268,7 +268,7 @@ export const OBSIDIAN_GUARD: EnemyDefinition = {
   weapon: OBSIDIAN_GLAIVE,
   skills: [OBSIDIAN_SHELL],
   baseLife: 285,
-  bonuses: { blockChance: 0.1, fireResistance: 0.3 },
+  bonuses: { blockChance: 0.1, fireResistance: 0.2 },
   triggers: [
     {
       id: "obsidian-barrier",
@@ -302,7 +302,7 @@ export const CINDER_TYRANT: EnemyDefinition = {
   skills: [FIREBALL],
   baseLife: 370,
   boss: true,
-  bonuses: { fireResistance: 0.4 },
+  bonuses: { fireResistance: 0.25 },
   telegraphs: [{ skill: ERUPTION, interval: 12, windup: 2 }],
   triggers: [
     {
@@ -340,7 +340,7 @@ export const FROST_FOX: EnemyDefinition = {
   weapon: FROST_FANGS,
   skills: [POUNCE],
   baseLife: 290,
-  bonuses: { evasion: 0.1, coldResistance: 0.3 },
+  bonuses: { evasion: 0.1, coldResistance: 0.2 },
 };
 
 export const RIME_IBEX: EnemyDefinition = {
@@ -352,7 +352,7 @@ export const RIME_IBEX: EnemyDefinition = {
   weapon: GLACIER_MAUL,
   skills: [HEAVY_SWING],
   baseLife: 360,
-  bonuses: { armor: 20, thorns: 1, coldResistance: 0.4 },
+  bonuses: { armor: 20, thorns: 1, coldResistance: 0.25 },
 };
 
 export const RIME_WITCH: EnemyDefinition = {
@@ -364,7 +364,7 @@ export const RIME_WITCH: EnemyDefinition = {
   weapon: RIME_WAND,
   skills: [ICE_BOLT],
   baseLife: 260,
-  bonuses: { coldResistance: 0.3 },
+  bonuses: { coldResistance: 0.2 },
 };
 
 export const FROST_WARDEN: EnemyDefinition = {
@@ -376,7 +376,7 @@ export const FROST_WARDEN: EnemyDefinition = {
   weapon: ICE_SHARDS,
   skills: [GLACIAL_MEND],
   baseLife: 305,
-  bonuses: { blockChance: 0.1, coldResistance: 0.3 },
+  bonuses: { blockChance: 0.1, coldResistance: 0.2 },
   triggers: [
     {
       id: "ice-wall",
@@ -409,7 +409,7 @@ export const RIME_WARDEN: EnemyDefinition = {
   skills: [ICE_BOLT],
   baseLife: 385,
   boss: true,
-  bonuses: { blockChance: 0.07, coldResistance: 0.4 },
+  bonuses: { blockChance: 0.07, coldResistance: 0.25 },
   telegraphs: [{ skill: AVALANCHE, interval: 12, windup: 2.5 }],
   triggers: [0.75, 0.5, 0.25].map((threshold) => ({
     id: `ice-barrier-${threshold * 100}`,
@@ -433,7 +433,7 @@ export const STORM_SPRITE: EnemyDefinition = {
   weapon: STORM_TALONS,
   skills: [ARC_DASH],
   baseLife: 260,
-  bonuses: { evasion: 0.12, lightningResistance: 0.3 },
+  bonuses: { evasion: 0.12, lightningResistance: 0.2 },
 };
 
 export const THUNDER_BRUTE: EnemyDefinition = {
@@ -445,7 +445,7 @@ export const THUNDER_BRUTE: EnemyDefinition = {
   weapon: THUNDER_MAUL,
   skills: [HEAVY_SWING],
   baseLife: 340,
-  bonuses: { armor: 22, lightningResistance: 0.4 },
+  bonuses: { armor: 22, lightningResistance: 0.25 },
 };
 
 export const STORM_CALLER: EnemyDefinition = {
@@ -457,7 +457,7 @@ export const STORM_CALLER: EnemyDefinition = {
   weapon: STORM_ROD,
   skills: [FORKED_BOLT],
   baseLife: 245,
-  bonuses: { lightningResistance: 0.3 },
+  bonuses: { lightningResistance: 0.2 },
 };
 
 export const STATIC_PORCUPINE: EnemyDefinition = {
@@ -469,7 +469,7 @@ export const STATIC_PORCUPINE: EnemyDefinition = {
   weapon: COPPER_FISTS,
   skills: [HEAVY_SWING],
   baseLife: 340,
-  bonuses: { armor: 18, thorns: 1, lightningResistance: 0.4 },
+  bonuses: { armor: 18, thorns: 1, lightningResistance: 0.25 },
   triggers: [
     {
       id: "static-discharge",
@@ -526,7 +526,7 @@ export const RIFT_STALKER: EnemyDefinition = {
   weapon: RIFT_CLAWS,
   skills: [QUICK_CUTS],
   baseLife: 275,
-  bonuses: { evasion: 0.12, voidResistance: 0.3 },
+  bonuses: { evasion: 0.12, voidResistance: 0.2 },
 };
 
 export const HOLLOW_BRUTE: EnemyDefinition = {
@@ -538,7 +538,7 @@ export const HOLLOW_BRUTE: EnemyDefinition = {
   weapon: HOLLOW_FIST,
   skills: [HEAVY_SWING],
   baseLife: 385,
-  bonuses: { armor: 24, voidResistance: 0.4 },
+  bonuses: { armor: 24, voidResistance: 0.25 },
 };
 
 export const VOID_SEER: EnemyDefinition = {
@@ -550,7 +550,7 @@ export const VOID_SEER: EnemyDefinition = {
   weapon: SEER_EYE,
   skills: [VOID_LANCE],
   baseLife: 255,
-  bonuses: { voidResistance: 0.3 },
+  bonuses: { voidResistance: 0.2 },
 };
 
 export const GLOOM_WEAVER: EnemyDefinition = {
@@ -562,7 +562,7 @@ export const GLOOM_WEAVER: EnemyDefinition = {
   weapon: GLOOM_THREADS,
   skills: [HEX],
   baseLife: 270,
-  bonuses: { voidResistance: 0.3 },
+  bonuses: { voidResistance: 0.2 },
 };
 
 export const ACT6_ENEMIES: readonly EnemyDefinition[] = [
@@ -586,7 +586,7 @@ export const VOIDBORN_MAW: EnemyDefinition = {
   skills: [CONSUME],
   baseLife: 430,
   boss: true,
-  bonuses: { voidResistance: 0.4 },
+  bonuses: { voidResistance: 0.25 },
   telegraphs: [{ skill: RIFT_SNAP, interval: 12, windup: 2 }],
   triggers: [
     {

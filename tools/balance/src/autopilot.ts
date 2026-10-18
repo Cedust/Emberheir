@@ -238,8 +238,8 @@ export function spendMastery(state: GameState, data: GameData, build?: BuildPlan
 }
 
 /**
- * Prestiges with the first new branch the weapon's tree plan prefers; once all of them are owned,
- * deepens them in plan order. All items stay.
+ * Harvests with the build's Mastery plan: the main Mastery first (it deepens up to Tier V), then
+ * Tier I of the others in plan order. All items stay.
  */
 export function autopilotPrestige(
   state: GameState,
@@ -248,10 +248,7 @@ export function autopilotPrestige(
 ): GameState {
   const open = openBranches(state, data).map((b) => b.id);
   const plan = build?.branches ?? [];
-  const preferred =
-    plan.find((b) => open.includes(b) && !state.legacy.branches.includes(b)) ??
-    plan.find((b) => open.includes(b)) ??
-    open[0];
+  const preferred = plan.find((b) => open.includes(b)) ?? open[0];
   const s = applyAction(state, data, {
     type: "prestige",
     ...(preferred ? { branchId: preferred } : {}),

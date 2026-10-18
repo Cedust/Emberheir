@@ -102,10 +102,11 @@ export const COMBAT = {
    */
   monsterArmorPerLevel: 0.27,
   /**
-   * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10):
-   * Elemental builds had it far easier than Physical ones against the same walls.
+   * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10).
+   * Klassengerüst v1: every weapon fights Physical or Elemental by its path, so the base matches
+   * what Monster Armor takes off a Physical hit (about 10 %); the act's own element comes on top.
    */
-  monsterResistance: 0.3,
+  monsterResistance: 0.1,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,

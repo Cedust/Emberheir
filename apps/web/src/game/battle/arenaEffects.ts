@@ -71,6 +71,10 @@ export const SKILL_FX: Record<string, Delivery> = {
   "Flame Dash": "slash",
   "Arc Dash": "slash",
   Pounce: "slash",
+  // Mastery skills: infused, so they take the colour of the Heirloom's damage type.
+  "Arcane Blast": "nova",
+  "Spell Volley": "orb",
+  Malediction: "orb",
 };
 
 export const RISE = -Math.PI / 2;
