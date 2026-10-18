@@ -195,14 +195,16 @@ describe("Act 1", () => {
       for (const weapon of heroClass.weapons) {
         const state = newGame(GAME_DATA, { seed: 1, classId: heroClass.id, weapon });
         expect(state.hero.weaponId).toBe(weapon);
-        expect(state.hero.equipment.offHand?.baseId).toBe(heroClass.offHand);
+        expect(state.hero.equipment.offHand?.baseId).toBe(
+          heroClass.offHandFor?.[weapon] ?? heroClass.offHand,
+        );
         const { gear } = heroSetup(state, GAME_DATA);
         expect(gear.inactive, `${heroClass.id} with ${weapon}`).toEqual([]);
       }
     }
   });
 
-  it("classes: Class Arrays add up to 14 (1 each + 8), four branches with Tactician, titles", () => {
+  it("classes: Class Arrays add up to 14 (1 each + 8), main attribute at 5, branches, titles", () => {
     const branches = new Set((SKILL_TREE.prestigeBranches ?? []).map((b) => b.id));
     for (const c of CLASSES) {
       expect(
@@ -211,8 +213,7 @@ describe("Act 1", () => {
       ).toBe(14);
       for (const v of Object.values(c.startingAttributes))
         expect(v, c.id).toBeGreaterThanOrEqual(1);
-      expect(c.branches, c.id).toHaveLength(4);
-      expect(c.branches.at(-1), c.id).toBe("tactician");
+      expect(c.startingAttributes[c.mainAttribute], c.id).toBe(5);
       for (const b of c.branches) {
         expect(branches.has(b), b).toBe(true);
         expect(c.titles[b], `${c.id} ${b}`).toBeTruthy();

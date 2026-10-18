@@ -95,7 +95,7 @@ export const PERK_FX: Record<
   opportunist: { color: [0xffd84a, 0xfff2b0], on: "foe", look: "star" },
   trueShot: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star", name: true },
   attuned: { color: [0x5b8cff], on: "self", look: "ring" },
-  elementalSurge: { color: [0x8a5bff, 0x5b8cff], on: "foe", look: "star" },
+  surge: { color: [0x8a5bff, 0x5b8cff], on: "foe", look: "star" },
   spellfire: { color: [0x5b8cff, 0xb8d0ff], on: "self", look: "ring", name: true },
   quickReflexes: { color: [0xd8f0c8, 0xa8d8a0], on: "self", look: "wind", name: true },
   emberDance: { color: [0xffb13b, 0xffd84a], on: "self", look: "wind" },
@@ -117,7 +117,7 @@ export const PAYOFF_FX: Record<
   {
     color: readonly number[];
     on: "self" | "foe";
-    look: "pop" | "flare" | "implode" | "ring" | "star" | "rift" | "arc";
+    look: "pop" | "flare" | "implode" | "ring" | "star" | "rift" | "arc" | "nova";
     shake?: number;
     /** No floating name: it happens too often (Conduction). */
     quiet?: boolean;
@@ -126,8 +126,10 @@ export const PAYOFF_FX: Record<
   overflow: { color: [0xb5d82c, 0xe8ff7a, 0x6f9a10], on: "foe", look: "pop", shake: 0.15 },
   combust: { color: [0xff6a2b, 0xffd84a, 0xfff1c9], on: "foe", look: "flare", shake: 0.2 },
   collapse: { color: [0xa35cff, 0x3a1a6a, 0xe0c8ff], on: "foe", look: "implode", shake: 0.3 },
-  ironBlood: { color: [0xc9c2b8, 0xff8a3a], on: "self", look: "ring" },
-  keenEye: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star" },
+  // Class Traits (klassengeruest-v1.md 2): full Fury bursts from the Cinderguard, the Overcharge
+  // Nova breaks loose from the Emberseer in its element (the arena colours it by the weapon).
+  fury: { color: [0xff6a2b, 0xffd84a, 0xffffff], on: "self", look: "ring", shake: 0.1 },
+  overcharge: { color: [0xffffff, 0xffd84a], on: "self", look: "nova", shake: 0.25 },
   spark: { color: [0x5b8cff, 0xffe14d], on: "foe", look: "star" },
   // Starfall: a white-violet tear of light where the Spark crits; built-up Crits break the same way.
   flashpoint: { color: [0xd2b8ff, 0xffffff, 0x8a5cff], on: "foe", look: "rift", shake: 0.15 },
@@ -141,8 +143,8 @@ export const PAYOFF_NAMES: Record<PayoffKind, string> = {
   overflow: "Overflow",
   combust: "Combust",
   collapse: "Collapse",
-  ironBlood: "Iron Blood",
-  keenEye: "Keen Eye",
+  fury: "Fury",
+  overcharge: "Overcharge",
   spark: "Spellcharge",
   flashpoint: "Flashpoint",
   criticalMass: "Critical Mass",

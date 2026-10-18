@@ -81,7 +81,7 @@ const PAGES: readonly TabItem<Page>[] = [
 ];
 
 function demoState(): GameState {
-  const base = newGame(GAME_DATA, { seed: 1, classId: "warrior" });
+  const base = newGame(GAME_DATA, { seed: 1, classId: "cinderguard" });
   return {
     ...base,
     wallet: {

@@ -279,6 +279,7 @@ export function heroSetup(
     {
       level: hero.level,
       attributes: hero.attributes,
+      mainAttribute: heroClass.mainAttribute,
       boonAttributes: boons.attributes,
       equipment: hero.equipment,
       weapon: mastery.weapon,

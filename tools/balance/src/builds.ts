@@ -27,7 +27,7 @@ const NOVA = { skillId: "frost-nova", conditionId: "enemy-windup" };
 export const BUILDS: readonly BuildPlan[] = [
   {
     id: "unbroken",
-    classId: "warrior",
+    classId: "cinderguard",
     weapon: "sword",
     nodes: ["might-unbroken", "might-brutal-force", "rupture-might-execute", "@branches"],
     rotation: ["flurry", "feint", "execute"],
@@ -36,7 +36,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "smasher",
-    classId: "warrior",
+    classId: "cinderguard",
     weapon: "mace",
     nodes: ["might-brutal-force", "might-colossus", "@branches", "might-arcana-arcane-edge"],
     rotation: ["crushing-blow", "feint", "flurry"],
@@ -45,7 +45,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "bleeder",
-    classId: "warrior",
+    classId: "cinderguard",
     weapon: "sword",
     nodes: ["might-brutal-force", "rupture-flayer", "rupture-exsanguinate", "@branches"],
     rotation: ["rend", "cleave", "feint"],
@@ -54,7 +54,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "bleed",
-    classId: "reaver",
+    classId: "cinderguard",
     weapon: "axe",
     nodes: ["rupture-exsanguinate", "rupture-flayer", "@branches", "affliction-rupture-iron-will"],
     rotation: ["rend", "cleave", "serrated-edge"],
@@ -63,7 +63,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "poison",
-    classId: "reaver",
+    classId: "ashstrider",
     weapon: "dagger",
     nodes: [
       "rupture-venom-heart",
@@ -77,7 +77,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "assassin",
-    classId: "reaver",
+    classId: "ashstrider",
     weapon: "dagger",
     nodes: ["rupture-might-killers-eye", "rupture-might-execute", "@branches", "might-whirlwind"],
     rotation: ["execute", "feint", "flurry"],
@@ -86,7 +86,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "marksman",
-    classId: "hunter",
+    classId: "ashstrider",
     weapon: "crossbow",
     nodes: [
       "rupture-might-killer-instinct",
@@ -101,7 +101,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "venom",
-    classId: "hunter",
+    classId: "ashstrider",
     weapon: "bow",
     nodes: ["rupture-venom-heart", "@branches", "affliction-rupture-toxic-burst"],
     rotation: ["envenom", "toxic-burst", "plague-cloud"],
@@ -112,7 +112,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "barbs",
-    classId: "hunter",
+    classId: "ashstrider",
     weapon: "bow",
     nodes: [
       "rupture-exsanguinate",
@@ -126,7 +126,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "storm",
-    classId: "sorcerer",
+    classId: "emberseer",
     weapon: "wand",
     nodes: ["arcana-tempest", "arcana-storm-weaver", "@branches", "arcana-kindled-mind"],
     rotation: ["chain-lightning", "thunderstrike", "meteor"],
@@ -135,7 +135,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "frost",
-    classId: "sorcerer",
+    classId: "emberseer",
     weapon: "wand",
     nodes: [
       "arcana-kindled-mind",
@@ -151,7 +151,7 @@ export const BUILDS: readonly BuildPlan[] = [
   {
     // Crits by rhythm (sorcerer-ohne-fire-v1.md): skills charge the Spark, the Spark crits.
     id: "starfall",
-    classId: "sorcerer",
+    classId: "emberseer",
     weapon: "wand",
     nodes: ["arcana-tempest", "arcana-ever-ward", "@branches", "arcana-kindled-mind"],
     rotation: ["chain-lightning", "ice-lance", "thunderstrike"],
@@ -161,7 +161,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "void",
-    classId: "warlock",
+    classId: "emberseer",
     weapon: "staff",
     nodes: ["affliction-hollow-crown", "affliction-hungering-void", "@branches"],
     rotation: ["corrupt", "void-rift", "soul-harvest"],
@@ -170,7 +170,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "pyre",
-    classId: "warlock",
+    classId: "emberseer",
     weapon: "staff",
     nodes: [
       "affliction-pyre-heart",
@@ -184,7 +184,7 @@ export const BUILDS: readonly BuildPlan[] = [
   },
   {
     id: "rot",
-    classId: "warlock",
+    classId: "emberseer",
     weapon: "staff",
     nodes: [
       "affliction-rupture-leeching-rot",

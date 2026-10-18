@@ -5,7 +5,7 @@ import { autopilotRunes, campSalvage, pouchCovers, wantsBase } from "./runes";
 
 /** A fresh Warrior (no helm, no shield) in the Camp with Nyssa, a full purse and these Runes. */
 function camp(runes: Record<string, number>, withBase = true): GameState {
-  const s = newGame(GAME_DATA, { seed: 1, classId: "warrior", weapon: "sword" });
+  const s = newGame(GAME_DATA, { seed: 1, classId: "cinderguard", weapon: "sword" });
   const cap = rollItem(
     GAME_DATA.items,
     { baseId: "leather-cap", itemLevel: 5, rarity: "normal" },

@@ -35,6 +35,8 @@ import {
   usePerk,
   withStatAilmentChances,
   conditionHolds,
+  furyFactor,
+  huntersMarkCrit,
   mark,
 } from "./fighter";
 import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
@@ -310,28 +312,18 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     wr?.topRollCrits !== undefined &&
     h.rollFraction !== undefined &&
     h.rollFraction >= wr.topRollCrits;
-  // Keen Eye (Hunter): the first hit and every hit into an enemy's wind-up is a clean Crit.
-  const keen =
-    attacker.setup.rules?.keenEye === true &&
-    !h.fromTrigger &&
-    (!attacker.keenOpened || defender.windup !== null);
-  if (keen) {
-    attacker.keenOpened = true;
-    payoff(core, attacker, "keenEye");
-  }
   const ambush = rolls && wr?.ambush !== undefined && now < wr.ambush;
   const promised = rolls && attacker.critsLeft > 0;
   const mightyCrit = rolls && h.mighty === true && wr?.mightyCrit === true;
   const forceCrit =
-    keen ||
-    (rolls &&
-      (h.forceCrit === true ||
-        attacker.nextCrit ||
-        opener ||
-        topRoll ||
-        ambush ||
-        promised ||
-        mightyCrit));
+    rolls &&
+    (h.forceCrit === true ||
+      attacker.nextCrit ||
+      opener ||
+      topRoll ||
+      ambush ||
+      promised ||
+      mightyCrit);
   if (forceCrit) attacker.nextCrit = false;
   if (forceCrit && promised) attacker.critsLeft--;
   if (opener) attacker.openerUsed = true;
@@ -340,11 +332,13 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   const gap =
     (rolls && attacker.afterSkill ? (wr?.critAfterSkill ?? 0) : 0) +
     ruleBonus(core, attacker, attacker.setup.rules?.conditionalCrit) +
-    attacker.critBuildup;
+    attacker.critBuildup +
+    // Hunter's Mark (Ashstrider): an enemy carrying your ailments is easier to crit.
+    huntersMarkCrit(attacker, defender);
   if (rolls) attacker.afterSkill = false;
   const precise = h.precise === true || (h.mighty === true && wr?.mightyNeverGlances === true);
   let precision: number | undefined;
-  if (rolls && !precise && !keen) {
+  if (rolls && !precise) {
     const aim = wr?.steadyAim;
     const steady =
       aim && fightTime(core) - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
@@ -366,7 +360,14 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       evadable: h.evadable,
       // Deflect is the hero's answer to spells; monsters only dodge attacks.
       deflects: defender.side === "hero",
-      attacker: attackerStats(attacker, h.type, penetration, gap),
+      attacker: attackerStats(
+        attacker,
+        h.type,
+        penetration,
+        gap,
+        // Armorbreaker: your Sunder lowers Resistance as well as Armor.
+        attacker.perks.has("armorbreaker") ? sundered : 0,
+      ),
       attackerLevel: attacker.setup.level,
       multiplier:
         h.multiplier *
@@ -375,11 +376,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         (attacker.setup.rules?.hitDamage ?? 1) *
         (defender.ailments.chill ? (attacker.setup.rules?.chilledDamage ?? 1) : 1) *
         crescendoFactor(attacker) *
+        furyFactor(attacker) *
         masteryDamageFactor(core, attacker, defender) *
-        // Iron Blood (Warrior): announced Heavy Attacks hit the Warrior softer.
-        (core.heavyFrom === attacker.side
-          ? (defender.setup.rules?.ironBlood?.damageTaken ?? 1)
-          : 1) *
         (opener ? 1 + (wr?.openerDamage ?? 0) : 1) *
         (h.fromSkill ? 1 + (wr?.skillDamage ?? 0) : 1) *
         ruleFactor(core, attacker, attacker.setup.rules?.conditionalDamage) *
@@ -453,6 +451,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     ...(damage < dealt ? { capped: true } : {}),
   });
   defender.lastHitTakenAt = fightTime(core);
+  gainFury(core, attacker);
   const dwr = defender.setup.weaponRules;
   if (outcome.blocked && dwr?.critAfter?.includes("block")) defender.nextCrit = true;
   if (outcome.blocked && dwr?.braced) defender.bracedUntil = now + dwr.braced.seconds;
@@ -501,10 +500,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       damage / (1 + damageTaken(defender)) / (attacker.setup.rules?.slowDeath?.hit ?? 1);
     const ailmentBase = hitBase * (h.ailmentPower ?? 1);
     const deepWound = outcome.crit ? (wr?.critBleedPower ?? 1) : 1;
-    for (const { ailment, chance } of withStatAilmentChances(
-      elementalSurge(attacker, h),
-      attacker.stats,
-    )) {
+    for (const { ailment, chance } of withStatAilmentChances(surge(attacker, h), attacker.stats)) {
       // Thousand Cuts: Poison Chance no longer counts, every clean hit Poisons instead.
       if (ailment === "poison" && wr?.thousandCuts) continue;
       if (!core.rng.chance(chance)) continue;
@@ -579,6 +575,14 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   return result;
 }
 
+/** Fury (Cinderguard): every hit that lands adds to the next; the full Fury flares once. */
+function gainFury(core: FightCore, f: Fighter): void {
+  const fury = f.setup.rules?.fury;
+  if (!fury || f.fury * fury.perHit >= fury.max - 1e-9) return;
+  f.fury++;
+  if (f.fury * fury.perHit >= fury.max - 1e-9) payoff(core, f, "fury");
+}
+
 /** An attack missed the defender: Read the Blow, Ember Dance and On Evade triggers. */
 function evaded(core: FightCore, defender: Fighter, h: HitOptions): void {
   emit(core, { t: fightTime(core), type: "evade", side: defender.side, source: h.source });
@@ -593,30 +597,40 @@ function evaded(core: FightCore, defender: Fighter, h: HitOptions): void {
   if (!h.fromTrigger) fireTriggers(core, defender, "onEvade");
 }
 
-/** Elemental Surge: elemental hits get a better chance of their element's ailment. */
-function elementalSurge(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
-  const ailment = ELEMENT_AILMENT[h.type];
-  if (!ailment || !attacker.perks.has("elementalSurge")) return h.ailmentChances;
-  const own = h.ailmentChances.find((c) => c.ailment === ailment);
-  return own
-    ? h.ailmentChances.map((c) =>
-        c === own ? { ailment, chance: Math.min(1, c.chance + PERK.elementalSurgeChance) } : c,
-      )
-    : [...h.ailmentChances, { ailment, chance: PERK.elementalSurgeChance }];
+/**
+ * Surge (INT 7): every ailment the hit can apply gets a better chance; an elemental hit also gets
+ * a chance of its element's ailment.
+ */
+function surge(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
+  if (!attacker.perks.has("surge")) return h.ailmentChances;
+  const raised = h.ailmentChances.map((c) => ({
+    ailment: c.ailment,
+    chance: Math.min(1, c.chance + PERK.surgeChance),
+  }));
+  const own = ELEMENT_AILMENT[h.type];
+  return own && !raised.some((c) => c.ailment === own)
+    ? [...raised, { ailment: own, chance: PERK.surgeChance }]
+    : raised;
 }
 
 /** The attacker's stats for one hit: extra Penetration (Master of Pierce) and Crit Chance. */
-function attackerStats(attacker: Fighter, type: DamageType, penetration: number, crit: number) {
+function attackerStats(
+  attacker: Fighter,
+  type: DamageType,
+  penetration: number,
+  crit: number,
+  elemental = 0,
+) {
   const stats = attacker.stats;
-  if (penetration <= 0 && crit <= 0 && !attacker.setup.weaponRules?.penetrationToElemental) {
-    return stats;
-  }
   const toElemental = attacker.setup.weaponRules?.penetrationToElemental && type !== "physical";
+  if (penetration <= 0 && crit <= 0 && elemental <= 0 && !toElemental) return stats;
   return {
     ...stats,
     physicalPenetration: stats.physicalPenetration + penetration,
     elementalPenetration:
-      stats.elementalPenetration + (toElemental ? stats.physicalPenetration + penetration : 0),
+      stats.elementalPenetration +
+      elemental +
+      (toElemental ? stats.physicalPenetration + penetration : 0),
     critChance: Math.min(1, stats.critChance + crit),
   };
 }

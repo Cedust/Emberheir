@@ -14,7 +14,7 @@ import {
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
 
 export interface HeroLook {
-  readonly heroClass: "warrior" | "reaver" | "hunter" | "sorcerer" | "warlock";
+  readonly heroClass: "cinderguard" | "ashstrider" | "emberseer";
   readonly weapon: "sword" | "wand" | "axe" | "dagger" | "bow" | "crossbow" | "mace" | "staff";
   readonly offHand: HeirOffHand | null;
   /** The weapon's id (Weapon Mastery): the painted weapon of the Mastery view is in hand. */
@@ -27,13 +27,11 @@ export interface HeroLook {
   readonly draught?: number;
 }
 
-/** Colors per class (klassen-v2.md section 9): body, chest piece, headgear. */
+/** Colors per class (klassengeruest-v1.md 2): body, chest piece, headgear. */
 const CLASS_LOOKS: Record<HeroLook["heroClass"], { body: number; chest: number; head: number }> = {
-  warrior: { body: 0x8a2f1c, chest: 0x9aa0a6, head: 0x8a8f96 },
-  reaver: { body: 0x4a3426, chest: 0x8a1c24, head: 0x2e2119 },
-  hunter: { body: 0x3f5a2e, chest: 0x7a5a34, head: 0x34492a },
-  sorcerer: { body: 0x2d4a8a, chest: 0xe8c07a, head: 0xe8c07a },
-  warlock: { body: 0x4b2a66, chest: 0x6a6460, head: 0x5a5450 },
+  cinderguard: { body: 0x8a2f1c, chest: 0x9aa0a6, head: 0x8a8f96 },
+  ashstrider: { body: 0x3f5a2e, chest: 0x7a5a34, head: 0x34492a },
+  emberseer: { body: 0x4b2a66, chest: 0xe8c07a, head: 0x5a5450 },
 };
 
 /**
@@ -261,7 +259,7 @@ function drawPaintedHero(
   const c = new Container();
   const rig = buildHeirRig(heir);
   // A quiver rides on the back, behind everything (a Hunter always wears one).
-  const quiver = look.offHand === "quiver" || look.heroClass === "hunter";
+  const quiver = look.offHand === "quiver" || look.heroClass === "ashstrider";
   const quiverArt = heir.offHands.quiver;
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
   const grip = HEIR_GRIPS[look.weapon];
@@ -290,7 +288,7 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const colors = CLASS_LOOKS[look.heroClass];
   // Off hand and back gear sit behind the body.
-  if (look.offHand === "quiver" || look.heroClass === "hunter") {
+  if (look.offHand === "quiver" || look.heroClass === "ashstrider") {
     c.addChild(
       new Graphics().roundRect(-78, -330, 30, 120, 8).fill(0x7a5a34).stroke(line),
       new Graphics()
@@ -317,14 +315,14 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
     );
   }
   // Robes reach the ground and flare; armor and leather stop at the knees.
-  const robe = look.heroClass === "sorcerer" || look.heroClass === "warlock";
+  const robe = look.heroClass === "emberseer";
   const body = new Graphics();
   if (robe) {
     body
       .moveTo(-84, -150)
       .bezierCurveTo(-70, -260, -50, -320, 0, -320)
       .bezierCurveTo(50, -320, 70, -260, 84, -150);
-    if (look.heroClass === "warlock") {
+    if (look.heroClass === "emberseer") {
       // A tattered hem.
       for (let x = 84; x > -84; x -= 24) body.lineTo(x - 12, -164).lineTo(x - 24, -150);
     }
@@ -337,22 +335,14 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
       .closePath();
   }
   c.addChild(body.fill(colors.body).stroke(line));
-  if (look.heroClass === "reaver") {
-    // A blood-red sash across the chest.
-    c.addChild(
-      new Graphics()
-        .poly([-50, -300, -30, -310, 52, -186, 32, -176])
-        .fill(colors.chest)
-        .stroke(line),
-    );
-  } else if (robe) {
+  if (robe) {
     c.addChild(
       new Graphics().rect(-8, -300, 16, 150).fill(colors.chest).stroke(line),
       new Graphics()
         .circle(-40, -200, 4)
         .circle(40, -220, 4)
         .circle(-30, -260, 3)
-        .fill({ color: look.heroClass === "sorcerer" ? 0xff8a3a : 0xa35cff, alpha: 0.9 }),
+        .fill({ color: 0xa35cff, alpha: 0.9 }),
     );
   } else {
     c.addChild(
@@ -368,7 +358,7 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
   c.addChild(new Graphics().circle(0, -364, 40).fill(0xf0c9a0).stroke(line));
   const head = new Graphics();
   switch (look.heroClass) {
-    case "warrior":
+    case "cinderguard":
       // Half helm with a nose guard.
       head
         .moveTo(-44, -360)
@@ -379,8 +369,7 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
         .stroke(line);
       head.rect(-4, -362, 8, 22).fill(colors.head).stroke({ color: INK, width: 2 });
       break;
-    case "reaver":
-    case "hunter":
+    case "ashstrider":
       // A hood that frames the face.
       head
         .moveTo(-48, -330)
@@ -391,24 +380,7 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
         .fill(colors.head)
         .stroke(line);
       break;
-    case "sorcerer":
-      // Hair and a high gold collar.
-      head
-        .moveTo(-40, -372)
-        .bezierCurveTo(-34, -400, 34, -400, 40, -372)
-        .lineTo(40, -364)
-        .bezierCurveTo(30, -384, -30, -384, -40, -364)
-        .closePath()
-        .fill(0x3a2a1e)
-        .stroke(line);
-      head
-        .moveTo(-52, -310)
-        .quadraticCurveTo(-62, -350, -44, -372)
-        .moveTo(52, -310)
-        .quadraticCurveTo(62, -350, 44, -372)
-        .stroke({ color: colors.head, width: 7, cap: "round" });
-      break;
-    case "warlock":
+    case "emberseer":
       // A pointed, sagging hood.
       head
         .moveTo(-50, -330)

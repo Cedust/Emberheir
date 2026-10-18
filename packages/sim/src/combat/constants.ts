@@ -40,20 +40,23 @@ export const COMBAT = {
    * Armor are percentages so they keep mattering at every level.
    */
   heir: {
-    physicalDamagePerStrength: 0.08,
+    /**
+     * Klassengerüst v1 (klassengeruest-v1.md 3): the class's main attribute (Cinderguard STR,
+     * Ashstrider DEX, Emberseer INT) gives % damage of every type; the other two damage
+     * attributes give nothing to damage. Each of STR, DEX and INT also gives one defense layer.
+     */
+    damagePerMainAttribute: 0.08,
     armorPerStrength: 0.06,
-    critChancePerDexterity: 0.015,
-    triggerChancePerDexterity: 0.04,
-    elementalDamagePerIntelligence: 0.08,
-    // Intelligence gives Barrier, not Resistance: Resistance comes from gear for every class
-    // (Timo, PoE rule: Strength Armor, Agility Evasion, Intelligence Barrier).
-    allResistancePerIntelligence: 0,
+    evasionPerDexterity: 0.02,
     /** % more Barrier per Intelligence point (the Barrier itself comes from gear). */
     barrierPerIntelligence: 0.08,
+    // Resistance comes from gear for every class (Timo, PoE rule).
+    allResistancePerIntelligence: 0,
     attackSpeedPerAgility: 0.03,
-    evasionPerAgility: 0.02,
+    critChancePerAgility: 0.015,
     heatGainPerWisdom: 0.06,
     ailmentEffectPerWisdom: 0.05,
+    triggerChancePerWisdom: 0.04,
     lifePerVitality: 0.06,
     tenacityPerVitality: 0.03,
   },

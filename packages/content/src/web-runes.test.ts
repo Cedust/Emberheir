@@ -14,7 +14,7 @@ describe("Rune Sockets in the web", () => {
   });
 
   it("a learned socket takes a Rune from the pouch; a respec gives it back", () => {
-    let s = newGame(GAME_DATA, { seed: 2, classId: "warrior" });
+    let s = newGame(GAME_DATA, { seed: 2, classId: "cinderguard" });
     s = {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 20 },

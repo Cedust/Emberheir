@@ -1,5 +1,6 @@
 import {
   type CombatEvent,
+  type FighterSnapshot,
   type FightSnapshot,
   type PayoffKind,
   type PerkId,
@@ -98,6 +99,10 @@ export class ArenaScene {
   private barrier: Record<Side, number> = { hero: 0, enemy: 0 };
   private ward: Record<Side, Graphics | null> = { hero: null, enemy: null };
   private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
+  /** The hero's Class Trait as the last snapshot showed it, and its drawing. */
+  private trait: FighterSnapshot["trait"] | undefined;
+  private traitGfx: Graphics | null = null;
+  private traitCarry = 0;
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
@@ -249,7 +254,8 @@ export class ArenaScene {
         ? (this.hero.body.getChildByLabel("weapon-tip", true) ?? null)
         : null;
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
-    this.world.addChild(this.hero.root, this.enemy.root, fx.front);
+    this.traitGfx = new Graphics();
+    this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
 
     // The weather is already falling when the fight opens.
     for (let i = 0; i < 80; i++) {
@@ -427,6 +433,7 @@ export class ArenaScene {
   /** Current state: telegraph wind-up and ailment tints. */
   onSnapshot(snapshot: FightSnapshot): void {
     this.telegraphOn = snapshot.enemy.telegraph !== null;
+    this.trait = snapshot.over ? undefined : snapshot.hero.trait;
     for (const side of ["hero", "enemy"] as const) {
       this.barrier[side] = Math.min(
         1,
@@ -439,6 +446,74 @@ export class ArenaScene {
       const sunder = snapshot[side].curses.some((c) => c.armor) ? ["sunder"] : [];
       this.ailments[side] = [...list.map((a) => a.type), ...sunder];
       if (snapshot[side].life <= 0) this.ailments[side] = [];
+    }
+  }
+
+  /**
+   * The Class Trait in the arena (klassengeruest-v1.md 2): an ember aura that grows with Fury,
+   * the Overcharge sparks circling the Emberseer, and Hunter's Mark as a sight over the enemy.
+   */
+  private drawTrait(dt: number): void {
+    const g = this.traitGfx;
+    if (!g) return;
+    g.clear();
+    const trait = this.trait;
+    if (!trait || !this.hero || this.hero.root.alpha < 1) return;
+    const spin = this.motion ? this.clock : 0;
+    const hero = this.center("hero");
+    if (trait.kind === "fury") {
+      const share = trait.value / Math.max(1, trait.max);
+      if (share <= 0) return;
+      const pulse = this.motion ? 0.06 * Math.sin(this.clock * 6) : 0;
+      g.ellipse(hero.x, GROUND_Y - 190, 120 + 40 * share, 180 + 40 * share)
+        .fill({ color: 0xff6a2b, alpha: 0.05 + 0.12 * share })
+        .stroke({ color: 0xff8a3a, width: 4 + 6 * share, alpha: 0.2 + 0.4 * share + pulse });
+      // Embers rise off the Cinderguard, more the hotter the Fury burns.
+      this.traitCarry += 14 * share * dt;
+      for (; this.fx && this.traitCarry >= 1; this.traitCarry--) {
+        this.fx.burst({
+          x: hero.x,
+          y: GROUND_Y - 120,
+          count: 1,
+          color: [0xff6a2b, 0xffb13b, 0xffd84a],
+          spreadX: 110,
+          spreadY: 160,
+          angle: [RISE - 0.3, RISE + 0.3],
+          speed: [60, 140],
+          life: [0.4, 0.9],
+          size: [6, 12],
+          endSize: 0.1,
+        });
+      }
+    } else if (trait.kind === "overcharge") {
+      const color = DAMAGE_COLORS[trait.damageType] ?? 0xffd84a;
+      for (let i = 0; i < trait.max; i++) {
+        const a = spin * 1.8 + (i * Math.PI * 2) / trait.max;
+        const x = hero.x + Math.cos(a) * 130;
+        const y = hero.y + Math.sin(a) * 50;
+        const lit = i < trait.value;
+        g.circle(x, y, lit ? 16 : 9).fill({
+          color: lit ? color : 0x8a8078,
+          alpha: lit ? 0.35 : 0.25,
+        });
+        g.circle(x, y, lit ? 7 : 4).fill({
+          color: lit ? 0xffffff : 0xb8b0a8,
+          alpha: lit ? 1 : 0.5,
+        });
+      }
+    } else if (trait.value > 0) {
+      // Hunter's Mark: a turning sight over the enemy while it carries your ailments.
+      const foe = this.center("enemy");
+      const y = foe.y - 230;
+      const a = spin * 1.2;
+      g.circle(foe.x, y, 26).stroke({ color: 0xffe9a8, width: 3, alpha: 0.9 });
+      for (let i = 0; i < 4; i++) {
+        const r = a + (i * Math.PI) / 2;
+        g.moveTo(foe.x + Math.cos(r) * 16, y + Math.sin(r) * 16)
+          .lineTo(foe.x + Math.cos(r) * 36, y + Math.sin(r) * 36)
+          .stroke({ color: 0xffe9a8, width: 3, alpha: 0.9 });
+      }
+      g.circle(foe.x, y, 4).fill({ color: 0xff6a2b });
     }
   }
 
@@ -638,6 +713,25 @@ export class ArenaScene {
             drag: 0.2,
           });
         }
+        break;
+      }
+      case "nova": {
+        // Overcharge: the three charges break loose as a ring of the weapon's element.
+        const tint = DAMAGE_COLORS[this.trait?.damageType ?? "fire"] ?? main;
+        this.fx?.ring(c.x, c.y, tint, 30, 320, 0.5, 14, 1);
+        this.fx?.ring(c.x, c.y, 0xffffff, 20, 200, 0.35, 6, 1);
+        this.fx?.burst({
+          x: c.x,
+          y: c.y,
+          count: 40,
+          color: [tint, 0xffffff],
+          angle: [0, Math.PI * 2],
+          speed: [260, 520],
+          life: [0.3, 0.6],
+          size: [8, 16],
+          stretch: 0.6,
+          drag: 0.2,
+        });
         break;
       }
       case "arc": {
@@ -1168,6 +1262,7 @@ export class ArenaScene {
       const target = share > 0.005 ? 0.55 + 0.45 * Math.min(1, share * 3) + pulse : 0;
       ward.alpha += (target - ward.alpha) * Math.min(1, dt * 8);
     }
+    this.drawTrait(dt);
     if (this.telegraph) {
       const target = this.telegraphOn ? 0.55 + 0.35 * Math.sin(this.clock * 9) : 0;
       this.telegraph.alpha += (target - this.telegraph.alpha) * Math.min(1, dt * 12);

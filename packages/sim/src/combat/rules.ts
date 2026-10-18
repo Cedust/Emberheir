@@ -28,8 +28,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   const ailmentDamageWhen: NonNullable<CombatRules["ailmentDamageWhen"]>[number][] = [];
   const conversion: NonNullable<CombatRules["conversion"]>[number][] = [];
   // Class Traits come from one source (the class): the first one wins.
-  let ironBlood: CombatRules["ironBlood"];
-  let keenEye = false;
+  let fury: CombatRules["fury"];
+  let huntersMark: CombatRules["huntersMark"];
+  let overcharge: CombatRules["overcharge"];
   let spark: CombatRules["spark"];
   let lingering: CombatRules["lingering"];
   let spellblade: CombatRules["spellblade"];
@@ -38,8 +39,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let slowDeath: CombatRules["slowDeath"];
   for (const r of sources) {
     if (!r) continue;
-    ironBlood ??= r.ironBlood;
-    keenEye ||= r.keenEye ?? false;
+    fury ??= r.fury;
+    huntersMark ??= r.huntersMark;
+    overcharge ??= r.overcharge;
     spark ??= r.spark;
     lingering ??= r.lingering;
     spellblade ??= r.spellblade;
@@ -100,8 +102,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(conditionalCrit.length ? { conditionalCrit } : {}),
     ...(ailmentDamageWhen.length ? { ailmentDamageWhen } : {}),
     ...(conversion.length ? { conversion } : {}),
-    ...(ironBlood ? { ironBlood } : {}),
-    ...(keenEye ? { keenEye } : {}),
+    ...(fury ? { fury } : {}),
+    ...(huntersMark ? { huntersMark } : {}),
+    ...(overcharge ? { overcharge } : {}),
     ...(spark ? { spark } : {}),
     ...(lingering ? { lingering } : {}),
     ...(spellblade ? { spellblade } : {}),

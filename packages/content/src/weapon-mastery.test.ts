@@ -136,7 +136,7 @@ describe("Weapon Mastery content", () => {
   });
 
   it("all paths can be learned in a real game, and the name follows the Keystone and Echo", () => {
-    let s = newGame(GAME_DATA, { seed: 2, classId: "warrior" });
+    let s = newGame(GAME_DATA, { seed: 2, classId: "cinderguard" });
     s = { ...s, hero: { ...s.hero, level: 100 }, legacy: { ...s.legacy, prestige: 6 } };
     const tree = WEAPON_MASTERY.sword;
     if (!tree) throw new Error("sword");
@@ -175,7 +175,7 @@ describe("Weapon Mastery content", () => {
   });
 
   it("Wand Attunement turns Spark and Shockbolt into Cold", () => {
-    let s = newGame(GAME_DATA, { seed: 2, classId: "sorcerer" });
+    let s = newGame(GAME_DATA, { seed: 2, classId: "emberseer" });
     s = applyAction(s, GAME_DATA, { type: "learnMastery", nodeId: "attune-cold" });
     const { setup } = heroSetup(s, GAME_DATA);
     expect(setup.weapon.damageType).toBe("cold");

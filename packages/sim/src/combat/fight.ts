@@ -165,13 +165,6 @@ function stepTelegraphs(core: FightCore, f: Fighter, dt: number): void {
       core.heavyFrom = f.side;
       castSkill(core, f, spec.skill, 1);
       core.heavyFrom = null;
-      // Iron Blood (Warrior): a Heavy Attack stood through gives Heat to strike back.
-      const target = core.fighters[other(f.side)];
-      const iron = target.setup.rules?.ironBlood;
-      if (iron && !core.result) {
-        target.heat = addHeat(target.heat, iron.heat, heatMultiplier(core, target));
-        payoff(core, target, "ironBlood");
-      }
     }
     return;
   }

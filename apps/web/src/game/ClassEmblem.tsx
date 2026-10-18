@@ -1,17 +1,16 @@
 import hunterUrl from "../assets/classes/hunter.webp";
-import reaverUrl from "../assets/classes/reaver.webp";
-import sorcererUrl from "../assets/classes/sorcerer.webp";
 import warlockUrl from "../assets/classes/warlock.webp";
 import warriorUrl from "../assets/classes/warrior.webp";
 import { Icon } from "../ui/Icon";
 
-/** Each class's painted emblem (klassen-v2.md): its signature gear. */
+/**
+ * Each class's painted emblem: its signature gear. The three classes of the Klassengerüst borrow
+ * the old emblems (Warrior, Hunter, Warlock) until their own are painted.
+ */
 const CLASS_EMBLEMS: Record<string, string> = {
-  warrior: warriorUrl,
-  reaver: reaverUrl,
-  hunter: hunterUrl,
-  sorcerer: sorcererUrl,
-  warlock: warlockUrl,
+  cinderguard: warriorUrl,
+  ashstrider: hunterUrl,
+  emberseer: warlockUrl,
 };
 
 export function ClassEmblem(props: { classId: string; size?: number }) {

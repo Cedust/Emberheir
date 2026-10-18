@@ -198,6 +198,11 @@ export interface WeaponDefinition {
   readonly range: "melee" | "ranged";
   readonly implicit: StatBonuses;
   readonly ailmentChances?: readonly AilmentChance[];
+  /**
+   * The ailment of the weapon's build (Heirloom path): what its Nova and payoffs apply. Default:
+   * the element's ailment, or the first of `ailmentChances`.
+   */
+  readonly ailment?: AilmentType;
   /** Innate triggers of the weapon type, e.g. the Sword's Riposte. */
   readonly triggers?: readonly TriggerSpec[];
   /**
@@ -395,20 +400,28 @@ export interface TelegraphSpec {
 
 /** Rule changes, e.g. from Keystones. They change rules, not just numbers. */
 export interface CombatRules {
-  // Class Traits (neuausrichtung-v1.md 2.1): each one says how the class fights.
+  // Class Traits (klassengeruest-v1.md 2): each one works in every fight, with every build.
   /**
-   * Warrior, Iron Blood: the enemy's telegraphed Heavy Attacks deal `damageTaken` of their damage,
-   * and each one the Warrior survives gives `heat` Heat.
+   * Cinderguard, Fury: every own hit that lands adds `perHit` damage to the following ones, up to
+   * `max`. Fury holds for the whole fight and starts at 0 in every fight.
    */
-  readonly ironBlood?: { readonly damageTaken: number; readonly heat: number };
-  /** Hunter, Keen Eye: the first hit of a fight and every hit while the enemy winds up are clean Crits. */
-  readonly keenEye?: boolean;
+  readonly fury?: { readonly perHit: number; readonly max: number };
   /**
-   * Sorcerer, Spark: after each skill the next Default Attack deals `damage` more and always
-   * applies the ailment of its element.
+   * Ashstrider, Hunter's Mark: hits against an enemy that carries one of your ailments have
+   * `critChance` more Crit Chance.
+   */
+  readonly huntersMark?: { readonly critChance: number };
+  /**
+   * Emberseer, Overcharge: every skill gives a charge; at `charges` they break loose as a Nova of
+   * the weapon's element for `multiplier` × Weapon Damage that always applies its ailment.
+   */
+  readonly overcharge?: { readonly charges: number; readonly multiplier: number };
+  /**
+   * Spark (Wand): after each skill the next Default Attack deals `damage` more and always applies
+   * the ailment of its element.
    */
   readonly spark?: { readonly damage: number };
-  /** Warlock, Lingering: own ailments deal `perSecond` more per second of fight, up to `max`. */
+  /** Own ailments deal `perSecond` more per second of fight, up to `max` (Warlock Mastery). */
   readonly lingering?: { readonly perSecond: number; readonly max: number };
   /** Extra damage taken from every source (0.2 = +20 %). */
   readonly damageTaken?: number;
@@ -815,6 +828,11 @@ export interface CombatantSetup {
    * (attribute-v1.md); monsters keep the old small steps ("classic", the default).
    */
   readonly attributeScale?: "classic" | "heir";
+  /**
+   * The class's main attribute (klassengeruest-v1.md 3): on the "heir" scale it gives % damage of
+   * every type. Without it no attribute adds damage.
+   */
+  readonly mainAttribute?: Attribute;
   /** Attribute Breakpoint Perks (attribute-v1.md section 4). */
   readonly perks?: readonly PerkId[];
   /**

@@ -83,7 +83,7 @@ export const ASHEN_BRUTE: EnemyDefinition = {
 
 export const ASHEN_SKIRMISHER: EnemyDefinition = {
   id: "ashen-skirmisher",
-  name: "Ashen Skirmisher",
+  name: "Ashen Prowler",
   archetype: "skirmisher",
   description: "Fast and hard to hit.",
   attributes: { strength: 4, dexterity: 8, agility: 15, intelligence: 0, wisdom: 2, vitality: 6 },

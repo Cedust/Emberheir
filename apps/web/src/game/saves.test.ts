@@ -33,15 +33,15 @@ describe("character slots", () => {
     const kv = memory();
     const store = new SaveStore(kv);
     expect(store.allSlots()).toEqual(Array.from({ length: SLOT_COUNT }, () => null));
-    store.write(2, hero("hunter"));
-    store.write(4, hero("warlock"));
+    store.write(2, hero("ashstrider"));
+    store.write(4, hero("emberseer"));
     const slots = store.allSlots();
     expect(slots.map((s) => s?.hero.classId ?? null)).toEqual([
       null,
       null,
-      "hunter",
+      "ashstrider",
       null,
-      "warlock",
+      "emberseer",
       null,
     ]);
     expect(store.lastSlot()).toBe(4);
@@ -50,7 +50,7 @@ describe("character slots", () => {
   it("deleting a character frees its slot and forgets it as the last one", () => {
     const kv = memory();
     const store = new SaveStore(kv);
-    store.write(1, hero("reaver"));
+    store.write(1, hero("cinderguard"));
     store.write(1, null);
     expect(kv.getItem(slotKey(1))).toBeNull();
     expect(store.lastSlot()).toBeNull();
@@ -70,10 +70,10 @@ describe("shared stash", () => {
   it("every Heir opens the same Supply Wagon", () => {
     const kv = memory();
     const store = new SaveStore(kv);
-    store.write(0, stashed(hero("warrior"), ["a", "b"]));
+    store.write(0, stashed(hero("cinderguard"), ["a", "b"]));
     expect(store.slot(0)?.stash.map((p) => p.item.id)).toEqual(["a", "b"]);
     // A new character finds the wagon full; what it puts in, the others see.
-    const twink = store.withSharedStash(hero("hunter"));
+    const twink = store.withSharedStash(hero("ashstrider"));
     expect(twink.stash.map((p) => p.item.id)).toEqual(["a", "b"]);
     store.write(1, { ...twink, stash: twink.stash.slice(1) });
     expect(store.slot(0)?.stash.map((p) => p.item.id)).toEqual(["b"]);
@@ -86,7 +86,7 @@ describe("shared stash", () => {
   it("writes the stash only when it changed, and each state only once", () => {
     const kv = memory();
     const store = new SaveStore(kv);
-    const first = stashed(hero("warrior"), ["a"]);
+    const first = stashed(hero("cinderguard"), ["a"]);
     store.write(0, first);
     expect(kv.writes).toEqual([STASH_KEY, slotKey(0), "emberheir.lastSlot"]);
     kv.writes.length = 0;
@@ -101,7 +101,7 @@ describe("shared stash", () => {
 
   it("parses each save once", () => {
     const kv = memory();
-    new SaveStore(kv).write(2, stashed(hero("warrior"), ["a"]));
+    new SaveStore(kv).write(2, stashed(hero("cinderguard"), ["a"]));
     const reads: string[] = [];
     const counting: KeyValueStore = {
       ...kv,
@@ -131,8 +131,8 @@ describe("shared stash", () => {
   it("broken saves, a broken stash and saves from unknown versions read as empty", () => {
     const kv = memory();
     kv.setItem(slotKey(0), "{not json");
-    kv.setItem(slotKey(1), JSON.stringify({ ...hero("warrior"), version: 99 }));
-    kv.setItem(slotKey(2), JSON.stringify({ ...hero("warrior"), hero: null }));
+    kv.setItem(slotKey(1), JSON.stringify({ ...hero("cinderguard"), version: 99 }));
+    kv.setItem(slotKey(2), JSON.stringify({ ...hero("cinderguard"), hero: null }));
     kv.setItem(STASH_KEY, JSON.stringify({ version: 1, items: [{ item: { id: "x" } }] }));
     const store = new SaveStore(kv);
     expect(store.allSlots()).toEqual(Array.from({ length: SLOT_COUNT }, () => null));
@@ -141,7 +141,7 @@ describe("shared stash", () => {
 });
 
 describe("Lineage", () => {
-  const hero = (seed: number) => newGame(GAME_DATA, { seed, classId: "warrior" });
+  const hero = (seed: number) => newGame(GAME_DATA, { seed, classId: "cinderguard" });
   const won = (s: GameState): GameState => ({ ...s, legacy: { ...s.legacy, finaleWon: true } });
 
   it("every character that wins the finale raises it once, up to 5", () => {
@@ -164,7 +164,7 @@ describe("Lineage storage", () => {
     const kv = memory();
     kv.setItem(LINEAGE_KEY, JSON.stringify({ finishers: ["x", 2] }));
     const store = new SaveStore(kv);
-    const won = newGame(GAME_DATA, { seed: 9, classId: "warrior" });
+    const won = newGame(GAME_DATA, { seed: 9, classId: "cinderguard" });
     expect(store.syncLineage(won).lineage ?? 0).toBe(0);
     const winner = { ...won, legacy: { ...won.legacy, finaleWon: true } };
     expect(store.syncLineage(winner).lineage).toBe(1);
@@ -176,8 +176,8 @@ describe("Power Codex", () => {
   it("belongs to the account: what one character learns, all know (the best tier counts)", () => {
     const kv = memory();
     const store = new SaveStore(kv);
-    const a = newGame(GAME_DATA, { seed: 1, classId: "warrior" });
-    const b = newGame(GAME_DATA, { seed: 2, classId: "sorcerer" });
+    const a = newGame(GAME_DATA, { seed: 1, classId: "cinderguard" });
+    const b = newGame(GAME_DATA, { seed: 2, classId: "emberseer" });
     expect(store.syncPowerCodex(a).powerCodex).toBeUndefined();
     store.syncPowerCodex({ ...a, powerCodex: { executioner: 3 } });
     expect(store.syncPowerCodex(b).powerCodex).toEqual({ executioner: 3 });

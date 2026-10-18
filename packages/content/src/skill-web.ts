@@ -202,9 +202,9 @@ const REGIONS: readonly RegionSpec[] = [
     branch: "might",
     angle: -135,
     hub: {
-      name: "Warrior's Oath",
-      classStart: "warrior",
-      description: "+4 % max Life, +8 % Armor. The Warrior starts here.",
+      name: "Cinderguard's Oath",
+      classStart: "cinderguard",
+      description: "+4 % max Life, +8 % Armor. The Cinderguard starts here.",
       bonuses: { increasedLife: 0.04, increasedArmor: 0.08 },
     },
     spokes: [
@@ -348,9 +348,8 @@ const REGIONS: readonly RegionSpec[] = [
     branch: "arcana",
     angle: -45,
     hub: {
-      name: "Sorcerer's Sigil",
-      classStart: "sorcerer",
-      description: "+10 % Barrier, +3 % max Life. The Sorcerer starts here.",
+      name: "Arcane Sigil",
+      description: "+10 % Barrier, +3 % max Life.",
       bonuses: { increasedBarrier: 0.1, increasedLife: 0.03 },
     },
     spokes: [
@@ -502,9 +501,9 @@ const REGIONS: readonly RegionSpec[] = [
     branch: "affliction",
     angle: 45,
     hub: {
-      name: "Warlock's Brand",
-      classStart: "warlock",
-      description: "+4 % max Life, +6 % Tenacity. The Warlock starts here.",
+      name: "Emberseer's Brand",
+      classStart: "emberseer",
+      description: "+4 % max Life, +6 % Tenacity. The Emberseer starts here.",
       bonuses: { increasedLife: 0.04, tenacity: 0.06 },
     },
     spokes: [
@@ -644,9 +643,9 @@ const REGIONS: readonly RegionSpec[] = [
     branch: "rupture",
     angle: 135,
     hub: {
-      name: "Reaver's Edge",
-      classStart: "reaver",
-      description: "+3 % Evasion, +3 % max Life. The Reaver starts here.",
+      name: "Ashstrider's Edge",
+      classStart: "ashstrider",
+      description: "+3 % Evasion, +3 % max Life. The Ashstrider starts here.",
       bonuses: { evasion: 0.03, increasedLife: 0.03 },
     },
     spokes: [
@@ -708,8 +707,7 @@ const REGIONS: readonly RegionSpec[] = [
     angle: 180,
     hub: {
       name: "Hunter's Eye",
-      classStart: "hunter",
-      description: "+3 % Evasion, +6 % Armor. The Hunter starts here.",
+      description: "+3 % Evasion, +6 % Armor.",
       bonuses: { evasion: 0.03, increasedArmor: 0.06 },
     },
     spokes: [

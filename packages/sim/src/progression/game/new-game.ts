@@ -40,8 +40,9 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
   }
   const seed = options.seed >>> 0;
   const rng = new Rng(mixSeed(seed, 0xfffff));
-  const offHand = heroClass.offHand
-    ? rollItem(data.items, { baseId: heroClass.offHand, itemLevel: 1, rarity: "normal" }, rng)
+  const offHandId = heroClass.offHandFor?.[weaponId] ?? heroClass.offHand;
+  const offHand = offHandId
+    ? rollItem(data.items, { baseId: offHandId, itemLevel: 1, rarity: "normal" }, rng)
     : undefined;
   const floor = heroClass.startingAttributes;
   const free = options.attributes ?? {};

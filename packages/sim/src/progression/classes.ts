@@ -1,18 +1,23 @@
-import type { Attributes, CombatRules, StatBonuses } from "../combat/types";
+import type { Attribute, Attributes, CombatRules, StatBonuses } from "../combat/types";
 
 /**
- * Classes (docs/design/klassen-v2.md): a starting point and an identity, not a cage. The class
- * picks the start weapon and off hand, the start attributes, a small Class Trait, the look and
- * the Prestige branches it can grow. Every item and weapon stays open to every class. The class
- * is fixed for the character.
+ * Classes (docs/design/klassengeruest-v1.md 2): who the Heir is. The class picks its main
+ * attribute, its weapon family, the start off hand and attributes, the Class Trait, the look and
+ * the Masteries it can grow. Items stay open to every class. The class is fixed for the character.
  */
 export interface HeroClass {
   readonly id: string;
   readonly name: string;
-  /** Weapon base ids the class can start with; the first is the default. */
+  /** The main attribute: it gives % damage of every type (klassengeruest-v1.md 3). */
+  readonly mainAttribute: Attribute;
+  /** What the class is best at, in two or three words ("Strong attacks"). */
+  readonly focus: string;
+  /** Weapon base ids of the class's weapon family; the first is the default. */
   readonly weapons: readonly string[];
   /** Off hand base the class starts with, if any. */
   readonly offHand?: string;
+  /** A different start off hand for single weapons (the Ashstrider's Dagger: no Quiver). */
+  readonly offHandFor?: Readonly<Record<string, string>>;
   readonly startingAttributes: Attributes;
   readonly trait: {
     readonly name: string;

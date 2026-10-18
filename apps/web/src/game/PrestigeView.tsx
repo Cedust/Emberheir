@@ -234,6 +234,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
       </header>
       <div className="harvest-stones panel-card">
         <AttributeStones
+          mainAttribute={heroClass.mainAttribute}
           base={own}
           delta={delta}
           canAdd={(a) => left > 0 && allowed(a, 1)}

@@ -1,87 +1,62 @@
 import type { HeroClass } from "@emberheir/sim";
 
 /**
- * The five classes (docs/design/klassen-v2.md). A class picks the start kit, its Class Array of
- * attributes (attribute-v1.md: 1 each plus 8, sum 14; 6 free points follow), a small Class Trait, the look and its four Prestige
- * branches: two of its own plus the Core branches Warden and Tactician (the Reaver trades Warden
- * for Duelist). Items and weapons stay open to every class.
+ * The three classes (docs/design/klassengeruest-v1.md 2): main attribute, weapon family, focus
+ * and Class Trait. A class picks its Class Array of attributes (sum 14; 6 free points follow at
+ * creation), the start off hand, the look and its three Masteries. Items stay open to every class.
  */
 export const CLASSES: readonly HeroClass[] = [
   {
-    id: "warrior",
-    name: "Warrior",
-    weapons: ["sword", "mace"],
+    id: "cinderguard",
+    name: "Cinderguard",
+    mainAttribute: "strength",
+    focus: "Strong attacks",
+    weapons: ["sword", "axe", "mace"],
     offHand: "round-shield",
     startingAttributes: {
       strength: 5,
-      dexterity: 2,
+      dexterity: 1,
       agility: 2,
       intelligence: 1,
-      wisdom: 1,
+      wisdom: 2,
       vitality: 3,
     },
     trait: {
-      name: "Iron Blood",
-      description:
-        "Announced Heavy Attacks deal 50 % less damage to you, and each one you stand through gives 25 Heat.",
-      rules: { ironBlood: { damageTaken: 0.5, heat: 25 } },
+      name: "Fury",
+      description: "Every hit you land deals 2 % more damage than the last, up to +20 %.",
+      rules: { fury: { perHit: 0.02, max: 0.2 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["duelist", "butcher", "warden", "tactician"],
     titles: {
-      duelist: "Blademaster",
-      butcher: "Headsman",
-      warden: "Ironclad",
-      tactician: "Warlord",
-    },
-    text: "Fights up close with Sword or Mace and wins through brute force: heavy direct hits, thick armor and a shield to take the blows. Keep swinging, or the Heat cools down.",
-  },
-  {
-    id: "reaver",
-    name: "Reaver",
-    weapons: ["axe", "dagger"],
-    offHand: "blood-talisman",
-    startingAttributes: {
-      strength: 3,
-      dexterity: 3,
-      agility: 3,
-      intelligence: 1,
-      wisdom: 1,
-      vitality: 3,
-    },
-    trait: {
-      name: "Bloodletter",
-      description: "Your Bleeds deal 25 % more damage, your Poisons 15 % more.",
-      rules: { ailmentDamage: { bleed: 1.25, poison: 1.15 } },
-    },
-    lineage: { name: "Red Lineage", stat: "Lifesteal", percent: 2, bonuses: { lifesteal: 0.02 } },
-    branches: ["butcher", "venomancer", "duelist", "tactician"],
-    titles: {
+      duelist: "Vanquisher",
       butcher: "Ravager",
-      venomancer: "Viper",
-      duelist: "Cutthroat",
-      tactician: "Shadowblade",
+      warden: "Ironclad",
+      tactician: "Berserker",
     },
-    text: "Fights up close with Axe or Dagger and wins with dirty tricks: every cut bleeds, every stab poisons. The wounds do the killing while the Reaver keeps striking.",
+    text: "Fights up close with Sword, Axe or Mace. Every blow lands harder than the last.",
   },
   {
-    id: "hunter",
-    name: "Hunter",
-    weapons: ["bow", "crossbow"],
+    id: "ashstrider",
+    name: "Ashstrider",
+    mainAttribute: "dexterity",
+    focus: "Critical hits",
+    weapons: ["bow", "crossbow", "dagger"],
     offHand: "quiver",
+    offHandFor: { dagger: "blood-talisman" },
     startingAttributes: {
-      strength: 2,
-      dexterity: 4,
+      strength: 1,
+      dexterity: 5,
       agility: 3,
       intelligence: 1,
       wisdom: 1,
       vitality: 3,
     },
     trait: {
-      name: "Keen Eye",
+      name: "Hunter's Mark",
       description:
-        "Your first hit of each fight, and every hit while the enemy winds up a Heavy Attack, is a clean Crit.",
-      rules: { keenEye: true },
+        "Your hits on an enemy that carries one of your ailments have +10 % Crit Chance.",
+      rules: { huntersMark: { critChance: 0.1 } },
     },
     lineage: {
       name: "Keen Lineage",
@@ -89,62 +64,35 @@ export const CLASSES: readonly HeroClass[] = [
       percent: 3,
       bonuses: { critChance: 0.03 },
     },
-    branches: ["marksman", "venomancer", "warden", "tactician"],
-    titles: { marksman: "Deadeye", venomancer: "Stalker", warden: "Sentinel", tactician: "Ranger" },
-    text: "Fights from range with Bow or Crossbow. Bolts punch through armor in single heavy shots, arrows leave bleeding and poisoned wounds. Patient, precise, deadly on a critical hit.",
+    branches: ["marksman", "venomancer", "duelist", "tactician"],
+    titles: {
+      marksman: "Deadeye",
+      venomancer: "Trickster",
+      duelist: "Skirmisher",
+      tactician: "Skirmisher",
+    },
+    text: "Fights with Bow, Crossbow or Dagger. Finds the weak spot and strikes it, again and again.",
   },
   {
-    id: "sorcerer",
-    name: "Sorcerer",
-    weapons: ["wand"],
+    id: "emberseer",
+    name: "Emberseer",
+    mainAttribute: "intelligence",
+    focus: "Ailments",
+    weapons: ["wand", "staff"],
     offHand: "ember-focus",
     startingAttributes: {
       strength: 1,
-      dexterity: 2,
+      dexterity: 1,
       agility: 1,
-      intelligence: 4,
+      intelligence: 5,
       wisdom: 3,
       vitality: 3,
     },
     trait: {
-      name: "Spellcharge",
+      name: "Overcharge",
       description:
-        "After each skill, your next Default Attack deals 10 % more damage and always applies the ailment of its element.",
-      rules: { spark: { damage: 0.1 } },
-    },
-    lineage: {
-      name: "Storm Lineage",
-      stat: "Elemental Damage",
-      percent: 5,
-      bonuses: { elementalDamage: 0.05 },
-    },
-    branches: ["stormcaller", "frostbinder", "warden", "tactician"],
-    titles: {
-      stormcaller: "Tempest",
-      frostbinder: "Rimeweaver",
-      warden: "Battlemage",
-      tactician: "Archmage",
-    },
-    text: "Fights from range with a Wand and wins with frost and lightning in big, sudden bursts. Every skill charges the next Spark, and the Heat builds on its own, so the next spell is always coming.",
-  },
-  {
-    id: "warlock",
-    name: "Warlock",
-    weapons: ["staff"],
-    offHand: "grimoire",
-    startingAttributes: {
-      strength: 1,
-      dexterity: 2,
-      agility: 1,
-      intelligence: 3,
-      wisdom: 4,
-      vitality: 3,
-    },
-    trait: {
-      name: "Lingering",
-      description:
-        "Your ailments deal 1 % more damage for every second of the fight (up to +25 % after 25 s).",
-      rules: { lingering: { perSecond: 0.01, max: 0.25 } },
+        "Every skill gives a Charge. At 3 Charges they break loose as a Nova of your element: 150 % Weapon Damage, always applies its ailment.",
+      rules: { overcharge: { charges: 3, multiplier: 1.5 } },
     },
     lineage: {
       name: "Hollow Lineage",
@@ -152,14 +100,14 @@ export const CLASSES: readonly HeroClass[] = [
       percent: 10,
       bonuses: { ailmentEffect: 0.1 },
     },
-    branches: ["pyromancer", "void-lord", "warden", "tactician"],
+    branches: ["void-lord", "stormcaller", "frostbinder", "pyromancer"],
     titles: {
-      pyromancer: "Ashcaller",
-      "void-lord": "Nightbinder",
-      warden: "Gravewarden",
-      tactician: "Hexmaster",
+      "void-lord": "Warlock",
+      stormcaller: "Archmage",
+      frostbinder: "Spellweaver",
+      pyromancer: "Warlock",
     },
-    text: "Fights from range with a Staff and wins with curses: lingering fire, creeping Void and slow decay. The longer the fight lasts, the surer the enemy dies.",
+    text: "Fights with Wand or Staff. Every spell feeds the next, until the charge breaks loose.",
   },
 ];
 

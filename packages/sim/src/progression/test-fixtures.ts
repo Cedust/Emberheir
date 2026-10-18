@@ -227,6 +227,8 @@ export const TEST_CLASSES: readonly HeroClass[] = [
   {
     id: "test-fighter",
     name: "Fighter",
+    mainAttribute: "strength",
+    focus: "Strong attacks",
     weapons: ["test-sword"],
     startingAttributes: TEST_ATTRIBUTES,
     trait: { name: "Tough", description: "" },
@@ -237,6 +239,8 @@ export const TEST_CLASSES: readonly HeroClass[] = [
   {
     id: "test-caster",
     name: "Caster",
+    mainAttribute: "intelligence",
+    focus: "Ailments",
     weapons: ["test-wand"],
     startingAttributes: TEST_ATTRIBUTES,
     trait: { name: "Spark", description: "" },

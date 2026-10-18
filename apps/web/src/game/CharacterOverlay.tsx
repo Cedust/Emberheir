@@ -1,5 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
+  heroClassOf,
   ASHBORN,
   ATTRIBUTES,
   ATTRIBUTE_RULES,
@@ -361,6 +362,7 @@ export function CharacterOverlay(props: {
                   </div>
                   <AttributeStones
                     perkBoard
+                    mainAttribute={heroClassOf(state, GAME_DATA).mainAttribute}
                     actions={
                       !inFight &&
                       state.hero.unspentAttributePoints > 0 && (

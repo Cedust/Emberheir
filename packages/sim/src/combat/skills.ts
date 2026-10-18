@@ -19,8 +19,11 @@ import {
   payoffFactor,
   perk,
   mark,
+  payoff,
   rollRange,
   usePerk,
+  weaponAilment,
+  weaponDamageOf,
 } from "./fighter";
 import { addHeat } from "./heat";
 import {
@@ -184,6 +187,8 @@ export function castSkill(
   }
   if (core.result || via === "reverb" || via === "echo") return;
   f.skillCount++;
+  overcharge(core, f);
+  if (core.result) return;
   // Echoing Chant: every few skills repeat themselves, weaker.
   const chant = wr?.echoChant;
   if (chant && f.skillCount % chant.every === 0) {
@@ -197,6 +202,30 @@ export function castSkill(
     f.repeatReadyAt = fightTime(core) + repeat.cooldown;
     castSkill(core, f, first.skill, first.level ?? 1, 0, 1, "echo");
   }
+}
+
+/**
+ * Overcharge (Emberseer): every skill gives a charge; a full set breaks loose as a Nova of the
+ * weapon's element that always applies its ailment.
+ */
+function overcharge(core: FightCore, f: Fighter): void {
+  const rule = f.setup.rules?.overcharge;
+  if (!rule) return;
+  f.charges++;
+  if (f.charges < rule.charges) return;
+  f.charges = 0;
+  const weapon = f.setup.weapon;
+  const ailment = weaponAilment(weapon);
+  payoff(core, f, "overcharge");
+  landHit(core, f, {
+    source: "Overcharge",
+    baseDamage: weaponDamageOf(weapon) * rule.multiplier,
+    type: weapon.damageType,
+    evadable: false,
+    multiplier: 1,
+    ailmentChances: ailment ? [{ ailment, chance: 1 }] : [],
+    fromTrigger: true,
+  });
 }
 
 function applySkillEffect(
