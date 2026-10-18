@@ -189,6 +189,9 @@ Innate Forms: **Ballista Bolt** (+60 % Schaden, ignoriert 50 % Armor) · **Explo
 
 ### Wand (Sorcerer) · *Spark* · *Firebolt*
 
+> Überholt am 17.10.2026 (`sorcerer-ohne-fire-v1.md`, aktueller Stand in `weapon-mastery-v2.md` 3.7): kein Fire mehr,
+> Attunement Lightning (Start) oder Cold, Innate Shockbolt, Pfade Starfall / Rime / Storm.
+
 Neu: **Attunement** (1 aus 3, im Refine, Respec möglich): Spark und Innate machen Fire, Cold oder Lightning Damage.
 Der Innate heißt entsprechend *Firebolt*, *Frostbolt* oder *Shockbolt*. Start Fire. Das ersetzt die Element-Bases der Wand.
 

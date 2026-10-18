@@ -92,6 +92,8 @@ export interface HitInput {
   readonly forceCrit?: boolean;
   /** Crits ignore this extra share of Armor (Killshot). */
   readonly critPenetration?: number;
+  /** Crits get this much extra Elemental Penetration (Overwhelm). */
+  readonly critElementalPenetration?: number;
   /** The defender's Parry: chance an attack becomes a Glancing Blow (half damage, no Crit). */
   readonly parry?: number;
   /** Extra damage multiplier that only a clean hit gets (Mighty Hits, Clean Line). */
@@ -143,10 +145,12 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   const critRoll = rng.chance(input.attacker.critChance);
   const crit = !glancing && (input.forceCrit === true || (input.critOverride ?? critRoll));
   const attacker =
-    crit && input.critPenetration
+    crit && (input.critPenetration || input.critElementalPenetration)
       ? {
           ...input.attacker,
-          physicalPenetration: input.attacker.physicalPenetration + input.critPenetration,
+          physicalPenetration: input.attacker.physicalPenetration + (input.critPenetration ?? 0),
+          elementalPenetration:
+            input.attacker.elementalPenetration + (input.critElementalPenetration ?? 0),
         }
       : input.attacker;
 

@@ -164,4 +164,27 @@ describe("the real migrations", () => {
     expect(migrated.hero.unspentSkillPoints).toBe(2 + 1 + 3 + 3);
     expect(migrated.hero.rotation).toEqual([null, null]);
   });
+
+  it("7: the Fire Wand becomes the Wand, Fire Attunement and Blaze are gone", () => {
+    const s = start();
+    const hero = {
+      ...s.hero,
+      classId: "sorcerer",
+      weaponId: "fire-wand",
+      mastery: {
+        learned: { precision: 2, "blaze-t1": 3, "blaze-kindle": 1, "storm-arc": 1, "rime-t1": 1 },
+        choices: { attunement: "attune-fire", keystone: "prism" },
+        echo: null,
+      },
+      rotation: ["fire-lance@cold", "chain-lightning"],
+    };
+    const wand = { ...shield("w"), baseId: "fire-wand" };
+    const v7 = { ...s, version: 7, hero, inventory: [{ item: wand, x: 0, y: 0 }] };
+    const migrated = deserializeGame(JSON.stringify(v7));
+    expect(migrated.hero.weaponId).toBe("wand");
+    expect(migrated.inventory[0]?.item.baseId).toBe("wand");
+    expect(migrated.hero.mastery.learned).toEqual({ precision: 2, "rime-t1": 1 });
+    expect(migrated.hero.mastery.choices).toEqual({ keystone: "prism" });
+    expect(migrated.hero.rotation).toEqual([null, "chain-lightning"]);
+  });
 });

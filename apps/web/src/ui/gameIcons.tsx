@@ -103,7 +103,7 @@ const WEAPON_ICONS: Readonly<Record<string, string>> = {
   dagger: daggerUrl,
   bow: bowUrl,
   crossbow: crossbowUrl,
-  "fire-wand": wandUrl,
+  wand: wandUrl,
   staff: staffUrl,
 };
 

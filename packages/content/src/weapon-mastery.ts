@@ -9,10 +9,10 @@ import type {
 } from "@emberheir/sim";
 import {
   BARBED_ARROW,
-  FIREBOLT,
   HEAVY_BOLT,
   LACERATE,
   POWER_STRIKE,
+  SHOCKBOLT,
   SKULL_CRACK,
   VENOM_COAT,
   VOID_BOLT,
@@ -368,7 +368,7 @@ const form = (
   skill: SkillDefinition,
 ): InnateFormSpec => ({ id, name, description, effect: {}, skill: { ...skill, description } });
 
-/** Path colours of the engraving: physical gold, blood red, ember, frost, storm, venom, void. */
+/** Path colours of the engraving: physical gold, blood red, ember, frost, storm, venom, void, starfall. */
 const C = {
   gold: 0xe0b45a,
   blood: 0xc8423a,
@@ -378,6 +378,7 @@ const C = {
   venom: 0x8cc04a,
   void: 0xa070e0,
   steel: 0xb8c0cc,
+  starfall: 0xd2b8ff,
 } as const;
 
 // --- the eight trees ------------------------------------------------------------------------
@@ -1658,18 +1659,19 @@ const CROSSBOW = buildTree({
 });
 
 const WAND = buildTree({
-  weaponId: "fire-wand",
+  weaponId: "wand",
   precision: 0.7,
   rangeMin: 0.4,
   rangeMax: 1.3,
   oldAverage: 0.75,
+  // Sorcerer without Fire (2026-10-17): Fire belongs to the Warlock, the Wand is Lightning or Cold.
   attunements: [
     {
-      id: "attune-fire",
-      name: "Fire",
-      description: "Spark and your Innate deal Fire Damage and Burn.",
-      damageType: "fire",
-      ailment: "burn",
+      id: "attune-lightning",
+      name: "Lightning",
+      description: "Spark and your Innate deal Lightning Damage and Shock.",
+      damageType: "lightning",
+      ailment: "shock",
     },
     {
       id: "attune-cold",
@@ -1678,45 +1680,43 @@ const WAND = buildTree({
       damageType: "cold",
       ailment: "chill",
     },
-    {
-      id: "attune-lightning",
-      name: "Lightning",
-      description: "Spark and your Innate deal Lightning Damage and Shock.",
-      damageType: "lightning",
-      ailment: "shock",
-    },
   ],
   paths: [
     {
-      id: "blaze",
-      name: "Blaze",
-      theme: "Burn",
-      color: C.ember,
+      // Crits by rhythm, not by timing (the Hunter's): a skill charges the Spark, the Spark crits.
+      id: "starfall",
+      name: "Starfall",
+      theme: "Crits, burst",
+      color: C.starfall,
       techniques: [
-        technique("Kindling", "+12 % effect of the Wand's Burn.", {
-          weaponRules: { ailmentEffectBy: { burn: 0.12 } },
-        }),
-        technique("Tinder", "+4 % Burn Chance.", { bonuses: { burnChance: 0.04 } }),
+        technique("Focus", "+3 % Precision.", { precision: 0.03 }),
+        technique("Amplify", "Your Innate deals +8 % damage.", { innatePatch: { damage: 0.08 } }),
       ],
       forks: [
         [
-          notable("Kindle", "+20 % Burn Chance.", { bonuses: { burnChance: 0.2 } }),
-          notable("Roaring Flame", "Burn deals 30 % more damage.", {
-            rules: { ailmentDamage: { burn: 1.3 } },
+          notable("Flashpoint", "Your charged Spark is always a clean Crit.", {
+            weaponRules: { sparkCrit: true },
           }),
+          notable(
+            "Critical Mass",
+            "Every Spark that does not crit gives +6 % Crit Chance until your next Crit.",
+            { weaponRules: { critBuildup: 0.06 } },
+          ),
         ],
         [
-          notable("Flare", "Combust sets off 50 % of the Burn instead of 25 %.", {
-            weaponRules: { combustMultiplier: 2 },
+          notable("Arc", "Every Crit gives 8 Heat.", {
+            triggers: [trigger("arc", "Arc", { kind: "onCrit" }, { kind: "heat", amount: 8 })],
           }),
-          notable("Smother", "Burning enemies cannot heal at all.", {
-            weaponRules: { noHealWhileBurning: true },
+          notable("Overwhelm", "Crits have +20 % Elemental Penetration.", {
+            weaponRules: { critElementalPenetration: 0.2 },
           }),
         ],
       ],
-      master: master("Master of Flame", "Every Burn tick gives 2 Heat.", {
-        weaponRules: { heatPerDotTick: { ailment: "burn", amount: 2 } },
-      }),
+      master: master(
+        "Master of Starfall",
+        "When a skill crits, it charges your Spark for two Default Attacks.",
+        { weaponRules: { skillCritSparks: 2 } },
+      ),
     },
     {
       id: "rime",
@@ -1758,27 +1758,30 @@ const WAND = buildTree({
       ),
     },
     {
+      // Shock only: the Crits moved to Starfall (2026-10-17).
       id: "storm",
       name: "Storm",
-      theme: "Shock, Crits",
+      theme: "Shock",
       color: C.storm,
       techniques: [
         technique("Static", "+10 % effect of the Wand's Shock.", {
           weaponRules: { ailmentEffectBy: { shock: 0.1 } },
         }),
-        technique("Focus", "+3 % Precision.", { precision: 0.03 }),
+        technique("Charge", "+4 % Shock Chance.", { bonuses: { shockChance: 0.04 } }),
       ],
       forks: [
         [
           notable("Static Field", "+20 % Shock Chance.", { bonuses: { shockChance: 0.2 } }),
-          notable("Arc", "Every Crit gives 8 Heat.", {
-            triggers: [trigger("arc", "Arc", { kind: "onCrit" }, { kind: "heat", amount: 8 })],
+          notable("Conduction", "Every new Shock stack gives 4 Heat.", {
+            weaponRules: { heatPerShockStack: 4 },
           }),
         ],
         [
-          notable("Arc Chain", "Crits against a Shocked enemy arc for 30 % of their damage.", {
-            weaponRules: { arcChain: 0.3 },
-          }),
+          notable(
+            "Arc Chain",
+            "Hits against an enemy with 3 Shock stacks arc for 15 % of their damage.",
+            { weaponRules: { arcChain: { share: 0.15, stacks: 3 } } },
+          ),
           notable("Static Build", "Shock stacks up to 5 times instead of 3.", {
             weaponRules: { shockMaxStacks: 2 },
           }),
@@ -1793,31 +1796,31 @@ const WAND = buildTree({
   ],
   innateForms: [
     form("lance", "Lance", "One bolt with 70 % more damage. Costs 10 more Heat.", {
-      ...FIREBOLT,
-      id: "fire-lance",
-      name: "Fire Lance",
-      heatCost: FIREBOLT.heatCost + 10,
-      hits: FIREBOLT.hits.map((h) =>
+      ...SHOCKBOLT,
+      id: "shock-lance",
+      name: "Shock Lance",
+      heatCost: SHOCKBOLT.heatCost + 10,
+      hits: SHOCKBOLT.hits.map((h) =>
         h.kind === "spell"
           ? { ...h, damage: { min: h.damage.min * 1.7, max: h.damage.max * 1.7 } }
           : h,
       ),
     }),
     form("barrage", "Barrage", "Three bolts of 45 % each.", {
-      ...FIREBOLT,
-      id: "fire-barrage",
-      name: "Fire Barrage",
-      hits: FIREBOLT.hits.map((h) =>
+      ...SHOCKBOLT,
+      id: "shock-barrage",
+      name: "Shock Barrage",
+      hits: SHOCKBOLT.hits.map((h) =>
         h.kind === "spell"
           ? { ...h, count: 3, damage: { min: h.damage.min * 0.45, max: h.damage.max * 0.45 } }
           : h,
       ),
     }),
     form("seeking-bolt", "Seeking Bolt", "Never a Glancing Blow.", {
-      ...FIREBOLT,
-      id: "seeking-firebolt",
-      name: "Seeking Firebolt",
-      hits: FIREBOLT.hits.map((h) => (h.kind === "spell" ? { ...h, precise: true } : h)),
+      ...SHOCKBOLT,
+      id: "seeking-shockbolt",
+      name: "Seeking Shockbolt",
+      hits: SHOCKBOLT.hits.map((h) => (h.kind === "spell" ? { ...h, precise: true } : h)),
     }),
   ],
   keystones: [
@@ -1826,8 +1829,8 @@ const WAND = buildTree({
       name: "Prism",
       form: "Prism Wand",
       description:
-        "Spark cycles through Fire, Cold and Lightning and can inflict each ailment. −15 % damage.",
-      effect: { weaponRules: { prism: true, damageDealt: 0.85 } },
+        "Spark alternates Lightning and Cold and can inflict both ailments. −10 % damage.",
+      effect: { weaponRules: { prism: true, damageDealt: 0.9 } },
     },
     {
       id: "glass-cannon",

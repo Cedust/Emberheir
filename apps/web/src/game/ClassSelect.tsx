@@ -26,7 +26,7 @@ const WEAPON_ICONS: Record<string, IconName> = {
   dagger: "dagger",
   bow: "bow",
   crossbow: "bow",
-  "fire-wand": "wand",
+  wand: "wand",
   staff: "wand",
 };
 

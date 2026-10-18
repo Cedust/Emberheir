@@ -616,6 +616,36 @@ export class ArenaScene {
       case "ring":
         this.fx?.ring(c.x, c.y, main, 50, 170, 0.45, 9, 1);
         break;
+      case "rift": {
+        // Starfall Crit: the air tears open in a white-violet seam, light spills out of it.
+        const top = c.y - 120;
+        const bottom = c.y + 90;
+        this.fx?.bolt(c.x - 6, top, c.x + 6, bottom, main);
+        this.fx?.bolt(c.x + 4, top + 20, c.x - 4, bottom - 20, 0xffffff);
+        this.fx?.ring(c.x, c.y, main, 24, 150, 0.35, 8, 1);
+        for (const dir of [0, Math.PI]) {
+          this.fx?.burst({
+            x: c.x,
+            y: c.y,
+            count: 22,
+            color,
+            spreadY: 90,
+            angle: [dir - 0.5, dir + 0.5],
+            speed: [120, 300],
+            life: [0.3, 0.6],
+            size: [5, 10],
+            stretch: 1,
+            drag: 0.2,
+          });
+        }
+        break;
+      }
+      case "arc": {
+        // Conduction: a thin arc runs from the Shocked enemy back to the Wand.
+        const back = this.center(owner);
+        this.fx?.bolt(c.x, c.y - 20, back.x, back.y - 30, main);
+        break;
+      }
       case "star":
         this.fx?.ring(c.x, c.y, main, 20, 110, 0.3, 6, 1);
         this.fx?.burst({
@@ -632,7 +662,8 @@ export class ArenaScene {
         break;
     }
     if (look.shake) this.shake(look.shake);
-    this.float(owner === side ? owner : side, PAYOFF_NAMES[kind], main, false, 0.8);
+    if (!look.quiet)
+      this.float(owner === side ? owner : side, PAYOFF_NAMES[kind], main, false, 0.8);
   }
 
   private shake(amount: number): void {

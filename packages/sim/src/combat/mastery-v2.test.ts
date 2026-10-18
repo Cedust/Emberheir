@@ -223,15 +223,103 @@ describe("streaks and Crits", () => {
     }
   });
 
-  it("Armor Shred breaks Barrier, Arc Chain jumps off Shocked enemies", () => {
-    const shocking = { ...TEST_WEAPON, ailmentChances: [{ ailment: "shock" as const, chance: 1 }] };
+  it("Armor Shred breaks Barrier", () => {
     const fight = play(
-      hero({ critBarrierShred: 0.5, arcChain: 0.3 }, { weapon: shocking, bonuses: ALL_CRIT }),
+      hero({ critBarrierShred: 0.5 }, { bonuses: ALL_CRIT }),
       dummy({ bonuses: { barrier: 1000 } }),
       2.05,
     );
-    expect(hits(fight.events).some((h) => h.source === "Arc Chain")).toBe(true);
     expect(fight.snapshot().enemy.barrier).toBeLessThan(1000 - 30);
+  });
+});
+
+describe("Starfall and Storm (Sorcerer without Fire)", () => {
+  const shocking = {
+    ...TEST_WEAPON,
+    damageType: "lightning" as const,
+    ailmentChances: [{ ailment: "shock" as const, chance: 1 }],
+  };
+  const spell: SkillDefinition = {
+    ...TEST_SKILL,
+    id: "spell",
+    type: "spell",
+    heatCost: 10,
+    hits: [{ kind: "spell", damage: { min: 1, max: 1 }, damageType: "lightning" }],
+  };
+  /** A Sorcerer: every Default Attack gives 10 Heat, the spell costs 10, so Sparks come often. */
+  const sorcerer = (weaponRules: WeaponRules, extra: Partial<CombatantSetup> = {}) =>
+    hero(weaponRules, {
+      rules: { spark: { damage: 0 } },
+      weapon: { ...TEST_WEAPON, precision: 1 },
+      rotation: [{ skill: spell }],
+      ...extra,
+    });
+  const attacks = (f: Fight) =>
+    hits(f.events).filter((h) => h.source === TEST_WEAPON.defaultAttack);
+
+  it("Flashpoint: the charged Spark is a clean Crit, the others are not", () => {
+    const fight = play(sorcerer({ sparkCrit: true }), dummy(), 4.05);
+    const [first, second] = attacks(fight);
+    expect(first?.crit).toBe(false);
+    expect(second).toMatchObject({ crit: true });
+    expect(second?.glancing).toBeUndefined();
+    const plain = play(sorcerer({}), dummy(), 4.05);
+    expect(attacks(plain).some((h) => h.crit)).toBe(false);
+  });
+
+  it("Critical Mass: Default Attacks without a Crit build Crit Chance up until the next Crit", () => {
+    const blade = { ...TEST_WEAPON, precision: 1 };
+    const crits = (rules: WeaponRules) =>
+      hits(play(hero(rules, { weapon: blade, bonuses: {} }), dummy(), 12.05).events).map(
+        (h) => h.crit,
+      );
+    // +100 % per miss: after any attack without a Crit the next one is a sure Crit.
+    const mass = crits({ critBuildup: 1 });
+    mass.forEach((crit, i) => {
+      if (i > 0 && !mass[i - 1]) expect(crit).toBe(true);
+    });
+    expect(mass.filter(Boolean).length).toBeGreaterThan(crits({}).filter(Boolean).length);
+  });
+
+  it("Overwhelm: Crits get extra Elemental Penetration", () => {
+    const enemy = dummy({ bonuses: { lightningResistance: 0.5 } });
+    const plain = play(hero({}, { weapon: shocking, bonuses: ALL_CRIT }), enemy, 1.05);
+    const over = play(
+      hero({ critElementalPenetration: 0.2 }, { weapon: shocking, bonuses: ALL_CRIT }),
+      enemy,
+      1.05,
+    );
+    const base = hits(plain.events)[0]?.damage ?? 0;
+    expect(hits(over.events)[0]?.damage).toBeCloseTo((base / 0.5) * 0.7, 0);
+  });
+
+  it("Master of Starfall: a skill that crits charges the Spark twice", () => {
+    const sparks = (f: Fight) => ofType(f.events, "payoff").filter((p) => p.payoff === "spark");
+    // A spell every third attack: the plain Spark charges one of the two attacks in between.
+    const rare = { bonuses: ALL_CRIT, rotation: [{ skill: { ...spell, heatCost: 30 } }] };
+    const plain = play(sorcerer({}, rare), dummy(), 8.05);
+    const master = play(sorcerer({ skillCritSparks: 2 }, rare), dummy(), 8.05);
+    expect(sparks(plain).length).toBeGreaterThan(0);
+    expect(sparks(master).length).toBeGreaterThan(sparks(plain).length);
+  });
+
+  it("Conduction: every new Shock stack gives Heat", () => {
+    const weapon = { ...shocking, heatPerHit: 0 };
+    const plain = play(hero({}, { weapon }), dummy(), 3.05);
+    const fight = play(hero({ heatPerShockStack: 4 }, { weapon }), dummy(), 3.05);
+    expect(fight.snapshot().hero.heat - plain.snapshot().hero.heat).toBeCloseTo(12);
+  });
+
+  it("Arc Chain: only hits against a fully Shocked enemy arc", () => {
+    const fight = play(
+      hero({ arcChain: { share: 0.3, stacks: 3 } }, { weapon: shocking }),
+      dummy(),
+      5.05,
+    );
+    const all = hits(fight.events);
+    const firstArc = all.findIndex((h) => h.source === "Arc Chain");
+    expect(firstArc).toBeGreaterThan(2);
+    expect(all[firstArc]?.damage).toBe(Math.round((all[firstArc - 1]?.damage ?? 0) * 0.3));
   });
 });
 
@@ -397,24 +485,6 @@ describe("ailments", () => {
     };
     const fight = play(hero(rules, { weapon: bleeding, baseLife: 100_000 }), attacker(), 2.05);
     expect(fight.snapshot().enemy.attackRate).toBeCloseTo(0.5);
-  });
-
-  it("Smother: a burning enemy cannot heal", () => {
-    const burning = { ...TEST_WEAPON, ailmentChances: [{ ailment: "burn" as const, chance: 1 }] };
-    const healer = [
-      {
-        id: "mend",
-        name: "Mend",
-        condition: { kind: "everySeconds" as const, seconds: 1 },
-        effect: { kind: "heal" as const, fraction: 0.5 },
-      },
-    ];
-    const fight = play(
-      hero({ noHealWhileBurning: true }, { weapon: burning }),
-      dummy({ triggers: healer, baseLife: 1000 }),
-      3.05,
-    );
-    expect(ofType(fight.events, "heal").filter((h) => h.side === "enemy")).toHaveLength(0);
   });
 
   it("Hollow: Corruption grows faster and Collapses deeper", () => {

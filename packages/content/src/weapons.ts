@@ -36,16 +36,17 @@ export const SWORD: WeaponDefinition = {
   ],
 };
 
-export const FIRE_WAND: WeaponDefinition = {
-  id: "fire-wand",
+export const WAND: WeaponDefinition = {
+  id: "wand",
   // Attunement picks the element now (Weapon Mastery), so the weapon is just "Wand".
   name: "Wand",
   defaultAttack: "Spark",
   // M7: +10 %, the Wand died far more often than the Sword. Prestige rework: +15 % for the
   // Level Band up to 20.
   damage: { min: 10, max: 16 },
-  damageType: "fire",
-  // Playtest 1: still felt too busy at 1.0 (Warming also fires Firebolt often), so 0.7.
+  // Sorcerer without Fire (2026-10-17): Lightning by default, Attunement can make it Cold.
+  damageType: "lightning",
+  // Playtest 1: still felt too busy at 1.0 (Warming also fires the Innate often), so 0.7.
   attacksPerSecond: 0.75,
   heatBehavior: "warming",
   heatPerHit: 0,
@@ -170,7 +171,7 @@ export const STAFF: WeaponDefinition = {
 
 export const HERO_WEAPONS: readonly WeaponDefinition[] = [
   SWORD,
-  FIRE_WAND,
+  WAND,
   AXE,
   DAGGER,
   BOW,

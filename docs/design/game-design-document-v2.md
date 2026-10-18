@@ -38,7 +38,7 @@ Endgame **Wildfire I–X**.
 | **Warrior** | Physical · Melee · Direct | Sword, Mace | Iron Blood: angekündigte Heavy Attacks −50 % Schaden, jede überstandene +25 Heat | Duelist, Butcher, Warden, Tactician |
 | **Reaver** | Physical · Melee · Over Time | Axe, Dagger | Bloodletter: Bleed +25 %, Poison +15 % Schaden | Butcher, Venomancer, Duelist, Tactician |
 | **Hunter** | Physical · Ranged | Bow, Crossbow | Keen Eye: erster Treffer jedes Kampfes und Treffer ins Ausholen des Gegners sind saubere Crits | Marksman, Venomancer, Warden, Tactician |
-| **Sorcerer** | Elemental · Ranged · Direct | Wand (Fire Wand) | Spark: nach jedem Skill macht die nächste Default Attack +10 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
+| **Sorcerer** | Elemental · Ranged · Direct | Wand (Lightning oder Cold) | Spark: nach jedem Skill macht die nächste Default Attack +10 % und setzt sicher ihr Element-Ailment | Stormcaller, Frostbinder, Warden, Tactician |
 | **Warlock** | Elemental · Ranged · Over Time | Staff | Lingering: Ailments +1 % Schaden pro Sekunde Kampf (bis +25 %) | Pyromancer, Void Lord, Warden, Tactician |
 
 - Class Traits seit Phase 3 der Neuausrichtung (`neuausrichtung-v1.md` 2.1): Ein Trait beschreibt, **wie** die Klasse
@@ -314,7 +314,7 @@ Endgame **Wildfire I–X**.
 | **Innate Form** (1 aus 3) | Variante des Innate Skills, ab Rank 5 |
 | **3 Pfade** | je Technik I (3 Ränge) → **Gabel 1** (1 aus 2 Notables) → Technik II (3 Ränge) → **Gabel 2** (1 aus 2) → **Pfad-Meister**; 9 Punkte für einen vollen Pfad |
 | **Keystone** (1 aus 4) | ab 12 ausgegebenen Punkten; jeder ändert, *wie* die Waffe kämpft |
-| **Attunement** (nur Wand, Staff) | Element der Default Attack und des Innate |
+| **Attunement** (nur Wand, Staff) | Element der Default Attack und des Innate: Wand Lightning (Start) oder Cold, Staff Void oder Fire |
 | **Echoes** | Andenken der Act-Bosse, werden pro Run stärker |
 
 - **Techniken** geben nur Werte, die es ausschließlich an der Waffe gibt: Precision, Damage Range, **Parry**, Sunder,
@@ -324,8 +324,13 @@ Endgame **Wildfire I–X**.
   aus), Battle Plan (Master of Tempo, Reload, Quake, Channel), Ailments (Master of Venom, Hollow, Smolder) oder Attribute
   (Master of the Edge: Precision über 85 % wird Crit Chance).
 - Am Ende ~20 von 41 möglichen Punkten: ein voller Pfad und ein halber, oder zwei Pfade bis zur ersten Gabel.
+- **Wand ohne Fire** (Timo 17.10.2026, `sorcerer-ohne-fire-v1.md`): Fire und Burn gehören dem Warlock. Die
+  Wand-Pfade sind **Starfall** (Crits über den Spark-Rhythmus: Flashpoint, Critical Mass, Arc, Overwhelm, Master of
+  Starfall), **Rime** (Chill, Kontrolle) und **Storm** (nur noch Shock: Conduction, Arc Chain ab 3 Stacks). Der Sorcerer
+  crittet nach Rhythmus (Skill → geladener Spark), der Hunter nach Timing. Stormcaller und Tempest behalten ihre
+  Crit-Bezüge als Kombination Lightning + Starfall.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
-  Heavy Bolt (Crossbow), Firebolt (Wand), Void Bolt (Staff). Jeder Innate gibt Heat laufend aus (Angriff oder Spell):
+  Heavy Bolt (Crossbow), Shockbolt (Wand, mit Cold-Attunement Frostbolt), Void Bolt (Staff). Jeder Innate gibt Heat laufend aus (Angriff oder Spell):
   Run 1 hat nur einen Rotation Slot, ein Buff dort liesse die Heat bei 100 stehen (Timo 15.10.2026: Dagger-Innate
   war Venom Coat, jetzt Envenom; die Coats bleiben als Innate Forms).
 
@@ -441,6 +446,9 @@ Endgame **Wildfire I–X**.
   Ailments, Stats, Heat Forms, Waffen, alle Item-Grundtypen, leere Slots, die Ember Flask (voll und leer) und die
   sieben Draughts. Im Kampf steht der gebraute Draught an der Stelle der Flask-Ladung, die er kostet. Seltenheit
   zeigt der Rahmen, nicht das Bild.
+- **Keine Spoiler:** Die UI zeigt nur die Acts des aktuellen Runs (Run n = Acts 1..n). Ein Boss heißt „???“,
+  bis der Heir ihm begegnet ist (oder der Act in diesem/einem früheren Run fiel). Gilt für Road, Camp-Kopf, Eldrin,
+  Up Next, Old Nans Sprüche, Trophy Wall, Trigger Codex und das Compendium (The Last Ember erst, wenn sie offen ist).
 
 ---
 

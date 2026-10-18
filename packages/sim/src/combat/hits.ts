@@ -108,16 +108,18 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
   const nthAttack = (n: number) => !fromTrigger && (f.attackCount + 1) % n === 0;
   const trueShot = f.perks.has("trueShot") && nthAttack(PERK.trueShotEvery);
   // Spark (Sorcerer): the Default Attack after a skill is charged and sets its element's ailment.
-  const spark = !fromTrigger && f.sparkReady ? f.setup.rules?.spark : undefined;
+  const spark = !fromTrigger && f.sparkCharges > 0 ? f.setup.rules?.spark : undefined;
+  // Flashpoint: the charged Spark is a clean Crit.
+  const sparkCrit = spark !== undefined && wr?.sparkCrit === true;
   if (spark) {
-    f.sparkReady = false;
+    f.sparkCharges--;
     const own = ELEMENT_AILMENT[prism?.type ?? weapon.damageType];
     if (own) {
       const at = ailmentChances.findIndex((c) => c.ailment === own);
       if (at >= 0) ailmentChances.splice(at, 1);
       ailmentChances.push({ ailment: own, chance: 1 });
     }
-    payoff(core, f, "spark");
+    payoff(core, f, sparkCrit ? "flashpoint" : "spark");
   }
   const defaultDamage =
     (f.setup.rules?.defaultAttackDamage ?? 1) *
@@ -153,7 +155,7 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
       ...(fromTrigger ? { extraAttack: true } : {}),
       ...(fromTrigger && extraFiresTriggers(f) ? { firesTriggers: true } : {}),
       ...(fromTrigger && wr?.extraAttacksPrecise ? { precise: true } : {}),
-      ...((nth && nthAttack(nth)) || trueShot ? { forceCrit: true } : {}),
+      ...((nth && nthAttack(nth)) || trueShot || sparkCrit ? { forceCrit: true } : {}),
       ...(siege && sunderStacks > 0 ? { cleanBonus: siege.perStack * sunderStacks } : {}),
       ...(volleyCrit !== undefined ? { critOverride: volleyCrit } : {}),
     });
@@ -337,7 +339,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   // Crit Chance while their condition holds.
   const gap =
     (rolls && attacker.afterSkill ? (wr?.critAfterSkill ?? 0) : 0) +
-    ruleBonus(core, attacker, attacker.setup.rules?.conditionalCrit);
+    ruleBonus(core, attacker, attacker.setup.rules?.conditionalCrit) +
+    attacker.critBuildup;
   if (rolls) attacker.afterSkill = false;
   const precise = h.precise === true || (h.mighty === true && wr?.mightyNeverGlances === true);
   let precision: number | undefined;
@@ -393,6 +396,9 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       ...(wr?.glancingDamage !== undefined ? { glancingDamage: wr.glancingDamage } : {}),
       ...(forceCrit ? { forceCrit: true } : {}),
       ...(wr?.critPenetration ? { critPenetration: wr.critPenetration } : {}),
+      ...(wr?.critElementalPenetration
+        ? { critElementalPenetration: wr.critElementalPenetration }
+        : {}),
       ...(h.evadable && defender.setup.weaponRules?.parry
         ? { parry: defender.setup.weaponRules.parry }
         : {}),
@@ -410,6 +416,17 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
 
   const { glancing, parried } = outcome;
   if (outcome.crit) mark(core, attacker, "crit");
+  // Critical Mass: Default Attacks without a Crit build Crit Chance up until the next Crit.
+  if (outcome.crit && attacker.critBuildup > 0) {
+    attacker.critBuildup = 0;
+    payoff(core, attacker, "criticalMass");
+  } else if (!outcome.crit && wr?.critBuildup && rolls && !h.fromSkill && !h.fromTrigger) {
+    attacker.critBuildup += wr.critBuildup;
+  }
+  // Master of Starfall: a skill that crits charges the Spark for more Default Attacks.
+  if (outcome.crit && h.fromSkill && wr?.skillCritSparks && attacker.setup.rules?.spark) {
+    attacker.sparkCharges = Math.max(attacker.sparkCharges, wr.skillCritSparks);
+  }
   if (outcome.blocked) mark(core, defender, "block");
   if (parried) mark(core, defender, "parry");
   const mighty = rolls && h.mighty === true && !glancing;
@@ -475,6 +492,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     if (!parried) glance(core, attacker);
   } else {
     if (rolls) cleanHit(core, attacker, defender, h, damage);
+    arcChain(core, attacker, defender, damage);
+    if (core.result) return "clean";
     // Ailments grow from the hit before "damage taken" (Shock, Keystones): their ticks take it
     // again on their own, so it counts once, not twice.
     // Slow Death weakens the hit, not the ailments it carries.
@@ -503,7 +522,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
       inflict(core, attacker, defender, "bleed", hitBase);
     }
-    if (outcome.crit && wr) critMastery(core, attacker, defender, hitBase, damage);
+    if (outcome.crit && wr) critMastery(core, attacker, defender, hitBase);
     if (outcome.crit && attacker.perks.has("armorbreaker")) {
       perk(core, attacker, "armorbreaker");
       addSunder(attacker, defender, 1);
@@ -819,33 +838,30 @@ function cleanHit(
   }
 }
 
-/** Crits with Weapon Mastery: Deep Cuts, Twist the Blade, Armor Shred and Arc Chain. */
-function critMastery(
-  core: FightCore,
-  attacker: Fighter,
-  defender: Fighter,
-  damage: number,
-  dealt: number,
-): void {
+/** Arc Chain: a hit against a fully Shocked enemy arcs for part of its damage. */
+function arcChain(core: FightCore, attacker: Fighter, defender: Fighter, dealt: number): void {
+  const chain = attacker.setup.weaponRules?.arcChain;
+  if (!chain || dealt <= 0 || (defender.ailments.shock?.stacks ?? 0) < chain.stacks) return;
+  const arc = Math.max(1, Math.round(dealt * chain.share));
+  emit(core, {
+    t: fightTime(core),
+    type: "hit",
+    side: attacker.side,
+    source: "Arc Chain",
+    damage: arc,
+    damageType: "lightning",
+    crit: false,
+    blocked: false,
+  });
+  dealDamage(core, defender, arc);
+}
+
+/** Crits with Weapon Mastery: Deep Cuts, Twist the Blade and Armor Shred. */
+function critMastery(core: FightCore, attacker: Fighter, defender: Fighter, damage: number): void {
   const wr = attacker.setup.weaponRules;
   if (wr?.critBarrierShred && defender.barrier > 0) {
     defender.barrier = Math.max(0, defender.barrier - defender.stats.barrier * wr.critBarrierShred);
     if (defender.barrier <= 0) react(defender, "barrierBreaks");
-  }
-  if (wr?.arcChain && defender.ailments.shock && dealt > 0) {
-    const arc = Math.max(1, Math.round(dealt * wr.arcChain));
-    emit(core, {
-      t: fightTime(core),
-      type: "hit",
-      side: attacker.side,
-      source: "Arc Chain",
-      damage: arc,
-      damageType: "lightning",
-      crit: false,
-      blocked: false,
-    });
-    dealDamage(core, defender, arc);
-    if (core.result) return;
   }
   const bleed = defender.ailments.bleed;
   if (wr?.critBleedMultiplier && bleed) {
@@ -905,6 +921,7 @@ export function inflict(
       ? poisonOverflow(defender.ailments, poisonCap(attacker))
       : undefined;
   const fresh = ailment === "corruption" && !defender.ailments.corruption;
+  const shockBefore = defender.ailments.shock?.stacks ?? 0;
   defender.ailments = applyAilment(
     defender.ailments,
     ailment,
@@ -920,6 +937,16 @@ export function inflict(
     defender.ailments = advanceCorruption(defender.ailments, wr.corruptionStart);
   }
   if (ailment === "chill" && wr) chillMastery(core, attacker, defender);
+  // Conduction: every Shock stack added gives Heat.
+  const added = ailment === "shock" ? (defender.ailments.shock?.stacks ?? 0) - shockBefore : 0;
+  if (added > 0 && wr?.heatPerShockStack) {
+    attacker.heat = addHeat(
+      attacker.heat,
+      added * wr.heatPerShockStack,
+      heatMultiplier(core, attacker),
+    );
+    payoff(core, attacker, "conduction");
+  }
   if (core.result) return;
   if (pushed) {
     const rest = pushed.damagePerSecond * pushed.remaining * payoffFactor(core, attacker);
@@ -979,12 +1006,7 @@ export function poisonCap(attacker: Fighter): number {
 export function combust(core: FightCore, attacker: Fighter, defender: Fighter, times: number) {
   const rest = remainingBurnDamage(defender.ailments);
   if (rest <= 0) return;
-  const amount =
-    rest *
-    COMBAT.combustShare *
-    (attacker.setup.weaponRules?.combustMultiplier ?? 1) *
-    times *
-    payoffFactor(core, attacker);
+  const amount = rest * COMBAT.combustShare * times * payoffFactor(core, attacker);
   const dealt = dotBurst(core, attacker, defender, amount, "Combust", "fire");
   payoff(core, attacker, "combust", dealt);
 }
@@ -1040,8 +1062,6 @@ export function dotBurst(
 }
 
 export function heal(core: FightCore, f: Fighter, amount: number): void {
-  // Smother: a burning fighter cannot heal at all.
-  if (f.ailments.burn && core.fighters[other(f.side)].setup.weaponRules?.noHealWhileBurning) return;
   // Black Flame: Corruption cuts healing like Burn (they do not stack).
   const blackFlame =
     f.ailments.corruption && core.fighters[other(f.side)].setup.rules?.corruptionStopsHeal

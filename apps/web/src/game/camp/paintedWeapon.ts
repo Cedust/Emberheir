@@ -38,6 +38,8 @@ export interface SceneWeaponArt {
   readonly glowBehind?: boolean;
   /** Refine hotspots moved along the weapon to sit on a painted part (node id -> t). */
   readonly refineT?: Readonly<Record<string, number>>;
+  /** The painting's tip (x along, y across the axis), where a Wand's or Staff's orbs hang. */
+  readonly tip?: { readonly x: number; readonly y: number };
 }
 
 function formOf(weaponId: string, look: WeaponLook): string | null {
@@ -188,6 +190,18 @@ function paintedCentre(
   };
 }
 
+/** The painting's last opaque columns: its tip, in painting pixels from the pommel and axis. */
+function paintedTip(centre: readonly (number | null)[], axis: number): { x: number; y: number } {
+  for (let x = centre.length - 1; x >= 0; x--) {
+    const c = centre[x];
+    if (c == null) continue;
+    // A few columns in: the very last ones are a pixel or two of soft edge.
+    const inner = centre.slice(Math.max(0, x - 4), x + 1).filter((v): v is number => v != null);
+    return { x, y: inner.reduce((a, b) => a + b, 0) / inner.length - axis };
+  }
+  return { x: centre.length, y: 0 };
+}
+
 /** The painted weapon, `length` pixels from the pommel to the plain form's tip. */
 export function drawPaintedWeapon(
   weaponId: string,
@@ -256,6 +270,7 @@ export function drawPaintedWeapon(
       : undefined,
   );
   body.addChild(marks);
+  const tip = paintedTip(textures.centre, size.axis);
   return {
     body,
     edge: place(new Sprite(textures.mask)),
@@ -263,6 +278,7 @@ export function drawPaintedWeapon(
     silhouette: () => place(new Sprite(textures.mask)),
     anchorY,
     glowBehind: true,
+    tip: { x: tip.x * scale, y: tip.y * scale },
     ...(weaponId === "bow" ? { refineT: BOW_REFINE[formOf(weaponId, look) ?? "plain"] ?? {} } : {}),
   };
 }

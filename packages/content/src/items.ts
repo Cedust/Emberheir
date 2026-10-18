@@ -28,7 +28,7 @@ import {
   RUNEWORDS,
   UNIQUES,
 } from "./legendary";
-import { AXE, BOW, CROSSBOW, DAGGER, FIRE_WAND, MACE, STAFF, SWORD } from "./weapons";
+import { AXE, BOW, CROSSBOW, DAGGER, MACE, STAFF, SWORD, WAND } from "./weapons";
 
 /**
  * Items (docs/design/item-system-v1.md): all 10 slots, Normal to Epic. Most slots have a light
@@ -48,11 +48,11 @@ export const SWORD_BASE: ItemBaseDefinition = {
   maxSockets: 3,
 };
 
-export const FIRE_WAND_BASE: ItemBaseDefinition = {
-  id: "fire-wand",
-  name: "Fire Wand",
+export const WAND_BASE: ItemBaseDefinition = {
+  id: "wand",
+  name: "Wand",
   slot: "mainHand",
-  weapon: FIRE_WAND,
+  weapon: WAND,
   requirements: { intelligence: 3 },
   affixWeights: { elemental: 1.5, physical: 0.5 },
   size: { w: 1, h: 2 },
@@ -140,7 +140,7 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   slot: "offHand",
   fitsWeaponRange: "ranged",
   // A Focus is for casters; a Bow or Crossbow takes a Quiver.
-  fitsWeapons: ["fire-wand", "staff"],
+  fitsWeapons: ["wand", "staff"],
   baseStats: { barrier: 10 },
   implicit: { elementalDamage: 0.08, heatGain: 0.05 },
   requirements: { intelligence: 3 },
@@ -166,7 +166,7 @@ export const GRIMOIRE: ItemBaseDefinition = {
   name: "Grimoire",
   slot: "offHand",
   fitsWeaponRange: "ranged",
-  fitsWeapons: ["fire-wand", "staff"],
+  fitsWeapons: ["wand", "staff"],
   baseStats: { barrier: 10 },
   implicit: { ailmentEffect: 0.1, burnChance: 0.03, corruptionChance: 0.03 },
   requirements: { wisdom: 3 },
@@ -425,7 +425,7 @@ export const LEAF_CHARM: ItemBaseDefinition = {
 
 export const ITEM_BASES: readonly ItemBaseDefinition[] = [
   SWORD_BASE,
-  FIRE_WAND_BASE,
+  WAND_BASE,
   AXE_BASE,
   DAGGER_BASE,
   BOW_BASE,

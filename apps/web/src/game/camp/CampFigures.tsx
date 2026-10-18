@@ -23,7 +23,7 @@ export function heirGear(state: GameState): HeirGear {
   const { offHand } = state.hero.equipment;
   const off = offHand?.baseId === "round-shield" ? "shield" : offHand ? "focus" : undefined;
   return {
-    weapon: state.hero.weaponId === "fire-wand" ? "wand" : "sword",
+    weapon: state.hero.weaponId === "wand" ? "wand" : "sword",
     ...(off ? { offHand: off } : {}),
   };
 }

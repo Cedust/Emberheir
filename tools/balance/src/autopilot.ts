@@ -34,7 +34,7 @@ import { keptBases, wantsBase } from "./runes";
 /** Attribute points per level for each weapon. */
 const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
   sword: ["strength", "agility", "vitality"],
-  "fire-wand": ["intelligence", "wisdom", "vitality"],
+  wand: ["intelligence", "wisdom", "vitality"],
   axe: ["strength", "vitality", "wisdom"],
   dagger: ["dexterity", "agility", "vitality"],
   mace: ["strength", "vitality", "agility"],

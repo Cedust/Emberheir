@@ -127,7 +127,7 @@ export const BUILDS: readonly BuildPlan[] = [
   {
     id: "storm",
     classId: "sorcerer",
-    weapon: "fire-wand",
+    weapon: "wand",
     nodes: ["arcana-tempest", "arcana-storm-weaver", "@branches", "arcana-kindled-mind"],
     rotation: ["chain-lightning", "thunderstrike", "meteor"],
     branches: ["stormcaller", "frostbinder", "tactician", "warden"],
@@ -136,7 +136,7 @@ export const BUILDS: readonly BuildPlan[] = [
   {
     id: "frost",
     classId: "sorcerer",
-    weapon: "fire-wand",
+    weapon: "wand",
     nodes: [
       "arcana-kindled-mind",
       "arcana-glacier",
@@ -146,15 +146,18 @@ export const BUILDS: readonly BuildPlan[] = [
     rotation: ["ice-lance", "chain-lightning"],
     branches: ["frostbinder", "stormcaller", "warden", "tactician"],
     reaction: NOVA,
+    mastery: { attunement: "attune-cold", paths: ["rime", "starfall", "storm"] },
   },
   {
-    id: "fire",
+    // Crits by rhythm (sorcerer-ohne-fire-v1.md): skills charge the Spark, the Spark crits.
+    id: "starfall",
     classId: "sorcerer",
-    weapon: "fire-wand",
-    nodes: ["arcana-affliction-pyroclasm", "arcana-affliction-firestarter", "@branches"],
-    rotation: ["meteor", "thunderstrike", "ice-lance"],
-    branches: ["stormcaller", "tactician", "frostbinder", "warden"],
+    weapon: "wand",
+    nodes: ["arcana-tempest", "arcana-ever-ward", "@branches", "arcana-kindled-mind"],
+    rotation: ["chain-lightning", "ice-lance", "thunderstrike"],
+    branches: ["tactician", "stormcaller", "frostbinder", "warden"],
     reaction: NOVA,
+    mastery: { paths: ["starfall", "storm", "rime"] },
   },
   {
     id: "void",
@@ -207,6 +210,8 @@ export function findBuild(weaponId: string, buildId?: string): BuildPlan | undef
  * Refine is spread between them.
  */
 interface MasteryPlan {
+  /** Wand and Staff: the Attunement to pick (free); without one the weapon keeps its first. */
+  readonly attunement?: string;
   readonly heat?: string;
   readonly innate: string;
   readonly keystone: string;
@@ -256,12 +261,12 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
     paths: ["payload", "pierce", "reload"],
     forks: { pierce: [1, 0] },
   },
-  "fire-wand": {
+  wand: {
     heat: "heat-warming",
     innate: "barrage",
     keystone: "wild-magic",
-    paths: ["storm", "blaze", "rime"],
-    forks: { blaze: [1, 0], rime: [1, 0] },
+    paths: ["storm", "starfall", "rime"],
+    forks: { rime: [1, 0] },
   },
   staff: {
     heat: "heat-warming",
@@ -295,6 +300,7 @@ export function masteryOrder(data: GameData, weaponId: string, build?: BuildPlan
     return out.filter((n): n is string => n !== undefined && nodes.some((m) => m.id === n));
   };
   return [
+    ...(plan.attunement ? [plan.attunement] : []),
     ...(plan.heat ? [plan.heat] : []),
     plan.innate,
     plan.keystone,
