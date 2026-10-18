@@ -201,18 +201,18 @@ Format pro Pfad: **Build-Idee** · Technik I · Gabel 1 · Technik II · Gabel 2
 ### 3.7 Wand (Sorcerer) – „Blitz, Frost und der Funke“
 
 Stand 17.10.2026 (`sorcerer-ohne-fire-v1.md`): Fire gehört dem Warlock. Die Attunement ist nur noch **Lightning**
-(Start) oder **Cold**, der Innate heißt Shockbolt bzw. Frostbolt. **Arcane** ersetzt Blaze; Storm gibt seine Crits an
-Arcane ab und ist ein reiner Shock-Pfad.
+(Start) oder **Cold**, der Innate heißt Shockbolt bzw. Frostbolt. **Starfall** ersetzt Blaze; Storm gibt seine Crits an
+Starfall ab und ist ein reiner Shock-Pfad.
 
 | Pfad | Build-Idee |
 |---|---|
-| **Arcane** | Crits über den Spark-Rhythmus: ein Skill lädt den Spark, der Spark crittet (jede Attunement) |
+| **Starfall** | Crits über den Spark-Rhythmus: ein Skill lädt den Spark, der Spark crittet (jede Attunement) |
 | **Rime** | Cold: Kontrolle, Chill bis zum Freeze |
 | **Storm** | Lightning: Shock-Stacks als Schaden und Heat |
 
 | Pfad | Technik I | Gabel 1 | Technik II | Gabel 2 | Meister |
 |---|---|---|---|---|---|
-| Arcane | +3 % Precision | **Flashpoint**: der geladene Spark ist immer ein sauberer Crit ◇ **Critical Mass**: jeder Spark ohne Crit gibt +6 % Crit Chance bis zum nächsten Crit | +8 % Innate-Schaden | **Arc**: jeder Crit gibt 8 Heat ◇ **Overwhelm**: Crits haben +20 % Elemental Penetration | **Master of the Arcane**: crittet ein Skill, lädt er den Spark für zwei Default Attacks |
+| Starfall | +3 % Precision | **Flashpoint**: der geladene Spark ist immer ein sauberer Crit ◇ **Critical Mass**: jeder Spark ohne Crit gibt +6 % Crit Chance bis zum nächsten Crit | +8 % Innate-Schaden | **Arc**: jeder Crit gibt 8 Heat ◇ **Overwhelm**: Crits haben +20 % Elemental Penetration | **Master of Starfall**: crittet ein Skill, lädt er den Spark für zwei Default Attacks |
 | Rime | +10 % Chill-Wirkung | **Bitter Cold**: Chill hält 40 % länger ◇ **Shatterpoint**: +25 % Schaden gegen Chilled | +4 % Chill Chance | **Frozen Solid**: 3 Chills in 6 s frieren 1 s ein ◇ **Cold Snap**: Telegraphs Chilled Gegner brauchen 30 % länger | **Master of Rime**: Chill während eines Telegraphs verschiebt die Heavy Attack um 1 s |
 | Storm | +10 % Shock-Wirkung | **Static Field**: +20 % Shock Chance ◇ **Conduction**: jeder neue Shock-Stack gibt 4 Heat | +4 % Shock Chance | **Arc Chain**: Treffer gegen 3 Shock-Stacks springen für 15 % über ◇ **Static Build**: Shock stapelt bis 5 | **Master of Storm**: solange Shock läuft, kosten Skills 10 % weniger |
 

@@ -233,7 +233,7 @@ describe("streaks and Crits", () => {
   });
 });
 
-describe("Arcane and Storm (Sorcerer without Fire)", () => {
+describe("Starfall and Storm (Sorcerer without Fire)", () => {
   const shocking = {
     ...TEST_WEAPON,
     damageType: "lightning" as const,
@@ -293,7 +293,7 @@ describe("Arcane and Storm (Sorcerer without Fire)", () => {
     expect(hits(over.events)[0]?.damage).toBeCloseTo((base / 0.5) * 0.7, 0);
   });
 
-  it("Master of the Arcane: a skill that crits charges the Spark twice", () => {
+  it("Master of Starfall: a skill that crits charges the Spark twice", () => {
     const sparks = (f: Fight) => ofType(f.events, "payoff").filter((p) => p.payoff === "spark");
     // A spell every third attack: the plain Spark charges one of the two attacks in between.
     const rare = { bonuses: ALL_CRIT, rotation: [{ skill: { ...spell, heatCost: 30 } }] };

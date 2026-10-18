@@ -92,7 +92,7 @@ export interface Fighter {
   // Class Traits.
   /** Keen Eye: the first hit of the fight has been a clean Crit. */
   keenOpened: boolean;
-  /** Spark: Default Attacks still charged by a skill (one, two after Master of the Arcane). */
+  /** Spark: Default Attacks still charged by a skill (one, two after Master of Starfall). */
   sparkCharges: number;
   /** Crit Chance built up by Default Attacks without a Crit (Critical Mass). */
   critBuildup: number;

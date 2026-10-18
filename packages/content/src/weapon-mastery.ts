@@ -368,7 +368,7 @@ const form = (
   skill: SkillDefinition,
 ): InnateFormSpec => ({ id, name, description, effect: {}, skill: { ...skill, description } });
 
-/** Path colours of the engraving: physical gold, blood red, ember, frost, storm, venom, void, arcane. */
+/** Path colours of the engraving: physical gold, blood red, ember, frost, storm, venom, void, starfall. */
 const C = {
   gold: 0xe0b45a,
   blood: 0xc8423a,
@@ -378,7 +378,7 @@ const C = {
   venom: 0x8cc04a,
   void: 0xa070e0,
   steel: 0xb8c0cc,
-  arcane: 0xd2b8ff,
+  starfall: 0xd2b8ff,
 } as const;
 
 // --- the eight trees ------------------------------------------------------------------------
@@ -1684,10 +1684,10 @@ const WAND = buildTree({
   paths: [
     {
       // Crits by rhythm, not by timing (the Hunter's): a skill charges the Spark, the Spark crits.
-      id: "arcane",
-      name: "Arcane",
+      id: "starfall",
+      name: "Starfall",
       theme: "Crits, burst",
-      color: C.arcane,
+      color: C.starfall,
       techniques: [
         technique("Focus", "+3 % Precision.", { precision: 0.03 }),
         technique("Amplify", "Your Innate deals +8 % damage.", { innatePatch: { damage: 0.08 } }),
@@ -1713,7 +1713,7 @@ const WAND = buildTree({
         ],
       ],
       master: master(
-        "Master of the Arcane",
+        "Master of Starfall",
         "When a skill crits, it charges your Spark for two Default Attacks.",
         { weaponRules: { skillCritSparks: 2 } },
       ),
@@ -1758,7 +1758,7 @@ const WAND = buildTree({
       ),
     },
     {
-      // Shock only: the Crits moved to Arcane (2026-10-17).
+      // Shock only: the Crits moved to Starfall (2026-10-17).
       id: "storm",
       name: "Storm",
       theme: "Shock",

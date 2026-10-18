@@ -734,7 +734,7 @@ export interface WeaponRules {
   readonly critBuildup?: number;
   /** Crits get this much extra Elemental Penetration (Overwhelm). */
   readonly critElementalPenetration?: number;
-  /** A skill that crits charges the Spark for this many Default Attacks (Master of the Arcane). */
+  /** A skill that crits charges the Spark for this many Default Attacks (Master of Starfall). */
   readonly skillCritSparks?: number;
   /** Burning enemies deal this much less damage (Ashen Veil). */
   readonly ashenVeil?: number;

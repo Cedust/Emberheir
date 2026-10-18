@@ -423,7 +423,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   } else if (!outcome.crit && wr?.critBuildup && rolls && !h.fromSkill && !h.fromTrigger) {
     attacker.critBuildup += wr.critBuildup;
   }
-  // Master of the Arcane: a skill that crits charges the Spark for more Default Attacks.
+  // Master of Starfall: a skill that crits charges the Spark for more Default Attacks.
   if (outcome.crit && h.fromSkill && wr?.skillCritSparks && attacker.setup.rules?.spark) {
     attacker.sparkCharges = Math.max(attacker.sparkCharges, wr.skillCritSparks);
   }

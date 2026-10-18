@@ -146,18 +146,18 @@ export const BUILDS: readonly BuildPlan[] = [
     rotation: ["ice-lance", "chain-lightning"],
     branches: ["frostbinder", "stormcaller", "warden", "tactician"],
     reaction: NOVA,
-    mastery: { attunement: "attune-cold", paths: ["rime", "arcane", "storm"] },
+    mastery: { attunement: "attune-cold", paths: ["rime", "starfall", "storm"] },
   },
   {
     // Crits by rhythm (sorcerer-ohne-fire-v1.md): skills charge the Spark, the Spark crits.
-    id: "arcane",
+    id: "starfall",
     classId: "sorcerer",
     weapon: "wand",
     nodes: ["arcana-tempest", "arcana-ever-ward", "@branches", "arcana-kindled-mind"],
     rotation: ["chain-lightning", "ice-lance", "thunderstrike"],
     branches: ["tactician", "stormcaller", "frostbinder", "warden"],
     reaction: NOVA,
-    mastery: { paths: ["arcane", "storm", "rime"] },
+    mastery: { paths: ["starfall", "storm", "rime"] },
   },
   {
     id: "void",
@@ -265,7 +265,7 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
     heat: "heat-warming",
     innate: "barrage",
     keystone: "wild-magic",
-    paths: ["storm", "arcane", "rime"],
+    paths: ["storm", "starfall", "rime"],
     forks: { rime: [1, 0] },
   },
   staff: {

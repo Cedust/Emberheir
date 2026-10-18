@@ -59,7 +59,7 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   6: {},
   // Sorcerer without Fire (sorcerer-ohne-fire-v1.md): the Fire Wand is just the Wand, Lightning
   // or Cold. Fire Attunement falls back to Lightning, Blaze and Storm give their points back
-  // (Arcane replaced Blaze, Storm's Notables changed), and Firebolt becomes Shockbolt.
+  // (Starfall replaced Blaze, Storm's Notables changed), and Firebolt becomes Shockbolt.
   7: { item: renameWandItem, state: wandWithoutFire },
 };
 

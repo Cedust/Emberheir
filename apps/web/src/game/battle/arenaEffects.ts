@@ -129,7 +129,7 @@ export const PAYOFF_FX: Record<
   ironBlood: { color: [0xc9c2b8, 0xff8a3a], on: "self", look: "ring" },
   keenEye: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star" },
   spark: { color: [0x5b8cff, 0xffe14d], on: "foe", look: "star" },
-  // Arcane: a white-violet tear of light where the Spark crits; built-up Crits break the same way.
+  // Starfall: a white-violet tear of light where the Spark crits; built-up Crits break the same way.
   flashpoint: { color: [0xd2b8ff, 0xffffff, 0x8a5cff], on: "foe", look: "rift", shake: 0.15 },
   criticalMass: { color: [0xb48cff, 0xffffff, 0xd2b8ff], on: "foe", look: "rift", shake: 0.1 },
   // Storm: a small arc of lightning runs from the Shocked enemy back into the Wand.

@@ -127,3 +127,6 @@ Mittel pro Build):
 Sorcerer-Builds: storm 17,4 → 27,0, frost 14,1 → 24,3 (davon 16 Versuche in Act 4: Cold gegen den Rime Warden; ein
 Spieler wechselt die Attunement dort kostenlos auf Lightning, der Autopilot nicht), fire 26,0 → arcane 17,0. Der
 Sorcerer war vorher die leichteste Klasse und liegt jetzt im Feld der anderen. Finale und Wildfire nicht neu gemessen.
+
+**Umbenannt (2026-10-18):** Der Path heißt **Starfall** statt Arcane (zu nah an der Skill-Web-Region Arcana, in der
+der Sorcerer startet); der Meister heißt Master of Starfall, der Autopilot-Build "starfall".

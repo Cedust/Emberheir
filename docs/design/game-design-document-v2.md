@@ -325,10 +325,10 @@ Endgame **Wildfire I–X**.
   (Master of the Edge: Precision über 85 % wird Crit Chance).
 - Am Ende ~20 von 41 möglichen Punkten: ein voller Pfad und ein halber, oder zwei Pfade bis zur ersten Gabel.
 - **Wand ohne Fire** (Timo 17.10.2026, `sorcerer-ohne-fire-v1.md`): Fire und Burn gehören dem Warlock. Die
-  Wand-Pfade sind **Arcane** (Crits über den Spark-Rhythmus: Flashpoint, Critical Mass, Arc, Overwhelm, Master of the
-  Arcane), **Rime** (Chill, Kontrolle) und **Storm** (nur noch Shock: Conduction, Arc Chain ab 3 Stacks). Der Sorcerer
+  Wand-Pfade sind **Starfall** (Crits über den Spark-Rhythmus: Flashpoint, Critical Mass, Arc, Overwhelm, Master of
+  Starfall), **Rime** (Chill, Kontrolle) und **Storm** (nur noch Shock: Conduction, Arc Chain ab 3 Stacks). Der Sorcerer
   crittet nach Rhythmus (Skill → geladener Spark), der Hunter nach Timing. Stormcaller und Tempest behalten ihre
-  Crit-Bezüge als Kombination Lightning + Arcane.
+  Crit-Bezüge als Kombination Lightning + Starfall.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
   Heavy Bolt (Crossbow), Shockbolt (Wand, mit Cold-Attunement Frostbolt), Void Bolt (Staff). Jeder Innate gibt Heat laufend aus (Angriff oder Spell):
   Run 1 hat nur einen Rotation Slot, ein Buff dort liesse die Heat bei 100 stehen (Timo 15.10.2026: Dagger-Innate

@@ -617,7 +617,7 @@ export class ArenaScene {
         this.fx?.ring(c.x, c.y, main, 50, 170, 0.45, 9, 1);
         break;
       case "rift": {
-        // Arcane Crit: the air tears open in a white-violet seam, light spills out of it.
+        // Starfall Crit: the air tears open in a white-violet seam, light spills out of it.
         const top = c.y - 120;
         const bottom = c.y + 90;
         this.fx?.bolt(c.x - 6, top, c.x + 6, bottom, main);
