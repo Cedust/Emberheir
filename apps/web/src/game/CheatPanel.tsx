@@ -176,9 +176,9 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
         <p className="sub small">Sets the level of that Rank.</p>
       </section>
       <section className="cheat-card">
-        <span className="eyebrow">Weapon Mastery · {masteryPointsLeft(state, GAME_DATA)} free</span>
+        <span className="eyebrow">Heirloom · {masteryPointsLeft(state, GAME_DATA)} free</span>
         <NumberRow
-          label="Bonus Mastery Points"
+          label="Bonus Heirloom Points"
           value={state.hero.mastery.bonusPoints ?? 0}
           quick={[5, 20]}
           onSet={(amount) => game.cheat({ kind: "masteryPoints", amount })}

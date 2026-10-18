@@ -123,6 +123,11 @@ export class ArenaScene {
   /** Exalted weapons shed golden sparks from this point of the hero figure. */
   private exaltedTip: Container | null = null;
   private exaltedCarry = 0;
+  /** The weapon's tip and the Heirloom Infusion it carries (klassengeruest-v1.md 4). */
+  private weaponTip: Container | null = null;
+  private infusion: string | undefined;
+  private infusionCarry = 0;
+  private infusionArc = 0;
   private ranged: Record<Side, boolean> = { hero: false, enemy: false };
   /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
   private heavy: { skill: string; until: number } | null = null;
@@ -253,6 +258,8 @@ export class ArenaScene {
       hero.weaponLook.grade >= 4
         ? (this.hero.body.getChildByLabel("weapon-tip", true) ?? null)
         : null;
+    this.weaponTip = this.hero.body.getChildByLabel("weapon-tip", true) ?? null;
+    this.infusion = hero.weaponLook.element;
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
     this.traitGfx = new Graphics();
     this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
@@ -453,6 +460,79 @@ export class ArenaScene {
    * The Class Trait in the arena (klassengeruest-v1.md 2): an ember aura that grows with Fury,
    * the Overcharge sparks circling the Emberseer, and Hunter's Mark as a sight over the enemy.
    */
+  /**
+   * Infusion: the Heirloom path's element clings to the weapon. A Fire blade burns, Lightning
+   * crackles, Cold breathes frost, Void smokes. Physical weapons stay bare.
+   */
+  private drawInfusion(dt: number): void {
+    const fx = this.fx;
+    const element = this.infusion;
+    if (!fx || !this.weaponTip || !this.hero || this.hero.root.alpha !== 1) return;
+    if (!element || element === "physical") return;
+    const at = this.world.toLocal(this.weaponTip.getGlobalPosition());
+    this.infusionCarry += (this.motion ? 10 : 4) * dt;
+    for (; this.infusionCarry >= 1; this.infusionCarry--) {
+      const base = { x: at.x, y: at.y, count: 1, layer: "front" as const };
+      if (element === "fire") {
+        fx.burst({
+          ...base,
+          color: [0xff4a1a, 0xff8a1f, 0xffd84a],
+          spreadX: 40,
+          spreadY: 50,
+          angle: [RISE - 0.4, RISE + 0.4],
+          speed: [40, 110],
+          life: [0.3, 0.7],
+          size: [8, 18],
+          endSize: 0.1,
+        });
+      } else if (element === "lightning") {
+        fx.burst({
+          ...base,
+          color: [0xffe066, 0xfff6c0],
+          spreadX: 36,
+          spreadY: 50,
+          speed: [80, 180],
+          life: [0.12, 0.25],
+          size: [3, 6],
+          stretch: 3,
+        });
+      } else if (element === "cold") {
+        fx.burst({
+          ...base,
+          color: [0xcfe9ff, 0x8ec8f0, 0xffffff],
+          spreadX: 40,
+          spreadY: 50,
+          angle: [Math.PI * 0.35, Math.PI * 0.65],
+          speed: [8, 30],
+          life: [0.8, 1.5],
+          size: [12, 24],
+          alpha: 0.45,
+        });
+      } else {
+        fx.burst({
+          ...base,
+          color: [0x2a1840, 0x6a3aa0, 0xa070e0],
+          spreadX: 36,
+          spreadY: 46,
+          angle: [RISE - 0.5, RISE + 0.5],
+          speed: [12, 40],
+          life: [0.8, 1.4],
+          size: [14, 28],
+          alpha: 0.5,
+        });
+      }
+    }
+    // Lightning also throws a short arc now and then.
+    if (element === "lightning" && this.motion) {
+      this.infusionArc -= dt;
+      if (this.infusionArc <= 0) {
+        this.infusionArc = 0.4 + Math.random() * 0.6;
+        const a = Math.random() * Math.PI * 2;
+        fx.bolt(at.x, at.y, at.x + Math.cos(a) * 50, at.y + Math.sin(a) * 50, 0xffe066);
+      }
+    }
+  }
+
   private drawTrait(dt: number): void {
     const g = this.traitGfx;
     if (!g) return;
@@ -1297,6 +1377,7 @@ export class ArenaScene {
         });
       }
     }
+    this.drawInfusion(dt);
     if (this.levelGlow && this.motion) {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
     }

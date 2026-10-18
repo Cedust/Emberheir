@@ -839,6 +839,8 @@ function cleanHit(
   const sunder = wr.sunder;
   let stacks = sunder && sunder.chance > 0 && core.rng.chance(sunder.chance) ? 1 : 0;
   if (h.extraAttack && wr.extraAttackSunder) stacks += 1;
+  // Mace Stun build: a stunned enemy cracks open (the lever against short boss stuns).
+  if (wr.stunnedSunder && defender.stunned > 1e-9) stacks += wr.stunnedSunder;
   if (stacks > 0) addSunder(attacker, defender, stacks);
   for (const ailment of wr.refreshOnHit ?? []) {
     if (ailment === "poison") continue;

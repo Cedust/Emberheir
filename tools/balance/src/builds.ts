@@ -108,7 +108,7 @@ export const BUILDS: readonly BuildPlan[] = [
     branches: ["venomancer", "marksman", "tactician", "warden"],
     reaction: GUARD,
     // A Poison bow: the Poison innate and the Toxin path, not the Bleed ones of the bow's plan.
-    mastery: { innate: "toxic-arrow", paths: ["toxin", "volley", "barbs"] },
+    mastery: { innate: "toxic-arrow", path: "toxin" },
   },
   {
     id: "barbs",
@@ -146,7 +146,7 @@ export const BUILDS: readonly BuildPlan[] = [
     rotation: ["ice-lance", "chain-lightning"],
     branches: ["frostbinder", "stormcaller", "warden", "tactician"],
     reaction: NOVA,
-    mastery: { attunement: "attune-cold", paths: ["rime", "starfall", "storm"] },
+    mastery: { path: "rime" },
   },
   {
     // Crits by rhythm (sorcerer-ohne-fire-v1.md): skills charge the Spark, the Spark crits.
@@ -157,7 +157,7 @@ export const BUILDS: readonly BuildPlan[] = [
     rotation: ["chain-lightning", "ice-lance", "thunderstrike"],
     branches: ["tactician", "stormcaller", "frostbinder", "warden"],
     reaction: NOVA,
-    mastery: { paths: ["starfall", "storm", "rime"] },
+    mastery: { path: "starfall" },
   },
   {
     id: "void",
@@ -205,17 +205,15 @@ export function findBuild(weaponId: string, buildId?: string): BuildPlan | undef
 }
 
 /**
- * Weapon Mastery plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone,
- * the paths in order and the side taken at each fork (0 = the first Notable, 1 = the second).
- * Refine is spread between them.
+ * Heirloom plan per weapon: Heat Form (the weapon's old behavior), Innate Form, Keystone, the
+ * build's path (one path at a time) and the side taken at each fork (0 = the first Notable,
+ * 1 = the second). Refine is spread around it. Without a path the weapon keeps its first one.
  */
 interface MasteryPlan {
-  /** Wand and Staff: the Attunement to pick (free); without one the weapon keeps its first. */
-  readonly attunement?: string;
   readonly heat?: string;
   readonly innate: string;
   readonly keystone: string;
-  readonly paths: readonly string[];
+  readonly path: string;
   /** Fork sides per path; a path without an entry takes the first Notable at both forks. */
   readonly forks?: Readonly<Record<string, readonly [0 | 1, 0 | 1]>>;
 }
@@ -225,54 +223,53 @@ const MASTERY_PLAN: Record<string, MasteryPlan> = {
     heat: "heat-cooling",
     innate: "rising-strike",
     keystone: "final-verdict",
-    paths: ["edge", "tempo", "riposte"],
-    forks: { edge: [0, 1], riposte: [1, 0] },
+    path: "edge",
+    forks: { edge: [0, 1], winter: [1, 0] },
   },
   mace: {
     heat: "heat-cooling",
     innate: "bone-breaker",
     keystone: "siege",
-    paths: ["crush", "quake", "bulwark"],
-    forks: { quake: [1, 0], bulwark: [0, 1] },
+    path: "quake",
+    forks: { quake: [1, 0], stormwall: [0, 1] },
   },
   axe: {
     heat: "heat-cooling",
     innate: "gutting-lacerate",
     keystone: "rampage",
-    paths: ["butcher", "frenzy", "cleave"],
+    path: "butcher",
     forks: { butcher: [0, 0] },
   },
   dagger: {
     heat: "heat-cooling",
     innate: "virulent-coat",
     keystone: "toxic-bloom",
-    paths: ["venom", "assassin", "flurry"],
-    forks: { assassin: [1, 1] },
+    path: "venom",
+    forks: { cutthroat: [1, 1] },
   },
   bow: {
     innate: "hooked-arrow",
-    keystone: "hunters-mark",
-    paths: ["barbs", "volley", "toxin"],
-    forks: { barbs: [0, 1] },
+    keystone: "marked-prey",
+    path: "toxin",
   },
   crossbow: {
     innate: "ballista-bolt",
     keystone: "repeater",
-    paths: ["payload", "pierce", "reload"],
-    forks: { pierce: [1, 0] },
+    path: "venom-bolts",
+    forks: { "venom-bolts": [1, 0] },
   },
   wand: {
     heat: "heat-warming",
     innate: "barrage",
     keystone: "wild-magic",
-    paths: ["storm", "starfall", "rime"],
+    path: "starfall",
     forks: { rime: [1, 0] },
   },
   staff: {
     heat: "heat-warming",
     innate: "void-lance",
     keystone: "endless-night",
-    paths: ["hollow", "channel", "smolder"],
+    path: "hollow",
     forks: { smolder: [1, 0] },
   },
 };
@@ -300,23 +297,21 @@ export function masteryOrder(data: GameData, weaponId: string, build?: BuildPlan
     return out.filter((n): n is string => n !== undefined && nodes.some((m) => m.id === n));
   };
   return [
-    ...(plan.attunement ? [plan.attunement] : []),
     ...(plan.heat ? [plan.heat] : []),
     plan.innate,
     plan.keystone,
     "precision",
     "steady-hand",
     "precision",
-    ...path(plan.paths[0]),
+    ...path(plan.path),
     "steady-hand",
     "precision",
-    ...path(plan.paths[1]),
     "steady-hand",
     "full-swing",
     "full-swing",
     "full-swing",
     "balance",
     "balance",
-    ...path(plan.paths[2]),
+    "balance",
   ];
 }

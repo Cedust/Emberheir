@@ -40,7 +40,7 @@ export function KaelenView(props: {
   const respecPrice = respecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
     { id: "tree", name: "Skill Tree", icon: "tree" },
-    { id: "mastery", name: "Weapon Mastery", icon: "sword" },
+    { id: "mastery", name: "Heirloom", icon: "sword" },
     ...(planEditable
       ? [{ id: "plan" as const, name: "Battle Plan", icon: "strike" as const }]
       : []),
@@ -78,7 +78,7 @@ export function KaelenView(props: {
                   />
                   <PointChip
                     value={masteryPointsLeft(state, GAME_DATA)}
-                    name="Mastery Points"
+                    name="Heirloom Points"
                     explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
                   />
                   <CurrencyChip id="acorns" amount={state.wallet.acorns} />

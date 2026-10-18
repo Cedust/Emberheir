@@ -16,7 +16,7 @@ import {
   EMPTY_MASTERY,
   MASTERY,
   type MasteryState,
-  attuneSkill,
+  infuseSkill,
   buildMasteryWeapon,
   learnMastery,
   masteryBlockReason,
@@ -192,7 +192,7 @@ describe("Weapon Mastery tree", () => {
     expect(w.triggers.find((x) => x.id === "x")?.chance).toBeCloseTo(0.15);
   });
 
-  it("Attunement turns a Fire Innate into another element", () => {
+  it("Infusion turns a Fire Innate into another element and ailment", () => {
     const firebolt = {
       ...TEST_SKILL,
       id: "firebolt",
@@ -208,12 +208,31 @@ describe("Weapon Mastery tree", () => {
         },
       ],
     };
-    const frost = attuneSkill(firebolt, { damageType: "cold", ailment: "chill" });
-    expect(frost).toMatchObject({ id: "firebolt@cold", name: "Frostbolt", tags: ["cold"] });
+    const frost = infuseSkill(firebolt, { damageType: "cold", ailment: "chill", chance: 0.2 });
+    expect(frost).toMatchObject({ id: "firebolt@cold-chill", name: "Frostbolt", tags: ["cold"] });
     expect(frost.hits[0]).toMatchObject({
       damageType: "cold",
       ailmentChances: [{ ailment: "chill", chance: 0.5 }],
     });
+    const arrow = {
+      ...TEST_SKILL,
+      description: "180 % Weapon Damage as Fire. Always Burns, 25 % chance to Bleed or Poison.",
+      hits: [
+        {
+          kind: "weapon" as const,
+          multiplier: 1.8,
+          damageType: "fire" as const,
+          ailmentChances: [{ ailment: "burn" as const, chance: 1 }],
+        },
+      ],
+    };
+    const shocking = infuseSkill(arrow, { damageType: "lightning", ailment: "shock", chance: 0.2 });
+    expect(shocking.description).toBe(
+      "180 % Weapon Damage as Lightning. Always Shocks, 25 % chance to Shock.",
+    );
+    const plain = infuseSkill(arrow, { damageType: "physical", ailment: "poison", chance: 0.2 });
+    expect(plain.description).toBe("180 % Weapon Damage. Always Poisons, 25 % chance to Poison.");
+    expect(plain.hits[0]).toMatchObject({ damageType: "physical" });
   });
 });
 

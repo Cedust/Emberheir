@@ -2,6 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import {
   type GameState,
   type MasteryState,
+  activePath,
   heroWeaponRank,
   masteryRanks,
   weaponBase,
@@ -19,16 +20,13 @@ export const ELEMENT_COLOR: Record<string, number> = {
 
 /**
  * How the build shows on the painted weapon: grade metal, a rune per learned path rank in the
- * path's colour, the Keystone's shape and the element's light.
+ * path's colour, the Keystone's shape and the light of the path's Infusion.
  */
 export function weaponLookOf(weaponId: string, mastery: MasteryState, rank: number): WeaponLook {
   const tree = GAME_DATA.weaponMastery[weaponId];
   const nodes = tree?.nodes ?? [];
-  const attunement = nodes.find(
-    (n) => n.kind === "attunement" && tree && masteryRanks(tree, mastery, n.id) > 0,
-  );
-  const element =
-    attunement?.effect.attunement?.damageType ?? weaponBase(GAME_DATA, weaponId).damageType;
+  const infusion = tree ? activePath(tree, mastery)?.infusion : undefined;
+  const element = infusion?.damageType ?? weaponBase(GAME_DATA, weaponId).damageType;
   return {
     grade: gradeIndex(rank),
     accent: ELEMENT_COLOR[element] ?? 0xff6a2a,
@@ -39,6 +37,7 @@ export function weaponLookOf(weaponId: string, mastery: MasteryState, rank: numb
         .reduce((sum, n) => sum + (tree ? masteryRanks(tree, mastery, n.id) : 0), 0),
     })),
     keystone: mastery.choices.keystone ?? null,
+    element,
   };
 }
 

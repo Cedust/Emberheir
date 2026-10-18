@@ -554,6 +554,8 @@ export interface WeaponRules {
   readonly extraAttacksPrecise?: boolean;
   /** Extra attacks add a Sunder stack. */
   readonly extraAttackSunder?: boolean;
+  /** Hits on a stunned enemy add this many Sunder stacks (the Mace's Stun path). */
+  readonly stunnedSunder?: number;
   readonly sunder?: SunderRule;
   /** After these defences the next own hit is clean and a Crit (Read the Blow, Shadowstep). */
   readonly critAfter?: readonly ("evade" | "block" | "parry")[];

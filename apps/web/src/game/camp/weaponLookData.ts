@@ -11,6 +11,8 @@ export interface WeaponLook {
   readonly runes: readonly { readonly color: number; readonly ranks: number }[];
   /** The chosen Keystone's id, if any. */
   readonly keystone: string | null;
+  /** The Heirloom path's Infusion (damage type): the weapon burns, crackles, frosts or smokes. */
+  readonly element?: string;
 }
 
 export const PLAIN_LOOK: WeaponLook = { grade: 0, accent: 0xff6a2a, runes: [], keystone: null };

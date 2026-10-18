@@ -139,7 +139,15 @@ export const TEST_MASTERY: WeaponMasteryTree = {
   precision: 0.7,
   rangeMin: 0.4,
   rangeMax: 1.1,
-  paths: [{ id: "edge", name: "Edge", theme: "", color: 0xffffff }],
+  paths: [
+    {
+      id: "edge",
+      name: "Edge",
+      theme: "",
+      color: 0xffffff,
+      infusion: { damageType: "physical", ailment: "bleed", chance: 0 },
+    },
+  ],
   nodes: [
     node({ id: "refine", kind: "refine", maxRanks: 3, effect: { precision: 0.05 } }),
     node({ id: "swing", kind: "refine", maxRanks: 3, effect: { rangeMax: 0.1 } }),
