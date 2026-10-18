@@ -596,10 +596,11 @@ h2 {
 }
 
 /*
- * Damage type and ailment colors in the log. The log sits on parchment, so light mode uses the
+ * Damage type and ailment colors in the log and on the Mastery cards. Both sit on parchment, so light mode uses the
  * darkened text variants (docs/design/ui-look-v1.md: only text on parchment is darkened).
  */
-.log {
+.log,
+.branch-picks {
   --tone-physical: #5a5550;
   --tone-fire: #c2410c;
   --tone-cold: #0e7490;
@@ -611,7 +612,8 @@ h2 {
 }
 
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .log {
+  :root:not([data-theme="light"]) .log,
+  :root:not([data-theme="light"]) .branch-picks {
     --tone-bleed: var(--dmg-bleed);
     --tone-poison: var(--dmg-poison);
     --tone-physical: var(--dmg-physical);
@@ -623,7 +625,8 @@ h2 {
   }
 }
 
-:root[data-theme="dark"] .log {
+:root[data-theme="dark"] .log,
+:root[data-theme="dark"] .branch-picks {
   --tone-bleed: var(--dmg-bleed);
   --tone-poison: var(--dmg-poison);
   --tone-physical: var(--dmg-physical);

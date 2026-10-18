@@ -60,13 +60,13 @@ const ROMAN = ["", "I", "II", "III", "IV", "V"];
 /** Colour of the Ash Tree region a Mastery grows from. */
 const BRANCH_COLORS: Record<string, string> = {
   core: "#c9a063",
-  steel: "var(--dmg-physical)",
-  blood: "var(--dmg-bleed)",
-  venom: "var(--dmg-poison)",
-  flame: "var(--dmg-fire)",
-  storm: "var(--dmg-lightning)",
-  frost: "var(--dmg-cold)",
-  void: "var(--dmg-void)",
+  steel: "var(--tone-physical)",
+  blood: "var(--tone-bleed)",
+  venom: "var(--tone-poison)",
+  flame: "var(--tone-fire)",
+  storm: "var(--tone-lightning)",
+  frost: "var(--tone-cold)",
+  void: "var(--tone-void)",
   trunk: "#c9a063",
   roots: "#d08a4a",
 };
