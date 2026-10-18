@@ -792,10 +792,18 @@ export class MasteryScene {
       const ax = v.tip.x - v.pommel.x;
       const ay = v.tip.y - v.pommel.y;
       const t = ((n.node.x - v.pommel.x) * ax + (n.node.y - v.pommel.y) * ay) / (ax * ax + ay * ay);
-      const q = {
-        x: (v.pommel.x + ax * Math.min(1, t)) * U,
-        y: (v.pommel.y + ay * Math.min(1, t)) * U,
-      };
+      const len = Math.hypot(ax, ay);
+      // Orbs hang from the painted tip (a crystal or gem point, often off the axis).
+      const tip = n.node.kind === "attunement" && t >= 1 ? this.art?.tip : undefined;
+      const q = tip
+        ? {
+            x: v.pommel.x * U + ((ax * tip.x - ay * tip.y) / len) * ART_SCALE,
+            y: v.pommel.y * U + ((ay * tip.x + ax * tip.y) / len) * ART_SCALE,
+          }
+        : {
+            x: (v.pommel.x + ax * Math.min(1, t)) * U,
+            y: (v.pommel.y + ay * Math.min(1, t)) * U,
+          };
       const on = n.state === "learned" || n.pending;
       g.moveTo(q.x, q.y)
         .lineTo(p.x, p.y)
