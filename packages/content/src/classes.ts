@@ -107,7 +107,7 @@ export const CLASSES: readonly HeroClass[] = [
       vitality: 3,
     },
     trait: {
-      name: "Afterglow",
+      name: "Spellcharge",
       description:
         "After each skill, your next Default Attack deals 10 % more damage and always applies the ailment of its element.",
       rules: { spark: { damage: 0.1 } },
