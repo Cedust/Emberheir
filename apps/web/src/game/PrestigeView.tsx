@@ -57,12 +57,18 @@ function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
 
 const ROMAN = ["", "I", "II", "III", "IV", "V"];
 
+/** Colour of the Ash Tree region a Mastery grows from. */
 const BRANCH_COLORS: Record<string, string> = {
   core: "#c9a063",
-  might: "#c9c2b8",
-  arcana: "#5b8cff",
-  rupture: "#d0505c",
-  affliction: "#a35cff",
+  steel: "var(--dmg-physical)",
+  blood: "var(--dmg-bleed)",
+  venom: "var(--dmg-poison)",
+  flame: "var(--dmg-fire)",
+  storm: "var(--dmg-lightning)",
+  frost: "var(--dmg-cold)",
+  void: "var(--dmg-void)",
+  trunk: "#c9a063",
+  roots: "#d08a4a",
 };
 
 /** Exploding embers for the Victory step (fixed shape). */
@@ -298,7 +304,7 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
     {
       kind: "THE HARVEST",
       name: `+${r.skillPoints} Skill Points`,
-      desc: "Spend them in the Skill Tree at Kaelen.",
+      desc: "Spend them in the Ash Tree at Kaelen.",
       tone: "accent",
     },
     ...(r.keystones > keystoneLimit(prestige - 1)
@@ -393,8 +399,8 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
             <div className="heir-caravan panel-card">
               <Icon name="camp" size={22} />
               <span>
-                <b>Kaelen and Liora</b> travel with the caravan: Skill Tree and Battle Plan at
-                Kaelen, Temper and Kindle at Liora.
+                <b>Kaelen and Liora</b> travel with the caravan: Ash Tree and Battle Plan at Kaelen,
+                Temper and Kindle at Liora.
               </span>
             </div>
           )}

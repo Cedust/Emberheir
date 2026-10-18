@@ -7,7 +7,7 @@ import { Icon } from "../ui/Icon";
 const ENTRIES: { title: string; text: string; finale?: boolean }[] = [
   {
     title: "Heat",
-    text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat fades all the time; the Skill Tree can make enemy hits build it too), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
+    text: "Every hit builds Heat. Skills in your Battle Plan fire in order once Heat reaches their threshold and cost Heat. Melee weapons are Cooling (Heat fades all the time; the Ash Tree can make enemy hits build it too), bows are Steady, wands and staffs are Warming (Heat fills by itself).",
   },
   {
     title: "Life and the Ember Flask",
@@ -23,7 +23,7 @@ const ENTRIES: { title: string; text: string; finale?: boolean }[] = [
   },
   {
     title: "Harvest and Prestige",
-    text: "When the newest Act's boss falls, the Harvester burns the world. The caravan saves everything you carry: gear, Inventory, Stash, Acorns and Ash. You start again at Act 1 with one more Act, a higher Level Cap (5 more per Act), a new Skill Tree branch and a Battle Plan upgrade. Better rarities open up from run to run.",
+    text: "When the newest Act's boss falls, the Harvester burns the world. The caravan saves everything you carry: gear, Inventory, Stash, Acorns and Ash. You start again at Act 1 with one more Act, a higher Level Cap (5 more per Act), a Mastery and a Battle Plan upgrade. Better rarities open up from run to run.",
   },
   {
     title: "Stolen Fire Boons",
@@ -61,6 +61,10 @@ const ENTRIES: { title: string; text: string; finale?: boolean }[] = [
   {
     title: "Supply Wagon",
     text: "The Stash is shared by all your Heirs, so a good find helps the next one too. Acorns and the other currencies stay with each Heir.",
+  },
+  {
+    title: "Ash Tree",
+    text: "Spend Skill Points at Kaelen. The crown has one region per damage type: Steel, Blood, Venom, Flame, Storm, Frost and Void, with their skills. The trunk holds defense, the roots Heat. Every region is open to you, but ailment nodes only help ailments you cause.",
   },
   {
     title: "Keystones",

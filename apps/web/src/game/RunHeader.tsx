@@ -117,7 +117,7 @@ export function ActProgress(props: {
   );
 }
 
-/** Top bar of the run screens: act and stage, progress, Character (C), Skill Tree (T), Menu. */
+/** Top bar of the run screens: act and stage, progress, Character (C), Ash Tree (T), Menu. */
 export function RunHeader(props: {
   act: ActData;
   stage: number;
@@ -178,10 +178,10 @@ export function RunHeader(props: {
         type="button"
         className="hud-button"
         onClick={props.onTree}
-        title="Skill Tree and Battle Plan"
+        title="Ash Tree and Battle Plan"
       >
         <Icon name="tree" size={18} />
-        <span>Skill Tree</span>
+        <span>Ash Tree</span>
         <kbd>T</kbd>
         {props.skillPoints > 0 && <span className="badge">{props.skillPoints}</span>}
       </button>

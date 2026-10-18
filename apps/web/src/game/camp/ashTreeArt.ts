@@ -3,7 +3,7 @@ import type { SkillNode } from "@emberheir/sim";
 import { FillGradient, Graphics } from "pixi.js";
 
 /**
- * The Ash Tree behind the Skill Tree, painted in code like the weapons of Weapon Mastery:
+ * The Ash Tree behind the web, painted in code like the weapons of the Heirloom:
  * layered bark with a shadow side and a lit side (light from the upper left), grooves and knots
  * in the trunk, limbs up to each crown region and gnarled roots down into the earth, twigs under
  * every link that grows outwards, and a few autumn leaves at the crown's tips. The Ember sigil
@@ -63,7 +63,7 @@ export interface AshTreeArt {
   readonly sigilAt: Pt;
 }
 
-export const SIGIL_Y = -0.9;
+export const SIGIL_Y = 1.3;
 const SIGIL_R = 0.95;
 
 /** Half width of the trunk at height `y` (tree units). */
@@ -262,9 +262,9 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt): void {
   }
   // Knots.
   for (const [x, y, r] of [
-    [-0.75, -4.6, 0.22],
+    [-0.75, -6.4, 0.22],
     [0.62, 1.2, 0.18],
-    [0.35, -5.6, 0.12],
+    [0.35, -7.6, 0.12],
   ] as const) {
     g.ellipse(u(x), u(y), u(r * 1.3), u(r)).fill({ color: GROOVE, alpha: 0.85 });
     g.ellipse(u(x - 0.02), u(y - 0.02), u(r * 0.9), u(r * 0.6)).stroke({

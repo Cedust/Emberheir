@@ -75,7 +75,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "a",
       name: "A",
-      branch: "might",
+      branch: "steel",
       kind: "minor",
       description: "",
       links: ["b"],
@@ -86,7 +86,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "b",
       name: "B",
-      branch: "might",
+      branch: "steel",
       kind: "skill",
       description: "",
       links: ["k"],
@@ -98,7 +98,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "k",
       name: "K",
-      branch: "might",
+      branch: "steel",
       kind: "keystone",
       description: "",
       links: [],
@@ -109,7 +109,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "r",
       name: "R",
-      branch: "arcana",
+      branch: "storm",
       kind: "notable",
       description: "",
       links: [],

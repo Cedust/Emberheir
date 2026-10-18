@@ -4,10 +4,10 @@ import { sumBonuses } from "../combat/stats";
 
 /** Skill Tree data (docs/design/skill-tree-v1.md, level-v2.md): a web with class starts. */
 
-export type SkillTreeBranch = "core" | "might" | "arcana" | "rupture" | "affliction";
-/** Regions of the web between the four branches (level-v2.md section 7). */
-export type SkillTreeRegion =
-  SkillTreeBranch | "might-arcana" | "arcana-affliction" | "affliction-rupture" | "rupture-might";
+export type SkillTreeBranch =
+  "core" | "steel" | "blood" | "venom" | "flame" | "storm" | "frost" | "void" | "trunk" | "roots";
+/** Where a node sits on the Ash Tree: a crown region, the trunk or the roots (one per branch). */
+export type SkillTreeRegion = SkillTreeBranch;
 /** `socket`: a Rune Socket of the web (neuausrichtung-v1.md 4.2), it takes a Rune from the pouch. */
 export type SkillNodeKind = "minor" | "notable" | "skill" | "keystone" | "socket";
 

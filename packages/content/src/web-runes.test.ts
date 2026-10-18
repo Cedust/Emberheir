@@ -8,8 +8,8 @@ describe("Rune Sockets in the web", () => {
   const sockets = GAME_DATA.skillTree.nodes.filter((n) => n.kind === "socket");
 
   it("one socket per region, and every Rune has a web effect", () => {
-    expect(sockets).toHaveLength(8);
-    expect(new Set(sockets.map((s) => s.region)).size).toBe(8);
+    expect(sockets).toHaveLength(9);
+    expect(new Set(sockets.map((s) => s.region)).size).toBe(9);
     for (const rune of RUNES) expect(rune.web?.description, rune.id).toBeTruthy();
   });
 
@@ -21,7 +21,7 @@ describe("Rune Sockets in the web", () => {
       wallet: { ...s.wallet, acorns: 10_000, runes: { rime: 1 } },
       progress: { ...s.progress, trainerUnlocked: true },
     };
-    const socket = "might-rune-socket";
+    const socket = "steel-rune-socket";
     const path = learnPath(GAME_DATA.skillTree, s.hero.learned, socket) ?? [];
     expect(path.at(-1)).toBe(socket);
     s = applyAction(s, GAME_DATA, { type: "learnNodes", nodeIds: path });

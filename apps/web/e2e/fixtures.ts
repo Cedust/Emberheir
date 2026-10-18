@@ -329,16 +329,16 @@ export function saveEnding(): string {
 }
 
 /**
- * A Camp save in the sixth run with a deep Skill Tree: Duelist up to tier III, Warden and
- * Tactician at tier I, much of the Might side of the web learned (skilltree-v2.md).
+ * A Camp save in the sixth run with a deep Ash Tree: Vanquisher up to tier III, Berserker and
+ * Ravager at tier I, much of the Steel region and the trunk learned (klassengeruest-v1.md).
  */
 export function saveDeepTree(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
-  const branches = ["duelist", "warden", "duelist", "tactician", "duelist"];
+  const branches = ["vanquisher", "berserker", "vanquisher", "ravager", "vanquisher"];
   const wanted = SKILL_TREE.nodes.filter(
     (n) =>
-      (n.branch === "core" || n.branch === "might" || n.prestigeBranch === "duelist") &&
-      !(n.prestigeBranch && n.prestigeBranch !== "duelist"),
+      (n.branch === "steel" || n.branch === "trunk" || n.prestigeBranch === "vanquisher") &&
+      !(n.prestigeBranch && n.prestigeBranch !== "vanquisher"),
   );
   let learned: Record<string, number> = { ...base.hero.learned };
   // Keystones cost 3 Skill Points; Prestige 5 has three Keystone places.
@@ -353,7 +353,7 @@ export function saveDeepTree(): string {
       }
     }
   }
-  learned = { ...learned, "pb-warden-entry": 1, "pb-warden-a1": 1 };
+  learned = { ...learned, "pb-ravager-entry": 1, "pb-ravager-a1": 1 };
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 75, learned, unspentSkillPoints: 6 },

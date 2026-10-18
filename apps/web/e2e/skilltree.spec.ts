@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveAfterHarvestBoss, saveDeepTree, saveWebTree, seedSave } from "./fixtures";
 
-test("The Skill Tree grows with the Prestige branches and their tiers", async ({ page }) => {
+test("The Ash Tree grows with the Masteries and their tiers", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveDeepTree());
@@ -9,27 +9,27 @@ test("The Skill Tree grows with the Prestige branches and their tiers", async ({
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("t");
 
-  // One tree: Duelist up to tier III, Warden and Tactician at tier I, the other branches hidden.
+  // One tree: Vanquisher up to tier III, Berserker and Ravager at tier I, the others hidden.
   await expect(page.getByTestId("skill-tree-canvas").locator("canvas")).toBeVisible();
-  const tree = page.getByRole("group", { name: "Skill Tree" });
-  await expect(tree.getByRole("button", { name: "Supreme Blade Dancer" })).toHaveCount(1);
-  await expect(tree.getByRole("button", { name: "Bulwark" })).toHaveCount(1);
-  await expect(tree.getByRole("button", { name: "Shield Wall" })).toHaveCount(0);
-  await expect(tree.getByRole("button", { name: "Cleaver's Arm" })).toHaveCount(0);
+  const tree = page.getByRole("group", { name: "Ash Tree" });
+  await expect(tree.getByRole("button", { name: "Supreme Executioner" })).toHaveCount(1);
+  await expect(tree.getByRole("button", { name: "Gore Hide" })).toHaveCount(1);
+  await expect(tree.getByRole("button", { name: "Vanquish" })).toHaveCount(0);
+  await expect(tree.getByRole("button", { name: "Malediction" })).toHaveCount(0);
 
   // A deeper tier lists the node it replaces.
-  await tree.getByRole("button", { name: "Counterstance" }).press("Enter");
+  await tree.getByRole("button", { name: "Greater Executioner" }).press("Enter");
   const detail = page.getByRole("region", { name: "Node details" });
-  await expect(detail).toContainText("DUELIST II");
-  await expect(detail).toContainText("Replaces Riposte");
+  await expect(detail).toContainText("VANQUISHER II");
+  await expect(detail).toContainText("Replaces Executioner");
 
   if (process.env.SHOTS) {
     await page.getByRole("button", { name: "Fit" }).click();
     await page.waitForTimeout(1200);
     await page.screenshot({ path: `${process.env.SHOTS}/tree-fit.png` });
-    await tree.getByRole("button", { name: "Greater Blade Dancer" }).press("Enter");
+    await tree.getByRole("button", { name: "Earthsplitter" }).press("Enter");
     await page.waitForTimeout(1200);
-    await page.screenshot({ path: `${process.env.SHOTS}/tree-duelist.png` });
+    await page.screenshot({ path: `${process.env.SHOTS}/tree-vanquisher.png` });
   }
   expect(errors).toEqual([]);
 });
@@ -55,7 +55,7 @@ test("The Bloodline step deepens an owned branch", async ({ page }) => {
   await expect(page.getByRole("region", { name: "Inheritance" })).toContainText("Warden II");
 });
 
-test("The Skill Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {
+test("The Ash Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {
   // Every touch waits for a frame, and the painted Ash Tree renders slowly on CI's software GL.
   test.slow();
   await seedSave(page, saveDeepTree());
@@ -107,7 +107,7 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("t");
-  const tree = page.getByRole("group", { name: "Skill Tree" });
+  const tree = page.getByRole("group", { name: "Ash Tree" });
   const detail = page.getByRole("region", { name: "Node details" });
 
   // Colossus sits four nodes out from the Warrior's start: the whole path is learned at once.
@@ -148,7 +148,7 @@ test("A Rune Socket of the web takes a Rune from the pouch", async ({ page }) =>
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("t");
-  const tree = page.getByRole("group", { name: "Skill Tree" });
+  const tree = page.getByRole("group", { name: "Ash Tree" });
   const detail = page.getByRole("region", { name: "Node details" });
 
   // The Warrior's socket: its path is learned at once, then the Rune goes in.

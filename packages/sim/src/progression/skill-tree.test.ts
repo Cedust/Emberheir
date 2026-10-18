@@ -87,7 +87,7 @@ describe("Skill Tree", () => {
         {
           id: "s",
           name: "S",
-          branch: "might",
+          branch: "steel",
           kind: "minor",
           description: "",
           links: ["x", "y"],
@@ -98,7 +98,7 @@ describe("Skill Tree", () => {
         {
           id: "x",
           name: "X",
-          branch: "might",
+          branch: "steel",
           kind: "notable",
           description: "",
           links: [],
@@ -109,7 +109,7 @@ describe("Skill Tree", () => {
         {
           id: "y",
           name: "Y",
-          branch: "might",
+          branch: "steel",
           kind: "notable",
           description: "",
           links: [],

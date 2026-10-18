@@ -23,21 +23,12 @@ describe("Skill Tree", () => {
   const base = nodes.filter((n) => !n.prestigeBranch);
   const regions = new Set(base.map((n) => n.region));
 
-  it("is a web of eight regions with unique ids and valid links", () => {
+  it("has seven crown regions, the trunk and the roots, with unique ids and valid links", () => {
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
     expect(regions).toEqual(
-      new Set([
-        "might",
-        "might-arcana",
-        "arcana",
-        "arcana-affliction",
-        "affliction",
-        "affliction-rupture",
-        "rupture",
-        "rupture-might",
-      ]),
+      new Set(["steel", "blood", "venom", "flame", "storm", "frost", "void", "trunk", "roots"]),
     );
   });
 
@@ -47,17 +38,16 @@ describe("Skill Tree", () => {
       .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0);
     expect(points).toBeGreaterThanOrEqual(160);
     expect(base.filter((n) => n.kind === "notable").length).toBeGreaterThanOrEqual(30);
-    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(14);
-    // Web v3: Plague Bearer and Hemomancer became one Keystone (Blood and Bile).
-    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(11);
+    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(21);
+    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(13);
     // No flat Life on the web: Life comes from the level and Vitality.
     expect(base.filter((n) => n.bonuses?.life)).toEqual([]);
   });
 
-  it("has nine forks of two Notables each", () => {
+  it("has forks of two Notables each", () => {
     const forks = new Map<string, number>();
     for (const n of base) if (n.fork) forks.set(n.fork, (forks.get(n.fork) ?? 0) + 1);
-    expect(forks.size).toBe(9);
+    expect(forks.size).toBe(12);
     for (const count of forks.values()) expect(count).toBe(2);
   });
 
@@ -68,8 +58,10 @@ describe("Skill Tree", () => {
       "increasedBarrier",
       "evasion",
       "tenacity",
+      "blockChance",
+      "allResistance",
     ]);
-    for (const node of base.filter((n) => n.kind === "minor" && n.id !== "might-battle-scars")) {
+    for (const node of base.filter((n) => n.kind === "minor" && n.id !== "roots-battle-scars")) {
       for (const stat of Object.keys(node.bonuses ?? {})) {
         expect(defense.has(stat), `${node.id}: ${stat}`).toBe(true);
       }
@@ -105,7 +97,7 @@ describe("Skill Tree", () => {
 
   it("enemy hits build Heat only through the Heat from Hits Taken nodes", () => {
     const nodes = base.filter((n) => (n.bonuses?.heatFromHitsTaken ?? 0) > 0);
-    expect(nodes.map((n) => n.id)).toEqual(["might-battle-scars", "might-unbroken"]);
+    expect(nodes.map((n) => n.id)).toEqual(["roots-battle-scars", "roots-unbroken"]);
     expect(nodes.every((n) => n.weaponRange === "melee")).toBe(true);
   });
 
@@ -125,16 +117,18 @@ describe("Skill Tree", () => {
     }
   });
 
-  it("grows as the Ash Tree: crown above, roots below, no two nodes on top of each other", () => {
+  it("grows as the Ash Tree: crown above the trunk above the roots, no two nodes overlap", () => {
     const nodes = SKILL_TREE.nodes;
     for (const [i, a] of nodes.entries()) {
       for (const b of nodes.slice(i + 1)) {
         expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id} / ${b.id}`).toBeGreaterThan(0.6);
       }
     }
-    const crown = nodes.filter((n) => n.region === "might" || n.region === "arcana");
-    const roots = nodes.filter((n) => n.region === "rupture" || n.region === "affliction");
-    expect(Math.max(...crown.map((n) => n.y))).toBeLessThan(Math.min(...roots.map((n) => n.y)));
+    const web = nodes.filter((n) => !n.prestigeBranch);
+    const ys = (region: string) => web.filter((n) => n.region === region).map((n) => n.y);
+    const top = ["blood", "venom", "flame", "storm", "frost"].flatMap(ys);
+    expect(Math.max(...top)).toBeLessThan(Math.min(...ys("trunk")));
+    expect(Math.max(...ys("trunk"))).toBeLessThan(Math.min(...ys("roots")));
   });
 
   it("has nine Masteries, three per class, one Skill and three Keystones each", () => {

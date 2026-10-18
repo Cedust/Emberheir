@@ -43,7 +43,7 @@ export function GameApp() {
 
   const toggle = (o: Exclude<Overlay, null>) => setOverlay((cur) => (cur === o ? null : o));
 
-  // Hotkeys (ui-ux-plan-v1.md 3.5): Esc = close or Menu, C/I = Character, T = Skill Tree,
+  // Hotkeys (ui-ux-plan-v1.md 3.5): Esc = close or Menu, C/I = Character, T = Ash Tree,
   // B = Battle Plan, L = Legacy (Camp), F8 = Cheats (Cheat Mode). Q/E flip tabs (ui/kit/hotkeys).
   useEffect(() => {
     if (!state || lab) return;
@@ -270,7 +270,7 @@ export function GameApp() {
           {screen}
         </div>
         <Presence>{campWindow}</Presence>
-        {/* On the road, Character and Skill Tree are windows over the arena with the arena
+        {/* On the road, Character and Ash Tree are windows over the arena with the arena
             around them (ui-ux-plan-v1.md 3.4). */}
         <div className={run ? "road-windows" : "camp-windows"}>
           <Presence>

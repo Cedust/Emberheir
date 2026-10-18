@@ -17,7 +17,7 @@ import { FramePacer, wantsAntialias } from "../pixiPacing";
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
  * with a camera to drag and zoom. Node colours follow the item rarities: grey = Unavailable,
- * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Hovering a
+ * white = Available, blue/yellow/purple/orange/gold = learned tier I-V, orange = Keystone. Hovering a
  * node lays its path over the web; a fork's closed side shows as a broken seal. The web grows on
  * the Ash Tree (`ashTreeArt.ts`): painted bark, limbs up to the crown, roots down into the earth,
  * and the Ember sigil carved into the trunk, glowing slowly.
@@ -34,7 +34,7 @@ export interface TreeNodeView {
   readonly selected: boolean;
   readonly ranks: number;
   readonly maxRanks: number;
-  /** Colour tier of a learned node (1-3). */
+  /** Colour tier of a learned node (1-5). */
   readonly tier: number;
   /** The other side of its fork is learned: a broken seal (level-v2.md). */
   readonly sealed: boolean;
@@ -83,6 +83,8 @@ export const TIER_COLOR: Record<number, number> = {
   1: 0x5b8cff,
   2: 0xffd84a,
   3: 0xb36bff,
+  4: 0xff8a1f,
+  5: 0xc9a063,
 };
 const KEYSTONE = 0xff8a1f;
 const AVAILABLE = 0xd8d4cc;

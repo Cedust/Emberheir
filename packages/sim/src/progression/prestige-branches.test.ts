@@ -52,8 +52,8 @@ const data: GameData = {
     nodes: [...TEST_GAME_DATA.skillTree.nodes, BRANCH_NODE],
     prestigeBranches: [
       { id: "guard", name: "Guard", branch: "core", anchor: "start", theme: "" },
-      { id: "elsewhere", name: "Elsewhere", branch: "arcana", anchor: "a", theme: "" },
-      { id: "other", name: "Other", branch: "might", anchor: "a", theme: "" },
+      { id: "elsewhere", name: "Elsewhere", branch: "storm", anchor: "a", theme: "" },
+      { id: "other", name: "Other", branch: "steel", anchor: "a", theme: "" },
     ],
   },
   bossAbilities: [ABILITY("one"), ABILITY("two"), ABILITY("three")],

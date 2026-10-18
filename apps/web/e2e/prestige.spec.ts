@@ -62,7 +62,7 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   // Rotation Slot 2 and Reaction Slot 1 are open at Kaelen.
   await page.keyboard.press("t");
   // Warden grows into the Skill Tree.
-  const tree = page.getByRole("group", { name: "Skill Tree" });
+  const tree = page.getByRole("group", { name: "Ash Tree" });
   await expect(tree.getByRole("button", { name: "Bulwark" })).toHaveCount(1);
   await page.getByRole("tab", { name: "Battle Plan" }).click();
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
