@@ -35,7 +35,7 @@ const PAYOFF_NAMES: Record<PayoffKind, string> = {
   collapse: "Collapse",
   ironBlood: "Iron Blood",
   keenEye: "Keen Eye",
-  spark: "Spark",
+  spark: "Afterglow",
   flashpoint: "Flashpoint",
   criticalMass: "Critical Mass",
   conduction: "Conduction",
