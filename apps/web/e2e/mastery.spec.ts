@@ -1,9 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveMastery, seedSave } from "./fixtures";
 
-test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", async ({
-  page,
-}) => {
+test("Heirloom: the painted weapon, its points, a Keystone and the Echo", async ({ page }) => {
   // CI's software renderer starts the Pixi tree slowly and the Echo rows wait for it to settle.
   test.slow();
   const errors: string[] = [];
@@ -12,7 +10,7 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("t");
-  await page.getByRole("tab", { name: "Weapon Mastery" }).click();
+  await page.getByRole("tab", { name: "Heirloom" }).click();
 
   await expect(page.getByTestId("mastery-canvas").locator("canvas")).toBeVisible({
     timeout: 15_000,
@@ -20,14 +18,14 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
   const plate = page.getByTestId("weapon-name");
   await expect(plate).toContainText("ASCENDANT · RANK 13");
   await expect(plate).toContainText("Ascendant Sword of Ashfall Wrath");
-  await expect(page.getByTestId("mastery-points")).toContainText("3 Mastery Points");
+  await expect(page.getByTestId("mastery-points")).toContainText("3 Heirloom Points");
   if (process.env.SHOTS) {
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${process.env.SHOTS}/mastery.png` });
   }
 
   // Two more points open the Keystone ring; the Keystone names the weapon.
-  const tree = page.getByRole("group", { name: "Weapon Mastery" });
+  const tree = page.getByRole("group", { name: "Heirloom" });
   const detail = page.getByRole("region", { name: "Node details" });
   for (const node of ["Steady Hand", "Balance"]) {
     await tree.getByRole("button", { name: node }).press("Enter");
@@ -37,7 +35,7 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
   await detail.getByRole("button", { name: /Choose/ }).click();
   await expect(plate).toContainText("Ascendant Parrying Blade of Ashfall Wrath");
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByTestId("mastery-points")).toContainText("0 Mastery Points");
+  await expect(page.getByTestId("mastery-points")).toContainText("0 Heirloom Points");
 
   // Another Echo.
   const echo = page.getByRole("region", { name: "Echo" });
@@ -50,7 +48,7 @@ test("Weapon Mastery: the painted weapon, its points, a Keystone and the Echo", 
   expect(errors).toEqual([]);
 });
 
-test("Weapon Mastery pans with a drag and zooms with the wheel and a pinch", async ({ page }) => {
+test("Heirloom pans with a drag and zooms with the wheel and a pinch", async ({ page }) => {
   // Every touch waits for a frame, and CI's software GL draws the forge slowly (like the Skill
   // Tree camera tests); the views also load on demand, so the canvas may take a moment.
   test.slow();
@@ -58,7 +56,7 @@ test("Weapon Mastery pans with a drag and zooms with the wheel and a pinch", asy
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("t");
-  await page.getByRole("tab", { name: "Weapon Mastery" }).click();
+  await page.getByRole("tab", { name: "Heirloom" }).click();
   const canvas = page.getByTestId("mastery-canvas").locator("canvas");
   await expect(canvas).toBeVisible({ timeout: 15_000 });
   const zoom = async () => Number(await canvas.getAttribute("data-zoom"));

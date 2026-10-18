@@ -34,25 +34,25 @@ test("The Ash Tree grows with the Masteries and their tiers", async ({ page }) =
   expect(errors).toEqual([]);
 });
 
-test("The Bloodline step deepens an owned branch", async ({ page }) => {
+test("The Mastery step deepens the main Mastery", async ({ page }) => {
   const save = JSON.parse(saveAfterHarvestBoss());
-  save.legacy = { ...save.legacy, prestige: 1, branches: ["warden"] };
+  save.legacy = { ...save.legacy, prestige: 1, branches: ["vanquisher"] };
   await seedSave(page, JSON.stringify(save));
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.getByRole("button", { name: "Pack the Caravan" }).click();
 
-  const bloodline = page.getByRole("region", { name: "Bloodline" });
-  // The Warrior's four paths in class order, Warden as its tier II.
-  await expect(bloodline.locator(".branch-pick")).toHaveCount(4);
-  const deepen = bloodline.locator(".branch-pick").nth(2);
+  const mastery = page.getByRole("region", { name: "Mastery" });
+  // The Cinderguard's three in class order, Vanquisher as its tier II.
+  await expect(mastery.locator(".branch-pick")).toHaveCount(3);
+  const deepen = mastery.locator(".branch-pick").nth(0);
   await expect(deepen).toContainText("DEEPEN · TIER II");
-  await expect(deepen).toContainText("Greater Juggernaut");
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bloodline.png` });
+  await expect(deepen).toContainText("Greater Executioner");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/mastery.png` });
   await deepen.click();
-  await page.getByRole("button", { name: "Deepen Warden" }).click();
+  await page.getByRole("button", { name: "Deepen Vanquisher" }).click();
   await page.getByRole("button", { name: "Let It Burn" }).click();
-  await expect(page.getByRole("region", { name: "Inheritance" })).toContainText("Warden II");
+  await expect(page.getByRole("region", { name: "Inheritance" })).toContainText("Vanquisher II");
 });
 
 test("The Ash Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {
@@ -110,15 +110,15 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   const tree = page.getByRole("group", { name: "Ash Tree" });
   const detail = page.getByRole("region", { name: "Node details" });
 
-  // Colossus sits four nodes out from the Warrior's start: the whole path is learned at once.
+  // Colossus sits four nodes out from the Cinderguard's start: the whole path is learned at once.
   await tree.getByRole("button", { name: "Colossus" }).press("Enter");
-  await expect(detail).toContainText("Fork: only this or Whirlwind");
+  await expect(detail).toContainText("Fork: only this or Killer Instinct");
   await detail.getByRole("button", { name: "Learn path · 4 Points" }).click();
   await expect(page.getByText("4 new nodes pending")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
 
   // The other side of the fork is sealed.
-  await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
+  await tree.getByRole("button", { name: "Killer Instinct" }).press("Enter");
   await expect(detail).toContainText("The other side is learned");
 
   // Colossus is forgotten for Acorns: the fork opens again.
@@ -130,7 +130,7 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   await page.mouse.down();
   await expect(forget).toBeHidden({ timeout: 10_000 });
   await page.mouse.up();
-  await tree.getByRole("button", { name: "Whirlwind" }).press("Enter");
+  await tree.getByRole("button", { name: "Killer Instinct" }).press("Enter");
   await expect(detail.getByRole("button", { name: "Learn · 1 Point" })).toBeEnabled();
   if (process.env.SHOTS) {
     await page.getByRole("button", { name: "Fit" }).click();
@@ -151,7 +151,7 @@ test("A Rune Socket of the web takes a Rune from the pouch", async ({ page }) =>
   const tree = page.getByRole("group", { name: "Ash Tree" });
   const detail = page.getByRole("region", { name: "Node details" });
 
-  // The Warrior's socket: its path is learned at once, then the Rune goes in.
+  // The Cinderguard's socket: its path is learned at once, then the Rune goes in.
   await tree.getByRole("button", { name: "Rune Socket" }).first().press("Enter");
   await detail.getByRole("button", { name: /Learn path/ }).click();
   await page.getByRole("button", { name: "Confirm" }).click();

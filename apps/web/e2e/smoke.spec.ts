@@ -58,6 +58,10 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await expect(page).toHaveTitle("Emberheir");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Emberheir");
   await page.getByRole("button", { name: "New Game" }).click();
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${process.env.SHOTS}/class-select.png` });
+  }
   await createHero(page);
   const camp = page.getByRole("region", { name: "Camp" });
   await expect(camp).toBeVisible();
@@ -113,7 +117,7 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await page.keyboard.press("c");
   const character = page.getByRole("dialog", { name: "Character" });
   await expect(character).toBeVisible();
-  await expect(character).toContainText("Warrior");
+  await expect(character).toContainText("Cinderguard");
   const taken = character.getByRole("group", { name: "Inventory grid" }).getByTestId("grid-item");
   await expect(taken).toHaveCount(1);
   // Hovering an item shows its Diablo-style tooltip; the paperdoll has all 10 slots.

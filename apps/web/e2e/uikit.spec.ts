@@ -29,7 +29,7 @@ test("one key scheme in the Camp: B, L, Q/E and Esc", async ({ page }) => {
     "true",
   );
   await page.keyboard.press("q");
-  await expect(kaelen.getByRole("tab", { name: "Weapon Mastery" })).toHaveAttribute(
+  await expect(kaelen.getByRole("tab", { name: "Heirloom" })).toHaveAttribute(
     "aria-selected",
     "true",
   );

@@ -381,8 +381,8 @@ export function saveWithRings(): string {
 }
 
 /**
- * A Camp save in the fifth run with a well refined sword (Rank 13): Riposte walked, Cooling
- * chosen, three Echoes earned and Ashfall Wrath worn. `extra` lists more Mastery nodes to learn.
+ * A Camp save in the fifth run with a well refined sword (Rank 13): the Edge path walked, Cooling
+ * chosen, three Echoes earned and Ashfall Wrath worn. `extra` lists more Heirloom nodes to learn.
  */
 export function saveMastery(extra: readonly string[] = []): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
@@ -412,10 +412,10 @@ export function saveMastery(extra: readonly string[] = []): string {
     "full-swing",
     "full-swing",
     "heat-cooling",
-    "riposte-t1",
-    "riposte-t1",
-    "riposte-t1",
-    "riposte-counterweight",
+    "edge-t1",
+    "edge-t1",
+    "edge-t1",
+    "edge-keen-edge",
     ...extra,
   ];
   for (const nodeId of learn)
@@ -424,7 +424,7 @@ export function saveMastery(extra: readonly string[] = []): string {
   return serializeGame(state);
 }
 
-/** A fresh Warrior at the Camp with Skill Points and Acorns: the web from its start (level-v2.md). */
+/** A fresh Cinderguard at the Camp with Skill Points and Acorns: the web from its start (level-v2.md). */
 export function saveWebTree(runes: Readonly<Record<string, number>> = {}): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
   return serializeGame({
@@ -439,7 +439,7 @@ export function saveWebTree(runes: Readonly<Record<string, number>> = {}): strin
 export async function createHero(page: Page, onAttributes?: () => Promise<void>): Promise<void> {
   await page.getByRole("button", { name: "Next" }).click();
   await onAttributes?.();
-  // The Warrior starts at Strength 5 and creation stops at 7: the sixth point goes to Agility.
+  // The Cinderguard starts at Strength 5 and creation stops at 7: the sixth point goes to Agility.
   for (let i = 0; i < 3; i++) await page.getByRole("button", { name: "Add Vitality" }).click();
   for (let i = 0; i < 2; i++) await page.getByRole("button", { name: "Add Strength" }).click();
   await page.getByRole("button", { name: "Add Agility" }).click();
