@@ -84,19 +84,9 @@ export function getClass(classes: readonly HeroClass[], id: string): HeroClass {
   return found;
 }
 
-/**
- * The main branch: the Prestige branch with the most tiers. On a tie the branch that got there
- * first stays, so a title does not flip back and forth.
- */
+/** The main Mastery: the one picked at the first Harvest (klassengeruest-v1.md 5). */
 export function mainBranch(branches: readonly string[]): string | undefined {
-  const tiers = new Map<string, number>();
-  let main: string | undefined;
-  for (const id of branches) {
-    const tier = (tiers.get(id) ?? 0) + 1;
-    tiers.set(id, tier);
-    if (main === undefined || tier > (tiers.get(main) ?? 0)) main = id;
-  }
-  return main;
+  return branches[0];
 }
 
 /**

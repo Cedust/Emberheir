@@ -18,6 +18,10 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let hitDamage = 1;
   let chilledDamage = 1;
   let barrierRecharge = 1;
+  let skillDamage = 0;
+  let ailmentChance = 0;
+  let ailmentDuration = 0;
+  let critsApplyAilment = false;
   const ailmentDamage: Partial<Record<AilmentType, number>> = {};
   const maxResistance: Partial<Record<Element, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
@@ -60,6 +64,10 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     hitDamage *= r.hitDamage ?? 1;
     chilledDamage *= r.chilledDamage ?? 1;
     barrierRecharge *= r.barrierRecharge ?? 1;
+    skillDamage += r.skillDamage ?? 0;
+    ailmentChance += r.ailmentChance ?? 0;
+    ailmentDuration += r.ailmentDuration ?? 0;
+    critsApplyAilment ||= r.critsApplyAilment ?? false;
     for (const [ailment, factor] of Object.entries(r.ailmentDamage ?? {}) as [
       AilmentType,
       number,
@@ -93,6 +101,10 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(hitDamage !== 1 ? { hitDamage } : {}),
     ...(chilledDamage !== 1 ? { chilledDamage } : {}),
     ...(barrierRecharge !== 1 ? { barrierRecharge } : {}),
+    ...(skillDamage ? { skillDamage } : {}),
+    ...(ailmentChance ? { ailmentChance } : {}),
+    ...(ailmentDuration ? { ailmentDuration } : {}),
+    ...(critsApplyAilment ? { critsApplyAilment } : {}),
     ...(Object.keys(ailmentDamage).length ? { ailmentDamage } : {}),
     ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),

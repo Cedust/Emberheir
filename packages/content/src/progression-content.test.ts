@@ -137,24 +137,27 @@ describe("Skill Tree", () => {
     expect(Math.max(...crown.map((n) => n.y))).toBeLessThan(Math.min(...roots.map((n) => n.y)));
   });
 
-  it("has ten Prestige branches with one Skill and one Keystone each, 8 / 5 / 6 points", () => {
+  it("has nine Masteries, three per class, one Skill and three Keystones each", () => {
     const branches = SKILL_TREE.prestigeBranches ?? [];
-    expect(branches).toHaveLength(10);
+    expect(branches).toHaveLength(9);
+    for (const c of CLASSES) expect(c.branches, c.id).toHaveLength(3);
     for (const b of branches) {
       const inBranch = nodes.filter((n) => n.prestigeBranch === b.id);
       const tier = (t: number) => inBranch.filter((n) => (n.tier ?? 1) === t);
-      expect(tier(1), b.id).toHaveLength(9);
-      expect(tier(2), b.id).toHaveLength(5);
-      expect(tier(3), b.id).toHaveLength(4);
-      // Skill Points to fill each tier: its nodes plus one more rank of the branch's Skill.
+      // Skill Points to fill each tier: its nodes plus one more rank of the Mastery's Skill.
       const cost = (t: number) =>
         tier(t)
           .filter((n) => n.kind !== "keystone")
           .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0) + (t > 1 ? 1 : 0);
-      expect([cost(1), cost(2), cost(3)], b.id).toEqual([8, 5, 6]);
+      expect([1, 2, 3, 4, 5].map(cost), b.id).toEqual([8, 5, 6, 4, 4]);
       expect(inBranch.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(1);
       expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(3);
-      // Every upgrade replaces a node of the same branch.
+      // Mastery skills follow the Heirloom path.
+      const skill = inBranch.find((n) => n.skill)?.skill;
+      expect(
+        skill?.hits.every((h) => h.infused),
+        b.id,
+      ).toBe(true);
       for (const n of inBranch.filter((x) => x.replaces)) {
         expect(
           inBranch.some((x) => x.id === n.replaces),

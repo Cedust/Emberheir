@@ -27,13 +27,8 @@ export const CLASSES: readonly HeroClass[] = [
       rules: { fury: { perHit: 0.02, max: 0.2 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
-    branches: ["duelist", "butcher", "warden", "tactician"],
-    titles: {
-      duelist: "Vanquisher",
-      butcher: "Ravager",
-      warden: "Ironclad",
-      tactician: "Berserker",
-    },
+    branches: ["vanquisher", "berserker", "ravager"],
+    titles: { vanquisher: "Vanquisher", berserker: "Berserker", ravager: "Ravager" },
     text: "Fights up close with Sword, Axe or Mace. Every blow lands harder than the last.",
   },
   {
@@ -64,13 +59,8 @@ export const CLASSES: readonly HeroClass[] = [
       percent: 3,
       bonuses: { critChance: 0.03 },
     },
-    branches: ["marksman", "venomancer", "duelist", "tactician"],
-    titles: {
-      marksman: "Deadeye",
-      venomancer: "Trickster",
-      duelist: "Skirmisher",
-      tactician: "Skirmisher",
-    },
+    branches: ["deadeye", "skirmisher", "trickster"],
+    titles: { deadeye: "Deadeye", skirmisher: "Skirmisher", trickster: "Trickster" },
     text: "Fights with Bow, Crossbow or Dagger. Finds the weak spot and strikes it, again and again.",
   },
   {
@@ -100,27 +90,24 @@ export const CLASSES: readonly HeroClass[] = [
       percent: 10,
       bonuses: { ailmentEffect: 0.1 },
     },
-    branches: ["void-lord", "stormcaller", "frostbinder", "pyromancer"],
-    titles: {
-      "void-lord": "Warlock",
-      stormcaller: "Archmage",
-      frostbinder: "Spellweaver",
-      pyromancer: "Warlock",
-    },
+    branches: ["archmage", "spellweaver", "warlock"],
+    titles: { archmage: "Archmage", spellweaver: "Spellweaver", warlock: "Warlock" },
     text: "Fights with Wand or Staff. Every spell feeds the next, until the charge breaks loose.",
   },
 ];
 
-/** Title epithet per Prestige branch, for old saves that took a branch outside the class. */
+/**
+ * Title epithet per Mastery: the main Mastery is the title (klassengeruest-v1.md 5), so this only
+ * names a Mastery outside the hero's class (cheats, tests).
+ */
 export const BRANCH_EPITHETS: Readonly<Record<string, string>> = {
-  duelist: "of the Blade",
-  marksman: "of the Hunt",
-  butcher: "of Blood",
-  venomancer: "of Venom",
-  stormcaller: "of the Storm",
-  frostbinder: "of Frost",
-  pyromancer: "of Flame",
-  "void-lord": "of the Void",
-  warden: "of Iron",
-  tactician: "of Command",
+  vanquisher: "the Vanquisher",
+  berserker: "the Berserker",
+  ravager: "the Ravager",
+  deadeye: "the Deadeye",
+  skirmisher: "the Skirmisher",
+  trickster: "the Trickster",
+  archmage: "the Archmage",
+  spellweaver: "the Spellweaver",
+  warlock: "the Warlock",
 };

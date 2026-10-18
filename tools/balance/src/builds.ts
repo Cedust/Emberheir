@@ -31,7 +31,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "sword",
     nodes: ["might-unbroken", "might-brutal-force", "rupture-might-execute", "@branches"],
     rotation: ["flurry", "feint", "execute"],
-    branches: ["duelist", "warden", "tactician", "butcher"],
+    branches: ["vanquisher", "berserker", "ravager"],
     reaction: GUARD,
   },
   {
@@ -40,7 +40,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "mace",
     nodes: ["might-brutal-force", "might-colossus", "@branches", "might-arcana-arcane-edge"],
     rotation: ["crushing-blow", "feint", "flurry"],
-    branches: ["warden", "duelist", "tactician", "butcher"],
+    branches: ["vanquisher", "berserker", "ravager"],
     reaction: GUARD,
   },
   {
@@ -49,7 +49,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "sword",
     nodes: ["might-brutal-force", "rupture-flayer", "rupture-exsanguinate", "@branches"],
     rotation: ["rend", "cleave", "feint"],
-    branches: ["butcher", "duelist", "tactician", "warden"],
+    branches: ["vanquisher", "berserker", "ravager"],
     reaction: GUARD,
   },
   {
@@ -58,7 +58,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "axe",
     nodes: ["rupture-exsanguinate", "rupture-flayer", "@branches", "affliction-rupture-iron-will"],
     rotation: ["rend", "cleave", "serrated-edge"],
-    branches: ["butcher", "duelist", "venomancer", "tactician"],
+    branches: ["vanquisher", "berserker", "ravager"],
     reaction: GUARD,
   },
   {
@@ -72,7 +72,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "affliction-rupture-leeching-rot",
     ],
     rotation: ["toxic-burst", "plague-cloud", "envenom"],
-    branches: ["venomancer", "tactician", "duelist", "butcher"],
+    branches: ["deadeye", "skirmisher", "trickster"],
     reaction: GUARD,
   },
   {
@@ -81,7 +81,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "dagger",
     nodes: ["rupture-might-killers-eye", "rupture-might-execute", "@branches", "might-whirlwind"],
     rotation: ["execute", "feint", "flurry"],
-    branches: ["duelist", "venomancer", "tactician", "butcher"],
+    branches: ["deadeye", "skirmisher", "trickster"],
     reaction: GUARD,
   },
   {
@@ -96,7 +96,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "rupture-might-coup-de-grace",
     ],
     rotation: ["piercing-shot", "execute"],
-    branches: ["marksman", "venomancer", "tactician", "warden"],
+    branches: ["deadeye", "skirmisher", "trickster"],
     reaction: GUARD,
   },
   {
@@ -105,7 +105,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "bow",
     nodes: ["rupture-venom-heart", "@branches", "affliction-rupture-toxic-burst"],
     rotation: ["envenom", "toxic-burst", "plague-cloud"],
-    branches: ["venomancer", "marksman", "tactician", "warden"],
+    branches: ["deadeye", "skirmisher", "trickster"],
     reaction: GUARD,
     // A Poison bow: the Poison innate and the Toxin path, not the Bleed ones of the bow's plan.
     mastery: { innate: "toxic-arrow", path: "toxin" },
@@ -121,7 +121,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "rupture-might-exploit-weakness",
     ],
     rotation: ["rend", "serrated-edge", "piercing-shot"],
-    branches: ["marksman", "venomancer", "warden", "tactician"],
+    branches: ["deadeye", "skirmisher", "trickster"],
     reaction: GUARD,
   },
   {
@@ -130,7 +130,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "wand",
     nodes: ["arcana-tempest", "arcana-storm-weaver", "@branches", "arcana-kindled-mind"],
     rotation: ["chain-lightning", "thunderstrike", "meteor"],
-    branches: ["stormcaller", "frostbinder", "tactician", "warden"],
+    branches: ["archmage", "spellweaver", "warlock"],
     reaction: NOVA,
   },
   {
@@ -144,7 +144,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "arcana-affliction-heart-of-embers",
     ],
     rotation: ["ice-lance", "chain-lightning"],
-    branches: ["frostbinder", "stormcaller", "warden", "tactician"],
+    branches: ["archmage", "spellweaver", "warlock"],
     reaction: NOVA,
     mastery: { path: "rime" },
   },
@@ -155,7 +155,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "wand",
     nodes: ["arcana-tempest", "arcana-ever-ward", "@branches", "arcana-kindled-mind"],
     rotation: ["chain-lightning", "ice-lance", "thunderstrike"],
-    branches: ["tactician", "stormcaller", "frostbinder", "warden"],
+    branches: ["archmage", "spellweaver", "warlock"],
     reaction: NOVA,
     mastery: { path: "starfall" },
   },
@@ -165,7 +165,7 @@ export const BUILDS: readonly BuildPlan[] = [
     weapon: "staff",
     nodes: ["affliction-hollow-crown", "affliction-hungering-void", "@branches"],
     rotation: ["corrupt", "void-rift", "soul-harvest"],
-    branches: ["void-lord", "pyromancer", "tactician", "warden"],
+    branches: ["archmage", "spellweaver", "warlock"],
     reaction: NOVA,
   },
   {
@@ -179,7 +179,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "arcana-affliction-firestarter",
     ],
     rotation: ["immolate", "inferno", "soul-harvest"],
-    branches: ["pyromancer", "void-lord", "tactician", "warden"],
+    branches: ["archmage", "spellweaver", "warlock"],
     reaction: NOVA,
   },
   {
@@ -193,7 +193,7 @@ export const BUILDS: readonly BuildPlan[] = [
       "affliction-hollow-crown",
     ],
     rotation: ["wither", "corrupt", "void-rift"],
-    branches: ["void-lord", "warden", "pyromancer", "tactician"],
+    branches: ["archmage", "spellweaver", "warlock"],
     reaction: NOVA,
   },
 ];

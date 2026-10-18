@@ -41,7 +41,7 @@ export interface SkillNode {
    * Branch tier the node belongs to (skilltree-v2.md): 2 and 3 open when the Prestige branch is
    * deepened. Default 1.
    */
-  readonly tier?: 1 | 2 | 3;
+  readonly tier?: 1 | 2 | 3 | 4 | 5;
   /** A node this one upgrades: once this one is learned, the other's triggers and rules stop. */
   readonly replaces?: string;
   /** Combat rules of a non-Keystone node ("Hits deal 40 % more damage below 35 % Life"). */
@@ -69,6 +69,8 @@ export interface PrestigeBranchDefinition {
   readonly anchor: string;
   /** One line about its theme. */
   readonly theme: string;
+  /** The Mastery's fighting style (klassengeruest-v1.md 5). */
+  readonly axis?: "burst" | "tempo" | "ailment";
 }
 
 export interface SkillTreeDefinition {
@@ -83,8 +85,12 @@ export interface SkillTreeDefinition {
   readonly prestigeBranches?: readonly PrestigeBranchDefinition[];
 }
 
-/** Highest Prestige branch tier: a branch can be taken once and deepened twice. */
-export const MAX_BRANCH_TIER = 3;
+/**
+ * Masteries (klassengeruest-v1.md 5): the main Mastery, picked at the first Harvest, grows to
+ * Tier V; the class's two other Masteries can be taken to Tier I (Last Epoch's rule).
+ */
+export const MAX_BRANCH_TIER = 5;
+export const SIDE_BRANCH_TIER = 1;
 
 /**
  * Tier of a Prestige branch: how often it was picked at a Prestige (0 = not unlocked).

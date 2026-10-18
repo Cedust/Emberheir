@@ -41,7 +41,7 @@ import {
 } from "./hits";
 import { PERK } from "./perks";
 import { applyEffect, fireTriggers } from "./trigger-effects";
-import type { SkillDefinition, SkillEffect } from "./types";
+import type { AilmentChance, SkillDefinition, SkillEffect } from "./types";
 
 /** Casting a skill (Rotation, Reaction, Opening Move, Echo) and what its effects do. */
 
@@ -106,7 +106,9 @@ export function castSkill(
           type: hit.damageType ?? f.setup.weapon.damageType,
           evadable: true,
           multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
-          ailmentChances: hit.ailmentChances ?? [],
+          ailmentChances: hit.infused
+            ? infusedChances(f, hit.ailmentChances)
+            : (hit.ailmentChances ?? []),
           ailmentPower: hit.ailmentPower ?? 1,
           ...(hit.penetration ? { penetration: hit.penetration } : {}),
           fromTrigger: false,
@@ -123,10 +125,12 @@ export function castSkill(
         const result = landHit(core, f, {
           source: skill.name,
           baseDamage: rollRange(core, hit.damage) * levelScale * (hit.falloff ?? 1) ** i * power,
-          type: hit.damageType,
+          type: hit.infused ? f.setup.weapon.damageType : hit.damageType,
           evadable: false,
           multiplier: 1,
-          ailmentChances: hit.ailmentChances ?? [],
+          ailmentChances: hit.infused
+            ? infusedChances(f, hit.ailmentChances)
+            : (hit.ailmentChances ?? []),
           ailmentPower: hit.ailmentPower ?? 1,
           fromTrigger: false,
           precisionApplies: true,
@@ -375,4 +379,14 @@ function applySkillEffect(
       return;
     }
   }
+}
+
+/** An infused hit applies the weapon's ailment with the best listed chance (none for Stun). */
+function infusedChances(
+  f: Fighter,
+  chances: readonly AilmentChance[] | undefined,
+): AilmentChance[] {
+  const ailment = weaponAilment(f.setup.weapon);
+  if (!ailment || !chances?.length) return [];
+  return [{ ailment, chance: Math.max(...chances.map((c) => c.chance)) }];
 }

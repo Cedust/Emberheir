@@ -13,7 +13,7 @@ export { ACT1, ACT2, GAME_DATA, LAST_EMBER } from "./game";
 export { STARTING_ATTRIBUTES, createHeroSetup, resolveHeroGear, type HeroLoadout } from "./heroes";
 
 export const GAME_TITLE = "Emberheir";
-export { PRESTIGE_BRANCHES } from "./prestige-branches";
+export { PRESTIGE_BRANCHES } from "./masteries";
 export { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 export { BOUNTIES } from "./bounties";
 export { DRAUGHTS } from "./draughts";

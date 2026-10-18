@@ -25,6 +25,8 @@ export interface HeroLook {
   readonly echo?: number;
   /** Colour of the Draught brewed for the trip: a brew ring at the hero's feet, rising bubbles. */
   readonly draught?: number;
+  /** The main Mastery's style: its aura in the arena (klassengeruest-v1.md 5). */
+  readonly mastery?: "burst" | "tempo" | "ailment";
 }
 
 /** Colors per class (klassengeruest-v1.md 2): body, chest piece, headgear. */

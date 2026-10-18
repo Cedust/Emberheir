@@ -128,6 +128,9 @@ export class ArenaScene {
   private infusion: string | undefined;
   private infusionCarry = 0;
   private infusionArc = 0;
+  /** The main Mastery's aura: Burst pulses, Tempo whirls, Ailment drips. */
+  private masteryAura: HeroLook["mastery"];
+  private masteryCarry = 0;
   private ranged: Record<Side, boolean> = { hero: false, enemy: false };
   /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
   private heavy: { skill: string; until: number } | null = null;
@@ -260,6 +263,7 @@ export class ArenaScene {
         : null;
     this.weaponTip = this.hero.body.getChildByLabel("weapon-tip", true) ?? null;
     this.infusion = hero.weaponLook.element;
+    this.masteryAura = hero.mastery;
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
     this.traitGfx = new Graphics();
     this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
@@ -529,6 +533,54 @@ export class ArenaScene {
         this.infusionArc = 0.4 + Math.random() * 0.6;
         const a = Math.random() * Math.PI * 2;
         fx.bolt(at.x, at.y, at.x + Math.cos(a) * 50, at.y + Math.sin(a) * 50, 0xffe066);
+      }
+    }
+  }
+
+  private drawMasteryAura(dt: number): void {
+    const fx = this.fx;
+    const aura = this.masteryAura;
+    if (!fx || !aura || !this.hero || this.hero.root.alpha !== 1) return;
+    const x = this.hero.root.x;
+    const rate = aura === "burst" ? 0.7 : 6;
+    this.masteryCarry += (this.motion ? rate : rate / 2) * dt;
+    for (; this.masteryCarry >= 1; this.masteryCarry--) {
+      if (aura === "burst") {
+        // A slow ember ring at the feet: power gathering for the big blow.
+        fx.ring(x, GROUND_Y - 4, 0xff8a3a, 30, 120, 0.9, 4);
+      } else if (aura === "tempo") {
+        // Wind streaks circle the hero.
+        const side = Math.random() < 0.5 ? -1 : 1;
+        fx.burst({
+          x: x - side * 70,
+          y: GROUND_Y - 60 - Math.random() * 140,
+          count: 1,
+          color: [0xf2e6c8, 0xd8f0ff],
+          angle: side > 0 ? [-0.15, 0.15] : [Math.PI - 0.15, Math.PI + 0.15],
+          speed: [220, 320],
+          life: [0.25, 0.4],
+          size: [4, 7],
+          stretch: 6,
+          alpha: 0.5,
+          layer: "back",
+        });
+      } else {
+        // Dark drops fall from the hero's hands.
+        fx.burst({
+          x,
+          y: GROUND_Y - 120,
+          count: 1,
+          color: [0x5a2a6a, 0x3a5a2a, 0x2a1830],
+          spreadX: 60,
+          spreadY: 50,
+          angle: [Math.PI * 0.4, Math.PI * 0.6],
+          speed: [20, 50],
+          life: [0.8, 1.3],
+          size: [6, 12],
+          alpha: 0.6,
+          kind: "bit",
+          layer: "back",
+        });
       }
     }
   }
@@ -1378,6 +1430,7 @@ export class ArenaScene {
       }
     }
     this.drawInfusion(dt);
+    this.drawMasteryAura(dt);
     if (this.levelGlow && this.motion) {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
     }

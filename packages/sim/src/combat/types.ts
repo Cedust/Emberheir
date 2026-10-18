@@ -246,6 +246,8 @@ export type SkillHit =
       readonly precise?: boolean;
       /** Always a Mighty Hit: the roll is at least the Mighty threshold (Master of Payload). */
       readonly mighty?: boolean;
+      /** Takes the weapon's ailment instead of the listed ones (Mastery skills). */
+      readonly infused?: boolean;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -260,6 +262,11 @@ export type SkillHit =
       readonly ailmentPower?: number;
       /** Never a Glancing Blow (Seeking Bolt). */
       readonly precise?: boolean;
+      /**
+       * Takes the weapon's damage type and ailment instead of its own (Mastery skills follow the
+       * Heirloom path, klassengeruest-v1.md 5).
+       */
+      readonly infused?: boolean;
     };
 
 /** What a skill does besides its hits. Effects follow the hits, in order. */
@@ -421,6 +428,14 @@ export interface CombatRules {
    * the ailment of its element.
    */
   readonly spark?: { readonly damage: number };
+  /** Skills deal this much more damage (Masteries, klassengeruest-v1.md 5). */
+  readonly skillDamage?: number;
+  /** + chance of every ailment your hits can apply (Ailment Masteries). */
+  readonly ailmentChance?: number;
+  /** Your ailments last this much longer (0.2 = +20 %). */
+  readonly ailmentDuration?: number;
+  /** Crits always apply your weapon's ailment (Ravager). */
+  readonly critsApplyAilment?: boolean;
   /** Own ailments deal `perSecond` more per second of fight, up to `max` (Warlock Mastery). */
   readonly lingering?: { readonly perSecond: number; readonly max: number };
   /** Extra damage taken from every source (0.2 = +20 %). */

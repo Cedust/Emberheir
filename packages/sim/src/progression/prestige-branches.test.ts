@@ -76,9 +76,14 @@ describe("Prestige branches", () => {
     expect(() => applyAction(s, data, { type: "prestige", branchId: "nope" })).toThrow(/branch/);
     const after = applyAction(s, data, { type: "prestige", branchId: "guard" });
     expect(after.legacy.branches).toEqual(["guard"]);
-    // An owned branch stays open: picking it again deepens it, up to tier III.
+    // The main Mastery stays open up to Tier V, the others only to Tier I.
     expect(openBranches(after, data).map((b) => b.id)).toEqual(["guard", "other"]);
-    const deep = { ...s, legacy: { ...s.legacy, branches: ["guard", "guard", "guard"] } };
+    const side = { ...s, legacy: { ...s.legacy, branches: ["guard", "other"] } };
+    expect(openBranches(side, data).map((b) => b.id)).toEqual(["guard"]);
+    const deep = {
+      ...s,
+      legacy: { ...s.legacy, branches: ["guard", "guard", "guard", "guard", "guard"] },
+    };
     expect(openBranches(deep, data).map((b) => b.id)).toEqual(["other"]);
     expect(() => applyAction(deep, data, { type: "prestige", branchId: "guard" })).toThrow(
       /branch/,

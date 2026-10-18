@@ -957,7 +957,7 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
 
 const WEB = buildWeb();
 
-/** The web's nodes (Prestige branches come on top, see `prestige-branches.ts`). */
+/** The web's nodes (Prestige branches come on top, see `masteries.ts`). */
 export const WEB_NODES: readonly SkillNode[] = WEB.nodes;
 
 /** Start node per class id. */

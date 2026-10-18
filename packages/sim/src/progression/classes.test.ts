@@ -54,11 +54,10 @@ describe("classes", () => {
     expect(setup.rules?.lifeMultiplier).toBeCloseTo(1.1);
   });
 
-  it("the main branch has the most tiers; a tie keeps the one that got there first", () => {
+  it("the main Mastery is the one picked at the first Harvest", () => {
     expect(mainBranch([])).toBeUndefined();
     expect(mainBranch(["a", "b"])).toBe("a");
-    expect(mainBranch(["a", "b", "b"])).toBe("b");
-    expect(mainBranch(["a", "b", "b", "a"])).toBe("b");
+    expect(mainBranch(["a", "b", "b"])).toBe("a");
   });
 
   it("the title: class name, then own title or epithet by the main branch", () => {
@@ -69,7 +68,7 @@ describe("classes", () => {
     const s = newGame(data, { seed: 1, classId: "test-fighter" });
     const later = {
       ...s,
-      legacy: { ...s.legacy, branches: ["other-branch", "test-branch", "test-branch"] },
+      legacy: { ...s.legacy, branches: ["test-branch", "other-branch"] },
     };
     expect(heroTitle(later, data)).toBe("Champion");
   });

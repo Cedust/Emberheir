@@ -2,7 +2,12 @@ import { type Attributes } from "../../combat/types";
 import { attributeProblem, sumAttributes } from "../attributes";
 import { EMPTY_BOONS } from "../boons";
 import { PROGRESSION } from "../constants";
-import { branchTier, MAX_BRANCH_TIER, type PrestigeBranchDefinition } from "../skill-tree";
+import {
+  branchTier,
+  MAX_BRANCH_TIER,
+  type PrestigeBranchDefinition,
+  SIDE_BRANCH_TIER,
+} from "../skill-tree";
 import { prestigeRewards } from "./acts";
 import { flaskCapacity } from "./flask";
 import { heroClassOf, heroTitle } from "./hero-build";
@@ -11,15 +16,21 @@ import { fail, type GameData, type GameState, type Notice } from "./state";
 /** The Prestige: the next generation inherits, branches open. */
 
 /**
- * Prestige branches the coming Prestige can pick (skilltree-v2.md): the class's branches
- * (klassen-v2.md), new ones and owned ones that can be deepened one tier, in the class's order.
+ * Masteries the coming Harvest can pick (klassengeruest-v1.md 5): at the first Harvest any of
+ * the class's three; later the main Mastery one tier deeper (up to V) or Tier I of another.
  */
 export function openBranches(state: GameState, data: GameData): PrestigeBranchDefinition[] {
   const all = data.skillTree.prestigeBranches ?? [];
+  const owned = state.legacy.branches;
+  const main = owned[0];
   return heroClassOf(state, data)
     .branches.map((id) => all.find((b) => b.id === id))
     .filter((b): b is PrestigeBranchDefinition => b !== undefined)
-    .filter((b) => branchTier(state.legacy.branches, b.id) < MAX_BRANCH_TIER);
+    .filter(
+      (b) =>
+        branchTier(owned, b.id) <
+        (main === undefined || b.id === main ? MAX_BRANCH_TIER : SIDE_BRANCH_TIER),
+    );
 }
 
 /**

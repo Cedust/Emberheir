@@ -38,6 +38,7 @@ import {
   furyFactor,
   huntersMarkCrit,
   mark,
+  weaponAilment,
 } from "./fighter";
 import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
 import { PERK } from "./perks";
@@ -379,7 +380,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         furyFactor(attacker) *
         masteryDamageFactor(core, attacker, defender) *
         (opener ? 1 + (wr?.openerDamage ?? 0) : 1) *
-        (h.fromSkill ? 1 + (wr?.skillDamage ?? 0) : 1) *
+        (h.fromSkill ? 1 + (wr?.skillDamage ?? 0) + (attacker.setup.rules?.skillDamage ?? 0) : 1) *
         ruleFactor(core, attacker, attacker.setup.rules?.conditionalDamage) *
         (attacker.setup.rules?.slowDeath?.hit ?? 1) *
         // Braced: right after a Block the defender takes less.
@@ -518,6 +519,10 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     if (outcome.crit && attacker.setup.rules?.critsApplyBleed) {
       inflict(core, attacker, defender, "bleed", hitBase);
     }
+    const own = weaponAilment(attacker.setup.weapon);
+    if (outcome.crit && own && attacker.setup.rules?.critsApplyAilment) {
+      inflict(core, attacker, defender, own, ailmentBase);
+    }
     if (outcome.crit && wr) critMastery(core, attacker, defender, hitBase);
     if (outcome.crit && attacker.perks.has("armorbreaker")) {
       perk(core, attacker, "armorbreaker");
@@ -602,14 +607,16 @@ function evaded(core: FightCore, defender: Fighter, h: HitOptions): void {
  * a chance of its element's ailment.
  */
 function surge(attacker: Fighter, h: HitOptions): readonly AilmentChance[] {
-  if (!attacker.perks.has("surge")) return h.ailmentChances;
+  const extra = attacker.setup.rules?.ailmentChance ?? 0;
+  const perk = attacker.perks.has("surge") ? PERK.surgeChance : 0;
+  if (extra + perk <= 0) return h.ailmentChances;
   const raised = h.ailmentChances.map((c) => ({
     ailment: c.ailment,
-    chance: Math.min(1, c.chance + PERK.surgeChance),
+    chance: Math.min(1, c.chance + extra + perk),
   }));
   const own = ELEMENT_AILMENT[h.type];
-  return own && !raised.some((c) => c.ailment === own)
-    ? [...raised, { ailment: own, chance: PERK.surgeChance }]
+  return perk > 0 && own && !raised.some((c) => c.ailment === own)
+    ? [...raised, { ailment: own, chance: perk }]
     : raised;
 }
 
@@ -911,7 +918,9 @@ export function addSunder(attacker: Fighter, defender: Fighter, stacks: number):
 
 /** Duration of an ailment the attacker inflicts. */
 function ownAilmentDuration(attacker: Fighter, defender: Fighter, ailment: AilmentType): number {
-  const by = attacker.setup.weaponRules?.ailmentDurationBy?.[ailment] ?? 0;
+  const by =
+    (attacker.setup.weaponRules?.ailmentDurationBy?.[ailment] ?? 0) +
+    (attacker.setup.rules?.ailmentDuration ?? 0);
   return ailmentDuration(ailment, defender.stats.tenacity) * Math.max(0, 1 + by);
 }
 

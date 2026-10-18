@@ -38,7 +38,7 @@ const LAST_WORDS: Record<string, string> = {
 type Step = "victory" | "branch" | "attributes";
 const STEPS = [
   { id: "victory", name: "Victory" },
-  { id: "branch", name: "Bloodline" },
+  { id: "branch", name: "Mastery" },
   { id: "attributes", name: "Attributes" },
   { id: "heir", name: "Inheritance" },
 ] as const;
@@ -55,7 +55,7 @@ function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
   );
 }
 
-const ROMAN = ["", "I", "II", "III"];
+const ROMAN = ["", "I", "II", "III", "IV", "V"];
 
 const BRANCH_COLORS: Record<string, string> = {
   core: "#c9a063",
@@ -152,11 +152,17 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
 
   if (step === "branch") {
     return (
-      <section className="screen prestige prestige-branch" aria-label="Bloodline">
+      <section className="screen prestige prestige-branch" aria-label="Mastery">
         <Crumbs step="branch" />
         <header className="seal-head">
-          <h2 className="title-font">THE BLOODLINE GROWS</h2>
-          <p className="sub">Grow a new branch, or deepen one you have. It stays forever.</p>
+          <h2 className="title-font">
+            {state.legacy.branches.length ? "THE MASTERY GROWS" : "CHOOSE YOUR MASTERY"}
+          </h2>
+          <p className="sub">
+            {state.legacy.branches.length
+              ? "Deepen your main Mastery, or learn the first tier of another. It stays forever."
+              : "Your main Mastery gives your title and grows up to Tier V. It stays forever."}
+          </p>
         </header>
         <div className="branch-picks">
           {open.map((b) => {
@@ -178,7 +184,9 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                 onClick={() => setBranch(b.id)}
               >
                 <span className="eyebrow">
-                  {tier > 1 ? `DEEPEN · TIER ${ROMAN[tier]}` : b.branch.toUpperCase()}
+                  {tier > 1
+                    ? `DEEPEN · TIER ${ROMAN[tier]}`
+                    : (b.axis?.toUpperCase() ?? b.branch.toUpperCase())}
                 </span>
                 <span className="title-font branch-pick-name">
                   {b.name}

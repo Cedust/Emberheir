@@ -80,6 +80,9 @@ function useLooks(state: GameState, run: RunState) {
   const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
   const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
   const draught = activeDraught(state, GAME_DATA);
+  const mastery = GAME_DATA.skillTree.prestigeBranches?.find(
+    (b) => b.id === state.legacy.branches[0],
+  );
   const heroLook = {
     ...heroLookOf(
       state.hero.classId,
@@ -89,6 +92,7 @@ function useLooks(state: GameState, run: RunState) {
       heroWeaponLook(state),
     ),
     ...(draught ? { draught: draught.color } : {}),
+    ...(mastery?.axis ? { mastery: mastery.axis } : {}),
   };
   const weapon = heroWeapon(state, GAME_DATA).weapon;
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
