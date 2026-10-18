@@ -958,12 +958,9 @@ const BRANCHES: readonly BranchSpec[] = [
     },
     keystone: {
       name: "Eye of the Storm",
-      description: "Your Burn and Chill also Shock. Your Default Attack deals 20 % less damage.",
+      description: "Your Chill also Shocks. Your Default Attack deals 20 % less damage.",
       rules: {
-        ailmentEcho: [
-          { from: "burn", to: "shock" },
-          { from: "chill", to: "shock" },
-        ],
+        ailmentEcho: [{ from: "chill", to: "shock" }],
         defaultAttackDamage: 0.8,
       },
     },
@@ -994,12 +991,9 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       keystone: {
         name: "Greater Eye of the Storm",
-        description: "Your Burn and Chill also Shock. Your Default Attack deals 10 % less damage.",
+        description: "Your Chill also Shocks. Your Default Attack deals 10 % less damage.",
         rules: {
-          ailmentEcho: [
-            { from: "burn", to: "shock" },
-            { from: "chill", to: "shock" },
-          ],
+          ailmentEcho: [{ from: "chill", to: "shock" }],
           defaultAttackDamage: 0.9,
         },
       },
@@ -1031,10 +1025,9 @@ const BRANCHES: readonly BranchSpec[] = [
       keystone: {
         name: "Supreme Eye of the Storm",
         description:
-          "Your Burn, Chill and Corruption also Shock. Your Default Attack deals 10 % less damage.",
+          "Your Chill and Corruption also Shock. Your Default Attack deals 10 % less damage.",
         rules: {
           ailmentEcho: [
-            { from: "burn", to: "shock" },
             { from: "chill", to: "shock" },
             { from: "corruption", to: "shock" },
           ],
@@ -1107,12 +1100,9 @@ const BRANCHES: readonly BranchSpec[] = [
     b4: { name: "Hoarfrost", description: "+5 % Tenacity per rank.", bonuses: { tenacity: 0.05 } },
     keystone: {
       name: "Winter's Grasp",
-      description: "Your Burn and Shock also Chill. Your Default Attack deals 20 % less damage.",
+      description: "Your Shock also Chills. Your Default Attack deals 20 % less damage.",
       rules: {
-        ailmentEcho: [
-          { from: "burn", to: "chill" },
-          { from: "shock", to: "chill" },
-        ],
+        ailmentEcho: [{ from: "shock", to: "chill" }],
         defaultAttackDamage: 0.8,
       },
     },
@@ -1141,12 +1131,9 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       keystone: {
         name: "Greater Winter's Grasp",
-        description: "Your Burn and Shock also Chill. Your Default Attack deals 10 % less damage.",
+        description: "Your Shock also Chills. Your Default Attack deals 10 % less damage.",
         rules: {
-          ailmentEcho: [
-            { from: "burn", to: "chill" },
-            { from: "shock", to: "chill" },
-          ],
+          ailmentEcho: [{ from: "shock", to: "chill" }],
           defaultAttackDamage: 0.9,
         },
       },
@@ -1177,11 +1164,9 @@ const BRANCHES: readonly BranchSpec[] = [
       },
       keystone: {
         name: "Supreme Winter's Grasp",
-        description:
-          "Your Burn, Shock and Bleed also Chill. Your Default Attack deals 10 % less damage.",
+        description: "Your Shock and Bleed also Chill. Your Default Attack deals 10 % less damage.",
         rules: {
           ailmentEcho: [
-            { from: "burn", to: "chill" },
             { from: "shock", to: "chill" },
             { from: "bleed", to: "chill" },
           ],
