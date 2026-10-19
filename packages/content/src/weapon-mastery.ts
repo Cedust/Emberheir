@@ -1002,8 +1002,8 @@ const AXE = buildTree({
       name: "Rampage",
       form: "Rampage Axe",
       description:
-        "Every Bleed tick adds 1 % damage until the fight ends. Start each fight at −20 %.",
-      effect: { weaponRules: { rampage: { ailment: "bleed", perTick: 0.01 }, damageDealt: 0.8 } },
+        "Every Bleed tick adds 2 % damage, Bleed included, until the fight ends. Start each fight at −10 %.",
+      effect: { weaponRules: { rampage: { ailment: "bleed", perTick: 0.02 }, damageDealt: 0.9 } },
     },
     {
       id: "executioner",

@@ -418,6 +418,8 @@ export function dotFactor(
   pool.more += (rules?.dotMore ?? 0) + extraMore;
   const lingering = rules?.lingering;
   if (lingering) pool.more += Math.min(lingering.max, lingering.perSecond * fightTime(core));
+  // Rampage: the Bleed it counts grows with it, not only the hits.
+  pool.more += source.rampage;
   if (ailment) {
     addFactor(pool, rules?.ailmentDamage?.[ailment]);
     pool.more += rules?.ailmentMore?.[ailment] ?? 0;
