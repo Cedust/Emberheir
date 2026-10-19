@@ -54,7 +54,7 @@ export function startPreview(classId: string, weapon: string): ClassPreview {
       undefined,
       heroWeaponLook(state),
     ),
-    enemyLook: { archetype: enemy.archetype, boss: false, elite: false, act: 1 },
+    enemyLook: { id: enemy.id, archetype: enemy.archetype, boss: false, elite: false, act: 1 },
     title: GAME_DATA.classes.find((c) => c.id === classId)?.name ?? "",
   };
 }
@@ -174,7 +174,7 @@ export function glimpsePreview(classId: string, weapon: string): ClassPreview {
       undefined,
       heroWeaponLook(state),
     ),
-    enemyLook: { archetype: enemy.archetype, boss: true, elite: false, act: 2 },
+    enemyLook: { id: enemy.id, archetype: enemy.archetype, boss: true, elite: false, act: 2 },
     title: heroTitle(state, GAME_DATA),
   };
 }

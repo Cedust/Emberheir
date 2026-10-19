@@ -97,6 +97,7 @@ function useLooks(state: GameState, run: RunState) {
   const weapon = heroWeapon(state, GAME_DATA).weapon;
   const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
   const enemyLook: EnemyLook = {
+    ...(enemyDef ? { id: enemyDef.id } : {}),
     archetype: enemyDef?.archetype ?? "brute",
     boss: encounter?.boss ?? false,
     elite: mods.length > 0,
