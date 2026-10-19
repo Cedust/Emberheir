@@ -2766,6 +2766,8 @@
 
 .stage .hero-level-badge {
   flex: none;
+  /* Room for the painted ring with its oak leaves (::after below). */
+  margin: 14px 12px 14px 22px;
   width: 52px;
   height: 52px;
   display: grid;
@@ -3557,7 +3559,6 @@
 }
 
 .stage .tree-controls .icon-btn {
-  min-width: 36px;
   font-weight: 700;
 }
 
@@ -4501,6 +4502,7 @@
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 
 .stage .compendium-list {
@@ -4511,6 +4513,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .stage .compendium-entry {
@@ -4531,6 +4535,8 @@
 }
 
 .stage .compendium-text {
+  min-height: 0;
+  overflow-y: auto;
   padding: 24px 30px;
   display: flex;
   flex-direction: column;

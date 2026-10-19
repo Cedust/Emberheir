@@ -254,7 +254,8 @@
 /* Square icon buttons (zoom, close) are the small riveted plate. */
 .stage .btn.icon-btn {
   --k-btn-art: url("../assets/ui/btn-close.webp");
-  padding: 0 10px;
+  width: 44px;
+  padding: 0;
   border-image-slice: 30 fill;
   border-image-width: 12px;
 }
