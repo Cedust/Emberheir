@@ -472,15 +472,18 @@ Endgame **Wildfire I–X**.
   jeden Gegner, so viel wie Armor von einem Physical Hit wegnimmt: Physical und Elemental kommen gleich schwer durch
   (Klassengerüst-Balance; vorher 30 %, das bremste jeden Element-Path). Act-Gegner mit Element-Thema haben 20–25 %
   in ihrem Element statt 30–40 %.
-- **Skalierung:** Das Monster Level bestimmt die Grundwerte. Dazu:
-  - **Run Pressure:** Life +80 %, Schaden +35 % pro Act nach dem ersten (der neueste Act bleibt der härteste).
-  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7,6 / 9 / 8,8 / 7,8 / 8),
-    Life nur mit deren Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3, Startwerte aus
-    `balance-messung-v1.md`): normale Stages 15 → 30 %, 25 → 35 %, 30 → 40 % der Wand, die **Gatekeeper** auf
-    Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Jede Wand mit höchstens +10 Level schaffbar.
-  - **Kampfdauer** (5.5): Gegner haben je Stage-Art mehr Life (normal ×1,4, Elite ×1,25, Gatekeeper ×1,7, Boss ×1,5;
-    der Boss trifft dafür mit ×0,9), in allen Acts eines Runs, nicht im Finale und im Wildfire.
-  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **3–5 Anläufe** (Timo, 13.10.: mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
+- **Skalierung** (`balancing-neustart-v1.md` Schritt 3): Das Monster Level bestimmt die Grundwerte über **eine
+  Tabelle** (`MONSTER_TABLE`), gemessen am Autopilot-Helden: Monster-Life wächst wie der Schaden pro Sekunde des Helden,
+  Monster-Schaden wie seine effektive Life (`npm run balance -- --act 7 --build all --mastery all --curve 1`). Dazu
+  nur noch:
+  - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,4; Elite Life ×2,1, Schaden ×1,05; Gatekeeper
+    Life ×2,2; Boss Life ×3, Schaden ×0,75. Champions +30 % Life.
+  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke (Run 1: 2,4, ab Run 2: 8), Life nur mit deren
+    Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
+    30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %.
+  - Der Harvester trifft wie ein halber Boss seines Levels (seine Phasen tragen sechs Boss-Mechaniken).
+  - Entfallen: Run Pressure, Kampfdauer- und Boss-Life-Faktoren, Elite-Faktoren, Harvester-Anteil, `endgameBoss`.
+  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **etwa 5 Anläufe** (Timo, 12.10.: Richtwert, mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
     normal 5–15 %; Kampfdauer normal 20–30 s, Elite 35–50 s, Gatekeeper 45–70 s, Boss 60–100 s.
 
 ---

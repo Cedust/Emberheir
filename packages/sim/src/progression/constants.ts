@@ -262,9 +262,9 @@ export const PROGRESSION = {
    */
   stageKinds: {
     normal: { life: 1.4, damage: 1 },
-    elite: { life: 1.75, damage: 1.05 },
-    gate: { life: 1.7, damage: 1 },
-    boss: { life: 2.25, damage: 0.9 },
+    elite: { life: 2.1, damage: 1.05 },
+    gate: { life: 2.2, damage: 1 },
+    boss: { life: 3, damage: 0.75 },
   },
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
   monsterLevelsPerEliteModifier: 25,
@@ -308,7 +308,7 @@ export const PROGRESSION = {
      * Level already follows the hero, so every run from the second on gets the same wall; run 1
      * stays gentle.
      */
-    strength: { firstRun: 1.8, later: 8 },
+    strength: { firstRun: 2.4, later: 8 },
     /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
     lifeExponent: 0.5,
     gates: [0.4, 0.45],
