@@ -3,6 +3,7 @@ import { type ActData, type GameState, bossKnown } from "@emberheir/sim";
 import { type IconName } from "../../ui/Icon";
 import { actVisible, visibleActs } from "../labels";
 import { SIGNPOST_DX } from "./art/CampScene";
+import { PAINTED } from "./art/paintedPersonas";
 
 /** The Camp's people: who stands where, what they say, where a click on them leads. */
 
@@ -12,12 +13,17 @@ export type CampTarget =
   | "forge"
   | "altar"
   | "kaelen"
+  | "dummy"
   | "stash"
   | "compendium"
   | "shop"
   | "runes"
   | "road"
   | "nan";
+
+/** Kaelen lunges right of the Hearthfire, at his Training Dummy left of it. */
+const KAELEN = { x: 810, y: 555, fs: 1.05 };
+const DUMMY_X = KAELEN.x - (PAINTED.kaelen?.prop?.x ?? 0) * KAELEN.fs;
 
 /** Old Nan's lines; one about an act or its boss only once the hero knows it (no spoilers). */
 const NAN_LINES: readonly {
@@ -59,7 +65,8 @@ export interface Persona {
   readonly cloak: string;
   readonly quote: string;
   readonly target?: CampTarget;
-  readonly object?: { w: number; h: number };
+  /** A clickable spot in the backdrop; `front` lays it over the personas' spots. */
+  readonly object?: { w: number; h: number; front?: boolean };
   readonly figure?: { fs: number };
   readonly locked?: string;
 }
@@ -83,7 +90,8 @@ export function personas(state: GameState, road: ActData): Persona[] {
       y: 610,
       icon: "fire",
       cloak: "#a8401a",
-      object: { w: 150, h: 230 },
+      // Over Kaelen's spot: he lunges right behind the fire.
+      object: { w: 120, h: 150, front: true },
       quote: "Whatever rests near the fire survives the burning.",
       target: "legacy",
     },
@@ -126,7 +134,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "marisha",
       name: "Marisha",
       role: "Black Market",
-      x: 200,
+      x: 175,
       y: 600,
       icon: "coins",
       cloak: "#7a5a24",
@@ -139,7 +147,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "liora",
       name: "Liora",
       role: "Mystic",
-      x: 380,
+      x: 360,
       y: 560,
       icon: "eye",
       cloak: "#2d5bd0",
@@ -152,19 +160,33 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "kaelen",
       name: "Kaelen",
       role: "Trainer",
-      x: 580,
-      y: 570,
+      x: KAELEN.x,
+      y: KAELEN.y,
       icon: "sword",
       cloak: "#6a2a20",
-      figure: { fs: 1.05 },
+      figure: { fs: KAELEN.fs },
       quote: "“Late to one battle. Never late to training.”",
       target: "kaelen",
+    },
+    {
+      // Painted with Kaelen (his prop); this is only its clickable spot.
+      id: "dummy",
+      name: "Training Dummy",
+      role: "Test your build",
+      x: DUMMY_X,
+      y: KAELEN.y,
+      icon: "eye",
+      cloak: "#8a6a3a",
+      // Up to the top of the pot, so the name plate sits above the dummy.
+      object: { w: 100, h: 175 },
+      quote: "Hit it. It keeps count.",
+      target: "dummy",
     },
     {
       id: "nyssa",
       name: "Nyssa",
       role: "Runesmith",
-      x: 970,
+      x: 1000,
       y: 560,
       icon: "rune",
       cloak: "#4f7a3a",

@@ -141,7 +141,7 @@ Endgame **Wildfire I–X**.
 
 | Persona | Rolle | Aufgaben |
 |---|---|---|
-| **Kaelen** | Trainer | Skill Web, Weapon Mastery, Battle Plan (jeder Respec kostet Acorns), **Training Dummy** (Schaden/s nach Quelle, Items live anprobieren) |
+| **Kaelen** | Trainer | Skill Web, Weapon Mastery, Battle Plan (jeder Respec kostet Acorns). Sein **Training Dummy** steht links vom Feuer und ist ein eigener Klickpunkt im Camp (Schaden/s nach Quelle, Items live anprobieren; Timo 19.10.2026) |
 | **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers), Reforge (Ember Coal), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
 | **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
