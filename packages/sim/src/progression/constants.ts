@@ -267,7 +267,8 @@ export const PROGRESSION = {
    */
   stageKinds: {
     normal: { life: 1.4, damage: 1 },
-    elite: { life: 2.1, damage: 1.05 },
+    // Step 4: Elites caused 22–33 % of the deaths (target 10–20 %); was Life 2.1, damage 1.05.
+    elite: { life: 2, damage: 1 },
     gate: { life: 2.2, damage: 1 },
     boss: { life: 3, damage: 0.75 },
   },

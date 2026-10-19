@@ -60,8 +60,9 @@ export const AXE: WeaponDefinition = {
   id: "axe",
   name: "Axe",
   defaultAttack: "Hack",
-  // +15 % in balancing restart step 4 (see the Sword).
-  damage: { min: 14, max: 24 },
+  // +15 % in balancing restart step 4 (see the Sword), and +8 % more: the Axe holds a Blood
+  // Talisman instead of a shield, so it has to win through damage.
+  damage: { min: 15, max: 26 },
   damageType: "physical",
   attacksPerSecond: 0.7,
   heatBehavior: "cooling",

@@ -594,8 +594,8 @@ const SWORD = buildTree({
       id: "deep-cuts",
       name: "Deep Cuts",
       form: "Bleeding Edge",
-      description: "Bleed from your Crits is twice as strong. Damage Range minimum −20 %.",
-      effect: { weaponRules: { critBleedPower: 2 }, rangeMin: -0.2 },
+      description: "Bleed from your Crits is 60 % stronger. Damage Range minimum −20 %.",
+      effect: { weaponRules: { critBleedPower: 1.6 }, rangeMin: -0.2 },
     },
     {
       id: "flowing-blade",
