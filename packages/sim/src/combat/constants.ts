@@ -63,6 +63,11 @@ export const COMBAT = {
 
   /** Crit Damage is fixed and cannot be raised (anti power creep). */
   critMultiplier: 1.5,
+  /**
+   * Discounts never take a skill below this share of its own Heat Cost (balancing-neustart-v1.md,
+   * step 2); only explicit "free" rules (free Innate, Ignition, Vigil) go lower.
+   */
+  minHeatCostShare: 0.5,
   /** Weapon Mastery: a Glancing Blow deals this share of a clean hit (Timo, 2026-10-08). */
   glancingDamage: 0.5,
   /** Evasion cannot dodge spells, but it Deflects them with the same chance: this damage share. */

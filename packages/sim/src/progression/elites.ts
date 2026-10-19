@@ -38,20 +38,17 @@ export function eliteModifierCount(monsterLevel: number): number {
   );
 }
 
-/** Turns an enemy setup into an Elite: more life and damage plus its modifiers. */
+/**
+ * Turns an enemy setup into an Elite: its modifiers. The Elite's extra Life and damage come from
+ * its stage kind (`PROGRESSION.stageKinds.elite`, set on the encounter).
+ */
 export function applyEliteModifiers(
   setup: CombatantSetup,
   modifiers: readonly EliteModifier[],
-  /** `plain`: the modifiers only, without the Elite Life and damage (Gatekeepers). */
-  options: { readonly plain?: boolean | undefined } = {},
 ): CombatantSetup {
   const triggers = [...(setup.triggers ?? []), ...modifiers.flatMap((m) => m.triggers ?? [])];
-  const life = options.plain ? 1 : PROGRESSION.eliteLifeMultiplier;
-  const damage = options.plain ? 1 : PROGRESSION.eliteDamageMultiplier;
   return {
     ...setup,
-    baseLife: (setup.baseLife ?? 100) * life,
-    damageMultiplier: (setup.damageMultiplier ?? 1) * damage,
     bonuses: sumBonuses(setup.bonuses, ...modifiers.map((m) => m.bonuses)),
     ...(triggers.length ? { triggers } : {}),
   };

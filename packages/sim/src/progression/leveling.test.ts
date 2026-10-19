@@ -7,6 +7,7 @@ import {
   gainXp,
   levelCap,
   xpForKill,
+  levelGapMalus,
   xpLevelFactor,
   xpToNextLevel,
 } from "./leveling";
@@ -49,9 +50,16 @@ describe("leveling", () => {
     expect(xpLevelFactor(1, 3)).toBeCloseTo(1.1);
     expect(xpLevelFactor(1, 60)).toBe(PROGRESSION.xpMaxFactor);
     // A small penalty up to 5 levels above, then a steep one.
-    expect(xpLevelFactor(4, 2)).toBeCloseTo(0.96);
-    expect(xpLevelFactor(7, 2)).toBeCloseTo(0.9);
-    expect(xpLevelFactor(12, 2)).toBeCloseTo(0.4);
+    expect(xpLevelFactor(4, 2)).toBeCloseTo(0.92);
+    expect(xpLevelFactor(7, 2)).toBeCloseTo(0.8);
+    expect(xpLevelFactor(12, 2)).toBeCloseTo(0.3);
+  });
+
+  it("an enemy above the hero's level hits 4 % harder per level, at most 40 %", () => {
+    expect(levelGapMalus(10, 10)).toBe(0);
+    expect(levelGapMalus(12, 10)).toBe(0);
+    expect(levelGapMalus(42, 50)).toBeCloseTo(0.32);
+    expect(levelGapMalus(1, 40)).toBe(PROGRESSION.levelGap.max);
     expect(xpLevelFactor(30, 1)).toBe(PROGRESSION.xpMinFactor);
     expect(xpForKill(2, "normal", 2)).toBe(PROGRESSION.xpBase + PROGRESSION.xpPerMonsterLevel);
     expect(xpForKill(1, "boss", 1)).toBe(PROGRESSION.xpBase * PROGRESSION.bossRewardMultiplier.xp);

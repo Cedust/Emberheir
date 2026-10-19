@@ -1,5 +1,12 @@
 import { ailmentStacks } from "./ailments";
-import { type FightCore, type Fighter, conditionHolds, other, skillCost } from "./fighter";
+import {
+  type FightCore,
+  type Fighter,
+  conditionHolds,
+  heatCostFloor,
+  other,
+  skillCost,
+} from "./fighter";
 import { castSkill } from "./skills";
 import type { RotationSlot, SkillDefinition, SlotModifier } from "./types";
 
@@ -29,7 +36,8 @@ export function masteryCost(
   cost: number,
 ): number {
   const wr = f.setup.weaponRules;
-  if (!wr || cost <= 0) return cost;
+  if (cost <= 0) return cost;
+  if (!wr) return heatCostFloor(skill, cost);
   const innate = wr.innateId !== undefined && skill.id === wr.innateId;
   if (innate && f.freeInnate) return 0;
   let c = cost;
@@ -39,7 +47,7 @@ export function masteryCost(
   for (const e of wr.skillDiscountWhen ?? []) {
     if (conditionHolds(core, f, e.condition)) discount += e.amount;
   }
-  return Math.max(0, Math.round(c * (1 - Math.min(1, discount))));
+  return heatCostFloor(skill, Math.max(0, Math.round(c * (1 - Math.min(1, discount)))));
 }
 
 /** Heat Cost of a slot: rules (Keystones) and the Thrifty modifier. */
@@ -74,8 +82,9 @@ export function castSlot(
   power: number,
   modifiers: readonly SlotModifier[] | undefined,
   via?: "reaction",
+  more = 0,
 ): void {
-  castSkill(core, f, skill, level, paid, power, via);
+  castSkill(core, f, skill, level, paid, power, via, more);
   if (core.result || !modifiers?.includes("reverb")) return;
   if (core.rng.chance(0.2)) castSkill(core, f, skill, level, 0, 1, "reverb");
 }
@@ -127,8 +136,11 @@ export function actReaction(core: FightCore, f: Fighter): boolean {
     const cost =
       vigil || stunned
         ? 0
-        : Math.round(
-            slotCost(f, r.spec.skill, r.spec.modifiers) * (1 - (wr?.reactionDiscount ?? 0)),
+        : heatCostFloor(
+            r.spec.skill,
+            Math.round(
+              slotCost(f, r.spec.skill, r.spec.modifiers) * (1 - (wr?.reactionDiscount ?? 0)),
+            ),
           );
     if (f.heat < cost) continue;
     f.heat -= cost;

@@ -265,8 +265,8 @@ const REGIONS: readonly RegionSpec[] = [
             reach: [t("Iron Resolve", TENACITY), t("Bulk", ARMOR)],
             keystone: {
               name: "Unyielding",
-              description: "Your max Life is 30 % higher. You cannot Crit.",
-              rules: { lifeMultiplier: 1.3, critChanceMultiplier: 0 },
+              description: "Your max Life is 30 % higher. Your Barrier no longer recharges.",
+              rules: { lifeMultiplier: 1.3, barrierRecharge: 0 },
             },
           },
         ],
@@ -571,13 +571,13 @@ const REGIONS: readonly RegionSpec[] = [
             keystone: {
               name: "Elemental Overload",
               description:
-                "Your Chill also Shocks and your Shock also Chills. You take 10 % more damage.",
+                "Your Chill also Shocks and your Shock also Chills. Your hits deal 10 % less damage.",
               rules: {
                 ailmentEcho: [
                   { from: "chill", to: "shock" },
                   { from: "shock", to: "chill" },
                 ],
-                damageTaken: 0.1,
+                hitDamage: 0.9,
               },
             },
           },
@@ -739,8 +739,8 @@ const REGIONS: readonly RegionSpec[] = [
             reach: [t("Old Bark", ARMOR), t("Deep Grain", LIFE)],
             keystone: {
               name: "Juggernaut",
-              description: "You take 15 % less damage. Your Default Attack deals 20 % less damage.",
-              rules: { damageTaken: -0.15, defaultAttackDamage: 0.8 },
+              description: "You take 15 % less damage. Skills cost 20 % more Heat.",
+              rules: { damageTaken: -0.15, skillCostMultiplier: 1.2 },
             },
           },
         ],
@@ -830,8 +830,8 @@ const REGIONS: readonly RegionSpec[] = [
             reach: [t("Swift Recovery", LIFE), t("Scarred", ARMOR)],
             keystone: {
               name: "Glass Focus",
-              description: "Heat no longer cools down. You take 20 % more damage.",
-              rules: { noHeatDecay: true, damageTaken: 0.2 },
+              description: "Heat no longer cools down. Skills cost 20 % more Heat.",
+              rules: { noHeatDecay: true, skillCostMultiplier: 1.2 },
             },
           },
         ],
@@ -865,8 +865,9 @@ const REGIONS: readonly RegionSpec[] = [
             reach: [t("Deep Roots", TENACITY), t("Long Count", LIFE)],
             keystone: {
               name: "Grand Strategy",
-              description: "Skills cost 20 % less Heat. You take 10 % more damage.",
-              rules: { skillCostMultiplier: 0.8, damageTaken: 0.1 },
+              description:
+                "Skills cost 20 % less Heat. Your Default Attack deals 15 % less damage.",
+              rules: { skillCostMultiplier: 0.8, defaultAttackDamage: 0.85 },
             },
           },
           {

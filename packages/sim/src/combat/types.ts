@@ -447,8 +447,13 @@ export interface CombatRules {
   readonly damageTaken?: number;
   /** Multiplies the Heat Cost of every Rotation skill. */
   readonly skillCostMultiplier?: number;
-  /** Multiplies the damage of the Default Attack. */
+  /**
+   * Damage of the Default Attack: above 1 a bonus in the "more" pool, below 1 a "less" factor.
+   * After `mergeRules` it holds only the penalties; the bonuses are in `defaultAttackMore`.
+   */
   readonly defaultAttackDamage?: number;
+  /** Merged Default Attack bonuses for the "more" pool (0.3 = +30 %). */
+  readonly defaultAttackMore?: number;
   /**
    * Twin Cast (Spellweaver): every n-th action happens twice, for each listed n. A Default Attack
    * strikes again, a Rotation skill is cast again for free.
@@ -471,16 +476,30 @@ export interface CombatRules {
   readonly dotLifesteal?: number;
   /** Multiplies how long stuns hold you (bosses shrug them off, `COMBAT.bossStunTaken`). */
   readonly stunTaken?: number;
-  /** Multiplies the damage your ailments deal over time (Affliction Keystone). */
+  /**
+   * Damage your ailments deal over time: above 1 a bonus in the DoT pool, below 1 a "less"
+   * factor (merged like `defaultAttackDamage`, bonuses in `dotMore`).
+   */
   readonly dotDamage?: number;
-  /** Multiplies the damage over time of single ailments (Reaver: Bleed and Poison). */
+  /** Merged DoT bonuses for the DoT pool. */
+  readonly dotMore?: number;
+  /** Damage over time of single ailments, like `dotDamage` (bonuses merge into `ailmentMore`). */
   readonly ailmentDamage?: Readonly<Partial<Record<AilmentType, number>>>;
+  /** Merged bonuses of single ailments for the DoT pool. */
+  readonly ailmentMore?: Readonly<Partial<Record<AilmentType, number>>>;
   /** Multiplies max life (Iron Lineage, Keystones). */
   readonly lifeMultiplier?: number;
-  /** Multiplies the damage of your hits, and so the ailments they cause (Warrior: Iron Blood). */
+  /**
+   * Damage of your hits: above 1 a bonus in the "more" pool, below 1 a "less" factor (merged like
+   * `defaultAttackDamage`, bonuses in `hitMore`).
+   */
   readonly hitDamage?: number;
-  /** Multiplies the damage of your hits against a Chilled enemy (Sorcerer: Glacier). */
+  /** Merged hit bonuses for the "more" pool. */
+  readonly hitMore?: number;
+  /** Damage of your hits against a Chilled enemy, like `hitDamage` (bonuses in `chilledMore`). */
   readonly chilledDamage?: number;
+  /** Merged bonuses against a Chilled enemy for the "more" pool. */
+  readonly chilledMore?: number;
   /** Multiplies how fast your Barrier recharges (Ward Draught, Barrier Notables). */
   readonly barrierRecharge?: number;
   /** Raises the Resistance cap of single elements (Fire Draught: +5 %). */
@@ -491,11 +510,11 @@ export interface CombatRules {
    */
   readonly heavyHitCap?: number;
   // Skill Web v3 (neuausrichtung-v1.md 4): Notables are "if, then", not plain numbers.
-  /** Your hits deal `amount` more damage while the condition holds; each one multiplies. */
+  /** Your hits deal `amount` more damage while the condition holds (into the "more" pool). */
   readonly conditionalDamage?: readonly RuleBonus[];
   /** More Crit Chance (added) while the condition holds. */
   readonly conditionalCrit?: readonly RuleBonus[];
-  /** Your ailments of a type deal `amount` more damage while the condition holds. */
+  /** Your ailments of a type deal `amount` more damage while the condition holds (DoT pool). */
   readonly ailmentDamageWhen?: readonly {
     readonly ailment: AilmentType;
     readonly amount: number;
@@ -598,15 +617,13 @@ export interface WeaponRules {
     readonly condition: MasteryCondition;
     readonly amount: number;
   }[];
-  /** Crits multiply the target's running Bleed (Deep Cuts). */
-  readonly critBleedMultiplier?: number;
   /** Multiplies the duration of own stuns. */
   readonly stunDuration?: number;
   /** A stunned enemy gains no Heat. */
   readonly stunnedNoHeat?: boolean;
   /** Multiplies the own Block Chance. */
   readonly blockMultiplier?: number;
-  /** Multiplies all own hit damage (not damage over time). */
+  /** Own hit damage (not damage over time): above 1 into the "more" pool, below 1 "less". */
   readonly damageDealt?: number;
   /** Heat per damage tick of an own ailment (Bloodrush). */
   readonly heatPerDotTick?: { readonly ailment: AilmentType; readonly amount: number };
@@ -806,7 +823,7 @@ export interface WeaponRules {
   readonly siegeEngine?: { readonly perStack: number };
   /** Default Attacks are volleys of `count` bolts of `multiplier` sharing one Crit roll (Repeater). */
   readonly volley?: { readonly count: number; readonly multiplier: number };
-  /** No Barrier; Default Attacks hit for `share` of the lost Barrier extra (Glass Cannon). */
+  /** Default Attacks hit for `share` of the max Barrier extra (Glass Cannon). */
   readonly glassCannon?: { readonly share: number };
   /** Every clean hit adds a Poison stack; Poison Chance no longer counts (Thousand Cuts). */
   readonly thousandCuts?: boolean;

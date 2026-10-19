@@ -51,6 +51,7 @@ describe("resolveHit", () => {
     expect(resolveHit(input(), rng())).toEqual({
       kind: "hit",
       damage: 100,
+      ailmentDamage: 100,
       crit: false,
       blocked: false,
       deflected: false,
@@ -63,6 +64,20 @@ describe("resolveHit", () => {
     const attacker = stats({ critChance: -1, physicalDamage: 0.5, elementalDamage: 0.2 });
     expect(resolveHit(input({ attacker }), rng())).toMatchObject({ damage: 150 });
     expect(resolveHit(input({ attacker, type: "fire" }), rng())).toMatchObject({ damage: 120 });
+  });
+
+  it("the more pool adds up and stays out of the ailments, like the Crit", () => {
+    const attacker = stats({ critChance: 1 });
+    const out = resolveHit(input({ attacker, more: 1, cleanMore: 0.5 }), rng());
+    // 100 × (1 + 1 + 0.5) × 1.5 = 375; the ailments grow from the 100 before both.
+    expect(out).toMatchObject({ damage: 375, ailmentDamage: 100, crit: true });
+  });
+
+  it("damage taken stays out of the ailment damage", () => {
+    expect(resolveHit(input({ defenderDamageTaken: 0.5 }), rng())).toMatchObject({
+      damage: 150,
+      ailmentDamage: 100,
+    });
   });
 
   it("crits for exactly 150 %", () => {
@@ -127,6 +142,7 @@ describe("resolveHit", () => {
     expect(results).toContainEqual({
       kind: "hit",
       damage: 100 * (1 - COMBAT.blockReduction),
+      ailmentDamage: 100 * (1 - COMBAT.blockReduction),
       crit: false,
       blocked: true,
       deflected: false,

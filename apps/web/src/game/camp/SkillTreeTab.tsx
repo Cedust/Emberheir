@@ -50,6 +50,12 @@ function WebSocketPanel(props: {
   const { state, game, nodeId, learned, viewOnly } = props;
   const current = state.hero.webRunes?.[nodeId];
   const pouch = Object.entries(state.wallet.runes).filter(([, n]) => n > 0);
+  // Each Rune works once in the Ash Tree: one already in another socket cannot go in here.
+  const elsewhere = new Set(
+    Object.entries(state.hero.webRunes ?? {})
+      .filter(([id]) => id !== nodeId)
+      .map(([, runeId]) => runeId),
+  );
   const web = (id: string) => ITEM_CATALOG.runes.get(id)?.web?.description ?? "";
   if (!learned) return <p className="sub small">Rune Socket</p>;
   return (
@@ -80,6 +86,8 @@ function WebSocketPanel(props: {
             key={id}
             type="button"
             className="btn web-socket-option"
+            disabled={elsewhere.has(id)}
+            title={elsewhere.has(id) ? "Already in another socket" : undefined}
             onClick={() => game.dispatch({ type: "socketWebRune", nodeId, runeId: id })}
           >
             <RuneStone runeId={id} size={22} />

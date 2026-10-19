@@ -31,15 +31,13 @@ describe("Walls of the newest act", () => {
     const late = stageWall(data, NEXT_ACT, 14, 1);
     const gate = stageWall(data, NEXT_ACT, 10, 1);
     const boss = stageWall(data, NEXT_ACT, 15, 1);
-    const strength = PROGRESSION.wall.strength[1] ?? 0;
-    const share = (s: number) => 1 + (strength - 1) * s;
+    const wall = PROGRESSION.wall.boss.later;
+    const share = (s: number) => 1 + (wall.damage - 1) * s;
     expect(first?.damage).toBeCloseTo(share(PROGRESSION.wall.ramps[0]?.[0] ?? 0));
     expect(late?.damage).toBeCloseTo(share(PROGRESSION.wall.ramps[2]?.[1] ?? 0));
     expect(gate?.gate).toBe(true);
     expect(boss?.damage).toBeGreaterThan(late?.damage ?? 0);
-    expect(boss?.damage).toBe(PROGRESSION.wall.strength[1]);
-    // Mostly damage: Life takes only the square root, so the fight stays short.
-    expect(boss?.life).toBeCloseTo(Math.sqrt(boss?.damage ?? 0));
+    expect(boss).toMatchObject(wall);
   });
 
   it("climbs in teeth: each Gatekeeper is a peak above the stretch around it", () => {
@@ -77,25 +75,22 @@ describe("Walls of the newest act", () => {
     const plain = enemySetup({ ...encounter, wall: { life: 1, damage: 1 } }, "long-act", data);
     const walled = enemySetup(encounter, "long-act", data);
     expect(walled.baseLife).toBeGreaterThan(plain.baseLife ?? 0);
-    // The Gatekeeper is half the wall, without the Elite Life on top.
-    const wall = encounter.wall?.life ?? 1;
-    const elite = enemySetup({ ...encounter, gate: false }, "long-act", data);
-    expect(elite.baseLife).toBeCloseTo((walled.baseLife ?? 0) * PROGRESSION.eliteLifeMultiplier);
-    expect(wall).toBeGreaterThan(1);
+    expect(encounter.wall?.life ?? 1).toBeGreaterThan(1);
+    expect(encounter.pressure).toEqual(PROGRESSION.stageKinds.gate);
   });
 
-  it("fights last longer over enemy Life per stage kind; the boss hits a little softer", () => {
+  it("each stage kind has its own Life and damage; the boss hits a little softer", () => {
     const at = (stage: number) => {
       let s = newGame(data, { seed: 3, classId: "test-fighter" });
       s = applyAction(s, data, { type: "setOut", actId: "long-act" });
       s = { ...s, run: s.run && { ...s.run, stage } };
       return applyAction(s, data, { type: "startStage" }).run?.encounter;
     };
-    const k = PROGRESSION.fightLength;
-    // Run 1 has no Run Pressure, so the encounter carries only the fight length.
-    expect(at(1)?.pressure?.life ?? 1).toBeCloseTo(k.life.normal);
-    expect(at(5)?.pressure?.life ?? 1).toBeCloseTo(k.life.gate);
-    expect(at(15)?.pressure).toEqual({ life: k.life.boss, damage: k.bossDamage });
+    const k = PROGRESSION.stageKinds;
+    expect(at(1)?.pressure).toEqual(k.normal);
+    expect(at(5)?.pressure).toEqual(k.gate);
+    expect(at(15)?.pressure).toEqual(k.boss);
+    expect(k.boss.damage).toBeLessThan(k.normal.damage);
   });
 
   it("Hearth Embers burn on the Waymarks before the boss, not in the Wildfire", () => {

@@ -5,6 +5,7 @@ import { COMBAT, MIGHTY_SHARE } from "./constants";
 import { type CombatEvent, type PayoffKind } from "./events";
 import { heatGainMultiplier } from "./heat";
 import { PERK, type PerkId } from "./perks";
+import { addBonus, addFactor, emptyPool, poolFactor } from "./pools";
 import { type DerivedStats, deriveStats, sumBonuses } from "./stats";
 import { type BuffState, type TriggerState, buffBonuses, createTriggerState } from "./triggers";
 import type {
@@ -17,7 +18,6 @@ import type {
   ReactionSlot,
   Side,
   SkillDefinition,
-  WeaponRules,
 } from "./types";
 import { AILMENT_TYPES } from "./types";
 
@@ -130,7 +130,7 @@ export interface Fighter {
   freeInnate: boolean;
   /** Clean Crits still promised after an Evade (Vanishing Act). */
   critsLeft: number;
-  /** Barrier given up for Glass Cannon. */
+  /** Max Barrier that Glass Cannon adds to the Default Attack. */
   readonly glassBarrier: number;
   /** Fight time of the last Crit, Evade, Block, Parry and skill (Skill Web "within" conditions). */
   readonly moments: Record<FightMoment, number>;
@@ -171,7 +171,15 @@ export const other = (side: Side): Side => (side === "hero" ? "enemy" : "hero");
 
 /** Heat Cost of a Rotation skill after rule changes (e.g. Keystones). */
 export function skillCost(setup: CombatantSetup, skill: SkillDefinition): number {
-  return Math.max(0, Math.round(skill.heatCost * (setup.rules?.skillCostMultiplier ?? 1)));
+  return heatCostFloor(
+    skill,
+    Math.max(0, Math.round(skill.heatCost * (setup.rules?.skillCostMultiplier ?? 1))),
+  );
+}
+
+/** A Heat Cost after its discounts: never below `COMBAT.minHeatCostShare` of the skill's own. */
+export function heatCostFloor(skill: SkillDefinition, cost: number): number {
+  return Math.max(Math.round(skill.heatCost * COMBAT.minHeatCostShare), cost);
 }
 
 /** Execute (Legendary Power): more damage against an enemy below the life threshold. */
@@ -184,19 +192,13 @@ export function executeFactor(rules: CombatRules | undefined, defender: Fighter)
 }
 
 /** Crescendo (Capstone): +2 % damage for every 100 Heat spent this fight. */
-export function crescendoFactor(f: Fighter): number {
-  return f.setup.capstone?.kind === "crescendo" ? 1 + 0.02 * Math.floor(f.heatSpent / 100) : 1;
-}
-
-function withoutGlass(rules: WeaponRules): WeaponRules {
-  return Object.fromEntries(Object.entries(rules).filter(([k]) => k !== "glassCannon"));
+export function crescendoBonus(f: Fighter): number {
+  return f.setup.capstone?.kind === "crescendo" ? 0.02 * Math.floor(f.heatSpent / 100) : 0;
 }
 
 export function createFighter(side: Side, setup: CombatantSetup): Fighter {
   const stats = deriveStats(setup);
-  const glassBarrier = setup.weaponRules?.glassCannon
-    ? deriveStats({ ...setup, weaponRules: withoutGlass(setup.weaponRules) }).barrier
-    : 0;
+  const glassBarrier = setup.weaponRules?.glassCannon ? stats.barrier : 0;
   const lifeFraction = Math.min(1, Math.max(0, setup.lifeFraction ?? 1));
   const triggers = [...(setup.weapon.triggers ?? []), ...(setup.triggers ?? [])];
   return {
@@ -288,10 +290,10 @@ export function weaponDamageOf(weapon: CombatantSetup["weapon"]): number {
     : (weapon.damage.min + weapon.damage.max) / 2;
 }
 
-/** Fury (Cinderguard): the damage share gathered so far. */
-export function furyFactor(f: Fighter): number {
+/** Fury (Cinderguard): the damage share gathered so far (for hits and ailments alike). */
+export function furyBonus(f: Fighter): number {
   const fury = f.setup.rules?.fury;
-  return fury ? 1 + Math.min(fury.max, fury.perHit * f.fury) : 1;
+  return fury ? Math.min(fury.max, fury.perHit * f.fury) : 0;
 }
 
 /** Hunter's Mark (Ashstrider): extra Precision against an enemy with one of your ailments. */
@@ -394,12 +396,40 @@ export function heatMultiplier(core: FightCore, f: Fighter): number {
 }
 
 /** Multiplier on damage over time dealt to `f`: damage taken, curses and the source's rules. */
-export function dotFactor(core: FightCore, f: Fighter): number {
+/**
+ * Multiplier of the damage over time `f` takes from its opponent's ailments: the DoT pool
+ * (balancing-neustart-v1.md, step 2) of the source, where its DoT bonuses add up (`dotDamage`,
+ * the ailment's own bonuses, Lingering, Fury), times what `f` takes extra (Shock, curses).
+ * `ailment` adds that ailment's own bonuses; `extraMore` joins the pool (Cash In: Skill Damage).
+ */
+export function dotFactor(
+  core: FightCore,
+  f: Fighter,
+  ailment?: AilmentType,
+  extraMore = 0,
+): number {
   const cursed = f.curses.reduce((sum, c) => sum + c.dotDamageTaken, 0);
   const source = core.fighters[other(f.side)];
-  const lingering = source.setup.rules?.lingering;
-  const grown = lingering ? 1 + Math.min(lingering.max, lingering.perSecond * fightTime(core)) : 1;
-  return (1 + damageTaken(f) + cursed) * (source.setup.rules?.dotDamage ?? 1) * grown;
+  const rules = source.setup.rules;
+  const pool = emptyPool();
+  addFactor(pool, rules?.dotDamage);
+  pool.more += (rules?.dotMore ?? 0) + extraMore + furyBonus(source);
+  const lingering = rules?.lingering;
+  if (lingering) pool.more += Math.min(lingering.max, lingering.perSecond * fightTime(core));
+  if (ailment) {
+    addFactor(pool, rules?.ailmentDamage?.[ailment]);
+    pool.more += rules?.ailmentMore?.[ailment] ?? 0;
+    // Bleeding Out, Master of Smolder: more ailment damage while a condition holds.
+    for (const e of [
+      ...(source.setup.weaponRules?.ailmentDamageWhen ?? []),
+      ...(rules?.ailmentDamageWhen ?? []),
+    ]) {
+      if (e.ailment === ailment && conditionHolds(core, source, e.condition)) {
+        addBonus(pool, e.amount);
+      }
+    }
+  }
+  return (1 + damageTaken(f) + cursed) * poolFactor(pool);
 }
 
 /** Boss phases: a trigger or telegraph with `belowLife` waits until life drops below it. */

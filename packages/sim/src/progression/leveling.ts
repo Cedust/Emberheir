@@ -23,7 +23,7 @@ export function xpToNextLevel(level: number, cap: number = levelCap(0)): number 
 }
 
 /**
- * A small XP penalty per level the hero is above the enemy (−2 % up to 5 levels), then −10 % per
+ * A small XP penalty per level the hero is above the enemy (−4 % up to 5 levels), then −10 % per
  * further level, at least 10 %; +5 % per level the enemy is above the hero, at most double, so a
  * hero behind the Monster Level catches up.
  */
@@ -36,6 +36,15 @@ export function xpLevelFactor(heroLevel: number, monsterLevel: number): number {
     PROGRESSION.xpMinFactor,
     1 - PROGRESSION.xpSoftPenalty * soft - PROGRESSION.xpPenaltyPerLevel * steep,
   );
+}
+
+/**
+ * How much harder an enemy above the hero's level hits (`PROGRESSION.levelGap`): +4 % per level of
+ * the gap, at most +40 %. 0 when the hero is at or above the enemy's level.
+ */
+export function levelGapMalus(heroLevel: number, monsterLevel: number): number {
+  const g = PROGRESSION.levelGap;
+  return Math.min(g.max, Math.max(0, monsterLevel - heroLevel) * g.perLevel);
 }
 
 export type { EnemyRank } from "./constants";

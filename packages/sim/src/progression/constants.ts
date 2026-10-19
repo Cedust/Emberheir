@@ -138,10 +138,15 @@ export const PROGRESSION = {
    * `xpSoftPenalty` per level up to `xpSoftGap` levels (farming a few levels pays), then
    * `xpPenaltyPerLevel` more per level, at least `xpMinFactor`.
    */
-  xpSoftPenalty: 0.02,
+  xpSoftPenalty: 0.04,
   xpSoftGap: 5,
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
+  /**
+   * Level gap (Timo 2026-10-19, "mild"): an enemy above the hero's level hits this much harder per
+   * level of the gap, at most `max`. Not in the Wildfire, where the hero cannot level past 100.
+   */
+  levelGap: { perLevel: 0.04, max: 0.4 },
   /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
   xpBonusPerLevel: 0.05,
   xpMaxFactor: 2,
@@ -254,9 +259,18 @@ export const PROGRESSION = {
   eliteChancePerStage: 0.005,
   eliteChancePerAct: 0.02,
   eliteChanceCap: 0.5,
-  /** Elites are tougher: life and damage multipliers on top of their modifiers. */
-  eliteLifeMultiplier: 1.4,
-  eliteDamageMultiplier: 1.05,
+  /**
+   * One factor per stage kind (balancing-neustart-v1.md, step 3), on top of the Monster Level
+   * (`MONSTER_TABLE`), everywhere: acts, finale and Wildfire. They replace the old fight-length,
+   * boss-Life and Elite factors. Fights long enough to watch the build: normal 20–30 s, Elite
+   * 35–50 s, Gatekeeper 45–70 s, boss 60–100 s.
+   */
+  stageKinds: {
+    normal: { life: 1.4, damage: 1 },
+    elite: { life: 2.1, damage: 1.05 },
+    gate: { life: 2.2, damage: 1 },
+    boss: { life: 3, damage: 0.75 },
+  },
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
@@ -275,12 +289,6 @@ export const PROGRESSION = {
    */
   bounty: { acornKills: 10, emberCoal: 2, thiefBoost: 5 },
   /**
-   * Run Pressure: a hero who regears from nothing grows much faster within a run than the Monster
-   * Level alone. Along the run, monsters gain up to this much Life and damage per act after the
-   * first, so a run's newest act stays the hardest.
-   */
-  runPressure: { life: 0.8, damage: 0.35 },
-  /**
    * The world burns anew (neuausrichtung-v1.md 5.1): from run 2 on every act of a run is at the
    * new level. Act 1 starts this many levels below the Level Cap of the run before (the hero's
    * level when the run starts), and the band rises evenly to the new boss.
@@ -288,21 +296,23 @@ export const PROGRESSION = {
   worldBelowCap: 5,
   /**
    * Walls (spielzeit-v1.md, balance-grundlagen-v1.md D): the newest act of a run is where the hero
-   * has to grow. Its boss hits with the run's `strength` (Life only takes its square root, so the
-   * fight stays short; Heavy Attacks stay under `COMBAT.heavyHitCap`). Index 0 = run 1, which
-   * stays gentle.
+   * has to grow. Its boss takes `boss` (Heavy Attacks stay under `COMBAT.heavyHitCap`).
    *
    * Sägezahn (neuausrichtung-v1.md 5.3): the act climbs in teeth instead of one cliff. The
-   * Gatekeepers on the Waymarks (stages 5 and 10) take `gates` of the strength, the normal stages
+   * Gatekeepers on the Waymarks (stages 5 and 10) take `gates` of the boss wall, the normal stages
    * between them ramp along `ramps` (one [from, to] per stretch: before the first Gatekeeper,
-   * between them, after the last). Shares of the strength's excess over 1. Start values from the
+   * between them, after the last). Shares of the wall's excess over 1. Start values from the
    * balance CLI (balance-messung-v1.md 6, run D): deaths in the newest act 9 % normal, 12 % Elite,
    * 29 % Gatekeeper, 50 % boss.
    */
   wall: {
-    strength: [1.8, 9, 7.6, 9, 8.8, 7.8, 8],
-    /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
-    lifeExponent: 0.5,
+    /**
+     * Life and damage of the newest act's boss (step 3: one rule instead of a number per run): the
+     * Monster Level already follows the hero, so every run from the second on gets the same wall.
+     * Timo (2026-10-19): longer fights through more boss Life rather than damage, and run 1 is no
+     * walk in the park either. Damage still rises, so defense keeps counting.
+     */
+    boss: { firstRun: { life: 3, damage: 3.5 }, later: { life: 4.5, damage: 6 } },
     gates: [0.4, 0.45],
     ramps: [
       [0.15, 0.3],
@@ -310,25 +320,10 @@ export const PROGRESSION = {
       [0.3, 0.4],
     ],
   },
-  /**
-   * Fights long enough to watch the build (neuausrichtung-v1.md 5.5): enemies get this much more
-   * Life by stage kind, in every act of a run (not the finale or the Wildfire). The boss also
-   * hits a little softer, since its fight gets longer. Targets: normal 20–30 s, Elite 35–50 s,
-   * Gatekeeper 45–70 s, boss 60–100 s.
-   */
-  fightLength: {
-    life: { normal: 1.4, elite: 1.25, gate: 1.7, boss: 1.5 },
-    bossDamage: 0.9,
-  },
   /** Hearth Embers (neuausrichtung-v1.md 5.4): a won Waymark before the boss heals this much. */
   hearthEmbers: 0.25,
   /** The Hearth path of a fork (6.2): its second stage won heals this much. */
   hearthPath: 0.25,
-  /**
-   * Act bosses have this much more Life than their content value, so a boss fight lasts about
-   * 1.5× a normal fight (Spielspaß balance target). The Harvester keeps its own value.
-   */
-  bossLife: 1.5,
   /**
    * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
    * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
@@ -336,7 +331,7 @@ export const PROGRESSION = {
    * instead of the Run Pressure). Like the walls: mostly damage, little more Life.
    */
   finalPrestige: 7,
-  finale: { life: 3, damage: 8.5 },
+  finale: { life: 0.5, damage: 3.3 },
   /**
    * The Warden echoes take this share of the finale's pressure, from the first to the last (Boons
    * pile up on the way); the Harvester's Core takes all of it, the hardest fight of the finale.
@@ -345,16 +340,18 @@ export const PROGRESSION = {
   /**
    * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
    * chosen tier. Monster Level is `baseLevel` + `levelsPerTier` × tier: 92 at I, 100 at V (the
-   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). Normal
-   * enemies take the seventh run's newest-act pressure, the act boss takes `boss` times its act's
-   * `endgameBoss` factor (endgame-balance-v1.md A). Both rise by `life`/`damage` per tier above I
+   * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). Every
+   * stage takes its stage kind (`stageKinds`), the act boss also `boss`. Both rise by `life`/`damage` per tier above I
    * and by the steeper `steep` rates per tier above `steep.from` (VI–X are meant to be really hard).
    * Legendaries and Runes come more often. No new currency: the highest tier cleared is the goal.
    */
   wildfire: {
     tiers: 10,
-    /** Life and damage of every act boss at Wildfire I (the Harvester included), before the tiers. */
-    boss: { life: 3.6, damage: 8.4 },
+    /**
+     * Life and damage of every act boss at Wildfire I (the Harvester included) on top of the
+     * boss's stage factor, before the tiers.
+     */
+    boss: { life: 0.6, damage: 3.3 },
     baseLevel: 90,
     levelsPerTier: 2,
     life: 0.08,
@@ -375,8 +372,6 @@ export const PROGRESSION = {
   finaleEchoAbilities: 5,
   /** Fusion Boons are this much likelier in the finale's Stolen Fire. */
   finaleFusionWeight: 1,
-  /** Share of the Run Pressure on Life and damage that the Harvester takes at the end of a run. */
-  harvesterPressure: { life: 0.7, damage: 0.2 },
 
   /** Phoenix Feathers (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossPhoenixFeathers: 1,

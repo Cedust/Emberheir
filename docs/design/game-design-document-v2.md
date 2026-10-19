@@ -205,7 +205,10 @@ Endgame **Wildfire I–X**.
   (15, 25, 35, 50, 65, 80), das Band steigt gleichmäßig über alle Stages bis zum neuen Boss. So droppt jeder Act
   aktuelles Gear.
 - Jedes Level: **+4 % Base Life, +3 % Weapon Damage** (zusammen ~+7 % Kampfkraft). Sonst nichts.
-- XP-Malus: −2 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
+- XP-Malus: −4 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
+- **Level-Malus** (Timo 19.10., mild): Ein Gegner über dem Level des Helden trifft +4 % härter pro Level Abstand,
+  höchstens +40 % (nicht im Wildfire, dort endet das Level bei 100). Das Gegner-Level steht dann rot, der Tooltip
+  nennt den Aufschlag.
 - Level ist der **sichere, langsame Hebel** gegen eine Wand; Gear der schnelle, glücksabhängige.
 
 ### 3.2 Attribute ✅ (`attribute-v1.md`)
@@ -269,6 +272,13 @@ Endgame **Wildfire I–X**.
   längere Ailments. Längere Dauer gibt es nur als Regel einzelner Nodes. Immolate löst Combust dreifach aus.
 
 - **Crit Damage ist fest 150 %** (nur Crit Chance skaliert; Ausnahmen über einzelne Keystones).
+- **Schadensformel mit festen Töpfen** (Timo 2026-10-19, `balancing-neustart-v1.md` Schritt 2):
+  Treffer = Basis (Waffe/Spell × Skill) × (1 + Increased aus Gear/Attributen) × (1 + **More**) × Crit × Armor/Resistance
+  × Damage Taken. Alle „X % more“ aus Ash Tree, Mastery, Heirloom, Keystones und Class Trait **addieren sich** in
+  einem Topf; nur Abzüge („10 % less“) multiplizieren. Overcharge und Arcane Conduit zählen in den More-Topf.
+- **DoTs** wachsen aus dem Treffer **vor** Crit, More und Damage Taken. Sie haben einen eigenen, additiven
+  **DoT-Topf** (DoT-Boni, Boni des einzelnen Ailments, bedingte Ailment-Boni, Lingering, Fury). Cash In legt Skill
+  Damage in diesen Topf, statt ihn zu multiplizieren.
 - **Sunder** (Debuff, senkt Armor stapelnd) ≠ **Physical Penetration** (ignoriert Armor pro Treffer).
 
 ### 4.3 Defense
@@ -301,6 +311,8 @@ Endgame **Wildfire I–X**.
 
 - **Slot Modifiers:** Thrifty (−15 % Heat Cost), Empowered (+1 Skill Level), Overcharge (Rest-Heat bis +50 % Wirkung),
   Reverb (selten, 20 % gratis wiederholen).
+- **Heat-Kosten** fallen durch Rabatte nie unter **50 %** der eigenen Kosten (Timo 2026-10-19). Nur ausdrückliche
+  Gratis-Regeln (Whirl, Ignition, Vigil, Master of Quake) gehen darunter.
 
 ---
 
@@ -394,12 +406,19 @@ Endgame **Wildfire I–X**.
 - **Hoheitsgebiete** (`neuausrichtung-v1.md` 2): Travel-Nodes geben nur Defense (Life, Armor, Barrier, Evasion,
   Tenacity; im Stamm auch Block und Resistances). **Notables** sind bedingt oder haben eine Regel; Conversion
   (Searing Steel, Arcane Edge, Void Ember) öffnet Hybride.
+- **Keystones tauschen nie Schaden gegen Überleben** (Timo 2026-10-19): kein „+X % Schaden genommen“, „Life ×0.8“
+  oder „keine Barrier“. Die Kosten bleiben auf derselben Achse (Unyielding: Barrier lädt nicht nach; Juggernaut,
+  Glass Focus, Skirmish, Bastion, Glass Cannon: Skills kosten 20 % mehr Heat; Grand Strategy: Default Attack −15 %;
+  Elemental Overload: Treffer −10 %; Vanishing Act: −10 % Precision). Glass Cannon behält die Barrier und schlägt mit
+  15 % davon zu. Deep Cuts (Sword): Bleed aus Crits ist doppelt so stark (vorher verdoppelte jeder Crit den laufenden
+  Bleed ohne Grenze).
 - **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4): Final Mercy,
   Unyielding (Steel), Blood Price, Blood and Bile (Blood), Slow Death (Venom), Black Flame (Flame), Spellblade (Storm),
   Elemental Overload (Frost), Pact of Ash (Void), Juggernaut (Stamm), Glass Focus, Grand Strategy, Arcane Conduit
   (Wurzeln).
 - **Rune Sockets** (9, einer pro Region): ein gelernter Socket nimmt bei Kaelen eine Rune aus dem Beutel und gibt ihre
-  **Web-Wirkung**. Herausnehmen oder Vergessen legt die Rune zurück in den Beutel.
+  **Web-Wirkung**. Herausnehmen oder Vergessen legt die Rune zurück in den Beutel. **Jede Rune nur einmal** im Ash
+  Tree (Timo 2026-10-19).
 
 ### 5.4 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
 - **Slots:** Off Hand, Helm, Body Armor, Gloves, Boots, Belt, Amulet, 2× Ring, **Charm** (nur Trigger-Affixe).
@@ -456,15 +475,18 @@ Endgame **Wildfire I–X**.
   jeden Gegner, so viel wie Armor von einem Physical Hit wegnimmt: Physical und Elemental kommen gleich schwer durch
   (Klassengerüst-Balance; vorher 30 %, das bremste jeden Element-Path). Act-Gegner mit Element-Thema haben 20–25 %
   in ihrem Element statt 30–40 %.
-- **Skalierung:** Das Monster Level bestimmt die Grundwerte. Dazu:
-  - **Run Pressure:** Life +80 %, Schaden +35 % pro Act nach dem ersten (der neueste Act bleibt der härteste).
-  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke des Runs (1,8 / 9 / 7,6 / 9 / 8,8 / 7,8 / 8),
-    Life nur mit deren Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3, Startwerte aus
-    `balance-messung-v1.md`): normale Stages 15 → 30 %, 25 → 35 %, 30 → 40 % der Wand, die **Gatekeeper** auf
-    Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Jede Wand mit höchstens +10 Level schaffbar.
-  - **Kampfdauer** (5.5): Gegner haben je Stage-Art mehr Life (normal ×1,4, Elite ×1,25, Gatekeeper ×1,7, Boss ×1,5;
-    der Boss trifft dafür mit ×0,9), in allen Acts eines Runs, nicht im Finale und im Wildfire.
-  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **3–5 Anläufe** (Timo, 13.10.: mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
+- **Skalierung** (`balancing-neustart-v1.md` Schritt 3): Das Monster Level bestimmt die Grundwerte über **eine
+  Tabelle** (`MONSTER_TABLE`), gemessen am Autopilot-Helden: Monster-Life wächst wie der Schaden pro Sekunde des Helden,
+  Monster-Schaden wie seine effektive Life (`npm run balance -- --act 7 --build all --mastery all --curve 1`). Dazu
+  nur noch:
+  - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,4; Elite Life ×2,1, Schaden ×1,05; Gatekeeper
+    Life ×2,2; Boss Life ×3, Schaden ×0,75. Champions +30 % Life.
+  - **Wand** im neuesten Act (Timo 19.10.: länger über Life, Run 1 darf fordern): Boss Run 1 Life ×3, Schaden ×3,5;
+    ab Run 2 Life ×4,5, Schaden ×6. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
+    30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %.
+  - Der Harvester trifft wie ein halber Boss seines Levels (seine Phasen tragen sechs Boss-Mechaniken).
+  - Entfallen: Run Pressure, Kampfdauer- und Boss-Life-Faktoren, Elite-Faktoren, Harvester-Anteil, `endgameBoss`.
+  - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **etwa 5 Anläufe** (Timo, 12.10.: Richtwert, mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
     normal 5–15 %; Kampfdauer normal 20–30 s, Elite 35–50 s, Gatekeeper 45–70 s, Boss 60–100 s.
 
 ---

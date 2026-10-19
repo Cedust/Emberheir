@@ -12,8 +12,6 @@ import {
   isFinaleAct,
   isHarvestAct,
   stageMonsterLevel,
-  harvesterShare,
-  stagePressure,
   stagesInAct,
   stageWall,
   routeAt,
@@ -216,20 +214,14 @@ export function startStage(state: GameState, data: GameData): GameState {
     ? wildfireLevel(tier)
     : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
   const atBoss = run.stage >= stagesInAct(act);
-  const p = tier
-    ? wildfirePressure(data, run.stage, tier, atBoss, act)
-    : harvesterShare(
-        stagePressure(data, act, run.stage, state.legacy.prestige),
-        atBoss && act.boss.archetype === "harvester",
-      );
+  const p = tier ? wildfirePressure(tier, atBoss) : { life: 1, damage: 1 };
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
   const omens = tripOmenEffects(state, data);
   const omened = run.omens?.length ? { omens: run.omens } : {};
-  // Longer fights over more enemy Life (neuausrichtung-v1.md 5.5), not in the Wildfire.
-  const length = (kind: keyof typeof PROGRESSION.fightLength.life) => {
-    const life = p.life * (tier ? 1 : PROGRESSION.fightLength.life[kind]);
-    const damage = p.damage * (tier || kind !== "boss" ? 1 : PROGRESSION.fightLength.bossDamage);
-    return life !== 1 || damage !== 1 ? { pressure: { life, damage } } : {};
+  // One factor per stage kind (balancing-neustart-v1.md, step 3), the Wildfire included.
+  const length = (kind: keyof typeof PROGRESSION.stageKinds) => {
+    const k = PROGRESSION.stageKinds[kind];
+    return { pressure: { life: p.life * k.life, damage: p.damage * k.damage } };
   };
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
@@ -292,8 +284,8 @@ export function startStage(state: GameState, data: GameData): GameState {
       ...(champion
         ? {
             pressure: {
-              life: (sized.pressure?.life ?? 1) * PROGRESSION.champion.life,
-              damage: sized.pressure?.damage ?? 1,
+              life: sized.pressure.life * PROGRESSION.champion.life,
+              damage: sized.pressure.damage,
             },
             champion: true,
           }

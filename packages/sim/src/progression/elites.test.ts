@@ -24,7 +24,7 @@ describe("Elites", () => {
     expect(eliteModifierCount(99)).toBe(3);
   });
 
-  it("are tougher and carry their modifiers", () => {
+  it("carry their modifiers (their extra Life comes from the stage kind)", () => {
     const elite = applyEliteModifiers(setup({ baseLife: 100 }), [
       { id: "x", name: "X", description: "", bonuses: { armor: 7 } },
       {
@@ -41,8 +41,7 @@ describe("Elites", () => {
         ],
       },
     ]);
-    expect(elite.baseLife).toBeCloseTo(100 * PROGRESSION.eliteLifeMultiplier);
-    expect(elite.damageMultiplier).toBeCloseTo(PROGRESSION.eliteDamageMultiplier);
+    expect(elite.baseLife).toBe(100);
     expect(elite.bonuses?.armor).toBe(7);
     expect(elite.triggers).toHaveLength(1);
   });

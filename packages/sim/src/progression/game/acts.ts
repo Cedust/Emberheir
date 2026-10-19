@@ -205,37 +205,6 @@ export function earnedSkillPoints(state: GameState, data: GameData): number {
   return points + state.progress.waymarks.length;
 }
 
-/**
- * Run Pressure of a stage (PROGRESSION.runPressure): 1 in a one-act run and on a run's first
- * stage, rising to 1 + pressure × (acts − 1) on its last.
- */
-export function stagePressure(
-  data: GameData,
-  act: ActData,
-  stage: number,
-  prestige: number,
-): { readonly life: number; readonly damage: number } {
-  const steps = (actsInRun(data, prestige).length - 1) * runProgress(data, act, stage, prestige);
-  return {
-    life: 1 + PROGRESSION.runPressure.life * steps,
-    damage: 1 + PROGRESSION.runPressure.damage * steps,
-  };
-}
-
-/**
- * The Harvester at the end of a run takes only part of the Run Pressure: its own values already
- * make it the run's peak. The Wildfire evens out its bosses per act (`ActData.wildfireBoss`), and
- * the Harvester's Core in the finale takes all of the finale's pressure.
- */
-export function harvesterShare(
-  p: { readonly life: number; readonly damage: number },
-  harvester: boolean,
-): { readonly life: number; readonly damage: number } {
-  if (!harvester) return p;
-  const k = PROGRESSION.harvesterPressure;
-  return { life: 1 + (p.life - 1) * k.life, damage: 1 + (p.damage - 1) * k.damage };
-}
-
 /** True for the newest act of the run (its boss brings The Harvest): the act with the walls. */
 export function isWallAct(data: GameData, act: ActData, prestige: number): boolean {
   return !isFinaleAct(data, act.id) && harvestAct(data, prestige).id === act.id;
@@ -250,8 +219,8 @@ export function gateStages(act: ActData): readonly number[] {
 }
 
 /**
- * The wall of a stage (PROGRESSION.wall): only in the run's newest act. The boss takes the run's
- * full strength; before it the act climbs in teeth (neuausrichtung-v1.md 5.3): normal stages ramp
+ * The wall of a stage (PROGRESSION.wall): only in the run's newest act. The boss takes the full
+ * wall; before it the act climbs in teeth (neuausrichtung-v1.md 5.3): normal stages ramp
  * up stretch by stretch, each Gatekeeper is a peak above the stretch before it. `null` = no wall.
  */
 export function stageWall(
@@ -262,18 +231,17 @@ export function stageWall(
 ): { readonly life: number; readonly damage: number; readonly gate: boolean } | null {
   if (!isWallAct(data, act, prestige)) return null;
   const w = PROGRESSION.wall;
-  const strength = w.strength[Math.min(prestige, w.strength.length - 1)] ?? 1;
+  const boss = prestige === 0 ? w.boss.firstRun : w.boss.later;
   // A wall is a fight that a few levels or better gear win (balance-grundlagen-v1.md D): the
-  // enemy hits harder, with only a little more Life so the fight stays short. Heavy Attacks stay
-  // below `COMBAT.heavyHitCap`, so it is never a one-shot lottery.
-  const at = (strength: number, gate: boolean) => ({
-    life: strength ** w.lifeExponent,
-    damage: strength,
+  // enemy lasts longer and hits harder. Heavy Attacks stay below `COMBAT.heavyHitCap`, so it is
+  // never a one-shot lottery.
+  const at = (share: number, gate: boolean) => ({
+    life: 1 + (boss.life - 1) * share,
+    damage: 1 + (boss.damage - 1) * share,
     gate,
   });
-  const part = (share: number) => 1 + (strength - 1) * share;
-  if (stage >= act.stages) return at(strength, false);
-  return at(part(sawtoothShare(act, stage)), gateStages(act).includes(stage));
+  if (stage >= act.stages) return at(1, false);
+  return at(sawtoothShare(act, stage), gateStages(act).includes(stage));
 }
 
 /** Share of the wall on a stage before the boss: a Gatekeeper's peak or its stretch's ramp. */
@@ -317,27 +285,21 @@ export const wildfireLevel = (tier: number) =>
   PROGRESSION.wildfire.baseLevel + PROGRESSION.wildfire.levelsPerTier * tier;
 
 /**
- * Life and damage of a Wildfire stage, raised per tier above I. Normal stages take the pressure of
- * the same stage in the seventh run's newest act (every act burns like the last one); the act boss
- * takes `PROGRESSION.wildfire.boss` times its act's `endgameBoss` factor (endgame-balance-v1.md
- * A). Above V each tier rises steeply.
+ * Life and damage of a Wildfire stage on top of its stage kind (`PROGRESSION.stageKinds`), raised
+ * per tier above I. The act boss also takes `PROGRESSION.wildfire.boss`. Above V each tier rises
+ * steeply.
  */
 export function wildfirePressure(
-  data: GameData,
-  stage: number,
   tier: number,
   boss = false,
-  act?: ActData,
 ): { readonly life: number; readonly damage: number } {
-  const last = PROGRESSION.finalPrestige - 1;
   const w = PROGRESSION.wildfire;
-  const k = boss ? (act?.endgameBoss ?? 1) : 1;
-  const p = boss ? w.boss : stagePressure(data, harvestAct(data, last), stage, last);
+  const p = boss ? w.boss : { life: 1, damage: 1 };
   const gentle = Math.min(tier, w.steep.from) - 1;
   const steep = Math.max(0, tier - w.steep.from);
   return {
-    life: k * p.life * (1 + w.life * gentle + w.steep.life * steep),
-    damage: k * p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
+    life: p.life * (1 + w.life * gentle + w.steep.life * steep),
+    damage: p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
   };
 }
 

@@ -594,8 +594,8 @@ const SWORD = buildTree({
       id: "deep-cuts",
       name: "Deep Cuts",
       form: "Bleeding Edge",
-      description: "Crits double the running Bleed. Damage Range minimum −20 %.",
-      effect: { weaponRules: { critBleedMultiplier: 2 }, rangeMin: -0.2 },
+      description: "Bleed from your Crits is twice as strong. Damage Range minimum −20 %.",
+      effect: { weaponRules: { critBleedPower: 2 }, rangeMin: -0.2 },
     },
     {
       id: "flowing-blade",
@@ -810,8 +810,8 @@ const MACE = buildTree({
       id: "bastion",
       name: "Bastion",
       form: "Bastion Mace",
-      description: "Double Block Chance. −20 % damage.",
-      effect: { weaponRules: { blockMultiplier: 2, damageDealt: 0.8 } },
+      description: "Double Block Chance. Skills cost 20 % more Heat.",
+      effect: { weaponRules: { blockMultiplier: 2 }, rules: { skillCostMultiplier: 1.2 } },
     },
   ],
 });
@@ -1224,8 +1224,8 @@ const DAGGER = buildTree({
       id: "shadowstep",
       name: "Vanishing Act",
       form: "Shadow Kris",
-      description: "After an Evade your next three Stabs are clean Crits. −20 % Life.",
-      effect: { weaponRules: { critsAfterEvade: 3 }, rules: { lifeMultiplier: 0.8 } },
+      description: "After an Evade your next three Stabs are clean Crits. −10 % Precision.",
+      effect: { weaponRules: { critsAfterEvade: 3 }, precision: -0.1 },
     },
   ],
 });
@@ -1787,8 +1787,11 @@ const WAND = buildTree({
       id: "glass-cannon",
       name: "Glass Cannon",
       form: "Glass Wand",
-      description: "You have no Barrier. Spark hits for 25 % of the Barrier you gave up on top.",
-      effect: { weaponRules: { glassCannon: { share: 0.25 } } },
+      description: "Spark hits for 15 % of your Barrier on top. Skills cost 20 % more Heat.",
+      effect: {
+        weaponRules: { glassCannon: { share: 0.15 } },
+        rules: { skillCostMultiplier: 1.2 },
+      },
     },
     {
       id: "focused-will",

@@ -43,7 +43,6 @@ export const ACT1: ActData = {
   enemies: ACT1_ENEMIES,
   boss: GORRAK,
   boonFamily: "ash",
-  endgameBoss: 0.88,
   shrineStages: [5, 10],
 };
 
@@ -57,7 +56,6 @@ export const ACT2: ActData = {
   boss: MOTHER_OF_ROT,
   boonFamily: "rot",
   runesmith: true,
-  endgameBoss: 0.72,
   shrineStages: [5, 10],
   favoredAffixes: { tenacity: 3, "poison-chance": 1.5 },
 };
@@ -74,7 +72,6 @@ export const ACT3: ActData = {
   enemies: ACT3_ENEMIES,
   boss: CINDER_TYRANT,
   boonFamily: "cinder",
-  endgameBoss: 0.94,
   shrineStages: [5, 10],
   favoredAffixes: { "fire-resistance": 4, "burn-chance": 1.5 },
 };
@@ -88,7 +85,6 @@ export const ACT4: ActData = {
   enemies: ACT4_ENEMIES,
   boss: RIME_WARDEN,
   boonFamily: "rime",
-  endgameBoss: 1.45,
   shrineStages: [5, 10],
   favoredAffixes: { "cold-resistance": 4, "heat-gain": 1.5 },
 };
@@ -102,7 +98,6 @@ export const ACT5: ActData = {
   enemies: ACT5_ENEMIES,
   boss: STORM_HERALD,
   boonFamily: "storm",
-  endgameBoss: 1.0,
   shrineStages: [5, 10],
   favoredAffixes: { "lightning-resistance": 4, tenacity: 1.5 },
 };
@@ -116,7 +111,6 @@ export const ACT6: ActData = {
   enemies: ACT6_ENEMIES,
   boss: VOIDBORN_MAW,
   boonFamily: "void",
-  endgameBoss: 1.55,
   shrineStages: [5, 10],
   favoredAffixes: { "void-resistance": 4, "corruption-chance": 1.5 },
 };
@@ -132,7 +126,6 @@ export const ACT7: ActData = {
   stages: 10,
   enemies: ACT7_ENEMIES,
   boss: ASHEN_HARVESTER,
-  endgameBoss: 0.85,
   shrineStages: [4, 7],
   favoredAffixes: { "all-resistance": 2, life: 1.5 },
 };

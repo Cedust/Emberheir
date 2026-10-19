@@ -69,6 +69,11 @@ export function mitigate(
 export interface HitInput {
   /** Damage before increases, crit and mitigation (weapon roll × skill multiplier). */
   readonly baseDamage: number;
+  /**
+   * The "more" pool (balancing-neustart-v1.md, step 2): all damage bonuses of Ash Tree, Mastery,
+   * Heirloom and Keystones added up (1.2 = +120 %). Default 0.
+   */
+  readonly more?: number;
   readonly type: DamageType;
   /** Attacks can be evaded (any damage type), spells only Deflected. Only Physical hits are blocked. */
   readonly evadable: boolean;
@@ -76,7 +81,7 @@ export interface HitInput {
   readonly deflects?: boolean;
   readonly attacker: DerivedStats;
   readonly attackerLevel: number;
-  /** Extra damage multiplier, e.g. monster level scaling or Execute. */
+  /** Damage multiplier outside the pools: skill strength, monster scaling, "less" penalties. */
   readonly multiplier: number;
   readonly defender: DerivedStats;
   /** Defender's "+X % damage taken" (Shock). */
@@ -96,8 +101,8 @@ export interface HitInput {
   readonly critElementalPenetration?: number;
   /** The defender's Parry: chance an attack becomes a Glancing Blow (half damage, no Crit). */
   readonly parry?: number;
-  /** Extra damage multiplier that only a clean hit gets (Mighty Hits, Clean Line). */
-  readonly cleanMultiplier?: number;
+  /** More damage only a clean hit gets (Mighty Hits, Clean Line), into the "more" pool. */
+  readonly cleanMore?: number;
   /** Decides the Crit instead of the roll (Repeater: one roll for the volley). */
   readonly critOverride?: boolean;
   /** Conversion: this share of the hit is dealt as `to` (its Damage % and the defender's layer). */
@@ -109,6 +114,11 @@ export type HitOutcome =
   | {
       readonly kind: "hit";
       readonly damage: number;
+      /**
+       * What the hit's ailments grow from: the hit before Crit, the "more" pool and the
+       * defender's "damage taken" (balancing-neustart-v1.md, step 2), unrounded.
+       */
+      readonly ailmentDamage: number;
       readonly crit: boolean;
       readonly blocked: boolean;
       /** A spell Deflected by Evasion: `COMBAT.deflectDamage` of the damage. */
@@ -155,12 +165,13 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
       : input.attacker;
 
   let damage = input.baseDamage * input.multiplier;
-  if (crit) damage *= COMBAT.critMultiplier;
   if (glancing) {
     damage *= parried ? COMBAT.glancingDamage : (input.glancingDamage ?? COMBAT.glancingDamage);
-  } else {
-    damage *= input.cleanMultiplier ?? 1;
   }
+  // The pools stay out of the ailments: they have their own (DoT pool, `dotFactor`).
+  const pool = Math.max(0, 1 + (input.more ?? 0) + (glancing ? 0 : (input.cleanMore ?? 0)));
+  const boost = pool * (crit ? COMBAT.critMultiplier : 1);
+  damage *= boost;
   // Each part of the hit takes its own Damage % and the defender's layer against its type.
   const conv = input.conversion;
   const share = conv && conv.to !== input.type ? clamp(conv.share, 0, 1) : 0;
@@ -177,15 +188,17 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
   damage =
     part(input.type, damage * (1 - share)) +
     (conv && share > 0 ? part(conv.to, damage * share) : 0);
-  damage *= 1 + input.defenderDamageTaken;
   // A block stops a share of the hit (D2: the shield takes the blow), so it keeps its worth
   // against the biggest late hits.
   if (blocked) damage *= 1 - defender.blockReduction;
   if (deflected) damage *= COMBAT.deflectDamage;
+  const ailmentDamage = boost > 0 ? damage / boost : 0;
+  damage *= 1 + input.defenderDamageTaken;
 
   return {
     kind: "hit",
     damage: Math.max(1, Math.round(damage)),
+    ailmentDamage,
     crit,
     blocked,
     deflected,

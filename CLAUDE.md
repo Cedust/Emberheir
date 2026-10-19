@@ -83,6 +83,7 @@ npm run balance -- --act 7 --generations 7 --runs 8 --build all     # the three 
 npm run balance -- --wildfire 10 --build all --runs 2  # ...plus The Last Ember and Wildfire I-X
 npm run balance -- --act 7 --build all --runs 3 --seed 31 --newest 1  # deaths and fight length per stage kind
 npm run balance -- --act 7 --build all --runs 3 --seed 31 --runes 0 --json out.json  # without Runes, raw reports
+npm run balance -- --budget 1 --build all --mastery all --runs 3  # end-game damage budget: sources, what each layer is worth
 npm run format                       # Prettier
 ```
 

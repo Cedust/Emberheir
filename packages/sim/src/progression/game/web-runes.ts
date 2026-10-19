@@ -9,15 +9,20 @@ import type { GameData, GameState, HeroState } from "./state";
  * the node puts the Rune back into the pouch.
  */
 
-/** Bonuses and rules of the Runes in the hero's web sockets (learned sockets only). */
+/**
+ * Bonuses and rules of the Runes in the hero's web sockets (learned sockets only). Each Rune
+ * counts once, even if an older save has it in several sockets.
+ */
 export function webRuneEffects(
   hero: HeroState,
   data: GameData,
 ): { readonly bonuses: StatBonuses; readonly rules: CombatRules } {
   const bonuses: StatBonuses[] = [];
   const rules: CombatRules[] = [];
+  const counted = new Set<string>();
   for (const [nodeId, runeId] of Object.entries(hero.webRunes ?? {})) {
-    if ((hero.learned[nodeId] ?? 0) <= 0) continue;
+    if ((hero.learned[nodeId] ?? 0) <= 0 || counted.has(runeId)) continue;
+    counted.add(runeId);
     const web = data.items.runes.get(runeId)?.web;
     if (web?.bonuses) bonuses.push(web.bonuses);
     if (web?.rules) rules.push(web.rules);
