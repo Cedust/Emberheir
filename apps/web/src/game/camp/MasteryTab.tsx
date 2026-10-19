@@ -2,6 +2,7 @@ import { GAME_DATA, MASTERY_LAYOUT, echoStageName } from "@emberheir/content";
 import {
   type GameState,
   MASTERY,
+  type Infusion,
   type MasteryBlockReason,
   type MasteryNode,
   type MasteryState,
@@ -41,18 +42,32 @@ const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   keystone: "Keystone",
   heatForm: "Heat Form",
   innateForm: "Innate Form",
-  attunement: "Attunement",
 };
 
 const BLOCK_TEXT: Record<MasteryBlockReason, string> = {
   maxed: "Fully learned",
-  noPoints: "No Mastery Points left",
+  noPoints: "No Heirloom Points left",
   notConnected: "Learn the node before it first",
   rankLocked: "Weapon Rank too low",
   keystoneLocked: `Opens after ${MASTERY.keystonePoints} points`,
   forkTaken: "The other side is learned",
+  pathTaken: "Your Heirloom follows another path. A reset switches it.",
   chosen: "Chosen",
 };
+
+const TYPE_NAME: Record<string, string> = {
+  physical: "Physical",
+  fire: "Fire",
+  cold: "Cold",
+  lightning: "Lightning",
+  void: "Void",
+};
+
+/** What a path's first point makes of the weapon. */
+export function infusionText(infusion: Infusion): string {
+  const ailment = infusion.ailment[0]?.toUpperCase() + infusion.ailment.slice(1);
+  return `Build: ${TYPE_NAME[infusion.damageType] ?? infusion.damageType} · ${ailment}. Your first point in this path makes it your weapon's damage and ailment.`;
+}
 
 const hex = (c: number) => `#${c.toString(16).padStart(6, "0")}`;
 const pct = (v: number) => `${Math.round(v * 100)} %`;
@@ -192,7 +207,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
     sceneRef.current?.setView(view);
   });
 
-  if (!tree) return <p className="sub">This weapon has no Mastery.</p>;
+  if (!tree) return <p className="sub">This weapon has no Heirloom tree.</p>;
 
   const hovered = hover ? nodes.find((n) => n.id === hover.id) : undefined;
   const path = selected?.path ? tree.paths.find((p) => p.id === selected.path) : undefined;
@@ -221,7 +236,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
         }
       >
         <div ref={hostRef} className="tree-host mastery-host" data-testid="mastery-canvas" />
-        {failed && <p className="tree-fallback sub">Weapon Mastery needs WebGL.</p>}
+        {failed && <p className="tree-fallback sub">Heirloom needs WebGL.</p>}
         <div className="mastery-plate" data-testid="weapon-name">
           <span className="eyebrow" style={{ color: GRADE_COLOR[gradeIndex] }}>
             {weaponGrade(rank).toUpperCase()} · RANK {rank}
@@ -284,7 +299,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             Fit
           </button>
         </div>
-        <div className="sr-only" role="group" aria-label="Weapon Mastery">
+        <div className="sr-only" role="group" aria-label="Heirloom">
           {nodes.map((n) => (
             <button
               key={n.id}
@@ -304,7 +319,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
           <div className="section-row">
             <span className="eyebrow">WEAPON</span>
             <span className="eyebrow" data-testid="mastery-points">
-              {left} Mastery Point{left === 1 ? "" : "s"}
+              {left} Heirloom Point{left === 1 ? "" : "s"}
             </span>
           </div>
           <dl className="stat-grid">
@@ -343,6 +358,11 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             <h3 className="title-font">{selected.name}</h3>
             <p>{selected.description}</p>
             {selected.form && <p className="sub small">Names the weapon: {selected.form}.</p>}
+            {path && (
+              <p className="sub small" data-testid="path-infusion">
+                {infusionText(path.infusion)}
+              </p>
+            )}
             {selected.fork && <p className="sub small">Fork</p>}
             {!viewOnly && (
               <>
@@ -357,7 +377,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                     : reason === "maxed"
                       ? "Learned"
                       : selected.group
-                        ? selected.default || selected.kind === "attunement"
+                        ? selected.default
                           ? "Choose · free"
                           : masteryRanks(tree, preview, selected.id) === 0 &&
                               preview.choices[selected.group]
@@ -435,7 +455,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                 tip={{
                   name: "Respec",
                   kind: "Hold to confirm",
-                  explain: "All Mastery Points come back. The Echo stays.",
+                  explain: "All Heirloom Points come back. The Echo stays.",
                 }}
                 onConfirm={() => {
                   game.dispatch({ type: "respecMastery" });

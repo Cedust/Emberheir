@@ -11,13 +11,7 @@ const OFF_HANDS: Record<string, HeroLook["offHand"]> = {
   "blood-talisman": "talisman",
   grimoire: "grimoire",
 };
-const CLASSES = new Set<HeroLook["heroClass"]>([
-  "warrior",
-  "reaver",
-  "hunter",
-  "sorcerer",
-  "warlock",
-]);
+const CLASSES = new Set<HeroLook["heroClass"]>(["cinderguard", "ashstrider", "emberseer"]);
 
 /**
  * How the Heir looks in the arena: the class's body, its own weapon in the build's look and the
@@ -36,7 +30,7 @@ export function heroLookOf(
   return {
     heroClass: CLASSES.has(classId as HeroLook["heroClass"])
       ? (classId as HeroLook["heroClass"])
-      : "warrior",
+      : "cinderguard",
     weapon: kind && WEAPONS.has(kind) ? kind : main?.weapon?.range === "ranged" ? "wand" : "sword",
     weaponId,
     weaponLook,

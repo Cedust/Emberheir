@@ -912,6 +912,70 @@ describe("Affliction effects", () => {
     expect(ofType(fight.events, "heal").map((h) => h.amount)).toContain(10);
   });
 
+  it("Cash In ends every DoT and deals what is left of it at once, stronger (Burst Masteries)", () => {
+    const cashIn = (multiplier: number) => {
+      const blow = skill([{ kind: "cashIn", multiplier }]);
+      const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: blow }] });
+      const fight = new Fight(hero, dummy(), 1);
+      fight.advance(2.05);
+      return fight;
+    };
+    const once = cashIn(1);
+    const hit = ofType(once.events, "hit").find((h) => h.source === "X");
+    expect(hit?.damage).toBeGreaterThan(5);
+    expect(once.snapshot().enemy.ailments.some((a) => a.type === "bleed")).toBe(false);
+    expect(ofType(once.events, "payoff").map((p) => p.payoff)).toContain("cashIn");
+    const twice = ofType(cashIn(2).events, "hit").find((h) => h.source === "X");
+    expect(twice?.damage).toBe((hit?.damage ?? 0) * 2);
+  });
+
+  it("Cash In is a hit: Lifesteal heals from it, and nothing happens without a DoT", () => {
+    const blow = skill([{ kind: "cashIn", multiplier: 1 }]);
+    const hero = setup({
+      weapon: bleeding,
+      bonuses: { ...NO_CRIT, lifesteal: 0.5 },
+      rotation: [{ skill: blow }],
+      lifeFraction: 0.5,
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    const hit = ofType(fight.events, "hit").find((h) => h.source === "X");
+    expect(ofType(fight.events, "heal").map((h) => h.amount)).toContain(
+      Math.round((hit?.damage ?? 0) * 0.5),
+    );
+    const clean = setup({ bonuses: NO_CRIT, rotation: [{ skill: blow }] });
+    const none = new Fight(clean, dummy(), 1);
+    none.advance(2.05);
+    expect(ofType(none.events, "payoff").some((p) => p.payoff === "cashIn")).toBe(false);
+  });
+
+  it("Twin Cast repeats every n-th action: a skill for free, an attack as an extra one", () => {
+    const bolt = skill(undefined, [
+      { kind: "spell", damage: { min: 10, max: 10 }, damageType: "fire", ailmentChances: [] },
+    ]);
+    const casts = (twinCast?: number[]) => {
+      const hero = setup({
+        bonuses: { ...NO_CRIT, startingHeat: 100 },
+        rotation: [{ skill: { ...bolt, heatCost: 0 } }],
+        ...(twinCast ? { rules: { twinCast } } : {}),
+      });
+      const fight = new Fight(hero, dummy(), 1);
+      fight.advance(4.05);
+      return ofType(fight.events, "skill");
+    };
+    const plain = casts();
+    const twin = casts([2]);
+    expect(twin.filter((c) => c.via === "twin")).toHaveLength(Math.floor(plain.length / 2));
+    expect(twin.filter((c) => c.via === "twin").every((c) => c.heatCost === 0)).toBe(true);
+    const attacks = (twinCast?: number[]) => {
+      const hero = setup({ bonuses: NO_CRIT, ...(twinCast ? { rules: { twinCast } } : {}) });
+      const fight = new Fight(hero, dummy(), 1);
+      fight.advance(4.05);
+      return ofType(fight.events, "hit").length;
+    };
+    expect(attacks([2])).toBeGreaterThan(attacks());
+  });
+
   it("Ailment Power makes the ailment of a hit stronger (Immolate)", () => {
     const immolate = skill(undefined, [
       {

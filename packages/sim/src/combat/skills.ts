@@ -1,4 +1,5 @@
 import {
+  DOT_AILMENTS,
   advanceCorruption,
   clearAilment,
   dotDamagePerSecond,
@@ -6,6 +7,7 @@ import {
   multiplyPoison,
   poisonStacks,
   remainingBleedDamage,
+  remainingDotDamage,
 } from "./ailments";
 import { COMBAT } from "./constants";
 import {
@@ -19,8 +21,11 @@ import {
   payoffFactor,
   perk,
   mark,
+  payoff,
   rollRange,
   usePerk,
+  weaponAilment,
+  weaponDamageOf,
 } from "./fighter";
 import { addHeat } from "./heat";
 import {
@@ -38,7 +43,7 @@ import {
 } from "./hits";
 import { PERK } from "./perks";
 import { applyEffect, fireTriggers } from "./trigger-effects";
-import type { SkillDefinition, SkillEffect } from "./types";
+import type { AilmentChance, SkillDefinition, SkillEffect } from "./types";
 
 /** Casting a skill (Rotation, Reaction, Opening Move, Echo) and what its effects do. */
 
@@ -53,7 +58,7 @@ export function castSkill(
   level: number,
   heatCost = 0,
   power = 1,
-  via?: "reaction" | "reverb" | "echo" | "opening",
+  via?: "reaction" | "reverb" | "echo" | "opening" | "twin",
 ): void {
   emit(core, {
     t: fightTime(core),
@@ -103,7 +108,9 @@ export function castSkill(
           type: hit.damageType ?? f.setup.weapon.damageType,
           evadable: true,
           multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
-          ailmentChances: hit.ailmentChances ?? [],
+          ailmentChances: hit.infused
+            ? infusedChances(f, hit.ailmentChances)
+            : (hit.ailmentChances ?? []),
           ailmentPower: hit.ailmentPower ?? 1,
           ...(hit.penetration ? { penetration: hit.penetration } : {}),
           fromTrigger: false,
@@ -120,10 +127,12 @@ export function castSkill(
         const result = landHit(core, f, {
           source: skill.name,
           baseDamage: rollRange(core, hit.damage) * levelScale * (hit.falloff ?? 1) ** i * power,
-          type: hit.damageType,
+          type: hit.infused ? f.setup.weapon.damageType : hit.damageType,
           evadable: false,
           multiplier: 1,
-          ailmentChances: hit.ailmentChances ?? [],
+          ailmentChances: hit.infused
+            ? infusedChances(f, hit.ailmentChances)
+            : (hit.ailmentChances ?? []),
           ailmentPower: hit.ailmentPower ?? 1,
           fromTrigger: false,
           precisionApplies: true,
@@ -182,8 +191,10 @@ export function castSkill(
       emit(core, { t: fightTime(core), type: "barrier", side: f.side, amount: Math.round(gain) });
     }
   }
-  if (core.result || via === "reverb" || via === "echo") return;
+  if (core.result || via === "reverb" || via === "echo" || via === "twin") return;
   f.skillCount++;
+  overcharge(core, f);
+  if (core.result) return;
   // Echoing Chant: every few skills repeat themselves, weaker.
   const chant = wr?.echoChant;
   if (chant && f.skillCount % chant.every === 0) {
@@ -197,6 +208,30 @@ export function castSkill(
     f.repeatReadyAt = fightTime(core) + repeat.cooldown;
     castSkill(core, f, first.skill, first.level ?? 1, 0, 1, "echo");
   }
+}
+
+/**
+ * Overcharge (Emberseer): every skill gives a charge; a full set breaks loose as a Nova of the
+ * weapon's element that always applies its ailment.
+ */
+function overcharge(core: FightCore, f: Fighter): void {
+  const rule = f.setup.rules?.overcharge;
+  if (!rule) return;
+  f.charges++;
+  if (f.charges < rule.charges) return;
+  f.charges = 0;
+  const weapon = f.setup.weapon;
+  const ailment = weaponAilment(weapon);
+  payoff(core, f, "overcharge");
+  landHit(core, f, {
+    source: "Overcharge",
+    baseDamage: weaponDamageOf(weapon) * rule.multiplier,
+    type: weapon.damageType,
+    evadable: false,
+    multiplier: 1,
+    ailmentChances: ailment ? [{ ailment, chance: 1 }] : [],
+    fromTrigger: true,
+  });
 }
 
 function applySkillEffect(
@@ -323,6 +358,9 @@ function applySkillEffect(
     case "combust":
       combust(core, f, target, effect.times);
       return;
+    case "cashIn":
+      cashIn(core, f, target, skill, effect.multiplier, level);
+      return;
     case "detonateDots": {
       const perSecond = dotDamagePerSecond(target.ailments);
       if (perSecond <= 0) return;
@@ -346,4 +384,63 @@ function applySkillEffect(
       return;
     }
   }
+}
+
+/**
+ * Cash In: every DoT on the target ends and its remaining damage lands at once, as the skill's
+ * own hit. It scales like the DoTs it ends, plus the skill's level and "more skill damage", and
+ * Lifesteal heals from it like from any hit.
+ */
+function cashIn(
+  core: FightCore,
+  f: Fighter,
+  target: Fighter,
+  skill: SkillDefinition,
+  multiplier: number,
+  level: number,
+): void {
+  const rest = remainingDotDamage(target.ailments);
+  if (rest <= 0) return;
+  for (const ailment of DOT_AILMENTS) {
+    if (!target.ailments[ailment]) continue;
+    target.ailments = clearAilment(target.ailments, ailment);
+    emit(core, { t: fightTime(core), type: "ailmentExpired", side: target.side, ailment });
+  }
+  const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
+  const skillDamage =
+    1 + (f.setup.weaponRules?.skillDamage ?? 0) + (f.setup.rules?.skillDamage ?? 0);
+  const damage = Math.max(
+    1,
+    Math.round(
+      rest *
+        multiplier *
+        levelScale *
+        skillDamage *
+        dotFactor(core, target) *
+        payoffFactor(core, f),
+    ),
+  );
+  emit(core, {
+    t: fightTime(core),
+    type: "hit",
+    side: f.side,
+    source: skill.name,
+    damage,
+    damageType: f.setup.weapon.damageType,
+    crit: false,
+    blocked: false,
+  });
+  payoff(core, f, "cashIn", damage);
+  dealDamage(core, target, damage);
+  if (!core.result) heal(core, f, damage * f.stats.lifesteal);
+}
+
+/** An infused hit applies the weapon's ailment with the best listed chance (none for Stun). */
+function infusedChances(
+  f: Fighter,
+  chances: readonly AilmentChance[] | undefined,
+): AilmentChance[] {
+  const ailment = weaponAilment(f.setup.weapon);
+  if (!ailment || !chances?.length) return [];
+  return [{ ailment, chance: Math.max(...chances.map((c) => c.chance)) }];
 }

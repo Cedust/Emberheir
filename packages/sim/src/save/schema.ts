@@ -71,7 +71,7 @@ const battlePlan = z.object({
 
 const mastery = z.object({
   learned: numbersById,
-  choices: z.partialRecord(z.enum(["heatForm", "innateForm", "keystone", "attunement"]), id),
+  choices: z.partialRecord(z.enum(["heatForm", "innateForm", "keystone"]), id),
   echo: z.string().nullable(),
   bonusPoints: opt(count),
 });

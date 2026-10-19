@@ -198,6 +198,11 @@ export interface WeaponDefinition {
   readonly range: "melee" | "ranged";
   readonly implicit: StatBonuses;
   readonly ailmentChances?: readonly AilmentChance[];
+  /**
+   * The ailment of the weapon's build (Heirloom path): what its Nova and payoffs apply. Default:
+   * the element's ailment, or the first of `ailmentChances`.
+   */
+  readonly ailment?: AilmentType;
   /** Innate triggers of the weapon type, e.g. the Sword's Riposte. */
   readonly triggers?: readonly TriggerSpec[];
   /**
@@ -241,6 +246,8 @@ export type SkillHit =
       readonly precise?: boolean;
       /** Always a Mighty Hit: the roll is at least the Mighty threshold (Master of Payload). */
       readonly mighty?: boolean;
+      /** Takes the weapon's ailment instead of the listed ones (Mastery skills). */
+      readonly infused?: boolean;
     }
   | {
       /** Spell hit with its own base damage, scaled by skill level. Cannot be evaded. */
@@ -255,6 +262,11 @@ export type SkillHit =
       readonly ailmentPower?: number;
       /** Never a Glancing Blow (Seeking Bolt). */
       readonly precise?: boolean;
+      /**
+       * Takes the weapon's damage type and ailment instead of its own (Mastery skills follow the
+       * Heirloom path, klassengeruest-v1.md 5).
+       */
+      readonly infused?: boolean;
     };
 
 /** What a skill does besides its hits. Effects follow the hits, in order. */
@@ -296,6 +308,11 @@ export type SkillEffect =
    * caster heals `leech` of the damage dealt.
    */
   | { readonly kind: "detonateDots"; readonly seconds: number; readonly leech?: number }
+  /**
+   * Cash In (Burst Masteries, klassengeruest-v1.md 5): ends every DoT on the target and deals
+   * their remaining damage × `multiplier` at once, as a hit of the skill (Lifesteal works).
+   */
+  | { readonly kind: "cashIn"; readonly multiplier: number }
   /** Immolate: Combust `times` over after the hit (ailments-v2.md 3.2). */
   | { readonly kind: "combust"; readonly times: number }
   /** Weapon Mastery Sunder: adds stacks of the caster's stacking Sunder (Bone Breaker). */
@@ -395,20 +412,36 @@ export interface TelegraphSpec {
 
 /** Rule changes, e.g. from Keystones. They change rules, not just numbers. */
 export interface CombatRules {
-  // Class Traits (neuausrichtung-v1.md 2.1): each one says how the class fights.
+  // Class Traits (klassengeruest-v1.md 2): each one works in every fight, with every build.
   /**
-   * Warrior, Iron Blood: the enemy's telegraphed Heavy Attacks deal `damageTaken` of their damage,
-   * and each one the Warrior survives gives `heat` Heat.
+   * Cinderguard, Fury: every own hit that lands adds `perHit` damage to the following ones, up to
+   * `max`. Fury holds for the whole fight and starts at 0 in every fight.
    */
-  readonly ironBlood?: { readonly damageTaken: number; readonly heat: number };
-  /** Hunter, Keen Eye: the first hit of a fight and every hit while the enemy winds up are clean Crits. */
-  readonly keenEye?: boolean;
+  readonly fury?: { readonly perHit: number; readonly max: number };
   /**
-   * Sorcerer, Spark: after each skill the next Default Attack deals `damage` more and always
-   * applies the ailment of its element.
+   * Ashstrider, Hunter's Mark: attacks against an enemy that carries one of your ailments have
+   * `precision` more Precision (Timo 2026-10-19: clean hits, not Crits, which belong to AGI).
+   */
+  readonly huntersMark?: { readonly precision: number };
+  /**
+   * Emberseer, Overcharge: every skill gives a charge; at `charges` they break loose as a Nova of
+   * the weapon's element for `multiplier` × Weapon Damage that always applies its ailment.
+   */
+  readonly overcharge?: { readonly charges: number; readonly multiplier: number };
+  /**
+   * Spark (Wand): after each skill the next Default Attack deals `damage` more and always applies
+   * the ailment of its element.
    */
   readonly spark?: { readonly damage: number };
-  /** Warlock, Lingering: own ailments deal `perSecond` more per second of fight, up to `max`. */
+  /** Skills deal this much more damage (Masteries, klassengeruest-v1.md 5). */
+  readonly skillDamage?: number;
+  /** + chance of every ailment your hits can apply (Ailment Masteries). */
+  readonly ailmentChance?: number;
+  /** Your ailments last this much longer (0.2 = +20 %). */
+  readonly ailmentDuration?: number;
+  /** Crits always apply your weapon's ailment (Ravager). */
+  readonly critsApplyAilment?: boolean;
+  /** Own ailments deal `perSecond` more per second of fight, up to `max` (Warlock Mastery). */
   readonly lingering?: { readonly perSecond: number; readonly max: number };
   /** Extra damage taken from every source (0.2 = +20 %). */
   readonly damageTaken?: number;
@@ -416,6 +449,11 @@ export interface CombatRules {
   readonly skillCostMultiplier?: number;
   /** Multiplies the damage of the Default Attack. */
   readonly defaultAttackDamage?: number;
+  /**
+   * Twin Cast (Spellweaver): every n-th action happens twice, for each listed n. A Default Attack
+   * strikes again, a Rotation skill is cast again for free.
+   */
+  readonly twinCast?: readonly number[];
   /** "Heat no longer cools down": Cooling weapons keep their Heat without landing hits. */
   readonly noHeatDecay?: boolean;
   /** Blood Price: every Crit inflicts Bleed. */
@@ -541,6 +579,8 @@ export interface WeaponRules {
   readonly extraAttacksPrecise?: boolean;
   /** Extra attacks add a Sunder stack. */
   readonly extraAttackSunder?: boolean;
+  /** Hits on a stunned enemy add this many Sunder stacks (the Mace's Stun path). */
+  readonly stunnedSunder?: number;
   readonly sunder?: SunderRule;
   /** After these defences the next own hit is clean and a Crit (Read the Blow, Shadowstep). */
   readonly critAfter?: readonly ("evade" | "block" | "parry")[];
@@ -815,6 +855,11 @@ export interface CombatantSetup {
    * (attribute-v1.md); monsters keep the old small steps ("classic", the default).
    */
   readonly attributeScale?: "classic" | "heir";
+  /**
+   * The class's main attribute (klassengeruest-v1.md 3): on the "heir" scale it gives % damage of
+   * every type. Without it no attribute adds damage.
+   */
+  readonly mainAttribute?: Attribute;
   /** Attribute Breakpoint Perks (attribute-v1.md section 4). */
   readonly perks?: readonly PerkId[];
   /**

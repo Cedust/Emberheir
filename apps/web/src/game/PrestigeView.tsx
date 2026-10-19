@@ -1,3 +1,4 @@
+import { MasteryEmblem } from "./ClassEmblem";
 import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
   ATTRIBUTES,
@@ -38,7 +39,7 @@ const LAST_WORDS: Record<string, string> = {
 type Step = "victory" | "branch" | "attributes";
 const STEPS = [
   { id: "victory", name: "Victory" },
-  { id: "branch", name: "Bloodline" },
+  { id: "branch", name: "Mastery" },
   { id: "attributes", name: "Attributes" },
   { id: "heir", name: "Inheritance" },
 ] as const;
@@ -55,14 +56,20 @@ function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
   );
 }
 
-const ROMAN = ["", "I", "II", "III"];
+const ROMAN = ["", "I", "II", "III", "IV", "V"];
 
+/** Colour of the Ash Tree region a Mastery grows from. */
 const BRANCH_COLORS: Record<string, string> = {
   core: "#c9a063",
-  might: "#c9c2b8",
-  arcana: "#5b8cff",
-  rupture: "#d0505c",
-  affliction: "#a35cff",
+  steel: "var(--tone-physical)",
+  blood: "var(--tone-bleed)",
+  venom: "var(--tone-poison)",
+  flame: "var(--tone-fire)",
+  storm: "var(--tone-lightning)",
+  frost: "var(--tone-cold)",
+  void: "var(--tone-void)",
+  trunk: "#c9a063",
+  roots: "#d08a4a",
 };
 
 /** Exploding embers for the Victory step (fixed shape). */
@@ -152,11 +159,17 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
 
   if (step === "branch") {
     return (
-      <section className="screen prestige prestige-branch" aria-label="Bloodline">
+      <section className="screen prestige prestige-branch" aria-label="Mastery">
         <Crumbs step="branch" />
         <header className="seal-head">
-          <h2 className="title-font">THE BLOODLINE GROWS</h2>
-          <p className="sub">Grow a new branch, or deepen one you have. It stays forever.</p>
+          <h2 className="title-font">
+            {state.legacy.branches.length ? "THE MASTERY GROWS" : "CHOOSE YOUR MASTERY"}
+          </h2>
+          <p className="sub">
+            {state.legacy.branches.length
+              ? "Deepen your main Mastery, or learn the first tier of another. It stays forever."
+              : "Your main Mastery gives your title and grows up to Tier V. It stays forever."}
+          </p>
         </header>
         <div className="branch-picks">
           {open.map((b) => {
@@ -177,8 +190,11 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                 style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
                 onClick={() => setBranch(b.id)}
               >
+                <MasteryEmblem masteryId={b.id} size={56} />
                 <span className="eyebrow">
-                  {tier > 1 ? `DEEPEN · TIER ${ROMAN[tier]}` : b.branch.toUpperCase()}
+                  {tier > 1
+                    ? `DEEPEN · TIER ${ROMAN[tier]}`
+                    : (b.axis?.toUpperCase() ?? b.branch.toUpperCase())}
                 </span>
                 <span className="title-font branch-pick-name">
                   {b.name}
@@ -234,6 +250,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
       </header>
       <div className="harvest-stones panel-card">
         <AttributeStones
+          mainAttribute={heroClass.mainAttribute}
           base={own}
           delta={delta}
           canAdd={(a) => left > 0 && allowed(a, 1)}
@@ -289,7 +306,7 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
     {
       kind: "THE HARVEST",
       name: `+${r.skillPoints} Skill Points`,
-      desc: "Spend them in the Skill Tree at Kaelen.",
+      desc: "Spend them in the Ash Tree at Kaelen.",
       tone: "accent",
     },
     ...(r.keystones > keystoneLimit(prestige - 1)
@@ -384,8 +401,8 @@ export function InheritanceView(props: { state: GameState; onWake: () => void })
             <div className="heir-caravan panel-card">
               <Icon name="camp" size={22} />
               <span>
-                <b>Kaelen and Liora</b> travel with the caravan: Skill Tree and Battle Plan at
-                Kaelen, Temper and Kindle at Liora.
+                <b>Kaelen and Liora</b> travel with the caravan: Ash Tree and Battle Plan at Kaelen,
+                Temper and Kindle at Liora.
               </span>
             </div>
           )}

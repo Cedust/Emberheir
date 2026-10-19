@@ -19,18 +19,27 @@ import vitalityUrl from "../assets/attributes/vitality.webp";
 import wisdomUrl from "../assets/attributes/wisdom.webp";
 import { type PerkStatus, usePerkHover } from "../ui/ItemTooltip";
 
+/**
+ * What each attribute gives every class (klassengeruest-v1.md 3); the class's main attribute
+ * also gives Damage of every type (`attributeEffects`).
+ */
 export const ATTRIBUTE_INFO: Record<Attribute, { name: string; short: string; effects: string }> = {
-  strength: { name: "Strength", short: "STR", effects: "Physical Damage · Armor" },
-  dexterity: { name: "Dexterity", short: "DEX", effects: "Crit Chance · Trigger Chance" },
-  intelligence: {
-    name: "Intelligence",
-    short: "INT",
-    effects: "Elemental Damage · Barrier",
+  strength: { name: "Strength", short: "STR", effects: "Armor" },
+  dexterity: { name: "Dexterity", short: "DEX", effects: "Evasion" },
+  intelligence: { name: "Intelligence", short: "INT", effects: "Barrier" },
+  agility: { name: "Agility", short: "AGI", effects: "Attack Speed · Crit Chance" },
+  wisdom: {
+    name: "Wisdom",
+    short: "WIS",
+    effects: "Heat Gain · Ailment Effect · Trigger Chance",
   },
-  agility: { name: "Agility", short: "AGI", effects: "Attack Speed · Evasion" },
-  wisdom: { name: "Wisdom", short: "WIS", effects: "Heat Gain · Ailment Effect" },
   vitality: { name: "Vitality", short: "VIT", effects: "Life · Tenacity" },
 };
+
+/** The effects line of an attribute: the main attribute of the class adds Damage. */
+export function attributeEffects(a: Attribute, main?: Attribute): string {
+  return a === main ? `Damage · ${ATTRIBUTE_INFO[a].effects}` : ATTRIBUTE_INFO[a].effects;
+}
 
 /** Painted attribute icons (Timo's class + attribute sheet, tools/art/cut_class_attributes.py). */
 export const ATTRIBUTE_ICONS: Record<Attribute, string> = {
@@ -97,6 +106,8 @@ export function AttributeStones(props: {
   perkBoard?: boolean;
   /** Buttons between the stones and the Perks (Confirm, Undo). */
   actions?: ReactNode;
+  /** The class's main attribute: its row says it gives Damage. */
+  mainAttribute?: Attribute;
 }) {
   const next = addAttributes(props.base, props.delta);
   const lit = new Set(heroPerks(next, props.boon ?? {}));
@@ -126,9 +137,9 @@ export function AttributeStones(props: {
                 alt=""
                 draggable={false}
               />
-              <div className="attr-text" title={ATTRIBUTE_INFO[a].effects}>
+              <div className="attr-text" title={attributeEffects(a, props.mainAttribute)}>
                 <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
-                <span className="sub small">{ATTRIBUTE_INFO[a].effects}</span>
+                <span className="sub small">{attributeEffects(a, props.mainAttribute)}</span>
               </div>
               <div className="attr-notches">
                 {Array.from({ length: ATTRIBUTE_RULES.max }, (_, i) => {

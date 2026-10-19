@@ -136,7 +136,7 @@ describe("Weapon Mastery content", () => {
   });
 
   it("all paths can be learned in a real game, and the name follows the Keystone and Echo", () => {
-    let s = newGame(GAME_DATA, { seed: 2, classId: "warrior" });
+    let s = newGame(GAME_DATA, { seed: 2, classId: "cinderguard" });
     s = { ...s, hero: { ...s.hero, level: 100 }, legacy: { ...s.legacy, prestige: 6 } };
     const tree = WEAPON_MASTERY.sword;
     if (!tree) throw new Error("sword");
@@ -145,10 +145,12 @@ describe("Weapon Mastery content", () => {
     };
     for (const id of ["precision", "precision", "steady-hand", "full-swing"]) learn(id);
     // A full path: both Techniques, one side of each fork, the Path Master.
-    for (const id of ["riposte-t1", "riposte-t1", "riposte-t1", "riposte-counterweight"]) learn(id);
-    for (const id of ["riposte-t2", "riposte-t2", "riposte-t2", "riposte-iron-wall"]) learn(id);
-    learn("riposte-master");
-    expect(() => learn("riposte-read-the-blow")).toThrow(/forkTaken/);
+    for (const id of ["winter-t1", "winter-t1", "winter-t1", "winter-counterweight"]) learn(id);
+    for (const id of ["winter-t2", "winter-t2", "winter-t2", "winter-shatterpoint"]) learn(id);
+    learn("winter-master");
+    expect(() => learn("winter-read-the-blow")).toThrow(/forkTaken/);
+    // One path at a time: the Winter build is Cold, the other paths are closed.
+    expect(() => learn("edge-t1")).toThrow(/pathTaken/);
     learn("perfect-parry");
     expect(heroWeaponName(s, GAME_DATA)).toBe("Exalted Parrying Blade");
     s = {
@@ -163,6 +165,8 @@ describe("Weapon Mastery content", () => {
     expect(setup.weaponRules?.extraAttacksTrigger).toBe(true);
     expect(setup.weaponRules?.parry).toBeCloseTo(0.12);
     expect(setup.weapon.precision).toBeCloseTo(0.85);
+    expect(setup.weapon.damageType).toBe("cold");
+    expect(setup.weapon.ailmentChances).toEqual([{ ailment: "chill", chance: 0.25 }]);
   });
 
   it("Echoes belong to the seven act bosses and grow with their stage", () => {
@@ -174,11 +178,29 @@ describe("Weapon Mastery content", () => {
     }
   });
 
-  it("Wand Attunement turns Spark and Shockbolt into Cold", () => {
-    let s = newGame(GAME_DATA, { seed: 2, classId: "sorcerer" });
-    s = applyAction(s, GAME_DATA, { type: "learnMastery", nodeId: "attune-cold" });
+  it("the first path is the start; a point in another path infuses Spark and Shockbolt", () => {
+    let s = newGame(GAME_DATA, { seed: 2, classId: "emberseer" });
+    expect(heroSetup(s, GAME_DATA).setup.weapon.damageType).toBe("void");
+    expect(heroSetup(s, GAME_DATA).setup.rotation[0]?.skill.name).toBe("Voidbolt");
+    s = { ...s, hero: { ...s.hero, level: 10 } };
+    s = applyAction(s, GAME_DATA, { type: "learnMastery", nodeId: "rime-t1" });
     const { setup } = heroSetup(s, GAME_DATA);
     expect(setup.weapon.damageType).toBe("cold");
     expect(setup.rotation[0]?.skill.name).toBe("Frostbolt");
+  });
+
+  it("every weapon has three paths, the class's core first, then Fire, Lightning, Cold", () => {
+    const order = ["fire", "lightning", "cold"];
+    for (const tree of Object.values(WEAPON_MASTERY)) {
+      expect(tree.paths, tree.weaponId).toHaveLength(3);
+      const [core, ...rest] = tree.paths.map((p) => p.infusion);
+      expect(["physical", "void"]).toContain(core?.damageType);
+      const elements = rest.map((i) => i.damageType).filter((t) => t !== "physical");
+      expect(elements, tree.weaponId).toEqual(order.filter((t) => elements.includes(t as never)));
+    }
+    const types = Object.values(WEAPON_MASTERY).flatMap((t) => t.paths.map((p) => p.infusion));
+    const count = (type: string) => types.filter((i) => i.damageType === type).length;
+    expect([count("fire"), count("lightning"), count("cold"), count("void")]).toEqual([5, 5, 5, 2]);
+    expect(count("physical")).toBe(7);
   });
 });

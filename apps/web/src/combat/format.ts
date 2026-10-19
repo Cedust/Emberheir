@@ -33,17 +33,19 @@ const PAYOFF_NAMES: Record<PayoffKind, string> = {
   overflow: "Overflow",
   combust: "Combust",
   collapse: "Collapse",
-  ironBlood: "Iron Blood",
-  keenEye: "Keen Eye",
+  fury: "Fury",
+  overcharge: "Overcharge",
   spark: "Spellcharge",
   flashpoint: "Flashpoint",
   criticalMass: "Critical Mass",
   conduction: "Conduction",
+  cashIn: "Cash In",
 };
 
 const VIA = {
   reaction: "Reaction",
   reverb: "Reverb",
+  twin: "Twin Cast",
   echo: "Echo",
   opening: "Opening Move",
 } as const;

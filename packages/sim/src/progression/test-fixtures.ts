@@ -75,7 +75,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "a",
       name: "A",
-      branch: "might",
+      branch: "steel",
       kind: "minor",
       description: "",
       links: ["b"],
@@ -86,7 +86,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "b",
       name: "B",
-      branch: "might",
+      branch: "steel",
       kind: "skill",
       description: "",
       links: ["k"],
@@ -98,7 +98,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "k",
       name: "K",
-      branch: "might",
+      branch: "steel",
       kind: "keystone",
       description: "",
       links: [],
@@ -109,7 +109,7 @@ export const TEST_TREE: SkillTreeDefinition = {
     {
       id: "r",
       name: "R",
-      branch: "arcana",
+      branch: "storm",
       kind: "notable",
       description: "",
       links: [],
@@ -139,7 +139,15 @@ export const TEST_MASTERY: WeaponMasteryTree = {
   precision: 0.7,
   rangeMin: 0.4,
   rangeMax: 1.1,
-  paths: [{ id: "edge", name: "Edge", theme: "", color: 0xffffff }],
+  paths: [
+    {
+      id: "edge",
+      name: "Edge",
+      theme: "",
+      color: 0xffffff,
+      infusion: { damageType: "physical", ailment: "bleed", chance: 0 },
+    },
+  ],
   nodes: [
     node({ id: "refine", kind: "refine", maxRanks: 3, effect: { precision: 0.05 } }),
     node({ id: "swing", kind: "refine", maxRanks: 3, effect: { rangeMax: 0.1 } }),
@@ -227,6 +235,8 @@ export const TEST_CLASSES: readonly HeroClass[] = [
   {
     id: "test-fighter",
     name: "Fighter",
+    mainAttribute: "strength",
+    focus: "Strong attacks",
     weapons: ["test-sword"],
     startingAttributes: TEST_ATTRIBUTES,
     trait: { name: "Tough", description: "" },
@@ -237,6 +247,8 @@ export const TEST_CLASSES: readonly HeroClass[] = [
   {
     id: "test-caster",
     name: "Caster",
+    mainAttribute: "intelligence",
+    focus: "Ailments",
     weapons: ["test-wand"],
     startingAttributes: TEST_ATTRIBUTES,
     trait: { name: "Spark", description: "" },

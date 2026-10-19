@@ -109,82 +109,18 @@ describe("migrations", () => {
     expect(stash[0]?.item.name).toMatch(/ \(v2\)$/);
     // Already current: nothing to do.
     expect(deserializeStash(json, data)[0]?.item).toEqual(shield("a"));
-    expect(() => deserializeStash(JSON.stringify({ version: 1, items: [{ x: 0 }] }))).toThrow(
-      /Stash is broken/,
-    );
+    expect(() =>
+      deserializeStash(JSON.stringify({ version: SAVE_VERSION, items: [{ x: 0 }] })),
+    ).toThrow(/Stash is broken/);
   });
 });
 
-describe("the real migrations", () => {
-  it("2: Ailment Duration rolls become Ailment Effect with the same quality", () => {
-    const s = start();
-    const old = {
-      ...shield("old"),
-      affixes: [{ affixId: "ailment-duration", quality: 0.7 }],
-    };
-    const v1 = { ...s, version: 1, inventory: [{ item: old, x: 0, y: 0 }] };
-    const migrated = deserializeGame(JSON.stringify(v1));
-    expect(migrated.version).toBe(SAVE_VERSION);
-    expect(migrated.inventory[0]?.item.affixes).toEqual([
-      { affixId: "ailment-effect", quality: 0.7 },
-    ]);
-  });
-
-  it("3: Weapon Mastery v2 gives the path points back and keeps Refine and the choices", () => {
-    const s = start();
-    const mastery = {
-      learned: { precision: 2, "riposte-1": 1, "riposte-counterweight": 1 },
-      choices: { keystone: "ks1" },
-      echo: null,
-    };
-    const v3 = { ...s, version: 3, hero: { ...s.hero, mastery } };
-    const migrated = deserializeGame(JSON.stringify(v3));
-    expect(migrated.hero.mastery.learned).toEqual({ precision: 2 });
-    expect(migrated.hero.mastery.choices).toEqual({ keystone: "ks1" });
-  });
-
-  it("4: Skill Web v3 gives every Skill Point back and keeps the class start", () => {
-    const s = start();
-    const hero = {
-      ...s.hero,
-      classId: "sorcerer",
-      unspentSkillPoints: 2,
-      learned: {
-        "arcana-sorcerers-spark": 1,
-        "arcana-glow": 1,
-        "arcana-arcane-conduit": 1,
-        "pb-stormcaller-keystone-2": 1,
-      },
-      rotation: ["chain-lightning", null],
-    };
-    const v4 = { ...s, version: 4, hero };
-    const migrated = deserializeGame(JSON.stringify(v4));
-    expect(migrated.hero.learned).toEqual({ "arcana-sorcerers-sigil": 1 });
-    // One plain node and two Keystones (3 points each).
-    expect(migrated.hero.unspentSkillPoints).toBe(2 + 1 + 3 + 3);
-    expect(migrated.hero.rotation).toEqual([null, null]);
-  });
-
-  it("7: the Fire Wand becomes the Wand, Fire Attunement and Blaze are gone", () => {
-    const s = start();
-    const hero = {
-      ...s.hero,
-      classId: "sorcerer",
-      weaponId: "fire-wand",
-      mastery: {
-        learned: { precision: 2, "blaze-t1": 3, "blaze-kindle": 1, "storm-arc": 1, "rime-t1": 1 },
-        choices: { attunement: "attune-fire", keystone: "prism" },
-        echo: null,
-      },
-      rotation: ["fire-lance@cold", "chain-lightning"],
-    };
-    const wand = { ...shield("w"), baseId: "fire-wand" };
-    const v7 = { ...s, version: 7, hero, inventory: [{ item: wand, x: 0, y: 0 }] };
-    const migrated = deserializeGame(JSON.stringify(v7));
-    expect(migrated.hero.weaponId).toBe("wand");
-    expect(migrated.inventory[0]?.item.baseId).toBe("wand");
-    expect(migrated.hero.mastery.learned).toEqual({ precision: 2, "rime-t1": 1 });
-    expect(migrated.hero.mastery.choices).toEqual({ keystone: "prism" });
-    expect(migrated.hero.rotation).toEqual([null, "chain-lightning"]);
+describe("the Klassengerüst", () => {
+  it("drops saves and stashes from before version 9 instead of converting them", () => {
+    const old = { ...JSON.parse(serializeGame(start())), version: 8 };
+    expect(() => deserializeGame(JSON.stringify(old), data)).toThrow(/not supported/);
+    expect(() => deserializeStash(JSON.stringify({ version: 8, items: [] }))).toThrow(
+      /not supported/,
+    );
   });
 });

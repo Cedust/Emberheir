@@ -27,17 +27,10 @@ import type {
  */
 
 export type MasteryNodeKind =
-  | "refine"
-  | "technique"
-  | "notable"
-  | "master"
-  | "keystone"
-  | "heatForm"
-  | "innateForm"
-  | "attunement";
+  "refine" | "technique" | "notable" | "master" | "keystone" | "heatForm" | "innateForm";
 
 /** Exclusive groups: one node of a group is chosen at a time. */
-export type MasteryGroup = "heatForm" | "innateForm" | "keystone" | "attunement";
+export type MasteryGroup = "heatForm" | "innateForm" | "keystone";
 
 /** What a node does (per rank for multi-rank nodes). */
 export interface MasteryEffect {
@@ -59,8 +52,6 @@ export interface MasteryEffect {
   readonly triggers?: readonly TriggerSpec[];
   /** Changes a weapon trigger by id (Heavy Head: Stagger every 3rd Smash). */
   readonly weaponTriggers?: readonly { readonly id: string; readonly n: number }[];
-  /** Attunement: the element of the Default Attack and the Innate (Wand, Staff). */
-  readonly attunement?: { readonly damageType: DamageType; readonly ailment: AilmentType };
   /** Extra ailment chances of the Default Attack. */
   readonly ailmentChances?: readonly AilmentChance[];
   /** The Innate Form: replaces the weapon's Innate skill. */
@@ -98,7 +89,7 @@ export interface MasteryNode {
   readonly links?: readonly string[];
   /** The node needs a point in Refine instead of a linked node. */
   readonly requiresRefine?: boolean;
-  /** Exclusive group (Heat Form, Innate Form, Keystone, Attunement). */
+  /** Exclusive group (Heat Form, Innate Form, Keystone). */
   readonly group?: MasteryGroup;
   /** The group's starting choice: free, chosen until another one is picked (Steady, Fire). */
   readonly default?: boolean;
@@ -110,12 +101,25 @@ export interface MasteryNode {
   readonly y: number;
 }
 
+/**
+ * A Heirloom path's Infusion (klassengeruest-v1.md 4): the damage type of the weapon's hits and
+ * the ailment they apply. Stun is the Mace's core instead of an ailment.
+ */
+export interface Infusion {
+  readonly damageType: DamageType;
+  readonly ailment: AilmentType | "stun";
+  /** Chance of the Default Attack to apply the ailment (none for Stun). */
+  readonly chance: number;
+}
+
+/** One of the weapon's three builds: its first point sets the Infusion. */
 export interface MasteryPath {
   readonly id: string;
   readonly name: string;
   readonly theme: string;
   /** Colour of the path's engraving (0xRRGGBB). */
   readonly color: number;
+  readonly infusion: Infusion;
 }
 
 /** One weapon's Mastery tree. */
@@ -276,7 +280,7 @@ export function pointsSpent(tree: WeaponMasteryTree, state: MasteryState): numbe
   }
   for (const id of Object.values(state.choices)) {
     const node = tree.nodes.find((n) => n.id === id);
-    if (node && !node.default && node.kind !== "attunement") spent += 1;
+    if (node && !node.default) spent += 1;
   }
   return spent;
 }
@@ -299,6 +303,8 @@ export type MasteryBlockReason =
   | "keystoneLocked"
   /** The other side of the fork is learned. */
   | "forkTaken"
+  /** Another path is the weapon's build (one path at a time, a reset at Kaelen switches). */
+  | "pathTaken"
   | "chosen";
 
 /** Why a node cannot be learned (or chosen) right now, or undefined if it can. */
@@ -320,15 +326,37 @@ export function masteryBlockReason(
       if (spentOutside < MASTERY.keystonePoints) return "keystoneLocked";
     }
     // Switching inside a paid group is free; the first paid choice costs a point.
-    const paid = current !== undefined && !current.default && node.kind !== "attunement";
-    const costs = !node.default && node.kind !== "attunement" && !paid;
+    const paid = current !== undefined && !current.default;
+    const costs = !node.default && !paid;
     return costs && free < 1 ? "noPoints" : undefined;
   }
   const ranks = state.learned[id] ?? 0;
   if (ranks >= (node.maxRanks ?? 1)) return "maxed";
+  if (ranks === 0 && node.path && learnedPath(tree, state, node.path)) return "pathTaken";
   if (ranks === 0 && forkTaken(tree, state, node)) return "forkTaken";
   if (ranks === 0 && !connected(tree, state, node)) return "notConnected";
   return free < 1 ? "noPoints" : undefined;
+}
+
+/** The path whose nodes are learned, if it is not `except`. */
+function learnedPath(
+  tree: WeaponMasteryTree,
+  state: MasteryState,
+  except?: string,
+): string | undefined {
+  for (const n of tree.nodes) {
+    if (n.path && n.path !== except && (state.learned[n.id] ?? 0) > 0) return n.path;
+  }
+  return undefined;
+}
+
+/**
+ * The weapon's build: the path with learned nodes, or the first path (the class's core) while
+ * none is learned.
+ */
+export function activePath(tree: WeaponMasteryTree, state: MasteryState): MasteryPath | undefined {
+  const id = learnedPath(tree, state);
+  return tree.paths.find((p) => p.id === id) ?? tree.paths[0];
 }
 
 function forkTaken(tree: WeaponMasteryTree, state: MasteryState, node: MasteryNode): boolean {
@@ -391,7 +419,7 @@ export interface MasteryBuild {
   readonly triggers: readonly TriggerSpec[];
   readonly rules: CombatRules;
   readonly weaponRules: WeaponRules;
-  /** The Innate skill after Innate Form and Attunement. */
+  /** The Innate skill after Innate Form and Infusion. */
   readonly innate: SkillDefinition | undefined;
   readonly precision: number;
   readonly rangeMin: number;
@@ -423,7 +451,7 @@ export function buildMasteryWeapon(
   let rangeMax = tree.rangeMax;
   let heatPerHit = 1;
   let heatForm: HeatBehavior = "steady";
-  let attunement: MasteryEffect["attunement"];
+  const infusion = activePath(tree, state)?.infusion;
   let innateSkill = innate;
   const bonuses: StatBonuses[] = [];
   const triggers: TriggerSpec[] = [];
@@ -445,7 +473,6 @@ export function buildMasteryWeapon(
     rangeMax += e.rangeMax ?? 0;
     heatPerHit *= e.heatPerHit ?? 1;
     if (e.heatForm) heatForm = e.heatForm;
-    if (e.attunement) attunement = e.attunement;
     if (e.innate) innateSkill = e.innate;
     if (e.rangeMaxCap !== undefined) maxCap = Math.min(maxCap ?? Infinity, e.rangeMaxCap);
     if (e.rangeMinSet !== undefined) minSet = e.rangeMinSet;
@@ -473,13 +500,18 @@ export function buildMasteryWeapon(
   // Focused Will, Anvil and Master of the Edge: no Glancing Blows at all.
   if (merged.noGlancing || toCrit !== undefined) precision = 1;
 
-  const damageType = attunement?.damageType ?? base.damageType;
-  const baseAilments = (base.ailmentChances ?? []).map((c) =>
-    attunement && isElementalAilment(c.ailment) ? { ...c, ailment: attunement.ailment } : c,
-  );
+  const damageType = infusion?.damageType ?? base.damageType;
+  // The Infusion replaces the weapon's own ailments with the path's (Stun has its Stagger).
+  const baseAilments: AilmentChance[] = !infusion
+    ? [...(base.ailmentChances ?? [])]
+    : infusion.ailment === "stun"
+      ? []
+      : [{ ailment: infusion.ailment, chance: infusion.chance }];
   const weapon: WeaponDefinition = {
     ...base,
     damageType,
+    implicit: infuseImplicit(base.implicit, damageType),
+    ...(infusion && infusion.ailment !== "stun" ? { ailment: infusion.ailment } : {}),
     damage: { min: weaponDamage * rangeMin, max: weaponDamage * rangeMax },
     spellPower: growth * MASTERY.damageFactor,
     heatBehavior: heatForm,
@@ -504,7 +536,7 @@ export function buildMasteryWeapon(
       : {}),
   };
   const patched = innateSkill ? patchInnate(innateSkill, innatePatches) : undefined;
-  const finalInnate = patched && attunement ? attuneSkill(patched, attunement) : patched;
+  const finalInnate = patched && infusion ? infuseSkill(patched, infusion) : patched;
   const fightRules: WeaponRules = {
     ...Object.fromEntries(
       Object.entries(merged).filter(([k]) => k !== "noGlancing" && k !== "sunder"),
@@ -575,9 +607,6 @@ export function patchInnate(
   };
 }
 
-const ELEMENTAL_AILMENTS: readonly AilmentType[] = ["burn", "chill", "shock", "corruption"];
-const isElementalAilment = (a: AilmentType) => ELEMENTAL_AILMENTS.includes(a);
-
 const ELEMENT_WORD: Partial<Record<DamageType, string>> = {
   fire: "Fire",
   cold: "Frost",
@@ -585,40 +614,108 @@ const ELEMENT_WORD: Partial<Record<DamageType, string>> = {
   void: "Void",
 };
 
+/** A Physical weapon infused with an element turns its Physical implicit elemental (and back). */
+function infuseImplicit(implicit: StatBonuses, damageType: DamageType): StatBonuses {
+  const elemental = damageType !== "physical";
+  const swap: Record<string, string> = elemental
+    ? { physicalDamage: "elementalDamage", physicalPenetration: "elementalPenetration" }
+    : { elementalDamage: "physicalDamage", elementalPenetration: "physicalPenetration" };
+  return Object.fromEntries(
+    Object.entries(implicit).map(([k, v]) => [swap[k] ?? k, v]),
+  ) as StatBonuses;
+}
+
 /**
- * Attunement: an elemental Innate takes the weapon's element and its ailment. "Shockbolt" becomes
- * "Frostbolt", "Shock Lance" becomes "Frost Lance".
+ * Infusion (klassengeruest-v1.md 4): the Innate takes the path's damage type and ailment.
+ * "Shockbolt" becomes "Voidbolt", "Explosive Bolt" deals Cold and Chills on a Cold Crossbow.
+ * Skills that buff an ailment chance (the Dagger's Coats) coat the path's ailment instead.
  */
-export function attuneSkill(
-  skill: SkillDefinition,
-  attunement: { readonly damageType: DamageType; readonly ailment: AilmentType },
-): SkillDefinition {
-  const from = skill.hits.find((h) => h.kind === "spell")?.damageType;
-  if (!from || from === "physical" || from === attunement.damageType) return skill;
-  const fromWord = ELEMENT_WORD[from] ?? "";
-  const toWord = ELEMENT_WORD[attunement.damageType] ?? "";
-  const rename = (text: string) => (fromWord ? text.split(fromWord).join(toWord) : text);
+const AILMENT_VERB: Record<AilmentType, string> = {
+  bleed: "Bleeds",
+  poison: "Poisons",
+  burn: "Burns",
+  chill: "Chills",
+  shock: "Shocks",
+  corruption: "Corrupts",
+};
+const AILMENT_NOUN: Record<AilmentType, string> = {
+  bleed: "Bleed",
+  poison: "Poison",
+  burn: "Burn",
+  chill: "Chill",
+  shock: "Shock",
+  corruption: "Corruption",
+};
+const TYPE_WORD: Record<DamageType, string> = {
+  physical: "Physical",
+  fire: "Fire",
+  cold: "Cold",
+  lightning: "Lightning",
+  void: "Void",
+};
+
+/** A skill text after the Infusion: "as Fire. Always Burns." reads "as Cold. Always Chills." */
+function infuseText(text: string, infusion: Infusion): string {
+  let out = text;
+  for (const t of Object.keys(TYPE_WORD) as DamageType[]) {
+    out = out
+      .split(`as ${TYPE_WORD[t]}`)
+      .join(infusion.damageType === "physical" ? "" : `as ${TYPE_WORD[infusion.damageType]}`);
+  }
+  if (infusion.ailment === "stun") return out.replace(/ +\./g, ".");
+  const to = infusion.ailment;
+  for (const a of Object.keys(AILMENT_VERB) as AilmentType[]) {
+    if (a === to) continue;
+    out = out.split(AILMENT_VERB[a]).join(AILMENT_VERB[to]);
+    out = out.split(` ${AILMENT_NOUN[a]}`).join(` ${AILMENT_NOUN[to]}`);
+  }
+  return out.replace(/ +\./g, ".").replace(/\b(\w+) or \1\b/g, "$1");
+}
+
+export function infuseSkill(skill: SkillDefinition, infusion: Infusion): SkillDefinition {
+  const to = infusion.damageType;
+  const ailment = infusion.ailment;
+  const from =
+    skill.hits.find((h) => h.kind === "spell")?.damageType ??
+    skill.hits.find((h) => h.kind === "weapon" && h.damageType)?.damageType;
+  const fromWord = from ? (ELEMENT_WORD[from] ?? "") : "";
+  const toWord = ELEMENT_WORD[to] ?? "";
+  const rename = (text: string) =>
+    fromWord && toWord && from !== to ? text.split(fromWord).join(toWord) : text;
+  const chances = (list: readonly AilmentChance[] | undefined) => {
+    if (!list) return undefined;
+    if (ailment === "stun") return [];
+    const best = Math.max(0, ...list.map((c) => c.chance));
+    return list.length ? [{ ailment, chance: best }] : [];
+  };
+  const effects = skill.effects?.map((e) =>
+    e.kind === "buff" && e.stat.endsWith("Chance") && e.stat !== "critChance" && ailment !== "stun"
+      ? { ...e, stat: `${ailment}Chance` as typeof e.stat }
+      : e,
+  );
+  const changed =
+    from !== undefined && from !== to
+      ? true
+      : skill.hits.some((h) => h.ailmentChances?.some((c) => c.ailment !== ailment)) ||
+        (effects ?? []).some((e, i) => e !== skill.effects?.[i]);
+  if (!changed) return skill;
   return {
     ...skill,
-    id: `${skill.id}@${attunement.damageType}`,
+    id: `${skill.id}@${to}-${ailment}`,
     name: rename(skill.name),
-    description: rename(skill.description),
-    tags: skill.tags.map((t) => (t === from ? attunement.damageType : t)),
-    hits: skill.hits.map((h) =>
-      h.kind === "spell" && h.damageType === from
-        ? {
-            ...h,
-            damageType: attunement.damageType,
-            ...(h.ailmentChances
-              ? {
-                  ailmentChances: h.ailmentChances.map((c) =>
-                    isElementalAilment(c.ailment) ? { ...c, ailment: attunement.ailment } : c,
-                  ),
-                }
-              : {}),
-          }
-        : h,
-    ),
+    description: infuseText(skill.description, infusion),
+    tags: skill.tags.map((t) => (t === from ? to : t)),
+    hits: skill.hits.map((h) => {
+      const ac = chances(h.ailmentChances);
+      const typed =
+        h.kind === "spell"
+          ? { ...h, damageType: to }
+          : h.damageType !== undefined
+            ? { ...h, damageType: to }
+            : h;
+      return ac ? { ...typed, ailmentChances: ac } : typed;
+    }),
+    ...(effects ? { effects } : {}),
   };
 }
 

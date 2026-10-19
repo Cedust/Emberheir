@@ -123,46 +123,55 @@ describe("built-in payoffs", () => {
 });
 
 describe("Class Traits", () => {
-  const SLAM: SkillDefinition = {
-    ...TEST_SKILL,
-    id: "slam",
-    name: "Slam",
-    heatCost: 0,
-    hits: [{ kind: "weapon", multiplier: 3 }],
-  };
-  const boss = () =>
-    setup({
-      name: "Boss",
-      weapon: { ...TEST_WEAPON, attacksPerSecond: 0 },
-      baseLife: 100_000,
+  it("Fury: every hit that lands adds 2 % to the next, up to 20 %, and flares once when full", () => {
+    const cinderguard = setup({
+      rules: { fury: { perHit: 0.02, max: 0.2 } },
       bonuses: NO_CRIT,
-      telegraphs: [{ skill: SLAM, interval: 2, windup: 1 }],
+      weapon: { ...TEST_WEAPON, damage: { min: 100, max: 100 } },
     });
-
-  it("Iron Blood: Heavy Attacks hit the Warrior softer and give Heat", () => {
-    const warrior = (rules?: CombatantSetup["rules"]) =>
-      dummy({ baseLife: 1000, ...(rules ? { rules } : {}) });
-    const slam = (hero: CombatantSetup) =>
-      ofType(play(hero, boss(), 3.1).events, "hit").find((h) => h.source === "Slam")?.damage ?? 0;
-    const iron = { ironBlood: { damageTaken: 0.75, heat: 20 } };
-    expect(slam(warrior(iron))).toBe(Math.round(slam(warrior()) * 0.75));
-    const fight = play(warrior(iron), boss(), 3.1);
-    expect(payoffs(fight.events, "ironBlood")).toHaveLength(1);
-    expect(fight.snapshot().hero.heat).toBeGreaterThanOrEqual(20);
+    const fight = play(cinderguard, dummy(), 14.05);
+    const hits = ofType(fight.events, "hit").filter((h) => h.side === "hero");
+    expect(hits.slice(0, 3).map((h) => h.damage)).toEqual([100, 102, 104]);
+    expect(hits.at(-1)?.damage).toBe(120);
+    expect(payoffs(fight.events, "fury")).toHaveLength(1);
+    expect(fight.snapshot().hero.trait).toMatchObject({ kind: "fury", value: 10, max: 10 });
   });
 
-  it("Keen Eye: the first hit and hits into a wind-up are clean Crits", () => {
-    const hunter = setup({
-      rules: { keenEye: true },
+  it("Hunter's Mark: more Precision against an enemy with one of your ailments", () => {
+    const hunter = (ailing: boolean) =>
+      setup({
+        rules: { huntersMark: { precision: 0.5 } },
+        weapon: { ...always("bleed", ailing ? {} : { ailmentChances: [] }), precision: 0.5 },
+      });
+    const glancing = (ailing: boolean) =>
+      ofType(play(hunter(ailing), dummy(), 10.05).events, "hit").filter(
+        (h) => h.side === "hero" && h.glancing,
+      ).length;
+    // Without an ailment half the attacks glance; once Bleed is on the enemy none do.
+    expect(glancing(false)).toBeGreaterThanOrEqual(3);
+    expect(glancing(true)).toBeLessThanOrEqual(2);
+  });
+
+  it("Overcharge: every third skill sets off a Nova of the weapon's element with its ailment", () => {
+    const spell: SkillDefinition = {
+      ...TEST_SKILL,
+      id: "spell",
+      heatCost: 10,
+      hits: [{ kind: "spell", damage: { min: 1, max: 1 }, damageType: "cold" }],
+    };
+    const emberseer = setup({
+      rules: { overcharge: { charges: 3, multiplier: 1.5 } },
+      weapon: { ...TEST_WEAPON, damageType: "void", heatPerHit: 10, attacksPerSecond: 2 },
+      rotation: [{ skill: spell }],
       bonuses: NO_CRIT,
-      weapon: { ...TEST_WEAPON, precision: 0 },
     });
-    const fight = play(hunter, boss(), 3.05);
-    const hits = ofType(fight.events, "hit").filter((h) => h.side === "hero");
-    // 1 s: the opener; 2 s: into the wind-up that starts the same moment; 3 s: the Slam has
-    // landed, a plain hit again.
-    expect(hits.map((h) => h.crit)).toEqual([true, true, false]);
-    expect(hits.every((h) => !h.glancing || h.crit === false)).toBe(true);
+    const fight = play(emberseer, dummy(), 6.05);
+    const novas = ofType(fight.events, "hit").filter((h) => h.source === "Overcharge");
+    expect(payoffs(fight.events, "overcharge")).toHaveLength(novas.length);
+    expect(novas.length).toBeGreaterThanOrEqual(1);
+    expect(novas[0]?.damage).toBe(15);
+    expect(novas[0]?.damageType).toBe("void");
+    expect(ofType(fight.events, "ailment").some((a) => a.ailment === "corruption")).toBe(true);
   });
 
   it("Spark: the Default Attack after a skill hits harder and sets its element's ailment", () => {
@@ -198,9 +207,9 @@ describe("Class Traits", () => {
   });
 
   it("merge from one source: the class", () => {
-    const rules = mergeRules({ keenEye: true }, { spark: { damage: 0.5 } }, undefined);
-    expect(rules.keenEye).toBe(true);
-    expect(rules.spark).toEqual({ damage: 0.5 });
-    expect(mergeRules({}).ironBlood).toBeUndefined();
+    const fury = { perHit: 0.02, max: 0.2 };
+    const rules = mergeRules({ fury }, { fury: { perHit: 1, max: 1 } }, undefined);
+    expect(rules.fury).toEqual(fury);
+    expect(mergeRules({}).overcharge).toBeUndefined();
   });
 });

@@ -7,6 +7,8 @@ export interface BalanceArgs {
   class: string;
   /** Act mode: autopilot build id, "all" (every build of the class) or "" (one per weapon). */
   build: string;
+  /** Act mode: main Mastery id, "all" (each of the class's three in turn) or "" (the build's). */
+  mastery: string;
   /** Rotation skill ids; empty = the weapon's Start Skill. */
   skills: string[];
   /** Enemy id, or "all" for every Act 1 enemy. */
@@ -44,6 +46,7 @@ const DEFAULTS: BalanceArgs = {
   weapon: "all",
   class: "all",
   build: "",
+  mastery: "",
   skills: [],
   enemy: "all",
   level: 1,
@@ -77,6 +80,7 @@ const STRING_FLAGS = {
   "--enemy": "enemy",
   "--class": "class",
   "--build": "build",
+  "--mastery": "mastery",
   "--json": "json",
 } as const;
 

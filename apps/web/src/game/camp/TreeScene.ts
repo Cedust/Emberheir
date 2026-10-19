@@ -11,13 +11,21 @@ import {
   Text,
 } from "pixi.js";
 import { Fx } from "../battle/fx";
-import { type AshTreeArt, drawTwigs, paintAshTree } from "./ashTreeArt";
+import {
+  type AshTreeArt,
+  type AshTreeTextures,
+  dressAshTree,
+  drawTwigs,
+  loadAshTreeTextures,
+  paintAshTree,
+  SIGIL_SCALE,
+} from "./ashTreeArt";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
 
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
  * with a camera to drag and zoom. Node colours follow the item rarities: grey = Unavailable,
- * white = Available, blue/yellow/purple = learned tier I/II/III, orange = Keystone. Hovering a
+ * white = Available, blue/yellow/purple/orange/gold = learned tier I-V, orange = Keystone. Hovering a
  * node lays its path over the web; a fork's closed side shows as a broken seal. The web grows on
  * the Ash Tree (`ashTreeArt.ts`): painted bark, limbs up to the crown, roots down into the earth,
  * and the Ember sigil carved into the trunk, glowing slowly.
@@ -34,7 +42,7 @@ export interface TreeNodeView {
   readonly selected: boolean;
   readonly ranks: number;
   readonly maxRanks: number;
-  /** Colour tier of a learned node (1-3). */
+  /** Colour tier of a learned node (1-5). */
   readonly tier: number;
   /** The other side of its fork is learned: a broken seal (level-v2.md). */
   readonly sealed: boolean;
@@ -83,6 +91,8 @@ export const TIER_COLOR: Record<number, number> = {
   1: 0x5b8cff,
   2: 0xffd84a,
   3: 0xb36bff,
+  4: 0xff8a1f,
+  5: 0xc9a063,
 };
 const KEYSTONE = 0xff8a1f;
 const AVAILABLE = 0xd8d4cc;
@@ -141,6 +151,8 @@ export class TreeScene {
   private readonly keystoneGlow = new Graphics();
   private keystoneKey = "";
   private twigKey = "";
+  /** Timo's painted bark and leaves, once loaded. */
+  private painted: AshTreeTextures | null = null;
   private readonly linkGlow = new Graphics();
   private readonly links = new Graphics();
   private readonly pathGlow = new Graphics();
@@ -177,6 +189,7 @@ export class TreeScene {
       this.art.earth,
       this.art.wood,
       this.art.twigs,
+      this.art.leaves,
       this.art.sigil,
       this.sigilLight,
       this.keystoneMarks,
@@ -205,9 +218,6 @@ export class TreeScene {
     this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
     this.sigilLight.blendMode = "add";
     this.keystoneGlow.blendMode = "add";
-    // The painted wood never changes: baked once, it costs one quad per frame instead of
-    // hundreds of layered shapes (software GL in CI timed out on it).
-    this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
   }
 
   layout(w: number, h: number, resolution: number): void {
@@ -237,6 +247,18 @@ export class TreeScene {
       return false;
     }
     this.app = app;
+    // The wood never changes: baked once, it costs one quad per frame instead of hundreds of
+    // layered shapes (software GL in CI timed out on it).
+    this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
+    // Timo's painted bark and leaves dress the code-drawn tree once they are loaded.
+    void loadAshTreeTextures().then((painted) => {
+      if (!painted || this.destroyed) return;
+      this.painted = painted;
+      dressAshTree(this.art, UNIT, painted);
+      this.art.wood.updateCacheTexture();
+      this.twigKey = "";
+      this.drawTwigs();
+    });
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
     this.fx = new Fx(app.renderer);
@@ -292,8 +314,8 @@ export class TreeScene {
     this.keystoneGlow.clear();
     if (!places) return;
     const at = this.art.sigilAt;
-    const r = 0.79 * UNIT;
-    const size = 0.11 * UNIT;
+    const r = 0.79 * SIGIL_SCALE * UNIT;
+    const size = 0.11 * SIGIL_SCALE * UNIT;
     for (let k = 0; k < places.max; k++) {
       const a = -Math.PI / 4 + (k * Math.PI) / 2;
       const x = at.x + Math.cos(a) * r;
@@ -525,6 +547,7 @@ export class TreeScene {
       UNIT,
       this.view.nodes.map((n) => n.node),
       regionOf,
+      this.painted ? { layer: this.art.leaves, leaves: this.painted.leaves } : null,
     );
   }
 

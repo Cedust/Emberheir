@@ -12,13 +12,16 @@ export const PAYOFF_KINDS = [
   "overflow",
   "combust",
   "collapse",
-  "ironBlood",
-  "keenEye",
+  // Class Traits (klassengeruest-v1.md 2): full Fury, the Overcharge Nova.
+  "fury",
+  "overcharge",
   "spark",
   // Wand Mastery (sorcerer-ohne-fire-v1.md): the Spark that crits, built-up Crits, Shock as Heat.
   "flashpoint",
   "criticalMass",
   "conduction",
+  // Burst Masteries (klassengeruest-v1.md 5): a skill sets off all DoTs on the enemy at once.
+  "cashIn",
 ] as const;
 export type PayoffKind = (typeof PAYOFF_KINDS)[number];
 
@@ -31,7 +34,7 @@ export type CombatEvent =
       readonly skill: string;
       readonly heatCost: number;
       /** How it was cast, if not by the Rotation: a Reaction Slot or a free repeat. */
-      readonly via?: "reaction" | "reverb" | "echo" | "opening";
+      readonly via?: "reaction" | "reverb" | "echo" | "opening" | "twin";
     }
   | {
       readonly t: number;
@@ -208,6 +211,17 @@ export interface FighterSnapshot {
     readonly in: number;
     readonly windup: number;
   } | null;
+  /**
+   * The Class Trait's state for the arena (klassengeruest-v1.md 2): Fury gathered, Overcharge
+   * charges, or Hunter's Mark on (1) or off (0). Missing without a trait.
+   */
+  readonly trait?: {
+    readonly kind: "fury" | "overcharge" | "huntersMark";
+    readonly value: number;
+    readonly max: number;
+    /** The weapon's damage type: the colour of the Overcharge sparks. */
+    readonly damageType: DamageType;
+  };
 }
 
 export interface FightSnapshot {

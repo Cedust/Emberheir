@@ -22,9 +22,9 @@ test("the Battle Plan has no dropdowns: skills, sockets, Heat slider and conditi
 
   // Drag a skill onto a Reaction Slot.
   await skills
-    .getByRole("button", { name: /^Feint/ })
+    .getByRole("button", { name: /^Iron Bastion/ })
     .dragTo(page.getByRole("button", { name: "Reaction Slot 1" }));
-  await expect(page.getByTestId("reaction-slot-0")).toContainText("Feint");
+  await expect(page.getByTestId("reaction-slot-0")).toContainText("Iron Bastion");
   await expect(page.getByTestId("reaction-slot-0")).toContainText("Life below 50 %");
 
   // A Modifier socket opens the Modifiers in the library.

@@ -185,6 +185,23 @@ export function remainingBleedDamage(states: AilmentStates): number {
   return bleed.damagePerSecond * ticks;
 }
 
+/**
+ * Damage every DoT on a fighter would still deal if it ran out: Burn, Corruption (at its current
+ * growth), Bleed and all Poison stacks (Cash In).
+ */
+export function remainingDotDamage(states: AilmentStates): number {
+  const corruption = states.corruption;
+  const corruptionTicks = corruption
+    ? Math.max(0, Math.floor(corruption.remaining - corruption.nextTickIn + 1e-9) + 1)
+    : 0;
+  return (
+    remainingBurnDamage(states) +
+    remainingBleedDamage(states) +
+    (corruption ? dotTickDamage(corruption) * corruptionTicks : 0) +
+    remainingPoisonDamage(states)
+  );
+}
+
 /** Removes an ailment (Rend ends the Bleed it consumes). */
 export function clearAilment(states: AilmentStates, type: AilmentType): AilmentStates {
   return Object.fromEntries(Object.entries(states).filter(([key]) => key !== type));

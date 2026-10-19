@@ -23,21 +23,12 @@ describe("Skill Tree", () => {
   const base = nodes.filter((n) => !n.prestigeBranch);
   const regions = new Set(base.map((n) => n.region));
 
-  it("is a web of eight regions with unique ids and valid links", () => {
+  it("has seven crown regions, the trunk and the roots, with unique ids and valid links", () => {
     const ids = new Set(nodes.map((n) => n.id));
     expect(ids.size).toBe(nodes.length);
     for (const node of nodes) for (const link of node.links) expect(ids, link).toContain(link);
     expect(regions).toEqual(
-      new Set([
-        "might",
-        "might-arcana",
-        "arcana",
-        "arcana-affliction",
-        "affliction",
-        "affliction-rupture",
-        "rupture",
-        "rupture-might",
-      ]),
+      new Set(["steel", "blood", "venom", "flame", "storm", "frost", "void", "trunk", "roots"]),
     );
   });
 
@@ -47,17 +38,16 @@ describe("Skill Tree", () => {
       .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0);
     expect(points).toBeGreaterThanOrEqual(160);
     expect(base.filter((n) => n.kind === "notable").length).toBeGreaterThanOrEqual(30);
-    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(14);
-    // Web v3: Plague Bearer and Hemomancer became one Keystone (Blood and Bile).
-    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(11);
+    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(21);
+    expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(13);
     // No flat Life on the web: Life comes from the level and Vitality.
     expect(base.filter((n) => n.bonuses?.life)).toEqual([]);
   });
 
-  it("has nine forks of two Notables each", () => {
+  it("has forks of two Notables each", () => {
     const forks = new Map<string, number>();
     for (const n of base) if (n.fork) forks.set(n.fork, (forks.get(n.fork) ?? 0) + 1);
-    expect(forks.size).toBe(9);
+    expect(forks.size).toBe(12);
     for (const count of forks.values()) expect(count).toBe(2);
   });
 
@@ -68,8 +58,10 @@ describe("Skill Tree", () => {
       "increasedBarrier",
       "evasion",
       "tenacity",
+      "blockChance",
+      "allResistance",
     ]);
-    for (const node of base.filter((n) => n.kind === "minor" && n.id !== "might-battle-scars")) {
+    for (const node of base.filter((n) => n.kind === "minor" && n.id !== "roots-battle-scars")) {
       for (const stat of Object.keys(node.bonuses ?? {})) {
         expect(defense.has(stat), `${node.id}: ${stat}`).toBe(true);
       }
@@ -105,7 +97,7 @@ describe("Skill Tree", () => {
 
   it("enemy hits build Heat only through the Heat from Hits Taken nodes", () => {
     const nodes = base.filter((n) => (n.bonuses?.heatFromHitsTaken ?? 0) > 0);
-    expect(nodes.map((n) => n.id)).toEqual(["might-battle-scars", "might-unbroken"]);
+    expect(nodes.map((n) => n.id)).toEqual(["roots-battle-scars", "roots-unbroken"]);
     expect(nodes.every((n) => n.weaponRange === "melee")).toBe(true);
   });
 
@@ -125,36 +117,41 @@ describe("Skill Tree", () => {
     }
   });
 
-  it("grows as the Ash Tree: crown above, roots below, no two nodes on top of each other", () => {
+  it("grows as the Ash Tree: crown above the trunk above the roots, no two nodes overlap", () => {
     const nodes = SKILL_TREE.nodes;
     for (const [i, a] of nodes.entries()) {
       for (const b of nodes.slice(i + 1)) {
         expect(Math.hypot(a.x - b.x, a.y - b.y), `${a.id} / ${b.id}`).toBeGreaterThan(0.6);
       }
     }
-    const crown = nodes.filter((n) => n.region === "might" || n.region === "arcana");
-    const roots = nodes.filter((n) => n.region === "rupture" || n.region === "affliction");
-    expect(Math.max(...crown.map((n) => n.y))).toBeLessThan(Math.min(...roots.map((n) => n.y)));
+    const web = nodes.filter((n) => !n.prestigeBranch);
+    const ys = (region: string) => web.filter((n) => n.region === region).map((n) => n.y);
+    const top = ["blood", "venom", "flame", "storm", "frost"].flatMap(ys);
+    expect(Math.max(...top)).toBeLessThan(Math.min(...ys("trunk")));
+    expect(Math.max(...ys("trunk"))).toBeLessThan(Math.min(...ys("roots")));
   });
 
-  it("has ten Prestige branches with one Skill and one Keystone each, 8 / 5 / 6 points", () => {
+  it("has nine Masteries, three per class, one Skill and three Keystones each", () => {
     const branches = SKILL_TREE.prestigeBranches ?? [];
-    expect(branches).toHaveLength(10);
+    expect(branches).toHaveLength(9);
+    for (const c of CLASSES) expect(c.branches, c.id).toHaveLength(3);
     for (const b of branches) {
       const inBranch = nodes.filter((n) => n.prestigeBranch === b.id);
       const tier = (t: number) => inBranch.filter((n) => (n.tier ?? 1) === t);
-      expect(tier(1), b.id).toHaveLength(9);
-      expect(tier(2), b.id).toHaveLength(5);
-      expect(tier(3), b.id).toHaveLength(4);
-      // Skill Points to fill each tier: its nodes plus one more rank of the branch's Skill.
+      // Skill Points to fill each tier: its nodes plus one more rank of the Mastery's Skill.
       const cost = (t: number) =>
         tier(t)
           .filter((n) => n.kind !== "keystone")
           .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0) + (t > 1 ? 1 : 0);
-      expect([cost(1), cost(2), cost(3)], b.id).toEqual([8, 5, 6]);
+      expect([1, 2, 3, 4, 5].map(cost), b.id).toEqual([8, 5, 6, 4, 4]);
       expect(inBranch.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(1);
       expect(inBranch.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(3);
-      // Every upgrade replaces a node of the same branch.
+      // Mastery skills follow the Heirloom path.
+      const skill = inBranch.find((n) => n.skill)?.skill;
+      expect(
+        skill?.hits.every((h) => h.infused),
+        b.id,
+      ).toBe(true);
       for (const n of inBranch.filter((x) => x.replaces)) {
         expect(
           inBranch.some((x) => x.id === n.replaces),
@@ -195,14 +192,16 @@ describe("Act 1", () => {
       for (const weapon of heroClass.weapons) {
         const state = newGame(GAME_DATA, { seed: 1, classId: heroClass.id, weapon });
         expect(state.hero.weaponId).toBe(weapon);
-        expect(state.hero.equipment.offHand?.baseId).toBe(heroClass.offHand);
+        expect(state.hero.equipment.offHand?.baseId).toBe(
+          heroClass.offHandFor?.[weapon] ?? heroClass.offHand,
+        );
         const { gear } = heroSetup(state, GAME_DATA);
         expect(gear.inactive, `${heroClass.id} with ${weapon}`).toEqual([]);
       }
     }
   });
 
-  it("classes: Class Arrays add up to 14 (1 each + 8), four branches with Tactician, titles", () => {
+  it("classes: Class Arrays add up to 14 (1 each + 8), main attribute at 5, branches, titles", () => {
     const branches = new Set((SKILL_TREE.prestigeBranches ?? []).map((b) => b.id));
     for (const c of CLASSES) {
       expect(
@@ -211,8 +210,7 @@ describe("Act 1", () => {
       ).toBe(14);
       for (const v of Object.values(c.startingAttributes))
         expect(v, c.id).toBeGreaterThanOrEqual(1);
-      expect(c.branches, c.id).toHaveLength(4);
-      expect(c.branches.at(-1), c.id).toBe("tactician");
+      expect(c.startingAttributes[c.mainAttribute], c.id).toBe(5);
       for (const b of c.branches) {
         expect(branches.has(b), b).toBe(true);
         expect(c.titles[b], `${c.id} ${b}`).toBeTruthy();

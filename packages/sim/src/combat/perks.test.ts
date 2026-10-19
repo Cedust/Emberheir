@@ -33,10 +33,13 @@ describe("Attribute Breakpoints", () => {
       "thickSkin",
     ]);
     expect(perksFor({ ...ZERO_ATTRIBUTES, agility: 12 })).toEqual([
-      "quickReflexes",
-      "emberDance",
+      "hawkeye",
+      "opportunist",
       "doubleTime",
     ]);
+    expect(new Set(perksFor({ ...ZERO_ATTRIBUTES, dexterity: 10 }))).toEqual(
+      new Set(["quickReflexes", "emberDance", "trueShot"]),
+    );
   });
 });
 
@@ -45,14 +48,28 @@ describe("the hero's attribute scale", () => {
     const heir = deriveStats(
       setup({
         attributeScale: "heir",
-        attributes: { ...ZERO_ATTRIBUTES, strength: 5, vitality: 10, agility: 4 },
+        mainAttribute: "strength",
+        attributes: { ...ZERO_ATTRIBUTES, strength: 5, vitality: 10, agility: 4, dexterity: 3 },
         bonuses: { armor: 100 },
       }),
     );
+    // The main attribute gives damage of every type; DEX gives Evasion, AGI Crit Chance.
     expect(heir.physicalDamage).toBeCloseTo(0.4);
+    expect(heir.elementalDamage).toBeCloseTo(0.4);
+    expect(heir.evasion).toBeCloseTo(0.06);
+    expect(heir.critChance).toBeCloseTo(COMBAT.baseCritChance + 0.06);
     expect(heir.maxLife).toBe(160);
     expect(heir.armor).toBeCloseTo(130);
     expect(heir.attackSpeed).toBeCloseTo(1.12);
+    // Without its class, Strength adds no damage, only Armor.
+    const other = deriveStats(
+      setup({
+        attributeScale: "heir",
+        mainAttribute: "intelligence",
+        attributes: { ...ZERO_ATTRIBUTES, strength: 5 },
+      }),
+    );
+    expect(other.physicalDamage).toBe(0);
     // Monsters keep the classic scale.
     const classic = deriveStats(
       setup({ attributes: { ...ZERO_ATTRIBUTES, strength: 5, vitality: 10 } }),
@@ -65,6 +82,7 @@ describe("the hero's attribute scale", () => {
     const stats = deriveStats(setup({ perks: ["stoneguard", "attuned", "innerFire"] }));
     expect(stats.blockReduction).toBeCloseTo(COMBAT.blockReduction + PERK.stoneguardBlock);
     expect(stats.elementalPenetration).toBeCloseTo(PERK.attunedPenetration);
+    expect(stats.physicalPenetration).toBeCloseTo(PERK.attunedPenetration);
     expect(stats.startingHeat).toBe(PERK.innerFireHeat);
   });
 });
@@ -74,6 +92,17 @@ describe("Perks in the fight", () => {
     const fight = play(setup({ perks: ["armorbreaker"], bonuses: ALWAYS_CRIT }), dummy(), 3.05);
     expect(perkEvents(fight.events, "armorbreaker")).toHaveLength(3);
     expect(fight.snapshot().enemy.curses[0]).toMatchObject({ name: "Sunder", stacks: 3 });
+  });
+
+  it("Armorbreaker: its Sunder lowers Resistance too", () => {
+    const fire = { ...TEST_WEAPON, damageType: "fire" as const };
+    const hits = play(
+      setup({ perks: ["armorbreaker"], bonuses: ALWAYS_CRIT, weapon: fire }),
+      dummy({ bonuses: { allResistance: 0.5 } }),
+      4.05,
+    ).events.filter((e) => e.type === "hit");
+    const damage = hits.map((h) => (h.type === "hit" ? h.damage : 0));
+    expect(damage[3]).toBeGreaterThan(damage[0] ?? 0);
   });
 
   it("Titan: a big hit stuns, then waits for its cooldown", () => {
@@ -133,12 +162,19 @@ describe("Perks in the fight", () => {
     expect(hits[4]?.glancing).toBeUndefined();
   });
 
-  it("Elemental Surge: elemental hits get a chance of their ailment", () => {
+  it("Surge: elemental hits get a chance of their ailment, every ailment a better one", () => {
     const fire = { ...TEST_WEAPON, damageType: "fire" as const };
     const burns = (perks: PerkId[]) =>
       ofType(play(setup({ perks, weapon: fire }), dummy(), 100).events, "ailment").length;
     expect(burns([])).toBe(0);
-    expect(burns(["elementalSurge"])).toBeGreaterThan(3);
+    expect(burns(["surge"])).toBeGreaterThan(3);
+    const bleeding = {
+      ...TEST_WEAPON,
+      ailmentChances: [{ ailment: "bleed" as const, chance: 0.1 }],
+    };
+    const bleeds = (perks: PerkId[]) =>
+      ofType(play(setup({ perks, weapon: bleeding }), dummy(), 200).events, "ailment").length;
+    expect(bleeds(["surge"])).toBeGreaterThan(bleeds([]) * 1.4);
   });
 
   it("Spellfire: the first Spell of a fight deals double damage", () => {

@@ -40,20 +40,23 @@ export const COMBAT = {
    * Armor are percentages so they keep mattering at every level.
    */
   heir: {
-    physicalDamagePerStrength: 0.08,
+    /**
+     * Klassengerüst v1 (klassengeruest-v1.md 3): the class's main attribute (Cinderguard STR,
+     * Ashstrider DEX, Emberseer INT) gives % damage of every type; the other two damage
+     * attributes give nothing to damage. Each of STR, DEX and INT also gives one defense layer.
+     */
+    damagePerMainAttribute: 0.08,
     armorPerStrength: 0.06,
-    critChancePerDexterity: 0.015,
-    triggerChancePerDexterity: 0.04,
-    elementalDamagePerIntelligence: 0.08,
-    // Intelligence gives Barrier, not Resistance: Resistance comes from gear for every class
-    // (Timo, PoE rule: Strength Armor, Agility Evasion, Intelligence Barrier).
-    allResistancePerIntelligence: 0,
+    evasionPerDexterity: 0.02,
     /** % more Barrier per Intelligence point (the Barrier itself comes from gear). */
     barrierPerIntelligence: 0.08,
+    // Resistance comes from gear for every class (Timo, PoE rule).
+    allResistancePerIntelligence: 0,
     attackSpeedPerAgility: 0.03,
-    evasionPerAgility: 0.02,
+    critChancePerAgility: 0.015,
     heatGainPerWisdom: 0.06,
     ailmentEffectPerWisdom: 0.05,
+    triggerChancePerWisdom: 0.04,
     lifePerVitality: 0.06,
     tenacityPerVitality: 0.03,
   },
@@ -71,9 +74,10 @@ export const COMBAT = {
    * Barrier (like Energy Shield): full at fight start and always trickles back (`steady` of its
    * max per s), so it holds a long boss fight like Armor does. After `delay` s without a hit it
    * refills fast (`perSecond`). The delay keeps it from refilling fully between the slow swings
-   * of early bosses.
+   * of early bosses; refilling slower than this made the Emberseer far too safe in Acts 2-3
+   * (Timo 2026-10-19).
    */
-  barrierRecharge: { steady: 0.03, delay: 1.5, perSecond: 0.2 },
+  barrierRecharge: { steady: 0.03, delay: 3, perSecond: 0.1 },
   /** Share of a blocked hit that a block stops (before Stoneguard). */
   blockReduction: 0.5,
   /**
@@ -99,10 +103,11 @@ export const COMBAT = {
    */
   monsterArmorPerLevel: 0.27,
   /**
-   * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10):
-   * Elemental builds had it far easier than Physical ones against the same walls.
+   * Every monster resists the elements a little (Phase 5 measurement, balance-messung-v1.md 10).
+   * Klassengerüst v1: every weapon fights Physical or Elemental by its path, so the base matches
+   * what Monster Armor takes off a Physical hit (about 10 %); the act's own element comes on top.
    */
-  monsterResistance: 0.3,
+  monsterResistance: 0.1,
 
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,

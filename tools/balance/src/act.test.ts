@@ -35,14 +35,14 @@ describe("act autopilot", () => {
 });
 
 describe("autopilot builds", () => {
-  it("three per class, every goal a node of the tree", () => {
+  it("at least three per class, every goal a node of the tree", () => {
     const ids = new Set(GAME_DATA.skillTree.nodes.map((n) => n.id));
     for (const c of GAME_DATA.classes) {
       const builds = BUILDS.filter((b) => b.classId === c.id);
-      expect(builds, c.id).toHaveLength(3);
+      expect(builds.length, c.id).toBeGreaterThanOrEqual(3);
       for (const b of builds) expect(c.weapons, b.id).toContain(b.weapon);
     }
-    const goals = BUILDS.flatMap((b) => b.nodes.filter((n) => n !== "@branches"));
+    const goals = BUILDS.flatMap((b) => b.nodes.filter((n) => !n.startsWith("@")));
     expect(goals.filter((n) => !ids.has(n))).toEqual([]);
   });
 });

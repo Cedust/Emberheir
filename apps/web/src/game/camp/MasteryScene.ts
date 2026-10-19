@@ -13,7 +13,6 @@ import {
 import { Fx } from "../battle/fx";
 import { type WeaponLook, drawWeapon } from "./weaponArt";
 import { type SceneWeaponArt, drawPaintedWeapon, paintedTextures } from "./paintedWeapon";
-import { ELEMENT_COLOR } from "../weaponLook";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
 import { arcPath } from "../pixiShapes";
 
@@ -101,7 +100,6 @@ const RADIUS: Record<MasteryNode["kind"], number> = {
   keystone: 19,
   heatForm: 20,
   innateForm: 17,
-  attunement: 15,
 };
 
 /** Rune glyphs of the three Innate seals (line segments in a unit circle). */
@@ -447,13 +445,11 @@ export class MasteryScene {
         ? KEYSTONE
         : node.kind === "heatForm"
           ? (HEAT_FORM_COLOR[node.id] ?? EMBER)
-          : node.kind === "attunement"
-            ? (ELEMENT_COLOR[node.effect.attunement?.damageType ?? "fire"] ?? EMBER)
-            : node.kind === "innateForm"
-              ? 0xffd27a
-              : node.kind === "refine"
-                ? (GRADE_GLOW[this.view?.grade ?? 0]?.color ?? GOLD)
-                : this.pathColor(node);
+          : node.kind === "innateForm"
+            ? 0xffd27a
+            : node.kind === "refine"
+              ? (GRADE_GLOW[this.view?.grade ?? 0]?.color ?? GOLD)
+              : this.pathColor(node);
     if (n.state === "learned") return own;
     if (n.state === "available") return node.path ? own : 0xd8d4cc;
     return DIM;
@@ -787,14 +783,14 @@ export class MasteryScene {
     }
     // Seals and orbs hang on thin chains from the weapon.
     for (const n of v.nodes) {
-      if (n.node.kind !== "innateForm" && n.node.kind !== "attunement") continue;
+      if (n.node.kind !== "innateForm") continue;
       const p = this.pos(n.node);
       const ax = v.tip.x - v.pommel.x;
       const ay = v.tip.y - v.pommel.y;
       const t = ((n.node.x - v.pommel.x) * ax + (n.node.y - v.pommel.y) * ay) / (ax * ax + ay * ay);
       const len = Math.hypot(ax, ay);
       // Orbs hang from the painted tip (a crystal or gem point, often off the axis).
-      const tip = n.node.kind === "attunement" && t >= 1 ? this.art?.tip : undefined;
+      const tip = t >= 1 ? this.art?.tip : undefined;
       const q = tip
         ? {
             x: v.pommel.x * U + ((ax * tip.x - ay * tip.y) / len) * ART_SCALE,
@@ -1034,14 +1030,6 @@ export class MasteryScene {
               cap: "round",
             });
         }
-        break;
-      }
-      case "attunement": {
-        g.circle(0, 0, r).fill({ color: 0x120c08 });
-        const element = ELEMENT_COLOR[n.node.effect.attunement?.damageType ?? "fire"] ?? EMBER;
-        g.circle(0, 0, r * 0.7).fill({ color: element, alpha: lit ? 0.95 : 0.35 });
-        if (lit) g.circle(-r * 0.25, -r * 0.25, r * 0.22).fill({ color: 0xffffff, alpha: 0.85 });
-        g.circle(0, 0, r).stroke({ color: lit ? element : 0xa8732e, width: 2.5 });
         break;
       }
     }

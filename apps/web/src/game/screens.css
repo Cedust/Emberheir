@@ -5208,6 +5208,11 @@
   box-shadow: 0 0 14px rgb(255 138 58 / 0.45);
 }
 
+.stage .branch-pick > .class-emblem {
+  align-self: center;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
+}
+
 .stage .branch-pick-name {
   font-size: 21px;
   color: var(--branch);
@@ -6595,6 +6600,20 @@
   display: grid;
   grid-template-columns: repeat(7, 1fr);
   gap: 4px;
+}
+
+.stage .cheat-builds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.stage .cheat-builds .cheat-rank {
+  font-family: inherit;
+  font-size: 12px;
+  height: auto;
+  min-height: 32px;
+  padding: 2px 4px;
 }
 
 .stage .cheat-rank {

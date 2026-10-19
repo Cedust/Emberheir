@@ -1,6 +1,7 @@
 import { mergeRules } from "../combat/rules";
 import { sumBonuses } from "../combat/stats";
 import {
+  type Attribute,
   type Attributes,
   type Capstone,
   type CombatRules,
@@ -40,6 +41,8 @@ export interface HeroBuildOptions {
   readonly lifeFraction?: number;
   /** Ember Penalty of the run on every Resistance. */
   readonly resistancePenalty?: number;
+  /** The class's main attribute: % damage of every type (klassengeruest-v1.md 3). */
+  readonly mainAttribute?: Attribute;
 }
 
 /** Builds the hero's fight setup from attributes, gear, Skill Tree bonuses and the Battle Plan. */
@@ -61,6 +64,7 @@ export function buildHeroSetup(
     level: options.level,
     attributes,
     attributeScale: "heir",
+    ...(options.mainAttribute ? { mainAttribute: options.mainAttribute } : {}),
     ...(perks.length ? { perks } : {}),
     weapon,
     rotation: options.rotation(weapon),

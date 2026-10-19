@@ -95,14 +95,25 @@ function WebSocketPanel(props: {
   );
 }
 
-/** Base branches with their colour (labels). */
+/** Regions of the Ash Tree with their colour (labels): damage-type colours in the crown. */
 const BRANCHES: readonly { id: SkillTreeBranch; name: string; color: number }[] = [
   { id: "core", name: "Core", color: 0xc9a063 },
-  { id: "might", name: "Might", color: 0xc9c2b8 },
-  { id: "arcana", name: "Arcana", color: 0x5b8cff },
-  { id: "rupture", name: "Rupture", color: 0xd0505c },
-  { id: "affliction", name: "Affliction", color: 0xa35cff },
+  { id: "steel", name: "Steel", color: 0xc9c2b8 },
+  { id: "blood", name: "Blood", color: 0xe0314b },
+  { id: "venom", name: "Venom", color: 0xb5d82c },
+  { id: "flame", name: "Flame", color: 0xff6a2b },
+  { id: "storm", name: "Storm", color: 0xffe14d },
+  { id: "frost", name: "Frost", color: 0x6fd3ff },
+  { id: "void", name: "Void", color: 0xa35cff },
+  { id: "trunk", name: "Trunk", color: 0xc9a063 },
+  { id: "roots", name: "Roots", color: 0xd08a4a },
 ];
+
+/** The trunk's and the roots' names sit beside them (their nodes are laid out by hand). */
+const LABEL_AT: Partial<Record<TreeRegion, { x: number; y: number }>> = {
+  trunk: { x: -6, y: 1.6 },
+  roots: { x: 0, y: 12.4 },
+};
 
 const KIND_LABEL: Record<SkillNode["kind"], string> = {
   minor: "Minor",
@@ -111,8 +122,8 @@ const KIND_LABEL: Record<SkillNode["kind"], string> = {
   keystone: "Keystone",
   socket: "Rune Socket",
 };
-const ROMAN = ["", "I", "II", "III"];
-const TIER_NAME = ["", "Magic", "Rare", "Epic"];
+const ROMAN = ["", "I", "II", "III", "IV", "V"];
+const TIER_NAME = ["", "Magic", "Rare", "Epic", "Legendary", "Runeword"];
 
 /** Base nodes, and the nodes of the Prestige branches at the tiers the Heir has reached. */
 function visibleNodes(branches: readonly string[]): SkillNode[] {
@@ -128,18 +139,17 @@ function visibleNodes(branches: readonly string[]): SkillNode[] {
 function colourTier(node: SkillNode, ranks: number): number {
   const own = node.tier ?? 1;
   if (node.kind !== "skill" || !node.prestigeBranch) return own;
-  return Math.min(3, own + Math.max(0, ranks - (node.maxRanks ?? 1)));
+  return Math.min(5, own + Math.max(0, ranks - (node.maxRanks ?? 1)));
 }
 
-/**
- * Big names: the four branch regions past the rim of the tree (the bridges between them carry no
- * name), Prestige branches past their end.
- */
+/** Big names: every region past the rim of the tree, Masteries past their end. */
 function treeLabels(branches: readonly string[]): TreeLabel[] {
   const labels: TreeLabel[] = BRANCHES.filter((b) => b.id !== "core").map((b) => {
     // Out past the region's Keystones, on the tree.
-    const ring = (TREE_PLACEMENT[b.id as TreeRegion].ring * Math.PI) / 180;
-    const at = onTree({ x: Math.cos(ring) * 14, y: Math.sin(ring) * 14 }, b.id as TreeRegion);
+    const region = b.id as TreeRegion;
+    const ring = (TREE_PLACEMENT[region].ring * Math.PI) / 180;
+    const at =
+      LABEL_AT[region] ?? onTree({ x: Math.cos(ring) * 14, y: Math.sin(ring) * 14 }, region);
     return { key: b.id, text: b.name.toUpperCase(), ...at, color: b.color, size: 20 };
   });
   for (const def of SKILL_TREE.prestigeBranches ?? []) {
@@ -150,7 +160,7 @@ function treeLabels(branches: readonly string[]): TreeLabel[] {
     if (!entry || !mid) continue;
     // `mid` sits three steps out from the entry: one step is a third of the way.
     const [sx, sy] = [(mid.x - entry.x) / 3, (mid.y - entry.y) / 3];
-    const reach = [0, 7.6, 9.6, 11.6][tier] ?? 7.6;
+    const reach = [0, 7.6, 9.6, 11.6, 13.6, 15.6][tier] ?? 7.6;
     labels.push({
       key: def.id,
       text: `${def.name.toUpperCase()} ${ROMAN[tier]}`,
@@ -322,7 +332,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
     <div className="tree-layout">
       <div className="tree-canvas tree-pixi">
         <div ref={hostRef} className="tree-host" data-testid="skill-tree-canvas" />
-        {failed && <p className="tree-fallback sub">The Skill Tree needs WebGL.</p>}
+        {failed && <p className="tree-fallback sub">The Ash Tree needs WebGL.</p>}
         {hovered && hover && (
           <div
             className="tree-tip panel-card"
@@ -405,7 +415,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
           )}
         </div>
         {/* The canvas is drawn; this list gives keyboards and screen readers the same nodes. */}
-        <div className="sr-only" role="group" aria-label="Skill Tree">
+        <div className="sr-only" role="group" aria-label="Ash Tree">
           {nodes.map((n) => (
             <button
               key={n.id}

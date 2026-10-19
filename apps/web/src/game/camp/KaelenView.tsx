@@ -19,13 +19,13 @@ import { PaintDefs } from "./art/paint";
 import { BattlePlanTab } from "./BattlePlanTab";
 
 /**
- * Kaelen (Trainer mock): the Skill Tree with pending nodes (Confirm / Undo) and the Battle
+ * Kaelen (Trainer mock): the Ash Tree with pending nodes (Confirm / Undo) and the Battle
  * Plan. During a run the T key opens the tree view only.
  */
 export function KaelenView(props: {
   state: GameState;
   game: GameApi;
-  /** The Skill Tree is view-only (during a run). */
+  /** The Ash Tree is view-only (during a run). */
   viewOnly: boolean;
   /** The Battle Plan can be changed (Camp and between stages, not mid-fight). */
   planEditable?: boolean;
@@ -38,8 +38,8 @@ export function KaelenView(props: {
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
-    { id: "tree", name: "Skill Tree", icon: "tree" },
-    { id: "mastery", name: "Weapon Mastery", icon: "sword" },
+    { id: "tree", name: "Ash Tree", icon: "tree" },
+    { id: "mastery", name: "Heirloom", icon: "sword" },
     ...(planEditable
       ? [{ id: "plan" as const, name: "Battle Plan", icon: "strike" as const }]
       : []),
@@ -72,11 +72,11 @@ export function KaelenView(props: {
                     testId="skill-points"
                     value={state.hero.unspentSkillPoints}
                     name="Skill Points"
-                    explain="Learn nodes in the Skill Tree. You earn them at Waymarks on the road."
+                    explain="Learn nodes in the Ash Tree. You earn them at Waymarks on the road."
                   />
                   <PointChip
                     value={masteryPointsLeft(state, GAME_DATA)}
-                    name="Mastery Points"
+                    name="Heirloom Points"
                     explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
                   />
                   <CurrencyChip id="acorns" amount={state.wallet.acorns} />

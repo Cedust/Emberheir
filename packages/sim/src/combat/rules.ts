@@ -18,6 +18,10 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let hitDamage = 1;
   let chilledDamage = 1;
   let barrierRecharge = 1;
+  let skillDamage = 0;
+  let ailmentChance = 0;
+  let ailmentDuration = 0;
+  let critsApplyAilment = false;
   const ailmentDamage: Partial<Record<AilmentType, number>> = {};
   const maxResistance: Partial<Record<Element, number>> = {};
   const ailmentEcho: NonNullable<CombatRules["ailmentEcho"]>[number][] = [];
@@ -27,9 +31,11 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   const conditionalCrit: NonNullable<CombatRules["conditionalCrit"]>[number][] = [];
   const ailmentDamageWhen: NonNullable<CombatRules["ailmentDamageWhen"]>[number][] = [];
   const conversion: NonNullable<CombatRules["conversion"]>[number][] = [];
+  const twinCast: number[] = [];
   // Class Traits come from one source (the class): the first one wins.
-  let ironBlood: CombatRules["ironBlood"];
-  let keenEye = false;
+  let fury: CombatRules["fury"];
+  let huntersMark: CombatRules["huntersMark"];
+  let overcharge: CombatRules["overcharge"];
   let spark: CombatRules["spark"];
   let lingering: CombatRules["lingering"];
   let spellblade: CombatRules["spellblade"];
@@ -38,8 +44,9 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let slowDeath: CombatRules["slowDeath"];
   for (const r of sources) {
     if (!r) continue;
-    ironBlood ??= r.ironBlood;
-    keenEye ||= r.keenEye ?? false;
+    fury ??= r.fury;
+    huntersMark ??= r.huntersMark;
+    overcharge ??= r.overcharge;
     spark ??= r.spark;
     lingering ??= r.lingering;
     spellblade ??= r.spellblade;
@@ -58,6 +65,10 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     hitDamage *= r.hitDamage ?? 1;
     chilledDamage *= r.chilledDamage ?? 1;
     barrierRecharge *= r.barrierRecharge ?? 1;
+    skillDamage += r.skillDamage ?? 0;
+    ailmentChance += r.ailmentChance ?? 0;
+    ailmentDuration += r.ailmentDuration ?? 0;
+    critsApplyAilment ||= r.critsApplyAilment ?? false;
     for (const [ailment, factor] of Object.entries(r.ailmentDamage ?? {}) as [
       AilmentType,
       number,
@@ -75,6 +86,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     conditionalCrit.push(...(r.conditionalCrit ?? []));
     ailmentDamageWhen.push(...(r.ailmentDamageWhen ?? []));
     conversion.push(...(r.conversion ?? []));
+    twinCast.push(...(r.twinCast ?? []));
     if (r.heavyHitCap !== undefined) heavyHitCap = Math.max(heavyHitCap ?? 0, r.heavyHitCap);
     if (r.execute && (!execute || r.execute.bonus > execute.bonus)) execute = r.execute;
   }
@@ -91,17 +103,23 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(hitDamage !== 1 ? { hitDamage } : {}),
     ...(chilledDamage !== 1 ? { chilledDamage } : {}),
     ...(barrierRecharge !== 1 ? { barrierRecharge } : {}),
+    ...(skillDamage ? { skillDamage } : {}),
+    ...(ailmentChance ? { ailmentChance } : {}),
+    ...(ailmentDuration ? { ailmentDuration } : {}),
+    ...(critsApplyAilment ? { critsApplyAilment } : {}),
     ...(Object.keys(ailmentDamage).length ? { ailmentDamage } : {}),
     ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
+    ...(twinCast.length ? { twinCast } : {}),
     ...(execute ? { execute } : {}),
     ...(heavyHitCap !== undefined ? { heavyHitCap } : {}),
     ...(conditionalDamage.length ? { conditionalDamage } : {}),
     ...(conditionalCrit.length ? { conditionalCrit } : {}),
     ...(ailmentDamageWhen.length ? { ailmentDamageWhen } : {}),
     ...(conversion.length ? { conversion } : {}),
-    ...(ironBlood ? { ironBlood } : {}),
-    ...(keenEye ? { keenEye } : {}),
+    ...(fury ? { fury } : {}),
+    ...(huntersMark ? { huntersMark } : {}),
+    ...(overcharge ? { overcharge } : {}),
     ...(spark ? { spark } : {}),
     ...(lingering ? { lingering } : {}),
     ...(spellblade ? { spellblade } : {}),

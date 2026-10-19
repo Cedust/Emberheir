@@ -38,9 +38,9 @@ import {
 
 /**
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
- * (`save/migrations.ts`). Started over at 1 in the Early Dev Preview.
+ * (`save/migrations.ts`). Started over at 9 with the Klassengerüst: older saves are dropped.
  */
-export const SAVE_VERSION = 8;
+export const SAVE_VERSION = 9;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {

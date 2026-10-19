@@ -1,5 +1,4 @@
 import { SAVE_VERSION } from "../progression/game";
-import { KEYSTONE } from "../progression/skill-tree";
 
 /** A save game or stash as read from JSON, before it is checked against the schema. */
 export type RawSave = Record<string, unknown>;
@@ -17,161 +16,12 @@ export interface SaveMigration {
   readonly state?: (save: RawSave) => RawSave;
 }
 
-/** Affix ids that were renamed: old id → new id. */
-const RENAMED_AFFIXES_V2: Readonly<Record<string, string>> = {
-  // Ailments v2: Ailment Duration became Ailment Effect, with the same roll share.
-  "ailment-duration": "ailment-effect",
-};
-
-/** Renames affix ids on an item (its stat affixes and the rolls keep their quality). */
-function renameAffixes(item: RawSave, renamed: Readonly<Record<string, string>>): RawSave {
-  const affixes = item["affixes"];
-  if (!Array.isArray(affixes)) return item;
-  return {
-    ...item,
-    affixes: affixes.map((a: unknown) => {
-      if (!isRecord(a) || typeof a["affixId"] !== "string") return a;
-      const to = renamed[a["affixId"]];
-      return to ? { ...a, affixId: to } : a;
-    }),
-  };
-}
-
 /**
- * The migrations by version. The save format started over at version 1 (Early Dev Preview,
- * older saves were dropped).
+ * The migrations by version. The save format started over at version 9 with the Klassengerüst
+ * (klassengeruest-v1.md: three new classes, Heirloom, Masteries, a new Ash Tree); older saves and
+ * stashes are dropped, not converted (Timo, Early Dev Preview).
  */
-export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
-  1: { item: (item) => renameAffixes(item, RENAMED_AFFIXES_V2) },
-  // Routes and Champions (neuausrichtung-v1.md 6.1, 6.2): new optional fields, nothing to move.
-  2: {},
-  // Weapon Mastery v2 (weapon-mastery-v2.md): the paths were rebuilt with forks, so their points
-  // come back. Refine, the chosen forms, Keystone, Attunement and the Echo stay.
-  3: { state: refundMasteryPaths },
-  // Skill Web v3 and the Prestige branches' travel nodes (neuausrichtung-v1.md 4): nodes were
-  // rebuilt and renamed, so every Skill Point comes back and the hero keeps the class start.
-  4: { state: refundSkillTree },
-  // Omens, Ashborn, Greater Affixes, Cinderglass and the Ember Crucible (neuausrichtung-v1.md 5.2,
-  // 7.2, 7.3, 7.5, 8): new optional fields, nothing to move.
-  5: {},
-  // Stash tabs (ui-ux-plan-v1.md 3.4): stashed items name their tab; without one they sit in the
-  // first, so nothing moves.
-  6: {},
-  // Sorcerer without Fire (sorcerer-ohne-fire-v1.md): the Fire Wand is just the Wand, Lightning
-  // or Cold. Fire Attunement falls back to Lightning, Blaze and Storm give their points back
-  // (Starfall replaced Blaze, Storm's Notables changed), and Firebolt becomes Shockbolt.
-  7: { item: renameWandItem, state: wandWithoutFire },
-};
-
-const OLD_WAND = "fire-wand";
-const WAND = "wand";
-/** Firebolt and its Innate Forms, attuned or not (`firebolt@cold`). */
-const OLD_WAND_INNATE = /^(firebolt|fire-lance|fire-barrage|seeking-firebolt)(@[a-z]+)?$/;
-
-function renameWandItem(item: RawSave): RawSave {
-  return item["baseId"] === OLD_WAND ? { ...item, baseId: WAND } : item;
-}
-
-function wandWithoutFire(save: RawSave): RawSave {
-  const hero = save["hero"];
-  if (!isRecord(hero) || hero["weaponId"] !== OLD_WAND) return save;
-  const out: RawSave = { ...hero, weaponId: WAND };
-  const mastery = hero["mastery"];
-  if (isRecord(mastery)) {
-    const learned = isRecord(mastery["learned"])
-      ? Object.fromEntries(
-          Object.entries(mastery["learned"]).filter(
-            ([id]) => !id.startsWith("blaze-") && !id.startsWith("storm-"),
-          ),
-        )
-      : mastery["learned"];
-    const choices = isRecord(mastery["choices"]) ? { ...mastery["choices"] } : mastery["choices"];
-    if (isRecord(choices) && choices["attunement"] === "attune-fire") delete choices["attunement"];
-    out["mastery"] = { ...mastery, learned, choices };
-  }
-  // The Innate is the empty slot (null), so a Battle Plan that named Firebolt keeps it.
-  const innate = (id: unknown) => typeof id === "string" && OLD_WAND_INNATE.test(id);
-  if (Array.isArray(hero["rotation"])) {
-    out["rotation"] = hero["rotation"].map((id: unknown) => (innate(id) ? null : id));
-  }
-  const plan = hero["plan"];
-  if (isRecord(plan) && Array.isArray(plan["reactions"])) {
-    out["plan"] = {
-      ...plan,
-      reactions: plan["reactions"].map((r: unknown) =>
-        isRecord(r) && innate(r["skillId"]) ? null : r,
-      ),
-    };
-  }
-  return { ...save, hero: out };
-}
-
-/** Class start nodes of Skill Web v3 (the Sorcerer's was renamed). */
-const WEB_V3_STARTS: Readonly<Record<string, string>> = {
-  warrior: "might-warriors-oath",
-  sorcerer: "arcana-sorcerers-sigil",
-  warlock: "affliction-warlocks-brand",
-  reaver: "rupture-reavers-edge",
-  hunter: "rupture-might-hunters-eye",
-};
-
-/** Class start nodes before Web v3: they were free. */
-const OLD_STARTS = new Set([...Object.values(WEB_V3_STARTS), "arcana-sorcerers-spark"]);
-
-/** Keystones of the web before v3 (they cost `KEYSTONE.skillPoints`); branch ones end in -keystone. */
-const OLD_KEYSTONES = new Set([
-  "might-unyielding",
-  "might-glass-focus",
-  "might-arcana-spellblade",
-  "arcana-arcane-conduit",
-  "arcana-elemental-overload",
-  "arcana-affliction-black-flame",
-  "affliction-slow-death",
-  "affliction-pact-of-ash",
-  "affliction-rupture-plague-bearer",
-  "rupture-blood-price",
-  "rupture-hemomancer",
-  "rupture-might-headsman",
-]);
-const isOldKeystone = (id: string) => OLD_KEYSTONES.has(id) || /-keystone(-\d)?$/.test(id);
-
-function refundSkillTree(save: RawSave): RawSave {
-  const hero = save["hero"];
-  if (!isRecord(hero) || !isRecord(hero["learned"])) return save;
-  let refund = 0;
-  for (const [id, ranks] of Object.entries(hero["learned"])) {
-    if (OLD_STARTS.has(id) || typeof ranks !== "number") continue;
-    refund += ranks * (isOldKeystone(id) ? KEYSTONE.skillPoints : 1);
-  }
-  const classId = typeof hero["classId"] === "string" ? hero["classId"] : "";
-  const start = WEB_V3_STARTS[classId];
-  const unspent = typeof hero["unspentSkillPoints"] === "number" ? hero["unspentSkillPoints"] : 0;
-  const rotation = Array.isArray(hero["rotation"]) ? hero["rotation"].map(() => null) : [];
-  return {
-    ...save,
-    hero: {
-      ...hero,
-      learned: start ? { [start]: 1 } : {},
-      unspentSkillPoints: unspent + refund,
-      // Tree skills are gone until learned again: the Battle Plan falls back to the Start Skill.
-      rotation,
-    },
-  };
-}
-
-/** Refine nodes kept their ids and meaning in Weapon Mastery v2. */
-const MASTERY_REFINE = new Set(["balance", "precision", "steady-hand", "full-swing"]);
-
-function refundMasteryPaths(save: RawSave): RawSave {
-  const hero = save["hero"];
-  if (!isRecord(hero)) return save;
-  const mastery = hero["mastery"];
-  if (!isRecord(mastery) || !isRecord(mastery["learned"])) return save;
-  const learned = Object.fromEntries(
-    Object.entries(mastery["learned"]).filter(([id]) => MASTERY_REFINE.has(id)),
-  );
-  return { ...save, hero: { ...hero, mastery: { ...mastery, learned } } };
-}
+export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {};
 
 export interface MigrateOptions {
   /** The version to end at (tests); default `SAVE_VERSION`. */

@@ -691,7 +691,7 @@ export const UNIQUES: readonly UniqueDefinition[] = [
   },
   {
     id: "heirloom-blade",
-    name: "The Heirloom Grips",
+    name: "Grips of the First Heir",
     baseId: "gauntlets",
     affixes: [
       { affixId: "physical-damage", quality: q(0.6) },

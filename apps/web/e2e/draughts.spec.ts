@@ -33,7 +33,7 @@ test("after the first Prestige a Draught is brewed for the trip and shows in the
 
   // The Skill Web's Ward buds: defense between the regions.
   await page.keyboard.press("t");
-  const tree = page.getByRole("group", { name: "Skill Tree" });
+  const tree = page.getByRole("group", { name: "Ash Tree" });
   await expect(tree.getByRole("button", { name: "Oakheart" })).toHaveCount(1);
   if (process.env.SHOTS) {
     await tree.getByRole("button", { name: "Oakheart" }).press("Enter");

@@ -5,18 +5,19 @@ import { Icon, type IconName } from "../ui/Icon";
 import { Button } from "../ui/kit/Button";
 import type { Settings } from "../ui/settings";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
-import { ClassEmblem } from "./ClassEmblem";
+import { ClassEmblem, MasteryEmblem } from "./ClassEmblem";
 import { PreviewArena } from "./lazyViews";
 import { glimpsePreview, startPreview } from "./classPreview";
 import type { NewCharacter } from "./useGame";
 
-/** Axis chips (klassen-v2.md): Damage Type, Range, Delivery and the Heat rhythm. */
-const AXES: Record<string, readonly string[]> = {
-  warrior: ["Physical", "Melee", "Direct"],
-  reaver: ["Physical", "Melee", "Over Time"],
-  hunter: ["Physical", "Ranged", "Direct · Over Time"],
-  sorcerer: ["Elemental", "Ranged", "Direct"],
-  warlock: ["Elemental", "Ranged", "Over Time"],
+/** The class card's line: main attribute and focus (klassengeruest-v1.md 2). */
+const ATTRIBUTE_NAMES: Record<Attribute, string> = {
+  strength: "Strength",
+  dexterity: "Dexterity",
+  intelligence: "Intelligence",
+  agility: "Agility",
+  wisdom: "Wisdom",
+  vitality: "Vitality",
 };
 
 const WEAPON_ICONS: Record<string, IconName> = {
@@ -39,11 +40,9 @@ const HEAT_NAMES = {
 
 /** A few names per class for the name field; the player can type their own. */
 const NAMES: Record<string, readonly string[]> = {
-  warrior: ["Bran", "Hilde", "Torvan", "Ysra"],
-  reaver: ["Kesh", "Vala", "Mordrin", "Sable"],
-  hunter: ["Wren", "Corvin", "Lysa", "Tamsin"],
-  sorcerer: ["Ilyra", "Caius", "Senna", "Orrin"],
-  warlock: ["Morwen", "Vesk", "Ashra", "Dross"],
+  cinderguard: ["Bran", "Hilde", "Torvan", "Ysra"],
+  ashstrider: ["Wren", "Corvin", "Kesh", "Sable"],
+  emberseer: ["Ilyra", "Morwen", "Senna", "Vesk"],
 };
 
 function suggestName(classId: string): string {
@@ -52,8 +51,8 @@ function suggestName(classId: string): string {
 }
 
 /**
- * Class select (klassen-v2.md section 6): five class cards, the chosen class fighting live in a
- * small arena (Glimpse shows a late build), a short text, the trait and the recommended paths.
+ * Class select (klassengeruest-v1.md 2): three class cards, the chosen class fighting live in a
+ * small arena (Glimpse shows a late build), a short text, the trait, the weapons and Masteries.
  */
 export function ClassSelect(props: {
   slot: number;
@@ -62,7 +61,7 @@ export function ClassSelect(props: {
   onBack: () => void;
 }) {
   const classes = GAME_DATA.classes;
-  const [classId, setClassId] = useState(classes[0]?.id ?? "warrior");
+  const [classId, setClassId] = useState(classes[0]?.id ?? "cinderguard");
   const heroClass = classes.find((c) => c.id === classId) ?? classes[0];
   const [weapon, setWeapon] = useState(heroClass?.weapons[0] ?? "sword");
   const [glimpse, setGlimpse] = useState(false);
@@ -102,7 +101,9 @@ export function ClassSelect(props: {
           >
             <ClassEmblem classId={c.id} size={52} />
             <strong className="title-font">{c.name}</strong>
-            <span className="axes">{(AXES[c.id] ?? []).join(" · ")}</span>
+            <span className="axes">
+              {ATTRIBUTE_NAMES[c.mainAttribute]} · {c.focus}
+            </span>
           </button>
         ))}
       </div>
@@ -152,6 +153,7 @@ export function ClassSelect(props: {
               </span>
             </div>
             <AttributeStones
+              mainAttribute={heroClass.mainAttribute}
               base={heroClass.startingAttributes}
               delta={free}
               canAdd={(a) =>
@@ -227,7 +229,7 @@ export function ClassSelect(props: {
                   className="path-chip"
                   title={`${PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id} → ${heroClass.titles[id] ?? ""}`}
                 >
-                  <ClassEmblem classId={classId} size={18} />
+                  <MasteryEmblem masteryId={id} size={18} />
                   {PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id}
                 </span>
               ))}

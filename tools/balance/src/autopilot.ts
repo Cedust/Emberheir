@@ -21,11 +21,11 @@ import {
   heroAshborn,
   heroBoons,
   heroSetup,
-  masteryPointsLeft,
+  learnHeirloom,
   openBranches,
   takeBlockReason,
 } from "@emberheir/sim";
-import { type BuildPlan, masteryOrder } from "./builds";
+import { type BuildPlan } from "./builds";
 import { actProfile, gearValue, upgradeGain } from "./gear-value";
 import { keptBases, wantsBase } from "./runes";
 
@@ -200,35 +200,9 @@ function spendAshborn(state: GameState, data: GameData): GameState {
   return s;
 }
 
-/** Kaelen: learns Weapon Mastery along the plan and wears the strongest Echo. */
+/** Kaelen: learns the Heirloom along the plan and wears the strongest Echo. */
 export function spendMastery(state: GameState, data: GameData, build?: BuildPlan): GameState {
-  let s = state;
-  const order = masteryOrder(data, s.hero.weaponId, build);
-  for (let guard = 0; guard < 64 && masteryPointsLeft(s, data) > 0; guard++) {
-    let learned = false;
-    const counts = new Map<string, number>();
-    for (const id of order) {
-      const want = (counts.get(id) ?? 0) + 1;
-      counts.set(id, want);
-      const tree = data.weaponMastery[s.hero.weaponId];
-      if (!tree) break;
-      const node = tree.nodes.find((n) => n.id === id);
-      const have = node?.group
-        ? s.hero.mastery.choices[node.group] === id
-          ? 1
-          : 0
-        : (s.hero.mastery.learned[id] ?? 0);
-      if (have >= want) continue;
-      try {
-        s = applyAction(s, data, { type: "learnMastery", nodeId: id });
-        learned = true;
-        break;
-      } catch {
-        // Not yet (Rank, Keystone ring): try the next step.
-      }
-    }
-    if (!learned) break;
-  }
+  let s = build ? learnHeirloom(state, data, build) : state;
   const echoes = Object.entries(s.legacy.echoes).sort((a, b) => b[1].stage - a[1].stage);
   const best = echoes[0]?.[0];
   if (best && s.hero.mastery.echo !== best) {
@@ -238,8 +212,8 @@ export function spendMastery(state: GameState, data: GameData, build?: BuildPlan
 }
 
 /**
- * Prestiges with the first new branch the weapon's tree plan prefers; once all of them are owned,
- * deepens them in plan order. All items stay.
+ * Harvests with the build's Mastery plan: the main Mastery first (it deepens up to Tier V), then
+ * Tier I of the others in plan order. All items stay.
  */
 export function autopilotPrestige(
   state: GameState,
@@ -247,11 +221,8 @@ export function autopilotPrestige(
   build: BuildPlan | undefined,
 ): GameState {
   const open = openBranches(state, data).map((b) => b.id);
-  const plan = build?.branches ?? [];
-  const preferred =
-    plan.find((b) => open.includes(b) && !state.legacy.branches.includes(b)) ??
-    plan.find((b) => open.includes(b)) ??
-    open[0];
+  const plan = build?.masteries ?? [];
+  const preferred = plan.find((b) => open.includes(b)) ?? open[0];
   const s = applyAction(state, data, {
     type: "prestige",
     ...(preferred ? { branchId: preferred } : {}),

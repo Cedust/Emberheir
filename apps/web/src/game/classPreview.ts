@@ -82,7 +82,7 @@ export function glimpseState(classId: string, weapon: string): GameState {
       Math.min(10, v * 2),
     ]),
   ) as unknown as Attributes;
-  const gear = glimpseGear(base, attributes, heroClass?.offHand);
+  const gear = glimpseGear(base, attributes, heroClass?.offHandFor?.[weapon] ?? heroClass?.offHand);
   const branches = branchId ? [branchId, branchId] : [];
   const draft: GameState = {
     ...base,

@@ -49,8 +49,9 @@ function runActMode(): void {
     args.class === "all" ? GAME_DATA.classes : GAME_DATA.classes.filter((c) => c.id === args.class);
   if (!classes.length) throw new Error(`Unknown class "${args.class}"`);
   const classIds = new Set(classes.map((c) => c.id));
-  // One autopilot build per start weapon, or the chosen builds (`--build storm`, `--build all`).
-  const plays: { weapon: string; build?: string }[] = args.build
+  // One autopilot build per start weapon, or the chosen builds (`--build storm`, `--build all`),
+  // each with its own main Mastery or the chosen ones (`--mastery all`: the class's three).
+  const chosen: { weapon: string; build?: string }[] = args.build
     ? BUILDS.filter(
         (b) =>
           (args.build === "all" ? classIds.has(b.classId) : b.id === args.build) &&
@@ -59,14 +60,28 @@ function runActMode(): void {
     : (args.weapon === "all" ? classes.flatMap((c) => c.weapons) : [args.weapon]).map((weapon) => ({
         weapon,
       }));
-  if (!plays.length) throw new Error(`Unknown build "${args.build}"`);
+  if (!chosen.length) throw new Error(`Unknown build "${args.build}"`);
+  const plays = chosen.flatMap((p) => {
+    if (!args.mastery) return [p];
+    const masteries =
+      args.mastery === "all"
+        ? (GAME_DATA.classes.find((c) => c.weapons.includes(p.weapon))?.branches ?? [])
+        : [args.mastery];
+    return masteries.map((mastery) => ({ ...p, mastery }));
+  });
   const byPlay: { label: string; reports: ActRunReport[] }[] = [];
-  for (const { weapon: starterWeapon, build } of plays) {
+  for (const { weapon: starterWeapon, build, mastery } of plays as {
+    weapon: string;
+    build?: string;
+    mastery?: string;
+  }[]) {
+    const label = `${build ? `${starterWeapon} (${build})` : starterWeapon}${mastery ? ` ${mastery}` : ""}`;
     const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(GAME_DATA, {
         seed: args.seed + i,
         starterWeapon,
         ...(build ? { build } : {}),
+        ...(mastery ? { mastery } : {}),
         upToAct: last.number,
         maxAttempts: args.attempts,
         generations,
@@ -75,14 +90,14 @@ function runActMode(): void {
         runes: args.runes > 0,
       }),
     ).flat();
-    byPlay.push({ label: build ? `${starterWeapon} (${build})` : starterWeapon, reports: all });
+    byPlay.push({ label, reports: all });
     const finale = GAME_DATA.finale;
     for (let tier = 1; tier <= args.wildfire; tier++) {
       const reports = all.filter((x) => x.act === 100 + tier);
       if (!reports.length) continue;
       const s = summarizeActRuns(reports);
       rows.push({
-        weapon: build ? `${starterWeapon} (${build})` : starterWeapon,
+        weapon: label,
         gen: `W${tier}`,
         act: ((tier - 1) % GAME_DATA.acts.length) + 1,
         runs: reports.length,
@@ -106,7 +121,7 @@ function runActMode(): void {
         if (!reports.length) continue;
         const s = summarizeActRuns(reports);
         rows.push({
-          weapon: build ? `${starterWeapon} (${build})` : starterWeapon,
+          weapon: label,
           gen: g,
           act: act.number,
           runs: reports.length,

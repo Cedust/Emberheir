@@ -23,7 +23,7 @@ import {
   conditionHolds,
 } from "./fighter";
 import { addHeat, stepHeat, triggerThreshold } from "./heat";
-import { dealDamage, defaultAttack, heal, inflict, rechargeBarrier } from "./hits";
+import { dealDamage, defaultAttack, extraAttack, heal, inflict, rechargeBarrier } from "./hits";
 import { PERK } from "./perks";
 import {
   actReaction,
@@ -40,7 +40,7 @@ import { castSkill } from "./skills";
 import { fighterSnapshot } from "./snapshot";
 import { fireTriggers, tryTrigger } from "./trigger-effects";
 import { stepBuffs, stepTriggers } from "./triggers";
-import type { CombatantSetup, RotationSlot, Side } from "./types";
+import type { CombatantSetup, RotationSlot, Side, SkillDefinition } from "./types";
 
 /**
  * The fight loop: `Fight` (public API) and one tick of it. The rest of a fight lives next to it:
@@ -165,13 +165,6 @@ function stepTelegraphs(core: FightCore, f: Fighter, dt: number): void {
       core.heavyFrom = f.side;
       castSkill(core, f, spec.skill, 1);
       core.heavyFrom = null;
-      // Iron Blood (Warrior): a Heavy Attack stood through gives Heat to strike back.
-      const target = core.fighters[other(f.side)];
-      const iron = target.setup.rules?.ironBlood;
-      if (iron && !core.result) {
-        target.heat = addHeat(target.heat, iron.heat, heatMultiplier(core, target));
-        payoff(core, target, "ironBlood");
-      }
     }
     return;
   }
@@ -248,9 +241,22 @@ function takeTurn(core: FightCore, f: Fighter): void {
     if (!core.result && capstone?.kind === "echo" && capstone.slot === index) {
       castSkill(core, f, slot.skill, slotLevel(slot.level, slot.modifiers), 0, 0.5, "echo");
     }
+    twinCast(core, f, slot.skill, slotLevel(slot.level, slot.modifiers));
     return;
   }
   defaultAttack(core, f);
+  twinCast(core, f);
+}
+
+/** Twin Cast (Spellweaver): every n-th action repeats, a skill for free, an attack as an extra one. */
+function twinCast(core: FightCore, f: Fighter, skill?: SkillDefinition, level = 1): void {
+  f.actionCount++;
+  for (const n of f.setup.rules?.twinCast ?? []) {
+    if (core.result) return;
+    if (n <= 0 || f.actionCount % n !== 0) continue;
+    if (skill) castSkill(core, f, skill, level, 0, 1, "twin");
+    else extraAttack(core, f);
+  }
 }
 
 /** Plays one tick of the fight and returns its events. */

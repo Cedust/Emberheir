@@ -23,7 +23,7 @@ import {
   spendCinderglass,
   spendPoints,
 } from "./autopilot";
-import { type BuildPlan, findBuild } from "./builds";
+import { type BuildPlan, findBuild, withMainMastery } from "./builds";
 import { chooseRunOmen, chooseWildfireOmens, flaskWorks } from "./omens";
 import { autopilotRunes, campSalvage, type RuneMemo } from "./runes";
 import { spendSkillPoints } from "./skill-path";
@@ -129,6 +129,8 @@ export function playGenerations(
     readonly starterWeapon: string;
     /** Autopilot build id (`BUILDS`); default: the first build with the weapon. */
     readonly build?: string;
+    /** Main Mastery instead of the build's own. */
+    readonly mastery?: string;
     /** Last act to play (its number). */
     readonly upToAct: number;
     readonly maxAttempts: number;
@@ -155,7 +157,8 @@ export function playGenerations(
     classId: heroClass.id,
     weapon: options.starterWeapon,
   });
-  const build = findBuild(options.starterWeapon, options.build);
+  const planned = findBuild(options.starterWeapon, options.build);
+  const build = planned && options.mastery ? withMainMastery(planned, options.mastery) : planned;
   const reports: ActRunReport[] = [];
   for (let generation = 1; generation <= options.generations; generation++) {
     let allCleared = true;

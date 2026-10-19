@@ -1,7 +1,7 @@
 import { Rng } from "../rng";
 import { type AilmentStates, chillFactor, damageTakenBonus, poisonStacks } from "./ailments";
 import type { FightMoment, RuleCondition } from "./types";
-import { COMBAT } from "./constants";
+import { COMBAT, MIGHTY_SHARE } from "./constants";
 import { type CombatEvent, type PayoffKind } from "./events";
 import { heatGainMultiplier } from "./heat";
 import { PERK, type PerkId } from "./perks";
@@ -39,6 +39,8 @@ export interface Fighter {
   ailments: AilmentStates;
   /** Default Attacks so far (for "Every Nth Attack"). Extra attacks from triggers do not count. */
   attackCount: number;
+  /** Rotation skills and Default Attacks taken so far (Twin Cast counts them). */
+  actionCount: number;
   readonly triggers: TriggerState[];
   buffs: BuffState[];
   curses: {
@@ -90,8 +92,10 @@ export interface Fighter {
   /** Once-per-fight Perks already used. */
   perksUsed: Set<PerkId>;
   // Class Traits.
-  /** Keen Eye: the first hit of the fight has been a clean Crit. */
-  keenOpened: boolean;
+  /** Fury (Cinderguard): own hits landed this fight, each one adds a little damage. */
+  fury: number;
+  /** Overcharge (Emberseer): skills cast since the last Nova. */
+  charges: number;
   /** Spark: Default Attacks still charged by a skill (one, two after Master of Starfall). */
   sparkCharges: number;
   /** Crit Chance built up by Default Attacks without a Crit (Critical Mass). */
@@ -207,6 +211,7 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     nextSlot: 0,
     ailments: {},
     attackCount: 0,
+    actionCount: 0,
     triggers: triggers.map(createTriggerState),
     buffs: [],
     curses: [],
@@ -234,7 +239,8 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     perks: new Set(setup.perks ?? []),
     titanReadyAt: 0,
     perksUsed: new Set(),
-    keenOpened: false,
+    fury: 0,
+    charges: 0,
     sparkCharges: 0,
     critBuildup: 0,
     cleanStreak: 0,
@@ -264,6 +270,39 @@ export const ELEMENT_AILMENT: Partial<Record<DamageType, AilmentType>> = {
   lightning: "shock",
   void: "corruption",
 };
+
+/**
+ * The ailment that belongs to a weapon's hits: its element's, or its first own ailment
+ * (Physical: Bleed, Poison or none).
+ */
+export function weaponAilment(weapon: CombatantSetup["weapon"]): AilmentType | undefined {
+  return (
+    weapon.ailment ?? ELEMENT_AILMENT[weapon.damageType] ?? weapon.ailmentChances?.[0]?.ailment
+  );
+}
+
+/** 100 % Weapon Damage of a weapon: the middle of its range (Mighty Hits start at 125 % of it). */
+export function weaponDamageOf(weapon: CombatantSetup["weapon"]): number {
+  return weapon.mightyAt !== undefined
+    ? weapon.mightyAt / MIGHTY_SHARE
+    : (weapon.damage.min + weapon.damage.max) / 2;
+}
+
+/** Fury (Cinderguard): the damage share gathered so far. */
+export function furyFactor(f: Fighter): number {
+  const fury = f.setup.rules?.fury;
+  return fury ? 1 + Math.min(fury.max, fury.perHit * f.fury) : 1;
+}
+
+/** Hunter's Mark (Ashstrider): extra Precision against an enemy with one of your ailments. */
+export function huntersMarkPrecision(attacker: Fighter, defender: Fighter): number {
+  const mark = attacker.setup.rules?.huntersMark;
+  if (!mark) return 0;
+  const ailing = AILMENT_TYPES.some((a) =>
+    a === "poison" ? poisonStacks(defender.ailments) > 0 : defender.ailments[a] !== undefined,
+  );
+  return ailing ? mark.precision : 0;
+}
 
 /** Gear ailment chances (Chance to Burn etc.) are added to the hit's own chances. */
 export function withStatAilmentChances(

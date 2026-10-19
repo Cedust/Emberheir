@@ -81,7 +81,7 @@ const PAGES: readonly TabItem<Page>[] = [
 ];
 
 function demoState(): GameState {
-  const base = newGame(GAME_DATA, { seed: 1, classId: "warrior" });
+  const base = newGame(GAME_DATA, { seed: 1, classId: "cinderguard" });
   return {
     ...base,
     wallet: {
@@ -220,7 +220,7 @@ function ButtonsPage(props: { state: GameState }) {
           Character
         </Button>
         <Button icon="tree" hotkey={HOTKEYS.tree}>
-          Skill Tree
+          Ash Tree
         </Button>
         <Button>Undo</Button>
         <Button variant="ghost">Sort</Button>
@@ -305,7 +305,7 @@ const KEY_ROWS: readonly [string, string][] = [
   [HOTKEYS.close, "Close the window on top · Menu"],
   [HOTKEYS.character, "Character"],
   [HOTKEYS.inventory, "Character (bag)"],
-  [HOTKEYS.tree, "Skill Tree (Kaelen)"],
+  [HOTKEYS.tree, "Ash Tree (Kaelen)"],
   [HOTKEYS.plan, "Battle Plan"],
   [HOTKEYS.legacy, "Legacy (Camp)"],
   [`${HOTKEYS.prevTab} / ${HOTKEYS.nextTab}`, "Previous / next tab"],

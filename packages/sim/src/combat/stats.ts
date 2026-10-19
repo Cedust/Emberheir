@@ -1,6 +1,6 @@
 import { COMBAT } from "./constants";
 import { PERK } from "./perks";
-import type { Attributes, CombatantSetup, Element, StatBonuses } from "./types";
+import type { Attribute, Attributes, CombatantSetup, Element, StatBonuses } from "./types";
 
 /** Final combat stats of a fighter, derived from attributes, weapon and bonuses. */
 export interface DerivedStats {
@@ -105,7 +105,7 @@ interface AttributeSteps {
   readonly critChance: number;
   readonly triggerChance: number;
   readonly elementalDamage: number;
-  /** Intelligence: % more Barrier per point. */
+  /** % more Barrier per point. */
   readonly barrier: number;
   readonly allResistance: number;
   readonly attackSpeed: number;
@@ -115,35 +115,65 @@ interface AttributeSteps {
   readonly tenacity: number;
 }
 
-const CLASSIC_STEPS: AttributeSteps = {
-  physicalDamage: COMBAT.physicalDamagePerStrength,
-  armor: COMBAT.armorPerStrength,
-  critChance: COMBAT.critChancePerDexterity,
-  triggerChance: COMBAT.triggerChancePerDexterity,
-  elementalDamage: COMBAT.elementalDamagePerIntelligence,
-  barrier: 0,
-  allResistance: COMBAT.allResistancePerIntelligence,
-  attackSpeed: COMBAT.attackSpeedPerAgility,
-  evasion: COMBAT.evasionPerAgility,
-  heatGain: COMBAT.heatGainPerWisdom,
-  ailmentEffect: COMBAT.ailmentEffectPerWisdom,
-  tenacity: COMBAT.tenacityPerVitality,
+const ZERO: Attributes = {
+  strength: 0,
+  dexterity: 0,
+  intelligence: 0,
+  agility: 0,
+  wisdom: 0,
+  vitality: 0,
 };
 
-const HEIR_STEPS: AttributeSteps = {
-  physicalDamage: COMBAT.heir.physicalDamagePerStrength,
-  armor: COMBAT.heir.armorPerStrength,
-  critChance: COMBAT.heir.critChancePerDexterity,
-  triggerChance: COMBAT.heir.triggerChancePerDexterity,
-  elementalDamage: COMBAT.heir.elementalDamagePerIntelligence,
-  barrier: COMBAT.heir.barrierPerIntelligence,
-  allResistance: COMBAT.heir.allResistancePerIntelligence,
-  attackSpeed: COMBAT.heir.attackSpeedPerAgility,
-  evasion: COMBAT.heir.evasionPerAgility,
-  heatGain: COMBAT.heir.heatGainPerWisdom,
-  ailmentEffect: COMBAT.heir.ailmentEffectPerWisdom,
-  tenacity: COMBAT.heir.tenacityPerVitality,
-};
+/** Monsters: the old small steps, each attribute with its two fixed effects. */
+function classicSteps(a: Attributes): AttributeSteps {
+  return {
+    physicalDamage: a.strength * COMBAT.physicalDamagePerStrength,
+    armor: a.strength * COMBAT.armorPerStrength,
+    critChance: a.dexterity * COMBAT.critChancePerDexterity,
+    triggerChance: a.dexterity * COMBAT.triggerChancePerDexterity,
+    elementalDamage: a.intelligence * COMBAT.elementalDamagePerIntelligence,
+    barrier: 0,
+    allResistance: a.intelligence * COMBAT.allResistancePerIntelligence,
+    attackSpeed: a.agility * COMBAT.attackSpeedPerAgility,
+    evasion: a.agility * COMBAT.evasionPerAgility,
+    heatGain: a.wisdom * COMBAT.heatGainPerWisdom,
+    ailmentEffect: a.wisdom * COMBAT.ailmentEffectPerWisdom,
+    tenacity: a.vitality * COMBAT.tenacityPerVitality,
+  };
+}
+
+/**
+ * The hero (klassengeruest-v1.md 3): the class's main attribute gives % damage of every type,
+ * STR Armor, DEX Evasion, INT Barrier for everyone; AGI speed and Crit, WIS Heat, ailments and
+ * triggers, VIT Life and Tenacity. Armor and Barrier are % of the gear's.
+ */
+function heirSteps(a: Attributes, main: Attribute | undefined): AttributeSteps {
+  const h = COMBAT.heir;
+  const damage = main ? a[main] * h.damagePerMainAttribute : 0;
+  return {
+    physicalDamage: damage,
+    elementalDamage: damage,
+    armor: a.strength * h.armorPerStrength,
+    evasion: a.dexterity * h.evasionPerDexterity,
+    barrier: a.intelligence * h.barrierPerIntelligence,
+    allResistance: a.intelligence * h.allResistancePerIntelligence,
+    attackSpeed: a.agility * h.attackSpeedPerAgility,
+    critChance: a.agility * h.critChancePerAgility,
+    heatGain: a.wisdom * h.heatGainPerWisdom,
+    ailmentEffect: a.wisdom * h.ailmentEffectPerWisdom,
+    triggerChance: a.wisdom * h.triggerChancePerWisdom,
+    tenacity: a.vitality * h.tenacityPerVitality,
+  };
+}
+
+/** What the attributes give before bonuses (the character sheet shows these shares). */
+export function attributeShares(
+  attributes: Attributes = ZERO,
+  scale: CombatantSetup["attributeScale"] = "classic",
+  main?: Attribute,
+): AttributeSteps {
+  return scale === "heir" ? heirSteps(attributes, main) : classicSteps(attributes);
+}
 
 /**
  * Turns attributes plus bonuses into combat stats. Each attribute has exactly two effects
@@ -154,11 +184,11 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
   const a: Attributes = setup.attributes;
   const b = sumBonuses(setup.weapon.implicit, setup.bonuses);
   const heir = setup.attributeScale === "heir";
-  const step = heir ? HEIR_STEPS : CLASSIC_STEPS;
+  const step = attributeShares(a, setup.attributeScale, setup.mainAttribute);
   const perks = new Set(setup.perks ?? []);
   const baseLife = setup.baseLife ?? heroBaseLife(setup.level);
   const penalty = setup.resistancePenalty ?? 0;
-  const allResistance = a.intelligence * step.allResistance + b.allResistance - penalty;
+  const allResistance = step.allResistance + b.allResistance - penalty;
   const capOf = (element: Element) =>
     COMBAT.maxResistance + (setup.rules?.maxResistance?.[element] ?? 0);
   const resist = (own: number, element: Element) => clamp(allResistance + own, 0, capOf(element));
@@ -166,23 +196,23 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     ? (baseLife + b.life) * (1 + a.vitality * COMBAT.heir.lifePerVitality + b.increasedLife)
     : (baseLife + a.vitality * COMBAT.lifePerVitality + b.life) * (1 + b.increasedLife);
   const armor = heir
-    ? b.armor * (1 + a.strength * step.armor + b.increasedArmor)
-    : (a.strength * step.armor + b.armor) * (1 + b.increasedArmor);
+    ? b.armor * (1 + step.armor + b.increasedArmor)
+    : (step.armor + b.armor) * (1 + b.increasedArmor);
 
   return {
     maxLife: Math.round(life * (setup.rules?.lifeMultiplier ?? 1)),
     armor,
-    physicalDamage: a.strength * step.physicalDamage + b.physicalDamage,
-    elementalDamage: a.intelligence * step.elementalDamage + b.elementalDamage,
+    physicalDamage: step.physicalDamage + b.physicalDamage,
+    elementalDamage: step.elementalDamage + b.elementalDamage,
     critChance: clamp(
-      (COMBAT.baseCritChance + a.dexterity * step.critChance + b.critChance) *
+      (COMBAT.baseCritChance + step.critChance + b.critChance) *
         (setup.rules?.critChanceMultiplier ?? 1),
       0,
       1,
     ),
-    triggerChance: a.dexterity * step.triggerChance + b.triggerChance,
-    attackSpeed: setup.weapon.attacksPerSecond * (1 + a.agility * step.attackSpeed + b.attackSpeed),
-    evasion: clamp(a.agility * step.evasion + b.evasion, 0, COMBAT.maxEvasion),
+    triggerChance: step.triggerChance + b.triggerChance,
+    attackSpeed: setup.weapon.attacksPerSecond * (1 + step.attackSpeed + b.attackSpeed),
+    evasion: clamp(step.evasion + b.evasion, 0, COMBAT.maxEvasion),
     blockChance: clamp(
       b.blockChance * (setup.weaponRules?.blockMultiplier ?? 1),
       0,
@@ -195,25 +225,25 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     // Glass Cannon gives the Barrier up (its Default Attacks hit for part of it instead).
     barrier: setup.weaponRules?.glassCannon
       ? 0
-      : Math.round(
-          Math.max(0, b.barrier) * (1 + a.intelligence * step.barrier + b.increasedBarrier),
-        ),
+      : Math.round(Math.max(0, b.barrier) * (1 + step.barrier + b.increasedBarrier)),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance, "fire"),
     coldResistance: resist(b.coldResistance, "cold"),
     lightningResistance: resist(b.lightningResistance, "lightning"),
     voidResistance: resist(b.voidResistance, "void"),
-    heatGain: a.wisdom * step.heatGain + b.heatGain,
+    heatGain: step.heatGain + b.heatGain,
     startingHeat: clamp(
       b.startingHeat + (perks.has("innerFire") ? PERK.innerFireHeat : 0),
       0,
       COMBAT.maxHeat,
     ),
     heatFromHitsTaken: Math.max(0, (setup.baseHeatFromHitsTaken ?? 1) + b.heatFromHitsTaken),
-    ailmentEffect: a.wisdom * step.ailmentEffect + b.ailmentEffect,
-    tenacity: clamp(a.vitality * step.tenacity + b.tenacity, 0, COMBAT.maxTenacity),
+    ailmentEffect: step.ailmentEffect + b.ailmentEffect,
+    tenacity: clamp(step.tenacity + b.tenacity, 0, COMBAT.maxTenacity),
     lifesteal: b.lifesteal,
-    physicalPenetration: b.physicalPenetration,
+    // Attuned (INT 4): Penetration of every type.
+    physicalPenetration:
+      b.physicalPenetration + (perks.has("attuned") ? PERK.attunedPenetration : 0),
     elementalPenetration:
       b.elementalPenetration + (perks.has("attuned") ? PERK.attunedPenetration : 0),
     thorns: b.thorns,

@@ -1,5 +1,6 @@
 import {
   type CombatEvent,
+  type FighterSnapshot,
   type FightSnapshot,
   type PayoffKind,
   type PerkId,
@@ -98,6 +99,10 @@ export class ArenaScene {
   private barrier: Record<Side, number> = { hero: 0, enemy: 0 };
   private ward: Record<Side, Graphics | null> = { hero: null, enemy: null };
   private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
+  /** The hero's Class Trait as the last snapshot showed it, and its drawing. */
+  private trait: FighterSnapshot["trait"] | undefined;
+  private traitGfx: Graphics | null = null;
+  private traitCarry = 0;
   private ailmentCarry: Record<Side, number> = { hero: 0, enemy: 0 };
   private echoColor: number | null = null;
   private echoCarry = 0;
@@ -118,6 +123,14 @@ export class ArenaScene {
   /** Exalted weapons shed golden sparks from this point of the hero figure. */
   private exaltedTip: Container | null = null;
   private exaltedCarry = 0;
+  /** The weapon's tip and the Heirloom Infusion it carries (klassengeruest-v1.md 4). */
+  private weaponTip: Container | null = null;
+  private infusion: string | undefined;
+  private infusionCarry = 0;
+  private infusionArc = 0;
+  /** The main Mastery's aura: Burst pulses, Tempo whirls, Ailment drips. */
+  private masteryAura: HeroLook["mastery"];
+  private masteryCarry = 0;
   private ranged: Record<Side, boolean> = { hero: false, enemy: false };
   /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
   private heavy: { skill: string; until: number } | null = null;
@@ -248,8 +261,12 @@ export class ArenaScene {
       hero.weaponLook.grade >= 4
         ? (this.hero.body.getChildByLabel("weapon-tip", true) ?? null)
         : null;
+    this.weaponTip = this.hero.body.getChildByLabel("weapon-tip", true) ?? null;
+    this.infusion = hero.weaponLook.element;
+    this.masteryAura = hero.mastery;
     this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
-    this.world.addChild(this.hero.root, this.enemy.root, fx.front);
+    this.traitGfx = new Graphics();
+    this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
 
     // The weather is already falling when the fight opens.
     for (let i = 0; i < 80; i++) {
@@ -286,6 +303,13 @@ export class ArenaScene {
       switch (e.type) {
         case "skill":
           this.cast(e.side, e.skill, e.heatCost, events.slice(i + 1));
+          if (e.via === "twin") {
+            // Twin Cast: the cast repeats, two violet rings mirror each other around the caster.
+            const c = this.center(e.side);
+            this.fx?.ring(c.x, c.y, 0xd2b8ff, 40, 150, 0.3, 5, 0.9);
+            this.wait(0.1, () => this.fx?.ring(c.x, c.y, 0xffffff, 40, 150, 0.3, 4, 0.8));
+            this.float(e.side, "Twin Cast", 0xd2b8ff, false, 0.7);
+          }
           break;
         case "telegraph":
           this.heavy = { skill: e.skill, until: this.clock + e.windup + 1 };
@@ -427,6 +451,7 @@ export class ArenaScene {
   /** Current state: telegraph wind-up and ailment tints. */
   onSnapshot(snapshot: FightSnapshot): void {
     this.telegraphOn = snapshot.enemy.telegraph !== null;
+    this.trait = snapshot.over ? undefined : snapshot.hero.trait;
     for (const side of ["hero", "enemy"] as const) {
       this.barrier[side] = Math.min(
         1,
@@ -439,6 +464,195 @@ export class ArenaScene {
       const sunder = snapshot[side].curses.some((c) => c.armor) ? ["sunder"] : [];
       this.ailments[side] = [...list.map((a) => a.type), ...sunder];
       if (snapshot[side].life <= 0) this.ailments[side] = [];
+    }
+  }
+
+  /**
+   * The Class Trait in the arena (klassengeruest-v1.md 2): an ember aura that grows with Fury,
+   * the Overcharge sparks circling the Emberseer, and Hunter's Mark as a sight over the enemy.
+   */
+  /**
+   * Infusion: the Heirloom path's element clings to the weapon. A Fire blade burns, Lightning
+   * crackles, Cold breathes frost, Void smokes. Physical weapons stay bare.
+   */
+  private drawInfusion(dt: number): void {
+    const fx = this.fx;
+    const element = this.infusion;
+    if (!fx || !this.weaponTip || !this.hero || this.hero.root.alpha !== 1) return;
+    if (!element || element === "physical") return;
+    const at = this.world.toLocal(this.weaponTip.getGlobalPosition());
+    this.infusionCarry += (this.motion ? 10 : 4) * dt;
+    for (; this.infusionCarry >= 1; this.infusionCarry--) {
+      const base = { x: at.x, y: at.y, count: 1, layer: "front" as const };
+      if (element === "fire") {
+        fx.burst({
+          ...base,
+          color: [0xff4a1a, 0xff8a1f, 0xffd84a],
+          spreadX: 40,
+          spreadY: 50,
+          angle: [RISE - 0.4, RISE + 0.4],
+          speed: [40, 110],
+          life: [0.3, 0.7],
+          size: [8, 18],
+          endSize: 0.1,
+        });
+      } else if (element === "lightning") {
+        fx.burst({
+          ...base,
+          color: [0xffe066, 0xfff6c0],
+          spreadX: 36,
+          spreadY: 50,
+          speed: [80, 180],
+          life: [0.12, 0.25],
+          size: [3, 6],
+          stretch: 3,
+        });
+      } else if (element === "cold") {
+        fx.burst({
+          ...base,
+          color: [0xcfe9ff, 0x8ec8f0, 0xffffff],
+          spreadX: 40,
+          spreadY: 50,
+          angle: [Math.PI * 0.35, Math.PI * 0.65],
+          speed: [8, 30],
+          life: [0.8, 1.5],
+          size: [12, 24],
+          alpha: 0.45,
+        });
+      } else {
+        fx.burst({
+          ...base,
+          color: [0x2a1840, 0x6a3aa0, 0xa070e0],
+          spreadX: 36,
+          spreadY: 46,
+          angle: [RISE - 0.5, RISE + 0.5],
+          speed: [12, 40],
+          life: [0.8, 1.4],
+          size: [14, 28],
+          alpha: 0.5,
+        });
+      }
+    }
+    // Lightning also throws a short arc now and then.
+    if (element === "lightning" && this.motion) {
+      this.infusionArc -= dt;
+      if (this.infusionArc <= 0) {
+        this.infusionArc = 0.4 + Math.random() * 0.6;
+        const a = Math.random() * Math.PI * 2;
+        fx.bolt(at.x, at.y, at.x + Math.cos(a) * 50, at.y + Math.sin(a) * 50, 0xffe066);
+      }
+    }
+  }
+
+  private drawMasteryAura(dt: number): void {
+    const fx = this.fx;
+    const aura = this.masteryAura;
+    if (!fx || !aura || !this.hero || this.hero.root.alpha !== 1) return;
+    const x = this.hero.root.x;
+    const rate = aura === "burst" ? 0.7 : 6;
+    this.masteryCarry += (this.motion ? rate : rate / 2) * dt;
+    for (; this.masteryCarry >= 1; this.masteryCarry--) {
+      if (aura === "burst") {
+        // A slow ember ring at the feet: power gathering for the big blow.
+        fx.ring(x, GROUND_Y - 4, 0xff8a3a, 30, 120, 0.9, 4);
+      } else if (aura === "tempo") {
+        // Wind streaks circle the hero.
+        const side = Math.random() < 0.5 ? -1 : 1;
+        fx.burst({
+          x: x - side * 70,
+          y: GROUND_Y - 60 - Math.random() * 140,
+          count: 1,
+          color: [0xf2e6c8, 0xd8f0ff],
+          angle: side > 0 ? [-0.15, 0.15] : [Math.PI - 0.15, Math.PI + 0.15],
+          speed: [220, 320],
+          life: [0.25, 0.4],
+          size: [4, 7],
+          stretch: 6,
+          alpha: 0.5,
+          layer: "back",
+        });
+      } else {
+        // Dark drops fall from the hero's hands.
+        fx.burst({
+          x,
+          y: GROUND_Y - 120,
+          count: 1,
+          color: [0x5a2a6a, 0x3a5a2a, 0x2a1830],
+          spreadX: 60,
+          spreadY: 50,
+          angle: [Math.PI * 0.4, Math.PI * 0.6],
+          speed: [20, 50],
+          life: [0.8, 1.3],
+          size: [6, 12],
+          alpha: 0.6,
+          kind: "bit",
+          layer: "back",
+        });
+      }
+    }
+  }
+
+  private drawTrait(dt: number): void {
+    const g = this.traitGfx;
+    if (!g) return;
+    g.clear();
+    const trait = this.trait;
+    if (!trait || !this.hero || this.hero.root.alpha < 1) return;
+    const spin = this.motion ? this.clock : 0;
+    const hero = this.center("hero");
+    if (trait.kind === "fury") {
+      const share = trait.value / Math.max(1, trait.max);
+      if (share <= 0) return;
+      const pulse = this.motion ? 0.06 * Math.sin(this.clock * 6) : 0;
+      g.ellipse(hero.x, GROUND_Y - 190, 120 + 40 * share, 180 + 40 * share)
+        .fill({ color: 0xff6a2b, alpha: 0.05 + 0.12 * share })
+        .stroke({ color: 0xff8a3a, width: 4 + 6 * share, alpha: 0.2 + 0.4 * share + pulse });
+      // Embers rise off the Cinderguard, more the hotter the Fury burns.
+      this.traitCarry += 14 * share * dt;
+      for (; this.fx && this.traitCarry >= 1; this.traitCarry--) {
+        this.fx.burst({
+          x: hero.x,
+          y: GROUND_Y - 120,
+          count: 1,
+          color: [0xff6a2b, 0xffb13b, 0xffd84a],
+          spreadX: 110,
+          spreadY: 160,
+          angle: [RISE - 0.3, RISE + 0.3],
+          speed: [60, 140],
+          life: [0.4, 0.9],
+          size: [6, 12],
+          endSize: 0.1,
+        });
+      }
+    } else if (trait.kind === "overcharge") {
+      const color = DAMAGE_COLORS[trait.damageType] ?? 0xffd84a;
+      for (let i = 0; i < trait.max; i++) {
+        const a = spin * 1.8 + (i * Math.PI * 2) / trait.max;
+        const x = hero.x + Math.cos(a) * 130;
+        const y = hero.y + Math.sin(a) * 50;
+        const lit = i < trait.value;
+        g.circle(x, y, lit ? 16 : 9).fill({
+          color: lit ? color : 0x8a8078,
+          alpha: lit ? 0.35 : 0.25,
+        });
+        g.circle(x, y, lit ? 7 : 4).fill({
+          color: lit ? 0xffffff : 0xb8b0a8,
+          alpha: lit ? 1 : 0.5,
+        });
+      }
+    } else if (trait.value > 0) {
+      // Hunter's Mark: a turning sight over the enemy while it carries your ailments.
+      const foe = this.center("enemy");
+      const y = foe.y - 230;
+      const a = spin * 1.2;
+      g.circle(foe.x, y, 26).stroke({ color: 0xffe9a8, width: 3, alpha: 0.9 });
+      for (let i = 0; i < 4; i++) {
+        const r = a + (i * Math.PI) / 2;
+        g.moveTo(foe.x + Math.cos(r) * 16, y + Math.sin(r) * 16)
+          .lineTo(foe.x + Math.cos(r) * 36, y + Math.sin(r) * 36)
+          .stroke({ color: 0xffe9a8, width: 3, alpha: 0.9 });
+      }
+      g.circle(foe.x, y, 4).fill({ color: 0xff6a2b });
     }
   }
 
@@ -640,6 +854,51 @@ export class ArenaScene {
         }
         break;
       }
+      case "nova": {
+        // Overcharge: the three charges break loose as a ring of the weapon's element.
+        const tint = DAMAGE_COLORS[this.trait?.damageType ?? "fire"] ?? main;
+        this.fx?.ring(c.x, c.y, tint, 30, 320, 0.5, 14, 1);
+        this.fx?.ring(c.x, c.y, 0xffffff, 20, 200, 0.35, 6, 1);
+        this.fx?.burst({
+          x: c.x,
+          y: c.y,
+          count: 40,
+          color: [tint, 0xffffff],
+          angle: [0, Math.PI * 2],
+          speed: [260, 520],
+          life: [0.3, 0.6],
+          size: [8, 16],
+          stretch: 0.6,
+          drag: 0.2,
+        });
+        break;
+      }
+      case "cashIn": {
+        // Cash In: the enemy's ailments are pulled into one point (their colours), then break out
+        // as one blow in the Heirloom's element.
+        const tint = DAMAGE_COLORS[this.trait?.damageType ?? "fire"] ?? main;
+        const dots = [0xff6a2b, 0xb5d82c, 0xa35cff, 0xc8102e];
+        this.fx?.ring(c.x, c.y, dots[0] ?? main, 220, 30, 0.3, 6, 0.9);
+        this.fx?.ring(c.x, c.y, dots[2] ?? main, 200, 25, 0.28, 6, 0.9);
+        this.fx?.ring(c.x, c.y, tint, 180, 20, 0.3, 10, 1);
+        this.wait(0.28, () => {
+          this.fx?.ring(c.x, c.y, 0xffffff, 20, 260, 0.4, 12, 1);
+          this.fx?.ring(c.x, c.y, tint, 30, 200, 0.5, 8, 1);
+          this.fx?.burst({
+            x: c.x,
+            y: c.y,
+            count: 44,
+            color: [tint, 0xffffff, ...dots],
+            angle: [0, Math.PI * 2],
+            speed: [260, 560],
+            life: [0.3, 0.6],
+            size: [8, 18],
+            stretch: 0.8,
+            drag: 0.2,
+          });
+        });
+        break;
+      }
       case "arc": {
         // Conduction: a thin arc runs from the Shocked enemy back to the Wand.
         const back = this.center(owner);
@@ -733,6 +992,25 @@ export class ArenaScene {
         });
         fx.ring(at.x, at.y, 0xc9c2b8, 30, 140, 0.35, 6, 1);
         this.shake(0.25);
+        break;
+      case "Earthsplitter":
+        // The Vanquisher's blow splits the ground under the foe.
+        fx.ring(at.x, GROUND_Y - 4, 0xc9c2b8, 30, 240, 0.55, 9);
+        fx.burst({
+          x: at.x,
+          y: GROUND_Y - 6,
+          count: 18,
+          kind: "bit",
+          color: [0x6b625a, 0x9a9088, 0x3a332c],
+          angle: [RISE - 0.9, RISE + 0.9],
+          speed: [180, 420],
+          gravity: 1100,
+          life: [0.5, 0.9],
+          size: [6, 12],
+          spin: 6,
+        });
+        this.shake(0.35);
+        this.hitStop(0.06);
         break;
       case "Skull Crack":
         fx.ring(at.x, at.y - 120, 0xffe14d, 20, 120, 0.4, 7, 1);
@@ -1168,6 +1446,7 @@ export class ArenaScene {
       const target = share > 0.005 ? 0.55 + 0.45 * Math.min(1, share * 3) + pulse : 0;
       ward.alpha += (target - ward.alpha) * Math.min(1, dt * 8);
     }
+    this.drawTrait(dt);
     if (this.telegraph) {
       const target = this.telegraphOn ? 0.55 + 0.35 * Math.sin(this.clock * 9) : 0;
       this.telegraph.alpha += (target - this.telegraph.alpha) * Math.min(1, dt * 12);
@@ -1202,6 +1481,8 @@ export class ArenaScene {
         });
       }
     }
+    this.drawInfusion(dt);
+    this.drawMasteryAura(dt);
     if (this.levelGlow && this.motion) {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
     }

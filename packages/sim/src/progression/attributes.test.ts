@@ -110,7 +110,7 @@ describe("Attributes v1", () => {
       "armorbreaker",
       "stoneguard",
       "titan",
-      "quickReflexes",
+      "hawkeye",
     ]);
     expect(movedPoints(own, { ...own, strength: 7, agility: 5 })).toBe(2);
   });
