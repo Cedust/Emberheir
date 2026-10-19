@@ -350,6 +350,10 @@ Endgame **Wildfire I–X**.
   sie (bis **Tier V**) oder nimmt Tier I einer anderen. Eine Tier kostet 8 / 5 / 6 / 4 / 4 Skill Points; Keystone II
   und III heißen Greater und Supreme, jede tiefere Tier gibt dem Mastery-Skill einen Rang.
 - Neue Bausteine: Skill Damage, Ailment Chance, Ailment Duration, „Crits setzen dein Ailment“.
+- **Cash In** (Burst, Timo 19.10.2026): Der Burst-Skill (Earthsplitter, Deadly Aim, Arcane Blast) beendet nach seinem
+  Treffer alle DoTs auf dem Gegner und macht 150 % ihres Restschadens auf einmal, als Treffer (Lifesteal greift, Skill
+  Damage zählt). Grund: Fast jeder Build macht den Großteil seines Schadens über Ailments; Burst hat vorher nur
+  Skill-Treffer verstärkt und lag klar hinter Tempo und Ailment. Ailment lässt die DoTs laufen, Burst löst sie ein.
 - Die Masteries wachsen an einem Notable aus dem Ash Tree, jede Klasse erreicht ihre drei nach 7/9/9 Nodes
   (Vanquisher: Brutal Force, Ravager: Flayer, Skirmisher: Red Tide, Deadeye: Searing Steel, Trickster: Venom Heart,
   Archmage: Deep Freeze, Warlock: Hollow Crown; Berserker und Spellweaver wachsen als untere Äste links und rechts aus

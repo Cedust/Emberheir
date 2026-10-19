@@ -358,7 +358,7 @@ function strike(
   heatCost: number,
   description: string,
   multiplier: number,
-  extra: { count?: number; chance: number; power?: number; precise?: boolean },
+  extra: { count?: number; chance: number; power?: number; precise?: boolean; cashIn?: number },
 ): SkillDefinition {
   return {
     id,
@@ -378,6 +378,7 @@ function strike(
         ...(extra.precise ? { precise: true } : {}),
       },
     ],
+    ...(extra.cashIn ? { effects: [{ kind: "cashIn", multiplier: extra.cashIn }] } : {}),
   };
 }
 
@@ -388,7 +389,7 @@ function spell(
   heatCost: number,
   description: string,
   damage: { min: number; max: number },
-  extra: { count?: number; chance: number; power?: number },
+  extra: { count?: number; chance: number; power?: number; cashIn?: number },
 ): SkillDefinition {
   return {
     id,
@@ -408,8 +409,16 @@ function spell(
         ...(extra.power ? { ailmentPower: extra.power } : {}),
       },
     ],
+    ...(extra.cashIn ? { effects: [{ kind: "cashIn", multiplier: extra.cashIn }] } : {}),
   };
 }
+
+/**
+ * Burst Masteries cash in (Timo 2026-10-19): their skill ends every damage-over-time ailment on
+ * the enemy and deals what is left of it at once, stronger. Ailment Masteries let them run.
+ */
+const CASH_IN = 1.5;
+const CASH_IN_TEXT = `sets off all damage over time on the enemy at once: ${CASH_IN * 100} % of what is left.`;
 
 const CINDER_TRAVEL = (names: readonly string[]) =>
   names.map((n, i) => [n, [L, A, K, T][i % 4] ?? L] as const);
@@ -434,9 +443,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "earthsplitter",
       "Earthsplitter",
       50,
-      "300 % Weapon Damage. Always applies your weapon's ailment.",
+      `300 % Weapon Damage. Always applies your weapon's ailment, then ${CASH_IN_TEXT}`,
       3,
-      { chance: 1 },
+      { chance: 1, cashIn: CASH_IN },
     ),
     notables: [
       skillPower("Heavy Hand", 0.15),
@@ -600,9 +609,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "deadly-aim",
       "Deadly Aim",
       45,
-      "260 % Weapon Damage that never glances. 50 % chance to apply your weapon's ailment.",
+      `260 % Weapon Damage that never glances. 50 % chance to apply your weapon's ailment, then ${CASH_IN_TEXT}`,
       2.6,
-      { chance: 0.5, precise: true },
+      { chance: 0.5, precise: true, cashIn: CASH_IN },
     ),
     notables: [
       skillPower("Steady Hands", 0.15),
@@ -753,9 +762,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "arcane-blast",
       "Arcane Blast",
       55,
-      "A heavy hit of your Heirloom's element. 50 % chance to apply its ailment.",
+      `A heavy hit of your Heirloom's element. 50 % chance to apply its ailment, then ${CASH_IN_TEXT}`,
       { min: 52, max: 81 },
-      { chance: 0.5 },
+      { chance: 0.5, cashIn: CASH_IN },
     ),
     notables: [
       skillPower("Arcane Might", 0.15),

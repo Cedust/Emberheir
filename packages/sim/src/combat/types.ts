@@ -308,6 +308,11 @@ export type SkillEffect =
    * caster heals `leech` of the damage dealt.
    */
   | { readonly kind: "detonateDots"; readonly seconds: number; readonly leech?: number }
+  /**
+   * Cash In (Burst Masteries, klassengeruest-v1.md 5): ends every DoT on the target and deals
+   * their remaining damage × `multiplier` at once, as a hit of the skill (Lifesteal works).
+   */
+  | { readonly kind: "cashIn"; readonly multiplier: number }
   /** Immolate: Combust `times` over after the hit (ailments-v2.md 3.2). */
   | { readonly kind: "combust"; readonly times: number }
   /** Weapon Mastery Sunder: adds stacks of the caster's stacking Sunder (Bone Breaker). */

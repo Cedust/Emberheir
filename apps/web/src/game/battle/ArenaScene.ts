@@ -866,6 +866,32 @@ export class ArenaScene {
         });
         break;
       }
+      case "cashIn": {
+        // Cash In: the enemy's ailments are pulled into one point (their colours), then break out
+        // as one blow in the Heirloom's element.
+        const tint = DAMAGE_COLORS[this.trait?.damageType ?? "fire"] ?? main;
+        const dots = [0xff6a2b, 0xb5d82c, 0xa35cff, 0xc8102e];
+        this.fx?.ring(c.x, c.y, dots[0] ?? main, 220, 30, 0.3, 6, 0.9);
+        this.fx?.ring(c.x, c.y, dots[2] ?? main, 200, 25, 0.28, 6, 0.9);
+        this.fx?.ring(c.x, c.y, tint, 180, 20, 0.3, 10, 1);
+        this.wait(0.28, () => {
+          this.fx?.ring(c.x, c.y, 0xffffff, 20, 260, 0.4, 12, 1);
+          this.fx?.ring(c.x, c.y, tint, 30, 200, 0.5, 8, 1);
+          this.fx?.burst({
+            x: c.x,
+            y: c.y,
+            count: 44,
+            color: [tint, 0xffffff, ...dots],
+            angle: [0, Math.PI * 2],
+            speed: [260, 560],
+            life: [0.3, 0.6],
+            size: [8, 18],
+            stretch: 0.8,
+            drag: 0.2,
+          });
+        });
+        break;
+      }
       case "arc": {
         // Conduction: a thin arc runs from the Shocked enemy back to the Wand.
         const back = this.center(owner);

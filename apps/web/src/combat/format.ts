@@ -39,6 +39,7 @@ const PAYOFF_NAMES: Record<PayoffKind, string> = {
   flashpoint: "Flashpoint",
   criticalMass: "Critical Mass",
   conduction: "Conduction",
+  cashIn: "Cash In",
 };
 
 const VIA = {

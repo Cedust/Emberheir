@@ -1,4 +1,5 @@
 import {
+  DOT_AILMENTS,
   advanceCorruption,
   clearAilment,
   dotDamagePerSecond,
@@ -6,6 +7,7 @@ import {
   multiplyPoison,
   poisonStacks,
   remainingBleedDamage,
+  remainingDotDamage,
 } from "./ailments";
 import { COMBAT } from "./constants";
 import {
@@ -356,6 +358,9 @@ function applySkillEffect(
     case "combust":
       combust(core, f, target, effect.times);
       return;
+    case "cashIn":
+      cashIn(core, f, target, skill, effect.multiplier, level);
+      return;
     case "detonateDots": {
       const perSecond = dotDamagePerSecond(target.ailments);
       if (perSecond <= 0) return;
@@ -379,6 +384,55 @@ function applySkillEffect(
       return;
     }
   }
+}
+
+/**
+ * Cash In: every DoT on the target ends and its remaining damage lands at once, as the skill's
+ * own hit. It scales like the DoTs it ends, plus the skill's level and "more skill damage", and
+ * Lifesteal heals from it like from any hit.
+ */
+function cashIn(
+  core: FightCore,
+  f: Fighter,
+  target: Fighter,
+  skill: SkillDefinition,
+  multiplier: number,
+  level: number,
+): void {
+  const rest = remainingDotDamage(target.ailments);
+  if (rest <= 0) return;
+  for (const ailment of DOT_AILMENTS) {
+    if (!target.ailments[ailment]) continue;
+    target.ailments = clearAilment(target.ailments, ailment);
+    emit(core, { t: fightTime(core), type: "ailmentExpired", side: target.side, ailment });
+  }
+  const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
+  const skillDamage =
+    1 + (f.setup.weaponRules?.skillDamage ?? 0) + (f.setup.rules?.skillDamage ?? 0);
+  const damage = Math.max(
+    1,
+    Math.round(
+      rest *
+        multiplier *
+        levelScale *
+        skillDamage *
+        dotFactor(core, target) *
+        payoffFactor(core, f),
+    ),
+  );
+  emit(core, {
+    t: fightTime(core),
+    type: "hit",
+    side: f.side,
+    source: skill.name,
+    damage,
+    damageType: f.setup.weapon.damageType,
+    crit: false,
+    blocked: false,
+  });
+  payoff(core, f, "cashIn", damage);
+  dealDamage(core, target, damage);
+  if (!core.result) heal(core, f, damage * f.stats.lifesteal);
 }
 
 /** An infused hit applies the weapon's ailment with the best listed chance (none for Stun). */

@@ -121,7 +121,7 @@ export const PAYOFF_FX: Record<
   {
     color: readonly number[];
     on: "self" | "foe";
-    look: "pop" | "flare" | "implode" | "ring" | "star" | "rift" | "arc" | "nova";
+    look: "pop" | "flare" | "implode" | "ring" | "star" | "rift" | "arc" | "nova" | "cashIn";
     shake?: number;
     /** No floating name: it happens too often (Conduction). */
     quiet?: boolean;
@@ -140,6 +140,8 @@ export const PAYOFF_FX: Record<
   criticalMass: { color: [0xb48cff, 0xffffff, 0xd2b8ff], on: "foe", look: "rift", shake: 0.1 },
   // Storm: a small arc of lightning runs from the Shocked enemy back into the Wand.
   conduction: { color: [0xfff08a, 0xffffff], on: "foe", look: "arc", quiet: true },
+  // Burst Masteries: every DoT on the enemy is pulled into one point and breaks out at once.
+  cashIn: { color: [0xffffff, 0xffd84a], on: "foe", look: "cashIn", shake: 0.35 },
 };
 
 /** Floating names of the payoffs. */
@@ -153,6 +155,7 @@ export const PAYOFF_NAMES: Record<PayoffKind, string> = {
   flashpoint: "Flashpoint",
   criticalMass: "Critical Mass",
   conduction: "Conduction",
+  cashIn: "Cash In",
 };
 
 const FALL = Math.PI / 2;

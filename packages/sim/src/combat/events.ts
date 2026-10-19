@@ -20,6 +20,8 @@ export const PAYOFF_KINDS = [
   "flashpoint",
   "criticalMass",
   "conduction",
+  // Burst Masteries (klassengeruest-v1.md 5): a skill sets off all DoTs on the enemy at once.
+  "cashIn",
 ] as const;
 export type PayoffKind = (typeof PAYOFF_KINDS)[number];
 
