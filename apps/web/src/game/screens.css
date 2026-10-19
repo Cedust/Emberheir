@@ -5632,14 +5632,15 @@
 }
 
 .stage .gamble-last {
-  display: flex;
-  justify-content: center;
-  align-items: flex-end;
+  display: block;
+  width: 100%;
   height: 100%;
 }
 
-.stage .gamble-last .item-tile {
-  position: relative;
+.stage .gamble-last .item-art {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.55));
 }
 
 .stage .rune-drops {

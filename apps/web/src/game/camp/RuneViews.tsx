@@ -11,9 +11,10 @@ import {
   merchantSlots,
 } from "@emberheir/sim";
 import { ItemArt } from "../../ui/ItemArt";
-import { BenchArt } from "./Workbench";
-import { ItemTile } from "../../ui/items";
+import { rarityClass } from "../../ui/items";
+import { useItemHover } from "../../ui/ItemTooltip";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
+import { BenchArt } from "./Workbench";
 
 /** Nyssa's and Marisha's center panels: Rune pouch, Codex, stock and gamble slots. */
 
@@ -162,6 +163,8 @@ export function GamblePanel(props: {
   last: Item | null;
 }) {
   const slots = merchantSlots(GAME_DATA);
+  const last = props.last ?? undefined;
+  const { active, ...hover } = useItemHover(last, false);
   return (
     <div className="gamble">
       <div className="gamble-slots" role="radiogroup" aria-label="Gamble slot">
@@ -186,11 +189,18 @@ export function GamblePanel(props: {
         })}
       </div>
       <span className="sub small">Item Level {merchantItemLevel(props.state, GAME_DATA)}</span>
-      <div className="workbench gamble-crate" aria-label="Mystery Crate">
+      <div
+        className={`workbench gamble-crate${last ? ` ${rarityClass(last)}` : ""}`}
+        aria-label="Mystery Crate"
+      >
         <BenchArt persona="marisha">
-          {props.last && (
-            <span className="gamble-last">
-              <ItemTile item={props.last} label="Gambled" size={76} equipped={false} />
+          {last && (
+            <span
+              className="gamble-last"
+              aria-label={`Gambled: ${last.name}`}
+              {...(active ? hover : {})}
+            >
+              <ItemArt baseId={last.baseId} slot={getBase(ITEM_CATALOG, last.baseId).slot} />
             </span>
           )}
         </BenchArt>
