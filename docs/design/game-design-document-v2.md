@@ -354,6 +354,8 @@ Endgame **Wildfire I–X**.
   Treffer alle DoTs auf dem Gegner und macht 150 % ihres Restschadens auf einmal, als Treffer (Lifesteal greift, Skill
   Damage zählt). Grund: Fast jeder Build macht den Großteil seines Schadens über Ailments; Burst hat vorher nur
   Skill-Treffer verstärkt und lag klar hinter Tempo und Ailment. Ailment lässt die DoTs laufen, Burst löst sie ein.
+- **Smolder** (Staff, Timo 19.10.2026): Cinders +40 % Burn-Schaden (war 25 %), Master of Smolder +35 % (war 20 %), weil
+  derselbe Held mit Hollow 10–35 % mehr Schaden machte.
 - **Twin Cast** (Spellweaver, Timo 19.10.2026): Twin Sparks (jede 4.) und Endless Weave (jede 3.) zählen Aktionen statt
   Angriffe: eine Default Attack schlägt noch einmal zu, ein Rotation-Skill wird gratis noch einmal gewirkt (zählt nicht
   für Overcharge). Grund: Warming-Waffen sammeln Heat pro Sekunde, mit viel Heat Gain ist fast jede Aktion ein Skill;

@@ -1880,8 +1880,8 @@ const STAFF = buildTree({
           notable("Slow Burn", "Burn lasts 40 % longer.", {
             weaponRules: { ailmentDurationBy: { burn: 0.4 } },
           }),
-          notable("Cinders", "Burn deals 25 % more damage.", {
-            rules: { ailmentDamage: { burn: 1.25 } },
+          notable("Cinders", "Burn deals 40 % more damage.", {
+            rules: { ailmentDamage: { burn: 1.4 } },
           }),
         ],
         [
@@ -1902,18 +1902,18 @@ const STAFF = buildTree({
       ],
       master: master(
         "Master of Smolder",
-        "Burn and Corruption on the same enemy both deal 20 % more damage.",
+        "Burn and Corruption on the same enemy both deal 35 % more damage.",
         {
           weaponRules: {
             ailmentDamageWhen: [
               {
                 ailment: "burn",
-                amount: 0.2,
+                amount: 0.35,
                 condition: { kind: "enemyHas", ailment: "corruption" },
               },
               {
                 ailment: "corruption",
-                amount: 0.2,
+                amount: 0.35,
                 condition: { kind: "enemyHas", ailment: "burn" },
               },
             ],
