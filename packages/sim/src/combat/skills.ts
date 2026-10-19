@@ -58,7 +58,7 @@ export function castSkill(
   level: number,
   heatCost = 0,
   power = 1,
-  via?: "reaction" | "reverb" | "echo" | "opening",
+  via?: "reaction" | "reverb" | "echo" | "opening" | "twin",
 ): void {
   emit(core, {
     t: fightTime(core),
@@ -191,7 +191,7 @@ export function castSkill(
       emit(core, { t: fightTime(core), type: "barrier", side: f.side, amount: Math.round(gain) });
     }
   }
-  if (core.result || via === "reverb" || via === "echo") return;
+  if (core.result || via === "reverb" || via === "echo" || via === "twin") return;
   f.skillCount++;
   overcharge(core, f);
   if (core.result) return;

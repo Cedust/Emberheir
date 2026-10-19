@@ -39,6 +39,8 @@ export interface Fighter {
   ailments: AilmentStates;
   /** Default Attacks so far (for "Every Nth Attack"). Extra attacks from triggers do not count. */
   attackCount: number;
+  /** Rotation skills and Default Attacks taken so far (Twin Cast counts them). */
+  actionCount: number;
   readonly triggers: TriggerState[];
   buffs: BuffState[];
   curses: {
@@ -209,6 +211,7 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     nextSlot: 0,
     ailments: {},
     attackCount: 0,
+    actionCount: 0,
     triggers: triggers.map(createTriggerState),
     buffs: [],
     curses: [],

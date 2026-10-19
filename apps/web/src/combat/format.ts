@@ -45,6 +45,7 @@ const PAYOFF_NAMES: Record<PayoffKind, string> = {
 const VIA = {
   reaction: "Reaction",
   reverb: "Reverb",
+  twin: "Twin Cast",
   echo: "Echo",
   opening: "Opening Move",
 } as const;

@@ -449,6 +449,11 @@ export interface CombatRules {
   readonly skillCostMultiplier?: number;
   /** Multiplies the damage of the Default Attack. */
   readonly defaultAttackDamage?: number;
+  /**
+   * Twin Cast (Spellweaver): every n-th action happens twice, for each listed n. A Default Attack
+   * strikes again, a Rotation skill is cast again for free.
+   */
+  readonly twinCast?: readonly number[];
   /** "Heat no longer cools down": Cooling weapons keep their Heat without landing hits. */
   readonly noHeatDecay?: boolean;
   /** Blood Price: every Crit inflicts Bleed. */

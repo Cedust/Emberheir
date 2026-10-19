@@ -297,6 +297,12 @@ const strikesTwice = (id: string, name: string, n: number): NodeSpec => ({
   description: `Every ${n}th attack strikes twice.`,
   triggers: [trigger(id, name, { kind: "everyNthAttack", n }, { kind: "extraAttack" })],
 });
+/** Spellweaver: Tempo for casters, so a skill counts like an attack. */
+const twinCast = (name: string, n: number): NodeSpec => ({
+  name,
+  description: `Every ${n}th action happens twice: an attack strikes again, a skill is cast again for free.`,
+  rules: { twinCast: [n] },
+});
 const attackSpeed = (name: string, v: number): NodeSpec => ({
   name,
   description: `+${pct(v)} Attack Speed.`,
@@ -842,10 +848,10 @@ const MASTERIES: readonly MasterySpec[] = [
       (s) => `Your Default Attack deals ${30 + s * 10} % more damage. Skills cost 20 % more Heat.`,
     ),
     deeper: [
-      strikesTwice("twin-sparks", "Twin Sparks", 4),
+      twinCast("Twin Sparks", 4),
       { name: "Barrier Weave", description: "+10 % Barrier.", bonuses: { increasedBarrier: 0.1 } },
       attackSpeed("Haste", 0.15),
-      strikesTwice("endless-weave", "Endless Weave", 3),
+      twinCast("Endless Weave", 3),
     ],
     travel: SEER_TRAVEL([
       "Rime Skin",

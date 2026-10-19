@@ -34,7 +34,7 @@ export type CombatEvent =
       readonly skill: string;
       readonly heatCost: number;
       /** How it was cast, if not by the Rotation: a Reaction Slot or a free repeat. */
-      readonly via?: "reaction" | "reverb" | "echo" | "opening";
+      readonly via?: "reaction" | "reverb" | "echo" | "opening" | "twin";
     }
   | {
       readonly t: number;

@@ -949,6 +949,33 @@ describe("Affliction effects", () => {
     expect(ofType(none.events, "payoff").some((p) => p.payoff === "cashIn")).toBe(false);
   });
 
+  it("Twin Cast repeats every n-th action: a skill for free, an attack as an extra one", () => {
+    const bolt = skill(undefined, [
+      { kind: "spell", damage: { min: 10, max: 10 }, damageType: "fire", ailmentChances: [] },
+    ]);
+    const casts = (twinCast?: number[]) => {
+      const hero = setup({
+        bonuses: { ...NO_CRIT, startingHeat: 100 },
+        rotation: [{ skill: { ...bolt, heatCost: 0 } }],
+        ...(twinCast ? { rules: { twinCast } } : {}),
+      });
+      const fight = new Fight(hero, dummy(), 1);
+      fight.advance(4.05);
+      return ofType(fight.events, "skill");
+    };
+    const plain = casts();
+    const twin = casts([2]);
+    expect(twin.filter((c) => c.via === "twin")).toHaveLength(Math.floor(plain.length / 2));
+    expect(twin.filter((c) => c.via === "twin").every((c) => c.heatCost === 0)).toBe(true);
+    const attacks = (twinCast?: number[]) => {
+      const hero = setup({ bonuses: NO_CRIT, ...(twinCast ? { rules: { twinCast } } : {}) });
+      const fight = new Fight(hero, dummy(), 1);
+      fight.advance(4.05);
+      return ofType(fight.events, "hit").length;
+    };
+    expect(attacks([2])).toBeGreaterThan(attacks());
+  });
+
   it("Ailment Power makes the ailment of a hit stronger (Immolate)", () => {
     const immolate = skill(undefined, [
       {

@@ -303,6 +303,13 @@ export class ArenaScene {
       switch (e.type) {
         case "skill":
           this.cast(e.side, e.skill, e.heatCost, events.slice(i + 1));
+          if (e.via === "twin") {
+            // Twin Cast: the cast repeats, two violet rings mirror each other around the caster.
+            const c = this.center(e.side);
+            this.fx?.ring(c.x, c.y, 0xd2b8ff, 40, 150, 0.3, 5, 0.9);
+            this.wait(0.1, () => this.fx?.ring(c.x, c.y, 0xffffff, 40, 150, 0.3, 4, 0.8));
+            this.float(e.side, "Twin Cast", 0xd2b8ff, false, 0.7);
+          }
           break;
         case "telegraph":
           this.heavy = { skill: e.skill, until: this.clock + e.windup + 1 };

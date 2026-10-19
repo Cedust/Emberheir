@@ -354,6 +354,10 @@ Endgame **Wildfire I–X**.
   Treffer alle DoTs auf dem Gegner und macht 150 % ihres Restschadens auf einmal, als Treffer (Lifesteal greift, Skill
   Damage zählt). Grund: Fast jeder Build macht den Großteil seines Schadens über Ailments; Burst hat vorher nur
   Skill-Treffer verstärkt und lag klar hinter Tempo und Ailment. Ailment lässt die DoTs laufen, Burst löst sie ein.
+- **Twin Cast** (Spellweaver, Timo 19.10.2026): Twin Sparks (jede 4.) und Endless Weave (jede 3.) zählen Aktionen statt
+  Angriffe: eine Default Attack schlägt noch einmal zu, ein Rotation-Skill wird gratis noch einmal gewirkt (zählt nicht
+  für Overcharge). Grund: Warming-Waffen sammeln Heat pro Sekunde, mit viel Heat Gain ist fast jede Aktion ein Skill;
+  auf dem Staff liefen die Default-Attack-Nodes des Spellweavers sonst ins Leere.
 - Die Masteries wachsen an einem Notable aus dem Ash Tree, jede Klasse erreicht ihre drei nach 7/9/9 Nodes
   (Vanquisher: Brutal Force, Ravager: Flayer, Skirmisher: Red Tide, Deadeye: Searing Steel, Trickster: Venom Heart,
   Archmage: Deep Freeze, Warlock: Hollow Crown; Berserker und Spellweaver wachsen als untere Äste links und rechts aus

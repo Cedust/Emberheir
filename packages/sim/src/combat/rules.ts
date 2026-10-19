@@ -31,6 +31,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   const conditionalCrit: NonNullable<CombatRules["conditionalCrit"]>[number][] = [];
   const ailmentDamageWhen: NonNullable<CombatRules["ailmentDamageWhen"]>[number][] = [];
   const conversion: NonNullable<CombatRules["conversion"]>[number][] = [];
+  const twinCast: number[] = [];
   // Class Traits come from one source (the class): the first one wins.
   let fury: CombatRules["fury"];
   let huntersMark: CombatRules["huntersMark"];
@@ -85,6 +86,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     conditionalCrit.push(...(r.conditionalCrit ?? []));
     ailmentDamageWhen.push(...(r.ailmentDamageWhen ?? []));
     conversion.push(...(r.conversion ?? []));
+    twinCast.push(...(r.twinCast ?? []));
     if (r.heavyHitCap !== undefined) heavyHitCap = Math.max(heavyHitCap ?? 0, r.heavyHitCap);
     if (r.execute && (!execute || r.execute.bonus > execute.bonus)) execute = r.execute;
   }
@@ -108,6 +110,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(Object.keys(ailmentDamage).length ? { ailmentDamage } : {}),
     ...(Object.keys(maxResistance).length ? { maxResistance } : {}),
     ...(ailmentEcho.length ? { ailmentEcho } : {}),
+    ...(twinCast.length ? { twinCast } : {}),
     ...(execute ? { execute } : {}),
     ...(heavyHitCap !== undefined ? { heavyHitCap } : {}),
     ...(conditionalDamage.length ? { conditionalDamage } : {}),

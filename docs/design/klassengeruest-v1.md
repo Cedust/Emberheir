@@ -130,7 +130,7 @@ Eine Mastery verstärkt einen **Kampfstil**, quer zu allen drei Builds der Waffe
 | Achse | verstärkt | Cinderguard | Ashstrider | Emberseer |
 |---|---|---|---|---|
 | **Burst** | große Treffer, Skills, Heat ausgeben, Crit als Auslöser; **Cash In**: der Mastery-Skill löst alle DoTs auf einmal ein (150 % vom Rest) | **Vanquisher** | **Deadeye** | **Archmage** |
-| **Tempo** | viele schnelle Treffer, Default Attack, On-Hit | **Berserker** | **Skirmisher** | **Spellweaver** |
+| **Tempo** | viele schnelle Treffer, Default Attack, On-Hit; beim Spellweaver **Twin Cast**: jede n-te Aktion doppelt, auch Skills | **Berserker** | **Skirmisher** | **Spellweaver** |
 | **Ailment** | Chance, Stärke, Dauer aller Ailments (auch Shock, Chill, Stun) | **Ravager** | **Trickster** | **Warlock** |
 
 **Ablauf** ✅: 7 Harvests = 7 Picks.
