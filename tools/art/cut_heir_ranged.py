@@ -20,8 +20,8 @@ POSES={
     'src':'heir-crossbow-v1.png',
     # The arm from the sleeve to the paw on the stock at the jaw.
     'arm':[(188,420),(225,368),(300,356),(400,358),(470,350),(510,345),(542,360),(548,395),(537,427),(500,442),(440,448),(380,447),(340,472),(280,507),(210,507),(186,470)],
-    # The curled fingers and the top of the palm under the fore end: the stock rests in them.
-    'hand':[(858,448),(870,438),(886,412),(905,400),(935,402),(978,410),(985,440),(968,468),(930,486),(890,490),(858,490)],
+    # The curled fingers, the palm and the wrist under the fore end: the stock rests in them.
+    'hand':[(838,448),(870,436),(886,412),(905,400),(935,402),(978,410),(985,440),(968,468),(930,486),(895,500),(880,535),(820,535),(826,470)],
   },
 }
 def save(img,name):
