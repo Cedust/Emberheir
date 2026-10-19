@@ -106,7 +106,10 @@ interface RegionSpec {
   readonly hub: NodeSpec & { readonly classStart?: string };
   /** Spokes at -14°, 0° and +14° from the region's angle. */
   readonly spokes: readonly [SpokeSpec, SpokeSpec, SpokeSpec];
-  /** Travel nodes towards the next region on the ring: on the inner ring and the middle ring. */
+  /**
+   * Travel nodes: the inner one sits on the Ash Tree's leader and joins the other regions there
+   * (`LADDER`); the middle one, towards the next region on the ring, carries the Ward bud.
+   */
   readonly innerTravel: NodeSpec;
   readonly middleTravel: NodeSpec;
   /**
@@ -959,6 +962,26 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
   const id = (region: RegionSpec, spec: NodeSpec | SkillSpec) =>
     `${region.id}-${slug(isSkill(spec) ? spec.skill.name : spec.name)}`;
 
+  const innerOf = (regionId: string) => {
+    const region = REGIONS.find((r) => r.id === regionId);
+    return region ? id(region, region.innerTravel) : "";
+  };
+  // The ladder up the leader: each rung's travel nodes join each other and the rung above, on
+  // the same side (a rung of one joins both).
+  const ladderLinks = (regionId: string): string[] => {
+    const k = LADDER.findIndex((rung) => rung.includes(regionId as TreeRegionId));
+    const rung = LADDER[k];
+    const above = LADDER[k + 1];
+    if (!rung) return [];
+    const side = rung.indexOf(regionId as TreeRegionId);
+    const links = side === 0 && rung[1] ? [innerOf(rung[1])] : [];
+    if (above) {
+      const up = rung.length === above.length ? [above[side]] : above;
+      links.push(...up.filter((r): r is TreeRegionId => !!r).map(innerOf));
+    }
+    return links;
+  };
+
   const ring = REGIONS.filter((r) => !r.attach);
   for (const region of REGIONS) {
     const r = ring.indexOf(region);
@@ -970,10 +993,14 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
     const innerId = id(region, region.innerTravel);
     const middleId = id(region, region.middleTravel);
     const firstNodes = region.spokes.map((spoke) => id(region, spoke.nodes[0]));
+    // The trunk's own hub is the ladder's foot; every crown region climbs it by its inner
+    // travel node.
+    const foot = region.id === LADDER[0]?.[0];
     const hub = plain(region, region.hub, "minor", polar(HUB_RADIUS, region.angle), [
       innerId,
       ...firstNodes,
       ...(region.attach ? [region.attach] : []),
+      ...(foot ? ladderLinks(region.id) : []),
     ]);
     add(region.hub.classStart ? { ...hub, classStart: region.hub.classStart } : hub);
     if (region.hub.classStart) classStarts[region.hub.classStart] = hubId;
@@ -983,12 +1010,11 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
         region.innerTravel,
         "minor",
         polar(HUB_RADIUS, travel),
-        next ? [id(next, next.hub)] : [],
+        foot ? [] : ladderLinks(region.id),
       ),
     );
     add(
       plain(region, region.middleTravel, "minor", polar(MIDDLE_TRAVEL_RADIUS, travel), [
-        ...(next ? [id(next, next.spokes[0].nodes[2])] : []),
         id(region, region.ward.nodes[0]),
       ]),
     );
@@ -1082,7 +1108,31 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
   return { nodes, classStarts };
 }
 
+type TreeRegionId = Exclude<SkillTreeRegion, "core">;
+
+/**
+ * The ladder up the Ash Tree's leader (tree-shape.ts), from the trunk's hub at its top up: each
+ * crown region's inner travel node sits where its bough leaves the leader, left and right at the
+ * same height. Any two regions meet over a few rungs instead of going round the ring (Timo
+ * 2026-10-19: shorter ways from the class starts).
+ */
+const LADDER: readonly (readonly TreeRegionId[])[] = [
+  ["trunk"],
+  ["steel", "void"],
+  ["blood", "frost"],
+  ["venom", "storm"],
+  ["flame"],
+];
+
 const WEB = buildWeb();
+
+/** The crown regions' inner travel nodes, which sit on the leader, by region. */
+export const LEADER_NODES: Readonly<Record<string, TreeRegionId>> = Object.fromEntries(
+  REGIONS.filter((r) => r.id !== "trunk" && LADDER.some((rung) => rung.includes(r.id))).map((r) => [
+    `${r.id}-${slug(r.innerTravel.name)}`,
+    r.id,
+  ]),
+);
 
 /** The web's nodes (Prestige branches come on top, see `masteries.ts`). */
 export const WEB_NODES: readonly SkillNode[] = WEB.nodes;

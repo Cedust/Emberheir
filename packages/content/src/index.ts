@@ -8,7 +8,17 @@ export * from "./elites";
 export * from "./codex";
 export { ECHOES, MASTERY_LAYOUT, WEAPON_MASTERY, echoStageName } from "./weapon-mastery";
 export { SKILL_TREE } from "./skill-tree";
-export { TREE_PLACEMENT, TRUNK, onTree, type TreeRegion } from "./tree-shape";
+export {
+  SIGIL,
+  TREE_PLACEMENT,
+  TRUNK,
+  fixedSpot,
+  onLeader,
+  onTree,
+  trunkHalf,
+  type TreeRegion,
+} from "./tree-shape";
+export { LEADER_NODES } from "./skill-web";
 export { ACT1, ACT2, GAME_DATA, LAST_EMBER } from "./game";
 export { STARTING_ATTRIBUTES, createHeroSetup, resolveHeroGear, type HeroLoadout } from "./heroes";
 

@@ -18,6 +18,7 @@ import {
   drawTwigs,
   loadAshTreeTextures,
   paintAshTree,
+  SIGIL_SCALE,
 } from "./ashTreeArt";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
 
@@ -313,8 +314,8 @@ export class TreeScene {
     this.keystoneGlow.clear();
     if (!places) return;
     const at = this.art.sigilAt;
-    const r = 0.79 * UNIT;
-    const size = 0.11 * UNIT;
+    const r = 0.79 * SIGIL_SCALE * UNIT;
+    const size = 0.11 * SIGIL_SCALE * UNIT;
     for (let k = 0; k < places.max; k++) {
       const a = -Math.PI / 4 + (k * Math.PI) / 2;
       const x = at.x + Math.cos(a) * r;

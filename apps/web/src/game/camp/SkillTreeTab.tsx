@@ -109,9 +109,10 @@ const BRANCHES: readonly { id: SkillTreeBranch; name: string; color: number }[] 
   { id: "roots", name: "Roots", color: 0xd08a4a },
 ];
 
-/** Where a region's name sits: out past its Keystones (ring angle and radius on the ring). */
-const LABEL_SPOT: Partial<Record<TreeRegion, { angle: number; radius: number }>> = {
-  trunk: { angle: 108, radius: 12 },
+/** The trunk's and the roots' names sit beside them (their nodes are laid out by hand). */
+const LABEL_AT: Partial<Record<TreeRegion, { x: number; y: number }>> = {
+  trunk: { x: -6, y: 1.6 },
+  roots: { x: 0, y: 12.4 },
 };
 
 const KIND_LABEL: Record<SkillNode["kind"], string> = {
@@ -146,9 +147,9 @@ function treeLabels(branches: readonly string[]): TreeLabel[] {
   const labels: TreeLabel[] = BRANCHES.filter((b) => b.id !== "core").map((b) => {
     // Out past the region's Keystones, on the tree.
     const region = b.id as TreeRegion;
-    const spot = LABEL_SPOT[region] ?? { angle: TREE_PLACEMENT[region].ring, radius: 14 };
-    const ring = (spot.angle * Math.PI) / 180;
-    const at = onTree({ x: Math.cos(ring) * spot.radius, y: Math.sin(ring) * spot.radius }, region);
+    const ring = (TREE_PLACEMENT[region].ring * Math.PI) / 180;
+    const at =
+      LABEL_AT[region] ?? onTree({ x: Math.cos(ring) * 14, y: Math.sin(ring) * 14 }, region);
     return { key: b.id, text: b.name.toUpperCase(), ...at, color: b.color, size: 20 };
   });
   for (const def of SKILL_TREE.prestigeBranches ?? []) {

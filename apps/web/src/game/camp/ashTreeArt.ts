@@ -1,4 +1,14 @@
-import { TREE_PLACEMENT, TRUNK, type TreeRegion, onTree } from "@emberheir/content";
+import {
+  LEADER_NODES,
+  SIGIL,
+  TREE_PLACEMENT,
+  TRUNK,
+  type TreeRegion,
+  fixedSpot,
+  onLeader,
+  onTree,
+  trunkHalf,
+} from "@emberheir/content";
 import type { SkillNode } from "@emberheir/sim";
 import { Assets, Container, FillGradient, Graphics, Matrix, Sprite, Texture } from "pixi.js";
 
@@ -55,9 +65,18 @@ export function loadAshTreeTextures(): Promise<AshTreeTextures | null> {
 
 /**
  * The painted trunk base (`trunk-base.webp`, 1024 px wide): where the middle of its bare patch
- * sits (texture pixels), and its pixels per tree unit, so that the patch holds the sigil.
+ * sits (texture pixels), and its pixels per tree unit, so that the patch holds the sigil and the
+ * roots' nodes sit on its painted roots (tree-shape.ts).
  */
-const BASE = { patchX: 516, patchY: 234, perUnit: 76 } as const;
+const BASE = { patchX: 516, patchY: 234, perUnit: 64 } as const;
+/** Below this the painted roots end: deeper root nodes hang on thin roots of code. */
+const PAINTED_ROOTS_END = 7.9;
+/**
+ * The bark tile is a cool grey brown, the trunk base a warm orange brown: both are tinted to
+ * meet in the middle, so the trunk runs into its foot without a colour jump (Timo 2026-10-19).
+ */
+const BARK_TINT = 0xffe2bc;
+const BASE_TINT = 0xd4c4bc;
 /** Bark tile size on the tree (tree units per tile). */
 const BARK_TILE = 3.2;
 
@@ -114,30 +133,10 @@ export interface AshTreeArt {
   readonly sigilAt: Pt;
 }
 
-export const SIGIL_Y = 1.3;
-const SIGIL_R = 0.95;
-
-/** Half width of the trunk at height `y` (tree units). */
-function trunkHalf(y: number): number {
-  const t = (TRUNK.bottom - y) / (TRUNK.bottom - TRUNK.top);
-  // Wide at the foot, where the painted base takes over (its top is ~2.3 units to each side).
-  const profile: readonly (readonly [number, number])[] = [
-    [0, 2.9],
-    [0.08, 2.6],
-    [0.2, 2.45],
-    [0.42, 2.3],
-    [0.6, 1.95],
-    [0.8, 1.6],
-    [0.92, 1.25],
-    [1, 0.8],
-  ];
-  for (let i = 1; i < profile.length; i++) {
-    const [t0, w0] = profile[i - 1] ?? [0, 1];
-    const [t1, w1] = profile[i] ?? [1, 1];
-    if (t <= t1) return lerp(w0, w1, (t - t0) / (t1 - t0));
-  }
-  return 0.8;
-}
+export const SIGIL_Y = SIGIL.y;
+const SIGIL_R = SIGIL.radius;
+/** The sigil's lines are drawn for a radius of 0.95 and scaled to its size. */
+export const SIGIL_SCALE = SIGIL.radius / 0.95;
 
 /**
  * A tapered limb along a curve, painted in layers: a soft cast shadow, the dark bark, a lit
@@ -182,6 +181,7 @@ function limb(
     const along = Math.atan2(last.y - first.y, last.x - first.x);
     g.poly(band(1, 0)).fill({
       texture: opts.bark,
+      color: BARK_TINT,
       matrix: barkMatrix(unit, along - Math.PI / 2),
       textureSpace: "global",
     });
@@ -227,6 +227,9 @@ function hubOf(region: TreeRegion): Pt {
 }
 
 const isRoot = (region: TreeRegion) => TREE_PLACEMENT[region].origin.y > 0;
+/** The roots' hub, laid out by hand on the painted roots. */
+const ROOT_HUB = "roots-taproot";
+const LEADER = new Set(Object.keys(LEADER_NODES));
 
 /** The earth under the root collar: the roots grow into it. */
 function drawEarth(g: Graphics, unit: number): void {
@@ -261,18 +264,20 @@ function drawEarth(g: Graphics, unit: number): void {
   }
 }
 
+/**
+ * The trunk, and the leader that grows on out of its top up into the highest crown region, in
+ * one piece: the boughs leave it from behind, so no cut end shows (Timo 2026-10-19).
+ */
 function drawTrunk(g: Graphics, unit: number, sigil: Pt, bark: Texture | null): void {
   const u = (v: number) => v * unit;
-  const steps = 40;
-  const ys = Array.from({ length: steps + 1 }, (_, i) =>
-    lerp(TRUNK.bottom + 0.45, TRUNK.top + 0.2, i / steps),
-  );
+  const top = leaderTop().y;
+  const steps = 90;
+  const ys = Array.from({ length: steps + 1 }, (_, i) => lerp(TRUNK.bottom + 0.45, top, i / steps));
   const wobble = (y: number, k: number) =>
     Math.sin(y * 2.3 + k) * 0.05 + Math.sin(y * 5.1 + k * 2) * 0.025;
   const edge = (side: 1 | -1, scale: number, shift = 0) =>
     ys.map(
-      (y) =>
-        [u(side * trunkHalf(y) * scale + shift * trunkHalf(y) + wobble(y, side)), u(y)] as const,
+      (y) => [u(side * woodHalf(y) * scale + shift * woodHalf(y) + wobble(y, side)), u(y)] as const,
     );
   const shape = (scale: number, shift = 0) => {
     const l = edge(-1, scale, shift);
@@ -299,7 +304,12 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt, bark: Texture | null): 
   });
   if (bark) {
     // Painted bark, rounded by the same light and shade, only lighter; the base is painted.
-    g.poly(shape(1)).fill({ texture: bark, matrix: barkMatrix(unit, 0), textureSpace: "global" });
+    g.poly(shape(1)).fill({
+      texture: bark,
+      color: BARK_TINT,
+      matrix: barkMatrix(unit, 0),
+      textureSpace: "global",
+    });
     g.poly(shape(1)).fill({ fill: roundness, alpha: 0.35 });
     const rim = edge(-1, 0.97);
     for (const [i, [x, y]] of rim.entries()) {
@@ -317,7 +327,7 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt, bark: Texture | null): 
     const seed = hash(`groove${k}`);
     let drawing = false;
     for (const [i, y] of ys.entries()) {
-      const x = trunkHalf(y) * f + Math.sin(y * (1.8 + seed) + k) * 0.07;
+      const x = woodHalf(y) * f + Math.sin(y * (1.8 + seed) + k) * 0.07;
       const inSigil = Math.hypot(x - sigil.x, y - sigil.y) < SIGIL_R + 0.25;
       const gap = hash(`gap${k}-${Math.floor(i / 6)}`) < 0.12;
       if (inSigil || gap) {
@@ -332,7 +342,7 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt, bark: Texture | null): 
     if (drawing) g.stroke({ color: GROOVE, width: 3.2, alpha: 0.75 });
     drawing = false;
     for (const y of ys) {
-      const x = trunkHalf(y) * f + Math.sin(y * (1.8 + seed) + k) * 0.07 - 0.05;
+      const x = woodHalf(y) * f + Math.sin(y * (1.8 + seed) + k) * 0.07 - 0.05;
       if (Math.hypot(x - sigil.x, y - sigil.y) < SIGIL_R + 0.3) {
         if (drawing) g.stroke({ color: BARK_LIGHT, width: 1.2, alpha: 0.35 });
         drawing = false;
@@ -367,14 +377,17 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt, bark: Texture | null): 
   g.stroke({ color: BARK_LIGHT, width: 2, alpha: 0.4 });
 }
 
-/** Roots from the collar to the root hubs, with side roots wandering into the earth. */
+/**
+ * Without the painted trunk base: a root from the collar to the roots' hub, with side roots
+ * wandering into the earth (the roots' paths get their own twigs).
+ */
 function drawRoots(g: Graphics, unit: number, bark: Texture | null): void {
   const regions = Object.keys(TREE_PLACEMENT) as TreeRegion[];
   // Roots first, so the trunk's foot covers their start.
   for (const region of regions.filter(isRoot)) {
     const place = TREE_PLACEMENT[region];
-    const hub = hubOf(region);
-    const from = { x: place.origin.x * 1.6, y: TRUNK.bottom + 0.2 };
+    const hub = fixedSpot(ROOT_HUB) ?? hubOf(region);
+    const from = { x: hub.x * 0.4, y: TRUNK.bottom - 0.6 };
     limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, -0.3, 14), 0.75, 0.2, { bark });
     // Side roots that wander off into the earth.
     for (let k = 0; k < 1; k++) {
@@ -394,10 +407,24 @@ function drawRoots(g: Graphics, unit: number, bark: Texture | null): void {
   }
 }
 
-/** The top of the leader: the trunk runs on up into the crown, to the highest bough. */
-function leaderTop(): Pt {
-  const top = Math.min(...CROWN_REGIONS.map((r) => TREE_PLACEMENT[r].origin.y));
-  return { x: 0, y: top + 0.6 };
+/** The highest crown region: the leader grows on up into it as its bough. */
+function topRegion(): TreeRegion {
+  return [...CROWN_REGIONS].sort(
+    (a, b) => TREE_PLACEMENT[a].origin.y - TREE_PLACEMENT[b].origin.y,
+  )[0] as TreeRegion;
+}
+
+/** The leader's half width at its top (at its foot it is as wide as the trunk). */
+const LEADER_TOP_WIDTH = 0.25;
+
+/** Where the leader ends: in the highest region's hub. */
+const leaderTop = (): Pt => hubOf(topRegion());
+
+/** Half width of the wood: the trunk, then the leader tapering up to its top. */
+function woodHalf(y: number): number {
+  if (y >= TRUNK.top) return trunkHalf(y);
+  const top = leaderTop().y;
+  return lerp(trunkHalf(TRUNK.top), LEADER_TOP_WIDTH, (TRUNK.top - y) / (TRUNK.top - top));
 }
 
 const CROWN_REGIONS = (Object.keys(TREE_PLACEMENT) as TreeRegion[]).filter(
@@ -405,31 +432,33 @@ const CROWN_REGIONS = (Object.keys(TREE_PLACEMENT) as TreeRegion[]).filter(
 );
 
 /**
- * The crown: the leader grows on out of the trunk's top, and each crown region gets a bough
- * from the leader at its own height (the lowest ones from the trunk's top), like an oak's limbs.
- * Drawn over the trunk so they grow out of it.
+ * The crown's boughs: each crown region but the highest (the leader grows into that one) gets a
+ * bough from the leader at its own height, the lowest ones from the trunk's top, like an oak's
+ * limbs. Drawn before the trunk, which covers their feet.
  */
 function drawCrownLimbs(g: Graphics, unit: number, bark: Texture | null): void {
-  const top = leaderTop();
-  limb(g, unit, bent({ x: 0, y: TRUNK.top + 1.4 }, top, 0.3, 0, 14), 1.1, 0.4, { bark });
+  const crest = topRegion();
   // Highest boughs first, so the lower, thicker ones lie over them.
-  const order = [...CROWN_REGIONS].sort(
-    (a, b) => TREE_PLACEMENT[a].origin.y - TREE_PLACEMENT[b].origin.y,
-  );
+  const order = [...CROWN_REGIONS]
+    .filter((r) => r !== crest)
+    .sort((a, b) => TREE_PLACEMENT[a].origin.y - TREE_PLACEMENT[b].origin.y);
   for (const region of order) {
-    const place = TREE_PLACEMENT[region];
     const hub = hubOf(region);
-    const y = Math.max(place.origin.y + 0.8, top.y + 0.8);
-    const from = { x: 0, y: Math.min(y, TRUNK.top + 1.1) };
-    const w = lerp(0.85, 0.5, (TRUNK.top - from.y) / (TRUNK.top - top.y || 1));
+    const at = onLeader(region);
+    // Out of the leader's middle, a little below the bough's rung; never wider than the leader.
+    const from = { x: 0, y: Math.min(at.y + 0.5, TRUNK.top + 1.1) };
+    const w = Math.min(0.75, woodHalf(Math.min(from.y, TRUNK.top)) * 0.95);
     limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, 0.5, 12), w, 0.2, { bark });
   }
 }
 
 /**
- * Twigs under every link that grows outwards (from the trunk's side to the tip); links that
- * run across, like the rings between spokes, stay plain lines. The trunk's own paths are bark,
- * so they get neither twigs nor leaves; the Masteries growing out of its sides are boughs and do.
+ * Wood under the paths: from each region's foot (its rung on the leader, the trunk's bark, the
+ * roots' hub) every visible node gets one twig back towards it, the first link that reaches it,
+ * so no path hangs in the air (Timo 2026-10-19). Links that close a loop, like the rings between
+ * spokes, stay plain lines. The trunk's own paths are bark; the Masteries growing out of its
+ * sides are boughs from its edge. The painted roots carry their nodes; only the deep ones below
+ * them get thin roots. Notables and Keystones of the crown get leaves.
  */
 export function drawTwigs(
   g: Graphics,
@@ -441,35 +470,53 @@ export function drawTwigs(
   g.clear();
   if (painted) for (const old of painted.layer.removeChildren()) old.destroy();
   const byId = new Map(nodes.map((n) => [n.id, n]));
-  const tips: { n: SkillNode; from: Pt }[] = [];
+  const near = new Map<string, SkillNode[]>();
+  const join = (a: SkillNode, b: SkillNode) => {
+    if (regionOf(a) !== regionOf(b)) return;
+    near.set(a.id, [...(near.get(a.id) ?? []), b]);
+    near.set(b.id, [...(near.get(b.id) ?? []), a]);
+  };
   for (const a of nodes) {
-    const region = regionOf(a);
-    if (!region || (region === "trunk" && !a.prestigeBranch)) continue;
-    const o = TREE_PLACEMENT[region].origin;
-    // Out from the region's middle; a bough on the trunk grows out from the trunk's axis.
-    const out = (n: Pt) => (region === "trunk" ? Math.abs(n.x) : Math.hypot(n.x - o.x, n.y - o.y));
-    const da = out(a);
     for (const id of a.links) {
       const b = byId.get(id);
-      if (!b || regionOf(b) !== region || (region === "trunk" && !b.prestigeBranch)) continue;
-      const db = out(b);
-      const len = Math.hypot(b.x - a.x, b.y - a.y);
-      if (Math.abs(db - da) < len * 0.55) continue;
-      const [inner, outer, di, dout] = da < db ? [a, b, da, db] : [b, a, db, da];
-      const w = (d: number) => Math.max(0.05, 0.2 - d * 0.013) * (isRoot(region) ? 1.1 : 1);
+      if (b) join(a, b);
+    }
+  }
+  // The feet: wood is there already.
+  const bark = (n: SkillNode) => regionOf(n) === "trunk" && !n.prestigeBranch;
+  const feet = nodes.filter((n) => LEADER.has(n.id) || bark(n) || n.id === ROOT_HUB);
+  const reached = new Set(feet.map((n) => n.id));
+  const queue = [...feet];
+  const tips: { n: SkillNode; from: Pt }[] = [];
+  for (let a = queue.shift(); a; a = queue.shift()) {
+    const region = regionOf(a);
+    if (!region) continue;
+    const o = TREE_PLACEMENT[region].origin;
+    // Thinner the further out; a bough on the trunk grows out from the trunk's axis.
+    const out = (n: Pt) => (region === "trunk" ? Math.abs(n.x) : Math.hypot(n.x - o.x, n.y - o.y));
+    const w = (d: number) => Math.max(0.05, 0.2 - d * 0.013) * (isRoot(region) ? 1.1 : 1);
+    // Out of the nearest node first, so each twig takes the shortest way back.
+    const next = [...(near.get(a.id) ?? [])]
+      .filter((b) => !reached.has(b.id))
+      .sort((p, q) => Math.hypot(p.x - a.x, p.y - a.y) - Math.hypot(q.x - a.x, q.y - a.y));
+    for (const b of next) {
+      reached.add(b.id);
+      queue.push(b);
+      // The rung's link to its hub runs along the bough.
+      if (LEADER.has(a.id)) continue;
+      if (isRoot(region) && painted && Math.max(a.y, b.y) < PAINTED_ROOTS_END) continue;
+      // A Mastery on the trunk grows out of the bark's edge, not out of its anchor.
+      const from = bark(a) ? { x: Math.sign(b.x - a.x) * trunkHalf(a.y) * 0.92, y: a.y } : a;
       limb(
         g,
         unit,
-        bent(inner, outer, (hash(inner.id + outer.id) - 0.5) * 0.25, 0, 6),
-        w(di),
-        w(dout),
-        {
-          grooves: false,
-          shadow: true,
-        },
+        bent(from, b, (hash(a.id + b.id) - 0.5) * 0.25, 0, 6),
+        w(out(from)),
+        w(out(b)),
+        { grooves: false, shadow: true },
       );
-      if (!isRoot(region) && (outer.kind === "notable" || outer.kind === "keystone")) {
-        tips.push({ n: outer, from: inner });
+      if (!isRoot(region) && (b.kind === "notable" || b.kind === "keystone")) {
+        tips.push({ n: b, from });
       }
     }
   }
@@ -577,9 +624,12 @@ function sigilLines(): { rings: number[]; lines: Pt[][] } {
       { x: Math.cos(a) * 0.86, y: Math.sin(a) * 0.86 },
     ]);
   }
+  const k = SIGIL_SCALE;
   return {
-    rings: [0.9, 0.68],
-    lines: [flame(1.15, 0.36, 0.55), flame(0.6, 0.17, 0.45), ...notches],
+    rings: [0.9 * k, 0.68 * k],
+    lines: [flame(1.15, 0.36, 0.55), flame(0.6, 0.17, 0.45), ...notches].map((line) =>
+      line.map((p) => ({ x: p.x * k, y: p.y * k })),
+    ),
   };
 }
 
@@ -702,21 +752,21 @@ function paintWood(wood: Container, unit: number, textures: AshTreeTextures | nu
   for (const old of wood.removeChildren()) old.destroy();
   const bark = textures?.bark ?? null;
   const roots = new Graphics();
-  drawRoots(roots, unit, bark);
+  // The painted trunk base brings its own roots.
+  if (!textures) drawRoots(roots, unit, bark);
   const trunk = new Graphics();
   drawTrunk(trunk, unit, { x: 0, y: SIGIL_Y }, bark);
   const limbs = new Graphics();
   drawCrownLimbs(limbs, unit, bark);
-  wood.addChild(roots, trunk);
+  wood.addChild(roots, limbs, trunk);
   if (textures) {
     // The painted foot of the trunk, its bare patch around the sigil.
     const base = new Sprite(textures.base);
     base.anchor.set(BASE.patchX / textures.base.width, BASE.patchY / textures.base.height);
     base.scale.set(unit / BASE.perUnit);
     base.position.set(0, SIGIL_Y * unit);
-    // A little darker, so the foot meets the bark tile above it.
-    base.tint = 0xcdb9a2;
+    // Toned to meet the bark tile above it.
+    base.tint = BASE_TINT;
     wood.addChild(base);
   }
-  wood.addChild(limbs);
 }

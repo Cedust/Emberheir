@@ -368,9 +368,16 @@ Endgame **Wildfire I–X**.
 - Der Baum ist wie ein echter Baum geformt (Timo 2026-10-19, kein Riesenrad): die Kronen-Regionen sitzen gestuft an
   Ästen über dem Stamm (Steel und Void unten, Blood/Frost, Venom/Storm, Flame oben am Leittrieb), der Stamm trägt nur
   Rinde (keine Zweige, kein Laub), die Wurzeln hängen am mittleren Notable des Stamms (Iron Will). Laub nur in der
-  Krone; gemalte Rinde und Laub folgen (`design/notes/ash-tree-art-v1.md`).
-  Jede Region: Hub, drei Speichen (drei Nodes, dann ein Notable oder eine Gabel), Travel-Nodes zu den
-  Nachbarn, eine Ward-Knospe und ein Rune Socket. 21 Skills, 13 Keystones, 12 Gabeln.
+  Krone; Rinde, Stammfuß und Laub sind gemalt (`design/notes/ash-tree-art-v1.md`).
+- **Leiter am Leittrieb** (Timo 2026-10-19, kürzere Wege): der innere Travel-Node jeder Kronen-Region sitzt am
+  Leittrieb, wo ihr Ast abgeht; links und rechts auf gleicher Höhe sind verbunden, jede Seite mit der Sprosse darüber,
+  unten hängt der Hub des Stamms (Heartwood). Von jedem Klassen-Start ist jede Region in höchstens 5 Schritten
+  erreichbar (vorher bis 8 über den Ring). Die äußeren Ring-Brücken zwischen Nachbar-Regionen entfallen.
+- Stamm und Wurzeln sind von Hand gelegt: alle Stamm-Nodes im Stamm, kein Weg durch das Sigil, die Wurzel-Nodes auf
+  den gemalten Wurzeln (Taproot links, damit der Weg von Iron Will am Sigil vorbeiführt), die tiefen Keystones an
+  dünnen Wurzeln darunter. Jeder Node hängt an Holz: kein Ast schwebt.
+  Jede Region: Hub, drei Speichen (drei Nodes, dann ein Notable oder eine Gabel), ein Travel-Node am Leittrieb, eine
+  Ward-Knospe und ein Rune Socket. 21 Skills, 13 Keystones, 12 Gabeln.
 - **Keine Region ist gesperrt.** Ailment-Nodes verstärken nur Ailments, die man setzt („Your Poisons …“).
 - **Klassen-Start:** Cinderguard bei Steel, Ashstrider bei Venom, Emberseer bei Void.
 - **Hoheitsgebiete** (`neuausrichtung-v1.md` 2): Travel-Nodes geben nur Defense (Life, Armor, Barrier, Evasion,

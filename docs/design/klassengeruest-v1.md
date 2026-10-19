@@ -163,6 +163,8 @@ Tab bei Kaelen: **Ash Tree**. Aufgabe: **stützt und schützt** den Build, den H
   Typ sind erlaubt ✅.
 - Klassen-Startpunkt am Stamm neben dem Kern: Cinderguard bei *Steel/Blood*, Ashstrider bei *Venom*, Emberseer bei *Void*.
 - Nachbar-Regionen ergeben Mischformen. 100 Skill Points, Wege kosten Punkte, Gabelungen wie in `level-v2.md`.
+- Die Regionen treffen sich an einer Leiter am Leittrieb (Timo 2026-10-19): jede Region ist von jedem Klassen-Start in
+  höchstens 5 Schritten erreichbar ✅.
 
 ## 7. Umbenennungen ✅
 - Gegner *Ashen Skirmisher* → **Ashen Prowler** (interne Archetype-Id `skirmisher` bleibt).

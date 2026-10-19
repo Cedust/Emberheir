@@ -17,7 +17,7 @@ box = base.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox()
 base = base.crop(box)
 base = base.resize((1024, round(base.height * 1024 / base.width)), Image.Resampling.LANCZOS)
 # Its top edge is cut straight: fade it out, so it melts into the bark the code draws above.
-FADE = 90
+FADE = 160
 alpha = base.getchannel('A')
 px = alpha.load()
 for y in range(FADE):
