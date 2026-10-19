@@ -37,7 +37,7 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Hauptattribut | Waffen (eine wählen) | Fokus | Class Trait | Masteries (Burst · Tempo · Ailment) |
 |---|---|---|---|---|---|
-| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, gibt 1 Fury (bis 10); das Innate gibt alle aus, +10 % more pro Fury (Timo 2026-10-19, Schritt 4: vorher +2 % pro Treffer auf alles) | Vanquisher · Berserker · Ravager |
+| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis 10); das Innate gibt alle aus, +25 % more pro Fury (Schritt 4, 19.10.2026: vorher +2 % pro Treffer auf alles; die alten +20 % stecken jetzt im Waffenschaden, Sword/Axe/Mace +15 %) | Vanquisher · Berserker · Ravager |
 | **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: +10 % Precision gegen einen Gegner mit einem deiner Ailments (Timo 2026-10-19: statt Crit, Crit gehört zu AGI) | Deadeye · Skirmisher · Trickster |
 | **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (150 % Weapon Damage, setzt sicher ihr Ailment) | Archmage · Spellweaver · Warlock |
 
@@ -357,6 +357,8 @@ Endgame **Wildfire I–X**.
 - **Innate-Level** (Schritt 4, 19.10.2026): Das Innate steigt mit der Waffe, +1 Level pro **Weapon Grade** (Crude 1,
   Honed 2 … Exalted 5). Vorher blieb es auf Level 1, während jeder andere Skill über Ränge wuchs; die Waffe fiel im
   Endgame unter 10 % des Schadens.
+- **Rampage** (Axe-Keystone, Schritt 4): +2 % pro Bleed-Tick (vorher 1 %), auch auf den Bleed selbst; Start −10 %
+  (vorher −20 %). Vorher verstärkte er nur Treffer, obwohl Butcher fast alles über Bleed macht, und kostete Schaden.
 
 ### 5.2 Mastery ✅ (`klassengeruest-v1.md` 5)
 - Ersetzt die Prestige-Äste. Jede Klasse hat drei Masteries, eine pro Stil: **Burst** (große Treffer, Skills, Heat
