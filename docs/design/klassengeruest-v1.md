@@ -34,8 +34,10 @@ Alte Spielstände werden **nicht** übernommen ✅ (Dev-Umgebung, alles wird gel
 | Kern-Ailment | Bleed (Physical), Stun (Mace) | Poison (Physical), Bleed nur Dagger | Corruption (Void), **kein Physical** |
 | Class Trait | **Fury** | **Hunter's Mark** | **Overcharge** |
 
-Ersetzt Warrior, Reaver, Hunter, Sorcerer, Warlock. Off Hands bleiben Items für alle; Start-Off-Hand 💡: Cinderguard
-Round Shield, Ashstrider Quiver, Emberseer Ember Focus.
+Ersetzt Warrior, Reaver, Hunter, Sorcerer, Warlock. Off Hands bleiben Items für alle. Start-Off-Hand nach Waffe
+(Timo 2026-10-19): Sword/Mace Round Shield, Axe/Dagger Blood Talisman, Bow/Crossbow Quiver, Wand Ember Focus, Staff
+Grimoire. Kein Start-Implicit legt einen Damage Type fest (das macht der Heirloom-Pfad): Blood Talisman +5 % Ailment
+Effect, +2 % Lifesteal; Grimoire +10 % Ailment Effect.
 
 **Klassentexte** 💡 (sagen, womit die Klasse gewinnt):
 - *Cinderguard:* Fights up close with Sword, Axe or Mace. Every blow lands harder than the last.

@@ -392,7 +392,9 @@ Endgame **Wildfire I–X**.
 
 ### 5.4 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
 - **Slots:** Off Hand, Helm, Body Armor, Gloves, Boots, Belt, Amulet, 2× Ring, **Charm** (nur Trigger-Affixe).
-  Off Hand passt zur Waffe: Shield (Melee), Quiver (Bow/Crossbow), Focus (Wand/Staff).
+  Off Hand passt zur Waffe: Shield oder Blood Talisman (Melee), Quiver (Bow/Crossbow), Focus oder Grimoire (Wand/Staff).
+  Start-Off-Hand nach Waffe: Sword/Mace Round Shield, Axe/Dagger Blood Talisman (+5 % Ailment Effect, +2 % Lifesteal),
+  Bow/Crossbow Quiver, Wand Ember Focus, Staff Grimoire (+10 % Ailment Effect).
 - **Grundtypen (Bases):** 30 ohne Waffen, jeder mit festem Bonus (Implicit) und eigenem gemalten Icon. Armor-Slots haben
   je eine leichte (AGI), schwere (STR) und Caster-Variante (INT), Body zusätzlich den **Leather Cuirass** (STR + AGI).
   Schmuck: Bone Amulet, Ember Pendant, **Gold Medallion** (+5 % Physical Damage); Iron Ring, Garnet Ring, **Gold Ring**

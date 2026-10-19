@@ -3,7 +3,8 @@ import type { HeroClass } from "@emberheir/sim";
 /**
  * The three classes (docs/design/klassengeruest-v1.md 2): main attribute, weapon family, focus
  * and Class Trait. A class picks its Class Array of attributes (sum 14; 6 free points follow at
- * creation), the start off hand, the look and its three Masteries. Items stay open to every class.
+ * creation), the start off hand (by weapon, Timo 2026-10-19), the look and its three Masteries.
+ * Items stay open to every class.
  */
 export const CLASSES: readonly HeroClass[] = [
   {
@@ -13,6 +14,7 @@ export const CLASSES: readonly HeroClass[] = [
     focus: "Strong attacks",
     weapons: ["sword", "axe", "mace"],
     offHand: "round-shield",
+    offHandFor: { axe: "blood-talisman" },
     startingAttributes: {
       strength: 5,
       dexterity: 1,
@@ -70,6 +72,7 @@ export const CLASSES: readonly HeroClass[] = [
     focus: "Ailments",
     weapons: ["wand", "staff"],
     offHand: "ember-focus",
+    offHandFor: { staff: "grimoire" },
     startingAttributes: {
       strength: 1,
       dexterity: 1,

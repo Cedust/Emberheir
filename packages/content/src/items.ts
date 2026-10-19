@@ -148,19 +148,22 @@ export const EMBER_FOCUS: ItemBaseDefinition = {
   maxSockets: 2,
 };
 
-/** Blood Talisman (klassen-v2.md): the Reaver's off hand, for Bleed and Poison up close. */
+/**
+ * Blood Talisman: the off hand up close without a shield (start off hand of Axe and Dagger).
+ * Its implicit fits every Heirloom path, the path sets the ailment (Timo 2026-10-19).
+ */
 export const BLOOD_TALISMAN: ItemBaseDefinition = {
   id: "blood-talisman",
   name: "Blood Talisman",
   slot: "offHand",
   fitsWeaponRange: "melee",
-  implicit: { bleedChance: 0.05, poisonChance: 0.05 },
-  requirements: { dexterity: 3 },
+  implicit: { ailmentEffect: 0.05, lifesteal: 0.02 },
+  // No attribute: it starts in the hand of a Strength Axe and a Dexterity Dagger alike.
   affixWeights: { ailment: 1.5, physical: 1.2, block: 0 },
   maxSockets: 2,
 };
 
-/** Grimoire (klassen-v2.md): the Warlock's off hand, for curses that linger. */
+/** Grimoire: the off hand for ailments that linger (start off hand of the Staff). */
 export const GRIMOIRE: ItemBaseDefinition = {
   id: "grimoire",
   name: "Grimoire",
@@ -168,7 +171,7 @@ export const GRIMOIRE: ItemBaseDefinition = {
   fitsWeaponRange: "ranged",
   fitsWeapons: ["wand", "staff"],
   baseStats: { barrier: 10 },
-  implicit: { ailmentEffect: 0.1, burnChance: 0.03, corruptionChance: 0.03 },
+  implicit: { ailmentEffect: 0.1 },
   requirements: { wisdom: 3 },
   affixWeights: { ailment: 1.5, elemental: 1.2, barrier: 4, block: 0, physical: 0.5 },
   maxSockets: 2,
