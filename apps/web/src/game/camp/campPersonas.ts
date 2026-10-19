@@ -154,7 +154,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "kaelen",
       name: "Kaelen",
       role: "Trainer",
-      x: 680,
+      x: 810,
       y: 555,
       icon: "sword",
       cloak: "#6a2a20",

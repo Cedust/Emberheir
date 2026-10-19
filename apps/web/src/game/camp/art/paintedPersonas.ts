@@ -58,7 +58,7 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     face: { size: "537% auto", pos: "56% 2%" },
     head: 11,
     turn: true,
-    prop: { url: dummyUrl, h: 150, x: 150 },
+    prop: { url: dummyUrl, h: 150, x: 170 },
   },
   liora: { url: lioraUrl, h: 165, face: { size: "444% auto", pos: "64% 4%" }, head: 18 },
   marisha: { url: marishaUrl, h: 150, face: { size: "382% auto", pos: "68% 19%" }, head: 20 },
