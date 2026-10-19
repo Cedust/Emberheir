@@ -485,7 +485,7 @@ const MASTERIES: readonly MasterySpec[] = [
     axis: "tempo",
     name: "Berserker",
     branch: "trunk",
-    anchor: "trunk-retaliation",
+    anchor: "trunk-unbreakable",
     theme: "Tempo: many quick hits and the Default Attack.",
     angle: 72,
     skill: strike(
@@ -800,7 +800,7 @@ const MASTERIES: readonly MasterySpec[] = [
     axis: "tempo",
     name: "Spellweaver",
     branch: "trunk",
-    anchor: "trunk-unbreakable",
+    anchor: "trunk-shield-wall",
     theme: "Tempo: quick casts, Sparks and the Default Attack.",
     angle: 108,
     skill: spell(
@@ -923,3 +923,8 @@ export const PRESTIGE_BRANCHES: readonly PrestigeBranchDefinition[] = MASTERIES.
 );
 
 export const PRESTIGE_BRANCH_NODES: readonly SkillNode[] = MASTERIES.flatMap(buildMastery);
+
+/** Where each Mastery hangs on the web, for setting it onto the Ash Tree (`tree-shape.ts`). */
+export const MASTERY_PLACEMENT = Object.fromEntries(
+  MASTERIES.map((m) => [m.id, { anchor: m.anchor, angle: m.angle, start: START_RADIUS }]),
+);

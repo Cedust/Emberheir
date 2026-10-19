@@ -1,5 +1,5 @@
 import type { SkillTreeDefinition } from "@emberheir/sim";
-import { PRESTIGE_BRANCHES, PRESTIGE_BRANCH_NODES } from "./masteries";
+import { MASTERY_PLACEMENT, PRESTIGE_BRANCHES, PRESTIGE_BRANCH_NODES } from "./masteries";
 import { CLASS_STARTS, WEB_NODES } from "./skill-web";
 import { plantTree } from "./tree-shape";
 
@@ -9,10 +9,7 @@ import { plantTree } from "./tree-shape";
  * the Ash Tree (`tree-shape.ts`).
  */
 export const SKILL_TREE: SkillTreeDefinition = {
-  nodes: plantTree(
-    [...WEB_NODES, ...PRESTIGE_BRANCH_NODES],
-    Object.fromEntries(PRESTIGE_BRANCHES.map((b) => [b.id, b.anchor])),
-  ),
+  nodes: plantTree([...WEB_NODES, ...PRESTIGE_BRANCH_NODES], MASTERY_PLACEMENT),
   classStarts: CLASS_STARTS,
   prestigeBranches: PRESTIGE_BRANCHES,
 };

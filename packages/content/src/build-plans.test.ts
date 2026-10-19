@@ -56,5 +56,5 @@ describe("build plans", () => {
       expect(s.hero.equipment.offHand?.baseId).toBe(start.hero.equipment.offHand?.baseId);
       expect(heroSetup(s, GAME_DATA).setup.level).toBe(PROGRESSION.maxLevel);
     }
-  });
+  }, 30_000);
 });

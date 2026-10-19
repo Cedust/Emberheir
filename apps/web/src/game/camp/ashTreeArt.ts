@@ -312,20 +312,42 @@ function drawRoots(g: Graphics, unit: number): void {
   }
 }
 
-/** Limbs leave the trunk for each crown hub; drawn over the trunk so they grow out of it. */
+/** The top of the leader: the trunk runs on up into the crown, to the highest bough. */
+function leaderTop(): Pt {
+  const top = Math.min(...CROWN_REGIONS.map((r) => TREE_PLACEMENT[r].origin.y));
+  return { x: 0, y: top + 0.6 };
+}
+
+const CROWN_REGIONS = (Object.keys(TREE_PLACEMENT) as TreeRegion[]).filter(
+  (r) => r !== "trunk" && !isRoot(r),
+);
+
+/**
+ * The crown: the leader grows on out of the trunk's top, and each crown region gets a bough
+ * from the leader at its own height (the lowest ones from the trunk's top), like an oak's limbs.
+ * Drawn over the trunk so they grow out of it.
+ */
 function drawCrownLimbs(g: Graphics, unit: number): void {
-  const regions = Object.keys(TREE_PLACEMENT) as TreeRegion[];
-  for (const region of regions.filter((r) => !isRoot(r))) {
+  const top = leaderTop();
+  limb(g, unit, bent({ x: 0, y: TRUNK.top + 1.4 }, top, 0.3, 0, 14), 1.1, 0.4);
+  // Highest boughs first, so the lower, thicker ones lie over them.
+  const order = [...CROWN_REGIONS].sort(
+    (a, b) => TREE_PLACEMENT[a].origin.y - TREE_PLACEMENT[b].origin.y,
+  );
+  for (const region of order) {
     const place = TREE_PLACEMENT[region];
     const hub = hubOf(region);
-    const from = { x: place.origin.x * 0.4, y: Math.max(place.origin.y + 0.9, TRUNK.top + 1.1) };
-    limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.6, 0.45, 12), 0.62, 0.2);
+    const y = Math.max(place.origin.y + 0.8, top.y + 0.8);
+    const from = { x: 0, y: Math.min(y, TRUNK.top + 1.1) };
+    const w = lerp(0.85, 0.5, (TRUNK.top - from.y) / (TRUNK.top - top.y || 1));
+    limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, 0.5, 12), w, 0.2);
   }
 }
 
 /**
  * Twigs under every link that grows outwards (from the trunk's side to the tip); links that
- * run across, like the rings between spokes, stay plain lines.
+ * run across, like the rings between spokes, stay plain lines. The trunk's own paths are bark,
+ * so they get neither twigs nor leaves; the Masteries growing out of its sides are boughs and do.
  */
 export function drawTwigs(
   g: Graphics,
@@ -338,13 +360,15 @@ export function drawTwigs(
   const tips: { n: SkillNode; from: Pt }[] = [];
   for (const a of nodes) {
     const region = regionOf(a);
-    if (!region) continue;
+    if (!region || (region === "trunk" && !a.prestigeBranch)) continue;
     const o = TREE_PLACEMENT[region].origin;
-    const da = Math.hypot(a.x - o.x, a.y - o.y);
+    // Out from the region's middle; a bough on the trunk grows out from the trunk's axis.
+    const out = (n: Pt) => (region === "trunk" ? Math.abs(n.x) : Math.hypot(n.x - o.x, n.y - o.y));
+    const da = out(a);
     for (const id of a.links) {
       const b = byId.get(id);
-      if (!b || regionOf(b) !== region) continue;
-      const db = Math.hypot(b.x - o.x, b.y - o.y);
+      if (!b || regionOf(b) !== region || (region === "trunk" && !b.prestigeBranch)) continue;
+      const db = out(b);
       const len = Math.hypot(b.x - a.x, b.y - a.y);
       if (Math.abs(db - da) < len * 0.55) continue;
       const [inner, outer, di, dout] = da < db ? [a, b, da, db] : [b, a, db, da];

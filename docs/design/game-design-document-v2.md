@@ -350,9 +350,10 @@ Endgame **Wildfire I–X**.
   sie (bis **Tier V**) oder nimmt Tier I einer anderen. Eine Tier kostet 8 / 5 / 6 / 4 / 4 Skill Points; Keystone II
   und III heißen Greater und Supreme, jede tiefere Tier gibt dem Mastery-Skill einen Rang.
 - Neue Bausteine: Skill Damage, Ailment Chance, Ailment Duration, „Crits setzen dein Ailment“.
-- Die Masteries wachsen an einem Notable aus dem Ash Tree (Vanquisher: Brutal Force, Ravager: Flayer, Trickster:
-  Venom Heart, Archmage: Pyroclasm, Spellweaver: Storm Weaver, Deadeye: Deep Freeze, Warlock: Hollow Crown, Berserker
-  und Skirmisher aus den Wurzeln). Der Held trägt in der Arena die Aura seiner Haupt-Mastery.
+- Die Masteries wachsen an einem Notable aus dem Ash Tree, jede Klasse erreicht ihre drei nach 7/9/9 Nodes
+  (Vanquisher: Brutal Force, Ravager: Flayer, Skirmisher: Red Tide, Deadeye: Searing Steel, Trickster: Venom Heart,
+  Archmage: Deep Freeze, Warlock: Hollow Crown; Berserker und Spellweaver wachsen als untere Äste links und rechts aus
+  dem Stamm, an Unbreakable und Shield Wall). Der Held trägt in der Arena die Aura seiner Haupt-Mastery.
 - Titel = Name der Haupt-Mastery.
 
 ### 5.3 Ash Tree ✅ (`klassengeruest-v1.md` 6, `level-v2.md` 7, `neuausrichtung-v1.md` 4)
@@ -364,8 +365,11 @@ Endgame **Wildfire I–X**.
 | **Stamm** | Verteidigung für alle: Block, Resistances, Iron Bastion, Shield Wall/Shield Bash, Retaliation, Unbreakable, Iron Will, Keystone Juggernaut |
 | **Wurzeln** | Heat und Rotation: Heat from Hits Taken (Battle Scars, Unbroken), Rally, Battle Trance, Refund, Stoked, Keystones Glass Focus, Grand Strategy, Arcane Conduit |
 
-- Krone und Stamm liegen auf einem Ring um die Spitze des Stamms, die Wurzeln hängen am mittleren Notable des Stamms
-  (Iron Will). Jede Region: Hub, drei Speichen (drei Nodes, dann ein Notable oder eine Gabel), Travel-Nodes zu den
+- Der Baum ist wie ein echter Baum geformt (Timo 2026-10-19, kein Riesenrad): die Kronen-Regionen sitzen gestuft an
+  Ästen über dem Stamm (Steel und Void unten, Blood/Frost, Venom/Storm, Flame oben am Leittrieb), der Stamm trägt nur
+  Rinde (keine Zweige, kein Laub), die Wurzeln hängen am mittleren Notable des Stamms (Iron Will). Laub nur in der
+  Krone; gemalte Rinde und Laub folgen (`design/notes/ash-tree-art-v1.md`).
+  Jede Region: Hub, drei Speichen (drei Nodes, dann ein Notable oder eine Gabel), Travel-Nodes zu den
   Nachbarn, eine Ward-Knospe und ein Rune Socket. 21 Skills, 13 Keystones, 12 Gabeln.
 - **Keine Region ist gesperrt.** Ailment-Nodes verstärken nur Ailments, die man setzt („Your Poisons …“).
 - **Klassen-Start:** Cinderguard bei Steel, Ashstrider bei Venom, Emberseer bei Void.
