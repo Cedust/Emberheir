@@ -109,8 +109,24 @@
     box-shadow 0.12s;
 }
 
+/* Painted socket (ui/slot.webp): a brass rim; the rarity shows as a line just inside it. */
 .stage .item-tile {
-  border-radius: 6px;
+  border: 2px solid transparent;
+  border-image: url("../assets/ui/slot.webp") 30 / 11px / 0 stretch;
+}
+
+.stage .item-tile::after {
+  content: "";
+  position: absolute;
+  inset: 7px;
+  border: 1.5px solid var(--frame, transparent);
+  border-radius: 3px;
+  pointer-events: none;
+}
+
+.stage .item-tile.empty::after,
+.stage .item-tile.inactive::after {
+  display: none;
 }
 
 .stage .item-tile:not(:disabled):hover,
@@ -167,6 +183,10 @@
   pointer-events: none;
 }
 
+.stage .item-tile .socket-dots {
+  bottom: 9px;
+}
+
 .stage .socket-dot {
   width: 7px;
   height: 7px;
@@ -211,12 +231,16 @@
 
 .stage .item-tile-tier {
   position: absolute;
-  right: 4px;
-  bottom: 2px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgb(12 8 4 / 0.7);
   font-family: var(--font-mono);
   font-size: 10px;
-  color: #b3a288;
-  text-shadow: 0 1px 1px #000;
+  line-height: 13px;
+  color: #d8c6a4;
 }
 
 .stage .weapon-tile {
@@ -227,8 +251,9 @@
 
 .stage .weapon-rank {
   position: absolute;
-  right: 5px;
-  bottom: 3px;
+  right: 12px;
+  bottom: 10px;
+  z-index: 1;
   font-size: 13px;
   font-weight: 700;
   text-shadow: 0 1px 2px #000;
@@ -330,8 +355,7 @@
 }
 
 .stage .btn.danger {
-  border-color: var(--life);
-  color: var(--life);
+  color: #ff9a8a;
 }
 
 /* --- item tooltips (Diablo style) ----------------------------------------------------------- */
@@ -352,6 +376,7 @@
 
 .stage .item-tooltip {
   --tip-name: #e8e2d6;
+  position: relative;
   box-sizing: border-box;
   width: 300px;
   padding: 12px 16px 10px;
@@ -371,6 +396,17 @@
   font-family: var(--font-text);
   font-size: 15px;
   line-height: 1.3;
+}
+
+/* Thin painted brass frame with oak-leaf corners (ui/panel-frame.webp) around every tooltip. */
+.stage .item-tooltip::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-style: solid;
+  border-width: 25px;
+  border-image: url("../assets/ui/panel-frame.webp") 50 stretch;
+  pointer-events: none;
 }
 
 .stage .item-tooltip.tip-magic {
@@ -1150,12 +1186,6 @@
   color: #b3a288;
 }
 
-.stage .notice-screen .btn.primary {
-  background: #ff8a3a;
-  color: #1c1a18;
-  border-color: #0e0c0a;
-}
-
 /* --- camp ----------------------------------------------------------------------------------- */
 
 .stage .camp-header .logo {
@@ -1779,10 +1809,8 @@
 }
 
 .stage .finale-button {
-  background: linear-gradient(180deg, #5a1d08, #1a0a04);
   color: #ffd27a;
-  border-color: #ff8a1f;
-  box-shadow: 0 0 18px rgb(255 138 31 / 0.45);
+  filter: drop-shadow(0 0 10px rgb(255 138 31 / 0.6));
 }
 
 /* Wildfire tier for the next trip (spielzeit-v1.md, C). */
@@ -1829,9 +1857,7 @@
 }
 
 .stage .btn.wildfire-go {
-  background: linear-gradient(180deg, #c2410c, #5a1d08);
-  border-color: #ffb13b;
-  box-shadow: 0 0 22px rgb(255 120 30 / 0.6);
+  filter: saturate(1.3) drop-shadow(0 0 14px rgb(255 120 30 / 0.75));
 }
 
 .stage .draught-picker {
@@ -2279,10 +2305,12 @@
 .stage .persona-action {
   min-height: 92px;
   padding: 10px 8px;
-  border-radius: 8px;
-  border: 1.5px solid var(--edge);
-  background: var(--panel);
+  border: 2px solid transparent;
+  border-image: var(--k-tile) 30 fill / 13px / 0 stretch;
+  /* The same image stretched underneath hides hairline seams between the slices. */
+  background: var(--k-tile) border-box center / 100% 100% no-repeat;
   color: inherit;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.3));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -2297,14 +2325,11 @@
 }
 
 .stage .persona-action:hover {
-  border-color: var(--accent);
+  filter: brightness(1.08) drop-shadow(0 0 6px rgb(255 138 58 / 0.4));
 }
 
 .stage .persona-action.on {
-  border: 2px solid var(--accent);
-  box-shadow:
-    0 0 10px rgb(255 138 58 / 0.35),
-    inset 0 0 18px rgb(255 138 58 / 0.18);
+  filter: drop-shadow(0 0 8px rgb(255 138 58 / 0.75));
   color: var(--accent);
 }
 
@@ -2490,7 +2515,7 @@
 .stage .workbench {
   position: relative;
   flex-shrink: 0;
-  height: 200px;
+  height: 250px;
   border-radius: 6px;
 }
 
@@ -2501,17 +2526,15 @@
 
 .stage .bench-art {
   position: absolute;
-  left: calc(50% - 160px);
+  left: 50%;
   bottom: 0;
-  width: 320px;
-  height: 150px;
+  pointer-events: none;
   filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
 }
 
 .stage .bench-item {
   position: absolute;
   left: calc(50% - 50px);
-  bottom: 96px;
   width: 100px;
   height: 100px;
   filter: drop-shadow(0 0 12px var(--frame, transparent));
@@ -2581,20 +2604,9 @@
 .stage .stash-tabs .k-tab {
   min-width: 64px;
   justify-content: center;
-  color: var(--k-on-wood-sub);
-  background: linear-gradient(180deg, var(--k-wood), var(--k-wood-2));
-}
-
-.stage .stash-tabs .k-tab:hover {
-  color: var(--k-on-wood);
-  background: linear-gradient(180deg, #4a3624, var(--k-wood-2));
 }
 
 .stage .stash-tabs .k-tab.on {
-  color: #ffd27a;
-  background: var(--slot-bg);
-  border-color: var(--k-brass);
-  margin-bottom: -2px;
   z-index: 1;
 }
 
@@ -2761,6 +2773,8 @@
 
 .stage .hero-level-badge {
   flex: none;
+  /* Room for the painted ring with its oak leaves (::after below). */
+  margin: 14px 12px 14px 22px;
   width: 52px;
   height: 52px;
   display: grid;
@@ -2768,12 +2782,22 @@
   border-radius: 50%;
   font-size: 22px;
   font-weight: 700;
+  position: relative;
   color: var(--k-on-wood, #f3e6c8);
   background: radial-gradient(circle at 40% 35%, #5a3a22, #2a1a10);
-  border: 2px solid var(--k-brass, #b8893e);
-  box-shadow:
-    0 0 0 2px var(--k-brass-dark, #6e4f22),
-    0 2px 6px rgb(0 0 0 / 0.35);
+}
+
+/* The painted brass level ring with oak leaves (ui/level-ring.webp 208 x 162). */
+.stage .hero-level-badge::after {
+  content: "";
+  position: absolute;
+  left: -21px;
+  top: -10px;
+  width: 94px;
+  height: 73px;
+  background: url("../assets/ui/level-ring.webp") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
+  pointer-events: none;
 }
 
 .stage .hero-level-bars {
@@ -3542,7 +3566,6 @@
 }
 
 .stage .tree-controls .icon-btn {
-  min-width: 36px;
   font-weight: 700;
 }
 
@@ -4486,6 +4509,7 @@
   display: grid;
   grid-template-columns: 280px minmax(0, 1fr);
   min-height: 0;
+  overflow: hidden;
 }
 
 .stage .compendium-list {
@@ -4496,6 +4520,8 @@
   display: flex;
   flex-direction: column;
   gap: 4px;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 .stage .compendium-entry {
@@ -4516,6 +4542,8 @@
 }
 
 .stage .compendium-text {
+  min-height: 0;
+  overflow-y: auto;
   padding: 24px 30px;
   display: flex;
   flex-direction: column;
@@ -5111,13 +5139,6 @@
   color: #b3a288;
 }
 
-.stage .prestige-victory .btn.primary,
-.stage .prestige .btn.primary {
-  background: #ff8a3a;
-  color: #1c1a18;
-  border-color: #0e0c0a;
-}
-
 .stage .prestige-branch,
 .stage .prestige-attributes,
 .stage .prestige-heir {
@@ -5611,13 +5632,20 @@
   text-shadow: 0 0 8px rgb(0 0 0 / 0.9);
 }
 
-.stage .gamble-last {
-  display: flex;
-  justify-content: center;
+.stage .gamble-crate {
+  align-self: stretch;
 }
 
-.stage .gamble-last .item-tile {
-  position: relative;
+.stage .gamble-last {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.stage .gamble-last .item-art {
+  width: 100%;
+  height: 100%;
+  filter: drop-shadow(0 4px 3px rgb(0 0 0 / 0.55));
 }
 
 .stage .rune-drops {
@@ -6654,7 +6682,8 @@
 
 .stage .cheat-panel .btn.small {
   min-height: 32px;
-  padding: 0 10px;
+  padding: 0 12px;
+  border-image-width: 11px 13px;
   font-size: 13px;
 }
 

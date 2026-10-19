@@ -157,7 +157,8 @@ Endgame **Wildfire I–X**.
   zeigen wartende Punkte (Heir: Attribute Points, Kaelen: Skill/Mastery Points) und eine fertige Bounty (Eldrin „!“).
   Unten im Camp stehen nur die Act-Leiste und Set Out; braucht der Zug noch ein Omen, öffnet Set Out Eldrins Fenster.
 - **Werkstätten** (Thoric, Liora, Nyssa, Marisha): links die Persona mit Spruch und ihren Diensten als Kacheln, in der
-  Mitte die Werkbank (Anvil, Altar, Rune Table) mit Now → After, rechts Paperdoll und Tasche. Ein Item kommt per Klick,
+  Mitte die gemalte Werkbank (Anvil, Altar, Rune Table) mit Now → After, rechts Paperdoll und Tasche; bei Marisha
+  liegt das zuletzt gegamblete Item auf der Mystery Crate. Ein Item kommt per Klick,
   Rechtsklick oder Ziehen auf die Werkbank; Kosten stehen als Währungs-Icons vor dem Knopf, Salvage wird gehalten.
   Jede Arbeit hat einen kurzen Effekt (Funken, Licht, Runenglühen, Münzen).
 - **Kaelen**: der Battle Plan sieht aus wie die Skill-Leiste im Kampf, ohne Dropdowns. Slot anklicken, rechts aus der
