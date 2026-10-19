@@ -4906,6 +4906,11 @@
   z-index: 1;
 }
 
+/* The round shield can fill the hole almost to the brass. */
+.stage .cs-class-ring[data-class="cinderguard"] .class-emblem {
+  transform: scale(1.18);
+}
+
 /* The orb on its stand is narrow and leans left in its painting: larger, a little to the right. */
 .stage .cs-class-ring[data-class="emberseer"] .class-emblem {
   transform: translate(3px, 1px) scale(1.22);
