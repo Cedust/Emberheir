@@ -15,7 +15,7 @@ import {
   type HeirTextures,
   buildHeirRig,
   heirOffFist,
-  heirRangedBody,
+  heirRangedPart,
 } from "./heirRig";
 
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
@@ -285,7 +285,15 @@ function drawPaintedHero(
     // Bow and Crossbow: the otter aims, both paws on the weapon (the ranged pose).
     if (quiver && quiverArt)
       c.addChild(paintedOffHand("quiver", quiverArt, false, HEIR_RANGED.back));
-    c.addChild(new RangedHold(look, painted), heirRangedBody(heir.ranged));
+    const hold = new RangedHold(look, painted);
+    const body = heirRangedPart(heir.ranged, "body");
+    // The weapon lies in front, under the drawing paw; the Bow's grip under the fingers only.
+    c.addChild(
+      body,
+      hold,
+      heirRangedPart(heir.ranged, "arm"),
+      heirRangedPart(heir.ranged, look.weapon === "bow" ? "fingers" : "fist"),
+    );
     return c;
   }
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
@@ -436,14 +444,14 @@ const lerp = (a: Point, b: Point, t: number): [number, number] => [
 const RANGED_SIZES = { bow: 270, arrow: 180 };
 
 /** Where the paws hold the painted Crossbow, along it (0 = butt, 1 = front) and across (px). */
-const CROSSBOW_HOLDS = { stock: 0.22, fore: 0.84, across: -14 };
+const CROSSBOW_HOLDS = { stock: 0.22, fore: 0.84, across: 6 };
 
 /** String colour of the drawn Bow. */
 const STRING = 0x3a2a1c;
 
 /**
- * Bow or Crossbow in the ranged pose, behind the otter: its paws hold it, the bow fist in front
- * and the drawing paw at the jaw. `pose` plays a shot: the Bow's string snaps forward and
+ * Bow or Crossbow in the ranged pose, in front of the otter, held by the bow fist and the paw at
+ * the jaw. `pose` plays a shot: the Bow's string snaps forward and
  * shivers, a new arrow is nocked and drawn back to the jaw; the Crossbow kicks into the
  * shoulder. Visual only.
  */
@@ -460,9 +468,9 @@ export class RangedHold extends Container {
   constructor(look: HeroLook, painted: PaintedTextures | null) {
     super({ label: "heir-ranged" });
     this.bow = look.weapon === "bow";
-    const grip = HEIR_RANGED.grip;
     const shot = new Container({ label: "heir-shot" });
     if (this.bow) {
+      const grip = HEIR_RANGED.bowGrip;
       const { holder, stringEnds } = weaponArt(look, painted, true);
       const k = RANGED_SIZES.bow / WEAPON_LENGTH;
       holder.scale.set(k);
@@ -498,6 +506,7 @@ export class RangedHold extends Container {
       );
     } else {
       const { holder } = weaponArt(look, painted);
+      const grip = HEIR_RANGED.grip;
       const stock = HEIR_RANGED.stock;
       const span = Math.hypot(grip[0] - stock[0], grip[1] - stock[1]);
       const k = span / ((CROSSBOW_HOLDS.fore - CROSSBOW_HOLDS.stock) * WEAPON_LENGTH);
