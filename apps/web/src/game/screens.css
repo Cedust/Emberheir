@@ -1568,6 +1568,15 @@
 .stage .figure.painted {
   position: relative;
   display: block;
+  /* Only the persona's own spot is clickable: a wide pose (Kaelen's lunge) reaches over the fire. */
+  pointer-events: none;
+}
+
+/* A painted prop beside a figure (Kaelen's Training Dummy), standing behind it. */
+.stage .figure.painted img.figure-prop {
+  position: absolute;
+  bottom: 0;
+  translate: -50% 0;
 }
 
 /* The act's name on Eldrin's painted signpost. */

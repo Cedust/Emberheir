@@ -6,6 +6,7 @@ import marishaUrl from "../../../assets/camp/personas/marisha.webp";
 import nanUrl from "../../../assets/camp/personas/nan.webp";
 import nyssaUrl from "../../../assets/camp/personas/nyssa.webp";
 import thoricUrl from "../../../assets/camp/personas/thoric.webp";
+import dummyUrl from "../../../assets/camp/personas/training-dummy.webp";
 
 /**
  * Personas Timo has painted (design/notes/personas-art-v1.md): the image replaces the SVG figure
@@ -23,11 +24,20 @@ export interface PaintedPersona {
   readonly head: number;
   /** The image shifts by this share of its width, so an off-centre post stands on the spot. */
   readonly shift?: number;
-  /** Already faces the right way: never mirrored (Eldrin looks left at the fire). */
-  readonly fixed?: boolean;
+  /** Overrides "faces the Hearthfire": false = never mirrored (Eldrin already looks left at the
+   * fire), true = always mirrored (Kaelen turns left to his Training Dummy). */
+  readonly turn?: boolean;
   /** An empty board in the painting the camp writes on: % of the image (left, top, w, h) and
    * the board's tilt in degrees. */
   readonly sign?: readonly [number, number, number, number, number];
+  /** A painted prop beside the figure, behind it and turned with it (Kaelen's Training Dummy):
+   * its height and where its middle stands right of the figure's middle at fs = 1 (stage px). */
+  readonly prop?: { readonly url: string; readonly h: number; readonly x: number };
+}
+
+/** Whether the painted figure of a persona standing at `x` is mirrored (painted facing right). */
+export function paintedFlip(art: PaintedPersona, x: number, hearthX: number): boolean {
+  return art.turn ?? x > hearthX;
 }
 
 export const PAINTED: Partial<Record<string, PaintedPersona>> = {
@@ -37,14 +47,21 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     face: { size: "425% auto", pos: "2% 1.5%" },
     head: -37,
     shift: 0.136,
-    fixed: true,
+    turn: false,
     sign: [6, 38.7, 82, 12, 2.1],
   },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
-  nan: { url: nanUrl, h: 155, face: { size: "245% auto", pos: "51% 0%" }, head: 0 },
-  kaelen: { url: kaelenUrl, h: 210, face: { size: "360% auto", pos: "76% 4%" }, head: 32 },
-  liora: { url: lioraUrl, h: 195, face: { size: "320% auto", pos: "66% 16%" }, head: 15 },
-  marisha: { url: marishaUrl, h: 185, face: { size: "290% auto", pos: "68% 0%" }, head: 18 },
-  nyssa: { url: nyssaUrl, h: 175, face: { size: "280% auto", pos: "72% 13%" }, head: 20 },
-  thoric: { url: thoricUrl, h: 195, face: { size: "240% auto", pos: "49% 0%" }, head: 0 },
+  nan: { url: nanUrl, h: 140, face: { size: "295% auto", pos: "66% 2%" }, head: 13 },
+  kaelen: {
+    url: kaelenUrl,
+    h: 170,
+    face: { size: "537% auto", pos: "56% 2%" },
+    head: 11,
+    turn: true,
+    prop: { url: dummyUrl, h: 150, x: 150 },
+  },
+  liora: { url: lioraUrl, h: 165, face: { size: "444% auto", pos: "64% 4%" }, head: 18 },
+  marisha: { url: marishaUrl, h: 150, face: { size: "382% auto", pos: "68% 19%" }, head: 20 },
+  nyssa: { url: nyssaUrl, h: 185, face: { size: "356% auto", pos: "58% 7%" }, head: 7 },
+  thoric: { url: thoricUrl, h: 195, face: { size: "294% auto", pos: "52% 1%" }, head: 2 },
 };

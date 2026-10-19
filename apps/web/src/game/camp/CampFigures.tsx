@@ -1,7 +1,7 @@
 import { type GameState } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
 import { HEARTH_X } from "./art/CampScene";
-import { PAINTED } from "./art/paintedPersonas";
+import { PAINTED, paintedFlip } from "./art/paintedPersonas";
 import {
   type HeirGear,
   FIGURE_H,
@@ -43,16 +43,26 @@ export function Figure(props: {
   const mirror = p.x > HEARTH_X;
   const painted = PAINTED[p.id];
   if (painted) {
-    const flip = mirror && !painted.fixed;
+    const flip = paintedFlip(painted, p.x, HEARTH_X);
     // A painted figure (art/personas/, the Heir from art/heir/heir-master-v1.png).
     const h = Math.round(painted.h * f.fs);
     const cls = `figure painted${flip ? " mirror" : ""}${props.on ? " on" : ""}`;
     const board = painted.sign;
+    const prop = painted.prop;
     return (
       <span
         className={cls}
         style={{ height: h, ...(painted.shift ? { translate: `${painted.shift * 100}% 0` } : {}) }}
       >
+        {prop && (
+          <img
+            className="figure-prop"
+            src={prop.url}
+            alt=""
+            height={Math.round(prop.h * f.fs)}
+            style={{ left: `calc(50% + ${Math.round(prop.x * f.fs)}px)` }}
+          />
+        )}
         <span className="figure-shadow" />
         <img
           className="figure-body"
@@ -105,7 +115,7 @@ export function markerSpot(p: Persona, w: number, h: number): { left: number; to
   const painted = PAINTED[p.id];
   const fs = p.figure?.fs ?? 1;
   if (!painted || !p.figure) return { left: w / 2, top: -16 };
-  const dx = painted.head * fs * (p.x > HEARTH_X && !painted.fixed ? -1 : 1);
+  const dx = painted.head * fs * (paintedFlip(painted, p.x, HEARTH_X) ? -1 : 1);
   return { left: w / 2 + dx, top: h - painted.h * fs - 24 };
 }
 

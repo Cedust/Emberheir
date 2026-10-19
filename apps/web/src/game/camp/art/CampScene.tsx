@@ -292,7 +292,7 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
       flicker: "fire",
     },
     // Marisha's corner by the Supply Wagon.
-    { x: 250, y: 480, rx: 110, ry: 90, color: "#ffb060", strength: 0.35, flicker: "soft" },
+    { x: 220, y: 480, rx: 110, ry: 90, color: "#ffb060", strength: 0.35, flicker: "soft" },
     // Eldrin on the signpost.
     {
       x: 1300 + SIGNPOST_DX,
@@ -311,8 +311,8 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
     ...(opts.orb
       ? [
           {
-            x: 415,
-            y: 380,
+            x: 365,
+            y: 395,
             rx: 80,
             ry: 80,
             color: "#6fd3ff",
