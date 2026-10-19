@@ -7,7 +7,7 @@ import {
   type Side,
   getPerk,
 } from "@emberheir/sim";
-import { Application, Container, Graphics, Text } from "pixi.js";
+import { Application, Container, Graphics, Sprite, Text } from "pixi.js";
 import { MAX_FPS, PAUSED_FPS, wantsAntialias } from "../pixiPacing";
 import {
   type Delivery,
@@ -41,6 +41,7 @@ import {
   drawWildfireGlow,
 } from "./arenaProps";
 import { type EnemyLook, drawEnemy, loadEnemyTexture } from "./enemyArt";
+import { backdropFeet, loadBackdrop, placeBackdrop } from "./arenaBackdrop";
 import { Fx } from "./fx";
 import { armSwing, loadHeirTextures } from "./heirRig";
 import { type HeroLook, RANGED_WEAPONS, drawHero, loadHeroWeapon } from "./heroArt";
@@ -84,6 +85,7 @@ export class ArenaScene {
   private heroArm: Container | null = null;
   private heroFist: Container | null = null;
   private enemy: Figure | null = null;
+  private backdrop: { sprite: Sprite; feet: number } | null = null;
   private telegraph: Graphics | null = null;
   private aura: Graphics | null = null;
   /** Ground light of the stronger side when the levels are far apart. */
@@ -155,6 +157,14 @@ export class ArenaScene {
     this.world.scale.set(scale);
     this.world.position.set((w - W * scale) / 2, h - bottom - H * scale);
     this.app?.renderer.resize(w, h, resolution);
+    this.placeBackdrop();
+  }
+
+  private placeBackdrop(): void {
+    if (!this.backdrop) return;
+    const { w, h } = this.size;
+    const feetY = this.world.y + GROUND_Y * this.world.scale.y;
+    placeBackdrop(this.backdrop.sprite, this.backdrop.feet, w, h, feetY);
   }
 
   /** True during a hit-stop: the fight loop holds the sim for that moment. */
@@ -186,10 +196,11 @@ export class ArenaScene {
       app.destroy(true, { children: true });
       return null;
     }
-    const [heir, weapon, painting] = await Promise.all([
+    const [heir, weapon, painting, backdrop] = await Promise.all([
       loadHeirTextures(),
       loadHeroWeapon(hero),
       loadEnemyTexture(enemy),
+      loadBackdrop(enemy.act),
     ]);
     if (this.destroyed) {
       app.destroy(true, { children: true });
@@ -199,6 +210,12 @@ export class ArenaScene {
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
     app.stage.addChild(this.camera, this.overlay);
+    if (backdrop) {
+      // A painted act: the painting replaces the drawn hills behind the fighters.
+      this.backdrop = { sprite: new Sprite(backdrop), feet: backdropFeet(enemy.act) };
+      this.camera.addChild(this.backdrop.sprite);
+      this.placeBackdrop();
+    }
     this.camera.addChild(this.world);
 
     const fx = new Fx(app.renderer);
@@ -206,7 +223,8 @@ export class ArenaScene {
     this.weather = new Weather(enemy.act, enemy.wildfire ?? 0);
     this.ranged = { hero: RANGED_WEAPONS.has(hero.weapon), enemy: enemy.ranged ?? false };
 
-    this.world.addChild(drawGround(), fx.back);
+    if (!backdrop) this.world.addChild(drawGround());
+    this.world.addChild(fx.back);
     this.aura = new Graphics();
     if (enemy.champion) {
       // A Champion wears two rings: violet Void-fire around the gold of an Elite.
