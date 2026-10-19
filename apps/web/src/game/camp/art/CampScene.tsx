@@ -311,7 +311,7 @@ export function campLights(opts: { orb: boolean }): CampLightSource[] {
     ...(opts.orb
       ? [
           {
-            x: 365,
+            x: 405,
             y: 395,
             rx: 80,
             ry: 80,

@@ -59,7 +59,8 @@ export interface Persona {
   readonly cloak: string;
   readonly quote: string;
   readonly target?: CampTarget;
-  readonly object?: { w: number; h: number };
+  /** A clickable spot in the backdrop; `front` lays it over the personas' spots. */
+  readonly object?: { w: number; h: number; front?: boolean };
   readonly figure?: { fs: number };
   readonly locked?: string;
 }
@@ -83,7 +84,8 @@ export function personas(state: GameState, road: ActData): Persona[] {
       y: 610,
       icon: "fire",
       cloak: "#a8401a",
-      object: { w: 150, h: 230 },
+      // Over Kaelen's spot: he lunges right behind the fire.
+      object: { w: 150, h: 150, front: true },
       quote: "Whatever rests near the fire survives the burning.",
       target: "legacy",
     },
@@ -139,7 +141,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "liora",
       name: "Liora",
       role: "Mystic",
-      x: 320,
+      x: 360,
       y: 560,
       icon: "eye",
       cloak: "#2d5bd0",
@@ -152,7 +154,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "kaelen",
       name: "Kaelen",
       role: "Trainer",
-      x: 610,
+      x: 680,
       y: 555,
       icon: "sword",
       cloak: "#6a2a20",
@@ -164,7 +166,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "nyssa",
       name: "Nyssa",
       role: "Runesmith",
-      x: 970,
+      x: 1000,
       y: 560,
       icon: "rune",
       cloak: "#4f7a3a",

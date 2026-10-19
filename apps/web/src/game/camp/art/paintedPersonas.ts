@@ -51,7 +51,7 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     sign: [6, 38.7, 82, 12, 2.1],
   },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
-  nan: { url: nanUrl, h: 140, face: { size: "295% auto", pos: "66% 2%" }, head: 13 },
+  nan: { url: nanUrl, h: 160, face: { size: "295% auto", pos: "66% 2%" }, head: 13 },
   kaelen: {
     url: kaelenUrl,
     h: 170,

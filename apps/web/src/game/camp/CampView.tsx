@@ -129,7 +129,13 @@ export function CampView(props: {
                 key={p.id}
                 type="button"
                 className="camp-target"
-                style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
+                style={{
+                  left: ox + p.x - w / 2,
+                  top: p.y - h - 64,
+                  width: w,
+                  height: h,
+                  ...(p.object?.front ? { zIndex: 1 } : {}),
+                }}
                 aria-label={`${p.name}, ${p.role}`}
                 onClick={() => {
                   if (target) props.onOpen(target);
