@@ -219,55 +219,80 @@
 
 /* --- buttons -------------------------------------------------------------------------------- */
 
+/*
+ * Older plain buttons wear the same painted plates as the UI kit's Button (ui/kit/kit.css):
+ * walnut for a normal button, glowing ember for a primary one.
+ */
 .stage .btn {
+  --k-btn-art: url("../assets/ui/btn-secondary.webp");
   min-height: 44px;
-  padding: 0 18px;
+  padding: 0 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
   gap: 8px;
-  border: 2px solid var(--edge);
-  border-radius: 4px;
-  background: var(--bg);
-  color: var(--text);
+  border: 2px solid transparent;
+  border-image: var(--k-btn-art) 34 40 fill / 15px 18px / 0 stretch;
+  /* The same image stretched underneath hides hairline seams between the slices. */
+  background: var(--k-btn-art) border-box center / 100% 100% no-repeat;
+  color: var(--k-on-wood);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
   font-family: var(--font-title);
   font-size: 15px;
   font-weight: 700;
   cursor: pointer;
   white-space: nowrap;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .stage .btn.primary {
-  background: var(--accent);
-  color: var(--on-accent);
-  border-color: var(--ink);
+  --k-btn-art: url("../assets/ui/btn-primary.webp");
+  color: #fff3dc;
+  text-shadow: 0 1px 2px rgb(60 15 0 / 0.75);
+}
+
+/* Square icon buttons (zoom, close) are the small riveted plate. */
+.stage .btn.icon-btn {
+  --k-btn-art: url("../assets/ui/btn-close.webp");
+  padding: 0 10px;
+  border-image-slice: 30 fill;
+  border-image-width: 12px;
 }
 
 .stage .btn.big {
   min-height: 52px;
-  padding: 0 26px;
+  padding: 0 30px;
+  border-image-width: 18px 22px;
   font-size: 18px;
   letter-spacing: 1px;
 }
 
 .stage .btn.ghost {
+  border: 2px solid var(--edge);
+  border-image: none;
   background: transparent;
+  color: var(--text);
+  text-shadow: none;
+  filter: none;
 }
 
 .stage .btn.glow {
-  box-shadow: 0 0 18px rgb(255 138 58 / 0.45);
+  filter: drop-shadow(0 0 10px rgb(255 120 40 / 0.55)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .stage .btn:hover:not(:disabled) {
-  filter: brightness(1.08);
+  filter: brightness(1.12) drop-shadow(0 0 8px rgb(255 150 60 / 0.45))
+    drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .stage .btn:disabled {
-  background: var(--track);
-  color: var(--text-sub);
-  border-color: var(--edge);
+  filter: grayscale(0.85) brightness(0.85);
+  opacity: 0.7;
   cursor: not-allowed;
-  box-shadow: none;
+}
+
+.stage .btn.ghost:disabled {
+  color: var(--text-sub);
 }
 
 .stage .icon-button {

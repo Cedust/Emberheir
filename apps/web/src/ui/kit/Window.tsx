@@ -7,8 +7,8 @@ import { HOTKEYS, useTabKeys } from "./hotkeys";
 import { Marker } from "./Marker";
 
 /**
- * The one window every screen outside the fight uses (ui-ux-plan-v1.md 3.1): a dark wood and
- * brass frame around parchment, one header, one way to close.
+ * The one window every screen outside the fight uses (ui-ux-plan-v1.md 3.1): Timo's painted
+ * wood and brass frame around parchment (kit.css), one header, one way to close.
  */
 export function Window(props: {
   label: string;
@@ -26,10 +26,6 @@ export function Window(props: {
       role={props.role === "dialog" ? "dialog" : undefined}
       aria-label={props.label}
     >
-      <span className="k-corner tl" aria-hidden="true" />
-      <span className="k-corner tr" aria-hidden="true" />
-      <span className="k-corner bl" aria-hidden="true" />
-      <span className="k-corner br" aria-hidden="true" />
       {props.header}
       <div className="k-window-body">{props.children}</div>
     </section>
