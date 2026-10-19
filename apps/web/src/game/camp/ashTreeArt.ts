@@ -487,6 +487,17 @@ export function drawTwigs(
   const feet = nodes.filter((n) => LEADER.has(n.id) || bark(n) || n.id === ROOT_HUB);
   const reached = new Set(feet.map((n) => n.id));
   const queue = [...feet];
+  // Each twig is at most as thick as the wood it grows out of, so a side branch never looks
+  // stronger than its parent (Timo 2026-10-19: the Ward buds seemed to float).
+  const thick = new Map<string, number>();
+  // A tip whose path goes on further out keeps no leaves: they would hide where the twig starts.
+  const grown = (n: SkillNode) => {
+    const region = regionOf(n);
+    if (!region) return false;
+    const o = TREE_PLACEMENT[region].origin;
+    const out = (p: Pt) => Math.hypot(p.x - o.x, p.y - o.y);
+    return (near.get(n.id) ?? []).some((m) => out(m) > out(n) + 0.3);
+  };
   const tips: { n: SkillNode; from: Pt }[] = [];
   for (let a = queue.shift(); a; a = queue.shift()) {
     const region = regionOf(a);
@@ -495,6 +506,7 @@ export function drawTwigs(
     // Thinner the further out; a bough on the trunk grows out from the trunk's axis.
     const out = (n: Pt) => (region === "trunk" ? Math.abs(n.x) : Math.hypot(n.x - o.x, n.y - o.y));
     const w = (d: number) => Math.max(0.05, 0.2 - d * 0.013) * (isRoot(region) ? 1.1 : 1);
+    const wa = thick.get(a.id) ?? w(out(a));
     // Out of the nearest node first, so each twig takes the shortest way back.
     const next = [...(near.get(a.id) ?? [])]
       .filter((b) => !reached.has(b.id))
@@ -502,6 +514,8 @@ export function drawTwigs(
     for (const b of next) {
       reached.add(b.id);
       queue.push(b);
+      const wb = Math.max(0.04, Math.min(w(out(b)), wa * 0.85));
+      thick.set(b.id, wb);
       // The rung's link to its hub runs along the bough.
       if (LEADER.has(a.id)) continue;
       if (isRoot(region) && painted && Math.max(a.y, b.y) < PAINTED_ROOTS_END) continue;
@@ -511,8 +525,8 @@ export function drawTwigs(
         g,
         unit,
         bent(from, b, (hash(a.id + b.id) - 0.5) * 0.25, 0, 6),
-        w(out(from)),
-        w(out(b)),
+        bark(a) ? w(out(from)) : wa,
+        wb,
         { grooves: false, shadow: true },
       );
       if (!isRoot(region) && (b.kind === "notable" || b.kind === "keystone")) {
@@ -521,6 +535,7 @@ export function drawTwigs(
     }
   }
   for (const { n, from } of tips) {
+    if (grown(n)) continue;
     if (painted) sprigs(painted.layer, unit, n, from, painted.leaves);
     else leaves(g, unit, n, from);
   }
