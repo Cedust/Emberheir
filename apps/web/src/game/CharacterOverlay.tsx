@@ -288,10 +288,7 @@ export function CharacterOverlay(props: {
         header={
           <WindowHeader
             title="Character"
-            sub={[
-              ...new Set([state.hero.name, heroTitle(state, GAME_DATA)]),
-              `Level ${state.hero.level}`,
-            ].join(" · ")}
+            sub={`${heroTitle(state, GAME_DATA)} · Level ${state.hero.level}`}
             medallion={
               <Medallion>
                 <HeirFace />

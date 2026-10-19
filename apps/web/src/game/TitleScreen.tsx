@@ -3,7 +3,7 @@ import { type GameState, SIM_VERSION, getAct, heroTitle } from "@emberheir/sim";
 import { useState } from "react";
 import { PREVIEW_PR } from "../storage";
 import { Icon } from "../ui/Icon";
-import { Button } from "../ui/kit/Button";
+import { Button, HoldButton } from "../ui/kit/Button";
 import type { SettingsApi } from "../ui/settings";
 import { useStageSize } from "../ui/Stage";
 import { CampLight } from "./camp/art/CampLight";
@@ -60,7 +60,6 @@ export function TitleScreen(props: {
         slots.findIndex((s) => s !== null),
       ),
   );
-  const [deleting, setDeleting] = useState("");
   const [confirmDelete, setConfirmDelete] = useState(false);
   const buildDate = new Date(__BUILD_TIME__).toLocaleDateString("en-GB");
   const hasCharacters = slots.some((s) => s !== null);
@@ -101,7 +100,7 @@ export function TitleScreen(props: {
               <Button big variant="primary" onClick={() => props.onContinue(last)}>
                 Continue
                 <small>
-                  {lastSave.hero.name} · {heroTitle(lastSave, GAME_DATA)} · {whereText(lastSave)}
+                  {heroTitle(lastSave, GAME_DATA)} · {whereText(lastSave)}
                 </small>
               </Button>
             )}
@@ -152,8 +151,7 @@ export function TitleScreen(props: {
                       size={48}
                     />
                     <span className="slot-text">
-                      <strong className="title-font">{save.hero.name}</strong>
-                      <span className="accent">{heroTitle(save, GAME_DATA)}</span>
+                      <strong className="title-font">{heroTitle(save, GAME_DATA)}</strong>
                       <span className="sub small">{whereText(save)}</span>
                     </span>
                   </button>
@@ -172,29 +170,20 @@ export function TitleScreen(props: {
             </div>
             {confirmDelete && selectedSave ? (
               <div className="delete-confirm panel-card" role="alertdialog" aria-label="Delete">
-                <span>
-                  Type <strong>{selectedSave.hero.name}</strong> to delete this Heir for good.
-                </span>
-                <input
-                  aria-label="Name to delete"
-                  value={deleting}
-                  onChange={(e) => setDeleting(e.target.value)}
-                />
+                <span>Delete this Heir for good?</span>
                 <Button onClick={() => setConfirmDelete(false)}>Keep</Button>
-                <Button
+                <HoldButton
                   icon="trash"
-                  blocked={deleting.trim() !== selectedSave.hero.name ? "Type the name" : null}
-                  onClick={() => {
+                  onConfirm={() => {
                     saveSlot(selected, null);
                     const next = loadSlots();
                     setSlots(next);
                     setConfirmDelete(false);
-                    setDeleting("");
                     if (!next.some((s) => s !== null)) setPage("main");
                   }}
                 >
                   Delete
-                </Button>
+                </HoldButton>
               </div>
             ) : (
               <div className="slot-buttons">

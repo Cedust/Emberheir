@@ -110,7 +110,7 @@ function useLooks(state: GameState, run: RunState) {
     ...(encounter ? { levelGap: encounter.level - state.hero.level } : {}),
   };
   const heroInfo: PlaqueInfo = {
-    name: `${state.hero.name} · ${heroTitle(state, GAME_DATA)}`,
+    name: heroTitle(state, GAME_DATA),
     sub: `${heroWeaponName(state, GAME_DATA)} · ${HEAT_TEXT[weapon.heatBehavior]}`,
     icon: "user",
   };

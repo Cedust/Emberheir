@@ -16,7 +16,6 @@ export interface NewCharacter {
   readonly slot: number;
   readonly classId: string;
   readonly weapon: string;
-  readonly name: string;
   /** The free points of the creation, on top of the Class Array. */
   readonly attributes?: AttributePoints;
 }
@@ -83,7 +82,6 @@ export function useGame() {
             seed,
             classId: character.classId,
             weapon: character.weapon,
-            name: character.name,
             ...(character.attributes ? { attributes: character.attributes } : {}),
           }),
         ),

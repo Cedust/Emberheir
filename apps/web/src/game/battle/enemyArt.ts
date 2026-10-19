@@ -5,6 +5,7 @@ import ashenSkirmisherUrl from "./enemies/ashen-skirmisher.webp";
 import cinderCasterUrl from "./enemies/cinder-caster.webp";
 import emberThiefUrl from "./enemies/ember-thief.webp";
 import gorrakUrl from "./enemies/gorrak.webp";
+import trainingDummyUrl from "../../assets/camp/personas/training-dummy.webp";
 
 /** The enemy in the arena: archetype body in its act's colors, Elite and boss marks. */
 
@@ -118,6 +119,8 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "cinder-caster": { url: cinderCasterUrl, height: 370, footX: 0.5 },
   gorrak: { url: gorrakUrl, height: 470, footX: 0.5 },
   "ember-thief": { url: emberThiefUrl, height: 290, footX: 0.45 },
+  // Kaelen's straw man from the Camp: the class select's sparring partner.
+  "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };
 
 /** The painting for this enemy, or null: it is drawn as its archetype body then. */
