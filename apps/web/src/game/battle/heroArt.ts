@@ -1,5 +1,10 @@
 import { BlurFilter, Container, Graphics, Sprite, type Texture } from "pixi.js";
-import { type PaintedTextures, drawPaintedWeapon, paintedTextures } from "../camp/paintedWeapon";
+import {
+  type PaintedTextures,
+  type SceneWeaponArt,
+  drawPaintedWeapon,
+  paintedTextures,
+} from "../camp/paintedWeapon";
 import { drawWeapon, type WeaponLook } from "../camp/weaponArt";
 import { INK } from "./arenaLayout";
 import {
@@ -9,6 +14,8 @@ import {
   type HeirTextures,
   buildHeirRig,
   heirOffFist,
+  heirPose,
+  heirPosePart,
 } from "./heirRig";
 
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
@@ -85,7 +92,7 @@ function heldWeapon(look: HeroLook, painted: PaintedTextures | null): Container 
   const pose = WEAPON_POSES[look.weapon];
   const [x0, y0] = pose.from;
   const [x1, y1] = pose.to;
-  const holder = weaponArt(look, painted);
+  const { holder } = weaponArt(look, painted);
   holder.position.set(x0, y0);
   holder.rotation = Math.atan2(y1 - y0, x1 - x0);
   holder.scale.set(Math.hypot(x1 - x0, y1 - y0) / WEAPON_LENGTH);
@@ -100,10 +107,14 @@ const WEAPON_LENGTH = 520;
  * of the build's Keystone form when it is loaded (the same one Weapon Mastery shows), else the
  * code-drawn weapon.
  */
-function weaponArt(look: HeroLook, painted: PaintedTextures | null): Container {
+function weaponArt(
+  look: HeroLook,
+  painted: PaintedTextures | null,
+  unstrung = false,
+): { holder: Container; stringEnds?: SceneWeaponArt["stringEnds"] } {
   const length = WEAPON_LENGTH;
   const art = painted
-    ? drawPaintedWeapon(look.weaponId, length, look.weaponLook, painted)
+    ? drawPaintedWeapon(look.weaponId, length, look.weaponLook, painted, unstrung)
     : drawWeapon(look.weaponId, length, look.weaponLook);
   const holder = new Container();
   const grade = Math.max(0, Math.min(4, look.weaponLook.grade));
@@ -133,7 +144,9 @@ function weaponArt(look: HeroLook, painted: PaintedTextures | null): Container {
   const tip = new Container({ label: "weapon-tip" });
   tip.position.set(length * 0.8, 0);
   holder.addChild(tip);
-  return holder;
+  return "stringEnds" in art && art.stringEnds
+    ? { holder, stringEnds: art.stringEnds }
+    : { holder };
 }
 
 /**
@@ -183,6 +196,12 @@ export async function loadHeroWeapon(look: HeroLook): Promise<PaintedTextures | 
  * whether it is mirrored. Held items (`gripped`) go under the fist, which is drawn again on top;
  * a `floating` one hovers over the fist, bobbing in the scene.
  */
+/** Bow and Crossbow carry a Quiver on the back (the Hunter's look); a Dagger does not. */
+const SHOOTERS = new Set<HeroLook["weapon"]>(["bow", "crossbow"]);
+
+/** In the ranged pose the Quiver stands steeper, its arrows over the shoulder behind the head. */
+const RANGED_QUIVER_TILT = -0.45;
+
 const OFF_HAND_HOLDS: Record<
   HeirOffHand,
   {
@@ -212,13 +231,19 @@ const OFF_HAND_HOLDS: Record<
 };
 
 /** The painted off-hand item in its hold; the Ember Focus' orb gets a glow the scene breathes. */
-function paintedOffHand(kind: HeirOffHand, texture: Texture, front = false): Container {
+function paintedOffHand(
+  kind: HeirOffHand,
+  texture: Texture,
+  front = false,
+  at?: readonly [number, number],
+  tilt?: number,
+): Container {
   const hold = OFF_HAND_HOLDS[kind];
-  const [x, y] = kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND;
+  const [x, y] = at ?? (kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND);
   const c = new Container({ label: kind === "quiver" ? "heir-quiver" : "heir-off-hand" });
   c.position.set(x + hold.offset[0], y + hold.offset[1]);
   // A hovering book tilts on its own; the light under it stays level.
-  if (!hold.floating) c.rotation = hold.tilt;
+  if (!hold.floating) c.rotation = tilt ?? hold.tilt;
   const sprite = new Sprite(texture);
   sprite.anchor.set(hold.anchor[0], hold.anchor[1]);
   const scale = hold.size / Math.max(texture.width, texture.height);
@@ -261,11 +286,28 @@ function drawPaintedHero(
   const c = new Container();
   const rig = buildHeirRig(heir);
   // A quiver rides on the back, behind everything (a Hunter always wears one).
-  const quiver = look.offHand === "quiver" || look.heroClass === "ashstrider";
+  const quiver = SHOOTERS.has(look.weapon);
   const quiverArt = heir.offHands.quiver;
+  const pose = look.weapon === "bow" || look.weapon === "crossbow" ? look.weapon : null;
+  const poseArt = pose ? heir.ranged[pose] : undefined;
+  if (pose && poseArt) {
+    // Bow and Crossbow: the otter aims, both paws on the weapon (its own pose).
+    if (quiver && quiverArt)
+      c.addChild(
+        paintedOffHand("quiver", quiverArt, false, heirPose(pose).back, RANGED_QUIVER_TILT),
+      );
+    // The weapon lies in front, under the drawing paw and the front paw's fingers.
+    c.addChild(
+      heirPosePart(poseArt, pose, "body"),
+      new RangedHold(look, painted),
+      heirPosePart(poseArt, pose, "arm"),
+      heirPosePart(poseArt, pose, "hand"),
+    );
+    return c;
+  }
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
   const grip = HEIR_GRIPS[look.weapon];
-  const weapon = weaponArt(look, painted);
+  const { holder: weapon } = weaponArt(look, painted);
   weapon.rotation = grip.angle;
   weapon.scale.set(grip.length / WEAPON_LENGTH);
   weapon.pivot.set(grip.at * WEAPON_LENGTH, 0);
@@ -290,7 +332,7 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const colors = CLASS_LOOKS[look.heroClass];
   // Off hand and back gear sit behind the body.
-  if (look.offHand === "quiver" || look.heroClass === "ashstrider") {
+  if (SHOOTERS.has(look.weapon)) {
     c.addChild(
       new Graphics().roundRect(-78, -330, 30, 120, 8).fill(0x7a5a34).stroke(line),
       new Graphics()
@@ -398,6 +440,147 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
   c.addChild(heldWeapon(look, painted));
   c.y = 150;
   return c;
+}
+
+type Point = readonly [number, number];
+
+const lerp = (a: Point, b: Point, t: number): [number, number] => [
+  a[0] + (b[0] - a[0]) * t,
+  a[1] + (b[1] - a[1]) * t,
+];
+
+/** Drawn sizes in the ranged pose (figure units): Bow tip to tip, the arrow, the Crossbow. */
+const RANGED_SIZES = { bow: 270, arrow: 180 };
+
+/**
+ * Where the paws hold the painted Crossbow, along it (0 = butt, 1 = front): the stock's wrist
+ * behind the trigger and the fore end just behind the latch, and across it (the fore end's
+ * underside rests on the palm).
+ */
+const CROSSBOW_HOLDS = { stock: 0.24, fore: 0.66, across: -8 };
+
+/** String colour of the drawn Bow. */
+const STRING = 0x3a2a1c;
+
+/**
+ * Bow or Crossbow in its pose, in front of the otter, held by the front paw and the paw at the
+ * jaw. `pose` plays a shot: the Bow's string snaps forward and shivers, a new arrow is nocked and drawn back to the jaw; the Crossbow kicks into the
+ * shoulder. Visual only.
+ */
+export class RangedHold extends Container {
+  private readonly bow: boolean;
+  private readonly weapon: Container;
+  private readonly string = new Graphics();
+  private readonly arrow: Sprite | null = null;
+  private readonly ends: [Point, Point] | null = null;
+  private readonly jaw: Point;
+  private readonly rest: Point;
+  private readonly aim: Point;
+  private readonly base: { x: number; y: number; rotation: number };
+
+  constructor(look: HeroLook, painted: PaintedTextures | null) {
+    super({ label: "heir-ranged" });
+    this.bow = look.weapon === "bow";
+    const shot = new Container({ label: "heir-shot" });
+    const { grip, jaw } = heirPose(this.bow ? "bow" : "crossbow");
+    this.jaw = jaw;
+    this.rest = grip;
+    if (this.bow) {
+      const { holder, stringEnds } = weaponArt(look, painted, true);
+      const k = RANGED_SIZES.bow / WEAPON_LENGTH;
+      holder.scale.set(k);
+      holder.pivot.set(WEAPON_LENGTH / 2, 0);
+      holder.rotation = Math.PI / 2;
+      holder.position.set(grip[0], grip[1]);
+      this.weapon = holder;
+      // The arrow rests on the bow fist's knuckles.
+      this.aim = [grip[0] - 6, grip[1] - 14];
+      if (stringEnds) {
+        // Painting along the axis → figure: turned a quarter, the string side towards the otter.
+        const place = ([x, y]: Point): Point => [
+          grip[0] - (y - 0) * k,
+          grip[1] + (x - WEAPON_LENGTH / 2) * k,
+        ];
+        this.ends = [place(stringEnds[0]), place(stringEnds[1])];
+        this.rest = lerp(this.ends[0], this.ends[1], 0.5);
+      }
+      const arrowTexture = painted?.arrow;
+      if (arrowTexture) {
+        this.arrow = new Sprite(arrowTexture);
+        this.arrow.anchor.set(0, 0.5);
+        this.arrow.scale.set(RANGED_SIZES.arrow / arrowTexture.width);
+      }
+      this.addChild(holder, this.string);
+      if (this.arrow) this.addChild(this.arrow);
+      // Arrows leave from the head of the fully drawn arrow.
+      const dir = Math.atan2(this.aim[1] - jaw[1], this.aim[0] - jaw[0]);
+      shot.position.set(
+        jaw[0] + Math.cos(dir) * RANGED_SIZES.arrow,
+        jaw[1] + Math.sin(dir) * RANGED_SIZES.arrow,
+      );
+    } else {
+      const { holder } = weaponArt(look, painted);
+      const stock = jaw;
+      const span = Math.hypot(grip[0] - stock[0], grip[1] - stock[1]);
+      const k = span / ((CROSSBOW_HOLDS.fore - CROSSBOW_HOLDS.stock) * WEAPON_LENGTH);
+      holder.scale.set(k);
+      holder.pivot.set(CROSSBOW_HOLDS.stock * WEAPON_LENGTH, CROSSBOW_HOLDS.across);
+      holder.rotation = Math.atan2(grip[1] - stock[1], grip[0] - stock[0]);
+      holder.position.set(stock[0], stock[1]);
+      this.weapon = holder;
+      this.aim = grip;
+      // Bolts leave from the Crossbow's front.
+      shot.position.set(WEAPON_LENGTH, CROSSBOW_HOLDS.across);
+      holder.addChild(shot);
+      this.addChild(holder);
+    }
+    if (this.bow) this.addChild(shot);
+    this.base = { x: this.weapon.x, y: this.weapon.y, rotation: this.weapon.rotation };
+    this.pose(Infinity, 0, false);
+  }
+
+  /** The shot `age` seconds ago (Infinity: none yet), `clock` for the shiver, `motion` off stills it. */
+  pose(age: number, clock: number, motion: boolean): void {
+    if (this.bow) this.poseBow(age, clock, motion);
+    else this.poseCrossbow(age, motion);
+  }
+
+  private poseBow(age: number, clock: number, motion: boolean): void {
+    // Released (string snaps and shivers), then a new arrow on the string, drawn to the jaw.
+    // The arrow keeps its aim: it slides along the line from the jaw over the knuckles.
+    const draw = age < 0.18 ? 0 : Math.min(1, (age - 0.18) / 0.4);
+    const eased = draw * draw * (3 - 2 * draw);
+    const jaw = this.jaw;
+    const angle = Math.atan2(this.aim[1] - jaw[1], this.aim[0] - jaw[0]);
+    const along =
+      (this.rest[0] - jaw[0]) * Math.cos(angle) + (this.rest[1] - jaw[1]) * Math.sin(angle);
+    const loose: Point = [jaw[0] + Math.cos(angle) * along, jaw[1] + Math.sin(angle) * along];
+    const nock = lerp(loose, jaw, eased);
+    const shiver = motion && age < 0.18 ? Math.sin(clock * 90) * 4 * (1 - age / 0.18) : 0;
+    const g = this.string.clear();
+    if (this.ends) {
+      g.moveTo(this.ends[0][0], this.ends[0][1])
+        .lineTo(nock[0] - shiver, nock[1])
+        .lineTo(this.ends[1][0], this.ends[1][1])
+        .stroke({ color: STRING, width: 2, join: "round", cap: "round" });
+    }
+    if (this.arrow) {
+      this.arrow.visible = age >= 0.18;
+      this.arrow.position.set(nock[0], nock[1]);
+      this.arrow.rotation = angle;
+    }
+  }
+
+  private poseCrossbow(age: number, motion: boolean): void {
+    // The kick: back into the shoulder and the front up, then settling.
+    const kick = motion && age < 0.3 ? Math.sin((age / 0.3) * Math.PI) * (1 - age / 0.3) : 0;
+    const back = 7 * kick;
+    this.weapon.rotation = this.base.rotation - 0.08 * kick;
+    this.weapon.position.set(
+      this.base.x - Math.cos(this.base.rotation) * back,
+      this.base.y - Math.sin(this.base.rotation) * back,
+    );
+  }
 }
 
 export const RANGED_WEAPONS = new Set<HeroLook["weapon"]>(["wand", "staff", "bow", "crossbow"]);
