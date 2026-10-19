@@ -1,4 +1,4 @@
-import { GAME_DATA } from "@emberheir/content";
+import { BUILD_PLANS, GAME_DATA, PRESTIGE_BRANCHES } from "@emberheir/content";
 import {
   CHEAT_MAX_LEVEL,
   type GameState,
@@ -30,9 +30,10 @@ export const CHEATS_ENABLED =
   import.meta.env.DEV ||
   new URLSearchParams(window.location.search).has("cheat");
 
-type Tab = "hero" | "currency" | "items" | "progress";
+type Tab = "hero" | "builds" | "currency" | "items" | "progress";
 const TABS: { id: Tab; name: string }[] = [
   { id: "hero", name: "Hero" },
+  { id: "builds", name: "Builds" },
   { id: "currency", name: "Currency" },
   { id: "items", name: "Items" },
   { id: "progress", name: "Progress" },
@@ -373,6 +374,80 @@ function ItemsTab(props: { state: GameState; game: GameApi }) {
   );
 }
 
+const masteryName = (id: string) => PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id;
+
+/**
+ * The 24 builds at their last stage (Timo 2026-10-19): a new Heir of the build's class after all
+ * seven runs, with its Heirloom path, Masteries, Ash Tree, attributes, Battle Plan and Epic gear.
+ */
+function BuildsTab(props: { state: GameState; game: GameApi; onClose: () => void }) {
+  const { state, game } = props;
+  const [picked, setPicked] = useState(BUILD_PLANS[0]?.id ?? "");
+  const plan = BUILD_PLANS.find((b) => b.id === picked);
+  const [main, setMain] = useState<string | null>(null);
+  const mastery = main && plan?.masteries.includes(main) ? main : plan?.masteries[0];
+  const inCamp = !state.run && !state.pendingPrestige;
+  const become = () => {
+    if (!plan || !mastery) return;
+    const masteries = [mastery, ...plan.masteries.filter((m) => m !== mastery)];
+    game.cheat({ kind: "buildPlan", plan: { ...plan, masteries } });
+    props.onClose();
+  };
+  return (
+    <div className="cheat-grid">
+      {GAME_DATA.classes.map((c) => (
+        <section key={c.id} className="cheat-card">
+          <span className="eyebrow">{c.name}</span>
+          <div className="cheat-builds" role="radiogroup" aria-label={`${c.name} builds`}>
+            {BUILD_PLANS.filter((b) => b.classId === c.id).map((b) => (
+              <button
+                key={b.id}
+                type="button"
+                role="radio"
+                aria-checked={picked === b.id}
+                className={`cheat-rank${picked === b.id ? " on" : ""}`}
+                onClick={() => {
+                  setPicked(b.id);
+                  setMain(null);
+                }}
+              >
+                {b.name}
+              </button>
+            ))}
+          </div>
+        </section>
+      ))}
+      {plan && (
+        <section className="cheat-card">
+          <span className="eyebrow">{plan.name} · last stage</span>
+          <div className="cheat-builds" role="radiogroup" aria-label="Main Mastery">
+            {plan.masteries.map((m) => (
+              <button
+                key={m}
+                type="button"
+                role="radio"
+                aria-checked={mastery === m}
+                className={`cheat-rank${mastery === m ? " on" : ""}`}
+                onClick={() => setMain(m)}
+              >
+                {masteryName(m)}
+              </button>
+            ))}
+          </div>
+          <p className="sub small">
+            A new Heir after all seven runs: Level 100, the main Mastery at Tier V, Heirloom, Ash
+            Tree, attributes, Battle Plan and Epic gear. This Heir is replaced, the stash stays.
+          </p>
+          <button type="button" className="btn primary" disabled={!inCamp} onClick={become}>
+            Become this Heir
+          </button>
+          {!inCamp && <p className="sub small">Only in the Camp.</p>}
+        </section>
+      )}
+    </div>
+  );
+}
+
 function ProgressTab(props: { state: GameState; game: GameApi; onClose: () => void }) {
   const { state, game } = props;
   const inCamp = !state.run && !state.pendingPrestige;
@@ -455,6 +530,7 @@ export function CheatPanel(props: { state: GameState; game: GameApi; onClose: ()
         </header>
         <div className="cheat-body">
           {tab === "hero" && <HeroTab state={state} game={game} />}
+          {tab === "builds" && <BuildsTab state={state} game={game} onClose={props.onClose} />}
           {tab === "currency" && <CurrencyTab state={state} game={game} />}
           {tab === "items" && <ItemsTab state={state} game={game} />}
           {tab === "progress" && <ProgressTab state={state} game={game} onClose={props.onClose} />}

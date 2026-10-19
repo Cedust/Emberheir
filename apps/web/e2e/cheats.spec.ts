@@ -45,3 +45,30 @@ test("Cheat Mode is off without ?cheat outside PR previews", async ({ page }) =>
   await expect(page.getByRole("dialog", { name: "Menu" })).toBeVisible();
   await expect(page.getByRole("button", { name: /Cheats/ })).toHaveCount(0);
 });
+
+test("Cheat Mode: become one of the 24 builds at its last stage", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveAfterAct1());
+  await page.goto("/?cheat");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: /Cheats/ }).click();
+  const panel = page.getByRole("dialog", { name: "Cheats" });
+  await panel.getByRole("tab", { name: "Builds" }).click();
+  await expect(panel.getByRole("radiogroup", { name: /builds/ }).getByRole("radio")).toHaveCount(
+    24,
+  );
+  await panel.getByRole("radio", { name: "Toxin Bow" }).click();
+  await panel
+    .getByRole("radiogroup", { name: "Main Mastery" })
+    .getByRole("radio", { name: "Skirmisher" })
+    .click();
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/cheats-builds.png` });
+  await panel.getByRole("button", { name: "Become this Heir" }).click();
+  await expect(page.getByRole("dialog", { name: "Cheats" })).toHaveCount(0);
+  await page.keyboard.press("c");
+  await expect(page.getByRole("dialog", { name: /Character/ })).toContainText("Skirmisher");
+  await expect(page.getByRole("dialog", { name: /Character/ })).toContainText("100");
+  expect(errors).toEqual([]);
+});

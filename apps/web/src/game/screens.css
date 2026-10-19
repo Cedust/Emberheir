@@ -6555,6 +6555,20 @@
   gap: 4px;
 }
 
+.stage .cheat-builds {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+}
+
+.stage .cheat-builds .cheat-rank {
+  font-family: inherit;
+  font-size: 12px;
+  height: auto;
+  min-height: 32px;
+  padding: 2px 4px;
+}
+
 .stage .cheat-rank {
   height: 32px;
   font-family: var(--font-mono, monospace);

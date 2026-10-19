@@ -42,7 +42,7 @@ describe("autopilot builds", () => {
       expect(builds.length, c.id).toBeGreaterThanOrEqual(3);
       for (const b of builds) expect(c.weapons, b.id).toContain(b.weapon);
     }
-    const goals = BUILDS.flatMap((b) => b.nodes.filter((n) => n !== "@branches"));
+    const goals = BUILDS.flatMap((b) => b.nodes.filter((n) => !n.startsWith("@")));
     expect(goals.filter((n) => !ids.has(n))).toEqual([]);
   });
 });

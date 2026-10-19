@@ -1,3 +1,4 @@
+import { itemSlotFor, missingRequirements } from "../items/equipment";
 import { getBase, rollItem, rollUnique } from "../items/generate";
 import type { Item, Rarity } from "../items/types";
 import { PROGRESSION } from "./constants";
@@ -6,6 +7,9 @@ import {
   type GameState,
   type Wallet,
   actsInRun,
+  applyAction,
+  newGame,
+  openBranches,
   fail,
   isHarvestAct,
   nextAct,
@@ -13,6 +17,8 @@ import {
   waymarkKey,
   waymarkStages,
 } from "./game";
+import { type BuildPlan, applyBuildPlan } from "./build-plan";
+import { ATTRIBUTE_RULES } from "./attributes";
 import { addToGrid } from "./inventory";
 import { addToStash } from "./stash";
 import { EMPTY_MASTERY, MASTERY, weaponRank } from "./weapon-mastery";
@@ -60,7 +66,12 @@ export type Cheat =
   /** Set an Echo's stage (0 forgets it). */
   | { readonly kind: "echo"; readonly echoId: string; readonly stage: number }
   /** Kaelen and Nyssa join the caravan. */
-  | { readonly kind: "unlockCamp" };
+  | { readonly kind: "unlockCamp" }
+  /**
+   * A new Heir of the plan's class at the end of the game: all seven runs played, Level 100, the
+   * plan's Masteries, Heirloom, Ash Tree, attributes and Battle Plan, Epic gear. The stash stays.
+   */
+  | { readonly kind: "buildPlan"; readonly plan: BuildPlan };
 
 /** Highest level the cheat sets: the max level. */
 export const CHEAT_MAX_LEVEL = PROGRESSION.maxLevel;
@@ -128,6 +139,8 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
         hero: worn ? { ...state.hero, mastery: { ...state.hero.mastery, echo: null } } : state.hero,
       };
     }
+    case "buildPlan":
+      return endgameBuild(state, data, cheat.plan);
     case "unlockCamp":
       return {
         ...state,
@@ -284,4 +297,67 @@ function clearActs(state: GameState, data: GameData, all: boolean): GameState {
     return fail("Every act of this run has fallen");
   }
   return s;
+}
+
+/** Item Level of the last stage's gear (wearable at Level 100). */
+const ENDGAME_ITEM_LEVEL = 100;
+
+function endgameBuild(state: GameState, data: GameData, plan: BuildPlan): GameState {
+  if (state.run || state.pendingPrestige) return fail("Only in the Camp");
+  const fresh = newGame(data, {
+    seed: state.seed,
+    classId: plan.classId,
+    weapon: plan.weapon,
+    name: state.hero.name,
+  });
+  let s: GameState = { ...fresh, stash: state.stash };
+  // Seven runs: every act falls, each Harvest takes the plan's next open Mastery.
+  while (s.legacy.prestige < PROGRESSION.finalPrestige) {
+    s = clearActs(s, data, true);
+    if (!s.pendingPrestige) break;
+    const open = openBranchesFor(s, data);
+    const branchId = plan.masteries.find((m) => open.includes(m)) ?? open[0];
+    s = applyAction(s, data, { type: "prestige", ...(branchId ? { branchId } : {}) });
+    s = { ...s, notice: null };
+  }
+  s = setLevel(s, CHEAT_MAX_LEVEL);
+  // Attribute points in the plan's order, each up to the max.
+  for (const attribute of plan.attributes) {
+    const room = ATTRIBUTE_RULES.max - s.hero.attributes[attribute];
+    const points = Math.min(room, s.hero.unspentAttributePoints);
+    if (points > 0) {
+      s = applyAction(s, data, { type: "allocateAttributes", points: { [attribute]: points } });
+    }
+  }
+  s = equipEpicGear(s, data);
+  return applyBuildPlan(s, data, plan);
+}
+
+function openBranchesFor(state: GameState, data: GameData): string[] {
+  return openBranches(state, data).map((b) => b.id);
+}
+
+/** An Epic item the hero can wear in every slot (the base worn there first, so the class keeps its Off Hand). */
+function equipEpicGear(state: GameState, data: GameData): GameState {
+  let s = state;
+  const equipment = { ...s.hero.equipment };
+  for (const slot of data.equipmentSlots) {
+    const worn = equipment[slot]?.baseId;
+    const bases = data.lootBases
+      .filter((id) => getBase(data.items, id).slot === itemSlotFor(slot))
+      .sort((a, b) => Number(b === worn) - Number(a === worn));
+    for (const baseId of bases) {
+      const [rng, next] = nextRng(s);
+      s = next;
+      const item = rollItem(
+        data.items,
+        { baseId, rarity: "epic", itemLevel: ENDGAME_ITEM_LEVEL },
+        rng,
+      );
+      if (missingRequirements(item, data.items, s.hero.attributes).length) continue;
+      equipment[slot] = item;
+      break;
+    }
+  }
+  return { ...s, hero: { ...s.hero, equipment } };
 }
