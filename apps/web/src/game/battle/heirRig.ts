@@ -244,7 +244,7 @@ const RANGED = {
   body: [42, 184],
   arm: [151, 358],
   fist: [912, 417],
-  fingers: [946, 418],
+  fingers: [921, 419],
   /** The middle of the bow fist, where a Crossbow's fore end is held. */
   grip: [950, 470],
   /** A Bow's grip in the fist: behind the fingers, over the back of the paw. */
@@ -254,7 +254,7 @@ const RANGED = {
   /** The middle of the drawing paw, on a Crossbow's stock. */
   stock: [440, 410],
   /** Between the shoulder blades, where a quiver's strap sits. */
-  back: [360, 560],
+  back: [380, 420],
 } as const;
 
 function rangedAt(p: readonly [number, number]): [number, number] {

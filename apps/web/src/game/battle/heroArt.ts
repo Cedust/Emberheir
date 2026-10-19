@@ -196,6 +196,12 @@ export async function loadHeroWeapon(look: HeroLook): Promise<PaintedTextures | 
  * whether it is mirrored. Held items (`gripped`) go under the fist, which is drawn again on top;
  * a `floating` one hovers over the fist, bobbing in the scene.
  */
+/** Bow and Crossbow carry a Quiver on the back (the Hunter's look); a Dagger does not. */
+const SHOOTERS = new Set<HeroLook["weapon"]>(["bow", "crossbow"]);
+
+/** In the ranged pose the Quiver stands steeper, its arrows over the shoulder behind the head. */
+const RANGED_QUIVER_TILT = -0.45;
+
 const OFF_HAND_HOLDS: Record<
   HeirOffHand,
   {
@@ -230,13 +236,14 @@ function paintedOffHand(
   texture: Texture,
   front = false,
   at?: readonly [number, number],
+  tilt?: number,
 ): Container {
   const hold = OFF_HAND_HOLDS[kind];
   const [x, y] = at ?? (kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND);
   const c = new Container({ label: kind === "quiver" ? "heir-quiver" : "heir-off-hand" });
   c.position.set(x + hold.offset[0], y + hold.offset[1]);
   // A hovering book tilts on its own; the light under it stays level.
-  if (!hold.floating) c.rotation = hold.tilt;
+  if (!hold.floating) c.rotation = tilt ?? hold.tilt;
   const sprite = new Sprite(texture);
   sprite.anchor.set(hold.anchor[0], hold.anchor[1]);
   const scale = hold.size / Math.max(texture.width, texture.height);
@@ -279,12 +286,12 @@ function drawPaintedHero(
   const c = new Container();
   const rig = buildHeirRig(heir);
   // A quiver rides on the back, behind everything (a Hunter always wears one).
-  const quiver = look.offHand === "quiver" || look.heroClass === "ashstrider";
+  const quiver = SHOOTERS.has(look.weapon);
   const quiverArt = heir.offHands.quiver;
   if ((look.weapon === "bow" || look.weapon === "crossbow") && heir.ranged) {
     // Bow and Crossbow: the otter aims, both paws on the weapon (the ranged pose).
     if (quiver && quiverArt)
-      c.addChild(paintedOffHand("quiver", quiverArt, false, HEIR_RANGED.back));
+      c.addChild(paintedOffHand("quiver", quiverArt, false, HEIR_RANGED.back, RANGED_QUIVER_TILT));
     const hold = new RangedHold(look, painted);
     const body = heirRangedPart(heir.ranged, "body");
     // The weapon lies in front, under the drawing paw; the Bow's grip under the fingers only.
@@ -323,7 +330,7 @@ function drawPlaceholderHero(look: HeroLook, painted: PaintedTextures | null): C
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const colors = CLASS_LOOKS[look.heroClass];
   // Off hand and back gear sit behind the body.
-  if (look.offHand === "quiver" || look.heroClass === "ashstrider") {
+  if (SHOOTERS.has(look.weapon)) {
     c.addChild(
       new Graphics().roundRect(-78, -330, 30, 120, 8).fill(0x7a5a34).stroke(line),
       new Graphics()

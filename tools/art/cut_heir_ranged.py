@@ -24,7 +24,7 @@ def cut(poly):
 arm=cut([(140,395),(200,383),(330,373),(398,358),(445,358),(484,374),(490,398),(470,425),(457,449),(412,457),(330,467),(262,492),(200,503),(140,492)])
 # The bow fist from the wrist on.
 fist=cut([(912,424),(940,414),(966,420),(997,432),(1000,492),(988,528),(944,531),(912,518)])
-# The bow fist's fingers alone: drawn over a Bow, the rest of the fist under it, so the grip
-# lies in the hand.
-fingers=cut([(946,418),(968,420),(997,432),(1000,492),(988,528),(950,531),(946,500)])
+# The bow fist's fingers and thumb alone: drawn over a Bow, the rest of the fist under it, so
+# the grip lies in the hand under the thumb.
+fingers=cut([(920,428),(934,418),(968,420),(997,432),(1000,492),(988,528),(950,531),(946,500),(946,448),(924,446)])
 print(json.dumps({'fingers':save(fingers,'heir-ranged-fingers.webp'),'body':save(im,'heir-ranged.webp'),'arm':save(arm,'heir-ranged-arm.webp'),'fist':save(fist,'heir-ranged-fist.webp')}))
