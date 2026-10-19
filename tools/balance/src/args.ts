@@ -35,6 +35,11 @@ export interface BalanceArgs {
   newest: number;
   /** Act mode: write every report as JSON to this file ("" = none). */
   json: string;
+  /**
+   * 1 = damage budget per build at the end of the game (where the damage comes from, what each
+   * layer is worth); `--runs` seeds of random gear each.
+   */
+  budget: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -60,6 +65,7 @@ const DEFAULTS: BalanceArgs = {
   runes: 1,
   newest: 0,
   json: "",
+  budget: 0,
 };
 
 const NUMBER_FLAGS = {
@@ -74,6 +80,7 @@ const NUMBER_FLAGS = {
   "--wildfire": "wildfire",
   "--runes": "runes",
   "--newest": "newest",
+  "--budget": "budget",
 } as const;
 const STRING_FLAGS = {
   "--weapon": "weapon",

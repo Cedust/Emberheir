@@ -12,6 +12,7 @@ import {
   type LearnedNodes,
   forkPartner,
   getNode,
+  keystoneLimit,
   learnBlockReason,
   nodeMaxRanks,
 } from "./skill-tree";
@@ -36,7 +37,9 @@ export interface BuildPlan {
   };
   /**
    * Ash Tree goals in order. `@mastery-skill` stands for the main Mastery's skill node,
-   * `@mastery` for the rest of its nodes (no Keystones).
+   * `@mastery` for the rest of its nodes, `@mastery-keystone` for its Keystone and the tiers that
+   * lift it. Ash Tree Keystones named here wait for the second Keystone place (Prestige 2), so the
+   * first place stays free for the Mastery's.
    */
   readonly nodes: readonly string[];
   /** Battle Plan skills after the Innate (`@mastery-skill` = the main Mastery's skill). */
@@ -51,6 +54,7 @@ export interface BuildPlan {
 /** Placeholders in `nodes` and `rotation`. */
 export const MASTERY_SKILL = "@mastery-skill";
 export const MASTERY_NODES = "@mastery";
+export const MASTERY_KEYSTONE = "@mastery-keystone";
 
 /** The plan's main Mastery once the hero owns it. */
 export function planMastery(state: GameState, plan: BuildPlan): string | undefined {
@@ -159,7 +163,9 @@ function pathTo(data: GameData, learned: LearnedNodes, target: string): string[]
     for (const next of graph.get(id) ?? []) {
       if (from.has(next)) continue;
       const node = getNode(tree, next);
-      if (node.kind === "keystone" || forkPartner(tree, learned, node)) continue;
+      if ((node.kind === "keystone" && next !== target) || forkPartner(tree, learned, node)) {
+        continue;
+      }
       from.set(next, id);
       if (next === target) {
         const path = [next];
@@ -225,19 +231,26 @@ function isDefenseNode(node: { readonly bonuses?: object }): boolean {
 /** The plan's goals with the placeholders filled in for this hero. */
 function goals(state: GameState, data: GameData, plan: BuildPlan): string[] {
   const mastery = planMastery(state, plan);
-  const own = mastery
-    ? data.skillTree.nodes.filter((n) => n.prestigeBranch === mastery && n.kind !== "keystone")
-    : [];
+  const branch = mastery ? data.skillTree.nodes.filter((n) => n.prestigeBranch === mastery) : [];
+  const own = branch.filter((n) => n.kind !== "keystone");
+  const keystones = branch
+    .filter((n) => n.kind === "keystone")
+    .sort((a, b) => (a.tier ?? 1) - (b.tier ?? 1));
+  const secondPlace = keystoneLimit(state.legacy.prestige) >= 2;
   return plan.nodes.flatMap((id) => {
     if (id === MASTERY_SKILL) return own.filter((n) => n.kind === "skill").map((n) => n.id);
     if (id === MASTERY_NODES) return own.map((n) => n.id);
+    if (id === MASTERY_KEYSTONE) return keystones.map((n) => n.id);
+    const node = data.skillTree.nodes.find((n) => n.id === id);
+    if (node?.kind === "keystone" && !secondPlace) return [];
     return [id];
   });
 }
 
 /**
- * Kaelen's Ash Tree: spends Skill Points on the plan's goals in order, then on the nearest open
- * nodes (no Keystones; within a kind, defense first, like a player stuck at a wall).
+ * Kaelen's Ash Tree: spends Skill Points on the plan's goals in order (Keystones only where the
+ * plan names them), then on the nearest open nodes (within a kind, defense first, like a player
+ * stuck at a wall).
  */
 export function learnAshTree(state: GameState, data: GameData, plan: BuildPlan): GameState {
   let s = state;

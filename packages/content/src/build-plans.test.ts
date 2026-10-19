@@ -1,6 +1,7 @@
 import {
   MASTERY_SKILL,
   PROGRESSION,
+  applyBuildPlan,
   applyCheat,
   heroSetup,
   newGame,
@@ -22,6 +23,11 @@ describe("build plans", () => {
         plan.nodes.filter((n) => !n.startsWith("@") && !nodes.has(n)),
         plan.id,
       ).toEqual([]);
+      // The Heirloom Keystone is one of the weapon's own.
+      const keystone = GAME_DATA.weaponMastery[plan.weapon]?.nodes.find(
+        (n) => n.id === plan.heirloom.keystone,
+      );
+      expect(keystone?.group, plan.id).toBe("keystone");
       const cls = GAME_DATA.classes.find((c) => c.id === plan.classId);
       expect(cls?.weapons, plan.id).toContain(plan.weapon);
       expect(cls?.branches, plan.id).toEqual(expect.arrayContaining([...plan.masteries]));
@@ -42,6 +48,9 @@ describe("build plans", () => {
         plan.id,
       ).toEqual([]);
       expect(s.hero.mastery.learned[`${plan.heirloom.path}-master`], plan.id).toBe(1);
+      expect(s.hero.mastery.choices.keystone, plan.id).toBe(plan.heirloom.keystone);
+      // The main Mastery's Keystone up to its Supreme tier.
+      expect(s.hero.learned[`pb-${plan.masteries[0]}-keystone-3`], plan.id).toBe(1);
       // The Battle Plan: the Innate, then three skills with the main Mastery's among them.
       const rotation = planRotation(s, GAME_DATA, plan);
       expect(s.hero.rotation.slice(1).filter(Boolean), plan.id).toEqual(rotation.slice(0, 3));
@@ -57,4 +66,24 @@ describe("build plans", () => {
       expect(heroSetup(s, GAME_DATA).setup.level).toBe(PROGRESSION.maxLevel);
     }
   }, 30_000);
+
+  it("Ash Tree Keystones wait for the second place, the first goes to the Mastery", () => {
+    for (const plan of BUILD_PLANS) {
+      const start = newGame(GAME_DATA, { seed: 3, classId: plan.classId, weapon: plan.weapon });
+      const mastery = plan.masteries[0] ?? "";
+      const s = applyBuildPlan(
+        {
+          ...start,
+          legacy: { ...start.legacy, prestige: 1, branches: [mastery] },
+          hero: { ...start.hero, unspentSkillPoints: 60 },
+        },
+        GAME_DATA,
+        plan,
+      );
+      const keystones = Object.keys(s.hero.learned).filter(
+        (id) => GAME_DATA.skillTree.nodes.find((n) => n.id === id)?.kind === "keystone",
+      );
+      expect(keystones, plan.id).toEqual([`pb-${mastery}-keystone`]);
+    }
+  });
 });

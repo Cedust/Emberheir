@@ -23,6 +23,7 @@ describe("parseArgs", () => {
       runes: 1,
       newest: 0,
       json: "",
+      budget: 0,
     });
   });
 
@@ -78,6 +79,7 @@ describe("parseArgs", () => {
       runes: 0,
       newest: 1,
       json: "out.json",
+      budget: 0,
     });
   });
 

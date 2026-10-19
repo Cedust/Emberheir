@@ -15,15 +15,93 @@ import { GEAR_MODES, type GearMode, parseArgs } from "./args";
 import { writeFileSync } from "node:fs";
 import { type ActRunReport, playGenerations, summarizeActRuns } from "./act";
 import { isNewestAct, stageKindRow, summarizeStageKinds } from "./newest";
-import { BUILDS } from "./builds";
+import { BUILDS, withMainMastery } from "./builds";
+import { type BudgetRow, LAYERS, buildBudget, meanBudget } from "./budget";
 import { simulateMatchup } from "./simulate";
 
 const args = parseArgs(process.argv.slice(2));
 
+if (args.budget > 0) {
+  runBudgetMode();
+  process.exit(0);
+}
 if (args.wildfire > 0) args.finale = 1;
 if (args.act > 0 || args.finale > 0) {
   runActMode();
   process.exit(0);
+}
+
+/**
+ * `--budget 1`: every chosen build (`--class`, `--build`, `--mastery` as in act mode) at the end
+ * of the game against a training dummy: damage per second, where it comes from and what each
+ * layer multiplies it by (balancing-neustart-v1.md, step 1).
+ */
+function runBudgetMode(): void {
+  const runs = Math.max(1, Math.min(args.runs, 20));
+  console.log(
+    `${GAME_TITLE} balance tool (sim ${SIM_VERSION}), damage budget at the end of the game`,
+  );
+  console.log(`seeds=${args.seed}..${args.seed + runs - 1} (random Epic gear each), 30 s dummy`);
+  console.log("factor = damage with the layer / without it; DA = Default Attack");
+  const classIds = new Set(
+    args.class === "all" ? GAME_DATA.classes.map((c) => c.id) : [args.class],
+  );
+  const plans = BUILDS.filter(
+    (b) =>
+      classIds.has(b.classId) &&
+      (!args.build || args.build === "all" || b.id === args.build) &&
+      (args.weapon === "all" || b.weapon === args.weapon),
+  ).flatMap((b) => {
+    if (!args.mastery) return [b];
+    const masteries =
+      args.mastery === "all"
+        ? (GAME_DATA.classes.find((c) => c.id === b.classId)?.branches ?? [])
+        : [args.mastery];
+    return masteries.map((m) => withMainMastery(b, m));
+  });
+  if (!plans.length) throw new Error("No build matches");
+  const pct = (x: number) => `${Math.round(100 * x)}`;
+  const rows: { classId: string; budget: BudgetRow }[] = [];
+  const table = plans.map((plan) => {
+    const budget = meanBudget(
+      Array.from({ length: runs }, (_, i) => buildBudget(GAME_DATA, plan, args.seed + i)),
+    );
+    rows.push({ classId: plan.classId, budget });
+    return {
+      build: plan.id,
+      mastery: plan.masteries[0] ?? "-",
+      "dps k": (budget.dps / 1000).toFixed(1),
+      "life k": (budget.life / 1000).toFixed(1),
+      "barrier k": (budget.barrier / 1000).toFixed(1),
+      "DA %": pct(budget.shares.defaultAttack),
+      "innate %": pct(budget.shares.innate),
+      "skills %": pct(budget.shares.skills),
+      "DoT %": pct(budget.shares.dots),
+      "other %": pct(budget.shares.other),
+      ...Object.fromEntries(LAYERS.map((l) => [`×${l}`, budget.factors[l].toFixed(2)])),
+    };
+  });
+  console.table(table);
+  const summary = [...classIds].map((classId) => {
+    const own = rows.filter((r) => r.classId === classId).map((r) => r.budget);
+    const dps = own.map((b) => b.dps);
+    const geo = (f: (b: BudgetRow) => number) =>
+      Math.exp(own.reduce((a, b) => a + Math.log(f(b)), 0) / Math.max(1, own.length));
+    return {
+      class: classId,
+      builds: own.length,
+      "dps k mean": (dps.reduce((a, b) => a + b, 0) / Math.max(1, dps.length) / 1000).toFixed(1),
+      "dps max/min": (Math.max(...dps) / Math.min(...dps)).toFixed(2),
+      "DA+innate %": pct(
+        own.reduce((a, b) => a + b.shares.defaultAttack + b.shares.innate, 0) /
+          Math.max(1, own.length),
+      ),
+      ...Object.fromEntries(LAYERS.map((l) => [`×${l}`, geo((b) => b.factors[l]).toFixed(2)])),
+    };
+  });
+  console.log("");
+  console.log("Per class (factors as geometric means)");
+  console.table(summary);
 }
 
 /**
