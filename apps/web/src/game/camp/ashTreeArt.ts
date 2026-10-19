@@ -1,6 +1,6 @@
 import { TREE_PLACEMENT, TRUNK, type TreeRegion, onTree } from "@emberheir/content";
 import type { SkillNode } from "@emberheir/sim";
-import { FillGradient, Graphics } from "pixi.js";
+import { Assets, Container, FillGradient, Graphics, Matrix, Sprite, Texture } from "pixi.js";
 
 /**
  * The Ash Tree behind the web, painted in code like the weapons of the Heirloom:
@@ -9,8 +9,57 @@ import { FillGradient, Graphics } from "pixi.js";
  * every link that grows outwards, and a few autumn leaves at the crown's tips. The Ember sigil
  * is carved into the trunk; its grooves glow (`sigilGlow`, pulsed by the scene).
  *
+ * Timo's painted material (`assets/tree/`, cut by `tools/art/cut_ash_tree.py`) dresses it once
+ * loaded: bark on the trunk, limbs and roots, the painted trunk base with its bare patch for the
+ * sigil, and leaf sprigs at the crown's tips. Until then (or if it fails) the code paints it all.
+ *
  * All sizes are in tree units; `unit` turns them into stage pixels.
  */
+
+const URLS = import.meta.glob<string>("../../assets/tree/*.webp", {
+  eager: true,
+  import: "default",
+});
+const urlOf = (name: string) => URLS[`../../assets/tree/${name}.webp`];
+
+/** Timo's painted material for the tree. */
+export interface AshTreeTextures {
+  readonly bark: Texture;
+  readonly base: Texture;
+  readonly leaves: readonly Texture[];
+}
+
+let loading: Promise<AshTreeTextures | null> | null = null;
+
+/** Loads the painted material once; null if any of it is missing or fails to load. */
+export function loadAshTreeTextures(): Promise<AshTreeTextures | null> {
+  loading ??= (async () => {
+    const leafUrls = Array.from({ length: 8 }, (_, i) => urlOf(`leaves-${i + 1}`));
+    const bark = urlOf("bark");
+    const base = urlOf("trunk-base");
+    if (!bark || !base || leafUrls.some((u) => !u)) return null;
+    try {
+      const [barkTex, baseTex, ...leaves] = await Promise.all(
+        [bark, base, ...(leafUrls as string[])].map((u) => Assets.load<Texture>(u)),
+      );
+      if (!barkTex || !baseTex) return null;
+      // The tile repeats over every limb.
+      barkTex.source.addressMode = "repeat";
+      return { bark: barkTex, base: baseTex, leaves };
+    } catch {
+      return null;
+    }
+  })();
+  return loading;
+}
+
+/**
+ * The painted trunk base (`trunk-base.webp`, 1024 px wide): where the middle of its bare patch
+ * sits (texture pixels), and its pixels per tree unit, so that the patch holds the sigil.
+ */
+const BASE = { patchX: 516, patchY: 234, perUnit: 76 } as const;
+/** Bark tile size on the tree (tree units per tile). */
+const BARK_TILE = 3.2;
 
 const SHADOW = 0x070403;
 const BARK = 0x2b1e15;
@@ -50,9 +99,11 @@ export interface AshTreeArt {
   /** The earth under the root collar (wide but cheap, so it is not baked). */
   readonly earth: Graphics;
   /** Trunk, limbs and roots: static, so the scene bakes them into a texture. */
-  readonly wood: Graphics;
+  readonly wood: Container;
   /** Twigs under the visible nodes' outward links (redrawn when the visible nodes change). */
   readonly twigs: Graphics;
+  /** The painted leaf sprigs at the crown's tips (refilled with the twigs). */
+  readonly leaves: Container;
   /** The carved Ember sigil. */
   readonly sigil: Graphics;
   /** The sigil's grooves as light, for an additive glow layer. */
@@ -69,21 +120,23 @@ const SIGIL_R = 0.95;
 /** Half width of the trunk at height `y` (tree units). */
 function trunkHalf(y: number): number {
   const t = (TRUNK.bottom - y) / (TRUNK.bottom - TRUNK.top);
+  // Wide at the foot, where the painted base takes over (its top is ~2.3 units to each side).
   const profile: readonly (readonly [number, number])[] = [
     [0, 2.9],
-    [0.08, 1.75],
-    [0.2, 1.35],
-    [0.5, 1.25],
-    [0.75, 1.4],
-    [0.88, 1.05],
-    [1, 0.35],
+    [0.08, 2.6],
+    [0.2, 2.45],
+    [0.42, 2.3],
+    [0.6, 1.95],
+    [0.8, 1.6],
+    [0.92, 1.25],
+    [1, 0.8],
   ];
   for (let i = 1; i < profile.length; i++) {
     const [t0, w0] = profile[i - 1] ?? [0, 1];
     const [t1, w1] = profile[i] ?? [1, 1];
     if (t <= t1) return lerp(w0, w1, (t - t0) / (t1 - t0));
   }
-  return 0.35;
+  return 0.8;
 }
 
 /**
@@ -96,7 +149,7 @@ function limb(
   pts: readonly Pt[],
   w0: number,
   w1: number,
-  opts: { shadow?: boolean; grooves?: boolean } = {},
+  opts: { shadow?: boolean; grooves?: boolean; bark?: Texture | null } = {},
 ): void {
   const u = (v: number) => v * unit;
   const normals = pts.map((p, i) => {
@@ -122,6 +175,20 @@ function limb(
     return [...left, ...back];
   };
   if (opts.shadow !== false) g.poly(band(1.15, 0, 0.08, 0.12)).fill({ color: SHADOW, alpha: 0.45 });
+  if (opts.bark) {
+    // The painted bark, its furrows running along the limb; the code adds shade and light.
+    const first = pts[0] ?? { x: 0, y: 0 };
+    const last = pts[pts.length - 1] ?? first;
+    const along = Math.atan2(last.y - first.y, last.x - first.x);
+    g.poly(band(1, 0)).fill({
+      texture: opts.bark,
+      matrix: barkMatrix(unit, along - Math.PI / 2),
+      textureSpace: "global",
+    });
+    g.poly(band(0.55, -0.45)).fill({ color: SHADOW, alpha: 0.4 });
+    g.poly(band(0.14, 0.72)).fill({ color: BARK_LIGHT, alpha: 0.35 });
+    return;
+  }
   g.poly(band(1, 0)).fill({ color: BARK });
   g.poly(band(0.5, 0.35)).fill({ color: BARK_MID, alpha: 0.9 });
   g.poly(band(0.14, 0.72)).fill({ color: BARK_LIGHT, alpha: 0.55 });
@@ -138,6 +205,12 @@ function limb(
       g.stroke({ color: GROOVE, width: 1.5, alpha: 0.6 });
     }
   }
+}
+
+/** Maps the bark tile onto the tree: `BARK_TILE` units per tile, turned by `angle`. */
+function barkMatrix(unit: number, angle: number): Matrix {
+  const scale = (BARK_TILE * unit) / 512;
+  return new Matrix().scale(scale, scale).rotate(angle);
 }
 
 /** Samples a bent line from `a` to `b`: `bend` lifts the middle sideways (tree units). */
@@ -188,7 +261,7 @@ function drawEarth(g: Graphics, unit: number): void {
   }
 }
 
-function drawTrunk(g: Graphics, unit: number, sigil: Pt): void {
+function drawTrunk(g: Graphics, unit: number, sigil: Pt, bark: Texture | null): void {
   const u = (v: number) => v * unit;
   const steps = 40;
   const ys = Array.from({ length: steps + 1 }, (_, i) =>
@@ -211,21 +284,32 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt): void {
     color: SHADOW,
     alpha: 0.5,
   });
-  g.poly(shape(1)).fill(
-    new FillGradient({
-      type: "linear",
-      start: { x: 0, y: 0 },
-      end: { x: 1, y: 0 },
-      colorStops: [
-        { offset: 0, color: "#3a2a1c" },
-        { offset: 0.18, color: "#5a4230" },
-        { offset: 0.4, color: "#3e2c1e" },
-        { offset: 0.75, color: "#25190f" },
-        { offset: 1, color: "#140c07" },
-      ],
-      textureSpace: "local",
-    }),
-  );
+  const roundness = new FillGradient({
+    type: "linear",
+    start: { x: 0, y: 0 },
+    end: { x: 1, y: 0 },
+    colorStops: [
+      { offset: 0, color: "#3a2a1c" },
+      { offset: 0.18, color: "#5a4230" },
+      { offset: 0.4, color: "#3e2c1e" },
+      { offset: 0.75, color: "#25190f" },
+      { offset: 1, color: "#140c07" },
+    ],
+    textureSpace: "local",
+  });
+  if (bark) {
+    // Painted bark, rounded by the same light and shade, only lighter; the base is painted.
+    g.poly(shape(1)).fill({ texture: bark, matrix: barkMatrix(unit, 0), textureSpace: "global" });
+    g.poly(shape(1)).fill({ fill: roundness, alpha: 0.35 });
+    const rim = edge(-1, 0.97);
+    for (const [i, [x, y]] of rim.entries()) {
+      if (i === 0) g.moveTo(x, y);
+      else g.lineTo(x, y);
+    }
+    g.stroke({ color: BARK_LIGHT, width: 2, alpha: 0.3 });
+    return;
+  }
+  g.poly(shape(1)).fill(roundness);
   // Bark plates: grooves running up the trunk, each with a lit lip on its left.
   const plates = 11;
   for (let k = 0; k < plates; k++) {
@@ -284,14 +368,14 @@ function drawTrunk(g: Graphics, unit: number, sigil: Pt): void {
 }
 
 /** Roots from the collar to the root hubs, with side roots wandering into the earth. */
-function drawRoots(g: Graphics, unit: number): void {
+function drawRoots(g: Graphics, unit: number, bark: Texture | null): void {
   const regions = Object.keys(TREE_PLACEMENT) as TreeRegion[];
   // Roots first, so the trunk's foot covers their start.
   for (const region of regions.filter(isRoot)) {
     const place = TREE_PLACEMENT[region];
     const hub = hubOf(region);
     const from = { x: place.origin.x * 1.6, y: TRUNK.bottom + 0.2 };
-    limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, -0.3, 14), 0.75, 0.2);
+    limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, -0.3, 14), 0.75, 0.2, { bark });
     // Side roots that wander off into the earth.
     for (let k = 0; k < 1; k++) {
       const a = ((place.angle + (hash(region) < 0.5 ? 40 : -40)) * Math.PI) / 180;
@@ -304,9 +388,7 @@ function drawRoots(g: Graphics, unit: number): void {
         bent(start, end, (hash(`${region}b${k}`) < 0.5 ? -1 : 1) * 0.7, 0, 12),
         0.22,
         0.03,
-        {
-          grooves: false,
-        },
+        { grooves: false, bark },
       );
     }
   }
@@ -327,9 +409,9 @@ const CROWN_REGIONS = (Object.keys(TREE_PLACEMENT) as TreeRegion[]).filter(
  * from the leader at its own height (the lowest ones from the trunk's top), like an oak's limbs.
  * Drawn over the trunk so they grow out of it.
  */
-function drawCrownLimbs(g: Graphics, unit: number): void {
+function drawCrownLimbs(g: Graphics, unit: number, bark: Texture | null): void {
   const top = leaderTop();
-  limb(g, unit, bent({ x: 0, y: TRUNK.top + 1.4 }, top, 0.3, 0, 14), 1.1, 0.4);
+  limb(g, unit, bent({ x: 0, y: TRUNK.top + 1.4 }, top, 0.3, 0, 14), 1.1, 0.4, { bark });
   // Highest boughs first, so the lower, thicker ones lie over them.
   const order = [...CROWN_REGIONS].sort(
     (a, b) => TREE_PLACEMENT[a].origin.y - TREE_PLACEMENT[b].origin.y,
@@ -340,7 +422,7 @@ function drawCrownLimbs(g: Graphics, unit: number): void {
     const y = Math.max(place.origin.y + 0.8, top.y + 0.8);
     const from = { x: 0, y: Math.min(y, TRUNK.top + 1.1) };
     const w = lerp(0.85, 0.5, (TRUNK.top - from.y) / (TRUNK.top - top.y || 1));
-    limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, 0.5, 12), w, 0.2);
+    limb(g, unit, bent(from, hub, (hash(region) - 0.5) * 0.8, 0.5, 12), w, 0.2, { bark });
   }
 }
 
@@ -354,8 +436,10 @@ export function drawTwigs(
   unit: number,
   nodes: readonly SkillNode[],
   regionOf: (n: SkillNode) => TreeRegion | undefined,
+  painted: { layer: Container; leaves: readonly Texture[] } | null = null,
 ): void {
   g.clear();
+  if (painted) for (const old of painted.layer.removeChildren()) old.destroy();
   const byId = new Map(nodes.map((n) => [n.id, n]));
   const tips: { n: SkillNode; from: Pt }[] = [];
   for (const a of nodes) {
@@ -389,7 +473,40 @@ export function drawTwigs(
       }
     }
   }
-  for (const { n, from } of tips) leaves(g, unit, n, from);
+  for (const { n, from } of tips) {
+    if (painted) sprigs(painted.layer, unit, n, from, painted.leaves);
+    else leaves(g, unit, n, from);
+  }
+}
+
+/** The painted sprigs point up and to the right at this angle (radians, y down). */
+const SPRIG_ANGLE = -0.5;
+/** Length of a painted sprig on the tree (tree units). */
+const SPRIG_LENGTH = 1.3;
+
+/** Two painted leaf sprigs beyond a crown tip, fanned to both sides. */
+function sprigs(
+  layer: Container,
+  unit: number,
+  n: SkillNode,
+  from: Pt,
+  textures: readonly Texture[],
+): void {
+  const dir = Math.atan2(n.y - from.y, n.x - from.x);
+  for (const side of [-1, 1]) {
+    const texture = textures[Math.floor(hash(`${n.id}${side}`) * textures.length)] ?? textures[0];
+    if (!texture) continue;
+    const s = new Sprite(texture);
+    // The stem's foot sits at the node, a little out along the link.
+    s.anchor.set(0.04, 0.85);
+    const size = (SPRIG_LENGTH * (0.85 + hash(`${n.id}z${side}`) * 0.3) * unit) / texture.width;
+    // Mirrored on one side, so the leaves fan out away from the link.
+    s.scale.set(size, side * size);
+    s.rotation = dir + side * (0.45 + hash(`${n.id}t${side}`) * 0.35) - side * SPRIG_ANGLE;
+    s.position.set((n.x + Math.cos(dir) * 0.2) * unit, (n.y + Math.sin(dir) * 0.2) * unit);
+    s.alpha = 0.92;
+    layer.addChild(s);
+  }
 }
 
 /** A sprig of ash leaves (pairs of leaflets) beyond a crown tip. */
@@ -466,9 +583,53 @@ function sigilLines(): { rings: number[]; lines: Pt[][] } {
   };
 }
 
-function drawSigil(sigil: Graphics, glow: Graphics, bloom: Graphics, unit: number, at: Pt): void {
+/**
+ * The sigil carved into the trunk. On the painted base its bare patch is the cut, so only the
+ * grooves are carved; on the code-drawn trunk the bark is cut away first.
+ */
+function carveSigil(sigil: Graphics, unit: number, at: Pt, painted: boolean): void {
+  sigil.clear();
+  if (!painted) cutBark(sigil, unit, at);
+  const { rings, lines } = sigilLines();
+  const path = sigilPath(unit, at, rings, lines);
+  // Carved: a lit lower lip, the dark groove, and the ember in its floor.
+  path(sigil, 0.02, 0.025, { color: 0xa88460, width: 6, alpha: 0.45 });
+  path(sigil, 0, 0, { color: GROOVE, width: 6, alpha: 1 });
+  path(sigil, 0, 0, { color: 0x5a1e08, width: 2.5, alpha: 1 });
+}
+
+/** The light in the sigil's grooves, and its wide strokes for the bloom. */
+function lightSigil(glow: Graphics, bloom: Graphics, unit: number, at: Pt): void {
+  const { rings, lines } = sigilLines();
+  const path = sigilPath(unit, at, rings, lines);
+  path(glow, 0, 0, { color: EMBER, width: 7, alpha: 0.35 });
+  path(glow, 0, 0, { color: EMBER, width: 3, alpha: 0.9 });
+  path(glow, 0, 0, { color: EMBER_CORE, width: 1.2, alpha: 0.9 });
+  path(bloom, 0, 0, { color: EMBER, width: 12, alpha: 0.7 });
+}
+
+function sigilPath(unit: number, at: Pt, rings: number[], lines: Pt[][]) {
   const u = (v: number) => v * unit;
-  // The bark is cut away: a round of lighter wood with a dark cut edge.
+  return (
+    g: Graphics,
+    dx: number,
+    dy: number,
+    style: { color: number; width: number; alpha: number },
+  ) => {
+    for (const r of rings) g.circle(u(at.x + dx), u(at.y + dy), u(r)).stroke(style);
+    for (const line of lines) {
+      for (const [i, p] of line.entries()) {
+        if (i === 0) g.moveTo(u(at.x + p.x + dx), u(at.y + p.y + dy));
+        else g.lineTo(u(at.x + p.x + dx), u(at.y + p.y + dy));
+      }
+      g.stroke({ ...style, cap: "round", join: "round" });
+    }
+  };
+}
+
+/** The bark cut away for the sigil: a round of lighter wood with a dark cut edge. */
+function cutBark(sigil: Graphics, unit: number, at: Pt): void {
+  const u = (v: number) => v * unit;
   sigil
     .circle(u(at.x), u(at.y), u(SIGIL_R + 0.12))
     .fill({ color: GROOVE, alpha: 0.9 })
@@ -505,53 +666,57 @@ function drawSigil(sigil: Graphics, glow: Graphics, bloom: Graphics, unit: numbe
       )
       .stroke({ color: WOOD_DARK, width: 1, alpha: 0.35 });
   }
-  const { rings, lines } = sigilLines();
-  const path = (
-    g: Graphics,
-    dx: number,
-    dy: number,
-    style: { color: number; width: number; alpha: number },
-  ) => {
-    for (const r of rings) g.circle(u(at.x + dx), u(at.y + dy), u(r)).stroke(style);
-    for (const line of lines) {
-      for (const [i, p] of line.entries()) {
-        if (i === 0) g.moveTo(u(at.x + p.x + dx), u(at.y + p.y + dy));
-        else g.lineTo(u(at.x + p.x + dx), u(at.y + p.y + dy));
-      }
-      g.stroke({ ...style, cap: "round", join: "round" });
-    }
-  };
-  // Carved: a lit lower lip, the dark groove, and the ember in its floor.
-  path(sigil, 0.02, 0.025, { color: 0xa88460, width: 6, alpha: 0.45 });
-  path(sigil, 0, 0, { color: GROOVE, width: 6, alpha: 1 });
-  path(sigil, 0, 0, { color: 0x5a1e08, width: 2.5, alpha: 1 });
-  // The light in the grooves.
-  path(glow, 0, 0, { color: EMBER, width: 7, alpha: 0.35 });
-  path(glow, 0, 0, { color: EMBER, width: 3, alpha: 0.9 });
-  path(glow, 0, 0, { color: EMBER_CORE, width: 1.2, alpha: 0.9 });
-  path(bloom, 0, 0, { color: EMBER, width: 12, alpha: 0.7 });
 }
 
 /** Paints the tree. Twigs are drawn separately (`drawTwigs`) because they follow the nodes. */
 export function paintAshTree(unit: number): AshTreeArt {
   const earth = new Graphics();
   drawEarth(earth, unit);
-  const wood = new Graphics();
+  const wood = new Container();
+  paintWood(wood, unit, null);
   const at = { x: 0, y: SIGIL_Y };
-  drawRoots(wood, unit);
-  drawTrunk(wood, unit, at);
-  drawCrownLimbs(wood, unit);
   const sigil = new Graphics();
   const sigilGlow = new Graphics();
   const sigilBloom = new Graphics();
-  drawSigil(sigil, sigilGlow, sigilBloom, unit, at);
+  carveSigil(sigil, unit, at, false);
+  lightSigil(sigilGlow, sigilBloom, unit, at);
   return {
     earth,
     wood,
     twigs: new Graphics(),
+    leaves: new Container(),
     sigil,
     sigilGlow,
     sigilBloom,
     sigilAt: { x: at.x * unit, y: at.y * unit },
   };
+}
+
+/** Repaints the wood with Timo's painted material (or the code's own, without it). */
+export function dressAshTree(art: AshTreeArt, unit: number, textures: AshTreeTextures): void {
+  paintWood(art.wood, unit, textures);
+  carveSigil(art.sigil, unit, { x: 0, y: SIGIL_Y }, true);
+}
+
+function paintWood(wood: Container, unit: number, textures: AshTreeTextures | null): void {
+  for (const old of wood.removeChildren()) old.destroy();
+  const bark = textures?.bark ?? null;
+  const roots = new Graphics();
+  drawRoots(roots, unit, bark);
+  const trunk = new Graphics();
+  drawTrunk(trunk, unit, { x: 0, y: SIGIL_Y }, bark);
+  const limbs = new Graphics();
+  drawCrownLimbs(limbs, unit, bark);
+  wood.addChild(roots, trunk);
+  if (textures) {
+    // The painted foot of the trunk, its bare patch around the sigil.
+    const base = new Sprite(textures.base);
+    base.anchor.set(BASE.patchX / textures.base.width, BASE.patchY / textures.base.height);
+    base.scale.set(unit / BASE.perUnit);
+    base.position.set(0, SIGIL_Y * unit);
+    // A little darker, so the foot meets the bark tile above it.
+    base.tint = 0xcdb9a2;
+    wood.addChild(base);
+  }
+  wood.addChild(limbs);
 }

@@ -11,7 +11,14 @@ import {
   Text,
 } from "pixi.js";
 import { Fx } from "../battle/fx";
-import { type AshTreeArt, drawTwigs, paintAshTree } from "./ashTreeArt";
+import {
+  type AshTreeArt,
+  type AshTreeTextures,
+  dressAshTree,
+  drawTwigs,
+  loadAshTreeTextures,
+  paintAshTree,
+} from "./ashTreeArt";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
 
 /**
@@ -143,6 +150,8 @@ export class TreeScene {
   private readonly keystoneGlow = new Graphics();
   private keystoneKey = "";
   private twigKey = "";
+  /** Timo's painted bark and leaves, once loaded. */
+  private painted: AshTreeTextures | null = null;
   private readonly linkGlow = new Graphics();
   private readonly links = new Graphics();
   private readonly pathGlow = new Graphics();
@@ -179,6 +188,7 @@ export class TreeScene {
       this.art.earth,
       this.art.wood,
       this.art.twigs,
+      this.art.leaves,
       this.art.sigil,
       this.sigilLight,
       this.keystoneMarks,
@@ -207,9 +217,6 @@ export class TreeScene {
     this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
     this.sigilLight.blendMode = "add";
     this.keystoneGlow.blendMode = "add";
-    // The painted wood never changes: baked once, it costs one quad per frame instead of
-    // hundreds of layered shapes (software GL in CI timed out on it).
-    this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
   }
 
   layout(w: number, h: number, resolution: number): void {
@@ -239,6 +246,18 @@ export class TreeScene {
       return false;
     }
     this.app = app;
+    // The wood never changes: baked once, it costs one quad per frame instead of hundreds of
+    // layered shapes (software GL in CI timed out on it).
+    this.art.wood.cacheAsTexture({ resolution: 2, antialias: true });
+    // Timo's painted bark and leaves dress the code-drawn tree once they are loaded.
+    void loadAshTreeTextures().then((painted) => {
+      if (!painted || this.destroyed) return;
+      this.painted = painted;
+      dressAshTree(this.art, UNIT, painted);
+      this.art.wood.updateCacheTexture();
+      this.twigKey = "";
+      this.drawTwigs();
+    });
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
     this.fx = new Fx(app.renderer);
@@ -527,6 +546,7 @@ export class TreeScene {
       UNIT,
       this.view.nodes.map((n) => n.node),
       regionOf,
+      this.painted ? { layer: this.art.leaves, leaves: this.painted.leaves } : null,
     );
   }
 
