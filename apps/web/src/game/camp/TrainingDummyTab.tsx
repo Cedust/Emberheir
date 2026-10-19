@@ -10,13 +10,15 @@ import {
 } from "@emberheir/sim";
 import { useMemo, useState } from "react";
 import { ItemTile, fmt } from "../../ui/items";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import type { GameApi } from "../useGame";
+import dummyUrl from "../../assets/camp/personas/training-dummy.webp";
 
 /**
  * Kaelen's practice ground (neuausrichtung-v1.md 9): the hero fights a straw man, the numbers
  * show what the build does. Items from the bag and the Supply Wagon can be put on right here; the
  * numbers jump at once, with an arrow against the item worn now. No respec here: that stays at
- * Kaelen's other tabs, for Acorns.
+ * Kaelen, for Acorns.
  */
 
 const PROFILE_TEXT: Record<DummyProfile, { name: string; text: string }> = {
@@ -42,7 +44,6 @@ export function TrainingDummyTab(props: { state: GameState; game: GameApi }) {
   return (
     <div className="dummy-tab">
       <div className="dummy-head">
-        <h2 className="title-font">TRAINING DUMMY</h2>
         <div className="route-options" role="radiogroup" aria-label="Dummy">
           {DUMMY_PROFILES.map((p) => (
             <button
@@ -150,5 +151,41 @@ function DummyItem(props: { state: GameState; game: GameApi; item: Item; profile
         Wear
       </button>
     </div>
+  );
+}
+
+/** Kaelen's Training Dummy, its own spot in the Camp: a window over the whole stage. */
+export function TrainingDummyView(props: { state: GameState; game: GameApi; onClose: () => void }) {
+  return (
+    <WindowLayer mode="full">
+      <Window
+        label="Training Dummy"
+        role="dialog"
+        mode="full"
+        className="kaelen"
+        header={
+          <WindowHeader
+            title="Training Dummy"
+            sub="Test your build"
+            medallion={
+              <Medallion tint="#6a2a20">
+                <span
+                  className="painted-portrait"
+                  style={{
+                    backgroundImage: `url(${dummyUrl})`,
+                    backgroundSize: "303% auto",
+                    backgroundPosition: "59% 7%",
+                  }}
+                  aria-hidden="true"
+                />
+              </Medallion>
+            }
+            onClose={props.onClose}
+          />
+        }
+      >
+        <TrainingDummyTab state={props.state} game={props.game} />
+      </Window>
+    </WindowLayer>
   );
 }

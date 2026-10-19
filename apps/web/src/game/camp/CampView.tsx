@@ -64,6 +64,7 @@ export function CampView(props: {
   const next = nextAct(state, GAME_DATA);
   // Personas who have not joined the caravan yet are not in the Camp at all.
   const list = personas(state, act).filter((p) => !p.locked);
+  const hearthY = list.find((p) => p.id === "hearth")?.y ?? 0;
   const gear = heirGear(state);
   const cleared = state.progress.actsCleared.includes(act.id);
   const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
@@ -116,7 +117,8 @@ export function CampView(props: {
             banners={completedCollections(state)}
             ancestor={(state.lineage ?? 0) >= LINEAGE_STEPS}
           />
-          <CampFx w={size.w} h={size.h - 64} ox={ox} />
+          <CampFx w={size.w} h={size.h - 64} ox={ox} part="back" />
+          <CampFx w={size.w} h={size.h - 64} ox={ox} part="hearth" />
           {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
           {list.map((p, i) => {
             const w = p.object ? p.object.w : 130;
@@ -129,7 +131,14 @@ export function CampView(props: {
                 key={p.id}
                 type="button"
                 className="camp-target"
-                style={{ left: ox + p.x - w / 2, top: p.y - h - 64, width: w, height: h }}
+                style={{
+                  left: ox + p.x - w / 2,
+                  top: p.y - h - 64,
+                  width: w,
+                  height: h,
+                  // The Hearthfire (z-index 1) stands in front of whoever is behind it.
+                  ...(p.object?.front ? { zIndex: 1 } : p.y > hearthY ? { zIndex: 2 } : {}),
+                }}
                 aria-label={`${p.name}, ${p.role}`}
                 onClick={() => {
                   if (target) props.onOpen(target);

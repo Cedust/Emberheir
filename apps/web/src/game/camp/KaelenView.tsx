@@ -17,7 +17,6 @@ import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { PaintDefs } from "./art/paint";
 import { BattlePlanTab } from "./BattlePlanTab";
-import { TrainingDummyTab } from "./TrainingDummyTab";
 
 /**
  * Kaelen (Trainer mock): the Ash Tree with pending nodes (Confirm / Undo) and the Battle
@@ -35,7 +34,7 @@ export function KaelenView(props: {
 }) {
   const { state, game, viewOnly } = props;
   const planEditable = props.planEditable ?? !viewOnly;
-  const [tab, setTab] = useState<"tree" | "plan" | "mastery" | "dummy">(props.initialTab ?? "tree");
+  const [tab, setTab] = useState<"tree" | "plan" | "mastery">(props.initialTab ?? "tree");
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
@@ -44,7 +43,6 @@ export function KaelenView(props: {
     ...(planEditable
       ? [{ id: "plan" as const, name: "Battle Plan", icon: "strike" as const }]
       : []),
-    ...(viewOnly ? [] : [{ id: "dummy" as const, name: "Training Dummy", icon: "eye" as const }]),
   ];
 
   // On the road the tree is a window over the arena; at Kaelen it needs the whole stage.
@@ -110,9 +108,7 @@ export function KaelenView(props: {
         }
       >
         <Suspense fallback={null}>
-          {tab === "dummy" && !viewOnly ? (
-            <TrainingDummyTab state={state} game={game} />
-          ) : tab === "mastery" ? (
+          {tab === "mastery" ? (
             <MasteryTab state={state} game={game} viewOnly={viewOnly} />
           ) : tab === "tree" || !planEditable ? (
             <SkillTreeTab state={state} game={game} viewOnly={viewOnly} />

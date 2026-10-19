@@ -18,6 +18,7 @@ import { BattleView } from "./lazyViews";
 import { CampView } from "./camp/CampView";
 import type { CampTarget } from "./camp/campPersonas";
 import { KaelenView } from "./camp/KaelenView";
+import { TrainingDummyView } from "./camp/TrainingDummyTab";
 import { LegacyView } from "./camp/LegacyView";
 import { PersonaView } from "./camp/PersonaView";
 import type { PersonaId } from "./camp/personaDefs";
@@ -25,7 +26,7 @@ import { StashView } from "./camp/StashView";
 import { useGame } from "./useGame";
 
 type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "cheats" | null;
-type CampScreen = "legacy" | "persona" | "kaelen" | "stash" | "road" | "nan" | null;
+type CampScreen = "legacy" | "persona" | "kaelen" | "dummy" | "stash" | "road" | "nan" | null;
 
 /** The game: title → camp → Act 1 → camp, on a full-window, resolution-independent stage. */
 export function GameApp() {
@@ -224,6 +225,8 @@ export function GameApp() {
           onClose={close}
         />
       );
+    } else if (campScreen === "dummy") {
+      screen = <TrainingDummyView state={state} game={game} onClose={close} />;
     } else if (campScreen === "legacy") {
       screen = <LegacyView state={state} onClose={close} />;
     } else {
