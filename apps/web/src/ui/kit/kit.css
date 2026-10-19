@@ -1,8 +1,9 @@
 /*
  * UI kit (ui-ux-plan-v1.md 3): one window frame, one button set, one wallet for every screen
- * outside the fight. The frame is the same in both modes (dark wood and brass, like the Battle
- * HUD); only the parchment inside follows Aged / Scorched Parchment. Timo's painted frame art
- * replaces the CSS frame later (border-image on .k-window and .k-btn).
+ * outside the fight. The frame is the same in both modes (Timo's painted wood and brass,
+ * design/notes/ui-rahmen-art-v1.md, cut by tools/art/cut_ui.py); only the parchment inside
+ * follows Aged / Scorched Parchment. Frames, buttons and tabs are 9-slice border-images: corners
+ * keep their ornaments, the even edges stretch to any size.
  */
 :root {
   --k-wood: #3b2a1c;
@@ -16,16 +17,21 @@
   --k-short: #b3261e;
   --k-frame-shadow:
     0 0 0 5px var(--k-wood), 0 0 0 7px var(--k-brass-dark), 0 20px 48px rgb(0 0 0 / 0.5);
+  --k-frame: url("../../assets/ui/window-frame.webp") 125 150 120 stretch;
+  /* Painted tiles (services, cards): parchment in light mode, walnut in dark mode. */
+  --k-tile: url("../../assets/ui/tile-parchment.webp");
 }
 
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --k-short: #ff7a6a;
+    --k-tile: url("../../assets/ui/tile-wood.webp");
   }
 }
 
 :root[data-theme="dark"] {
   --k-short: #ff7a6a;
+  --k-tile: url("../../assets/ui/tile-wood.webp");
 }
 
 /* --- window ----------------------------------------------------------------------------------- */
@@ -36,54 +42,49 @@
   flex-direction: column;
   min-height: 0;
   background: var(--panel);
-  border: 2px solid var(--k-brass);
-  border-radius: 6px;
   box-shadow:
-    var(--k-frame-shadow),
+    0 20px 48px rgb(0 0 0 / 0.5),
     inset 0 0 40px rgb(60 35 15 / 0.18);
 }
 
-.stage .k-window.k-full {
-  border-radius: 0;
-}
-
-.stage .k-corner {
+/*
+ * The painted frame lies around the window: the inner edge of its wood meets the parchment, the
+ * oak leaves reach out past the corners. The crest with its ember gem sits on the top edge.
+ * Sizes are the cut image's pixels (window-frame.webp 836 x 458, window-crest.webp 224 x 88) times 0.33.
+ */
+.stage .k-window::after,
+.stage .overlay-panel::after,
+.stage .k-dialog-box::after {
+  content: "";
   position: absolute;
-  width: 18px;
-  height: 18px;
-  z-index: 3;
-  background: radial-gradient(
-    circle at 35% 35%,
-    var(--k-brass-hi),
-    var(--k-brass) 45%,
-    var(--k-brass-dark)
-  );
-  border: 1.5px solid var(--k-wood-2);
-  transform: rotate(45deg);
+  inset: -26px -16px -19px;
+  z-index: 4;
+  border-style: solid;
+  border-width: 41px 50px 40px;
+  border-image: var(--k-frame);
   pointer-events: none;
 }
 
-.stage .k-corner.tl {
-  left: -12px;
-  top: -12px;
+.stage .k-window::before {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: -26px;
+  z-index: 5;
+  width: 74px;
+  height: 29px;
+  transform: translateX(-50%);
+  background: url("../../assets/ui/window-crest.webp") center / 100% 100% no-repeat;
+  pointer-events: none;
 }
 
-.stage .k-corner.tr {
-  right: -12px;
-  top: -12px;
+.stage .k-window.k-full {
+  box-shadow: none;
+  border: 2px solid var(--k-brass);
 }
 
-.stage .k-corner.bl {
-  left: -12px;
-  bottom: -12px;
-}
-
-.stage .k-corner.br {
-  right: -12px;
-  bottom: -12px;
-}
-
-.stage .k-window.k-full .k-corner {
+.stage .k-window.k-full::after,
+.stage .k-window.k-full::before {
   display: none;
 }
 
@@ -93,7 +94,6 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  border-radius: 0 0 4px 4px;
 }
 
 .stage .k-window-body > * {
@@ -116,7 +116,8 @@
 .stage .k-layer-panel {
   align-items: center;
   justify-content: center;
-  padding: 22px calc(var(--safe-x) + 26px);
+  /* Room for the painted frame's leaves and crest around the window. */
+  padding: 30px calc(var(--safe-x) + 26px) 22px;
   background: rgb(14 10 6 / 0.58);
   backdrop-filter: blur(2px);
   animation: k-layer-in 0.16s ease-out;
@@ -233,25 +234,39 @@
 }
 
 .stage .k-medallion {
+  position: relative;
   flex-shrink: 0;
   width: 50px;
   height: 50px;
+  margin: 0 4px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;
   background: var(--accent);
-  border: 2px solid var(--k-brass);
-  box-shadow:
-    0 0 0 2px var(--k-wood-2),
-    0 2px 8px rgb(0 0 0 / 0.5);
+}
+
+.stage .k-medallion > * {
+  clip-path: circle(50%);
 }
 
 .stage .k-medallion img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+}
+
+/* The painted brass ring (portrait-ring.webp 170 x 181) with its acorn hanging below. */
+.stage .k-medallion::after {
+  content: "";
+  position: absolute;
+  left: -10px;
+  top: -7px;
+  width: 70px;
+  height: 74px;
+  background: url("../../assets/ui/portrait-ring.webp") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.5));
+  pointer-events: none;
 }
 
 /* --- tabs: bookmarks hanging from the header ---------------------------------------------------- */
@@ -280,27 +295,28 @@
   font-size: 15px;
   letter-spacing: 0.03em;
   color: var(--k-on-wood-sub);
-  background: rgb(255 235 200 / 0.06);
-  border: 1.5px solid var(--k-brass-dark);
+  /* Painted tab: curved brass top, open bottom edge. */
+  border: 2px solid transparent;
   border-bottom: none;
-  border-radius: 6px 6px 0 0;
+  --k-tab-art: url("../../assets/ui/tab-off.webp");
+  border-image: var(--k-tab-art) 22 40 4 fill / 13px 24px 2px / 0 stretch;
+  background: none;
   cursor: pointer;
   transition:
     color 0.12s,
-    background 0.12s;
+    filter 0.12s;
 }
 
 .stage .k-tab:hover:not(.locked) {
   color: var(--k-on-wood);
-  background: rgb(255 235 200 / 0.12);
+  filter: brightness(1.15);
 }
 
 .stage .k-tab.on {
   height: 50px;
-  margin-bottom: -2px;
-  color: var(--text);
-  background: var(--panel);
-  border-color: var(--k-brass);
+  color: #ffe6b8;
+  text-shadow: 0 0 10px rgb(255 140 50 / 0.6);
+  --k-tab-art: url("../../assets/ui/tab-on.webp");
 }
 
 .stage .k-tab.locked {
@@ -329,9 +345,10 @@
 /* --- buttons ------------------------------------------------------------------------------------ */
 
 .stage .k-btn {
+  --k-btn-edge: 15px 18px;
   position: relative;
   min-height: 44px;
-  padding: 0 18px;
+  padding: 0 22px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -352,8 +369,9 @@
 }
 
 .stage .k-btn.k-big {
+  --k-btn-edge: 19px 22px;
   min-height: 54px;
-  padding: 0 28px;
+  padding: 0 32px;
   font-size: 19px;
   letter-spacing: 0.06em;
 }
@@ -362,35 +380,36 @@
   transform: translateY(1px);
 }
 
-.stage .k-btn.k-primary {
+/* Painted plates: glowing ember (primary) and worn walnut (secondary), both in a riveted brass rim. */
+.stage .k-btn.k-primary,
+.stage .k-btn.k-secondary {
+  --k-btn-art: url("../../assets/ui/btn-primary.webp");
+  overflow: visible;
   color: #fff3dc;
-  background: var(--k-ember);
-  border: 2px solid var(--k-brass);
-  box-shadow:
-    0 0 0 2px var(--k-wood-2),
-    0 0 18px rgb(255 120 40 / 0.45),
-    inset 0 1px 0 rgb(255 220 170 / 0.45);
-  text-shadow: 0 1px 2px rgb(60 15 0 / 0.6);
+  border: 2px solid transparent;
+  border-radius: 0;
+  border-image: var(--k-btn-art) 34 40 fill / var(--k-btn-edge) / 0 stretch;
+  /* The same image stretched underneath hides hairline seams between the slices. */
+  background: var(--k-btn-art) border-box center / 100% 100% no-repeat;
+  text-shadow: 0 1px 2px rgb(60 15 0 / 0.75);
+  filter: drop-shadow(0 0 8px rgb(255 120 40 / 0.4)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
 }
 
 .stage .k-btn.k-primary:hover:not([data-blocked]) {
-  filter: brightness(1.1);
-  box-shadow:
-    0 0 0 2px var(--k-wood-2),
-    0 0 26px rgb(255 140 50 / 0.65),
-    inset 0 1px 0 rgb(255 220 170 / 0.5);
+  filter: brightness(1.1) drop-shadow(0 0 14px rgb(255 140 50 / 0.65))
+    drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
 }
 
 .stage .k-btn.k-secondary {
-  color: var(--text);
-  background: linear-gradient(180deg, rgb(255 255 255 / 0.12), transparent 60%), var(--bg);
-  border: 2px solid var(--k-brass-dark);
-  box-shadow: inset 0 0 0 1px rgb(240 210 154 / 0.35);
+  --k-btn-art: url("../../assets/ui/btn-secondary.webp");
+  color: var(--k-on-wood);
+  text-shadow: 0 1px 2px rgb(0 0 0 / 0.7);
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .stage .k-btn.k-secondary:hover:not([data-blocked]) {
-  border-color: var(--k-brass);
-  filter: brightness(1.05);
+  filter: brightness(1.15) drop-shadow(0 0 8px rgb(255 160 70 / 0.4))
+    drop-shadow(0 2px 3px rgb(0 0 0 / 0.35));
 }
 
 .stage .k-btn.k-ghost {
@@ -411,6 +430,12 @@
   box-shadow: none;
 }
 
+.stage .k-btn.k-primary[data-blocked],
+.stage .k-btn.k-secondary[data-blocked] {
+  filter: grayscale(0.85) brightness(0.85);
+  opacity: 0.7;
+}
+
 .stage .k-btn .k-key {
   margin-left: 2px;
 }
@@ -423,15 +448,16 @@
   align-items: center;
   justify-content: center;
   color: var(--k-on-wood);
-  background: linear-gradient(180deg, #4a3624, var(--k-wood-2));
-  border: 1.5px solid var(--k-brass);
-  border-radius: 4px;
+  border: 2px solid transparent;
+  border-image: url("../../assets/ui/btn-close.webp") 30 fill / 12px / 0 stretch;
+  background: url("../../assets/ui/btn-close.webp") border-box center / 100% 100% no-repeat;
   cursor: pointer;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
 }
 
 .stage .k-icon-btn:hover {
   color: #fff;
-  box-shadow: 0 0 12px rgb(255 160 70 / 0.45);
+  filter: brightness(1.2) drop-shadow(0 0 8px rgb(255 160 70 / 0.55));
 }
 
 /* Hold to confirm: the fill runs like the Heat bar. */
@@ -571,24 +597,24 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 22px;
-  height: 22px;
-  padding: 0 5px;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
   font-family: var(--font-title);
   font-size: 13px;
   font-weight: 900;
   line-height: 1;
-  color: #2a1606;
-  background: radial-gradient(circle at 40% 35%, #ffe3a0, #ffb13b 55%, #d9782a);
-  border: 1.5px solid var(--k-wood-2);
+  color: #fff3dc;
+  text-shadow: 0 1px 2px rgb(60 15 0 / 0.9);
+  background: url("../../assets/ui/marker.webp") center / 100% 100% no-repeat;
   border-radius: 11px;
-  box-shadow: 0 0 10px rgb(255 177 59 / 0.7);
+  filter: drop-shadow(0 0 5px rgb(255 177 59 / 0.7));
   animation: k-marker-pulse 1.8s ease-in-out infinite;
 }
 
 @keyframes k-marker-pulse {
   50% {
-    box-shadow: 0 0 16px rgb(255 177 59 / 0.95);
+    filter: drop-shadow(0 0 9px rgb(255 177 59 / 0.95));
   }
 }
 
@@ -648,25 +674,32 @@
 .stage .k-dialog-box {
   flex: 1;
   position: relative;
+  /* Its own stack, so the painted frame stays behind the portrait. */
+  z-index: 0;
   padding: 30px 28px 18px 52px;
   background: var(--panel);
-  border: 2px solid var(--k-brass);
-  border-radius: 6px;
-  box-shadow: var(--k-frame-shadow);
+  box-shadow: 0 20px 48px rgb(0 0 0 / 0.5);
 }
 
 .stage .k-dialog-plate {
   position: absolute;
   left: 40px;
   top: -24px;
-  padding: 6px 18px;
+  padding: 6px 34px;
   display: flex;
   align-items: baseline;
   gap: 10px;
-  color: var(--k-on-wood);
-  background: linear-gradient(180deg, var(--k-wood), var(--k-wood-2));
-  border: 2px solid var(--k-brass);
-  border-radius: 4px;
+  z-index: 6;
+  color: #2a1606;
+  border: 2px solid transparent;
+  border-image: url("../../assets/ui/name-plate.webp") 22 fill / 22px / 0 stretch;
+  /* The same image stretched underneath hides hairline seams between the slices. */
+  background: url("../../assets/ui/name-plate.webp") border-box center / 100% 100% no-repeat;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45));
+}
+
+.stage .k-dialog-plate .k-title-sub {
+  color: #5a3a1a;
 }
 
 .stage .k-dialog-line {
@@ -883,9 +916,11 @@
 }
 
 .stage .overlay-panel {
-  border: 2px solid var(--k-brass);
-  border-radius: 6px;
-  box-shadow: var(--k-frame-shadow);
+  position: relative;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  box-shadow: 0 20px 48px rgb(0 0 0 / 0.5);
 }
 
 .stage .overlay-header {
@@ -902,6 +937,8 @@
 
 .stage .overlay-header .icon-button {
   color: var(--k-on-wood);
-  background: linear-gradient(180deg, #4a3624, var(--k-wood-2));
-  border-color: var(--k-brass);
+  border: 2px solid transparent;
+  border-image: url("../../assets/ui/btn-close.webp") 30 fill / 12px / 0 stretch;
+  background: url("../../assets/ui/btn-close.webp") border-box center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
 }
