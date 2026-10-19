@@ -70,4 +70,6 @@ def cut(sheet: str, grid: list[list[str]], out: str) -> None:
 
 
 cut('class-sheet-v2.png', CLASSES, 'apps/web/src/assets/classes')
+# Timo 2026-10-19: the Emberseer's orb lost its eye-shaped flame; its own picture replaces the sheet's.
+cut('emberseer-v2.png', [['emberseer']], 'apps/web/src/assets/classes')
 cut('mastery-sheet-v1.png', MASTERIES, 'apps/web/src/assets/masteries')
