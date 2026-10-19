@@ -4,7 +4,7 @@ import {
   type FightCore,
   type Fighter,
   attackRate,
-  huntersMarkCrit,
+  huntersMarkPrecision,
   other,
   phaseActive,
   skillCost,
@@ -115,7 +115,7 @@ function traitSnapshot(core: FightCore, f: Fighter): Pick<FighterSnapshot, "trai
     return { trait: { kind: "overcharge", value: f.charges, max, damageType } };
   }
   if (rules?.huntersMark) {
-    const on = huntersMarkCrit(f, core.fighters[other(f.side)]) > 0 ? 1 : 0;
+    const on = huntersMarkPrecision(f, core.fighters[other(f.side)]) > 0 ? 1 : 0;
     return { trait: { kind: "huntersMark", value: on, max: 1, damageType } };
   }
   return {};

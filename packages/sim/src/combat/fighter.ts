@@ -291,14 +291,14 @@ export function furyFactor(f: Fighter): number {
   return fury ? 1 + Math.min(fury.max, fury.perHit * f.fury) : 1;
 }
 
-/** Hunter's Mark (Ashstrider): extra Crit Chance against an enemy with one of your ailments. */
-export function huntersMarkCrit(attacker: Fighter, defender: Fighter): number {
+/** Hunter's Mark (Ashstrider): extra Precision against an enemy with one of your ailments. */
+export function huntersMarkPrecision(attacker: Fighter, defender: Fighter): number {
   const mark = attacker.setup.rules?.huntersMark;
   if (!mark) return 0;
   const ailing = AILMENT_TYPES.some((a) =>
     a === "poison" ? poisonStacks(defender.ailments) > 0 : defender.ailments[a] !== undefined,
   );
-  return ailing ? mark.critChance : 0;
+  return ailing ? mark.precision : 0;
 }
 
 /** Gear ailment chances (Chance to Burn etc.) are added to the hit's own chances. */

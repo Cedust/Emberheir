@@ -46,7 +46,7 @@ Round Shield, Ashstrider Quiver, Emberseer Ember Focus.
 | Klasse | Trait | Wirkung |
 |---|---|---|
 | Cinderguard | **Fury** | Jeder Hit in Folge +2 % Schaden, bis +20 %. Fällt vorerst nicht ab; startet in jedem Kampf bei 0. |
-| Ashstrider | **Hunter's Mark** | Hits auf einen Gegner, der eins deiner Ailments trägt, haben +10 % Crit Chance. |
+| Ashstrider | **Hunter's Mark** | Angriffe auf einen Gegner, der eins deiner Ailments trägt, haben +10 % Precision (Timo 2026-10-19, vorher +10 % Crit Chance). |
 | Emberseer | **Overcharge** | Jeder Skill gibt 1 Charge. Bei 3 Charges entlädt sich eine Nova im Element deines Heirloom-Paths: 150 % Weapon Damage, setzt ihr Ailment immer. |
 
 „Deine Ailments“ = alle Ailments, die du gerade auf dem Gegner hast, egal woher. Kein Trait fasst die Heat an (dafür gibt

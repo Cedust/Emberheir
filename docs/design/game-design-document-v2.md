@@ -38,7 +38,7 @@ Endgame **Wildfire I–X**.
 | Klasse | Hauptattribut | Waffen (eine wählen) | Fokus | Class Trait | Masteries (Burst · Tempo · Ailment) |
 |---|---|---|---|---|---|
 | **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jeder Treffer +2 % Schaden mehr als der letzte, bis +20 % | Vanquisher · Berserker · Ravager |
-| **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Crits | Hunter's Mark: +10 % Crit Chance gegen einen Gegner mit einem deiner Ailments | Deadeye · Skirmisher · Trickster |
+| **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: +10 % Precision gegen einen Gegner mit einem deiner Ailments (Timo 2026-10-19: statt Crit, Crit gehört zu AGI) | Deadeye · Skirmisher · Trickster |
 | **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (150 % Weapon Damage, setzt sicher ihr Ailment) | Archmage · Spellweaver · Warlock |
 
 - Start-Arrays (STR/DEX/AGI/INT/WIS/VIT): Cinderguard 5-1-2-1-2-3, Ashstrider 1-5-3-1-1-3, Emberseer 1-1-1-5-3-3.

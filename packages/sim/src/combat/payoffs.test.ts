@@ -137,20 +137,19 @@ describe("Class Traits", () => {
     expect(fight.snapshot().hero.trait).toMatchObject({ kind: "fury", value: 10, max: 10 });
   });
 
-  it("Hunter's Mark: +10 % Crit Chance against an enemy with one of your ailments", () => {
+  it("Hunter's Mark: more Precision against an enemy with one of your ailments", () => {
     const hunter = (ailing: boolean) =>
       setup({
-        rules: { huntersMark: { critChance: 0.95 } },
-        bonuses: { critChance: -0.05 },
-        weapon: always("bleed", ailing ? {} : { ailmentChances: [] }),
+        rules: { huntersMark: { precision: 0.5 } },
+        weapon: { ...always("bleed", ailing ? {} : { ailmentChances: [] }), precision: 0.5 },
       });
-    const crits = (ailing: boolean) =>
+    const glancing = (ailing: boolean) =>
       ofType(play(hunter(ailing), dummy(), 10.05).events, "hit").filter(
-        (h) => h.side === "hero" && h.crit,
+        (h) => h.side === "hero" && h.glancing,
       ).length;
-    // Without an ailment it never crits; with Bleed on the enemy every hit after the first does.
-    expect(crits(false)).toBe(0);
-    expect(crits(true)).toBeGreaterThanOrEqual(8);
+    // Without an ailment half the attacks glance; once Bleed is on the enemy none do.
+    expect(glancing(false)).toBeGreaterThanOrEqual(3);
+    expect(glancing(true)).toBeLessThanOrEqual(2);
   });
 
   it("Overcharge: every third skill sets off a Nova of the weapon's element with its ailment", () => {

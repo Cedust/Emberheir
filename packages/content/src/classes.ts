@@ -35,7 +35,7 @@ export const CLASSES: readonly HeroClass[] = [
     id: "ashstrider",
     name: "Ashstrider",
     mainAttribute: "dexterity",
-    focus: "Critical hits",
+    focus: "Clean hits",
     weapons: ["bow", "crossbow", "dagger"],
     offHand: "quiver",
     offHandFor: { dagger: "blood-talisman" },
@@ -50,8 +50,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Hunter's Mark",
       description:
-        "Your hits on an enemy that carries one of your ailments have +10 % Crit Chance.",
-      rules: { huntersMark: { critChance: 0.1 } },
+        "Your attacks on an enemy that carries one of your ailments have +10 % Precision: more clean hits, fewer Glancing Blows.",
+      rules: { huntersMark: { precision: 0.1 } },
     },
     lineage: {
       name: "Keen Lineage",

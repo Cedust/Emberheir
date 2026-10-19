@@ -36,7 +36,7 @@ import {
   withStatAilmentChances,
   conditionHolds,
   furyFactor,
-  huntersMarkCrit,
+  huntersMarkPrecision,
   mark,
   weaponAilment,
 } from "./fighter";
@@ -333,9 +333,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   const gap =
     (rolls && attacker.afterSkill ? (wr?.critAfterSkill ?? 0) : 0) +
     ruleBonus(core, attacker, attacker.setup.rules?.conditionalCrit) +
-    attacker.critBuildup +
-    // Hunter's Mark (Ashstrider): an enemy carrying your ailments is easier to crit.
-    huntersMarkCrit(attacker, defender);
+    attacker.critBuildup;
   if (rolls) attacker.afterSkill = false;
   const precise = h.precise === true || (h.mighty === true && wr?.mightyNeverGlances === true);
   let precision: number | undefined;
@@ -344,7 +342,9 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     const steady =
       aim && fightTime(core) - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
     const hand = attacker.perks.has("hawkeye") ? PERK.hawkeyePrecision : 0;
-    precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand));
+    // Hunter's Mark (Ashstrider): an enemy carrying your ailments is easier to hit cleanly.
+    const mark = huntersMarkPrecision(attacker, defender);
+    precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand + mark));
   }
 
   // Quick Reflexes: the first attack of the fight misses.

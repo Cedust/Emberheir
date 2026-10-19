@@ -414,10 +414,10 @@ export interface CombatRules {
    */
   readonly fury?: { readonly perHit: number; readonly max: number };
   /**
-   * Ashstrider, Hunter's Mark: hits against an enemy that carries one of your ailments have
-   * `critChance` more Crit Chance.
+   * Ashstrider, Hunter's Mark: attacks against an enemy that carries one of your ailments have
+   * `precision` more Precision (Timo 2026-10-19: clean hits, not Crits, which belong to AGI).
    */
-  readonly huntersMark?: { readonly critChance: number };
+  readonly huntersMark?: { readonly precision: number };
   /**
    * Emberseer, Overcharge: every skill gives a charge; at `charges` they break loose as a Nova of
    * the weapon's element for `multiplier` × Weapon Damage that always applies its ailment.
