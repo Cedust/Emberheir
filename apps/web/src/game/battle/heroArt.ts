@@ -10,12 +10,12 @@ import { INK } from "./arenaLayout";
 import {
   HEIR_BACK,
   HEIR_OFF_HAND,
-  HEIR_RANGED,
   type HeirOffHand,
   type HeirTextures,
   buildHeirRig,
   heirOffFist,
-  heirRangedPart,
+  heirPose,
+  heirPosePart,
 } from "./heirRig";
 
 /** The hero in the arena: class look, weapon pose and grade glow, drawn as one figure. */
@@ -288,18 +288,20 @@ function drawPaintedHero(
   // A quiver rides on the back, behind everything (a Hunter always wears one).
   const quiver = SHOOTERS.has(look.weapon);
   const quiverArt = heir.offHands.quiver;
-  if ((look.weapon === "bow" || look.weapon === "crossbow") && heir.ranged) {
-    // Bow and Crossbow: the otter aims, both paws on the weapon (the ranged pose).
+  const pose = look.weapon === "bow" || look.weapon === "crossbow" ? look.weapon : null;
+  const poseArt = pose ? heir.ranged[pose] : undefined;
+  if (pose && poseArt) {
+    // Bow and Crossbow: the otter aims, both paws on the weapon (its own pose).
     if (quiver && quiverArt)
-      c.addChild(paintedOffHand("quiver", quiverArt, false, HEIR_RANGED.back, RANGED_QUIVER_TILT));
-    const hold = new RangedHold(look, painted);
-    const body = heirRangedPart(heir.ranged, "body");
-    // The weapon lies in front, under the drawing paw; the Bow's grip under the fingers only.
+      c.addChild(
+        paintedOffHand("quiver", quiverArt, false, heirPose(pose).back, RANGED_QUIVER_TILT),
+      );
+    // The weapon lies in front, under the drawing paw and the front paw's fingers.
     c.addChild(
-      body,
-      hold,
-      heirRangedPart(heir.ranged, "arm"),
-      heirRangedPart(heir.ranged, look.weapon === "bow" ? "fingers" : "fist"),
+      heirPosePart(poseArt, pose, "body"),
+      new RangedHold(look, painted),
+      heirPosePart(poseArt, pose, "arm"),
+      heirPosePart(poseArt, pose, "hand"),
     );
     return c;
   }
@@ -450,16 +452,19 @@ const lerp = (a: Point, b: Point, t: number): [number, number] => [
 /** Drawn sizes in the ranged pose (figure units): Bow tip to tip, the arrow, the Crossbow. */
 const RANGED_SIZES = { bow: 270, arrow: 180 };
 
-/** Where the paws hold the painted Crossbow, along it (0 = butt, 1 = front) and across (px). */
-const CROSSBOW_HOLDS = { stock: 0.22, fore: 0.84, across: 6 };
+/**
+ * Where the paws hold the painted Crossbow, along it (0 = butt, 1 = front): the stock's wrist
+ * behind the trigger and the fore end just behind the latch, and across it (the fore end's
+ * underside rests on the palm).
+ */
+const CROSSBOW_HOLDS = { stock: 0.24, fore: 0.66, across: -8 };
 
 /** String colour of the drawn Bow. */
 const STRING = 0x3a2a1c;
 
 /**
- * Bow or Crossbow in the ranged pose, in front of the otter, held by the bow fist and the paw at
- * the jaw. `pose` plays a shot: the Bow's string snaps forward and
- * shivers, a new arrow is nocked and drawn back to the jaw; the Crossbow kicks into the
+ * Bow or Crossbow in its pose, in front of the otter, held by the front paw and the paw at the
+ * jaw. `pose` plays a shot: the Bow's string snaps forward and shivers, a new arrow is nocked and drawn back to the jaw; the Crossbow kicks into the
  * shoulder. Visual only.
  */
 export class RangedHold extends Container {
@@ -468,7 +473,8 @@ export class RangedHold extends Container {
   private readonly string = new Graphics();
   private readonly arrow: Sprite | null = null;
   private readonly ends: [Point, Point] | null = null;
-  private readonly rest: Point = HEIR_RANGED.grip;
+  private readonly jaw: Point;
+  private readonly rest: Point;
   private readonly aim: Point;
   private readonly base: { x: number; y: number; rotation: number };
 
@@ -476,8 +482,10 @@ export class RangedHold extends Container {
     super({ label: "heir-ranged" });
     this.bow = look.weapon === "bow";
     const shot = new Container({ label: "heir-shot" });
+    const { grip, jaw } = heirPose(this.bow ? "bow" : "crossbow");
+    this.jaw = jaw;
+    this.rest = grip;
     if (this.bow) {
-      const grip = HEIR_RANGED.bowGrip;
       const { holder, stringEnds } = weaponArt(look, painted, true);
       const k = RANGED_SIZES.bow / WEAPON_LENGTH;
       holder.scale.set(k);
@@ -505,16 +513,14 @@ export class RangedHold extends Container {
       this.addChild(holder, this.string);
       if (this.arrow) this.addChild(this.arrow);
       // Arrows leave from the head of the fully drawn arrow.
-      const nock = HEIR_RANGED.nock;
-      const dir = Math.atan2(this.aim[1] - nock[1], this.aim[0] - nock[0]);
+      const dir = Math.atan2(this.aim[1] - jaw[1], this.aim[0] - jaw[0]);
       shot.position.set(
-        nock[0] + Math.cos(dir) * RANGED_SIZES.arrow,
-        nock[1] + Math.sin(dir) * RANGED_SIZES.arrow,
+        jaw[0] + Math.cos(dir) * RANGED_SIZES.arrow,
+        jaw[1] + Math.sin(dir) * RANGED_SIZES.arrow,
       );
     } else {
       const { holder } = weaponArt(look, painted);
-      const grip = HEIR_RANGED.grip;
-      const stock = HEIR_RANGED.stock;
+      const stock = jaw;
       const span = Math.hypot(grip[0] - stock[0], grip[1] - stock[1]);
       const k = span / ((CROSSBOW_HOLDS.fore - CROSSBOW_HOLDS.stock) * WEAPON_LENGTH);
       holder.scale.set(k);
@@ -544,7 +550,7 @@ export class RangedHold extends Container {
     // The arrow keeps its aim: it slides along the line from the jaw over the knuckles.
     const draw = age < 0.18 ? 0 : Math.min(1, (age - 0.18) / 0.4);
     const eased = draw * draw * (3 - 2 * draw);
-    const jaw = HEIR_RANGED.nock;
+    const jaw = this.jaw;
     const angle = Math.atan2(this.aim[1] - jaw[1], this.aim[0] - jaw[0]);
     const along =
       (this.rest[0] - jaw[0]) * Math.cos(angle) + (this.rest[1] - jaw[1]) * Math.sin(angle);
