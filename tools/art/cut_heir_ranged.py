@@ -12,15 +12,16 @@ POSES={
     'src':'heir-ranged-v1.png',
     # The drawing arm from the sleeve to the paw at the jaw (not the neck behind the paw).
     'arm':[(140,395),(200,383),(330,373),(398,358),(445,358),(484,374),(490,398),(470,425),(457,449),(412,457),(330,467),(262,492),(200,503),(140,492)],
-    # The whole bow fist from the wrist on: the grip lies in the hand under thumb and fingers.
-    'hand':[(912,424),(940,414),(966,420),(997,432),(1000,492),(988,528),(944,531),(912,518)],
+    # The bow fist's fingers and thumb, the thumb's root reaching back to the hand: the grip
+    # lies in the fist under them, over its palm.
+    'hand':[(906,436),(918,424),(934,416),(968,420),(997,432),(1000,492),(988,528),(950,531),(946,500),(946,466),(926,464),(906,460)],
   },
   'crossbow':{
     'src':'heir-crossbow-v1.png',
     # The arm from the sleeve to the paw on the stock at the jaw.
     'arm':[(188,420),(225,368),(300,356),(400,358),(470,350),(510,345),(542,360),(548,395),(537,427),(500,442),(440,448),(380,447),(340,472),(280,507),(210,507),(186,470)],
-    # The curled fingers of the paw under the fore end: the stock rests in them.
-    'hand':[(886,412),(905,400),(935,402),(978,410),(985,440),(968,468),(930,486),(888,488)],
+    # The curled fingers and the top of the palm under the fore end: the stock rests in them.
+    'hand':[(858,448),(870,438),(886,412),(905,400),(935,402),(978,410),(985,440),(968,468),(930,486),(890,490),(858,490)],
   },
 }
 def save(img,name):

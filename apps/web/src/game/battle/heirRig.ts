@@ -271,7 +271,7 @@ const RANGED_POSES: Record<HeirRangedPose, PoseSource> = {
     feet: [580, 1350],
     body: [42, 184],
     arm: [151, 358],
-    hand: [912, 417],
+    hand: [906, 418],
     // In the middle of the fist, under thumb and fingers.
     grip: [958, 474],
     jaw: [448, 402],
@@ -281,7 +281,7 @@ const RANGED_POSES: Record<HeirRangedPose, PoseSource> = {
     feet: [600, 1355],
     body: [26, 165],
     arm: [193, 345],
-    hand: [887, 404],
+    hand: [858, 404],
     // On the palm, in the curled fingers.
     grip: [905, 452],
     jaw: [505, 398],
