@@ -41,21 +41,20 @@ export function ActProgress(props: {
       aria-label={`Stage ${stage} of ${stages}`}
       style={{ width }}
     >
-      <div className="act-track" style={{ left: left0, right: 20 }} />
+      <div className="act-track" style={{ left: 16, right: 8 }} />
       <div
         className="act-track-fill"
         style={{ left: left0, width: (Math.max(0, done) / (stages - 1)) * span }}
       />
-      <div className="act-camp" title="Camp">
-        <Icon name="camp" size={18} />
-      </div>
+      <div className="act-camp" title="Camp" />
       {Array.from({ length: stages }, (_, i) => {
         const n = i + 1;
         const cur = n === stage;
         const boss = n === stages || finale;
         const shrine = act.shrineStages.includes(n);
         const gate = props.gates?.includes(n) ?? false;
-        const size = cur ? 30 : boss ? 26 : shrine ? 16 : 12;
+        // Painted markers (sheet 9): their box, the art keeps its own aspect inside.
+        const size = cur ? 40 : boss ? 34 : gate ? 30 : shrine ? 22 : 16;
         const cls = [
           "act-dot",
           n <= done || cur ? "done" : "",
@@ -109,7 +108,7 @@ export function ActProgress(props: {
             key={`waymark-${n}`}
             className={`act-waymark ${taken ? "taken" : ""}`}
             title={taken ? "Waymark reached · +1 Skill Point" : "Waymark · +1 Skill Point"}
-            style={{ left: left0 + ((n - 1) / (stages - 1)) * span - 5 }}
+            style={{ left: left0 + ((n - 1) / (stages - 1)) * span - 7 }}
           />
         );
       })}

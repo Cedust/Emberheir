@@ -424,17 +424,26 @@
   flex-shrink: 0;
 }
 
-.stage .act-track,
+/* Painted stage markers (sheet 9, tools/art/cut_stage_markers.py). A brass rail with an ember
+   fill in its groove; every marker is a picture that keeps its aspect inside its box. */
+.stage .act-track {
+  position: absolute;
+  top: 14px;
+  height: 12px;
+  border-style: solid;
+  border-width: 0 12px;
+  border-image: url("../assets/ui/stage-rail.webp") 0 29 fill / 0 12px stretch;
+  /* Same picture under the border-image: hides its hairline seams under the stage transform. */
+  background: url("../assets/ui/stage-rail.webp") center / 100% 100% no-repeat border-box;
+}
+
 .stage .act-track-fill {
   position: absolute;
   top: 18px;
   height: 4px;
   border-radius: 2px;
-  background: var(--track);
-}
-
-.stage .act-track-fill {
-  background: var(--accent);
+  background: linear-gradient(180deg, #ffd27a 0%, #ff8a1f 55%, #b8420e 100%);
+  box-shadow: 0 0 6px rgb(255 138 58 / 0.75);
 }
 
 .stage .act-camp {
@@ -443,88 +452,92 @@
   top: 4px;
   width: 32px;
   height: 32px;
-  border-radius: 16px;
-  background: var(--bg);
-  border: 2px solid var(--accent);
-  color: var(--accent);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: url("../assets/ui/stage-camp.webp") center / contain no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+  z-index: 1;
 }
 
 .stage .act-dot {
   position: absolute;
-  border-radius: 50%;
-  background: var(--bg);
-  border: 2px solid var(--edge);
   display: flex;
   align-items: center;
   justify-content: center;
+  background: url("../assets/ui/stage-stud.webp") center / contain no-repeat;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
   font-family: var(--font-mono);
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 700;
-  color: var(--on-accent);
+  color: #ffe6b8;
+  text-shadow:
+    0 0 4px rgb(255 138 58 / 0.9),
+    0 1px 1px #000;
 }
 
-/* Waymarks (level-v2.md): a small rune stone above the stage, lit once reached this run. */
+.stage .act-dot.done {
+  background-image: url("../assets/ui/stage-stud-lit.webp");
+}
+
+.stage .act-dot.shrine {
+  background-image: url("../assets/ui/stage-shrine.webp");
+}
+
+.stage .act-dot.gate {
+  background-image: url("../assets/ui/stage-gate.webp");
+}
+
+.stage .act-dot.boss {
+  background-image: url("../assets/ui/stage-boss.webp");
+}
+
+/* Shrine, Gatekeeper and Boss ahead lie dim; once behind the hero they glow like the lit studs. */
+.stage .act-dot:is(.shrine, .gate, .boss):not(.done) {
+  filter: brightness(0.8) saturate(0.8) drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+}
+
+.stage .act-dot:is(.shrine, .gate, .boss).done {
+  filter: drop-shadow(0 0 4px rgb(255 138 58 / 0.85));
+}
+
+.stage .act-dot.current {
+  background-image: url("../assets/ui/stage-current.webp");
+  filter: none;
+  z-index: 1;
+}
+
 .stage .act-waymark {
   position: absolute;
-  top: -3px;
-  width: 10px;
-  height: 10px;
-  transform: rotate(45deg);
-  border: 2px solid var(--edge);
-  background: var(--bg);
+  top: -5px;
+  width: 14px;
+  height: 14px;
+  background: url("../assets/ui/stage-waymark.webp") center / contain no-repeat;
+  filter: brightness(0.8) drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
   pointer-events: auto;
   z-index: 1;
 }
 
+/* A reached Waymark: an ember burns in the diamond. */
 .stage .act-waymark.taken {
-  border-color: var(--heat);
-  background: var(--heat);
-  box-shadow: 0 0 6px rgb(255 138 58 / 0.8);
+  filter: drop-shadow(0 0 4px rgb(255 138 58 / 0.85));
 }
 
-.stage .act-dot.shrine {
-  border-radius: 2px;
-  border-color: #c9a063;
+.stage .act-waymark.taken::after {
+  content: "";
+  position: absolute;
+  inset: 4px;
+  transform: rotate(45deg);
+  border-radius: 1px;
+  background: radial-gradient(circle, #ffe08a 0%, #ff8a1f 60%, #b8420e 100%);
 }
 
-/* A fork: two thin arcs above the track between its two stages. */
+/* A fork: two thin brass arcs above the rail between its two stages. */
 .stage .act-fork {
   position: absolute;
-  top: 4px;
+  top: 3px;
   height: 10px;
-  border: 2px solid var(--accent-2);
+  border: 2px solid #c9a063;
   border-bottom: none;
   border-radius: 10px 10px 0 0;
-  opacity: 0.7;
-}
-
-.stage .act-dot.gate {
-  border-radius: 2px;
-  transform: rotate(45deg);
-  background: #4a423b;
-  border-color: #ff8a1f;
-}
-
-.stage .act-dot.gate.done {
-  background: var(--accent);
-}
-
-.stage .act-dot.boss {
-  background: #6a2a20;
-  border-color: #ff8a1f;
-}
-
-.stage .act-dot.done {
-  background: var(--accent);
-}
-
-.stage .act-dot.current {
-  border-radius: 50%;
-  border-color: var(--ink);
-  box-shadow: 0 0 12px rgb(255 138 58 / 0.7);
+  opacity: 0.8;
 }
 
 /* --- battle --------------------------------------------------------------------------------- */
