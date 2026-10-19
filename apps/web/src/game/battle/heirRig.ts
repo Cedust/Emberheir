@@ -248,7 +248,7 @@ const RANGED = {
   /** The middle of the bow fist, where a Crossbow's fore end is held. */
   grip: [950, 470],
   /** A Bow's grip in the fist: behind the fingers, over the back of the paw. */
-  bowGrip: [938, 474],
+  bowGrip: [958, 474],
   /** The drawing paw's fingers at the jaw, where the string is drawn to. */
   nock: [448, 402],
   /** The middle of the drawing paw, on a Crossbow's stock. */
