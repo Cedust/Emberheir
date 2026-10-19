@@ -25,6 +25,16 @@ export interface PaintedTextures {
   readonly arrow: Texture | null;
   /** Per pixel column, the middle row of the painting's thickest part (null where empty). */
   readonly centre: readonly (number | null)[];
+  /** The Bow without its painted string, for a hand that draws it (the arena's ranged pose). */
+  readonly unstrung: Unstrung | null;
+}
+
+/** A painted Bow with its string taken out: the code draws the string between its two ends. */
+export interface Unstrung {
+  readonly body: Texture;
+  readonly mask: Texture;
+  /** Where the string met the limbs, in painting pixels. */
+  readonly ends: readonly [readonly [number, number], readonly [number, number]];
 }
 
 /** A weapon as the Mastery scene draws it: painted or drawn in code (weaponArt.ts). */
@@ -40,6 +50,8 @@ export interface SceneWeaponArt {
   readonly refineT?: Readonly<Record<string, number>>;
   /** The painting's tip (x along, y across the axis), where a Wand's or Staff's orbs hang. */
   readonly tip?: { readonly x: number; readonly y: number };
+  /** An unstrung Bow: where its string meets the limbs (x along, y across the axis). */
+  readonly stringEnds?: readonly [readonly [number, number], readonly [number, number]];
 }
 
 function formOf(weaponId: string, look: WeaponLook): string | null {
@@ -84,6 +96,67 @@ function centreLine(alpha: Uint8ClampedArray, w: number, h: number): (number | n
   return out;
 }
 
+/** The opaque runs (start, end) of one pixel column. */
+function runs(alpha: Uint8ClampedArray, w: number, h: number, x: number): [number, number][] {
+  const out: [number, number][] = [];
+  let start = -1;
+  for (let y = 0; y <= h; y++) {
+    const on = y < h && (alpha[(y * w + x) * 4 + 3] ?? 0) > 128;
+    if (on && start < 0) start = y;
+    if (!on && start >= 0) {
+      out.push([start, y]);
+      start = -1;
+    }
+  }
+  return out;
+}
+
+/**
+ * Takes the painted string out of a Bow: in each column, a thin run below the limb. What is
+ * left of the string's soft edge goes with it. Null when no string is found.
+ */
+function unstring(texture: Texture): Unstrung | null {
+  const canvas = document.createElement("canvas");
+  const w = (canvas.width = texture.width);
+  const h = (canvas.height = texture.height);
+  const ctx = canvas.getContext("2d", { willReadFrequently: true });
+  if (!ctx) return null;
+  ctx.drawImage(texture.source.resource as CanvasImageSource, 0, 0, w, h);
+  const image = ctx.getImageData(0, 0, w, h);
+  const px = image.data;
+  let first: [number, number] | null = null;
+  let last: [number, number] | null = null;
+  for (let x = 0; x < w; x++) {
+    const col = runs(px, w, h, x);
+    const limb = col.reduce<[number, number] | null>(
+      (best, r) => (!best || r[1] - r[0] > best[1] - best[0] ? r : best),
+      null,
+    );
+    if (!limb) continue;
+    const string = col.find((r) => r[0] > limb[1] + 1 && r[1] - r[0] <= 8);
+    if (!string) continue;
+    const mid = (string[0] + string[1]) / 2;
+    first ??= [x, mid];
+    last = [x, mid];
+    for (let y = Math.max(limb[1] + 1, string[0] - 3); y < Math.min(h, string[1] + 3); y++)
+      px[(y * w + x) * 4 + 3] = 0;
+  }
+  if (!first || !last || last[0] - first[0] < w / 2) return null;
+  ctx.putImageData(image, 0, 0);
+  const body = Texture.from(canvas);
+  const white = document.createElement("canvas");
+  white.width = w;
+  white.height = h;
+  const wctx = white.getContext("2d");
+  if (wctx) {
+    wctx.drawImage(canvas, 0, 0);
+    wctx.globalCompositeOperation = "source-in";
+    wctx.fillStyle = "#ffffff";
+    wctx.fillRect(0, 0, w, h);
+  }
+  return { body, mask: Texture.from(white), ends: [first, last] };
+}
+
 function whiteMask(texture: Texture): { mask: Texture; centre: (number | null)[] } {
   const canvas = document.createElement("canvas");
   canvas.width = texture.width;
@@ -120,7 +193,8 @@ export function paintedTextures(
       extra(urlOf(weaponId, `${form}-gem`)),
       extra(weaponId === "bow" ? urlOf(weaponId, "arrow") : undefined),
     ]).then(([body, gem, arrow]) => {
-      const textures = { body, ...whiteMask(body), gem, arrow };
+      const unstrung = weaponId === "bow" ? unstring(body) : null;
+      const textures = { body, ...whiteMask(body), gem, arrow, unstrung };
       loaded.set(url, textures);
       return textures;
     });
@@ -208,7 +282,12 @@ export function drawPaintedWeapon(
   length: number,
   look: WeaponLook,
   textures: PaintedTextures,
+  /** Without its painted string and nocked arrow (a Bow the hand draws), when it has one. */
+  unstrung = false,
 ): SceneWeaponArt {
+  const bare = unstrung ? textures.unstrung : null;
+  const bodyTexture = bare?.body ?? textures.body;
+  const maskTexture = bare?.mask ?? textures.mask;
   const forms = MASTERY_ART[weaponId] ?? {};
   const size = forms[formOf(weaponId, look) ?? "plain"] ?? forms.plain;
   const plain = forms.plain;
@@ -220,13 +299,13 @@ export function drawPaintedWeapon(
     return sprite;
   };
   const body = new Container();
-  const painting = place(new Sprite(textures.body));
+  const painting = place(new Sprite(bodyTexture));
   const filter = gradeFilter(look.grade);
   if (filter) painting.filters = [filter];
   body.addChild(painting);
   if (look.grade <= 0) {
     // Crude: a dark wash over the painting.
-    const dull = place(new Sprite(textures.mask));
+    const dull = place(new Sprite(maskTexture));
     dull.tint = 0x1a120c;
     dull.alpha = 0.28;
     body.addChild(dull);
@@ -241,7 +320,7 @@ export function drawPaintedWeapon(
     shine.blendMode = "add";
     body.addChild(gem, shine);
   }
-  if (textures.arrow) {
+  if (textures.arrow && !bare) {
     // Arrows nocked on the string's middle, pointing away from it: three for Hailstorm.
     const arrowSize = MASTERY_ART[weaponId]?.arrow;
     const string = (size.h - size.axis - 4) * scale;
@@ -273,12 +352,20 @@ export function drawPaintedWeapon(
   const tip = paintedTip(textures.centre, size.axis);
   return {
     body,
-    edge: place(new Sprite(textures.mask)),
+    edge: place(new Sprite(maskTexture)),
     runeGlow,
-    silhouette: () => place(new Sprite(textures.mask)),
+    silhouette: () => place(new Sprite(maskTexture)),
     anchorY,
     glowBehind: true,
     tip: { x: tip.x * scale, y: tip.y * scale },
+    ...(bare
+      ? {
+          stringEnds: [
+            [bare.ends[0][0] * scale, (bare.ends[0][1] - size.axis) * scale],
+            [bare.ends[1][0] * scale, (bare.ends[1][1] - size.axis) * scale],
+          ] as const,
+        }
+      : {}),
     ...(weaponId === "bow" ? { refineT: BOW_REFINE[formOf(weaponId, look) ?? "plain"] ?? {} } : {}),
   };
 }

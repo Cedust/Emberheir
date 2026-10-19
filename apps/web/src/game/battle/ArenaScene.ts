@@ -43,7 +43,7 @@ import {
 import { type EnemyLook, drawEnemy } from "./enemyArt";
 import { Fx } from "./fx";
 import { armSwing, loadHeirTextures } from "./heirRig";
-import { type HeroLook, RANGED_WEAPONS, drawHero, loadHeroWeapon } from "./heroArt";
+import { type HeroLook, RANGED_WEAPONS, RangedHold, drawHero, loadHeroWeapon } from "./heroArt";
 import { type View, Weather } from "./weather";
 
 /** A Skip resolves the rest of the fight at once: then only the outcome is shown. */
@@ -83,6 +83,10 @@ export class ArenaScene {
   /** The painted Heir's forearm (turns to swing) and fist (where shots leave). */
   private heroArm: Container | null = null;
   private heroFist: Container | null = null;
+  /** Bow or Crossbow in the ranged pose, where its shots leave, and when the last one left. */
+  private heroRanged: RangedHold | null = null;
+  private heroShot: Container | null = null;
+  private heroShotAt = -Infinity;
   private enemy: Figure | null = null;
   private telegraph: Graphics | null = null;
   private aura: Graphics | null = null;
@@ -254,6 +258,9 @@ export class ArenaScene {
     this.hero = makeFigure("hero", drawHero(hero, heir, weapon), HERO_X);
     this.heroArm = this.hero.body.getChildByLabel("heir-arm", true) ?? null;
     this.heroFist = this.hero.body.getChildByLabel("heir-fist", true) ?? null;
+    const ranged = this.hero.body.getChildByLabel("heir-ranged", true);
+    this.heroRanged = ranged instanceof RangedHold ? ranged : null;
+    this.heroShot = this.hero.body.getChildByLabel("heir-shot", true) ?? null;
     this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
     this.offHandGlow = this.hero.body.getChildByLabel("off-hand-glow", true) ?? null;
     this.offHandFloat = this.hero.body.getChildByLabel("off-hand-float", true) ?? null;
@@ -669,6 +676,10 @@ export class ArenaScene {
 
   /** Where projectiles leave: the bow, wand or casting hand. */
   private hand(side: Side): { x: number; y: number } {
+    if (side === "hero" && this.heroShot) {
+      const p = this.world.toLocal(this.heroShot.getGlobalPosition());
+      return { x: p.x, y: p.y };
+    }
     if (side === "hero" && this.heroFist) {
       const p = this.world.toLocal(this.heroFist.getGlobalPosition());
       return { x: p.x + 30, y: p.y - 30 };
@@ -1087,10 +1098,12 @@ export class ArenaScene {
         case "arrow":
         case "orb":
           attacker.recoil = 1;
+          if (e.side === "hero") this.heroShotAt = this.clock;
           fx.projectile(how, from, to, color, land);
           break;
         case "bolt":
           attacker.recoil = 1;
+          if (e.side === "hero") this.heroShotAt = this.clock;
           fx.bolt(from.x, from.y, to.x, to.y, color);
           land();
           break;
@@ -1433,6 +1446,8 @@ export class ArenaScene {
         const swing = timer > 0 ? armSwing(1 - timer, ranged) : 0;
         this.heroArm.rotation = Math.sin(this.clock * 2.2) * 0.04 + swing;
       }
+      if (f.side === "hero")
+        this.heroRanged?.pose(this.clock - this.heroShotAt, this.clock, this.motion);
       const base = this.tint[f.side];
       f.body.tint = f.flash > 0.5 ? 0xff7777 : base;
       f.stars.visible = f.stun > 0;
