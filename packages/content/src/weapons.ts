@@ -15,8 +15,9 @@ export const SWORD: WeaponDefinition = {
   name: "Sword",
   defaultAttack: "Slash",
   // Raised from 10-17: the Riposte rarely fires against slow bosses, so the Sword had the least
-  // damage of all melee weapons.
-  damage: { min: 12, max: 20 },
+  // damage of all melee weapons. +15 % in balancing restart step 4: Fury no longer adds to every
+  // hit, its strength moved into the weapon itself.
+  damage: { min: 14, max: 23 },
   damageType: "physical",
   attacksPerSecond: 0.8,
   heatBehavior: "cooling",
@@ -59,7 +60,8 @@ export const AXE: WeaponDefinition = {
   id: "axe",
   name: "Axe",
   defaultAttack: "Hack",
-  damage: { min: 12, max: 21 },
+  // +15 % in balancing restart step 4 (see the Sword).
+  damage: { min: 14, max: 24 },
   damageType: "physical",
   attacksPerSecond: 0.7,
   heatBehavior: "cooling",
@@ -133,7 +135,8 @@ export const MACE: WeaponDefinition = {
   id: "mace",
   name: "Mace",
   defaultAttack: "Smash",
-  damage: { min: 14, max: 23 },
+  // +15 % in balancing restart step 4 (see the Sword).
+  damage: { min: 16, max: 26 },
   damageType: "physical",
   attacksPerSecond: 0.65,
   heatBehavior: "cooling",
