@@ -456,6 +456,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   });
   defender.lastHitTakenAt = fightTime(core);
   if (h.source === attacker.setup.weapon.defaultAttack) gainFury(attacker);
+  gainFury(defender);
   const dwr = defender.setup.weaponRules;
   if (outcome.blocked && dwr?.critAfter?.includes("block")) defender.nextCrit = true;
   if (outcome.blocked && dwr?.braced) defender.bracedUntil = now + dwr.braced.seconds;
@@ -588,7 +589,10 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
 }
 
 /** Fury (Cinderguard): every Default Attack that lands adds one, up to the cap. */
-/** Cinderguard: a Default Attack that lands adds one Fury; the Innate spends it (skills.ts). */
+/**
+ * Cinderguard: a Default Attack that lands and a hit taken add one Fury; the Innate spends it
+ * (skills.ts).
+ */
 function gainFury(f: Fighter): void {
   const fury = f.setup.rules?.fury;
   if (!fury || f.fury >= fury.maxStacks) return;

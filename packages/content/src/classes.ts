@@ -27,7 +27,7 @@ export const CLASSES: readonly HeroClass[] = [
       name: "Fury",
       description:
         "Every Default Attack you land gives 1 Fury (up to 10). Your Innate spends all of it and deals 10 % more damage per Fury.",
-      rules: { fury: { perStack: 0.1, maxStacks: 10 } },
+      rules: { fury: { perStack: 0.25, maxStacks: 10 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["vanquisher", "berserker", "ravager"],
