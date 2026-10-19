@@ -74,9 +74,10 @@ export const COMBAT = {
    * Barrier (like Energy Shield): full at fight start and always trickles back (`steady` of its
    * max per s), so it holds a long boss fight like Armor does. After `delay` s without a hit it
    * refills fast (`perSecond`). The delay keeps it from refilling fully between the slow swings
-   * of early bosses.
+   * of early bosses; refilling slower than this made the Emberseer far too safe in Acts 2-3
+   * (Timo 2026-10-19).
    */
-  barrierRecharge: { steady: 0.03, delay: 1.5, perSecond: 0.2 },
+  barrierRecharge: { steady: 0.03, delay: 3, perSecond: 0.1 },
   /** Share of a blocked hit that a block stops (before Stoneguard). */
   blockReduction: 0.5,
   /**
