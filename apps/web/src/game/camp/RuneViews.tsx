@@ -11,6 +11,7 @@ import {
   merchantSlots,
 } from "@emberheir/sim";
 import { ItemArt } from "../../ui/ItemArt";
+import { BenchArt } from "./Workbench";
 import { ItemTile } from "../../ui/items";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 
@@ -185,11 +186,15 @@ export function GamblePanel(props: {
         })}
       </div>
       <span className="sub small">Item Level {merchantItemLevel(props.state, GAME_DATA)}</span>
-      {props.last && (
-        <div className="gamble-last">
-          <ItemTile item={props.last} label="Gambled" size={76} equipped={false} />
-        </div>
-      )}
+      <div className="workbench gamble-crate" aria-label="Mystery Crate">
+        <BenchArt persona="marisha">
+          {props.last && (
+            <span className="gamble-last">
+              <ItemTile item={props.last} label="Gambled" size={76} equipped={false} />
+            </span>
+          )}
+        </BenchArt>
+      </div>
     </div>
   );
 }

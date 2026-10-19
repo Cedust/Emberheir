@@ -2515,7 +2515,7 @@
 .stage .workbench {
   position: relative;
   flex-shrink: 0;
-  height: 200px;
+  height: 250px;
   border-radius: 6px;
 }
 
@@ -2526,17 +2526,15 @@
 
 .stage .bench-art {
   position: absolute;
-  left: calc(50% - 160px);
+  left: 50%;
   bottom: 0;
-  width: 320px;
-  height: 150px;
+  pointer-events: none;
   filter: drop-shadow(0 4px 6px rgb(0 0 0 / 0.35));
 }
 
 .stage .bench-item {
   position: absolute;
   left: calc(50% - 50px);
-  bottom: 96px;
   width: 100px;
   height: 100px;
   filter: drop-shadow(0 0 12px var(--frame, transparent));
@@ -5629,9 +5627,15 @@
   text-shadow: 0 0 8px rgb(0 0 0 / 0.9);
 }
 
+.stage .gamble-crate {
+  align-self: stretch;
+}
+
 .stage .gamble-last {
   display: flex;
   justify-content: center;
+  align-items: flex-end;
+  height: 100%;
 }
 
 .stage .gamble-last .item-tile {
