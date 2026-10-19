@@ -37,7 +37,7 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Hauptattribut | Waffen (eine wählen) | Fokus | Class Trait | Masteries (Burst · Tempo · Ailment) |
 |---|---|---|---|---|---|
-| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jeder Treffer +2 % Schaden mehr als der letzte, bis +20 % | Vanquisher · Berserker · Ravager |
+| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, gibt 1 Fury (bis 10); das Innate gibt alle aus, +10 % more pro Fury (Timo 2026-10-19, Schritt 4: vorher +2 % pro Treffer auf alles) | Vanquisher · Berserker · Ravager |
 | **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: +10 % Precision gegen einen Gegner mit einem deiner Ailments (Timo 2026-10-19: statt Crit, Crit gehört zu AGI) | Deadeye · Skirmisher · Trickster |
 | **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (150 % Weapon Damage, setzt sicher ihr Ailment) | Archmage · Spellweaver · Warlock |
 
@@ -277,7 +277,7 @@ Endgame **Wildfire I–X**.
   × Damage Taken. Alle „X % more“ aus Ash Tree, Mastery, Heirloom, Keystones und Class Trait **addieren sich** in
   einem Topf; nur Abzüge („10 % less“) multiplizieren. Overcharge und Arcane Conduit zählen in den More-Topf.
 - **DoTs** wachsen aus dem Treffer **vor** Crit, More und Damage Taken. Sie haben einen eigenen, additiven
-  **DoT-Topf** (DoT-Boni, Boni des einzelnen Ailments, bedingte Ailment-Boni, Lingering, Fury). Cash In legt Skill
+  **DoT-Topf** (DoT-Boni, Boni des einzelnen Ailments, bedingte Ailment-Boni, Lingering). Cash In legt Skill
   Damage in diesen Topf, statt ihn zu multiplizieren.
 - **Sunder** (Debuff, senkt Armor stapelnd) ≠ **Physical Penetration** (ignoriert Armor pro Treffer).
 
@@ -354,6 +354,9 @@ Endgame **Wildfire I–X**.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
   Heavy Bolt (Crossbow), Shockbolt (Wand), Void Bolt (Staff); der Path benennt sie um (z. B. Frostbolt, Voidbolt).
   Jeder Innate gibt Heat laufend aus (Angriff oder Spell).
+- **Innate-Level** (Schritt 4, 19.10.2026): Das Innate steigt mit der Waffe, +1 Level pro **Weapon Grade** (Crude 1,
+  Honed 2 … Exalted 5). Vorher blieb es auf Level 1, während jeder andere Skill über Ränge wuchs; die Waffe fiel im
+  Endgame unter 10 % des Schadens.
 
 ### 5.2 Mastery ✅ (`klassengeruest-v1.md` 5)
 - Ersetzt die Prestige-Äste. Jede Klasse hat drei Masteries, eine pro Stil: **Burst** (große Treffer, Skills, Heat
@@ -367,6 +370,12 @@ Endgame **Wildfire I–X**.
   Treffer alle DoTs auf dem Gegner und macht 150 % ihres Restschadens auf einmal, als Treffer (Lifesteal greift, Skill
   Damage zählt). Grund: Fast jeder Build macht den Großteil seines Schadens über Ailments; Burst hat vorher nur
   Skill-Treffer verstärkt und lag klar hinter Tempo und Ailment. Ailment lässt die DoTs laufen, Burst löst sie ein.
+  **Earthsplitter** (Schritt 4): löst nur das Ailment der eigenen Waffe ein, und zwar **vor** seinem Treffer, der es
+  danach neu setzt. Vorher löste er alles ein (auch Gear-Poison), und Vanquisher lag 2× über den anderen Masteries.
+- **Element-Angriffe** (Schritt 4): Waffenkämpfer bekommen im Ash Tree je einen Angriff pro Element, auf dem Weg zu
+  den Element-Notables: Searing Blow (Flame, 160 % Fire, setzt immer Burn), Storm Strike (Storm, 3 × 70 % Lightning,
+  je 50 % Shock), Frost Strike (Frost, 240 % Cold, setzt immer Chill). Sie ersetzen die Reise-Nodes Ember Ash, Steady
+  Mind und Still Mind (Spielstand-Version 10 zieht gelernte Punkte um).
 - **Smolder** (Staff, Timo 19.10.2026): Cinders +40 % Burn-Schaden (war 25 %), Master of Smolder +35 % (war 20 %), weil
   derselbe Held mit Hollow 10–35 % mehr Schaden machte.
 - **Twin Cast** (Spellweaver, Timo 19.10.2026): Twin Sparks (jede 4.) und Endless Weave (jede 3.) zählen Aktionen statt

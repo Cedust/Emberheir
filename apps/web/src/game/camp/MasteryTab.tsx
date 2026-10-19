@@ -238,7 +238,11 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
         <div ref={hostRef} className="tree-host mastery-host" data-testid="mastery-canvas" />
         {failed && <p className="tree-fallback sub">Heirloom needs WebGL.</p>}
         <div className="mastery-plate" data-testid="weapon-name">
-          <span className="eyebrow" style={{ color: GRADE_COLOR[gradeIndex] }}>
+          <span
+            className="eyebrow"
+            style={{ color: GRADE_COLOR[gradeIndex] }}
+            title={`Every Weapon Grade gives your Innate +1 level (now +${gradeIndex}).`}
+          >
             {weaponGrade(rank).toUpperCase()} · RANK {rank}
           </span>
           <h2 className="title-font">{name}</h2>

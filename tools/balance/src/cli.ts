@@ -80,6 +80,7 @@ function runBudgetMode(): void {
       "skills %": pct(budget.shares.skills),
       "DoT %": pct(budget.shares.dots),
       "other %": pct(budget.shares.other),
+      "weapon %": pct(budget.shares.weapon),
       ...Object.fromEntries(LAYERS.map((l) => [`×${l}`, budget.factors[l].toFixed(2)])),
     };
   });
@@ -98,6 +99,7 @@ function runBudgetMode(): void {
         own.reduce((a, b) => a + b.shares.defaultAttack + b.shares.innate, 0) /
           Math.max(1, own.length),
       ),
+      "weapon %": pct(own.reduce((a, b) => a + b.shares.weapon, 0) / Math.max(1, own.length)),
       ...Object.fromEntries(LAYERS.map((l) => [`×${l}`, geo((b) => b.factors[l]).toFixed(2)])),
     };
   });

@@ -171,3 +171,23 @@ describe("dotDamagePerSecond", () => {
     );
   });
 });
+
+describe("DoT sources (damage reports)", () => {
+  it("a refreshing DoT keeps the source of its strongest application", () => {
+    let s = applyAilment({}, "bleed", 4, 100, undefined, 0, undefined, "Rend");
+    s = applyAilment(s, "bleed", 4, 10, undefined, 0, undefined, "Slash");
+    expect(s.bleed?.source).toBe("Rend");
+    s = applyAilment(s, "bleed", 4, 500, undefined, 0, undefined, "Slash");
+    expect(s.bleed?.source).toBe("Slash");
+    const { ticks } = stepAilments(s, 1);
+    expect(ticks[0]?.sources).toEqual({ Slash: 1 });
+  });
+
+  it("a Poison tick splits by the stacks' sources", () => {
+    let s = applyAilment({}, "poison", 4, 100, undefined, 0, undefined, "Stab");
+    s = applyAilment(s, "poison", 4, 300, undefined, 0, undefined, "Envenom");
+    const { ticks } = stepAilments(s, 1);
+    expect(ticks[0]?.sources?.Stab).toBeCloseTo(0.25);
+    expect(ticks[0]?.sources?.Envenom).toBeCloseTo(0.75);
+  });
+});

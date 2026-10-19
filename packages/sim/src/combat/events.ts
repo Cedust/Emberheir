@@ -57,6 +57,11 @@ export type CombatEvent =
       readonly capped?: boolean;
       /** A spell Deflected by Evasion. */
       readonly deflected?: boolean;
+      /**
+       * A burst that ends DoTs (Rend, Cash In): share of this hit per hit or skill that caused
+       * the ended DoTs, for the part that is their own damage (damage reports).
+       */
+      readonly dotSources?: Readonly<Record<string, number>>;
     }
   | { readonly t: number; readonly type: "evade"; readonly side: Side; readonly source: string }
   | {
@@ -79,6 +84,8 @@ export type CombatEvent =
       readonly side: Side;
       readonly ailment: AilmentType;
       readonly damage: number;
+      /** Share of the tick per hit or skill that caused the ailment (for damage reports). */
+      readonly sources?: Readonly<Record<string, number>>;
     }
   | { readonly t: number; readonly type: "heal"; readonly side: Side; readonly amount: number }
   /** A trigger affix (or weapon trigger) fired. Its effect follows as separate events. */

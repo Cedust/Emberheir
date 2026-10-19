@@ -21,7 +21,11 @@ export interface SaveMigration {
  * (klassengeruest-v1.md: three new classes, Heirloom, Masteries, a new Ash Tree); older saves and
  * stashes are dropped, not converted (Timo, Early Dev Preview).
  */
-export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {};
+export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
+  // Balancing restart step 4: three travel nodes of the Ash Tree became the element attacks of
+  // weapon fighters. A hero who had one learned keeps the Skill Point in the node's place.
+  9: { state: (save) => renameLearned(save, ELEMENT_ATTACK_NODES) },
+};
 
 export interface MigrateOptions {
   /** The version to end at (tests); default `SAVE_VERSION`. */
@@ -31,6 +35,23 @@ export interface MigrateOptions {
 
 const isRecord = (value: unknown): value is RawSave =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+/** Old Ash Tree node → the element attack that took its place (save version 10). */
+export const ELEMENT_ATTACK_NODES: Readonly<Record<string, string>> = {
+  "flame-ember-ash": "flame-searing-blow",
+  "storm-steady-mind": "storm-storm-strike",
+  "frost-still-mind": "frost-frost-strike",
+};
+
+/** Renames learned Ash Tree nodes of the hero; the ranks stay. */
+function renameLearned(save: RawSave, names: Readonly<Record<string, string>>): RawSave {
+  const hero = save["hero"];
+  if (!isRecord(hero) || !isRecord(hero["learned"])) return save;
+  const learned = Object.fromEntries(
+    Object.entries(hero["learned"]).map(([id, ranks]) => [names[id] ?? id, ranks]),
+  );
+  return { ...save, hero: { ...hero, learned } };
+}
 
 /** The version a save or stash was written in; throws if it has none or is from the future. */
 export function versionOf(raw: RawSave, to = SAVE_VERSION): number {

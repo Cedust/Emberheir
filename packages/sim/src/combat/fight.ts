@@ -74,7 +74,14 @@ function stepStatus(core: FightCore, f: Fighter, dt: number): void {
       1,
       Math.round(tick.damage * dotFactor(core, f, tick.ailment) * hide * burst),
     );
-    emit(core, { t: fightTime(core), type: "dot", side: f.side, ailment: tick.ailment, damage });
+    emit(core, {
+      t: fightTime(core),
+      type: "dot",
+      side: f.side,
+      ailment: tick.ailment,
+      damage,
+      ...(tick.sources ? { sources: tick.sources } : {}),
+    });
     if (tick.collapse) payoff(core, source, "collapse", damage);
     dealDamage(core, f, damage);
     if (core.result) return;
@@ -339,6 +346,7 @@ export class Fight {
       ticks: 0,
       result: undefined,
       heavyFrom: null,
+      ailmentSource: null,
     };
   }
 

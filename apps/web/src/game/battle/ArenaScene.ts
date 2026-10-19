@@ -1012,6 +1012,45 @@ export class ArenaScene {
         this.shake(0.35);
         this.hitStop(0.06);
         break;
+      case "Searing Blow":
+        // The blade leaves a curtain of embers rising off the foe.
+        fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 26,
+          color: [0xff8a3a, 0xffd84a, 0xff4a1a],
+          spreadX: 40,
+          spreadY: 60,
+          angle: [RISE - 0.5, RISE + 0.5],
+          speed: [120, 320],
+          life: [0.5, 1],
+          size: [6, 12],
+          drag: 0.06,
+          gravity: -120,
+        });
+        break;
+      case "Storm Strike":
+        // Each of the three cuts throws a short arc from the sky.
+        fx.bolt(at.x + (Math.random() - 0.5) * 60, this.view().top, at.x, at.y, 0xffe14d);
+        break;
+      case "Frost Strike":
+        // Ice shards burst out and a cold ring settles on the ground.
+        fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 20,
+          kind: "bit",
+          color: [0xb8e4ff, 0xffffff, 0x6ab8f0],
+          angle: [away - 1, away + 1],
+          speed: [220, 520],
+          gravity: 800,
+          life: [0.4, 0.8],
+          size: [6, 12],
+          spin: 10,
+        });
+        fx.ring(at.x, GROUND_Y - 4, 0xb8e4ff, 30, 200, 0.5, 8);
+        this.hitStop(0.05);
+        break;
       case "Skull Crack":
         fx.ring(at.x, at.y - 120, 0xffe14d, 20, 120, 0.4, 7, 1);
         fx.ring(at.x, GROUND_Y - 4, 0xc9c2b8, 40, 200, 0.5, 8);

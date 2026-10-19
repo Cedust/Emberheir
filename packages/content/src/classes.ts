@@ -25,13 +25,14 @@ export const CLASSES: readonly HeroClass[] = [
     },
     trait: {
       name: "Fury",
-      description: "Every hit you land deals 2 % more damage than the last, up to +20 %.",
-      rules: { fury: { perHit: 0.02, max: 0.2 } },
+      description:
+        "Every Default Attack you land gives 1 Fury (up to 10). Your Innate spends all of it and deals 10 % more damage per Fury.",
+      rules: { fury: { perStack: 0.1, maxStacks: 10 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["vanquisher", "berserker", "ravager"],
     titles: { vanquisher: "Vanquisher", berserker: "Berserker", ravager: "Ravager" },
-    text: "Fights up close with Sword, Axe or Mace. Every blow lands harder than the last.",
+    text: "Fights up close with Sword, Axe or Mace. Every swing feeds the Fury of the next big blow.",
   },
   {
     id: "ashstrider",

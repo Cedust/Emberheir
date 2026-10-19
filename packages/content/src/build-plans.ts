@@ -91,6 +91,13 @@ const ELEMENT_NOTABLES: Record<"fire" | "lightning" | "cold", readonly string[]>
   cold: ["frost-glacier", "frost-deep-freeze"],
 };
 
+/** The element attack of a weapon fighter: its Ash Tree node and the skill it teaches. */
+const ELEMENT_ATTACKS: Record<"fire" | "lightning" | "cold", { node: string; skill: string }> = {
+  fire: { node: "flame-searing-blow", skill: "searing-blow" },
+  lightning: { node: "storm-storm-strike", skill: "storm-strike" },
+  cold: { node: "frost-frost-strike", skill: "frost-strike" },
+};
+
 interface Kit {
   readonly nodes: readonly string[];
   readonly rotation: readonly string[];
@@ -113,16 +120,19 @@ function cinderguardKit(style: Style): Kit {
         MN,
         "steel-colossus",
       ],
-      rotation: ["rend", MS, "cleave", "crushing-blow"],
+      rotation: [MS, "rend"],
     };
   }
-  // An elemental path learns its element's Notables right after the Mastery, not last.
+  // An elemental path learns its element's attack and Notables right after the Mastery, not last.
+  const attack =
+    style === "stun" ? undefined : ELEMENT_ATTACKS[style as "fire" | "lightning" | "cold"];
   const element = style === "stun" ? [] : ELEMENT_NOTABLES[style as "fire" | "lightning" | "cold"];
   return {
     nodes: [
       "steel-crushing-blow",
       MS,
       MK,
+      ...(attack ? [attack.node] : []),
       ...element,
       "steel-brutal-force",
       "steel-flurry",
@@ -134,7 +144,7 @@ function cinderguardKit(style: Style): Kit {
       "roots-unbroken",
       "steel-execute",
     ],
-    rotation: ["crushing-blow", MS, "flurry", "execute"],
+    rotation: [MS, attack?.skill ?? "crushing-blow"],
   };
 }
 

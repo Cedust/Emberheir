@@ -235,6 +235,23 @@ describe("game loop", () => {
     expect(() => act(s, { type: "allocateAttributes", points: { strength: 1 } })).toThrow();
   });
 
+  it("the Innate gains a level per Weapon Grade", () => {
+    const s = start();
+    const weapon = heroSetup(s, data).setup.weapon;
+    const innate = (level: number, prestige: number) =>
+      heroRotation(
+        { ...s, hero: { ...s.hero, level }, legacy: { ...s.legacy, prestige } },
+        data,
+        weapon,
+      )[0]?.level;
+    expect(innate(1, 0)).toBe(1);
+    // Rank 4 (Honed) at level 10; the first run stops at that Rank.
+    expect(innate(10, 0)).toBe(2);
+    expect(innate(100, 0)).toBe(2);
+    // Rank 16 (Exalted) in a later run.
+    expect(innate(60, 6)).toBe(5);
+  });
+
   it("Kaelen teaches the Skill Tree from the first Camp on", () => {
     let s = { ...start(), hero: { ...start().hero, unspentSkillPoints: 3 } };
     expect(s.progress.trainerUnlocked).toBe(false);

@@ -51,10 +51,11 @@ describe("build plans", () => {
       expect(s.hero.mastery.choices.keystone, plan.id).toBe(plan.heirloom.keystone);
       // The main Mastery's Keystone up to its Supreme tier.
       expect(s.hero.learned[`pb-${plan.masteries[0]}-keystone-3`], plan.id).toBe(1);
-      // The Battle Plan: the Innate, then three skills with the main Mastery's among them.
+      // The Battle Plan: the Innate, then two or three skills with the main Mastery's among them
+      // (Cinderguard keeps two so the Innate comes round often enough to spend the Fury).
       const rotation = planRotation(s, GAME_DATA, plan);
       expect(s.hero.rotation.slice(1).filter(Boolean), plan.id).toEqual(rotation.slice(0, 3));
-      expect(rotation.length, plan.id).toBeGreaterThanOrEqual(3);
+      expect(rotation.length, plan.id).toBeGreaterThanOrEqual(2);
       expect(plan.rotation, plan.id).toContain(MASTERY_SKILL);
       expect(s.hero.plan.reactions[0]?.skillId, plan.id).toBe(plan.reaction?.skillId);
       // Epic gear the hero can wear, the class's Off Hand kept.
