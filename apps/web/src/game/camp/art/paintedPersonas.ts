@@ -1,11 +1,17 @@
 import eldrinUrl from "../../../assets/camp/personas/eldrin.webp";
 import heirUrl from "../../../assets/camp/heir-camp.webp";
 import kaelenUrl from "../../../assets/camp/personas/kaelen.webp";
+import kaelenFace from "../../../assets/camp/personas/kaelen-portrait.webp";
 import lioraUrl from "../../../assets/camp/personas/liora.webp";
+import lioraFace from "../../../assets/camp/personas/liora-portrait.webp";
 import marishaUrl from "../../../assets/camp/personas/marisha.webp";
+import marishaFace from "../../../assets/camp/personas/marisha-portrait.webp";
 import nanUrl from "../../../assets/camp/personas/nan.webp";
+import nanFace from "../../../assets/camp/personas/nan-portrait.webp";
 import nyssaUrl from "../../../assets/camp/personas/nyssa.webp";
+import nyssaFace from "../../../assets/camp/personas/nyssa-portrait.webp";
 import thoricUrl from "../../../assets/camp/personas/thoric.webp";
+import thoricFace from "../../../assets/camp/personas/thoric-portrait.webp";
 import dummyUrl from "../../../assets/camp/personas/training-dummy.webp";
 
 /**
@@ -17,8 +23,9 @@ export interface PaintedPersona {
   readonly url: string;
   /** On-screen height at fs = 1, in stage pixels. */
   readonly h: number;
-  /** Round portrait: CSS background-size and background-position over the head. */
-  readonly face: { readonly size: string; readonly pos: string };
+  /** Round portrait: CSS background-size and background-position over the head, on `url` when
+   * the portrait comes from the persona's first painting (looking at the camera, Timo). */
+  readonly face: { readonly url?: string; readonly size: string; readonly pos: string };
   /** Where the head sits left or right of the figure's middle at fs = 1 (stage px, facing right):
    * the camp marker floats above it. */
   readonly head: number;
@@ -51,17 +58,42 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     sign: [6, 38.7, 82, 12, 2.1],
   },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
-  nan: { url: nanUrl, h: 160, face: { size: "295% auto", pos: "66% 2%" }, head: 13 },
+  nan: {
+    url: nanUrl,
+    h: 160,
+    face: { url: nanFace, size: "245% auto", pos: "51% 0%" },
+    head: 13,
+  },
   kaelen: {
     url: kaelenUrl,
     h: 170,
-    face: { size: "537% auto", pos: "56% 2%" },
+    face: { url: kaelenFace, size: "360% auto", pos: "76% 4%" },
     head: 11,
     turn: true,
     prop: { url: dummyUrl, h: 150, x: 170 },
   },
-  liora: { url: lioraUrl, h: 165, face: { size: "444% auto", pos: "64% 4%" }, head: 18 },
-  marisha: { url: marishaUrl, h: 150, face: { size: "382% auto", pos: "68% 19%" }, head: 20 },
-  nyssa: { url: nyssaUrl, h: 185, face: { size: "356% auto", pos: "58% 7%" }, head: 7 },
-  thoric: { url: thoricUrl, h: 195, face: { size: "294% auto", pos: "52% 1%" }, head: 2 },
+  liora: {
+    url: lioraUrl,
+    h: 165,
+    face: { url: lioraFace, size: "320% auto", pos: "66% 16%" },
+    head: 18,
+  },
+  marisha: {
+    url: marishaUrl,
+    h: 150,
+    face: { url: marishaFace, size: "290% auto", pos: "68% 0%" },
+    head: 20,
+  },
+  nyssa: {
+    url: nyssaUrl,
+    h: 185,
+    face: { url: nyssaFace, size: "280% auto", pos: "72% 13%" },
+    head: 7,
+  },
+  thoric: {
+    url: thoricUrl,
+    h: 195,
+    face: { url: thoricFace, size: "240% auto", pos: "49% 0%" },
+    head: 2,
+  },
 };

@@ -177,7 +177,8 @@ export function personas(state: GameState, road: ActData): Persona[] {
       y: KAELEN.y,
       icon: "eye",
       cloak: "#8a6a3a",
-      object: { w: 100, h: 150 },
+      // Up to the top of the pot, so the name plate sits above the dummy.
+      object: { w: 100, h: 175 },
       quote: "Hit it. It keeps count.",
       target: "dummy",
     },

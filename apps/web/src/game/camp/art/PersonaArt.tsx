@@ -1060,7 +1060,7 @@ export function PaintedFace(props: { id: string }) {
     <span
       className="painted-portrait"
       style={{
-        backgroundImage: `url(${art.url})`,
+        backgroundImage: `url(${art.face.url ?? art.url})`,
         backgroundSize: art.face.size,
         backgroundPosition: art.face.pos,
       }}
