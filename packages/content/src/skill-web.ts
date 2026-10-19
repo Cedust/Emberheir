@@ -908,13 +908,20 @@ const NOTABLE_RADIUS = 7;
 const MIDDLE_TRAVEL_RADIUS = 6.4;
 const RADIUS_STEP = 1.1;
 const SPOKE_TURN = 13;
+/**
+ * The middle travel node forks off the last spoke, outwards and a little to its side, so the
+ * Ward bud grows on as a side branch of that spoke (Timo 2026-10-19: no twig growing back).
+ */
+const MIDDLE_TRAVEL_TURN = 20;
 /** The Ward bud: two nodes and its Notable, outwards from the middle travel node. */
 const WARD_RADII = [8.1, 9.15, 10.25] as const;
+const WARD_TURN = 21;
 const FORK_TURN = 3.2;
 /** Angle to the travel nodes of a region off the ring (twice the turn to them). */
 const DEFAULT_GAP = 40;
-/** Rune Sockets sit on the travel line between the inner and the middle ring. */
-const SOCKET_RADIUS = 4.25;
+/** Rune Sockets hang off the middle travel node, outwards beside the Ward bud. */
+const SOCKET_RADIUS = 7.3;
+const SOCKET_TURN = 26;
 
 const slug = (name: string) =>
   name
@@ -1014,9 +1021,13 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
       ),
     );
     add(
-      plain(region, region.middleTravel, "minor", polar(MIDDLE_TRAVEL_RADIUS, travel), [
-        id(region, region.ward.nodes[0]),
-      ]),
+      plain(
+        region,
+        region.middleTravel,
+        "minor",
+        polar(MIDDLE_TRAVEL_RADIUS, region.angle + MIDDLE_TRAVEL_TURN),
+        [id(region, region.ward.nodes[0])],
+      ),
     );
 
     region.spokes.forEach((spoke, i) => {
@@ -1081,7 +1092,7 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
       }
     });
 
-    // A Rune Socket (neuausrichtung-v1.md 4.2) between the inner and the middle ring.
+    // A Rune Socket (neuausrichtung-v1.md 4.2) on a short twig off the middle travel node.
     add({
       id: `${region.id}-rune-socket`,
       name: "Rune Socket",
@@ -1090,11 +1101,11 @@ function buildWeb(): { nodes: SkillNode[]; classStarts: Record<string, string> }
       kind: "socket",
       description: "Holds a Rune from your pouch and gives its web effect. Kaelen sets it.",
       links: [middleId],
-      ...polar(SOCKET_RADIUS, travel),
+      ...polar(SOCKET_RADIUS, region.angle + SOCKET_TURN),
     });
 
-    // The Ward bud grows out of the middle travel node, between this region and the next.
-    const wardAngle = travel + region.ward.turn;
+    // The Ward bud grows on out of the middle travel node.
+    const wardAngle = region.angle + WARD_TURN + region.ward.turn;
     const wardIds = [...region.ward.nodes, region.ward.notable].map((n) => id(region, n));
     region.ward.nodes.forEach((spec, k) => {
       add(
