@@ -3,6 +3,7 @@ import { COMBAT } from "./constants";
 import type { CombatEvent } from "./events";
 import { Fight, runFight } from "./fight";
 import { heavyHitCap } from "./fighter";
+import { mergeRules } from "./rules";
 import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
 import type { CombatantSetup, SkillDefinition, SlotModifier, WeaponDefinition } from "./types";
@@ -445,6 +446,19 @@ describe("Fight", () => {
       expect(ofType(fight.events, "hit")[0]?.damage).toBe(5);
     });
 
+    it("discounts never take a skill below half its Heat Cost", () => {
+      const hero = setup({
+        bonuses: NO_CRIT,
+        rotation: [{ skill: SKILL_B, modifiers: ["thrifty"] }],
+        rules: { skillCostMultiplier: 0.2 },
+      });
+      const fight = new Fight(hero, dummy(), 1);
+      // 30 × 0.2 × 0.85 would be 5; the floor is 15.
+      expect(fight.snapshot().hero.rotation[0]?.heatCost).toBe(15);
+      fight.advance(3.01);
+      expect(ofType(fight.events, "skill")[0]).toMatchObject({ heatCost: 15 });
+    });
+
     it("noHeatDecay keeps Cooling Heat without hits", () => {
       const idle: WeaponDefinition = {
         ...TEST_WEAPON,
@@ -848,12 +862,33 @@ describe("Affliction effects", () => {
     expect(fight.snapshot().hero.maxLife).toBe(110);
   });
 
-  it("the hit damage rule raises hits and the Bleed they cause (Warrior: Iron Blood)", () => {
+  it("the hit damage rule raises hits, not the Bleed they cause (Warrior: Iron Blood)", () => {
     const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rules: { hitDamage: 1.2 } });
     const fight = new Fight(hero, dummy(), 1);
     fight.advance(2.05);
     expect(ofType(fight.events, "hit")[0]?.damage).toBe(12);
-    expect(ofType(fight.events, "dot")[0]?.damage).toBe(6);
+    // Ailments grow from the hit before the "more" pool: they have their own DoT pool.
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(5);
+  });
+
+  it("a Crit does not make the Bleed it causes stronger", () => {
+    const hero = setup({ weapon: bleeding, bonuses: { critChance: 1 } });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    expect(ofType(fight.events, "hit")[0]?.crit).toBe(true);
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(5);
+  });
+
+  it("DoT bonuses add up in their own pool", () => {
+    const hero = setup({
+      weapon: bleeding,
+      bonuses: NO_CRIT,
+      rules: mergeRules({ dotDamage: 1.5 }, { ailmentDamage: { bleed: 1.5 } }),
+    });
+    const fight = new Fight(hero, dummy(), 1);
+    fight.advance(2.05);
+    // 5 × (1 + 0.5 + 0.5) = 10, not 5 × 1.5 × 1.5.
+    expect(ofType(fight.events, "dot")[0]?.damage).toBe(10);
   });
 
   it("damage taken counts once on a DoT: in its ticks, not again in the hit it grew from", () => {

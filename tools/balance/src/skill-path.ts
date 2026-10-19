@@ -21,7 +21,8 @@ export function spendSkillPoints(
 
 /**
  * Rune Sockets of the Ash Tree: an empty learned socket takes the highest Rune of which the pouch
- * holds more than two (two stay for Runeword recipes, like the combining rule).
+ * holds more than two (two stay for Runeword recipes, like the combining rule) and that is in no
+ * other socket yet (each Rune works once).
  */
 function fillWebSockets(state: GameState, data: GameData): GameState {
   let s = state;
@@ -30,7 +31,10 @@ function fillWebSockets(state: GameState, data: GameData): GameState {
   );
   for (const socket of sockets) {
     const spare = [...data.items.runes.values()]
-      .filter((r) => (s.wallet.runes[r.id] ?? 0) > 2)
+      .filter(
+        (r) =>
+          (s.wallet.runes[r.id] ?? 0) > 2 && !Object.values(s.hero.webRunes ?? {}).includes(r.id),
+      )
       .sort((a, b) => b.rank - a.rank)[0];
     if (!spare) break;
     s = applyAction(s, data, { type: "socketWebRune", nodeId: socket.id, runeId: spare.id });

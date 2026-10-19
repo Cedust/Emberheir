@@ -269,6 +269,13 @@ Endgame **Wildfire I–X**.
   längere Ailments. Längere Dauer gibt es nur als Regel einzelner Nodes. Immolate löst Combust dreifach aus.
 
 - **Crit Damage ist fest 150 %** (nur Crit Chance skaliert; Ausnahmen über einzelne Keystones).
+- **Schadensformel mit festen Töpfen** (Timo 2026-10-19, `balancing-neustart-v1.md` Schritt 2):
+  Treffer = Basis (Waffe/Spell × Skill) × (1 + Increased aus Gear/Attributen) × (1 + **More**) × Crit × Armor/Resistance
+  × Damage Taken. Alle „X % more“ aus Ash Tree, Mastery, Heirloom, Keystones und Class Trait **addieren sich** in
+  einem Topf; nur Abzüge („10 % less“) multiplizieren. Overcharge und Arcane Conduit zählen in den More-Topf.
+- **DoTs** wachsen aus dem Treffer **vor** Crit, More und Damage Taken. Sie haben einen eigenen, additiven
+  **DoT-Topf** (DoT-Boni, Boni des einzelnen Ailments, bedingte Ailment-Boni, Lingering, Fury). Cash In legt Skill
+  Damage in diesen Topf, statt ihn zu multiplizieren.
 - **Sunder** (Debuff, senkt Armor stapelnd) ≠ **Physical Penetration** (ignoriert Armor pro Treffer).
 
 ### 4.3 Defense
@@ -301,6 +308,8 @@ Endgame **Wildfire I–X**.
 
 - **Slot Modifiers:** Thrifty (−15 % Heat Cost), Empowered (+1 Skill Level), Overcharge (Rest-Heat bis +50 % Wirkung),
   Reverb (selten, 20 % gratis wiederholen).
+- **Heat-Kosten** fallen durch Rabatte nie unter **50 %** der eigenen Kosten (Timo 2026-10-19). Nur ausdrückliche
+  Gratis-Regeln (Whirl, Ignition, Vigil, Master of Quake) gehen darunter.
 
 ---
 
@@ -394,12 +403,19 @@ Endgame **Wildfire I–X**.
 - **Hoheitsgebiete** (`neuausrichtung-v1.md` 2): Travel-Nodes geben nur Defense (Life, Armor, Barrier, Evasion,
   Tenacity; im Stamm auch Block und Resistances). **Notables** sind bedingt oder haben eine Regel; Conversion
   (Searing Steel, Arcane Edge, Void Ember) öffnet Hybride.
+- **Keystones tauschen nie Schaden gegen Überleben** (Timo 2026-10-19): kein „+X % Schaden genommen“, „Life ×0.8“
+  oder „keine Barrier“. Die Kosten bleiben auf derselben Achse (Unyielding: Barrier lädt nicht nach; Juggernaut,
+  Glass Focus, Skirmish, Bastion, Glass Cannon: Skills kosten 20 % mehr Heat; Grand Strategy: Default Attack −15 %;
+  Elemental Overload: Treffer −10 %; Vanishing Act: −10 % Precision). Glass Cannon behält die Barrier und schlägt mit
+  15 % davon zu. Deep Cuts (Sword): Bleed aus Crits ist doppelt so stark (vorher verdoppelte jeder Crit den laufenden
+  Bleed ohne Grenze).
 - **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4): Final Mercy,
   Unyielding (Steel), Blood Price, Blood and Bile (Blood), Slow Death (Venom), Black Flame (Flame), Spellblade (Storm),
   Elemental Overload (Frost), Pact of Ash (Void), Juggernaut (Stamm), Glass Focus, Grand Strategy, Arcane Conduit
   (Wurzeln).
 - **Rune Sockets** (9, einer pro Region): ein gelernter Socket nimmt bei Kaelen eine Rune aus dem Beutel und gibt ihre
-  **Web-Wirkung**. Herausnehmen oder Vergessen legt die Rune zurück in den Beutel.
+  **Web-Wirkung**. Herausnehmen oder Vergessen legt die Rune zurück in den Beutel. **Jede Rune nur einmal** im Ash
+  Tree (Timo 2026-10-19).
 
 ### 5.4 Items ✅ (`item-system-v1.md`, `legendary-runes-v1.md`)
 - **Slots:** Off Hand, Helm, Body Armor, Gloves, Boots, Belt, Amulet, 2× Ring, **Charm** (nur Trigger-Affixe).

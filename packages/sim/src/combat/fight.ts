@@ -20,7 +20,6 @@ import {
   REACTION_PATIENCE,
   refreshStats,
   attackRate,
-  conditionHolds,
 } from "./fighter";
 import { addHeat, stepHeat, triggerThreshold } from "./heat";
 import { dealDamage, defaultAttack, extraAttack, heal, inflict, rechargeBarrier } from "./hits";
@@ -68,22 +67,12 @@ function stepStatus(core: FightCore, f: Fighter, dt: number): void {
   });
   f.ailments = states;
   for (const tick of ticks) {
-    let byAilment = source.setup.rules?.ailmentDamage?.[tick.ailment] ?? 1;
-    // Bleeding Out, Master of Smolder: more ailment damage while a condition holds.
-    for (const e of [
-      ...(swr?.ailmentDamageWhen ?? []),
-      ...(source.setup.rules?.ailmentDamageWhen ?? []),
-    ]) {
-      if (e.ailment === tick.ailment && conditionHolds(core, source, e.condition)) {
-        byAilment *= 1 + e.amount;
-      }
-    }
     const hide = f.perks.has("thickSkin") ? 1 - PERK.thickSkinDotTaken : 1;
     // Collapse: the burst of Corruption at full growth (Clarity makes it stronger).
     const burst = tick.collapse ? payoffFactor(core, source) : 1;
     const damage = Math.max(
       1,
-      Math.round(tick.damage * dotFactor(core, f) * byAilment * hide * burst),
+      Math.round(tick.damage * dotFactor(core, f, tick.ailment) * hide * burst),
     );
     emit(core, { t: fightTime(core), type: "dot", side: f.side, ailment: tick.ailment, damage });
     if (tick.collapse) payoff(core, source, "collapse", damage);
@@ -227,15 +216,18 @@ function takeTurn(core: FightCore, f: Fighter): void {
     const paid = cost + overcharge;
     f.heat -= paid;
     advanceRotation(f);
-    const power = 1 + (conduit ? overcharge / 100 : Math.min(0.5, overcharge / 100));
+    // The Heat paid above the cost is a bonus of the "more" pool.
+    const more = conduit ? overcharge / 100 : Math.min(0.5, overcharge / 100);
     castSlot(
       core,
       f,
       slot.skill,
       slotLevel(slot.level, slot.modifiers),
       paid,
-      power,
+      1,
       slot.modifiers,
+      undefined,
+      more,
     );
     const capstone = f.setup.capstone;
     if (!core.result && capstone?.kind === "echo" && capstone.slot === index) {

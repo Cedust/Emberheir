@@ -36,14 +36,14 @@ describe("conditional Notables", () => {
     expect(hits(fight.events).map((h) => h.damage)).toEqual([10, 15]);
   });
 
-  it("several bonuses multiply", () => {
+  it("several bonuses add up in the more pool", () => {
     const rules: CombatRules = {
       conditionalDamage: [
         { condition: { kind: "enemyBelow", fraction: 2 }, amount: 0.5 },
         { condition: { kind: "enemyBelow", fraction: 2 }, amount: 1 },
       ],
     };
-    expect(hits(play(hero(rules), dummy(), 1.05).events)[0]?.damage).toBe(30);
+    expect(hits(play(hero(rules), dummy(), 1.05).events)[0]?.damage).toBe(25);
   });
 
   it("Heat at least: the hit after enough Heat is stronger", () => {

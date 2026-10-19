@@ -681,8 +681,8 @@ const MASTERIES: readonly MasterySpec[] = [
     ],
     keystones: keystones(
       tierName("Skirmish"),
-      (s) => ({ defaultAttackDamage: 1.3 + s * 0.1, damageTaken: 0.1 }),
-      (s) => `Your Default Attack deals ${30 + s * 10} % more damage. You take 10 % more damage.`,
+      (s) => ({ defaultAttackDamage: 1.3 + s * 0.1, skillCostMultiplier: 1.2 }),
+      (s) => `Your Default Attack deals ${30 + s * 10} % more damage. Skills cost 20 % more Heat.`,
     ),
     deeper: [
       strikesTwice("double-shot", "Double Shot", 4),

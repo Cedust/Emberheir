@@ -48,8 +48,8 @@ import type { AilmentChance, SkillDefinition, SkillEffect } from "./types";
 /** Casting a skill (Rotation, Reaction, Opening Move, Echo) and what its effects do. */
 
 /**
- * Casts a skill. `power` scales its hits (Overcharge, Echo); `via` marks casts that did not
- * come from the Rotation.
+ * Casts a skill. `power` scales its hits (Echo, Spellfire); `more` joins the "more" pool of its
+ * hits (Overcharge, Arcane Conduit); `via` marks casts that did not come from the Rotation.
  */
 export function castSkill(
   core: FightCore,
@@ -59,6 +59,7 @@ export function castSkill(
   heatCost = 0,
   power = 1,
   via?: "reaction" | "reverb" | "echo" | "opening" | "twin",
+  more = 0,
 ): void {
   emit(core, {
     t: fightTime(core),
@@ -105,6 +106,7 @@ export function castSkill(
         const result = landHit(core, f, {
           source: skill.name,
           baseDamage: roll * hit.multiplier * levelScale * power,
+          ...(more ? { more } : {}),
           type: hit.damageType ?? f.setup.weapon.damageType,
           evadable: true,
           multiplier: lowLife && hit.lowLifeBonus ? hit.lowLifeBonus.multiplier : 1,
@@ -127,6 +129,7 @@ export function castSkill(
         const result = landHit(core, f, {
           source: skill.name,
           baseDamage: rollRange(core, hit.damage) * levelScale * (hit.falloff ?? 1) ** i * power,
+          ...(more ? { more } : {}),
           type: hit.infused ? f.setup.weapon.damageType : hit.damageType,
           evadable: false,
           multiplier: 1,
@@ -159,6 +162,7 @@ export function castSkill(
     landHit(core, f, {
       source: `${skill.name} (Spellblade)`,
       baseDamage: roll * blade.multiplier * power,
+      ...(more ? { more } : {}),
       type: f.setup.weapon.damageType,
       evadable: true,
       multiplier: 1,
@@ -308,7 +312,17 @@ function applySkillEffect(
         stacks: poisonStacks(target.ailments),
       });
       // Stacks over the cap burst at once for their remaining damage.
-      if (overflow > 0) dotBurst(core, f, target, overflow * payoffFactor(core, f), skill.name);
+      if (overflow > 0) {
+        dotBurst(
+          core,
+          f,
+          target,
+          overflow * payoffFactor(core, f),
+          skill.name,
+          "physical",
+          "poison",
+        );
+      }
       return;
     }
     case "heal":
@@ -388,7 +402,7 @@ function applySkillEffect(
 
 /**
  * Cash In: every DoT on the target ends and its remaining damage lands at once, as the skill's
- * own hit. It scales like the DoTs it ends, plus the skill's level and "more skill damage", and
+ * own hit. It scales like the DoTs it ends (their pool, with Skill Damage added to it), plus the skill's level, and
  * Lifesteal heals from it like from any hit.
  */
 function cashIn(
@@ -407,16 +421,15 @@ function cashIn(
     emit(core, { t: fightTime(core), type: "ailmentExpired", side: target.side, ailment });
   }
   const levelScale = 1 + COMBAT.attackDamagePerSkillLevel * (level - 1);
-  const skillDamage =
-    1 + (f.setup.weaponRules?.skillDamage ?? 0) + (f.setup.rules?.skillDamage ?? 0);
+  // Skill Damage joins the DoT pool instead of multiplying it.
+  const skillDamage = (f.setup.weaponRules?.skillDamage ?? 0) + (f.setup.rules?.skillDamage ?? 0);
   const damage = Math.max(
     1,
     Math.round(
       rest *
         multiplier *
         levelScale *
-        skillDamage *
-        dotFactor(core, target) *
+        dotFactor(core, target, undefined, skillDamage) *
         payoffFactor(core, f),
     ),
   );

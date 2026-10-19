@@ -173,7 +173,8 @@ export function forgetNode(state: GameState, data: GameData, nodeId: string): Ga
 
 /**
  * Kaelen: puts a Rune from the pouch into a learned Rune Socket of the web, or takes it out
- * (`runeId` null). A Rune already in the socket goes back into the pouch.
+ * (`runeId` null). A Rune already in the socket goes back into the pouch. Each Rune goes into one
+ * socket at most.
  */
 export function socketWebRune(
   state: GameState,
@@ -189,6 +190,11 @@ export function socketWebRune(
   if (runeId !== null) {
     if (!data.items.runes.has(runeId)) return fail(`Unknown Rune "${runeId}"`);
     if ((runes[runeId] ?? 0) <= 0) return fail("That Rune is not in the pouch");
+    // Each Rune works once in the Ash Tree (balancing-neustart-v1.md, step 2).
+    const elsewhere = Object.entries(state.hero.webRunes ?? {}).some(
+      ([id, r]) => id !== nodeId && r === runeId,
+    );
+    if (elsewhere) return fail("That Rune is already in another socket");
     runes[runeId] = (runes[runeId] ?? 0) - 1;
   }
   const old = state.hero.webRunes?.[nodeId];

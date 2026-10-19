@@ -12,7 +12,7 @@ import {
 import { COMBAT, MIGHTY_SHARE } from "./constants";
 import { resolveHit } from "./damage";
 import {
-  crescendoFactor,
+  crescendoBonus,
   damageTaken,
   dotFactor,
   ELEMENT_AILMENT,
@@ -35,13 +35,15 @@ import {
   usePerk,
   withStatAilmentChances,
   conditionHolds,
-  furyFactor,
+  furyBonus,
   huntersMarkPrecision,
   mark,
   weaponAilment,
 } from "./fighter";
 import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
 import { PERK } from "./perks";
+import { addBonus, addFactor, type DamagePool, emptyPool } from "./pools";
+import { damageSplit } from "./rules";
 import { checkReactionThresholds, react } from "./rotation";
 import { applyEffect, fireTriggers, tryTrigger } from "./trigger-effects";
 import type { AilmentChance, AilmentType, DamageType, RuleBonus, WeaponRules } from "./types";
@@ -87,6 +89,8 @@ interface HitOptions {
   readonly fromSkill?: boolean;
   /** Extra damage share that only a clean hit gets (Siege Engine). */
   readonly cleanBonus?: number;
+  /** Bonuses of this hit for the "more" pool (Default Attack bonuses, a charged Spark). */
+  readonly more?: number;
   /** Decides the Crit instead of the roll (Repeater). */
   readonly critOverride?: boolean;
 }
@@ -124,13 +128,16 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
     }
     payoff(core, f, sparkCrit ? "flashpoint" : "spark");
   }
-  const defaultDamage =
-    (f.setup.rules?.defaultAttackDamage ?? 1) *
-    (1 + (spark?.damage ?? 0)) *
-    (fromTrigger ? 1 + (wr?.extraAttackDamage ?? 0) : 1);
+  // Default Attack bonuses go into the "more" pool, its penalties stay "less".
+  const [defaultDamage, defaultMore] = damageSplit(
+    f.setup.rules?.defaultAttackDamage,
+    (f.setup.rules?.defaultAttackMore ?? 0) +
+      (spark?.damage ?? 0) +
+      (fromTrigger ? (wr?.extraAttackDamage ?? 0) : 0),
+  );
   if (trueShot) perk(core, f, "trueShot");
   const roll = weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min);
-  // Glass Cannon: the Barrier given up hits along with every Default Attack.
+  // Glass Cannon: part of the max Barrier hits along with every Default Attack.
   const glass = wr?.glassCannon ? f.glassBarrier * wr.glassCannon.share : 0;
   // Siege Engine: the Bolt sets off every Sunder stack on the target.
   const target = core.fighters[other(f.side)];
@@ -147,6 +154,7 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
       type: prism?.type ?? weapon.damageType,
       evadable: true,
       multiplier: defaultDamage,
+      ...(defaultMore ? { more: defaultMore } : {}),
       // A Keystone that weakens the Default Attack (Void-lord I, Black Flame) does not weaken the
       // ailments it carries.
       ...(defaultDamage < 1 ? { ailmentPower: 1 / defaultDamage } : {}),
@@ -255,6 +263,8 @@ function toxicCascade(core: FightCore, attacker: Fighter, defender: Fighter, sha
     defender,
     rest * payoffFactor(core, attacker),
     "Toxic Cascade",
+    "physical",
+    "poison",
   );
   burstLeech(core, attacker, dealt);
 }
@@ -347,6 +357,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand + mark));
   }
 
+  const pool = hitPool(core, attacker, defender, h, opener);
+
   // Quick Reflexes: the first attack of the fight misses.
   if (h.evadable && !h.fromTrigger && usePerk(defender, "quickReflexes")) {
     perk(core, defender, "quickReflexes");
@@ -370,19 +382,11 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         attacker.perks.has("armorbreaker") ? sundered : 0,
       ),
       attackerLevel: attacker.setup.level,
+      more: pool.more,
       multiplier:
         h.multiplier *
+        pool.less *
         (attacker.setup.damageMultiplier ?? 1) *
-        executeFactor(attacker.setup.rules, defender) *
-        (attacker.setup.rules?.hitDamage ?? 1) *
-        (defender.ailments.chill ? (attacker.setup.rules?.chilledDamage ?? 1) : 1) *
-        crescendoFactor(attacker) *
-        furyFactor(attacker) *
-        masteryDamageFactor(core, attacker, defender) *
-        (opener ? 1 + (wr?.openerDamage ?? 0) : 1) *
-        (h.fromSkill ? 1 + (wr?.skillDamage ?? 0) + (attacker.setup.rules?.skillDamage ?? 0) : 1) *
-        ruleFactor(core, attacker, attacker.setup.rules?.conditionalDamage) *
-        (attacker.setup.rules?.slowDeath?.hit ?? 1) *
         // Braced: right after a Block the defender takes less.
         (now <= defender.bracedUntil + 1e-9
           ? 1 - (defender.setup.weaponRules?.braced?.reduction ?? 0)
@@ -401,7 +405,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       ...(h.evadable && defender.setup.weaponRules?.parry
         ? { parry: defender.setup.weaponRules.parry }
         : {}),
-      cleanMultiplier: cleanMultiplier(attacker, defender, h, rolls),
+      cleanMore: cleanMore(attacker, defender, h, rolls),
       ...conversionOf(attacker, h.type),
       ...(h.critOverride !== undefined ? { critOverride: h.critOverride } : {}),
     },
@@ -494,11 +498,12 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     if (rolls) cleanHit(core, attacker, defender, h, damage);
     arcChain(core, attacker, defender, damage);
     if (core.result) return "clean";
-    // Ailments grow from the hit before "damage taken" (Shock, Keystones): their ticks take it
-    // again on their own, so it counts once, not twice.
+    // Ailments grow from the hit before Crit, the "more" pool and "damage taken" (step 2): their
+    // ticks take the DoT pool and "damage taken" on their own, so nothing counts twice.
     // Slow Death weakens the hit, not the ailments it carries.
     const hitBase =
-      damage / (1 + damageTaken(defender)) / (attacker.setup.rules?.slowDeath?.hit ?? 1);
+      Math.min(outcome.ailmentDamage, damage / (1 + damageTaken(defender))) /
+      (attacker.setup.rules?.slowDeath?.hit ?? 1);
     const ailmentBase = hitBase * (h.ailmentPower ?? 1);
     const deepWound = outcome.crit ? (wr?.critBleedPower ?? 1) : 1;
     for (const { ailment, chance } of withStatAilmentChances(surge(attacker, h), attacker.stats)) {
@@ -655,21 +660,17 @@ function defenderStats(attacker: Fighter, defender: Fighter) {
 }
 
 /** What only a clean hit gets: Mighty Hit bonuses, Clean Line, Siege Engine. */
-function cleanMultiplier(
-  attacker: Fighter,
-  defender: Fighter,
-  h: HitOptions,
-  rolls: boolean,
-): number {
+/** More damage only a clean hit gets (Siege Engine, Clean Line, Mighty Hits), added up. */
+function cleanMore(attacker: Fighter, defender: Fighter, h: HitOptions, rolls: boolean): number {
   const wr = attacker.setup.weaponRules;
-  let m = 1 + (h.cleanBonus ?? 0);
-  if (rolls && attacker.cleanLineReady) m *= 1 + (wr?.cleanLine?.bonus ?? 0);
+  let more = h.cleanBonus ?? 0;
+  if (rolls && attacker.cleanLineReady) more += wr?.cleanLine?.bonus ?? 0;
   if (rolls && h.mighty) {
-    m *= 1 + (wr?.mightyDamage ?? 0);
+    more += wr?.mightyDamage ?? 0;
     const exe = wr?.mightyExecute;
-    if (exe && defender.life / defender.stats.maxLife < exe.below) m *= 1 + exe.bonus;
+    if (exe && defender.life / defender.stats.maxLife < exe.below) more += exe.bonus;
   }
-  return m;
+  return more;
 }
 
 /** A Mighty Hit landed: stun, Sunder, Bleed, Heat drain and Rupture Plate. */
@@ -719,11 +720,6 @@ export function releaseStored(core: FightCore, f: Fighter, source: string): void
 }
 
 /** Skill Web: the product of the "more" bonuses whose condition holds. */
-function ruleFactor(core: FightCore, f: Fighter, bonuses: readonly RuleBonus[] | undefined) {
-  let factor = 1;
-  for (const b of bonuses ?? []) if (conditionHolds(core, f, b.condition)) factor *= 1 + b.amount;
-  return factor;
-}
 
 /** Skill Web: the sum of the bonuses whose condition holds. */
 function ruleBonus(core: FightCore, f: Fighter, bonuses: readonly RuleBonus[] | undefined) {
@@ -752,27 +748,56 @@ function conversionOf(
 }
 
 /** Weapon Mastery multipliers on own hit damage. */
-function masteryDamageFactor(core: FightCore, attacker: Fighter, defender: Fighter): number {
+/**
+ * The "more" pool of one hit (balancing-neustart-v1.md, step 2): every damage bonus of Ash Tree,
+ * Mastery, Heirloom, Keystones and Class Trait adds up; penalties ("hits deal 10 % less") multiply.
+ */
+function hitPool(
+  core: FightCore,
+  attacker: Fighter,
+  defender: Fighter,
+  h: HitOptions,
+  opener: boolean,
+): DamagePool {
+  const rules = attacker.setup.rules;
   const wr = attacker.setup.weaponRules;
-  if (!wr) return 1;
-  let extra = attacker.rampage;
+  const pool = emptyPool();
+  pool.more += h.more ?? 0;
+  addFactor(pool, executeFactor(rules, defender));
+  addFactor(pool, rules?.hitDamage);
+  pool.more += rules?.hitMore ?? 0;
+  if (defender.ailments.chill) {
+    addFactor(pool, rules?.chilledDamage);
+    pool.more += rules?.chilledMore ?? 0;
+  }
+  pool.more += crescendoBonus(attacker) + furyBonus(attacker);
+  if (h.fromSkill) pool.more += (wr?.skillDamage ?? 0) + (rules?.skillDamage ?? 0);
+  for (const b of rules?.conditionalDamage ?? []) {
+    if (conditionHolds(core, attacker, b.condition)) addBonus(pool, b.amount);
+  }
+  addFactor(pool, rules?.slowDeath?.hit);
+  if (!wr) return pool;
+  // Heirloom: Rampage, conditional bonuses, Patience, Marked Prey, Eclipse, Assassinate.
+  addFactor(pool, wr.damageDealt);
+  pool.more += attacker.rampage;
   for (const e of wr.conditionalDamage ?? []) {
-    if (conditionHolds(core, attacker, e.condition)) extra += e.amount;
+    if (conditionHolds(core, attacker, e.condition)) addBonus(pool, e.amount);
   }
   if (wr.patience) {
-    extra += Math.min(
+    pool.more += Math.min(
       wr.patience.max,
       wr.patience.perSecond * (fightTime(core) - attacker.lastSkillAt),
     );
   }
-  if (wr.mark && attacker.marked) extra += wr.mark.bonus;
+  if (wr.mark && attacker.marked) pool.more += wr.mark.bonus;
   if (wr.damagePerAilment) {
     const running = AILMENT_TYPES.filter((a) =>
       a === "poison" ? poisonStacks(defender.ailments) > 0 : defender.ailments[a] !== undefined,
     ).length;
-    extra += wr.damagePerAilment * running;
+    pool.more += wr.damagePerAilment * running;
   }
-  return (wr.damageDealt ?? 1) * (1 + extra);
+  if (opener) pool.more += wr.openerDamage ?? 0;
+  return pool;
 }
 
 /** A Glancing Blow: Heat from Loaded Spring or Flowing Blade, the streak ends. */
@@ -886,13 +911,6 @@ function critMastery(core: FightCore, attacker: Fighter, defender: Fighter, dama
     defender.barrier = Math.max(0, defender.barrier - defender.stats.barrier * wr.critBarrierShred);
     if (defender.barrier <= 0) react(defender, "barrierBreaks");
   }
-  const bleed = defender.ailments.bleed;
-  if (wr?.critBleedMultiplier && bleed) {
-    defender.ailments = {
-      ...defender.ailments,
-      bleed: { ...bleed, damagePerSecond: bleed.damagePerSecond * wr.critBleedMultiplier },
-    };
-  }
   for (let i = 0; i < (wr?.critPoisonStacks ?? 0); i++) {
     inflict(core, attacker, defender, "poison", damage);
   }
@@ -976,7 +994,7 @@ export function inflict(
   if (pushed) {
     const rest = pushed.damagePerSecond * pushed.remaining * payoffFactor(core, attacker);
     if (rest > 0) {
-      const dealt = dotBurst(core, attacker, defender, rest, "Overflow");
+      const dealt = dotBurst(core, attacker, defender, rest, "Overflow", "physical", "poison");
       payoff(core, attacker, "overflow", dealt);
       burstLeech(core, attacker, dealt);
       if (core.result) return;
@@ -1032,7 +1050,7 @@ export function combust(core: FightCore, attacker: Fighter, defender: Fighter, t
   const rest = remainingBurnDamage(defender.ailments);
   if (rest <= 0) return;
   const amount = rest * COMBAT.combustShare * times * payoffFactor(core, attacker);
-  const dealt = dotBurst(core, attacker, defender, amount, "Combust", "fire");
+  const dealt = dotBurst(core, attacker, defender, amount, "Combust", "fire", "burn");
   payoff(core, attacker, "combust", dealt);
 }
 
@@ -1052,7 +1070,15 @@ function poisonBurst(
     side: defender.side,
     ailment: "poison",
   });
-  const damage = dotBurst(core, attacker, defender, rest * multiplier, "Toxic Bloom");
+  const damage = dotBurst(
+    core,
+    attacker,
+    defender,
+    rest * multiplier,
+    "Toxic Bloom",
+    "physical",
+    "poison",
+  );
   if (leech && !core.result) heal(core, attacker, damage * leech);
   burstLeech(core, attacker, damage);
 }
@@ -1068,8 +1094,10 @@ export function dotBurst(
   amount: number,
   source: string,
   damageType: DamageType = "physical",
+  /** The ailment the burst comes from: its own DoT bonuses count. */
+  ailment?: AilmentType,
 ): number {
-  const damage = Math.max(1, Math.round(amount * dotFactor(core, defender)));
+  const damage = Math.max(1, Math.round(amount * dotFactor(core, defender, ailment)));
   emit(core, {
     t: fightTime(core),
     type: "hit",

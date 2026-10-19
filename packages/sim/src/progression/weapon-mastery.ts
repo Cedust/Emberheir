@@ -732,12 +732,7 @@ export type MasteryWeaponRules = Omit<WeaponRules, "sunder"> & {
 /** Combines Weapon Mastery rules: numbers add (multipliers multiply), lists join, flags switch on. */
 export function mergeWeaponRules(...sources: readonly MasteryWeaponRules[]): MasteryWeaponRules {
   const out: Record<string, unknown> = {};
-  const multiply = new Set([
-    "damageDealt",
-    "stunDuration",
-    "blockMultiplier",
-    "critBleedMultiplier",
-  ]);
+  const multiply = new Set(["damageDealt", "stunDuration", "blockMultiplier", "critBleedPower"]);
   const lists = new Set([
     "conditionalDamage",
     "conditionalAttackSpeed",
