@@ -7,7 +7,7 @@ import { Rng } from "../../rng";
 import { PROGRESSION } from "../constants";
 import { applyEliteModifiers, type EliteModifier } from "../elites";
 import { type OmenEffects } from "../omens";
-import { type EnemyRank } from "../leveling";
+import { levelGapMalus, type EnemyRank } from "../leveling";
 import { finaleEchoes, getAct, harvestAct, stageMonsterLevel } from "./acts";
 import { heroSetup } from "./hero-build";
 import { omenEffectsOf } from "./omens";
@@ -132,9 +132,13 @@ export function currentFight(
 ): { readonly hero: CombatantSetup; readonly enemy: CombatantSetup; readonly seed: number } {
   const run = state.run;
   if (!run || run.phase !== "fight" || !run.encounter) return fail("No fight in progress");
+  const enemy = enemySetup(run.encounter, run.actId, data);
+  const malus = run.wildfire ? 0 : levelGapMalus(state.hero.level, run.encounter.level);
   return {
     hero: heroSetup(state, data).setup,
-    enemy: enemySetup(run.encounter, run.actId, data),
+    enemy: malus
+      ? { ...enemy, damageMultiplier: (enemy.damageMultiplier ?? 1) * (1 + malus) }
+      : enemy,
     seed: run.encounter.seed,
   };
 }

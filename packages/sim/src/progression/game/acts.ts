@@ -219,8 +219,8 @@ export function gateStages(act: ActData): readonly number[] {
 }
 
 /**
- * The wall of a stage (PROGRESSION.wall): only in the run's newest act. The boss takes the run's
- * full strength; before it the act climbs in teeth (neuausrichtung-v1.md 5.3): normal stages ramp
+ * The wall of a stage (PROGRESSION.wall): only in the run's newest act. The boss takes the full
+ * wall; before it the act climbs in teeth (neuausrichtung-v1.md 5.3): normal stages ramp
  * up stretch by stretch, each Gatekeeper is a peak above the stretch before it. `null` = no wall.
  */
 export function stageWall(
@@ -231,18 +231,17 @@ export function stageWall(
 ): { readonly life: number; readonly damage: number; readonly gate: boolean } | null {
   if (!isWallAct(data, act, prestige)) return null;
   const w = PROGRESSION.wall;
-  const strength = prestige === 0 ? w.strength.firstRun : w.strength.later;
+  const boss = prestige === 0 ? w.boss.firstRun : w.boss.later;
   // A wall is a fight that a few levels or better gear win (balance-grundlagen-v1.md D): the
-  // enemy hits harder, with only a little more Life so the fight stays short. Heavy Attacks stay
-  // below `COMBAT.heavyHitCap`, so it is never a one-shot lottery.
-  const at = (strength: number, gate: boolean) => ({
-    life: strength ** w.lifeExponent,
-    damage: strength,
+  // enemy lasts longer and hits harder. Heavy Attacks stay below `COMBAT.heavyHitCap`, so it is
+  // never a one-shot lottery.
+  const at = (share: number, gate: boolean) => ({
+    life: 1 + (boss.life - 1) * share,
+    damage: 1 + (boss.damage - 1) * share,
     gate,
   });
-  const part = (share: number) => 1 + (strength - 1) * share;
-  if (stage >= act.stages) return at(strength, false);
-  return at(part(sawtoothShare(act, stage)), gateStages(act).includes(stage));
+  if (stage >= act.stages) return at(1, false);
+  return at(sawtoothShare(act, stage), gateStages(act).includes(stage));
 }
 
 /** Share of the wall on a stage before the boss: a Gatekeeper's peak or its stretch's ramp. */

@@ -31,15 +31,13 @@ describe("Walls of the newest act", () => {
     const late = stageWall(data, NEXT_ACT, 14, 1);
     const gate = stageWall(data, NEXT_ACT, 10, 1);
     const boss = stageWall(data, NEXT_ACT, 15, 1);
-    const strength = PROGRESSION.wall.strength.later;
-    const share = (s: number) => 1 + (strength - 1) * s;
+    const wall = PROGRESSION.wall.boss.later;
+    const share = (s: number) => 1 + (wall.damage - 1) * s;
     expect(first?.damage).toBeCloseTo(share(PROGRESSION.wall.ramps[0]?.[0] ?? 0));
     expect(late?.damage).toBeCloseTo(share(PROGRESSION.wall.ramps[2]?.[1] ?? 0));
     expect(gate?.gate).toBe(true);
     expect(boss?.damage).toBeGreaterThan(late?.damage ?? 0);
-    expect(boss?.damage).toBe(strength);
-    // Mostly damage: Life takes only the square root, so the fight stays short.
-    expect(boss?.life).toBeCloseTo(Math.sqrt(boss?.damage ?? 0));
+    expect(boss).toMatchObject(wall);
   });
 
   it("climbs in teeth: each Gatekeeper is a peak above the stretch around it", () => {

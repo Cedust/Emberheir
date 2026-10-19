@@ -58,12 +58,12 @@ export const MONSTER_TABLE: readonly {
   { level: 8, life: 1.3, damage: 1.75 },
   { level: 18, life: 6.1, damage: 4 },
   { level: 28, life: 19, damage: 10 },
-  { level: 43, life: 45, damage: 29 },
-  { level: 58, life: 135, damage: 77 },
-  { level: 73, life: 360, damage: 180 },
-  { level: 88, life: 1090, damage: 525 },
-  { level: 100, life: 1760, damage: 945 },
-  { level: 110, life: 2540, damage: 1490 },
+  { level: 43, life: 36, damage: 29 },
+  { level: 58, life: 105, damage: 77 },
+  { level: 73, life: 280, damage: 180 },
+  { level: 88, life: 850, damage: 525 },
+  { level: 100, life: 1370, damage: 945 },
+  { level: 110, life: 1980, damage: 1490 },
 ];
 
 /**

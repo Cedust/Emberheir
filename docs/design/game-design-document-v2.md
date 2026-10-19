@@ -205,7 +205,10 @@ Endgame **Wildfire I–X**.
   (15, 25, 35, 50, 65, 80), das Band steigt gleichmäßig über alle Stages bis zum neuen Boss. So droppt jeder Act
   aktuelles Gear.
 - Jedes Level: **+4 % Base Life, +3 % Weapon Damage** (zusammen ~+7 % Kampfkraft). Sonst nichts.
-- XP-Malus: −2 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
+- XP-Malus: −4 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
+- **Level-Malus** (Timo 19.10., mild): Ein Gegner über dem Level des Helden trifft +4 % härter pro Level Abstand,
+  höchstens +40 % (nicht im Wildfire, dort endet das Level bei 100). Das Gegner-Level steht dann rot, der Tooltip
+  nennt den Aufschlag.
 - Level ist der **sichere, langsame Hebel** gegen eine Wand; Gear der schnelle, glücksabhängige.
 
 ### 3.2 Attribute ✅ (`attribute-v1.md`)
@@ -478,8 +481,8 @@ Endgame **Wildfire I–X**.
   nur noch:
   - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,4; Elite Life ×2,1, Schaden ×1,05; Gatekeeper
     Life ×2,2; Boss Life ×3, Schaden ×0,75. Champions +30 % Life.
-  - **Wand** im neuesten Act: Der Boss trifft mit der Wand-Stärke (Run 1: 2,4, ab Run 2: 8), Life nur mit deren
-    Wurzel. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
+  - **Wand** im neuesten Act (Timo 19.10.: länger über Life, Run 1 darf fordern): Boss Run 1 Life ×3, Schaden ×3,5;
+    ab Run 2 Life ×4,5, Schaden ×6. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
     30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %.
   - Der Harvester trifft wie ein halber Boss seines Levels (seine Phasen tragen sechs Boss-Mechaniken).
   - Entfallen: Run Pressure, Kampfdauer- und Boss-Life-Faktoren, Elite-Faktoren, Harvester-Anteil, `endgameBoss`.

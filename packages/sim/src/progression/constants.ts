@@ -138,10 +138,15 @@ export const PROGRESSION = {
    * `xpSoftPenalty` per level up to `xpSoftGap` levels (farming a few levels pays), then
    * `xpPenaltyPerLevel` more per level, at least `xpMinFactor`.
    */
-  xpSoftPenalty: 0.02,
+  xpSoftPenalty: 0.04,
   xpSoftGap: 5,
   xpPenaltyPerLevel: 0.1,
   xpMinFactor: 0.1,
+  /**
+   * Level gap (Timo 2026-10-19, "mild"): an enemy above the hero's level hits this much harder per
+   * level of the gap, at most `max`. Not in the Wildfire, where the hero cannot level past 100.
+   */
+  levelGap: { perLevel: 0.04, max: 0.4 },
   /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
   xpBonusPerLevel: 0.05,
   xpMaxFactor: 2,
@@ -291,26 +296,23 @@ export const PROGRESSION = {
   worldBelowCap: 5,
   /**
    * Walls (spielzeit-v1.md, balance-grundlagen-v1.md D): the newest act of a run is where the hero
-   * has to grow. Its boss hits with the run's `strength` (Life only takes its square root, so the
-   * fight stays short; Heavy Attacks stay under `COMBAT.heavyHitCap`). Index 0 = run 1, which
-   * stays gentle.
+   * has to grow. Its boss takes `boss` (Heavy Attacks stay under `COMBAT.heavyHitCap`).
    *
    * Sägezahn (neuausrichtung-v1.md 5.3): the act climbs in teeth instead of one cliff. The
-   * Gatekeepers on the Waymarks (stages 5 and 10) take `gates` of the strength, the normal stages
+   * Gatekeepers on the Waymarks (stages 5 and 10) take `gates` of the boss wall, the normal stages
    * between them ramp along `ramps` (one [from, to] per stretch: before the first Gatekeeper,
-   * between them, after the last). Shares of the strength's excess over 1. Start values from the
+   * between them, after the last). Shares of the wall's excess over 1. Start values from the
    * balance CLI (balance-messung-v1.md 6, run D): deaths in the newest act 9 % normal, 12 % Elite,
    * 29 % Gatekeeper, 50 % boss.
    */
   wall: {
     /**
-     * Strength of the run's newest act (step 3: one rule instead of a number per run): the Monster
-     * Level already follows the hero, so every run from the second on gets the same wall; run 1
-     * stays gentle.
+     * Life and damage of the newest act's boss (step 3: one rule instead of a number per run): the
+     * Monster Level already follows the hero, so every run from the second on gets the same wall.
+     * Timo (2026-10-19): longer fights through more boss Life rather than damage, and run 1 is no
+     * walk in the park either. Damage still rises, so defense keeps counting.
      */
-    strength: { firstRun: 2.4, later: 8 },
-    /** Damage takes the full strength, Life only strength^this (√): short fights, no sponges. */
-    lifeExponent: 0.5,
+    boss: { firstRun: { life: 3, damage: 3.5 }, later: { life: 4.5, damage: 6 } },
     gates: [0.4, 0.45],
     ramps: [
       [0.15, 0.3],

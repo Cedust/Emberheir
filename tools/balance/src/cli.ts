@@ -19,6 +19,7 @@ import { BUILDS, withMainMastery } from "./builds";
 import { type BudgetRow, LAYERS, buildBudget, meanBudget } from "./budget";
 import { simulateMatchup } from "./simulate";
 import { type PowerSample, powerCurve, powerProbe } from "./curve";
+import { PLAYTIME, median, runMinutes } from "./playtime";
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -223,7 +224,7 @@ function runActMode(): void {
     }
   }
   if (!args.newest) console.table(rows);
-  printNewestActs(byPlay, generations);
+  printNewestActs(byPlay, generations, runs);
   if (probe) printCurve(samples);
   if (args.json) {
     writeFileSync(args.json, JSON.stringify({ args, plays: byPlay }, null, 1));
@@ -264,6 +265,7 @@ function printCurve(samples: readonly PowerSample[]): void {
 function printNewestActs(
   byPlay: readonly { label: string; reports: readonly ActRunReport[] }[],
   generations: number,
+  seeds: number,
 ): void {
   const perBuild = [];
   for (const { label, reports } of byPlay) {
@@ -303,6 +305,37 @@ function printNewestActs(
   console.log("");
   console.log("All builds pooled (targets: ✓ inside, ↑ too low, ↓ too high)");
   console.table(pooled);
+  printPlaytime(byPlay, generations, seeds);
+}
+
+/**
+ * Playtime per run (laengere-runs-v1.md): all acts of the run, fight seconds plus the time between
+ * fights and trips (`PLAYTIME`), median and range over the builds.
+ */
+function printPlaytime(
+  byPlay: readonly { label: string; reports: readonly ActRunReport[] }[],
+  generations: number,
+  seeds: number,
+): void {
+  const rows = [];
+  let total = 0;
+  for (let g = 1; g <= generations; g++) {
+    const minutes = byPlay.map((p) => runMinutes(p.reports, g, seeds)).filter((m) => m > 0);
+    if (!minutes.length) continue;
+    const mid = median(minutes);
+    total += mid;
+    rows.push({
+      run: g,
+      "median min": mid.toFixed(0),
+      "min / max": `${Math.min(...minutes).toFixed(0)} / ${Math.max(...minutes).toFixed(0)}`,
+      "total h": (total / 60).toFixed(1),
+    });
+  }
+  console.log("");
+  console.log(
+    `Playtime per run (fights + ${PLAYTIME.perFight} s per fight + ${PLAYTIME.perTrip} s per trip; stuck builds count too low)`,
+  );
+  console.table(rows);
 }
 
 const pick = <T extends { id: string }>(list: readonly T[], id: string, what: string): T[] => {

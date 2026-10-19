@@ -1,6 +1,11 @@
 import { Potion, draughtIconUrl } from "../../../ui/Potion";
 import { useNoteHover } from "../../../ui/ItemTooltip";
-import { COMBAT, type DraughtDefinition, type FighterSnapshot } from "@emberheir/sim";
+import {
+  COMBAT,
+  levelGapMalus,
+  type DraughtDefinition,
+  type FighterSnapshot,
+} from "@emberheir/sim";
 import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { fmt } from "../../../ui/items";
@@ -415,6 +420,8 @@ export interface EnemyFrameProps {
   attackIcon: IconName;
   thiefLeft: number | null;
   heroLevel: number;
+  /** The Wildfire has no Level Malus (the hero's level ends at 100). */
+  noLevelMalus?: boolean;
 }
 
 /**
@@ -423,13 +430,16 @@ export interface EnemyFrameProps {
  */
 function levelClass(gap: number): string {
   if (gap >= 5) return "lv-deadly";
-  if (gap >= 2) return "lv-hard";
+  if (gap >= 1) return "lv-hard";
   if (gap <= -5) return "lv-trivial";
   return "";
 }
 
-function levelHint(gap: number): string {
-  if (gap >= 2) return `${gap} levels above you`;
+function levelHint(gap: number, malus: number): string {
+  const above = `${gap} level${gap === 1 ? "" : "s"} above you`;
+  if (malus > 0)
+    return `${above}: hits you ${Math.round(malus * 100)} % harder. Level up to even it out.`;
+  if (gap >= 1) return above;
   if (gap <= -5) return `${-gap} levels below you`;
   return "About your level";
 }
@@ -479,7 +489,10 @@ export function EnemyFrame(props: EnemyFrameProps) {
         <span className="hud-enemy-kind">{props.sub.split(" · ")[0]}</span>
         <span
           className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
-          title={levelHint(e.level - props.heroLevel)}
+          title={levelHint(
+            e.level - props.heroLevel,
+            props.noLevelMalus ? 0 : levelGapMalus(props.heroLevel, e.level),
+          )}
         >
           Lv {e.level}
         </span>
