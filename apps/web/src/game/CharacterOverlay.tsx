@@ -31,7 +31,7 @@ import {
 } from "@emberheir/sim";
 import type { NoteHover } from "../ui/ItemTooltip";
 import { useState } from "react";
-import { ClassEmblem } from "./ClassEmblem";
+import { HeirEmblem } from "./ClassEmblem";
 import {
   type GridContext,
   ItemGrid,
@@ -318,7 +318,11 @@ export function CharacterOverlay(props: {
               </span>
               <div className="hero-level-bars">
                 <div className="hero-level-line">
-                  <ClassEmblem classId={state.hero.classId} size={26} />
+                  <HeirEmblem
+                    classId={state.hero.classId}
+                    mastery={state.legacy.branches[0]}
+                    size={26}
+                  />
                   <span className="title-font">{heroTitle(state, GAME_DATA)}</span>
                   <span className="k-grow" />
                   <span className="sub">{xpText}</span>

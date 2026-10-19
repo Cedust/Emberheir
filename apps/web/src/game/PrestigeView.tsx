@@ -1,3 +1,4 @@
+import { MasteryEmblem } from "./ClassEmblem";
 import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
   ATTRIBUTES,
@@ -189,6 +190,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
                 style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
                 onClick={() => setBranch(b.id)}
               >
+                <MasteryEmblem masteryId={b.id} size={56} />
                 <span className="eyebrow">
                   {tier > 1
                     ? `DEEPEN · TIER ${ROMAN[tier]}`

@@ -9,7 +9,7 @@ import { useStageSize } from "../ui/Stage";
 import { CampLight } from "./camp/art/CampLight";
 import { CampBackdrop, CampFx, SCENE_W, campLights } from "./camp/art/CampScene";
 import { PaintDefs } from "./camp/art/paint";
-import { ClassEmblem } from "./ClassEmblem";
+import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
 import { SettingsPanel } from "./MenuOverlay";
 import { loadLastSlot, loadSlots, saveSlot } from "./saves";
@@ -146,7 +146,11 @@ export function TitleScreen(props: {
                     }}
                     onDoubleClick={() => props.onContinue(i)}
                   >
-                    <ClassEmblem classId={save.hero.classId} size={48} />
+                    <HeirEmblem
+                      classId={save.hero.classId}
+                      mastery={save.legacy.branches[0]}
+                      size={48}
+                    />
                     <span className="slot-text">
                       <strong className="title-font">{save.hero.name}</strong>
                       <span className="accent">{heroTitle(save, GAME_DATA)}</span>

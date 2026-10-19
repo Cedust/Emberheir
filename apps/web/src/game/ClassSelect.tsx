@@ -5,7 +5,7 @@ import { Icon, type IconName } from "../ui/Icon";
 import { Button } from "../ui/kit/Button";
 import type { Settings } from "../ui/settings";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
-import { ClassEmblem } from "./ClassEmblem";
+import { ClassEmblem, MasteryEmblem } from "./ClassEmblem";
 import { PreviewArena } from "./lazyViews";
 import { glimpsePreview, startPreview } from "./classPreview";
 import type { NewCharacter } from "./useGame";
@@ -229,7 +229,7 @@ export function ClassSelect(props: {
                   className="path-chip"
                   title={`${PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id} → ${heroClass.titles[id] ?? ""}`}
                 >
-                  <ClassEmblem classId={classId} size={18} />
+                  <MasteryEmblem masteryId={id} size={18} />
                   {PRESTIGE_BRANCHES.find((b) => b.id === id)?.name ?? id}
                 </span>
               ))}
