@@ -337,12 +337,27 @@ const SPARKS = [
 /** Moves the fire (drawn with its feet at y = 614) into the painted stone ring, a bit smaller. */
 const HEARTH_FIT = `translate(${HEARTH_X} ${HEARTH_Y}) scale(0.85) translate(-${HEARTH_X} -614)`;
 
-/** The moving part of the camp: the Hearthfire with its glow and sparks, and drifting ash. */
-export function CampFx(props: { w: number; h: number; ox: number }) {
-  const { w, h, ox } = props;
+/**
+ * The moving part of the camp: the Hearthfire with its glow and sparks, and drifting ash. The Camp
+ * draws it in two parts, so the bowl and flames stand in front of the personas behind the fire.
+ */
+export function CampFx(props: { w: number; h: number; ox: number; part?: "back" | "hearth" }) {
+  const { w, h, ox, part } = props;
   const ash = rand(21);
+  const cls = part === "hearth" ? "camp-fx camp-hearth" : "camp-fx";
   return (
-    <svg className="camp-fx" width={w} height={h} viewBox={`${-ox} 0 ${w} ${h}`} aria-hidden="true">
+    <svg className={cls} width={w} height={h} viewBox={`${-ox} 0 ${w} ${h}`} aria-hidden="true">
+      {part !== "hearth" && <CampAir ash={ash} w={w} h={h} ox={ox} />}
+      {part !== "back" && <Hearthfire />}
+    </svg>
+  );
+}
+
+/** The fire's glow on the ground and the drifting ash. */
+function CampAir(props: { ash: () => number; w: number; h: number; ox: number }) {
+  const { ash, w, h, ox } = props;
+  return (
+    <>
       <ellipse
         className="hearth-glow"
         cx={HEARTH_X}
@@ -371,46 +386,50 @@ export function CampFx(props: { w: number; h: number; ox: number }) {
           />
         ))}
       </g>
+    </>
+  );
+}
 
-      {/* Timo's painted iron bowl with its glowing coals; the flames rise from behind the coals. */}
-      <g transform={HEARTH_FIT}>
-        <Flames />
-        <image href={hearthBowl} x="635" y="517" width="170" height="98" />
-        <ellipse
-          className="coal-glow"
-          cx={HEARTH_X}
-          cy="538"
-          rx="62"
-          ry="14"
-          fill="url(#ember-glow)"
-          style={{ mixBlendMode: "screen" }}
-        />
-        <g fill="#ffcf6a">
-          {SPARKS.map((s) => (
-            <circle
-              key={s.x}
-              className="spark"
-              cx={s.x}
-              cy="440"
-              r="2.4"
-              style={{ "--dx": `${s.dx}px`, animationDelay: `${-s.d}s` } as CSSProperties}
-            />
-          ))}
-        </g>
-        <g fill="#8a8078" filter="url(#soft-blur)">
-          {[0, 2.2, 4.4].map((d) => (
-            <ellipse
-              key={d}
-              className="smoke"
-              cx={HEARTH_X}
-              cy="400"
-              rx="26"
-              ry="18"
-              style={{ animationDelay: `${-d}s` }}
-            />
-          ))}
-        </g>
+/** Timo's painted iron bowl with its glowing coals; the flames rise from behind the coals. */
+function Hearthfire() {
+  return (
+    <g transform={HEARTH_FIT}>
+      <Flames />
+      <image href={hearthBowl} x="635" y="517" width="170" height="98" />
+      <ellipse
+        className="coal-glow"
+        cx={HEARTH_X}
+        cy="538"
+        rx="62"
+        ry="14"
+        fill="url(#ember-glow)"
+        style={{ mixBlendMode: "screen" }}
+      />
+      <g fill="#ffcf6a">
+        {SPARKS.map((s) => (
+          <circle
+            key={s.x}
+            className="spark"
+            cx={s.x}
+            cy="440"
+            r="2.4"
+            style={{ "--dx": `${s.dx}px`, animationDelay: `${-s.d}s` } as CSSProperties}
+          />
+        ))}
       </g>
-    </svg>
+      <g fill="#8a8078" filter="url(#soft-blur)">
+        {[0, 2.2, 4.4].map((d) => (
+          <ellipse
+            key={d}
+            className="smoke"
+            cx={HEARTH_X}
+            cy="400"
+            rx="26"
+            ry="18"
+            style={{ animationDelay: `${-d}s` }}
+          />
+        ))}
+      </g>
+    </g>
   );
 }

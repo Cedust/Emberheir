@@ -3,6 +3,7 @@ import { type ActData, type GameState, bossKnown } from "@emberheir/sim";
 import { type IconName } from "../../ui/Icon";
 import { actVisible, visibleActs } from "../labels";
 import { SIGNPOST_DX } from "./art/CampScene";
+import { PAINTED } from "./art/paintedPersonas";
 
 /** The Camp's people: who stands where, what they say, where a click on them leads. */
 
@@ -12,12 +13,17 @@ export type CampTarget =
   | "forge"
   | "altar"
   | "kaelen"
+  | "dummy"
   | "stash"
   | "compendium"
   | "shop"
   | "runes"
   | "road"
   | "nan";
+
+/** Kaelen lunges right of the Hearthfire, at his Training Dummy left of it. */
+const KAELEN = { x: 810, y: 555, fs: 1.05 };
+const DUMMY_X = KAELEN.x - (PAINTED.kaelen?.prop?.x ?? 0) * KAELEN.fs;
 
 /** Old Nan's lines; one about an act or its boss only once the hero knows it (no spoilers). */
 const NAN_LINES: readonly {
@@ -85,7 +91,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       icon: "fire",
       cloak: "#a8401a",
       // Over Kaelen's spot: he lunges right behind the fire.
-      object: { w: 150, h: 150, front: true },
+      object: { w: 120, h: 150, front: true },
       quote: "Whatever rests near the fire survives the burning.",
       target: "legacy",
     },
@@ -154,13 +160,26 @@ export function personas(state: GameState, road: ActData): Persona[] {
       id: "kaelen",
       name: "Kaelen",
       role: "Trainer",
-      x: 810,
-      y: 555,
+      x: KAELEN.x,
+      y: KAELEN.y,
       icon: "sword",
       cloak: "#6a2a20",
-      figure: { fs: 1.05 },
+      figure: { fs: KAELEN.fs },
       quote: "“Late to one battle. Never late to training.”",
       target: "kaelen",
+    },
+    {
+      // Painted with Kaelen (his prop); this is only its clickable spot.
+      id: "dummy",
+      name: "Training Dummy",
+      role: "Test your build",
+      x: DUMMY_X,
+      y: KAELEN.y,
+      icon: "eye",
+      cloak: "#8a6a3a",
+      object: { w: 100, h: 150 },
+      quote: "Hit it. It keeps count.",
+      target: "dummy",
     },
     {
       id: "nyssa",
