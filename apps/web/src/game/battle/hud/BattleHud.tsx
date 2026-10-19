@@ -5,7 +5,7 @@ import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { fmt } from "../../../ui/items";
 import { skillIcon, skillTint } from "../skills";
-import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, hudLayout } from "./layout";
+import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, ORB_REACH, hudLayout } from "./layout";
 
 /** Tooltip of an announced Heavy Attack: it hits hard, but never more than its cap. */
 const heavyTitle = (skill: string) =>
@@ -282,8 +282,8 @@ export function HeroBar(props: HeroBarProps) {
   const stunned = hero.stunned > 0;
   const skillNext = nextIsSkill(hero);
   const lifePct = Math.round((hero.life / hero.maxLife) * 100);
-  const sideLeft = L.lifeOrb.x + ORB_R + 30;
-  const sideRight = props.stageW - (L.heatOrb.x - ORB_R - 30);
+  const sideLeft = L.lifeOrb.x + ORB_REACH;
+  const sideRight = props.stageW - (L.heatOrb.x - ORB_REACH);
   const nextSlot = hero.rotation[hero.nextSlot];
   return (
     <div className="hud-hero" style={{ "--bar-h": `${BAR_H}px` } as React.CSSProperties}>

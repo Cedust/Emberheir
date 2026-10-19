@@ -8,7 +8,9 @@ export const BAR_H = 104;
 /** Life and Heat orb radius (the glass, without the frame). */
 export const ORB_R = 84;
 /** Orb centers sit this far above the bottom edge. */
-export const ORB_LIFT = 100;
+export const ORB_LIFT = 132;
+/** How far the painted ring (with its oak leaves) reaches beside an orb's center. */
+export const ORB_REACH = ORB_R + 70;
 
 /** The enemy frame at the top center. */
 export const ENEMY_TOP = 70;
@@ -37,7 +39,7 @@ export interface HudLayout {
 
 export function hudLayout(w: number, h: number): HudLayout {
   const cx = w / 2;
-  const orbDx = Math.min(700, w / 2 - ORB_R - 22);
+  const orbDx = Math.min(700, w / 2 - ORB_REACH);
   const y = h - ORB_LIFT;
   const frameX = cx - ENEMY_W / 2;
   return {

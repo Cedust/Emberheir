@@ -15,6 +15,7 @@ import {
 } from "pixi.js";
 import { Fx } from "../fx";
 import { BAR_FRAGMENT, GAUGE_VERTEX, ORB_FRAGMENT } from "./shaders";
+import { type HudTextures, beam, enemyPlate, loadHudTextures, orbRing } from "./hudArt";
 import { BAR_H, ENEMY_TOP, ENEMY_W, ORB_R, type HudLayout, hudLayout } from "./layout";
 
 /**
@@ -171,6 +172,7 @@ class Orb {
   readonly gauge: Gauge;
   readonly fx: Fx;
   private readonly glow = new Graphics();
+  private readonly frame: Container;
   private spawn = 0;
 
   constructor(
@@ -217,11 +219,17 @@ class Orb {
     inner.mask = mask;
 
     // Static parts render once into a texture: the blur and the frame are not redrawn per frame.
-    const frame = drawFrame(R, gem);
+    this.frame = drawFrame(R, gem);
     const cache = { resolution: app.renderer.resolution, antialias: true };
     shadow.cacheAsTexture(cache);
-    frame.cacheAsTexture(cache);
-    this.root.addChild(shadow, this.glow, this.gauge.view, inner, frame);
+    this.frame.cacheAsTexture(cache);
+    this.root.addChild(shadow, this.glow, this.gauge.view, inner, this.frame);
+  }
+
+  /** Swaps the drawn bronze ring for Timo's painted one. */
+  paint(art: HudTextures): void {
+    this.frame.visible = false;
+    this.root.addChild(orbRing(art, ORB_R));
   }
 
   update(time: number, dt: number, hot: number): void {
@@ -370,6 +378,7 @@ export class HudScene {
   private life: Orb | null = null;
   private heat: Orb | null = null;
   private enemy: Gauge | null = null;
+  private art: HudTextures | null = null;
   private time = 0;
   private hot = 0;
   private last: FightSnapshot | null = null;
@@ -394,6 +403,13 @@ export class HudScene {
     this.place();
     if (this.last) this.onSnapshot(this.last, true);
     app.ticker.add(this.onTick);
+    void loadHudTextures().then((art) => {
+      if (this.destroyed || !art) return;
+      this.art = art;
+      this.life?.paint(art);
+      this.heat?.paint(art);
+      this.place();
+    });
   }
 
   destroy(): void {
@@ -471,28 +487,29 @@ export class HudScene {
     ])
       .fill(body)
       .stroke({ color: edge, width: 4, alignment: 1 });
-    // Bronze trim along the top edge.
-    g.poly(
-      [
-        x0,
-        top + 3,
-        cx - half - 39,
-        top + 3,
-        cx - half + 1,
-        top - lip + 3,
-        cx + half - 1,
-        top - lip + 3,
-        cx + half + 39,
-        top + 3,
-        x1,
-        top + 3,
-      ],
-      false,
-    ).stroke({
-      color: 0xd9a55a,
-      width: 1.5,
-      alpha: 0.55,
-    });
+    // Bronze trim along the top edge (the painted beams take its place once they load).
+    if (!this.art)
+      g.poly(
+        [
+          x0,
+          top + 3,
+          cx - half - 39,
+          top + 3,
+          cx - half + 1,
+          top - lip + 3,
+          cx + half - 1,
+          top - lip + 3,
+          cx + half + 39,
+          top + 3,
+          x1,
+          top + 3,
+        ],
+        false,
+      ).stroke({
+        color: 0xd9a55a,
+        width: 1.5,
+        alpha: 0.55,
+      });
     // Rivets along the bar.
     for (let x = x0 + 120; x < x1 - 110; x += 90) {
       if (x > cx - half - 50 && x < cx + half + 50) continue;
@@ -502,12 +519,16 @@ export class HudScene {
         .fill(0xd9a55a);
     }
     this.bar.addChild(fade, g);
+    // The painted beam carrying the rhythm track along the raised center.
+    if (this.art)
+      this.bar.addChild(beam(this.art, cx - half - 50, cx + half + 50, top - lip + 10, 24));
     const cache = { resolution: this.app?.renderer.resolution ?? 1, antialias: true };
     this.bar.cacheAsTexture(cache);
     this.bar.updateCacheTexture();
 
     // The enemy plate: dark glass panel with a bronze rim, behind the DOM enemy frame.
-    this.enemyPlate.removeChildren().forEach((c) => c.destroy());
+    // The enemy gauge is kept; only the drawn plate is rebuilt.
+    this.enemyPlate.removeChildren().forEach((c) => c !== this.enemy?.view && c.destroy());
     const px = cx - ENEMY_W / 2;
     const plate = new Graphics()
       .roundRect(px, ENEMY_TOP, ENEMY_W, ENEMY_PLATE_H, 10)
@@ -516,10 +537,12 @@ export class HudScene {
       .roundRect(px + 4, ENEMY_TOP + 4, ENEMY_W - 8, ENEMY_PLATE_H - 8, 7)
       .stroke({ color: 0xd9a55a, width: 1, alpha: 0.3 });
     const E = L.enemyLife;
-    const tube = new Graphics()
-      .roundRect(E.x - 4, E.y - 4, E.w + 8, E.h + 8, 6)
-      .fill(0x140c06)
-      .stroke({ color: 0xb98a4a, width: 2 });
+    const tube = this.art
+      ? enemyPlate(this.art, E.x, E.y, E.w, E.h)
+      : new Graphics()
+          .roundRect(E.x - 4, E.y - 4, E.w + 8, E.h + 8, 6)
+          .fill(0x140c06)
+          .stroke({ color: 0xb98a4a, width: 2 });
     this.enemyPlate.addChild(plate, tube);
     if (this.enemy) {
       this.enemy.view.position.set(E.x, E.y);
