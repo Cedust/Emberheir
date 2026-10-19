@@ -183,6 +183,10 @@
   pointer-events: none;
 }
 
+.stage .item-tile .socket-dots {
+  bottom: 9px;
+}
+
 .stage .socket-dot {
   width: 7px;
   height: 7px;
@@ -227,12 +231,16 @@
 
 .stage .item-tile-tier {
   position: absolute;
-  right: 4px;
-  bottom: 2px;
+  right: 12px;
+  bottom: 12px;
+  z-index: 1;
+  padding: 0 3px;
+  border-radius: 3px;
+  background: rgb(12 8 4 / 0.7);
   font-family: var(--font-mono);
   font-size: 10px;
-  color: #b3a288;
-  text-shadow: 0 1px 1px #000;
+  line-height: 13px;
+  color: #d8c6a4;
 }
 
 .stage .weapon-tile {
@@ -243,8 +251,9 @@
 
 .stage .weapon-rank {
   position: absolute;
-  right: 5px;
-  bottom: 3px;
+  right: 12px;
+  bottom: 10px;
+  z-index: 1;
   font-size: 13px;
   font-weight: 700;
   text-shadow: 0 1px 2px #000;
