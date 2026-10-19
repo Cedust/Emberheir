@@ -8,13 +8,12 @@ import {
   sumAttributes,
 } from "@emberheir/sim";
 import { Suspense, useMemo, useState } from "react";
-import { GAME_ICONS, type GameIconId, HEAT_FORM_ICONS } from "../ui/gameIcons";
+import { GAME_ICONS, type GameIconId } from "../ui/gameIcons";
 import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
 import { Button } from "../ui/kit/Button";
 import type { Settings } from "../ui/settings";
 import { useStageSize } from "../ui/Stage";
 import { ATTRIBUTE_ICONS, ATTRIBUTE_INFO, AttributeStones, NO_POINTS } from "./AttributeStones";
-import { HEAT_BEHAVIOR_NOTES } from "./character/StatTabs";
 import { ClassEmblem, MasteryEmblem } from "./ClassEmblem";
 import { dummyPreview } from "./classPreview";
 import { PreviewArena } from "./lazyViews";
@@ -120,7 +119,6 @@ export function ClassSelect(props: {
                 width={arenaW}
                 height={arenaH}
                 settings={props.settings}
-                dps
               />
             </Suspense>
           </div>
@@ -190,7 +188,7 @@ export function ClassSelect(props: {
   );
 }
 
-/** One class on the left: its emblem in the brass ring, name, main attribute and focus. */
+/** One class on the left: its emblem in the brass ring, name, and main attribute. */
 function ClassBanner(props: { heroClass: HeroClass; on: boolean; onPick: (id: string) => void }) {
   const c = props.heroClass;
   const attribute = ATTRIBUTE_INFO[c.mainAttribute];
@@ -204,11 +202,10 @@ function ClassBanner(props: { heroClass: HeroClass; on: boolean; onPick: (id: st
       onClick={() => props.onPick(c.id)}
     >
       <span className="cs-class-ring">
-        <ClassEmblem classId={c.id} size={84} />
+        <ClassEmblem classId={c.id} size={70} />
       </span>
       <span className="cs-class-text">
         <strong className="title-font">{c.name}</strong>
-        <span className="cs-class-focus">{c.focus}</span>
         <span className="cs-class-attr">
           <img src={ATTRIBUTE_ICONS[c.mainAttribute]} alt="" width={20} height={20} />
           {attribute.name}
@@ -296,21 +293,12 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
                 "It stays with you for the whole game and grows with you. Gear never replaces it.",
             }}
           />
+          <div className="cs-innate">
+            <span className="cs-innate-label">Innate</span>
+            <strong className="title-font">{skill?.name}</strong>
+            <p>{skill?.description}</p>
+          </div>
           <div className="cs-weapon-facts">
-            <Fact
-              icon={HEAT_FORM_ICONS[w.heatBehavior]}
-              label={`${HEAT_BEHAVIOR_NOTES[w.heatBehavior].name} Heat`}
-              note={HEAT_BEHAVIOR_NOTES[w.heatBehavior]}
-            />
-            <Fact
-              icon={GAME_ICONS[w.damageType as GameIconId]}
-              label={skill?.name ?? ""}
-              note={{
-                name: skill?.name ?? "",
-                kind: "Innate skill · free with the weapon",
-                explain: skill?.description ?? "",
-              }}
-            />
             <Meter
               label="Speed"
               value={pips(
@@ -348,7 +336,6 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
         />
         <ul className="cs-paths">
           {paths.map((p) => {
-            const [, ...extra] = p.theme.split(", ");
             return (
               <li key={p.id} className="cs-path">
                 <span className="cs-path-icons">
@@ -364,7 +351,6 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
                     {p.infusion.ailment
                       ? ` · ${AILMENT_NAMES[p.infusion.ailment] ?? p.infusion.ailment}`
                       : ""}
-                    {extra.length ? ` · ${extra.join(", ")}` : ""}
                   </small>
                 </span>
               </li>
@@ -399,16 +385,6 @@ function SectionHead(props: { title: string; note: NoteHover }) {
     <h4 className="cs-section title-font" tabIndex={0} {...hover}>
       {props.title}
     </h4>
-  );
-}
-
-function Fact(props: { icon: string; label: string; note: NoteHover }) {
-  const hover = useNoteHover(props.note);
-  return (
-    <span className="cs-fact" tabIndex={0} {...hover}>
-      <img src={props.icon} alt="" width={30} height={30} />
-      {props.label}
-    </span>
   );
 }
 

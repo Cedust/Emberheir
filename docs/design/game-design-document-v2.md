@@ -169,8 +169,8 @@ Endgame **Wildfire I–X**.
   („Tell me more.“, Compendium, die Resets mit Acorn-Preis, „Farewell.“). Ein Reset fragt einmal nach.
 - **Title Screen** und **Class Select** stehen vor dem nächtlichen Camp; Menu und Settings sind Fenster im selben Rahmen.
   Class Select (19.10.2026): links die drei Klassen, in der Mitte die gewählte Klasse, die mit ihrer Startwaffe Kaelens
-  Training Dummy schlägt (Schaden pro Sekunde darüber), darunter die Waffen als gemalte Bretter. Rechts Class Trait, die
-  Waffe (Heat, Innate, Speed, Power), ihre drei Heirloom-Paths als „Playstyles“ und die drei Masteries; Erklärungen
+  Training Dummy schlägt, darunter die Waffen als gemalte Bretter. Rechts Class Trait, die Waffe (Innate, Speed,
+  Power), ihre drei Heirloom-Paths als „Playstyles“ (Schadensart + Ailment) und die drei Masteries; Erklärungen
   stehen im Hover. Danach die 6 freien Attributpunkte. Der Heir hat **keinen Namen** mehr: überall steht der Titel.
   Die Combat Lab gibt es nur mit `?dev` in der Adresse.
 

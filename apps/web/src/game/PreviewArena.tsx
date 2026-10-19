@@ -1,5 +1,5 @@
-import { type CombatEvent, Fight, fightReport } from "@emberheir/sim";
-import { useEffect, useRef, useState } from "react";
+import { type CombatEvent, Fight } from "@emberheir/sim";
+import { useEffect, useRef } from "react";
 import { useStageSize } from "../ui/Stage";
 import type { Settings } from "../ui/settings";
 import { ArenaScene } from "./battle/ArenaScene";
@@ -15,19 +15,16 @@ const ROUND_SECONDS = 24;
 /**
  * A small PixiJS arena that plays the class preview in a loop: the real sim and the real arena
  * effects. A fight that ends, or a sparring round against the Training Dummy, starts over with
- * the next seed. With `dps`, the hero's damage per second of the round shows over the arena.
- * Remount it (key) for a new preview.
+ * the next seed. Remount it (key) for a new preview.
  */
 export function PreviewArena(props: {
   preview: ClassPreview;
   width: number;
   height: number;
   settings: Settings;
-  dps?: boolean;
 }) {
   const { preview, width, height, settings } = props;
   const hostRef = useRef<HTMLDivElement | null>(null);
-  const [dps, setDps] = useState<number | null>(null);
   const stage = useStageSize();
   const resolution = canvasResolution(stage.scale);
 
@@ -43,13 +40,10 @@ export function PreviewArena(props: {
     let fight = new Fight(preview.hero, preview.enemy, 1);
     let frame = 0;
     let timer = 0;
-    let measured = 0;
     let last = performance.now();
     const next = () => {
       round += 1;
       fight = new Fight(preview.hero, preview.enemy, 1 + round);
-      measured = 0;
-      setDps(null);
     };
     const loop = (now: number) => {
       const dt = Math.min(0.25, (now - last) / 1000);
@@ -60,10 +54,6 @@ export function PreviewArena(props: {
         const fresh: readonly CombatEvent[] = fight.events.slice(before);
         scene.onEvents(fresh);
         scene.onSnapshot(fight.snapshot());
-      }
-      if (fight.time >= 2 && fight.time - measured >= 0.5) {
-        measured = fight.time;
-        setDps(fightReport(fight.events, "hero").total / fight.time);
       }
       if (fight.over) {
         timer = window.setTimeout(() => {
@@ -86,14 +76,5 @@ export function PreviewArena(props: {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [preview, width, height, resolution]);
 
-  return (
-    <div className="preview-arena" ref={hostRef} style={{ width, height }}>
-      {props.dps && (
-        <div className="preview-dps" data-testid="preview-dps" aria-live="off">
-          <b className="mono">{dps === null ? "–" : Math.round(dps)}</b>
-          <span>damage per second</span>
-        </div>
-      )}
-    </div>
-  );
+  return <div className="preview-arena" ref={hostRef} style={{ width, height }} />;
 }
