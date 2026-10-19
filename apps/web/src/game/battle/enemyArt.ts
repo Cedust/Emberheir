@@ -1,9 +1,16 @@
-import { Container, Graphics } from "pixi.js";
+import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import { INK } from "./arenaLayout";
+import ashenBruteUrl from "./enemies/ashen-brute.webp";
+import ashenSkirmisherUrl from "./enemies/ashen-skirmisher.webp";
+import cinderCasterUrl from "./enemies/cinder-caster.webp";
+import emberThiefUrl from "./enemies/ember-thief.webp";
+import gorrakUrl from "./enemies/gorrak.webp";
 
 /** The enemy in the arena: archetype body in its act's colors, Elite and boss marks. */
 
 export interface EnemyLook {
+  /** Enemy id: a painted enemy (PAINTED_ENEMIES) shows its painting instead of the archetype body. */
+  readonly id?: string;
   readonly archetype: string;
   readonly boss: boolean;
   readonly elite: boolean;
@@ -100,7 +107,38 @@ const BODY: Record<string, "robe" | "broad" | "lean"> = {
   skirmisher: "lean",
 };
 
-export function drawEnemy(look: EnemyLook): Container {
+/**
+ * Timo's painted enemies (tools/art/cut_enemies.py), facing left toward the hero. `height` is the
+ * figure's height in stage px (the painted Heir stands ~390 tall), `footX` where its feet are
+ * between left (0) and right (1) edge of the painting.
+ */
+const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: number }> = {
+  "ashen-brute": { url: ashenBruteUrl, height: 400, footX: 0.55 },
+  "ashen-skirmisher": { url: ashenSkirmisherUrl, height: 300, footX: 0.55 },
+  "cinder-caster": { url: cinderCasterUrl, height: 370, footX: 0.5 },
+  gorrak: { url: gorrakUrl, height: 470, footX: 0.5 },
+  "ember-thief": { url: emberThiefUrl, height: 290, footX: 0.45 },
+};
+
+/** The painting for this enemy, or null: it is drawn as its archetype body then. */
+export function loadEnemyTexture(look: EnemyLook): Promise<Texture | null> {
+  const id = look.thief ? "ember-thief" : look.id;
+  const painted = id ? PAINTED_ENEMIES[id] : undefined;
+  if (!painted) return Promise.resolve(null);
+  return Assets.load<Texture>(painted.url).catch(() => null);
+}
+
+export function drawEnemy(look: EnemyLook, painting?: Texture | null): Container {
+  const id = look.thief ? "ember-thief" : look.id;
+  const painted = id ? PAINTED_ENEMIES[id] : undefined;
+  if (painted && painting) {
+    const c = new Container();
+    const sprite = new Sprite(painting);
+    sprite.anchor.set(painted.footX, 1);
+    sprite.scale.set(painted.height / painting.height);
+    c.addChild(sprite);
+    return c;
+  }
   const c = new Container();
   const line = { color: INK, width: 3, join: "round" as const, cap: "round" as const };
   const fallback = { body: 0, trim: 0, head: 0 };

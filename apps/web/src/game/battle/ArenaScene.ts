@@ -40,7 +40,7 @@ import {
   drawStars,
   drawWildfireGlow,
 } from "./arenaProps";
-import { type EnemyLook, drawEnemy } from "./enemyArt";
+import { type EnemyLook, drawEnemy, loadEnemyTexture } from "./enemyArt";
 import { Fx } from "./fx";
 import { armSwing, loadHeirTextures } from "./heirRig";
 import { type HeroLook, RANGED_WEAPONS, drawHero, loadHeroWeapon } from "./heroArt";
@@ -186,7 +186,11 @@ export class ArenaScene {
       app.destroy(true, { children: true });
       return null;
     }
-    const [heir, weapon] = await Promise.all([loadHeirTextures(), loadHeroWeapon(hero)]);
+    const [heir, weapon, painting] = await Promise.all([
+      loadHeirTextures(),
+      loadHeroWeapon(hero),
+      loadEnemyTexture(enemy),
+    ]);
     if (this.destroyed) {
       app.destroy(true, { children: true });
       return null;
@@ -264,7 +268,7 @@ export class ArenaScene {
     this.weaponTip = this.hero.body.getChildByLabel("weapon-tip", true) ?? null;
     this.infusion = hero.weaponLook.element;
     this.masteryAura = hero.mastery;
-    this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
+    this.enemy = makeFigure("enemy", drawEnemy(enemy, painting), ENEMY_X);
     this.traitGfx = new Graphics();
     this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
 
