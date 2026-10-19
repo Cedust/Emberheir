@@ -31,6 +31,8 @@ export interface EnemyDefinition {
   readonly triggers?: readonly TriggerSpec[];
   /** Act bosses are never Elites and give better rewards. */
   readonly boss?: boolean;
+  /** Damage factor on top of the Monster Level (default 1), for a foe whose kit hits extra hard. */
+  readonly damage?: number;
 }
 
 /**
@@ -54,8 +56,8 @@ export const MONSTER_TABLE: readonly {
 }[] = [
   { level: 1, life: 1, damage: 1 },
   { level: 8, life: 1.3, damage: 1.75 },
-  { level: 18, life: 6.1, damage: 6 },
-  { level: 28, life: 19, damage: 16 },
+  { level: 18, life: 6.1, damage: 5 },
+  { level: 28, life: 19, damage: 13 },
   { level: 43, life: 45, damage: 29 },
   { level: 58, life: 135, damage: 77 },
   { level: 73, life: 360, damage: 180 },
@@ -100,7 +102,7 @@ export function createEnemySetup(enemy: EnemyDefinition, level: number): Combata
     weapon: enemy.weapon,
     rotation: enemy.skills.map((skill) => ({ skill })),
     baseLife: enemy.baseLife * scaling.life,
-    damageMultiplier: scaling.damage,
+    damageMultiplier: scaling.damage * (enemy.damage ?? 1),
     bonuses,
     ...(enemy.telegraphs ? { telegraphs: enemy.telegraphs } : {}),
     ...(enemy.triggers ? { triggers: enemy.triggers } : {}),
