@@ -8,7 +8,8 @@ export const BAR_H = 104;
 /** Life and Heat orb radius (the glass, without the frame). */
 export const ORB_R = 84;
 /** Orb centers sit this far above the bottom edge. */
-export const ORB_LIFT = 132;
+/** High enough that the painted ring's acorns stay on screen. */
+export const ORB_LIFT = 152;
 /** How far the painted ring (with its oak leaves) reaches beside an orb's center. */
 export const ORB_REACH = ORB_R + 70;
 

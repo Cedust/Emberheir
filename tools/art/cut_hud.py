@@ -1,7 +1,8 @@
 # Cuts Timo's painted Battle HUD sheet (design/notes/ui-rahmen-art-v1.md, sheet 8) into
 # apps/web/src/assets/ui/hud-*.webp for the PixiJS HUD (game/battle/hud/HudScene.ts) and the
 # skill slots (hud.css). Run from the repo root: python3 tools/art/cut_hud.py  (needs Pillow)
-#   art/ui/battle-hud-v1.png  orb ring / skill slot / enemy plate / bar beam
+#   art/ui/battle-hud-v1.png  orb ring / skill slot / enemy plate / bar beam (beam not used:
+#                             it looked out of place along the bar, Timo 2026-10-19)
 # Prints the opening of the ring and the slices HudScene.ts and hud.css use.
 from collections import deque
 
@@ -28,7 +29,7 @@ def hole(im):
   return (min(xs), min(ys), max(xs) + 1, max(ys) + 1), len(seen)
 
 
-ring, slot, plate, beam = blobs(load('battle-hud-v1.png'), 4, reach=1)
+ring, slot, plate, _beam = blobs(load('battle-hud-v1.png'), 4, reach=1)
 
 box, area = hole(ring)
 out = save(ring, 'hud-orb-ring', 1)
@@ -41,6 +42,3 @@ print(f'hud-slot {out.width}x{out.height}: rim {box[0] * 0.6:.0f}')
 
 out = save(plate, 'hud-enemy-plate', 0.8)
 print(f'hud-enemy-plate {out.width}x{out.height}')
-
-out = save(beam, 'hud-beam', 0.5)
-print(f'hud-beam {out.width}x{out.height}')

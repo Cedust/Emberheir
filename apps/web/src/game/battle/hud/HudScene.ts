@@ -15,7 +15,7 @@ import {
 } from "pixi.js";
 import { Fx } from "../fx";
 import { BAR_FRAGMENT, GAUGE_VERTEX, ORB_FRAGMENT } from "./shaders";
-import { type HudTextures, beam, enemyPlate, loadHudTextures, orbRing } from "./hudArt";
+import { type HudTextures, enemyPlate, loadHudTextures, orbRing } from "./hudArt";
 import { BAR_H, ENEMY_TOP, ENEMY_W, ORB_R, type HudLayout, hudLayout } from "./layout";
 
 /**
@@ -487,29 +487,28 @@ export class HudScene {
     ])
       .fill(body)
       .stroke({ color: edge, width: 4, alignment: 1 });
-    // Bronze trim along the top edge (the painted beams take its place once they load).
-    if (!this.art)
-      g.poly(
-        [
-          x0,
-          top + 3,
-          cx - half - 39,
-          top + 3,
-          cx - half + 1,
-          top - lip + 3,
-          cx + half - 1,
-          top - lip + 3,
-          cx + half + 39,
-          top + 3,
-          x1,
-          top + 3,
-        ],
-        false,
-      ).stroke({
-        color: 0xd9a55a,
-        width: 1.5,
-        alpha: 0.55,
-      });
+    // Bronze trim along the top edge.
+    g.poly(
+      [
+        x0,
+        top + 3,
+        cx - half - 39,
+        top + 3,
+        cx - half + 1,
+        top - lip + 3,
+        cx + half - 1,
+        top - lip + 3,
+        cx + half + 39,
+        top + 3,
+        x1,
+        top + 3,
+      ],
+      false,
+    ).stroke({
+      color: 0xd9a55a,
+      width: 1.5,
+      alpha: 0.55,
+    });
     // Rivets along the bar.
     for (let x = x0 + 120; x < x1 - 110; x += 90) {
       if (x > cx - half - 50 && x < cx + half + 50) continue;
@@ -519,9 +518,6 @@ export class HudScene {
         .fill(0xd9a55a);
     }
     this.bar.addChild(fade, g);
-    // The painted beam carrying the rhythm track along the raised center.
-    if (this.art)
-      this.bar.addChild(beam(this.art, cx - half - 50, cx + half + 50, top - lip + 10, 24));
     const cache = { resolution: this.app?.renderer.resolution ?? 1, antialias: true };
     this.bar.cacheAsTexture(cache);
     this.bar.updateCacheTexture();
