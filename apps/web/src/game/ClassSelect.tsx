@@ -201,7 +201,7 @@ function ClassBanner(props: { heroClass: HeroClass; on: boolean; onPick: (id: st
       className={`cs-class ${props.on ? "on" : ""}`}
       onClick={() => props.onPick(c.id)}
     >
-      <span className="cs-class-ring">
+      <span className="cs-class-ring" data-class={c.id}>
         <ClassEmblem classId={c.id} size={70} />
       </span>
       <span className="cs-class-text">
