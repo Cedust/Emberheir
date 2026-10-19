@@ -56,7 +56,6 @@ export {
   openFork,
   waymarkKey,
   earnedSkillPoints,
-  stagePressure,
   isWallAct,
   gateStages,
   stageWall,

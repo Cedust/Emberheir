@@ -116,6 +116,19 @@ export function gearValue(
   data: GameData,
   profile: DamageProfile = runProfile(state, data),
 ): number {
+  const { dps, effectiveLife } = heroPower(state, data, profile);
+  return Math.log(dps) + Math.log(effectiveLife);
+}
+
+/**
+ * The hero's power as the autopilot sees it: damage per second against the training dummy and
+ * effective Life against a damage mix (Armor, Resistances, Evasion, Block, Tenacity, Lifesteal).
+ */
+export function heroPower(
+  state: GameState,
+  data: GameData,
+  profile: DamageProfile = runProfile(state, data),
+): { readonly dps: number; readonly effectiveLife: number } {
   const setup = heroSetup(state, data).setup;
   const st = deriveStats(setup);
   const dps = dummyDps(setup);
@@ -131,7 +144,7 @@ export function gearValue(
     (profile.physical * physTaken + magic) * (1 - 0.6 * st.evasion) * (1 - 0.3 * st.tenacity);
   // Lifesteal heals back part of the damage dealt over a fight of about 20 s.
   const effectiveLife = (st.maxLife + st.barrier) / taken + st.lifesteal * dps * 20;
-  return Math.log(dps) + Math.log(effectiveLife);
+  return { dps, effectiveLife };
 }
 
 /** Value gained by wearing `item` in its slot instead of what is there now. */

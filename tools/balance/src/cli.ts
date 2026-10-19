@@ -18,6 +18,7 @@ import { isNewestAct, stageKindRow, summarizeStageKinds } from "./newest";
 import { BUILDS, withMainMastery } from "./builds";
 import { type BudgetRow, LAYERS, buildBudget, meanBudget } from "./budget";
 import { simulateMatchup } from "./simulate";
+import { type PowerSample, powerCurve, powerProbe } from "./curve";
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -148,6 +149,8 @@ function runActMode(): void {
     return masteries.map((mastery) => ({ ...p, mastery }));
   });
   const byPlay: { label: string; reports: ActRunReport[] }[] = [];
+  const samples: PowerSample[] = [];
+  const probe = args.curve ? powerProbe(GAME_DATA, samples) : undefined;
   for (const { weapon: starterWeapon, build, mastery } of plays as {
     weapon: string;
     build?: string;
@@ -166,6 +169,7 @@ function runActMode(): void {
         finale: args.finale > 0,
         wildfire: args.wildfire,
         runes: args.runes > 0,
+        ...(probe ? { onFight: probe } : {}),
       }),
     ).flat();
     byPlay.push({ label, reports: all });
@@ -220,10 +224,36 @@ function runActMode(): void {
   }
   if (!args.newest) console.table(rows);
   printNewestActs(byPlay, generations);
+  if (probe) printCurve(samples);
   if (args.json) {
     writeFileSync(args.json, JSON.stringify({ args, plays: byPlay }, null, 1));
     console.log(`reports written to ${args.json}`);
   }
+}
+
+/**
+ * `--curve 1`: the hero's power per Monster Level next to the monsters it meets (balancing-neustart
+ * step 3), all stages and newest acts on their own.
+ */
+function printCurve(samples: readonly PowerSample[]): void {
+  const k = (x: number) => (x / 1000).toFixed(x < 10_000 ? 2 : 0);
+  const table = (own: readonly PowerSample[]) =>
+    powerCurve(own).map((r) => ({
+      ML: `${r.from}-${r.to}`,
+      samples: r.samples,
+      "hero lvl": r.heroLevel,
+      "dps k": k(r.dps),
+      "eff. life k": k(r.effectiveLife),
+      "enemy life / dps s": r.lifeOverDps.toFixed(1),
+      "eff. life / enemy dmg": r.ehpOverDamage.toFixed(0),
+    }));
+  console.log("");
+  console.log("Hero power per Monster Level (medians), all sampled stages");
+  console.table(table(samples));
+  console.log("Newest acts only, bosses");
+  console.table(table(samples.filter((s) => s.newest && s.kind === "boss")));
+  console.log("Newest acts only, normal stages");
+  console.table(table(samples.filter((s) => s.newest && s.kind === "normal")));
 }
 
 /**

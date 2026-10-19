@@ -80,11 +80,7 @@ export function eliteModifiersOf(encounter: Encounter, data: GameData): EliteMod
 export function enemySetup(encounter: Encounter, actId: string, data: GameData): CombatantSetup {
   const enemy = encounterEnemy(encounter, getAct(data, actId), data);
   const created = createEnemySetup(enemy, encounter.level);
-  const base = encounter.thief
-    ? { ...created, fleeAfter: PROGRESSION.thiefFleeSeconds }
-    : encounter.boss && enemy.archetype !== "harvester"
-      ? { ...created, baseLife: (created.baseLife ?? 0) * PROGRESSION.bossLife }
-      : created;
+  const base = encounter.thief ? { ...created, fleeAfter: PROGRESSION.thiefFleeSeconds } : created;
   const p = encounter.pressure;
   const setup = p
     ? {
@@ -103,7 +99,7 @@ export function enemySetup(encounter: Encounter, actId: string, data: GameData):
     : setup;
   const mods = eliteModifiersOf(encounter, data);
   // A Gatekeeper is already half the wall: its modifiers, but no Elite Life and damage on top.
-  const elite = mods.length ? applyEliteModifiers(walled, mods, { plain: encounter.gate }) : walled;
+  const elite = mods.length ? applyEliteModifiers(walled, mods) : walled;
   return encounter.omens?.length ? withOmens(elite, omenEffectsOf(data, encounter.omens)) : elite;
 }
 
@@ -185,7 +181,9 @@ export function finaleEncounter(data: GameData, stage: number, rng: Rng): Encoun
   const finale = data.finale ?? fail("No finale in this game");
   const last = harvestAct(data, PROGRESSION.finalPrestige - 1);
   const level = stageMonsterLevel(data, last, last.stages, PROGRESSION.finalPrestige - 1);
-  const pressure = finalePressure(stage, finale.stages);
+  const ramp = finalePressure(stage, finale.stages);
+  const kind = PROGRESSION.stageKinds.boss;
+  const pressure = { life: ramp.life * kind.life, damage: ramp.damage * kind.damage };
   const echo = finaleEchoes(data)[stage - 1];
   const seed = rng.int(0, 0x7fffffff);
   if (!echo || stage >= finale.stages) {
@@ -198,11 +196,7 @@ export function finaleEncounter(data: GameData, stage: number, rng: Rng): Encoun
     eliteModifiers: bossAbilities(data, echo, PROGRESSION.finalPrestige)
       .slice(0, Math.min(stage, PROGRESSION.finaleEchoAbilities))
       .map((m) => m.id),
-    // The echoes are evened out like the Wildfire's bosses (ActData.endgameBoss).
-    pressure: {
-      life: pressure.life * (echo.endgameBoss ?? 1),
-      damage: pressure.damage * (echo.endgameBoss ?? 1),
-    },
+    pressure,
     seed,
     echo: echo.id,
   };

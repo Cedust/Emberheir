@@ -24,6 +24,7 @@ describe("parseArgs", () => {
       newest: 0,
       json: "",
       budget: 0,
+      curve: 0,
     });
   });
 
@@ -80,6 +81,7 @@ describe("parseArgs", () => {
       newest: 1,
       json: "out.json",
       budget: 0,
+      curve: 0,
     });
   });
 

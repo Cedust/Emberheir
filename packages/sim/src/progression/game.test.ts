@@ -16,7 +16,6 @@ import {
   isHarvestAct,
   levelBand,
   stageMonsterLevel,
-  stagePressure,
   enemySetup,
   nextAct,
   currentFight,
@@ -563,14 +562,7 @@ describe("the road through the acts", () => {
     expect(stageMonsterLevel(data, second, 3, 1)).toBe(20);
   });
 
-  it("Run Pressure grows along a run with more than one act and toughens its monsters", () => {
-    const second = data.acts[1] ?? fail();
-    expect(stagePressure(data, TEST_ACT, 3, 0)).toEqual({ life: 1, damage: 1 });
-    expect(stagePressure(data, TEST_ACT, 1, 1)).toEqual({ life: 1, damage: 1 });
-    expect(stagePressure(data, second, 3, 1)).toEqual({
-      life: 1 + PROGRESSION.runPressure.life,
-      damage: 1 + PROGRESSION.runPressure.damage,
-    });
+  it("an encounter's pressure toughens its monster", () => {
     const encounter = {
       enemyId: TEST_ACT.enemies[0]?.id ?? fail(),
       level: 5,
@@ -589,7 +581,11 @@ describe("the road through the acts", () => {
   });
 
   it("opens one act after the other and lets cleared acts be revisited", () => {
-    let s = inRun(start(), 2);
+    // A strong Heir, so the third run's monsters fall.
+    const fresh = start();
+    const a = fresh.hero.attributes;
+    const strong = { ...a, strength: a.strength + 60, vitality: a.vitality + 120 };
+    let s = inRun({ ...fresh, hero: { ...fresh.hero, level: 45, attributes: strong } }, 2);
     expect(actUnlocked(s, data, "test-act")).toBe(true);
     expect(actUnlocked(s, data, "deadly-act")).toBe(false);
     expect(nextAct(s, data).id).toBe("test-act");

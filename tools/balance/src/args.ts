@@ -40,6 +40,11 @@ export interface BalanceArgs {
    * layer is worth); `--runs` seeds of random gear each.
    */
   budget: number;
+  /**
+   * Act mode: 1 = also measure the hero's power along the game (damage per second, effective Life
+   * per Monster Level) next to the monsters it meets.
+   */
+  curve: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -66,6 +71,7 @@ const DEFAULTS: BalanceArgs = {
   newest: 0,
   json: "",
   budget: 0,
+  curve: 0,
 };
 
 const NUMBER_FLAGS = {
@@ -81,6 +87,7 @@ const NUMBER_FLAGS = {
   "--runes": "runes",
   "--newest": "newest",
   "--budget": "budget",
+  "--curve": "curve",
 } as const;
 const STRING_FLAGS = {
   "--weapon": "weapon",

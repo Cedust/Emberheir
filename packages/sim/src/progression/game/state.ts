@@ -70,12 +70,6 @@ export interface ActData {
   readonly favoredAffixes?: Readonly<Record<string, number>>;
   /** The Stolen Fire Boon family of this act's Warden (open from this act on). */
   readonly boonFamily?: string;
-  /**
-   * Life and damage factor of this act's boss in the endgame (default 1): its Warden echo in The
-   * Last Ember and its Wildfire fights. The bosses were made for their own act; this evens them
-   * out, so every act burns about as hot at the same tier (endgame-balance-v1.md A).
-   */
-  readonly endgameBoss?: number;
 }
 
 /** Everything content-related the game loop needs. Built once in `@emberheir/content`. */
@@ -175,7 +169,7 @@ export interface Encounter {
   readonly boss: boolean;
   /** Elite modifier ids; empty for normal enemies. */
   readonly eliteModifiers: readonly string[];
-  /** Run Pressure on Life and damage (see `stagePressure`); missing means none. */
+  /** Life and damage of the stage kind, finale or Wildfire tier on top of the Monster Level; missing means none. */
   readonly pressure?: { readonly life: number; readonly damage: number };
   /** Wall of the run's newest act on Life and damage (see `stageWall`); missing means none. */
   readonly wall?: { readonly life: number; readonly damage: number };

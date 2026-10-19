@@ -682,7 +682,7 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   attributes: { strength: 12, dexterity: 6, agility: 4, intelligence: 10, wisdom: 8, vitality: 16 },
   weapon: HARVEST_SCYTHE,
   skills: [SOUL_REAP],
-  baseLife: 520,
+  baseLife: 347,
   boss: true,
   // As tough against Physical as against Elemental (Timo): about 15 % each at the hero's level
   // (its Strength gives the Armor, COMBAT.monsterArmorPerLevel).
@@ -755,7 +755,7 @@ export const HARVESTER_CORE: EnemyDefinition = {
   },
   weapon: HARVEST_SCYTHE,
   skills: [SOUL_REAP],
-  baseLife: 1500,
+  baseLife: 1000,
   boss: true,
   bonuses: { allResistance: 0.25 },
   telegraphs: [

@@ -67,19 +67,14 @@ describe("Wildfire", () => {
     expect(wildfireLevel(5)).toBe(100);
     expect(wildfireLevel(10)).toBe(110);
     expect(encounter.wall).toBeUndefined();
-    expect(wildfirePressure(data, 1, 3).life).toBeGreaterThan(wildfirePressure(data, 1, 1).life);
+    expect(wildfirePressure(3).life).toBeGreaterThan(wildfirePressure(1).life);
     // Above V each tier climbs at the steep rate.
     const w = PROGRESSION.wildfire;
-    const step = (t: number) =>
-      wildfirePressure(data, 1, t + 1).life - wildfirePressure(data, 1, t).life;
-    const base = wildfirePressure(data, 1, 1).life;
+    const step = (t: number) => wildfirePressure(t + 1).life - wildfirePressure(t).life;
+    const base = wildfirePressure(1).life;
     expect(step(2)).toBeCloseTo(base * w.life);
     expect(step(w.steep.from)).toBeCloseTo(base * w.steep.life);
-    const tierOne = enemySetup(
-      { ...encounter, pressure: wildfirePressure(data, 1, 1) },
-      "final-act",
-      data,
-    );
+    const tierOne = enemySetup({ ...encounter, pressure: wildfirePressure(1) }, "final-act", data);
     expect(enemySetup(encounter, "final-act", data).baseLife).toBeGreaterThan(
       tierOne.baseLife ?? 0,
     );
@@ -89,19 +84,10 @@ describe("Wildfire", () => {
     expect(s.progress.waymarks).toEqual([]);
   });
 
-  it("the act boss takes the Wildfire boss pressure times its act's endgame factor", () => {
-    const testAct = data.acts.find((a) => a.id === "test-act") ?? fail("missing");
-    const plain = wildfirePressure(data, testAct.stages, 4, true, testAct);
-    expect(plain.damage).toBeCloseTo(
-      (PROGRESSION.wildfire.boss.damage * wildfirePressure(data, 1, 4).damage) /
-        wildfirePressure(data, 1, 1).damage,
-    );
-    const evened = wildfirePressure(data, testAct.stages, 4, true, {
-      ...testAct,
-      endgameBoss: 0.5,
-    });
-    expect(evened.life).toBeCloseTo(plain.life * 0.5);
-    expect(evened.damage).toBeCloseTo(plain.damage * 0.5);
+  it("the act boss takes the Wildfire boss pressure on top of the tier", () => {
+    const boss = wildfirePressure(4, true);
+    expect(boss.damage).toBeCloseTo(PROGRESSION.wildfire.boss.damage * wildfirePressure(4).damage);
+    expect(boss.life).toBeCloseTo(PROGRESSION.wildfire.boss.life * wildfirePressure(4).life);
   });
 
   it("the act boss raises the highest tier and opens the next", () => {
