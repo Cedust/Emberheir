@@ -821,8 +821,6 @@ export interface WeaponRules {
   readonly whirl?: { readonly stabs: number; readonly seconds: number };
   /** After an Evade, this many hits are clean Crits (Vanishing Act). */
   readonly critsAfterEvade?: number;
-  /** Attacks come at this fixed rate, whatever the Attack Speed (Siege Engine). */
-  readonly fixedAttackRate?: number;
   /** Every clean Default Attack sets off all Sunder stacks: `perStack` more damage each (Siege Engine). */
   readonly siegeEngine?: { readonly perStack: number };
   /** Default Attacks are volleys of `count` bolts of `multiplier` sharing one Crit roll (Repeater). */

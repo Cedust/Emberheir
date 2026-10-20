@@ -529,7 +529,5 @@ export function attackRate(core: FightCore, f: Fighter): number {
   for (const e of opponent.setup.weaponRules?.enemyAttackSpeed ?? []) {
     if (conditionHolds(core, opponent, e.condition)) extra += e.amount;
   }
-  const fixed = f.setup.weaponRules?.fixedAttackRate;
-  const base = fixed ?? f.stats.attackSpeed * Math.max(0.1, 1 + extra);
-  return base * chillFactor(f.ailments);
+  return f.stats.attackSpeed * Math.max(0.1, 1 + extra) * chillFactor(f.ailments);
 }

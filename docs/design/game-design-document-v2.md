@@ -38,7 +38,7 @@ Endgame **Wildfire I–X**.
 | Klasse | Hauptattribut | Waffen (eine wählen) | Fokus | Class Trait | Masteries (Burst · Tempo · Ailment) |
 |---|---|---|---|---|---|
 | **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis 10); das Innate gibt alle aus, +25 % more pro Fury (Schritt 4, 19.10.2026: vorher +2 % pro Treffer auf alles; die alten +20 % stecken jetzt im Waffenschaden). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Sword 13–20 bei 0,9/s (Speed 4, Power 2), Axe 14–25 bei 0,75/s (3/3), Mace 18–27 bei 0,6/s (2/4) | Vanquisher · Berserker · Ravager |
-| **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: +10 % Precision gegen einen Gegner mit einem deiner Ailments (Timo 2026-10-19: statt Crit, Crit gehört zu AGI) | Deadeye · Skirmisher · Trickster |
+| **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: jede saubere Default Attack ohne Crit markiert den Gegner (bis 10 Marken); dein nächster Crit gibt alle aus, +15 % more pro Marke (Schritt 5, 20.10.2026: vorher +10 % Precision gegen einen Gegner mit deinem Ailment, ≈ +5 %). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Bow 15–24 bei 0,8/s (Speed 3, Power 3), Crossbow 21–32 bei 0,5/s (1/5), Dagger 11–17 bei 1,1/s (5/1) | Deadeye · Skirmisher · Trickster |
 | **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (150 % Weapon Damage, setzt sicher ihr Ailment) | Archmage · Spellweaver · Warlock |
 
 - Start-Arrays (STR/DEX/AGI/INT/WIS/VIT): Cinderguard 5-1-2-1-2-3, Ashstrider 1-5-3-1-1-3, Emberseer 1-1-1-5-3-3.
@@ -355,6 +355,10 @@ Endgame **Wildfire I–X**.
 - Der Mace-Stun ersetzt ein Ailment (Quake: Stunned Sunder). Attunement gibt es nicht mehr, der Path übernimmt es.
 - **Techniken** geben nur Werte, die es ausschließlich an der Waffe gibt: Precision, Damage Range, **Parry**, Sunder,
   Ailment-Wirkung der Waffe, Extra-Attack Damage, Innate Damage/Cost, Mighty-Hit-Schaden, Heat per Hit.
+- **Barbed Arrow** (Bow-Innate vor dem Heirloom, Schritt 5): 180 % (vorher 100 %, das schwächste Innate pro Heat;
+  der Bow brauchte in Act 1 6,5 Versuche, Crossbow und Dagger 4,4). Die Formen Hooked Arrow 180 %, Toxic Arrow 2 × 90 %,
+  Split Arrow 3 × 65 % ziehen mit. **Siege Engine** (Crossbow-Keystone): kein fester Bolzen-Takt mehr; der kostete
+  bei Steady Heat (nur aus Treffern) auch die Skills und unterm Strich bis 70 % Schaden.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
   Heavy Bolt (Crossbow), Shockbolt (Wand), Void Bolt (Staff); der Path benennt sie um (z. B. Frostbolt, Voidbolt).
   Jeder Innate gibt Heat laufend aus (Angriff oder Spell).
@@ -381,7 +385,11 @@ Endgame **Wildfire I–X**.
 - **Element-Angriffe** (Schritt 4): Waffenkämpfer bekommen im Ash Tree je einen Angriff pro Element, auf dem Weg zu
   den Element-Notables: Searing Blow (Flame, 160 % Fire, setzt immer Burn), Storm Strike (Storm, 3 × 70 % Lightning,
   je 50 % Shock), Frost Strike (Frost, 240 % Cold, setzt immer Chill). Sie ersetzen die Reise-Nodes Ember Ash, Steady
-  Mind und Still Mind (Spielstand-Version 10 zieht gelernte Punkte um).
+  Mind und Still Mind (Spielstand-Version 10 zieht gelernte Punkte um). Seit Schritt 5 schießen auch die
+  Element-Builds des Ashstrider damit (vorher warfen Fire-, Storm- und Frost-Bögen Cleave und Rend mit Bleed).
+- **Deadly Aim** (Deadeye, Schritt 5): wie Earthsplitter, löst nur das Ailment der eigenen Waffe ein, vor dem Treffer,
+  der es danach sicher neu setzt. Vorher beendete er auch Gear-Poison und die Poison-Stapel der Venom-Paths.
+- **Hit and Run** (Skirmisher, Schritt 5): 4 × 65 % (vorher 55 %), der Skirmisher lag einen Versuch hinter dem Trickster.
 - **Smolder** (Staff, Timo 19.10.2026): Cinders +40 % Burn-Schaden (war 25 %), Master of Smolder +35 % (war 20 %), weil
   derselbe Held mit Hollow 10–35 % mehr Schaden machte.
 - **Twin Cast** (Spellweaver, Timo 19.10.2026): Twin Sparks (jede 4.) und Endless Weave (jede 3.) zählen Aktionen statt
