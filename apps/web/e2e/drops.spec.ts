@@ -96,6 +96,9 @@ test("Bounty: a done bounty is turned in at Eldrin, the item goes into the inven
   // Eldrin hands out a new bounty for the next trip.
   await expect(page.getByLabel("Bounty done")).toHaveCount(0);
   await page.keyboard.press("Escape");
+  // Wait until Eldrin's window is gone: a click during its closing animation brought the same
+  // window back, paid note and all.
+  await expect(page.getByLabel("Eldrin, The Road")).toHaveCount(0);
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   await expect(page.getByLabel("Bounty", { exact: true })).toContainText("BOUNTY ·");
   expect(errors).toEqual([]);
