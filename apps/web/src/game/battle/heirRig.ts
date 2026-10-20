@@ -310,9 +310,9 @@ const RANGED_POSES: Record<HeirRangedPose, PoseSource> = {
     feet: [580, 1350],
     body: [42, 184],
     arm: [151, 358],
-    hand: [906, 418],
+    hand: [904, 418],
     // In the middle of the fist, under thumb and fingers.
-    grip: [990, 474],
+    grip: [952, 474],
     jaw: [448, 402],
     back: [380, 420],
   },
