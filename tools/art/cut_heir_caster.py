@@ -2,7 +2,7 @@
 # (heir-staff-v1.png). Per pose the whole otter and the paw on the weapon once more (only fur and
 # ink, never the shirt behind), drawn over the weapon: for the Wand the thumb, which lies over the
 # upright Wand in front of the fist; for the Staff the fist, the Staff running through it. The
-# Staff's forearm (with the fist) is cut as well and taken out of the otter, so it can lift the
+# forearm (with the fist) is cut as well and taken out of the otter, so it can lift the
 # Staff on a cast: where it lay, the shirt right of it is drawn on, or nothing over the background.
 # Run from the repo root: python3 tools/art/cut_heir_caster.py  (needs Pillow)
 # The printed top lefts match CASTER_POSES in apps/web/src/game/battle/heirRig.ts.
@@ -13,8 +13,12 @@ OUT='apps/web/src/game/battle/heir/'
 POSES={
   'wand':{
     'src':'heir-wand-v1.png',
-    # The thumb over the fist's top, its tip pressed on the index finger.
-    'hand':[(938,458),(944,447),(954,444),(966,448),(975,455),(979,465),(971,474),(960,472),(950,469),(943,466)],
+    # The thumb along the fist's underside, its tip under the curled fingers: the Wand lies under it.
+    'hand':[(897,500),(906,496),(920,495),(932,493),(942,497),(952,502),(961,507),(964,514),(952,516),(935,513),(918,511),(903,509),(895,505)],
+    # The forearm from the sleeve's cuff out to the fist.
+    'arm':[(788,452),(830,448),(880,432),(925,415),(960,412),(990,425),(1003,450),(1000,490),(985,515),(965,525),(940,522),(905,518),(870,532),(830,556),(788,572)],
+    # Only right of here does the forearm leave the otter: left of it stays inside the cuff.
+    'keep':800,
   },
   'staff':{
     'src':'heir-staff-v1.png',
@@ -59,7 +63,7 @@ for pose,p in POSES.items():
     body=im.copy(); bp=body.load(); gp=gone.load(); src=im.load()
     for y in range(body.height):
       for x in range(body.width):
-        if not gp[x,y]: continue
+        if not gp[x,y] or x<p.get('keep',0): continue
         k=x+1
         while k<body.width and gp[k,y]: k+=1
         bp[x,y]=src[k,y] if k<body.width else (0,0,0,0)

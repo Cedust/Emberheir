@@ -626,15 +626,15 @@ export class RangedHold extends Container {
  * enemy from the stretched fist; the Staff's foot stands on the ground between the feet.
  */
 const CASTER_GRIPS: Record<HeirCasterPose, { angle: number; length: number; at: number }> = {
-  wand: { angle: -0.42, length: 120, at: 0.08 },
+  wand: { angle: -0.42, length: 120, at: 0.16 },
   staff: { angle: -Math.PI / 2 - 0.03, length: 390, at: 0.6 },
 };
 
 /**
  * Wand or Staff in its caster pose, drawn over the otter: the weapon in front of the fist, the
- * paw on it once more on top (the Wand's thumb, the Staff's fist), and for the Staff its forearm,
- * which turns at the elbow. `pose` plays a cast: the Wand flicks at the enemy; the Staff's arm
- * lifts it and brings it down, its head dipping. Spells leave from the weapon's tip. Visual only.
+ * paw on it once more on top (the Wand's thumb, the Staff's fist), and the forearm, which turns
+ * at the elbow. `pose` plays a cast: the Wand's arm draws back and thrusts the Wand at the enemy;
+ * the Staff's arm lifts it and brings it down, its head dipping. Spells leave from the weapon's tip. Visual only.
  */
 export class CasterHold extends Container {
   private readonly wand: boolean;
@@ -679,10 +679,13 @@ export class CasterHold extends Container {
     if (motion && age < 0.45) {
       const t = age / 0.45;
       if (this.wand) {
-        // A short wind-up back, then a snap at the enemy, settling.
-        if (t < 0.25) turn = -0.15 * (t / 0.25);
-        else if (t < 0.45) turn = -0.15 + 0.4 * ((t - 0.25) / 0.2);
-        else turn = 0.25 * (1 - (t - 0.45) / 0.55);
+        // The arm draws back up, then thrusts at the enemy a little past rest; the Wand flicks.
+        if (t < 0.3) lift = -0.08 * Math.sin((t / 0.3) * (Math.PI / 2));
+        else if (t < 0.45) lift = -0.08 + 0.12 * ((t - 0.3) / 0.15);
+        else lift = 0.04 * (1 - (t - 0.45) / 0.55);
+        if (t < 0.3) turn = -0.1 * (t / 0.3);
+        else if (t < 0.45) turn = -0.1 + 0.25 * ((t - 0.3) / 0.15);
+        else turn = 0.15 * (1 - (t - 0.45) / 0.55);
       } else {
         // The arm lifts the Staff, then brings it down a little past rest; its head dips.
         if (t < 0.4) lift = -0.12 * Math.sin((t / 0.4) * (Math.PI / 2));

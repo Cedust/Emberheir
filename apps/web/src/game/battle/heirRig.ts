@@ -16,6 +16,7 @@ import crossbowUrl from "./heir/heir-crossbow.webp";
 import staffArmUrl from "./heir/heir-staff-arm.webp";
 import staffHandUrl from "./heir/heir-staff-hand.webp";
 import staffUrl from "./heir/heir-staff.webp";
+import wandArmUrl from "./heir/heir-wand-arm.webp";
 import wandHandUrl from "./heir/heir-wand-hand.webp";
 import wandUrl from "./heir/heir-wand.webp";
 import grimoireOpenUrl from "./heir/offhand-grimoire-open.webp";
@@ -78,7 +79,7 @@ export type HeirCasterPose = "wand" | "staff";
 
 /**
  * A caster pose: the whole otter, the paw on the weapon once more (the Wand's thumb, the Staff's
- * fist) and, for the Staff, the forearm that lifts it (taken out of the otter).
+ * fist) and the forearm that swings it on a cast (taken out of the otter).
  */
 export interface HeirCasterTextures {
   readonly body: Texture;
@@ -87,7 +88,7 @@ export interface HeirCasterTextures {
 }
 
 const CASTER_URLS: Record<HeirCasterPose, [string, string, string | null]> = {
-  wand: [wandUrl, wandHandUrl, null],
+  wand: [wandUrl, wandHandUrl, wandArmUrl],
   staff: [staffUrl, staffHandUrl, staffArmUrl],
 };
 
@@ -360,11 +361,11 @@ export function heirPosePart(
 interface CasterSource {
   /** Between the feet, on the ground. */
   readonly feet: Pt;
-  /** Top left of the cut otter, the paw on the weapon and the Staff's forearm (stored at half size). */
+  /** Top left of the cut otter, the paw on the weapon and the forearm (stored at half size). */
   readonly body: Pt;
   readonly hand: Pt;
   readonly arm?: Pt;
-  /** Where the Staff's forearm turns, inside the sleeve. */
+  /** Where the forearm turns, inside the sleeve. */
   readonly elbow?: Pt;
   /** Where the weapon crosses the fist. */
   readonly grip: Pt;
@@ -382,9 +383,11 @@ const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
   wand: {
     feet: [600, 1395],
     body: [22, 183],
-    hand: [938, 444],
-    // Through the fist's hole, under the thumb's tip.
-    grip: [960, 478],
+    hand: [895, 493],
+    arm: [788, 429],
+    elbow: [790, 510],
+    // Along the fist's underside, under the thumb.
+    grip: [938, 504],
     palm: [670, 686],
   },
   staff: {
