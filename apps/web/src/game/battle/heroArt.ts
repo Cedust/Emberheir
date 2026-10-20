@@ -639,7 +639,7 @@ const CASTER_GRIPS: Record<HeirCasterPose, { angle: number; length: number; at: 
   wand: { angle: -0.6, length: 120, at: 0.2 },
   staff: { angle: -Math.PI / 2 - 0.03, length: 390, at: 0.6 },
   // Reverse grip: the blade points down out of the fist, the pommel shows above it.
-  dagger: { angle: Math.PI / 2 + 0.15, length: 120, at: 0.22 },
+  dagger: { angle: 2.3, length: 120, at: 0.22 },
 };
 
 /**

@@ -126,6 +126,8 @@ function unstring(texture: Texture): Unstrung | null {
   const px = image.data;
   let first: [number, number] | null = null;
   let last: [number, number] | null = null;
+  let seen: [number, number] | null = null;
+  const merged: [number, number, number][] = [];
   for (let x = 0; x < w; x++) {
     const col = runs(px, w, h, x);
     const limb = col.reduce<[number, number] | null>(
@@ -134,7 +136,13 @@ function unstring(texture: Texture): Unstrung | null {
     );
     if (!limb) continue;
     const string = col.find((r) => r[0] > limb[1] + 1 && r[1] - r[0] <= 8);
-    if (!string) continue;
+    if (!string) {
+      // At the grip the string runs into the limb's lower edge: cut it off there too (once the
+      // string shows again further on, so the limbs' tips stay whole).
+      if (seen && limb[1] >= seen[1] - 1) merged.push([x, seen[0] - 1, limb[1] + 3]);
+      continue;
+    }
+    seen = string;
     const mid = (string[0] + string[1]) / 2;
     first ??= [x, mid];
     last = [x, mid];
@@ -142,6 +150,10 @@ function unstring(texture: Texture): Unstrung | null {
       px[(y * w + x) * 4 + 3] = 0;
   }
   if (!first || !last || last[0] - first[0] < w / 2) return null;
+  for (const [x, from, to] of merged) {
+    if (x > last[0]) break;
+    for (let y = from; y < Math.min(h, to); y++) px[(y * w + x) * 4 + 3] = 0;
+  }
   ctx.putImageData(image, 0, 0);
   const body = Texture.from(canvas);
   const white = document.createElement("canvas");
