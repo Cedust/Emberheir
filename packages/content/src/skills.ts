@@ -554,10 +554,13 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   FROST_STRIKE,
 ];
 
-/** Staff Innate: a slow Void bolt that Corrupts. */
+/**
+ * Staff Innate: a slow Void orb that Corrupts. An orb, not a bolt, so it never reads like the
+ * Wand's Shockbolt (a Void Wand casts "Voidbolt"; Timo 2026-10-20).
+ */
 export const VOID_BOLT: SkillDefinition = {
   id: "void-bolt",
-  name: "Void Bolt",
+  name: "Void Orb",
   type: "spell",
   heatCost: 35,
   tags: ["void", "over-time", "any"],

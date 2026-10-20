@@ -84,8 +84,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Overcharge",
       description:
-        "Every skill gives a Charge. At 3 Charges they break loose as a Nova of your element: 150 % Weapon Damage, always applies its ailment.",
-      rules: { overcharge: { charges: 3, multiplier: 1.5 } },
+        "Every skill gives a Charge. At 3 Charges they break loose as a Nova of your element: 125 % Weapon Damage, always applies its ailment.",
+      rules: { overcharge: { charges: 3, multiplier: 1.25 } },
     },
     lineage: {
       name: "Hollow Lineage",

@@ -80,7 +80,7 @@ const HEIRLOOM: Record<
     innate: "void-lance",
     innates: { smolder: "rift-bolt" },
     keystones: { hollow: "endless-night", smolder: "pyre", glacial: "eclipse" },
-    forks: { smolder: [1, 0] },
+    forks: { smolder: [1, 1] },
   },
 };
 
@@ -219,7 +219,7 @@ function emberseerKit(style: Style): Kit {
         "void-soul-harvest",
         "frost-heart-of-winter",
       ],
-      rotation: ["corrupt", MS, "void-rift", "soul-harvest"],
+      rotation: [MS, "void-rift"],
     },
     cold: {
       nodes: [
@@ -234,7 +234,7 @@ function emberseerKit(style: Style): Kit {
         MN,
         "frost-deep-freeze",
       ],
-      rotation: ["ice-lance", MS, "frost-nova", "corrupt"],
+      rotation: [MS, "frost-nova"],
     },
     lightning: {
       nodes: [
@@ -250,7 +250,7 @@ function emberseerKit(style: Style): Kit {
         MN,
         "frost-heart-of-winter",
       ],
-      rotation: ["chain-lightning", MS, "thunderstrike", "corrupt"],
+      rotation: [MS, "chain-lightning"],
     },
     fire: {
       nodes: [
@@ -267,7 +267,7 @@ function emberseerKit(style: Style): Kit {
         "roots-arcane-conduit",
         MN,
       ],
-      rotation: ["immolate", MS, "meteor", "inferno", "corrupt"],
+      rotation: [MS, "inferno"],
     },
   };
   return spells[style] ?? (spells.void as Kit);

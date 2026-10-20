@@ -42,13 +42,14 @@ export const WAND: WeaponDefinition = {
   // Attunement picks the element now (Weapon Mastery), so the weapon is just "Wand".
   name: "Wand",
   defaultAttack: "Spark",
-  // M7: +10 %, the Wand died far more often than the Sword. Prestige rework: +15 % for the
-  // Level Band up to 20.
-  damage: { min: 10, max: 16 },
+  // Step 6 (Timo 2026-10-20): Wand and Staff have their own Speed and Power, at the same damage
+  // per second. Wand: fast and light (was 10-16 at 0.75/s). The caster's Default Attack was the
+  // weakest in the game (weapon share 10 %), so both gained about 40 % damage per second.
+  damage: { min: 12, max: 19 },
   // Sorcerer without Fire (2026-10-17): Lightning by default, Attunement can make it Cold.
   damageType: "lightning",
-  // Playtest 1: still felt too busy at 1.0 (Warming also fires the Innate often), so 0.7.
-  attacksPerSecond: 0.75,
+  // Warming Heat comes per second, so the faster Spark needs no other Heat.
+  attacksPerSecond: 0.9,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",
@@ -163,9 +164,10 @@ export const STAFF: WeaponDefinition = {
   id: "staff",
   name: "Staff",
   defaultAttack: "Channel",
-  damage: { min: 12, max: 20 },
+  // Step 6 (see the Wand): slow and heavy (was 12-20 at 0.6/s).
+  damage: { min: 15, max: 25 },
   damageType: "void",
-  attacksPerSecond: 0.6,
+  attacksPerSecond: 0.65,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",

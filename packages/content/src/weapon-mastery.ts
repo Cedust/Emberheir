@@ -1747,10 +1747,11 @@ const WAND = buildTree({
     },
   ],
   innateForms: [
-    form("lance", "Lance", "One bolt with 70 % more damage. Costs 10 more Heat.", {
+    // A Spear, not a Lance: a Void Wand would cast the Staff's "Void Lance".
+    form("lance", "Spear", "One bolt with 70 % more damage. Costs 10 more Heat.", {
       ...SHOCKBOLT,
       id: "shock-lance",
-      name: "Shock Lance",
+      name: "Shock Spear",
       heatCost: SHOCKBOLT.heatCost + 10,
       hits: SHOCKBOLT.hits.map((h) =>
         h.kind === "spell"
@@ -1999,17 +2000,17 @@ const STAFF = buildTree({
       id: "endless-night",
       name: "Endless Night",
       form: "Nightstaff",
-      description: "Corruption lasts ten times as long. −30 % hit damage.",
-      effect: { weaponRules: { ailmentDurationBy: { corruption: 9 }, damageDealt: 0.7 } },
+      description: "Corruption lasts three times as long. −30 % hit damage.",
+      effect: { weaponRules: { ailmentDurationBy: { corruption: 2 }, damageDealt: 0.7 } },
     },
     {
       id: "pyre",
       name: "Pyre",
       form: "Pyre Staff",
-      description: "Burn deals 60 % more damage but lasts 40 % shorter.",
+      description: "Burn deals 40 % more damage but lasts 20 % shorter.",
       effect: {
-        rules: { ailmentDamage: { burn: 1.6 } },
-        weaponRules: { ailmentDurationBy: { burn: -0.4 } },
+        rules: { ailmentDamage: { burn: 1.4 } },
+        weaponRules: { ailmentDurationBy: { burn: -0.2 } },
       },
     },
     {

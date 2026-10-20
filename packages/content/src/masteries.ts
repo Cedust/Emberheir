@@ -409,7 +409,7 @@ function spell(
   heatCost: number,
   description: string,
   damage: { min: number; max: number },
-  extra: { count?: number; chance: number; power?: number; cashIn?: number },
+  extra: { count?: number; chance: number; power?: number; cashIn?: number; own?: boolean },
 ): SkillDefinition {
   return {
     id,
@@ -429,16 +429,21 @@ function spell(
         ...(extra.power ? { ailmentPower: extra.power } : {}),
       },
     ],
-    ...(extra.cashIn ? { effects: [{ kind: "cashIn", multiplier: extra.cashIn }] } : {}),
+    ...(extra.cashIn
+      ? {
+          effects: [
+            { kind: "cashIn", multiplier: extra.cashIn, ...(extra.own ? { own: true } : {}) },
+          ],
+        }
+      : {}),
   };
 }
 
 /**
- * Burst Masteries cash in (Timo 2026-10-19): their skill ends every damage-over-time ailment on
- * the enemy and deals what is left of it at once, stronger. Ailment Masteries let them run.
+ * Burst Masteries cash in (Timo 2026-10-19): their skill first sets off the weapon's own ailment
+ * at once, stronger, then applies it again (steps 4-6). Ailment Masteries let it run.
  */
 const CASH_IN = 1.5;
-const CASH_IN_TEXT = `sets off all damage over time on the enemy at once: ${CASH_IN * 100} % of what is left.`;
 
 const CINDER_TRAVEL = (names: readonly string[]) =>
   names.map((n, i) => [n, [L, A, K, T][i % 4] ?? L] as const);
@@ -785,9 +790,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "arcane-blast",
       "Arcane Blast",
       55,
-      `A heavy hit of your Heirloom's element. 50 % chance to apply its ailment, then ${CASH_IN_TEXT}`,
+      `First sets off your Heirloom's ailment on the enemy at once: ${CASH_IN * 100} % of what is left. Then a heavy hit of its element that always applies it again.`,
       { min: 52, max: 81 },
-      { chance: 0.5, cashIn: CASH_IN },
+      { chance: 1, cashIn: CASH_IN, own: true },
     ),
     notables: [
       skillPower("Arcane Might", 0.15),
@@ -898,28 +903,28 @@ const MASTERIES: readonly MasterySpec[] = [
       "malediction",
       "Malediction",
       50,
-      "A hit of your Heirloom's element that always applies its ailment, two and a half times as strong.",
+      "A hit of your Heirloom's element that always applies its ailment, twice as strong.",
       { min: 23, max: 34 },
-      { chance: 1, power: 2.5 },
+      { chance: 1, power: 2 },
     ),
     notables: [
       {
         name: "Lingering",
-        description: "Your ailments deal 2 % more per second of the fight, up to 30 %.",
-        rules: { lingering: { perSecond: 0.02, max: 0.3 } },
+        description: "Your ailments deal 1 % more per second of the fight, up to 20 %.",
+        rules: { lingering: { perSecond: 0.01, max: 0.2 } },
       },
       ailmentChance("Malice", 0.1),
       ailmentLonger("Long Curse", 0.2),
     ],
     keystones: keystones(
       tierName("Dark Pact"),
-      (s) => ({ dotDamage: 1.25 + s * 0.1, ailmentDuration: 0.25, hitDamage: 0.9 }),
+      (s) => ({ dotDamage: 1.1 + s * 0.1, ailmentDuration: 0.25, hitDamage: 0.9 }),
       (s) =>
-        `Ailments deal ${25 + s * 10} % more damage over time and last 25 % longer. Your hits deal 10 % less.`,
+        `Ailments deal ${10 + s * 10} % more damage over time and last 25 % longer. Your hits deal 10 % less.`,
     ),
     deeper: [
-      dotLeech("Soul Drain"),
       ailmentEffect("Withering", 0.15),
+      dotLeech("Soul Drain"),
       ailmentChance("Spreading Hex", 0.1),
       ailmentCrown("Doom"),
     ],

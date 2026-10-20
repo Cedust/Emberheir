@@ -39,7 +39,7 @@ Endgame **Wildfire I–X**.
 |---|---|---|---|---|---|
 | **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis 10); das Innate gibt alle aus, +25 % more pro Fury (Schritt 4, 19.10.2026: vorher +2 % pro Treffer auf alles; die alten +20 % stecken jetzt im Waffenschaden). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Sword 13–20 bei 0,9/s (Speed 4, Power 2), Axe 14–25 bei 0,75/s (3/3), Mace 18–27 bei 0,6/s (2/4) | Vanquisher · Berserker · Ravager |
 | **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: jede saubere Default Attack ohne Crit markiert den Gegner (bis 10 Marken); dein nächster Crit gibt alle aus, +15 % more pro Marke (Schritt 5, 20.10.2026: vorher +10 % Precision gegen einen Gegner mit deinem Ailment, ≈ +5 %). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Bow 15–24 bei 0,8/s (Speed 3, Power 3), Crossbow 21–32 bei 0,5/s (1/5), Dagger 11–17 bei 1,1/s (5/1) | Deadeye · Skirmisher · Trickster |
-| **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (150 % Weapon Damage, setzt sicher ihr Ailment) | Archmage · Spellweaver · Warlock |
+| **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (125 % Weapon Damage, setzt sicher ihr Ailment; Schritt 6: vorher 150 %, der Waffentreffer ist jetzt höher). Eigene Speed und Power bei gleichem Schaden pro Sekunde (Timo 20.10.2026): Wand 12–19 bei 0,9/s (Speed 4, Power 2), Staff 15–25 bei 0,65/s (2/4); beide rund 40 % mehr als vorher, die Caster-Default-Attack war die schwächste im Spiel | Archmage · Spellweaver · Warlock |
 
 - Start-Arrays (STR/DEX/AGI/INT/WIS/VIT): Cinderguard 5-1-2-1-2-3, Ashstrider 1-5-3-1-1-3, Emberseer 1-1-1-5-3-3.
   Start-Off-Hands: Round Shield, Quiver (Dagger: Blood Talisman), Ember Focus.
@@ -360,7 +360,7 @@ Endgame **Wildfire I–X**.
   Split Arrow 3 × 65 % ziehen mit. **Siege Engine** (Crossbow-Keystone): kein fester Bolzen-Takt mehr; der kostete
   bei Steady Heat (nur aus Treffern) auch die Skills und unterm Strich bis 70 % Schaden.
 - **Innate Skills:** Power Strike (Sword), Skull Crack (Mace), Lacerate (Axe), Envenom (Dagger), Barbed Arrow (Bow),
-  Heavy Bolt (Crossbow), Shockbolt (Wand), Void Bolt (Staff); der Path benennt sie um (z. B. Frostbolt, Voidbolt).
+  Heavy Bolt (Crossbow), Shockbolt (Wand), Void Orb (Staff); der Path benennt sie um (Wand: Voidbolt, Frostbolt; Staff: Fire Orb, Frost Orb).
   Jeder Innate gibt Heat laufend aus (Angriff oder Spell).
 - **Innate-Level** (Schritt 4, 19.10.2026): Das Innate steigt mit der Waffe, +1 Level pro **Weapon Grade** (Crude 1,
   Honed 2 … Exalted 5). Vorher blieb es auf Level 1, während jeder andere Skill über Ränge wuchs; die Waffe fiel im
@@ -390,6 +390,15 @@ Endgame **Wildfire I–X**.
 - **Deadly Aim** (Deadeye, Schritt 5): wie Earthsplitter, löst nur das Ailment der eigenen Waffe ein, vor dem Treffer,
   der es danach sicher neu setzt. Vorher beendete er auch Gear-Poison und die Poison-Stapel der Venom-Paths.
 - **Hit and Run** (Skirmisher, Schritt 5): 4 × 65 % (vorher 55 %), der Skirmisher lag einen Versuch hinter dem Trickster.
+- **Arcane Blast** (Archmage, Schritt 6): wie Earthsplitter und Deadly Aim, löst nur das Ailment der eigenen Waffe ein,
+  vor dem Treffer, der es danach sicher neu setzt. Vorher beendete er Burn und die Corruption-Rampe.
+- **Warlock** (Schritt 6): Malediction setzt das Ailment 2× so stark (vorher 2,5×), Lingering 1 %/s bis 20 % (vorher
+  2 %/s bis 30 %), Dark Pact +10 % DoT (+10 % je Stufe, vorher +25 %), Soul Drain eine Tier später (tauscht mit
+  Withering). Der Warlock lag klar vor Archmage und Spellweaver; jetzt gebaut wie Ravager.
+- **Endless Night** (Staff-Keystone, Schritt 6): Corruption hält 3× so lang (vorher 10×), −30 % Treffer. Mit Cash In
+  zahlte der Archmage sonst 60 s Corruption auf einmal aus. **Pyre:** Burn +40 % und 20 % kürzer (vorher +60 %, 40 %).
+- **Innate-Namen** (Timo 20.10.2026): Das Staff-Innate heißt Void Orb (nicht mehr Void Bolt, zu nah am Voidbolt des
+  Void-Wands); die Lance-Form des Wand heißt Spear.
 - **Smolder** (Staff, Timo 19.10.2026): Cinders +40 % Burn-Schaden (war 25 %), Master of Smolder +35 % (war 20 %), weil
   derselbe Held mit Hollow 10–35 % mehr Schaden machte.
 - **Twin Cast** (Spellweaver, Timo 19.10.2026): Twin Sparks (jede 4.) und Endless Weave (jede 3.) zählen Aktionen statt
