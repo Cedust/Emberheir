@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 
 test("Effect Gallery: every battle effect plays without errors", async ({ page }) => {
+  // About a hundred effects, each building its arena: longer than the default test time.
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?effects");
