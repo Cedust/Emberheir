@@ -14,7 +14,6 @@ export const CLASSES: readonly HeroClass[] = [
     focus: "Strong attacks",
     weapons: ["sword", "axe", "mace"],
     offHand: "round-shield",
-    offHandFor: { axe: "blood-talisman" },
     startingAttributes: {
       strength: 5,
       dexterity: 1,
