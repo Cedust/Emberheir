@@ -60,8 +60,9 @@ export const AXE: WeaponDefinition = {
   id: "axe",
   name: "Axe",
   defaultAttack: "Hack",
-  // +15 % in balancing restart step 4 (see the Sword).
-  damage: { min: 14, max: 24 },
+  // +23 % in balancing restart step 4 (see the Sword): the slowest Cinderguard weapon, and its
+  // Butcher and Glacier paths stayed behind the Sword and Mace even with a shield.
+  damage: { min: 15, max: 26 },
   damageType: "physical",
   attacksPerSecond: 0.7,
   heatBehavior: "cooling",
