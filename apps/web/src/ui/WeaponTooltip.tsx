@@ -1,5 +1,6 @@
 import { MAX_WEAPON_RANK, WEAPON_GRADES } from "@emberheir/sim";
 import type { CSSProperties, ReactNode } from "react";
+import { MASTERY_ART } from "../game/camp/masteryArtData";
 import { GameIcon, type GameIconId, HEAT_FORM_ICONS } from "./gameIcons";
 import { Icon } from "./Icon";
 import { GRADE_COLOR, type WeaponTip } from "./weaponTip";
@@ -58,6 +59,19 @@ const HEAT_FORM_TEXT = {
 } as const;
 
 const fmt = (n: number) => Math.round(n).toLocaleString("en-US");
+/** Widest painting, and the height its tilted box may take in the banner (stage pixels). */
+const PAINTING_W = 318;
+const PAINTING_H = 90;
+const TILT = (7 * Math.PI) / 180;
+
+/** Width that keeps a tilted painting of this shape inside the banner (Axe, Crossbow are bulky). */
+function paintingWidth(weaponId: string, form: string): number {
+  const art = MASTERY_ART[weaponId]?.[form] ?? MASTERY_ART[weaponId]?.plain;
+  if (!art) return PAINTING_W;
+  const height = Math.sin(TILT) + (Math.cos(TILT) * art.h) / art.w;
+  return Math.min(PAINTING_W, Math.floor(PAINTING_H / height));
+}
+
 const hex = (c: number) => `#${c.toString(16).padStart(6, "0")}`;
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 
@@ -71,8 +85,9 @@ function WeaponPainting(props: { tip: WeaponTip }) {
   const gemForm = PAINTINGS[`../assets/mastery/${tip.weaponId}-${form}-gem.webp`] ? form : "plain";
   const gem = PAINTINGS[`../assets/mastery/${tip.weaponId}-${gemForm}-gem.webp`];
   if (!url) return null;
+  const shown = PAINTINGS[`../assets/mastery/${tip.weaponId}-${form}.webp`] ? form : "plain";
   return (
-    <span className="wt-painting">
+    <span className="wt-painting" style={{ width: paintingWidth(tip.weaponId, shown) }}>
       <img src={url} alt="" draggable={false} />
       {gem && (
         <>
