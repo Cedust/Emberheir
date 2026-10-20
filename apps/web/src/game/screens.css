@@ -8592,10 +8592,77 @@
   line-height: 1.1;
 }
 
+/* Damage Range: an axis from 0 % to the cap, the reachable part lit, a notch at 100 %. */
 .stage .wt-range {
-  padding-bottom: 6px;
-  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px 0 8px;
+}
+
+.stage .wt-range-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.stage .wt-range-head b {
+  font-family: var(--font-title);
+  font-size: 13px;
+  color: var(--ib-text);
+}
+
+.stage .wt-axis {
+  position: relative;
+  height: 8px;
+  border-radius: 4px;
+  background: #2a2019;
+  box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.8);
+}
+
+.stage .wt-axis-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  border-radius: 4px;
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--tip-name) 55%, #3a2410),
+    var(--tip-name)
+  );
+  box-shadow: 0 0 8px color-mix(in srgb, var(--tip-name) 55%, transparent);
+}
+
+.stage .wt-axis-mark {
+  position: absolute;
+  top: -3px;
+  bottom: -3px;
+  width: 2px;
+  margin-left: -1px;
+  background: #f4ead8;
+  box-shadow: 0 0 3px rgb(0 0 0 / 0.9);
+}
+
+.stage .wt-axis-scale {
+  position: relative;
+  height: 13px;
+  font-size: 11px;
   color: var(--ib-sub);
+}
+
+.stage .wt-axis-scale > span {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+}
+
+.stage .wt-axis-scale > span:first-child {
+  transform: none;
+}
+
+.stage .wt-axis-scale > span:last-child {
+  transform: translateX(-100%);
 }
 
 /* What the Heirloom made of the weapon: one row each, icon left. */

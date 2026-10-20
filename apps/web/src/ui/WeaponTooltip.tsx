@@ -1,4 +1,4 @@
-import { MAX_WEAPON_RANK, WEAPON_GRADES } from "@emberheir/sim";
+import { MASTERY, MAX_WEAPON_RANK, WEAPON_GRADES } from "@emberheir/sim";
 import type { CSSProperties, ReactNode } from "react";
 import { MASTERY_ART } from "../game/camp/masteryArtData";
 import { GameIcon, type GameIconId, HEAT_FORM_ICONS } from "./gameIcons";
@@ -102,6 +102,37 @@ function WeaponPainting(props: { tip: WeaponTip }) {
   );
 }
 
+/**
+ * The Damage Range on an axis from 0 % to its cap: the lit part is where a hit can land, the
+ * notch at 100 % is the weapon's Weapon Damage.
+ */
+function RangeAxis(props: { min: number; max: number }) {
+  const cap = MASTERY.maxRangeMax;
+  const at = (v: number) => `${(Math.min(cap, Math.max(0, v)) / cap) * 100}%`;
+  return (
+    <div className="wt-range" aria-label={`Damage Range ${pct(props.min)} to ${pct(props.max)}`}>
+      <span className="wt-range-head">
+        <span className="wt-feature-label">Damage Range</span>
+        <b>
+          {pct(props.min)} – {pct(props.max)}
+        </b>
+      </span>
+      <span className="wt-axis">
+        <span
+          className="wt-axis-fill"
+          style={{ left: at(props.min), width: `calc(${at(props.max)} - ${at(props.min)})` }}
+        />
+        <span className="wt-axis-mark" style={{ left: at(1) }} />
+      </span>
+      <span className="wt-axis-scale">
+        <span style={{ left: 0 }}>0 %</span>
+        <span style={{ left: at(1) }}>100 %</span>
+        <span style={{ left: "100%" }}>{pct(cap)}</span>
+      </span>
+    </div>
+  );
+}
+
 /** One thing the Heirloom gives the weapon: an icon, a small label, its name and rule. */
 function Feature(props: {
   icon: ReactNode;
@@ -195,9 +226,7 @@ export function WeaponTooltipCard(props: { tip: WeaponTip; tag?: string }) {
           <span className="ib-big-label">Precision</span>
         </span>
       </div>
-      <span className="wt-range">
-        Damage Range {pct(tip.rangeMin)} – {pct(tip.rangeMax)}
-      </span>
+      <RangeAxis min={tip.rangeMin} max={tip.rangeMax} />
       <div className="wt-features">
         {tip.path && (
           <Feature
