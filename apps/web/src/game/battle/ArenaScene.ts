@@ -146,7 +146,7 @@ export class ArenaScene {
   /** Fight speed; hit-stops only play at normal speed. */
   speed = 1;
   /** Graphics Quality (Settings): particle budget and weather; set before `mount`. */
-  quality: GraphicsQuality = "medium";
+  quality: GraphicsQuality = "high";
   /** Nothing fights (Intermission): the air drifts at the calm frame rate. */
   idle = false;
 

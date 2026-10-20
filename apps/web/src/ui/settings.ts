@@ -23,10 +23,10 @@ export const DEFAULT_SETTINGS: Settings = {
   theme: "system",
   damageNumbers: true,
   sound: true,
-  volume: 0.8,
+  volume: 0.5,
   sounds: { hover: true, click: true, window: true, coin: true, loot: true },
   screenShake: true,
-  graphicsQuality: "medium",
+  graphicsQuality: "high",
 };
 
 const soundsSchema = z.object(
