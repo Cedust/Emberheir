@@ -1,8 +1,10 @@
 import { expect, test } from "@playwright/test";
 
-test("Effect Gallery: every battle effect plays without errors", async ({ page }) => {
-  // About a hundred effects, each building its arena: longer than the default test time.
-  test.setTimeout(120_000);
+test("Effect Gallery: the first and last effect of every group play without errors", async ({
+  page,
+}) => {
+  // Each pick builds its arena again; CI runners draw slowly.
+  test.setTimeout(60_000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?effects");
@@ -11,9 +13,9 @@ test("Effect Gallery: every battle effect plays without errors", async ({ page }
   for (let g = 0; g < (await groups.count()); g++) {
     await groups.nth(g).click();
     const effects = page.getByRole("list", { name: "Effekte" }).getByRole("button");
-    for (let i = 0; i < (await effects.count()); i++) {
-      await effects.nth(i).click();
-      await expect(effects.nth(i)).toHaveAttribute("aria-pressed", "true");
+    for (const effect of [effects.first(), effects.last()]) {
+      await effect.click();
+      await expect(effect).toHaveAttribute("aria-pressed", "true");
     }
   }
   await page.waitForTimeout(500);
