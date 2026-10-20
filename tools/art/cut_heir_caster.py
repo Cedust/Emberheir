@@ -13,8 +13,9 @@ OUT='apps/web/src/game/battle/heir/'
 POSES={
   'wand':{
     'src':'heir-wand-v1.png',
-    # The thumb along the fist's underside, its tip under the curled fingers: the Wand lies under it.
-    'hand':[(897,500),(906,496),(920,495),(932,493),(942,497),(952,502),(961,507),(964,514),(952,516),(935,513),(918,511),(903,509),(895,505)],
+    # The thumb on the fist's near side, between the wrist and the curled fingers: the Wand runs
+    # under it into the fist, its end showing again below the wrist.
+    'hand':[(915,474),(926,463),(940,460),(952,466),(958,476),(955,488),(945,495),(930,497),(917,492),(912,483)],
     # The forearm from the sleeve's cuff out to the fist.
     'arm':[(788,452),(830,448),(880,432),(925,415),(960,412),(990,425),(1003,450),(1000,490),(985,515),(965,525),(940,522),(905,518),(870,532),(830,556),(788,572)],
     # Only right of here does the forearm leave the otter: left of it stays inside the cuff.

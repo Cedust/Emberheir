@@ -626,7 +626,7 @@ export class RangedHold extends Container {
  * enemy from the stretched fist; the Staff's foot stands on the ground between the feet.
  */
 const CASTER_GRIPS: Record<HeirCasterPose, { angle: number; length: number; at: number }> = {
-  wand: { angle: -0.6, length: 120, at: 0.12 },
+  wand: { angle: -0.6, length: 120, at: 0.2 },
   staff: { angle: -Math.PI / 2 - 0.03, length: 390, at: 0.6 },
 };
 
