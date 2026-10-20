@@ -336,18 +336,27 @@ function drawPaintedHero(
   }
   const held = look.offHand && look.offHand !== "quiver" ? look.offHand : null;
   const heldArt = held ? heir.offHands[held] : undefined;
-  const caster = look.weapon === "wand" || look.weapon === "staff" ? look.weapon : null;
+  const caster =
+    look.weapon === "wand" || look.weapon === "staff" || look.weapon === "dagger"
+      ? look.weapon
+      : null;
   const casterArt = caster ? heir.caster[caster] : undefined;
-  // Wand and Staff have their own pose when the other paw is free for a floating off hand (or
-  // empty): a Shield or Talisman is held in the fist, so it keeps the melee pose.
-  if (caster && casterArt && (!held || OFF_HAND_HOLDS[held].floating !== undefined)) {
+  // Wand, Staff and Dagger have their own pose when the other paw is free for a floating off
+  // hand (or empty), and the Dagger's open paw also lets a Talisman dangle from it: a Shield (or
+  // a caster's Talisman) is held in the fist, so it keeps the melee pose.
+  const freePaw =
+    !held ||
+    OFF_HAND_HOLDS[held].floating !== undefined ||
+    (caster === "dagger" && held === "talisman");
+  if (caster && casterArt && freePaw) {
     c.addChild(
       heirCasterPart(casterArt.body, caster, "body"),
       new CasterHold(look, painted, caster, casterArt),
     );
     const art = held === "grimoire" ? (heir.grimoireOpen ?? heldArt) : heldArt;
+    const floating = held ? OFF_HAND_HOLDS[held].floating !== undefined : false;
     if (held && art)
-      c.addChild(paintedOffHand(held, art, heirCasterPose(caster).palm, undefined, true));
+      c.addChild(paintedOffHand(held, art, heirCasterPose(caster).palm, undefined, floating));
     return c;
   }
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
@@ -629,16 +638,20 @@ export class RangedHold extends Container {
 const CASTER_GRIPS: Record<HeirCasterPose, { angle: number; length: number; at: number }> = {
   wand: { angle: -0.6, length: 120, at: 0.2 },
   staff: { angle: -Math.PI / 2 - 0.03, length: 390, at: 0.6 },
+  // Reverse grip: the blade points down out of the fist, the pommel shows above it.
+  dagger: { angle: Math.PI / 2 + 0.15, length: 120, at: 0.22 },
 };
 
 /**
  * Wand or Staff in its caster pose, drawn over the otter: the weapon in front of the fist, the
  * paw on it once more on top (the Wand's thumb, the Staff's fist), and the forearm, which turns
  * at the elbow. `pose` plays a cast: the Wand's arm draws back and thrusts the Wand at the enemy;
- * the Staff's arm lifts it and brings it down, its head dipping. Spells leave from the weapon's tip. Visual only.
+ * the Staff's arm lifts it and brings it down, its head dipping. Spells leave from the weapon's tip.
+ * The Dagger's pose works the same way: its fist, raised before the chest, rips the blade down on
+ * a strike. Visual only.
  */
 export class CasterHold extends Container {
-  private readonly wand: boolean;
+  private readonly kind: HeirCasterPose;
   private readonly weapon: Container;
   private readonly arm: Container;
   private readonly rest: number;
@@ -650,7 +663,7 @@ export class CasterHold extends Container {
     art: HeirCasterTextures,
   ) {
     super({ label: "heir-caster" });
-    this.wand = pose === "wand";
+    this.kind = pose;
     const grip = CASTER_GRIPS[pose];
     const { grip: at, elbow } = heirCasterPose(pose);
     const { holder } = weaponArt(look, painted);
@@ -673,13 +686,26 @@ export class CasterHold extends Container {
     this.rest = grip.angle;
   }
 
-  /** The cast `age` seconds ago (Infinity: none yet); `motion` off keeps the weapon still. */
-  pose(age: number, _clock: number, motion: boolean): void {
+  /**
+   * The cast `age` seconds ago (Infinity: none yet), or for the Dagger the melee `swing` timer
+   * (1 → 0 over a strike); `motion` off keeps the weapon still.
+   */
+  pose(age: number, _clock: number, motion: boolean, swing = 0): void {
     let turn = 0;
     let lift = 0;
-    if (motion && age < 0.45) {
+    if (this.kind === "dagger") {
+      if (motion && swing > 0) {
+        // The fist draws up and back, then rips down at the enemy past rest and settles; the
+        // blade leads the cut.
+        const t = 1 - swing;
+        if (t < 0.25) lift = -0.14 * (t / 0.25);
+        else if (t < 0.45) lift = -0.14 + 0.36 * ((t - 0.25) / 0.2);
+        else lift = 0.22 * (1 - (t - 0.45) / 0.55);
+        turn = -0.6 * Math.max(0, lift);
+      }
+    } else if (motion && age < 0.45) {
       const t = age / 0.45;
-      if (this.wand) {
+      if (this.kind === "wand") {
         // The arm draws back up, then thrusts at the enemy a little past rest; the Wand flicks.
         if (t < 0.3) lift = -0.08 * Math.sin((t / 0.3) * (Math.PI / 2));
         else if (t < 0.45) lift = -0.08 + 0.12 * ((t - 0.3) / 0.15);

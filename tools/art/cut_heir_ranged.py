@@ -12,9 +12,9 @@ POSES={
     'src':'heir-ranged-v1.png',
     # The drawing arm from the sleeve to the paw at the jaw (not the neck behind the paw).
     'arm':[(140,395),(200,383),(330,373),(398,358),(445,358),(484,374),(490,398),(470,425),(457,449),(412,457),(330,467),(262,492),(200,503),(140,492)],
-    # The whole bow fist (fingers, thumb and palm, cut at the wrist): the grip lies in the fist
-    # under it, the bow shows only above and below the hand.
-    'hand':[(906,436),(918,424),(934,416),(968,420),(997,432),(1000,492),(988,528),(950,534),(926,532),(912,520),(904,496),(904,460)],
+    # The bow fist's fingers and thumb, the thumb's root reaching back to the hand: the grip
+    # lies in the fist under them, over its palm.
+    'hand':[(906,436),(918,424),(934,416),(968,420),(997,432),(1000,492),(988,528),(950,531),(946,500),(946,466),(926,464),(906,460)],
   },
   'crossbow':{
     'src':'heir-crossbow-v1.png',
