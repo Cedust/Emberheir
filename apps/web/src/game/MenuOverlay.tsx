@@ -1,4 +1,5 @@
 import type { SettingsApi } from "../ui/settings";
+import type { GraphicsQuality } from "./pixiPacing";
 import { useNoteHover } from "../ui/ItemTooltip";
 import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
@@ -37,6 +38,7 @@ export function SettingsPanel(props: { api: SettingsApi }) {
         value={settings.screenShake}
         onChange={(v) => update({ screenShake: v })}
       />
+      <QualityRow api={props.api} />
       <FullscreenRow />
 
       <h3 className="settings-head title-font">Sound</h3>
@@ -79,6 +81,41 @@ const GROUP_LABEL: Readonly<Record<SoundGroup, { name: string; explain: string }
   coin: { name: "Coins", explain: "The ring when your currencies grow." },
   loot: { name: "Loot", explain: "Item and Rune drops, Boons." },
 };
+
+const QUALITY_LABEL: Readonly<Record<GraphicsQuality, string>> = {
+  high: "High",
+  medium: "Medium",
+  low: "Low",
+};
+
+/** Graphics Quality: how sharp the arena draws and how many particles fly (`QUALITY`). */
+function QualityRow(props: { api: SettingsApi }) {
+  const { settings, update } = props.api;
+  const hover = useNoteHover({
+    name: "Graphics quality",
+    kind: "Display",
+    explain: "Lower it if fights stutter: the arena draws a little softer, with fewer particles.",
+  });
+  return (
+    <div className="setting-row">
+      <span {...hover}>Graphics quality</span>
+      <div className="segmented" role="radiogroup" aria-label="Graphics quality">
+        {(["high", "medium", "low"] as const).map((q) => (
+          <button
+            key={q}
+            type="button"
+            role="radio"
+            aria-checked={settings.graphicsQuality === q}
+            className={settings.graphicsQuality === q ? "on" : ""}
+            onClick={() => update({ graphicsQuality: q })}
+          >
+            {QUALITY_LABEL[q]}
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 /** One On/Off switch. `sub` rows sit indented under Sound; `muted` greys them out. */
 function OnOffRow(props: {

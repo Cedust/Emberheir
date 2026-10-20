@@ -34,7 +34,7 @@ import { HudScene } from "./hud/HudScene";
 import { EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
 import { BAR_H } from "./hud/layout";
 import "./hud/hud.css";
-import { canvasResolution } from "../pixiPacing";
+import { QUALITY, canvasResolution } from "../pixiPacing";
 
 interface PlaqueInfo {
   readonly name: string;
@@ -47,6 +47,12 @@ interface PlaqueInfo {
 /** `?dev` in the URL shows fight speed and Skip for testing (not part of the game design). */
 export const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
 const DEV_SPEEDS = [1, 4, 16] as const;
+/**
+ * The DOM parts of the HUD (numbers, skill bar, rhythm) redraw at most this often. The Pixi
+ * arena and orbs still get every frame; a React render of the whole view 60 times a second
+ * was work the eye does not see.
+ */
+const DOM_FPS = 30;
 
 const HEAT_TEXT = {
   cooling: "Cooling Heat",
@@ -141,6 +147,38 @@ function useLooks(state: GameState, run: RunState) {
   return { act, heroLook, enemyLook, heroInfo, enemyInfo, enemyAttackIcon };
 }
 
+/** `?dev`: frames per second and what the arena keeps alive, to keep the effect budget honest. */
+function DevMeter(props: { scene: React.RefObject<ArenaScene | null> }) {
+  const [text, setText] = useState("");
+  useEffect(() => {
+    let frames = 0;
+    let since = performance.now();
+    let raf = 0;
+    const count = () => {
+      frames += 1;
+      raf = requestAnimationFrame(count);
+    };
+    raf = requestAnimationFrame(count);
+    const timer = window.setInterval(() => {
+      const now = performance.now();
+      const fps = (frames * 1000) / (now - since);
+      frames = 0;
+      since = now;
+      const s = props.scene.current?.stats;
+      setText(`${fps.toFixed(0)} FPS · ${s?.particles ?? 0} particles · ${s?.floaters ?? 0} texts`);
+    }, 500);
+    return () => {
+      cancelAnimationFrame(raf);
+      window.clearInterval(timer);
+    };
+  }, [props.scene]);
+  return (
+    <span className="dev-meter mono" data-testid="dev-meter">
+      {text}
+    </span>
+  );
+}
+
 const reducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
@@ -175,7 +213,7 @@ export function BattleView(props: {
   // The arena canvas covers the whole stage: the world stands on the bar, the HUD sits on top.
   const arenaW = stage.w;
   const arenaH = stage.h;
-  const arenaRes = canvasResolution(stage.scale);
+  const arenaRes = canvasResolution(stage.scale, QUALITY[settings.graphicsQuality].maxResolution);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const hudRef = useRef<HudScene | null>(null);
   const pausedRef = useRef(props.paused);
@@ -197,6 +235,7 @@ export function BattleView(props: {
     const scene = new ArenaScene();
     scene.showNumbers = settings.damageNumbers;
     scene.motion = settings.screenShake && !reducedMotion();
+    scene.quality = settings.graphicsQuality;
     scene.layout(arenaW, arenaH, arenaRes, 1, BAR_H);
     sceneRef.current = scene;
     const hud = new HudScene();
@@ -229,14 +268,15 @@ export function BattleView(props: {
   useEffect(() => {
     let frame = 0;
     let last = performance.now();
+    let shown = -Infinity;
     const loop = (now: number) => {
       const dt = Math.min(0.25, (now - last) / 1000) * speedRef.current * slowRef.current;
       last = now;
       // A hit-stop holds the fight for a few frames; the lost time is simply skipped.
-      if (!pausedRef.current && !sceneRef.current?.frozen) publish(fight.advance(dt));
+      if (!pausedRef.current && !sceneRef.current?.frozen) publish(fight.advance(dt), now);
       if (!fight.over) frame = requestAnimationFrame(loop);
     };
-    const publish = (fresh: readonly CombatEvent[]) => {
+    const publish = (fresh: readonly CombatEvent[], now: number) => {
       const snap = fight.snapshot();
       sceneRef.current?.onEvents(fresh);
       sceneRef.current?.onSnapshot(snap);
@@ -254,7 +294,10 @@ export function BattleView(props: {
       );
       if (fired.length) setBoonFlash(new Set(fired));
       if (bossFight) slowRef.current = snap.enemy.life / snap.enemy.maxLife < 0.08 ? 0.35 : 1;
-      setSnapshot(snap);
+      if (snap.over || now - shown >= 1000 / DOM_FPS - 1) {
+        shown = now;
+        setSnapshot(snap);
+      }
     };
     frame = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(frame);
@@ -365,6 +408,7 @@ export function BattleView(props: {
           <>
             {DEV_MODE && !result && (
               <div className="dev-tools">
+                <DevMeter scene={sceneRef} />
                 {DEV_SPEEDS.map((s) => (
                   <button
                     key={s}

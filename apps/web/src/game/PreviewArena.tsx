@@ -4,7 +4,7 @@ import { useStageSize } from "../ui/Stage";
 import type { Settings } from "../ui/settings";
 import { ArenaScene } from "./battle/ArenaScene";
 import type { ClassPreview } from "./classPreview";
-import { canvasResolution } from "./pixiPacing";
+import { QUALITY, canvasResolution } from "./pixiPacing";
 
 const reducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
@@ -26,7 +26,7 @@ export function PreviewArena(props: {
   const { preview, width, height, settings } = props;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const stage = useStageSize();
-  const resolution = canvasResolution(stage.scale);
+  const resolution = canvasResolution(stage.scale, QUALITY[settings.graphicsQuality].maxResolution);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -34,6 +34,7 @@ export function PreviewArena(props: {
     const scene = new ArenaScene();
     scene.showNumbers = settings.damageNumbers;
     scene.motion = settings.screenShake && !reducedMotion();
+    scene.quality = settings.graphicsQuality;
     scene.layout(width, height, resolution, height / 620);
     void scene.mount(host, preview.heroLook, preview.enemyLook);
     let round = 0;
