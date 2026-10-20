@@ -101,3 +101,42 @@ test("Heirloom pans with a drag and zooms with the wheel and a pinch", async ({ 
   await pinch(90, 30);
   await expect.poll(zoom).toBeLessThan(zoomedIn / 1.5);
 });
+
+test("the weapon's tooltip on the paperdoll, the Damage plaque and the class select", async ({
+  page,
+}) => {
+  await seedSave(page, saveMastery(["steady-hand", "balance"]));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("c");
+  const sheet = page.getByRole("dialog", { name: "Character" });
+  const tip = page.getByTestId("weapon-tooltip");
+
+  await sheet.getByTestId("weapon-slot").hover();
+  await expect(tip).toContainText("Ascendant Sword of Ashfall Wrath");
+  await expect(tip).toContainText("Heirloom Sword · Melee");
+  await expect(tip).toContainText("Cooling");
+  await expect(tip).toContainText("Echo IV");
+  await expect(tip).toContainText("Exalted at Rank 16");
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${process.env.SHOTS}/weapon-tooltip.png` });
+  }
+
+  await sheet.getByRole("tab", { name: "Overview" }).click();
+  await sheet.getByTestId("weapon-medallion").first().hover();
+  await expect(tip).toContainText("Ascendant Sword of Ashfall Wrath");
+});
+
+test("class select: every weapon on the rack has its tooltip", async ({ page }) => {
+  await page.goto("/");
+  await page.getByRole("button", { name: "New Game" }).click();
+  const tip = page.getByTestId("weapon-tooltip");
+  await page.getByRole("radio", { name: "Axe" }).hover();
+  await expect(tip).toContainText("Crude Axe");
+  await expect(tip).toContainText("Innate · Lv 1");
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(500);
+    await page.screenshot({ path: `${process.env.SHOTS}/weapon-tooltip-class-select.png` });
+  }
+});

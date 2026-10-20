@@ -5,11 +5,13 @@ import {
   type HeroClass,
   type WeaponDefinition,
   getBase,
+  speedValue,
   sumAttributes,
 } from "@emberheir/sim";
 import { Suspense, useMemo, useState } from "react";
 import { GAME_ICONS, type GameIconId } from "../ui/gameIcons";
-import { type NoteHover, useNoteHover } from "../ui/ItemTooltip";
+import { type NoteHover, useNoteHover, useWeaponHover } from "../ui/ItemTooltip";
+import { newWeaponTip } from "../ui/weaponTip";
 import { Button } from "../ui/kit/Button";
 import type { Settings } from "../ui/settings";
 import { useStageSize } from "../ui/Stage";
@@ -219,12 +221,8 @@ function ClassBanner(props: { heroClass: HeroClass; on: boolean; onPick: (id: st
 function WeaponCard(props: { id: string; on: boolean; onPick: () => void }) {
   const base = getBase(ITEM_CATALOG, props.id);
   const w = base.weapon;
-  const skill = GAME_DATA.startSkills[props.id];
-  const hover = useNoteHover({
-    name: base.name,
-    kind: `${w?.range === "ranged" ? "Ranged" : "Melee"} · Innate: ${skill?.name ?? ""}`,
-    explain: skill?.description ?? "",
-  });
+  const id = props.id;
+  const hover = useWeaponHover(() => newWeaponTip(id));
   const painting = PAINTINGS[`../assets/mastery/${props.id}-plain.webp`];
   const gem = PAINTINGS[`../assets/mastery/${props.id}-plain-gem.webp`];
   const glow = `#${(ELEMENT_COLOR[w?.damageType ?? "physical"] ?? 0xff6a2a).toString(16).padStart(6, "0")}`;
@@ -308,7 +306,7 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
               note={{
                 name: "Speed",
                 kind: base.name,
-                explain: `${w.attacksPerSecond.toFixed(2)} attacks per second.`,
+                explain: `Speed ${speedValue(w.attacksPerSecond)}: ${w.attacksPerSecond.toFixed(2)} attacks per second.`,
               }}
             />
             <Meter

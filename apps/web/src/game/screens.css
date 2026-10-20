@@ -8420,6 +8420,285 @@
   color: #2a1808;
 }
 
+/* --- the Heirloom weapon's tooltip (ui/WeaponTooltip.tsx) ------------------------------------ */
+
+.stage .item-tooltip.weapon-tip {
+  width: 380px;
+}
+
+/* The painted weapon lies across a forge that glows in the grade's colour. */
+.stage .wt-banner {
+  position: relative;
+  height: 104px;
+  margin: 0 -16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(
+      ellipse 70% 90% at 50% 100%,
+      color-mix(in srgb, var(--tip-name) 42%, transparent),
+      transparent 70%
+    ),
+    linear-gradient(180deg, #1a120c, #0e0b08);
+  border-bottom: 1px solid color-mix(in srgb, var(--tip-name) 35%, transparent);
+}
+
+.stage .wt-forge {
+  position: absolute;
+  inset: auto 0 0;
+  height: 26px;
+  background:
+    radial-gradient(circle at 18% 120%, rgb(255 140 40 / 0.55) 0 2px, transparent 3px),
+    radial-gradient(circle at 37% 90%, rgb(255 190 90 / 0.5) 0 1.5px, transparent 2.5px),
+    radial-gradient(circle at 63% 110%, rgb(255 140 40 / 0.5) 0 2px, transparent 3px),
+    radial-gradient(circle at 82% 80%, rgb(255 200 110 / 0.45) 0 1.5px, transparent 2.5px),
+    linear-gradient(0deg, color-mix(in srgb, var(--tip-name) 30%, transparent), transparent);
+  pointer-events: none;
+}
+
+.stage .wt-painting {
+  position: relative;
+  width: 318px;
+  transform: rotate(-7deg);
+  filter: drop-shadow(0 6px 4px rgb(0 0 0 / 0.75))
+    drop-shadow(0 0 10px color-mix(in srgb, var(--tip-name) 45%, transparent));
+}
+
+.stage .wt-painting img {
+  display: block;
+  width: 100%;
+}
+
+.stage .wt-painting > :not(:first-child) {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+}
+
+/* The Wand's and Staff's crystal in the colour of its element. */
+.stage .wt-gem {
+  mask-size: 100% 100%;
+  background: var(--gem);
+  mix-blend-mode: color;
+}
+
+/* Weapon Rank on a brass plaque, like an item's Tier. */
+.stage .wt-rank {
+  position: absolute;
+  right: 10px;
+  bottom: 8px;
+  padding: 1px 8px;
+  border: 1px solid #3a2410;
+  border-radius: 3px;
+  background: linear-gradient(180deg, #e7c47a, #a8752e 60%, #7a5420);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.7);
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #2a1808;
+}
+
+.stage .wt-rank b {
+  font-size: 14px;
+  letter-spacing: 0;
+}
+
+.stage .wt-title {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 10px 0 8px;
+}
+
+.stage .weapon-tip .ib-name {
+  font-size: 19px;
+  color: var(--tip-name);
+  text-shadow:
+    0 0 12px color-mix(in srgb, var(--tip-name) 40%, transparent),
+    0 1px 6px rgb(0 0 0 / 0.9);
+}
+
+.stage .wt-grade {
+  flex-shrink: 0;
+  font-family: var(--font-title);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--tip-name);
+}
+
+/* Weapon Rank gauge: one notch per Rank, each lit in its grade's colour. */
+.stage .wt-gauge {
+  display: flex;
+  gap: 2px;
+  margin-top: 3px;
+}
+
+.stage .wt-gauge i {
+  flex: 1;
+  height: 5px;
+  border-radius: 1px;
+  background: #2a2019;
+  box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.6);
+}
+
+.stage .wt-gauge i.on {
+  box-shadow: 0 0 4px color-mix(in srgb, var(--tip-name) 60%, transparent);
+}
+
+/* Damage, Speed and Precision as three big numbers side by side. */
+.stage .wt-stats {
+  display: grid;
+  grid-template-columns: 1.5fr 1fr 1fr;
+  gap: 6px;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--ib-rule);
+}
+
+.stage .wt-stat {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: 6px;
+  align-items: center;
+}
+
+.stage .wt-stat > :first-child {
+  grid-row: span 2;
+}
+
+.stage .wt-stat-icon {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  color: #e0b45a;
+}
+
+.stage .wt-stat .ib-big-value {
+  font-size: 21px;
+  white-space: nowrap;
+}
+
+.stage .wt-stat .ib-big-label {
+  font-size: 12px;
+  line-height: 1.1;
+}
+
+.stage .wt-range {
+  padding-bottom: 6px;
+  font-size: 12px;
+  color: var(--ib-sub);
+}
+
+/* What the Heirloom made of the weapon: one row each, icon left. */
+.stage .wt-features {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 8px 0 6px;
+  border-top: 1px solid var(--ib-rule);
+}
+
+.stage .wt-feature {
+  --tone: var(--ib-text);
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.stage .wt-feature-icon {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-height: 30px;
+}
+
+.stage .wt-path-icons {
+  display: flex;
+  margin-left: -6px;
+}
+
+.stage .wt-path-icons > :last-child {
+  margin-left: -8px;
+}
+
+.stage .wt-feature-body {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.stage .wt-feature-head {
+  display: flex;
+  align-items: baseline;
+  gap: 7px;
+}
+
+.stage .wt-feature-label {
+  font-family: var(--font-title);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--ib-sub);
+  white-space: nowrap;
+}
+
+.stage .wt-feature-name {
+  font-family: var(--font-title);
+  font-size: 15px;
+  color: var(--tone);
+}
+
+.stage .wt-feature-text {
+  font-size: 13px;
+  line-height: 1.28;
+  color: #b9ad98;
+}
+
+.stage .wt-innate {
+  --tone: #ffb070;
+}
+
+.stage .wt-keystone {
+  --tone: #ff9a3a;
+}
+
+.stage .wt-keystone-gem {
+  width: 16px;
+  height: 16px;
+  margin-top: 6px;
+  transform: rotate(45deg);
+  border: 1px solid #3a2410;
+  background: linear-gradient(135deg, #ffd27a, #ff8a2a 55%, #a8461a);
+  box-shadow: 0 0 10px rgb(255 154 58 / 0.7);
+}
+
+.stage .wt-echo-orb {
+  width: 20px;
+  height: 20px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 35% 35%, #fff 0 8%, var(--tone) 45%, transparent 72%);
+  box-shadow: 0 0 12px var(--tone);
+}
+
+.stage .weapon-tip .wt-foot {
+  margin-top: 6px;
+  color: var(--tip-name);
+  font-family: var(--font-title);
+  font-size: 12px;
+  letter-spacing: 0.5px;
+}
+
 .stage .ib-compare-hint {
   align-self: flex-start;
 }

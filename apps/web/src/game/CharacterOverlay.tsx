@@ -28,8 +28,10 @@ import {
   describeItem,
   flaskCapacity,
   itemModifiers,
+  speedValue,
 } from "@emberheir/sim";
 import type { NoteHover } from "../ui/ItemTooltip";
+import { heroWeaponTip } from "../ui/weaponTip";
 import { useState } from "react";
 import { HeirEmblem } from "./ClassEmblem";
 import {
@@ -143,6 +145,8 @@ export function CharacterOverlay(props: {
     max: setup.weapon.damage.max,
     heatBehavior: setup.weapon.heatBehavior,
     heatPerHit: setup.weapon.heatPerHit,
+    baseSpeed: speedValue(setup.weapon.attacksPerSecond),
+    tip: () => heroWeaponTip(state),
   };
 
   // Triggers and Legendary Powers of the worn items that work right now.

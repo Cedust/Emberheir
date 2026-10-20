@@ -13,7 +13,8 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { EmptyState } from "../../ui/kit/Marker";
 import { playUiSound } from "../../ui/sound";
 import type { PanelId } from "./pins";
-import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
+import { type NoteHover, useNoteHover, useWeaponHover } from "../../ui/ItemTooltip";
+import type { WeaponTip } from "../../ui/weaponTip";
 import { fmt } from "../../ui/items";
 import { type Element, Vitals, Medal, Plaque, Pill, Res, Row, pct } from "./HeroNumbers";
 
@@ -29,6 +30,10 @@ export interface WeaponNumbers {
   readonly max: number;
   readonly heatBehavior: HeatBehavior;
   readonly heatPerHit: number;
+  /** The weapon's own Speed, before Attack Speed. */
+  readonly baseSpeed: number;
+  /** The weapon's tooltip, built on hover. */
+  readonly tip: () => WeaponTip;
 }
 
 const NOTES = {
@@ -37,11 +42,6 @@ const NOTES = {
     kind: "Offense",
     explain:
       "What you deal each second on average: weapon, Attack Speed, crits and your Battle Plan together.",
-  },
-  speed: {
-    name: "Speed",
-    kind: "Offense",
-    explain: "How often you attack. A Sword starts at 100; higher is faster.",
   },
   critChance: {
     name: "Crit Chance",
@@ -204,12 +204,22 @@ function BonusTable(props: { stats: DerivedStats }) {
 type Only = { readonly only?: readonly PanelId[] | undefined };
 const shows = (only: Only["only"]) => (id: PanelId) => !only || only.includes(id);
 
+/** Speed in plain words, from the hero's own weapon. */
+function speedNote(weapon: WeaponNumbers): NoteHover {
+  return {
+    name: "Speed",
+    kind: "Offense",
+    explain: `How often you attack. Your ${weapon.name} starts at ${weapon.baseSpeed}; higher is faster.`,
+  };
+}
+
 /** The hero's weapon, painted big on an ember plaque, with its damage below. */
 function WeaponMedallion(props: { weapon: WeaponNumbers }) {
   const { weapon } = props;
   const url = weaponIconUrl(weapon.id);
+  const hover = useWeaponHover(weapon.tip);
   return (
-    <span className="hero-weapon">
+    <span className="hero-weapon" tabIndex={0} data-testid="weapon-medallion" {...hover}>
       <span className="hero-weapon-plaque">
         {url ? (
           <img src={url} width={92} height={92} alt="" draggable={false} />
@@ -271,7 +281,7 @@ export function OffensePanel(
             <span className="hero-damage-numbers">
               <PerSecond value={fmt(props.dps)} note={NOTES.dps} />
               <span className="hero-pills">
-                <Pill icon="cycle" painted="speed" label="Speed" note={NOTES.speed}>
+                <Pill icon="cycle" painted="speed" label="Speed" note={speedNote(weapon)}>
                   {speedValue(stats.attackSpeed)}
                 </Pill>
                 <Pill icon="target" painted="crit" label="Crit Chance" note={NOTES.critChance}>

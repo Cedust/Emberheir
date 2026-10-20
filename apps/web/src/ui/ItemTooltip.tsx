@@ -15,6 +15,8 @@ import { CompareList, ItemBody, ItemHead, itemTip, rarityClass } from "./ItemBod
 import { aimedSlot, useRingSlot } from "./ringSlot";
 import { useStageSize } from "./Stage";
 import { type CompareView, compareWithEquipped } from "./itemCompare";
+import { WeaponTooltipCard } from "./WeaponTooltip";
+import type { WeaponTip } from "./weaponTip";
 
 /**
  * Diablo-style item tooltips: hovering an item tile or a grid item shows its full tooltip next
@@ -48,6 +50,8 @@ interface Hover {
   readonly item?: Item;
   readonly perk?: PerkHover;
   readonly note?: NoteHover;
+  /** The Heirloom weapon (not an item: it has its own tooltip). */
+  readonly weapon?: WeaponTip;
   /** The hovered element in stage pixels. */
   readonly anchor: {
     readonly x: number;
@@ -136,6 +140,24 @@ export function useNoteHover(note: NoteHover | undefined) {
   }, [api, name, kind, explain, status, hotkey]);
 }
 
+/**
+ * Mouse and focus handlers that show the Heirloom weapon's tooltip. `tip` is built on hover, so
+ * the views do not compute it on every render.
+ */
+export function useWeaponHover(tip: () => WeaponTip) {
+  const api = useContext(HoverContext);
+  return useMemo(() => {
+    if (!api) return {};
+    const show = (element: Element) => api.show({ weapon: tip() }, element);
+    return {
+      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
+      onMouseLeave: () => api.hide(),
+      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
+      onBlur: () => api.hide(),
+    };
+  }, [api, tip]);
+}
+
 const GAP = 12;
 const MARGIN = 10;
 /** Anchors that end above this line sit in a header bar. */
@@ -180,7 +202,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
     const h = box.offsetHeight;
     const { anchor } = hover;
     // Header bars (wallet, points, tabs): hang the note below instead of over the bar.
-    if (!hover.item && anchor.y + anchor.h <= HEADER_ZONE) {
+    if (!hover.item && !hover.weapon && anchor.y + anchor.h <= HEADER_ZONE) {
       const centered = anchor.x + anchor.w / 2 - w / 2;
       setPos({
         left: Math.min(Math.max(MARGIN, centered), stage.w - MARGIN - w),
@@ -217,6 +239,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
           >
             {hover.perk && <PerkTooltipCard {...hover.perk} />}
             {hover.note && <NoteTooltipCard {...hover.note} />}
+            {hover.weapon && <WeaponTooltipCard tip={hover.weapon} />}
             {hover.item && (
               <ItemTooltipCard
                 item={hover.item}
