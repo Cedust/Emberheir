@@ -37,7 +37,7 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Hauptattribut | Waffen (eine wählen) | Fokus | Class Trait | Masteries (Burst · Tempo · Ailment) |
 |---|---|---|---|---|---|
-| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis 10); das Innate gibt alle aus, +25 % more pro Fury (Schritt 4, 19.10.2026: vorher +2 % pro Treffer auf alles; die alten +20 % stecken jetzt im Waffenschaden, Sword/Axe/Mace +15 %) | Vanquisher · Berserker · Ravager |
+| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis 10); das Innate gibt alle aus, +25 % more pro Fury (Schritt 4, 19.10.2026: vorher +2 % pro Treffer auf alles; die alten +20 % stecken jetzt im Waffenschaden). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Sword 13–20 bei 0,9/s (Speed 4, Power 2), Axe 14–25 bei 0,75/s (3/3), Mace 18–27 bei 0,6/s (2/4) | Vanquisher · Berserker · Ravager |
 | **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: +10 % Precision gegen einen Gegner mit einem deiner Ailments (Timo 2026-10-19: statt Crit, Crit gehört zu AGI) | Deadeye · Skirmisher · Trickster |
 | **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (150 % Weapon Damage, setzt sicher ihr Ailment) | Archmage · Spellweaver · Warlock |
 
@@ -425,7 +425,7 @@ Endgame **Wildfire I–X**.
   oder „keine Barrier“. Die Kosten bleiben auf derselben Achse (Unyielding: Barrier lädt nicht nach; Juggernaut,
   Glass Focus, Skirmish, Bastion, Glass Cannon: Skills kosten 20 % mehr Heat; Grand Strategy: Default Attack −15 %;
   Elemental Overload: Treffer −10 %; Vanishing Act: −10 % Precision). Glass Cannon behält die Barrier und schlägt mit
-  15 % davon zu. Deep Cuts (Sword): Bleed aus Crits ist doppelt so stark (vorher verdoppelte jeder Crit den laufenden
+  15 % davon zu. Deep Cuts (Sword): Bleed aus Crits ist 60 % stärker (vorher verdoppelte jeder Crit den laufenden
   Bleed ohne Grenze).
 - **Keystones** kosten 3 Skill Points und einen Keystone-Platz (1, +1 bei Prestige 2/4/6, max. 4): Final Mercy,
   Unyielding (Steel), Blood Price, Blood and Bile (Blood), Slow Death (Venom), Black Flame (Flame), Spellblade (Storm),
