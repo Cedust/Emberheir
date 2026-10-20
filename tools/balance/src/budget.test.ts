@@ -11,8 +11,12 @@ describe("damage budget", () => {
   it("damage shares add up to the whole", () => {
     const { dps, shares } = dummyFight(heroSetup(state, GAME_DATA).setup);
     expect(dps).toBeGreaterThan(1);
-    const sum = Object.values(shares).reduce((a, b) => a + b, 0);
+    const { weapon, ...parts } = shares;
+    const sum = Object.values(parts).reduce((a, b) => a + b, 0);
     expect(sum).toBeCloseTo(1, 6);
+    // The weapon's share holds its hits and the ailment damage they caused (ticks or bursts).
+    expect(weapon).toBeGreaterThanOrEqual(shares.defaultAttack + shares.innate - 1e-9);
+    expect(weapon).toBeLessThanOrEqual(1 + 1e-9);
   });
 
   it("each layer comes off on its own, skills and the path's damage type stay", () => {

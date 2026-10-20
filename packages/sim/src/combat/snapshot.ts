@@ -107,7 +107,7 @@ function traitSnapshot(core: FightCore, f: Fighter): Pick<FighterSnapshot, "trai
   const rules = f.setup.rules;
   const damageType = f.setup.weapon.damageType;
   if (rules?.fury) {
-    const max = Math.round(rules.fury.max / rules.fury.perHit);
+    const max = rules.fury.maxStacks;
     return { trait: { kind: "fury", value: Math.min(max, f.fury), max, damageType } };
   }
   if (rules?.overcharge) {

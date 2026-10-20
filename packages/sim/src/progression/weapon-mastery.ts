@@ -224,6 +224,11 @@ export function nextRankLevel(rank: number): number | null {
   return MASTERY.rankLevels[rank + 1] ?? null;
 }
 
+/** Index of the Weapon Grade at a Rank (0 = Crude): the Innate gains a level per Grade. */
+export function weaponGradeIndex(rank: number): number {
+  return WEAPON_GRADES.reduce((index, g, i) => (rank >= g.from ? i : index), 0);
+}
+
 export function weaponGrade(rank: number): string {
   let grade: string = WEAPON_GRADES[0].name;
   for (const g of WEAPON_GRADES) if (rank >= g.from) grade = g.name;

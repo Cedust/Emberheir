@@ -31,6 +31,12 @@ export interface DamageShares {
   readonly dots: number;
   /** Everything else: triggers, Overcharge Nova, bursts, Thorns. */
   readonly other: number;
+  /**
+   * The weapon (balancing-neustart-v1.md F6): Default Attacks and the Innate, with the ailment
+   * ticks they caused, also when a burst (Rend, Cash In) ends them early. Overlaps `dots` and
+   * `skills`, so it is not part of the sum.
+   */
+  readonly weapon: number;
 }
 
 /** One layer taken away from the hero to see what it is worth. */
@@ -66,9 +72,23 @@ export function dummyFight(setup: CombatantSetup): { dps: number; shares: Damage
     if (e.type === "skill" && e.side === "hero") skills.add(e.skill);
   }
   const sum = { defaultAttack: 0, innate: 0, skills: 0, dots: 0, other: 0 };
+  const weaponSource = (source: string) =>
+    source === setup.weapon.defaultAttack || source === innate;
+  let weaponDots = 0;
   for (const e of fight.events) {
-    if (e.type === "dot" && e.side !== "hero") sum.dots += e.damage;
+    if (e.type === "dot" && e.side !== "hero") {
+      sum.dots += e.damage;
+      for (const [source, share] of Object.entries(e.sources ?? {})) {
+        if (weaponSource(source)) weaponDots += e.damage * share;
+      }
+    }
     if (e.type !== "hit" || e.side !== "hero") continue;
+    // A burst that ends DoTs (Rend, Cash In): their own damage stays with whoever applied them.
+    if (!weaponSource(e.source)) {
+      for (const [source, share] of Object.entries(e.dotSources ?? {})) {
+        if (weaponSource(source)) weaponDots += e.damage * share;
+      }
+    }
     if (e.source === setup.weapon.defaultAttack) sum.defaultAttack += e.damage;
     else if (e.source === innate) sum.innate += e.damage;
     else if (skills.has(e.source) || e.source.endsWith("(Spellblade)")) sum.skills += e.damage;
@@ -84,6 +104,7 @@ export function dummyFight(setup: CombatantSetup): { dps: number; shares: Damage
       skills: share(sum.skills),
       dots: share(sum.dots),
       other: share(sum.other),
+      weapon: share(sum.defaultAttack + sum.innate + weaponDots),
     },
   };
 }
@@ -198,6 +219,7 @@ export function meanBudget(rows: readonly BudgetRow[]): BudgetRow {
       skills: avg((r) => r.shares.skills),
       dots: avg((r) => r.shares.dots),
       other: avg((r) => r.shares.other),
+      weapon: avg((r) => r.shares.weapon),
     },
     factors: Object.fromEntries(LAYERS.map((l) => [l, geo((r) => r.factors[l])])) as Record<
       Layer,

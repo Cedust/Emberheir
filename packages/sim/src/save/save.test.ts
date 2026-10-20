@@ -124,3 +124,19 @@ describe("the Klassengerüst", () => {
     );
   });
 });
+
+describe("version 10: element attacks", () => {
+  it("moves a learned travel node onto the element attack that replaced it", () => {
+    const s = start();
+    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
+    const hero = raw["hero"] as Record<string, unknown>;
+    const old = {
+      ...raw,
+      version: 9,
+      hero: { ...hero, learned: { ...(hero["learned"] as object), "storm-steady-mind": 1 } },
+    };
+    const migrated = deserializeGame(JSON.stringify(old), data);
+    expect(migrated.hero.learned["storm-storm-strike"]).toBe(1);
+    expect(migrated.hero.learned["storm-steady-mind"]).toBeUndefined();
+  });
+});

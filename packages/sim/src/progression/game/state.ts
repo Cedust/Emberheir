@@ -39,8 +39,9 @@ import {
 /**
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 9 with the Klassengerüst: older saves are dropped.
+ * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  */
-export const SAVE_VERSION = 9;
+export const SAVE_VERSION = 10;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {

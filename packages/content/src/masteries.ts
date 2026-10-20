@@ -364,7 +364,15 @@ function strike(
   heatCost: number,
   description: string,
   multiplier: number,
-  extra: { count?: number; chance: number; power?: number; precise?: boolean; cashIn?: number },
+  extra: {
+    count?: number;
+    chance: number;
+    power?: number;
+    precise?: boolean;
+    cashIn?: number;
+    /** Cash In only the weapon's own ailment. */
+    own?: boolean;
+  },
 ): SkillDefinition {
   return {
     id,
@@ -384,7 +392,13 @@ function strike(
         ...(extra.precise ? { precise: true } : {}),
       },
     ],
-    ...(extra.cashIn ? { effects: [{ kind: "cashIn", multiplier: extra.cashIn }] } : {}),
+    ...(extra.cashIn
+      ? {
+          effects: [
+            { kind: "cashIn", multiplier: extra.cashIn, ...(extra.own ? { own: true } : {}) },
+          ],
+        }
+      : {}),
   };
 }
 
@@ -449,9 +463,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "earthsplitter",
       "Earthsplitter",
       50,
-      `300 % Weapon Damage. Always applies your weapon's ailment, then ${CASH_IN_TEXT}`,
+      `First sets off your weapon's ailment on the enemy at once: ${CASH_IN * 100} % of what is left. Then 300 % Weapon Damage that always applies it again.`,
       3,
-      { chance: 1, cashIn: CASH_IN },
+      { chance: 1, cashIn: CASH_IN, own: true },
     ),
     notables: [
       skillPower("Heavy Hand", 0.15),

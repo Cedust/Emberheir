@@ -123,18 +123,24 @@ describe("built-in payoffs", () => {
 });
 
 describe("Class Traits", () => {
-  it("Fury: every hit that lands adds 2 % to the next, up to 20 %, and flares once when full", () => {
+  it("Fury: Default Attacks build it, the Innate spends all of it for 10 % more per Fury", () => {
+    const innate = { ...TEST_SKILL, id: "test-innate" };
     const cinderguard = setup({
-      rules: { fury: { perHit: 0.02, max: 0.2 } },
+      rules: { fury: { perStack: 0.1, maxStacks: 10 } },
       bonuses: NO_CRIT,
       weapon: { ...TEST_WEAPON, damage: { min: 100, max: 100 } },
+      weaponRules: { innateId: innate.id },
+      rotation: [{ skill: innate }],
     });
-    const fight = play(cinderguard, dummy(), 14.05);
+    const fight = play(cinderguard, dummy(), 8.05);
     const hits = ofType(fight.events, "hit").filter((h) => h.side === "hero");
-    expect(hits.slice(0, 3).map((h) => h.damage)).toEqual([100, 102, 104]);
-    expect(hits.at(-1)?.damage).toBe(120);
-    expect(payoffs(fight.events, "fury")).toHaveLength(1);
-    expect(fight.snapshot().hero.trait).toMatchObject({ kind: "fury", value: 10, max: 10 });
+    const first = hits.findIndex((h) => h.source === innate.name);
+    const second = hits.findIndex((h, i) => i > first && h.source === innate.name);
+    expect(first).toBeGreaterThan(0);
+    // Each Default Attack before the cast is one Fury; the cast resets it.
+    expect(hits[first]?.damage).toBe(Math.round(200 * (1 + 0.1 * first)));
+    expect(hits[second]?.damage).toBe(Math.round(200 * (1 + 0.1 * (second - first - 1))));
+    expect(payoffs(fight.events, "fury").length).toBeGreaterThan(0);
   });
 
   it("Hunter's Mark: more Precision against an enemy with one of your ailments", () => {
@@ -207,8 +213,8 @@ describe("Class Traits", () => {
   });
 
   it("merge from one source: the class", () => {
-    const fury = { perHit: 0.02, max: 0.2 };
-    const rules = mergeRules({ fury }, { fury: { perHit: 1, max: 1 } }, undefined);
+    const fury = { perStack: 0.1, maxStacks: 10 };
+    const rules = mergeRules({ fury }, { fury: { perStack: 1, maxStacks: 1 } }, undefined);
     expect(rules.fury).toEqual(fury);
     expect(mergeRules({}).overcharge).toBeUndefined();
   });

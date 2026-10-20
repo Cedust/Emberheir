@@ -594,8 +594,8 @@ const SWORD = buildTree({
       id: "deep-cuts",
       name: "Deep Cuts",
       form: "Bleeding Edge",
-      description: "Bleed from your Crits is twice as strong. Damage Range minimum −20 %.",
-      effect: { weaponRules: { critBleedPower: 2 }, rangeMin: -0.2 },
+      description: "Bleed from your Crits is 60 % stronger. Damage Range minimum −20 %.",
+      effect: { weaponRules: { critBleedPower: 1.6 }, rangeMin: -0.2 },
     },
     {
       id: "flowing-blade",
@@ -944,7 +944,7 @@ const AXE = buildTree({
     form(
       "gutting-lacerate",
       "Gutting Lacerate",
-      "100 % Weapon Damage. Always Bleeds, 60 % stronger.",
+      "150 % Weapon Damage. Always Bleeds, 60 % stronger.",
       {
         ...LACERATE,
         id: "gutting-lacerate",
@@ -952,7 +952,7 @@ const AXE = buildTree({
         hits: [
           {
             kind: "weapon",
-            multiplier: 1,
+            multiplier: 1.5,
             ailmentPower: 1.6,
             ailmentChances: [{ ailment: "bleed", chance: 1 }],
           },
@@ -962,7 +962,7 @@ const AXE = buildTree({
     form(
       "rending-lacerate",
       "Rending Lacerate",
-      "Two cuts of 50 % Weapon Damage. Each always Bleeds.",
+      "Two cuts of 75 % Weapon Damage. Each always Bleeds.",
       {
         ...LACERATE,
         id: "rending-lacerate",
@@ -970,7 +970,7 @@ const AXE = buildTree({
         hits: [
           {
             kind: "weapon",
-            multiplier: 0.5,
+            multiplier: 0.75,
             count: 2,
             ailmentChances: [{ ailment: "bleed", chance: 1 }],
           },
@@ -980,7 +980,7 @@ const AXE = buildTree({
     form(
       "hemorrhage",
       "Hemorrhage",
-      "100 % Weapon Damage. Always Bleeds, then the Bleed bursts at once.",
+      "150 % Weapon Damage. Always Bleeds, then the Bleed bursts at once.",
       {
         ...LACERATE,
         id: "hemorrhage",
@@ -1002,8 +1002,8 @@ const AXE = buildTree({
       name: "Rampage",
       form: "Rampage Axe",
       description:
-        "Every Bleed tick adds 1 % damage until the fight ends. Start each fight at −20 %.",
-      effect: { weaponRules: { rampage: { ailment: "bleed", perTick: 0.01 }, damageDealt: 0.8 } },
+        "Every Bleed tick adds 2 % damage, Bleed included, until the fight ends. Start each fight at −10 %.",
+      effect: { weaponRules: { rampage: { ailment: "bleed", perTick: 0.02 }, damageDealt: 0.9 } },
     },
     {
       id: "executioner",

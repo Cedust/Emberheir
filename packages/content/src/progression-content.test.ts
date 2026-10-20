@@ -38,7 +38,7 @@ describe("Skill Tree", () => {
       .reduce((sum, n) => sum + (n.maxRanks ?? 1), 0);
     expect(points).toBeGreaterThanOrEqual(160);
     expect(base.filter((n) => n.kind === "notable").length).toBeGreaterThanOrEqual(30);
-    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(21);
+    expect(base.filter((n) => n.kind === "skill" && n.skill)).toHaveLength(24);
     expect(base.filter((n) => n.kind === "keystone" && n.keystone)).toHaveLength(13);
     // No flat Life on the web: Life comes from the level and Vitality.
     expect(base.filter((n) => n.bonuses?.life)).toEqual([]);

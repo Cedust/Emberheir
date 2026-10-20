@@ -14,14 +14,15 @@ export const SWORD: WeaponDefinition = {
   id: "sword",
   name: "Sword",
   defaultAttack: "Slash",
-  // Raised from 10-17: the Riposte rarely fires against slow bosses, so the Sword had the least
-  // damage of all melee weapons.
-  damage: { min: 12, max: 20 },
+  // Step 4 (Timo 2026-10-20): the three Cinderguard weapons each have their own Speed and Power,
+  // at about the same damage per second (Fury's old +20 % on every hit moved into the weapons).
+  // Sword: fast and light (was 14-23 at 0.8/s).
+  damage: { min: 13, max: 20 },
   damageType: "physical",
-  attacksPerSecond: 0.8,
+  attacksPerSecond: 0.9,
   heatBehavior: "cooling",
-  // Heat per Hit = 12 Heat/s target rate ÷ 0.8 attacks/s.
-  heatPerHit: 15,
+  // Heat per Hit = 12 Heat/s target rate ÷ 0.9 attacks/s.
+  heatPerHit: 13,
   range: "melee",
   implicit: { evasion: 0.05 },
   // Counter identity (docs/design/waffen-v1.md section 3).
@@ -59,12 +60,13 @@ export const AXE: WeaponDefinition = {
   id: "axe",
   name: "Axe",
   defaultAttack: "Hack",
-  damage: { min: 12, max: 21 },
+  // Step 4 (see the Sword): in between (was 15-26 at 0.7/s).
+  damage: { min: 14, max: 25 },
   damageType: "physical",
-  attacksPerSecond: 0.7,
+  attacksPerSecond: 0.75,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 0.7 attacks/s.
-  heatPerHit: 17,
+  // 12 Heat/s ÷ 0.75 attacks/s.
+  heatPerHit: 16,
   range: "melee",
   implicit: { physicalDamage: 0.1 },
   ailmentChances: [{ ailment: "bleed", chance: 0.25 }],
@@ -133,12 +135,14 @@ export const MACE: WeaponDefinition = {
   id: "mace",
   name: "Mace",
   defaultAttack: "Smash",
-  damage: { min: 14, max: 23 },
+  // Step 4 (Timo 2026-10-20): the three Cinderguard weapons each have their own Speed and Power.
+  // Mace: slow and heavy (was 14-23 at 0.65/s).
+  damage: { min: 18, max: 27 },
   damageType: "physical",
-  attacksPerSecond: 0.65,
+  attacksPerSecond: 0.6,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 0.65 attacks/s.
-  heatPerHit: 18,
+  // 12 Heat/s ÷ 0.6 attacks/s.
+  heatPerHit: 20,
   range: "melee",
   implicit: { physicalPenetration: 0.1 },
   triggers: [

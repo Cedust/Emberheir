@@ -113,8 +113,8 @@ export const LACERATE: SkillDefinition = {
   type: "attack",
   heatCost: 25,
   tags: ["physical", "over-time", "any"],
-  description: "100 % Weapon Damage. Always Bleeds.",
-  hits: [{ kind: "weapon", multiplier: 1, ailmentChances: [{ ailment: "bleed", chance: 1 }] }],
+  description: "150 % Weapon Damage. Always Bleeds.",
+  hits: [{ kind: "weapon", multiplier: 1.5, ailmentChances: [{ ailment: "bleed", chance: 1 }] }],
 };
 
 export const VENOM_COAT: SkillDefinition = {
@@ -459,6 +459,63 @@ export const ENVENOM: SkillDefinition = {
 };
 
 /** Skills the hero can put into the Battle Plan. */
+/**
+ * Element attacks (balancing-neustart-v1.md, step 4): weapon fighters of an elemental path swing
+ * their weapon in the element instead of borrowing a caster's spell. One per element region of
+ * the Ash Tree; they hit with the weapon, so melee and ranged weapons use them alike.
+ */
+export const SEARING_BLOW: SkillDefinition = {
+  id: "searing-blow",
+  name: "Searing Blow",
+  type: "attack",
+  heatCost: 40,
+  tags: ["fire", "over-time", "any"],
+  description: "160 % Weapon Damage as Fire. Always Burns.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 1.6,
+      damageType: "fire",
+      ailmentChances: [{ ailment: "burn", chance: 1 }],
+    },
+  ],
+};
+
+export const STORM_STRIKE: SkillDefinition = {
+  id: "storm-strike",
+  name: "Storm Strike",
+  type: "attack",
+  heatCost: 45,
+  tags: ["lightning", "direct", "any"],
+  description: "3 quick hits for 70 % Weapon Damage as Lightning. Each has a 50 % chance to Shock.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 0.7,
+      count: 3,
+      damageType: "lightning",
+      ailmentChances: [{ ailment: "shock", chance: 0.5 }],
+    },
+  ],
+};
+
+export const FROST_STRIKE: SkillDefinition = {
+  id: "frost-strike",
+  name: "Frost Strike",
+  type: "attack",
+  heatCost: 50,
+  tags: ["cold", "direct", "any"],
+  description: "240 % Weapon Damage as Cold. Always Chills.",
+  hits: [
+    {
+      kind: "weapon",
+      multiplier: 2.4,
+      damageType: "cold",
+      ailmentChances: [{ ailment: "chill", chance: 1 }],
+    },
+  ],
+};
+
 export const HERO_SKILLS: readonly SkillDefinition[] = [
   POWER_STRIKE,
   SKULL_CRACK,
@@ -491,6 +548,9 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   VOID_RIFT,
   IRON_BASTION,
   RALLY,
+  SEARING_BLOW,
+  STORM_STRIKE,
+  FROST_STRIKE,
 ];
 
 /** Staff Innate: a slow Void bolt that Corrupts. */

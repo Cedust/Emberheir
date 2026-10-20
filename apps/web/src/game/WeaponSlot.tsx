@@ -1,23 +1,12 @@
 import { GAME_DATA } from "@emberheir/content";
-import {
-  type GameState,
-  WEAPON_GRADES,
-  heroWeaponName,
-  heroWeaponRank,
-  weaponGrade,
-} from "@emberheir/sim";
+import { type GameState, heroWeaponName, heroWeaponRank, weaponGradeIndex } from "@emberheir/sim";
 import { ItemArt } from "../ui/ItemArt";
 import { type DollBox, WEAPON_BOX } from "../ui/Paperdoll";
 
 /** Grade colours, Crude to Exalted (the weapon's temperature). */
 export const GRADE_COLOR = ["#9a8c78", "#d0803a", "#ff7a2a", "#ffc04a", "#fff0c8"];
 
-export function gradeIndex(rank: number): number {
-  return Math.max(
-    0,
-    WEAPON_GRADES.findIndex((g) => g.name === weaponGrade(rank)),
-  );
-}
+export const gradeIndex = weaponGradeIndex;
 
 /**
  * The hero's own weapon on the paperdoll (Weapon Mastery): not an item, so it cannot be moved.

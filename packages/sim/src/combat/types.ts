@@ -311,8 +311,10 @@ export type SkillEffect =
   /**
    * Cash In (Burst Masteries, klassengeruest-v1.md 5): ends every DoT on the target and deals
    * their remaining damage × `multiplier` at once, as a hit of the skill (Lifesteal works).
+   * `own`: only the weapon's own ailment (the Heirloom path's) is cashed in, before the skill's
+   * hits land (it never cashes in the ailment it applies itself).
    */
-  | { readonly kind: "cashIn"; readonly multiplier: number }
+  | { readonly kind: "cashIn"; readonly multiplier: number; readonly own?: boolean }
   /** Immolate: Combust `times` over after the hit (ailments-v2.md 3.2). */
   | { readonly kind: "combust"; readonly times: number }
   /** Weapon Mastery Sunder: adds stacks of the caster's stacking Sunder (Bone Breaker). */
@@ -414,10 +416,11 @@ export interface TelegraphSpec {
 export interface CombatRules {
   // Class Traits (klassengeruest-v1.md 2): each one works in every fight, with every build.
   /**
-   * Cinderguard, Fury: every own hit that lands adds `perHit` damage to the following ones, up to
-   * `max`. Fury holds for the whole fight and starts at 0 in every fight.
+   * Cinderguard, Fury (balancing-neustart-v1.md, step 4: the weapon is the heart): every Default
+   * Attack that lands gives 1 Fury, up to `maxStacks`. The Innate spends all of it and deals
+   * `perStack` more damage per Fury (the "more" pool). Fury starts at 0 in every fight.
    */
-  readonly fury?: { readonly perHit: number; readonly max: number };
+  readonly fury?: { readonly perStack: number; readonly maxStacks: number };
   /**
    * Ashstrider, Hunter's Mark: attacks against an enemy that carries one of your ailments have
    * `precision` more Precision (Timo 2026-10-19: clean hits, not Crits, which belong to AGI).

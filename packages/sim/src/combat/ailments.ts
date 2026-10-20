@@ -13,6 +13,8 @@ export interface DotState {
   readonly nextTickIn: number;
   /** Corruption: ticks it has grown so far (each adds `corruptionRampPerTick` of the base). */
   readonly ramp?: number;
+  /** The hit or skill whose application set the damage (for damage reports). */
+  readonly source?: string;
 }
 
 /**
@@ -31,6 +33,8 @@ export interface TimedAilmentState {
 export interface PoisonStack {
   readonly damagePerSecond: number;
   readonly remaining: number;
+  /** The hit or skill that added the stack (for damage reports). */
+  readonly source?: string;
 }
 
 /** Poison: Physical DoT that stacks (docs/design/stat-liste-v2.md section 6). */
@@ -97,27 +101,30 @@ export function applyAilment(
   effect = 0,
   /** Shock stacks kept at most (Static Build raises it). */
   maxShockStacks: number = COMBAT.shockMaxStacks,
+  /** The hit or skill applying it, kept for damage reports. */
+  source?: string,
 ): AilmentStates {
   if (duration <= 0) return states;
   const strength = Math.max(0, 1 + effect);
   if (type === "burn" || type === "bleed" || type === "corruption") {
     const previous = states[type];
-    const damagePerSecond = Math.max(
-      previous?.damagePerSecond ?? 0,
-      hitDamage * DOT_PER_SECOND[type] * strength,
-    );
+    const fresh = hitDamage * DOT_PER_SECOND[type] * strength;
+    const damagePerSecond = Math.max(previous?.damagePerSecond ?? 0, fresh);
+    const by = previous && previous.damagePerSecond >= fresh ? previous.source : source;
     const dot: DotState = {
       damagePerSecond,
       remaining: duration,
       nextTickIn: previous?.nextTickIn ?? 1,
       ...(type === "corruption" ? { ramp: previous?.ramp ?? 0 } : {}),
+      ...(by !== undefined ? { source: by } : {}),
     };
     return { ...states, [type]: dot };
   }
   if (type === "poison") {
-    const stack = {
+    const stack: PoisonStack = {
       damagePerSecond: hitDamage * COMBAT.poisonDamagePerSecond * strength,
       remaining: duration,
+      ...(source !== undefined ? { source } : {}),
     };
     const stacks = [...(states.poison?.stacks ?? []), stack].slice(-maxPoisonStacks);
     return { ...states, poison: { stacks, nextTickIn: states.poison?.nextTickIn ?? 1 } };
@@ -163,6 +170,32 @@ export function remainingBurnDamage(states: AilmentStates): number {
 /** Damage all Poison stacks would still deal if they ran out (Toxic Bloom). */
 export function remainingPoisonDamage(states: AilmentStates): number {
   return (states.poison?.stacks ?? []).reduce((sum, p) => sum + p.damagePerSecond * p.remaining, 0);
+}
+
+/**
+ * Who caused the damage still left in some DoTs: share per hit or skill (sums to 1 when every
+ * application knows its source). For damage reports of bursts that end DoTs.
+ */
+export function remainingDotSources(
+  states: AilmentStates,
+  ailments: readonly AilmentType[],
+): Record<string, number> {
+  const parts: Record<string, number> = {};
+  let total = 0;
+  const add = (source: string | undefined, amount: number) => {
+    total += amount;
+    if (source && amount > 0) parts[source] = (parts[source] ?? 0) + amount;
+  };
+  for (const a of ailments) {
+    if (a === "poison") {
+      for (const p of states.poison?.stacks ?? []) add(p.source, p.damagePerSecond * p.remaining);
+      continue;
+    }
+    const state = states[a];
+    if (!state || !("damagePerSecond" in state)) continue;
+    add(state.source, remainingDotDamage({ [a]: state }));
+  }
+  return total > 0 ? Object.fromEntries(Object.entries(parts).map(([s, v]) => [s, v / total])) : {};
 }
 
 /** Number of Poison stacks. */
@@ -237,6 +270,8 @@ export interface AilmentStepResult {
     readonly damage: number;
     /** Corruption at full growth collapsed: this tick is its burst (`COMBAT.collapseSeconds`). */
     readonly collapse?: boolean;
+    /** Share of the tick per hit or skill that caused it (for damage reports). */
+    readonly sources?: Readonly<Record<string, number>>;
   }[];
   readonly expired: readonly AilmentType[];
 }
@@ -251,8 +286,12 @@ export function stepAilments(
   growth: { readonly ramp?: number; readonly collapse?: number } = {},
 ): AilmentStepResult {
   const next: { -readonly [K in keyof AilmentStates]: AilmentStates[K] } = {};
-  const ticks: { ailment: (typeof DOT_AILMENTS)[number]; damage: number; collapse?: boolean }[] =
-    [];
+  const ticks: {
+    ailment: (typeof DOT_AILMENTS)[number];
+    damage: number;
+    collapse?: boolean;
+    sources?: Record<string, number>;
+  }[] = [];
   const expired: AilmentType[] = [];
 
   for (const type of REFRESHING_DOTS) {
@@ -267,6 +306,7 @@ export function stepAilments(
       ticks.push({
         ailment: type,
         damage: dotTickDamage(ramp === undefined ? dot : { ...dot, ramp }),
+        ...(dot.source !== undefined ? { sources: { [dot.source]: 1 } } : {}),
       });
       if (ramp !== undefined) {
         ramp = Math.min(COMBAT.corruptionMaxRamp, ramp + 1 + (growth.ramp ?? 0));
@@ -277,6 +317,7 @@ export function stepAilments(
             damage:
               dotTickDamage({ ...dot, ramp }) * (COMBAT.collapseSeconds + (growth.collapse ?? 0)),
             collapse: true,
+            ...(dot.source !== undefined ? { sources: { [dot.source]: 1 } } : {}),
           });
           ramp = Math.floor(COMBAT.corruptionMaxRamp / 2);
         }
@@ -290,6 +331,7 @@ export function stepAilments(
         remaining,
         nextTickIn,
         ...(ramp !== undefined ? { ramp } : {}),
+        ...(dot.source !== undefined ? { source: dot.source } : {}),
       };
     }
   }
@@ -301,10 +343,21 @@ export function stepAilments(
     // Every stack ticks while it lasts; the shared tick clock keeps one number per second.
     while (nextTickIn <= EPSILON) {
       const elapsed = dt + nextTickIn;
-      const damage = before
-        .filter((stack) => stack.remaining - elapsed >= -EPSILON)
-        .reduce((sum, stack) => sum + stack.damagePerSecond, 0);
-      if (damage > 0) ticks.push({ ailment: "poison", damage });
+      const live = before.filter((stack) => stack.remaining - elapsed >= -EPSILON);
+      const damage = live.reduce((sum, stack) => sum + stack.damagePerSecond, 0);
+      const sources: Record<string, number> = {};
+      for (const stack of live) {
+        if (stack.source !== undefined && damage > 0) {
+          sources[stack.source] = (sources[stack.source] ?? 0) + stack.damagePerSecond / damage;
+        }
+      }
+      if (damage > 0) {
+        ticks.push({
+          ailment: "poison",
+          damage,
+          ...(live.some((x) => x.source) ? { sources } : {}),
+        });
+      }
       nextTickIn += 1;
     }
     const stacks = before

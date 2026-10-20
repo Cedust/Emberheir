@@ -290,10 +290,10 @@ export function weaponDamageOf(weapon: CombatantSetup["weapon"]): number {
     : (weapon.damage.min + weapon.damage.max) / 2;
 }
 
-/** Fury (Cinderguard): the damage share gathered so far (for hits and ailments alike). */
+/** Fury (Cinderguard): the bonus the Innate gets from the Fury gathered so far. */
 export function furyBonus(f: Fighter): number {
   const fury = f.setup.rules?.fury;
-  return fury ? Math.min(fury.max, fury.perHit * f.fury) : 0;
+  return fury ? fury.perStack * Math.min(fury.maxStacks, f.fury) : 0;
 }
 
 /** Hunter's Mark (Ashstrider): extra Precision against an enemy with one of your ailments. */
@@ -340,6 +340,8 @@ export interface FightCore {
   result: { winner: Side | null; fled: Side | null } | undefined;
   /** The side whose telegraphed Heavy Attack is landing right now (its hits are capped). */
   heavyFrom: Side | null;
+  /** The hit or skill applying ailments right now; DoTs remember it for damage reports. */
+  ailmentSource: string | null;
 }
 
 /** Fight time in seconds after the ticks so far. */
@@ -413,9 +415,11 @@ export function dotFactor(
   const rules = source.setup.rules;
   const pool = emptyPool();
   addFactor(pool, rules?.dotDamage);
-  pool.more += (rules?.dotMore ?? 0) + extraMore + furyBonus(source);
+  pool.more += (rules?.dotMore ?? 0) + extraMore;
   const lingering = rules?.lingering;
   if (lingering) pool.more += Math.min(lingering.max, lingering.perSecond * fightTime(core));
+  // Rampage: the Bleed it counts grows with it, not only the hits.
+  pool.more += source.rampage;
   if (ailment) {
     addFactor(pool, rules?.ailmentDamage?.[ailment]);
     pool.more += rules?.ailmentMore?.[ailment] ?? 0;

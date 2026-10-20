@@ -35,7 +35,6 @@ import {
   usePerk,
   withStatAilmentChances,
   conditionHolds,
-  furyBonus,
   huntersMarkPrecision,
   mark,
   weaponAilment,
@@ -456,7 +455,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     ...(damage < dealt ? { capped: true } : {}),
   });
   defender.lastHitTakenAt = fightTime(core);
-  gainFury(core, attacker);
+  if (h.source === attacker.setup.weapon.defaultAttack) gainFury(attacker);
+  gainFury(defender);
   const dwr = defender.setup.weaponRules;
   if (outcome.blocked && dwr?.critAfter?.includes("block")) defender.nextCrit = true;
   if (outcome.blocked && dwr?.braced) defender.bracedUntil = now + dwr.braced.seconds;
@@ -506,6 +506,8 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       (attacker.setup.rules?.slowDeath?.hit ?? 1);
     const ailmentBase = hitBase * (h.ailmentPower ?? 1);
     const deepWound = outcome.crit ? (wr?.critBleedPower ?? 1) : 1;
+    const before = core.ailmentSource;
+    core.ailmentSource = h.source;
     for (const { ailment, chance } of withStatAilmentChances(surge(attacker, h), attacker.stats)) {
       // Thousand Cuts: Poison Chance no longer counts, every clean hit Poisons instead.
       if (ailment === "poison" && wr?.thousandCuts) continue;
@@ -529,6 +531,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       inflict(core, attacker, defender, own, ailmentBase);
     }
     if (outcome.crit && wr) critMastery(core, attacker, defender, hitBase);
+    core.ailmentSource = before;
     if (outcome.crit && attacker.perks.has("armorbreaker")) {
       perk(core, attacker, "armorbreaker");
       addSunder(attacker, defender, 1);
@@ -585,12 +588,15 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   return result;
 }
 
-/** Fury (Cinderguard): every hit that lands adds to the next; the full Fury flares once. */
-function gainFury(core: FightCore, f: Fighter): void {
+/** Fury (Cinderguard): every Default Attack that lands adds one, up to the cap. */
+/**
+ * Cinderguard: a Default Attack that lands and a hit taken add one Fury; the Innate spends it
+ * (skills.ts).
+ */
+function gainFury(f: Fighter): void {
   const fury = f.setup.rules?.fury;
-  if (!fury || f.fury * fury.perHit >= fury.max - 1e-9) return;
+  if (!fury || f.fury >= fury.maxStacks) return;
   f.fury++;
-  if (f.fury * fury.perHit >= fury.max - 1e-9) payoff(core, f, "fury");
 }
 
 /** An attack missed the defender: Read the Blow, Ember Dance and On Evade triggers. */
@@ -770,7 +776,7 @@ function hitPool(
     addFactor(pool, rules?.chilledDamage);
     pool.more += rules?.chilledMore ?? 0;
   }
-  pool.more += crescendoBonus(attacker) + furyBonus(attacker);
+  pool.more += crescendoBonus(attacker);
   if (h.fromSkill) pool.more += (wr?.skillDamage ?? 0) + (rules?.skillDamage ?? 0);
   for (const b of rules?.conditionalDamage ?? []) {
     if (conditionHolds(core, attacker, b.condition)) addBonus(pool, b.amount);
@@ -973,6 +979,7 @@ export function inflict(
     poisonCap(attacker),
     attacker.stats.ailmentEffect + (wr?.ailmentEffectBy?.[ailment] ?? 0),
     COMBAT.shockMaxStacks + (wr?.shockMaxStacks ?? 0),
+    core.ailmentSource ?? undefined,
   );
   if (duration <= 0) return;
   // Master of the Hollow: a new Corruption starts grown.

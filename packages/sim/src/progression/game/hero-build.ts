@@ -30,6 +30,7 @@ import { keystoneRules, treeBonuses, treeSkills, treeTriggers } from "../skill-t
 import {
   buildMasteryWeapon,
   pointsAvailable,
+  weaponGradeIndex,
   weaponRank,
   weaponTitle,
   type EchoDefinition,
@@ -101,7 +102,7 @@ export function masteryPointsLeft(state: GameState, data: GameData): number {
 
 export interface KnownSkill {
   readonly skill: SkillDefinition;
-  /** Node ranks, +1 for the Start Skill of the weapon in hand. */
+  /** Node ranks; the Start Skill of the weapon in hand adds 1 and one per Weapon Grade. */
   readonly level: number;
   readonly startSkill: boolean;
 }
@@ -120,7 +121,9 @@ export function knownSkills(
   if (start) {
     const ranks =
       fromTree.find((t) => t.skill.id === start.id || t.skill.id === own?.id)?.ranks ?? 0;
-    result.push({ skill: start, level: 1 + ranks, startSkill: true });
+    // The Innate grows with the weapon: one level per Weapon Grade (balancing restart step 4).
+    const grade = weaponGradeIndex(heroWeaponRank(state));
+    result.push({ skill: start, level: 1 + grade + ranks, startSkill: true });
   }
   for (const { skill, ranks } of fromTree) {
     if (skill.id !== start?.id && skill.id !== own?.id) {

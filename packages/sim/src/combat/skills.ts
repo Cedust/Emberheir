@@ -8,6 +8,7 @@ import {
   poisonStacks,
   remainingBleedDamage,
   remainingDotDamage,
+  remainingDotSources,
 } from "./ailments";
 import { COMBAT } from "./constants";
 import {
@@ -17,6 +18,7 @@ import {
   dotFactor,
   emit,
   fightTime,
+  furyBonus,
   other,
   payoffFactor,
   perk,
@@ -75,6 +77,12 @@ export function castSkill(
   const wr = f.setup.weaponRules;
   const innate = wr?.innateId !== undefined && skill.id === wr.innateId;
   if (innate) f.freeInnate = false;
+  // Fury (Cinderguard): the Innate spends all Fury the Default Attacks gathered.
+  if (innate && f.fury > 0 && f.setup.rules?.fury && via !== "twin") {
+    more += furyBonus(f);
+    f.fury = 0;
+    payoff(core, f, "fury");
+  }
   f.cleanSinceSkill = 0;
   if (heatCost > 0 && f.perks.has("afterglow")) {
     f.heat = addHeat(f.heat, heatCost * PERK.afterglowRefund, 1);
@@ -91,6 +99,13 @@ export function castSkill(
   const target = core.fighters[other(f.side)];
   let landed = false;
   let clean = false;
+  // A Cash In of the weapon's own ailment sets off what is already there before the skill
+  // strikes, so it never cashes in the ailment it applies itself.
+  const cashesFirst = (e: SkillEffect) => e.kind === "cashIn" && e.own === true;
+  for (const effect of skill.effects ?? []) {
+    if (cashesFirst(effect)) applySkillEffect(core, f, target, skill, effect, level);
+    if (core.result) return;
+  }
   for (const hit of skill.hits) {
     const count = hit.count ?? 1;
     for (let i = 0; i < count && !core.result; i++) {
@@ -149,6 +164,7 @@ export function castSkill(
   }
   for (const effect of skill.effects ?? []) {
     if (core.result) return;
+    if (cashesFirst(effect)) continue;
     if (effect.kind === "refundHeat") {
       if (clean && heatCost > 0) f.heat = addHeat(f.heat, heatCost * effect.fraction, 1);
       continue;
@@ -260,6 +276,7 @@ function applySkillEffect(
     case "consumeBleed": {
       const all = remainingBleedDamage(target.ailments);
       if (all <= 0) return;
+      const consumed = remainingDotSources(target.ailments, ["bleed"]);
       // Hooked Rend, Master Butcher: only a share bursts, the rest bleeds on.
       const share = Math.min(1, effect.share ?? f.setup.weaponRules?.consumeBleedShare ?? 1);
       const rest = all * share;
@@ -294,6 +311,7 @@ function applySkillEffect(
         damageType: "physical",
         crit: false,
         blocked: false,
+        ...ownDotShare(consumed, effect.multiplier * levelScale),
       });
       dealDamage(core, target, damage);
       if (effect.leech && !core.result) heal(core, f, damage * effect.leech);
@@ -373,7 +391,7 @@ function applySkillEffect(
       combust(core, f, target, effect.times);
       return;
     case "cashIn":
-      cashIn(core, f, target, skill, effect.multiplier, level);
+      cashIn(core, f, target, skill, effect.multiplier, level, effect.own === true);
       return;
     case "detonateDots": {
       const perSecond = dotDamagePerSecond(target.ailments);
@@ -412,11 +430,14 @@ function cashIn(
   skill: SkillDefinition,
   multiplier: number,
   level: number,
+  own: boolean,
 ): void {
-  const rest = remainingDotDamage(target.ailments);
+  const weapon = weaponAilment(f.setup.weapon);
+  const ends = DOT_AILMENTS.filter((a) => target.ailments[a] && (!own || a === weapon));
+  const rest = ends.reduce((sum, a) => sum + remainingDotDamage({ [a]: target.ailments[a] }), 0);
   if (rest <= 0) return;
-  for (const ailment of DOT_AILMENTS) {
-    if (!target.ailments[ailment]) continue;
+  const consumed = remainingDotSources(target.ailments, ends);
+  for (const ailment of ends) {
     target.ailments = clearAilment(target.ailments, ailment);
     emit(core, { t: fightTime(core), type: "ailmentExpired", side: target.side, ailment });
   }
@@ -442,10 +463,26 @@ function cashIn(
     damageType: f.setup.weapon.damageType,
     crit: false,
     blocked: false,
+    ...ownDotShare(consumed, multiplier * levelScale),
   });
   payoff(core, f, "cashIn", damage);
   dealDamage(core, target, damage);
   if (!core.result) heal(core, f, damage * f.stats.lifesteal);
+}
+
+/**
+ * Damage reports of a burst that ends DoTs: the part that is the DoTs' own damage (everything but
+ * the skill's multiplier and level) belongs to whoever applied them.
+ */
+function ownDotShare(
+  sources: Record<string, number>,
+  scale: number,
+): { dotSources?: Record<string, number> } {
+  const own = Math.min(1, 1 / Math.max(1, scale));
+  const entries = Object.entries(sources);
+  return entries.length
+    ? { dotSources: Object.fromEntries(entries.map(([s, v]) => [s, v * own])) }
+    : {};
 }
 
 /** An infused hit applies the weapon's ailment with the best listed chance (none for Stun). */

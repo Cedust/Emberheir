@@ -18,6 +18,7 @@ import {
   EXECUTE,
   FLURRY,
   FROST_NOVA,
+  FROST_STRIKE,
   ICE_LANCE,
   IMMOLATE,
   INFERNO,
@@ -25,8 +26,10 @@ import {
   METEOR,
   RALLY,
   REND,
+  SEARING_BLOW,
   SERRATED_EDGE,
   SOUL_HARVEST,
+  STORM_STRIKE,
   THUNDERSTRIKE,
   TOXIC_BURST,
   VOID_RIFT,
@@ -469,7 +472,7 @@ const REGIONS: readonly RegionSpec[] = [
         ],
       },
       {
-        nodes: [t("Scorched Hide", LIFE), s(INFERNO), t("Ember Ash", TENACITY)],
+        nodes: [t("Scorched Hide", LIFE), s(INFERNO), s(SEARING_BLOW)],
         notable: [
           n("Searing Steel", "30 % of your Physical Damage is converted to Fire.", {
             conversion: [{ from: "physical", to: "fire", share: 0.3 }],
@@ -494,7 +497,7 @@ const REGIONS: readonly RegionSpec[] = [
     hub: t("Storm Sigil", { increasedBarrier: 0.1, increasedLife: 0.03 }),
     spokes: [
       {
-        nodes: [t("Arcing Ward", BARRIER), t("Steady Mind", TENACITY), t("Focus Ward", LIFE)],
+        nodes: [t("Arcing Ward", BARRIER), s(STORM_STRIKE), t("Focus Ward", LIFE)],
         notable: n(
           "Arcane Edge",
           "20 % of your Physical Damage is converted to Lightning. Your hits deal 20 % more damage to Shocked enemies.",
@@ -557,7 +560,7 @@ const REGIONS: readonly RegionSpec[] = [
     hub: t("Frost Sigil", { increasedBarrier: 0.1, tenacity: 0.04 }),
     spokes: [
       {
-        nodes: [t("Rime Ward", BARRIER), s(ICE_LANCE), t("Still Mind", TENACITY)],
+        nodes: [t("Rime Ward", BARRIER), s(ICE_LANCE), s(FROST_STRIKE)],
         notable: {
           name: "Glacier",
           description: "+12 % Chill Chance. Your hits deal 15 % more damage to Chilled enemies.",
