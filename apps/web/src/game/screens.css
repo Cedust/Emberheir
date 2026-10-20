@@ -404,8 +404,8 @@
   position: absolute;
   inset: -8px;
   border-style: solid;
-  border-width: 25px;
-  border-image: url("../assets/ui/panel-frame.webp") 50 stretch;
+  border-width: 35px;
+  border-image: url("../assets/ui/panel-frame.webp") 70 stretch;
   pointer-events: none;
 }
 
