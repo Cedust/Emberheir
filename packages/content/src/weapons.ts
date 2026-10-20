@@ -96,14 +96,14 @@ export const BOW: WeaponDefinition = {
   id: "bow",
   name: "Bow",
   defaultAttack: "Shoot",
-  // Many small arrows: Bleed keeps only the strongest hit, so the Bow hits 30 % harder than it
-  // looks next to the Crossbow.
-  damage: { min: 13, max: 22 },
+  // Step 5 (Timo 2026-10-20): the three Ashstrider weapons each have their own Speed and Power,
+  // at about the same damage per second. Bow: in between (was 13-22 at 0.9/s).
+  damage: { min: 15, max: 24 },
   damageType: "physical",
-  attacksPerSecond: 0.9,
+  attacksPerSecond: 0.8,
   heatBehavior: "steady",
-  // 12 Heat/s ÷ 0.9 attacks/s.
-  heatPerHit: 13,
+  // 12 Heat/s ÷ 0.8 attacks/s.
+  heatPerHit: 15,
   range: "ranged",
   implicit: { bleedChance: 0.04, poisonChance: 0.04 },
   ailmentChances: [

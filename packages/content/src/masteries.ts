@@ -629,9 +629,11 @@ const MASTERIES: readonly MasterySpec[] = [
       "deadly-aim",
       "Deadly Aim",
       45,
-      `260 % Weapon Damage that never glances. 50 % chance to apply your weapon's ailment, then ${CASH_IN_TEXT}`,
+      // Step 5: like Earthsplitter, it sets off only the weapon's own ailment, before its hit, so
+      // the poison stacks of a Venom path and the gear's ailments keep running.
+      `First sets off your weapon's ailment on the enemy at once: ${CASH_IN * 100} % of what is left. Then 260 % Weapon Damage that never glances and always applies it again.`,
       2.6,
-      { chance: 0.5, precise: true, cashIn: CASH_IN },
+      { chance: 1, precise: true, cashIn: CASH_IN, own: true },
     ),
     notables: [
       skillPower("Steady Hands", 0.15),
@@ -678,8 +680,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "hit-and-run",
       "Hit and Run",
       40,
-      "4 quick hits for 55 % Weapon Damage. Each has a 25 % chance to apply your weapon's ailment.",
-      0.55,
+      // Step 5: 55 % left the Skirmisher a full attempt behind the Trickster.
+      "4 quick hits for 65 % Weapon Damage. Each has a 25 % chance to apply your weapon's ailment.",
+      0.65,
       { count: 4, chance: 0.25 },
     ),
     notables: [

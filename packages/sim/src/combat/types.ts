@@ -422,10 +422,11 @@ export interface CombatRules {
    */
   readonly fury?: { readonly perStack: number; readonly maxStacks: number };
   /**
-   * Ashstrider, Hunter's Mark: attacks against an enemy that carries one of your ailments have
-   * `precision` more Precision (Timo 2026-10-19: clean hits, not Crits, which belong to AGI).
+   * Ashstrider, Hunter's Mark (balancing restart step 5): every clean Default Attack that does not
+   * crit marks the enemy, up to `maxStacks`. Your next Crit spends all Marks and deals `perStack`
+   * more damage per Mark (the "more" pool). Marks start at 0 in every fight.
    */
-  readonly huntersMark?: { readonly precision: number };
+  readonly huntersMark?: { readonly perStack: number; readonly maxStacks: number };
   /**
    * Emberseer, Overcharge: every skill gives a charge; at `charges` they break loose as a Nova of
    * the weapon's element for `multiplier` × Weapon Damage that always applies its ailment.
@@ -820,8 +821,6 @@ export interface WeaponRules {
   readonly whirl?: { readonly stabs: number; readonly seconds: number };
   /** After an Evade, this many hits are clean Crits (Vanishing Act). */
   readonly critsAfterEvade?: number;
-  /** Attacks come at this fixed rate, whatever the Attack Speed (Siege Engine). */
-  readonly fixedAttackRate?: number;
   /** Every clean Default Attack sets off all Sunder stacks: `perStack` more damage each (Siege Engine). */
   readonly siegeEngine?: { readonly perStack: number };
   /** Default Attacks are volleys of `count` bolts of `multiplier` sharing one Crit roll (Repeater). */

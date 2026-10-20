@@ -52,8 +52,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Hunter's Mark",
       description:
-        "Your attacks on an enemy that carries one of your ailments have +10 % Precision: more clean hits, fewer Glancing Blows.",
-      rules: { huntersMark: { precision: 0.1 } },
+        "Every clean Default Attack that does not crit marks the enemy (up to 10). Your next Crit spends all Marks and deals 15 % more damage per Mark.",
+      rules: { huntersMark: { perStack: 0.15, maxStacks: 10 } },
     },
     lineage: {
       name: "Keen Lineage",

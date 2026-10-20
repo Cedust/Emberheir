@@ -165,27 +165,39 @@ function ashstriderKit(style: Style): Kit {
         "venom-leeching-rot",
         "trunk-iron-bastion",
       ],
-      rotation: ["envenom", MS, "toxic-burst", "wither"],
+      rotation: [MS, "toxic-burst"],
     };
   }
-  const element =
-    style === "bleed"
-      ? ["blood-flayer", "blood-exsanguinate"]
-      : ELEMENT_NOTABLES[style as "fire" | "lightning" | "cold"];
+  if (style === "bleed") {
+    return {
+      nodes: [
+        "blood-rend",
+        MS,
+        MK,
+        "blood-flayer",
+        "blood-exsanguinate",
+        "steel-final-mercy",
+        MN,
+        "venom-ghost-step",
+        "trunk-iron-bastion",
+      ],
+      rotation: [MS, "rend"],
+    };
+  }
+  // Like the Cinderguard, an elemental path shoots its element's attack, not the Blood kit.
+  const attack = ELEMENT_ATTACKS[style as "fire" | "lightning" | "cold"];
   return {
     nodes: [
-      "blood-cleave",
+      attack.node,
       MS,
       MK,
-      ...element,
-      "blood-rend",
-      "roots-grand-strategy",
+      ...ELEMENT_NOTABLES[style as "fire" | "lightning" | "cold"],
+      "steel-final-mercy",
       MN,
-      ...(style === "bleed" ? [] : ["blood-flayer"]),
       "venom-ghost-step",
       "trunk-iron-bastion",
     ],
-    rotation: ["cleave", MS, "rend", "serrated-edge"],
+    rotation: [MS, attack.skill],
   };
 }
 

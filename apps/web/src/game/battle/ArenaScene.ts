@@ -670,18 +670,29 @@ export class ArenaScene {
         });
       }
     } else if (trait.value > 0) {
-      // Hunter's Mark: a turning sight over the enemy while it carries your ailments.
+      // Hunter's Mark: a turning sight over the enemy, one notch lit per Mark; it glows hotter as
+      // the Marks pile up for the next Crit.
       const foe = this.center("enemy");
       const y = foe.y - 230;
       const a = spin * 1.2;
-      g.circle(foe.x, y, 26).stroke({ color: 0xffe9a8, width: 3, alpha: 0.9 });
+      const share = trait.value / Math.max(1, trait.max);
+      const color = share >= 1 ? 0xff6a2b : 0xffe9a8;
+      g.circle(foe.x, y, 26 + 6 * share).stroke({ color, width: 3 + 2 * share, alpha: 0.9 });
       for (let i = 0; i < 4; i++) {
         const r = a + (i * Math.PI) / 2;
         g.moveTo(foe.x + Math.cos(r) * 16, y + Math.sin(r) * 16)
           .lineTo(foe.x + Math.cos(r) * 36, y + Math.sin(r) * 36)
-          .stroke({ color: 0xffe9a8, width: 3, alpha: 0.9 });
+          .stroke({ color, width: 3, alpha: 0.9 });
       }
-      g.circle(foe.x, y, 4).fill({ color: 0xff6a2b });
+      for (let i = 0; i < trait.max; i++) {
+        const r = -Math.PI / 2 + (i * Math.PI * 2) / trait.max;
+        const lit = i < trait.value;
+        g.circle(foe.x + Math.cos(r) * 50, y + Math.sin(r) * 50, lit ? 6 : 3).fill({
+          color: lit ? 0xff6a2b : 0x8a8078,
+          alpha: lit ? 0.95 : 0.4,
+        });
+      }
+      g.circle(foe.x, y, 4 + 3 * share).fill({ color: 0xff6a2b });
     }
   }
 

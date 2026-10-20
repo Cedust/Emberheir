@@ -103,6 +103,8 @@ export interface HitInput {
   readonly parry?: number;
   /** More damage only a clean hit gets (Mighty Hits, Clean Line), into the "more" pool. */
   readonly cleanMore?: number;
+  /** "More" that only a Crit gets (Hunter's Mark). */
+  readonly critMore?: number;
   /** Decides the Crit instead of the roll (Repeater: one roll for the volley). */
   readonly critOverride?: boolean;
   /** Conversion: this share of the hit is dealt as `to` (its Damage % and the defender's layer). */
@@ -169,7 +171,13 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
     damage *= parried ? COMBAT.glancingDamage : (input.glancingDamage ?? COMBAT.glancingDamage);
   }
   // The pools stay out of the ailments: they have their own (DoT pool, `dotFactor`).
-  const pool = Math.max(0, 1 + (input.more ?? 0) + (glancing ? 0 : (input.cleanMore ?? 0)));
+  const pool = Math.max(
+    0,
+    1 +
+      (input.more ?? 0) +
+      (glancing ? 0 : (input.cleanMore ?? 0)) +
+      (crit ? (input.critMore ?? 0) : 0),
+  );
   const boost = pool * (crit ? COMBAT.critMultiplier : 1);
   damage *= boost;
   // Each part of the hit takes its own Damage % and the defender's layer against its type.
