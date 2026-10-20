@@ -248,8 +248,8 @@ export function LegacyView(props: {
                 <div className="chronicle-row">
                   <span className="mono accent">Gen {generation}</span>
                   <span>
-                    <strong className="accent">{heroTitle(state, GAME_DATA)}</strong> · Now ·{" "}
-                    {state.hero.name} walks the Ashen Fields.
+                    <strong className="accent">{heroTitle(state, GAME_DATA)}</strong> · Now · The
+                    Heir walks the Ashen Fields.
                   </span>
                 </div>
               </section>

@@ -9,6 +9,12 @@ import offFistUrl from "./heir/heir-off-fist.webp";
 import thumbUrl from "./heir/heir-thumb.webp";
 import focusFrontUrl from "./heir/offhand-focus-front.webp";
 import quiverUrl from "./heir/offhand-quiver.webp";
+import bowArmUrl from "./heir/heir-bow-arm.webp";
+import bowHandUrl from "./heir/heir-bow-hand.webp";
+import bowUrl from "./heir/heir-bow.webp";
+import crossbowArmUrl from "./heir/heir-crossbow-arm.webp";
+import crossbowHandUrl from "./heir/heir-crossbow-hand.webp";
+import crossbowUrl from "./heir/heir-crossbow.webp";
 
 /**
  * The painted Heir (an otter) as a cutout rig: the body and the weapon forearm are two parts of
@@ -42,7 +48,24 @@ export interface HeirTextures {
   readonly offHands: Partial<Record<HeirOffHand, Texture>>;
   /** The left half of the Ember Focus' root ring, drawn over the fist (the hand goes through). */
   readonly focusFront: Texture | null;
+  /** The otter's ranged poses (Bow, Crossbow); a missing one draws that weapon in the melee pose. */
+  readonly ranged: Partial<Record<HeirRangedPose, HeirPoseTextures>>;
 }
+
+/** The weapons with a pose of their own: both paws on the weapon, aiming. */
+export type HeirRangedPose = "bow" | "crossbow";
+
+/** A ranged pose: the whole otter, and its drawing arm and front paw's fingers once more. */
+export interface HeirPoseTextures {
+  readonly body: Texture;
+  readonly arm: Texture;
+  readonly hand: Texture;
+}
+
+const POSE_URLS: Record<HeirRangedPose, [string, string, string]> = {
+  bow: [bowUrl, bowArmUrl, bowHandUrl],
+  crossbow: [crossbowUrl, crossbowArmUrl, crossbowHandUrl],
+};
 
 let loading: Promise<HeirTextures | null> | null = null;
 
@@ -52,14 +75,37 @@ export function loadHeirTextures(): Promise<HeirTextures | null> {
     Promise.all([bodyUrl, armUrl, thumbUrl, offFistUrl].map((u) => Assets.load<Texture>(u))),
     loadOffHands(),
     Assets.load<Texture>(focusFrontUrl).catch(() => null),
+    loadPoses(),
   ]).then(
-    ([[body, arm, thumb, offFist], offHands, focusFront]) =>
+    ([[body, arm, thumb, offFist], offHands, focusFront, ranged]) =>
       body && arm && thumb && offFist
-        ? { body, arm, thumb, offFist, offHands, focusFront: focusFront ?? null }
+        ? {
+            body,
+            arm,
+            thumb,
+            offFist,
+            offHands,
+            focusFront: focusFront ?? null,
+            ranged,
+          }
         : null,
     () => null,
   );
   return loading;
+}
+
+async function loadPoses(): Promise<HeirTextures["ranged"]> {
+  const loaded = await Promise.all(
+    (Object.keys(POSE_URLS) as HeirRangedPose[]).map((pose) =>
+      Promise.all(POSE_URLS[pose].map((u) => Assets.load<Texture>(u))).then(
+        ([body, arm, hand]) => [pose, body && arm && hand ? { body, arm, hand } : null] as const,
+        () => [pose, null] as const,
+      ),
+    ),
+  );
+  const out: Partial<Record<HeirRangedPose, HeirPoseTextures>> = {};
+  for (const [pose, t] of loaded) if (t) out[pose] = t;
+  return out;
 }
 
 async function loadOffHands(): Promise<HeirTextures["offHands"]> {
@@ -196,4 +242,79 @@ export function armSwing(t: number, ranged: boolean): number {
   if (t < 0.2) return -0.95 * (t / 0.2);
   if (t < 0.4) return -0.95 + 1.6 * ((t - 0.2) / 0.2);
   return 0.65 * (1 - (t - 0.4) / 0.6);
+}
+
+type Pt = readonly [number, number];
+
+interface PoseSource {
+  /** Between the feet, on the ground. */
+  readonly feet: Pt;
+  /** Top left of the cut otter, its drawing arm and front paw (stored at half size). */
+  readonly body: Pt;
+  readonly arm: Pt;
+  readonly hand: Pt;
+  /** Where the front paw holds the weapon: a Bow's grip, a Crossbow's fore end. */
+  readonly grip: Pt;
+  /** The back paw at the jaw: where a Bow's string is drawn to, a Crossbow's stock is held. */
+  readonly jaw: Pt;
+  /** Between the shoulder blades, where a quiver's strap sits. */
+  readonly back: Pt;
+}
+
+/**
+ * The ranged poses (/mnt/project-files/art/heir/heir-ranged-v1.png for the Bow, heir-crossbow-v1.png
+ * for the Crossbow, cut by `tools/art/cut_heir_ranged.py`): the drawing paw at the jaw, the front
+ * paw on the weapon. Points in those paintings (1024 × 1536 px), same scale as the melee pose.
+ */
+const RANGED_POSES: Record<HeirRangedPose, PoseSource> = {
+  bow: {
+    feet: [580, 1350],
+    body: [42, 184],
+    arm: [151, 358],
+    hand: [906, 418],
+    // In the middle of the fist, under thumb and fingers.
+    grip: [958, 474],
+    jaw: [448, 402],
+    back: [380, 420],
+  },
+  crossbow: {
+    feet: [600, 1355],
+    body: [26, 165],
+    arm: [193, 345],
+    hand: [820, 404],
+    // On the palm, in the curled fingers.
+    grip: [905, 452],
+    jaw: [505, 398],
+    back: [400, 430],
+  },
+};
+
+/** A ranged pose's points in figure coordinates (feet at 0/0). */
+export function heirPose(pose: HeirRangedPose): {
+  grip: [number, number];
+  jaw: [number, number];
+  back: [number, number];
+} {
+  const src = RANGED_POSES[pose];
+  const at = (p: Pt): [number, number] => [
+    (p[0] - src.feet[0]) * HEIR_SCALE,
+    (p[1] - src.feet[1]) * HEIR_SCALE,
+  ];
+  return { grip: at(src.grip), jaw: at(src.jaw), back: at(src.back) };
+}
+
+/** A part of a ranged pose (the otter, drawing arm, front paw's fingers) in figure coordinates. */
+export function heirPosePart(
+  textures: HeirPoseTextures,
+  pose: HeirRangedPose,
+  part: "body" | "arm" | "hand",
+): Sprite {
+  const src = RANGED_POSES[pose];
+  const s = new Sprite(textures[part]);
+  s.scale.set(HEIR_SCALE / STORED);
+  s.position.set(
+    (src[part][0] - src.feet[0]) * HEIR_SCALE,
+    (src[part][1] - src.feet[1]) * HEIR_SCALE,
+  );
+  return s;
 }

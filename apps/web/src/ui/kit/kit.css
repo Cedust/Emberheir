@@ -118,8 +118,8 @@
   justify-content: center;
   /* Room for the painted frame's leaves and crest around the window. */
   padding: 30px calc(var(--safe-x) + 26px) 22px;
-  background: rgb(14 10 6 / 0.58);
-  backdrop-filter: blur(2px);
+  /* Only darkened: a backdrop blur re-blurred the live arena under it in every frame. */
+  background: rgb(14 10 6 / 0.62);
   animation: k-layer-in 0.16s ease-out;
 }
 
@@ -911,8 +911,8 @@
 /* --- older overlays (Menu, Compendium, Trigger Codex, Cheats) wear the same frame -------------- */
 
 .stage .overlay {
-  background: rgb(14 10 6 / 0.58);
-  backdrop-filter: blur(2px);
+  /* Only darkened: a backdrop blur re-blurred the live arena under it in every frame. */
+  background: rgb(14 10 6 / 0.62);
 }
 
 .stage .overlay-panel {

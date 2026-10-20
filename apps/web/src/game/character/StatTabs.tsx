@@ -90,7 +90,8 @@ const NOTES = {
   },
 } satisfies Record<string, NoteHover>;
 
-const BEHAVIOR: Record<HeatBehavior, NoteHover> = {
+/** Heat Forms in plain words (also on the class select's weapon cards). */
+export const HEAT_BEHAVIOR_NOTES: Record<HeatBehavior, NoteHover> = {
   cooling: {
     name: "Cooling",
     kind: "Heat · melee",
@@ -226,7 +227,7 @@ function WeaponMedallion(props: { weapon: WeaponNumbers }) {
 
 /** The active Heat Form, painted big on an ember plaque; its tooltip says how Heat fills. */
 function HeatFormMedallion(props: { behavior: HeatBehavior }) {
-  const note = BEHAVIOR[props.behavior];
+  const note = HEAT_BEHAVIOR_NOTES[props.behavior];
   const hover = useNoteHover(note);
   return (
     <span className="hero-weapon hero-heat-form" tabIndex={0} {...hover}>

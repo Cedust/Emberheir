@@ -3224,7 +3224,7 @@
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 6px 10px;
+  padding: 9px 12px;
   border-radius: 6px;
   border: 1.5px solid var(--edge);
   background: var(--panel);
@@ -3412,23 +3412,50 @@
   gap: 6px;
 }
 
+/* One row per attribute: name and notches on top, what it gives on its own line below them, so it
+   never gets cut off; value and buttons sit beside both. */
 .stage .attributes li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto auto auto;
+  grid-template-areas:
+    "icon name notches value minus plus"
+    "icon effects effects value minus plus";
   align-items: center;
-  gap: 10px;
+  column-gap: 10px;
+  row-gap: 2px;
   padding: 4px 0;
   border-bottom: 1px solid var(--grid-line);
 }
 
-.stage .attr-text {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  line-height: 1.2;
+.stage .attributes .attr-icon {
+  grid-area: icon;
 }
 
 .stage .attr-name {
+  grid-area: name;
   font-size: 15px;
+  line-height: 1.2;
+}
+
+.stage .attr-effects {
+  grid-area: effects;
+  line-height: 1.2;
+}
+
+.stage .attributes .attr-notches {
+  grid-area: notches;
+}
+
+.stage .attributes .attr-value {
+  grid-area: value;
+}
+
+.stage .attributes .plus.minus {
+  grid-area: minus;
+}
+
+.stage .attributes .plus:not(.minus) {
+  grid-area: plus;
 }
 
 .stage .attr-value {
@@ -4779,19 +4806,15 @@
   padding: 12px 18px;
 }
 
-.stage .delete-confirm input,
-.stage .name-field input {
-  font: inherit;
-  padding: 6px 10px;
-  border: 1px solid var(--edge);
-  border-radius: 6px;
-  background: var(--slot-bg);
-  color: #ecdfc4;
-}
-
+/*
+ * Class select: three columns over the night Camp. Classes on the left, the chosen class in the
+ * middle (sparring with the Training Dummy, its weapons on a rack below), its trait, weapon,
+ * playstyles and Masteries on the right. Always the night scene behind it, so the panels are
+ * dark smoked glass with the painted brass frame in both modes.
+ */
 .stage .class-screen {
   justify-content: flex-start;
-  padding-top: 26px;
+  padding-top: 22px;
 }
 
 .stage .class-select {
@@ -4799,202 +4822,523 @@
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 16px;
+  gap: 14px;
+  color: var(--k-on-wood);
+  /* Always the night scene: the panels read in Scorched Parchment colours in both modes. */
+  --text: #ecdfc4;
+  --text-sub: #b3a288;
+  --accent: #ff8a3a;
+  --accent-2: #e8c07a;
+  --edge: #6a4a2c;
+  --panel: #2a2622;
 }
 
-.stage .class-select h2 {
-  font-size: 30px;
-  color: var(--k-on-wood);
+.stage .cs-title {
+  margin: 0;
+  font-size: 26px;
+  letter-spacing: 4px;
+  color: var(--k-on-wood-sub);
   text-shadow: 0 2px 6px rgb(0 0 0 / 0.8);
 }
 
-/* Class cards and panels in the window frame (ui-ux-plan-v1.md 3.1) over the night Camp. */
-.stage .class-preview,
-.stage .class-info {
-  border: 2px solid var(--k-brass);
-  box-shadow: var(--k-frame-shadow);
-}
-
-.stage .class-card {
-  border: 2px solid var(--k-brass);
-  box-shadow: 0 8px 20px rgb(0 0 0 / 0.5);
-}
-
-.stage .class-cards {
+.stage .cs-body {
   display: flex;
-  gap: 14px;
+  align-items: stretch;
+  gap: 24px;
+  height: 790px;
 }
 
-.stage .class-card {
-  width: 236px;
-  padding: 14px 10px;
+/* --- classes ----------------------------------------------------------------------------------- */
+
+.stage .cs-classes {
+  width: 250px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 18px;
+}
+
+.stage .cs-class {
+  position: relative;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 4px;
+  gap: 8px;
+  padding: 18px 12px 16px;
+  border: 1px solid rgb(201 160 99 / 0.35);
+  border-radius: 10px;
+  background: linear-gradient(180deg, rgb(28 20 14 / 0.82), rgb(14 10 8 / 0.82));
+  color: var(--k-on-wood-sub);
+  font: inherit;
   cursor: pointer;
-  color: var(--text);
+  opacity: 0.72;
+  transition:
+    opacity 0.2s,
+    transform 0.2s,
+    box-shadow 0.2s,
+    border-color 0.2s;
 }
 
-.stage .class-card strong {
-  font-size: 20px;
+.stage .cs-class:hover {
+  opacity: 0.95;
 }
 
-.stage .class-card .axes {
-  font-size: 13px;
-  color: var(--text-sub);
-}
-
-.stage .class-card.on,
-.stage .class-card:hover {
-  border-color: var(--accent);
+.stage .cs-class.on {
+  opacity: 1;
+  color: var(--k-on-wood);
+  border-color: #ff8a3a;
+  transform: translateX(8px);
   box-shadow:
-    0 0 0 2px var(--accent),
-    0 0 28px rgb(255 138 58 / 0.55);
+    0 0 0 1px #ff8a3a,
+    0 0 34px rgb(255 120 40 / 0.45),
+    inset 0 -40px 60px rgb(255 110 40 / 0.14);
 }
 
-.stage .class-detail {
-  display: flex;
-  gap: 16px;
-  align-items: stretch;
-}
-
-.stage .class-preview {
+/*
+ * The painted brass ring (portrait-ring.webp 170 x 181, its hole centred at 85.5 / 78 and
+ * 108 across) with the class emblem whole inside the hole, on a dark ember-lit disc.
+ */
+.stage .cs-class-ring {
   position: relative;
-  padding: 0;
+  width: 140px;
+  height: 149px;
+  margin-bottom: -2px;
+}
+
+.stage .cs-class-ring::before {
+  content: "";
+  position: absolute;
+  left: 26px;
+  top: 19px;
+  width: 89px;
+  height: 89px;
+  border-radius: 50%;
+  background: radial-gradient(circle at 50% 45%, #4a2a16 0%, #1e140d 70%);
+  box-shadow: inset 0 0 12px rgb(0 0 0 / 0.8);
+}
+
+.stage .cs-class-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: url("../assets/ui/portrait-ring.webp") center / 100% 100% no-repeat;
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.6));
+  pointer-events: none;
+}
+
+.stage .cs-class-ring .class-emblem {
+  position: absolute;
+  left: 35.4px;
+  top: 29.2px;
+  z-index: 1;
+}
+
+/* The round shield can fill the hole almost to the brass. */
+.stage .cs-class-ring[data-class="cinderguard"] .class-emblem {
+  transform: scale(1.18);
+}
+
+/* The orb on its stand is narrow and leans left in its painting: larger, a little to the right. */
+.stage .cs-class-ring[data-class="emberseer"] .class-emblem {
+  transform: translate(3px, 1px) scale(1.22);
+}
+
+.stage .cs-class-text {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stage .cs-class strong {
+  font-size: 22px;
+  color: var(--k-on-wood);
+}
+
+.stage .cs-class.on strong {
+  color: #ffb066;
+  text-shadow: 0 0 12px rgb(255 120 40 / 0.6);
+}
+
+.stage .cs-class-attr {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+/* --- middle: name, arena, weapon rack ------------------------------------------------------- */
+
+.stage .cs-center {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage .cs-head {
+  text-align: center;
+}
+
+.stage .cs-name {
+  margin: 0;
+  font-size: 46px;
+  font-weight: 900;
+  letter-spacing: 3px;
+  color: #ffb066;
+  text-shadow:
+    0 0 24px rgb(255 110 40 / 0.55),
+    0 3px 6px rgb(0 0 0 / 0.9);
+}
+
+.stage .cs-text {
+  margin: 2px 0 0;
+  font-size: 18px;
+  color: var(--k-on-wood);
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.9);
+}
+
+.stage .cs-arena {
+  position: relative;
+  border-radius: 6px;
   overflow: hidden;
   background: linear-gradient(180deg, #4a3a2a 0%, #1c1a18 100%);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.6);
+}
+
+.stage .cs-arena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-width: 34px;
+  border-image: url("../assets/ui/panel-frame.webp") 72 stretch;
+  pointer-events: none;
+}
+
+.stage .preview-arena {
+  position: relative;
 }
 
 .stage .preview-arena canvas {
   display: block;
 }
 
-.stage .preview-tags {
-  position: absolute;
-  top: 12px;
-  left: 12px;
+.stage .cs-rack {
   display: flex;
-  gap: 8px;
-  align-items: center;
+  justify-content: center;
+  gap: 18px;
 }
 
-.stage .preview-tags .chip {
+.stage .cs-weapon {
+  position: relative;
+  width: 196px;
+  height: 172px;
+  padding: 0;
+  border: 2px solid transparent;
+  border-image: url("../assets/ui/tile-wood.webp") 30 fill / 13px / 0 stretch;
+  background: url("../assets/ui/tile-wood.webp") border-box center / 100% 100% no-repeat;
   font: inherit;
-  font-size: 14px;
-  padding: 4px 14px;
-  border-radius: 999px;
-  border: 1px solid #a88d62;
-  background: rgb(20 17 14 / 0.6);
-  color: #ecdfc4;
   cursor: pointer;
+  filter: brightness(0.62) saturate(0.7) drop-shadow(0 4px 6px rgb(0 0 0 / 0.5));
+  transition:
+    filter 0.2s,
+    transform 0.2s;
 }
 
-.stage .preview-tags .chip.on {
-  background: #ff8a3a;
-  border-color: #ff8a3a;
-  color: #1c1a18;
+.stage .cs-weapon:hover {
+  filter: brightness(0.85) saturate(0.9) drop-shadow(0 4px 6px rgb(0 0 0 / 0.5));
 }
 
-.stage .glimpse-title {
-  color: #ffd84a;
-  font-size: 18px;
-  text-shadow: 0 0 10px rgb(0 0 0 / 0.8);
+.stage .cs-weapon.on {
+  transform: translateY(-6px);
+  filter: drop-shadow(0 0 16px rgb(255 120 40 / 0.75)) drop-shadow(0 6px 8px rgb(0 0 0 / 0.5));
 }
 
-.stage .class-info {
-  width: 560px;
-  padding: 20px 22px;
+/* The painting lies aslant over the board, from the bottom left up to the top right. */
+.stage .cs-weapon-art {
+  position: absolute;
+  left: 50%;
+  top: 74px;
+  width: 196px;
+  height: 0;
+  transform: translate(-50%, 0) rotate(-27deg);
+}
+
+.stage .cs-weapon-art > * {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: 100%;
+  transform: translateY(-50%);
+}
+
+.stage .cs-weapon-img {
+  filter: drop-shadow(0 3px 2px rgb(0 0 0 / 0.6));
+}
+
+/* The Wand's and Staff's crystal in the colour of its element. */
+.stage .cs-weapon-gem {
+  aspect-ratio: 900 / 89;
+  mask-size: 100% 100%;
+  background: var(--gem);
+  mix-blend-mode: color;
+}
+
+.stage .cs-weapon[aria-label="Staff"] .cs-weapon-gem {
+  aspect-ratio: 892 / 122;
+}
+
+.stage .cs-weapon-name {
+  position: absolute;
+  left: 50%;
+  bottom: 10px;
+  transform: translateX(-50%);
+  min-width: 120px;
+  padding: 4px 16px;
+  border: 1px solid transparent;
+  border-image: url("../assets/ui/name-plate.webp") 22 fill / 22px / 0 stretch;
+  background: url("../assets/ui/name-plate.webp") border-box center / 100% 100% no-repeat;
+  color: #3a2614;
+  font-size: 17px;
+  text-align: center;
+}
+
+/* --- right: what makes the class ---------------------------------------------------------- */
+
+.stage .cs-side {
+  position: relative;
+  width: 410px;
+  padding: 22px 26px;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-}
-
-.stage .class-name-row {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.stage .class-name {
-  font-size: 32px;
-  color: var(--accent);
-}
-
-.stage .class-text {
-  font-size: 17px;
-  line-height: 1.4;
-  margin: 0;
-}
-
-.stage .class-trait {
-  margin: 0;
-  color: var(--text-sub);
-}
-
-.stage .class-trait .title-font {
-  color: var(--text);
-}
-
-.stage .class-weapons {
-  display: flex;
-  gap: 10px;
-}
-
-.stage .weapon-pick {
-  flex: 1;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  column-gap: 8px;
-  align-items: center;
-  padding: 8px 12px;
-  border: 1px solid var(--edge);
   border-radius: 8px;
-  background: transparent;
-  color: var(--text);
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
+  background: linear-gradient(180deg, rgb(30 22 15 / 0.9), rgb(16 11 8 / 0.9));
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.55);
 }
 
-.stage .weapon-pick small {
-  grid-column: 2;
-  color: var(--text-sub);
-  font-size: 12px;
+.stage .cs-side::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+  border-style: solid;
+  border-width: 34px;
+  border-image: url("../assets/ui/panel-frame.webp") 72 stretch;
+  pointer-events: none;
 }
 
-.stage .weapon-pick.on {
-  border-color: var(--accent);
-  background: rgb(255 138 58 / 0.12);
-}
-
-.stage .class-paths {
+.stage .cs-facts,
+.stage .cs-attributes {
   display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
+  flex-direction: column;
+  gap: 24px;
+  min-height: 0;
 }
 
-.stage .path-chip {
+.stage .cs-block {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .cs-section {
+  align-self: flex-start;
+  margin: 0;
+  font-size: 13px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--k-brass);
+  cursor: help;
+}
+
+.stage .cs-trait-row {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.stage .cs-trait-row p {
+  margin: 2px 0 0;
+  font-size: 16px;
+  line-height: 1.35;
+  color: var(--k-on-wood);
+}
+
+.stage .cs-trait-name {
+  font-size: 20px;
+  color: #ffb066;
+}
+
+.stage .cs-weapon-facts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 14px;
+}
+
+.stage .cs-innate {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  column-gap: 10px;
+}
+
+.stage .cs-innate-label {
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--k-on-wood-sub);
+}
+
+.stage .cs-innate strong {
+  font-size: 18px;
+  color: #ffb066;
+}
+
+.stage .cs-innate p {
+  flex-basis: 100%;
+  margin: 0;
+  font-size: 15px;
+  line-height: 1.35;
+}
+
+.stage .cs-meter {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 3px 12px;
-  border-radius: 999px;
-  border: 1px solid var(--edge);
-  font-size: 14px;
+  gap: 8px;
+  font-size: 15px;
+  cursor: help;
 }
 
-.stage .name-field {
+.stage .cs-meter-label {
+  width: 46px;
+  font-size: 13px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--k-on-wood-sub);
+}
+
+.stage .cs-pips {
+  display: inline-flex;
+  gap: 4px;
+}
+
+.stage .cs-pips i {
+  width: 16px;
+  height: 8px;
+  border-radius: 2px;
+  background: rgb(241 226 194 / 0.14);
+  box-shadow: inset 0 0 0 1px rgb(201 160 99 / 0.35);
+}
+
+.stage .cs-pips i.lit {
+  background: linear-gradient(180deg, #ffc46b, #d9662a);
+  box-shadow: 0 0 6px rgb(255 120 40 / 0.6);
+}
+
+.stage .cs-paths {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .cs-path {
   display: flex;
   align-items: center;
   gap: 12px;
+  padding: 9px 12px;
+  border-radius: 6px;
+  background: rgb(241 226 194 / 0.05);
+  box-shadow: inset 0 0 0 1px rgb(201 160 99 / 0.2);
 }
 
-.stage .name-field input {
-  flex: 1;
+.stage .cs-path-icons {
+  display: inline-flex;
 }
 
-.stage .class-buttons {
+.stage .cs-path-icons img {
+  width: 34px;
+  height: 34px;
+}
+
+.stage .cs-path-icons img + img {
+  margin-left: -8px;
+}
+
+.stage .cs-path-text {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
+}
+
+.stage .cs-path strong {
+  font-size: 17px;
+}
+
+.stage .cs-path small {
+  font-size: 14px;
+  color: var(--k-on-wood-sub);
+}
+
+.stage .cs-masteries {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stage .cs-mastery {
+  width: 110px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  cursor: help;
+}
+
+.stage .cs-mastery strong {
+  margin-top: 4px;
+  font-size: 15px;
+}
+
+.stage .cs-mastery small {
+  font-size: 12px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--k-on-wood-sub);
+}
+
+/* The attribute stones in the narrow column: the name, then the notches, then what it gives. */
+.stage .cs-attributes .attributes {
+  gap: 4px;
+}
+
+.stage .cs-attributes .attributes li {
+  grid-template-columns: 34px minmax(0, 1fr) auto auto auto;
+  grid-template-areas:
+    "icon name value minus plus"
+    "icon notches value minus plus"
+    "icon effects effects effects effects";
+  row-gap: 4px;
+  padding: 6px 0;
+  border-bottom-color: rgb(201 160 99 / 0.2);
+}
+
+.stage .cs-attributes .attr-value {
+  grid-area: value;
+  min-width: 28px;
+}
+
+.stage .cs-side-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 22px;
+}
+
+.stage .cs-buttons {
   margin-top: auto;
   display: flex;
   justify-content: flex-end;
@@ -6707,10 +7051,6 @@
 .stage .class-emblem {
   flex-shrink: 0;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
-}
-
-.stage .attr-stones .attr-text {
-  min-width: 0;
 }
 
 .stage .attr-notches {

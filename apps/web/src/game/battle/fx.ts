@@ -68,22 +68,23 @@ export interface Burst {
   readonly layer?: Layer;
 }
 
+/** One live particle; dead ones wait in a pool and are dealt out again. */
 interface Mote {
   readonly p: Particle;
-  readonly box: ParticleContainer;
+  box: ParticleContainer;
   vx: number;
   vy: number;
-  readonly gravity: number;
-  readonly drag: number;
+  gravity: number;
+  drag: number;
   age: number;
-  readonly life: number;
-  readonly size0: number;
-  readonly size1: number;
-  readonly alpha0: number;
-  readonly stretch: number;
-  readonly spin: number;
-  readonly wobble: number;
-  readonly phase: number;
+  life: number;
+  size0: number;
+  size1: number;
+  alpha0: number;
+  stretch: number;
+  spin: number;
+  wobble: number;
+  phase: number;
   baseX: number;
 }
 
@@ -99,6 +100,7 @@ interface Shape {
 const TEX = 32;
 /** Above this many live particles new ones are dropped (weak GPUs, Skip floods). */
 const CAP = 1400;
+type Box = ParticleContainer;
 
 export class Fx {
   readonly back = new Container();
@@ -107,10 +109,17 @@ export class Fx {
   private readonly glowTex: Texture;
   private readonly bitTex: Texture;
   private motes: Mote[] = [];
+  private readonly spare: Mote[] = [];
+  /** Containers whose particles came or went this frame: only they rebuild their list. */
+  private readonly dirty = new Set<Box>();
   private shapes: Shape[] = [];
   readonly rand = new Jitter();
 
-  constructor(renderer: Renderer) {
+  /** `cap`: live particles at most (Graphics Quality). */
+  constructor(
+    renderer: Renderer,
+    private readonly cap = CAP,
+  ) {
     const glow = new Graphics();
     for (let i = 0; i < 10; i++) {
       glow
@@ -148,41 +157,42 @@ export class Fx {
     const kind = b.kind ?? "glow";
     const box = this.boxes[b.layer ?? "front"][kind];
     const tex = kind === "glow" ? this.glowTex : this.bitTex;
-    for (let i = 0; i < b.count && this.motes.length < CAP; i++) {
+    for (let i = 0; i < b.count && this.motes.length < this.cap; i++) {
       const angle = r.range(...(b.angle ?? [0, Math.PI * 2]));
       const speed = r.range(...(b.speed ?? [60, 160]));
       const size = r.range(...(b.size ?? [8, 14]));
       const color = typeof b.color === "number" ? b.color : r.pick(b.color);
       const x = b.x + (b.spreadX ? r.range(-b.spreadX, b.spreadX) : 0);
-      const p = new Particle({
-        texture: tex,
-        x,
-        y: b.y + (b.spreadY ? r.range(-b.spreadY, b.spreadY) : 0),
-        anchorX: 0.5,
-        anchorY: 0.5,
-        tint: color,
-        alpha: b.alpha ?? 1,
-        rotation: kind === "bit" ? r.range(0, Math.PI) : 0,
-      });
+      const y = b.y + (b.spreadY ? r.range(-b.spreadY, b.spreadY) : 0);
+      const m =
+        this.spare.pop() ??
+        ({ p: new Particle({ texture: tex, anchorX: 0.5, anchorY: 0.5 }) } as Mote);
+      const p = m.p;
+      p.texture = tex;
+      p.x = x;
+      p.y = y;
+      p.tint = color;
+      p.alpha = b.alpha ?? 1;
+      p.rotation = kind === "bit" ? r.range(0, Math.PI) : 0;
+      p.scaleX = p.scaleY = size / TEX;
+      m.box = box;
+      m.vx = Math.cos(angle) * speed;
+      m.vy = Math.sin(angle) * speed;
+      m.gravity = b.gravity ?? 0;
+      m.drag = b.drag ?? 1;
+      m.age = 0;
+      m.life = r.range(...(b.life ?? [0.4, 0.8]));
+      m.size0 = size / TEX;
+      m.size1 = (size / TEX) * (b.endSize ?? 0.2);
+      m.alpha0 = b.alpha ?? 1;
+      m.stretch = b.stretch ?? 0;
+      m.spin = b.spin ? r.range(-b.spin, b.spin) : 0;
+      m.wobble = b.wobble ?? 0;
+      m.phase = r.range(0, Math.PI * 2);
+      m.baseX = x;
       box.particleChildren.push(p);
-      this.motes.push({
-        p,
-        box,
-        vx: Math.cos(angle) * speed,
-        vy: Math.sin(angle) * speed,
-        gravity: b.gravity ?? 0,
-        drag: b.drag ?? 1,
-        age: 0,
-        life: r.range(...(b.life ?? [0.4, 0.8])),
-        size0: size / TEX,
-        size1: (size / TEX) * (b.endSize ?? 0.2),
-        alpha0: b.alpha ?? 1,
-        stretch: b.stretch ?? 0,
-        spin: b.spin ? r.range(-b.spin, b.spin) : 0,
-        wobble: b.wobble ?? 0,
-        phase: r.range(0, Math.PI * 2),
-        baseX: x,
-      });
+      this.dirty.add(box);
+      this.motes.push(m);
     }
   }
 
@@ -322,12 +332,16 @@ export class Fx {
   }
 
   update(dt: number): void {
-    const keep = new Map<ParticleContainer, Particle[]>();
-    const alive: Mote[] = [];
-    for (const m of this.motes) {
+    const motes = this.motes;
+    let keep = 0;
+    for (const m of motes) {
       m.age += dt;
       const t = m.age / m.life;
-      if (t >= 1) continue;
+      if (t >= 1) {
+        this.spare.push(m);
+        this.dirty.add(m.box);
+        continue;
+      }
       const drag = m.drag === 1 ? 1 : Math.pow(m.drag, dt);
       m.vx *= drag;
       m.vy = m.vy * drag + m.gravity * dt;
@@ -346,17 +360,15 @@ export class Fx {
         m.p.scaleY = size;
       }
       m.p.alpha = m.alpha0 * (t < 0.1 ? t / 0.1 : t > 0.6 ? (1 - t) / 0.4 : 1);
-      alive.push(m);
-      const list = keep.get(m.box);
-      if (list) list.push(m.p);
-      else keep.set(m.box, [m.p]);
+      motes[keep++] = m;
     }
-    this.motes = alive;
-    for (const layer of Object.values(this.boxes)) {
-      for (const box of [layer.glow, layer.bit]) {
-        box.particleChildren = keep.get(box) ?? [];
-        box.update();
-      }
+    motes.length = keep;
+    // Containers that lost or gained particles take the live ones again, in the same order.
+    if (this.dirty.size) {
+      for (const box of this.dirty) box.particleChildren.length = 0;
+      for (const m of motes) if (this.dirty.has(m.box)) m.box.particleChildren.push(m.p);
+      for (const box of this.dirty) box.update();
+      this.dirty.clear();
     }
     const shapes = this.shapes;
     const finished: Shape[] = [];

@@ -7,8 +7,10 @@ import {
   type Side,
   getPerk,
 } from "@emberheir/sim";
-import { Application, Container, Graphics, Text } from "pixi.js";
-import { MAX_FPS, PAUSED_FPS, wantsAntialias } from "../pixiPacing";
+import { type Application, Container, Graphics, Sprite } from "pixi.js";
+import { type GraphicsQuality, IDLE_FPS, MAX_FPS, PAUSED_FPS, QUALITY } from "../pixiPacing";
+import { type ArenaLease, leaseArenaApp } from "./arenaApp";
+import { Floaters, prepareFloaterFonts } from "./floaters";
 import {
   type Delivery,
   AILMENT_FX,
@@ -40,23 +42,15 @@ import {
   drawStars,
   drawWildfireGlow,
 } from "./arenaProps";
-import { type EnemyLook, drawEnemy } from "./enemyArt";
+import { type EnemyLook, drawEnemy, loadEnemyTexture } from "./enemyArt";
+import { backdropFeet, loadBackdrop, placeBackdrop } from "./arenaBackdrop";
 import { Fx } from "./fx";
 import { armSwing, loadHeirTextures } from "./heirRig";
-import { type HeroLook, RANGED_WEAPONS, drawHero, loadHeroWeapon } from "./heroArt";
+import { type HeroLook, RANGED_WEAPONS, RangedHold, drawHero, loadHeroWeapon } from "./heroArt";
 import { type View, Weather } from "./weather";
 
 /** A Skip resolves the rest of the fight at once: then only the outcome is shown. */
 const FLOOD = 40;
-
-interface Floater {
-  readonly text: Text;
-  readonly vx: number;
-  readonly vy: number;
-  age: number;
-  readonly life: number;
-  readonly pop: boolean;
-}
 
 interface Later {
   at: number;
@@ -75,6 +69,8 @@ type HitEvent = Extract<CombatEvent, { type: "hit" }>;
  */
 export class ArenaScene {
   private app: Application | null = null;
+  private lease: ArenaLease | null = null;
+  private readonly onTick = (ticker: { deltaMS: number }) => this.tick(ticker.deltaMS / 1000);
   private readonly camera = new Container();
   private readonly world = new Container();
   private size = { w: W, h: H, resolution: 1 };
@@ -83,14 +79,19 @@ export class ArenaScene {
   /** The painted Heir's forearm (turns to swing) and fist (where shots leave). */
   private heroArm: Container | null = null;
   private heroFist: Container | null = null;
+  /** Bow or Crossbow in the ranged pose, where its shots leave, and when the last one left. */
+  private heroRanged: RangedHold | null = null;
+  private heroShot: Container | null = null;
+  private heroShotAt = -Infinity;
   private enemy: Figure | null = null;
+  private backdrop: { sprite: Sprite; feet: number } | null = null;
   private telegraph: Graphics | null = null;
   private aura: Graphics | null = null;
   /** Ground light of the stronger side when the levels are far apart. */
   private levelGlow: Graphics | null = null;
   private fx: Fx | null = null;
   private weather: Weather | null = null;
-  private floaters: Floater[] = [];
+  private floaters: Floaters | null = null;
   private later: Later[] = [];
   private clock = 0;
   private telegraphOn = false;
@@ -144,6 +145,10 @@ export class ArenaScene {
   motion = true;
   /** Fight speed; hit-stops only play at normal speed. */
   speed = 1;
+  /** Graphics Quality (Settings): particle budget and weather; set before `mount`. */
+  quality: GraphicsQuality = "medium";
+  /** Nothing fights (Intermission): the air drifts at the calm frame rate. */
+  idle = false;
 
   /**
    * Host size in stage pixels and device pixels per stage pixel. The drawing stays centered
@@ -155,6 +160,19 @@ export class ArenaScene {
     this.world.scale.set(scale);
     this.world.position.set((w - W * scale) / 2, h - bottom - H * scale);
     this.app?.renderer.resize(w, h, resolution);
+    this.placeBackdrop();
+  }
+
+  private placeBackdrop(): void {
+    if (!this.backdrop) return;
+    const { w, h } = this.size;
+    const feetY = this.world.y + GROUND_Y * this.world.scale.y;
+    placeBackdrop(this.backdrop.sprite, this.backdrop.feet, w, h, feetY);
+  }
+
+  /** Live particles and floating texts (the `?dev` meter). */
+  get stats(): { particles: number; floaters: number } {
+    return { particles: this.fx?.count ?? 0, floaters: this.floaters?.count ?? 0 };
   }
 
   /** True during a hit-stop: the fight loop holds the sim for that moment. */
@@ -168,41 +186,43 @@ export class ArenaScene {
   /** Resolves with the Pixi app, or null without WebGL or when destroyed meanwhile. */
   async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<Application | null> {
     this.echoColor = hero.echo ?? null;
-    const app = new Application();
-    try {
-      await app.init({
-        width: this.size.w,
-        height: this.size.h,
-        backgroundAlpha: 0,
-        antialias: wantsAntialias(this.size.resolution),
-        resolution: this.size.resolution,
-        autoDensity: true,
-      });
-    } catch {
-      // No WebGL: the fight still runs, only the arena art is missing.
-      return null;
-    }
+    const [heir, weapon, painting, backdrop] = await Promise.all([
+      loadHeirTextures(),
+      loadHeroWeapon(hero),
+      loadEnemyTexture(enemy),
+      loadBackdrop(enemy.act),
+      prepareFloaterFonts(),
+    ]);
+    if (this.destroyed) return null;
+    const lease = await leaseArenaApp(this.size.w, this.size.h, this.size.resolution);
+    if (!lease) return null;
     if (this.destroyed) {
-      app.destroy(true, { children: true });
+      lease.release();
       return null;
     }
-    const [heir, weapon] = await Promise.all([loadHeirTextures(), loadHeroWeapon(hero)]);
-    if (this.destroyed) {
-      app.destroy(true, { children: true });
-      return null;
-    }
+    const app = lease.app;
+    this.lease = lease;
     this.app = app;
+    // The shared app may come from a screen of another size.
+    app.renderer.resize(this.size.w, this.size.h, this.size.resolution);
     app.canvas.setAttribute("aria-hidden", "true");
     host.appendChild(app.canvas);
     app.stage.addChild(this.camera, this.overlay);
+    if (backdrop) {
+      // A painted act: the painting replaces the drawn hills behind the fighters.
+      this.backdrop = { sprite: new Sprite(backdrop), feet: backdropFeet(enemy.act) };
+      this.camera.addChild(this.backdrop.sprite);
+      this.placeBackdrop();
+    }
     this.camera.addChild(this.world);
 
-    const fx = new Fx(app.renderer);
+    const fx = new Fx(app.renderer, QUALITY[this.quality].particles);
     this.fx = fx;
-    this.weather = new Weather(enemy.act, enemy.wildfire ?? 0);
+    this.weather = new Weather(enemy.act, enemy.wildfire ?? 0, QUALITY[this.quality].weather);
     this.ranged = { hero: RANGED_WEAPONS.has(hero.weapon), enemy: enemy.ranged ?? false };
 
-    this.world.addChild(drawGround(), fx.back);
+    if (!backdrop) this.world.addChild(drawGround());
+    this.world.addChild(fx.back);
     this.aura = new Graphics();
     if (enemy.champion) {
       // A Champion wears two rings: violet Void-fire around the gold of an Elite.
@@ -254,6 +274,9 @@ export class ArenaScene {
     this.hero = makeFigure("hero", drawHero(hero, heir, weapon), HERO_X);
     this.heroArm = this.hero.body.getChildByLabel("heir-arm", true) ?? null;
     this.heroFist = this.hero.body.getChildByLabel("heir-fist", true) ?? null;
+    const ranged = this.hero.body.getChildByLabel("heir-ranged", true);
+    this.heroRanged = ranged instanceof RangedHold ? ranged : null;
+    this.heroShot = this.hero.body.getChildByLabel("heir-shot", true) ?? null;
     this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
     this.offHandGlow = this.hero.body.getChildByLabel("off-hand-glow", true) ?? null;
     this.offHandFloat = this.hero.body.getChildByLabel("off-hand-float", true) ?? null;
@@ -264,7 +287,7 @@ export class ArenaScene {
     this.weaponTip = this.hero.body.getChildByLabel("weapon-tip", true) ?? null;
     this.infusion = hero.weaponLook.element;
     this.masteryAura = hero.mastery;
-    this.enemy = makeFigure("enemy", drawEnemy(enemy), ENEMY_X);
+    this.enemy = makeFigure("enemy", drawEnemy(enemy, painting), ENEMY_X);
     this.traitGfx = new Graphics();
     this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
 
@@ -274,7 +297,8 @@ export class ArenaScene {
       fx.update(0.1);
     }
 
-    app.ticker.add((ticker) => this.tick(ticker.deltaMS / 1000));
+    this.floaters = new Floaters(this.world);
+    app.ticker.add(this.onTick);
     return app;
   }
 
@@ -285,8 +309,13 @@ export class ArenaScene {
 
   destroy(): void {
     this.destroyed = true;
+    this.app?.ticker?.remove(this.onTick);
+    this.camera.destroy({ children: true });
+    this.overlay.destroy({ children: true });
+    this.floaters?.destroy();
     this.fx?.destroy();
-    this.app?.destroy(true, { children: true });
+    this.lease?.release();
+    this.lease = null;
     this.app = null;
   }
 
@@ -669,6 +698,10 @@ export class ArenaScene {
 
   /** Where projectiles leave: the bow, wand or casting hand. */
   private hand(side: Side): { x: number; y: number } {
+    if (side === "hero" && this.heroShot) {
+      const p = this.world.toLocal(this.heroShot.getGlobalPosition());
+      return { x: p.x, y: p.y };
+    }
     if (side === "hero" && this.heroFist) {
       const p = this.world.toLocal(this.heroFist.getGlobalPosition());
       return { x: p.x + 30, y: p.y - 30 };
@@ -1126,10 +1159,12 @@ export class ArenaScene {
         case "arrow":
         case "orb":
           attacker.recoil = 1;
+          if (e.side === "hero") this.heroShotAt = this.clock;
           fx.projectile(how, from, to, color, land);
           break;
         case "bolt":
           attacker.recoil = 1;
+          if (e.side === "hero") this.heroShotAt = this.clock;
           fx.bolt(from.x, from.y, to.x, to.y, color);
           land();
           break;
@@ -1391,28 +1426,16 @@ export class ArenaScene {
       (side === "hero" ? HERO_X : ENEMY_X) +
       (side === "hero" ? -40 : 40) +
       spread(this.clock * 7.3) * 70;
-    const text = new Text({
-      text: label,
-      style: {
-        fontFamily: "JetBrains Mono, monospace",
-        fontWeight: "700",
-        fontSize: Math.round((crit ? 46 : 28) * scale),
-        fill: crit ? lighten(color) : color,
-        stroke: { color: 0x1c1a18, width: crit ? 5 : 4 },
-        dropShadow: crit ? { color: 0xffffff, alpha: 0.45, blur: 10, distance: 0 } : false,
-      },
-    });
-    text.anchor.set(0.5);
-    text.position.set(x, GROUND_Y - 260 + spread(this.clock * 3.1) * 40);
-    if (crit) text.rotation = -0.14;
-    this.world.addChild(text);
-    this.floaters.push({
-      text,
+    this.floaters?.spawn({
+      x,
+      y: GROUND_Y - 260 + spread(this.clock * 3.1) * 40,
+      label,
+      color: crit ? lighten(color) : color,
+      fontSize: Math.round((crit ? 46 : 28) * scale),
+      crit,
       vx: spread(this.clock * 5.7) * 12,
       vy: -55,
-      age: 0,
       life: crit ? 1.3 : 1.05,
-      pop: crit,
     });
   }
 
@@ -1433,7 +1456,8 @@ export class ArenaScene {
 
   private tick(dt: number): void {
     // Under an overlay the arena holds still: a few frames a second keep the picture.
-    if (this.app) this.app.ticker.maxFPS = this.paused ? PAUSED_FPS : MAX_FPS;
+    if (this.app)
+      this.app.ticker.maxFPS = this.paused ? PAUSED_FPS : this.idle ? IDLE_FPS : MAX_FPS;
     if (this.paused) return;
     this.freezeCooldown = Math.max(0, this.freezeCooldown - dt);
     if (this.freeze > 0) {
@@ -1472,6 +1496,8 @@ export class ArenaScene {
         const swing = timer > 0 ? armSwing(1 - timer, ranged) : 0;
         this.heroArm.rotation = Math.sin(this.clock * 2.2) * 0.04 + swing;
       }
+      if (f.side === "hero")
+        this.heroRanged?.pose(this.clock - this.heroShotAt, this.clock, this.motion);
       const base = this.tint[f.side];
       f.body.tint = f.flash > 0.5 ? 0xff7777 : base;
       f.stars.visible = f.stun > 0;
@@ -1634,19 +1660,6 @@ export class ArenaScene {
       this.fx.update(dt);
     }
     this.moveCamera(dt);
-    this.floaters = this.floaters.filter((f) => {
-      f.age += dt;
-      f.text.x += f.vx * dt;
-      f.text.y += f.vy * dt;
-      const t = f.age / f.life;
-      const pop = f.pop && f.age < 0.15 ? 1 + (0.15 - f.age) * 3 : 1;
-      f.text.scale.set(pop);
-      f.text.alpha = t < 0.7 ? 1 : Math.max(0, 1 - (t - 0.7) / 0.3);
-      if (t >= 1) {
-        f.text.destroy();
-        return false;
-      }
-      return true;
-    });
+    this.floaters?.update(dt);
   }
 }

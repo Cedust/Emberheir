@@ -15,6 +15,13 @@ describe("stored settings", () => {
     });
   });
 
+  it("keeps a known Graphics Quality and repairs an unknown one", () => {
+    expect(parseSettings(JSON.stringify({ graphicsQuality: "low" })).graphicsQuality).toBe("low");
+    expect(parseSettings(JSON.stringify({ graphicsQuality: "ultra" })).graphicsQuality).toBe(
+      DEFAULT_SETTINGS.graphicsQuality,
+    );
+  });
+
   it("drops settings that no longer exist and survives broken JSON", () => {
     const old = JSON.stringify({ ...DEFAULT_SETTINGS, theme: "dark", autoDrink: true });
     expect(parseSettings(old)).toEqual({ ...DEFAULT_SETTINGS, theme: "dark" });
