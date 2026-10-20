@@ -680,8 +680,9 @@ const MASTERIES: readonly MasterySpec[] = [
       "hit-and-run",
       "Hit and Run",
       40,
-      "4 quick hits for 55 % Weapon Damage. Each has a 25 % chance to apply your weapon's ailment.",
-      0.55,
+      // Step 5: 55 % left the Skirmisher a full attempt behind the Trickster.
+      "4 quick hits for 65 % Weapon Damage. Each has a 25 % chance to apply your weapon's ailment.",
+      0.65,
       { count: 4, chance: 0.25 },
     ),
     notables: [
