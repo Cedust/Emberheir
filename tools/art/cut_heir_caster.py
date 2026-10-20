@@ -1,9 +1,9 @@
 # Cuts the painted Heir in its caster poses for the arena: Wand (heir-wand-v1.png) and Staff
 # (heir-staff-v1.png). Per pose the whole otter and the paw on the weapon once more (only fur and
 # ink, never the shirt behind), drawn over the weapon: for the Wand the thumb, which lies over the
-# upright Wand in front of the fist; for the Staff the fist, the Staff running through it. The
-# forearm (with the fist) is cut as well and taken out of the otter, so it can lift the
-# Staff on a cast: where it lay, the shirt right of it is drawn on, or nothing over the background.
+# slanted Wand where it enters the fist; for the Staff the fist, the Staff running through it. The
+# forearm (with the fist) is cut as well and taken out of the otter, so it can swing the weapon on
+# a cast: where it lay, the shirt right of it is drawn on, or nothing over the background.
 # Run from the repo root: python3 tools/art/cut_heir_caster.py  (needs Pillow)
 # The printed top lefts match CASTER_POSES in apps/web/src/game/battle/heirRig.ts.
 from PIL import Image, ImageDraw, ImageFilter
