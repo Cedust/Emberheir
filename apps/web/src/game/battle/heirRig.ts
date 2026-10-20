@@ -386,8 +386,8 @@ const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
     hand: [895, 493],
     arm: [788, 429],
     elbow: [790, 510],
-    // Under the thumb along the fist's underside, slanted up at the enemy.
-    grip: [945, 506],
+    // Out of the fist's middle, slanted up at the enemy; its end under the thumb.
+    grip: [945, 478],
     palm: [670, 686],
   },
   staff: {
