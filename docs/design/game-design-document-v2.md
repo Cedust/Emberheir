@@ -119,7 +119,8 @@ Endgame **Wildfire I–X**.
   härtester Kampf). Nach jedem Echo 1 aus 3 Boons. Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe.
 - **Wildfire I–X** (nach dem Finale): Ein gewählter Act brennt erneut auf einer Stufe. Monster Level 92 (I) bis 110 (X).
   Mehr Legendaries und Runes, keine Shrines. Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
-  Min-Maxing (`endgame-balance-v1.md`).
+  Min-Maxing (`endgame-balance-v1.md`). Pro Stufe bis V +8 % Life, +6 % Schaden; darüber +20 % Life und +25 % Schaden
+  pro Stufe (Schritt 7, vorher +35 % Life, +8 % Schaden: VI–VII waren zu leicht).
 - **Wildfire-Omens** (`neuausrichtung-v1.md` 7.2): Vor jedem Wildfire-Zug wählt man beliebig viele aus 20 Omens, jedes mit
   **Peril 1–3**. Mindest-Peril: I–V 0, VI 2, VII 4, VIII 6, IX 8, X 10. **Jeder Punkt Peril** gibt +8 % XP und +5 %
   Legendary-Chance, je 4 Peril einen Rune-Rang mehr, je 3 Peril ein Cinderglass mehr am Boss.
@@ -267,13 +268,18 @@ Endgame **Wildfire I–X**.
 |---|---|---|---|
 | Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert | Rend (Skill) |
 | Physical | **Poison** | 14 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
-| Fire | **Burn** | 22 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus |
+| Fire | **Burn** | 22 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus, höchstens so viel wie ein normaler Burn (4 s) noch macht (Schritt 7) |
 | Void | **Corruption** | 9 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
 | Cold | **Chill** | −25 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −40 %) | – |
 | Lightning | **Shock** | +10 % erlittener Schaden pro Stack, bis 3 Stacks, 3 s (mit Ailment Effect bis +50 %) | – |
 
 - **Ailment Effect** (statt Ailment Duration, `ailments-v2.md`): stärkere DoTs, stärkeres Chill und Shock, nicht
   längere Ailments. Längere Dauer gibt es nur als Regel einzelner Nodes. Immolate löst Combust dreifach aus.
+- **Stun** (Schritt 7): hält den Gegner an, sein laufender Angriff pausiert und geht danach weiter. Nur die Stuns des
+  Mace-Paths Quake (Technique Jolt) lassen ihn von vorn anfangen. Vorher setzte jeder Stun den Angriff zurück, und
+  Frost Nova alle paar Sekunden machte Cold-Caster zu den leichtesten Builds.
+- **Ailments aus Gear-Triggern** (Venom Sting und Co., Schritt 7) wachsen wie Waffen-Ailments aus dem Treffer vor
+  Crit und More und zählen für den Treffer, der sie ausgelöst hat (Budget: Waffenanteil).
 
 - **Crit Damage ist fest 150 %** (nur Crit Chance skaliert; Ausnahmen über einzelne Keystones).
 - **Schadensformel mit festen Töpfen** (Timo 2026-10-19, `balancing-neustart-v1.md` Schritt 2):
@@ -283,6 +289,8 @@ Endgame **Wildfire I–X**.
 - **DoTs** wachsen aus dem Treffer **vor** Crit, More und Damage Taken. Sie haben einen eigenen, additiven
   **DoT-Topf** (DoT-Boni, Boni des einzelnen Ailments, bedingte Ailment-Boni, Lingering). Cash In legt Skill
   Damage in diesen Topf, statt ihn zu multiplizieren.
+- **Skill Level** (Schritt 7): Spells und Angriffs-Skills wachsen gleich, +10 % Basisschaden pro Skill Level über 1
+  (Spells vorher +20 %; Spells verfehlen nie und streifen nie).
 - **Sunder** (Debuff, senkt Armor stapelnd) ≠ **Physical Penetration** (ignoriert Armor pro Treffer).
 
 ### 4.3 Defense
@@ -296,7 +304,7 @@ Endgame **Wildfire I–X**.
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
 | **Tenacity** | Gear, VIT | kürzere Ailments auf dem Helden |
-| **Heilung** | Lifesteal (nur Treffer), DoT-Heilung (nur aus DoT-Nodes), Heal-Trigger, Barrier | keine Life Regeneration |
+| **Heilung** | Lifesteal (nur Treffer), DoT-Heilung (nur aus DoT-Nodes), Heal-Trigger, Barrier | keine Life Regeneration. DoT-Heilung ist knapp (Schritt 7, vorher bis zu 3× so viel): Mastery-Node 3 % (Ravager, Trickster, Warlock), Ash Tree Venom 3 %, Void 1 % plus Keystone Pact of Ash 3 %, Heirloom 3–8 %, Uniques 2–8 %, Boons 1,5–3 %, Ashborn 0,2 %/Punkt |
 
 ### 4.4 Battle Plan ✅ (`skills-v1.md`)
 - **Rotation Slots** feuern der Reihe nach, **Reaction Slots** bei einer Bedingung (Fight Start, Life unter X, Telegraph,
@@ -397,6 +405,11 @@ Endgame **Wildfire I–X**.
   Withering). Der Warlock lag klar vor Archmage und Spellweaver; jetzt gebaut wie Ravager.
 - **Endless Night** (Staff-Keystone, Schritt 6): Corruption hält 3× so lang (vorher 10×), −30 % Treffer. Mit Cash In
   zahlte der Archmage sonst 60 s Corruption auf einmal aus. **Pyre:** Burn +40 % und 20 % kürzer (vorher +60 %, 40 %).
+- **Schritt 7** (gemeinsame Systeme): Lingering (Warlock) bis 10 % (vorher 20 %); Foul Play (Trickster) +20 % DoT
+  (+10 % je Stufe) wie Ravage. Die Ailment-Masteries waren die leichtesten, vor allem über DoT-Heilung (siehe 4.3).
+  **Spark** (Wand Starfall, ersetzt Amplify): nach einem Skill ist die nächste Default Attack geladen, 30 % mehr Schaden
+  und setzt sicher das Ailment der Waffe. Vorher gab keine Klasse den Spark, Flashpoint und Master of Starfall liefen leer.
+  **Jolt** (Mace Quake): Stuns halten 10 % länger und lassen den Gegner seinen Angriff neu beginnen (siehe 4.2).
 - **Innate-Namen** (Timo 20.10.2026): Das Staff-Innate heißt Void Orb (nicht mehr Void Bolt, zu nah am Voidbolt des
   Void-Wands); die Lance-Form des Wand heißt Spear.
 - **Smolder** (Staff, Timo 19.10.2026): Cinders +40 % Burn-Schaden (war 25 %), Master of Smolder +35 % (war 20 %), weil
@@ -505,18 +518,26 @@ Endgame **Wildfire I–X**.
 - **Bosse:** pro Act einer mit Phasen und Signatur-Mechanik. Jedes Prestige gibt jedem Boss eine Fähigkeit dazu.
 - **Defense der Gegner:** Armor wächst mit dem Monster Level (×0,27 pro Level), dazu **10 % All Resistance** für
   jeden Gegner, so viel wie Armor von einem Physical Hit wegnimmt: Physical und Elemental kommen gleich schwer durch
-  (Klassengerüst-Balance; vorher 30 %, das bremste jeden Element-Path). Act-Gegner mit Element-Thema haben 20–25 %
-  in ihrem Element statt 30–40 %.
+  (Klassengerüst-Balance; vorher 30 %, das bremste jeden Element-Path). Act-Gegner mit Element-Thema haben 10–15 %
+  in ihrem Element (Schritt 7, vorher 20–25 %: Element-Builds hingen im passenden Act, Cold in Act 4, Fire in Act 3).
+  Emberfall (Act 7) hat 10 % All Resistance (vorher 15 %), der Harvester 15 %; die Ash Revenant trifft Physical, so
+  stehen dort zwei Physical- und zwei Fire-Gegner.
 - **Skalierung** (`balancing-neustart-v1.md` Schritt 3): Das Monster Level bestimmt die Grundwerte über **eine
   Tabelle** (`MONSTER_TABLE`), gemessen am Autopilot-Helden: Monster-Life wächst wie der Schaden pro Sekunde des Helden,
   Monster-Schaden wie seine effektive Life (`npm run balance -- --act 7 --build all --mastery all --curve 1`). Dazu
   nur noch:
-  - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,4; Elite Life ×2,1, Schaden ×1,05; Gatekeeper
+  - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,4; Elite Life ×2 (Schritt 4); Gatekeeper
     Life ×2,2; Boss Life ×3, Schaden ×0,75. Champions +30 % Life.
-  - **Wand** im neuesten Act (Timo 19.10.: länger über Life, Run 1 darf fordern): Boss Run 1 Life ×3, Schaden ×3,5;
-    ab Run 2 Life ×4,5, Schaden ×6. Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
-    30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %.
-  - Der Harvester trifft wie ein halber Boss seines Levels (seine Phasen tragen sechs Boss-Mechaniken).
+  - **Wand** im neuesten Act (Timo 19.10.: länger über Life, Run 1 darf fordern): Boss Run 1 Life ×3,25, Schaden ×2,6;
+    ab Run 2 Life ×3,5, Schaden ×6 (Schritt 7, vorher ×3/×3,5 und ×4,5/×6: Bosse machten 58 % der Tode, Bosskämpfe
+    im neuesten Act ab Act 4 dauerten 136–200 s). Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
+    30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Ein Gatekeeper braucht 4 Stages
+    Anlauf für seine volle Spitze, sonst anteilig (Schritt 7: Emberfall hat 10 Stages, Gatekeeper auf Stage 3 und 7, der
+    erste stand nach 2 Stages schon voll da und war der häufigste Tod in Act 7).
+  - Der Harvester trifft mit 45 % eines Bosses seines Levels (seine Phasen tragen sechs Boss-Mechaniken; Schritt 7,
+    vorher 50 %).
+  - Boss-Runde Schritt 7: Cinder Tyrant Fire Aura 0,45–0,7 (vorher 0,6–0,9), Enrage +30 % Attack Speed (vorher +50 %);
+    Rime Warden Ice Barrier bei 75/50/25 % Life je 10 % (vorher 15 %).
   - Entfallen: Run Pressure, Kampfdauer- und Boss-Life-Faktoren, Elite-Faktoren, Harvester-Anteil, `endgameBoss`.
   - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **etwa 5 Anläufe** (Timo, 12.10.: Richtwert, mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
     normal 5–15 %; Kampfdauer normal 20–30 s, Elite 35–50 s, Gatekeeper 45–70 s, Boss 60–100 s.
@@ -530,6 +551,11 @@ Endgame **Wildfire I–X**.
 - Resistance ist eine Entscheidung (Ember Penalty). Kein Magic Find, Gold Find oder XP %.
 - Messung immer mit der Balance-CLI: 24 Autopilot-Builds (einer pro Heirloom-Path, `--build all`), mit
   `--mastery all` je Build alle drei Masteries der Klasse; mehrere Seeds, Vorher/Nachher im PR.
+- **Stand Schritt 7** (20.10.2026, `balancing-neustart/schritt7-ergebnis.md`, alle 72 Paare, Seeds 41/51 × 2 Läufe):
+  im neuesten Act 3,9 Versuche (Cinderguard 3,9, Ashstrider 4,2, Emberseer 3,5), Tode 4/18/21/57 % (normal/Elite/
+  Gatekeeper/Boss), 9 h bis Ende Run 7. The Last Ember 2,9 Versuche. Wildfire I–V 1–3 Versuche, VI–VII etwa 2,5,
+  VIII–X schafft der Autopilot nur selten (15/7/wenige %). Waffenanteil im Budget C/A/E 40/35/20 %. Alle Builds:
+  `build-karten-v1.md`.
 - **Stand Klassengerüst** (18.10., `--act 7 --mastery all --runs 2 --seed 41 --newest 1`, Summe der Anläufe über die
   sieben neuesten Acts): Cinderguard 27,1 (9,5–64,5), Ashstrider 24,3 (13–54), Emberseer 18,5 (7–50). Vorher (alte
   Resistances) 43,7 / 36,4 / 32,3. Schwächste Stellen: Cinderguard-Axt und Cold/Lightning-Paths in Act 4

@@ -219,14 +219,6 @@ export function castSkill(
   const chant = wr?.echoChant;
   if (chant && f.skillCount % chant.every === 0) {
     castSkill(core, f, skill, level, 0, chant.power, "reverb");
-    if (core.result) return;
-  }
-  // Master of Tempo: after the Innate, Rotation Slot 1 again for free.
-  const repeat = wr?.repeatFirstSlot;
-  const first = f.setup.rotation.find((r) => r.skill.id !== skill.id);
-  if (innate && repeat && first && fightTime(core) + 1e-9 >= f.repeatReadyAt) {
-    f.repeatReadyAt = fightTime(core) + repeat.cooldown;
-    castSkill(core, f, first.skill, first.level ?? 1, 0, 1, "echo");
   }
 }
 

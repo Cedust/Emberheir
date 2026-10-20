@@ -379,12 +379,12 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Supple", EVASION), s(ENVENOM), t("Lithe", LIFE)],
         notable: n(
           "Venom Heart",
-          "Your hits deal 1.5 % more damage for every Poison stack on the enemy (up to 10). Heal 2 % of the damage your ailments deal.",
+          "Your hits deal 1.5 % more damage for every Poison stack on the enemy (up to 10). Heal 1 % of the damage your ailments deal.",
           {
             conditionalDamage: [1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((c) =>
               more(stacks("poison", c), 0.015),
             ),
-            dotLifesteal: 0.02,
+            dotLifesteal: 0.01,
           },
         ),
       },
@@ -392,8 +392,8 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Septic", LIFE), s(WITHER), t("Bitter Blood", TENACITY)],
         notable: n(
           "Leeching Rot",
-          "Heal 4 % of the damage your ailments deal. Your hits deal 10 % more damage to Poisoned enemies.",
-          { dotLifesteal: 0.04, conditionalDamage: [more(has("poison"), 0.1)] },
+          "Heal 2 % of the damage your ailments deal. Your hits deal 10 % more damage to Poisoned enemies.",
+          { dotLifesteal: 0.02, conditionalDamage: [more(has("poison"), 0.1)] },
         ),
         keystones: [
           {
@@ -641,8 +641,8 @@ const REGIONS: readonly RegionSpec[] = [
         nodes: [t("Umbra", BARRIER), s(CORRUPT), t("Dread", TENACITY)],
         notable: n(
           "Hollow Crown",
-          "Your hits deal 10 % more damage to Corrupted enemies. Heal 3 % of the damage your ailments deal.",
-          { conditionalDamage: [more(has("corruption"), 0.1)], dotLifesteal: 0.03 },
+          "Your hits deal 10 % more damage to Corrupted enemies. Heal 1 % of the damage your ailments deal.",
+          { conditionalDamage: [more(has("corruption"), 0.1)], dotLifesteal: 0.01 },
         ),
       },
       {
@@ -663,8 +663,8 @@ const REGIONS: readonly RegionSpec[] = [
             keystone: {
               name: "Pact of Ash",
               description:
-                "Heal 8 % of the damage your ailments deal. Your max Life is 20 % lower.",
-              rules: { dotLifesteal: 0.08, lifeMultiplier: 0.8 },
+                "Heal 3 % of the damage your ailments deal. Your max Life is 20 % lower.",
+              rules: { dotLifesteal: 0.03, lifeMultiplier: 0.8 },
             },
           },
         ],

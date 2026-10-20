@@ -55,6 +55,14 @@ describe("Walls of the newest act", () => {
     expect(shares[7]).toBeGreaterThan(shares[6] ?? 1);
   });
 
+  it("a Gatekeeper after a short stretch peaks lower (the 10-stage last act)", () => {
+    const short = { ...NEXT_ACT, id: "short-act", stages: 10 };
+    // Waymarks 3 and 7: two and three stages before them instead of four.
+    const [first, second] = PROGRESSION.wall.gates;
+    expect(sawtoothShare(short, 3)).toBeCloseTo((first ?? 0) * (2 / 4));
+    expect(sawtoothShare(short, 7)).toBeCloseTo((second ?? 0) * (3 / 4));
+  });
+
   it("run 1 is gentler than run 2", () => {
     const one = stageWall(data, LONG_ACT, 15, 0)?.life ?? 0;
     const two = stageWall(data, NEXT_ACT, 15, 1)?.life ?? 0;

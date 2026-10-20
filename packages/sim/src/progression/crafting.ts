@@ -64,8 +64,6 @@ export type CraftRequest =
 
 export type CraftKind = CraftRequest["kind"];
 
-/** Thoric travels with the caravan from the start. */
-export const BLACKSMITH_CRAFTS: readonly CraftKind[] = ["upgrade", "reforge"];
 /** Liora joins the caravan with Kaelen, after the first act boss. */
 export const MYSTIC_CRAFTS: readonly CraftKind[] = [
   "temper",

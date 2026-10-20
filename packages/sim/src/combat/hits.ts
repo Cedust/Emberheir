@@ -76,8 +76,6 @@ interface HitOptions {
   readonly precise?: boolean;
   /** Clean and a Crit for sure (Deadeye, Headsplitter). */
   readonly forceCrit?: boolean;
-  /** Where the damage roll landed in the Damage Range, 0..1 (Headsplitter). */
-  readonly rollFraction?: number;
   /** An extra attack from a trigger (Riposte): may add Sunder. */
   readonly extraAttack?: boolean;
   /** The roll reached the weapon's Mighty threshold: a Mighty Hit if it lands cleanly. */
@@ -130,9 +128,7 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
   // Default Attack bonuses go into the "more" pool, its penalties stay "less".
   const [defaultDamage, defaultMore] = damageSplit(
     f.setup.rules?.defaultAttackDamage,
-    (f.setup.rules?.defaultAttackMore ?? 0) +
-      (spark?.damage ?? 0) +
-      (fromTrigger ? (wr?.extraAttackDamage ?? 0) : 0),
+    (f.setup.rules?.defaultAttackMore ?? 0) + (spark?.damage ?? 0),
   );
   if (trueShot) perk(core, f, "trueShot");
   const roll = weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min);
@@ -160,7 +156,6 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
       ailmentChances,
       fromTrigger,
       precisionApplies: true,
-      rollFraction: fraction,
       ...(isMighty(weapon, roll) ? { mighty: true } : {}),
       ...(fromTrigger ? { extraAttack: true } : {}),
       ...(fromTrigger && extraFiresTriggers(f) ? { firesTriggers: true } : {}),
@@ -275,7 +270,7 @@ function burstLeech(core: FightCore, f: Fighter, damage: number): void {
 }
 
 /** Stuns a fighter (Tenacity shortens it, at most by 75 %) and breaks its swing: back to 0. */
-export function stun(core: FightCore, target: Fighter, seconds: number): void {
+export function stun(core: FightCore, target: Fighter, seconds: number, breaksSwing = false): void {
   const source = core.fighters[other(target.side)];
   const time =
     seconds *
@@ -284,7 +279,9 @@ export function stun(core: FightCore, target: Fighter, seconds: number): void {
     (1 - Math.min(0.75, target.stats.tenacity));
   if (time <= 0) return;
   target.stunned = Math.max(target.stunned, time);
-  target.attackProgress = 0;
+  // Step 7: a stun pauses the swing; only the Mace's Stagger and Quake's stuns start it over.
+  // Frost Nova every few seconds reset every enemy attack and made Cold casters the easiest.
+  if (breaksSwing || source.setup.weaponRules?.stunResetsSwing) target.attackProgress = 0;
   emit(core, { t: fightTime(core), type: "stun", side: target.side, seconds: time });
   // Interrupt: a stun during a wind-up breaks the Heavy Attack.
   const interrupt = source.setup.weaponRules?.interrupt;
@@ -318,22 +315,12 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   const weaponPrecision = attacker.setup.weapon.precision;
   const rolls = h.precisionApplies === true && weaponPrecision !== undefined;
   const opener = rolls && wr?.openerDamage !== undefined && !attacker.openerUsed;
-  const topRoll =
-    wr?.topRollCrits !== undefined &&
-    h.rollFraction !== undefined &&
-    h.rollFraction >= wr.topRollCrits;
   const ambush = rolls && wr?.ambush !== undefined && now < wr.ambush;
   const promised = rolls && attacker.critsLeft > 0;
   const mightyCrit = rolls && h.mighty === true && wr?.mightyCrit === true;
   const forceCrit =
     rolls &&
-    (h.forceCrit === true ||
-      attacker.nextCrit ||
-      opener ||
-      topRoll ||
-      ambush ||
-      promised ||
-      mightyCrit);
+    (h.forceCrit === true || attacker.nextCrit || opener || ambush || promised || mightyCrit);
   if (forceCrit) attacker.nextCrit = false;
   if (forceCrit && promised) attacker.critsLeft--;
   if (opener) attacker.openerUsed = true;
@@ -393,7 +380,6 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       defender: defenderStats(attacker, defender),
       defenderDamageTaken: damageTaken(defender),
       ...(precision !== undefined ? { precision } : {}),
-      ...(wr?.glancingDamage !== undefined ? { glancingDamage: wr.glancingDamage } : {}),
       ...(forceCrit ? { forceCrit: true } : {}),
       ...(wr?.critPenetration ? { critPenetration: wr.critPenetration } : {}),
       ...(wr?.critElementalPenetration
@@ -530,7 +516,6 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     if (outcome.crit && own && attacker.setup.rules?.critsApplyAilment) {
       inflict(core, attacker, defender, own, ailmentBase);
     }
-    if (outcome.crit && wr) critMastery(core, attacker, defender, hitBase);
     core.ailmentSource = before;
     if (outcome.crit && attacker.perks.has("armorbreaker")) {
       perk(core, attacker, "armorbreaker");
@@ -555,16 +540,23 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   if (h.fromTrigger && !h.firesTriggers) return result;
 
   const context = { damage };
+  // Ailments from the attacker's triggers (Venom Sting & co.) grow from the hit before Crit and
+  // the "more" pool like the hit's own ailments (step 7) and count for the skill that hit.
+  const ownContext = {
+    damage,
+    ailmentDamage: Math.min(outcome.ailmentDamage, damage / (1 + damageTaken(defender))),
+    source: h.source,
+  };
   // A Glancing Blow fires no on-hit triggers of the attacker (unless Opportunist).
   if (!glancing || attacker.perks.has("opportunist")) {
     if (glancing) perk(core, attacker, "opportunist");
-    fireTriggers(core, attacker, "onHit", context);
+    fireTriggers(core, attacker, "onHit", ownContext);
     // Master of Cleave: Mighty Hits roll the on-hit triggers twice.
     if (mighty && wr?.mightyTriggersTwice && !core.result) {
-      fireTriggers(core, attacker, "onHit", context);
+      fireTriggers(core, attacker, "onHit", ownContext);
     }
   }
-  if (outcome.crit) fireTriggers(core, attacker, "onCrit", context);
+  if (outcome.crit) fireTriggers(core, attacker, "onCrit", ownContext);
   fireTriggers(core, defender, "whenHit", context);
   defender.hitsTaken++;
   fireTriggers(core, defender, "everyNthHitTaken", context);
@@ -700,14 +692,13 @@ function cleanMore(attacker: Fighter, defender: Fighter, h: HitOptions, rolls: b
   return more;
 }
 
-/** A Mighty Hit landed: stun, Sunder, Bleed, Heat drain and Rupture Plate. */
+/** A Mighty Hit landed: Bleed, stun and Rupture Plate. */
 function mightyHit(core: FightCore, attacker: Fighter, defender: Fighter, ailmentBase: number) {
   const wr = attacker.setup.weaponRules;
   if (!wr) return;
   if (wr.mightyBleed) inflict(core, attacker, defender, "bleed", ailmentBase * wr.mightyBleed);
   if (core.result) return;
   if (wr.mightyStun) stun(core, defender, wr.mightyStun);
-  if (wr.mightyHeatDrain) defender.heat = Math.max(0, defender.heat - wr.mightyHeatDrain);
   const rule = wr.sunder ?? COMBAT.sunder;
   if (wr.rupture && sunderOn(defender) >= rule.maxStacks) {
     const stacks = sunderOn(defender);
@@ -723,9 +714,7 @@ function mightyHit(core: FightCore, attacker: Fighter, defender: Fighter, ailmen
       ailmentChances: [],
       fromTrigger: true,
     });
-    if (core.result) return;
   }
-  if (wr.mightySunder) addSunder(attacker, defender, wr.mightySunder);
 }
 
 /** Releases damage stored for the Innate (Master of the Wall, Impale) as one extra hit. */
@@ -830,18 +819,6 @@ function hitPool(
 /** A Glancing Blow: Heat from Loaded Spring or Flowing Blade, the streak ends. */
 function glance(core: FightCore, f: Fighter): void {
   const wr = f.setup.weaponRules;
-  f.glancingCount++;
-  const spring = wr?.glancingExtraAttack;
-  if (spring && f.glancingCount % spring === 0 && f.extraDepth === 0) {
-    emit(core, { t: fightTime(core), type: "trigger", side: f.side, name: "Spring Trap" });
-    extraAttack(core, f);
-    if (core.result) return;
-  }
-  // Steady Breath: a Glancing Blow keeps the streaks.
-  if (wr?.glancingKeepsFlow) {
-    if (wr.glancingHeat) gainHeat(core, f, wr.glancingHeat);
-    return;
-  }
   f.flowing = false;
   f.cleanStreak = 0;
   if (wr?.glancingHeat) {
@@ -929,18 +906,6 @@ function arcChain(core: FightCore, attacker: Fighter, defender: Fighter, dealt: 
     blocked: false,
   });
   dealDamage(core, defender, arc);
-}
-
-/** Crits with Weapon Mastery: Deep Cuts, Twist the Blade and Armor Shred. */
-function critMastery(core: FightCore, attacker: Fighter, defender: Fighter, damage: number): void {
-  const wr = attacker.setup.weaponRules;
-  if (wr?.critBarrierShred && defender.barrier > 0) {
-    defender.barrier = Math.max(0, defender.barrier - defender.stats.barrier * wr.critBarrierShred);
-    if (defender.barrier <= 0) react(defender, "barrierBreaks");
-  }
-  for (let i = 0; i < (wr?.critPoisonStacks ?? 0); i++) {
-    inflict(core, attacker, defender, "poison", damage);
-  }
 }
 
 /** Adds stacks of the attacker's stacking Sunder to the defender. */
@@ -1075,7 +1040,7 @@ export function poisonCap(attacker: Fighter): number {
  * at once, as Fire. The Burn keeps running. Immolate combusts three times over.
  */
 export function combust(core: FightCore, attacker: Fighter, defender: Fighter, times: number) {
-  const rest = remainingBurnDamage(defender.ailments);
+  const rest = remainingBurnDamage(defender.ailments, COMBAT.burnDurationSeconds);
   if (rest <= 0) return;
   const amount = rest * COMBAT.combustShare * times * payoffFactor(core, attacker);
   const dealt = dotBurst(core, attacker, defender, amount, "Combust", "fire", "burn");

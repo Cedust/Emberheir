@@ -151,7 +151,8 @@ export const MACE: WeaponDefinition = {
       id: "stagger",
       name: "Stagger",
       condition: { kind: "everyNthAttack", n: 4 },
-      effect: { kind: "stun", seconds: 0.5 },
+      // Step 7: only the Mace's own stun breaks the swing; other stuns pause it.
+      effect: { kind: "stun", seconds: 0.5, breaksSwing: true },
     },
   ],
 };
@@ -603,13 +604,15 @@ export const MAW_JAWS: WeaponDefinition = {
 
 // Act 7 (Emberfall) enemy weapons: everything at once.
 
-// Ember-forged: Emberfall gets as much magic as Physical threat.
+// Emberfall gets as much magic as Physical threat: the Revenant and the Hound hit Physical, the
+// Wraith and the Knight Fire. Step 7: the Revenant hit Fire too, so three of four Act 7 foes went
+// past Armor straight into the hero's Fire Resistance (−60 % Ember Penalty in run 7).
 export const REVENANT_BLADE: WeaponDefinition = {
   id: "revenant-blade",
   name: "Revenant Blade",
   defaultAttack: "Cleave",
   damage: { min: 1.67, max: 2.46 },
-  damageType: "fire",
+  damageType: "physical",
   attacksPerSecond: 0.5,
   heatBehavior: "cooling",
   heatPerHit: 24,

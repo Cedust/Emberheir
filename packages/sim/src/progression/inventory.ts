@@ -109,14 +109,6 @@ export function placeAt(
   return [...rest, { item, x, y }];
 }
 
-/** Number of cells in use, e.g. for "23 / 40". */
-export function usedCells(placed: readonly PlacedItem[], catalog: ItemCatalog): number {
-  return placed.reduce((sum, p) => {
-    const size = itemSize(p.item, catalog);
-    return sum + size.w * size.h;
-  }, 0);
-}
-
 /**
  * Re-packs a grid: biggest items first, then by slot and name ("Sort" in the stash). If the
  * items do not fit in that order, the grid stays as it is.

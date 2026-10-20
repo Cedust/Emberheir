@@ -120,8 +120,6 @@ export const PROGRESSION = {
   maxLevel: 100,
   /** The Level Cap of a run lies this far above its boss's Monster Level: room to farm past a wall. */
   levelHeadroom: 10,
-  /** Acts of a full world (run 7). */
-  actsPerFullRun: 7,
   /**
    * Skill Points come from progress, not from levels (level-v2.md section 7): 2 at the start,
    * 1 per Waymark (3 per act in every run, 84 in all) and `harvestSkillPoints` per Prestige
@@ -313,8 +311,12 @@ export const PROGRESSION = {
      * Timo (2026-10-19): longer fights through more boss Life rather than damage, and run 1 is no
      * walk in the park either. Damage still rises, so defense keeps counting.
      */
-    boss: { firstRun: { life: 3, damage: 3.5 }, later: { life: 4.5, damage: 6 } },
+    // Step 7 boss round: bosses caused 58 % of the deaths (target 35–55 %) and the newest act's
+    // boss fight took 136–200 s from Act 4 on (target 60–100 s); was life 3 / 4.5, damage 3.5 / 6.
+    boss: { firstRun: { life: 3.25, damage: 2.6 }, later: { life: 3.5, damage: 6 } },
     gates: [0.4, 0.45],
+    /** Stages before a Gatekeeper (since the last one) it needs for its full peak. */
+    gateStretch: 4,
     ramps: [
       [0.15, 0.3],
       [0.25, 0.35],
@@ -357,8 +359,12 @@ export const PROGRESSION = {
     levelsPerTier: 2,
     life: 0.08,
     damage: 0.06,
-    /** Above V the hero is capped at level 100 while Monster Levels keep rising: Life only. */
-    steep: { from: 5, life: 0.35, damage: 0.08 },
+    /**
+     * Above V the hero is capped at level 100 while Monster Levels keep rising. Step 7: more
+     * damage, less Life (was Life 0.35, damage 0.08): the autopilot cleared VI and VII in under 2
+     * attempts and then stuck at VIII.
+     */
+    steep: { from: 5, life: 0.2, damage: 0.25 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,

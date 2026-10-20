@@ -1,5 +1,11 @@
 import { describe, expect, it } from "vitest";
-import { applyAilment, chillFactor, damageTakenBonus, stepAilments } from "./ailments";
+import {
+  applyAilment,
+  chillFactor,
+  damageTakenBonus,
+  remainingBurnDamage,
+  stepAilments,
+} from "./ailments";
 import { COMBAT } from "./constants";
 import type { CombatEvent, PayoffKind } from "./events";
 import { Fight } from "./fight";
@@ -79,6 +85,23 @@ describe("built-in payoffs", () => {
     // A Physical hit does not combust.
     const plain = play(setup({ weapon: always("burn"), bonuses: NO_CRIT }), dummy(), 2.05);
     expect(payoffs(plain.events, "combust")).toHaveLength(0);
+  });
+
+  it("Combust counts at most a normal Burn's length, however long the Burn lasts", () => {
+    const burn = applyAilment({}, "burn", 12, 100);
+    const perSecond = burn.burn?.damagePerSecond ?? 0;
+    expect(remainingBurnDamage(burn)).toBeCloseTo(perSecond * 12);
+    expect(remainingBurnDamage(burn, COMBAT.burnDurationSeconds)).toBeCloseTo(
+      perSecond * COMBAT.burnDurationSeconds,
+    );
+    // Past a normal Burn's length, a longer Burn makes the Combust no bigger.
+    const fire = always("burn", { damageType: "fire", damage: { min: 1000, max: 1000 } });
+    const combustOf = (duration: number) => {
+      const hero = setup({ weapon: fire, bonuses: NO_CRIT, rules: { ailmentDuration: duration } });
+      return payoffs(play(hero, dummy(), 2.05).events, "combust")[0]?.damage ?? 0;
+    };
+    expect(combustOf(1)).toBeGreaterThan(100);
+    expect(combustOf(2)).toBeCloseTo(combustOf(1), 0);
   });
 
   it("Immolate combusts three times over", () => {

@@ -164,7 +164,7 @@ export const TEST_MASTERY: WeaponMasteryTree = {
       kind: "notable",
       path: "edge",
       links: ["p1"],
-      effect: { weaponRules: { glancingDamage: 0.25 } },
+      effect: { weaponRules: { critBuildup: 0.06 } },
     }),
     node({
       id: "fa",

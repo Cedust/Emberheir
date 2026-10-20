@@ -160,14 +160,18 @@ export const COMBAT = {
   /**
    * Built-in payoffs (ailments-v2.md 3.1): every DoT has its own burst moment. Overflow: a Poison
    * stack pushed off at the cap deals its remaining damage at once. Combust: a Fire hit on a
-   * burning target deals this share of the Burn's remaining damage at once. Collapse: Corruption
+   * burning target deals this share of the Burn's remaining damage at once, counting at most a
+   * normal Burn's length (step 7: a longer Burn made every Fire hit bigger). Collapse: Corruption
    * at full growth deals `collapseSeconds` of its damage at once and falls back to half growth.
    */
   combustShare: 0.25,
   collapseSeconds: 4,
 
-  /** Spell skills gain this much base damage per skill level above 1. */
-  spellDamagePerSkillLevel: 0.2,
+  /**
+   * Spell skills gain this much base damage per skill level above 1. Step 7: as much as attacks
+   * (was 0.2); spells already never miss or glance, and the Emberseer killed 40 % faster.
+   */
+  spellDamagePerSkillLevel: 0.1,
   /** Attack skills gain this much damage per skill level above 1. */
   attackDamagePerSkillLevel: 0.1,
 } as const;

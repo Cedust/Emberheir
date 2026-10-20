@@ -16,7 +16,7 @@ import { writeFileSync } from "node:fs";
 import { type ActRunReport, playGenerations, summarizeActRuns } from "./act";
 import { isNewestAct, stageKindRow, summarizeStageKinds } from "./newest";
 import { BUILDS, withMainMastery } from "./builds";
-import { type BudgetRow, LAYERS, buildBudget, meanBudget } from "./budget";
+import { type BudgetRow, LAYERS, PLAYED_LAYERS, buildBudget, meanBudget } from "./budget";
 import { simulateMatchup } from "./simulate";
 import { type PowerSample, powerCurve, powerProbe } from "./curve";
 import { PLAYTIME, median, runMinutes } from "./playtime";
@@ -40,10 +40,18 @@ if (args.act > 0 || args.finale > 0) {
  */
 function runBudgetMode(): void {
   const runs = Math.max(1, Math.min(args.runs, 20));
+  // `--budget 2`: the hero the autopilot played to the end of run 7 (step 7), with Runes, Powers,
+  // Boons and Ashborn; `--budget 1`: the Cheat Panel's hero.
+  const played = args.budget === 2 ? (args.finale ? "finale" : "run7") : false;
+  const layers = played ? PLAYED_LAYERS : LAYERS;
   console.log(
     `${GAME_TITLE} balance tool (sim ${SIM_VERSION}), damage budget at the end of the game`,
   );
-  console.log(`seeds=${args.seed}..${args.seed + runs - 1} (random Epic gear each), 30 s dummy`);
+  console.log(
+    played
+      ? `seeds=${args.seed}..${args.seed + runs - 1} (hero at the last fight of ${played === "finale" ? "The Last Ember" : "run 7"}), 30 s dummy`
+      : `seeds=${args.seed}..${args.seed + runs - 1} (random Epic gear each), 30 s dummy`,
+  );
   console.log("factor = damage with the layer / without it; DA = Default Attack");
   const classIds = new Set(
     args.class === "all" ? GAME_DATA.classes.map((c) => c.id) : [args.class],
@@ -64,10 +72,12 @@ function runBudgetMode(): void {
   if (!plans.length) throw new Error("No build matches");
   const pct = (x: number) => `${Math.round(100 * x)}`;
   const rows: { classId: string; budget: BudgetRow }[] = [];
-  const table = plans.map((plan) => {
-    const budget = meanBudget(
-      Array.from({ length: runs }, (_, i) => buildBudget(GAME_DATA, plan, args.seed + i)),
-    );
+  const table = plans.flatMap((plan) => {
+    const found = Array.from({ length: runs }, (_, i) =>
+      buildBudget(GAME_DATA, plan, args.seed + i, played),
+    ).filter((b) => b !== undefined);
+    if (!found.length) return [];
+    const budget = meanBudget(found);
     rows.push({ classId: plan.classId, budget });
     return {
       build: plan.id,
@@ -81,28 +91,32 @@ function runBudgetMode(): void {
       "DoT %": pct(budget.shares.dots),
       "other %": pct(budget.shares.other),
       "weapon %": pct(budget.shares.weapon),
-      ...Object.fromEntries(LAYERS.map((l) => [`×${l}`, budget.factors[l].toFixed(2)])),
+      ...Object.fromEntries(layers.map((l) => [`×${l}`, (budget.factors[l] ?? 1).toFixed(2)])),
     };
   });
   console.table(table);
-  const summary = [...classIds].map((classId) => {
-    const own = rows.filter((r) => r.classId === classId).map((r) => r.budget);
-    const dps = own.map((b) => b.dps);
-    const geo = (f: (b: BudgetRow) => number) =>
-      Math.exp(own.reduce((a, b) => a + Math.log(f(b)), 0) / Math.max(1, own.length));
-    return {
-      class: classId,
-      builds: own.length,
-      "dps k mean": (dps.reduce((a, b) => a + b, 0) / Math.max(1, dps.length) / 1000).toFixed(1),
-      "dps max/min": (Math.max(...dps) / Math.min(...dps)).toFixed(2),
-      "DA+innate %": pct(
-        own.reduce((a, b) => a + b.shares.defaultAttack + b.shares.innate, 0) /
-          Math.max(1, own.length),
-      ),
-      "weapon %": pct(own.reduce((a, b) => a + b.shares.weapon, 0) / Math.max(1, own.length)),
-      ...Object.fromEntries(LAYERS.map((l) => [`×${l}`, geo((b) => b.factors[l]).toFixed(2)])),
-    };
-  });
+  const summary = [...classIds]
+    .filter((c) => rows.some((r) => r.classId === c))
+    .map((classId) => {
+      const own = rows.filter((r) => r.classId === classId).map((r) => r.budget);
+      const dps = own.map((b) => b.dps);
+      const geo = (f: (b: BudgetRow) => number) =>
+        Math.exp(own.reduce((a, b) => a + Math.log(f(b)), 0) / Math.max(1, own.length));
+      return {
+        class: classId,
+        builds: own.length,
+        "dps k mean": (dps.reduce((a, b) => a + b, 0) / Math.max(1, dps.length) / 1000).toFixed(1),
+        "dps max/min": (Math.max(...dps) / Math.min(...dps)).toFixed(2),
+        "DA+innate %": pct(
+          own.reduce((a, b) => a + b.shares.defaultAttack + b.shares.innate, 0) /
+            Math.max(1, own.length),
+        ),
+        "weapon %": pct(own.reduce((a, b) => a + b.shares.weapon, 0) / Math.max(1, own.length)),
+        ...Object.fromEntries(
+          layers.map((l) => [`×${l}`, geo((b) => b.factors[l] ?? 1).toFixed(2)]),
+        ),
+      };
+    });
   console.log("");
   console.log("Per class (factors as geometric means)");
   console.table(summary);

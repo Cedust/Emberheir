@@ -207,7 +207,7 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     runes: ["venom", "moss"],
     slots: ["offHand", "helm"],
     bonuses: { poisonChance: 0.35, ailmentEffect: 0.2 },
-    rules: { dotLifesteal: 0.15 },
+    rules: { dotLifesteal: 0.03 },
   },
   {
     id: "hearthfire",
@@ -450,9 +450,9 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     id: "leech-bloom",
     crucible: "ward",
     name: "Leech Bloom",
-    description: "Your Bleed, Poison and Burn heal you for 20 % of their damage.",
+    description: "Your Bleed, Poison and Burn heal you for 8 % of their damage.",
     slots: ["body", "amulet", "ring"],
-    rules: { dotLifesteal: 0.2 },
+    rules: { dotLifesteal: 0.08 },
   },
   {
     id: "undying-heat",
@@ -609,9 +609,9 @@ export const LEGENDARY_POWERS: readonly LegendaryPowerDefinition[] = [
     crucible: "ember",
     uniqueOnly: true,
     name: "Endless Hunger",
-    description: "Your Corruption also Poisons; your ailments heal you for 10 % of their damage.",
+    description: "Your Corruption also Poisons; your ailments heal you for 4 % of their damage.",
     slots: ["amulet"],
-    rules: { ailmentEcho: [{ from: "corruption", to: "poison" }], dotLifesteal: 0.1 },
+    rules: { ailmentEcho: [{ from: "corruption", to: "poison" }], dotLifesteal: 0.04 },
   },
   {
     id: "rift-pulse",

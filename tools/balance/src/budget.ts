@@ -1,5 +1,7 @@
 import {
   type BuildPlan,
+  EMPTY_BOONS,
+  type Item,
   type CombatantSetup,
   deriveStats,
   Fight,
@@ -9,6 +11,7 @@ import {
   heroSetup,
   newGame,
 } from "@emberheir/sim";
+import { playGenerations } from "./act";
 
 /**
  * Damage budget of a build at the end of the game (balancing-neustart-v1.md, step 1): where its
@@ -41,7 +44,19 @@ export interface DamageShares {
 
 /** One layer taken away from the hero to see what it is worth. */
 export const LAYERS = ["gear", "ashTree", "mastery", "heirloom", "refine", "keystones"] as const;
-export type Layer = (typeof LAYERS)[number];
+/**
+ * What only a played hero has (step 7): ailments from gear triggers (Venom Sting & co.), Runes and
+ * Runewords, Legendary Powers, the run's Boons and the Ashborn Boards.
+ */
+export const PLAYED_LAYERS = [
+  ...LAYERS,
+  "gearAilments",
+  "runes",
+  "powers",
+  "boons",
+  "ashborn",
+] as const;
+export type Layer = (typeof PLAYED_LAYERS)[number];
 
 export interface BudgetRow {
   readonly dps: number;
@@ -49,7 +64,7 @@ export interface BudgetRow {
   readonly barrier: number;
   readonly shares: DamageShares;
   /** Damage with the layer divided by damage without it (×1.5 = the layer adds 50 %). */
-  readonly factors: Readonly<Record<Layer, number>>;
+  readonly factors: Readonly<Partial<Record<Layer, number>>>;
 }
 
 const REFINE = new Set(["balance", "precision", "steady-hand", "full-swing"]);
@@ -109,6 +124,11 @@ export function dummyFight(setup: CombatantSetup): { dps: number; shares: Damage
   };
 }
 
+/** A copy of `o` without the optional field `key`. */
+function without<T extends object>(o: T, key: keyof T): T {
+  return Object.fromEntries(Object.entries(o).filter(([k]) => k !== key)) as T;
+}
+
 /**
  * The hero without one layer. Skills stay learned (taking a skill node away would change the
  * Battle Plan, not the layer's power), and the Heirloom keeps one point in its path so the weapon
@@ -132,9 +152,41 @@ export function withoutLayer(
   });
   const weaponTree = data.weaponMastery[hero.weaponId];
   const heirloomNode = (id: string) => weaponTree?.nodes.find((n) => n.id === id);
+  const items = (f: (item: Item) => Item) => ({
+    ...state,
+    hero: {
+      ...hero,
+      equipment: Object.fromEntries(
+        Object.entries(hero.equipment).map(([slot, item]) => [slot, item ? f(item) : item]),
+      ),
+    },
+  });
   switch (layer) {
     case "gear":
       return { ...state, hero: { ...hero, equipment: {} } };
+    case "gearAilments":
+      return items((item) => ({
+        ...item,
+        affixes: item.affixes.filter((a) => {
+          const def = data.items.affixes.get(a.affixId);
+          return !(def?.kind === "trigger" && def.effect.kind === "ailment");
+        }),
+      }));
+    case "runes": {
+      const s = items((item) => (item.runes ? { ...item, runes: [] } : item));
+      return { ...s, hero: without(s.hero, "webRunes") };
+    }
+    case "powers": {
+      const s = items((item) => {
+        return item.powerId ? without(item, "powerId") : item;
+      });
+      return { ...s, hero: without(s.hero, "crucible") };
+    }
+    case "boons":
+      return { ...state, boons: EMPTY_BOONS };
+    case "ashborn": {
+      return { ...state, hero: without(hero, "ashborn") };
+    }
     case "ashTree":
       return keepLearned((id) => {
         const node = nodeOf(id);
@@ -182,18 +234,54 @@ export function endgameHero(data: GameData, plan: BuildPlan, seed: number): Game
   return applyCheat(start, data, { kind: "buildPlan", plan });
 }
 
-/** Budget of one build at the end of the game. */
-export function buildBudget(data: GameData, plan: BuildPlan, seed: number): BudgetRow {
-  const state = endgameHero(data, plan, seed);
+/**
+ * The plan's hero as the autopilot played it: at the last fight of run 7 (with `finale`: of The
+ * Last Ember), with what it found (gear, Runes, Powers), its Boons and Ashborn points. Undefined
+ * if it got stuck before.
+ */
+export function playedHero(
+  data: GameData,
+  plan: BuildPlan,
+  seed: number,
+  finale = false,
+): GameState | undefined {
+  let last: GameState | undefined;
+  playGenerations(data, {
+    seed,
+    starterWeapon: plan.weapon,
+    build: plan.id,
+    ...(plan.masteries[0] ? { mastery: plan.masteries[0] } : {}),
+    upToAct: 7,
+    maxAttempts: 30,
+    generations: 7,
+    finale,
+    onFight: (s, generation) => {
+      if (generation === (finale ? 8 : 7)) last = s;
+    },
+  });
+  return last;
+}
+
+/** Budget of one build at the end of the game: the Cheat Panel's hero, or the played one. */
+export function buildBudget(
+  data: GameData,
+  plan: BuildPlan,
+  seed: number,
+  played: false | "run7" | "finale" = false,
+): BudgetRow | undefined {
+  const state = played
+    ? playedHero(data, plan, seed, played === "finale")
+    : endgameHero(data, plan, seed);
+  if (!state) return undefined;
   const setup = heroSetup(state, data).setup;
   const stats = deriveStats(setup);
   const full = dummyFight(setup);
   const factors = Object.fromEntries(
-    LAYERS.map((layer) => {
+    (played ? PLAYED_LAYERS : LAYERS).map((layer) => {
       const without = dummyFight(heroSetup(withoutLayer(state, data, plan, layer), data).setup);
       return [layer, full.dps / without.dps];
     }),
-  ) as Record<Layer, number>;
+  ) as Partial<Record<Layer, number>>;
   return {
     dps: full.dps,
     life: stats.maxLife,
@@ -221,9 +309,11 @@ export function meanBudget(rows: readonly BudgetRow[]): BudgetRow {
       other: avg((r) => r.shares.other),
       weapon: avg((r) => r.shares.weapon),
     },
-    factors: Object.fromEntries(LAYERS.map((l) => [l, geo((r) => r.factors[l])])) as Record<
-      Layer,
-      number
-    >,
+    factors: Object.fromEntries(
+      PLAYED_LAYERS.filter((l) => rows.every((r) => r.factors[l] !== undefined)).map((l) => [
+        l,
+        geo((r) => r.factors[l] ?? 1),
+      ]),
+    ) as Partial<Record<Layer, number>>,
   };
 }

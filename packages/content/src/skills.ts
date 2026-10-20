@@ -215,29 +215,6 @@ export const SOUL_HARVEST: SkillDefinition = {
   effects: [{ kind: "detonateDots", seconds: 4, leech: 0.25 }],
 };
 
-// Prestige branch skills (skill-tree-v1.md section 3): one per branch.
-
-export const FEINT: SkillDefinition = {
-  id: "feint",
-  name: "Feint",
-  type: "attack",
-  heatCost: 35,
-  tags: ["physical", "direct", "melee"],
-  description: "160 % Weapon Damage, then +15 % Crit Chance for 4 s.",
-  hits: [{ kind: "weapon", multiplier: 1.6 }],
-  effects: [{ kind: "buff", stat: "critChance", amount: 0.15, duration: 4 }],
-};
-
-export const PIERCING_SHOT: SkillDefinition = {
-  id: "piercing-shot",
-  name: "Piercing Shot",
-  type: "attack",
-  heatCost: 45,
-  tags: ["physical", "direct", "ranged"],
-  description: "280 % Weapon Damage.",
-  hits: [{ kind: "weapon", multiplier: 2.8 }],
-};
-
 export const CLEAVE: SkillDefinition = {
   id: "cleave",
   name: "Cleave",
@@ -251,23 +228,6 @@ export const CLEAVE: SkillDefinition = {
       multiplier: 1.8,
       ailmentChances: [{ ailment: "bleed", chance: 1 }],
       ailmentPower: 1.5,
-    },
-  ],
-};
-
-export const PLAGUE_CLOUD: SkillDefinition = {
-  id: "plague-cloud",
-  name: "Plague Cloud",
-  type: "attack",
-  heatCost: 50,
-  tags: ["physical", "over-time", "any"],
-  description: "3 hits for 60 % Weapon Damage. Each one Poisons.",
-  hits: [
-    {
-      kind: "weapon",
-      multiplier: 0.6,
-      count: 3,
-      ailmentChances: [{ ailment: "poison", chance: 1 }],
     },
   ],
 };
@@ -539,10 +499,7 @@ export const HERO_SKILLS: readonly SkillDefinition[] = [
   CORRUPT,
   WITHER,
   SOUL_HARVEST,
-  FEINT,
-  PIERCING_SHOT,
   CLEAVE,
-  PLAGUE_CLOUD,
   THUNDERSTRIKE,
   FROST_NOVA,
   INFERNO,

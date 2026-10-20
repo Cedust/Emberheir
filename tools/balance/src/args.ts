@@ -37,7 +37,9 @@ export interface BalanceArgs {
   json: string;
   /**
    * 1 = damage budget per build at the end of the game (where the damage comes from, what each
-   * layer is worth); `--runs` seeds of random gear each.
+   * layer is worth); `--runs` seeds of random gear each. 2 = the same for the hero the autopilot
+   * played to the end of run 7 (with `--finale 1`: of The Last Ember), with Runes, Powers, Boons
+   * and Ashborn as layers.
    */
   budget: number;
   /**

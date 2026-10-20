@@ -751,9 +751,9 @@ const MASTERIES: readonly MasterySpec[] = [
     ],
     keystones: keystones(
       tierName("Foul Play"),
-      (s) => ({ dotDamage: 1.25 + s * 0.1, ailmentDuration: 0.25, hitDamage: 0.9 }),
+      (s) => ({ dotDamage: 1.2 + s * 0.1, ailmentDuration: 0.25, hitDamage: 0.9 }),
       (s) =>
-        `Ailments deal ${25 + s * 10} % more damage over time and last 25 % longer. Your hits deal 10 % less.`,
+        `Ailments deal ${20 + s * 10} % more damage over time and last 25 % longer. Your hits deal 10 % less.`,
     ),
     deeper: [
       ailmentEffect("Exploit Weakness", 0.15),
@@ -910,8 +910,8 @@ const MASTERIES: readonly MasterySpec[] = [
     notables: [
       {
         name: "Lingering",
-        description: "Your ailments deal 1 % more per second of the fight, up to 20 %.",
-        rules: { lingering: { perSecond: 0.01, max: 0.2 } },
+        description: "Your ailments deal 1 % more per second of the fight, up to 10 %.",
+        rules: { lingering: { perSecond: 0.01, max: 0.1 } },
       },
       ailmentChance("Malice", 0.1),
       ailmentLonger("Long Curse", 0.2),
@@ -945,8 +945,6 @@ const MASTERIES: readonly MasterySpec[] = [
     ]),
   },
 ];
-
-export const MASTERY_IDS = MASTERIES.map((m) => m.id);
 
 export const PRESTIGE_BRANCHES: readonly PrestigeBranchDefinition[] = MASTERIES.map(
   ({ id, name, branch, anchor, theme, axis }) => ({

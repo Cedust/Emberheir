@@ -154,8 +154,11 @@ export type TriggerEffect =
     }
   /** An immediate extra Default Attack (e.g. the Sword's Riposte). */
   | { readonly kind: "extraAttack" }
-  /** The enemy cannot act for a moment: no attacks, skills or wind-ups (the Mace's Smash). */
-  | { readonly kind: "stun"; readonly seconds: number }
+  /**
+   * The enemy cannot act for a moment: no attacks, skills or wind-ups (the Mace's Smash). Its
+   * swing pauses; `breaksSwing` starts it over (the Mace's Stagger).
+   */
+  | { readonly kind: "stun"; readonly seconds: number; readonly breaksSwing?: boolean }
   /**
    * Sends a fraction of the hit that fired the trigger back to the attacker, at most `cap` of the
    * attacker's max life, so big hits are punished without one-shotting.
@@ -594,8 +597,6 @@ export interface SunderRule {
  * Built and merged by the Weapon Mastery tree in `progression`; the fight only reads them.
  */
 export interface WeaponRules {
-  /** Damage of a Glancing Blow as a share of a clean hit. Default 0.5. */
-  readonly glancingDamage?: number;
   /** Heat gained (or, negative, lost) on every Glancing Blow (Loaded Spring, Flowing Blade). */
   readonly glancingHeat?: number;
   /** Extra attacks (Riposte, Double Stab) always land cleanly. */
@@ -631,8 +632,6 @@ export interface WeaponRules {
   readonly damageDealt?: number;
   /** Heat per damage tick of an own ailment (Bloodrush). */
   readonly heatPerDotTick?: { readonly ailment: AilmentType; readonly amount: number };
-  /** Hits that roll at least this share of the Damage Range always crit (Headsplitter). */
-  readonly topRollCrits?: number;
   /** Clean hits refresh these running ailments on the target (Bloodbath). */
   readonly refreshOnHit?: readonly AilmentType[];
   /** Every damage tick of the ailment adds `perTick` hit damage for the rest of the fight. */
@@ -641,8 +640,6 @@ export interface WeaponRules {
   readonly poisonMaxStacks?: number;
   /** Longer (or shorter) own ailments by type, on top of Ailment Effect. */
   readonly ailmentDurationBy?: Readonly<Partial<Record<AilmentType, number>>>;
-  /** Crits add this many Poison stacks (Twist the Blade). */
-  readonly critPoisonStacks?: number;
   /** The first clean hit of a fight crits and deals this much more damage (Assassinate). */
   readonly openerDamage?: number;
   /**
@@ -686,8 +683,6 @@ export interface WeaponRules {
   readonly innateId?: string;
   /** Chance that an enemy attack (not a spell) becomes a Glancing Blow (Parry, at most 30 %). */
   readonly parry?: number;
-  /** Extra attacks (Riposte, Double Stab, Split Shot) deal this much more damage. */
-  readonly extraAttackDamage?: number;
   /** Extra attacks can fire your trigger affixes (Path Masters); not the ones they cause. */
   readonly extraAttacksTrigger?: boolean;
   /** Extra attacks always inflict these ailments (Thousand Needles). */
@@ -700,12 +695,8 @@ export interface WeaponRules {
   readonly mightyNeverGlances?: boolean;
   /** Mighty Hits stun for this long (Earthbreaker). */
   readonly mightyStun?: number;
-  /** Mighty Hits add this many Sunder stacks (Splitting Blow). */
-  readonly mightySunder?: number;
   /** Mighty Hits always Bleed, this much stronger (Ragged Cut). */
   readonly mightyBleed?: number;
-  /** Mighty Hits take this much Heat from the enemy (Recoil). */
-  readonly mightyHeatDrain?: number;
   /** Mighty Hits deal `bonus` more against an enemy below `below` Life (Executioner's Swing). */
   readonly mightyExecute?: { readonly below: number; readonly bonus: number };
   /** Mighty Hits roll your on-hit triggers twice (Master of Cleave). */
@@ -720,18 +711,14 @@ export interface WeaponRules {
   readonly critBleedPower?: number;
   /** The enemy attacks this much faster (negative: slower) while the condition holds. */
   readonly enemyAttackSpeed?: readonly MasteryBonus[];
-  /** Glancing Blows keep your streaks and Flowing Blade (Steady Breath). */
-  readonly glancingKeepsFlow?: boolean;
   /** The Innate costs this much less Heat per clean hit since your last skill (Building Edge). */
   readonly innateDiscountPerHit?: number;
-  /** After the Innate, Rotation Slot 1 is cast again for free, once per `cooldown` s. */
-  readonly repeatFirstSlot?: { readonly cooldown: number };
   /** A stun during a telegraph breaks the Heavy Attack, once per `cooldown` s (Interrupt). */
   readonly interrupt?: { readonly cooldown: number };
+  /** Your stuns also start the enemy's swing over (Jolt, Quake); other stuns only pause it. */
+  readonly stunResetsSwing?: boolean;
   /** Reaction Slots cost no Heat while the enemy is stunned (Master of Quake). */
   readonly freeReactionsVsStunned?: boolean;
-  /** Extra share of a blocked hit that the block stops. */
-  readonly blockReduction?: number;
   /** After a Block you take `reduction` less damage for `seconds` (Braced). */
   readonly braced?: { readonly seconds: number; readonly reduction: number };
   /**
@@ -763,12 +750,8 @@ export interface WeaponRules {
   }[];
   /** Poison set off at once (Overflow, Toxic Bloom, Toxic Cascade) heals this share (Master of Toxin). */
   readonly burstLeech?: number;
-  /** Crits destroy this share of the enemy's max Barrier (Armor Shred). */
-  readonly critBarrierShred?: number;
   /** Physical Penetration also lowers Resistances (Master of Pierce). */
   readonly penetrationToElemental?: boolean;
-  /** Every Nth Glancing Blow fires a free extra attack (Spring Trap). */
-  readonly glancingExtraAttack?: number;
   /** Rotation Slot `slot` (0-based) costs `discount` less Heat (Master of Reload). */
   readonly slotDiscount?: { readonly slot: number; readonly discount: number };
   /** Skills cost `amount` less while the condition holds (Master of Storm). */
