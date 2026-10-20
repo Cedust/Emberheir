@@ -155,14 +155,15 @@ function weaponArt(
 /**
  * How the painted Heir holds each weapon in the fist: angle at rest (radians, 0 = pointing at
  * the enemy, negative = up), drawn length in figure units, where along it the fist grips, and
- * an optional nudge of the grip (figure units) so a thick shaft does not cover the palm.
+ * an optional nudge of the grip (figure units) so a thick shaft does not cover the palm, and an
+ * optional slimming of the painting across its shaft so the thumb stays in sight over it.
  */
 const HEIR_GRIPS: Record<
   HeroLook["weapon"],
-  { angle: number; length: number; at: number; nudge?: [number, number] }
+  { angle: number; length: number; at: number; nudge?: [number, number]; slim?: number }
 > = {
   sword: { angle: -0.7, length: 210, at: 0.1 },
-  axe: { angle: -0.8, length: 200, at: 0.14 },
+  axe: { angle: -0.8, length: 200, at: 0.14, nudge: [4, 2], slim: 0.8 },
   dagger: { angle: -0.6, length: 120, at: 0.2 },
   mace: { angle: -0.75, length: 190, at: 0.14 },
   staff: { angle: -1.05, length: 380, at: 0.42, nudge: [5, -2] },
@@ -353,7 +354,7 @@ function drawPaintedHero(
   const grip = HEIR_GRIPS[look.weapon];
   const { holder: weapon } = weaponArt(look, painted);
   weapon.rotation = grip.angle;
-  weapon.scale.set(grip.length / WEAPON_LENGTH);
+  weapon.scale.set(grip.length / WEAPON_LENGTH, (grip.length / WEAPON_LENGTH) * (grip.slim ?? 1));
   weapon.pivot.set(grip.at * WEAPON_LENGTH, 0);
   if (grip.nudge) weapon.position.set(grip.nudge[0], grip.nudge[1]);
   rig.grip.addChild(weapon);
