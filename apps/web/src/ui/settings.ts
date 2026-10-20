@@ -26,7 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.5,
   sounds: { hover: true, click: true, window: true, coin: true, loot: true },
   screenShake: true,
-  graphicsQuality: "high",
+  graphicsQuality: "medium",
 };
 
 const soundsSchema = z.object(
