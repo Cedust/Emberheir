@@ -25,6 +25,7 @@ import { bountyPreview } from "../bounty";
 import { bossName, visibleActs } from "../labels";
 import type { GameApi } from "../useGame";
 import { PersonaPortrait } from "./art/PersonaArt";
+import { eldrinLines } from "./campPersonas";
 import {
   BountyNote,
   BountyTurnIn,
@@ -180,6 +181,9 @@ export function RoadWindow(props: {
   const { act } = plan;
   // What Eldrin just paid for a turned-in bounty (shown until the window closes).
   const [paid, setPaid] = useState<TurnInReward | null>(null);
+  // A new word every visit, and another when the raven is poked.
+  const lines = eldrinLines(state);
+  const [line, setLine] = useState(() => Math.floor(Math.random() * lines.length));
   const bounty = bountyPreview(state, act.id);
   const info = ACTS.find((a) => a.id === act.id);
   const capacity = flaskCapacity(state, GAME_DATA);
@@ -210,9 +214,27 @@ export function RoadWindow(props: {
         }
       >
         <div className="road-columns">
-          <section className="road-acts" aria-label="Acts">
-            <RoadStrip state={state} plan={plan} vertical />
-          </section>
+          <aside className="road-left">
+            <button
+              type="button"
+              className="persona-bust road-bust"
+              style={{ background: "#3b5a2c", borderColor: "#9fbf7a" }}
+              aria-label="Eldrin"
+              onClick={() => setLine((n) => n + 1)}
+            >
+              <PersonaPortrait id="eldrin" />
+            </button>
+            <blockquote
+              key={line}
+              className="persona-quote road-quote"
+              style={{ borderColor: "#9fbf7a" }}
+            >
+              &ldquo;{lines[line % lines.length]}&rdquo;
+            </blockquote>
+            <section className="road-acts" aria-label="Acts">
+              <RoadStrip state={state} plan={plan} vertical />
+            </section>
+          </aside>
           <section className="road-trip" aria-label="Trip">
             <div className="road-brief">
               <span className="eyebrow">

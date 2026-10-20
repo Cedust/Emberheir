@@ -2039,6 +2039,41 @@
   padding: 18px 22px 20px;
 }
 
+/* Eldrin on top of the acts: his bust, a word in a speech bubble. */
+.stage .road-left {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.stage .road-bust {
+  flex-shrink: 0;
+  width: 150px;
+  height: 150px;
+  padding: 0;
+  cursor: pointer;
+}
+
+.stage .road-quote {
+  margin: 8px 0 6px;
+  font-size: 15px;
+  animation: road-quote-in 0.25s ease-out;
+}
+
+@keyframes road-quote-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .road-quote {
+    animation: none;
+  }
+}
+
 .stage .road.vertical {
   flex-direction: column;
   gap: 8px;
