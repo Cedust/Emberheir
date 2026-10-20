@@ -3,7 +3,7 @@
 # ink, never the shirt behind), drawn over the weapon: for the Wand the thumb, which lies over the
 # slanted Wand where it enters the fist; for the Staff the fist, the Staff running through it. The
 # forearm (with the fist) is cut as well and taken out of the otter, so it can swing the weapon on
-# a cast: where it lay, the shirt right of it (for the Dagger: below it) is drawn on, or nothing
+# a cast: where it lay, the shirt right of it (for the Dagger: above or below it) is drawn on, or nothing
 # over the background.
 # Run from the repo root: python3 tools/art/cut_heir_caster.py  (needs Pillow)
 # The printed top lefts match CASTER_POSES in apps/web/src/game/battle/heirRig.ts.
@@ -38,7 +38,7 @@ POSES={
     # The forearm from inside the sleeve's cuff out to the fist.
     'arm':[(268,505),(320,495),(420,483),(468,451),(500,448),(536,466),(552,500),(545,534),(518,557),(490,572),(455,567),(400,587),(330,612),(278,622),(266,580)],
     'keep':285,
-    # Under the forearm lies the sleeve and the shirt: fill from below.
+    # Under the forearm lies the sleeve and the shirt: fill from the nearest pixel above or below.
     'fill':'down',
   },
 }
@@ -79,9 +79,13 @@ for pose,p in POSES.items():
       for x in range(body.width):
         if not gp[x,y] or x<p.get('keep',0): continue
         if p.get('fill')=='down':
-          k=y+1
-          while k<body.height and gp[x,k]: k+=1
-          bp[x,y]=src[x,k] if k<body.height else (0,0,0,0)
+          # The nearest pixel above or below: the shirt under the arm, the fur next to its top.
+          dn=y+1
+          while dn<body.height and gp[x,dn]: dn+=1
+          up=y-1
+          while up>=0 and gp[x,up]: up-=1
+          k=up if up>=0 and (y-up<dn-y or dn>=body.height) else dn
+          bp[x,y]=src[x,k] if 0<=k<body.height else (0,0,0,0)
           continue
         k=x+1
         while k<body.width and gp[k,y]: k+=1
