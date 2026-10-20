@@ -1352,27 +1352,27 @@ const BOW = buildTree({
     },
   ],
   innateForms: [
-    form("hooked-arrow", "Hooked Arrow", "150 % Weapon Damage. Always Bleeds, 30 % stronger.", {
+    form("hooked-arrow", "Hooked Arrow", "180 % Weapon Damage. Always Bleeds, 30 % stronger.", {
       ...BARBED_ARROW,
       id: "hooked-arrow",
       name: "Hooked Arrow",
       hits: [
         {
           kind: "weapon",
-          multiplier: 1.5,
+          multiplier: 1.8,
           ailmentPower: 1.3,
           ailmentChances: [{ ailment: "bleed", chance: 1 }],
         },
       ],
     }),
-    form("toxic-arrow", "Toxic Arrow", "Two hits of 75 % Weapon Damage. Each always Poisons.", {
+    form("toxic-arrow", "Toxic Arrow", "Two hits of 90 % Weapon Damage. Each always Poisons.", {
       ...BARBED_ARROW,
       id: "toxic-arrow",
       name: "Toxic Arrow",
       hits: [
         {
           kind: "weapon",
-          multiplier: 0.75,
+          multiplier: 0.9,
           count: 2,
           ailmentChances: [{ ailment: "poison", chance: 1 }],
         },
@@ -1381,7 +1381,7 @@ const BOW = buildTree({
     form(
       "split-arrow",
       "Split Arrow",
-      "Three arrows of 60 % Weapon Damage. 25 % chance each to Bleed or Poison.",
+      "Three arrows of 65 % Weapon Damage. 25 % chance each to Bleed or Poison.",
       {
         ...BARBED_ARROW,
         id: "split-arrow",
@@ -1389,7 +1389,7 @@ const BOW = buildTree({
         hits: [
           {
             kind: "weapon",
-            multiplier: 0.6,
+            multiplier: 0.65,
             count: 3,
             ailmentChances: [
               { ailment: "bleed", chance: 0.25 },

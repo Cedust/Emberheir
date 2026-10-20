@@ -629,9 +629,11 @@ const MASTERIES: readonly MasterySpec[] = [
       "deadly-aim",
       "Deadly Aim",
       45,
-      `260 % Weapon Damage that never glances. 50 % chance to apply your weapon's ailment, then ${CASH_IN_TEXT}`,
+      // Step 5: like Earthsplitter, it sets off only the weapon's own ailment, before its hit, so
+      // the poison stacks of a Venom path and the gear's ailments keep running.
+      `First sets off your weapon's ailment on the enemy at once: ${CASH_IN * 100} % of what is left. Then 260 % Weapon Damage that never glances and always applies it again.`,
       2.6,
-      { chance: 0.5, precise: true, cashIn: CASH_IN },
+      { chance: 1, precise: true, cashIn: CASH_IN, own: true },
     ),
     notables: [
       skillPower("Steady Hands", 0.15),

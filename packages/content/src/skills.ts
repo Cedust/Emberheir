@@ -390,11 +390,12 @@ export const BARBED_ARROW: SkillDefinition = {
   type: "attack",
   heatCost: 25,
   tags: ["physical", "over-time", "any"],
-  description: "100 % Weapon Damage. 50 % chance to Bleed, 50 % chance to Poison.",
+  description: "180 % Weapon Damage. 50 % chance to Bleed, 50 % chance to Poison.",
   hits: [
     {
       kind: "weapon",
-      multiplier: 1,
+      // Step 5: 100 % was the weakest Innate per Heat (the Heavy Bolt deals 240 % for 30 Heat).
+      multiplier: 1.8,
       ailmentChances: [
         { ailment: "bleed", chance: 0.5 },
         { ailment: "poison", chance: 0.5 },
