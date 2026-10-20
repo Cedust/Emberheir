@@ -3412,23 +3412,50 @@
   gap: 6px;
 }
 
+/* One row per attribute: name and notches on top, what it gives on its own line below them, so it
+   never gets cut off; value and buttons sit beside both. */
 .stage .attributes li {
-  display: flex;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto auto auto auto;
+  grid-template-areas:
+    "icon name notches value minus plus"
+    "icon effects effects value minus plus";
   align-items: center;
-  gap: 10px;
+  column-gap: 10px;
+  row-gap: 2px;
   padding: 4px 0;
   border-bottom: 1px solid var(--grid-line);
 }
 
-.stage .attr-text {
-  display: flex;
-  flex-direction: column;
-  flex-grow: 1;
-  line-height: 1.2;
+.stage .attributes .attr-icon {
+  grid-area: icon;
 }
 
 .stage .attr-name {
+  grid-area: name;
   font-size: 15px;
+  line-height: 1.2;
+}
+
+.stage .attr-effects {
+  grid-area: effects;
+  line-height: 1.2;
+}
+
+.stage .attributes .attr-notches {
+  grid-area: notches;
+}
+
+.stage .attributes .attr-value {
+  grid-area: value;
+}
+
+.stage .attributes .plus.minus {
+  grid-area: minus;
+}
+
+.stage .attributes .plus:not(.minus) {
+  grid-area: plus;
 }
 
 .stage .attr-value {
@@ -5283,56 +5310,25 @@
   color: var(--k-on-wood-sub);
 }
 
-/* The attribute stones in the narrow column: name and effects on top, the notches below. */
+/* The attribute stones in the narrow column: the name, then the notches, then what it gives. */
 .stage .cs-attributes .attributes {
   gap: 4px;
 }
 
 .stage .cs-attributes .attributes li {
-  display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto auto auto;
   grid-template-areas:
-    "icon text value minus plus"
-    "icon notches value minus plus";
-  column-gap: 10px;
+    "icon name value minus plus"
+    "icon notches value minus plus"
+    "icon effects effects effects effects";
   row-gap: 4px;
   padding: 6px 0;
   border-bottom-color: rgb(201 160 99 / 0.2);
 }
 
-.stage .cs-attributes .attr-icon {
-  grid-area: icon;
-}
-
-.stage .cs-attributes .attr-text {
-  grid-area: text;
-  flex-direction: row;
-  align-items: baseline;
-  gap: 8px;
-  white-space: nowrap;
-  overflow: hidden;
-}
-
-.stage .cs-attributes .attr-text .sub {
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.stage .cs-attributes .attr-notches {
-  grid-area: notches;
-}
-
 .stage .cs-attributes .attr-value {
   grid-area: value;
   min-width: 28px;
-}
-
-.stage .cs-attributes .plus.minus {
-  grid-area: minus;
-}
-
-.stage .cs-attributes .plus:not(.minus) {
-  grid-area: plus;
 }
 
 .stage .cs-side-head {
@@ -7055,10 +7051,6 @@
 .stage .class-emblem {
   flex-shrink: 0;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
-}
-
-.stage .attr-stones .attr-text {
-  min-width: 0;
 }
 
 .stage .attr-notches {

@@ -137,10 +137,10 @@ export function AttributeStones(props: {
                 alt=""
                 draggable={false}
               />
-              <div className="attr-text" title={attributeEffects(a, props.mainAttribute)}>
-                <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
-                <span className="sub small">{attributeEffects(a, props.mainAttribute)}</span>
-              </div>
+              <span className="attr-name title-font">{ATTRIBUTE_INFO[a].name}</span>
+              <span className="attr-effects sub small">
+                {attributeEffects(a, props.mainAttribute)}
+              </span>
               <div className="attr-notches">
                 {Array.from({ length: ATTRIBUTE_RULES.max }, (_, i) => {
                   const n = i + 1;
