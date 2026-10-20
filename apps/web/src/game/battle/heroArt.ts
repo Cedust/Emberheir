@@ -10,10 +10,12 @@ import { INK } from "./arenaLayout";
 import {
   HEIR_BACK,
   HEIR_OFF_HAND,
+  type HeirCasterPose,
   type HeirOffHand,
   type HeirTextures,
   buildHeirRig,
-  heirOffFist,
+  heirCasterPart,
+  heirCasterPose,
   heirPose,
   heirPosePart,
 } from "./heirRig";
@@ -189,19 +191,19 @@ export async function loadHeroWeapon(look: HeroLook): Promise<PaintedTextures | 
   }
 }
 
-/**
- * How the Heir carries each painted off hand: drawn size (longest side, figure units), the point
- * of the picture (0..1) that sits on the fist or the back, an offset from there, a tilt
- * (radians), a squash of its width (a shield turned towards the enemy is seen at an angle) and
- * whether it is mirrored. Held items (`gripped`) go under the fist, which is drawn again on top;
- * a `floating` one hovers over the fist, bobbing in the scene.
- */
 /** Bow and Crossbow carry a Quiver on the back (the Hunter's look); a Dagger does not. */
 const SHOOTERS = new Set<HeroLook["weapon"]>(["bow", "crossbow"]);
 
 /** In the ranged pose the Quiver stands steeper, its arrows over the shoulder behind the head. */
 const RANGED_QUIVER_TILT = -0.45;
 
+/**
+ * How the Heir carries each painted off hand: drawn size (longest side, figure units), the point
+ * of the picture (0..1) that sits on the fist or the back, an offset from there, a tilt
+ * (radians), a squash of its width (a shield turned towards the enemy is seen at an angle;
+ * negative mirrors it). A `floating` one hovers over the fist or the open paw in its light, bobbing
+ * in the scene.
+ */
 const OFF_HAND_HOLDS: Record<
   HeirOffHand,
   {
@@ -210,13 +212,13 @@ const OFF_HAND_HOLDS: Record<
     offset: [number, number];
     tilt: number;
     squash?: number;
-    gripped?: boolean;
-    floating?: boolean;
+    /** Hovers in a light of this colour. */
+    floating?: number;
   }
 > = {
   shield: { size: 112, anchor: [0.5, 0.5], offset: [8, 10], tilt: 0.06, squash: 0.84 },
-  // The hand goes through the root ring: its right side in the fist, its left over the arm.
-  focus: { size: 84, anchor: [0.44, 0.7], offset: [-4, 2], tilt: 0, gripped: true },
+  // The orb hovers over the fist.
+  focus: { size: 42, anchor: [0.5, 0.5], offset: [0, -34], tilt: 0, floating: 0xff8a2a },
   // In front of the hand, the knot just under the fist.
   talisman: { size: 62, anchor: [0.6, 0.18], offset: [0, 20], tilt: -0.1 },
   grimoire: {
@@ -225,55 +227,82 @@ const OFF_HAND_HOLDS: Record<
     offset: [40, -10],
     tilt: 0.62,
     squash: -1,
-    floating: true,
+    floating: 0x7a3cd0,
   },
   quiver: { size: 147, anchor: [0.55, 0.42], offset: [0, 0], tilt: -0.5 },
 };
 
-/** The painted off-hand item in its hold; the Ember Focus' orb gets a glow the scene breathes. */
+/** How far over the open paw a floating off hand hovers (figure units, under its picture). */
+const PALM_GAP = 6;
+
+/** The Grimoire open over a paw, at the size it is painted over the Staff pose. */
+const OPEN_GRIMOIRE: (typeof OFF_HAND_HOLDS)[HeirOffHand] = {
+  size: 100,
+  anchor: [0.5, 0.5],
+  offset: [0, 0],
+  tilt: 0,
+  floating: 0x7a3cd0,
+};
+
+/**
+ * The painted off-hand item in its hold, at the off-hand fist (or `at`, the back or an open
+ * paw). A floating one gets its light: a halo around the Ember Focus' orb, a glow under the
+ * Grimoire, and a soft light on the paw under it; the scene lets it bob and the light breathe.
+ */
 function paintedOffHand(
   kind: HeirOffHand,
   texture: Texture,
-  front = false,
   at?: readonly [number, number],
   tilt?: number,
+  overPalm = false,
 ): Container {
-  const hold = OFF_HAND_HOLDS[kind];
-  const [x, y] = at ?? (kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND);
-  const c = new Container({ label: kind === "quiver" ? "heir-quiver" : "heir-off-hand" });
-  c.position.set(x + hold.offset[0], y + hold.offset[1]);
-  // A hovering book tilts on its own; the light under it stays level.
-  if (!hold.floating) c.rotation = tilt ?? hold.tilt;
+  // Over an open paw the Grimoire lies open, its pages towards the otter, painted as it is seen.
+  const hold = overPalm && kind === "grimoire" ? OPEN_GRIMOIRE : OFF_HAND_HOLDS[kind];
   const sprite = new Sprite(texture);
   sprite.anchor.set(hold.anchor[0], hold.anchor[1]);
   const scale = hold.size / Math.max(texture.width, texture.height);
   sprite.scale.set(scale * (hold.squash ?? 1), scale);
   const w = texture.width * scale;
   const h = texture.height * scale;
-  if (hold.floating) {
-    // Void light under the hovering book; the scene lets the book bob and the light breathe.
-    const glow = bakedGlow(
-      [new Graphics().ellipse(0, h * 0.55, w * 0.3, h * 0.07).fill(0x7a3cd0)],
-      8,
-    );
-    glow.label = "off-hand-glow";
-    glow.alpha = 0.45;
-    const book = new Container({ label: "off-hand-float" });
-    sprite.rotation = hold.tilt;
-    book.addChild(sprite);
-    c.addChild(glow, book);
-  } else {
+  const [x, y] = at ?? (kind === "quiver" ? HEIR_BACK : HEIR_OFF_HAND);
+  const c = new Container({ label: kind === "quiver" ? "heir-quiver" : "heir-off-hand" });
+  // Over an open paw it hovers just above the palm; otherwise at its hold's offset.
+  if (overPalm) c.position.set(x, y - h / 2 - PALM_GAP);
+  else c.position.set(x + hold.offset[0], y + hold.offset[1]);
+  if (hold.floating === undefined) {
+    c.rotation = tilt ?? hold.tilt;
     c.addChild(sprite);
+    return c;
   }
-  if (kind === "focus" && !front) {
-    // The ember in the orb glows over the painting.
-    const orb = new Graphics()
-      .circle((0.57 - hold.anchor[0]) * w, (0.25 - hold.anchor[1]) * h, w * 0.16)
-      .fill(0xff8a2a);
-    const glow = bakedGlow([orb], 8);
-    glow.label = "off-hand-glow";
-    glow.alpha = 0.45;
-    c.addChild(glow);
+  // A hovering item tilts on its own; the light under it stays level.
+  sprite.rotation = tilt ?? hold.tilt;
+  const float = new Container({ label: "off-hand-float" });
+  const round = kind === "focus";
+  const glow = bakedGlow(
+    [
+      round
+        ? new Graphics().circle(0, 0, w * 0.62).fill(hold.floating)
+        : new Graphics().ellipse(0, h * 0.55, w * 0.3, h * 0.07).fill(hold.floating),
+    ],
+    8,
+  );
+  glow.label = "off-hand-glow";
+  glow.alpha = 0.45;
+  if (round) {
+    float.addChild(glow, sprite);
+    c.addChild(float);
+  } else {
+    float.addChild(sprite);
+    c.addChild(glow, float);
+  }
+  if (overPalm) {
+    // The item's light falls on the open paw.
+    const light = bakedGlow(
+      [new Graphics().ellipse(0, h / 2 + PALM_GAP, w * 0.4, 5).fill(hold.floating)],
+      6,
+    );
+    light.alpha = 0.5;
+    c.addChildAt(light, 0);
   }
   return c;
 }
@@ -293,9 +322,7 @@ function drawPaintedHero(
   if (pose && poseArt) {
     // Bow and Crossbow: the otter aims, both paws on the weapon (its own pose).
     if (quiver && quiverArt)
-      c.addChild(
-        paintedOffHand("quiver", quiverArt, false, heirPose(pose).back, RANGED_QUIVER_TILT),
-      );
+      c.addChild(paintedOffHand("quiver", quiverArt, heirPose(pose).back, RANGED_QUIVER_TILT));
     // The weapon lies in front, under the drawing paw and the front paw's fingers.
     c.addChild(
       heirPosePart(poseArt, pose, "body"),
@@ -303,6 +330,23 @@ function drawPaintedHero(
       heirPosePart(poseArt, pose, "arm"),
       heirPosePart(poseArt, pose, "hand"),
     );
+    return c;
+  }
+  const held = look.offHand && look.offHand !== "quiver" ? look.offHand : null;
+  const heldArt = held ? heir.offHands[held] : undefined;
+  const caster = look.weapon === "wand" || look.weapon === "staff" ? look.weapon : null;
+  const casterArt = caster ? heir.caster[caster] : undefined;
+  // Wand and Staff have their own pose when the other paw is free for a floating off hand (or
+  // empty): a Shield or Talisman is held in the fist, so it keeps the melee pose.
+  if (caster && casterArt && (!held || OFF_HAND_HOLDS[held].floating !== undefined)) {
+    const hold = new CasterHold(look, painted, caster);
+    const body = heirCasterPart(casterArt.body, caster, "body");
+    // The Wand lies behind its stretched fist; the Staff stands in front, under the fingers.
+    if (caster === "wand" || !casterArt.hand) c.addChild(hold, body);
+    else c.addChild(body, hold, heirCasterPart(casterArt.hand, caster, "hand"));
+    const art = held === "grimoire" ? (heir.grimoireOpen ?? heldArt) : heldArt;
+    if (held && art)
+      c.addChild(paintedOffHand(held, art, heirCasterPose(caster).palm, undefined, true));
     return c;
   }
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
@@ -316,14 +360,7 @@ function drawPaintedHero(
   // The forearm comes out of the sleeve, so it and the weapon sit behind the body.
   c.addChild(rig.sleeveMask, rig.arm, rig.body);
   // The off hand is held in the raised fist, in front of the chest.
-  const held = look.offHand && look.offHand !== "quiver" ? look.offHand : null;
-  const heldArt = held ? heir.offHands[held] : undefined;
-  if (held && heldArt) {
-    c.addChild(paintedOffHand(held, heldArt));
-    if (OFF_HAND_HOLDS[held].gripped) c.addChild(heirOffFist(heir));
-    if (held === "focus" && heir.focusFront)
-      c.addChild(paintedOffHand(held, heir.focusFront, true));
-  }
+  if (held && heldArt) c.addChild(paintedOffHand(held, heldArt));
   return c;
 }
 
@@ -580,6 +617,58 @@ export class RangedHold extends Container {
       this.base.x - Math.cos(this.base.rotation) * back,
       this.base.y - Math.sin(this.base.rotation) * back,
     );
+  }
+}
+
+/**
+ * How the caster poses hold their weapon: angle at rest (radians, 0 = at the enemy, negative =
+ * up), drawn length in figure units and where along it the fist grips. The Staff's foot stands on
+ * the ground between the feet.
+ */
+const CASTER_GRIPS: Record<HeirCasterPose, { angle: number; length: number; at: number }> = {
+  wand: { angle: -0.42, length: 120, at: 0.12 },
+  staff: { angle: -Math.PI / 2 - 0.03, length: 390, at: 0.6 },
+};
+
+/**
+ * Wand or Staff in its caster pose. `pose` plays a cast: the Wand flicks up and snaps at the
+ * enemy, the Staff's head dips towards it. Spells leave from the weapon's tip. Visual only.
+ */
+export class CasterHold extends Container {
+  private readonly wand: boolean;
+  private readonly weapon: Container;
+  private readonly rest: number;
+
+  constructor(look: HeroLook, painted: PaintedTextures | null, pose: HeirCasterPose) {
+    super({ label: "heir-caster" });
+    this.wand = pose === "wand";
+    const grip = CASTER_GRIPS[pose];
+    const at = heirCasterPose(pose).grip;
+    const { holder } = weaponArt(look, painted);
+    holder.scale.set(grip.length / WEAPON_LENGTH);
+    holder.pivot.set(grip.at * WEAPON_LENGTH, 0);
+    holder.rotation = grip.angle;
+    holder.position.set(at[0], at[1]);
+    const shot = new Container({ label: "heir-shot" });
+    shot.position.set(WEAPON_LENGTH, 0);
+    holder.addChild(shot);
+    this.addChild(holder);
+    this.weapon = holder;
+    this.rest = grip.angle;
+  }
+
+  /** The cast `age` seconds ago (Infinity: none yet); `motion` off keeps the weapon still. */
+  pose(age: number, _clock: number, motion: boolean): void {
+    let turn = 0;
+    if (motion && age < 0.35) {
+      const t = age / 0.35;
+      // Wand: up first, then a snap past rest at the enemy, settling. Staff: the head dips.
+      if (!this.wand) turn = 0.12 * Math.sin(t * Math.PI);
+      else if (t < 0.25) turn = -0.35 * (t / 0.25);
+      else if (t < 0.45) turn = -0.35 + 0.55 * ((t - 0.25) / 0.2);
+      else turn = 0.2 * (1 - (t - 0.45) / 0.55);
+    }
+    this.weapon.rotation = this.rest + turn;
   }
 }
 

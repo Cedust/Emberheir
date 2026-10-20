@@ -46,7 +46,14 @@ import { type EnemyLook, drawEnemy, loadEnemyTexture } from "./enemyArt";
 import { backdropFeet, loadBackdrop, placeBackdrop } from "./arenaBackdrop";
 import { Fx } from "./fx";
 import { armSwing, loadHeirTextures } from "./heirRig";
-import { type HeroLook, RANGED_WEAPONS, RangedHold, drawHero, loadHeroWeapon } from "./heroArt";
+import {
+  CasterHold,
+  type HeroLook,
+  RANGED_WEAPONS,
+  RangedHold,
+  drawHero,
+  loadHeroWeapon,
+} from "./heroArt";
 import { type View, Weather } from "./weather";
 
 /** A Skip resolves the rest of the fight at once: then only the outcome is shown. */
@@ -80,7 +87,8 @@ export class ArenaScene {
   private heroArm: Container | null = null;
   private heroFist: Container | null = null;
   /** Bow or Crossbow in the ranged pose, where its shots leave, and when the last one left. */
-  private heroRanged: RangedHold | null = null;
+  /** Bow, Crossbow, Wand or Staff in its own pose: plays the shot. */
+  private heroRanged: RangedHold | CasterHold | null = null;
   private heroShot: Container | null = null;
   private heroShotAt = -Infinity;
   private enemy: Figure | null = null;
@@ -274,8 +282,10 @@ export class ArenaScene {
     this.hero = makeFigure("hero", drawHero(hero, heir, weapon), HERO_X);
     this.heroArm = this.hero.body.getChildByLabel("heir-arm", true) ?? null;
     this.heroFist = this.hero.body.getChildByLabel("heir-fist", true) ?? null;
-    const ranged = this.hero.body.getChildByLabel("heir-ranged", true);
-    this.heroRanged = ranged instanceof RangedHold ? ranged : null;
+    const ranged =
+      this.hero.body.getChildByLabel("heir-ranged", true) ??
+      this.hero.body.getChildByLabel("heir-caster", true);
+    this.heroRanged = ranged instanceof RangedHold || ranged instanceof CasterHold ? ranged : null;
     this.heroShot = this.hero.body.getChildByLabel("heir-shot", true) ?? null;
     this.echoAura = this.hero.body.getChildByLabel("weapon-echo", true) ?? null;
     this.offHandGlow = this.hero.body.getChildByLabel("off-hand-glow", true) ?? null;
@@ -1628,8 +1638,11 @@ export class ArenaScene {
     if (this.echoAura && this.motion) {
       this.echoAura.alpha = 0.5 + 0.15 * Math.sin(this.clock * 1.4);
     }
-    if (this.offHandGlow && this.motion) {
-      this.offHandGlow.alpha = 0.4 + 0.2 * Math.sin(this.clock * 2.1);
+    if (this.offHandGlow) {
+      // A floating off hand flares on a cast.
+      const flare = Math.max(0, 1 - (this.clock - this.heroShotAt) / 0.4);
+      const breath = this.motion ? 0.2 * Math.sin(this.clock * 2.1) : 0;
+      this.offHandGlow.alpha = 0.4 + breath + 0.5 * flare;
     }
     if (this.offHandFloat && this.motion) {
       this.offHandFloat.y = -4 * Math.sin(this.clock * 1.6);

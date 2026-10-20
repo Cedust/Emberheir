@@ -23,6 +23,8 @@ SHEETS = {
 }
 KEEP_SHAPE = sys.argv[1:2] == ['b']
 SRC, ROWS = SHEETS[sys.argv[1] if len(sys.argv) > 1 else 'a']
+# Bases repainted on their own, which replace their spot on the sheet.
+SINGLES = {'ember-focus': '/mnt/project-files/art/items/ember-focus-orb-v1.png'}
 OUT = 'apps/web/src/assets/items/'
 SIZE = 192  # a 2x2 item cell is about 80 stage px, up to 2.4x on 4K stay sharp on 4K (the stage scales up to 2.4x)
 PAD = 0.02
@@ -120,7 +122,12 @@ if [len(r) for r in rows] != [len(r) for r in ROWS]:
 
 for name, b in [(n, b) for names, row in zip(ROWS, rows) for n, b in zip(names, row)]:
   x0, y0, x1, y1 = b['box']
-  part = drop_crumbs(im.crop((max(0, x0), max(0, y0), min(W, x1), min(H, y1))))
+  if name in SINGLES:
+    single = Image.open(SINGLES[name]).convert('RGBA')
+    single.putalpha(single.getchannel('A').point(lambda a: 0 if a < 20 else a))
+    part = drop_crumbs(single)
+  else:
+    part = drop_crumbs(im.crop((max(0, x0), max(0, y0), min(W, x1), min(H, y1))))
   part = part.crop(part.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox())
   if KEEP_SHAPE:
     pad = round(max(part.size) * PAD)
