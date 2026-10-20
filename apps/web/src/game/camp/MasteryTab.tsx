@@ -33,6 +33,8 @@ import {
 } from "./MasteryScene";
 import { canvasResolution } from "../pixiPacing";
 import { Price } from "../../ui/kit/Currency";
+import { useWeaponHover } from "../../ui/ItemTooltip";
+import { heroWeaponTip } from "../../ui/weaponTip";
 
 const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   refine: "Refine",
@@ -123,6 +125,8 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
     (n) => n.kind === "heatForm" && tree && masteryRanks(tree, preview, n.id) > 0,
   );
   const look = weaponLookOf(weaponId, preview, rank);
+  // The plate's tooltip shows the weapon with the points not confirmed yet.
+  const plateHover = useWeaponHover(() => heroWeaponTip(previewState));
 
   const view: MasteryView = {
     weaponId,
@@ -237,7 +241,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
       >
         <div ref={hostRef} className="tree-host mastery-host" data-testid="mastery-canvas" />
         {failed && <p className="tree-fallback sub">Heirloom needs WebGL.</p>}
-        <div className="mastery-plate" data-testid="weapon-name">
+        <div className="mastery-plate" data-testid="weapon-name" tabIndex={0} {...plateHover}>
           <span
             className="eyebrow"
             style={{ color: GRADE_COLOR[gradeIndex] }}
