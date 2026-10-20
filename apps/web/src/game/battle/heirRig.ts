@@ -13,8 +13,10 @@ import bowUrl from "./heir/heir-bow.webp";
 import crossbowArmUrl from "./heir/heir-crossbow-arm.webp";
 import crossbowHandUrl from "./heir/heir-crossbow-hand.webp";
 import crossbowUrl from "./heir/heir-crossbow.webp";
+import staffArmUrl from "./heir/heir-staff-arm.webp";
 import staffHandUrl from "./heir/heir-staff-hand.webp";
 import staffUrl from "./heir/heir-staff.webp";
+import wandHandUrl from "./heir/heir-wand-hand.webp";
 import wandUrl from "./heir/heir-wand.webp";
 import grimoireOpenUrl from "./heir/offhand-grimoire-open.webp";
 
@@ -74,15 +76,19 @@ const POSE_URLS: Record<HeirRangedPose, [string, string, string]> = {
 /** The weapons of the caster poses: the weapon in one fist, the off hand floats over the other. */
 export type HeirCasterPose = "wand" | "staff";
 
-/** A caster pose: the whole otter, and the fist that holds the Staff once more (none for the Wand). */
+/**
+ * A caster pose: the whole otter, the paw on the weapon once more (the Wand's thumb, the Staff's
+ * fist) and, for the Staff, the forearm that lifts it (taken out of the otter).
+ */
 export interface HeirCasterTextures {
   readonly body: Texture;
-  readonly hand: Texture | null;
+  readonly hand: Texture;
+  readonly arm: Texture | null;
 }
 
-const CASTER_URLS: Record<HeirCasterPose, [string, string | null]> = {
-  wand: [wandUrl, null],
-  staff: [staffUrl, staffHandUrl],
+const CASTER_URLS: Record<HeirCasterPose, [string, string, string | null]> = {
+  wand: [wandUrl, wandHandUrl, null],
+  staff: [staffUrl, staffHandUrl, staffArmUrl],
 };
 
 let loading: Promise<HeirTextures | null> | null = null;
@@ -130,12 +136,14 @@ async function loadPoses(): Promise<HeirTextures["ranged"]> {
 async function loadCasterPoses(): Promise<HeirTextures["caster"]> {
   const loaded = await Promise.all(
     (Object.keys(CASTER_URLS) as HeirCasterPose[]).map((pose) => {
-      const [bodyUrl, handUrl] = CASTER_URLS[pose];
+      const [bodyUrl, handUrl, armUrl] = CASTER_URLS[pose];
       return Promise.all([
         Assets.load<Texture>(bodyUrl),
-        handUrl ? Assets.load<Texture>(handUrl) : null,
+        Assets.load<Texture>(handUrl),
+        armUrl ? Assets.load<Texture>(armUrl) : null,
       ]).then(
-        ([body, hand]) => [pose, body ? { body, hand: hand ?? null } : null] as const,
+        ([body, hand, arm]) =>
+          [pose, body && hand ? { body, hand, arm: arm ?? null } : null] as const,
         () => [pose, null] as const,
       );
     }),
@@ -352,9 +360,12 @@ export function heirPosePart(
 interface CasterSource {
   /** Between the feet, on the ground. */
   readonly feet: Pt;
-  /** Top left of the cut otter and of the Staff's fist (stored at half size). */
+  /** Top left of the cut otter, the paw on the weapon and the Staff's forearm (stored at half size). */
   readonly body: Pt;
-  readonly hand?: Pt;
+  readonly hand: Pt;
+  readonly arm?: Pt;
+  /** Where the Staff's forearm turns, inside the sleeve. */
+  readonly elbow?: Pt;
   /** Where the weapon crosses the fist. */
   readonly grip: Pt;
   /** The middle of the open paw, palm up: the off hand floats over it. */
@@ -368,11 +379,20 @@ interface CasterSource {
  * paintings (1024 × 1536 px), same scale as the melee pose.
  */
 const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
-  wand: { feet: [600, 1395], body: [22, 183], grip: [962, 474], palm: [670, 686] },
+  wand: {
+    feet: [600, 1395],
+    body: [22, 183],
+    hand: [938, 444],
+    // Through the fist's hole, under the thumb's tip.
+    grip: [960, 478],
+    palm: [670, 686],
+  },
   staff: {
     feet: [600, 1390],
     body: [17, 166],
     hand: [436, 557],
+    arm: [299, 557],
+    elbow: [317, 700],
     grip: [497, 612],
     palm: [935, 636],
   },
@@ -382,20 +402,22 @@ const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
 export function heirCasterPose(pose: HeirCasterPose): {
   grip: [number, number];
   palm: [number, number];
+  /** The Staff's elbow; the Wand's arm does not move. */
+  elbow: [number, number] | null;
 } {
   const src = CASTER_POSES[pose];
   const at = (p: Pt): [number, number] => [
     (p[0] - src.feet[0]) * HEIR_SCALE,
     (p[1] - src.feet[1]) * HEIR_SCALE,
   ];
-  return { grip: at(src.grip), palm: at(src.palm) };
+  return { grip: at(src.grip), palm: at(src.palm), elbow: src.elbow ? at(src.elbow) : null };
 }
 
-/** A part of a caster pose (the otter, the Staff's fist) in figure coordinates. */
+/** A part of a caster pose (the otter, the paw on the weapon, the forearm) in figure coordinates. */
 export function heirCasterPart(
   texture: Texture,
   pose: HeirCasterPose,
-  part: "body" | "hand",
+  part: "body" | "hand" | "arm",
 ): Sprite {
   const src = CASTER_POSES[pose];
   const topLeft = src[part] ?? src.body;

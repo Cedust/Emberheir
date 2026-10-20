@@ -11,6 +11,7 @@ import {
   HEIR_BACK,
   HEIR_OFF_HAND,
   type HeirCasterPose,
+  type HeirCasterTextures,
   type HeirOffHand,
   type HeirTextures,
   buildHeirRig,
@@ -339,11 +340,10 @@ function drawPaintedHero(
   // Wand and Staff have their own pose when the other paw is free for a floating off hand (or
   // empty): a Shield or Talisman is held in the fist, so it keeps the melee pose.
   if (caster && casterArt && (!held || OFF_HAND_HOLDS[held].floating !== undefined)) {
-    const hold = new CasterHold(look, painted, caster);
-    const body = heirCasterPart(casterArt.body, caster, "body");
-    // The Wand lies behind its stretched fist; the Staff stands in front, under the fingers.
-    if (caster === "wand" || !casterArt.hand) c.addChild(hold, body);
-    else c.addChild(body, hold, heirCasterPart(casterArt.hand, caster, "hand"));
+    c.addChild(
+      heirCasterPart(casterArt.body, caster, "body"),
+      new CasterHold(look, painted, caster, casterArt),
+    );
     const art = held === "grimoire" ? (heir.grimoireOpen ?? heldArt) : heldArt;
     if (held && art)
       c.addChild(paintedOffHand(held, art, heirCasterPose(caster).palm, undefined, true));
@@ -622,28 +622,36 @@ export class RangedHold extends Container {
 
 /**
  * How the caster poses hold their weapon: angle at rest (radians, 0 = at the enemy, negative =
- * up), drawn length in figure units and where along it the fist grips. The Staff's foot stands on
- * the ground between the feet.
+ * up), drawn length in figure units and where along it the fist grips. The Wand points up at the
+ * enemy from the stretched fist; the Staff's foot stands on the ground between the feet.
  */
 const CASTER_GRIPS: Record<HeirCasterPose, { angle: number; length: number; at: number }> = {
-  wand: { angle: -0.42, length: 120, at: 0.12 },
+  wand: { angle: -0.42, length: 120, at: 0.08 },
   staff: { angle: -Math.PI / 2 - 0.03, length: 390, at: 0.6 },
 };
 
 /**
- * Wand or Staff in its caster pose. `pose` plays a cast: the Wand flicks up and snaps at the
- * enemy, the Staff's head dips towards it. Spells leave from the weapon's tip. Visual only.
+ * Wand or Staff in its caster pose, drawn over the otter: the weapon in front of the fist, the
+ * paw on it once more on top (the Wand's thumb, the Staff's fist), and for the Staff its forearm,
+ * which turns at the elbow. `pose` plays a cast: the Wand flicks at the enemy; the Staff's arm
+ * lifts it and brings it down, its head dipping. Spells leave from the weapon's tip. Visual only.
  */
 export class CasterHold extends Container {
   private readonly wand: boolean;
   private readonly weapon: Container;
+  private readonly arm: Container;
   private readonly rest: number;
 
-  constructor(look: HeroLook, painted: PaintedTextures | null, pose: HeirCasterPose) {
+  constructor(
+    look: HeroLook,
+    painted: PaintedTextures | null,
+    pose: HeirCasterPose,
+    art: HeirCasterTextures,
+  ) {
     super({ label: "heir-caster" });
     this.wand = pose === "wand";
     const grip = CASTER_GRIPS[pose];
-    const at = heirCasterPose(pose).grip;
+    const { grip: at, elbow } = heirCasterPose(pose);
     const { holder } = weaponArt(look, painted);
     holder.scale.set(grip.length / WEAPON_LENGTH);
     holder.pivot.set(grip.at * WEAPON_LENGTH, 0);
@@ -652,7 +660,14 @@ export class CasterHold extends Container {
     const shot = new Container({ label: "heir-shot" });
     shot.position.set(WEAPON_LENGTH, 0);
     holder.addChild(shot);
-    this.addChild(holder);
+    // Turns at the elbow, its parts kept in figure coordinates.
+    this.arm = new Container({ label: "heir-caster-arm" });
+    const [ex, ey] = elbow ?? at;
+    this.arm.pivot.set(ex, ey);
+    this.arm.position.set(ex, ey);
+    if (art.arm) this.arm.addChild(heirCasterPart(art.arm, pose, "arm"));
+    this.arm.addChild(holder, heirCasterPart(art.hand, pose, "hand"));
+    this.addChild(this.arm);
     this.weapon = holder;
     this.rest = grip.angle;
   }
@@ -660,14 +675,23 @@ export class CasterHold extends Container {
   /** The cast `age` seconds ago (Infinity: none yet); `motion` off keeps the weapon still. */
   pose(age: number, _clock: number, motion: boolean): void {
     let turn = 0;
-    if (motion && age < 0.35) {
-      const t = age / 0.35;
-      // Wand: up first, then a snap past rest at the enemy, settling. Staff: the head dips.
-      if (!this.wand) turn = 0.12 * Math.sin(t * Math.PI);
-      else if (t < 0.25) turn = -0.35 * (t / 0.25);
-      else if (t < 0.45) turn = -0.35 + 0.55 * ((t - 0.25) / 0.2);
-      else turn = 0.2 * (1 - (t - 0.45) / 0.55);
+    let lift = 0;
+    if (motion && age < 0.45) {
+      const t = age / 0.45;
+      if (this.wand) {
+        // A short wind-up back, then a snap at the enemy, settling.
+        if (t < 0.25) turn = -0.15 * (t / 0.25);
+        else if (t < 0.45) turn = -0.15 + 0.4 * ((t - 0.25) / 0.2);
+        else turn = 0.25 * (1 - (t - 0.45) / 0.55);
+      } else {
+        // The arm lifts the Staff, then brings it down a little past rest; its head dips.
+        if (t < 0.4) lift = -0.12 * Math.sin((t / 0.4) * (Math.PI / 2));
+        else if (t < 0.6) lift = -0.12 + 0.16 * ((t - 0.4) / 0.2);
+        else lift = 0.04 * (1 - (t - 0.6) / 0.4);
+        turn = 0.1 * Math.sin(t * Math.PI);
+      }
     }
+    this.arm.rotation = lift;
     this.weapon.rotation = this.rest + turn;
   }
 }
