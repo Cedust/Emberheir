@@ -5,9 +5,7 @@ import grimoireUrl from "../../assets/items/grimoire.webp";
 import shieldUrl from "../../assets/items/round-shield.webp";
 import armUrl from "./heir/heir-arm.webp";
 import bodyUrl from "./heir/heir-body.webp";
-import offFistUrl from "./heir/heir-off-fist.webp";
 import thumbUrl from "./heir/heir-thumb.webp";
-import focusFrontUrl from "./heir/offhand-focus-front.webp";
 import quiverUrl from "./heir/offhand-quiver.webp";
 import bowArmUrl from "./heir/heir-bow-arm.webp";
 import bowHandUrl from "./heir/heir-bow-hand.webp";
@@ -15,6 +13,13 @@ import bowUrl from "./heir/heir-bow.webp";
 import crossbowArmUrl from "./heir/heir-crossbow-arm.webp";
 import crossbowHandUrl from "./heir/heir-crossbow-hand.webp";
 import crossbowUrl from "./heir/heir-crossbow.webp";
+import staffArmUrl from "./heir/heir-staff-arm.webp";
+import staffHandUrl from "./heir/heir-staff-hand.webp";
+import staffUrl from "./heir/heir-staff.webp";
+import wandArmUrl from "./heir/heir-wand-arm.webp";
+import wandHandUrl from "./heir/heir-wand-hand.webp";
+import wandUrl from "./heir/heir-wand.webp";
+import grimoireOpenUrl from "./heir/offhand-grimoire-open.webp";
 
 /**
  * The painted Heir (an otter) as a cutout rig: the body and the weapon forearm are two parts of
@@ -25,8 +30,7 @@ import crossbowUrl from "./heir/heir-crossbow.webp";
 
 /**
  * The off hands the Heir can carry: the painted item bases of the inventory. The Quiver (without
- * its strap) and the front half of the Ember Focus' root ring are cut for the arena by
- * `tools/art/cut_offhands.py`.
+ * its strap) is cut for the arena by `tools/art/cut_offhands.py`.
  */
 export type HeirOffHand = "shield" | "focus" | "quiver" | "talisman" | "grimoire";
 
@@ -42,14 +46,17 @@ export interface HeirTextures {
   readonly body: Texture;
   readonly arm: Texture;
   readonly thumb: Texture;
-  /** The raised off-hand fist once more, drawn over a held item so the fist grips it. */
-  readonly offFist: Texture;
   /** The painted off-hand items; one that fails to load is simply not drawn. */
   readonly offHands: Partial<Record<HeirOffHand, Texture>>;
-  /** The left half of the Ember Focus' root ring, drawn over the fist (the hand goes through). */
-  readonly focusFront: Texture | null;
   /** The otter's ranged poses (Bow, Crossbow); a missing one draws that weapon in the melee pose. */
   readonly ranged: Partial<Record<HeirRangedPose, HeirPoseTextures>>;
+  /** The otter's caster poses (Wand, Staff); a missing one draws that weapon in the melee pose. */
+  readonly caster: Partial<Record<HeirCasterPose, HeirCasterTextures>>;
+  /**
+   * The Grimoire open over a paw, its pages towards the otter (painted over the Staff pose, cut
+   * by `tools/art/cut_heir_caster.py`); null draws the closed book there.
+   */
+  readonly grimoireOpen: Texture | null;
 }
 
 /** The weapons with a pose of their own: both paws on the weapon, aiming. */
@@ -67,26 +74,45 @@ const POSE_URLS: Record<HeirRangedPose, [string, string, string]> = {
   crossbow: [crossbowUrl, crossbowArmUrl, crossbowHandUrl],
 };
 
+/** The weapons of the caster poses: the weapon in one fist, the off hand floats over the other. */
+export type HeirCasterPose = "wand" | "staff";
+
+/**
+ * A caster pose: the whole otter, the paw on the weapon once more (the Wand's thumb, the Staff's
+ * fist) and the forearm that swings it on a cast (taken out of the otter).
+ */
+export interface HeirCasterTextures {
+  readonly body: Texture;
+  readonly hand: Texture;
+  readonly arm: Texture | null;
+}
+
+const CASTER_URLS: Record<HeirCasterPose, [string, string, string | null]> = {
+  wand: [wandUrl, wandHandUrl, wandArmUrl],
+  staff: [staffUrl, staffHandUrl, staffArmUrl],
+};
+
 let loading: Promise<HeirTextures | null> | null = null;
 
 /** Loads the painted parts once; null when they cannot be loaded (the placeholder is drawn). */
 export function loadHeirTextures(): Promise<HeirTextures | null> {
   loading ??= Promise.all([
-    Promise.all([bodyUrl, armUrl, thumbUrl, offFistUrl].map((u) => Assets.load<Texture>(u))),
+    Promise.all([bodyUrl, armUrl, thumbUrl].map((u) => Assets.load<Texture>(u))),
     loadOffHands(),
-    Assets.load<Texture>(focusFrontUrl).catch(() => null),
     loadPoses(),
+    loadCasterPoses(),
+    Assets.load<Texture>(grimoireOpenUrl).catch(() => null),
   ]).then(
-    ([[body, arm, thumb, offFist], offHands, focusFront, ranged]) =>
-      body && arm && thumb && offFist
+    ([[body, arm, thumb], offHands, ranged, caster, grimoireOpen]) =>
+      body && arm && thumb
         ? {
             body,
             arm,
             thumb,
-            offFist,
             offHands,
-            focusFront: focusFront ?? null,
             ranged,
+            caster,
+            grimoireOpen: grimoireOpen ?? null,
           }
         : null,
     () => null,
@@ -104,6 +130,26 @@ async function loadPoses(): Promise<HeirTextures["ranged"]> {
     ),
   );
   const out: Partial<Record<HeirRangedPose, HeirPoseTextures>> = {};
+  for (const [pose, t] of loaded) if (t) out[pose] = t;
+  return out;
+}
+
+async function loadCasterPoses(): Promise<HeirTextures["caster"]> {
+  const loaded = await Promise.all(
+    (Object.keys(CASTER_URLS) as HeirCasterPose[]).map((pose) => {
+      const [bodyUrl, handUrl, armUrl] = CASTER_URLS[pose];
+      return Promise.all([
+        Assets.load<Texture>(bodyUrl),
+        Assets.load<Texture>(handUrl),
+        armUrl ? Assets.load<Texture>(armUrl) : null,
+      ]).then(
+        ([body, hand, arm]) =>
+          [pose, body && hand ? { body, hand, arm: arm ?? null } : null] as const,
+        () => [pose, null] as const,
+      );
+    }),
+  );
+  const out: Partial<Record<HeirCasterPose, HeirCasterTextures>> = {};
   for (const [pose, t] of loaded) if (t) out[pose] = t;
   return out;
 }
@@ -141,8 +187,6 @@ const SRC = {
   ],
   /** The middle of the raised off-hand fist. */
   offGrip: [520, 645],
-  /** Top left of the cut off-hand fist. */
-  offFist: [427, 608],
   /** Between the shoulder blades, where a quiver's strap sits. */
   back: [372, 612],
 } as const;
@@ -169,11 +213,6 @@ export const HEIR_GRIP_FROM_ELBOW: [number, number] = [
   (SRC.grip[0] - SRC.elbow[0]) * HEIR_SCALE,
   (SRC.grip[1] - SRC.elbow[1]) * HEIR_SCALE,
 ];
-
-/** The off-hand fist, placed over the body in figure coordinates: a held item goes under it. */
-export function heirOffFist(textures: HeirTextures): Sprite {
-  return part(textures.offFist, SRC.offFist, [0, 0]);
-}
 
 function part(texture: Texture, topLeft: readonly [number, number], origin: [number, number]) {
   const s = new Sprite(texture);
@@ -316,5 +355,77 @@ export function heirPosePart(
     (src[part][0] - src.feet[0]) * HEIR_SCALE,
     (src[part][1] - src.feet[1]) * HEIR_SCALE,
   );
+  return s;
+}
+
+interface CasterSource {
+  /** Between the feet, on the ground. */
+  readonly feet: Pt;
+  /** Top left of the cut otter, the paw on the weapon and the forearm (stored at half size). */
+  readonly body: Pt;
+  readonly hand: Pt;
+  readonly arm?: Pt;
+  /** Where the forearm turns, inside the sleeve. */
+  readonly elbow?: Pt;
+  /** Where the weapon crosses the fist. */
+  readonly grip: Pt;
+  /** The middle of the open paw, palm up: the off hand floats over it. */
+  readonly palm: Pt;
+}
+
+/**
+ * The caster poses (/mnt/project-files/art/heir/heir-wand-v1.png and heir-staff-v1.png, cut by
+ * `tools/art/cut_heir_caster.py`): Wand stretched at the enemy with the open paw before the belly,
+ * or the Staff upright in the raised fist with the other paw reaching forward. Points in those
+ * paintings (1024 × 1536 px), same scale as the melee pose.
+ */
+const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
+  wand: {
+    feet: [600, 1395],
+    body: [22, 183],
+    hand: [912, 460],
+    arm: [788, 429],
+    elbow: [790, 510],
+    // Out of the fist's middle, slanted up at the enemy, under the thumb.
+    grip: [945, 478],
+    palm: [670, 686],
+  },
+  staff: {
+    feet: [600, 1390],
+    body: [17, 166],
+    hand: [436, 557],
+    arm: [299, 557],
+    elbow: [317, 700],
+    grip: [497, 612],
+    palm: [935, 636],
+  },
+};
+
+/** A caster pose's points in figure coordinates (feet at 0/0). */
+export function heirCasterPose(pose: HeirCasterPose): {
+  grip: [number, number];
+  palm: [number, number];
+  /** The Staff's elbow; the Wand's arm does not move. */
+  elbow: [number, number] | null;
+} {
+  const src = CASTER_POSES[pose];
+  const at = (p: Pt): [number, number] => [
+    (p[0] - src.feet[0]) * HEIR_SCALE,
+    (p[1] - src.feet[1]) * HEIR_SCALE,
+  ];
+  return { grip: at(src.grip), palm: at(src.palm), elbow: src.elbow ? at(src.elbow) : null };
+}
+
+/** A part of a caster pose (the otter, the paw on the weapon, the forearm) in figure coordinates. */
+export function heirCasterPart(
+  texture: Texture,
+  pose: HeirCasterPose,
+  part: "body" | "hand" | "arm",
+): Sprite {
+  const src = CASTER_POSES[pose];
+  const topLeft = src[part] ?? src.body;
+  const s = new Sprite(texture);
+  s.scale.set(HEIR_SCALE / STORED);
+  s.position.set((topLeft[0] - src.feet[0]) * HEIR_SCALE, (topLeft[1] - src.feet[1]) * HEIR_SCALE);
   return s;
 }
