@@ -62,6 +62,8 @@ export function PersonaView(props: {
 }) {
   const { state, game } = props;
   const def = PERSONAS[props.persona];
+  // A new word every visit, and another when the crafter is poked.
+  const [line, setLine] = useState(() => Math.floor(Math.random() * 60));
   const [kinds, setKinds] = useState<Record<PersonaId, ActionKind>>({
     thoric: "upgrade",
     liora: "temper",
@@ -333,14 +335,21 @@ export function PersonaView(props: {
       >
         <div className="persona-body">
           <aside className="persona-left">
-            <div
+            <button
+              type="button"
               className="persona-bust"
               style={{ background: def.portrait, borderColor: def.accent }}
+              aria-label={def.name}
+              onClick={() => setLine((n) => n + 1)}
             >
               <PersonaPortrait id={props.persona} />
-            </div>
-            <blockquote className="persona-quote" style={{ borderColor: def.accent }}>
-              &ldquo;{def.quote}&rdquo;
+            </button>
+            <blockquote
+              key={`${props.persona}-${line}`}
+              className="persona-quote"
+              style={{ borderColor: def.accent }}
+            >
+              &ldquo;{def.quotes[line % def.quotes.length]}&rdquo;
             </blockquote>
             <div className="persona-actions" role="group" aria-label="Services">
               {actions.map((a) => (

@@ -1,5 +1,5 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
-import { type ActData, type GameState, bossKnown } from "@emberheir/sim";
+import { type ActData, type GameState, bossKnown, finaleOpen, wildfireTop } from "@emberheir/sim";
 import { type IconName } from "../../ui/Icon";
 import { actVisible, visibleActs } from "../labels";
 import { SIGNPOST_DX } from "./art/CampScene";
@@ -53,6 +53,44 @@ export function nanLines(state: GameState): string[] {
   return NAN_LINES.filter(
     (l) => (!l.act || actVisible(state, l.act)) && (!l.boss || bossKnown(state, GAME_DATA, l.boss)),
   ).map((l) => l.text);
+}
+
+/**
+ * Eldrin's lines in his Road window: scouting gossip, never what waits on a road (no spoilers)
+ * and never where a currency comes from.
+ */
+const ELDRIN_LINES: readonly {
+  readonly text: string;
+  readonly when?: (state: GameState) => boolean;
+}[] = [
+  { text: "I've seen the road ahead. Mostly from above. It looks smaller from up there." },
+  { text: "Pack light. I'll carry the bad news." },
+  { text: "Every road leads somewhere. Most of them lead to something with teeth." },
+  { text: "Maps are just rumors with straight lines." },
+  { text: "I don't fly ahead because I'm brave. I fly ahead because I'm nosy." },
+  { text: "Ravens never get lost. We just find new places to be." },
+  { text: "If you hear cawing, run. If you hear nothing at all, run faster." },
+  { text: "I marked every dangerous spot on your map. Yes, that's why it's all red." },
+  { text: "Anything shiny on the road is mine. Scout's fee." },
+  { text: "The road is very patient. I am not. Shall we?" },
+  { text: "Back already? Good. I hate scouting for nobody." },
+  {
+    text: "Bounty done! I knew you'd make it. I even bet on it. Against Marisha.",
+    when: (s) => Boolean(s.bountyDone),
+  },
+  {
+    text: "The whole world burns again. Lovely view. Terrible smell.",
+    when: (s) => wildfireTop(s) > 0,
+  },
+  {
+    text: "One road I never scouted. Some roads you walk alone, Heir.",
+    when: (s) => finaleOpen(s, GAME_DATA) && !s.legacy.finaleWon,
+  },
+];
+
+/** The lines Eldrin may say to this Heir. */
+export function eldrinLines(state: GameState): string[] {
+  return ELDRIN_LINES.filter((l) => !l.when || l.when(state)).map((l) => l.text);
 }
 
 export interface Persona {

@@ -39,7 +39,8 @@ interface PersonaDef {
   readonly role: string;
   readonly portrait: string;
   readonly accent: string;
-  readonly quote: string;
+  /** What the crafter says in the speech bubble; a different one every visit. */
+  readonly quotes: readonly string[];
   readonly actions: readonly {
     k: ActionKind;
     icon: IconName;
@@ -58,7 +59,14 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     role: "Blacksmith",
     portrait: "#5a3a24",
     accent: "#c9c2b8",
-    quote: "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
+    quotes: [
+      "Bring it here. If it's bent, I straighten it. If it's broken, I charge extra.",
+      "Steel remembers every hammer blow. So do I. Mostly the ones on my thumb.",
+      "Another dent? What do you do out there, headbutt the trees?",
+      "Good steel, bad steel. Hit it hard enough and it all sounds the same.",
+      "Don't touch the anvil. It's hot. No, the other one is hot too.",
+      "I don't do small talk. I do big hammers.",
+    ],
     actions: [
       { k: "upgrade", icon: "hammer", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
       {
@@ -80,7 +88,14 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     role: "Mystic",
     portrait: "#3a2a5a",
     accent: "#b36bff",
-    quote: "One affix at a time, dear. All of them at once? Ask Thoric and his hammer.",
+    quotes: [
+      "One affix at a time, dear. All of them at once? Ask Thoric and his hammer.",
+      "The moon told me you'd come. It also told me to buy more candles.",
+      "Hold still. Magic is like a cat. It comes when it wants to.",
+      "Every item has a little song inside. Yours hums off-key.",
+      "I tried to read your future. It was mostly fighting. And some napping.",
+      "Breathe in. Breathe out. Now, which affix are we being mean to today?",
+    ],
     actions: [
       { k: "temper", icon: "gear", name: "Temper", desc: "Reroll the value of one affix." },
       {
@@ -124,7 +139,14 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     role: "Runesmith",
     portrait: "#2e4a26",
     accent: "#8fd06a",
-    quote: "Three small runes make one bigger rune. It's basically poetry. With rocks.",
+    quotes: [
+      "Three small runes make one bigger rune. It's basically poetry. With rocks.",
+      "Careful with that one. It bites. Not really. Probably.",
+      "I sort my runes by color, size and how loudly they glow at night.",
+      "A Socket is just a hole with ambition.",
+      "Did you know some runes are older than the trees? Nobody ever asks about those.",
+      "If you hear humming from my bag, that's normal. If it stops, run.",
+    ],
     actions: [
       { k: "socket", icon: "shell", name: "Add Socket", desc: "+1 Socket on a Normal item." },
       { k: "rune", icon: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
@@ -142,7 +164,14 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     role: "Black Market",
     portrait: "#5a4218",
     accent: "#e0c27a",
-    quote: "Gamble? Of course. The house always wins. I am the house.",
+    quotes: [
+      "Gamble? Of course. The house always wins. I am the house.",
+      "No refunds. No questions. No looking inside before you pay.",
+      "Everything in my chest is legal. Somewhere. Probably.",
+      "Feeling lucky? Good. Luck is my best customer.",
+      "I found this on the road. Well, it was on someone. Near the road.",
+      "Psst. Want something shiny? Of course you do.",
+    ],
     actions: [
       {
         k: "gamble",

@@ -34,3 +34,18 @@ test("a right-click puts an item on Thoric's Anvil; Salvage is held and sparks f
   );
   expect(errors).toEqual([]);
 });
+
+test("the crafters say something new when poked", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveWithCodex());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByRole("button", { name: "Thoric, Blacksmith" }).click();
+  const bubble = page.locator(".persona-quote");
+  const first = await bubble.innerText();
+  expect(first.length).toBeGreaterThan(4);
+  await page.getByRole("button", { name: "Thoric", exact: true }).click();
+  await expect(bubble).not.toHaveText(first);
+  expect(errors).toEqual([]);
+});
