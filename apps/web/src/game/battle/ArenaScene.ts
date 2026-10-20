@@ -1518,7 +1518,7 @@ export class ArenaScene {
         this.heroArm.rotation = Math.sin(this.clock * 2.2) * 0.04 + swing;
       }
       if (f.side === "hero")
-        this.heroRanged?.pose(this.clock - this.heroShotAt, this.clock, this.motion);
+        this.heroRanged?.pose(this.clock - this.heroShotAt, this.clock, this.motion, f.swing);
       const base = this.tint[f.side];
       f.body.tint = f.flash > 0.5 ? 0xff7777 : base;
       f.stars.visible = f.stun > 0;

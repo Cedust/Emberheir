@@ -13,6 +13,9 @@ import bowUrl from "./heir/heir-bow.webp";
 import crossbowArmUrl from "./heir/heir-crossbow-arm.webp";
 import crossbowHandUrl from "./heir/heir-crossbow-hand.webp";
 import crossbowUrl from "./heir/heir-crossbow.webp";
+import daggerArmUrl from "./heir/heir-dagger-arm.webp";
+import daggerHandUrl from "./heir/heir-dagger-hand.webp";
+import daggerUrl from "./heir/heir-dagger.webp";
 import staffArmUrl from "./heir/heir-staff-arm.webp";
 import staffHandUrl from "./heir/heir-staff-hand.webp";
 import staffUrl from "./heir/heir-staff.webp";
@@ -74,8 +77,11 @@ const POSE_URLS: Record<HeirRangedPose, [string, string, string]> = {
   crossbow: [crossbowUrl, crossbowArmUrl, crossbowHandUrl],
 };
 
-/** The weapons of the caster poses: the weapon in one fist, the off hand floats over the other. */
-export type HeirCasterPose = "wand" | "staff";
+/**
+ * The weapons of the caster poses: the weapon in one fist, the off hand floats over the other.
+ * The Dagger's pose is built the same way (its fist raised, the other paw open and free).
+ */
+export type HeirCasterPose = "wand" | "staff" | "dagger";
 
 /**
  * A caster pose: the whole otter, the paw on the weapon once more (the Wand's thumb, the Staff's
@@ -90,6 +96,7 @@ export interface HeirCasterTextures {
 const CASTER_URLS: Record<HeirCasterPose, [string, string, string | null]> = {
   wand: [wandUrl, wandHandUrl, wandArmUrl],
   staff: [staffUrl, staffHandUrl, staffArmUrl],
+  dagger: [daggerUrl, daggerHandUrl, daggerArmUrl],
 };
 
 let loading: Promise<HeirTextures | null> | null = null;
@@ -312,7 +319,7 @@ const RANGED_POSES: Record<HeirRangedPose, PoseSource> = {
     arm: [151, 358],
     hand: [906, 418],
     // In the middle of the fist, under thumb and fingers.
-    grip: [958, 474],
+    grip: [974, 474],
     jaw: [448, 402],
     back: [380, 420],
   },
@@ -371,13 +378,16 @@ interface CasterSource {
   readonly grip: Pt;
   /** The middle of the open paw, palm up: the off hand floats over it. */
   readonly palm: Pt;
+  /** Where a Talisman hangs from the belt, when the pose has no fist free for it. */
+  readonly belt?: Pt;
 }
 
 /**
  * The caster poses (/mnt/project-files/art/heir/heir-wand-v1.png and heir-staff-v1.png, cut by
  * `tools/art/cut_heir_caster.py`): Wand stretched at the enemy with the open paw before the belly,
- * or the Staff upright in the raised fist with the other paw reaching forward. Points in those
- * paintings (1024 × 1536 px), same scale as the melee pose.
+ * or the Staff upright in the raised fist with the other paw reaching forward; the Dagger's pose
+ * (heir-dagger-v1.png) holds it in reverse grip in the raised fist. Points in those paintings
+ * (1024 × 1536 px), same scale as the melee pose.
  */
 const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
   wand: {
@@ -399,21 +409,41 @@ const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
     grip: [497, 612],
     palm: [935, 636],
   },
+  // heir-dagger-v1.png: crouched, the fist raised before the chest, the other paw open forward.
+  dagger: {
+    feet: [560, 1330],
+    body: [19, 171],
+    hand: [391, 459],
+    arm: [266, 448],
+    elbow: [285, 562],
+    // Through the fist, top to bottom: the Dagger in reverse grip.
+    grip: [497, 506],
+    palm: [915, 738],
+    // The belt left of the buckle: a Talisman hangs from it.
+    belt: [535, 765],
+  },
 };
 
 /** A caster pose's points in figure coordinates (feet at 0/0). */
 export function heirCasterPose(pose: HeirCasterPose): {
   grip: [number, number];
   palm: [number, number];
-  /** The Staff's elbow; the Wand's arm does not move. */
+  /** The Staff's and Dagger's elbow; the Wand's arm does not move. */
   elbow: [number, number] | null;
+  /** Where a Talisman hangs from the belt (the Dagger's pose). */
+  belt: [number, number] | null;
 } {
   const src = CASTER_POSES[pose];
   const at = (p: Pt): [number, number] => [
     (p[0] - src.feet[0]) * HEIR_SCALE,
     (p[1] - src.feet[1]) * HEIR_SCALE,
   ];
-  return { grip: at(src.grip), palm: at(src.palm), elbow: src.elbow ? at(src.elbow) : null };
+  return {
+    grip: at(src.grip),
+    palm: at(src.palm),
+    elbow: src.elbow ? at(src.elbow) : null,
+    belt: src.belt ? at(src.belt) : null,
+  };
 }
 
 /** A part of a caster pose (the otter, the paw on the weapon, the forearm) in figure coordinates. */

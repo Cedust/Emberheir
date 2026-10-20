@@ -1,9 +1,10 @@
 # Cuts the painted Heir in its caster poses for the arena: Wand (heir-wand-v1.png) and Staff
-# (heir-staff-v1.png). Per pose the whole otter and the paw on the weapon once more (only fur and
+# (heir-staff-v1.png), and the Dagger's pose (heir-dagger-v1.png), cut the same way as the Staff. Per pose the whole otter and the paw on the weapon once more (only fur and
 # ink, never the shirt behind), drawn over the weapon: for the Wand the thumb, which lies over the
 # slanted Wand where it enters the fist; for the Staff the fist, the Staff running through it. The
 # forearm (with the fist) is cut as well and taken out of the otter, so it can swing the weapon on
-# a cast: where it lay, the shirt right of it is drawn on, or nothing over the background.
+# a cast: where it lay, the shirt right of it (for the Dagger: above or below it) is drawn on, or nothing
+# over the background.
 # Run from the repo root: python3 tools/art/cut_heir_caster.py  (needs Pillow)
 # The printed top lefts match CASTER_POSES in apps/web/src/game/battle/heirRig.ts.
 from PIL import Image, ImageDraw, ImageFilter
@@ -27,6 +28,18 @@ POSES={
     'hand':[(440,585),(470,556),(530,553),(552,575),(552,620),(535,650),(520,676),(490,700),(452,700),(436,660)],
     # The forearm from inside the sleeve's cuff up to the fist.
     'arm':[(300,647),(350,630),(400,620),(443,590),(463,567),(490,555),(523,558),(545,590),(532,620),(519,653),(505,672),(465,679),(432,708),(405,735),(350,756),(316,752),(298,720)],
+  },
+  'dagger':{
+    'src':'heir-dagger-v1.png',
+    # The raised fist before the chest and the wrist and forearm below it: the Dagger runs down
+    # through the fist in reverse grip, its blade slanting down behind the forearm.
+    # Along the fist's own outline at the top and right, so no chest fur covers the pommel.
+    'hand':[(400,490),(452,472),(470,461),(500,459),(526,470),(538,490),(542,520),(517,555),(490,570),(460,575),(420,590),(390,600)],
+    # The forearm from inside the sleeve's cuff out to the fist.
+    'arm':[(268,505),(320,495),(420,483),(468,451),(500,448),(536,466),(552,500),(545,534),(518,557),(490,572),(455,567),(400,587),(330,612),(278,622),(266,580)],
+    'keep':285,
+    # Under the forearm lies the sleeve and the shirt: fill from the nearest pixel above or below.
+    'fill':'down',
   },
 }
 def save(img,name):
@@ -65,6 +78,15 @@ for pose,p in POSES.items():
     for y in range(body.height):
       for x in range(body.width):
         if not gp[x,y] or x<p.get('keep',0): continue
+        if p.get('fill')=='down':
+          # The nearest pixel above or below: the shirt under the arm, the fur next to its top.
+          dn=y+1
+          while dn<body.height and gp[x,dn]: dn+=1
+          up=y-1
+          while up>=0 and gp[x,up]: up-=1
+          k=up if up>=0 and (y-up<dn-y or dn>=body.height) else dn
+          bp[x,y]=src[x,k] if 0<=k<body.height else (0,0,0,0)
+          continue
         k=x+1
         while k<body.width and gp[k,y]: k+=1
         bp[x,y]=src[k,y] if k<body.width else (0,0,0,0)
