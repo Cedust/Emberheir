@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { z } from "zod";
+import type { GraphicsQuality } from "../game/pixiPacing";
 import { parseStored, storageKey } from "../storage";
 import { SOUND_GROUPS, type SoundGroup, setSoundOptions } from "./sound";
 
@@ -14,6 +15,8 @@ export interface Settings {
   readonly sounds: Readonly<Record<SoundGroup, boolean>>;
   /** Screen shake and camera zoom in fights. */
   readonly screenShake: boolean;
+  /** Arena sharpness, particles and weather (`QUALITY` in pixiPacing.ts). */
+  readonly graphicsQuality: GraphicsQuality;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -23,6 +26,7 @@ export const DEFAULT_SETTINGS: Settings = {
   volume: 0.8,
   sounds: { hover: true, click: true, window: true, coin: true, loot: true },
   screenShake: true,
+  graphicsQuality: "medium",
 };
 
 const soundsSchema = z.object(
@@ -46,6 +50,7 @@ const settingsSchema: z.ZodType<Settings> = z
     volume: z.number().min(0).max(1).catch(DEFAULT_SETTINGS.volume),
     sounds: soundsSchema.catch(DEFAULT_SETTINGS.sounds),
     screenShake: z.boolean().catch(DEFAULT_SETTINGS.screenShake),
+    graphicsQuality: z.enum(["high", "medium", "low"]).catch(DEFAULT_SETTINGS.graphicsQuality),
   })
   .catch(DEFAULT_SETTINGS);
 

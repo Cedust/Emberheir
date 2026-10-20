@@ -228,8 +228,12 @@ export class Weather {
   private carry: number[] = [];
   private readonly drifts: readonly Drift[];
 
-  /** `wildfire`: the Wildfire tier of the trip (0 = none). */
-  constructor(act: number, wildfire = 0) {
+  /** `wildfire`: the Wildfire tier of the trip (0 = none); `share`: Graphics Quality's weather. */
+  constructor(
+    act: number,
+    wildfire = 0,
+    private readonly share = 1,
+  ) {
     this.drifts = [
       ...(WEATHER[act] ?? WEATHER[1] ?? []),
       ...(wildfire > 0 ? wildfireDrifts(wildfire) : []),
@@ -237,7 +241,7 @@ export class Weather {
   }
 
   update(fx: Fx, view: View, dt: number): void {
-    const width = (view.right - view.left) / 1440;
+    const width = ((view.right - view.left) / 1440) * this.share;
     this.drifts.forEach((d, i) => {
       const due = (this.carry[i] ?? 0) + d.rate * width * dt;
       const n = Math.floor(due);

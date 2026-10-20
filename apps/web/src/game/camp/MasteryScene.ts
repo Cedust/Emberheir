@@ -126,6 +126,9 @@ export class MasteryScene {
   private readonly world = new Container();
   private readonly forgeBed = new Graphics();
   private readonly filigreeGlow = new Graphics();
+  /** The blurred glow baked into a texture: the blur runs on a redraw, not in every frame. */
+  private readonly filigreeGlowBake = new Container();
+  private readonly filigreeGlowRoom = new Graphics();
   private readonly filigree = new Graphics();
   private readonly weaponLayer = new Container();
   private readonly nodeLayer = new Container();
@@ -170,10 +173,12 @@ export class MasteryScene {
   constructor(private readonly callbacks: MasteryCallbacks) {
     this.filigreeGlow.blendMode = "add";
     this.filigreeGlow.filters = [new BlurFilter({ strength: 4, quality: 2 })];
+    this.filigreeGlowBake.blendMode = "add";
+    this.filigreeGlowBake.addChild(this.filigreeGlowRoom, this.filigreeGlow);
     this.world.addChild(
       this.forgeBed,
       this.labelLayer,
-      this.filigreeGlow,
+      this.filigreeGlowBake,
       this.filigree,
       this.weaponLayer,
       this.nodeLayer,
@@ -461,6 +466,7 @@ export class MasteryScene {
     this.drawWeapon(v);
     this.drawForge(v);
     this.drawFiligree(v);
+    this.bakeFiligreeGlow();
     this.drawLabels(v);
 
     const seen = new Set<string>();
@@ -706,6 +712,19 @@ export class MasteryScene {
         before: before ? this.pos(before) : undefined,
       };
     });
+  }
+
+  private bakeFiligreeGlow(): void {
+    const bake = this.filigreeGlowBake;
+    bake.cacheAsTexture(false);
+    // Room for the blur: a texture clipped at the lines' own bounds would cut its soft edge.
+    const b = this.filigreeGlow.getLocalBounds();
+    const pad = 20;
+    this.filigreeGlowRoom
+      .clear()
+      .rect(b.minX - pad, b.minY - pad, b.width + pad * 2, b.height + pad * 2)
+      .fill({ color: 0x000000, alpha: 0.001 });
+    bake.cacheAsTexture({ resolution: this.app?.renderer.resolution ?? 1, antialias: true });
   }
 
   private drawFiligree(v: MasteryView): void {

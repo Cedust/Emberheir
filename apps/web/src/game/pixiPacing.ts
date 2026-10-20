@@ -14,9 +14,34 @@ const IDLE_AFTER = 1.5;
  */
 export const MAX_RESOLUTION = 2.5;
 
+/**
+ * The Graphics Quality setting: how sharp the arena canvas renders, how many particles it keeps
+ * and how thick the act weather falls. The arena is limited by the pixels it fills, not by the
+ * game logic: the painted act backdrops are about 1900 px wide, more density gives them nothing.
+ */
+export type GraphicsQuality = "high" | "medium" | "low";
+
+export const QUALITY: Readonly<
+  Record<
+    GraphicsQuality,
+    {
+      /** Highest pixel density of the arena canvas. */
+      readonly maxResolution: number;
+      /** Live particles at most; above it new ones are dropped. */
+      readonly particles: number;
+      /** Share of the act weather that falls. */
+      readonly weather: number;
+    }
+  >
+> = {
+  high: { maxResolution: MAX_RESOLUTION, particles: 1400, weather: 1 },
+  medium: { maxResolution: 1.5, particles: 900, weather: 1 },
+  low: { maxResolution: 1, particles: 450, weather: 0.5 },
+};
+
 /** Canvas pixel density for a canvas inside the scaled stage (devicePixelRatio x stage scale). */
-export function canvasResolution(stageScale: number): number {
-  return Math.min(MAX_RESOLUTION, (window.devicePixelRatio || 1) * stageScale);
+export function canvasResolution(stageScale: number, max = MAX_RESOLUTION): number {
+  return Math.min(max, (window.devicePixelRatio || 1) * stageScale);
 }
 
 /**

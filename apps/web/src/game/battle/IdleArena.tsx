@@ -4,7 +4,7 @@ import { useEffect, useRef } from "react";
 import { useStageSize } from "../../ui/Stage";
 import type { Settings } from "../../ui/settings";
 import { heroLookOf } from "../heroLook";
-import { canvasResolution } from "../pixiPacing";
+import { QUALITY, canvasResolution } from "../pixiPacing";
 import { heroWeaponLook } from "../weaponLook";
 import { ArenaScene } from "./ArenaScene";
 import { arenaStyle } from "./BattleView";
@@ -27,7 +27,7 @@ export function IdleArena(props: {
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<ArenaScene | null>(null);
   const stage = useStageSize();
-  const resolution = canvasResolution(stage.scale);
+  const resolution = canvasResolution(stage.scale, QUALITY[settings.graphicsQuality].maxResolution);
 
   useEffect(() => {
     const host = hostRef.current;
@@ -47,6 +47,8 @@ export function IdleArena(props: {
     const scene = new ArenaScene();
     scene.showNumbers = false;
     scene.motion = settings.screenShake && !reducedMotion();
+    scene.quality = settings.graphicsQuality;
+    scene.idle = true;
     scene.layout(stage.w, stage.h, resolution, 1, BAR_H);
     sceneRef.current = scene;
     void scene
