@@ -31,8 +31,9 @@ POSES={
   },
   'dagger':{
     'src':'heir-dagger-v1.png',
-    # The raised fist before the chest: the Dagger runs down through it in reverse grip.
-    'hand':[(452,470),(470,453),(500,450),(532,466),(550,498),(543,532),(517,555),(490,570),(460,563),(448,540)],
+    # The raised fist before the chest and the wrist and forearm below it: the Dagger runs down
+    # through the fist in reverse grip, its blade slanting down behind the forearm.
+    'hand':[(400,490),(452,470),(470,453),(500,450),(532,466),(550,498),(543,532),(517,555),(490,570),(460,575),(420,590),(390,600)],
     # The forearm from inside the sleeve's cuff out to the fist.
     'arm':[(268,505),(320,495),(420,483),(468,451),(500,448),(536,466),(552,500),(545,534),(518,557),(490,572),(455,567),(400,587),(330,612),(278,622),(266,580)],
     'keep':285,

@@ -246,6 +246,14 @@ const OPEN_GRIMOIRE: (typeof OFF_HAND_HOLDS)[HeirOffHand] = {
   floating: 0x7a3cd0,
 };
 
+/** A Talisman worn on the belt: smaller, its loop round the belt, hanging straight down. */
+const BELT_TALISMAN: (typeof OFF_HAND_HOLDS)[HeirOffHand] = {
+  size: 44,
+  anchor: [0.6, 0.18],
+  offset: [0, 0],
+  tilt: 0.05,
+};
+
 /**
  * The painted off-hand item in its hold, at the off-hand fist (or `at`, the back or an open
  * paw). A floating one gets its light: a halo around the Ember Focus' orb, a glow under the
@@ -257,9 +265,11 @@ function paintedOffHand(
   at?: readonly [number, number],
   tilt?: number,
   overPalm = false,
+  /** Its hold instead of the usual one (a Talisman worn on the belt). */
+  custom?: (typeof OFF_HAND_HOLDS)[HeirOffHand],
 ): Container {
   // Over an open paw the Grimoire lies open, its pages towards the otter, painted as it is seen.
-  const hold = overPalm && kind === "grimoire" ? OPEN_GRIMOIRE : OFF_HAND_HOLDS[kind];
+  const hold = custom ?? (overPalm && kind === "grimoire" ? OPEN_GRIMOIRE : OFF_HAND_HOLDS[kind]);
   const sprite = new Sprite(texture);
   sprite.anchor.set(hold.anchor[0], hold.anchor[1]);
   const scale = hold.size / Math.max(texture.width, texture.height);
@@ -326,12 +336,11 @@ function drawPaintedHero(
     if (quiver && quiverArt)
       c.addChild(paintedOffHand("quiver", quiverArt, heirPose(pose).back, RANGED_QUIVER_TILT));
     // The weapon lies in front, under the drawing paw and the front paw's fingers.
-    c.addChild(
-      heirPosePart(poseArt, pose, "body"),
-      new RangedHold(look, painted),
-      heirPosePart(poseArt, pose, "arm"),
-      heirPosePart(poseArt, pose, "hand"),
-    );
+    const hold = new RangedHold(look, painted);
+    c.addChild(heirPosePart(poseArt, pose, "body"), hold, heirPosePart(poseArt, pose, "hand"));
+    // The nocked arrow lies over the bow fist's knuckles, under the drawing paw at the jaw.
+    if (hold.arrow) c.addChild(hold.arrow);
+    c.addChild(heirPosePart(poseArt, pose, "arm"));
     return c;
   }
   const held = look.offHand && look.offHand !== "quiver" ? look.offHand : null;
@@ -342,21 +351,25 @@ function drawPaintedHero(
       : null;
   const casterArt = caster ? heir.caster[caster] : undefined;
   // Wand, Staff and Dagger have their own pose when the other paw is free for a floating off
-  // hand (or empty), and the Dagger's open paw also lets a Talisman dangle from it: a Shield (or
-  // a caster's Talisman) is held in the fist, so it keeps the melee pose.
+  // hand (or empty); the Dagger's pose wears a Talisman on the belt. A Shield (or a caster's
+  // Talisman) is held in the fist, so it keeps the melee pose.
+  const { palm, belt } = caster ? heirCasterPose(caster) : { palm: null, belt: null };
   const freePaw =
-    !held ||
-    OFF_HAND_HOLDS[held].floating !== undefined ||
-    (caster === "dagger" && held === "talisman");
-  if (caster && casterArt && freePaw) {
+    !held || OFF_HAND_HOLDS[held].floating !== undefined || (held === "talisman" && belt);
+  if (caster && casterArt && palm && freePaw) {
     c.addChild(
       heirCasterPart(casterArt.body, caster, "body"),
       new CasterHold(look, painted, caster, casterArt),
     );
     const art = held === "grimoire" ? (heir.grimoireOpen ?? heldArt) : heldArt;
-    const floating = held ? OFF_HAND_HOLDS[held].floating !== undefined : false;
-    if (held && art)
-      c.addChild(paintedOffHand(held, art, heirCasterPose(caster).palm, undefined, floating));
+    if (held && art) {
+      const floating = OFF_HAND_HOLDS[held].floating !== undefined;
+      c.addChild(
+        floating || !belt
+          ? paintedOffHand(held, art, palm, undefined, floating)
+          : paintedOffHand(held, art, belt, undefined, false, BELT_TALISMAN),
+      );
+    }
     return c;
   }
   if (quiver && quiverArt) c.addChild(paintedOffHand("quiver", quiverArt));
@@ -518,7 +531,8 @@ export class RangedHold extends Container {
   private readonly bow: boolean;
   private readonly weapon: Container;
   private readonly string = new Graphics();
-  private readonly arrow: Sprite | null = null;
+  /** The nocked arrow; the figure draws it over the bow fist (same coordinates as this hold). */
+  readonly arrow: Sprite | null = null;
   private readonly ends: [Point, Point] | null = null;
   private readonly jaw: Point;
   private readonly rest: Point;

@@ -378,6 +378,8 @@ interface CasterSource {
   readonly grip: Pt;
   /** The middle of the open paw, palm up: the off hand floats over it. */
   readonly palm: Pt;
+  /** Where a Talisman hangs from the belt, when the pose has no fist free for it. */
+  readonly belt?: Pt;
 }
 
 /**
@@ -411,12 +413,14 @@ const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
   dagger: {
     feet: [560, 1330],
     body: [19, 171],
-    hand: [448, 450],
+    hand: [391, 450],
     arm: [266, 448],
     elbow: [285, 562],
     // Through the fist, top to bottom: the Dagger in reverse grip.
     grip: [497, 506],
     palm: [915, 738],
+    // The belt left of the buckle: a Talisman hangs from it.
+    belt: [535, 765],
   },
 };
 
@@ -426,13 +430,20 @@ export function heirCasterPose(pose: HeirCasterPose): {
   palm: [number, number];
   /** The Staff's and Dagger's elbow; the Wand's arm does not move. */
   elbow: [number, number] | null;
+  /** Where a Talisman hangs from the belt (the Dagger's pose). */
+  belt: [number, number] | null;
 } {
   const src = CASTER_POSES[pose];
   const at = (p: Pt): [number, number] => [
     (p[0] - src.feet[0]) * HEIR_SCALE,
     (p[1] - src.feet[1]) * HEIR_SCALE,
   ];
-  return { grip: at(src.grip), palm: at(src.palm), elbow: src.elbow ? at(src.elbow) : null };
+  return {
+    grip: at(src.grip),
+    palm: at(src.palm),
+    elbow: src.elbow ? at(src.elbow) : null,
+    belt: src.belt ? at(src.belt) : null,
+  };
 }
 
 /** A part of a caster pose (the otter, the paw on the weapon, the forearm) in figure coordinates. */
