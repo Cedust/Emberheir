@@ -35,7 +35,7 @@ import {
   usePerk,
   withStatAilmentChances,
   conditionHolds,
-  huntersMarkPrecision,
+  huntersMarkBonus,
   mark,
   weaponAilment,
 } from "./fighter";
@@ -351,9 +351,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
     const steady =
       aim && fightTime(core) - attacker.lastHitTakenAt >= aim.seconds ? aim.precision : 0;
     const hand = attacker.perks.has("hawkeye") ? PERK.hawkeyePrecision : 0;
-    // Hunter's Mark (Ashstrider): an enemy carrying your ailments is easier to hit cleanly.
-    const mark = huntersMarkPrecision(attacker, defender);
-    precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand + mark));
+    precision = Math.min(1, Math.max(0, (weaponPrecision ?? 1) + steady + hand));
   }
 
   const pool = hitPool(core, attacker, defender, h, opener);
@@ -405,6 +403,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         ? { parry: defender.setup.weaponRules.parry }
         : {}),
       cleanMore: cleanMore(attacker, defender, h, rolls),
+      critMore: huntersMarkBonus(attacker),
       ...conversionOf(attacker, h.type),
       ...(h.critOverride !== undefined ? { critOverride: h.critOverride } : {}),
     },
@@ -457,6 +456,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   defender.lastHitTakenAt = fightTime(core);
   if (h.source === attacker.setup.weapon.defaultAttack) gainFury(attacker);
   gainFury(defender);
+  huntersMark(core, attacker, h, outcome.crit, glancing);
   const dwr = defender.setup.weaponRules;
   if (outcome.blocked && dwr?.critAfter?.includes("block")) defender.nextCrit = true;
   if (outcome.blocked && dwr?.braced) defender.bracedUntil = now + dwr.braced.seconds;
@@ -597,6 +597,27 @@ function gainFury(f: Fighter): void {
   const fury = f.setup.rules?.fury;
   if (!fury || f.fury >= fury.maxStacks) return;
   f.fury++;
+}
+
+/**
+ * Hunter's Mark (Ashstrider): a Crit spends the Marks (its bonus was in the hit), a clean Default
+ * Attack that does not crit adds one.
+ */
+function huntersMark(
+  core: FightCore,
+  f: Fighter,
+  h: HitOptions,
+  crit: boolean,
+  glancing: boolean,
+): void {
+  const mark = f.setup.rules?.huntersMark;
+  if (!mark) return;
+  if (crit) {
+    if (f.marks > 0) payoff(core, f, "huntersMark");
+    f.marks = 0;
+  } else if (!glancing && h.source === f.setup.weapon.defaultAttack && f.marks < mark.maxStacks) {
+    f.marks++;
+  }
 }
 
 /** An attack missed the defender: Read the Blow, Ember Dance and On Evade triggers. */

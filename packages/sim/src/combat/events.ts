@@ -15,6 +15,8 @@ export const PAYOFF_KINDS = [
   // Class Traits (klassengeruest-v1.md 2): full Fury, the Overcharge Nova.
   "fury",
   "overcharge",
+  // Hunter's Mark: the Crit that spends the Marks.
+  "huntersMark",
   "spark",
   // Wand Mastery (sorcerer-ohne-fire-v1.md): the Spark that crits, built-up Crits, Shock as Heat.
   "flashpoint",
@@ -220,7 +222,7 @@ export interface FighterSnapshot {
   } | null;
   /**
    * The Class Trait's state for the arena (klassengeruest-v1.md 2): Fury gathered, Overcharge
-   * charges, or Hunter's Mark on (1) or off (0). Missing without a trait.
+   * charges, or Hunter's Marks on the enemy. Missing without a trait.
    */
   readonly trait?: {
     readonly kind: "fury" | "overcharge" | "huntersMark";

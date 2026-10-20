@@ -94,6 +94,8 @@ export interface Fighter {
   // Class Traits.
   /** Fury (Cinderguard): own hits landed this fight, each one adds a little damage. */
   fury: number;
+  /** Hunter's Mark (Ashstrider): Marks on the enemy, spent by the next Crit. */
+  marks: number;
   /** Overcharge (Emberseer): skills cast since the last Nova. */
   charges: number;
   /** Spark: Default Attacks still charged by a skill (one, two after Master of Starfall). */
@@ -242,6 +244,7 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     titanReadyAt: 0,
     perksUsed: new Set(),
     fury: 0,
+    marks: 0,
     charges: 0,
     sparkCharges: 0,
     critBuildup: 0,
@@ -296,14 +299,10 @@ export function furyBonus(f: Fighter): number {
   return fury ? fury.perStack * Math.min(fury.maxStacks, f.fury) : 0;
 }
 
-/** Hunter's Mark (Ashstrider): extra Precision against an enemy with one of your ailments. */
-export function huntersMarkPrecision(attacker: Fighter, defender: Fighter): number {
-  const mark = attacker.setup.rules?.huntersMark;
-  if (!mark) return 0;
-  const ailing = AILMENT_TYPES.some((a) =>
-    a === "poison" ? poisonStacks(defender.ailments) > 0 : defender.ailments[a] !== undefined,
-  );
-  return ailing ? mark.precision : 0;
+/** Hunter's Mark (Ashstrider): the bonus the next Crit gets from the Marks gathered so far. */
+export function huntersMarkBonus(f: Fighter): number {
+  const mark = f.setup.rules?.huntersMark;
+  return mark ? mark.perStack * Math.min(mark.maxStacks, f.marks) : 0;
 }
 
 /** Gear ailment chances (Chance to Burn etc.) are added to the hit's own chances. */

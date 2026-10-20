@@ -134,6 +134,8 @@ export const PAYOFF_FX: Record<
   // Nova breaks loose from the Emberseer in its element (the arena colours it by the weapon).
   fury: { color: [0xff6a2b, 0xffd84a, 0xffffff], on: "self", look: "ring", shake: 0.1 },
   overcharge: { color: [0xffffff, 0xffd84a], on: "self", look: "nova", shake: 0.25 },
+  // Hunter's Mark: the Crit that spends the Marks breaks the sight over the enemy like a star.
+  huntersMark: { color: [0xffe9a8, 0xffffff, 0xff6a2b], on: "foe", look: "star", shake: 0.15 },
   spark: { color: [0x5b8cff, 0xffe14d], on: "foe", look: "star" },
   // Starfall: a white-violet tear of light where the Spark crits; built-up Crits break the same way.
   flashpoint: { color: [0xd2b8ff, 0xffffff, 0x8a5cff], on: "foe", look: "rift", shake: 0.15 },
@@ -151,6 +153,7 @@ export const PAYOFF_NAMES: Record<PayoffKind, string> = {
   collapse: "Collapse",
   fury: "Fury",
   overcharge: "Overcharge",
+  huntersMark: "Hunter's Mark",
   spark: "Spellcharge",
   flashpoint: "Flashpoint",
   criticalMass: "Critical Mass",

@@ -1352,27 +1352,27 @@ const BOW = buildTree({
     },
   ],
   innateForms: [
-    form("hooked-arrow", "Hooked Arrow", "100 % Weapon Damage. Always Bleeds, 30 % stronger.", {
+    form("hooked-arrow", "Hooked Arrow", "150 % Weapon Damage. Always Bleeds, 30 % stronger.", {
       ...BARBED_ARROW,
       id: "hooked-arrow",
       name: "Hooked Arrow",
       hits: [
         {
           kind: "weapon",
-          multiplier: 1,
+          multiplier: 1.5,
           ailmentPower: 1.3,
           ailmentChances: [{ ailment: "bleed", chance: 1 }],
         },
       ],
     }),
-    form("toxic-arrow", "Toxic Arrow", "Two hits of 50 % Weapon Damage. Each always Poisons.", {
+    form("toxic-arrow", "Toxic Arrow", "Two hits of 75 % Weapon Damage. Each always Poisons.", {
       ...BARBED_ARROW,
       id: "toxic-arrow",
       name: "Toxic Arrow",
       hits: [
         {
           kind: "weapon",
-          multiplier: 0.5,
+          multiplier: 0.75,
           count: 2,
           ailmentChances: [{ ailment: "poison", chance: 1 }],
         },
@@ -1381,7 +1381,7 @@ const BOW = buildTree({
     form(
       "split-arrow",
       "Split Arrow",
-      "Three arrows of 50 % Weapon Damage. 25 % chance each to Bleed or Poison.",
+      "Three arrows of 60 % Weapon Damage. 25 % chance each to Bleed or Poison.",
       {
         ...BARBED_ARROW,
         id: "split-arrow",
@@ -1389,7 +1389,7 @@ const BOW = buildTree({
         hits: [
           {
             kind: "weapon",
-            multiplier: 0.5,
+            multiplier: 0.6,
             count: 3,
             ailmentChances: [
               { ailment: "bleed", chance: 0.25 },
@@ -1604,9 +1604,10 @@ const CROSSBOW = buildTree({
       id: "siege-engine",
       name: "Siege Engine",
       form: "Siege Arbalest",
-      description:
-        "Every Bolt winds for 2 s, whatever your Attack Speed. A clean Bolt sets off every Sunder stack: +80 % damage each.",
-      effect: { weaponRules: { fixedAttackRate: 0.5, siegeEngine: { perStack: 0.8 } } },
+      // Step 5: the old cost (a fixed 0.5 Bolts per second) also cut the Steady Heat that comes
+      // only from hits, so the Keystone cost up to 70 % damage. Setting the stacks off is the cost.
+      description: "A clean Bolt sets off every Sunder stack on the enemy: +80 % damage each.",
+      effect: { weaponRules: { siegeEngine: { perStack: 0.8 } } },
     },
     {
       id: "repeater",

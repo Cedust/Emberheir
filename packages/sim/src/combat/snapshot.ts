@@ -4,8 +4,6 @@ import {
   type FightCore,
   type Fighter,
   attackRate,
-  huntersMarkPrecision,
-  other,
   phaseActive,
   skillCost,
 } from "./fighter";
@@ -98,12 +96,12 @@ export function fighterSnapshot(core: FightCore, f: Fighter): FighterSnapshot {
     attackProgress: f.attackProgress,
     attackRate: f.windup || f.stunned > 1e-9 ? 0 : attackRate(core, f),
     nextHeavy: nextHeavy(f),
-    ...traitSnapshot(core, f),
+    ...traitSnapshot(f),
   };
 }
 
 /** The Class Trait as the arena draws it. */
-function traitSnapshot(core: FightCore, f: Fighter): Pick<FighterSnapshot, "trait"> {
+function traitSnapshot(f: Fighter): Pick<FighterSnapshot, "trait"> {
   const rules = f.setup.rules;
   const damageType = f.setup.weapon.damageType;
   if (rules?.fury) {
@@ -115,8 +113,8 @@ function traitSnapshot(core: FightCore, f: Fighter): Pick<FighterSnapshot, "trai
     return { trait: { kind: "overcharge", value: f.charges, max, damageType } };
   }
   if (rules?.huntersMark) {
-    const on = huntersMarkPrecision(f, core.fighters[other(f.side)]) > 0 ? 1 : 0;
-    return { trait: { kind: "huntersMark", value: on, max: 1, damageType } };
+    const max = rules.huntersMark.maxStacks;
+    return { trait: { kind: "huntersMark", value: Math.min(max, f.marks), max, damageType } };
   }
   return {};
 }

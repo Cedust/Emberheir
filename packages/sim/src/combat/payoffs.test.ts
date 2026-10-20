@@ -143,19 +143,24 @@ describe("Class Traits", () => {
     expect(payoffs(fight.events, "fury").length).toBeGreaterThan(0);
   });
 
-  it("Hunter's Mark: more Precision against an enemy with one of your ailments", () => {
-    const hunter = (ailing: boolean) =>
-      setup({
-        rules: { huntersMark: { precision: 0.5 } },
-        weapon: { ...always("bleed", ailing ? {} : { ailmentChances: [] }), precision: 0.5 },
-      });
-    const glancing = (ailing: boolean) =>
-      ofType(play(hunter(ailing), dummy(), 10.05).events, "hit").filter(
-        (h) => h.side === "hero" && h.glancing,
-      ).length;
-    // Without an ailment half the attacks glance; once Bleed is on the enemy none do.
-    expect(glancing(false)).toBeGreaterThanOrEqual(3);
-    expect(glancing(true)).toBeLessThanOrEqual(2);
+  it("Hunter's Mark: clean Default Attacks mark the enemy, the next Crit spends the Marks", () => {
+    const ashstrider = setup({
+      rules: { huntersMark: { perStack: 0.1, maxStacks: 10 } },
+      bonuses: NO_CRIT,
+      weapon: { ...TEST_WEAPON, damage: { min: 100, max: 100 }, precision: 1 },
+      // Every 4th Default Attack crits, the others never do.
+      weaponRules: { everyNthCrit: 4 },
+    });
+    const fight = play(ashstrider, dummy(), 10.05);
+    const hits = ofType(fight.events, "hit").filter((h) => h.side === "hero");
+    const plain = hits[0]?.damage ?? 0;
+    const crits = hits.filter((h) => h.crit);
+    expect(crits.length).toBeGreaterThan(1);
+    // Three clean hits before every Crit: 3 Marks, +30 % on top of the Crit.
+    for (const c of crits) {
+      expect(c.damage).toBe(Math.round(plain * COMBAT.critMultiplier * 1.3));
+    }
+    expect(payoffs(fight.events, "huntersMark").length).toBe(crits.length);
   });
 
   it("Overcharge: every third skill sets off a Nova of the weapon's element with its ailment", () => {
