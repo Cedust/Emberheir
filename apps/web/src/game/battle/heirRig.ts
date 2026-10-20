@@ -413,7 +413,7 @@ const CASTER_POSES: Record<HeirCasterPose, CasterSource> = {
   dagger: {
     feet: [560, 1330],
     body: [19, 171],
-    hand: [391, 450],
+    hand: [391, 459],
     arm: [266, 448],
     elbow: [285, 562],
     // Through the fist, top to bottom: the Dagger in reverse grip.
