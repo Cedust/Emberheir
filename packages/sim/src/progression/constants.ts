@@ -327,8 +327,10 @@ export const PROGRESSION = {
      */
     // Step 7 boss round: bosses caused 58 % of the deaths (target 35–55 %) and the newest act's
     // boss fight took 136–200 s from Act 4 on (target 60–100 s); was life 3 / 4.5, damage 3.5 / 6.
-    boss: { firstRun: { life: 3.25, damage: 2.6 }, later: { life: 3.5, damage: 6 } },
-    gates: [0.4, 0.45],
+    // Phase 5 (longer runs): bosses 61 % of the deaths again, Gatekeepers 22 %; was damage 6 and
+    // gates 0.4 / 0.45.
+    boss: { firstRun: { life: 3.25, damage: 2.6 }, later: { life: 3.5, damage: 5.25 } },
+    gates: [0.45, 0.5],
     /** Stages before a Gatekeeper (since the last one) it needs for its full peak. */
     gateStretch: 4,
     ramps: [
