@@ -31,8 +31,11 @@ export {
   type PendingPrestige,
   type GameStats,
   type GameState,
-  ROUTE_KINDS,
-  type RouteKind,
+  NODE_KINDS,
+  type NodeKind,
+  type MapNode,
+  type ActMap,
+  type NodeVisit,
 } from "./state";
 export { newGame, type NewGameOptions } from "./new-game";
 export {
@@ -51,10 +54,7 @@ export {
   stageMonsterLevel,
   waymarkStages,
   hearthEmbers,
-  routeForks,
   wardensGate,
-  routeAt,
-  openFork,
   waymarkKey,
   earnedSkillPoints,
   isWallAct,
@@ -142,6 +142,7 @@ export {
   addRunes,
   maxRuneRank,
   rollRuneDrops,
+  rollRune,
   tagAffixFactor,
 } from "./loot";
 export { rewardsDone } from "./rewards";
@@ -153,7 +154,35 @@ export {
   attributeRespecAcorns,
 } from "./trainer";
 export { openBranches } from "./prestige";
-export { thiefTrailOpen } from "./run";
+export {
+  MAP_LANES,
+  QUIET_NODES,
+  isQuiet,
+  singleRows,
+  generateActMap,
+  nodeAt,
+  currentNode,
+  nextNodes,
+  chosenNext,
+  forkAhead,
+  pathOpen,
+  defaultNext,
+  nextWaymark,
+  type MapOptions,
+} from "./act-map";
+export {
+  ROAD_GAMBLE,
+  shrinesBurn,
+  getEvent,
+  eventPrice,
+  eventBlockReason,
+  roadGamblePrice,
+  roadGambleBlockReason,
+  nodeBlockReason,
+  hearthHeal,
+  tripFlaskCapacity,
+  type VisitBlockReason,
+} from "./visits";
 export {
   DUMMY_PROFILES,
   type DummyProfile,

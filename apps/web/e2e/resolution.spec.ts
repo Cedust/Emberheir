@@ -103,12 +103,10 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: /NEXT STAGE/ }).click();
     await expect(page.getByRole("region", { name: "Battle" })).toBeVisible();
     await check("battle");
-    // Normal fights offer an item pick only on every third stage: on to a hero with Stage 3 ahead.
+    // Normal fights offer an item pick only on every third fight: on to a hero with its third ahead.
     await seedSave(page, saveRun1Stage3());
     await page.goto("/?dev");
     await page.getByRole("button", { name: /Continue/ }).click();
-    // Stages 3–4 are a fork of the road: the Shrine Path keeps Stage 3 a normal fight.
-    await page.getByRole("radio", { name: "Shrine Path" }).click();
     await expect(page.getByRole("region", { name: "Intermission" })).toBeVisible();
     await page.getByRole("button", { name: /NEXT STAGE/ }).click();
     await page.getByRole("button", { name: "Skip fight" }).click();

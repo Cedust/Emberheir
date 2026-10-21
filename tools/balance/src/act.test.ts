@@ -30,7 +30,8 @@ describe("act autopilot", () => {
       [2, 2],
     ]);
     expect(reports[0]?.cleared).toBe(true);
-    expect(reports[1]?.fights).toBeGreaterThanOrEqual(15);
+    // Every stage of the act: a fight or a quiet node of the map.
+    expect((reports[1]?.fights ?? 0) + (reports[1]?.visits ?? 0)).toBeGreaterThanOrEqual(15);
   });
 });
 

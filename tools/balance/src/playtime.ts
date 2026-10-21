@@ -1,17 +1,21 @@
 import type { ActRunReport } from "./act";
 
 /**
- * Time a player spends besides the fights (laengere-runs-v1.md): picking loot, cards and routes
- * after every fight, and gear, tree and crafting in the Camp before every trip. Rough values from
+ * Time a player spends besides the fights (laengere-runs-v1.md): picking loot, cards and the
+ * road after every fight, a quiet node of the act map (act-karte-entwurf-v1.md), and gear, tree
+ * and crafting in the Camp before every trip. Rough values from
  * playtests; they turn the simulated fight seconds into playtime.
  */
-export const PLAYTIME = { perFight: 12, perTrip: 90 };
+export const PLAYTIME = { perFight: 12, perTrip: 90, perVisit: 15 };
 
 /** Minutes a player spends on one act report: fights, the time between them and the trips. */
 export function reportMinutes(r: ActRunReport): number {
   const fights = r.stageFights.reduce((sum, f) => sum + f.seconds, 0);
   const trips = r.deaths + 1;
-  return (fights + PLAYTIME.perFight * r.stageFights.length + PLAYTIME.perTrip * trips) / 60;
+  const visits = PLAYTIME.perVisit * (r.visits ?? 0);
+  return (
+    (fights + PLAYTIME.perFight * r.stageFights.length + PLAYTIME.perTrip * trips + visits) / 60
+  );
 }
 
 /** Median of a list (0 when empty). */

@@ -43,7 +43,7 @@ export const RUN_OMENS: readonly OmenDefinition[] = [
     name: "Dry Season",
     kind: "run",
     price: "The Ember Flask heals 40 % less.",
-    reward: "Hearth Embers and the fire of a fork heal 60 % more.",
+    reward: "Hearth Embers and a Hearth on the map heal 60 % more.",
     question: "Do you heal yourself in the fight (Lifesteal, Barrier)?",
     flaskHeal: 0.6,
     restHeal: 1.6,

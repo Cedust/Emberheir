@@ -9,14 +9,11 @@ import {
   deriveStats,
   flaskCapacity,
   gateStages,
-  type ActData,
+  currentNode,
   getAct,
   hearthEmbers,
-  ROUTE_KINDS,
-  type RouteKind,
-  routeAt,
+  isQuiet,
   stageMonsterLevel,
-  thiefTrailOpen,
   heroReactions,
   heroSetup,
   isWallAct,
@@ -54,9 +51,13 @@ export function nextStageActions(state: GameState): GameAction[] {
     s = applyAction(s, GAME_DATA, a);
   };
   try {
-    if (s.run?.phase === "rewards") step({ type: "continue" });
+    // A quiet node of the act map (or one just left): on along the road first.
+    if (s.run?.phase === "rewards" || s.run?.visit) step({ type: "continue" });
     const run = s.run;
     if (run?.phase !== "intermission") return actions;
+    // The road leads onto a quiet node: its cards wait, no fight.
+    const node = currentNode(run);
+    if (node && isQuiet(node.kind)) return actions;
     step({ type: "startStage" });
   } catch {
     // useGame shows the error when it applies the same actions.
@@ -260,49 +261,6 @@ export function PlanCard(props: { state: GameState; run: RunState; onPlan: () =>
   );
 }
 
-/** The paths of a fork (neuausrichtung-v1.md 6.2): what each one holds. */
-const ROUTE_TEXT: Record<RouteKind, { name: string; text: string; icon: IconName }> = {
-  elite: { name: "Elite Path", text: "Two Elites in a row, with their themed loot.", icon: "boss" },
-  shrine: { name: "Shrine Path", text: "Two fights, then an Ember Shrine.", icon: "flame" },
-  hearth: { name: "Hearth Path", text: "Two fights, then a fire: +25 % Life.", icon: "fire" },
-  thief: { name: "Thief's Trail", text: "The Ember Thief waits on it.", icon: "target" },
-};
-
-/**
- * A fork of the road, in the middle of the Intermission: one big card per path. There is no
- * default; NEXT STAGE waits until one is chosen (Timo).
- */
-export function PathCards(props: { state: GameState; run: RunState; game: GameApi }) {
-  const { state, run, game } = props;
-  const act = getAct(GAME_DATA, run.actId);
-  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
-  const at = routeAt(run, act, next);
-  if (!at || at.second) return null;
-  const chosen = run.routes?.[String(at.fork)];
-  const kinds = ROUTE_KINDS.filter((k) => k !== "thief" || thiefTrailOpen(state, GAME_DATA));
-  return (
-    <div className="path-cards" role="radiogroup" aria-label="Choose a path">
-      {kinds.map((k) => (
-        <button
-          key={k}
-          type="button"
-          role="radio"
-          aria-checked={chosen === k}
-          aria-label={ROUTE_TEXT[k].name}
-          className={`path-card panel-card path-${k}${chosen === k ? " chosen" : ""}`}
-          onClick={() => game.dispatch({ type: "chooseRoute", route: k })}
-        >
-          <span className="path-sigil">
-            <Icon name={ROUTE_TEXT[k].icon} size={34} />
-          </span>
-          <strong className="title-font">{ROUTE_TEXT[k].name}</strong>
-          <span className="sub">{ROUTE_TEXT[k].text}</span>
-        </button>
-      ))}
-    </div>
-  );
-}
-
 /**
  * The Warden's Gate (laengere-runs-v1.md): before the boss of the run's newest act, Challenge it
  * (its fall brings The Harvest) or Wander on through the act to farm. The boss's level shows red
@@ -311,7 +269,7 @@ export function PathCards(props: { state: GameState; run: RunState; game: GameAp
 export function GateCards(props: { state: GameState; run: RunState; game: GameApi }) {
   const { state, run, game } = props;
   const act = getAct(GAME_DATA, run.actId);
-  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  const next = run.phase === "rewards" || run.visit ? run.stage + 1 : run.stage;
   const boss = next >= act.stages;
   const level = stageMonsterLevel(GAME_DATA, act, next, state.legacy.prestige);
   const gap = level - state.hero.level;
@@ -324,7 +282,7 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
   const challenge = () => game.dispatchAll(nextStageActions(state));
   const wander = () =>
     game.dispatchAll([
-      ...(run.phase === "rewards" ? [{ type: "continue" } as const] : []),
+      ...(run.phase === "rewards" || run.visit ? [{ type: "continue" } as const] : []),
       { type: "wander" },
     ]);
   return (
@@ -355,7 +313,7 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
           name: "Wander",
           kind: "Warden's Gate",
           explain:
-            "Back to Stage 1 of this act. Life, Flask and Boons stay, the forks open again. No new Shrines, Waymarks pay only once.",
+            "Back to Stage 1 of this act on a new map. Life, Flask and Boons stay. No new Shrines, Waymarks pay only once.",
           ...(walks ? { status: `Walked ${walks}× on this trip` } : {}),
         }}
         onClick={wander}
@@ -394,28 +352,12 @@ function GateCard(props: {
   );
 }
 
-/** The path taken at a fork, while it lasts. */
-function PathRow(props: { run: RunState; act: ActData; next: number }) {
-  const at = routeAt(props.run, props.act, props.next);
-  const chosen = at && props.run.routes?.[String(at.fork)];
-  if (!at || !chosen) return null;
-  return (
-    <div className="up-row" title={ROUTE_TEXT[chosen].text}>
-      <Icon name={ROUTE_TEXT[chosen].icon} size={16} color="var(--heat)" />
-      <span>{ROUTE_TEXT[chosen].name}</span>
-      <span className="sub">
-        Stages {at.fork}–{at.fork + 1}
-      </span>
-    </div>
-  );
-}
-
 export function UpNext(props: { state: GameState; run: RunState; prestige: number }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
   const stages = act.stages;
-  // During the rewards the next stage is stage + 1.
-  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  // During the rewards (and at a quiet node) the next stage is stage + 1.
+  const next = run.phase === "rewards" || run.visit ? run.stage + 1 : run.stage;
   if (inFinale(act)) {
     return (
       <section className="panel-card up-next" aria-label="Up next">
@@ -475,7 +417,6 @@ export function UpNext(props: { state: GameState; run: RunState; prestige: numbe
           </div>
         ) : null;
       })}
-      <PathRow run={run} act={act} next={next} />
       {shrine !== undefined && (
         <div className="up-row">
           <span className="shrine-mark" />
@@ -609,13 +550,18 @@ export function DoneCard(props: { state: GameState; run: RunState }) {
   let line: string;
   let sub: string;
   if (!rewards) {
-    const boss = run.stage === act.stages;
+    // At a quiet node of the map the road ahead starts with the next stage.
+    const ahead = run.visit ? run.stage + 1 : run.stage;
+    const boss = ahead === act.stages;
     line = inFinale(act)
       ? `${finaleFoe(run.stage)} waits`
       : boss
         ? `${bossKnown(props.state, GAME_DATA, act.id) ? act.boss.name : "The boss"} waits`
-        : `Stage ${run.stage} ahead`;
+        : `Stage ${ahead} ahead`;
     sub = "";
+  } else if (run.visit && !rewards.items.length && rewards.boonPick == null) {
+    line = "The road goes on";
+    sub = rewards.xp ? `+${fmt(rewards.xp)} XP` : "";
   } else {
     const pick = rewards.itemPick;
     const item = pick && pick.kind !== "salvageAll" ? rewards.items[pick.index] : undefined;

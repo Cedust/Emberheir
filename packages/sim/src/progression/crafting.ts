@@ -610,7 +610,7 @@ export function gamblePrice(itemLevel: number): number {
 }
 
 /** Whether a gamble for this slot would find room: checked with the slot's biggest base. */
-function hasRoomFor(state: GameState, data: GameData, slot: ItemSlot): boolean {
+export function hasRoomFor(state: GameState, data: GameData, slot: ItemSlot): boolean {
   return data.lootBases
     .filter((id) => getBase(data.items, id).slot === slot)
     .every((baseId) => {
@@ -628,8 +628,13 @@ export function gambleRarityWeights(prestige: number): Readonly<Record<Rarity, n
 }
 
 /** A gambled item: random base of the slot, rarity by Marisha's odds, Uniques possible. */
-export function gambleItem(state: GameState, data: GameData, slot: ItemSlot, rng: Rng): Item {
-  const level = merchantItemLevel(state, data);
+export function gambleItem(
+  state: GameState,
+  data: GameData,
+  slot: ItemSlot,
+  rng: Rng,
+  level = merchantItemLevel(state, data),
+): Item {
   const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
   const rarity = rollRarity(rng, gambleRarityWeights(state.legacy.prestige));
   if (rarity === "legendary") {

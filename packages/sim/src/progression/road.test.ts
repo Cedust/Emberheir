@@ -9,9 +9,7 @@ import {
   gearDelta,
   itemPickAt,
   newGame,
-  routeAt,
-  openFork,
-  routeForks,
+  type NodeKind,
   wardensGate,
   tagAffixFactor,
   trainingDummy,
@@ -21,7 +19,7 @@ import { rollItem } from "../items/generate";
 import { TEST_SHIELD } from "../items/test-fixtures";
 import { TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
 
-/** Elites, routes, item picks and the Training Dummy (neuausrichtung-v1.md 6 and 9). */
+/** Elites, item picks, the Warden's Gate and the Training Dummy (neuausrichtung-v1.md 6 and 9). */
 
 const LONG_ACT = { ...TEST_ACT, id: "long-act", stages: 15, shrineStages: [5, 10], pickEvery: 3 };
 const data: GameData = {
@@ -34,13 +32,18 @@ const data: GameData = {
   ],
 };
 
-/** On the road of the long act, at `stage`, in the intermission. */
-function onRoad(stage: number, seed = 3): GameState {
+/** On the road of the long act, at `stage`, in the intermission, on a node of this kind. */
+function onRoad(stage: number, seed = 3, kind: NodeKind = "fight"): GameState {
   const s = applyAction(newGame(data, { seed, classId: "test-fighter" }), data, {
     type: "setOut",
     actId: "long-act",
   });
-  return { ...s, run: s.run && { ...s.run, stage } };
+  const run = s.run;
+  if (!run?.map) return s;
+  const rows = run.map.rows.map((row, r) =>
+    r === stage - 1 ? row.map((n) => ({ ...n, kind })) : row,
+  );
+  return { ...s, run: { ...run, stage, map: { rows } } };
 }
 
 describe("Elites with a theme", () => {
@@ -63,8 +66,8 @@ describe("Elites with a theme", () => {
 });
 
 describe("Item picks: fewer, but weightier", () => {
-  it("normal fights only on every third stage; Elites, bosses and caught thieves always", () => {
-    expect([1, 2, 3, 4, 5, 6].map((st) => itemPickAt("normal", st, false))).toEqual([
+  it("normal fights only on every third normal fight; Elites, bosses and caught thieves always", () => {
+    expect([1, 2, 3, 4, 5, 6].map((n) => itemPickAt("normal", n, false))).toEqual([
       false,
       false,
       true,
@@ -77,11 +80,16 @@ describe("Item picks: fewer, but weightier", () => {
     expect(itemPickAt("normal", 1, true)).toBe(true);
   });
 
-  it("a stage without a pick pays its cards as Ash at once (run 1 too)", () => {
-    const third = applyAction(onRoad(3), data, { type: "startStage" });
-    expect(applyAction(third, data, { type: "resolveFight" }).run?.rewards?.items.length).toBe(
-      PROGRESSION.itemChoices,
-    );
+  it("a fight without a pick pays its cards as Ash at once (run 1 too)", () => {
+    const road = onRoad(7);
+    const third = applyAction({ ...road, run: road.run && { ...road.run, fights: 2 } }, data, {
+      type: "startStage",
+    });
+    const won = applyAction(third, data, { type: "resolveFight" }).run;
+    if (!third.run?.encounter?.eliteModifiers.length) {
+      expect(won?.rewards?.items.length).toBe(PROGRESSION.itemChoices);
+      expect(won?.fights).toBe(3);
+    }
     let s = applyAction(onRoad(1), data, { type: "startStage" });
     const ash = s.wallet.ash;
     s = applyAction(s, data, { type: "resolveFight" });
@@ -90,53 +98,9 @@ describe("Item picks: fewer, but weightier", () => {
     expect(rewards?.itemPick).toEqual({ kind: "salvageAll" });
     expect(rewards?.salvagedAsh).toBeGreaterThan(0);
     expect(s.wallet.ash).toBeGreaterThan(ash);
+    expect(s.run?.fights).toBe(1);
     // Salvage All is a no-op there, so the usual flow goes on.
     expect(applyAction(s, data, { type: "salvageAll" })).toBe(s);
-  });
-});
-
-describe("Routes", () => {
-  it("fork twice in a 15-stage act, right before the Waymarks", () => {
-    expect(routeForks(LONG_ACT)).toEqual([
-      [3, 4],
-      [8, 9],
-    ]);
-    expect(routeForks(TEST_ACT)).toEqual([]);
-    expect(routeAt({}, LONG_ACT, 4)).toEqual({ kind: "shrine", second: true, fork: 3 });
-    expect(routeAt({ wildfire: 2 }, LONG_ACT, 3)).toBeNull();
-  });
-
-  it("a fork stays open until a path is chosen, only on its first stage", () => {
-    expect(openFork({}, LONG_ACT, 3)).toBe(3);
-    expect(openFork({ routes: { "3": "hearth" } }, LONG_ACT, 3)).toBeNull();
-    expect(openFork({}, LONG_ACT, 4)).toBeNull();
-    expect(openFork({}, LONG_ACT, 5)).toBeNull();
-    expect(openFork({ wildfire: 1 }, LONG_ACT, 8)).toBeNull();
-  });
-
-  it("the Elite path puts sure Elites on both stages", () => {
-    let s = applyAction(onRoad(3), data, { type: "chooseRoute", route: "elite" });
-    expect(s.run?.routes).toEqual({ "3": "elite" });
-    s = applyAction(s, data, { type: "startStage" });
-    expect(s.run?.encounter?.eliteModifiers.length).toBeGreaterThan(0);
-    // Only before the fork: not in its middle, and the thief's trail needs a thief bounty.
-    expect(() => applyAction(onRoad(4), data, { type: "chooseRoute", route: "hearth" })).toThrow();
-    expect(() => applyAction(onRoad(3), data, { type: "chooseRoute", route: "thief" })).toThrow();
-  });
-
-  it("the Hearth path heals after its second stage, the Shrine path offers a Boon", () => {
-    const second = (route: "hearth" | "shrine") => {
-      const base = applyAction(onRoad(3), data, { type: "chooseRoute", route });
-      let s: GameState = { ...base, run: base.run && { ...base.run, stage: 4, lifeFraction: 0.4 } };
-      s = applyAction(s, data, { type: "startStage" });
-      return applyAction(s, data, { type: "resolveFight" }).run;
-    };
-    const hearth = second("hearth");
-    const shrine = second("shrine");
-    expect((hearth?.lifeFraction ?? 0) - (shrine?.lifeFraction ?? 0)).toBeCloseTo(
-      PROGRESSION.hearthPath,
-    );
-    expect(hearth?.rewards?.boonOffer).toBeUndefined();
   });
 });
 
@@ -151,16 +115,18 @@ describe("Warden's Gate", () => {
     expect(applyAction(onRoad(10), data, { type: "wander" }).run?.stage).toBe(1);
   });
 
-  it("wandering starts the act anew: Life, Flask and Boons stay, the forks open again", () => {
-    const routed = applyAction(onRoad(3), data, { type: "chooseRoute", route: "elite" });
+  it("wandering starts the act anew on a new map: Life, Flask and Boons stay", () => {
+    const road = onRoad(15);
     const gate: GameState = {
-      ...routed,
+      ...road,
       flaskCharges: 1,
-      run: routed.run && { ...routed.run, stage: 15, lifeFraction: 0.6 },
+      run: road.run && { ...road.run, lifeFraction: 0.6, path: [1, 0, 0, 1, 1] },
     };
     const s = applyAction(gate, data, { type: "wander" });
     expect(s.run).toMatchObject({ stage: 1, lifeFraction: 0.6, phase: "intermission", wanders: 1 });
-    expect(s.run?.routes).toEqual({});
+    expect(s.run?.path).toEqual([1]);
+    expect(s.run?.map).toBeDefined();
+    expect(s.run?.map).not.toEqual(gate.run?.map);
     expect(s.flaskCharges).toBe(1);
     expect(s.pendingPrestige).toBeNull();
     const again = applyAction({ ...s, run: s.run && { ...s.run, stage: 15 } }, data, {
@@ -173,10 +139,9 @@ describe("Warden's Gate", () => {
 describe("Champions", () => {
   it("appear from run 3 on with three modifiers and more Life", () => {
     const elite = (seed: number) => {
-      const s = onRoad(8, seed);
+      const s = onRoad(8, seed, "elite");
       const run3 = { ...s, legacy: { ...s.legacy, prestige: 2 } };
-      const routed = applyAction(run3, data, { type: "chooseRoute", route: "elite" });
-      return applyAction(routed, data, { type: "startStage" }).run?.encounter;
+      return applyAction(run3, data, { type: "startStage" }).run?.encounter;
     };
     const champions = Array.from({ length: 200 }, (_, seed) => elite(seed)).filter(
       (e) => e?.champion,
@@ -186,11 +151,7 @@ describe("Champions", () => {
       expect(c?.eliteModifiers.length).toBe(PROGRESSION.maxEliteModifiers);
     }
     // Not in runs 1 and 2.
-    const early = applyAction(
-      applyAction(onRoad(8, 1), data, { type: "chooseRoute", route: "elite" }),
-      data,
-      { type: "startStage" },
-    );
+    const early = applyAction(onRoad(8, 1, "elite"), data, { type: "startStage" });
     expect(early.run?.encounter?.champion).toBeUndefined();
   });
 });

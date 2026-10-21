@@ -14,8 +14,14 @@ import {
   crucibleLock,
   draughtsOpen,
   equipBlockReason,
+  currentNode,
   getAct,
-  routeAt,
+  getEvent,
+  isQuiet,
+  type MapNode,
+  nextNodes,
+  nodeBlockReason,
+  roadGambleBlockReason,
   stageMonsterLevel,
   wardensGate,
   type GameData,
@@ -78,17 +84,141 @@ export function brewDraught(state: GameState, data: GameData, act: ActData | und
 }
 
 /**
- * At a fork (neuausrichtung-v1.md 6.2) the autopilot reads its Life like a player: healthy, it
- * takes the Elite path for the better loot; hurt, it rests on the Hearth path; else the Shrine.
+ * The act map (act-karte-entwurf-v1.md): the autopilot plans the road to the next Waymark like a
+ * player, by what the build needs. Hurt, it heads for a Hearth and avoids Elites; healthy, it
+ * likes Elites, Caches and Events for the loot, and Shrines while they burn.
  */
-export function chooseRoute(state: GameState, data: GameData): GameState {
+function nodeValue(kind: MapNode["kind"], life: number): number {
+  switch (kind) {
+    case "hearth":
+      return life < 0.6 ? 4 : 0.5;
+    case "elite":
+      return life >= 0.7 ? 2 : -2;
+    case "thief":
+      return 2.5;
+    case "shrine":
+      return 3;
+    case "cache":
+      return 2;
+    case "event":
+      return 1.5;
+    case "marisha":
+      return 0.5;
+    default:
+      return 1;
+  }
+}
+
+/** The best sum of node values on the paths from a node to the next single row. */
+function pathValue(state: GameState, node: MapNode, stage: number, life: number): number {
+  const map = state.run?.map;
+  const here = nodeValue(node.kind, life);
+  const row = map?.rows[stage];
+  if (!map || !row || row.length === 1) return here;
+  // Further ahead the hero is a little more hurt, unless it rests.
+  const later = node.kind === "hearth" ? Math.min(1, life + 0.25) : Math.max(0, life - 0.1);
+  let best = -Infinity;
+  for (const lane of node.next) {
+    const next = row.find((n) => n.lane === lane);
+    if (next) best = Math.max(best, pathValue(state, next, stage + 1, later));
+  }
+  return here + (best === -Infinity ? 0 : best);
+}
+
+/** Picks the lane of the next row (after a fight's rewards or at a quiet node). */
+export function choosePath(state: GameState, data: GameData): GameState {
   const run = state.run;
-  if (!run || run.phase !== "intermission") return state;
-  const at = routeAt(run, getAct(data, run.actId), run.stage);
-  if (!at || at.second || run.routes?.[String(at.fork)]) return state;
+  if (!run?.map || run.encounter?.boss) return state;
+  if (run.phase === "intermission" && !run.visit) return state;
+  const ahead = nextNodes(run);
+  if (ahead.length < 2 || run.path?.[run.stage] !== undefined) return state;
+  let best = ahead[0];
+  let bestValue = -Infinity;
+  for (const node of ahead) {
+    const value = pathValue(state, node, run.stage + 1, run.lifeFraction);
+    if (value > bestValue) {
+      best = node;
+      bestValue = value;
+    }
+  }
+  return best ? applyAction(state, data, { type: "chooseNode", lane: best.lane }) : state;
+}
+
+/** The autopilot's choice at a quiet node; -1 walks on. */
+function visitChoice(state: GameState, data: GameData): number {
+  const run = state.run;
+  const visit = run?.visit;
+  if (!run || !visit) return -1;
   const life = run.lifeFraction;
-  const route = life >= 0.75 ? "elite" : life < 0.5 ? "hearth" : "shrine";
-  return applyAction(state, data, { type: "chooseRoute", route });
+  const ok = (choice: number) => !nodeBlockReason(state, data, choice);
+  switch (visit.kind) {
+    case "hearth":
+      return life < 0.8 || !ok(1) ? 0 : 1;
+    case "cache":
+      return 0;
+    case "event": {
+      const event = getEvent(data, visit.event ?? "");
+      const want: Record<string, number> = {
+        "smoldering-altar": life > 0.6 ? 0 : -1,
+        "ember-spring": life < 0.8 || !ok(1) ? 0 : 1,
+        "trapped-chest": life > 0.5 ? 0 : -1,
+        "ashen-challenger": life >= 0.7 ? 0 : -1,
+        "hedgehog-peddler": ok(0) ? 0 : ok(1) ? 1 : -1,
+        "hunters-camp": life < 0.6 ? 0 : 1,
+        "cursed-spark": life >= 0.6 ? 0 : -1,
+        "lost-cub": state.flaskCharges >= 2 ? 0 : -1,
+      };
+      const choice = want[event.id] ?? event.options.findIndex((_, i) => ok(i));
+      return choice >= 0 && ok(choice) ? choice : -1;
+    }
+    case "marisha": {
+      // Marisha's luck is for spare Acorns: one gamble when the Camp's needs are covered.
+      const free = (visit.slots ?? []).findIndex((_, i) => !roadGambleBlockReason(state, data, i));
+      return free >= 0 && state.wallet.acorns > 2000 ? free : -1;
+    }
+    default:
+      return -1;
+  }
+}
+
+/**
+ * Walks the quiet nodes ahead until the hero stands at a fight: each node's choice, its rewards,
+ * then the road on. Returns how many quiet nodes it visited (for the playtime).
+ */
+export function walkQuiet(
+  state: GameState,
+  data: GameData,
+  runes = false,
+): { state: GameState; visits: number } {
+  let s = state;
+  let visits = 0;
+  let seen = -1;
+  for (let guard = 0; guard < 40; guard++) {
+    const run = s.run;
+    if (!run?.visit) break;
+    const node = currentNode(run);
+    if (!node || !isQuiet(node.kind)) break;
+    if (run.stage !== seen) {
+      visits++;
+      seen = run.stage;
+    }
+    if (run.phase === "intermission" && !run.visit.done) {
+      if (run.visit.kind === "marisha") {
+        const choice = visitChoice(s, data);
+        if (choice >= 0) s = applyAction(s, data, { type: "visitNode", choice });
+        s = applyAction(s, data, { type: "visitNode", choice: -1 });
+      } else {
+        s = applyAction(s, data, { type: "visitNode", choice: visitChoice(s, data) });
+      }
+    }
+    if (s.run?.phase === "rewards") {
+      s = autopilotRewards(s, data, runes);
+      continue;
+    }
+    s = choosePath(s, data);
+    s = applyAction(s, data, { type: "continue" });
+  }
+  return { state: s, visits };
 }
 
 /**
@@ -167,6 +297,7 @@ export function autopilotRewards(state: GameState, data: GameData, runes = false
   const offer = s.run?.rewards?.boonOffer;
   if (offer?.length)
     s = applyAction(s, data, { type: "pickBoon", index: bestBoon(s, data, offer) });
+  s = choosePath(s, data);
   return applyAction(s, data, { type: "continue" });
 }
 

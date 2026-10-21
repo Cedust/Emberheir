@@ -67,13 +67,36 @@ Endgame **Wildfire I–X**.
 - **Warden's Gate** (`notes/laengere-runs-v1.md`, Längere Runs Phase 1): Vor jeder Wand des neuesten Acts (den
   Gatekeepern auf Stage 5 und 10 und dem Boss) wählt man **Challenge** (Kampf; beim Boss bringt der Sieg The Harvest)
   oder **Wander**: zurück auf Stage 1 desselben Acts, um zu farmen. Life,
-  Flask, Boons und Bounty bleiben, die Gabelungen werden neu gewählt. Beim Wandern gibt es **keine neuen Shrines**
+  Flask, Boons und Bounty bleiben, die Act-Karte wird neu gewürfelt. Beim Wandern gibt es **keine neuen Shrines**
   (keine Boons aus dem Farmen), Waymarks zahlen ihren Skill Point weiter nur einmal pro Run. Das Tor zeigt das
   Level der Wand, rot, solange der Held darunter liegt. Nicht im Wildfire, im Finale und nach dem letzten Prestige.
 - **Waymarks:** Stage 5, 10 und 15 jedes Acts. Der erste Sieg dort in einem Run gibt einen Skill Point.
-- **Routen** (`elites-routen-v1.md`): Vor jedem Waymark vor dem Boss gabelt sich der Weg für zwei Stages (3–4 und 8–9):
-  **Elite-Pfad** (zwei sichere Elites), **Shrine-Pfad** (danach eine Shrine), **Hearth-Pfad** (danach +25 % Life),
-  mit offener Thief-Bounty auch die **Thief's Trail**. Gewählt in der Intermission als große Karten in der Mitte; es gibt keinen Default, NEXT STAGE wartet auf die Wahl.
+- **Act-Karte** (`notes/laengere-runs/act-karte-entwurf-v1.md`, Längere Runs Phase 2, Timo 21.10.2026; ersetzt die
+  Routen aus `elites-routen-v1.md`): Jeder Zug durch einen Act hat eine gewürfelte Karte wie bei Slay the Spire,
+  **3 Spuren, eine Reihe pro Stage** (15, Emberfall 10). Reihe 1 ist ein einzelner Start-Kampf, die Waymark-Reihen
+  (5, 10, 15; Emberfall 3, 7, 10) sind einzelne Knoten, in die alle Spuren münden. Jeder Knoten führt zu 1–2 Knoten
+  der nächsten Reihe, Wege kreuzen sich nie, jeder Knoten hat einen Kampf als Nachfolger, in der Reihe vor dem Boss
+  liegt immer ein Hearth. Neu gewürfelt bei jedem Aufbruch, nach dem Tod und bei Wander. Wildfire und Finale haben
+  keine Karte.
+
+  | Knoten | Kampf? | Was passiert |
+  |---|---|---|
+  | Fight | ja | normaler Kampf (kann zufällig Elite oder Ember Thief sein) |
+  | Elite | ja | sicherer Elite, ohne Shrine danach |
+  | Thief's Trail | ja | nur bei offener Thief-Bounty, in den ersten zwei Abschnitten: sicherer Ember Thief |
+  | Shrine | nein | 1 aus 3 Boons; nur in den ersten zwei Abschnitten und solange Shrines brennen (nicht beim Wandern) |
+  | Hearth | nein | Rast +25 % Life (Dry Season +60 %) **oder** +1 Flask-Ladung |
+  | Cache | nein | ein Item-Pick, eine Rune oder Ember Coal |
+  | Event | nein | eins von 8 Events (`content/src/events.ts`), jedes mit freiem **Walk On**; was man nicht bezahlen kann, ist ausgegraut mit Tooltip. Kein Preis nimmt mehr als die Hälfte einer Schicht |
+  | Marisha | nein | Gamble für 3 zufällige Slots, 25 % günstiger als im Camp; höchstens einmal pro Karte, im zweiten Abschnitt |
+
+  Events: Smoldering Altar (−20 % Life → Rune einen Rang höher), Ember Spring (+30 % Life oder +1 Flask), Trapped
+  Chest (Item-Pick, 50 % −25 % Life), Ashen Challenger (nächster Kampf ein Elite mit 2 Items), Hedgehog Peddler
+  (Acorns → Flask, Ash → 2 Ember Coal), Hunters' Camp (+20 % Life oder XP von 2 Kämpfen), Cursed Spark (1 aus 3 Boons,
+  Gegner +15 % Schaden bis zur nächsten Waymark; nur solange Shrines brennen), Lost Cub (−1 Flask → nächster
+  Item-Pick mindestens Rare). Die Karte steht rechts in der Intermission und öffnet sich groß mit **M**. Die
+  erreichbaren Knoten erscheinen als große Karten in der Mitte (auch ein Klick auf den Knoten wählt); sind sie
+  verschieden, wartet NEXT STAGE auf die Wahl, drei gleiche Kämpfe gehen geradeaus.
 - **Omens** (`neuausrichtung-v1.md` 5.2): Wer in einen **alten** Act des Runs aufbricht (jeder Act vor dem neuesten),
   wählt bei Eldrin **eins von zwei Omens**. Das Angebot ist pro Act und Run fest, das nächste Prestige würfelt neu.
   Jedes Run-Omen hat einen **Preis und einen Lohn** und nimmt keiner Defense- oder Heil-Schicht mehr als die Hälfte:
@@ -83,7 +106,7 @@ Endgame **Wildfire I–X**.
   | Stoneflesh | Gegner +50 % Armor | +50 % Ember Coal |
   | Blight Bloom | Gegner-Treffer vergiften, Gegner heilen sich an ihrem Poison | Runes einen Rang höher |
   | Cinder Rain | Gegner-Treffer setzen Burn | +20 % XP |
-  | Dry Season | Flask heilt 40 % weniger | Hearth Embers und Feuer der Gabelung heilen 60 % mehr |
+  | Dry Season | Flask heilt 40 % weniger | Hearth Embers und Hearth-Knoten heilen 60 % mehr |
   | Restless Dead | Elites 60 % häufiger | +30 % Legendary-Chance |
   | Thin Veil | Gegner-Treffer lassen bluten, Gegner-Ailments +30 % | eigene Ailments +20 % |
   | Blood Moon | Gegner +15 % Attack Speed | eigene +10 % Attack Speed |
@@ -93,12 +116,12 @@ Endgame **Wildfire I–X**.
 - Jeder Kampf ist 1 gegen 1 und läuft automatisch. Keine Zeitraffer- oder Auto-Resolve-Funktion ✅ (Timo).
 
 ### 2.3 Nach jedem Kampf ✅ (`entschlackung-v1.md`)
-- XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe in jedem Run nur **jede dritte Stage 1 aus 3**
+- XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe in jedem Run nur **jeder dritte normale Kampf 1 aus 3** (seit der Act-Karte, vorher jede dritte Stage)
   (sonst werden die Karten sofort zu Ash; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
   Bosse immer. Die DPS-Pfeile auf den Karten misst der
   Training Dummy.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 2–3 Ember Coal, Boss 4–6, normale Gegner 15 % auf 1).
-- **Ember Shrine** nach Stage 5 und 10 und nach Elites (nur in Acts, die in diesem Run noch nicht geschafft sind):
+- **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
 - Boss: zusätzlich **Boss Hoard** (Chance auf Boss-Unique/Trophy) und sein **Echo** für das Heirloom.
 
@@ -635,5 +658,5 @@ Endgame **Wildfire I–X**.
 | `balance-messung-v1.md` | Messung Phase 1 (Runes im Autopilot, Tode und Kampfdauer je Stage-Art), Startwerte Phase 2 | gemessen |
 | `weapon-mastery-v2.md` | Mastery-Pfade mit Gabeln, Precision, Mighty Hits, Parry | gebaut (Abweichungen dort in Abschnitt 6) |
 | `ailments-v2.md` | Ailment-Identitäten, Payoffs, Ailment Effect, Wisdom | gebaut |
-| `elites-routen-v1.md` | Elite-Modifier pro Act, Champions, Routen, Item-Picks, Training Dummy | gebaut |
+| `elites-routen-v1.md` | Elite-Modifier pro Act, Champions, Routen, Item-Picks, Training Dummy | gebaut (Routen durch die Act-Karte ersetzt) |
 | `merkliste-spaeter.md` | Ideen für später | gemerkt |

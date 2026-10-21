@@ -350,7 +350,7 @@ function printPlaytime(
   }
   console.log("");
   console.log(
-    `Playtime per run (fights + ${PLAYTIME.perFight} s per fight + ${PLAYTIME.perTrip} s per trip; stuck builds count too low)`,
+    `Playtime per run (fights + ${PLAYTIME.perFight} s per fight + ${PLAYTIME.perVisit} s per quiet node + ${PLAYTIME.perTrip} s per trip; stuck builds count too low)`,
   );
   console.table(rows);
 }

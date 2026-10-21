@@ -84,6 +84,15 @@ export function IdleArena(props: {
     walks.current = now;
   }, [run.wanders]);
 
+  // A quiet node of the act map: its moment once the hero arrives (and the arena is up).
+  const visit = run.visit?.kind;
+  const stageKey = `${run.wanders ?? 0}:${run.stage}`;
+  useEffect(() => {
+    if (!visit) return;
+    const timer = window.setTimeout(() => sceneRef.current?.visit(visit), 350);
+    return () => window.clearTimeout(timer);
+  }, [visit, stageKey]);
+
   return (
     <div className="idle-arena" style={arenaStyle(run)} aria-hidden="true">
       <div className="arena-host" ref={hostRef} />

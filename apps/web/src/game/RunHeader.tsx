@@ -3,7 +3,6 @@ import {
   type ActData,
   gateStages,
   isWallAct,
-  routeForks,
   waymarkKey,
   waymarkStages,
   wildfireLevel,
@@ -89,18 +88,6 @@ export function ActProgress(props: {
           </div>
         );
       })}
-      {/* Forks of the road (neuausrichtung-v1.md 6.2): a split line over their two stages. */}
-      {(finale || !props.waymarks ? [] : routeForks(act)).map(([a, b]) => (
-        <span
-          key={`fork-${a}`}
-          className="act-fork"
-          title={`Fork · Stages ${a}–${b}: Elite, Shrine or Hearth path`}
-          style={{
-            left: left0 + ((a - 1) / (stages - 1)) * span,
-            width: (1 / (stages - 1)) * span,
-          }}
-        />
-      ))}
       {marks.map((n) => {
         const taken = props.waymarks?.includes(waymarkKey(act.id, n)) ?? false;
         return (

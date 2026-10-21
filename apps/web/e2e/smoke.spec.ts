@@ -82,7 +82,7 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await expect(page.getByTestId("fight-result")).toHaveText("VICTORY");
 
   // The rewards follow on their own after the banner.
-  // Normal fights offer an item pick only on every third stage; the others pay their cards as Ash.
+  // Normal fights offer an item pick only on every third fight; the others pay their cards as Ash.
   await expect(page.getByText("Stage 1 cleared")).toBeVisible();
   await expect(page.getByTestId("done-card")).toContainText("Ash from salvage");
   await expect(page.getByTestId("item-card")).toHaveCount(0);
@@ -91,8 +91,6 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await seedSave(page, saveRun1Stage3());
   await page.goto("/?dev");
   await page.getByRole("button", { name: /Continue/ }).click();
-  // Stages 3–4 are a fork of the road: the Shrine Path keeps Stage 3 a normal fight.
-  await page.getByRole("radio", { name: "Shrine Path" }).click();
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   await page.getByRole("button", { name: "Skip fight" }).click();
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");

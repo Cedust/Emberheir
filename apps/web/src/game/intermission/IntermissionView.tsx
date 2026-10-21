@@ -3,16 +3,17 @@ import {
   type EquipmentSlot,
   type GameState,
   type RunState,
+  forkAhead as mapForkAhead,
   getAct,
-  openFork,
+  pathOpen,
   rewardsDone,
-  routeAt,
   salvageValue,
   takeBlockReason,
   targetSlot,
   wardensGate,
 } from "@emberheir/sim";
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
+import { isTypingTarget } from "../../ui/kit/hotkeys";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { type CurrencyId, Price, Wallet } from "../../ui/kit/Currency";
@@ -30,11 +31,11 @@ import {
   GateCards,
   HeroCard,
   nextStageActions,
-  PathCards,
   PlanCard,
   RunMoments,
   UpNext,
 } from "./RunCards";
+import { ActMapView, ActMapWindow, NodeCards, VisitCards, visitTitle } from "./ActMap";
 
 /**
  * Between two stages (Intermission mock): the rewards of the last fight (item pick, then a
@@ -56,59 +57,86 @@ export function IntermissionView(props: {
   const act = getAct(GAME_DATA, run.actId);
   const rewards = run.rewards;
   const [focus, setFocus] = useState<EquipmentSlot | undefined>(undefined);
-  const nextStage = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  // After a fight's rewards and at a quiet node of the map, the road ahead starts with the next stage.
+  const nextStage = run.phase === "rewards" || run.visit ? run.stage + 1 : run.stage;
   // An act boss ends the run; a finale echo does not.
   const boss = run.encounter?.boss === true && run.phase === "rewards" && !inFinale(act);
-  // A fork of the road ahead: after the rewards the path is chosen in the middle.
-  const fork = boss ? null : routeAt(run, act, nextStage);
-  const forkAhead = fork !== null && !fork.second;
-  const pathOpen = forkAhead && openFork(run, act, nextStage) !== null;
-  // The Warden's Gate before the newest act's boss: Challenge or Wander (laengere-runs-v1.md).
+  // The act map (act-karte-entwurf-v1.md): the next node, chosen in the middle.
+  const choosing = !boss && (run.phase === "rewards" || !!run.visit);
+  const forkAhead = choosing && mapForkAhead(run);
+  const pathMissing = forkAhead && pathOpen(run);
+  // A quiet node waits for its choice (Hearth, Cache, Event, Marisha).
+  const visiting = run.phase === "intermission" && !!run.visit && !run.visit.done;
+  // The Warden's Gate before the newest act's walls: Challenge or Wander (laengere-runs-v1.md).
   const gate = !boss && wardensGate(state, GAME_DATA, { ...run, stage: nextStage });
-  const step = !rewards
-    ? forkAhead
-      ? "path"
-      : gate
-        ? "gate"
-        : "ready"
-    : rewards.itemPick === null
-      ? "items"
-      : rewards.boonOffer?.length && rewards.boonPick == null
-        ? "shrine"
-        : forkAhead
-          ? "path"
-          : gate
-            ? "gate"
-            : "done";
+  const step = visiting
+    ? "visit"
+    : !rewards
+      ? forkAhead
+        ? "path"
+        : gate
+          ? "gate"
+          : "ready"
+      : rewards.itemPick === null
+        ? "items"
+        : rewards.boonOffer?.length && rewards.boonPick == null
+          ? "shrine"
+          : forkAhead
+            ? "path"
+            : gate
+              ? "gate"
+              : "done";
   const done = step === "ready" || step === "done" || step === "path" || step === "gate";
+  const visitText = visitTitle(run);
   const title =
-    step === "shrine"
-      ? "EMBER SHRINE"
-      : step === "path"
-        ? "CHOOSE A PATH"
-        : step === "gate"
-          ? "WARDEN'S GATE"
-          : step === "ready"
-            ? "READY"
-            : "VICTORY";
-  const subtitle =
-    step === "path" && fork
-      ? `Stages ${fork.fork}–${fork.fork + 1}`
-      : step === "items"
-        ? rewards && rewards.items.length > 3
-          ? `${rewards.thief === "caught" ? "Ember Thief caught" : "Boss Hoard"} · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
-          : rewards?.thief === "escaped"
-            ? "The thief got away · choose 1 of 3 items"
-            : "Choose 1 of 3 items"
-        : step === "shrine"
-          ? "Steal 1 of 3 sparks"
+    step === "visit"
+      ? visitText.title
+      : step === "shrine"
+        ? "EMBER SHRINE"
+        : step === "path"
+          ? "CHOOSE A PATH"
           : step === "gate"
-            ? nextStage >= act.stages
-              ? "Challenge the boss or wander on"
-              : "Challenge the Gatekeeper or wander on"
-            : boss
-              ? `${act.name} cleared`
-              : "";
+            ? "WARDEN'S GATE"
+            : step === "ready"
+              ? run.visit
+                ? visitText.title
+                : "READY"
+              : run.visit
+                ? visitText.title
+                : "VICTORY";
+  const subtitle =
+    step === "visit"
+      ? visitText.sub
+      : step === "path"
+        ? `Stage ${nextStage}`
+        : step === "items"
+          ? rewards && rewards.items.length > 3
+            ? `${rewards.thief === "caught" ? "Ember Thief caught" : "Boss Hoard"} · choose ${(rewards.picks ?? 1) - (rewards.taken?.length ?? 0)} of ${rewards.items.length}`
+            : rewards?.thief === "escaped"
+              ? "The thief got away · choose 1 of 3 items"
+              : (rewards?.picks ?? 1) > 1
+                ? `Choose ${(rewards?.picks ?? 1) - (rewards?.taken?.length ?? 0)} of ${rewards?.items.length ?? 3} items`
+                : "Choose 1 of 3 items"
+          : step === "shrine"
+            ? "Steal 1 of 3 sparks"
+            : step === "gate"
+              ? nextStage >= act.stages
+                ? "Challenge the boss or wander on"
+                : "Challenge the Gatekeeper or wander on"
+              : boss
+                ? `${act.name} cleared`
+                : "";
+  // M opens the act map big, to plan the road.
+  const [bigMap, setBigMap] = useState(false);
+  useEffect(() => {
+    if (!run.map) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.ctrlKey || e.metaKey || e.altKey || isTypingTarget(e.target)) return;
+      if (e.key.toLowerCase() === "m" && !props.covered) setBigMap((open) => !open);
+    };
+    window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [run.map, props.covered]);
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
@@ -129,7 +157,7 @@ export function IntermissionView(props: {
       <RunHeader
         act={act}
         stage={run.stage}
-        sub={rewards ? `Stage ${run.stage} cleared` : `Stage ${run.stage} next`}
+        sub={rewards || run.visit ? `Stage ${run.stage} cleared` : `Stage ${run.stage} next`}
         cleared={!!rewards}
         attributePoints={state.hero.unspentAttributePoints}
         skillPoints={state.hero.unspentSkillPoints}
@@ -150,7 +178,7 @@ export function IntermissionView(props: {
         <main className="intermission-center">
           <h2 className="screen-title title-font">{title}</h2>
           {subtitle && <p className="screen-sub">{subtitle}</p>}
-          {rewards && step !== "ready" && !inFinale(act) && (
+          {rewards && step !== "ready" && !inFinale(act) && !(run.visit && !rewards.xp) && (
             <p className="auto-rewards sub" data-testid="auto-rewards">
               +{fmt(rewards.xp)} XP <Price id="acorns" amount={rewards.acorns} plus />{" "}
               <Price id="ash" amount={rewards.ash} plus />
@@ -193,7 +221,8 @@ export function IntermissionView(props: {
             />
           )}
           {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
-          {step === "path" && <PathCards state={state} run={run} game={game} />}
+          {step === "visit" && <VisitCards state={state} run={run} game={game} />}
+          {step === "path" && <NodeCards state={state} run={run} game={game} />}
           {step === "gate" && <GateCards state={state} run={run} game={game} />}
           {(step === "ready" || step === "done") && <DoneCard state={state} run={run} />}
           {step === "items" && (
@@ -211,7 +240,11 @@ export function IntermissionView(props: {
         {/* During the item pick the paperdoll takes the road's place. */}
         {step !== "items" && (
           <aside className="intermission-right-road">
-            <UpNext state={state} run={run} prestige={state.legacy.prestige} />
+            {run.map ? (
+              <ActMapView state={state} run={run} game={game} onBig={() => setBigMap(true)} />
+            ) : (
+              <UpNext state={state} run={run} prestige={state.legacy.prestige} />
+            )}
             {run.bounty && <BountyCard run={run} />}
           </aside>
         )}
@@ -237,7 +270,7 @@ export function IntermissionView(props: {
           <Button
             variant="ghost"
             icon="retreat"
-            blocked={done ? null : "Pick your rewards first"}
+            blocked={done || step === "visit" ? null : "Pick your rewards first"}
             tip={{
               name: "Retreat to Camp",
               kind: "",
@@ -254,17 +287,22 @@ export function IntermissionView(props: {
           icon="strike"
           className="next-stage"
           blocked={
-            !done || (rewards !== null && !rewardsDone(rewards))
-              ? "Pick your rewards first"
-              : pathOpen
-                ? "Choose a path first"
-                : null
+            step === "visit"
+              ? "Choose first, or Walk On"
+              : !done || (rewards !== null && !rewardsDone(rewards))
+                ? "Pick your rewards first"
+                : pathMissing
+                  ? "Choose a path first"
+                  : null
           }
           onClick={() => game.dispatchAll(nextStageActions(state))}
         >
           {boss ? "RETURN TO CAMP" : nextStage === act.stages ? "FACE THE BOSS" : "NEXT STAGE"}
         </Button>
       </footer>
+      {bigMap && run.map && (
+        <ActMapWindow state={state} run={run} game={game} onClose={() => setBigMap(false)} />
+      )}
     </section>
   );
 }
