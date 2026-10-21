@@ -189,12 +189,11 @@ export function GamblePanel({
   const { active, ...hover } = useItemHover(last, false);
   const lastSlot = last && getBase(ITEM_CATALOG, last.baseId).slot;
   const slot = lastSlot ?? props.selected;
-  const shape = slot && gambleShape(slot);
+  const shape = slot && slotShape(slot, "gamble-shape");
   return (
     <div className="gamble">
       <div className="gamble-slots" role="radiogroup" aria-label="Gamble slot">
         {slots.map((slot) => {
-          const base = GAME_DATA.lootBases.find((id) => getBase(ITEM_CATALOG, id).slot === slot);
           return (
             <button
               key={slot}
@@ -205,7 +204,7 @@ export function GamblePanel({
               onClick={() => props.onSelect(slot)}
             >
               <span className="gamble-art">
-                {base && <ItemArt baseId={base} slot={slot} />}
+                {slotShape(slot)}
                 <span className="gamble-q title-font">?</span>
               </span>
               <span className="title-font small">{SLOT_NAMES[slot]}</span>
@@ -244,12 +243,10 @@ export function GamblePanel({
   );
 }
 
-/** The slot's painted empty shape, dark, as it waits in the crate (base art if it has none). */
-function gambleShape(slot: ItemSlot) {
+/** The slot's painted empty-slot icon (base art if it has none). */
+function slotShape(slot: ItemSlot, className?: string) {
   const art = emptySlotArt(slot);
-  if (art) {
-    return <img className="gamble-shape" src={art} alt="" draggable={false} />;
-  }
+  if (art) return <img className={className} src={art} alt="" draggable={false} />;
   const base = GAME_DATA.lootBases.find((id) => getBase(ITEM_CATALOG, id).slot === slot);
-  return base ? <ItemArt baseId={base} slot={slot} className="gamble-shape" /> : null;
+  return base ? <ItemArt baseId={base} slot={slot} className={className} /> : null;
 }
