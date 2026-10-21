@@ -1,4 +1,3 @@
-import brand from "../assets/hunts/brand.webp";
 import trail0 from "../assets/hunts/trail-0.webp";
 import trail1 from "../assets/hunts/trail-1.webp";
 import trail2 from "../assets/hunts/trail-2.webp";
@@ -24,19 +23,5 @@ export function TrailMark(props: { tier: number; size?: number; className?: stri
   );
 }
 
-/** The Hunt Affix brand: a paw in a brass ring, on the card that carries it. */
-export function HuntBrand(props: { size?: number }) {
-  const size = props.size ?? 18;
-  return (
-    <img className="hunt-brand" src={brand} width={size} height={size} alt="" draggable={false} />
-  );
-}
-
-/** A Hunt Affix line on an item: the brand, its Trail on hover. */
-export function HuntAffixMark(props: { trail: number }) {
-  return (
-    <span className="hunt-affix-mark" title={`Hunt Affix · rolled at ${trailTitle(props.trail)}`}>
-      <HuntBrand size={16} />
-    </span>
-  );
-}
+/** The hover text of a Hunt Affix line (its bullet is a paw track, screens.css `li.hunt`). */
+export const huntAffixTitle = (trail: number) => `Hunt Affix · rolled at ${trailTitle(trail)}`;

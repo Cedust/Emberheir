@@ -66,7 +66,7 @@ export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: Ico
   },
   hunt: {
     name: "Hunt",
-    text: `A chosen enemy of the act. It counts ${HUNT.nodeFactor}× for its Trail and always drops an item pick.`,
+    text: `Fresh tracks in the ash. Counts ${HUNT.nodeFactor}× for its Trail and always drops an item pick.`,
     icon: "wolf",
   },
 };
@@ -567,7 +567,10 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
                 </span>
               )}
             </span>
-            <strong className="title-font">{text.name}</strong>
+            {/* A Hunt names its quarry on the enemy line below. */}
+            <strong className="title-font">
+              {node.kind === "hunt" ? NODE_TEXT.hunt.name : text.name}
+            </strong>
             <span className="sub">{text.text}</span>
             {foeOf(node) && <FoeLine state={state} enemyId={foeOf(node) ?? ""} />}
             <span className="node-lane sub">{["Left", "Middle", "Right"][node.lane]}</span>

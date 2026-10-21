@@ -13,7 +13,7 @@ import { COMPARE_KEY, useCompareShown } from "./compareToggle";
 import { GameIcon, type GameIconId } from "./gameIcons";
 import { Icon } from "./Icon";
 import { ItemArt } from "./ItemArt";
-import { HuntAffixMark } from "./TrailMark";
+import { huntAffixTitle } from "./TrailMark";
 import type { CompareView } from "./itemCompare";
 import { RuneStone } from "./RuneArt";
 
@@ -184,8 +184,13 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
       {stats.length > 0 && (
         <ul className="ib-lines ib-affixes">
           {stats.map((l, i) => (
-            <li key={`${i}-${l.text}`} className={l.greater ? "greater" : undefined}>
-              {l.hunt ? <HuntAffixMark trail={l.hunt} /> : null}
+            <li
+              key={`${i}-${l.text}`}
+              className={
+                [l.greater ? "greater" : "", l.hunt ? "hunt" : ""].join(" ").trim() || undefined
+              }
+              title={l.hunt ? huntAffixTitle(l.hunt) : undefined}
+            >
               {l.text}
               {l.greater ? <span className="greater-mark">{greaterName(l.greater)}</span> : null}
             </li>
@@ -195,12 +200,7 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
       {triggers.length > 0 && (
         <ul className="ib-lines ib-triggers">
           {triggers.map((l, i) => (
-            <li
-              key={`${i}-${l.hunt ? <HuntAffixMark trail={l.hunt} /> : null}
-              {l.text}`}
-              className={l.kind === "kindled" ? "kindled" : undefined}
-            >
-              {l.hunt ? <HuntAffixMark trail={l.hunt} /> : null}
+            <li key={`${i}-${l.text}`} className={l.kind === "kindled" ? "kindled" : undefined}>
               {l.text}
               {l.greater ? <span className="greater-mark">{greaterName(l.greater)}</span> : null}
             </li>

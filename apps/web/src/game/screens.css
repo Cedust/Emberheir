@@ -9534,14 +9534,17 @@
   flex: none;
 }
 
+.stage .enemy-portrait {
+  position: relative;
+}
+
+/* The paintings stand full figure: EnemyPortrait moves the face into the middle. */
 .stage .enemy-portrait img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  /* The paintings stand full figure: the head sits in the upper part. */
-  object-position: 50% 12%;
-  transform: scale(1.5);
-  transform-origin: 50% 10%;
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: auto;
+  max-width: none;
 }
 
 .stage .enemy-portrait.hidden img,
@@ -9697,15 +9700,21 @@
   border: 0;
 }
 
-.stage .hunt-brand {
-  display: block;
-  filter: drop-shadow(0 0 3px rgb(255 160 60 / 0.6));
+/* A Hunt Affix: two paw prints instead of the diamond (Timo). */
+.stage .ib-lines li.hunt {
+  padding-left: 24px;
 }
 
-.stage .hunt-affix-mark {
-  display: inline-block;
-  vertical-align: -3px;
-  margin-right: 4px;
+.stage .ib-lines li.hunt::before {
+  left: 0;
+  top: 0.22em;
+  width: 19px;
+  height: 13px;
+  transform: none;
+  opacity: 1;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 16'%3E%3Cellipse cx='5' cy='12' rx='2.6' ry='2.2'/%3E%3Ccircle cx='2.4' cy='8.6' r='1'/%3E%3Ccircle cx='4.4' cy='7.6' r='1'/%3E%3Ccircle cx='6.6' cy='7.9' r='1'/%3E%3Ccircle cx='8.2' cy='9.4' r='1'/%3E%3Cellipse cx='17' cy='7' rx='2.6' ry='2.2'/%3E%3Ccircle cx='14.4' cy='3.6' r='1'/%3E%3Ccircle cx='16.4' cy='2.6' r='1'/%3E%3Ccircle cx='18.6' cy='2.9' r='1'/%3E%3Ccircle cx='20.2' cy='4.4' r='1'/%3E%3C/svg%3E")
+    center / contain no-repeat;
+  filter: drop-shadow(0 0 2px rgb(255 160 60 / 0.6));
 }
 
 /* The enemy waiting at a fight on the path cards, with its Trail. */

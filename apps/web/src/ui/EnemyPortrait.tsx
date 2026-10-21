@@ -1,5 +1,5 @@
 import { GAME_DATA } from "@emberheir/content";
-import { enemyPainting } from "../game/battle/enemyPaintings";
+import { enemyFace, enemyPainting } from "../game/battle/enemyPaintings";
 import { enemyAct } from "../game/hunts";
 import { Icon, type IconName } from "./Icon";
 
@@ -48,10 +48,19 @@ export function EnemyPortrait(props: { enemyId: string; size?: number; hidden?: 
       aria-hidden="true"
     >
       {painting ? (
-        <img src={painting} alt="" draggable={false} />
+        <img src={painting} alt="" draggable={false} style={faceStyle(props.enemyId)} />
       ) : (
         <Icon name={ARCHETYPE_ICON[enemy?.archetype ?? ""] ?? "brute"} size={size * 0.56} />
       )}
     </span>
   );
+}
+
+/** Centres the painting's face in the round frame (`ENEMY_FACES`). */
+function faceStyle(enemyId: string): React.CSSProperties {
+  const face = enemyFace(enemyId);
+  return {
+    height: `${face.zoom * 100}%`,
+    transform: `translate(${-face.x * 100}%, ${-face.y * 100}%)`,
+  };
 }
