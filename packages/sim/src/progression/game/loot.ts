@@ -173,24 +173,28 @@ export function rollItemChoices(
     }
     items.push(item);
   }
-  // The Hunt Affix is sure: when no card carries it (Normal cards, Charms, Uniques), the first
-  // card whose slot can hold it rolls again with it, a Normal one as Magic.
+  // The Hunt Affix is sure: when no card carries it (Normal cards, Charms, Uniques, slots that
+  // cannot hold it), one card rolls again with it, a Normal one as Magic.
   const sign = hunt.signature;
   if (sign && !signed) {
-    const fits = (it: Item) => {
-      const slot = getBase(data.items, it.baseId).slot;
+    const fits = (baseId: string) => {
+      const slot = getBase(data.items, baseId).slot;
       return sign.affixIds.some((id) => {
         const affix = data.items.affixes.get(id);
         return affix?.kind === "stat" && affix.slots.includes(slot);
       });
     };
-    const at = items.findIndex((it) => !it.uniqueId && fits(it));
+    // No card's slot can hold it: the first plain card turns into a base that can.
+    const fitting = data.lootBases.filter(fits);
+    const same = items.findIndex((it) => !it.uniqueId && fits(it.baseId));
+    const at = same >= 0 ? same : items.findIndex((it) => !it.uniqueId);
     const card = items[at];
-    if (card) {
+    const baseId = same >= 0 ? card?.baseId : fitting[rng.int(0, Math.max(0, fitting.length - 1))];
+    if (card && baseId) {
       items[at] = rollItem(
         data.items,
         {
-          baseId: card.baseId,
+          baseId,
           itemLevel: card.itemLevel,
           rarity: card.rarity === "normal" ? "magic" : card.rarity,
           signature: sign,
