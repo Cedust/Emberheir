@@ -60,6 +60,13 @@ export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: Ico
   },
 };
 
+/** Timo's painted node medallions (icon sheet 10, tools/art/cut_map_nodes.py). */
+const NODE_ART = import.meta.glob<string>("../../assets/map/node-*.webp", {
+  eager: true,
+  import: "default",
+});
+const nodeArt = (kind: NodeKind) => NODE_ART[`../../assets/map/node-${kind}.webp`];
+
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
 const NODE = 30;
@@ -102,7 +109,7 @@ export function ActMapView(props: {
   if (!map) return null;
   const act = getAct(GAME_DATA, run.actId);
   const rows = map.rows.length;
-  const rowH = props.big ? BIG_ROW : Math.min(38, 540 / rows);
+  const rowH = props.big ? BIG_ROW : Math.min(44, 600 / rows);
   const scale = props.big ? 2.4 : 1;
   // The planning window keeps room around the first and last row for the nodes' glow.
   const pad = props.big ? 56 : 4;
@@ -406,7 +413,9 @@ function MapNodeButton(props: {
     props.waymarkTaken ? "taken" : "",
   ].join(" ");
   const style = { left: props.x, top: props.y, width: NODE, height: NODE };
-  const art = label.marker ? null : <Icon name={label.icon} size={16} />;
+  const art = label.marker ? null : (
+    <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
+  );
   return props.ahead ? (
     <button
       type="button"
@@ -462,9 +471,7 @@ export function ActMapWindow(props: {
           {(["fight", "elite", "shrine", "hearth", "cache", "event", "marisha"] as const).map(
             (k) => (
               <span key={k} className="legend-item">
-                <span className={`legend-node map-${k}`}>
-                  <Icon name={NODE_TEXT[k].icon} size={12} />
-                </span>
+                <img src={nodeArt(k)} alt="" className="legend-node" />
                 {NODE_TEXT[k].name}
               </span>
             ),
@@ -493,8 +500,8 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
             className={`path-card panel-card path-${node.kind}${chosen === node.lane ? " chosen" : ""}`}
             onClick={() => game.dispatch({ type: "chooseNode", lane: node.lane })}
           >
-            <span className="path-sigil">
-              <Icon name={text.icon} size={34} />
+            <span className="path-sigil painted">
+              <img src={nodeArt(node.kind)} alt="" />
             </span>
             <strong className="title-font">{text.name}</strong>
             <span className="sub">{text.text}</span>

@@ -27,7 +27,8 @@ export function ActProgress(props: {
   const { act, stage } = props;
   const stages = act.stages;
   const width = 760;
-  const left0 = 36;
+  // Room after the Camp, so a current Stage 1 never covers it and the rail shows between them.
+  const left0 = 68;
   const span = width - left0 - 20;
   const done = props.cleared ? stage : stage - 1;
   // The Last Ember: every stage is a boss, each dot names its echo.

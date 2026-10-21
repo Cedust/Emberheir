@@ -169,11 +169,13 @@ export function IntermissionView(props: {
         onMenu={props.onMenu}
       />
       <div className="intermission-body">
-        {/* Left: the hero as it stands. Middle: the choice of the moment. Right: the road. */}
+        {/* Left: the hero and the trip's bounty. Middle: the choice of the moment. Right: the road. */}
         <aside className="intermission-left">
           <HeroCard state={state} run={run} game={game} />
           <BoonPanel state={state} />
           <PlanCard state={state} run={run} onPlan={props.onPlan} />
+          {/* The trip's bounty sits with the hero, so the act map has the whole right side. */}
+          {run.bounty && <BountyCard run={run} />}
         </aside>
         <main className="intermission-center">
           <h2 className="screen-title title-font">{title}</h2>
@@ -245,7 +247,6 @@ export function IntermissionView(props: {
             ) : (
               <UpNext state={state} run={run} prestige={state.legacy.prestige} />
             )}
-            {run.bounty && <BountyCard run={run} />}
           </aside>
         )}
         {step === "items" && (
