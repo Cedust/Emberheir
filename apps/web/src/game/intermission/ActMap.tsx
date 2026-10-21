@@ -319,6 +319,8 @@ function MapViewport(props: {
       ref={box}
       className="act-map-viewport"
       data-testid="act-map-viewport"
+      // A drag starting here never starts a text selection on the page.
+      onMouseDown={(e) => e.preventDefault()}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
         drag.current = { x: e.clientX, y: e.clientY, moved: false };
@@ -374,8 +376,13 @@ function MapViewport(props: {
         <button type="button" className="btn" onClick={() => setView(fitted())}>
           Fit
         </button>
-        <button type="button" className="btn" onClick={() => setView(centered(1))}>
-          Ahead
+        <button
+          type="button"
+          className="btn"
+          title="Back to where the Heir stands"
+          onClick={() => setView(centered(1))}
+        >
+          Heir
         </button>
       </div>
     </div>

@@ -9128,6 +9128,9 @@
 
 /* The act map (act-karte-entwurf-v1.md): three lanes from Stage 1 (bottom) to the boss (top). */
 .stage .act-map {
+  /* A drag pans the map; it never selects the nodes like text. */
+  user-select: none;
+  -webkit-user-select: none;
   padding: 12px 14px 14px;
   display: flex;
   flex-direction: column;
