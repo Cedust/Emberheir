@@ -44,6 +44,41 @@ const AILMENT_NAME: Record<string, string> = {
   corruption: "Corruption",
 };
 
+/** Painted icon per buff stat (the Stats sheet), so buffs read like gear stats. */
+const BUFF_PAINTED: Partial<Record<string, GameIconId>> = {
+  armor: "armor",
+  increasedArmor: "armor",
+  barrier: "barrier",
+  increasedBarrier: "barrier",
+  physicalDamage: "physical",
+  physicalPenetration: "physical",
+  elementalDamage: "elemental",
+  elementalPenetration: "elemental",
+  critChance: "crit",
+  triggerChance: "trigger",
+  attackSpeed: "speed",
+  evasion: "evasion",
+  blockChance: "block",
+  allResistance: "elemental",
+  fireResistance: "fire",
+  coldResistance: "cold",
+  lightningResistance: "lightning",
+  voidResistance: "void",
+  heatGain: "heat-gain",
+  startingHeat: "heat",
+  heatFromHitsTaken: "heat-from-hits",
+  ailmentEffect: "ailment-effect",
+  tenacity: "tenacity",
+  lifesteal: "lifesteal",
+  thorns: "thorns",
+  burnChance: "burn",
+  chillChance: "chill",
+  shockChance: "shock",
+  corruptionChance: "corruption",
+  bleedChance: "bleed",
+  poisonChance: "poison",
+};
+
 /** What an ailment does, for its tooltip on the status rail (game-design-document-v2.md 4.2). */
 const AILMENT_EXPLAIN: Record<string, string> = {
   burn: "Takes Fire damage over time and heals only half as much.",
@@ -135,6 +170,7 @@ function statusesOf(f: FighterSnapshot): Status[] {
     out.push({
       key: `b-${b.name}`,
       icon: buffIcon(b.stat),
+      ...(BUFF_PAINTED[b.stat] ? { painted: BUFF_PAINTED[b.stat] } : {}),
       name: b.name,
       kind: "buff",
       ...(b.stacks > 1 ? { stacks: b.stacks } : {}),
@@ -201,9 +237,9 @@ function RailStatus(props: { status: Status }) {
       {...hover}
     >
       {s.painted ? (
-        <GameIcon id={s.painted} size={26} />
+        <GameIcon id={s.painted} size={32} />
       ) : (
-        <Icon name={s.icon} size={17} color="#fff6e4" />
+        <Icon name={s.icon} size={20} color="#fff6e4" />
       )}
       <span className="rail-sweep" aria-hidden="true" />
       {s.stacks && <b className="mono">{s.stacks}</b>}
