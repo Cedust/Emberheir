@@ -167,8 +167,10 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   // Wildfire has no Shrines: the Boons of the run carry the fire.
   // The route of a fork (neuausrichtung-v1.md 6.2): its second stage ends in a Shrine or a fire.
   const route = routeAt(run, act, run.stage);
+  // A walk past the Warden's Gate brings no new Shrines (laengere-runs-v1.md).
   const shrine =
     !tier &&
+    !run.wanders &&
     (data.boons?.length ?? 0) > 0 &&
     !state.progress.actsCleared.includes(act.id) &&
     rank !== "boss" &&

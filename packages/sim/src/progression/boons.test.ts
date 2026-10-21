@@ -152,6 +152,15 @@ describe("Stolen Fire Boons", () => {
     expect(r.boons.kept.slice(0, 2)).toEqual([spark("grit"), spark("banked-coals")]);
   });
 
+  it("a walk past the Warden's Gate gives no Shrine", () => {
+    let s = act(start(), { type: "setOut", actId: "test-act" });
+    s = { ...s, run: s.run && { ...s.run, wanders: 1 } };
+    s = act(s, { type: "startStage" }, { type: "resolveFight" }, { type: "salvageAll" });
+    s = act(s, { type: "continue" });
+    s = act(s, { type: "startStage" }, { type: "resolveFight" });
+    expect(s.run?.rewards?.boonOffer).toBeUndefined();
+  });
+
   it("Revisit Act gives no Shrine", () => {
     let s: GameState = {
       ...start(),

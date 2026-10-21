@@ -19,6 +19,7 @@ import {
   bestBoon,
   brewDraught,
   bindPowers,
+  chooseGate,
   chooseRoute,
   spendCinderglass,
   spendPoints,
@@ -103,6 +104,8 @@ export interface ActRunReport {
   /** Runewords and single Runes the hero wears when the act ends. */
   readonly runewords: readonly string[];
   readonly runesWorn: number;
+  /** Walks past the Warden's Gate instead of the boss (laengere-runs-v1.md). */
+  readonly wanders?: number;
 }
 
 /** The Runewords and the count of socketed Runes on the hero right now. */
@@ -177,6 +180,7 @@ export function playGenerations(
       let bossDeaths = 0;
       let firstFightLost = false;
       const stageFights: StageFight[] = [];
+      let wanders = 0;
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
         s = prepare(s, data, build, act, runes, memo);
@@ -191,6 +195,12 @@ export function playGenerations(
             s = applyAction(s, data, { type: "useFlask" });
           }
           s = chooseRoute(s, data);
+          const walked = s.run?.wanders ?? 0;
+          s = chooseGate(s, data);
+          if ((s.run?.wanders ?? 0) > walked) {
+            wanders++;
+            continue;
+          }
           s = applyAction(s, data, { type: "startStage" });
           options.onFight?.(s, generation, act.number);
           // The encounter's one fight; resolveFight reads the same one.
@@ -241,6 +251,7 @@ export function playGenerations(
         firstFightLost,
         stageFights,
         ...wornRunes(s, data),
+        wanders,
       });
       if (!cleared) {
         allCleared = false;
@@ -509,6 +520,8 @@ export interface ActSummary {
   readonly bossDeathShare: number;
   /** The enemy that killed the hero most often, e.g. "storm-caller (42 %)". */
   readonly topKiller: string;
+  /** Walks past the Warden's Gate per run. */
+  readonly avgWanders: number;
 }
 
 const avg = (values: readonly number[]) =>
@@ -544,6 +557,7 @@ export function summarizeActRuns(reports: readonly ActRunReport[]): ActSummary {
         reports.reduce((n, r) => n + r.deathStages.length, 0),
       ),
     topKiller: topKiller(reports.flatMap((r) => r.deathEnemies)),
+    avgWanders: avg(reports.map((r) => r.wanders ?? 0)),
   };
 }
 

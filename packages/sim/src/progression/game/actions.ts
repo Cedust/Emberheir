@@ -24,6 +24,7 @@ import {
   continueRun,
   enterFinale,
   retreat,
+  wander,
   setOut,
   setOutWildfire,
   startStage,
@@ -67,6 +68,8 @@ export type GameAction =
   | { readonly type: "resolveFight" }
   /** Back to Camp mid-act (works like a death, but costs no Pity). */
   | { readonly type: "retreat" }
+  /** At the Warden's Gate: walk the act anew instead of challenging its boss. */
+  | { readonly type: "wander" }
   | {
       readonly type: "pickItem";
       readonly index: number;
@@ -176,6 +179,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return resolveFight(state, data);
     case "retreat":
       return retreat(state, data);
+    case "wander":
+      return wander(state, data);
     case "pickItem":
       return pickItem(state, data, action.index, action.mode, action.slot);
     case "salvageAll":

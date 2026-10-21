@@ -229,6 +229,7 @@ function runActMode(): void {
           "1st fight lost %": (s.firstFightLossRate * 100).toFixed(1),
           "% deaths at boss": (s.bossDeathShare * 100).toFixed(0),
           "level at boss": s.avgLevelAtBoss.toFixed(1),
+          wanders: s.avgWanders.toFixed(1),
           "avg fight s": s.avgFightSeconds.toFixed(1),
           "p90 fight s": s.p90FightSeconds.toFixed(1),
           "boss fight s": s.avgBossSeconds.toFixed(1),

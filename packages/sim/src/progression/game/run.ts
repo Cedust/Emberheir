@@ -15,6 +15,7 @@ import {
   stagesInAct,
   stageWall,
   routeAt,
+  wardensGate,
   wildfireLevel,
   wildfireOpen,
   wildfirePressure,
@@ -392,6 +393,28 @@ export function continueRun(state: GameState, data: GameData): GameState {
   return {
     ...state,
     run: { ...run, stage: run.stage + 1, phase: "intermission", encounter: null, rewards: null },
+  };
+}
+
+/**
+ * Wander at the Warden's Gate (laengere-runs-v1.md): instead of the boss the road through the act
+ * starts anew at Stage 1. Life, the Flask, Boons and the bounty stay; the forks are chosen again.
+ * Waymarks pay their Skill Point only once per run, and Shrines stay quiet on the walks after
+ * the first, so farming brings levels and loot but no extra Boons.
+ */
+export function wander(state: GameState, data: GameData): GameState {
+  const run = requireRun(state, "intermission");
+  if (!wardensGate(state, data, run)) return fail("No Warden's Gate here");
+  return {
+    ...state,
+    run: {
+      ...run,
+      stage: 1,
+      encounter: null,
+      rewards: null,
+      routes: {},
+      wanders: (run.wanders ?? 0) + 1,
+    },
   };
 }
 

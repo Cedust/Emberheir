@@ -180,6 +180,7 @@ const run = z.object({
   wildfire: opt(int.positive()),
   draught: opt(id),
   routes: opt(z.record(z.string(), z.enum(ROUTE_KINDS))),
+  wanders: opt(int.positive()),
   omens: opt(z.array(id)),
 });
 

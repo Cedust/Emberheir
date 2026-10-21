@@ -64,6 +64,11 @@ Endgame **Wildfire I–X**.
 - **Run 1** besteht nur aus Act 1. **Jeder Run öffnet einen Act mehr**, Run 7 umfasst alle sieben Acts.
 - Fällt der Boss des **neuesten** Acts, kommt **The Harvest**: Der Harvester erntet die Glut, der Heir erwacht im Camp,
   das nächste Prestige beginnt. In Run 7 kämpft man selbst gegen den Harvester.
+- **Warden's Gate** (`notes/laengere-runs-v1.md`, Längere Runs Phase 1): Vor dem Boss des neuesten Acts wählt man
+  **Challenge** (Bosskampf, Sieg = The Harvest) oder **Wander**: zurück auf Stage 1 desselben Acts, um zu farmen. Life,
+  Flask, Boons und Bounty bleiben, die Gabelungen werden neu gewählt. Beim Wandern gibt es **keine neuen Shrines**
+  (keine Boons aus dem Farmen), Waymarks zahlen ihren Skill Point weiter nur einmal pro Run. Das Tor zeigt das
+  Boss-Level, rot, solange der Held darunter liegt. Nicht im Wildfire, im Finale und nach dem letzten Prestige.
 - **Waymarks:** Stage 5, 10 und 15 jedes Acts. Der erste Sieg dort in einem Run gibt einen Skill Point.
 - **Routen** (`elites-routen-v1.md`): Vor jedem Waymark vor dem Boss gabelt sich der Weg für zwei Stages (3–4 und 8–9):
   **Elite-Pfad** (zwei sichere Elites), **Shrine-Pfad** (danach eine Shrine), **Hearth-Pfad** (danach +25 % Life),
@@ -107,7 +112,8 @@ Endgame **Wildfire I–X**.
   Wildfire). Ein Zwischenziel, auf das man hinkämpft (`neuausrichtung-v1.md` 5.4).
 
 ### 2.5 Prestige ✅ (`entschlackung-v1.md`)
-- Pflicht nach dem Sieg über den Boss des neuesten Acts. Wer noch farmen will, macht vorher Retreat oder Revisit.
+- Pflicht nach dem Sieg über den Boss des neuesten Acts. Wer noch farmen will, wählt am **Warden's Gate** Wander
+  (oder macht Retreat/Revisit).
 - **Es bleibt alles** außer dem Act-Fortschritt (Gear, Inventar, Supply Wagon, Level, Währungen, Punkte, Codices).
 - **Man bekommt:** einen neuen Act · eine Mastery-Wahl (Haupt-Mastery vertiefen oder Tier I einer anderen) · die nächste Battle-Plan-Sprosse ·
   +2 Skill Points · +2 Attributpunkte · ein höheres Level Cap und Level-Band · bei Prestige 2, 4 und 6 einen weiteren
@@ -211,6 +217,8 @@ Endgame **Wildfire I–X**.
   aktuelles Gear.
 - Jedes Level: **+4 % Base Life, +3 % Weapon Damage** (zusammen ~+7 % Kampfkraft). Sonst nichts.
 - XP-Malus: −4 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
+- Ein Level kostet **4,5 × (1,6 + 0,07 × (Level − 1))** normale Kills gleichen Levels (×1,5 mit dem Warden's Gate,
+  Längere Runs): Der gerade Weg erreicht das Boss-Level nicht mehr ganz, ein paar Wanderungen durch den Act schon.
 - **Level-Malus** (Timo 19.10., mild): Ein Gegner über dem Level des Helden trifft +4 % härter pro Level Abstand,
   höchstens +40 % (nicht im Wildfire, dort endet das Level bei 100). Das Gegner-Level steht dann rot, der Tooltip
   nennt den Aufschlag.
