@@ -1095,7 +1095,11 @@
 }
 
 .stage .dev-tools {
-  position: relative;
+  position: absolute;
+  /* Under the run header, beside the enemy frame. */
+  top: 74px;
+  right: calc(var(--safe-x, 0px) + 16px);
+  z-index: 5;
   display: flex;
   gap: 4px;
 }
@@ -1110,11 +1114,11 @@
   cursor: pointer;
 }
 
-/* Above the dev buttons, so it never covers the skill bar. */
+/* Under the dev buttons. */
 .stage .dev-tools .dev-meter {
   position: absolute;
   right: 0;
-  bottom: calc(100% + 6px);
+  top: calc(100% + 6px);
   padding: 2px 6px;
   border-radius: 3px;
   background: var(--bg);

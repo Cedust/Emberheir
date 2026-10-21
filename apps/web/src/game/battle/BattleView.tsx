@@ -393,6 +393,26 @@ export function BattleView(props: {
         </div>
       )}
 
+      {/* Dev readout and speed at the top right, away from the skill bar (Timo). */}
+      {DEV_MODE && !result && (
+        <div className="dev-tools">
+          <DevMeter scene={sceneRef} />
+          {DEV_SPEEDS.map((s) => (
+            <button
+              key={s}
+              type="button"
+              className={speed === s ? "active" : ""}
+              onClick={() => setSpeed(s)}
+            >
+              {s}×
+            </button>
+          ))}
+          <button type="button" onClick={skip}>
+            Skip fight
+          </button>
+        </div>
+      )}
+
       <HeroBar
         hero={hero}
         heroTitle={looks.heroInfo.name}
@@ -405,37 +425,17 @@ export function BattleView(props: {
         stageH={stage.h}
         boons={<BoonBar state={state} flash={boonFlash} className="battle-boons" />}
         right={
-          <>
-            {DEV_MODE && !result && (
-              <div className="dev-tools">
-                <DevMeter scene={sceneRef} />
-                {DEV_SPEEDS.map((s) => (
-                  <button
-                    key={s}
-                    type="button"
-                    className={speed === s ? "active" : ""}
-                    onClick={() => setSpeed(s)}
-                  >
-                    {s}×
-                  </button>
-                ))}
-                <button type="button" onClick={skip}>
-                  Skip fight
-                </button>
-              </div>
-            )}
-            <button
-              type="button"
-              className="btn hud-retreat"
-              disabled={over}
-              aria-label="Retreat to Camp"
-              title="Retreat to Camp"
-              onClick={() => game.dispatch({ type: "retreat" })}
-            >
-              <Icon name="retreat" size={18} />
-              Retreat
-            </button>
-          </>
+          <button
+            type="button"
+            className="btn hud-retreat"
+            disabled={over}
+            aria-label="Retreat to Camp"
+            title="Retreat to Camp"
+            onClick={() => game.dispatch({ type: "retreat" })}
+          >
+            <Icon name="retreat" size={18} />
+            Retreat
+          </button>
         }
       />
     </section>
