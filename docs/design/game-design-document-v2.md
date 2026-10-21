@@ -50,8 +50,11 @@ Endgame **Wildfire I–X**.
 - Jeder Trait hat in der Arena einen eigenen Moment (Fury-Glut, Mark, Overcharge-Nova).
 
 - Die Klasse ist ein Startpunkt, kein Käfig: Alle Items und alle Regionen des Ash Trees sind für jede Klasse nutzbar.
-- **Lineage:** Gewinnt ein Charakter das Finale, bekommen alle Klassen des Accounts einen kleinen Lineage-Bonus
-  (pro Klasse eigener Wert), der mit jedem weiteren Finale-Sieg eines anderen Charakters steigt (bis Stufe 5).
+- **Lineage** (Phase 5, Timo 21.10.2026): Jede Klasse, die das Finale gewinnt, entzündet ihre Flamme (Iron, Keen,
+  Hollow Lineage). Jeder neue Charakter **jeder** Klasse bekommt bei der Erstellung **+1 Attribute Point** im
+  Hauptattribut jeder entzündeten Klasse (STR, DEX, INT), höchstens 3. Die Punkte sind an- und abwählbar (Default an),
+  leuchten feuerrot, zählen für Breakpoint Perks und gehören zur Untergrenze beim Respec. Alle drei Flammen = Titel
+  „Emberheir“ und das Ahnenporträt. (Vorher: kleine Prozent-Boni nur für die eigene Klasse, Stufen 1–5.)
 
 ### 2.2 Runs und Acts ✅ (`prestige-acts-v1.md`)
 
@@ -414,7 +417,10 @@ Endgame **Wildfire I–X**.
 | **Echoes** | Andenken der Act-Bosse, werden pro Run stärker |
 
 - **Infusion:** Der Path tauscht den Damage Type der Waffe (Implicit Physical ↔ Elemental), ersetzt ihre Ailment-Chance
-  und schreibt den Innate um (Name, Typ, Ailment). Ohne Punkt gilt der erste Path. Mastery-Skills sind „infused“ und
+  und schreibt den Innate um (Name, Typ, Ailment). Ohne Punkt gilt der erste Path. **Attunement** (Wand und Staff,
+  Phase 5): Das Element der Default Attack (und von allem, was „das Element deiner Waffe“ nimmt: Overcharge, Barrier
+  Burst) ist frei unter den drei Path-Elementen wählbar, kostenlos im Camp bei Kaelen; Default „wie der Path“. Path,
+  Innate und Path-Nodes behalten ihr Element. Mastery-Skills sind „infused“ und
   folgen ihm auch. In der Arena glüht die Waffenspitze in der Farbe des Paths.
 
 | Waffe | Path 1 | Path 2 | Path 3 |
