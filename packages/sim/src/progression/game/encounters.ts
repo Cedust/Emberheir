@@ -133,7 +133,9 @@ export function currentFight(
   const run = state.run;
   if (!run || run.phase !== "fight" || !run.encounter) return fail("No fight in progress");
   const enemy = enemySetup(run.encounter, run.actId, data);
-  const malus = run.wildfire ? 0 : levelGapMalus(state.hero.level, run.encounter.level);
+  const malus = run.wildfire
+    ? 0
+    : levelGapMalus(state.hero.level, run.encounter.level, encounterRank(run.encounter));
   return {
     hero: heroSetup(state, data).setup,
     enemy: malus

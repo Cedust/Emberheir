@@ -641,7 +641,9 @@ export function EnemyFrame(props: EnemyFrameProps) {
           className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
           title={levelHint(
             e.level - props.heroLevel,
-            props.noLevelMalus ? 0 : levelGapMalus(props.heroLevel, e.level),
+            props.noLevelMalus
+              ? 0
+              : levelGapMalus(props.heroLevel, e.level, props.tag ? "elite" : "normal"),
           )}
         >
           Lv {e.level}
