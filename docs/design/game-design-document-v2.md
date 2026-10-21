@@ -124,7 +124,13 @@ Endgame **Wildfire I–X**.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 2–3 Ember Coal, Boss 4–6, normale Gegner 15 % auf 1).
 - **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
-- Boss: zusätzlich **Boss Hoard** (Chance auf Boss-Unique/Trophy) und sein **Echo** für das Heirloom.
+- Boss: zusätzlich **Boss Hoard** (15 % auf eine Trophy des eigenen Wardens, ab Run 4; vorher 10 %) und sein **Echo** für das Heirloom.
+- **Act-Beute** (`notes/laengere-runs/act-beute-entwurf-v1.md`, Timo 21.10.2026): jeder Act hat eine **Home Rune**
+  (Ashen Fields Bark, Rotwood Thorn, Ember Wastes Ember, Frost Peaks Rime, Storm Spires Volt, Void Rift Venom,
+  Emberfall Dusk). Dort ist jede 5. Rune die Home Rune (Kampf, Cache, Smoldering Altar), Volt und Dusk jede 10. und
+  nur von Elites, Gatekeepern, Bossen und Caches; die Anzahl Runes bleibt gleich. **Home Uniques** fallen im eigenen
+  Act 3-mal so oft (Ashen Fields Ashwalkers, Rotwood Barkhide Bulwark und Mossgrown Mail, Ember Wastes Cinderwick).
+  Eldrin zeigt beides im Act-Text, der Cache-Knoten nennt die Home Rune.
 
 ### 2.4 Tod, Retreat, Revisit ✅
 - **Tod:** zurück ins Camp (Beginn des aktuellen Acts). Level, Gear, Inventar, Währungen und Punkte **bleiben**.
