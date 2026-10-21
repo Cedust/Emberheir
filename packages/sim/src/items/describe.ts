@@ -87,6 +87,75 @@ export const SLOT_NAMES: Readonly<Record<ItemSlot, string>> = {
   charm: "Charm",
 };
 
+/**
+ * Fixed order of stat lines on item tooltips (Diablo style): Attributes, Offense, Ailments,
+ * Defense, Utility. Lower comes first.
+ */
+export const STAT_ORDER: Readonly<Record<AffixStat, number>> = Object.fromEntries(
+  (
+    [
+      "strength",
+      "dexterity",
+      "agility",
+      "intelligence",
+      "wisdom",
+      "vitality",
+      "addedWeaponDamage",
+      "physicalDamage",
+      "elementalDamage",
+      "attackSpeed",
+      "critChance",
+      "physicalPenetration",
+      "elementalPenetration",
+      "ailmentEffect",
+      "bleedChance",
+      "poisonChance",
+      "burnChance",
+      "chillChance",
+      "shockChance",
+      "corruptionChance",
+      "life",
+      "increasedLife",
+      "barrier",
+      "increasedBarrier",
+      "armor",
+      "increasedArmor",
+      "evasion",
+      "blockChance",
+      "allResistance",
+      "fireResistance",
+      "coldResistance",
+      "lightningResistance",
+      "voidResistance",
+      "lifesteal",
+      "thorns",
+      "tenacity",
+      "heatGain",
+      "startingHeat",
+      "heatFromHitsTaken",
+      "triggerChance",
+      "flaskCharges",
+    ] satisfies readonly AffixStat[]
+  ).map((stat, i) => [stat, i]),
+) as Record<AffixStat, number>;
+
+/** Fixed order of trigger lines, by what sets them off. */
+const TRIGGER_ORDER: Readonly<Record<TriggerCondition["kind"], number>> = {
+  fightStart: 0,
+  everySeconds: 1,
+  everyNthAttack: 2,
+  onHit: 3,
+  onCrit: 4,
+  onSkillUse: 5,
+  whenHit: 6,
+  everyNthHitTaken: 7,
+  onEvade: 8,
+  onBlock: 9,
+  onParry: 10,
+  enemyWindup: 11,
+  lifeBelow: 12,
+};
+
 const DAMAGE_TYPE_NAMES: Readonly<Record<DamageType, string>> = {
   physical: "Physical",
   fire: "Fire",
@@ -292,53 +361,64 @@ export function describeItem(
   const power = item.powerId ? catalog.powers.get(item.powerId) : undefined;
   const unique = item.uniqueId ? catalog.uniques.get(item.uniqueId) : undefined;
   const runeName = (id: string) => catalog.runes.get(id)?.name ?? id;
-  const affixLines = [
+  type AffixLine = ItemTooltip["affixLines"][number] & { readonly rank: number };
+  const rolled = [
     ...item.affixes,
     ...(word?.triggers ?? []),
     ...(power?.trigger ? [power.trigger] : []),
-  ].flatMap(
-    (roll, i): { text: string; kind: "stat" | "trigger" | "kindled"; greater?: number }[] => {
-      const affix = catalog.affixes.get(roll.affixId);
-      if (!affix) return [];
-      const rank = greaterRank(item, i);
-      const greater = rank > 0 ? { greater: rank } : {};
-      if (affix.kind === "trigger") {
-        return [
-          {
-            text: describeTrigger(resolveTrigger(affix, item.tier, roll.quality, rank)),
-            kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
-            ...greater,
-          },
-        ];
-      }
+  ].flatMap((roll, i): AffixLine[] => {
+    const affix = catalog.affixes.get(roll.affixId);
+    if (!affix) return [];
+    const rank = greaterRank(item, i);
+    const greater = rank > 0 ? { greater: rank } : {};
+    if (affix.kind === "trigger") {
+      const spec = resolveTrigger(affix, item.tier, roll.quality, rank);
       return [
         {
-          text: describeStat(
-            affix.stat,
-            statAffixValue(affix, item.tier, roll.quality, item.rarity, rank),
-          ),
-          kind: "stat" as const,
+          text: describeTrigger(spec),
+          kind: roll.kindled ? ("kindled" as const) : ("trigger" as const),
+          rank: TRIGGER_ORDER[spec.condition.kind],
           ...greater,
         },
       ];
-    },
-  );
+    }
+    return [
+      {
+        text: describeStat(
+          affix.stat,
+          statAffixValue(affix, item.tier, roll.quality, item.rarity, rank),
+        ),
+        kind: "stat" as const,
+        rank: STAT_ORDER[affix.stat],
+        ...greater,
+      },
+    ];
+  });
   // Runeword and Rune bonuses read like affixes.
   const extra = scaledFlatBonuses(
     sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses),
     item.tier,
   );
-  const wordAttributes = ATTRIBUTES.flatMap((a) =>
-    word?.attributes?.[a] ? [describeStat(a, word.attributes[a])] : [],
-  );
-  affixLines.push(
-    ...[...wordAttributes, ...describeBonuses(extra)].map((text) => ({
-      text,
-      kind: "stat" as const,
-    })),
-  );
-  // Stat affixes first, triggers last (like the tooltip mock).
-  affixLines.sort((a, b) => (a.kind === b.kind ? 0 : a.kind === "stat" ? -1 : 1));
+  const bonusStats: [AffixStat, number][] = [
+    ...ATTRIBUTES.flatMap((a): [AffixStat, number][] =>
+      word?.attributes?.[a] ? [[a, word.attributes[a]]] : [],
+    ),
+    ...(Object.entries(extra) as [AffixStat, number][]).filter(([, value]) => value !== 0),
+  ];
+  // Fixed order, so two items read alike at a glance: stats by STAT_ORDER, triggers last by
+  // TRIGGER_ORDER. The sort is stable, so equal stats keep affix-before-Rune order.
+  const affixLines = (
+    [
+      ...rolled,
+      ...bonusStats.map(([stat, value]) => ({
+        text: describeStat(stat, value),
+        kind: "stat" as const,
+        rank: STAT_ORDER[stat],
+      })),
+    ] as AffixLine[]
+  )
+    .sort((a, b) => Number(a.kind !== "stat") - Number(b.kind !== "stat") || a.rank - b.rank)
+    .map(({ text, kind, greater }) => ({ text, kind, ...(greater ? { greater } : {}) }));
 
   const required = requirementsFor(base, item.tier);
   const requirements = ATTRIBUTES.flatMap((attribute) => {
