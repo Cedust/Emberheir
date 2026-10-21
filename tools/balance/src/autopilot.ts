@@ -92,18 +92,18 @@ export function chooseRoute(state: GameState, data: GameData): GameState {
 }
 
 /**
- * At the Warden's Gate (laengere-runs-v1.md) the autopilot reads the boss's level like a player:
+ * At the Warden's Gate (laengere-runs-v1.md) the autopilot reads the wall's level like a player:
  * below it (the Gate shows it red) it wanders on through the act to farm, at most
- * `GATE_WANDERS` walks per trip, then it challenges the boss.
+ * `GATE_WANDERS` walks per trip, then it challenges the Gatekeeper or the boss.
  */
-export const GATE_WANDERS = 3;
+export const GATE_WANDERS = 4;
 
 export function chooseGate(state: GameState, data: GameData): GameState {
   const run = state.run;
   if (!run || run.phase !== "intermission" || !wardensGate(state, data, run)) return state;
   const act = getAct(data, run.actId);
-  const bossLevel = stageMonsterLevel(data, act, act.stages, state.legacy.prestige);
-  if (state.hero.level >= bossLevel || (run.wanders ?? 0) >= GATE_WANDERS) return state;
+  const wallLevel = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
+  if (state.hero.level >= wallLevel || (run.wanders ?? 0) >= GATE_WANDERS) return state;
   return applyAction(state, data, { type: "wander" });
 }
 

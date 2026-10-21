@@ -103,7 +103,9 @@ export function IntermissionView(props: {
         : step === "shrine"
           ? "Steal 1 of 3 sparks"
           : step === "gate"
-            ? "Challenge the boss or wander on"
+            ? nextStage >= act.stages
+              ? "Challenge the boss or wander on"
+              : "Challenge the Gatekeeper or wander on"
             : boss
               ? `${act.name} cleared`
               : "";

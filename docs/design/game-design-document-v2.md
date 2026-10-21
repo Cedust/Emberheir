@@ -64,11 +64,12 @@ Endgame **Wildfire I–X**.
 - **Run 1** besteht nur aus Act 1. **Jeder Run öffnet einen Act mehr**, Run 7 umfasst alle sieben Acts.
 - Fällt der Boss des **neuesten** Acts, kommt **The Harvest**: Der Harvester erntet die Glut, der Heir erwacht im Camp,
   das nächste Prestige beginnt. In Run 7 kämpft man selbst gegen den Harvester.
-- **Warden's Gate** (`notes/laengere-runs-v1.md`, Längere Runs Phase 1): Vor dem Boss des neuesten Acts wählt man
-  **Challenge** (Bosskampf, Sieg = The Harvest) oder **Wander**: zurück auf Stage 1 desselben Acts, um zu farmen. Life,
+- **Warden's Gate** (`notes/laengere-runs-v1.md`, Längere Runs Phase 1): Vor jeder Wand des neuesten Acts (den
+  Gatekeepern auf Stage 5 und 10 und dem Boss) wählt man **Challenge** (Kampf; beim Boss bringt der Sieg The Harvest)
+  oder **Wander**: zurück auf Stage 1 desselben Acts, um zu farmen. Life,
   Flask, Boons und Bounty bleiben, die Gabelungen werden neu gewählt. Beim Wandern gibt es **keine neuen Shrines**
   (keine Boons aus dem Farmen), Waymarks zahlen ihren Skill Point weiter nur einmal pro Run. Das Tor zeigt das
-  Boss-Level, rot, solange der Held darunter liegt. Nicht im Wildfire, im Finale und nach dem letzten Prestige.
+  Level der Wand, rot, solange der Held darunter liegt. Nicht im Wildfire, im Finale und nach dem letzten Prestige.
 - **Waymarks:** Stage 5, 10 und 15 jedes Acts. Der erste Sieg dort in einem Run gibt einen Skill Point.
 - **Routen** (`elites-routen-v1.md`): Vor jedem Waymark vor dem Boss gabelt sich der Weg für zwei Stages (3–4 und 8–9):
   **Elite-Pfad** (zwei sichere Elites), **Shrine-Pfad** (danach eine Shrine), **Hearth-Pfad** (danach +25 % Life),

@@ -5,6 +5,9 @@ import {
   actsInRun,
   applyAction,
   encounterFight,
+  gateStages,
+  isWallAct,
+  stageMonsterLevel,
   outcomeOf,
   type FightOutcome,
   type GameData,
@@ -71,6 +74,27 @@ function prepare(
   return brewDraught(s, data, act);
 }
 
+/** Farm trips per act at most before the autopilot goes in anyway. */
+export const FARM_TRIPS = 3;
+
+/**
+ * The act to farm before setting out into `act`: the act before it, while the hero is below the
+ * level of `act`'s first wall (its first Gatekeeper, or its boss). Only for the run's newest act.
+ */
+function farmAct(
+  state: GameState,
+  data: GameData,
+  act: ActData,
+  acts: readonly ActData[],
+): ActData | undefined {
+  const index = acts.findIndex((a) => a.id === act.id);
+  if (index !== acts.length - 1 || index < 1) return undefined;
+  if (!isWallAct(data, act, state.legacy.prestige)) return undefined;
+  const wall = gateStages(act)[0] ?? act.stages;
+  const level = stageMonsterLevel(data, act, wall, state.legacy.prestige);
+  return state.hero.level < level ? acts[index - 1] : undefined;
+}
+
 /**
  * Plays whole acts with a simple autopilot to answer "how long does a fight take" and "how often
  * do you die before the boss" (game-design-document-v1.md section 11).
@@ -106,6 +130,8 @@ export interface ActRunReport {
   readonly runesWorn: number;
   /** Walks past the Warden's Gate instead of the boss (laengere-runs-v1.md). */
   readonly wanders?: number;
+  /** Trips through the act before this one to farm levels first (newest act only). */
+  readonly farmTrips?: number;
 }
 
 /** The Runewords and the count of socketed Runes on the hero right now. */
@@ -181,8 +207,38 @@ export function playGenerations(
       let firstFightLost = false;
       const stageFights: StageFight[] = [];
       let wanders = 0;
+      let farmTrips = 0;
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
+        // Farming like a player (laengere-runs-v1.md): below the level of the newest act's first
+        // wall, a trip through the act before it (no walls there) comes first.
+        const farm = farmAct(s, data, act, acts);
+        if (farm && farmTrips < FARM_TRIPS) {
+          farmTrips++;
+          attempt--;
+          s = prepare(s, data, build, farm, runes, memo);
+          s = applyAction(s, data, {
+            type: "setOut",
+            actId: farm.id,
+            omens: chooseRunOmen(s, data, farm.id),
+          });
+          while (s.run) {
+            s = spendPoints(s, data, options.starterWeapon);
+            if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
+              s = applyAction(s, data, { type: "useFlask" });
+            }
+            s = chooseRoute(s, data);
+            s = applyAction(s, data, { type: "startStage" });
+            const encounter = s.run?.encounter;
+            const result = finishedFight(s, data);
+            s = applyAction(s, data, { type: "resolveFight" });
+            const died = !s.run && s.notice?.kind === "death";
+            stageFights.push({ kind: stageKind(encounter), seconds: result.duration, died });
+            if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
+          }
+          s = applyAction(s, data, { type: "dismissNotice" });
+          continue;
+        }
         s = prepare(s, data, build, act, runes, memo);
         s = applyAction(s, data, {
           type: "setOut",
@@ -252,6 +308,7 @@ export function playGenerations(
         stageFights,
         ...wornRunes(s, data),
         wanders,
+        farmTrips,
       });
       if (!cleared) {
         allCleared = false;

@@ -311,9 +311,16 @@ export function PathCards(props: { state: GameState; run: RunState; game: GameAp
 export function GateCards(props: { state: GameState; run: RunState; game: GameApi }) {
   const { state, run, game } = props;
   const act = getAct(GAME_DATA, run.actId);
-  const bossLevel = stageMonsterLevel(GAME_DATA, act, act.stages, state.legacy.prestige);
-  const gap = bossLevel - state.hero.level;
+  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  const boss = next >= act.stages;
+  const level = stageMonsterLevel(GAME_DATA, act, next, state.legacy.prestige);
+  const gap = level - state.hero.level;
   const walks = run.wanders ?? 0;
+  const foe = boss
+    ? bossKnown(state, GAME_DATA, act.id)
+      ? act.boss.name
+      : "the boss"
+    : "the Gatekeeper";
   const challenge = () => game.dispatchAll(nextStageActions(state));
   const wander = () =>
     game.dispatchAll([
@@ -324,19 +331,20 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
     <div className="path-cards gate-cards" aria-label="Warden's Gate">
       <GateCard
         kind="challenge"
-        icon="boss"
+        icon={boss ? "boss" : "warden"}
         name="Challenge"
-        text={`Face ${bossKnown(state, GAME_DATA, act.id) ? act.boss.name : "the boss"}. Its fall brings The Harvest.`}
+        text={boss ? `Face ${foe}. Its fall brings The Harvest.` : `Face ${foe} of this Waymark.`}
         tip={{
           name: "Challenge",
           kind: "Warden's Gate",
-          explain:
-            "Fight the boss now. Win, and the run ends in The Harvest: the next Prestige begins.",
-          status: `Boss level ${bossLevel} · you are ${state.hero.level}`,
+          explain: boss
+            ? "Fight the boss now. Win, and the run ends in The Harvest: the next Prestige begins."
+            : "Fight the Gatekeeper now. It guards the Waymark: a wall of the newest act.",
+          status: `Level ${level} · you are ${state.hero.level}`,
         }}
         onClick={challenge}
       >
-        <span className={`gate-level${gap >= 1 ? " below" : ""}`}>Level {bossLevel}</span>
+        <span className={`gate-level${gap >= 1 ? " below" : ""}`}>Level {level}</span>
       </GateCard>
       <GateCard
         kind="wander"

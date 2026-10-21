@@ -141,12 +141,14 @@ describe("Routes", () => {
 });
 
 describe("Warden's Gate", () => {
-  it("stands before the boss of the run's newest act only", () => {
+  it("stands before each wall of the run's newest act: its Gatekeepers and its boss", () => {
     const run = onRoad(15).run ?? { actId: "long-act", stage: 0 };
     expect(wardensGate(onRoad(15), data, run)).toBe(true);
     expect(wardensGate(onRoad(15), data, { ...run, stage: 14 })).toBe(false);
+    expect(wardensGate(onRoad(15), data, { ...run, stage: 5 })).toBe(true);
     expect(wardensGate(onRoad(15), data, { ...run, wildfire: 1 })).toBe(false);
     expect(() => applyAction(onRoad(14), data, { type: "wander" })).toThrow();
+    expect(applyAction(onRoad(10), data, { type: "wander" }).run?.stage).toBe(1);
   });
 
   it("wandering starts the act anew: Life, Flask and Boons stay, the forks open again", () => {
