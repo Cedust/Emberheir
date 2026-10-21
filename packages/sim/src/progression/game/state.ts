@@ -77,6 +77,13 @@ export interface ActData {
    * drops the answer to its own question more often.
    */
   readonly favoredAffixes?: Readonly<Record<string, number>>;
+  /**
+   * Home Rune (act-beute-entwurf-v1.md A1): in this act a share of all Runes is this one
+   * (`PROGRESSION.homeRuneShare`), so who wants it knows where to go.
+   */
+  readonly homeRune?: string;
+  /** Home Uniques (A2): a Unique card in this act is one of these more often. */
+  readonly homeUniques?: readonly string[];
   /** The Stolen Fire Boon family of this act's Warden (open from this act on). */
   readonly boonFamily?: string;
 }

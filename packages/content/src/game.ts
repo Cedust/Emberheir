@@ -45,6 +45,8 @@ export const ACT1: ActData = {
   boss: GORRAK,
   boonFamily: "ash",
   shrineStages: [5, 10],
+  homeRune: "ash",
+  homeUniques: ["ashwalkers"],
 };
 
 /** Act 2: Rotwood, Bleed and Poison. Opens with the first Prestige. */
@@ -59,6 +61,8 @@ export const ACT2: ActData = {
   runesmith: true,
   shrineStages: [5, 10],
   favoredAffixes: { tenacity: 3, "poison-chance": 1.5 },
+  homeRune: "thorn",
+  homeUniques: ["barkhide-bulwark", "mossgrown-mail"],
 };
 
 /**
@@ -75,6 +79,8 @@ export const ACT3: ActData = {
   boonFamily: "cinder",
   shrineStages: [5, 10],
   favoredAffixes: { "fire-resistance": 4, "burn-chance": 1.5 },
+  homeRune: "ember",
+  homeUniques: ["cinderwick"],
 };
 
 /** Act 4: the Frost Peaks, Cold and Chill. Opens with the third Prestige; loot favors Cold Resistance. */
@@ -88,6 +94,7 @@ export const ACT4: ActData = {
   boonFamily: "rime",
   shrineStages: [5, 10],
   favoredAffixes: { "cold-resistance": 4, "heat-gain": 1.5 },
+  homeRune: "rime",
 };
 
 /** Act 5: the Storm Spires, Lightning and Shock. Opens with the fourth Prestige. */
@@ -101,6 +108,7 @@ export const ACT5: ActData = {
   boonFamily: "storm",
   shrineStages: [5, 10],
   favoredAffixes: { "lightning-resistance": 4, tenacity: 1.5 },
+  homeRune: "volt",
 };
 
 /** Act 6: the Void Rift, Void and Corruption. Opens with the fifth Prestige. */
@@ -114,6 +122,7 @@ export const ACT6: ActData = {
   boonFamily: "void",
   shrineStages: [5, 10],
   favoredAffixes: { "void-resistance": 4, "corruption-chance": 1.5 },
+  homeRune: "venom",
 };
 
 /**
@@ -129,6 +138,7 @@ export const ACT7: ActData = {
   boss: ASHEN_HARVESTER,
   shrineStages: [4, 7],
   favoredAffixes: { "all-resistance": 2, life: 1.5 },
+  homeRune: "dusk",
 };
 
 /**

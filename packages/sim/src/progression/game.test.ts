@@ -37,6 +37,7 @@ import {
   addRunes,
   maxRuneRank,
   rollRuneDrops,
+  rollRune,
 } from "./game";
 import { requiredLevel } from "../items/equipment";
 import { levelCap } from "./leveling";
@@ -689,6 +690,24 @@ describe("Runes in the run", () => {
         true,
       );
     }
+  });
+
+  it("an act's Home Rune gets its share, the top ranks only from high drops and below the cap", () => {
+    // The test catalog has three Runes, so Thorn (rank 3) is a top rank there.
+    const share = (high: boolean, tier: number, home?: string) => {
+      let hits = 0;
+      for (let seed = 1; seed <= 3000; seed++) {
+        if (rollRune(data, tier, high, new Rng(seed), home) === "thorn") hits++;
+      }
+      return hits / 3000;
+    };
+    const base = share(true, 9);
+    // On top of its own small weight, about every 10th high Rune is the top-rank Home Rune.
+    expect(share(true, 9, "thorn") - base).toBeGreaterThan(PROGRESSION.homeHighRuneShare * 0.7);
+    expect(share(true, 9, "thorn") - base).toBeLessThan(PROGRESSION.homeHighRuneShare * 1.2);
+    expect(share(false, 9, "thorn")).toBe(0);
+    // Above the act's rank cap it does not drop at all.
+    expect(share(true, 0, "thorn")).toBe(0);
   });
 
   it("dropped Runes go into the pouch and are remembered as found", () => {

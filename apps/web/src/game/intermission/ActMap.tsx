@@ -33,6 +33,8 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { Price } from "../../ui/kit/Currency";
 import { emptySlotArt } from "../../ui/items";
 import type { GameApi } from "../useGame";
+import { homeRuneOf } from "../actLoot";
+import { runeName } from "../../ui/RuneArt";
 
 /**
  * The act map (act-karte-entwurf-v1.md, Slay the Spire): the road through the act as three
@@ -407,7 +409,10 @@ function MapNodeButton(props: {
   const hover = useNoteHover({
     name: label.name,
     kind: `Stage ${props.stage}`,
-    explain: label.text,
+    explain:
+      props.node.kind === "cache" && homeRuneOf(props.run.actId)
+        ? `${label.text} Home Rune: ${runeName(homeRuneOf(props.run.actId) ?? "")}.`
+        : label.text,
     ...(props.ahead ? { status: "Click to walk here next" } : {}),
   });
   const cls = [
@@ -609,7 +614,11 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
         kind="rune"
         icon="rune"
         name={rune ? `${rune.name} Rune` : "Runes"}
-        text="Into the Rune pouch."
+        text={
+          rune && rune.id === homeRuneOf(run.actId)
+            ? "The Home Rune of this act. Into the Rune pouch."
+            : "Into the Rune pouch."
+        }
         blocked={rune ? undefined : "Empty"}
         onClick={() => choose(1)}
       />,

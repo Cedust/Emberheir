@@ -1,4 +1,4 @@
-import { ACTS, GAME_DATA } from "@emberheir/content";
+import { ACTS, GAME_DATA, ITEM_CATALOG } from "@emberheir/content";
 import {
   type ActData,
   actUnlocked,
@@ -9,6 +9,7 @@ import {
   finaleOpen,
   flaskCapacity,
   type GameState,
+  getBase,
   minPeril,
   nextAct,
   omenOffer,
@@ -18,6 +19,10 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import { Icon } from "../../ui/Icon";
+import { ItemArt } from "../../ui/ItemArt";
+import { useNoteHover } from "../../ui/ItemTooltip";
+import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
+import { homeRuneNote, homeUniqueNote } from "../actLoot";
 import { Button } from "../../ui/kit/Button";
 import { Wallet } from "../../ui/kit/Currency";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
@@ -156,6 +161,11 @@ export function RoadStrip(props: { state: GameState; plan: RoadPlan; vertical?: 
                 {open && bossKnown(state, GAME_DATA, a.id) ? ` · ${a.boss.name}` : ""}
               </span>
             </span>
+            {props.vertical && a.homeRune && (
+              <span className="road-home-rune" title={`Home Rune: ${runeName(a.homeRune)}`}>
+                <RuneStone runeId={a.homeRune} size={22} />
+              </span>
+            )}
             {done ? (
               <Icon name="check" size={16} className="road-mark" />
             ) : !open ? (
@@ -165,6 +175,59 @@ export function RoadStrip(props: { state: GameState; plan: RoadPlan; vertical?: 
         );
       })}
     </div>
+  );
+}
+
+/** The act's Home Rune and Home Uniques (act-beute-entwurf-v1.md A3): what to farm here. */
+function HomeLoot(props: { state: GameState; act: ActData }) {
+  const { state, act } = props;
+  if (!act.homeRune && !act.homeUniques?.length) return null;
+  return (
+    <div className="road-home" aria-label="Home loot">
+      {act.homeRune && <HomeRuneChip act={act} />}
+      {(act.homeUniques ?? []).map((id) => (
+        <HomeUniqueChip
+          key={id}
+          id={id}
+          act={act}
+          found={state.legacy.trophies.includes(id)}
+          prestige={state.legacy.prestige}
+        />
+      ))}
+    </div>
+  );
+}
+
+function HomeRuneChip(props: { act: ActData }) {
+  const id = props.act.homeRune ?? "";
+  const hover = useNoteHover(homeRuneNote(props.act));
+  return (
+    <span
+      className="road-home-chip"
+      tabIndex={0}
+      data-testid="home-rune"
+      style={{ "--rune": runeColor(id) } as React.CSSProperties}
+      {...hover}
+    >
+      <RuneStone runeId={id} size={26} />
+      <span className="title-font">{runeName(id)}</span>
+    </span>
+  );
+}
+
+function HomeUniqueChip(props: { id: string; act: ActData; found: boolean; prestige: number }) {
+  const unique = ITEM_CATALOG.uniques.get(props.id);
+  const hover = useNoteHover(homeUniqueNote(props.id, props.act, props.found, props.prestige));
+  if (!unique) return null;
+  return (
+    <span
+      className={`road-home-unique${props.found ? " found" : ""}`}
+      tabIndex={0}
+      aria-label={unique.name}
+      {...hover}
+    >
+      <ItemArt baseId={unique.baseId} slot={getBase(ITEM_CATALOG, unique.baseId).slot} />
+    </span>
   );
 }
 
@@ -250,6 +313,7 @@ export function RoadWindow(props: {
                   ? act.boss.description
                   : "Nobody came back to tell what waits at its end."}
               </span>
+              <HomeLoot state={state} act={act} />
             </div>
             {finaleOpen(state, GAME_DATA) && (
               <Button

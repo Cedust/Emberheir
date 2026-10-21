@@ -176,7 +176,15 @@ export const PROGRESSION = {
   /** The Ashen Challenger of an Event: its Elite lets the hero take this many of its cards. */
   challengePicks: 2,
   /** Chance per boss kill that one Hoard card is a trophy from the boss's own list. */
-  bossTrophyChance: 0.1,
+  bossTrophyChance: 0.15,
+  /** A Unique card in its home act is a Home Unique this many times as often (act-beute A2). */
+  homeUniqueWeight: 3,
+  /**
+   * Share of an act's Runes that are its Home Rune (act-beute A1). The two top ranks only on
+   * `high` drops, and half as often.
+   */
+  homeRuneShare: 0.2,
+  homeHighRuneShare: 0.1,
   /** The top Rune ranks only drop from Elites and Bosses, this much rarer on top of the falloff. */
   highRuneRanks: 2,
   highRuneFactor: 0.3,
