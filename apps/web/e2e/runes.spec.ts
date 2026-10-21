@@ -13,6 +13,8 @@ test("Marisha gambles a ring, Nyssa turns three Bark into Moss", async ({ page }
     .getByRole("radiogroup", { name: "Gamble slot" })
     .getByRole("radio", { name: "Ring" })
     .click();
+  // The chosen slot waits in the Mystery Crate as a dark shape, then turns into the item.
+  await expect(page.locator(".gamble-crate .gamble-shape")).toBeVisible();
   await page.locator(".cost-bar").getByRole("button", { name: "Gamble" }).click();
   await expect(page.locator(".gamble-last")).toBeVisible();
 

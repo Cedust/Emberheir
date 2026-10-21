@@ -11,7 +11,7 @@ import {
   merchantSlots,
 } from "@emberheir/sim";
 import { ItemArt } from "../../ui/ItemArt";
-import { rarityClass } from "../../ui/items";
+import { emptySlotArt, rarityClass } from "../../ui/items";
 import { useItemHover } from "../../ui/ItemTooltip";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 import { BenchArt } from "./Workbench";
@@ -155,16 +155,26 @@ export function RuneBoard(props: {
   );
 }
 
-/** Gamble: one card per slot; the last gambled item below. */
-export function GamblePanel(props: {
+/**
+ * Gamble: one card per slot; the Mystery Crate below shows the chosen slot's empty shape, dark,
+ * and on a gamble that shape turns into the item Marisha pulled out.
+ */
+export function GamblePanel({
+  crate,
+  ...props
+}: {
   state: GameState;
   selected: ItemSlot | null;
   onSelect: (slot: ItemSlot) => void;
   last: Item | null;
+  crate?: React.Ref<HTMLDivElement>;
 }) {
   const slots = merchantSlots(GAME_DATA);
   const last = props.last ?? undefined;
   const { active, ...hover } = useItemHover(last, false);
+  const lastSlot = last && getBase(ITEM_CATALOG, last.baseId).slot;
+  const slot = lastSlot ?? props.selected;
+  const shape = slot && gambleShape(slot);
   return (
     <div className="gamble">
       <div className="gamble-slots" role="radiogroup" aria-label="Gamble slot">
@@ -190,21 +200,41 @@ export function GamblePanel(props: {
       </div>
       <span className="sub small">Item Level {merchantItemLevel(props.state, GAME_DATA)}</span>
       <div
+        ref={crate}
         className={`workbench gamble-crate${last ? ` ${rarityClass(last)}` : ""}`}
         aria-label="Mystery Crate"
       >
         <BenchArt persona="marisha">
-          {last && (
-            <span
-              className="gamble-last"
-              aria-label={`Gambled: ${last.name}`}
-              {...(active ? hover : {})}
-            >
-              <ItemArt baseId={last.baseId} slot={getBase(ITEM_CATALOG, last.baseId).slot} />
+          {slot && (
+            // Keyed by the item, so each gamble plays the change again.
+            <span key={last?.id ?? slot} className={`gamble-reveal${last ? " turned" : ""}`}>
+              {shape}
+              {last && lastSlot && (
+                <>
+                  <span className="gamble-flash" aria-hidden="true" />
+                  <span
+                    className="gamble-last"
+                    aria-label={`Gambled: ${last.name}`}
+                    {...(active ? hover : {})}
+                  >
+                    <ItemArt baseId={last.baseId} slot={lastSlot} />
+                  </span>
+                </>
+              )}
             </span>
           )}
         </BenchArt>
       </div>
     </div>
   );
+}
+
+/** The slot's painted empty shape, dark, as it waits in the crate (base art if it has none). */
+function gambleShape(slot: ItemSlot) {
+  const art = emptySlotArt(slot);
+  if (art) {
+    return <img className="gamble-shape" src={art} alt="" draggable={false} />;
+  }
+  const base = GAME_DATA.lootBases.find((id) => getBase(ITEM_CATALOG, id).slot === slot);
+  return base ? <ItemArt baseId={base} slot={slot} className="gamble-shape" /> : null;
 }
