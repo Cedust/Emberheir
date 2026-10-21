@@ -251,9 +251,10 @@ export interface ItemTooltip {
 
 /**
  * Attack Speed as an abstract Speed value instead of attacks per second (playtest 1):
- * 0.8 attacks per second, the Sword's speed, is Speed 100. +10 % Attack Speed makes it 110.
+ * 1 attack per second is Speed 100 (Timo 2026-10-21: round start values, Dagger 110 down to the
+ * Crossbow at 50). +10 % Attack Speed on a Speed 90 weapon makes it 99.
  */
-export const SPEED_BASE_ATTACKS_PER_SECOND = 0.8;
+export const SPEED_BASE_ATTACKS_PER_SECOND = 1;
 
 export function speedValue(attacksPerSecond: number): number {
   return Math.round((attacksPerSecond / SPEED_BASE_ATTACKS_PER_SECOND) * 100);
