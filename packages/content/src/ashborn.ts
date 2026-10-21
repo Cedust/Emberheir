@@ -97,8 +97,8 @@ export const ASHBORN_VALUES: readonly AshbornValue[] = [
     id: "dot-healing",
     name: "Ailment Healing",
     board: "mending",
-    text: "Heal 0.5 % of the damage your ailments deal",
-    perPoint: { dotLifesteal: 0.005 },
+    text: "Heal 0.2 % of the damage your ailments deal",
+    perPoint: { dotLifesteal: 0.002 },
   },
   {
     id: "barrier-recharge",

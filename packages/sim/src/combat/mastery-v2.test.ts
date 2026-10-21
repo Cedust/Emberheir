@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { stepAilments } from "./ailments";
+import { COMBAT } from "./constants";
 import type { CombatEvent } from "./events";
 import { Fight } from "./fight";
 import { TEST_SKILL, TEST_WEAPON, dummy, setup } from "./test-fixtures";
@@ -63,12 +64,10 @@ describe("Mighty Hits", () => {
     expect(hits(head.events)[0]).toMatchObject({ mighty: true, crit: true });
   });
 
-  it("stuns, Sunders, Bleeds and drains Heat", () => {
+  it("stuns and Bleeds", () => {
     const rules: WeaponRules = {
       mightyStun: 0.3,
-      mightySunder: 2,
       mightyBleed: 1.5,
-      mightyHeatDrain: 15,
     };
     const fight = play(
       hero(rules, { weapon: mighty }),
@@ -77,9 +76,7 @@ describe("Mighty Hits", () => {
     );
     const snap = fight.snapshot();
     expect(ofType(fight.events, "stun")).toHaveLength(1);
-    expect(snap.enemy.curses.find((c) => c.name === "Sunder")?.stacks).toBe(2);
     expect(snap.enemy.ailments.some((a) => a.type === "bleed")).toBe(true);
-    expect(snap.enemy.heat).toBeLessThan(50);
   });
 
   it("Master of Payload: a skill hit marked Mighty always is one", () => {
@@ -140,21 +137,6 @@ describe("extra attacks", () => {
     },
   ];
 
-  it("Extra-Attack Damage raises Ripostes and Split Shots, not the Default Attack", () => {
-    const split = [
-      {
-        id: "split",
-        name: "Split Shot",
-        condition: { kind: "onHit" as const },
-        effect: { kind: "weaponHit" as const, multiplier: 0.6, extra: true },
-      },
-    ];
-    const fight = play(hero({ extraAttackDamage: 0.5 }, { triggers: split }), dummy(), 1.05);
-    const [first, second] = hits(fight.events);
-    expect(first?.damage).toBe(10);
-    expect(second?.damage).toBe(9);
-  });
-
   it("Path Masters: extra attacks fire triggers, the ones they cause do not", () => {
     const plain = play(hero({}, { triggers: [...riposte, ...onHitHeat] }), dummy(), 1.05);
     const master = play(
@@ -177,15 +159,6 @@ describe("extra attacks", () => {
       1.05,
     );
     expect(ofType(fight.events, "ailment").filter((a) => a.ailment === "poison")).toHaveLength(1);
-  });
-
-  it("Spring Trap: every Nth Glancing Blow fires a free Bolt", () => {
-    const fight = play(
-      hero({ glancingExtraAttack: 2 }, { weapon: { ...TEST_WEAPON, precision: 0 } }),
-      dummy(),
-      2.05,
-    );
-    expect(ofType(fight.events, "trigger").filter((t) => t.name === "Spring Trap")).toHaveLength(1);
   });
 });
 
@@ -221,15 +194,6 @@ describe("streaks and Crits", () => {
       const crits = new Set(shots.slice(v * 3, v * 3 + 3).map((h) => h.crit));
       expect(crits.size).toBe(1);
     }
-  });
-
-  it("Armor Shred breaks Barrier", () => {
-    const fight = play(
-      hero({ critBarrierShred: 0.5 }, { bonuses: ALL_CRIT }),
-      dummy({ bonuses: { barrier: 1000 } }),
-      2.05,
-    );
-    expect(fight.snapshot().enemy.barrier).toBeLessThan(1000 - 30);
   });
 });
 
@@ -325,7 +289,10 @@ describe("Starfall and Storm (Sorcerer without Fire)", () => {
 
 describe("Sunder and stored damage", () => {
   it("Siege Engine: a clean Bolt sets off every Sunder stack", () => {
-    const rules: WeaponRules = { siegeEngine: { perStack: 0.5 }, mightySunder: 2 };
+    const rules: WeaponRules = {
+      siegeEngine: { perStack: 1 },
+      sunder: { ...COMBAT.sunder, chance: 1, perStack: 0 },
+    };
     const fight = play(
       hero(rules, { weapon: { ...TEST_WEAPON, mightyAt: 10, precision: 1 } }),
       dummy(),
@@ -379,21 +346,6 @@ describe("Heat and the Battle Plan", () => {
     const rules: WeaponRules = { whirl: { stabs: 2, seconds: 3 }, innateId: innate.id };
     const fight = play(hero(rules, { rotation: [{ skill: innate }] }), dummy(), 3.05);
     expect(ofType(fight.events, "skill")[0]).toMatchObject({ heatCost: 0 });
-  });
-
-  it("Master of Tempo: the Innate repeats the next Rotation skill for free", () => {
-    const free: SkillDefinition = { ...innate, heatCost: 0 };
-    const other: SkillDefinition = { ...TEST_SKILL, id: "other", name: "Other", heatCost: 90 };
-    const rules: WeaponRules = { repeatFirstSlot: { cooldown: 8 }, innateId: free.id };
-    const fight = play(
-      hero(rules, { rotation: [{ skill: free }, { skill: other }] }),
-      dummy(),
-      1.05,
-    );
-    expect(ofType(fight.events, "skill").map((s) => [s.skill, s.via])).toEqual([
-      ["Test Strike", undefined],
-      ["Other", "echo"],
-    ]);
   });
 
   it("Echoing Chant: every Nth skill repeats itself, weaker", () => {

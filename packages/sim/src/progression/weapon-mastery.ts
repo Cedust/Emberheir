@@ -8,7 +8,6 @@ import type {
   DamageType,
   HeatBehavior,
   SkillDefinition,
-  SkillEffect,
   StatBonuses,
   SunderRule,
   TriggerSpec,
@@ -40,8 +39,6 @@ export interface MasteryEffect {
   /** + Minimum / Maximum of the Damage Range (0.1 = +10 percentage points of Weapon Damage). */
   readonly rangeMin?: number;
   readonly rangeMax?: number;
-  /** Sets the Damage Range's Maximum to at most this (Thousand Cuts). */
-  readonly rangeMaxCap?: number;
   /** Sets the Damage Range's Minimum to exactly this (Gore). */
   readonly rangeMinSet?: number;
   /** Multiplies Heat per Hit (Cooling +25 %, Smoldering 30 %). */
@@ -56,10 +53,8 @@ export interface MasteryEffect {
   readonly ailmentChances?: readonly AilmentChance[];
   /** The Innate Form: replaces the weapon's Innate skill. */
   readonly innate?: SkillDefinition;
-  /** Changes the Innate skill: more damage (adds up), Heat Cost, extra effects, always Mighty. */
+  /** Changes the Innate skill: more damage (adds up), Heat Cost, always Mighty. */
   readonly innatePatch?: InnatePatch;
-  /** Rules that only hold once Precision reaches `atLeast` (Dead Center). */
-  readonly whenPrecision?: { readonly atLeast: number; readonly weaponRules: MasteryWeaponRules };
   /** No more Glancing Blows; Precision above `above` becomes Crit Chance (Master of the Edge). */
   readonly precisionToCrit?: { readonly above: number };
 }
@@ -70,7 +65,6 @@ export interface InnatePatch {
   readonly damage?: number;
   /** Heat Cost change (−4 = 4 less). */
   readonly cost?: number;
-  readonly effects?: readonly SkillEffect[];
   /** Its weapon hits are always Mighty Hits. */
   readonly mighty?: boolean;
 }
@@ -217,11 +211,6 @@ export function weaponRank(level: number, prestige?: number): number {
   if (prestige === undefined) return rank;
   const caps = MASTERY.rankCaps;
   return Math.min(rank, caps[Math.min(prestige, caps.length - 1)] ?? MAX_WEAPON_RANK);
-}
-
-/** Hero level of the next Weapon Rank, or null at the top. */
-export function nextRankLevel(rank: number): number | null {
-  return MASTERY.rankLevels[rank + 1] ?? null;
 }
 
 /** Index of the Weapon Grade at a Rank (0 = Crude): the Innate gains a level per Grade. */
@@ -464,14 +453,11 @@ export function buildMasteryWeapon(
   const weaponRules: MasteryWeaponRules[] = [];
   const ailmentChances: AilmentChance[] = [];
   const patches = new Map<string, number>();
-  let maxCap: number | undefined;
   let minSet: number | undefined;
   const innatePatches: InnatePatch[] = [];
-  const precisionRules: NonNullable<MasteryEffect["whenPrecision"]>[] = [];
   let toCrit: number | undefined;
   for (const e of effects) {
     if (e.innatePatch) innatePatches.push(e.innatePatch);
-    if (e.whenPrecision) precisionRules.push(e.whenPrecision);
     if (e.precisionToCrit) toCrit = Math.min(toCrit ?? 1, e.precisionToCrit.above);
     precision += e.precision ?? 0;
     rangeMin += e.rangeMin ?? 0;
@@ -479,7 +465,6 @@ export function buildMasteryWeapon(
     heatPerHit *= e.heatPerHit ?? 1;
     if (e.heatForm) heatForm = e.heatForm;
     if (e.innate) innateSkill = e.innate;
-    if (e.rangeMaxCap !== undefined) maxCap = Math.min(maxCap ?? Infinity, e.rangeMaxCap);
     if (e.rangeMinSet !== undefined) minSet = e.rangeMinSet;
     if (e.bonuses) bonuses.push(e.bonuses);
     if (e.triggers) triggers.push(...e.triggers);
@@ -489,7 +474,6 @@ export function buildMasteryWeapon(
     for (const p of e.weaponTriggers ?? []) patches.set(p.id, p.n);
   }
   if (minSet !== undefined) rangeMin = minSet;
-  if (maxCap !== undefined) rangeMax = Math.min(rangeMax, maxCap);
   // Master of the Edge: Precision past the mark turns into Crit Chance.
   const rawPrecision = precision;
   if (toCrit !== undefined && rawPrecision > toCrit) {
@@ -498,9 +482,6 @@ export function buildMasteryWeapon(
   precision = Math.min(MASTERY.maxPrecision, Math.max(0, precision));
   rangeMax = Math.min(MASTERY.maxRangeMax, rangeMax);
   rangeMin = Math.min(MASTERY.maxRangeMin, rangeMax, Math.max(0, rangeMin));
-  for (const p of precisionRules) {
-    if (precision + 1e-9 >= p.atLeast) weaponRules.push(p.weaponRules);
-  }
   const merged = mergeWeaponRules(...weaponRules);
   // Focused Will, Anvil and Master of the Edge: no Glancing Blows at all.
   if (merged.noGlancing || toCrit !== undefined) precision = 1;
@@ -553,9 +534,7 @@ export function buildMasteryWeapon(
           sunder: {
             chance: COMBAT.sunder.chance + (merged.sunder.chance ?? 0),
             maxStacks: Math.max(1, COMBAT.sunder.maxStacks + (merged.sunder.maxStacks ?? 0)),
-            perStack:
-              Math.max(COMBAT.sunder.perStack, merged.sunder.perStack ?? 0) +
-              (merged.sunder.perStackBonus ?? 0),
+            perStack: Math.max(COMBAT.sunder.perStack, merged.sunder.perStack ?? 0),
             duration: Math.max(COMBAT.sunder.duration, merged.sunder.duration ?? 0),
           },
         }
@@ -599,7 +578,6 @@ export function patchInnate(
   const more = 1 + patches.reduce((sum, p) => sum + (p.damage ?? 0), 0);
   const cost = patches.reduce((sum, p) => sum + (p.cost ?? 0), 0);
   const mighty = patches.some((p) => p.mighty);
-  const effects = patches.flatMap((p) => p.effects ?? []);
   return {
     ...skill,
     heatCost: Math.max(0, skill.heatCost + cost),
@@ -608,7 +586,6 @@ export function patchInnate(
         ? { ...h, multiplier: h.multiplier * more, ...(mighty ? { mighty: true } : {}) }
         : { ...h, damage: { min: h.damage.min * more, max: h.damage.max * more } },
     ),
-    ...(effects.length ? { effects: [...(skill.effects ?? []), ...effects] } : {}),
   };
 }
 
@@ -729,8 +706,7 @@ export function infuseSkill(skill: SkillDefinition, infusion: Infusion): SkillDe
  * build-time flag "no Glancing Blows".
  */
 export type MasteryWeaponRules = Omit<WeaponRules, "sunder"> & {
-  /** `perStackBonus` adds Armor share per stack on top of the strongest `perStack`. */
-  readonly sunder?: Partial<SunderRule> & { readonly perStackBonus?: number };
+  readonly sunder?: Partial<SunderRule>;
   readonly noGlancing?: boolean;
 };
 
@@ -773,7 +749,6 @@ export function mergeWeaponRules(...sources: readonly MasteryWeaponRules[]): Mas
           chance: (a.chance ?? 0) + (b.chance ?? 0),
           maxStacks: (a.maxStacks ?? 0) + (b.maxStacks ?? 0),
           perStack: Math.max(a.perStack ?? 0, b.perStack ?? 0),
-          perStackBonus: (a.perStackBonus ?? 0) + (b.perStackBonus ?? 0),
           duration: Math.max(a.duration ?? 0, b.duration ?? 0),
         };
       } else if (key === "poisonBurst") {

@@ -240,7 +240,7 @@ describe("Fight", () => {
         1,
       );
       leveled.advance(1.01);
-      expect(ofType(leveled.events, "hit")[0]?.damage).toBe(48);
+      expect(ofType(leveled.events, "hit")[0]?.damage).toBe(44);
 
       const powered = new Fight(
         setup({
@@ -1076,11 +1076,37 @@ describe("M10 building blocks", () => {
       ofType(events, "hit").filter((e) => e.side === "enemy" && e.t <= 10).length;
     expect(ofType(stunning.events, "stun").length).toBeGreaterThan(0);
     expect(enemyAttacks(stunning.events)).toBeLessThan(enemyAttacks(plain.events));
-    // A stun breaks the swing: the enemy starts its next attack from 0.
+    // A stun pauses the swing (step 7): the enemy keeps what it had of its next attack.
     const stun = ofType(stunning.events, "stun")[0];
+    const t = stun?.t ?? 0;
+    const before = new Fight(setup({ weapon: mace, baseLife: 100_000 }), enemy, 1);
+    before.advance(t - 0.001);
     const probe = new Fight(setup({ weapon: mace, baseLife: 100_000 }), enemy, 1);
-    probe.advance((stun?.t ?? 0) + 0.001);
-    expect(probe.snapshot().enemy.attackProgress).toBe(0);
+    probe.advance(t + 0.2);
+    expect(probe.snapshot().enemy.attackProgress).toBeGreaterThan(0);
+    expect(probe.snapshot().enemy.attackProgress).toBeCloseTo(
+      before.snapshot().enemy.attackProgress,
+      1,
+    );
+    // Quake's Jolt: its stuns start the swing over.
+    const jolt = new Fight(
+      setup({ weapon: mace, baseLife: 100_000, weaponRules: { stunResetsSwing: true } }),
+      enemy,
+      1,
+    );
+    jolt.advance(t + 0.001);
+    expect(jolt.snapshot().enemy.attackProgress).toBe(0);
+    // The Mace's own Stagger breaks the swing too.
+    const stagger: WeaponDefinition = {
+      ...mace,
+      triggers: (mace.triggers ?? []).map((tr) => ({
+        ...tr,
+        effect: { kind: "stun", seconds: 0.5, breaksSwing: true },
+      })),
+    };
+    const staggering = new Fight(setup({ weapon: stagger, baseLife: 100_000 }), enemy, 1);
+    staggering.advance(t + 0.001);
+    expect(staggering.snapshot().enemy.attackProgress).toBe(0);
   });
 
   it("skills can give Barrier (scaled by Skill Level) and stun (Iron Bastion, Frost Nova)", () => {

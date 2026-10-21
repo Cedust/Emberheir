@@ -87,12 +87,10 @@ export interface HitInput {
   /** Defender's "+X % damage taken" (Shock). */
   readonly defenderDamageTaken: number;
   /**
-   * Weapon Mastery: chance to land cleanly. A miss is a Glancing Blow: `glancingDamage` of the
-   * damage and never a Crit. Undefined = always clean (no extra roll).
+   * Weapon Mastery: chance to land cleanly. A miss is a Glancing Blow: `COMBAT.glancingDamage` of
+   * the damage and never a Crit. Undefined = always clean (no extra roll).
    */
   readonly precision?: number;
-  /** Damage share of a Glancing Blow. Default 0.5. */
-  readonly glancingDamage?: number;
   /** The hit lands cleanly and crits (Read the Blow, Deadeye). */
   readonly forceCrit?: boolean;
   /** Crits ignore this extra share of Armor (Killshot). */
@@ -167,9 +165,7 @@ export function resolveHit(input: HitInput, rng: Rng): HitOutcome {
       : input.attacker;
 
   let damage = input.baseDamage * input.multiplier;
-  if (glancing) {
-    damage *= parried ? COMBAT.glancingDamage : (input.glancingDamage ?? COMBAT.glancingDamage);
-  }
+  if (glancing) damage *= COMBAT.glancingDamage;
   // The pools stay out of the ailments: they have their own (DoT pool, `dotFactor`).
   const pool = Math.max(
     0,

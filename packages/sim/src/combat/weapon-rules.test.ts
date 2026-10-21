@@ -113,9 +113,8 @@ describe("Weapon Mastery in a fight", () => {
     expect(broken.snapshot().hero.buffs).toEqual([]);
   });
 
-  it("Damage Dealt multiplies hit damage; Glancing Damage changes the glance", () => {
+  it("Damage Dealt multiplies hit damage", () => {
     expect(hits(fight(1, { damageDealt: 2 }).events)[0]?.damage).toBe(20);
-    expect(hits(fight(0, { glancingDamage: 0.8 }).events)[0]?.damage).toBe(8);
   });
 
   it("Glancing Heat feeds Heat on every Glancing Blow", () => {

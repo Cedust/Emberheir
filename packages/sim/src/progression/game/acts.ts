@@ -249,7 +249,14 @@ export function sawtoothShare(act: ActData, stage: number): number {
   const w = PROGRESSION.wall;
   const gates = gateStages(act);
   const gate = gates.indexOf(stage);
-  if (gate >= 0) return w.gates[Math.min(gate, w.gates.length - 1)] ?? 1;
+  if (gate >= 0) {
+    // A Gatekeeper's peak needs a stretch to grow into (step 7): full after four stages since the
+    // last one. In the 10-stage Act 7 the first came right after the two Elite-free stages and
+    // held half of its deaths.
+    const stretch = stage - (gates[gate - 1] ?? 0) - 1;
+    const peak = w.gates[Math.min(gate, w.gates.length - 1)] ?? 1;
+    return peak * Math.min(1, stretch / w.gateStretch);
+  }
   // The stretch between the Gatekeeper before this stage and the next one (or the boss).
   const stretch = gates.filter((g) => g < stage).length;
   const first = (gates[stretch - 1] ?? 0) + 1;

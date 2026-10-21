@@ -110,16 +110,12 @@ export interface Fighter {
   extraDepth: number;
   /** Clean hits since the last own skill (Building Edge). */
   cleanSinceSkill: number;
-  /** Fight time from which the free repeat of Rotation Slot 1 is ready (Master of Tempo). */
-  repeatReadyAt: number;
   /** Fight time from which Interrupt is ready again. */
   interruptReadyAt: number;
   /** Fight time until which Braced holds. */
   bracedUntil: number;
   /** Damage stored for the next Innate (Master of the Wall, Impale). */
   stored: number;
-  /** Glancing Blows so far (Spring Trap). */
-  glancingCount: number;
   /** Fight times of recent Chills inflicted (Frozen Solid). */
   chillTimes: number[];
   /** Skills cast so far (Echoing Chant). */
@@ -252,11 +248,9 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     cleanLineReady: false,
     extraDepth: 0,
     cleanSinceSkill: 0,
-    repeatReadyAt: 0,
     interruptReadyAt: 0,
     bracedUntil: -1,
     stored: 0,
-    glancingCount: 0,
     chillTimes: [],
     skillCount: 0,
     afterSkill: false,

@@ -180,8 +180,8 @@ const ROT: readonly BoonDefinition[] = [
   boon("rot", "passive", "Fester", "Ailments deal +# % damage", 15, {
     rules: { dotDamage: 1.15 },
   }),
-  boon("rot", "passive", "Bloodfeast", "Heal # % of ailment damage", 3, {
-    rules: { dotLifesteal: 0.03 },
+  boon("rot", "passive", "Bloodfeast", "Heal # % of ailment damage", 1.5, {
+    rules: { dotLifesteal: 0.015 },
   }),
   boon("rot", "trigger", "Open Wounds", "Crit: # % chance to Bleed", 30, {
     trigger: { when: { kind: "onCrit" }, effect: ailment("bleed"), chance: 0.3 },
@@ -374,9 +374,9 @@ const FUSIONS: readonly BoonDefinition[] = [
       effect: { kind: "weaponHit", multiplier: 1 },
     },
   }),
-  boon("void", "passive", "Black Hearth", "Heal # % of ailment damage", 6, {
+  boon("void", "passive", "Black Hearth", "Heal # % of ailment damage", 3, {
     fusion: ["hearth", "void"],
-    rules: { dotLifesteal: 0.06 },
+    rules: { dotLifesteal: 0.03 },
   }),
   boon("ash", "passive", "Molten Edge", "Default Attack deals +# % damage", 30, {
     fusion: ["ash", "cinder"],

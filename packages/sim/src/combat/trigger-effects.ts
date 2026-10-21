@@ -39,6 +39,9 @@ import type { TriggerCondition, TriggerEffect } from "./types";
 interface TriggerContext {
   /** Damage of the hit that fired the trigger (Burn from a trigger scales with it). */
   readonly damage?: number;
+  /** The own hit's ailment base (before Crit and the "more" pool) and its source. */
+  readonly ailmentDamage?: number;
+  readonly source?: string;
 }
 
 /** Checks every trigger of `f` with the given condition kind. */
@@ -99,7 +102,7 @@ export function applyEffect(
         baseDamage: roll * effect.multiplier,
         type: f.setup.weapon.damageType,
         evadable: true,
-        multiplier: extra ? 1 + (wr?.extraAttackDamage ?? 0) : 1,
+        multiplier: 1,
         ailmentChances: extra
           ? (wr?.extraAttackAilments ?? []).map((ailment) => ({ ailment, chance: 1 }))
           : [],
@@ -130,10 +133,14 @@ export function applyEffect(
     case "ailment": {
       const weapon = f.setup.weapon.damage;
       const hit =
-        context.damage !== undefined
+        context.ailmentDamage ??
+        (context.damage !== undefined
           ? context.damage / (1 + damageTaken(target))
-          : (weapon.min + weapon.max) / 2;
+          : (weapon.min + weapon.max) / 2);
+      const before = core.ailmentSource;
+      if (context.source) core.ailmentSource = context.source;
       inflict(core, f, target, effect.ailment, hit);
+      core.ailmentSource = before;
       return;
     }
     case "heal":
@@ -172,7 +179,7 @@ export function applyEffect(
       extraAttack(core, f);
       return;
     case "stun":
-      stun(core, target, effect.seconds);
+      stun(core, target, effect.seconds, effect.breaksSwing);
       return;
     case "reflect": {
       if (!context.damage) return;

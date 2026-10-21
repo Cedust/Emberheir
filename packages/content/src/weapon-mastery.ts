@@ -629,7 +629,9 @@ const MACE = buildTree({
       color: C.steel,
       infusion: { damageType: "physical", ailment: "stun", chance: 0 },
       techniques: [
-        technique("Jolt", "Your stuns last 10 % longer.", { weaponRules: { stunDuration: 1.1 } }),
+        technique("Jolt", "Your stuns last 10 % longer and make the enemy start its attack over.", {
+          weaponRules: { stunDuration: 1.1, stunResetsSwing: true },
+        }),
         technique("Heft", "Damage Range maximum +10 %.", { rangeMax: 0.1 }),
       ],
       forks: [
@@ -1642,7 +1644,13 @@ const WAND = buildTree({
       infusion: { damageType: "void", ailment: "corruption", chance: 0.25 },
       techniques: [
         ailmentPower("Taint", "corruption", 0.1),
-        technique("Amplify", "Your Innate deals +8 % damage.", { innatePatch: { damage: 0.08 } }),
+        // Step 7: no class grants the Spark any more (Sorcerer's trait), so Flashpoint and Master
+        // of Starfall did nothing. The path brings it itself.
+        technique(
+          "Spark",
+          "After a skill, your next Default Attack is charged: 30 % more damage, and it always applies your weapon's ailment.",
+          { rules: { spark: { damage: 0.3 } } },
+        ),
       ],
       forks: [
         [
@@ -2050,7 +2058,7 @@ const brood = grow(0.3, 0.6);
 const crown = grow(0.5, 0.8);
 const breath = grow(3, 4.5);
 const thunder = grow(1, 1.75);
-const hunger = grow(0.1, 0.22);
+const hunger = grow(0.04, 0.08);
 const dawn = grow(0.6, 1);
 
 /**

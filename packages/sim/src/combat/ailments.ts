@@ -160,11 +160,11 @@ export function poisonOverflow(
 }
 
 /** Burn damage that is still to come (Combust deals a share of it at once). */
-export function remainingBurnDamage(states: AilmentStates): number {
+export function remainingBurnDamage(states: AilmentStates, maxTicks = Infinity): number {
   const burn = states.burn;
   if (!burn) return 0;
   const ticks = Math.max(0, Math.floor(burn.remaining - burn.nextTickIn + 1e-9) + 1);
-  return burn.damagePerSecond * ticks;
+  return burn.damagePerSecond * Math.min(ticks, maxTicks);
 }
 
 /** Damage all Poison stacks would still deal if they ran out (Toxic Bloom). */

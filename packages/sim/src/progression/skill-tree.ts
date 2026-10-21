@@ -399,13 +399,6 @@ export function prestigeBranchNodes(tree: SkillTreeDefinition, branchId: string)
   return tree.nodes.filter((n) => n.prestigeBranch === branchId);
 }
 
-/** Keystones the hero has learned and that are not replaced by a higher tier. */
-export function learnedKeystones(tree: SkillTreeDefinition, learned: LearnedNodes): SkillNode[] {
-  return activeList(tree, learned)
-    .map((e) => e.node)
-    .filter((n) => n.keystone);
-}
-
 /** Skills unlocked by Skill nodes, with their ranks. */
 export function treeSkills(
   tree: SkillTreeDefinition,

@@ -191,9 +191,6 @@ describe("resolveHit", () => {
       crit: false,
       glancing: true,
     });
-    expect(resolveHit(input({ precision: 0, glancingDamage: 0.3 }), rng())).toMatchObject({
-      damage: 30,
-    });
     expect(resolveHit(input({ precision: 1 }), rng())).toMatchObject({ glancing: false });
   });
 

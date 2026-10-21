@@ -76,7 +76,7 @@ describe("Weapon Mastery tree", () => {
     const w = build(s, 3);
     expect(w.precision).toBeCloseTo(0.75);
     expect(w.bonuses.life).toBe(10);
-    expect(w.weaponRules.glancingDamage).toBe(0.25);
+    expect(w.weaponRules.critBuildup).toBe(0.06);
   });
 
   it("a path root without links is open from the start", () => {

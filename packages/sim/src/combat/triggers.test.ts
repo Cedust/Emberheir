@@ -151,6 +151,29 @@ describe("triggers in a fight", () => {
     expect(ofType(events, "hit").map((h) => h.source)).toEqual(["Poke", "Echo"]);
   });
 
+  it("an ailment from a gear trigger grows from the hit before Crit and counts for that hit", () => {
+    const bleedTicks = (hero: ReturnType<typeof setup>) =>
+      ofType(play(hero, dummy(), 3.5).events, "dot").filter((d) => d.ailment === "bleed");
+    // Venom Sting & co.: a Crit's trigger ailment is as strong as the hit's own one without Crit.
+    const fromTrigger = bleedTicks(
+      setup({
+        bonuses: ALWAYS_CRIT,
+        triggers: [
+          trigger({ condition: { kind: "onCrit" }, effect: { kind: "ailment", ailment: "bleed" } }),
+        ],
+      }),
+    );
+    const own = bleedTicks(
+      setup({
+        bonuses: NO_CRIT,
+        weapon: { ...TEST_WEAPON, ailmentChances: [{ ailment: "bleed", chance: 1 }] },
+      }),
+    );
+    expect(fromTrigger.length).toBeGreaterThan(0);
+    expect(fromTrigger[0]?.damage).toBe(own[0]?.damage);
+    expect(fromTrigger[0]?.sources).toEqual({ Poke: 1 });
+  });
+
   it("chance and Internal Cooldown limit how often a trigger fires", () => {
     const never = setup({
       triggers: [

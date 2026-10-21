@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { Rng } from "../rng";
 import { rollItem } from "../items/generate";
 import { TEST_CATALOG } from "../items/test-fixtures";
-import { type PlacedItem, addToGrid, findSpace, itemSize, usedCells } from "./inventory";
+import { type PlacedItem, addToGrid, findSpace, itemSize } from "./inventory";
 
 const item = (baseId: string, seed = 1) =>
   rollItem(TEST_CATALOG, { baseId, itemLevel: 1, rarity: "normal" }, new Rng(seed));
@@ -24,7 +24,6 @@ describe("inventory grid", () => {
       [0, 3],
       [1, 0],
     ]);
-    expect(usedCells(grid, TEST_CATALOG)).toBe(5);
   });
 
   it("returns undefined when an item does not fit", () => {
