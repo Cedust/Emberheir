@@ -40,6 +40,7 @@ import {
   respecMastery,
   respecTree,
   setBattlePlan,
+  setAttunement,
   setEcho,
   setRotationSkill,
   socketWebRune,
@@ -128,6 +129,7 @@ export type GameAction =
   | { readonly type: "respecMastery" }
   /** Kaelen: wear an earned Echo on the weapon (or none). */
   | { readonly type: "setEcho"; readonly echoId: string | null }
+  | { readonly type: "setAttunement"; readonly pathId: string | null }
   /** Supply Wagon (Camp only): move an item between inventory and stash. */
   | {
       readonly type: "moveItem";
@@ -226,6 +228,8 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return respecMastery(state, data);
     case "setEcho":
       return setEcho(state, data, action.echoId);
+    case "setAttunement":
+      return setAttunement(state, data, action.pathId);
     case "moveItem":
       return moveItem(state, data, action.itemId, action.to, action.at, action.tab);
     case "sortStash":

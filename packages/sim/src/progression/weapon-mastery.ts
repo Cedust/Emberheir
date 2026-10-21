@@ -131,6 +131,11 @@ export interface WeaponMasteryTree {
   readonly damageScale?: number;
   readonly paths: readonly MasteryPath[];
   readonly nodes: readonly MasteryNode[];
+  /**
+   * Attunement (phase 5, Timo 2026-10-21): the Default Attack's element may differ from the path,
+   * picked freely among the paths' Infusions (Wand, Staff).
+   */
+  readonly attunable?: boolean;
 }
 
 /** A boss's Echo (section 4 of the trees doc): earned by beating the boss, worn on the weapon. */
@@ -154,6 +159,11 @@ export interface MasteryState {
   readonly echo: string | null;
   /** Extra points on top of the Weapon Rank (Cheat Mode only). */
   readonly bonusPoints?: number;
+  /**
+   * Attunement: the path whose Infusion the weapon's own hits take (Default Attack, and what uses
+   * "your weapon's element": Overcharge, Barrier Burst). Missing = the active path's.
+   */
+  readonly attunement?: string;
 }
 
 export const EMPTY_MASTERY: MasteryState = { learned: {}, choices: {}, echo: null };
@@ -348,6 +358,15 @@ function learnedPath(
  * The weapon's build: the path with learned nodes, or the first path (the class's core) while
  * none is learned.
  */
+/** The Attunement's Infusion, when the weapon can be attuned and one is picked. */
+export function attunedInfusion(
+  tree: WeaponMasteryTree,
+  state: MasteryState,
+): Infusion | undefined {
+  if (!tree.attunable || !state.attunement) return undefined;
+  return tree.paths.find((p) => p.id === state.attunement)?.infusion;
+}
+
 export function activePath(tree: WeaponMasteryTree, state: MasteryState): MasteryPath | undefined {
   const id = learnedPath(tree, state);
   return tree.paths.find((p) => p.id === id) ?? tree.paths[0];
@@ -446,6 +465,7 @@ export function buildMasteryWeapon(
   let heatPerHit = 1;
   let heatForm: HeatBehavior = "steady";
   const infusion = activePath(tree, state)?.infusion;
+  const own = attunedInfusion(tree, state) ?? infusion;
   let innateSkill = innate;
   const bonuses: StatBonuses[] = [];
   const triggers: TriggerSpec[] = [];
@@ -486,18 +506,19 @@ export function buildMasteryWeapon(
   // Focused Will, Anvil and Master of the Edge: no Glancing Blows at all.
   if (merged.noGlancing || toCrit !== undefined) precision = 1;
 
-  const damageType = infusion?.damageType ?? base.damageType;
+  // The weapon's own hits take the Attunement, else the path's Infusion; the Innate always the path's.
+  const damageType = own?.damageType ?? base.damageType;
   // The Infusion replaces the weapon's own ailments with the path's (Stun has its Stagger).
-  const baseAilments: AilmentChance[] = !infusion
+  const baseAilments: AilmentChance[] = !own
     ? [...(base.ailmentChances ?? [])]
-    : infusion.ailment === "stun"
+    : own.ailment === "stun"
       ? []
-      : [{ ailment: infusion.ailment, chance: infusion.chance }];
+      : [{ ailment: own.ailment, chance: own.chance }];
   const weapon: WeaponDefinition = {
     ...base,
     damageType,
     implicit: infuseImplicit(base.implicit, damageType),
-    ...(infusion && infusion.ailment !== "stun" ? { ailment: infusion.ailment } : {}),
+    ...(own && own.ailment !== "stun" ? { ailment: own.ailment } : {}),
     damage: { min: weaponDamage * rangeMin, max: weaponDamage * rangeMax },
     spellPower: growth * MASTERY.damageFactor,
     heatBehavior: heatForm,

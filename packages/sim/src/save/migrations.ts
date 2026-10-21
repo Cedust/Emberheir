@@ -32,7 +32,8 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   11: { state: dropRoutes },
   // Hunts (hunts-entwurf-v1.md): kills per enemy (`legacy.hunts`) and the Hunt node, optional.
   12: {},
-  // Phase 5: Lineage points of the hero (`hero.lineage`, optional); the account's Lineage is the
+  // Phase 5: Lineage points of the hero (`hero.lineage`) and the Attunement of Wand and Staff
+  // (`hero.mastery.attunement`), both optional; the account's Lineage is the
   // classes that won now, not a step (the UI fills it in again on load).
   13: { state: dropLineageStep },
 };

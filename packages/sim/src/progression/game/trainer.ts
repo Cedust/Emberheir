@@ -239,11 +239,30 @@ export function respecMastery(state: GameState, data: GameData): GameState {
       mastery: {
         ...EMPTY_MASTERY,
         echo: mastery.echo,
+        ...(mastery.attunement ? { attunement: mastery.attunement } : {}),
         ...(mastery.bonusPoints ? { bonusPoints: mastery.bonusPoints } : {}),
       },
     },
     wallet: { ...state.wallet, acorns: state.wallet.acorns - MASTERY.respecAcorns },
   };
+}
+
+/**
+ * Attunement (phase 5): picks the element of the weapon's own hits among its paths' Infusions,
+ * free and at any time in the Camp; `null` follows the path again. Wand and Staff only.
+ */
+export function setAttunement(state: GameState, data: GameData, pathId: string | null): GameState {
+  requireTrainer(state);
+  const tree = masteryTree(data, state.hero.weaponId);
+  if (!tree.attunable) return fail("This weapon cannot be attuned");
+  if (pathId !== null && !tree.paths.some((p) => p.id === pathId)) {
+    return fail(`Unknown path "${pathId}"`);
+  }
+  const rest = Object.fromEntries(
+    Object.entries(state.hero.mastery).filter(([k]) => k !== "attunement"),
+  ) as MasteryState;
+  const mastery = pathId === null ? rest : { ...rest, attunement: pathId };
+  return { ...state, hero: { ...state.hero, mastery } };
 }
 
 export function setEcho(state: GameState, data: GameData, echoId: string | null): GameState {

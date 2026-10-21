@@ -75,6 +75,7 @@ const mastery = z.object({
   choices: z.partialRecord(z.enum(["heatForm", "innateForm", "keystone"]), id),
   echo: z.string().nullable(),
   bonusPoints: opt(count),
+  attunement: opt(id),
 });
 
 const hero = z.object({
