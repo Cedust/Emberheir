@@ -184,8 +184,6 @@ export interface RollItemOptions {
     /** Mark IV (Apex): the signature turns Greater, rank by these weights (I–V). */
     readonly greater?: readonly number[];
   };
-  /** Hunts: affix stages (of 3) the enemy's hunt allows (`Item.stages`); default all. */
-  readonly stages?: number;
 }
 
 /**
@@ -236,14 +234,13 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     ),
   );
   chosen.push(...pickAffixes(triggerPool, base, triggerCount, rng, allowed, factor));
-  const cap = options.stages ?? ITEMS.stageUnlockPositions.length;
   const apex = signature && sign?.greater ? pickRank(sign.greater, rng) : 0;
   const rolls: AffixRoll[] = chosen.map((a) => ({
     affixId: a.id,
     quality: Number(
       (a === signature && sign?.best
-        ? rollBestQuality(itemLevel, rng, cap)
-        : rollQuality(itemLevel, rarity, rng, cap)
+        ? rollBestQuality(itemLevel, rng)
+        : rollQuality(itemLevel, rarity, rng)
       ).toFixed(4),
     ),
   }));
@@ -263,7 +260,6 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     affixes: rolls,
     ...(sockets > 0 ? { sockets } : {}),
     ...(power ? { powerId: power.id } : {}),
-    ...(cap < ITEMS.stageUnlockPositions.length ? { stages: cap } : {}),
     // The signature is the first affix rolled.
     ...(apex > 0 ? { greater: { index: 0, rank: apex } } : {}),
   };

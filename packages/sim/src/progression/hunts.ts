@@ -2,21 +2,20 @@ import type { Rng } from "../rng";
 
 /**
  * Hunts (hunts-entwurf-v1.md, Längere Runs phase 4): every enemy has a hunt bar. Its kills
- * survive the fire; full tiers make the enemy a farming goal without new stats:
+ * survive the fire, and each full tier makes the enemy more worth farming.
  *
- * The hunt sets how far the affixes of the enemy's items may roll (Timo): below tier II only in
- * the lowest of the three stages, at tier II up to the middle one, at tier III all of them. The
- * Item Level stays a second limit.
+ * Item Tier and Item Level still set every affix's range. Only the enemy's own Hunt Affix (one
+ * of its two Signature Affixes, `GameData.huntSignatures`) rolls better with its Trail (Timo):
  *
  * - I Tracked: its Bestiary card, a few Acorns once.
- * - II Hunted: middle stage; one card of every item pick after a win over it carries one of its
- *   Signature Affixes (existing affixes, `GameData.huntSignatures`). A Warden: its trophy drops
- *   more often.
- * - III Mastered: all stages; that affix rolls in the best stage the Item Level allows.
- * - IV Apex (Timo, endgame): that affix drops as a Greater Affix (Greater I–V, 110–150 % of the
- *   tier's best roll). It takes a great many kills: a reason to farm in the Wildfire.
+ * - II Hunted: one card of every item pick after a win over it carries a Hunt Affix. A Warden:
+ *   its trophy drops more often.
+ * - III Feared: the Hunt Affix rolls in the best stage the Item Level allows.
+ * - IV Apex (endgame): the Hunt Affix rolls past the top, as a Greater Affix (Greater I–V,
+ *   110–150 % of the tier's best roll). It takes a great many kills: a reason to farm in the
+ *   Wildfire.
  *
- * The tiers are called Hunter's Marks in the game (Mark I–IV).
+ * The tiers are called Trails in the game (Trail I–IV).
  */
 export const HUNT = {
   /**
@@ -52,8 +51,6 @@ export const HUNT = {
   ],
   /** A hunted Warden (tier II) drops its trophy this often instead of `bossTrophyChance`. */
   bossTrophyChance: 0.25,
-  /** Affix stages (of 3) the enemy's items may roll in, by hunt tier 0–IV. */
-  stages: [1, 1, 2, 3, 3],
   /** Mark IV: weights of the Signature Affix's Greater rank I–V (low ranks likelier). */
   apexRanks: [5, 4, 3, 2, 1],
 } as const;
@@ -92,26 +89,6 @@ export function huntTier(kills: number, thresholds: HuntThresholds): HuntTier {
 /** Kills the next tier needs in all, or `undefined` once the hunt is mastered. */
 export function huntNextAt(kills: number, thresholds: HuntThresholds): number | undefined {
   return thresholds.find((t) => kills < t);
-}
-
-/** Affix stages the items of an enemy at this hunt tier may roll in. */
-export function huntStages(tier: HuntTier): number {
-  return HUNT.stages[tier];
-}
-
-/**
- * Affix stages of loot that no enemy dropped (Cache, Event, Marisha on the road, the Scout's
- * bounty): the act's least hunted enemy sets them, so there is no road around the hunt.
- */
-export function actHuntStages(
-  acts: readonly HuntAct[],
-  act: HuntAct,
-  kills: HuntKills,
-): number {
-  if (!act.enemies.length) return HUNT.stages[4];
-  return Math.min(
-    ...act.enemies.map((e) => huntStages(huntTier(kills[e.id] ?? 0, huntThresholds(acts, e.id)))),
-  );
 }
 
 /** Kills a win counts for: Elites and Gatekeepers more, a Hunt node twice. */

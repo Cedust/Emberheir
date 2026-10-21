@@ -11,17 +11,15 @@ import {
 } from "./game";
 import {
   HUNT,
-  actHuntStages,
   huntKillsFor,
   huntNextAt,
   huntQuarry,
-  huntStages,
   huntThresholds,
   huntTier,
 } from "./hunts";
 import { TEST_ACT, TEST_GAME_DATA, WEAK_ENEMY } from "./test-fixtures";
 
-/** Hunts (hunts-entwurf-v1.md): kills per enemy, Hunter's Marks, Signature Affixes, Hunt nodes. */
+/** Hunts (hunts-entwurf-v1.md): kills per enemy, Trails, Hunt Affixes, Hunt nodes. */
 
 const OTHER = { ...WEAK_ENEMY, id: "other" };
 const ACTS = [
@@ -30,7 +28,7 @@ const ACTS = [
 ];
 
 describe("hunt tiers", () => {
-  it("counts the Marks by the act's thresholds", () => {
+  it("counts the Trails by the act's thresholds", () => {
     const scale = huntThresholds(ACTS, "weakling");
     expect(scale).toEqual(HUNT.actTiers[0]);
     expect(huntTier(0, scale)).toBe(0);
@@ -55,14 +53,6 @@ describe("hunt tiers", () => {
     expect(huntKillsFor({ elite: false }, true)).toBe(HUNT.nodeFactor);
   });
 
-  it("opens the affix stages with the Marks; the road follows the least hunted enemy", () => {
-    expect([0, 1, 2, 3, 4].map((t) => huntStages(t as 0))).toEqual([1, 1, 2, 3, 3]);
-    const act = ACTS[0] ?? TEST_ACT;
-    const second = HUNT.actTiers[0][1];
-    expect(actHuntStages(ACTS, act, { weakling: second })).toBe(1);
-    expect(actHuntStages(ACTS, act, { weakling: second, other: second })).toBe(2);
-  });
-
   it("points a Hunt node at the least hunted enemy", () => {
     expect(huntQuarry(["a", "b"], { a: 5 }, new Rng(1))).toBe("b");
     expect(huntQuarry([], {}, new Rng(1))).toBeUndefined();
@@ -84,16 +74,7 @@ describe("hunt loot", () => {
     }
   });
 
-  it("caps the affix stages and keeps the cap on the item", () => {
-    for (let seed = 1; seed <= 50; seed++) {
-      const item = rollItem(TEST_GAME_DATA.items, { ...base, stages: 1 }, new Rng(seed));
-      expect(item.stages).toBe(1);
-      for (const a of item.affixes) expect(a.quality).toBeLessThan(1 / 3 + 1e-9);
-    }
-    expect(rollItem(TEST_GAME_DATA.items, base, new Rng(1)).stages).toBeUndefined();
-  });
-
-  it("a mastered signature rolls in the best stage, an Apex one is Greater", () => {
+  it("a Feared Hunt Affix rolls in the best stage, an Apex one is Greater", () => {
     for (let seed = 1; seed <= 50; seed++) {
       const best = rollItem(
         TEST_GAME_DATA.items,
@@ -118,7 +99,7 @@ describe("hunts in the game", () => {
   const act = (state: GameState, ...actions: GameAction[]) =>
     actions.reduce((s, a) => applyAction(s, data, a), state);
 
-  it("a win fills the enemy's hunt bar and pays the new Mark once", () => {
+  it("a win fills the enemy's hunt bar and pays the new Trail once", () => {
     let s = act(newGame(data, { seed: 3, classId: "test-fighter" }), {
       type: "setOut",
       actId: "test-act",
@@ -132,10 +113,6 @@ describe("hunts in the game", () => {
     expect(hunt).toMatchObject({ enemyId: "weakling", tier: 1, tierUp: true });
     expect(hunt?.acorns).toBe(HUNT.rewards[0]?.acorns);
     expect(s.wallet.acorns).toBeGreaterThanOrEqual(acorns + (HUNT.rewards[0]?.acorns ?? 0));
-    // Below Mark II the cards roll only in the lowest stage.
-    for (const item of s.run?.rewards?.items ?? []) {
-      if (!item.uniqueId && item.affixes.length) expect(item.stages).toBe(1);
-    }
   });
 
   it("Hunt nodes stand on plain fights and name their quarry", () => {

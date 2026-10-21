@@ -43,7 +43,6 @@ export const itemSchema: z.ZodType<Item> = z.object({
   runes: opt(z.array(id)),
   powerId: opt(id),
   uniqueId: opt(id),
-  stages: opt(int.positive()),
 });
 
 export const placedItemSchema: z.ZodType<PlacedItem> = z.object({

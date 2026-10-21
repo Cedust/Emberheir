@@ -452,8 +452,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
   const location = findCraftItem(state, request.itemId) ?? fail("Item not found");
   const { item } = location;
   const paid = pay(state, craftCost(request, item, data, state));
-  const quality = (rng: Rng) =>
-    Number(rollQuality(item.itemLevel, item.rarity, rng, item.stages).toFixed(4));
+  const quality = (rng: Rng) => Number(rollQuality(item.itemLevel, item.rarity, rng).toFixed(4));
 
   switch (request.kind) {
     case "upgrade":
@@ -476,12 +475,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
       const [rng, next] = nextRng(paid);
       const rolled = rollItem(
         data.items,
-        {
-          baseId: item.baseId,
-          itemLevel: item.itemLevel,
-          rarity: item.rarity,
-          ...(item.stages ? { stages: item.stages } : {}),
-        },
+        { baseId: item.baseId, itemLevel: item.itemLevel, rarity: item.rarity },
         rng,
       );
       // Base, Tier, Rarity, Sockets, Runes and the Legendary Power stay; the lock is gone.
@@ -496,7 +490,6 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         ...(item.sockets ? { sockets: item.sockets } : {}),
         ...(item.runes ? { runes: item.runes } : {}),
         ...(item.powerId ? { powerId: item.powerId } : {}),
-        ...(item.stages ? { stages: item.stages } : {}),
       };
       // The Greater Affix keeps its rank on a random new affix (neuausrichtung-v1.md 7.5).
       const targets = item.greater ? greaterTargets(reforged, data.items) : [];
@@ -641,8 +634,6 @@ export function gambleItem(
   slot: ItemSlot,
   rng: Rng,
   level = merchantItemLevel(state, data),
-  /** Hunts: affix stages on the road (`roadStages`); the Camp's Marisha lets them roll freely. */
-  stages?: number,
 ): Item {
   const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
   const rarity = rollRarity(rng, gambleRarityWeights(state.legacy.prestige));
@@ -654,9 +645,5 @@ export function gambleItem(
     }
   }
   const baseId = bases[rng.int(0, bases.length - 1)] ?? fail("Nothing to gamble on");
-  return rollItem(
-    data.items,
-    { baseId, itemLevel: level, rarity, ...(stages !== undefined ? { stages } : {}) },
-    rng,
-  );
+  return rollItem(data.items, { baseId, itemLevel: level, rarity }, rng);
 }

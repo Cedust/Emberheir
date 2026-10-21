@@ -1,10 +1,6 @@
 import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import { INK } from "./arenaLayout";
-import ashenBruteUrl from "./enemies/ashen-brute.webp";
-import ashenSkirmisherUrl from "./enemies/ashen-skirmisher.webp";
-import cinderCasterUrl from "./enemies/cinder-caster.webp";
-import emberThiefUrl from "./enemies/ember-thief.webp";
-import gorrakUrl from "./enemies/gorrak.webp";
+import { ENEMY_PAINTINGS } from "./enemyPaintings";
 import trainingDummyUrl from "../../assets/camp/personas/training-dummy.webp";
 
 /** The enemy in the arena: archetype body in its act's colors, Elite and boss marks. */
@@ -114,11 +110,11 @@ const BODY: Record<string, "robe" | "broad" | "lean"> = {
  * between left (0) and right (1) edge of the painting.
  */
 const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: number }> = {
-  "ashen-brute": { url: ashenBruteUrl, height: 400, footX: 0.55 },
-  "ashen-skirmisher": { url: ashenSkirmisherUrl, height: 300, footX: 0.55 },
-  "cinder-caster": { url: cinderCasterUrl, height: 370, footX: 0.5 },
-  gorrak: { url: gorrakUrl, height: 470, footX: 0.5 },
-  "ember-thief": { url: emberThiefUrl, height: 290, footX: 0.45 },
+  "ashen-brute": { url: ENEMY_PAINTINGS["ashen-brute"], height: 400, footX: 0.55 },
+  "ashen-skirmisher": { url: ENEMY_PAINTINGS["ashen-skirmisher"], height: 300, footX: 0.55 },
+  "cinder-caster": { url: ENEMY_PAINTINGS["cinder-caster"], height: 370, footX: 0.5 },
+  gorrak: { url: ENEMY_PAINTINGS.gorrak, height: 470, footX: 0.5 },
+  "ember-thief": { url: ENEMY_PAINTINGS["ember-thief"], height: 290, footX: 0.45 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };

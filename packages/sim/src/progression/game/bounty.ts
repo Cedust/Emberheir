@@ -7,7 +7,6 @@ import { addToGrid } from "../inventory";
 import { autoRewards } from "../leveling";
 import { getAct, stageMonsterLevel } from "./acts";
 import { requireCamp } from "./guards";
-import { roadStages } from "./loot";
 import { lootGate } from "./loot";
 import {
   fail,
@@ -48,12 +47,7 @@ export function bountyReward(
   const baseId = data.lootBases[rng.int(0, data.lootBases.length - 1)] ?? fail("No loot bases");
   const item = rollItem(
     data.items,
-    {
-      baseId,
-      itemLevel: level,
-      rarity: rollRarity(rng, weights),
-      stages: roadStages(state, data, act),
-    },
+    { baseId, itemLevel: level, rarity: rollRarity(rng, weights) },
     rng,
   );
   return {

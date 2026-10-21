@@ -10,7 +10,7 @@ import { codexAffixFactor } from "../codex";
 import { PROGRESSION } from "../constants";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
-import { HUNT, huntKillsFor, huntStages, huntThresholds, huntTier } from "../hunts";
+import { HUNT, huntKillsFor, huntThresholds, huntTier } from "../hunts";
 import { currentNode } from "./act-map";
 import { getAct, hearthEmbers, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
 import { getBounty } from "./bounty";
@@ -168,8 +168,6 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     (1 + PROGRESSION.wildfire.legendaryPerTier * tier) * (1 + omen.bonus.legendary),
     rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
     {
-      // A game without hunts lets every affix roll freely.
-      ...(data.huntSignatures ? { stages: huntStages(huntAfter) } : {}),
       ...(signatures?.length && huntAfter >= 2 && !escaped
         ? {
             signature: {

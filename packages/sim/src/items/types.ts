@@ -237,11 +237,6 @@ export interface Item {
    * times `1 + 0.1 × rank` (Greater I–V). The rank belongs to the item: Shift moves it along.
    */
   readonly greater?: { readonly index: number; readonly rank: number };
-  /**
-   * Hunts (hunts-entwurf-v1.md): the affix stages (of 3) the hunt of the enemy that dropped it
-   * allowed; a Reforge keeps them. Missing = all three.
-   */
-  readonly stages?: number;
 }
 
 /** Which bonus of a Rune applies: in a weapon, or in armor (Off Hand, Helm, Body Armor). */

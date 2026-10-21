@@ -17,8 +17,7 @@ import {
 import { Rng } from "../../rng";
 import { PROGRESSION, type LootGate } from "../constants";
 import { type EnemyRank } from "../leveling";
-import { actHuntStages } from "../hunts";
-import { fail, type ActData, type Encounter, type GameData, type GameState } from "./state";
+import { fail, type ActData, type Encounter, type GameData } from "./state";
 
 /** Loot rolls: the item pick, act affix weights and Rune drops. */
 
@@ -166,7 +165,6 @@ export function rollItemChoices(
         rarity,
         ...(factor ? { affixFactor: factor } : {}),
         ...(signature ? { signature } : {}),
-        ...(hunt.stages !== undefined ? { stages: hunt.stages } : {}),
       },
       rng,
     );
@@ -178,11 +176,6 @@ export function rollItemChoices(
   return items;
 }
 
-/** Affix stages of loot from the road (no enemy dropped it): the act's least hunted enemy. */
-export function roadStages(state: GameState, data: GameData, act: ActData): number {
-  return data.huntSignatures ? actHuntStages(data.acts, act, state.legacy.hunts ?? {}) : 3;
-}
-
 /** What a hunt adds to an item pick (hunts-entwurf-v1.md). */
 export interface HuntLoot {
   readonly signature?: {
@@ -190,8 +183,6 @@ export interface HuntLoot {
     readonly best?: boolean;
     readonly greater?: readonly number[];
   };
-  /** Affix stages (of 3) the cards may roll in. */
-  readonly stages?: number;
   readonly trophyChance?: number;
 }
 
