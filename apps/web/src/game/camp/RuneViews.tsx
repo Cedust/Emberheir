@@ -248,5 +248,5 @@ function slotShape(slot: ItemSlot, className?: string) {
   const art = emptySlotArt(slot);
   if (art) return <img className={className} src={art} alt="" draggable={false} />;
   const base = GAME_DATA.lootBases.find((id) => getBase(ITEM_CATALOG, id).slot === slot);
-  return base ? <ItemArt baseId={base} slot={slot} className={className} /> : null;
+  return base ? <ItemArt baseId={base} slot={slot} className={className ?? ""} /> : null;
 }
