@@ -1,11 +1,5 @@
 import type { Rng } from "../rng";
-import {
-  affixPool,
-  affixWeight,
-  rollBestQuality,
-  rollQuality,
-  tierForItemLevel,
-} from "./affixes";
+import { affixPool, affixWeight, rollBestQuality, rollQuality, tierForItemLevel } from "./affixes";
 import { ITEMS } from "./constants";
 import {
   type AffixDefinition,

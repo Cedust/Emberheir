@@ -9,14 +9,7 @@ import {
   generateActMap,
   newGame,
 } from "./game";
-import {
-  HUNT,
-  huntKillsFor,
-  huntNextAt,
-  huntQuarry,
-  huntThresholds,
-  huntTier,
-} from "./hunts";
+import { HUNT, huntKillsFor, huntNextAt, huntQuarry, huntThresholds, huntTier } from "./hunts";
 import { TEST_ACT, TEST_GAME_DATA, WEAK_ENEMY } from "./test-fixtures";
 
 /** Hunts (hunts-entwurf-v1.md): kills per enemy, Trails, Hunt Affixes, Hunt nodes. */

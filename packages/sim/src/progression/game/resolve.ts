@@ -300,9 +300,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       ...state.legacy,
       runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
       trophies: [...state.legacy.trophies, ...newTrophies],
-      ...(huntKills !== huntFrom
-        ? { hunts: { ...state.legacy.hunts, [huntId]: huntKills } }
-        : {}),
+      ...(huntKills !== huntFrom ? { hunts: { ...state.legacy.hunts, [huntId]: huntKills } } : {}),
       ...(echo
         ? {
             echoes: {

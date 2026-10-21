@@ -96,18 +96,16 @@ export function huntKillsFor(
   win: { readonly elite: boolean; readonly champion?: boolean; readonly boss?: boolean },
   onHuntNode = false,
 ): number {
-  const base = win.boss
-    ? 1
-    : win.champion
-      ? HUNT.championKills
-      : win.elite
-        ? HUNT.eliteKills
-        : 1;
+  const base = win.boss ? 1 : win.champion ? HUNT.championKills : win.elite ? HUNT.eliteKills : 1;
   return base * (onHuntNode ? HUNT.nodeFactor : 1);
 }
 
 /** The enemy a Hunt node points at: the one with the fewest kills (ties by the dice). */
-export function huntQuarry(enemyIds: readonly string[], kills: HuntKills, rng: Rng): string | undefined {
+export function huntQuarry(
+  enemyIds: readonly string[],
+  kills: HuntKills,
+  rng: Rng,
+): string | undefined {
   if (!enemyIds.length) return undefined;
   const least = Math.min(...enemyIds.map((id) => kills[id] ?? 0));
   const open = enemyIds.filter((id) => (kills[id] ?? 0) === least);
