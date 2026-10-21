@@ -250,7 +250,8 @@ function RailStatus(props: { status: Status }) {
 
 /**
  * The hero's status rail (Timo, Diablo-like): one straight line over the skill bar. Boons and
- * buffs line up from the left, debuffs (ailments, curses, stun) from the right.
+ * buffs line up from the left, Boons sit in the middle, debuffs (ailments, curses, stun) come
+ * from the right.
  */
 export function StatusRail(props: {
   fighter: FighterSnapshot;
@@ -263,11 +264,11 @@ export function StatusRail(props: {
   return (
     <div className="status-rail" style={{ width: props.width }} data-testid="status-rail">
       <div className="rail-side good">
-        {props.boons}
         {good.map((s) => (
           <RailStatus key={s.key} status={s} />
         ))}
       </div>
+      <div className="rail-boons">{props.boons}</div>
       <div className="rail-side bad">
         {bad.map((s) => (
           <RailStatus key={s.key} status={s} />

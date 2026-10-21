@@ -475,18 +475,19 @@
   background: #2a1048;
 }
 
-/* --- the hero's status rail: Boons and buffs from the left, debuffs from the right ----------- */
+/* --- the hero's status rail: buffs from the left, Boons in the middle, debuffs from the right - */
 
 .stage .status-rail {
   position: relative;
   height: 22px;
   flex: none;
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  gap: 12px;
   padding: 0 34px;
-  /* Centered on the straight top edge of the raised plate: icons sit on that line. */
-  transform: translateY(-9px);
+  /* On the straight top edge of the raised plate, lifted so the icons keep air above the skills. */
+  transform: translateY(-22px);
 }
 
 .stage .rail-side {
@@ -498,6 +499,11 @@
 
 .stage .rail-side.bad {
   flex-direction: row-reverse;
+}
+
+.stage .rail-boons {
+  display: flex;
+  justify-content: center;
 }
 
 /* Color-coded like Diablo 3 and PoE: green frame = buff, red frame = debuff; the dark inside lets
@@ -513,7 +519,7 @@
   justify-content: center;
   border-radius: 4px;
   border: 2px solid var(--frame);
-  background: radial-gradient(circle at 50% 45%, #2a2318, #0d0a07);
+  background: radial-gradient(circle at 50% 45%, #5a4a32, #2a2116 60%, #120e09);
   box-shadow:
     0 0 0 1px #0b0805,
     inset 0 0 0 1px rgb(0 0 0 / 0.7),
@@ -526,7 +532,12 @@
 .stage .rail-status.bad {
   --frame: #e2412b;
   --glow: rgb(226 65 43 / 0.55);
-  background: radial-gradient(circle at 50% 45%, #2e1510, #0d0605);
+  background: radial-gradient(circle at 50% 45%, #5e3226, #2e1610 60%, #120706);
+}
+
+/* A soft light rim, so dark painted icons (Burn, Bleed) stand out from the socket. */
+.stage .rail-status > img {
+  filter: drop-shadow(0 0 2px rgb(255 236 200 / 0.55)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.8));
 }
 
 /* The time already used up darkens the icon clockwise, like a cooldown. */
@@ -570,7 +581,7 @@
 .stage .status-rail .battle-boons {
   flex-wrap: nowrap;
   gap: 2px 6px;
-  margin: 0 4px 0 0;
+  margin: 0;
   padding: 0;
   background: none;
 }
