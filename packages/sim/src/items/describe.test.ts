@@ -1,6 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { ZERO_ATTRIBUTES } from "../combat/test-fixtures";
-import { describeItem, describeStat, describeTrigger, formatPercent, speedValue } from "./describe";
+import {
+  STAT_NAMES,
+  STAT_ORDER,
+  describeItem,
+  describeStat,
+  describeTrigger,
+  formatPercent,
+  speedValue,
+} from "./describe";
 import { TEST_CATALOG } from "./test-fixtures";
 
 describe("item text", () => {
@@ -77,5 +85,35 @@ describe("item text", () => {
     expect(tooltip.requirements).toEqual([
       { attribute: "strength", name: "Strength", value: 5, met: false },
     ]);
+  });
+
+  it("lists affixes in a fixed order, whatever order they rolled in", () => {
+    const tooltip = describeItem(
+      {
+        id: "1",
+        baseId: "test-sword",
+        name: "Ash Bite",
+        rarity: "rare",
+        itemLevel: 5,
+        tier: 1,
+        affixes: [
+          { affixId: "second-wind", quality: 0 },
+          { affixId: "life", quality: 0 },
+          { affixId: "searing-crit", quality: 0 },
+          { affixId: "crit", quality: 0 },
+          { affixId: "strength", quality: 0 },
+        ],
+      },
+      TEST_CATALOG,
+    );
+    expect(
+      tooltip.affixLines.map((l) => l.text.replace(/^\+[\d.]+ (% )?/, "").replace(/:.*$/, "")),
+    ).toEqual(["Strength", "Crit Chance", "Life", "On Crit", "Life below 35 %"]);
+  });
+
+  it("gives every stat a place in the order", () => {
+    for (const stat of Object.keys(STAT_NAMES)) {
+      expect(STAT_ORDER[stat as keyof typeof STAT_ORDER], stat).toBeTypeOf("number");
+    }
   });
 });
