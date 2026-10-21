@@ -613,5 +613,14 @@ export function saveAtWardensGate(): string {
 export function saveRun1Stage3(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
   const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
-  return serializeGame(onMap(out, 3, ["fight", "fight", "fight"]));
+  // One way on: the item pick ends in the done card, not in a path choice.
+  return serializeGame(
+    onMap(out, 3, ["fight", "fight", "fight"], {
+      map: {
+        rows: (onMap(out, 3, ["fight", "fight", "fight"]).run?.map?.rows ?? []).map((row, r) =>
+          r === 2 ? row.map((n) => ({ ...n, next: [n.lane] })) : row,
+        ),
+      },
+    }),
+  );
 }

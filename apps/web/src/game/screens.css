@@ -9300,10 +9300,64 @@
 }
 
 .stage .act-map.big {
+  align-self: stretch;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
   border: none;
   background: none;
   box-shadow: none;
   padding: 0;
+}
+
+/* The planning window zooms (wheel, buttons) and pans (drag). */
+.stage .act-map-viewport {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 6px;
+  background: radial-gradient(ellipse at 50% 40%, rgb(120 80 40 / 0.08), rgb(60 36 18 / 0.18));
+}
+
+.stage .act-map-viewport:active {
+  cursor: grabbing;
+}
+
+.stage .act-map-pan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.stage .act-map-zoom {
+  position: absolute;
+  right: 12px;
+  bottom: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .act-map-zoom button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 50%;
+  font: 600 20px/1 var(--font-title);
+  color: #f1e2c2;
+  background: radial-gradient(circle at 40% 35%, #5a3c22, #22170f);
+  border: 2px solid #8a6a3e;
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
+  cursor: pointer;
+}
+
+.stage .act-map-zoom button:hover {
+  border-color: var(--heat);
 }
 
 .stage .act-map.big .map-node {
@@ -9319,8 +9373,13 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+  min-height: 0;
   gap: 12px;
   padding: 8px 36px 16px;
+}
+
+.stage .act-map-window .act-map-legend {
+  flex-grow: 0;
 }
 
 .stage .act-map-legend {

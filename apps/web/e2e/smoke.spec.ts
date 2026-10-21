@@ -84,8 +84,12 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   // The rewards follow on their own after the banner.
   // Normal fights offer an item pick only on every third fight; the others pay their cards as Ash.
   await expect(page.getByText("Stage 1 cleared")).toBeVisible();
-  await expect(page.getByTestId("done-card")).toContainText("Ash from salvage");
+  await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(0);
+  // Stage 2 forks into three lanes: the road waits for a choice.
+  await expect(
+    page.getByRole("radiogroup", { name: "Choose a path" }).getByRole("radio"),
+  ).toHaveCount(3);
 
   // On to a stage with an item pick: a hero of the same class with Stage 3 ahead.
   await seedSave(page, saveRun1Stage3());

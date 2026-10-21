@@ -41,6 +41,11 @@ test("the act map: the next node is chosen in the Intermission, a Hearth has no 
   // M opens the map big for planning; Escape closes it.
   await page.keyboard.press("m");
   await expect(page.getByTestId("act-map-big")).toBeVisible();
+  // The planning window zooms and pans.
+  const pan = page.getByTestId("act-map-viewport").locator(".act-map-pan");
+  const before = await pan.getAttribute("style");
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  await expect(pan).not.toHaveAttribute("style", before ?? "");
   if (process.env.SHOTS) {
     await page.waitForTimeout(400);
     await page.screenshot({ path: `${process.env.SHOTS}/map-big.png` });

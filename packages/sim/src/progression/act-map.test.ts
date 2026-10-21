@@ -237,13 +237,13 @@ describe("Act map", () => {
 describe("Walking the map", () => {
   it("chooses the next node after a fight; without a choice it takes a fight", () => {
     const s = at(6, "cache");
-    // Three Caches are no fork; a Hearth beside them is.
-    expect(pathOpen(s.run ?? { stage: 1 })).toBe(false);
+    // Two nodes ahead are a fork, even of the same kind; a single way on is none.
+    expect(pathOpen(s.run ?? { stage: 1 })).toBe(nextNodes(s.run ?? { stage: 1 }).length > 1);
     const rows = s.run?.map?.rows.map((row, r) =>
-      r === 5 ? row.map((n) => (n.lane === 2 ? { ...n, kind: "hearth" as const } : n)) : row,
+      r === 4 ? row.map((n) => ({ ...n, next: [n.lane] })) : row,
     );
-    const mixed = { ...s.run, map: { rows: rows ?? [] } } as GameState["run"];
-    expect(pathOpen(mixed ?? { stage: 1 })).toBe(true);
+    const single = { ...s.run, map: { rows: rows ?? [] } } as GameState["run"];
+    expect(pathOpen(single ?? { stage: 1 })).toBe(false);
     expect(() => applyAction(s, data, { type: "chooseNode", lane: 7 })).toThrow();
     const there = arrive(s, 2);
     expect(there.run).toMatchObject({ stage: 6, phase: "intermission" });

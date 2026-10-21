@@ -305,7 +305,6 @@ export function HeroBar(props: HeroBarProps) {
         <span className="orb-num title-font">{fmt(hero.life)}</span>
         <span className="orb-max mono">/ {fmt(hero.maxLife)}</span>
         {hero.barrier > 0 && <span className="orb-shield mono">+{fmt(hero.barrier)}</span>}
-        <span className="orb-level title-font">{hero.level}</span>
       </div>
       <div
         className={`orb-readout heat${skillNext ? " ready" : ""}`}

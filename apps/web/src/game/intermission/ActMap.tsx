@@ -26,7 +26,7 @@ import {
   waymarkKey,
   waymarkStages,
 } from "@emberheir/sim";
-import { useEffect } from "react";
+import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import { Icon, type IconName } from "../../ui/Icon";
@@ -63,6 +63,9 @@ export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: Ico
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
 const NODE = 30;
+/** Row distance in the planning window: roomy, the window zooms and pans (Timo 2026-10-21). */
+const BIG_ROW = 84;
+const ZOOM = { min: 0.5, max: 2, step: 1.2 };
 
 function nodeLabel(
   state: GameState,
@@ -99,7 +102,7 @@ export function ActMapView(props: {
   if (!map) return null;
   const act = getAct(GAME_DATA, run.actId);
   const rows = map.rows.length;
-  const rowH = props.big ? 44 : Math.min(38, 540 / rows);
+  const rowH = props.big ? BIG_ROW : Math.min(38, 540 / rows);
   const scale = props.big ? 2.4 : 1;
   const height = rowH * (rows - 1) + NODE + 8;
   const yOf = (row: number) => 4 + (rows - row) * rowH + NODE / 2;
@@ -156,39 +159,200 @@ export function ActMapView(props: {
           )}
         </div>
       )}
-      <div className="act-map-field" style={{ width, height }}>
-        <svg className="act-map-lines" width={width} height={height} aria-hidden="true">
-          {lines}
-        </svg>
-        {map.rows.map((row, r) =>
-          row.map((node) => {
-            const stage = r + 1;
-            const lane = row.length === 1 ? 1 : node.lane;
-            const isAhead = stage === run.stage + 1 && ahead.some((n) => n.lane === lane);
-            return (
-              <MapNodeButton
-                key={`${stage}-${lane}`}
-                state={state}
-                run={run}
-                stage={stage}
-                node={node}
-                x={xOf(stage, lane) - NODE / 2}
-                y={yOf(stage) - NODE / 2}
-                current={stage === run.stage && here?.lane === node.lane}
-                walked={onPath(stage, lane) && stage < run.stage}
-                ahead={isAhead && ahead.length > 1}
-                chosen={isAhead && chosen === lane}
-                waymarkTaken={
-                  singleRows(act).includes(stage) &&
-                  state.progress.waymarks.includes(waymarkKey(act.id, stage))
-                }
-                onPick={() => game.dispatch({ type: "chooseNode", lane })}
-              />
-            );
-          }),
-        )}
-      </div>
+      {props.big ? (
+        <MapViewport width={width} height={height} focusY={yOf(Math.min(rows, run.stage + 1))}>
+          <div className="act-map-field" style={{ width, height }}>
+            <svg className="act-map-lines" width={width} height={height} aria-hidden="true">
+              {lines}
+            </svg>
+            {map.rows.map((row, r) =>
+              row.map((node) => {
+                const stage = r + 1;
+                const lane = row.length === 1 ? 1 : node.lane;
+                const isAhead = stage === run.stage + 1 && ahead.some((n) => n.lane === lane);
+                return (
+                  <MapNodeButton
+                    key={`${stage}-${lane}`}
+                    state={state}
+                    run={run}
+                    stage={stage}
+                    node={node}
+                    x={xOf(stage, lane) - NODE / 2}
+                    y={yOf(stage) - NODE / 2}
+                    current={stage === run.stage && here?.lane === node.lane}
+                    walked={onPath(stage, lane) && stage < run.stage}
+                    ahead={isAhead && ahead.length > 1}
+                    chosen={isAhead && chosen === lane}
+                    waymarkTaken={
+                      singleRows(act).includes(stage) &&
+                      state.progress.waymarks.includes(waymarkKey(act.id, stage))
+                    }
+                    onPick={() => game.dispatch({ type: "chooseNode", lane })}
+                  />
+                );
+              }),
+            )}
+          </div>
+        </MapViewport>
+      ) : (
+        <div className="act-map-field" style={{ width, height }}>
+          <svg className="act-map-lines" width={width} height={height} aria-hidden="true">
+            {lines}
+          </svg>
+          {map.rows.map((row, r) =>
+            row.map((node) => {
+              const stage = r + 1;
+              const lane = row.length === 1 ? 1 : node.lane;
+              const isAhead = stage === run.stage + 1 && ahead.some((n) => n.lane === lane);
+              return (
+                <MapNodeButton
+                  key={`${stage}-${lane}`}
+                  state={state}
+                  run={run}
+                  stage={stage}
+                  node={node}
+                  x={xOf(stage, lane) - NODE / 2}
+                  y={yOf(stage) - NODE / 2}
+                  current={stage === run.stage && here?.lane === node.lane}
+                  walked={onPath(stage, lane) && stage < run.stage}
+                  ahead={isAhead && ahead.length > 1}
+                  chosen={isAhead && chosen === lane}
+                  waymarkTaken={
+                    singleRows(act).includes(stage) &&
+                    state.progress.waymarks.includes(waymarkKey(act.id, stage))
+                  }
+                  onPick={() => game.dispatch({ type: "chooseNode", lane })}
+                />
+              );
+            }),
+          )}
+        </div>
+      )}
     </section>
+  );
+}
+
+/**
+ * The planning window's view on the map: the wheel zooms around the cursor, a drag pans, the
+ * buttons zoom and bring the next row back into view. Opens on the row ahead.
+ */
+function MapViewport(props: {
+  width: number;
+  height: number;
+  focusY: number;
+  children: ReactNode;
+}) {
+  const box = useRef<HTMLDivElement>(null);
+  const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  const [view, setView] = useState({ x: 0, y: 0, z: 1 });
+  const [size, setSize] = useState({ w: 0, h: 0 });
+
+  // Stage pixels per screen pixel: the stage is scaled to the window (ui/Stage.tsx).
+  const unit = () => {
+    const el = box.current;
+    return el && el.offsetWidth ? el.offsetWidth / el.getBoundingClientRect().width : 1;
+  };
+  const clamp = (v: { x: number; y: number; z: number }, w = size.w, h = size.h) => {
+    const z = Math.min(ZOOM.max, Math.max(ZOOM.min, v.z));
+    const fit = (pos: number, content: number, room: number) =>
+      content <= room ? (room - content) / 2 : Math.min(0, Math.max(room - content, pos));
+    return { z, x: fit(v.x, props.width * z, w), y: fit(v.y, props.height * z, h) };
+  };
+  const centered = (w: number, h: number, z = 1) =>
+    clamp({ z, x: (w - props.width * z) / 2, y: h / 2 - props.focusY * z }, w, h);
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const w = el.offsetWidth;
+    const h = el.offsetHeight;
+    setSize({ w, h });
+    setView(centered(w, h));
+    // Only on open: the view stays where the player put it.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const zoomAt = (factor: number, px = size.w / 2, py = size.h / 2) =>
+    setView((v) => {
+      const z = Math.min(ZOOM.max, Math.max(ZOOM.min, v.z * factor));
+      const k = z / v.z;
+      return clamp({ z, x: px - (px - v.x) * k, y: py - (py - v.y) * k });
+    });
+
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    // A native listener: React's wheel listener is passive and cannot stop the page scroll.
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const r = el.getBoundingClientRect();
+      const u = unit();
+      zoomAt(
+        e.deltaY < 0 ? ZOOM.step : 1 / ZOOM.step,
+        (e.clientX - r.left) * u,
+        (e.clientY - r.top) * u,
+      );
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+  });
+
+  return (
+    <div
+      ref={box}
+      className="act-map-viewport"
+      data-testid="act-map-viewport"
+      onPointerDown={(e) => {
+        if (e.button !== 0) return;
+        drag.current = { x: e.clientX, y: e.clientY, moved: false };
+      }}
+      onPointerMove={(e) => {
+        const d = drag.current;
+        if (!d) return;
+        const dx = e.clientX - d.x;
+        const dy = e.clientY - d.y;
+        if (!d.moved && Math.hypot(dx, dy) < 4) return;
+        if (!d.moved) box.current?.setPointerCapture(e.pointerId);
+        d.moved = true;
+        d.x = e.clientX;
+        d.y = e.clientY;
+        const u = unit();
+        setView((v) => clamp({ ...v, x: v.x + dx * u, y: v.y + dy * u }));
+      }}
+      onPointerUp={() => {
+        // A drag that moved keeps its click from picking the node under the cursor.
+        const moved = drag.current?.moved;
+        drag.current = null;
+        if (moved) {
+          const stop = (ev: MouseEvent) => ev.stopPropagation();
+          window.addEventListener("click", stop, { capture: true, once: true });
+          setTimeout(() => window.removeEventListener("click", stop, { capture: true }), 0);
+        }
+      }}
+      onPointerCancel={() => (drag.current = null)}
+    >
+      <div
+        className="act-map-pan"
+        style={{ transform: `translate(${view.x}px, ${view.y}px) scale(${view.z})` }}
+      >
+        {props.children}
+      </div>
+      <div className="act-map-zoom" onPointerDown={(e) => e.stopPropagation()}>
+        <button type="button" aria-label="Zoom in" onClick={() => zoomAt(ZOOM.step)}>
+          +
+        </button>
+        <button type="button" aria-label="Zoom out" onClick={() => zoomAt(1 / ZOOM.step)}>
+          −
+        </button>
+        <button
+          type="button"
+          aria-label="Back to the road ahead"
+          onClick={() => setView(centered(size.w, size.h, view.z))}
+        >
+          <Icon name="eye" size={14} />
+        </button>
+      </div>
+    </div>
   );
 }
 

@@ -14,8 +14,8 @@ const reducedMotion = () =>
   window.matchMedia?.("(prefers-reduced-motion: reduce)").matches === true;
 
 /**
- * The act's arena between two fights (ui-ux-plan-v1.md 3.4): the hero waits in the act's air,
- * and the Intermission and its windows sit on top. Visual only, no fight runs.
+ * The act's arena between two fights (ui-ux-plan-v1.md 3.4): the act's air without figures (the
+ * Heir comes back for the fight), and the Intermission and its windows sit on top. Visual only, no fight runs.
  */
 export function IdleArena(props: {
   state: GameState;
@@ -59,7 +59,10 @@ export function IdleArena(props: {
         act: act.number,
         ...(run.wildfire ? { wildfire: run.wildfire } : {}),
       })
-      .then(() => scene.hideEnemy());
+      .then(() => {
+        scene.hideEnemy();
+        scene.hideHero();
+      });
     return () => {
       scene.destroy();
       sceneRef.current = null;

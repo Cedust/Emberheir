@@ -495,6 +495,16 @@ export class ArenaScene {
     if (this.enemy) this.enemy.root.visible = false;
   }
 
+  /** Between fights the arena stays empty: the Heir shows again in the fight (Timo 2026-10-21). */
+  hideHero(): void {
+    if (this.hero) {
+      this.hero.root.visible = false;
+      // The hero's sparks and auras only run at full alpha.
+      this.hero.root.alpha = 0;
+    }
+    if (this.draught) this.draught.ring.visible = false;
+  }
+
   destroy(): void {
     this.destroyed = true;
     this.app?.ticker?.remove(this.onTick);

@@ -202,9 +202,9 @@ export function chosenNext(run: Pick<RunState, "map" | "path" | "stage">): numbe
   return run.path?.[run.stage];
 }
 
-/** Whether the road ahead forks into different kinds of nodes (three plain fights do not). */
+/** Whether the road ahead forks: more than one node to walk to, even of the same kind (Timo). */
 export function forkAhead(run: Pick<RunState, "map" | "path" | "stage">): boolean {
-  return new Set(nextNodes(run).map((n) => n.kind)).size > 1;
+  return nextNodes(run).length > 1;
 }
 
 /** Whether the next row asks for a choice: a fork ahead and nothing chosen yet. */

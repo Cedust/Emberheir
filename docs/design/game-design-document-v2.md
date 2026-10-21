@@ -95,8 +95,9 @@ Endgame **Wildfire I–X**.
   (Acorns → Flask, Ash → 2 Ember Coal), Hunters' Camp (+20 % Life oder XP von 2 Kämpfen), Cursed Spark (1 aus 3 Boons,
   Gegner +15 % Schaden bis zur nächsten Waymark; nur solange Shrines brennen), Lost Cub (−1 Flask → nächster
   Item-Pick mindestens Rare). Die Karte steht rechts in der Intermission und öffnet sich groß mit **M**. Die
-  erreichbaren Knoten erscheinen als große Karten in der Mitte (auch ein Klick auf den Knoten wählt); sind sie
-  verschieden, wartet NEXT STAGE auf die Wahl, drei gleiche Kämpfe gehen geradeaus.
+  erreichbaren Knoten erscheinen als große Karten in der Mitte (auch ein Klick auf den Knoten wählt); gibt es
+  mehr als einen Weg, wartet NEXT STAGE auf die Wahl. Groß lässt sich die Karte zoomen und verschieben. Zwischen
+  den Kämpfen ist die Arena leer, der Heir erscheint erst im Kampf.
 - **Omens** (`neuausrichtung-v1.md` 5.2): Wer in einen **alten** Act des Runs aufbricht (jeder Act vor dem neuesten),
   wählt bei Eldrin **eins von zwei Omens**. Das Angebot ist pro Act und Run fest, das nächste Prestige würfelt neu.
   Jedes Run-Omen hat einen **Preis und einen Lohn** und nimmt keiner Defense- oder Heil-Schicht mehr als die Hälfte:
