@@ -155,6 +155,19 @@ export function RuneBoard(props: {
   );
 }
 
+/** Gamble cards in reading order: armor from head to toe, then the off hand and jewelry. */
+const GAMBLE_ORDER: readonly ItemSlot[] = [
+  "helm",
+  "body",
+  "gloves",
+  "belt",
+  "boots",
+  "offHand",
+  "amulet",
+  "ring",
+  "charm",
+];
+
 /**
  * Gamble: one card per slot; the Mystery Crate below shows the chosen slot's empty shape, dark,
  * and on a gamble that shape turns into the item Marisha pulled out.
@@ -169,7 +182,9 @@ export function GamblePanel({
   last: Item | null;
   crate?: React.Ref<HTMLDivElement>;
 }) {
-  const slots = merchantSlots(GAME_DATA);
+  const slots = merchantSlots(GAME_DATA).sort(
+    (a, b) => GAMBLE_ORDER.indexOf(a) - GAMBLE_ORDER.indexOf(b),
+  );
   const last = props.last ?? undefined;
   const { active, ...hover } = useItemHover(last, false);
   const lastSlot = last && getBase(ITEM_CATALOG, last.baseId).slot;

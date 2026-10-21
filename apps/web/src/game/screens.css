@@ -5981,14 +5981,17 @@
   align-items: center;
 }
 
+/* Five cards a row; a shorter last row stays centered. */
 .stage .gamble-slots {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
   gap: 10px;
   align-self: stretch;
 }
 
 .stage .gamble-slot {
+  flex: 0 0 calc((100% - 40px) / 5);
   flex-direction: column;
   padding: 10px 6px;
 }
