@@ -51,7 +51,7 @@ export interface WeaponTip {
   /** The Keystone the painting shows, or null for the plain weapon. */
   readonly keystoneId: string | null;
   readonly damage: { readonly min: number; readonly max: number; readonly type: DamageType };
-  /** The weapon's own Speed (0.8 attacks per second is 100). */
+  /** The weapon's own Speed (1 attack per second is 100). */
   readonly speed: number;
   readonly precision: number;
   readonly rangeMin: number;

@@ -1,9 +1,8 @@
-import { GAME_DATA, ITEM_CATALOG, PRESTIGE_BRANCHES } from "@emberheir/content";
+import { GAME_DATA, ITEM_CATALOG, PRESTIGE_BRANCHES, WEAPON_PIPS } from "@emberheir/content";
 import {
   ATTRIBUTE_RULES,
   type Attribute,
   type HeroClass,
-  type WeaponDefinition,
   getBase,
   speedValue,
   sumAttributes,
@@ -54,20 +53,6 @@ const DAMAGE_NAMES: Record<string, string> = {
   lightning: "Lightning",
   void: "Void",
 };
-
-/** Speed and power of every hero weapon, for the five pips on the weapon card. */
-const HERO_WEAPONS = GAME_DATA.classes
-  .flatMap((c) => c.weapons)
-  .map((id) => getBase(ITEM_CATALOG, id).weapon)
-  .filter((w): w is WeaponDefinition => !!w);
-const hitOf = (w: WeaponDefinition) =>
-  ((w.damage.min + w.damage.max) / 2) * (GAME_DATA.weaponMastery[w.id]?.damageScale ?? 1);
-
-function pips(value: number, all: readonly number[]): number {
-  const lo = Math.min(...all);
-  const hi = Math.max(...all);
-  return hi > lo ? 1 + Math.round(((value - lo) / (hi - lo)) * 4) : 3;
-}
 
 export function ClassSelect(props: {
   slot: number;
@@ -299,10 +284,7 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
           <div className="cs-weapon-facts">
             <Meter
               label="Speed"
-              value={pips(
-                w.attacksPerSecond,
-                HERO_WEAPONS.map((x) => x.attacksPerSecond),
-              )}
+              value={WEAPON_PIPS[w.id]?.speed ?? 3}
               note={{
                 name: "Speed",
                 kind: base.name,
@@ -311,7 +293,7 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
             />
             <Meter
               label="Power"
-              value={pips(hitOf(w), HERO_WEAPONS.map(hitOf))}
+              value={WEAPON_PIPS[w.id]?.power ?? 3}
               note={{
                 name: "Power",
                 kind: base.name,

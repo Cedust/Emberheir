@@ -7,8 +7,8 @@ import type { WeaponDefinition } from "@emberheir/sim";
  * Playtest 1: fights read too busy, so every weapon attacks a third slower (hero and enemies)
  * and hits harder by the same factor. DPS and fight length stay the same.
  *
- * Playtest 2 (after the real-time fix): Timo chose a wider spread per weapon, Sword 0.8 as Speed
- * 100, from the Dagger at 1.1 down to the Crossbow at 0.5. Heat per Hit keeps 12 Heat/s.
+ * Playtest 2 (after the real-time fix): Timo chose a wider spread per weapon, from the Dagger at
+ * 1.1 down to the Crossbow at 0.5 (Speed 110 to 50, 1 attack per second is Speed 100). Heat per Hit keeps 12 Heat/s.
  */
 export const SWORD: WeaponDefinition = {
   id: "sword",
@@ -45,11 +45,13 @@ export const WAND: WeaponDefinition = {
   // Step 6 (Timo 2026-10-20): Wand and Staff have their own Speed and Power, at the same damage
   // per second. Wand: fast and light (was 10-16 at 0.75/s). The caster's Default Attack was the
   // weakest in the game (weapon share 10 %), so both gained about 40 % damage per second.
-  damage: { min: 12, max: 19 },
+  // Round Speed (Timo 2026-10-21): Speed 100 instead of 90, damage lowered by the same factor
+  // (was 12-19 at 0.9/s).
+  damage: { min: 11, max: 17 },
   // Sorcerer without Fire (2026-10-17): Lightning by default, Attunement can make it Cold.
   damageType: "lightning",
   // Warming Heat comes per second, so the faster Spark needs no other Heat.
-  attacksPerSecond: 0.9,
+  attacksPerSecond: 1,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",
@@ -137,13 +139,14 @@ export const MACE: WeaponDefinition = {
   name: "Mace",
   defaultAttack: "Smash",
   // Step 4 (Timo 2026-10-20): the three Cinderguard weapons each have their own Speed and Power.
-  // Mace: slow and heavy (was 14-23 at 0.65/s).
-  damage: { min: 18, max: 27 },
+  // Mace: slow and heavy (was 14-23 at 0.65/s). Round Speed (Timo 2026-10-21): Speed 65 like the
+  // Staff instead of 60, damage lowered by the same factor (was 18-27 at 0.6/s).
+  damage: { min: 17, max: 25 },
   damageType: "physical",
-  attacksPerSecond: 0.6,
+  attacksPerSecond: 0.65,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 0.6 attacks/s.
-  heatPerHit: 20,
+  // 12 Heat/s ÷ 0.65 attacks/s.
+  heatPerHit: 18,
   range: "melee",
   implicit: { physicalPenetration: 0.1 },
   triggers: [
@@ -186,6 +189,24 @@ export const HERO_WEAPONS: readonly WeaponDefinition[] = [
   MACE,
   STAFF,
 ];
+
+/**
+ * The five pips on the class select's weapon card, Speed and Power (Timo 2026-10-21: fixed per
+ * weapon, so a small change in numbers never moves a weapon's place on the card). Speed and
+ * Power always add up to 6.
+ */
+export const WEAPON_PIPS: Readonly<
+  Record<string, { readonly speed: number; readonly power: number }>
+> = {
+  dagger: { speed: 5, power: 1 },
+  sword: { speed: 4, power: 2 },
+  wand: { speed: 4, power: 2 },
+  bow: { speed: 3, power: 3 },
+  axe: { speed: 3, power: 3 },
+  staff: { speed: 2, power: 4 },
+  mace: { speed: 2, power: 4 },
+  crossbow: { speed: 1, power: 5 },
+};
 
 // Enemy weapons. Enemies follow the same rules as the hero, including Heat.
 // Playtest 1: Act 1 drops less Rare and Epic gear, so enemy damage went down by ~40 %.

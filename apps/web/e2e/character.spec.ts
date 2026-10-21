@@ -1,3 +1,5 @@
+import { GAME_DATA } from "@emberheir/content";
+import { newGame, serializeGame } from "@emberheir/sim";
 import { expect, test } from "@playwright/test";
 import { saveAfterAct1, seedSave } from "./fixtures";
 
@@ -31,4 +33,16 @@ test("the Overview shows the pinned Stats panels, up to three, and keeps them", 
   await sheet.getByRole("tab", { name: "Overview" }).click();
   await expect(overview).toContainText("Ailments");
   await expect(overview).not.toContainText("Starts at");
+});
+
+test("the Speed note names the hero's own weapon and its start Speed", async ({ page }) => {
+  const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard", weapon: "axe" });
+  await seedSave(page, serializeGame(base));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("c");
+  const sheet = page.getByRole("dialog", { name: "Character" });
+  await sheet.getByRole("tab", { name: "Overview" }).click();
+  await sheet.locator(".hero-pill", { hasText: "Speed" }).first().hover();
+  await expect(page.getByText("Your Axe starts at 75")).toBeVisible();
 });

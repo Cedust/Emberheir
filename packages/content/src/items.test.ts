@@ -27,7 +27,7 @@ import {
   TRIGGER_AFFIXES,
   rollGear,
 } from "./items";
-import { HERO_WEAPONS } from "./weapons";
+import { HERO_WEAPONS, WEAPON_PIPS } from "./weapons";
 
 describe("item content", () => {
   it("attribute affixes: jewelry only, +1 (Epic and Legendary +2), no growth per tier", () => {
@@ -65,6 +65,19 @@ describe("item content", () => {
         taught.some((p) => p.effect === e.id),
         e.id,
       ).toBe(true);
+    }
+  });
+
+  it("every hero weapon has Speed and Power pips from 1 to 5 that add up to 6", () => {
+    for (const weapon of HERO_WEAPONS) {
+      const pips = WEAPON_PIPS[weapon.id];
+      expect(pips, weapon.id).toBeDefined();
+      for (const value of [pips?.speed, pips?.power]) {
+        expect(value).toBeGreaterThanOrEqual(1);
+        expect(value).toBeLessThanOrEqual(5);
+      }
+      // Timo 2026-10-21: what a weapon gains in Speed it gives up in Power.
+      expect((pips?.speed ?? 0) + (pips?.power ?? 0), weapon.id).toBe(6);
     }
   });
 
