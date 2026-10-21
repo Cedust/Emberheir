@@ -29,6 +29,8 @@ export interface HudLayout {
   readonly orbDx: number;
   readonly lifeOrb: { readonly x: number; readonly y: number };
   readonly heatOrb: { readonly x: number; readonly y: number };
+  /** Half the width of the raised center plate behind the skill bar and the status rail. */
+  readonly plateHalf: number;
   /** The enemy Life bar rectangle in stage pixels. */
   readonly enemyLife: {
     readonly x: number;
@@ -50,6 +52,7 @@ export function hudLayout(w: number, h: number): HudLayout {
     orbDx,
     lifeOrb: { x: cx - orbDx, y },
     heatOrb: { x: cx + orbDx, y },
+    plateHalf: Math.min(400, orbDx - 150),
     enemyLife: {
       x: frameX + ENEMY_LIFE.x,
       y: ENEMY_TOP + ENEMY_LIFE.y,
