@@ -173,6 +173,44 @@
   border-color: #ffd84a;
 }
 
+/* The enemy's Trail (Hunts): four pips and the way to the next one. */
+.stage .hunt-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 999px;
+  font-size: 13px;
+  color: #f3e6c8;
+  background: rgb(20 14 10 / 0.82);
+  border: 1px solid rgb(184 137 62 / 0.7);
+  pointer-events: auto;
+}
+
+.stage .hunt-label {
+  font-family: var(--font-title);
+  letter-spacing: 1px;
+}
+
+.stage .hunt-count {
+  font-size: 12px;
+  opacity: 0.8;
+}
+
+.stage .hunt-bar {
+  width: 64px;
+  height: 5px;
+  border-radius: 2px;
+  background: rgb(255 255 255 / 0.12);
+  overflow: hidden;
+}
+
+.stage .hunt-bar > span {
+  display: block;
+  height: 100%;
+  background: linear-gradient(90deg, #b8893e, #ffd27a);
+}
+
 .stage .hud-enemy-below .thief-timer {
   padding: 4px 10px;
   font-size: 13px;

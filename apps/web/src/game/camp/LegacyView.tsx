@@ -19,6 +19,7 @@ import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../../ui/kit
 import { type CollectionId, collections } from "../collections";
 import { RuneBoard } from "./RuneViews";
 import { TrophyWall } from "./TrophyWall";
+import { Bestiary } from "./Bestiary";
 import { TriggerCodex } from "./TriggerCodex";
 
 type LegacyTab = "gear" | "collections" | "lineage";
@@ -164,6 +165,8 @@ export function LegacyView(props: {
             <div className="collection-detail">
               {pick === "trophies" ? (
                 <TrophyWall state={state} />
+              ) : pick === "hunts" ? (
+                <Bestiary state={state} />
               ) : pick === "runewords" ? (
                 <RuneBoard state={state} mode="codex" selected={null} onSelect={() => {}} />
               ) : (

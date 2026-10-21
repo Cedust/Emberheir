@@ -13,6 +13,7 @@ import {
   gateStages,
   getAct,
   getEvent,
+  HUNT,
   hearthHeal,
   isWallAct,
   nextNodes,
@@ -35,6 +36,8 @@ import { emptySlotArt } from "../../ui/items";
 import type { GameApi } from "../useGame";
 import { homeRuneOf } from "../actLoot";
 import { runeName } from "../../ui/RuneArt";
+import { EnemyPortrait } from "../../ui/EnemyPortrait";
+import { huntView, trailTitle } from "../hunts";
 
 /**
  * The act map (act-karte-entwurf-v1.md, Slay the Spire): the road through the act as three
@@ -60,6 +63,11 @@ export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: Ico
     text: `She gambles on ${ROAD_GAMBLE.slots} slots, ${Math.round(ROAD_GAMBLE.discount * 100)} % cheaper. No fight.`,
     icon: "coins",
   },
+  hunt: {
+    name: "Hunt",
+    text: `A chosen enemy of the act. It counts ${HUNT.nodeFactor}× for its Trail and always drops an item pick.`,
+    icon: "wolf",
+  },
 };
 
 /** Timo's painted node medallions (icon sheet 10, tools/art/cut_map_nodes.py). */
@@ -67,7 +75,21 @@ const NODE_ART = import.meta.glob<string>("../../assets/map/node-*.webp", {
   eager: true,
   import: "default",
 });
-const nodeArt = (kind: NodeKind) => NODE_ART[`../../assets/map/node-${kind}.webp`];
+// The Hunt node is the sheet's spare medallion with its quarry's face inside.
+const nodeArt = (kind: NodeKind) =>
+  NODE_ART[`../../assets/map/node-${kind === "hunt" ? "empty" : kind}.webp`];
+
+/** A Hunt node's quarry by name, with its Trail. */
+function huntLabel(state: GameState, node: MapNode): { name: string; text: string } | undefined {
+  if (node.kind !== "hunt" || !node.quarry) return undefined;
+  const enemy = GAME_DATA.acts.flatMap((a) => a.enemies).find((e) => e.id === node.quarry);
+  const hunt = huntView(state, node.quarry);
+  const next = hunt.next !== undefined ? ` (${hunt.kills}/${hunt.next})` : "";
+  return {
+    name: `Hunt: ${enemy?.name ?? "?"}`,
+    text: `${NODE_TEXT.hunt.text} ${trailTitle(hunt.tier)}${next}.`,
+  };
+}
 
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
@@ -95,7 +117,8 @@ function nodeLabel(
       marker: gate ? "gate" : "waymark",
     };
   }
-  return NODE_TEXT[node.kind];
+  const hunt = huntLabel(state, node);
+  return hunt ? { ...NODE_TEXT.hunt, ...hunt } : NODE_TEXT[node.kind];
 }
 
 /** The map in the Intermission's right column; `big` is the planning window (M). */
@@ -426,7 +449,14 @@ function MapNodeButton(props: {
   ].join(" ");
   const style = { left: props.x, top: props.y, width: NODE, height: NODE };
   const art = label.marker ? null : (
-    <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
+    <>
+      <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
+      {props.node.quarry && (
+        <span className="map-node-quarry">
+          <EnemyPortrait enemyId={props.node.quarry} size={NODE * 0.62} />
+        </span>
+      )}
+    </>
   );
   return props.ahead ? (
     <button
@@ -480,14 +510,14 @@ export function ActMapWindow(props: {
       >
         <ActMapView state={props.state} run={props.run} game={props.game} big />
         <p className="sub act-map-legend">
-          {(["fight", "elite", "shrine", "hearth", "cache", "event", "marisha"] as const).map(
-            (k) => (
-              <span key={k} className="legend-item">
-                <img src={nodeArt(k)} alt="" className="legend-node" />
-                {NODE_TEXT[k].name}
-              </span>
-            ),
-          )}
+          {(
+            ["fight", "elite", "shrine", "hearth", "cache", "event", "marisha", "hunt"] as const
+          ).map((k) => (
+            <span key={k} className="legend-item">
+              <img src={nodeArt(k)} alt="" className="legend-node" />
+              {NODE_TEXT[k].name}
+            </span>
+          ))}
         </p>
       </Window>
     </WindowLayer>
@@ -514,6 +544,11 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
           >
             <span className="path-sigil painted">
               <img src={nodeArt(node.kind)} alt="" />
+              {node.quarry && (
+                <span className="map-node-quarry">
+                  <EnemyPortrait enemyId={node.quarry} size={46} />
+                </span>
+              )}
             </span>
             <strong className="title-font">{text.name}</strong>
             <span className="sub">{text.text}</span>

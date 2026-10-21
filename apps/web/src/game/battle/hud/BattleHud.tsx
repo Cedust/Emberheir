@@ -1,4 +1,5 @@
 import { Potion, draughtIconUrl } from "../../../ui/Potion";
+import { BOSS_TRAIL_TEXT, type HuntView, TRAIL_NAMES, TRAIL_TEXT, trailTitle } from "../../hunts";
 import { useNoteHover } from "../../../ui/ItemTooltip";
 import {
   COMBAT,
@@ -542,6 +543,39 @@ export interface EnemyFrameProps {
   heroLevel: number;
   /** The Wildfire has no Level Malus (the hero's level ends at 100). */
   noLevelMalus?: boolean;
+  /** The enemy's Trail (hunts-entwurf-v1.md); missing for echoes and the finale. */
+  hunt?: HuntView;
+}
+
+/** The enemy's Trail under its plaque: four pips and the kills to the next one. */
+function HuntChip(props: { hunt: HuntView }) {
+  const h = props.hunt;
+  const part = h.next !== undefined ? (h.kills - h.from) / Math.max(1, h.next - h.from) : 1;
+  const text = h.boss ? BOSS_TRAIL_TEXT : TRAIL_TEXT;
+  return (
+    <span
+      className={`hunt-chip trail-${h.tier}`}
+      data-testid="hunt-chip"
+      title={`${trailTitle(h.tier)} · ${h.kills}${h.next !== undefined ? ` / ${h.next}` : ""} kills${
+        h.next !== undefined ? `\nNext: ${text[h.tier + 1] ?? ""}` : ""
+      }`}
+    >
+      <Icon name="wolf" size={14} color="#f3e6c8" />
+      <span className="hunt-pips">
+        {[1, 2, 3, 4].map((t) => (
+          <span key={t} className={`hunt-pip${t <= h.tier ? " on" : ""}`} />
+        ))}
+      </span>
+      <span className="hunt-label">{TRAIL_NAMES[h.tier]}</span>
+      <span className="hunt-bar">
+        <span style={{ width: `${Math.min(1, part) * 100}%` }} />
+      </span>
+      <span className="hunt-count mono">
+        {h.kills}
+        {h.next !== undefined ? `/${h.next}` : ""}
+      </span>
+    </span>
+  );
 }
 
 /**
@@ -657,6 +691,7 @@ export function EnemyFrame(props: EnemyFrameProps) {
         </div>
       </div>
       <div className="hud-enemy-below">
+        {props.hunt && <HuntChip hunt={props.hunt} />}
         {props.mods.map((m) => (
           <span key={m} className="mod-chip">
             {m}

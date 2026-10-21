@@ -625,3 +625,26 @@ export function saveRun1Stage3(): string {
     }),
   );
 }
+
+/** Kills for the Hunts (hunts-entwurf-v1.md): the Ashen Fields' enemies on different Trails. */
+const HUNT_KILLS = { "ashen-brute": 30, "ashen-skirmisher": 9, "cinder-caster": 110, gorrak: 4 };
+
+/** On the road in the Ashen Fields (run 2), Stage 2 won: a Hunt node after the Ashen Prowler ahead. */
+export function saveAtHuntFork(prowlerKills = 9): string {
+  const out = oldActTrip();
+  const state = onMap(out, 2, ["fight", "hunt", "elite"], wonFight(out));
+  const rows = state.run?.map?.rows.map((row, r) =>
+    r === 2 ? row.map((n) => (n.kind === "hunt" ? { ...n, quarry: "ashen-skirmisher" } : n)) : row,
+  );
+  return serializeGame({
+    ...state,
+    legacy: { ...state.legacy, hunts: { ...HUNT_KILLS, "ashen-skirmisher": prowlerKills } },
+    run: state.run && rows ? { ...state.run, map: { rows } } : state.run,
+  });
+}
+
+/** A Camp save in run 2 with hunted Ashen Fields enemies: the Bestiary has pages. */
+export function saveHunter(): string {
+  const state = JSON.parse(saveAfterAct1()) as GameState;
+  return serializeGame({ ...state, legacy: { ...state.legacy, hunts: HUNT_KILLS } });
+}

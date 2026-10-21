@@ -1,4 +1,5 @@
 import { GAME_DATA } from "@emberheir/content";
+import { BOSS_TRAIL_TEXT, TRAIL_TEXT, trailTitle } from "../hunts";
 import {
   type GameAction,
   type GameState,
@@ -498,6 +499,22 @@ export function RunMoments(props: { state: GameState; run: RunState }) {
             icon: "fire" as const,
             name: "Hearth Embers",
             sub: `+${Math.round(PROGRESSION.hearthEmbers * 100)} % Life`,
+          },
+        ]
+      : []),
+    ...(rewards.hunt?.tierUp
+      ? [
+          {
+            key: "hunt",
+            icon: "wolf" as const,
+            name: `${trailTitle(rewards.hunt.tier)}!`,
+            sub: [
+              (rewards.hunt.boss ? BOSS_TRAIL_TEXT : TRAIL_TEXT)[rewards.hunt.tier] ?? "",
+              rewards.hunt.acorns ? `+${rewards.hunt.acorns} Acorns` : "",
+              rewards.hunt.emberCoal ? `+${rewards.hunt.emberCoal} Ember Coal` : "",
+            ]
+              .filter(Boolean)
+              .join(" "),
           },
         ]
       : []),

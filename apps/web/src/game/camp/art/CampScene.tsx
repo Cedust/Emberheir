@@ -55,6 +55,13 @@ const BANNERS: Record<CollectionId, { x: number; cloth: string; emblem: string }
     cloth: "#a8401a",
     emblem: "M0 -14 a14 14 0 1 0 0.1 0 Z M0 -8 L6 4 L0 10 L-6 4 Z",
   },
+  // A paw print for the Bestiary.
+  hunts: {
+    x: 1386,
+    cloth: "#6b4a2a",
+    emblem:
+      "M0 2 c-7 0 -10 6 -8 10 c2 3 6 2 8 2 c2 0 6 1 8 -2 c2 -4 -1 -10 -8 -10 Z M-9 -4 a3 4 0 1 0 0.1 0 Z M9 -4 a3 4 0 1 0 0.1 0 Z M-4 -11 a3 4 0 1 0 0.1 0 Z M4 -11 a3 4 0 1 0 0.1 0 Z",
+  },
 };
 
 function Banner(props: { id: CollectionId }) {

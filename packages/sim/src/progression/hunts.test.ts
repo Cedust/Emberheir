@@ -74,7 +74,7 @@ describe("hunt loot", () => {
     }
   });
 
-  it("a Feared Hunt Affix rolls in the best stage, an Apex one is Greater", () => {
+  it("a Cornered Hunt Affix rolls in the best stage, an Apex one is Greater", () => {
     for (let seed = 1; seed <= 50; seed++) {
       const best = rollItem(
         TEST_GAME_DATA.items,
@@ -135,5 +135,29 @@ describe("hunts in the game", () => {
       found += hunts.length;
     }
     expect(found).toBeGreaterThan(30);
+  });
+});
+
+describe("the sure Hunt Affix", () => {
+  it("one card of every hunted pick carries it, a Normal card turns Magic for it", async () => {
+    const { rollItemChoices } = await import("./game/loot");
+    const data: GameData = { ...TEST_GAME_DATA, huntSignatures: { weakling: ["crit"] } };
+    for (let seed = 1; seed <= 40; seed++) {
+      const items = rollItemChoices(
+        data,
+        "test-act",
+        { enemyId: "weakling", level: 10, boss: false, eliteModifiers: [], seed: 0 },
+        "normal",
+        0,
+        0,
+        new Rng(seed),
+        undefined,
+        1,
+        undefined,
+        { signature: { affixIds: ["crit"] } },
+      );
+      const signed = items.filter((it) => it.affixes.some((a) => a.affixId === "crit"));
+      expect(signed.length, `seed ${seed}`).toBeGreaterThanOrEqual(1);
+    }
   });
 });

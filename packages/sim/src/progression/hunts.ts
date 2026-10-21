@@ -10,7 +10,7 @@ import type { Rng } from "../rng";
  * - I Tracked: its Bestiary card, a few Acorns once.
  * - II Hunted: one card of every item pick after a win over it carries a Hunt Affix. A Warden:
  *   its trophy drops more often.
- * - III Feared: the Hunt Affix rolls in the best stage the Item Level allows.
+ * - III Cornered: the Hunt Affix rolls in the best stage the Item Level allows.
  * - IV Apex (endgame): the Hunt Affix rolls past the top, as a Greater Affix (Greater I–V,
  *   110–150 % of the tier's best roll). It takes a great many kills: a reason to farm in the
  *   Wildfire.

@@ -173,6 +173,33 @@ export function rollItemChoices(
     }
     items.push(item);
   }
+  // The Hunt Affix is sure: when no card carries it (Normal cards, Charms, Uniques), the first
+  // card whose slot can hold it rolls again with it, a Normal one as Magic.
+  const sign = hunt.signature;
+  if (sign && !signed) {
+    const fits = (it: Item) => {
+      const slot = getBase(data.items, it.baseId).slot;
+      return sign.affixIds.some((id) => {
+        const affix = data.items.affixes.get(id);
+        return affix?.kind === "stat" && affix.slots.includes(slot);
+      });
+    };
+    const at = items.findIndex((it) => !it.uniqueId && fits(it));
+    const card = items[at];
+    if (card) {
+      items[at] = rollItem(
+        data.items,
+        {
+          baseId: card.baseId,
+          itemLevel: card.itemLevel,
+          rarity: card.rarity === "normal" ? "magic" : card.rarity,
+          signature: sign,
+          ...(affixFactor ? { affixFactor } : {}),
+        },
+        rng,
+      );
+    }
+  }
   return items;
 }
 

@@ -951,6 +951,17 @@
   animation: banner 0.5s ease-out;
 }
 
+/* A new Trail on the beaten enemy (Hunts): a smaller line under VICTORY. */
+.stage .fight-banner .trail-banner {
+  display: block;
+  margin-top: 6px;
+  font-size: 30px;
+  letter-spacing: 4px;
+  color: #ffd27a;
+  -webkit-text-stroke: 1px #1c1a18;
+  animation: banner 0.6s ease-out 0.4s both;
+}
+
 .stage .fight-banner.defeat {
   color: #d8d0c4;
   text-shadow: 0 0 30px rgb(0 0 0 / 0.7);
