@@ -117,7 +117,8 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
 /** One card per act, painted in the act's arena colors. */
 export function RoadStrip(props: { state: GameState; plan: RoadPlan; vertical?: boolean }) {
   const { state, plan } = props;
-  const compact = !props.vertical && plan.acts.length > 4;
+  // More than one act: the cards fold to their number, only the chosen act stays open.
+  const compact = !props.vertical && plan.acts.length > 1;
   return (
     <div
       className={`road${compact ? " compact" : ""}${props.vertical ? " vertical" : ""}`}
