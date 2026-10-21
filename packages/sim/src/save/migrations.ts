@@ -27,7 +27,18 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   9: { state: (save) => renameLearned(save, ELEMENT_ATTACK_NODES) },
   // Längere Runs: a trip may hold its walks past the Warden's Gate (`run.wanders`, optional).
   10: {},
+  // Act map (act-karte-entwurf-v1.md): the forks' routes are gone. A trip under way walks on
+  // without a map (every stage a fight) until the next set-out.
+  11: { state: dropRoutes },
 };
+
+function dropRoutes(save: RawSave): RawSave {
+  const run = save["run"];
+  if (!isRecord(run) || !("routes" in run)) return save;
+  const rest = { ...run };
+  delete rest["routes"];
+  return { ...save, run: rest };
+}
 
 export interface MigrateOptions {
   /** The version to end at (tests); default `SAVE_VERSION`. */

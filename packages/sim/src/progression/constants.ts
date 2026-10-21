@@ -173,6 +173,8 @@ export const PROGRESSION = {
   thiefFleeSeconds: 15,
   thiefCards: 4,
   thiefPicks: 2,
+  /** The Ashen Challenger of an Event: its Elite lets the hero take this many of its cards. */
+  challengePicks: 2,
   /** Chance per boss kill that one Hoard card is a trophy from the boss's own list. */
   bossTrophyChance: 0.1,
   /** The top Rune ranks only drop from Elites and Bosses, this much rarer on top of the falloff. */
@@ -326,8 +328,8 @@ export const PROGRESSION = {
   },
   /** Hearth Embers (neuausrichtung-v1.md 5.4): a won Waymark before the boss heals this much. */
   hearthEmbers: 0.25,
-  /** The Hearth path of a fork (6.2): its second stage won heals this much. */
-  hearthPath: 0.25,
+  /** A Hearth on the act map (act-karte-entwurf-v1.md): resting there heals this much. */
+  hearthNode: 0.25,
   /**
    * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
    * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes

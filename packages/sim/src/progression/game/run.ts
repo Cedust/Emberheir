@@ -14,7 +14,6 @@ import {
   stageMonsterLevel,
   stagesInAct,
   stageWall,
-  routeAt,
   wardensGate,
   wildfireLevel,
   wildfireOpen,
@@ -35,8 +34,10 @@ import {
   type GameData,
   type GameState,
   type Notice,
-  type RouteKind,
+  runWithout,
 } from "./state";
+import { currentNode, generateActMap, isQuiet } from "./act-map";
+import { mapOptions, walkOn } from "./visits";
 
 /** A trip out of the Camp: set out, stages, drinking from the Ember Flask, back to the Camp. */
 
@@ -63,7 +64,7 @@ export function setOut(
         )
       : undefined;
   const draught = brewedDraught(state, data);
-  return {
+  const out: GameState = {
     ...(bounty ? next : state),
     notice: null,
     // The Flask leaves the Camp full, as much as the worn Belt allows, minus a brewed Draught.
@@ -80,6 +81,17 @@ export function setOut(
       ...(omens.length ? { omens } : {}),
     },
   };
+  return withMap(out, data);
+}
+
+/** A fresh act map for the walk that starts now (act-karte-entwurf-v1.md), standing on row 1. */
+function withMap(state: GameState, data: GameData): GameState {
+  const run = state.run;
+  if (!run) return state;
+  const act = getAct(data, run.actId);
+  const [rng, next] = nextRng(state);
+  const map = generateActMap(act, mapOptions(state, data, run), rng);
+  return { ...next, run: { ...run, map, path: [1] } };
 }
 
 export function chooseDraught(state: GameState, data: GameData, id: string | null): GameState {
@@ -150,34 +162,6 @@ export function enterFinale(state: GameState, data: GameData): GameState {
 }
 
 /**
- * Picks the path of the fork ahead (neuausrichtung-v1.md 6.2): before the fork's first stage
- * (in the intermission, or in the rewards of the stage before). The thief's trail is only there while a thief bounty runs.
- */
-export function chooseRoute(state: GameState, data: GameData, route: RouteKind): GameState {
-  const run = requireRun(state, "intermission", "rewards");
-  const act = getAct(data, run.actId);
-  // In the rewards the road ahead starts with the next stage.
-  const ahead = run.phase === "rewards" ? run.stage + 1 : run.stage;
-  const at = routeAt(run, act, ahead);
-  if (!at || at.second) return fail("No fork ahead");
-  if (route === "thief" && !thiefTrailOpen(state, data)) return fail("No thief to follow");
-  return {
-    ...state,
-    run: { ...run, routes: { ...run.routes, [String(at.fork)]: route } },
-  };
-}
-
-/** The thief's trail is a route while a "catch the Ember Thief" bounty is open. */
-export function thiefTrailOpen(state: GameState, data: GameData): boolean {
-  const bounty = state.run?.bounty;
-  return (
-    data.thief !== undefined &&
-    bounty?.status === "open" &&
-    getBounty(data, bounty.id).goal.kind === "thief"
-  );
-}
-
-/**
  * An Elite's modifiers (neuausrichtung-v1.md 6.1): one of its act's own first (an act without
  * own ones, like Emberfall, draws from all acts), the rest from the general pool.
  */
@@ -205,6 +189,8 @@ export function rollEliteModifiers(
 export function startStage(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission");
   const act = getAct(data, run.actId);
+  const node = currentNode(run);
+  if (node && isQuiet(node.kind)) return fail("Nothing to fight here");
   const [rng, next] = nextRng(state);
   if (isFinaleAct(data, act.id)) {
     const encounter = finaleEncounter(data, run.stage, rng);
@@ -216,13 +202,15 @@ export function startStage(state: GameState, data: GameData): GameState {
     : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
   const atBoss = run.stage >= stagesInAct(act);
   const p = tier ? wildfirePressure(tier, atBoss) : { life: 1, damage: 1 };
+  // Cursed Spark (an Event): enemies hit harder until the next Waymark.
+  const cursed = run.curse && run.stage < run.curse.until ? 1 + run.curse.damage : 1;
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
   const omens = tripOmenEffects(state, data);
   const omened = run.omens?.length ? { omens: run.omens } : {};
   // One factor per stage kind (balancing-neustart-v1.md, step 3), the Wildfire included.
   const length = (kind: keyof typeof PROGRESSION.stageKinds) => {
     const k = PROGRESSION.stageKinds[kind];
-    return { pressure: { life: p.life * k.life, damage: p.damage * k.damage } };
+    return { pressure: { life: p.life * k.life, damage: p.damage * k.damage * cursed } };
   };
   const walled = wall ? { wall: { life: wall.life, damage: wall.damage } } : {};
   let encounter: Encounter;
@@ -252,9 +240,10 @@ export function startStage(state: GameState, data: GameData): GameState {
     // An open "catch the Ember Thief" bounty: the Scout saw it nearby.
     const hunted =
       run.bounty?.status === "open" && getBounty(data, run.bounty.id).goal.kind === "thief";
-    // The route of a fork (neuausrichtung-v1.md 6.2): sure Elites, or the thief's trail.
-    const route = routeAt(run, act, run.stage);
-    const trail = route?.kind === "thief" && !route.second && hunted && data.thief !== undefined;
+    // The act map: a sure Elite, or the thief's trail (act-karte-entwurf-v1.md).
+    const trail = node?.kind === "thief" && data.thief !== undefined;
+    // The Ashen Challenger of an Event waits on the next fight off the Waymarks.
+    const challenge = run.challenge === true && !wall?.gate && !trail;
     // A Gatekeeper holds the Waymark: no thief there.
     const thief =
       trail ||
@@ -266,12 +255,17 @@ export function startStage(state: GameState, data: GameData): GameState {
     if (
       !thief &&
       (wall?.gate ||
-        route?.kind === "elite" ||
+        node?.kind === "elite" ||
+        challenge ||
         rng.chance(eliteChance(act.number, run.stage) * omens.eliteChance))
     ) {
       // From run 3 an Elite may be a named Champion: three modifiers and its own hoard.
       const c = PROGRESSION.champion;
-      champion = !wall?.gate && state.legacy.prestige >= c.fromPrestige && rng.chance(c.chance);
+      champion =
+        !wall?.gate &&
+        !challenge &&
+        state.legacy.prestige >= c.fromPrestige &&
+        rng.chance(c.chance);
       const count = champion ? PROGRESSION.maxEliteModifiers : eliteModifierCount(level);
       mods.push(...rollEliteModifiers(data, act, count, rng));
     }
@@ -296,8 +290,10 @@ export function startStage(state: GameState, data: GameData): GameState {
       ...(wall?.gate ? { gate: true } : {}),
       seed: rng.int(0, 0x7fffffff),
       ...(thief ? { thief: true } : {}),
+      ...(challenge && mods.length ? { challenge: true } : {}),
     };
   }
+  if (run.lucky) encounter = { ...encounter, lucky: true };
   return { ...next, run: { ...run, phase: "fight", encounter } };
 }
 
@@ -346,6 +342,12 @@ export function retreat(state: GameState, data: GameData): GameState {
 }
 
 export function continueRun(state: GameState, data: GameData): GameState {
+  // A quiet node of the act map: on to the next row once its rewards are picked.
+  if (state.run?.visit) {
+    const run = requireRun(state, "intermission", "rewards");
+    if (run.rewards && !rewardsDone(run.rewards)) return fail("Pick your rewards first");
+    return walkOn(state, data, run);
+  }
   const { run, rewards } = requireRewards(state);
   if (!rewardsDone(rewards)) return fail("Pick your rewards first");
   const encounter = run.encounter ?? fail("No encounter");
@@ -390,32 +392,25 @@ export function continueRun(state: GameState, data: GameData): GameState {
       ? { ...after, pendingPrestige: { actId: run.actId, stage: run.stage, enemyName } }
       : after;
   }
-  return {
-    ...state,
-    run: { ...run, stage: run.stage + 1, phase: "intermission", encounter: null, rewards: null },
-  };
+  return walkOn(state, data, run);
 }
 
 /**
  * Wander at the Warden's Gate (laengere-runs-v1.md): instead of the boss the road through the act
- * starts anew at Stage 1. Life, the Flask, Boons and the bounty stay; the forks are chosen again.
+ * starts anew at Stage 1 on a new act map. Life, the Flask, Boons and the bounty stay.
  * Waymarks pay their Skill Point only once per run, and Shrines stay quiet on the walks after
  * the first, so farming brings levels and loot but no extra Boons.
  */
 export function wander(state: GameState, data: GameData): GameState {
   const run = requireRun(state, "intermission");
   if (!wardensGate(state, data, run)) return fail("No Warden's Gate here");
-  return {
+  // A Cursed Spark burns out with the walk; a waiting Challenger or Cub stays.
+  const rest = runWithout(run, "visit", "curse");
+  const walked: GameState = {
     ...state,
-    run: {
-      ...run,
-      stage: 1,
-      encounter: null,
-      rewards: null,
-      routes: {},
-      wanders: (run.wanders ?? 0) + 1,
-    },
+    run: { ...rest, stage: 1, encounter: null, rewards: null, wanders: (run.wanders ?? 0) + 1 },
   };
+  return withMap(walked, data);
 }
 
 export function useFlask(state: GameState, data: GameData): GameState {

@@ -9,7 +9,7 @@ test("a Gatekeeper guards the Waymark of the newest act", async ({ page }) => {
   await page.getByRole("button", { name: /Continue/ }).click();
 
   const intermission = page.getByRole("region", { name: "Intermission" });
-  await expect(intermission.getByLabel("Up next")).toContainText("Gatekeeper");
+  await expect(intermission.getByTestId("act-map").getByLabel("Gatekeeper, Stage 5")).toBeVisible();
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   const plaque = page.getByLabel(/plaque$/).last();
   await expect(plaque.getByText("GATEKEEPER")).toBeVisible();

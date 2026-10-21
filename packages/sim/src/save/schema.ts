@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { ATTRIBUTES } from "../combat/types";
-import { EQUIPMENT_SLOTS, type Item, RARITIES } from "../items/types";
+import { EQUIPMENT_SLOTS, ITEM_SLOTS, type Item, RARITIES } from "../items/types";
 import type { PlacedItem } from "../progression/inventory";
-import { type GameState, ROUTE_KINDS } from "../progression/game/state";
+import { type GameState, NODE_KINDS } from "../progression/game/state";
 
 /**
  * The shape of a save game (zod). `deserializeGame` parses every save with it, so a broken or
@@ -127,6 +127,8 @@ const encounter = z.object({
   echo: opt(id),
   champion: opt(z.boolean()),
   omens: opt(z.array(id)),
+  challenge: opt(z.boolean()),
+  lucky: opt(z.boolean()),
 });
 
 const pickKind = z.enum(["equip", "take"]);
@@ -169,6 +171,22 @@ const bounty = z.object({
   status: z.enum(["open", "done", "failed"]),
 });
 
+const mapNode = z.object({
+  lane: count,
+  kind: z.enum(NODE_KINDS),
+  next: z.array(count),
+});
+
+const visit = z.object({
+  kind: z.enum(NODE_KINDS),
+  done: opt(z.boolean()),
+  event: opt(id),
+  runes: opt(z.array(id)),
+  emberCoal: opt(count),
+  slots: opt(z.array(z.enum(ITEM_SLOTS))),
+  bought: opt(z.array(count)),
+});
+
 const run = z.object({
   actId: id,
   stage: int.positive(),
@@ -179,8 +197,15 @@ const run = z.object({
   bounty: opt(bounty),
   wildfire: opt(int.positive()),
   draught: opt(id),
-  routes: opt(z.record(z.string(), z.enum(ROUTE_KINDS))),
   wanders: opt(int.positive()),
+  map: opt(z.object({ rows: z.array(z.array(mapNode)) })),
+  path: opt(z.array(count)),
+  visit: opt(visit),
+  fights: opt(count),
+  events: opt(z.array(id)),
+  challenge: opt(z.boolean()),
+  lucky: opt(z.boolean()),
+  curse: opt(z.object({ damage: num, until: count })),
   omens: opt(z.array(id)),
 });
 

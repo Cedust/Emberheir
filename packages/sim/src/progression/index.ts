@@ -12,6 +12,7 @@ export * from "./classes";
 export * from "./game";
 export * from "./draughts";
 export * from "./omens";
+export * from "./events";
 export * from "./ashborn";
 export * from "./notes";
 export * from "./crafting";

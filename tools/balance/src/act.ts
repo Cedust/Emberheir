@@ -23,7 +23,7 @@ import {
   brewDraught,
   bindPowers,
   chooseGate,
-  chooseRoute,
+  walkQuiet,
   spendCinderglass,
   spendPoints,
 } from "./autopilot";
@@ -132,6 +132,8 @@ export interface ActRunReport {
   readonly wanders?: number;
   /** Trips through the act before this one to farm levels first (newest act only). */
   readonly farmTrips?: number;
+  /** Quiet nodes of the act map visited (Shrine, Hearth, Cache, Event, Marisha). */
+  readonly visits?: number;
 }
 
 /** The Runewords and the count of socketed Runes on the hero right now. */
@@ -208,6 +210,7 @@ export function playGenerations(
       const stageFights: StageFight[] = [];
       let wanders = 0;
       let farmTrips = 0;
+      let visits = 0;
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
         // Farming like a player (laengere-runs-v1.md): below the level of the newest act's first
@@ -227,7 +230,9 @@ export function playGenerations(
             if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
               s = applyAction(s, data, { type: "useFlask" });
             }
-            s = chooseRoute(s, data);
+            const quiet = walkQuiet(s, data, runes);
+            s = quiet.state;
+            visits += quiet.visits;
             s = applyAction(s, data, { type: "startStage" });
             const encounter = s.run?.encounter;
             const result = finishedFight(s, data);
@@ -250,7 +255,9 @@ export function playGenerations(
           if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
             s = applyAction(s, data, { type: "useFlask" });
           }
-          s = chooseRoute(s, data);
+          const quiet = walkQuiet(s, data, runes);
+          s = quiet.state;
+          visits += quiet.visits;
           const walked = s.run?.wanders ?? 0;
           s = chooseGate(s, data);
           if ((s.run?.wanders ?? 0) > walked) {
@@ -309,6 +316,7 @@ export function playGenerations(
         ...wornRunes(s, data),
         wanders,
         farmTrips,
+        visits,
       });
       if (!cleared) {
         allCleared = false;
@@ -456,6 +464,7 @@ function farmLastAct(
     if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
       s = applyAction(s, data, { type: "useFlask" });
     }
+    s = walkQuiet(s, data, runes).state;
     s = applyAction(s, data, { type: "startStage" });
     s = applyAction(s, data, { type: "resolveFight" });
     if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);

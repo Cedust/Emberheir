@@ -3,6 +3,9 @@ import type { Page } from "@playwright/test";
 import {
   type GameState,
   type Item,
+  type NodeKind,
+  type Rewards,
+  type RunState,
   applyAction,
   learnBlockReason,
   learnNodes,
@@ -450,7 +453,7 @@ export async function createHero(page: Page, onAttributes?: () => Promise<void>)
 export function saveBeforeGatekeeper(): string {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
   const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "rotwood" });
-  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 5 } });
+  return serializeGame(onMap(out, 5));
 }
 
 /** In the Camp with every Unique found and every Runeword forged: two banners hang. */
@@ -486,25 +489,138 @@ export function saveAshborn(): string {
   });
 }
 
-/** On the road in the Ashen Fields (second run), right before the fork of Stages 3–4. */
-export function saveAtFork(): string {
+/**
+ * Puts a trip onto its act map at `stage` (act-karte-entwurf-v1.md): the rows up to there are
+ * fights on the middle lane, walked already; `kinds` sets the next row's three nodes.
+ */
+function onMap(
+  state: GameState,
+  stage: number,
+  kinds?: readonly [NodeKind, NodeKind, NodeKind],
+  extra: Partial<RunState> = {},
+): GameState {
+  const run = state.run;
+  if (!run?.map) throw new Error("No act map");
+  const rows = run.map.rows.map((row, r) => {
+    if (r < stage) {
+      const open = (lane: number) => r === stage - 1 && kinds !== undefined && lane === 1;
+      return row.map((n) => ({
+        ...n,
+        kind: "fight" as const,
+        next: open(n.lane) ? [0, 1, 2] : n.next,
+      }));
+    }
+    if (r === stage && kinds && row.length === 3) {
+      return row.map((n, i) => ({ ...n, kind: kinds[i] ?? n.kind }));
+    }
+    return row;
+  });
+  return {
+    ...state,
+    run: {
+      ...run,
+      stage,
+      map: { rows },
+      path: Array.from({ length: stage }, () => 1),
+      fights: stage - 1,
+      ...extra,
+    },
+  };
+}
+
+/** The rewards of a won normal fight, all picked: the road ahead is next. */
+function wonFight(state: GameState): Partial<RunState> {
+  const act = GAME_DATA.acts.find((a) => a.id === state.run?.actId);
+  const rewards: Rewards = {
+    rank: "normal",
+    xp: 30,
+    acorns: 10,
+    ash: 4,
+    emberCoal: 0,
+    phoenixFeathers: 0,
+    runes: [],
+    levelsGained: 0,
+    items: [],
+    itemPick: { kind: "salvageAll" },
+    salvagedAsh: 12,
+  };
+  return {
+    phase: "rewards",
+    rewards,
+    encounter: {
+      enemyId: act?.enemies[0]?.id ?? "",
+      level: 3,
+      boss: false,
+      eliteModifiers: [],
+      seed: 4,
+    },
+  };
+}
+
+/** On the road through the Ashen Fields in the second run (an old act: it burns under an Omen). */
+function oldActTrip(): GameState {
   const camp = JSON.parse(saveAfterAct1()) as GameState;
-  // The Ashen Fields are an old act in the second run: they burn under an Omen.
   const omens = omenOffer(camp, GAME_DATA, "ashen-fields").slice(0, 1);
-  const out = applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields", omens });
-  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
+  return applyAction(camp, GAME_DATA, { type: "setOut", actId: "ashen-fields", omens });
+}
+
+/** On the road in the Ashen Fields (second run), Stage 2 won: the act map asks where to go. */
+export function saveAtFork(): string {
+  const out = oldActTrip();
+  const kinds = ["hearth", "cache", "event"] as const;
+  return serializeGame(onMap(out, 2, kinds, { ...wonFight(out), lifeFraction: 0.55 }));
+}
+
+/** On an Event of the act map: the Hedgehog Peddler, and the hero has no Acorns to pay. */
+export function saveAtEvent(eventId = "hedgehog-peddler"): string {
+  const out = oldActTrip();
+  const state = onMap(out, 7, undefined, { visit: { kind: "event", event: eventId } });
+  const rows = state.run?.map?.rows.map((row, r) =>
+    r === 6 ? row.map((n) => ({ ...n, kind: "event" as const })) : row,
+  );
+  return serializeGame({
+    ...state,
+    wallet: { ...state.wallet, acorns: 0 },
+    flaskCharges: 1,
+    run: state.run && rows ? { ...state.run, map: { rows } } : state.run,
+  });
+}
+
+/** Marisha on the road: three slots a quarter cheaper. */
+export function saveAtMarisha(): string {
+  const out = oldActTrip();
+  const state = onMap(out, 7, undefined, {
+    visit: { kind: "marisha", slots: ["helm", "gloves", "ring"], bought: [] },
+  });
+  const rows = state.run?.map?.rows.map((row, r) =>
+    r === 6 ? row.map((n) => ({ ...n, kind: "marisha" as const })) : row,
+  );
+  return serializeGame({
+    ...state,
+    wallet: { ...state.wallet, acorns: 2000 },
+    run: state.run && rows ? { ...state.run, map: { rows } } : state.run,
+  });
 }
 
 /** Run 1 at the Warden's Gate: the boss of the Ashen Fields is next, the hero below its level. */
 export function saveAtWardensGate(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
   const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
-  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 15, lifeFraction: 0.7 } });
+  return serializeGame(onMap(out, 15, undefined, { lifeFraction: 0.7 }));
 }
 
-/** A new hero on the road through the Ashen Fields (run 1), Stage 3 ahead: it ends in an item pick. */
+/** A new hero on the road through the Ashen Fields (run 1), Stage 3 ahead: the third fight, an item pick. */
 export function saveRun1Stage3(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
   const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
-  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
+  // One way on: the item pick ends in the done card, not in a path choice.
+  return serializeGame(
+    onMap(out, 3, ["fight", "fight", "fight"], {
+      map: {
+        rows: (onMap(out, 3, ["fight", "fight", "fight"]).run?.map?.rows ?? []).map((row, r) =>
+          r === 2 ? row.map((n) => ({ ...n, next: [n.lane] })) : row,
+        ),
+      },
+    }),
+  );
 }

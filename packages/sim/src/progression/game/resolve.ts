@@ -10,7 +10,8 @@ import { codexAffixFactor } from "../codex";
 import { PROGRESSION } from "../constants";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
-import { getAct, hearthEmbers, isFinaleAct, routeAt, waymarkKey, waymarkStages } from "./acts";
+import { currentNode } from "./act-map";
+import { getAct, hearthEmbers, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
 import { getBounty } from "./bounty";
 import {
   eliteModifiersOf,
@@ -33,7 +34,7 @@ import {
   tagAffixFactor,
 } from "./loot";
 import { toCamp } from "./run";
-import { fail, nextRng, type GameData, type GameState, type GameStats } from "./state";
+import { fail, nextRng, type GameData, type GameState, type GameStats, runWithout } from "./state";
 
 /** The end of a fight: death, rewards and The Last Ember's fights. */
 
@@ -147,8 +148,10 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     (1 + PROGRESSION.wildfire.legendaryPerTier * tier) * (1 + omen.bonus.legendary),
     rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
   );
-  // Fewer, weightier picks: most normal fights pay Ash for their cards at once.
-  const pick = itemPickAt(rank, run.stage, caught, act.pickEvery);
+  // Fewer, weightier picks: most normal fights pay Ash for their cards at once. Every
+  // `pickEvery`'th normal fight of the trip offers a pick (act-karte-entwurf-v1.md, K4).
+  const normalFights = (run.fights ?? 0) + (rank === "normal" ? 1 : 0);
+  const pick = itemPickAt(rank, normalFights, caught, act.pickEvery);
   const items = pick ? rolled : [];
   const autoAsh = pick ? 0 : rolled.reduce((sum, it) => sum + salvageValue(it), 0);
   const runes = rollRuneDrops(
@@ -165,8 +168,8 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10 and Elites of an act this run has not
   // cleared yet. Bosses have none: their moment belongs to the Hoard and the Echo.
   // Wildfire has no Shrines: the Boons of the run carry the fire.
-  // The route of a fork (neuausrichtung-v1.md 6.2): its second stage ends in a Shrine or a fire.
-  const route = routeAt(run, act, run.stage);
+  // The node of the act map the fight stood on.
+  const node = currentNode(run);
   // A walk past the Warden's Gate brings no new Shrines (laengere-runs-v1.md).
   const shrine =
     !tier &&
@@ -174,14 +177,10 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     (data.boons?.length ?? 0) > 0 &&
     !state.progress.actsCleared.includes(act.id) &&
     rank !== "boss" &&
-    // Elites of the Elite path pay in themed loot, not in Boons (neuausrichtung-v1.md 6.2).
-    ((rank === "elite" && route?.kind !== "elite") ||
-      act.shrineStages.includes(run.stage) ||
-      (route?.kind === "shrine" && route.second));
-  const rest =
-    ((hearthEmbers(act, run.stage, tier) ? PROGRESSION.hearthEmbers : 0) +
-      (route?.kind === "hearth" && route.second ? PROGRESSION.hearthPath : 0)) *
-    omen.restHeal;
+    // Elites of an Elite node pay in themed loot, not in Boons (neuausrichtung-v1.md 6.2).
+    ((rank === "elite" && node?.kind !== "elite" && !encounter.challenge) ||
+      act.shrineStages.includes(run.stage));
+  const rest = (hearthEmbers(act, run.stage, tier) ? PROGRESSION.hearthEmbers : 0) * omen.restHeal;
   // The act boss leaves its Echo, one stage stronger once per run (Weapon Mastery).
   const echoDef = rank === "boss" ? data.echoes.find((e) => e.actId === act.id) : undefined;
   const echoBefore = echoDef ? state.legacy.echoes[echoDef.id] : undefined;
@@ -218,6 +217,14 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     : undefined;
   const bountyDone = bounty?.status === "done" && run.bounty?.status === "open";
 
+  // The Lost Cub's luck lasts until a pick, the Ashen Challenger until its fight.
+  const plainRun = runWithout(run, "lucky", "challenge");
+  const runAfter = {
+    ...plainRun,
+    ...(run.lucky && !pick ? { lucky: true } : {}),
+    ...(run.challenge && !encounter.challenge ? { challenge: true } : {}),
+    ...(normalFights ? { fights: normalFights } : {}),
+  };
   const won: GameState = {
     ...next,
     stats: {
@@ -267,7 +274,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         : {}),
     },
     run: {
-      ...run,
+      ...runAfter,
       phase: "rewards",
       lifeFraction: Math.min(1, lifeFraction + rest),
       ...(bounty ? { bounty } : {}),
@@ -287,6 +294,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         items,
         ...(rank === "boss" ? { picks: PROGRESSION.bossHoardPicks } : {}),
         ...(caught ? { picks: PROGRESSION.thiefPicks, thief: "caught" as const } : {}),
+        ...(encounter.challenge ? { picks: PROGRESSION.challengePicks } : {}),
         ...(escaped ? { thief: "escaped" as const } : {}),
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
         ...(newTrophies.length ? { newTrophies } : {}),

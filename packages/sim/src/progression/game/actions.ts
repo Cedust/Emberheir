@@ -20,7 +20,6 @@ import { resolveFight } from "./resolve";
 import { pickBoon, pickItem, salvageAll } from "./rewards";
 import {
   chooseDraught,
-  chooseRoute,
   continueRun,
   enterFinale,
   retreat,
@@ -30,7 +29,8 @@ import {
   startStage,
   useFlask,
 } from "./run";
-import { type GameData, type GameState, type RouteKind } from "./state";
+import { type GameData, type GameState } from "./state";
+import { chooseNode, visitNode } from "./visits";
 import {
   allocateAttributes,
   forgetNode,
@@ -82,8 +82,13 @@ export type GameAction =
   /** After the rewards: on to the next stage (or back to Camp after the boss). */
   | { readonly type: "continue" }
   | { readonly type: "useFlask" }
-  /** At a fork of the road: the path for its two stages (neuausrichtung-v1.md 6.2). */
-  | { readonly type: "chooseRoute"; readonly route: RouteKind }
+  /** The act map: the lane of the next row (act-karte-entwurf-v1.md). */
+  | { readonly type: "chooseNode"; readonly lane: number }
+  /**
+   * At a quiet node of the act map: Hearth 0 rest / 1 Flask charge, Cache 0 item / 1 Runes /
+   * 2 Ember Coal, an Event's option, Marisha's offer; -1 walks on.
+   */
+  | { readonly type: "visitNode"; readonly choice: number }
   | { readonly type: "allocateAttributes"; readonly points: Partial<Attributes> }
   /** From inventory or (Camp) stash; `slot` picks the Ring slot or a drop target. */
   | { readonly type: "equip"; readonly itemId: string; readonly slot?: EquipmentSlot }
@@ -191,8 +196,10 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return continueRun(state, data);
     case "useFlask":
       return useFlask(state, data);
-    case "chooseRoute":
-      return chooseRoute(state, data, action.route);
+    case "chooseNode":
+      return chooseNode(state, action.lane);
+    case "visitNode":
+      return visitNode(state, data, action.choice);
     case "allocateAttributes":
       return allocateAttributes(state, action.points);
     case "equip":

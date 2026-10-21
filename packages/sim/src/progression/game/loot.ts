@@ -79,8 +79,8 @@ export function rollItemChoices(
         : champion
           ? PROGRESSION.champion.cards
           : PROGRESSION.itemChoices;
-  // A caught Ember Thief always drops one card that is at least Rare.
-  const rareCard = encounter.thief ? rng.int(0, count - 1) : -1;
+  // A caught Ember Thief (and the Lost Cub's luck) always drops one card that is at least Rare.
+  const rareCard = encounter.thief || encounter.lucky ? rng.int(0, count - 1) : -1;
   const gate = lootGate(prestige);
   const weights = itemPickWeights(rank, deathsInAct, prestige);
   // The run's window may promise one card of at least a rarity (the boss of run 1: a Rare).
@@ -178,16 +178,17 @@ export function tagAffixFactor(
 }
 
 /**
- * Normal fights give an item pick only on every `PROGRESSION.normalPickEvery`th stage; Elites,
- * Gatekeepers, bosses and a caught Ember Thief always do (neuausrichtung-v1.md 6.3).
+ * Normal fights give an item pick only on every `PROGRESSION.normalPickEvery`th normal fight of
+ * a trip (`normalFight` counts them, this one included); Elites, Gatekeepers, bosses and a caught
+ * Ember Thief always do (neuausrichtung-v1.md 6.3, act-karte-entwurf-v1.md K4).
  */
 export function itemPickAt(
   rank: EnemyRank,
-  stage: number,
+  normalFight: number,
   thiefCaught: boolean,
   every: number = PROGRESSION.normalPickEvery,
 ): boolean {
-  return rank !== "normal" || thiefCaught || stage % every === 0;
+  return rank !== "normal" || thiefCaught || normalFight % every === 0;
 }
 
 export function actAffixFactor(
@@ -219,21 +220,31 @@ export function rollRuneDrops(
   actTier: number,
   rng: Rng,
 ): string[] {
-  const max = maxRuneRank(actTier);
-  // The top ranks are the Ber and Jah of Emberheir: only Elites and Bosses, and rarely.
-  const topRank = Math.max(...[...data.items.runes.values()].map((r) => r.rank));
-  const high = (r: { rank: number }) => r.rank > topRank - PROGRESSION.highRuneRanks;
-  const pool = [...data.items.runes.values()].filter(
-    (r) => r.rank <= max && (rank !== "normal" || !high(r)),
-  );
   const drops: string[] = [];
   const count = PROGRESSION.runeDrops[rank];
-  const weight = (r: { rank: number }) =>
-    PROGRESSION.runeRankFalloff ** (r.rank - 1) * (high(r) ? PROGRESSION.highRuneFactor : 1);
   for (let i = 0; i < Math.ceil(count); i++) {
     if (!rng.chance(Math.min(1, count - i))) continue;
-    const rune = pickWeighted(pool, weight, rng);
-    if (rune) drops.push(rune.id);
+    const rune = rollRune(data, actTier, rank !== "normal", rng);
+    if (rune) drops.push(rune);
   }
   return drops;
+}
+
+/**
+ * One Rune of an Act Tier. The top ranks are the Ber and Jah of Emberheir: only `high` drops
+ * (Elites, Bosses, Caches) may give them, and rarely.
+ */
+export function rollRune(
+  data: GameData,
+  actTier: number,
+  high: boolean,
+  rng: Rng,
+): string | undefined {
+  const max = maxRuneRank(actTier);
+  const topRank = Math.max(...[...data.items.runes.values()].map((r) => r.rank));
+  const isHigh = (r: { rank: number }) => r.rank > topRank - PROGRESSION.highRuneRanks;
+  const pool = [...data.items.runes.values()].filter((r) => r.rank <= max && (high || !isHigh(r)));
+  const weight = (r: { rank: number }) =>
+    PROGRESSION.runeRankFalloff ** (r.rank - 1) * (isHigh(r) ? PROGRESSION.highRuneFactor : 1);
+  return pickWeighted(pool, weight, rng)?.id;
 }

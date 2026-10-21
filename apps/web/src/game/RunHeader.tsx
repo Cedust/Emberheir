@@ -3,7 +3,6 @@ import {
   type ActData,
   gateStages,
   isWallAct,
-  routeForks,
   waymarkKey,
   waymarkStages,
   wildfireLevel,
@@ -28,7 +27,8 @@ export function ActProgress(props: {
   const { act, stage } = props;
   const stages = act.stages;
   const width = 760;
-  const left0 = 36;
+  // Room after the Camp, so a current Stage 1 never covers it and the rail shows between them.
+  const left0 = 68;
   const span = width - left0 - 20;
   const done = props.cleared ? stage : stage - 1;
   // The Last Ember: every stage is a boss, each dot names its echo.
@@ -89,18 +89,6 @@ export function ActProgress(props: {
           </div>
         );
       })}
-      {/* Forks of the road (neuausrichtung-v1.md 6.2): a split line over their two stages. */}
-      {(finale || !props.waymarks ? [] : routeForks(act)).map(([a, b]) => (
-        <span
-          key={`fork-${a}`}
-          className="act-fork"
-          title={`Fork · Stages ${a}–${b}: Elite, Shrine or Hearth path`}
-          style={{
-            left: left0 + ((a - 1) / (stages - 1)) * span,
-            width: (1 / (stages - 1)) * span,
-          }}
-        />
-      ))}
       {marks.map((n) => {
         const taken = props.waymarks?.includes(waymarkKey(act.id, n)) ?? false;
         return (

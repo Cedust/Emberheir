@@ -47,7 +47,7 @@ export interface OmenDefinition {
   readonly hero?: OmenSide;
   /** Multiplies what one Flask charge heals; 0 = no Flask at all. */
   readonly flaskHeal?: number;
-  /** Multiplies the rest at the Hearth Embers and the fire of a fork. */
+  /** Multiplies the rest at the Hearth Embers and at a Hearth of the act map. */
   readonly restHeal?: number;
   /** A fight that lasts longer than this is lost. */
   readonly fightSeconds?: number;

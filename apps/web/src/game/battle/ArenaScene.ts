@@ -361,9 +361,148 @@ export class ArenaScene {
     }
   }
 
+  /**
+   * A quiet node of the act map (act-karte-entwurf-v1.md): its moment in the arena where the
+   * enemy would stand. Hearth: a campfire flares and warm sparks rise around the hero. Cache: a
+   * chest bursts open in gold. Event: a strange mist rolls in. Marisha: coins rain from her
+   * wagon. Shrine: stolen fire swirls up. Visual only; calmer with reduced motion.
+   */
+  visit(kind: string): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const spot = HERO_X + 260;
+    const calm = this.motion ? 1 : 0.4;
+    const n = (count: number) => Math.max(4, Math.round(count * calm));
+    switch (kind) {
+      case "hearth":
+        for (let i = 0; i < (this.motion ? 4 : 1); i++) {
+          this.wait(i * 0.25, () => {
+            fx.burst({
+              x: spot,
+              y: GROUND_Y - 10,
+              count: n(26),
+              color: [0xff8a1f, 0xffb13b, 0xffd84a],
+              spreadX: 26,
+              spreadY: 8,
+              angle: [-Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35],
+              speed: [90, 220],
+              life: [0.9, 1.6],
+              size: [6, 14],
+              wobble: 10,
+              drag: 0.9,
+            });
+            fx.burst({
+              x: HERO_X,
+              y: GROUND_Y - 120,
+              count: n(10),
+              color: [0xffd27a, 0xfff2c4],
+              spreadX: 70,
+              spreadY: 110,
+              angle: [-Math.PI / 2 - 0.2, -Math.PI / 2 + 0.2],
+              speed: [30, 80],
+              life: [1, 1.6],
+              size: [5, 9],
+            });
+          });
+        }
+        fx.ring(spot, GROUND_Y, 0xff9a3c, 10, 90, 0.9, 6);
+        break;
+      case "cache":
+        fx.ring(spot, GROUND_Y - 30, 0xffd84a, 10, 120, 0.6, 7, 0.9);
+        fx.burst({
+          x: spot,
+          y: GROUND_Y - 30,
+          count: n(40),
+          color: [0xffd84a, 0xffb13b, 0xfff2c4],
+          spreadX: 20,
+          spreadY: 10,
+          angle: [-Math.PI / 2 - 0.7, -Math.PI / 2 + 0.7],
+          speed: [260, 520],
+          life: [0.8, 1.3],
+          size: [6, 12],
+          gravity: 700,
+          kind: "bit",
+          spin: 6,
+        });
+        break;
+      case "event":
+        for (let i = 0; i < (this.motion ? 3 : 1); i++) {
+          this.wait(i * 0.3, () =>
+            fx.burst({
+              x: spot + 160,
+              y: GROUND_Y - 90,
+              count: n(18),
+              color: [0x8a7aa8, 0x6b6080, 0xb8a8d8],
+              spreadX: 120,
+              spreadY: 80,
+              angle: [Math.PI - 0.15, Math.PI + 0.15],
+              speed: [40, 110],
+              life: [1.8, 2.6],
+              size: [30, 60],
+              endSize: 1.4,
+              alpha: 0.35,
+              wobble: 20,
+            }),
+          );
+        }
+        fx.ring(spot, GROUND_Y - 120, 0xb8a8ff, 10, 70, 0.8, 4, 1);
+        break;
+      case "marisha":
+        for (let i = 0; i < (this.motion ? 3 : 1); i++) {
+          this.wait(i * 0.2, () =>
+            fx.burst({
+              x: spot,
+              y: GROUND_Y - 260,
+              count: n(16),
+              color: [0xffd84a, 0xe0a83a, 0xc9a063],
+              spreadX: 90,
+              spreadY: 20,
+              angle: [Math.PI / 2 - 0.2, Math.PI / 2 + 0.2],
+              speed: [80, 160],
+              life: [1, 1.5],
+              size: [7, 11],
+              gravity: 600,
+              kind: "bit",
+              spin: 8,
+            }),
+          );
+        }
+        break;
+      case "shrine":
+        fx.ring(HERO_X, GROUND_Y, 0xff6a2a, 20, 140, 0.8, 6);
+        fx.burst({
+          x: HERO_X,
+          y: GROUND_Y - 40,
+          count: n(36),
+          color: [0xff6a2a, 0xffb13b, 0xfff2c4],
+          spreadX: 80,
+          spreadY: 20,
+          angle: [-Math.PI / 2 - 0.25, -Math.PI / 2 + 0.25],
+          speed: [160, 340],
+          life: [1, 1.6],
+          size: [6, 13],
+          stretch: 2,
+          wobble: 14,
+        });
+        break;
+      default:
+        break;
+    }
+  }
+
   /** Between fights (Intermission): the hero waits alone in the act's air. */
   hideEnemy(): void {
     if (this.enemy) this.enemy.root.visible = false;
+  }
+
+  /** Between fights the arena stays empty: the Heir shows again in the fight (Timo 2026-10-21). */
+  hideHero(): void {
+    if (this.hero) {
+      this.hero.root.visible = false;
+      // The hero's sparks and auras only run at full alpha.
+      this.hero.root.alpha = 0;
+    }
+    if (this.draught) this.draught.ring.visible = false;
   }
 
   destroy(): void {

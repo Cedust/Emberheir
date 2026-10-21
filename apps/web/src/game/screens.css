@@ -522,7 +522,7 @@
     radial-gradient(ellipse at 60% 40%, transparent 30%, rgb(14 10 6 / 0.45) 100%);
 }
 
-.stage .intermission > :not(.idle-arena) {
+.stage .intermission > :not(.idle-arena, .k-layer) {
   position: relative;
   z-index: 1;
 }
@@ -9124,4 +9124,293 @@
 
 .stage .loot-card .ib-lines {
   font-size: 14px;
+}
+
+/* The act map (act-karte-entwurf-v1.md): three lanes from Stage 1 (bottom) to the boss (top). */
+.stage .act-map {
+  /* A drag pans the map; it never selects the nodes like text. */
+  user-select: none;
+  -webkit-user-select: none;
+  padding: 12px 14px 14px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .act-map .section-row {
+  width: 100%;
+}
+
+.stage .act-map-big-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  font: inherit;
+  font-size: 13px;
+  color: var(--text-sub);
+  background: transparent;
+  border: 1px solid var(--edge);
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.stage .act-map-big-btn:hover {
+  color: var(--text);
+  border-color: var(--heat);
+}
+
+.stage .act-map-big-btn kbd {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  opacity: 0.8;
+}
+
+.stage .act-map-field {
+  position: relative;
+  flex-shrink: 0;
+}
+
+.stage .act-map-lines {
+  position: absolute;
+  inset: 0;
+  overflow: visible;
+}
+
+.stage .act-map-lines line {
+  stroke: color-mix(in srgb, var(--text-sub) 45%, transparent);
+  stroke-width: 2;
+  stroke-dasharray: 3 5;
+  stroke-linecap: round;
+}
+
+.stage .act-map-lines line.walked {
+  stroke: var(--heat);
+  stroke-dasharray: none;
+  stroke-width: 3;
+}
+
+.stage .act-map-lines line.ahead {
+  stroke: #ffd27a;
+  stroke-dasharray: 5 4;
+  stroke-width: 2.5;
+}
+
+.stage .map-node {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  padding: 0;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  /* Solid, so the roads never show through; nodes off the path are only dimmer. */
+  filter: brightness(0.78) drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+
+/* Timo's painted medallions (icon sheet 10). */
+.stage .map-node-art {
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+
+.stage .map-node.walked,
+.stage .map-node.current {
+  filter: drop-shadow(0 0 4px rgb(255 138 58 / 0.9));
+}
+
+.stage .map-node.current {
+  box-shadow:
+    0 0 0 2px rgb(255 154 60 / 0.7),
+    0 0 14px rgb(255 154 60 / 0.8);
+  z-index: 1;
+}
+
+/* Waymarks, Gatekeepers and the boss keep the painted stage markers (sheet 9). */
+.stage .map-node:is(.map-waymark, .map-gate, .map-boss) {
+  border: none;
+  border-radius: 0;
+  background: url("../assets/ui/stage-waymark.webp") center / contain no-repeat;
+  box-shadow: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+
+.stage .map-node.map-gate {
+  background-image: url("../assets/ui/stage-gate.webp");
+}
+
+.stage .map-node.map-boss {
+  background-image: url("../assets/ui/stage-boss.webp");
+  transform: scale(1.25);
+}
+
+.stage .map-node:is(.map-waymark, .map-gate, .map-boss):is(.walked, .current, .taken) {
+  filter: drop-shadow(0 0 5px rgb(255 138 58 / 0.9));
+}
+
+.stage .map-node.ahead {
+  filter: none;
+  cursor: pointer;
+  animation: map-node-pulse 1.4s ease-in-out infinite;
+}
+
+.stage .map-node.ahead:hover,
+.stage .map-node.chosen {
+  box-shadow:
+    0 0 0 3px var(--heat),
+    0 0 16px rgb(255 154 60 / 0.8);
+  animation: none;
+}
+
+@keyframes map-node-pulse {
+  50% {
+    box-shadow: 0 0 12px rgb(255 210 122 / 0.9);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .map-node.ahead {
+    animation: none;
+  }
+}
+
+.stage .act-map.big {
+  align-self: stretch;
+  flex: 1;
+  min-height: 0;
+  align-items: stretch;
+  border: none;
+  background: none;
+  box-shadow: none;
+  padding: 0;
+}
+
+/* The planning window zooms (wheel, buttons) and pans (drag). */
+.stage .act-map-viewport {
+  position: relative;
+  flex: 1;
+  overflow: hidden;
+  cursor: grab;
+  touch-action: none;
+  border-radius: 6px;
+  background: radial-gradient(ellipse at 50% 40%, rgb(120 80 40 / 0.08), rgb(60 36 18 / 0.18));
+}
+
+.stage .act-map-viewport:active {
+  cursor: grabbing;
+}
+
+.stage .act-map-pan {
+  position: absolute;
+  top: 0;
+  left: 0;
+  transform-origin: 0 0;
+}
+
+.stage .act-map.big .map-node {
+  transform: scale(1.25);
+}
+
+.stage .act-map.big .map-node.map-boss {
+  transform: scale(1.6);
+}
+
+/* The planning window (M) over the Intermission. */
+.stage .act-map-window .k-window-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 0;
+  gap: 12px;
+  padding: 8px 36px 16px;
+}
+
+.stage .act-map-window .act-map-legend {
+  flex-grow: 0;
+}
+
+.stage .act-map-legend {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 6px 14px;
+  margin: 0;
+}
+
+.stage .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stage .legend-node {
+  width: 22px;
+  height: 22px;
+}
+
+.stage .path-sigil.painted {
+  background: none;
+  border: none;
+  box-shadow: none;
+}
+
+.stage .path-sigil.painted img {
+  width: 100%;
+  height: 100%;
+}
+
+/* The choice at a quiet node; a choice that cannot be paid stays greyed with a tooltip. */
+.stage .visit-cards .path-card {
+  width: 200px;
+  min-height: 230px;
+}
+
+.stage .path-card.blocked {
+  cursor: not-allowed;
+  filter: grayscale(0.8) brightness(0.75);
+}
+
+.stage .path-card.blocked:hover {
+  transform: none;
+  box-shadow: none;
+}
+
+.stage .choice-price {
+  margin-top: auto;
+  display: flex;
+  gap: 8px;
+  font-family: var(--font-mono);
+}
+
+.stage .choice-art {
+  width: 46px;
+  height: 46px;
+  object-fit: contain;
+  filter: brightness(0.35) sepia(0.4);
+}
+
+.stage .choice-walk .path-sigil {
+  color: #e8d3a8;
+}
+
+.stage .node-lane {
+  margin-top: auto;
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.stage .path-cache .path-sigil,
+.stage .choice-item .path-sigil {
+  color: #ffd84a;
+}
+
+.stage .path-event .path-sigil {
+  color: #b8a8ff;
+}
+
+.stage .path-marisha .path-sigil {
+  color: #e0b85a;
 }

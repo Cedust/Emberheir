@@ -1,7 +1,13 @@
 import { type EnemyDefinition } from "../../combat/monsters";
 import { type FightReport } from "../../combat/report";
 import { type Attributes, type SkillDefinition } from "../../combat/types";
-import { type Equipment, type EquipmentSlot, type Item, type ItemCatalog } from "../../items/types";
+import {
+  type Equipment,
+  type EquipmentSlot,
+  type Item,
+  type ItemCatalog,
+  type ItemSlot,
+} from "../../items/types";
 import { Rng } from "../../rng";
 import { type AshbornState, type AshbornValue } from "../ashborn";
 import { type BattlePlanState } from "../battle-plan";
@@ -16,6 +22,7 @@ import { type HeroClass } from "../classes";
 import { type CodexState } from "../codex";
 import { type DraughtDefinition } from "../draughts";
 import { type EliteModifier } from "../elites";
+import { type EventDefinition } from "../events";
 import { type PlacedItem } from "../inventory";
 import { type EnemyRank } from "../leveling";
 import { type OmenDefinition } from "../omens";
@@ -40,8 +47,9 @@ import {
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
  * (`save/migrations.ts`). Started over at 9 with the Klassengerüst: older saves are dropped.
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
+ * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 11;
+export const SAVE_VERSION = 12;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -60,7 +68,7 @@ export interface ActData {
   /** Stages with an Ember Shrine (5 and 10); Elites have one too. */
   readonly shrineStages: readonly number[];
   /**
-   * Normal fights offer an item pick on every this many'th stage (default
+   * Normal fights offer an item pick on every this many'th normal fight of a trip (default
    * `PROGRESSION.normalPickEvery`, neuausrichtung-v1.md 6.3).
    */
   readonly pickEvery?: number;
@@ -117,6 +125,8 @@ export interface GameData {
   readonly omens?: readonly OmenDefinition[];
   /** The values of the Ashborn Boards (neuausrichtung-v1.md 7.3); no Ashborn without them. */
   readonly ashbornValues?: readonly AshbornValue[];
+  /** Events on the act map (act-karte-entwurf-v1.md); no Event nodes without them. */
+  readonly events?: readonly EventDefinition[];
 }
 
 export interface Wallet {
@@ -186,6 +196,10 @@ export interface Encounter {
   readonly champion?: boolean;
   /** The Omens of the trip that change the enemy (copied from the run). */
   readonly omens?: readonly string[];
+  /** The Ashen Challenger of an Event: a sure Elite with one more pick. */
+  readonly challenge?: boolean;
+  /** The Lost Cub of an Event: one card of this fight's item pick is at least Rare. */
+  readonly lucky?: boolean;
 }
 
 export type ItemPick =
@@ -270,23 +284,71 @@ export interface RunState {
   /** The Omens of this trip: one Run Omen in an old act, any Wildfire Omens in the Wildfire. */
   readonly omens?: readonly string[];
   /**
-   * Routes chosen on this trip (neuausrichtung-v1.md 6.2): by the first stage of each fork
-   * (`routeForks`). A fork without a choice takes the Shrine path.
-   */
-  readonly routes?: Readonly<Record<string, RouteKind>>;
-  /**
    * Times the hero walked on at the Warden's Gate on this trip (laengere-runs-v1.md): the road
    * through the act starts anew, and its Shrines stay quiet. Missing = the first walk.
    */
   readonly wanders?: number;
+  /** The act map of this walk (act-karte-entwurf-v1.md); missing in the Wildfire and the finale. */
+  readonly map?: ActMap;
+  /** The lane of the node taken on each row so far (`path[stage - 1]`), maybe one row ahead. */
+  readonly path?: readonly number[];
+  /** The quiet node the hero stands at (Shrine, Hearth, Cache, Event, Marisha). */
+  readonly visit?: NodeVisit;
+  /** Normal fights won on this trip: every `pickEvery`'th one offers an item pick. */
+  readonly fights?: number;
+  /** Events met on this trip: they come again only once all were met. */
+  readonly events?: readonly string[];
+  /** Ashen Challenger: the next fight on the map is a sure Elite with one more pick. */
+  readonly challenge?: boolean;
+  /** Lost Cub: the next item pick holds one card of at least Rare. */
+  readonly lucky?: boolean;
+  /** Cursed Spark: enemies deal this much more damage before the stage `until`. */
+  readonly curse?: { readonly damage: number; readonly until: number };
 }
 
 /**
- * The paths of a fork on the road (neuausrichtung-v1.md 6.2): two Elites with better loot, a
- * Shrine, a fire to rest at, or the Ember Thief's trail while a thief bounty runs.
+ * Nodes of the act map (act-karte-entwurf-v1.md). Fights: a fight (maybe a random Elite or the
+ * Ember Thief), a sure Elite, the Ember Thief's trail. Quiet nodes have no fight.
  */
-export const ROUTE_KINDS = ["elite", "shrine", "hearth", "thief"] as const;
-export type RouteKind = (typeof ROUTE_KINDS)[number];
+export const NODE_KINDS = [
+  "fight",
+  "elite",
+  "thief",
+  "shrine",
+  "hearth",
+  "cache",
+  "event",
+  "marisha",
+] as const;
+export type NodeKind = (typeof NODE_KINDS)[number];
+
+export interface MapNode {
+  /** 0 = left, 1 = middle, 2 = right. */
+  readonly lane: number;
+  readonly kind: NodeKind;
+  /** Lanes of the next row this node leads to. */
+  readonly next: readonly number[];
+}
+
+/** One map per walk through an act: `rows[stage - 1]`, one node or one per lane. */
+export interface ActMap {
+  readonly rows: readonly (readonly MapNode[])[];
+}
+
+/** The state of a quiet node while the hero stands there. */
+export interface NodeVisit {
+  readonly kind: NodeKind;
+  /** The choice is made (or left); only the road ahead is left. */
+  readonly done?: boolean;
+  /** Event: its id. */
+  readonly event?: string;
+  /** Cache: the Runes and the Ember Coal on offer (the third card is an item pick). */
+  readonly runes?: readonly string[];
+  readonly emberCoal?: number;
+  /** Marisha on the Road: the slots she gambles on, and the offers already bought. */
+  readonly slots?: readonly ItemSlot[];
+  readonly bought?: readonly number[];
+}
 
 /** Shown once in the Camp after a run ends. */
 export interface Notice {
@@ -440,6 +502,12 @@ export class GameActionError extends Error {}
 export const fail = (message: string): never => {
   throw new GameActionError(message);
 };
+
+/** A copy of the run without the given optional fields (a quiet node's visit, an Event's luck). */
+export function runWithout(run: RunState, ...keys: (keyof RunState)[]): RunState {
+  const drop = new Set<string>(keys);
+  return Object.fromEntries(Object.entries(run).filter(([key]) => !drop.has(key))) as RunState;
+}
 
 export function mixSeed(seed: number, nonce: number): number {
   let h = (seed ^ Math.imul(nonce + 1, 0x9e3779b1)) >>> 0;
