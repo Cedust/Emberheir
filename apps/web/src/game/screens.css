@@ -1942,18 +1942,37 @@
   cursor: pointer;
 }
 
-/* Many acts: only the chosen one shows its name, the others shrink to their number. */
+/* More than one act: only the chosen one shows its name, the others fold to their number.
+   Picking another act folds the old card shut while the new one opens. */
+.stage .road.compact .road-act {
+  transition:
+    width 0.32s cubic-bezier(0.3, 0.7, 0.3, 1),
+    padding 0.32s cubic-bezier(0.3, 0.7, 0.3, 1),
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.stage .road.compact .road-act .road-text {
+  flex-shrink: 0;
+  transition: opacity 0.22s 0.1s;
+}
+
 .stage .road.compact .road-act:not(.on) {
   width: 52px;
   padding: 0;
 }
 
 .stage .road.compact .road-act:not(.on) .road-text {
-  display: none;
+  opacity: 0;
+  transition-delay: 0s;
+  transition-duration: 0.12s;
 }
 
-.stage .road.compact .road-act:not(.on) .road-num {
-  flex-basis: 100%;
+.stage .road.compact .road-act .road-mark {
+  transition:
+    top 0.32s,
+    right 0.32s,
+    color 0.32s;
 }
 
 .stage .road.compact .road-act:not(.on) .road-mark {
@@ -1964,6 +1983,14 @@
 
 .stage .road.compact .road-act.on {
   width: 260px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .road.compact .road-act,
+  .stage .road.compact .road-act .road-text,
+  .stage .road.compact .road-act .road-mark {
+    transition: none;
+  }
 }
 
 .stage .road-act:hover:not(:disabled) {
