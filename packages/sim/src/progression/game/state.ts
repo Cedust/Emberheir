@@ -365,6 +365,8 @@ export interface MapNode {
   readonly next: readonly number[];
   /** Hunt node: the enemy id it points at. */
   readonly quarry?: string;
+  /** Fight and Elite nodes: the act enemy waiting there (the Ember Thief may still cut in). */
+  readonly enemy?: string;
 }
 
 /** One map per walk through an act: `rows[stage - 1]`, one node or one per lane. */

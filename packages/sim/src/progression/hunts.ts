@@ -23,13 +23,13 @@ export const HUNT = {
    * early acts come back in every run, so their enemies need more kills.
    */
   actTiers: [
-    [8, 25, 100, 300],
-    [5, 15, 60, 180],
-    [5, 15, 60, 180],
-    [5, 15, 60, 180],
-    [5, 15, 60, 180],
-    [5, 15, 60, 180],
-    [5, 12, 40, 120],
+    [10, 25, 100, 300],
+    [5, 15, 60, 200],
+    [5, 15, 60, 200],
+    [5, 15, 60, 200],
+    [5, 15, 60, 200],
+    [5, 15, 60, 200],
+    [5, 10, 40, 100],
   ],
   /** The Ember Thief shows up in every act from Act 2. */
   thiefTiers: [3, 8, 20, 60],

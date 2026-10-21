@@ -11,7 +11,14 @@ test("a Hunt node names its quarry, the fight shows its Trail", async ({ page })
   const paths = page.getByRole("radiogroup", { name: "Choose a path" });
   const hunt = paths.getByRole("radio", { name: "Hunt: Ashen Prowler" });
   await expect(hunt).toBeVisible();
-  await expect(hunt).toContainText("Trail I · Tracked (9/25)");
+  await expect(hunt.getByTestId("node-foe")).toContainText("Tracked · 12/25");
+  // Every fight shows the enemy waiting there with its Trail.
+  await expect(paths.getByRole("radio", { name: "Fight" }).getByTestId("node-foe")).toContainText(
+    "Ashen Brute",
+  );
+  await expect(paths.getByRole("radio", { name: "Elite" }).getByTestId("node-foe")).toContainText(
+    "Cornered · 110/300",
+  );
   await hunt.click();
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/hunt-node.png` });
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
@@ -46,6 +53,7 @@ test("a win that fills a Trail: its moment, then the card with the Hunt Affix", 
   // The Hunt node always gives an item pick; one card carries a Hunt Affix of the Prowler.
   await expect(page.getByTestId("item-card")).toHaveCount(3, { timeout: 15_000 });
   await expect(page.getByTestId("hunt-ribbon")).toHaveCount(1);
+  await expect(page.locator(".hunt-affix-mark")).toHaveCount(1);
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/hunt-ribbon.png` });
   expect(errors).toEqual([]);
 });

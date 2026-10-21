@@ -139,13 +139,17 @@ Endgame **Wildfire I–X**.
 
   | Trail | Act 1 | Act 2–6 | Act 7 | Thief | Warden (Siege) | Lohn |
   |---|---|---|---|---|---|---|
-  | I · Tracked | 8 | 5 | 5 | 3 | 1 | Bestiary-Seite, einmal 25 Acorns |
-  | II · Hunted | 25 | 15 | 12 | 8 | 3 | ein Hunt Affix sicher auf einer Karte jedes Item-Picks nach einem Sieg über ihn; einmal 2 Ember Coal; Warden: Trophy-Chance 25 % statt 15 % |
+  | I · Tracked | 10 | 5 | 5 | 3 | 1 | Bestiary-Seite, einmal 25 Acorns |
+  | II · Hunted | 25 | 15 | 10 | 8 | 3 | ein Hunt Affix sicher auf einer Karte jedes Item-Picks nach einem Sieg über ihn; einmal 2 Ember Coal; Warden: Trophy-Chance 25 % statt 15 % |
   | III · Cornered | 100 | 60 | 40 | 20 | 6 | das Hunt Affix rollt in der besten Qualitätsstufe, die das Item Level erlaubt |
-  | IV · Apex | 300 | 180 | 120 | 60 | 15 | das Hunt Affix rollt als Greater Affix (Rang I–V, 110–150 %); Endgame |
+  | IV · Apex | 300 | 200 | 100 | 60 | 15 | das Hunt Affix rollt als Greater Affix (Rang I–V, 110–150 %); Endgame |
 
   Der Kampf zeigt den Trail unter der Gegner-Plakette, ein neuer Trail läuft als Pfotenspur durch die Arena (nicht
-  bei Skip) und steht als Moment über der Beute; die Karte mit dem Hunt Affix trägt das Brandzeichen. Das
+  bei Skip) und steht als Moment über der Beute; die Karte mit dem Hunt Affix trägt ein Band mit der Trail-Marke,
+  und die Affix-Zeile behält ihr Brandzeichen dauerhaft (`AffixRoll.hunt`, weg nach Reforge oder Temper). Jeder
+  Fight- und Elite-Knoten vor dem Boss kennt seinen Gegner schon beim Würfeln der Karte; die Weg-Karten zeigen ihn mit
+  Trail und Kills (ungesehene Gegner als Schatten), damit man gezielt jagen kann. Der Ember Thief kann weiter
+  dazwischenkommen, ob ein Fight zum Elite wird, bleibt offen. Das
   **Bestiary** ist eine Collection am Hearthfire (voll, wenn jeder Gegner Cornered ist; Belohnung Pelz-Banner im
   Camp), Eldrin zeigt die Trails des gewählten Acts. Gemalte Trail-Marken: Icon Sheet 11.
 

@@ -4,6 +4,7 @@ import {
   pickWeighted,
   rollItem,
   rollRarity,
+  type RollItemOptions,
   rollUnique,
   uniquesFor,
 } from "../../items/generate";
@@ -209,11 +210,7 @@ export function rollItemChoices(
 
 /** What a hunt adds to an item pick (hunts-entwurf-v1.md). */
 export interface HuntLoot {
-  readonly signature?: {
-    readonly affixIds: readonly string[];
-    readonly best?: boolean;
-    readonly greater?: readonly number[];
-  };
+  readonly signature?: RollItemOptions["signature"];
   readonly trophyChance?: number;
 }
 

@@ -85,6 +85,16 @@ describe("hunt loot", () => {
       expect(apex.greater?.rank).toBeLessThanOrEqual(5);
     }
   });
+
+  it("the Hunt Affix keeps the Trail it was rolled at", () => {
+    const item = rollItem(
+      TEST_GAME_DATA.items,
+      { ...base, signature: { affixIds: ["crit"], best: true, trail: 3 } },
+      new Rng(7),
+    );
+    expect(item.affixes[0]?.hunt).toBe(3);
+    expect(item.affixes.slice(1).every((a) => a.hunt === undefined)).toBe(true);
+  });
 });
 
 describe("hunts in the game", () => {
@@ -128,6 +138,41 @@ describe("hunts in the game", () => {
       found += hunts.length;
     }
     expect(found).toBeGreaterThan(30);
+  });
+
+  it("every fight before the boss names its enemy, and the fight brings it", () => {
+    const map = generateActMap(
+      { ...TEST_ACT, enemies: [WEAK_ENEMY, OTHER] },
+      { shrines: false, thief: false, events: false },
+      new Rng(5),
+    );
+    map.rows.forEach((row, r) =>
+      row.forEach((n) => {
+        if ((n.kind === "fight" || n.kind === "elite") && r + 1 < TEST_ACT.stages)
+          expect(["weakling", "other"]).toContain(n.enemy);
+        else expect(n.enemy).toBeUndefined();
+      }),
+    );
+    const two: GameData = {
+      ...data,
+      acts: data.acts.map((a) =>
+        a.id === "test-act" ? { ...a, enemies: [WEAK_ENEMY, OTHER] } : a,
+      ),
+    };
+    let s = applyAction(newGame(two, { seed: 3, classId: "test-fighter" }), two, {
+      type: "setOut",
+      actId: "test-act",
+    });
+    const run = s.run;
+    if (!run?.map) throw new Error("no map");
+    const first = run.map.rows[0]?.[0];
+    const rows = run.map.rows.map((row, r) =>
+      r === 0 ? row.map((n) => ({ ...n, enemy: "other" })) : row,
+    );
+    s = { ...s, run: { ...run, map: { rows } } };
+    s = applyAction(s, two, { type: "startStage" });
+    expect(first?.kind).toBe("fight");
+    expect(s.run?.encounter?.enemyId).toBe("other");
   });
 });
 

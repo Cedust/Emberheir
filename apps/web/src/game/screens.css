@@ -9701,3 +9701,29 @@
   display: block;
   filter: drop-shadow(0 0 3px rgb(255 160 60 / 0.6));
 }
+
+.stage .hunt-affix-mark {
+  display: inline-block;
+  vertical-align: -3px;
+  margin-right: 4px;
+}
+
+/* The enemy waiting at a fight on the path cards, with its Trail. */
+.stage .node-foe {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border-radius: 8px;
+  background: color-mix(in srgb, var(--ink) 7%, transparent);
+  text-align: left;
+}
+
+.stage .node-foe-text {
+  display: grid;
+  flex: 1;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.2;
+}

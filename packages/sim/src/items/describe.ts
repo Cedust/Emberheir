@@ -295,6 +295,8 @@ export interface ItemTooltip {
     readonly kind: "stat" | "trigger" | "kindled";
     /** Greater Affix rank (I–V), neuausrichtung-v1.md 7.5. */
     readonly greater?: number;
+    /** A Hunt Affix: the Trail (II–IV) it was rolled at. */
+    readonly hunt?: number;
   }[];
   /** "unique" and "runeword" items show their own label and color. */
   readonly special?: "unique" | "runeword";
@@ -371,7 +373,10 @@ export function describeItem(
     const affix = catalog.affixes.get(roll.affixId);
     if (!affix) return [];
     const rank = greaterRank(item, i);
-    const greater = rank > 0 ? { greater: rank } : {};
+    const greater = {
+      ...(rank > 0 ? { greater: rank } : {}),
+      ...("hunt" in roll && roll.hunt ? { hunt: roll.hunt } : {}),
+    };
     if (affix.kind === "trigger") {
       const spec = resolveTrigger(affix, item.tier, roll.quality, rank);
       return [
@@ -419,7 +424,12 @@ export function describeItem(
     ] as AffixLine[]
   )
     .sort((a, b) => Number(a.kind !== "stat") - Number(b.kind !== "stat") || a.rank - b.rank)
-    .map(({ text, kind, greater }) => ({ text, kind, ...(greater ? { greater } : {}) }));
+    .map(({ text, kind, greater, hunt }) => ({
+      text,
+      kind,
+      ...(greater ? { greater } : {}),
+      ...(hunt ? { hunt } : {}),
+    }));
 
   const required = requirementsFor(base, item.tier);
   const requirements = ATTRIBUTES.flatMap((attribute) => {

@@ -27,6 +27,7 @@ const affixRoll = z.object({
   affixId: id,
   quality: num,
   kindled: opt(z.literal(true)),
+  hunt: opt(count),
 });
 
 export const itemSchema: z.ZodType<Item> = z.object({
@@ -191,6 +192,7 @@ const mapNode = z.object({
   kind: z.enum(NODE_KINDS),
   next: z.array(count),
   quarry: opt(id),
+  enemy: opt(id),
 });
 
 const visit = z.object({

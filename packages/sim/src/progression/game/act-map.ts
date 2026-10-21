@@ -186,15 +186,22 @@ export function generateActMap(act: ActData, options: MapOptions, rng: Rng): Act
     }
   }
 
+  // Every fight before the boss knows its enemy already, so a path can be chosen for a hunt.
+  const foe = (row: number, kind: NodeKind) =>
+    (kind === "fight" || kind === "elite") && row < act.stages && act.enemies.length
+      ? act.enemies[rng.int(0, act.enemies.length - 1)]?.id
+      : undefined;
   return {
     rows: kinds.map((row, r) =>
       row.map((kind, i): MapNode => {
         const quarry = kind === "hunt" ? quarries.get(`${r + 1}:${i}`) : undefined;
+        const enemy = foe(r + 1, kind);
         return {
           lane: row.length === 1 ? 1 : i,
           kind,
           next: (next[r]?.[i] ?? []).map((l) => ((kinds[r + 1]?.length ?? 0) === 1 ? 1 : l)),
           ...(quarry ? { quarry } : {}),
+          ...(enemy ? { enemy } : {}),
         };
       }),
     ),

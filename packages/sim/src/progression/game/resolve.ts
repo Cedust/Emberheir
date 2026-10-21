@@ -173,6 +173,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
             signature: {
               affixIds: signatures,
               best: huntAfter >= 3,
+              trail: huntAfter,
               ...(huntAfter >= 4 ? { greater: HUNT.apexRanks } : {}),
             },
           }

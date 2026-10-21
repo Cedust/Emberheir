@@ -177,6 +177,8 @@ export interface RollItemOptions {
     readonly best?: boolean;
     /** Mark IV (Apex): the signature turns Greater, rank by these weights (I–V). */
     readonly greater?: readonly number[];
+    /** The Trail it is rolled at, kept on the affix (`AffixRoll.hunt`). */
+    readonly trail?: number;
   };
 }
 
@@ -237,6 +239,7 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
         : rollQuality(itemLevel, rarity, rng)
       ).toFixed(4),
     ),
+    ...(a === signature && sign?.trail ? { hunt: sign.trail } : {}),
   }));
   const power =
     rarity === "legendary"

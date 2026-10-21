@@ -234,7 +234,9 @@ export function startStage(state: GameState, data: GameData): GameState {
       return { ...next, legacy, run: { ...run, phase: "fight", encounter } };
     }
   } else {
-    const rolled = act.enemies[rng.int(0, act.enemies.length - 1)];
+    const rolled =
+      act.enemies.find((e) => e.id === node?.enemy) ??
+      act.enemies[rng.int(0, act.enemies.length - 1)];
     // A Hunt node: its quarry, plain, no thief and no Elite (hunts-entwurf-v1.md).
     const quarry =
       node?.kind === "hunt" ? act.enemies.find((e) => e.id === node.quarry) : undefined;

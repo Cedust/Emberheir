@@ -37,7 +37,8 @@ import type { GameApi } from "../useGame";
 import { homeRuneOf } from "../actLoot";
 import { runeName } from "../../ui/RuneArt";
 import { EnemyPortrait } from "../../ui/EnemyPortrait";
-import { huntView, trailTitle } from "../hunts";
+import { TRAIL_NAMES, huntView } from "../hunts";
+import { TrailMark } from "../../ui/TrailMark";
 
 /**
  * The act map (act-karte-entwurf-v1.md, Slay the Spire): the road through the act as three
@@ -80,16 +81,32 @@ const nodeArt = (kind: NodeKind) =>
   NODE_ART[`../../assets/map/node-${kind === "hunt" ? "empty" : kind}.webp`];
 
 /** A Hunt node's quarry by name, with its Trail. */
-function huntLabel(state: GameState, node: MapNode): { name: string; text: string } | undefined {
+function huntLabel(node: MapNode): { name: string; text: string } | undefined {
   if (node.kind !== "hunt" || !node.quarry) return undefined;
   const enemy = GAME_DATA.acts.flatMap((a) => a.enemies).find((e) => e.id === node.quarry);
-  const hunt = huntView(state, node.quarry);
-  const next = hunt.next !== undefined ? ` (${hunt.kills}/${hunt.next})` : "";
-  return {
-    name: `Hunt: ${enemy?.name ?? "?"}`,
-    text: `${NODE_TEXT.hunt.text} ${trailTitle(hunt.tier)}${next}.`,
-  };
+  return { name: `Hunt: ${enemy?.name ?? "?"}`, text: NODE_TEXT.hunt.text };
 }
+
+/** The enemy waiting at a fight on the path cards, with its Trail (Timo: farm a hunt on purpose). */
+function FoeLine(props: { state: GameState; enemyId: string }) {
+  const enemy = GAME_DATA.acts.flatMap((a) => a.enemies).find((e) => e.id === props.enemyId);
+  const hunt = huntView(props.state, props.enemyId);
+  return (
+    <span className="node-foe" data-testid="node-foe">
+      <EnemyPortrait enemyId={props.enemyId} size={34} hidden={hunt.kills === 0} />
+      <span className="node-foe-text">
+        <b>{hunt.kills ? (enemy?.name ?? "?") : "???"}</b>
+        <span className="sub small">
+          {TRAIL_NAMES[hunt.tier]} · {hunt.kills}
+          {hunt.next !== undefined ? `/${hunt.next}` : ""}
+        </span>
+      </span>
+      <TrailMark tier={hunt.tier} size={26} />
+    </span>
+  );
+}
+
+const foeOf = (node: MapNode) => (node.kind === "hunt" ? node.quarry : node.enemy);
 
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
@@ -117,7 +134,7 @@ function nodeLabel(
       marker: gate ? "gate" : "waymark",
     };
   }
-  const hunt = huntLabel(state, node);
+  const hunt = huntLabel(node);
   return hunt ? { ...NODE_TEXT.hunt, ...hunt } : NODE_TEXT[node.kind];
 }
 
@@ -552,6 +569,7 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
             </span>
             <strong className="title-font">{text.name}</strong>
             <span className="sub">{text.text}</span>
+            {foeOf(node) && <FoeLine state={state} enemyId={foeOf(node) ?? ""} />}
             <span className="node-lane sub">{["Left", "Middle", "Right"][node.lane]}</span>
           </button>
         );

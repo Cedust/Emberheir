@@ -19,9 +19,9 @@ import { ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
 import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
-import { HuntBrand } from "../../ui/TrailMark";
+import { TrailMark } from "../../ui/TrailMark";
 import { isHighRune } from "../actLoot";
-import { affixName } from "../hunts";
+import { affixName, trailTitle } from "../hunts";
 import { type DropSound, playSound } from "../../ui/sound";
 import { EQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
@@ -191,7 +191,7 @@ function TrophyToast(props: { item: Item }) {
 }
 
 /** The card that carries the beaten enemy's Hunt Affix (hunts-entwurf-v1.md). */
-function HuntRibbon(props: { affix: string; enemyId: string }) {
+function HuntRibbon(props: { affix: string; enemyId: string; tier: number }) {
   const enemy = [
     ...GAME_DATA.acts.flatMap((a) => a.enemies),
     ...(GAME_DATA.thief ? [GAME_DATA.thief] : []),
@@ -200,9 +200,9 @@ function HuntRibbon(props: { affix: string; enemyId: string }) {
     <span
       className="hunt-ribbon small"
       data-testid="hunt-ribbon"
-      title={`Hunt Affix of the ${enemy?.name ?? "enemy"}: its Trail makes it roll better.`}
+      title={`Hunt Affix of the ${enemy?.name ?? "enemy"}, rolled at ${trailTitle(props.tier)}.`}
     >
-      <HuntBrand size={20} /> Hunt Affix · {affixName(props.affix)}
+      <TrailMark tier={props.tier} size={22} /> Hunt Affix · {affixName(props.affix)}
     </span>
   );
 }
@@ -333,7 +333,11 @@ export function ItemCards(props: {
           >
             {big && <span className="light-pillar" aria-hidden />}
             {rewards.hunt?.card === i && rewards.hunt.affix && (
-              <HuntRibbon affix={rewards.hunt.affix} enemyId={rewards.hunt.enemyId} />
+              <HuntRibbon
+                affix={rewards.hunt.affix}
+                enemyId={rewards.hunt.enemyId}
+                tier={rewards.hunt.tier}
+              />
             )}
             <ItemDetail
               item={item}

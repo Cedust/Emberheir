@@ -612,7 +612,7 @@ export function saveAtWardensGate(): string {
 
 /** A new hero on the road through the Ashen Fields (run 1), Stage 3 ahead: the third fight, an item pick. */
 export function saveRun1Stage3(): string {
-  const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
+  const base = newGame(GAME_DATA, { seed: 43, classId: "cinderguard" });
   const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
   // One way on: the item pick ends in the done card, not in a path choice.
   return serializeGame(
@@ -630,11 +630,22 @@ export function saveRun1Stage3(): string {
 const HUNT_KILLS = { "ashen-brute": 30, "ashen-skirmisher": 9, "cinder-caster": 110, gorrak: 4 };
 
 /** On the road in the Ashen Fields (run 2), Stage 2 won: a Hunt node after the Ashen Prowler ahead. */
-export function saveAtHuntFork(prowlerKills = 9): string {
+export function saveAtHuntFork(prowlerKills = 12): string {
   const out = oldActTrip();
   const state = onMap(out, 2, ["fight", "hunt", "elite"], wonFight(out));
   const rows = state.run?.map?.rows.map((row, r) =>
-    r === 2 ? row.map((n) => (n.kind === "hunt" ? { ...n, quarry: "ashen-skirmisher" } : n)) : row,
+    r === 2
+      ? row.map((n) =>
+          n.kind === "hunt"
+            ? { ...n, quarry: "ashen-skirmisher" }
+            : {
+                lane: n.lane,
+                kind: n.kind,
+                next: n.next,
+                enemy: n.kind === "elite" ? "cinder-caster" : "ashen-brute",
+              },
+        )
+      : row,
   );
   return serializeGame({
     ...state,
