@@ -59,7 +59,18 @@ export function mapOptions(state: GameState, data: GameData, run: RunState): Map
       bounty?.status === "open" &&
       getBounty(data, bounty.id).goal.kind === "thief",
     events: (data.events?.length ?? 0) > 0,
+    ...huntOptions(state, data, run),
   };
+}
+
+/** The act's enemies that can be hunted, for the Hunt nodes (not in the Wildfire). */
+function huntOptions(state: GameState, data: GameData, run: RunState): Pick<MapOptions, "hunts"> {
+  const signatures = data.huntSignatures;
+  if (!signatures || run.wildfire) return {};
+  const enemyIds = getAct(data, run.actId)
+    .enemies.map((e) => e.id)
+    .filter((id) => signatures[id]?.length);
+  return enemyIds.length ? { hunts: { enemyIds, kills: state.legacy.hunts ?? {} } } : {};
 }
 
 /** A Shrine's offer of three Boons. */

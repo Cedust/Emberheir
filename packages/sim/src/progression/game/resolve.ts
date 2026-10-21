@@ -10,6 +10,7 @@ import { codexAffixFactor } from "../codex";
 import { PROGRESSION } from "../constants";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
 import { MASTERY } from "../weapon-mastery";
+import { HUNT, huntKillsFor, huntThresholds, huntTier } from "../hunts";
 import { currentNode } from "./act-map";
 import { getAct, hearthEmbers, isFinaleAct, waymarkKey, waymarkStages } from "./acts";
 import { getBounty } from "./bounty";
@@ -31,6 +32,7 @@ import {
   itemPickAt,
   rollItemChoices,
   rollRuneDrops,
+  signatureCard,
   tagAffixFactor,
 } from "./loot";
 import { toCamp } from "./run";
@@ -136,6 +138,24 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     PROGRESSION.eliteThemeWeight,
   );
   const codex = actAffixFactor(act, codexAffixFactor(data.items, fight));
+  // The enemy's hunt bar (hunts-entwurf-v1.md): an escaped thief leaves no kill.
+  const huntId = encounter.enemyId;
+  const huntBoss = rank === "boss";
+  const huntFrom = state.legacy.hunts?.[huntId] ?? 0;
+  const huntKills = escaped
+    ? huntFrom
+    : huntFrom +
+      huntKillsFor(
+        { elite: rank === "elite", champion: encounter.champion === true, boss: huntBoss },
+        encounter.hunt === true,
+      );
+  const huntScale = huntThresholds(data.acts, huntId);
+  const huntBefore = huntTier(huntFrom, huntScale);
+  const huntAfter = huntTier(huntKills, huntScale);
+  const signatures = huntBoss ? undefined : data.huntSignatures?.[huntId];
+  const huntPaid = huntAfter > huntBefore ? HUNT.rewards.slice(huntBefore, huntAfter) : [];
+  const huntAcorns = huntPaid.reduce((n, r) => n + r.acorns, 0);
+  const huntCoal = huntPaid.reduce((n, r) => n + r.emberCoal, 0);
   const rolled = rollItemChoices(
     data,
     act.id,
@@ -147,11 +167,27 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     (affix) => codex(affix) * theme(affix),
     (1 + PROGRESSION.wildfire.legendaryPerTier * tier) * (1 + omen.bonus.legendary),
     rank === "boss" ? tagAffixFactor(buildTags(hero), PROGRESSION.buildCardWeight) : undefined,
+    {
+      ...(signatures?.length && huntAfter >= 2 && !escaped
+        ? {
+            signature: {
+              affixIds: signatures,
+              best: huntAfter >= 3,
+              trail: huntAfter,
+              ...(huntAfter >= 4 ? { greater: HUNT.apexRanks } : {}),
+            },
+          }
+        : {}),
+      ...(huntBoss && huntAfter >= 2 ? { trophyChance: HUNT.bossTrophyChance } : {}),
+    },
   );
   // Fewer, weightier picks: most normal fights pay Ash for their cards at once. Every
   // `pickEvery`'th normal fight of the trip offers a pick (act-karte-entwurf-v1.md, K4).
   const normalFights = (run.fights ?? 0) + (rank === "normal" ? 1 : 0);
-  const pick = itemPickAt(rank, normalFights, caught, act.pickEvery);
+  // A Hunt node's quarry always offers a pick.
+  const pick = itemPickAt(rank, normalFights, caught, act.pickEvery) || encounter.hunt === true;
+  const signed =
+    pick && signatures?.length && huntAfter >= 2 ? signatureCard(rolled, signatures) : undefined;
   const items = pick ? rolled : [];
   const autoAsh = pick ? 0 : rolled.reduce((sum, it) => sum + salvageValue(it), 0);
   const runes = rollRuneDrops(
@@ -254,9 +290,9 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       : {}),
     wallet: {
       ...state.wallet,
-      acorns: state.wallet.acorns + auto.acorns,
+      acorns: state.wallet.acorns + auto.acorns + huntAcorns,
       ash: state.wallet.ash + auto.ash + autoAsh,
-      emberCoal: state.wallet.emberCoal + stones,
+      emberCoal: state.wallet.emberCoal + stones + huntCoal,
       phoenixFeathers: state.wallet.phoenixFeathers + feathers,
       runes: addRunes(state.wallet.runes, runes),
       ...(cinderglass ? { cinderglass: (state.wallet.cinderglass ?? 0) + cinderglass } : {}),
@@ -265,6 +301,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       ...state.legacy,
       runesFound: [...new Set([...state.legacy.runesFound, ...runes])],
       trophies: [...state.legacy.trophies, ...newTrophies],
+      ...(huntKills !== huntFrom ? { hunts: { ...state.legacy.hunts, [huntId]: huntKills } } : {}),
       ...(echo
         ? {
             echoes: {
@@ -301,6 +338,21 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         ...(newTrophies.length ? { newTrophies } : {}),
         ...(echo ? { echo } : {}),
         ...(bountyDone ? { bountyDone: true } : {}),
+        ...(huntKills !== huntFrom
+          ? {
+              hunt: {
+                enemyId: huntId,
+                from: huntFrom,
+                kills: huntKills,
+                tier: huntAfter,
+                ...(huntAfter > huntBefore ? { tierUp: true } : {}),
+                ...(huntBoss ? { boss: true } : {}),
+                ...(signed ? signed : {}),
+                ...(huntAcorns ? { acorns: huntAcorns } : {}),
+                ...(huntCoal ? { emberCoal: huntCoal } : {}),
+              },
+            }
+          : {}),
         ...(pick
           ? { itemPick: null, salvagedAsh: 0 }
           : { itemPick: { kind: "salvageAll" as const }, salvagedAsh: autoAsh }),

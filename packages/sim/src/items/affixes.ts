@@ -83,6 +83,12 @@ export function rollQuality(itemLevel: number, rarity: Rarity, rng: Rng): number
   return best;
 }
 
+/** A quality in the best stage the Item Level unlocks (a mastered hunt's Signature Affix). */
+export function rollBestQuality(itemLevel: number, rng: Rng): number {
+  const stages = ITEMS.stageUnlockPositions.length;
+  return (unlockedStages(itemLevel) - 1 + rng.next()) / stages;
+}
+
 /** Growth factor of a per-tier scaled value. */
 export function tierGrowth(perTier: number, tier: number): number {
   return 1 + perTier * (Math.max(1, tier) - 1);

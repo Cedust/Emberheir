@@ -13,6 +13,7 @@ import {
   gateStages,
   getAct,
   getEvent,
+  HUNT,
   hearthHeal,
   isWallAct,
   nextNodes,
@@ -35,6 +36,9 @@ import { emptySlotArt } from "../../ui/items";
 import type { GameApi } from "../useGame";
 import { homeRuneOf } from "../actLoot";
 import { runeName } from "../../ui/RuneArt";
+import { EnemyPortrait } from "../../ui/EnemyPortrait";
+import { TRAIL_NAMES, huntView } from "../hunts";
+import { TrailMark } from "../../ui/TrailMark";
 
 /**
  * The act map (act-karte-entwurf-v1.md, Slay the Spire): the road through the act as three
@@ -43,9 +47,20 @@ import { runeName } from "../../ui/RuneArt";
  */
 
 /** What each node holds, in one line for its card and tooltip. */
-export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: IconName }> = {
-  fight: { name: "Fight", text: "An enemy of the act. Sometimes an Elite.", icon: "strike" },
-  elite: { name: "Elite", text: "A sure Elite, with loot of its theme.", icon: "boss" },
+export const NODE_TEXT: Record<
+  NodeKind,
+  { name: string; text: string; icon: IconName; points?: readonly string[] }
+> = {
+  fight: {
+    name: "Fight",
+    text: "Something blocks the road. Some of them burn hotter than others.",
+    icon: "strike",
+  },
+  elite: {
+    name: "Elite",
+    text: "A hardened foe, burning with ash. It guards something worth taking.",
+    icon: "boss",
+  },
   thief: { name: "Thief's Trail", text: "The Ember Thief waits here.", icon: "target" },
   shrine: { name: "Ember Shrine", text: "Steal 1 of 3 Boons. No fight.", icon: "flame" },
   hearth: {
@@ -60,6 +75,12 @@ export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: Ico
     text: `She gambles on ${ROAD_GAMBLE.slots} slots, ${Math.round(ROAD_GAMBLE.discount * 100)} % cheaper. No fight.`,
     icon: "coins",
   },
+  hunt: {
+    name: "Hunt",
+    text: "Eldrin spotted its tracks.",
+    points: [`Counts ${HUNT.nodeFactor}× for its Trail`, "Always drops an item pick"],
+    icon: "wolf",
+  },
 };
 
 /** Timo's painted node medallions (icon sheet 10, tools/art/cut_map_nodes.py). */
@@ -67,7 +88,37 @@ const NODE_ART = import.meta.glob<string>("../../assets/map/node-*.webp", {
   eager: true,
   import: "default",
 });
-const nodeArt = (kind: NodeKind) => NODE_ART[`../../assets/map/node-${kind}.webp`];
+// The Hunt node is the sheet's spare medallion with its quarry's face inside.
+const nodeArt = (kind: NodeKind) =>
+  NODE_ART[`../../assets/map/node-${kind === "hunt" ? "empty" : kind}.webp`];
+
+/** A Hunt node's quarry by name, with its Trail. */
+function huntLabel(node: MapNode): { name: string; text: string } | undefined {
+  if (node.kind !== "hunt" || !node.quarry) return undefined;
+  const enemy = GAME_DATA.acts.flatMap((a) => a.enemies).find((e) => e.id === node.quarry);
+  return { name: `Hunt: ${enemy?.name ?? "?"}`, text: NODE_TEXT.hunt.text };
+}
+
+/** The enemy waiting at a fight on the path cards, with its Trail (Timo: farm a hunt on purpose). */
+function FoeLine(props: { state: GameState; enemyId: string }) {
+  const enemy = GAME_DATA.acts.flatMap((a) => a.enemies).find((e) => e.id === props.enemyId);
+  const hunt = huntView(props.state, props.enemyId);
+  return (
+    <span className="node-foe" data-testid="node-foe">
+      <EnemyPortrait enemyId={props.enemyId} size={34} hidden={hunt.kills === 0} />
+      <span className="node-foe-text">
+        <b>{hunt.kills ? (enemy?.name ?? "?") : "???"}</b>
+        <span className="sub small">
+          {TRAIL_NAMES[hunt.tier]} · {hunt.kills}
+          {hunt.next !== undefined ? `/${hunt.next}` : ""}
+        </span>
+      </span>
+      <TrailMark tier={hunt.tier} size={26} />
+    </span>
+  );
+}
+
+const foeOf = (node: MapNode) => (node.kind === "hunt" ? node.quarry : node.enemy);
 
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
@@ -81,7 +132,13 @@ function nodeLabel(
   run: RunState,
   row: number,
   node: MapNode,
-): { name: string; text: string; icon: IconName; marker?: string } {
+): {
+  name: string;
+  text: string;
+  icon: IconName;
+  marker?: string;
+  points?: readonly string[];
+} {
   const act = getAct(GAME_DATA, run.actId);
   if (row === act.stages)
     return { name: "Boss", text: "The act's boss.", icon: "boss", marker: "boss" };
@@ -95,7 +152,8 @@ function nodeLabel(
       marker: gate ? "gate" : "waymark",
     };
   }
-  return NODE_TEXT[node.kind];
+  const hunt = huntLabel(node);
+  return hunt ? { ...NODE_TEXT.hunt, ...hunt } : NODE_TEXT[node.kind];
 }
 
 /** The map in the Intermission's right column; `big` is the planning window (M). */
@@ -412,7 +470,7 @@ function MapNodeButton(props: {
     explain:
       props.node.kind === "cache" && homeRuneOf(props.run.actId)
         ? `${label.text} Home Rune: ${runeName(homeRuneOf(props.run.actId) ?? "")}.`
-        : label.text,
+        : [label.text, ...(label.points ?? []).map((p) => `${p}.`)].join(" "),
     ...(props.ahead ? { status: "Click to walk here next" } : {}),
   });
   const cls = [
@@ -426,7 +484,14 @@ function MapNodeButton(props: {
   ].join(" ");
   const style = { left: props.x, top: props.y, width: NODE, height: NODE };
   const art = label.marker ? null : (
-    <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
+    <>
+      <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
+      {props.node.quarry && (
+        <span className="map-node-quarry">
+          <EnemyPortrait enemyId={props.node.quarry} size={NODE * 0.62} />
+        </span>
+      )}
+    </>
   );
   return props.ahead ? (
     <button
@@ -480,14 +545,14 @@ export function ActMapWindow(props: {
       >
         <ActMapView state={props.state} run={props.run} game={props.game} big />
         <p className="sub act-map-legend">
-          {(["fight", "elite", "shrine", "hearth", "cache", "event", "marisha"] as const).map(
-            (k) => (
-              <span key={k} className="legend-item">
-                <img src={nodeArt(k)} alt="" className="legend-node" />
-                {NODE_TEXT[k].name}
-              </span>
-            ),
-          )}
+          {(
+            ["fight", "elite", "shrine", "hearth", "cache", "event", "marisha", "hunt"] as const
+          ).map((k) => (
+            <span key={k} className="legend-item">
+              <img src={nodeArt(k)} alt="" className="legend-node" />
+              {NODE_TEXT[k].name}
+            </span>
+          ))}
         </p>
       </Window>
     </WindowLayer>
@@ -514,9 +579,25 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
           >
             <span className="path-sigil painted">
               <img src={nodeArt(node.kind)} alt="" />
+              {node.quarry && (
+                <span className="map-node-quarry">
+                  <EnemyPortrait enemyId={node.quarry} size={46} />
+                </span>
+              )}
             </span>
-            <strong className="title-font">{text.name}</strong>
+            {/* A Hunt names its quarry on the enemy line below. */}
+            <strong className="title-font">
+              {node.kind === "hunt" ? NODE_TEXT.hunt.name : text.name}
+            </strong>
             <span className="sub">{text.text}</span>
+            {text.points && (
+              <ul className="node-points sub">
+                {text.points.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            )}
+            {foeOf(node) && <FoeLine state={state} enemyId={foeOf(node) ?? ""} />}
             <span className="node-lane sub">{["Left", "Middle", "Right"][node.lane]}</span>
           </button>
         );

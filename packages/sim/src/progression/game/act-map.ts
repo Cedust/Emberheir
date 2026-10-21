@@ -1,5 +1,6 @@
 import { PROGRESSION } from "../constants";
 import type { Rng } from "../../rng";
+import { HUNT, huntQuarry, type HuntKills } from "../hunts";
 import { waymarkStages } from "./acts";
 import { type ActData, type ActMap, type MapNode, type NodeKind, type RunState } from "./state";
 
@@ -25,6 +26,8 @@ export interface MapOptions {
   readonly thief: boolean;
   /** Events exist. */
   readonly events: boolean;
+  /** Hunt nodes (hunts-entwurf-v1.md): the act's enemies that can be hunted and their kills. */
+  readonly hunts?: { readonly enemyIds: readonly string[]; readonly kills: HuntKills };
 }
 
 /** Rows with a single node: the first stage and the Waymarks. */
@@ -46,7 +49,7 @@ const KIND_WEIGHTS: readonly (readonly [NodeKind, number])[] = [
 const MARISHA_CHANCE = 0.6;
 
 const fights = (kind: NodeKind | undefined) =>
-  kind === "fight" || kind === "elite" || kind === "thief";
+  kind === "fight" || kind === "elite" || kind === "thief" || kind === "hunt";
 
 export function generateActMap(act: ActData, options: MapOptions, rng: Rng): ActMap {
   const single = singleRows(act);
@@ -161,13 +164,46 @@ export function generateActMap(act: ActData, options: MapOptions, rng: Rng): Act
     last[lane] = "hearth";
   }
 
+  // Hunt nodes on plain fights of two different stretches, each after another quarry.
+  const quarries = new Map<string, string>();
+  const hunts = options.hunts;
+  if (hunts?.enemyIds.length) {
+    const stretches = [0, 1, 2];
+    const taken: string[] = [];
+    for (let n = 0; n < HUNT.maxNodes && stretches.length; n++) {
+      const [s] = stretches.splice(rng.int(0, stretches.length - 1), 1);
+      const spots = mixed(s ?? 0).flatMap((row) =>
+        (kinds[row - 1] ?? []).flatMap((k, lane) => (k === "fight" ? [{ row, lane }] : [])),
+      );
+      const spot = spots.length ? spots[rng.int(0, spots.length - 1)] : undefined;
+      const left = hunts.enemyIds.filter((id) => !taken.includes(id));
+      const quarry = huntQuarry(left.length ? left : hunts.enemyIds, hunts.kills, rng);
+      const at = spot && kinds[spot.row - 1];
+      if (!spot || !at || !quarry) continue;
+      at[spot.lane] = "hunt";
+      taken.push(quarry);
+      quarries.set(`${spot.row}:${spot.lane}`, quarry);
+    }
+  }
+
+  // Every fight before the boss knows its enemy already, so a path can be chosen for a hunt.
+  const foe = (row: number, kind: NodeKind) =>
+    (kind === "fight" || kind === "elite") && row < act.stages && act.enemies.length
+      ? act.enemies[rng.int(0, act.enemies.length - 1)]?.id
+      : undefined;
   return {
     rows: kinds.map((row, r) =>
-      row.map((kind, i): MapNode => ({
-        lane: row.length === 1 ? 1 : i,
-        kind,
-        next: (next[r]?.[i] ?? []).map((l) => ((kinds[r + 1]?.length ?? 0) === 1 ? 1 : l)),
-      })),
+      row.map((kind, i): MapNode => {
+        const quarry = kind === "hunt" ? quarries.get(`${r + 1}:${i}`) : undefined;
+        const enemy = foe(r + 1, kind);
+        return {
+          lane: row.length === 1 ? 1 : i,
+          kind,
+          next: (next[r]?.[i] ?? []).map((l) => ((kinds[r + 1]?.length ?? 0) === 1 ? 1 : l)),
+          ...(quarry ? { quarry } : {}),
+          ...(enemy ? { enemy } : {}),
+        };
+      }),
     ),
   };
 }

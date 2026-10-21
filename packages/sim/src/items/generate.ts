@@ -1,5 +1,5 @@
 import type { Rng } from "../rng";
-import { affixPool, affixWeight, rollQuality, tierForItemLevel } from "./affixes";
+import { affixPool, affixWeight, rollBestQuality, rollQuality, tierForItemLevel } from "./affixes";
 import { ITEMS } from "./constants";
 import {
   type AffixDefinition,
@@ -168,6 +168,18 @@ export interface RollItemOptions {
   readonly rarity: Rarity;
   /** Extra weight per affix, e.g. Trigger Codex homes (default 1). */
   readonly affixFactor?: (affix: AffixDefinition) => number;
+  /**
+   * Hunts (hunts-entwurf-v1.md): one of these stat affixes for sure, if the item has stat affixes
+   * and its slot can carry one; with `best` it rolls in the best stage the Item Level allows.
+   */
+  readonly signature?: {
+    readonly affixIds: readonly string[];
+    readonly best?: boolean;
+    /** Mark IV (Apex): the signature turns Greater, rank by these weights (I–V). */
+    readonly greater?: readonly number[];
+    /** The Trail it is rolled at, kept on the affix (`AffixRoll.hunt`). */
+    readonly trail?: number;
+  };
 }
 
 /**
@@ -196,13 +208,38 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     [...chosen, ...picked].every((c) => affixPosition(c) !== affixPosition(affix));
   const factor = options.affixFactor;
   const triggerPool = affixPool(all, base.slot, "trigger");
+  const statPool = affixPool(all, base.slot, "stat");
+  const sign = options.signature;
+  const signature =
+    sign && statCount > 0
+      ? pickWeighted(
+          statPool.filter((a) => sign.affixIds.includes(a.id)),
+          (a) => affixWeight(a, base),
+          rng,
+        )
+      : undefined;
+  if (signature) chosen.push(signature);
   chosen.push(
-    ...pickAffixes(affixPool(all, base.slot, "stat"), base, statCount, rng, allowed, factor),
+    ...pickAffixes(
+      statPool.filter((a) => a !== signature),
+      base,
+      statCount - (signature ? 1 : 0),
+      rng,
+      allowed,
+      factor,
+    ),
   );
   chosen.push(...pickAffixes(triggerPool, base, triggerCount, rng, allowed, factor));
+  const apex = signature && sign?.greater ? pickRank(sign.greater, rng) : 0;
   const rolls: AffixRoll[] = chosen.map((a) => ({
     affixId: a.id,
-    quality: Number(rollQuality(itemLevel, rarity, rng).toFixed(4)),
+    quality: Number(
+      (a === signature && sign?.best
+        ? rollBestQuality(itemLevel, rng)
+        : rollQuality(itemLevel, rarity, rng)
+      ).toFixed(4),
+    ),
+    ...(a === signature && sign?.trail ? { hunt: sign.trail } : {}),
   }));
   const power =
     rarity === "legendary"
@@ -220,7 +257,15 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     affixes: rolls,
     ...(sockets > 0 ? { sockets } : {}),
     ...(power ? { powerId: power.id } : {}),
+    // The signature is the first affix rolled.
+    ...(apex > 0 ? { greater: { index: 0, rank: apex } } : {}),
   };
+}
+
+/** A rank 1..n by weights (index 0 = rank 1). */
+function pickRank(weights: readonly number[], rng: Rng): number {
+  const ranks = weights.map((_, i) => i + 1);
+  return pickWeighted(ranks, (r) => weights[r - 1] ?? 0, rng) ?? 1;
 }
 
 /** Legendary Powers that can roll on a slot. */

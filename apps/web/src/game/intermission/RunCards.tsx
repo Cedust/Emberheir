@@ -1,4 +1,5 @@
 import { GAME_DATA } from "@emberheir/content";
+import { BOSS_TRAIL_TEXT, TRAIL_TEXT, trailTitle } from "../hunts";
 import {
   type GameAction,
   type GameState,
@@ -27,6 +28,7 @@ import { useEffect, useState } from "react";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { Icon, type IconName } from "../../ui/Icon";
 import { Potion } from "../../ui/Potion";
+import { TrailMark } from "../../ui/TrailMark";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { skillIcon, skillTint } from "../battle/skills";
@@ -487,7 +489,7 @@ export function RunMoments(props: { state: GameState; run: RunState }) {
   if (!rewards) return null;
   // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
   const hearth = hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
-  const moments: { key: string; icon: IconName; name: string; sub: string }[] = [
+  const moments: { key: string; icon: IconName; name: string; sub: string; trail?: number }[] = [
     ...(rewards.waymark
       ? [{ key: "waymark", icon: "tree" as const, name: "Waymark!", sub: "+1 Skill Point" }]
       : []),
@@ -498,6 +500,23 @@ export function RunMoments(props: { state: GameState; run: RunState }) {
             icon: "fire" as const,
             name: "Hearth Embers",
             sub: `+${Math.round(PROGRESSION.hearthEmbers * 100)} % Life`,
+          },
+        ]
+      : []),
+    ...(rewards.hunt?.tierUp
+      ? [
+          {
+            key: "hunt",
+            icon: "wolf" as const,
+            trail: rewards.hunt.tier,
+            name: `${trailTitle(rewards.hunt.tier)}!`,
+            sub: [
+              (rewards.hunt.boss ? BOSS_TRAIL_TEXT : TRAIL_TEXT)[rewards.hunt.tier] ?? "",
+              rewards.hunt.acorns ? `+${rewards.hunt.acorns} Acorns` : "",
+              rewards.hunt.emberCoal ? `+${rewards.hunt.emberCoal} Ember Coal` : "",
+            ]
+              .filter(Boolean)
+              .join(" "),
           },
         ]
       : []),
@@ -518,7 +537,11 @@ export function RunMoments(props: { state: GameState; run: RunState }) {
       {moments.map((m) => (
         <div key={m.key} className={`run-moment panel-card moment-${m.key}`}>
           <span className="moment-sigil">
-            <Icon name={m.icon} size={26} />
+            {m.trail !== undefined ? (
+              <TrailMark tier={m.trail} size={46} />
+            ) : (
+              <Icon name={m.icon} size={26} />
+            )}
           </span>
           <div className="bounty-paid-text">
             <strong className="title-font">{m.name}</strong>

@@ -4,6 +4,7 @@ import {
   pickWeighted,
   rollItem,
   rollRarity,
+  type RollItemOptions,
   rollUnique,
   uniquesFor,
 } from "../../items/generate";
@@ -69,6 +70,8 @@ export function rollItemChoices(
   legendaryBoost = 1,
   /** The boss's build card (neuausrichtung-v1.md 6.3): the first card leans to these affixes. */
   buildFactor?: (affix: AffixDefinition) => number,
+  /** Hunts: the first card that can carry it gets a Signature Affix; a hunted Warden's trophy chance. */
+  hunt: HuntLoot = {},
 ): Item[] {
   const champion = encounter.champion === true;
   const homeUniques = data.acts.find((a) => a.id === actId)?.homeUniques ?? [];
@@ -95,6 +98,7 @@ export function rollItemChoices(
   }
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
+  let signed = false;
   // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
   const legendaryChance = champion
     ? Math.max(PROGRESSION.champion.legendary, gate.legendary[rank])
@@ -108,7 +112,7 @@ export function rollItemChoices(
       ? bossTrophies(data.items, actId).filter((u) => u.minItemLevel <= encounter.level)
       : [];
   const trophy =
-    trophies.length && rng.chance(PROGRESSION.bossTrophyChance)
+    trophies.length && rng.chance(hunt.trophyChance ?? PROGRESSION.bossTrophyChance)
       ? trophies[rng.int(0, trophies.length - 1)]
       : undefined;
   const trophyCard = trophy ? rng.int(0, count - 1) : -1;
@@ -153,20 +157,74 @@ export function rollItemChoices(
       buildFactor && i === 0
         ? (affix: AffixDefinition) => base(affix) * buildFactor(affix)
         : affixFactor;
-    items.push(
-      rollItem(
+    const signature = !signed && hunt.signature ? hunt.signature : undefined;
+    const item = rollItem(
+      data.items,
+      {
+        baseId,
+        itemLevel: encounter.level,
+        rarity,
+        ...(factor ? { affixFactor: factor } : {}),
+        ...(signature ? { signature } : {}),
+      },
+      rng,
+    );
+    if (signature && item.affixes.some((a) => signature.affixIds.includes(a.affixId))) {
+      signed = true;
+    }
+    items.push(item);
+  }
+  // The Hunt Affix is sure: when no card carries it (Normal cards, Charms, Uniques, slots that
+  // cannot hold it), one card rolls again with it, a Normal one as Magic.
+  const sign = hunt.signature;
+  if (sign && !signed) {
+    const fits = (baseId: string) => {
+      const slot = getBase(data.items, baseId).slot;
+      return sign.affixIds.some((id) => {
+        const affix = data.items.affixes.get(id);
+        return affix?.kind === "stat" && affix.slots.includes(slot);
+      });
+    };
+    // No card's slot can hold it: the first plain card turns into a base that can.
+    const fitting = data.lootBases.filter(fits);
+    const same = items.findIndex((it) => !it.uniqueId && fits(it.baseId));
+    const at = same >= 0 ? same : items.findIndex((it) => !it.uniqueId);
+    const card = items[at];
+    const baseId = same >= 0 ? card?.baseId : fitting[rng.int(0, Math.max(0, fitting.length - 1))];
+    if (card && baseId) {
+      items[at] = rollItem(
         data.items,
         {
           baseId,
-          itemLevel: encounter.level,
-          rarity,
-          ...(factor ? { affixFactor: factor } : {}),
+          itemLevel: card.itemLevel,
+          rarity: card.rarity === "normal" ? "magic" : card.rarity,
+          signature: sign,
+          ...(affixFactor ? { affixFactor } : {}),
         },
         rng,
-      ),
-    );
+      );
+    }
   }
   return items;
+}
+
+/** What a hunt adds to an item pick (hunts-entwurf-v1.md). */
+export interface HuntLoot {
+  readonly signature?: RollItemOptions["signature"];
+  readonly trophyChance?: number;
+}
+
+/** The card of a pick that carries one of the Signature Affixes, and which affix. */
+export function signatureCard(
+  items: readonly Item[],
+  affixIds: readonly string[],
+): { readonly card: number; readonly affix: string } | undefined {
+  for (const [card, item] of items.entries()) {
+    if (item.uniqueId) continue;
+    const roll = item.affixes.find((a) => affixIds.includes(a.affixId));
+    if (roll) return { card, affix: roll.affixId };
+  }
+  return undefined;
 }
 
 /** Adds Runes to the pouch. */

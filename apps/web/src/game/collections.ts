@@ -1,7 +1,8 @@
 import { ITEM_CATALOG, RUNEWORDS } from "@emberheir/content";
 import { type GameState, codexKnows } from "@emberheir/sim";
+import { bestiary, huntView } from "./hunts";
 
-export type CollectionId = "trophies" | "runewords" | "codex";
+export type CollectionId = "trophies" | "runewords" | "codex" | "hunts";
 
 /** One collection goal at the Hearthfire (spielzeit-v1.md, E): progress and its banner. */
 export interface Collection {
@@ -18,7 +19,9 @@ const CODEX_PARTS = [
   ...[...ITEM_CATALOG.effects.keys()].map((id) => ({ kind: "effect" as const, id })),
 ];
 
-/** The three collections of a character: Trophy Wall, Runeword Codex, Trigger Codex. */
+const HUNTED = bestiary().flatMap((r) => r.enemies.map((e) => e.id));
+
+/** The collections of a character: Trophy Wall, Runeword Codex, Trigger Codex, Bestiary. */
 export function collections(state: GameState): readonly Collection[] {
   const { legacy } = state;
   const uniques = new Set(ITEM_CATALOG.uniques.keys());
@@ -44,6 +47,14 @@ export function collections(state: GameState): readonly Collection[] {
       reward: "A sigil banner in the Camp",
       found: CODEX_PARTS.filter((p) => codexKnows(legacy.codex, p.kind, p.id)).length,
       total: CODEX_PARTS.length,
+    },
+    {
+      // Hunts (hunts-entwurf-v1.md): full once every enemy is Cornered (Trail III).
+      id: "hunts",
+      name: "Bestiary",
+      reward: "A fur banner in the Camp",
+      found: HUNTED.filter((id) => huntView(state, id).tier >= 3).length,
+      total: HUNTED.length,
     },
   ];
 }

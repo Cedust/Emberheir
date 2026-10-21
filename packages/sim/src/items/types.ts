@@ -207,6 +207,8 @@ export interface AffixRoll {
   readonly quality: number;
   /** Kindled at the Mystic (one per item); it counts at the item's tier like every affix. */
   readonly kindled?: true;
+  /** A Hunt Affix (hunts-entwurf-v1.md): the Trail (II–IV) it was rolled at. */
+  readonly hunt?: number;
 }
 
 /** A concrete item. Plain data (ids + numbers), so it can go into a save game as is. */

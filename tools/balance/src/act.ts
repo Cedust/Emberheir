@@ -140,6 +140,8 @@ export interface ActRunReport {
   readonly farmTrips?: number;
   /** Quiet nodes of the act map visited (Shrine, Hearth, Cache, Event, Marisha). */
   readonly visits?: number;
+  /** Hunt kills per enemy when the act ends (hunts-entwurf-v1.md). */
+  readonly hunts?: Readonly<Record<string, number>>;
 }
 
 /** The Runewords and the count of socketed Runes on the hero right now. */
@@ -339,6 +341,7 @@ export function playGenerations(
         visits,
         runesDropped,
         homeRunes,
+        hunts: s.legacy.hunts ?? {},
       });
       if (!cleared) {
         allCleared = false;

@@ -17,6 +17,7 @@ import {
   activeDraught,
   DRAUGHT_FLASK_COST,
   flaskCapacity,
+  huntKillsFor,
 } from "@emberheir/sim";
 import { useEffect, useRef, useState } from "react";
 import { Icon } from "../../ui/Icon";
@@ -35,6 +36,7 @@ import { EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
 import { BAR_H } from "./hud/layout";
 import "./hud/hud.css";
 import { QUALITY, canvasResolution } from "../pixiPacing";
+import { huntView, trailTitle } from "../hunts";
 
 interface PlaqueInfo {
   readonly name: string;
@@ -309,6 +311,32 @@ export function BattleView(props: {
     return () => window.clearTimeout(timer);
   }, [boonFlash]);
 
+  // The enemy's Trail (hunts-entwurf-v1.md): echoes of the finale have none.
+  const encounter = run.encounter;
+  const huntable = !!encounter && !encounter.echo && !isFinaleAct(GAME_DATA, run.actId);
+  const won = snapshot.over && snapshot.winner === "hero";
+  const hunt = huntable && encounter ? huntView(state, encounter.enemyId) : undefined;
+  const after =
+    hunt && encounter && won
+      ? huntView(
+          state,
+          encounter.enemyId,
+          huntKillsFor(
+            {
+              elite: encounter.eliteModifiers.length > 0 && !encounter.boss,
+              champion: encounter.champion === true,
+              boss: encounter.boss,
+            },
+            encounter.hunt === true,
+          ),
+        )
+      : hunt;
+  const trailUp = hunt && after && after.tier > hunt.tier ? after.tier : 0;
+  const skipped = useRef(false);
+  useEffect(() => {
+    if (trailUp && !skipped.current) sceneRef.current?.trail(trailUp);
+  }, [trailUp]);
+
   // When the fight is over, show the banner briefly, then let the sim resolve it.
   const over = snapshot.over;
   useEffect(() => {
@@ -321,6 +349,7 @@ export function BattleView(props: {
   }, [over, game, bossFight, snapshot.winner]);
 
   const skip = () => {
+    skipped.current = true;
     sceneRef.current?.onEvents(fight.finish());
     hudRef.current?.onSnapshot(fight.snapshot(), true);
     setSnapshot(fight.snapshot());
@@ -377,6 +406,7 @@ export function BattleView(props: {
         thiefLeft={over ? null : thiefLeft}
         heroLevel={state.hero.level}
         noLevelMalus={Boolean(state.run?.wildfire)}
+        {...(after ? { hunt: after } : {})}
       />
 
       {result && (
@@ -385,6 +415,11 @@ export function BattleView(props: {
           data-testid="fight-result"
         >
           {result}
+          {trailUp > 0 && (
+            <span className="trail-banner title-font" data-testid="trail-banner">
+              {trailTitle(trailUp)}
+            </span>
+          )}
         </div>
       )}
       {props.paused && !result && (

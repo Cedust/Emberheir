@@ -490,6 +490,44 @@ export class ArenaScene {
     }
   }
 
+  /**
+   * A new Trail on the enemy just beaten (hunts-entwurf-v1.md): glowing paw prints run from the
+   * hero to the fallen enemy, a ring of gold rises where it stood, more sparks for each Trail;
+   * Apex burns red. Visual only; calmer with reduced motion.
+   */
+  trail(tier: number): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const apex = tier >= 4;
+    const color = apex ? [0xff5a2b, 0xff8a1f, 0xffd84a] : [0xffd27a, 0xffb13b, 0xfff2c4];
+    const steps = this.motion ? 6 : 2;
+    for (let i = 0; i < steps; i++) {
+      const x = HERO_X + 80 + ((ENEMY_X - HERO_X - 160) * (i + 1)) / steps;
+      this.wait(i * 0.12, () => {
+        fx.ring(x, GROUND_Y + (i % 2 ? 6 : -6), color[0] ?? 0xffd27a, 4, 18, 0.7, 3);
+      });
+    }
+    this.wait(steps * 0.12, () => {
+      for (let r = 0; r < Math.min(tier, 4); r++) {
+        fx.ring(ENEMY_X, GROUND_Y - 20 - r * 26, color[1] ?? 0xffb13b, 12, 90 + r * 20, 0.9, 5);
+      }
+      fx.burst({
+        x: ENEMY_X,
+        y: GROUND_Y - 30,
+        count: Math.round((18 + tier * 10) * (this.motion ? 1 : 0.4)),
+        color,
+        spreadX: 60,
+        spreadY: 16,
+        angle: [-Math.PI / 2 - 0.4, -Math.PI / 2 + 0.4],
+        speed: [140, 320],
+        life: [1, 1.8],
+        size: [5, 12],
+        stretch: 1.6,
+        wobble: 10,
+      });
+    });
+  }
+
   /** Between fights (Intermission): the hero waits alone in the act's air. */
   hideEnemy(): void {
     if (this.enemy) this.enemy.root.visible = false;

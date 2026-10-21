@@ -1,4 +1,6 @@
 import { ACTS, GAME_DATA, ITEM_CATALOG } from "@emberheir/content";
+import { EnemyPortrait } from "../../ui/EnemyPortrait";
+import { huntView, trailTitle } from "../hunts";
 import {
   type ActData,
   actUnlocked,
@@ -22,6 +24,7 @@ import { Icon } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
+import { TrailMark } from "../../ui/TrailMark";
 import { homeRuneNote, homeUniqueNote } from "../actLoot";
 import { Button } from "../../ui/kit/Button";
 import { Wallet } from "../../ui/kit/Currency";
@@ -198,6 +201,31 @@ function HomeLoot(props: { state: GameState; act: ActData }) {
   );
 }
 
+/** The act's enemies with their Trails (hunts-entwurf-v1.md): who is worth hunting here. */
+function ActHunts(props: { state: GameState; act: ActData }) {
+  const { state, act } = props;
+  if (!act.enemies.length) return null;
+  return (
+    <div className="road-hunts" aria-label="Hunts" data-testid="road-hunts">
+      {act.enemies.map((e) => {
+        const hunt = huntView(state, e.id);
+        return (
+          <span
+            key={e.id}
+            className={`road-hunt trail-${hunt.tier}`}
+            title={`${hunt.tier ? e.name : "???"} · ${trailTitle(hunt.tier)} · ${hunt.kills}${
+              hunt.next !== undefined ? ` / ${hunt.next}` : ""
+            } kills · Hunt Affixes: ${hunt.affixes.join(", ")}`}
+          >
+            <EnemyPortrait enemyId={e.id} size={30} hidden={hunt.tier === 0} />
+            <TrailMark tier={hunt.tier} size={22} className="badge" />
+          </span>
+        );
+      })}
+    </div>
+  );
+}
+
 function HomeRuneChip(props: { act: ActData }) {
   const id = props.act.homeRune ?? "";
   const hover = useNoteHover(homeRuneNote(props.act));
@@ -314,6 +342,7 @@ export function RoadWindow(props: {
                   : "Nobody came back to tell what waits at its end."}
               </span>
               <HomeLoot state={state} act={act} />
+              <ActHunts state={state} act={act} />
             </div>
             {finaleOpen(state, GAME_DATA) && (
               <Button

@@ -49,7 +49,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 12;
+export const SAVE_VERSION = 13;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -134,6 +134,11 @@ export interface GameData {
   readonly ashbornValues?: readonly AshbornValue[];
   /** Events on the act map (act-karte-entwurf-v1.md); no Event nodes without them. */
   readonly events?: readonly EventDefinition[];
+  /**
+   * Hunts (hunts-entwurf-v1.md): the Signature Affixes (affix ids) per enemy id. A hunted enemy's
+   * item pick holds one of them; no Hunt nodes without them.
+   */
+  readonly huntSignatures?: Readonly<Record<string, readonly string[]>>;
 }
 
 export interface Wallet {
@@ -207,6 +212,26 @@ export interface Encounter {
   readonly challenge?: boolean;
   /** The Lost Cub of an Event: one card of this fight's item pick is at least Rare. */
   readonly lucky?: boolean;
+  /** The quarry of a Hunt node: it counts twice for its hunt and always offers an item pick. */
+  readonly hunt?: boolean;
+}
+
+/** A win's step on the enemy's hunt bar (hunts-entwurf-v1.md). */
+export interface HuntReward {
+  readonly enemyId: string;
+  /** Kills before and after this win. */
+  readonly from: number;
+  readonly kills: number;
+  /** The tier after this win; `tierUp` when this win filled it. */
+  readonly tier: number;
+  readonly tierUp?: boolean;
+  readonly boss?: boolean;
+  /** The card of the item pick that carries a Signature Affix, and the affix. */
+  readonly card?: number;
+  readonly affix?: string;
+  /** What the new tier paid once. */
+  readonly acorns?: number;
+  readonly emberCoal?: number;
 }
 
 export type ItemPick =
@@ -267,6 +292,8 @@ export interface Rewards {
   /** Ember Shrine: 1 of these Boons (after Stage 5 and 10 and Elites). */
   readonly boonOffer?: readonly BoonPick[];
   readonly boonPick?: number | null;
+  /** The enemy's hunt bar after this win. */
+  readonly hunt?: HuntReward;
 }
 
 export type RunPhase = "intermission" | "fight" | "rewards";
@@ -326,6 +353,7 @@ export const NODE_KINDS = [
   "cache",
   "event",
   "marisha",
+  "hunt",
 ] as const;
 export type NodeKind = (typeof NODE_KINDS)[number];
 
@@ -335,6 +363,10 @@ export interface MapNode {
   readonly kind: NodeKind;
   /** Lanes of the next row this node leads to. */
   readonly next: readonly number[];
+  /** Hunt node: the enemy id it points at. */
+  readonly quarry?: string;
+  /** Fight and Elite nodes: the act enemy waiting there (the Ember Thief may still cut in). */
+  readonly enemy?: string;
 }
 
 /** One map per walk through an act: `rows[stage - 1]`, one node or one per lane. */
@@ -431,6 +463,8 @@ export interface LegacyState {
   readonly wildfire?: number;
   /** Acts whose boss the hero has faced (missing in older saves): until then its name stays hidden. */
   readonly bossesMet?: readonly string[];
+  /** Hunts (hunts-entwurf-v1.md): kills per enemy id, Wardens included (missing = none yet). */
+  readonly hunts?: Readonly<Record<string, number>>;
 }
 
 /** The final boss of the run fell: the Prestige flow (Victory, Seal) waits for its choice. */

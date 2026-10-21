@@ -27,6 +27,7 @@ const affixRoll = z.object({
   affixId: id,
   quality: num,
   kindled: opt(z.literal(true)),
+  hunt: opt(count),
 });
 
 export const itemSchema: z.ZodType<Item> = z.object({
@@ -129,6 +130,7 @@ const encounter = z.object({
   omens: opt(z.array(id)),
   challenge: opt(z.boolean()),
   lucky: opt(z.boolean()),
+  hunt: opt(z.boolean()),
 });
 
 const pickKind = z.enum(["equip", "take"]);
@@ -162,6 +164,20 @@ const rewards = z.object({
   report: opt(fightReport),
   boonOffer: opt(z.array(boonPick)),
   boonPick: opt(count.nullable()),
+  hunt: opt(
+    z.object({
+      enemyId: id,
+      from: count,
+      kills: count,
+      tier: count,
+      tierUp: opt(z.boolean()),
+      boss: opt(z.boolean()),
+      card: opt(count),
+      affix: opt(id),
+      acorns: opt(count),
+      emberCoal: opt(count),
+    }),
+  ),
 });
 
 const bounty = z.object({
@@ -175,6 +191,8 @@ const mapNode = z.object({
   lane: count,
   kind: z.enum(NODE_KINDS),
   next: z.array(count),
+  quarry: opt(id),
+  enemy: opt(id),
 });
 
 const visit = z.object({
@@ -238,6 +256,7 @@ const legacy = z.object({
   finaleWon: opt(z.boolean()),
   wildfire: opt(count),
   bossesMet: opt(z.array(id)),
+  hunts: opt(z.record(z.string(), count)),
 });
 
 export const gameStateSchema: z.ZodType<GameState> = z.object({
