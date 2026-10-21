@@ -128,6 +128,12 @@ export interface ActRunReport {
   /** Runewords and single Runes the hero wears when the act ends. */
   readonly runewords: readonly string[];
   readonly runesWorn: number;
+  /** Uniques the hero wears when the act ends. */
+  readonly uniquesWorn?: number;
+  /** Runes dropped by fights in this act's trips (farm trips into the act before included). */
+  readonly runesDropped?: number;
+  /** ...and how many of them were the act's Home Rune (act-beute-entwurf-v1.md A1). */
+  readonly homeRunes?: number;
   /** Walks past the Warden's Gate instead of the boss (laengere-runs-v1.md). */
   readonly wanders?: number;
   /** Trips through the act before this one to farm levels first (newest act only). */
@@ -137,9 +143,13 @@ export interface ActRunReport {
 }
 
 /** The Runewords and the count of socketed Runes on the hero right now. */
-function wornRunes(state: GameState, data: GameData): { runewords: string[]; runesWorn: number } {
+function wornRunes(
+  state: GameState,
+  data: GameData,
+): { runewords: string[]; runesWorn: number; uniquesWorn: number } {
   const items = Object.values(state.hero.equipment).filter((i) => !!i);
   return {
+    uniquesWorn: items.filter((i) => !!i.uniqueId).length,
     runewords: items.flatMap((i) => {
       const word = activeRuneword(i, data.items);
       return word ? [word.id] : [];
@@ -211,6 +221,14 @@ export function playGenerations(
       let wanders = 0;
       let farmTrips = 0;
       let visits = 0;
+      let runesDropped = 0;
+      let homeRunes = 0;
+      const countRunes = (st: GameState) => {
+        const dropped = st.run?.phase === "rewards" ? (st.run.rewards?.runes ?? []) : [];
+        const home = data.acts.find((a) => a.id === st.run?.actId)?.homeRune;
+        runesDropped += dropped.length;
+        homeRunes += dropped.filter((id) => id === home).length;
+      };
       let cleared = false;
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
         // Farming like a player (laengere-runs-v1.md): below the level of the newest act's first
@@ -239,6 +257,7 @@ export function playGenerations(
             s = applyAction(s, data, { type: "resolveFight" });
             const died = !s.run && s.notice?.kind === "death";
             stageFights.push({ kind: stageKind(encounter), seconds: result.duration, died });
+            countRunes(s);
             if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
           }
           s = applyAction(s, data, { type: "dismissNotice" });
@@ -291,6 +310,7 @@ export function playGenerations(
             if (encounter) deathEnemies.push(encounter.enemyId);
             if (encounter?.boss) bossDeaths++;
           }
+          countRunes(s);
           if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
         }
         cleared = s.pendingPrestige !== null || s.notice?.kind === "actCleared";
@@ -317,6 +337,8 @@ export function playGenerations(
         wanders,
         farmTrips,
         visits,
+        runesDropped,
+        homeRunes,
       });
       if (!cleared) {
         allCleared = false;

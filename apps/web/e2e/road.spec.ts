@@ -165,6 +165,13 @@ test("Eldrin talks in his Road window, and says something new when poked", async
   await expect(bubble).not.toHaveText(first);
   // All acts still fit under him.
   await expect(road.getByRole("radio", { name: /Act 7/ })).toBeInViewport();
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/eldrin-road.png` });
+  if (process.env.SHOTS) {
+    await road.getByTestId("home-rune").hover();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${process.env.SHOTS}/eldrin-road.png` });
+    await road.locator(".road-home-unique").first().hover();
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${process.env.SHOTS}/eldrin-home-unique.png` });
+  }
   expect(errors).toEqual([]);
 });

@@ -15,6 +15,12 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   // The cards lie face down, then turn over one by one.
   await expect(page.getByTestId("hoard-card")).toHaveCount(6, { timeout: 10_000 });
   await expect(page.getByRole("status")).toContainText("Thornsong");
+  // The act's Home Rune shows as such (act-beute-entwurf-v1.md).
+  const drops = page.getByTestId("rune-drops");
+  await expect(drops).toContainText("Moss Rune");
+  await expect(drops.locator(".rune-drop.home")).toContainText("Thorn Rune");
+  await expect(drops.locator(".rune-drop.home")).toContainText("Home Rune");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/home-rune-drop.png` });
 
   const cards = page.getByTestId("hoard-card");
   await cards.nth(0).click();

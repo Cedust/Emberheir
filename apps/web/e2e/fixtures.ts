@@ -197,7 +197,8 @@ export function saveBossHoard(): string {
         ash: 40,
         emberCoal: 4,
         phoenixFeathers: 1,
-        runes: ["moss"],
+        // Thorn is the Rotwood's Home Rune.
+        runes: ["moss", "thorn"],
         levelsGained: 0,
         items,
         picks: 2,

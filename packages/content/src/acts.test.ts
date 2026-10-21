@@ -21,6 +21,21 @@ describe("ACTS", () => {
     expect(GAME_DATA.acts.reduce((n, a) => n + a.stages, 0)).toBe(100);
   });
 
+  it("each act has its own Home Rune, and Home Uniques that exist and drop anywhere", () => {
+    const homes = GAME_DATA.acts.map((a) => a.homeRune);
+    expect(new Set(homes).size).toBe(GAME_DATA.acts.length);
+    for (const act of GAME_DATA.acts) {
+      expect(ITEM_CATALOG.runes.has(act.homeRune ?? ""), `${act.id}: ${act.homeRune}`).toBe(true);
+      for (const id of act.homeUniques ?? []) {
+        const unique = ITEM_CATALOG.uniques.get(id);
+        expect(unique, `${act.id}: ${id}`).toBeDefined();
+        expect(unique?.bossOf, `${act.id}: ${id}`).toBeUndefined();
+      }
+    }
+    // Act 1 drops up to rank 3, so its Home Rune must be one of those.
+    expect(ITEM_CATALOG.runes.get(GAME_DATA.acts[0]?.homeRune ?? "")?.rank).toBeLessThanOrEqual(3);
+  });
+
   it("act loot only favors affixes that exist", () => {
     for (const act of GAME_DATA.acts) {
       for (const id of Object.keys(act.favoredAffixes ?? {})) {

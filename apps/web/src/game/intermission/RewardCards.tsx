@@ -7,7 +7,6 @@ import {
   equipBlockReason,
   getBase,
   itemSlotFor,
-  PROGRESSION,
   SLOT_NAMES,
   takeBlockReason,
   targetSlot,
@@ -19,7 +18,8 @@ import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
-import { runeName, RuneStone } from "../../ui/RuneArt";
+import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
+import { isHighRune } from "../actLoot";
 import { type DropSound, playSound } from "../../ui/sound";
 import { EQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
@@ -28,13 +28,11 @@ import { compareWithEquipped } from "../../ui/itemCompare";
 
 /** The rewards after a won fight: Rune drops, the item cards with their reveal, the worn gear. */
 
-const TOP_RUNE_RANK = Math.max(...[...GAME_DATA.items.runes.values()].map((r) => r.rank));
-
-const isHighRune = (id: string) =>
-  (GAME_DATA.items.runes.get(id)?.rank ?? 0) > TOP_RUNE_RANK - PROGRESSION.highRuneRanks;
-
-/** Runes fall onto the ground with a glowing glyph and a clink before they go to the pouch. */
-export function RuneDrops(props: { runes: readonly string[] }) {
+/**
+ * Runes fall onto the ground with a glowing glyph and a clink before they go to the pouch. The
+ * act's Home Rune gets a burst of sparks in its color and a "Home Rune" tag.
+ */
+export function RuneDrops(props: { runes: readonly string[]; home?: string | undefined }) {
   useEffect(() => {
     const timers = props.runes.map((id, i) =>
       window.setTimeout(
@@ -49,12 +47,19 @@ export function RuneDrops(props: { runes: readonly string[] }) {
       {props.runes.map((id, i) => (
         <span
           key={i}
-          className={`rune-drop${isHighRune(id) ? " high" : ""}`}
-          style={{ animationDelay: `${0.2 + i * 0.25}s` }}
+          className={`rune-drop${isHighRune(id) ? " high" : ""}${id === props.home ? " home" : ""}`}
+          style={
+            {
+              animationDelay: `${0.2 + i * 0.25}s`,
+              "--rune": runeColor(id),
+            } as React.CSSProperties
+          }
         >
           <span className="rune-glyph-glow" aria-hidden />
+          {id === props.home && <span className="rune-home-burst" aria-hidden />}
           <RuneStone runeId={id} size={40} />
           <span className="title-font">{runeName(id)} Rune</span>
+          {id === props.home && <span className="rune-home-tag small">Home Rune</span>}
         </span>
       ))}
     </div>

@@ -24,6 +24,8 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   await camp.getByRole("button", { name: "CHOOSE AN OMEN" }).click();
   const trip = page.getByRole("region", { name: "Eldrin, The Road" });
   await expect(trip.getByRole("button", { name: "CHOOSE AN OMEN" })).toBeDisabled();
+  // Each act has its Home Rune (act-beute-entwurf-v1.md): Bark in the Ashen Fields.
+  await expect(trip.getByTestId("home-rune")).toContainText("Bark");
   const omens = trip.getByRole("radiogroup", { name: "Omen" });
   await expect(omens.getByRole("radio")).toHaveCount(2);
   await omens.getByRole("radio").first().click();
@@ -32,6 +34,11 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
   // The newest act has no Omen: go on to the Rotwood.
   await trip.getByRole("radio", { name: /Rotwood/ }).click();
   await expect(trip.getByRole("radiogroup", { name: "Omen" })).toHaveCount(0);
+  await expect(trip.getByTestId("home-rune")).toContainText("Thorn");
+  await trip.getByTestId("home-rune").hover();
+  await expect(
+    page.getByText("In Rotwood, 1 in 5 Runes is Thorn.", { exact: false }),
+  ).toBeVisible();
   await trip.getByRole("button", { name: /SET OUT · ACT 2/i }).click();
   await expect(page.getByRole("region", { name: "Intermission" })).toContainText("Rotwood");
   expect(errors).toEqual([]);

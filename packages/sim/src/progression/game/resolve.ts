@@ -162,6 +162,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       PROGRESSION.wildfire.runeTiersPerTier * tier +
       omen.bonus.runeTiers,
     rng,
+    act.homeRune,
   );
   const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
   const newTrophies = [...new Set(found)].filter((id) => !state.legacy.trophies.includes(id));

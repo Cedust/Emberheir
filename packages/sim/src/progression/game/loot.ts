@@ -71,6 +71,7 @@ export function rollItemChoices(
   buildFactor?: (affix: AffixDefinition) => number,
 ): Item[] {
   const champion = encounter.champion === true;
+  const homeUniques = data.acts.find((a) => a.id === actId)?.homeUniques ?? [];
   const count =
     rank === "boss"
       ? PROGRESSION.bossHoardCards
@@ -126,9 +127,14 @@ export function rollItemChoices(
     const bases = bySlot.get(slot) ?? [];
     if (i === legendaryCard) {
       const uniques = uniquesFor(data.items, encounter.level, bases);
+      // Home Uniques of the act come up more often (act-beute-entwurf-v1.md A2).
       const unique =
         uniques.length > 0 && rng.chance(PROGRESSION.uniqueShare)
-          ? uniques[rng.int(0, uniques.length - 1)]
+          ? pickWeighted(
+              uniques,
+              (u) => (homeUniques.includes(u.id) ? PROGRESSION.homeUniqueWeight : 1),
+              rng,
+            )
           : undefined;
       if (unique) {
         items.push(rollUnique(data.items, unique.id, encounter.level, rng));
@@ -219,12 +225,14 @@ export function rollRuneDrops(
   rank: EnemyRank,
   actTier: number,
   rng: Rng,
+  /** The act's Home Rune (act-beute-entwurf-v1.md A1). */
+  home?: string,
 ): string[] {
   const drops: string[] = [];
   const count = PROGRESSION.runeDrops[rank];
   for (let i = 0; i < Math.ceil(count); i++) {
     if (!rng.chance(Math.min(1, count - i))) continue;
-    const rune = rollRune(data, actTier, rank !== "normal", rng);
+    const rune = rollRune(data, actTier, rank !== "normal", rng, home);
     if (rune) drops.push(rune);
   }
   return drops;
@@ -239,10 +247,17 @@ export function rollRune(
   actTier: number,
   high: boolean,
   rng: Rng,
+  /** The act's Home Rune: this share of the drops is it, if it may drop here at all. */
+  home?: string,
 ): string | undefined {
   const max = maxRuneRank(actTier);
   const topRank = Math.max(...[...data.items.runes.values()].map((r) => r.rank));
   const isHigh = (r: { rank: number }) => r.rank > topRank - PROGRESSION.highRuneRanks;
+  const homeRune = home ? data.items.runes.get(home) : undefined;
+  if (homeRune && homeRune.rank <= max && (high || !isHigh(homeRune))) {
+    const share = isHigh(homeRune) ? PROGRESSION.homeHighRuneShare : PROGRESSION.homeRuneShare;
+    if (rng.chance(share)) return homeRune.id;
+  }
   const pool = [...data.items.runes.values()].filter((r) => r.rank <= max && (high || !isHigh(r)));
   const weight = (r: { rank: number }) =>
     PROGRESSION.runeRankFalloff ** (r.rank - 1) * (isHigh(r) ? PROGRESSION.highRuneFactor : 1);

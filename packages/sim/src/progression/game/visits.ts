@@ -105,6 +105,9 @@ const runeTier = (state: GameState, data: GameData, run: RunState) =>
   state.legacy.prestige +
   (tripOmenEffects(state, data).bonus.runeTiers ?? 0);
 
+/** The act's Home Rune (act-beute-entwurf-v1.md A1). */
+const homeRune = (data: GameData, run: RunState) => getAct(data, run.actId).homeRune;
+
 /** Flask charges the trip may hold: the Flask's capacity minus a brewed Draught. */
 export function tripFlaskCapacity(state: GameState, data: GameData): number {
   return flaskCapacity(state, data) - (state.run?.draught ? DRAUGHT_FLASK_COST : 0);
@@ -135,7 +138,7 @@ export function enterNode(state: GameState, data: GameData, run: RunState): Game
       };
     }
     case "cache": {
-      const rune = rollRune(data, runeTier(next, data, run), true, rng);
+      const rune = rollRune(data, runeTier(next, data, run), true, rng, homeRune(data, run));
       return {
         ...next,
         run: {
@@ -435,7 +438,7 @@ function takeEventOption(
   }
   let runes: string[] = [];
   if (gain.rune !== undefined) {
-    const rune = rollRune(data, runeTier(s, data, r) + gain.rune, true, rng);
+    const rune = rollRune(data, runeTier(s, data, r) + gain.rune, true, rng, homeRune(data, r));
     if (rune) runes = [rune];
     s = {
       ...s,
