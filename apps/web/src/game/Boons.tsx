@@ -138,21 +138,42 @@ export function BoonBar(props: {
   return (
     <div className={`boon-bar ${props.className ?? ""}`} data-testid="boon-bar">
       {active.map((b) => (
-        <span
+        <BoonChip
           key={b.def.id}
-          className="boon-chip"
-          title={`${b.def.name} ${ROMAN[b.rank]} · ${boonText(b.def, b.scale, b.rank)}`}
-          style={{ "--boon": familyOf(b.def.family)?.color ?? "#c9a063" } as React.CSSProperties}
-        >
-          <span
-            className={`boon-sigil small${props.flash?.has(b.def.name) ? " flash" : ""}${fresh.has(b.def.id) && !kept.has(b.def.id) ? " fresh" : ""}`}
-          >
-            <Icon name={SLOT_ICON[b.def.slot]} size={14} color="#fff6e4" />
-          </span>
-          {b.rank > 1 && <i>{ROMAN[b.rank]}</i>}
-        </span>
+          boon={b}
+          flash={props.flash?.has(b.def.name) ?? false}
+          fresh={fresh.has(b.def.id) && !kept.has(b.def.id)}
+        />
       ))}
     </div>
+  );
+}
+
+/** One Boon in the battle HUD: its sigil and rank, the effect in the game tooltip. */
+function BoonChip(props: { boon: ActiveBoon; flash: boolean; fresh: boolean }) {
+  const { boon: b } = props;
+  const family = familyOf(b.def.family);
+  const hover = useNoteHover({
+    name: `${b.def.name} ${ROMAN[b.rank]}`,
+    kind: `${family?.name ?? SLOT_NAME[b.def.slot]} Boon`,
+    explain: boonText(b.def, b.scale, b.rank),
+    ...(props.fresh ? { status: "Stolen in this act" } : {}),
+  });
+  return (
+    <span
+      className="boon-chip"
+      style={{ "--boon": family?.color ?? "#c9a063" } as React.CSSProperties}
+      tabIndex={0}
+      aria-label={`${b.def.name} ${ROMAN[b.rank]}`}
+      {...hover}
+    >
+      <span
+        className={`boon-sigil small${props.flash ? " flash" : ""}${props.fresh ? " fresh" : ""}`}
+      >
+        <Icon name={SLOT_ICON[b.def.slot]} size={14} color="#fff6e4" />
+      </span>
+      {b.rank > 1 && <i>{ROMAN[b.rank]}</i>}
+    </span>
   );
 }
 

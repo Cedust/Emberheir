@@ -2,6 +2,7 @@ import { Potion, draughtIconUrl } from "../../../ui/Potion";
 import { useNoteHover } from "../../../ui/ItemTooltip";
 import {
   COMBAT,
+  describeBonuses,
   levelGapMalus,
   type DraughtDefinition,
   type FighterSnapshot,
@@ -10,6 +11,7 @@ import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { fmt } from "../../../ui/items";
 import { skillIcon, skillTint } from "../skills";
+import { useState } from "react";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, ORB_REACH, hudLayout } from "./layout";
 
 /** Tooltip of an announced Heavy Attack: it hits hard, but never more than its cap. */
@@ -40,6 +42,16 @@ const AILMENT_NAME: Record<string, string> = {
   bleed: "Bleed",
   poison: "Poison",
   corruption: "Corruption",
+};
+
+/** What an ailment does, for its tooltip on the status rail (game-design-document-v2.md 4.2). */
+const AILMENT_EXPLAIN: Record<string, string> = {
+  burn: "Takes Fire damage over time and heals only half as much.",
+  chill: "Attacks and gains Heat slower.",
+  shock: "Takes more damage from every hit. Stacks up to 3 times.",
+  bleed: "Takes Physical damage over time.",
+  poison: "Takes Physical damage over time. Every stack adds more.",
+  corruption: "Takes Void damage over time that grows with every tick.",
 };
 
 function buffIcon(stat: string): IconName {
@@ -78,7 +90,11 @@ type Status = {
   kind: "buff" | "curse" | "stun" | `ailment-${string}`;
   stacks?: number;
   remaining: number;
+  /** One line for the tooltip on the status rail. */
+  explain: string;
 };
+
+const pct = (v: number) => `${Math.round(v * 100)} %`;
 
 function statusesOf(f: FighterSnapshot): Status[] {
   const out: Status[] = [];
@@ -90,6 +106,7 @@ function statusesOf(f: FighterSnapshot): Status[] {
       name: "Stunned",
       kind: "stun",
       remaining: f.stunned,
+      explain: "Cannot act. The swing pauses and goes on afterwards.",
     });
   for (const a of f.ailments)
     out.push({
@@ -100,6 +117,7 @@ function statusesOf(f: FighterSnapshot): Status[] {
       kind: `ailment-${a.type}`,
       ...(a.stacks && a.stacks > 1 ? { stacks: a.stacks } : {}),
       remaining: a.remaining,
+      explain: AILMENT_EXPLAIN[a.type] ?? "",
     });
   for (const c of f.curses)
     out.push({
@@ -107,7 +125,11 @@ function statusesOf(f: FighterSnapshot): Status[] {
       icon: c.armor ? "hammer" : "curse",
       name: c.name,
       kind: "curse",
+      ...(c.stacks && c.stacks > 1 ? { stacks: c.stacks } : {}),
       remaining: c.remaining,
+      explain: c.armor
+        ? `${pct(c.armor)} of Armor no longer counts.`
+        : `Takes ${pct(c.dotDamageTaken)} more damage over time.`,
     });
   for (const b of f.buffs)
     out.push({
@@ -117,6 +139,7 @@ function statusesOf(f: FighterSnapshot): Status[] {
       kind: "buff",
       ...(b.stacks > 1 ? { stacks: b.stacks } : {}),
       remaining: b.remaining,
+      explain: describeBonuses({ [b.stat]: b.amount * b.stacks }).join(", "),
     });
   return out;
 }
@@ -147,6 +170,73 @@ export function StatusIcons(props: {
           </i>
         </span>
       ))}
+    </div>
+  );
+}
+
+/** One timed status on the hero's rail: painted socket, a dark sweep for the time used up. */
+function RailStatus(props: { status: Status }) {
+  const { status: s } = props;
+  // The snapshot only tells the time left: what it was when the status (re)started is its length.
+  const [total, setTotal] = useState(s.remaining);
+  const [last, setLast] = useState(s.remaining);
+  if (s.remaining !== last) {
+    setLast(s.remaining);
+    if (s.remaining > last + 0.05) setTotal(s.remaining);
+  }
+  const bad = s.kind !== "buff";
+  const hover = useNoteHover({
+    name: s.stacks ? `${s.name} ×${s.stacks}` : s.name,
+    kind: bad ? "Debuff" : "Buff",
+    explain: s.explain,
+  });
+  const used = total > 0 ? Math.min(1, Math.max(0, 1 - s.remaining / total)) : 0;
+  return (
+    <span
+      className={`rail-status ${s.kind}${bad ? " bad" : ""}${s.remaining < 1.5 ? " fading" : ""}`}
+      style={{ "--used": `${Math.round(used * 360)}deg` } as React.CSSProperties}
+      tabIndex={0}
+      aria-label={s.name}
+      data-testid="rail-status"
+      {...hover}
+    >
+      {s.painted ? (
+        <GameIcon id={s.painted} size={26} />
+      ) : (
+        <Icon name={s.icon} size={17} color="#fff6e4" />
+      )}
+      <span className="rail-sweep" aria-hidden="true" />
+      {s.stacks && <b className="mono">{s.stacks}</b>}
+      <i className="mono">{s.remaining < 10 ? s.remaining.toFixed(1) : Math.ceil(s.remaining)}</i>
+    </span>
+  );
+}
+
+/**
+ * The hero's status rail (Timo, Diablo-like): one straight line over the skill bar. Boons and
+ * buffs line up from the left, debuffs (ailments, curses, stun) from the right.
+ */
+export function StatusRail(props: {
+  fighter: FighterSnapshot;
+  boons: React.ReactNode;
+  width: number;
+}) {
+  const list = statusesOf(props.fighter);
+  const good = list.filter((s) => s.kind === "buff");
+  const bad = list.filter((s) => s.kind !== "buff");
+  return (
+    <div className="status-rail" style={{ width: props.width }} data-testid="status-rail">
+      <div className="rail-side good">
+        {props.boons}
+        {good.map((s) => (
+          <RailStatus key={s.key} status={s} />
+        ))}
+      </div>
+      <div className="rail-side bad">
+        {bad.map((s) => (
+          <RailStatus key={s.key} status={s} />
+        ))}
+      </div>
     </div>
   );
 }
@@ -288,7 +378,6 @@ export function HeroBar(props: HeroBarProps) {
   const skillNext = nextIsSkill(hero);
   const lifePct = Math.round((hero.life / hero.maxLife) * 100);
   const sideLeft = L.lifeOrb.x + ORB_REACH;
-  const sideRight = props.stageW - (L.heatOrb.x - ORB_REACH);
   const nextSlot = hero.rotation[hero.nextSlot];
   return (
     <div className="hud-hero" style={{ "--bar-h": `${BAR_H}px` } as React.CSSProperties}>
@@ -321,11 +410,6 @@ export function HeroBar(props: HeroBarProps) {
         {nextSlot && <span className="orb-max mono">/ {nextSlot.threshold}</span>}
       </div>
 
-      <StatusIcons fighter={hero} className="hero" style={{ left: sideLeft }} />
-      <div className="hud-boons-wrap" style={{ right: sideRight }}>
-        {props.boons}
-      </div>
-
       <div className="hud-flasks" style={{ left: sideLeft }} title="Ember Flask: between stages">
         {Array.from({ length: props.flaskMax }, (_, i) => (
           <Potion key={i} full={i < props.flaskCharges} className="hud-flask" />
@@ -337,7 +421,7 @@ export function HeroBar(props: HeroBarProps) {
       </div>
 
       <div className="hud-center">
-        <Rhythm fighter={hero} width={420} attackIcon={props.weaponIcon} />
+        <StatusRail fighter={hero} boons={props.boons} width={L.plateHalf * 2} />
         <div className="skillbar" aria-label="Battle Plan">
           <div className="skill-slot-wrap" title={`${hero.defaultAttack} · Default Attack`}>
             <div

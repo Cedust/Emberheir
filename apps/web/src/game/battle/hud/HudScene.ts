@@ -466,7 +466,7 @@ export class HudScene {
     const g = new Graphics();
     // The raised center plate behind the skill bar (classic ARPG silhouette).
     const lip = 22;
-    const half = Math.min(400, (x1 - x0) / 2 - 150);
+    const half = L.plateHalf;
     g.poly([
       x0,
       top,
