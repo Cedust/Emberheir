@@ -21,6 +21,7 @@ export {
   type BountyDone,
   type BountyReward,
   type Rewards,
+  type HuntReward,
   type RunPhase,
   type RunState,
   type Notice,

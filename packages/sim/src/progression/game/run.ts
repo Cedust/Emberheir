@@ -234,7 +234,11 @@ export function startStage(state: GameState, data: GameData): GameState {
       return { ...next, legacy, run: { ...run, phase: "fight", encounter } };
     }
   } else {
-    const enemy = act.enemies[rng.int(0, act.enemies.length - 1)];
+    const rolled = act.enemies[rng.int(0, act.enemies.length - 1)];
+    // A Hunt node: its quarry, plain, no thief and no Elite (hunts-entwurf-v1.md).
+    const quarry =
+      node?.kind === "hunt" ? act.enemies.find((e) => e.id === node.quarry) : undefined;
+    const enemy = quarry ?? rolled;
     if (!enemy) return fail(`Act ${act.id} has no enemies`);
     const mods: string[] = [];
     // An open "catch the Ember Thief" bounty: the Scout saw it nearby.
@@ -243,17 +247,19 @@ export function startStage(state: GameState, data: GameData): GameState {
     // The act map: a sure Elite, or the thief's trail (act-karte-entwurf-v1.md).
     const trail = node?.kind === "thief" && data.thief !== undefined;
     // The Ashen Challenger of an Event waits on the next fight off the Waymarks.
-    const challenge = run.challenge === true && !wall?.gate && !trail;
+    const challenge = run.challenge === true && !wall?.gate && !trail && !quarry;
     // A Gatekeeper holds the Waymark: no thief there.
     const thief =
       trail ||
       (!wall?.gate &&
+        !quarry &&
         data.thief !== undefined &&
         act.number >= PROGRESSION.thiefFromAct &&
         rng.chance(PROGRESSION.thiefChance * (hunted ? PROGRESSION.bounty.thiefBoost : 1)));
     let champion = false;
     if (
       !thief &&
+      !quarry &&
       (wall?.gate ||
         node?.kind === "elite" ||
         challenge ||
@@ -291,6 +297,7 @@ export function startStage(state: GameState, data: GameData): GameState {
       seed: rng.int(0, 0x7fffffff),
       ...(thief ? { thief: true } : {}),
       ...(challenge && mods.length ? { challenge: true } : {}),
+      ...(quarry ? { hunt: true } : {}),
     };
   }
   if (run.lucky) encounter = { ...encounter, lucky: true };

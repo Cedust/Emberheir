@@ -86,7 +86,7 @@ export function brewDraught(state: GameState, data: GameData, act: ActData | und
 /**
  * The act map (act-karte-entwurf-v1.md): the autopilot plans the road to the next Waymark like a
  * player, by what the build needs. Hurt, it heads for a Hearth and avoids Elites; healthy, it
- * likes Elites, Caches and Events for the loot, and Shrines while they burn.
+ * likes Elites, Caches, Hunts and Events for the loot, and Shrines while they burn.
  */
 function nodeValue(kind: MapNode["kind"], life: number): number {
   switch (kind) {
@@ -99,6 +99,9 @@ function nodeValue(kind: MapNode["kind"], life: number): number {
     case "shrine":
       return 3;
     case "cache":
+      return 2;
+    // A Hunt node: a plain fight with a sure item pick.
+    case "hunt":
       return 2;
     case "event":
       return 1.5;

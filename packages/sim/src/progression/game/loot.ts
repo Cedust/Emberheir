@@ -17,7 +17,8 @@ import {
 import { Rng } from "../../rng";
 import { PROGRESSION, type LootGate } from "../constants";
 import { type EnemyRank } from "../leveling";
-import { fail, type ActData, type Encounter, type GameData } from "./state";
+import { actHuntStages } from "../hunts";
+import { fail, type ActData, type Encounter, type GameData, type GameState } from "./state";
 
 /** Loot rolls: the item pick, act affix weights and Rune drops. */
 
@@ -69,6 +70,8 @@ export function rollItemChoices(
   legendaryBoost = 1,
   /** The boss's build card (neuausrichtung-v1.md 6.3): the first card leans to these affixes. */
   buildFactor?: (affix: AffixDefinition) => number,
+  /** Hunts: the first card that can carry it gets a Signature Affix; a hunted Warden's trophy chance. */
+  hunt: HuntLoot = {},
 ): Item[] {
   const champion = encounter.champion === true;
   const homeUniques = data.acts.find((a) => a.id === actId)?.homeUniques ?? [];
@@ -95,6 +98,7 @@ export function rollItemChoices(
   }
   const slots = [...bySlot.keys()];
   const items: Item[] = [];
+  let signed = false;
   // Bosses (sometimes Elites) may turn one card Legendary, or even Unique.
   const legendaryChance = champion
     ? Math.max(PROGRESSION.champion.legendary, gate.legendary[rank])
@@ -108,7 +112,7 @@ export function rollItemChoices(
       ? bossTrophies(data.items, actId).filter((u) => u.minItemLevel <= encounter.level)
       : [];
   const trophy =
-    trophies.length && rng.chance(PROGRESSION.bossTrophyChance)
+    trophies.length && rng.chance(hunt.trophyChance ?? PROGRESSION.bossTrophyChance)
       ? trophies[rng.int(0, trophies.length - 1)]
       : undefined;
   const trophyCard = trophy ? rng.int(0, count - 1) : -1;
@@ -153,20 +157,55 @@ export function rollItemChoices(
       buildFactor && i === 0
         ? (affix: AffixDefinition) => base(affix) * buildFactor(affix)
         : affixFactor;
-    items.push(
-      rollItem(
-        data.items,
-        {
-          baseId,
-          itemLevel: encounter.level,
-          rarity,
-          ...(factor ? { affixFactor: factor } : {}),
-        },
-        rng,
-      ),
+    const signature = !signed && hunt.signature ? hunt.signature : undefined;
+    const item = rollItem(
+      data.items,
+      {
+        baseId,
+        itemLevel: encounter.level,
+        rarity,
+        ...(factor ? { affixFactor: factor } : {}),
+        ...(signature ? { signature } : {}),
+        ...(hunt.stages !== undefined ? { stages: hunt.stages } : {}),
+      },
+      rng,
     );
+    if (signature && item.affixes.some((a) => signature.affixIds.includes(a.affixId))) {
+      signed = true;
+    }
+    items.push(item);
   }
   return items;
+}
+
+/** Affix stages of loot from the road (no enemy dropped it): the act's least hunted enemy. */
+export function roadStages(state: GameState, data: GameData, act: ActData): number {
+  return data.huntSignatures ? actHuntStages(data.acts, act, state.legacy.hunts ?? {}) : 3;
+}
+
+/** What a hunt adds to an item pick (hunts-entwurf-v1.md). */
+export interface HuntLoot {
+  readonly signature?: {
+    readonly affixIds: readonly string[];
+    readonly best?: boolean;
+    readonly greater?: readonly number[];
+  };
+  /** Affix stages (of 3) the cards may roll in. */
+  readonly stages?: number;
+  readonly trophyChance?: number;
+}
+
+/** The card of a pick that carries one of the Signature Affixes, and which affix. */
+export function signatureCard(
+  items: readonly Item[],
+  affixIds: readonly string[],
+): { readonly card: number; readonly affix: string } | undefined {
+  for (const [card, item] of items.entries()) {
+    if (item.uniqueId) continue;
+    const roll = item.affixes.find((a) => affixIds.includes(a.affixId));
+    if (roll) return { card, affix: roll.affixId };
+  }
+  return undefined;
 }
 
 /** Adds Runes to the pouch. */

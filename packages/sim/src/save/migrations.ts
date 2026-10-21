@@ -30,6 +30,8 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Act map (act-karte-entwurf-v1.md): the forks' routes are gone. A trip under way walks on
   // without a map (every stage a fight) until the next set-out.
   11: { state: dropRoutes },
+  // Hunts (hunts-entwurf-v1.md): kills per enemy (`legacy.hunts`) and the Hunt node, optional.
+  12: {},
 };
 
 function dropRoutes(save: RawSave): RawSave {

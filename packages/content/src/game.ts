@@ -4,6 +4,7 @@ import { STAGES_PER_ACT } from "./acts";
 import { BOUNTIES } from "./bounties";
 import { DRAUGHTS } from "./draughts";
 import { EVENTS } from "./events";
+import { HUNT_SIGNATURES } from "./hunts";
 import { OMENS } from "./omens";
 import { ASHBORN_VALUES } from "./ashborn";
 import { BOSS_ABILITIES, ELITE_MODIFIERS } from "./elites";
@@ -180,4 +181,5 @@ export const GAME_DATA: GameData = {
   thief: EMBER_THIEF,
   finale: LAST_EMBER,
   boonFamilies: BOON_FAMILIES,
+  huntSignatures: HUNT_SIGNATURES,
 };

@@ -21,7 +21,7 @@ import { getBounty } from "./bounty";
 import { flaskCapacity } from "./flask";
 import { requireRun } from "./guards";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
-import { actAffixFactor, addRunes, rollItemChoices, rollRune } from "./loot";
+import { actAffixFactor, addRunes, roadStages, rollItemChoices, rollRune } from "./loot";
 import { tripOmenEffects } from "./omens";
 import {
   type ActData,
@@ -59,7 +59,18 @@ export function mapOptions(state: GameState, data: GameData, run: RunState): Map
       bounty?.status === "open" &&
       getBounty(data, bounty.id).goal.kind === "thief",
     events: (data.events?.length ?? 0) > 0,
+    ...huntOptions(state, data, run),
   };
+}
+
+/** The act's enemies that can be hunted, for the Hunt nodes (not in the Wildfire). */
+function huntOptions(state: GameState, data: GameData, run: RunState): Pick<MapOptions, "hunts"> {
+  const signatures = data.huntSignatures;
+  if (!signatures || run.wildfire) return {};
+  const enemyIds = getAct(data, run.actId)
+    .enemies.map((e) => e.id)
+    .filter((id) => signatures[id]?.length);
+  return enemyIds.length ? { hunts: { enemyIds, kills: state.legacy.hunts ?? {} } } : {};
 }
 
 /** A Shrine's offer of three Boons. */
@@ -352,6 +363,7 @@ export function visitNode(state: GameState, data: GameData, choice: number): Gam
         slot,
         rng,
         stageMonsterLevel(data, act, act.stages, state.legacy.prestige),
+        roadStages(state, data, act),
       );
       const trophy = item.uniqueId && !next.legacy.trophies.includes(item.uniqueId);
       return {
@@ -389,6 +401,9 @@ function withItemPick(state: GameState, data: GameData, run: RunState): GameStat
     state.legacy.prestige,
     rng,
     actAffixFactor(act, () => 1),
+    1,
+    undefined,
+    { stages: roadStages(state, data, act) },
   );
   const rest = runWithout(run, "lucky");
   return {

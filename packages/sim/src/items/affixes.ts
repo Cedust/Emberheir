@@ -71,9 +71,15 @@ export function unlockedStages(itemLevel: number): number {
  * Rolls an affix quality (0..1): picks one of the unlocked stages, then a spot inside it.
  * Magic items roll several times and keep the best.
  */
-export function rollQuality(itemLevel: number, rarity: Rarity, rng: Rng): number {
+export function rollQuality(
+  itemLevel: number,
+  rarity: Rarity,
+  rng: Rng,
+  /** Hunts: at most this many stages, whatever the Item Level unlocks (`Item.stages`). */
+  cap: number = ITEMS.stageUnlockPositions.length,
+): number {
   const stages = ITEMS.stageUnlockPositions.length;
-  const unlocked = unlockedStages(itemLevel);
+  const unlocked = Math.max(1, Math.min(cap, unlockedStages(itemLevel)));
   const rolls = rarity === "magic" ? ITEMS.magicQualityRolls : 1;
   let best = 0;
   for (let i = 0; i < rolls; i++) {
@@ -81,6 +87,16 @@ export function rollQuality(itemLevel: number, rarity: Rarity, rng: Rng): number
     best = Math.max(best, (stage + rng.next()) / stages);
   }
   return best;
+}
+
+/** A quality in the best stage the Item Level unlocks (a mastered hunt's Signature Affix). */
+export function rollBestQuality(
+  itemLevel: number,
+  rng: Rng,
+  cap: number = ITEMS.stageUnlockPositions.length,
+): number {
+  const stages = ITEMS.stageUnlockPositions.length;
+  return (Math.max(1, Math.min(cap, unlockedStages(itemLevel))) - 1 + rng.next()) / stages;
 }
 
 /** Growth factor of a per-tier scaled value. */
