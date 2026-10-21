@@ -166,24 +166,31 @@ describe("Class Traits", () => {
     expect(payoffs(fight.events, "fury").length).toBeGreaterThan(0);
   });
 
-  it("Hunter's Mark: clean Default Attacks mark the enemy, the next Crit spends the Marks", () => {
-    const ashstrider = setup({
-      rules: { huntersMark: { perStack: 0.1, maxStacks: 10 } },
-      bonuses: NO_CRIT,
+  it("Hunter's Mark: every clean Default Attack marks (Crit or not), a skill's Crit spends up to 5", () => {
+    const strike = { ...TEST_SKILL, heatCost: 70 };
+    const base = {
+      bonuses: { critChance: 1 },
       weapon: { ...TEST_WEAPON, damage: { min: 100, max: 100 }, precision: 1 },
-      // Every 4th Default Attack crits, the others never do.
-      weaponRules: { everyNthCrit: 4 },
-    });
-    const fight = play(ashstrider, dummy(), 10.05);
-    const hits = ofType(fight.events, "hit").filter((h) => h.side === "hero");
-    const plain = hits[0]?.damage ?? 0;
-    const crits = hits.filter((h) => h.crit);
-    expect(crits.length).toBeGreaterThan(1);
-    // Three clean hits before every Crit: 3 Marks, +30 % on top of the Crit.
-    for (const c of crits) {
-      expect(c.damage).toBe(Math.round(plain * COMBAT.critMultiplier * 1.3));
-    }
-    expect(payoffs(fight.events, "huntersMark").length).toBe(crits.length);
+      rotation: [{ skill: strike }],
+    };
+    const marked = play(
+      setup({ ...base, rules: { huntersMark: { perStack: 0.1, maxStacks: 5 } } }),
+      dummy(),
+      20.05,
+    );
+    const plain = play(setup(base), dummy(), 20.05);
+    const skillHit = (f: Fight) =>
+      ofType(f.events, "hit").filter((h) => h.side === "hero" && h.source === strike.name);
+    const das = ofType(marked.events, "hit").filter((h) => h.side === "hero" && h.crit);
+    expect(das.length).toBeGreaterThan(8);
+    const plainHit = skillHit(plain)[0]?.damage ?? 0;
+    // Seven critting Default Attacks before every cast, capped at 5 Marks: +50 % on the skill.
+    for (const h of skillHit(marked)) expect(h.damage).toBe(Math.round(plainHit * 1.5));
+    // Default Attacks keep their damage: their Crits never spend the Marks.
+    const da = (f: Fight) =>
+      ofType(f.events, "hit").filter((h) => h.side === "hero" && h.source !== strike.name);
+    expect(da(marked).map((h) => h.damage)).toEqual(da(plain).map((h) => h.damage));
+    expect(payoffs(marked.events, "huntersMark").length).toBe(skillHit(marked).length);
   });
 
   it("Overcharge: every third skill sets off a Nova of the weapon's element with its ailment", () => {

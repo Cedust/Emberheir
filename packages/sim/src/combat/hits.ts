@@ -389,7 +389,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         ? { parry: defender.setup.weaponRules.parry }
         : {}),
       cleanMore: cleanMore(attacker, defender, h, rolls),
-      critMore: huntersMarkBonus(attacker),
+      critMore: h.fromSkill ? huntersMarkBonus(attacker) : 0,
       ...conversionOf(attacker, h.type),
       ...(h.critOverride !== undefined ? { critOverride: h.critOverride } : {}),
     },
@@ -592,8 +592,8 @@ function gainFury(f: Fighter): void {
 }
 
 /**
- * Hunter's Mark (Ashstrider): a Crit spends the Marks (its bonus was in the hit), a clean Default
- * Attack that does not crit adds one.
+ * Hunter's Mark (Ashstrider, phase 5): every clean Default Attack adds a Mark, Crit or not; the
+ * next Crit of a skill or the Innate spends them (its bonus was in the hit).
  */
 function huntersMark(
   core: FightCore,
@@ -604,7 +604,7 @@ function huntersMark(
 ): void {
   const mark = f.setup.rules?.huntersMark;
   if (!mark) return;
-  if (crit) {
+  if (crit && h.fromSkill) {
     if (f.marks > 0) payoff(core, f, "huntersMark");
     f.marks = 0;
   } else if (!glancing && h.source === f.setup.weapon.defaultAttack && f.marks < mark.maxStacks) {

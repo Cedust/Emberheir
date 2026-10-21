@@ -25,8 +25,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Fury",
       description:
-        "Every Default Attack you land and every hit you take gives 1 Fury (up to 10). Your Innate spends all of it and deals 25 % more damage per Fury.",
-      rules: { fury: { perStack: 0.25, maxStacks: 10 } },
+        "Every Default Attack you land and every hit you take gives 1 Fury (up to 5). Your Innate spends all of it and deals 25 % more damage per Fury.",
+      rules: { fury: { perStack: 0.25, maxStacks: 5 } },
     },
     lineage: { name: "Iron Lineage", stat: "Life", percent: 5, lifeMultiplier: 1.05 },
     branches: ["vanquisher", "berserker", "ravager"],
@@ -52,8 +52,8 @@ export const CLASSES: readonly HeroClass[] = [
     trait: {
       name: "Hunter's Mark",
       description:
-        "Every clean Default Attack that does not crit marks the enemy (up to 10). Your next Crit spends all Marks and deals 15 % more damage per Mark.",
-      rules: { huntersMark: { perStack: 0.15, maxStacks: 10 } },
+        "Every clean Default Attack marks the enemy (up to 5). The next Crit of a skill spends all Marks and deals 15 % more damage per Mark.",
+      rules: { huntersMark: { perStack: 0.15, maxStacks: 5 } },
     },
     lineage: {
       name: "Keen Lineage",
