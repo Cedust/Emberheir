@@ -37,10 +37,14 @@ Endgame **Wildfire I–X**.
 
 | Klasse | Hauptattribut | Waffen (eine wählen) | Fokus | Class Trait | Masteries (Burst · Tempo · Ailment) |
 |---|---|---|---|---|---|
-| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis 10); das Innate gibt alle aus, +25 % more pro Fury (Schritt 4, 19.10.2026: vorher +2 % pro Treffer auf alles; die alten +20 % stecken jetzt im Waffenschaden). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Sword 13–20 bei 0,9/s (Speed 4, Power 2), Axe 14–25 bei 0,75/s (3/3), Mace 17–25 bei 0,65/s (2/4; 21.10.2026 runde Speed 65 wie der Staff, vorher 18–27 bei 0,6/s). Speed 100 = 1 Attack pro Sekunde (Timo 21.10.2026, vorher 0,8/s; die Pips sind feste Werte pro Waffe in `WEAPON_PIPS`, Speed + Power immer 6): Dagger 110, Wand 100, Sword 90, Bow 80, Axe 75, Staff/Mace 65, Crossbow 50 | Vanquisher · Berserker · Ravager |
-| **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: jede saubere Default Attack ohne Crit markiert den Gegner (bis 10 Marken); dein nächster Crit gibt alle aus, +15 % more pro Marke (Schritt 5, 20.10.2026: vorher +10 % Precision gegen einen Gegner mit deinem Ailment, ≈ +5 %). Eigene Speed und Power bei etwa gleichem Schaden pro Sekunde (Timo 20.10.2026): Bow 15–24 bei 0,8/s (Speed 3, Power 3), Crossbow 21–32 bei 0,5/s (1/5), Dagger 11–17 bei 1,1/s (5/1) | Deadeye · Skirmisher · Trickster |
-| **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (125 % Weapon Damage, setzt sicher ihr Ailment; Schritt 6: vorher 150 %, der Waffentreffer ist jetzt höher). Eigene Speed und Power bei gleichem Schaden pro Sekunde (Timo 20.10.2026): Wand 11–17 bei 1,0/s (Speed 4, Power 2; 21.10.2026 runde Speed 100, vorher 12–19 bei 0,9/s), Staff 15–25 bei 0,65/s (2/4); beide rund 40 % mehr als vorher, die Caster-Default-Attack war die schwächste im Spiel | Archmage · Spellweaver · Warlock |
+| **Cinderguard** | Strength | Sword, Axe, Mace | starke Angriffe | Fury: jede Default Attack, die trifft, und jeder eingesteckte Treffer gibt 1 Fury (bis **5**, Phase 5 21.10.2026: vorher 10, die Leiste wurde nie voll); das Innate gibt alle aus, +25 % more pro Fury. Sword 12–18 bei 0,95/s, Axe 14–22 bei 0,8/s, Mace 18–26 bei 0,65/s (Waffen-Pips siehe unten) | Vanquisher · Berserker · Ravager |
+| **Ashstrider** | Dexterity | Bow, Crossbow, Dagger | Saubere Treffer | Hunter's Mark: **jede** saubere Default Attack markiert den Gegner, auch ein Crit (bis **5** Marken); der nächste Crit eines **Skills oder des Innate** gibt alle aus, +15 % more pro Marke (Phase 5, 21.10.2026: vorher nur DAs ohne Crit, bis 10, ausgegeben vom nächsten Crit; Crit-Builds sammelten am Ende gar keine Marken). Bow 14–22 bei 0,8/s, Crossbow 23–34 bei 0,5/s, Dagger 11–15 bei 1,1/s | Deadeye · Skirmisher · Trickster |
+| **Emberseer** | Intelligence | Wand, Staff | Ailments | Overcharge: jeder Skill gibt eine Ladung, bei 3 eine Nova deines Elements (125 % Weapon Damage, setzt sicher ihr Ailment). Wand 12–18 bei 0,95/s, Staff 18–26 bei 0,65/s | Archmage · Spellweaver · Warlock |
 
+- **Waffen-Pips** (Timo 21.10.2026, Phase 5): Speed + Power = 6 und die Pips legen die Zahlen fest. Speed-Pip 5–1 =
+  Speed **110 · 95 · 80 · 65 · 50** (100 = 1 Angriff/s), Power-Pip 1–5 = Ø-Treffer **13 · 15 · 18 · 22 · 28,5**. Gleiche Pips,
+  gleiche Zahlen: Dagger 5/1, Sword und Wand 4/2, Bow und Axe 3/3, Staff und Mace 2/4, Crossbow 1/5. Die Waffen
+  unterscheiden sich in Damage Range, Heat Form und ihren Extras.
 - Start-Arrays (STR/DEX/AGI/INT/WIS/VIT): Cinderguard 5-1-2-1-2-3, Ashstrider 1-5-3-1-1-3, Emberseer 1-1-1-5-3-3.
   Start-Off-Hands: Round Shield, Quiver (Dagger: Blood Talisman), Ember Focus.
 - Jeder Trait hat in der Arena einen eigenen Moment (Fury-Glut, Mark, Overcharge-Nova).
@@ -269,23 +273,27 @@ Endgame **Wildfire I–X**.
   aktuelles Gear.
 - Jedes Level: **+4 % Base Life, +3 % Weapon Damage** (zusammen ~+7 % Kampfkraft). Sonst nichts.
 - XP-Malus: −4 % pro Level über dem Gegner bis +5, danach −10 % pro Level (min. 10 %).
-- Ein Level kostet **4,5 × (1,6 + 0,07 × (Level − 1))** normale Kills gleichen Levels (×1,5 mit dem Warden's Gate,
-  Längere Runs): Der gerade Weg erreicht das Boss-Level nicht mehr ganz, ein paar Wanderungen durch den Act schon.
+- Ein Level kostet **6,75 × (1,6 + 0,07 × (Level − 1))** normale Kills gleichen Levels (×1,5 mit dem Warden's Gate,
+  noch einmal ×1,5 in Phase 5): Die Wände verlangen ihr Level, und das Level braucht Zeit.
 - **Level-Malus** (Timo 19.10., mild): Ein Gegner über dem Level des Helden trifft +4 % härter pro Level Abstand,
-  höchstens +40 % (nicht im Wildfire, dort endet das Level bei 100). Das Gegner-Level steht dann rot, der Tooltip
+  höchstens +40 %. **Elites, Gatekeeper, Champions und Bosse: +10 % pro Level, höchstens +100 %** (Timo 21.10.,
+  Phase 5: weit unter dem Level gewinnt die Wand das Rennen, nah dran entscheidet das Gear) (nicht im Wildfire, dort endet das Level bei 100). Das Gegner-Level steht dann rot, der Tooltip
   nennt den Aufschlag.
 - Level ist der **sichere, langsame Hebel** gegen eine Wand; Gear der schnelle, glücksabhängige.
 
 ### 3.2 Attribute ✅ (`attribute-v1.md`)
 - Sechs Attribute, Skala **1–10** (Gear hebt bis 12). Bei der Erstellung: Klassen-Array + 6 freie Punkte (max. 7).
   Jede Harvest: +2 Punkte. Zurücksetzen bei Old Nan für Acorns, neu verteilt im Character Sheet.
-- **Breakpoints bei 4, 7 und 10** schalten je einen Perk frei (nur eigene Punkte zählen).
+- **Breakpoints bei 4, 7 und 10** schalten je einen Perk frei (nur eigene Punkte zählen). Ziel (Timo 21.10.2026): ein
+  sichtbarer Moment oder Rhythmus, der zur Rolle des Attributs passt, keine weiteren Prozent-Werte; erstrebenswert,
+  aber kein Build stirbt ohne ihn. Phase 5: Armorbreaker an Mighty Hits statt Crits, Stoneguard wirkt auch ohne Schild,
+  Barrier Burst ersetzt Spellfire.
 
 | Attribut | Wirkung pro Punkt | Perks 4 / 7 / 10 |
 |---|---|---|
-| **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker / Stoneguard / Titan |
+| **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −15 %, Blocks +15 %) / Titan |
 | **Dexterity** | +2 % Evasion; Hauptattribut des Ashstrider: +8 % Damage | Quick Reflexes / Ember Dance / True Shot |
-| **Intelligence** | +8 % Barrier; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / Spellfire |
+| **Intelligence** | +8 % Barrier; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
 | **Agility** | +3 % Attack Speed, +1,5 % Crit Chance | Hawkeye / Opportunist / Double Time |
 | **Wisdom** | +6 % Heat Gain, +5 % Ailment Effect, +4 % Trigger Chance | Inner Fire / Afterglow / Clarity (Payoffs +25 %) |
 | **Vitality** | +6 % Life, +3 % Tenacity | Second Breath / Thick Skin / Undying |
