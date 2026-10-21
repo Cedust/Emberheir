@@ -8,7 +8,6 @@ import {
   keystoneLimit,
   itemSlotFor,
   LINEAGE_STEPS,
-  lineageScale,
   levelCap,
 } from "@emberheir/sim";
 import { useState } from "react";
@@ -21,6 +20,7 @@ import { RuneBoard } from "./RuneViews";
 import { TrophyWall } from "./TrophyWall";
 import { Bestiary } from "./Bestiary";
 import { TriggerCodex } from "./TriggerCodex";
+import { ATTRIBUTE_INFO } from "../AttributeStones";
 
 type LegacyTab = "gear" | "collections" | "lineage";
 
@@ -265,48 +265,51 @@ export function LegacyView(props: {
 }
 
 /**
- * Lineage (spielzeit-v1.md, D): the account's finale wins. The first one opens a bonus for every
- * class, each further one raises them all a step; a character carries its own class's bonus.
+ * Lineage (phase 5, Timo 2026-10-21): every class that wins The Last Ember lights its flame. Each
+ * new Heir, of any class, may take +1 point in the main attribute of every lit class.
  */
 function Lineage(props: { state: GameState }) {
-  const step = props.state.lineage ?? 0;
-  const scale = lineageScale(step);
-  const own = props.state.hero.classId;
+  const won = props.state.lineage ?? [];
+  const own = props.state.hero.lineage ?? {};
   return (
     <section className="panel-card lineage" aria-label="Lineage">
       <div className="section-row">
         <span
           className="title-font section-title"
-          title={`Every win of The Last Ember lights a flame. Every class inherits its bonus. At ${LINEAGE_STEPS} flames, every Heir is called Emberheir.`}
+          title={`Every class that wins The Last Ember lights a flame. Every new Heir may take +1 point in the main attribute of each lit class. With all ${LINEAGE_STEPS} flames, every Heir is called Emberheir.`}
         >
           Lineage
         </span>
-        <span className="lineage-steps" aria-label={`Step ${step} of ${LINEAGE_STEPS}`}>
+        <span className="lineage-steps" aria-label={`${won.length} of ${LINEAGE_STEPS}`}>
           {Array.from({ length: LINEAGE_STEPS }, (_, i) => (
-            <span key={i} className={`lineage-pip${i < step ? " lit" : ""}`}>
+            <span key={i} className={`lineage-pip${i < won.length ? " lit" : ""}`}>
               <Icon name="flame" size={16} />
             </span>
           ))}
         </span>
       </div>
-      {step >= LINEAGE_STEPS && <span className="title-font accent">Emberheir</span>}
+      {won.length >= LINEAGE_STEPS && <span className="title-font accent">Emberheir</span>}
       <div className="lineage-classes">
         {GAME_DATA.classes.map((c) => {
           const l = c.lineage;
           if (!l) return null;
-          const value = Math.round(l.percent * Math.max(1, scale) * 10) / 10;
+          const lit = won.includes(c.id);
+          const attr = ATTRIBUTE_INFO[c.mainAttribute].name;
+          const taken = (own[c.mainAttribute] ?? 0) > 0;
           return (
             <div
               key={c.id}
-              className={`lineage-class${c.id === own ? " own" : ""}${step > 0 ? " open" : ""}`}
-              title={`${l.name}: every new ${c.name} gets +${value} % ${l.stat}${step === 0 ? " once the Lineage opens" : ""}.`}
+              className={`lineage-class${taken ? " own" : ""}${lit ? " open" : ""}`}
+              title={
+                lit
+                  ? `${l.name}: a ${c.name} has won The Last Ember. Every new Heir may take +1 ${attr}.`
+                  : `${l.name}: win The Last Ember with a ${c.name}, and every new Heir may take +1 ${attr}.`
+              }
             >
               <span className="eyebrow">{c.name.toUpperCase()}</span>
               <span className="title-font">{l.name}</span>
-              <span className="mono">
-                +{value} % {l.stat}
-              </span>
-              {c.id === own && <span className="sub small accent">This Heir</span>}
+              <span className="mono">+1 {attr}</span>
+              {taken && <span className="sub small accent">This Heir</span>}
             </div>
           );
         })}

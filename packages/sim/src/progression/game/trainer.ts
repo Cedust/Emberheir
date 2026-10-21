@@ -1,6 +1,6 @@
 import { COMBAT } from "../../combat/constants";
 import { ATTRIBUTES, type Attribute, type Attributes, type SlotModifier } from "../../combat/types";
-import { ATTRIBUTE_RULES, attributeProblem, sumAttributes } from "../attributes";
+import { ATTRIBUTE_RULES, attributeFloor, attributeProblem, sumAttributes } from "../attributes";
 import {
   battlePlanUnlocks,
   CAPSTONES,
@@ -381,8 +381,8 @@ export function respecAttributes(
   requireTrainer(state);
   const price = attributeRespecAcorns(state.legacy.prestige);
   if (state.wallet.acorns < price) fail("Not enough Acorns");
-  const floor = heroClassOf(state, data).startingAttributes;
   const { hero } = state;
+  const floor = attributeFloor(heroClassOf(state, data).startingAttributes, hero.lineage);
   const points =
     sumAttributes(hero.attributes) - sumAttributes(floor) + hero.unspentAttributePoints;
   const problem = attributeProblem(attributes, { floor, current: floor, points });

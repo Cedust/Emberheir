@@ -21,7 +21,7 @@ import {
 } from "../battle-plan";
 import { ashbornEffects } from "../ashborn";
 import { activeBoons, boonEffects } from "../boons";
-import { classTitle, getClass, LINEAGE_STEPS, lineageEffect, type HeroClass } from "../classes";
+import { classTitle, getClass, LINEAGE_STEPS, type HeroClass } from "../classes";
 import { buildHeroSetup } from "../hero";
 import { crucibleEffects } from "./crucible";
 import { tripOmenEffects } from "./omens";
@@ -255,11 +255,11 @@ export function heroClassOf(state: GameState, data: GameData): HeroClass {
 
 /**
  * The character's title: class name, then the main Prestige branch decides (klassen-v2.md). A
- * full Lineage (five finale wins on the account) puts "Emberheir" in front.
+ * full Lineage (every class has won the finale on the account) puts "Emberheir" in front.
  */
 export function heroTitle(state: GameState, data: GameData): string {
   const title = classTitle(heroClassOf(state, data), state.legacy.branches, data.branchEpithets);
-  return (state.lineage ?? 0) >= LINEAGE_STEPS ? `Emberheir ${title}` : title;
+  return (state.lineage?.length ?? 0) >= LINEAGE_STEPS ? `Emberheir ${title}` : title;
 }
 
 /** The hero's fight setup from the current state. */
@@ -271,7 +271,6 @@ export function heroSetup(
   const boons = boonEffects(heroBoons(state, data));
   const heroClass = heroClassOf(state, data);
   const trait = heroClass.trait;
-  const lineage = lineageEffect(heroClass.lineage, state.lineage ?? 0);
   const mastery = heroWeapon(state, data);
   const draught = activeDraught(state, data);
   const sockets = webRuneEffects(hero, data);
@@ -296,7 +295,6 @@ export function heroSetup(
           treeBonuses(data.skillTree, hero.learned, weapon.range),
           boons.bonuses,
           trait.bonuses,
-          lineage.bonuses,
           mastery.bonuses,
           draught?.bonuses,
           sockets.bonuses,
@@ -315,7 +313,6 @@ export function heroSetup(
         keystoneRules(data.skillTree, hero.learned),
         boons.rules,
         trait.rules,
-        lineage.rules,
         mastery.rules,
         draught?.rules,
         sockets.rules,

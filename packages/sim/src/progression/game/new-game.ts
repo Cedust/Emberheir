@@ -1,9 +1,11 @@
-import { ATTRIBUTES } from "../../combat/types";
+import { ATTRIBUTES, type Attribute } from "../../combat/types";
 import { rollItem } from "../../items/generate";
 import { Rng } from "../../rng";
 import {
   addAttributes,
+  attributeFloor,
   ATTRIBUTE_RULES,
+  lineagePoints,
   attributeProblem,
   sumAttributes,
   type AttributePoints,
@@ -29,6 +31,11 @@ export interface NewGameOptions {
    * out, they wait as unspent points.
    */
   readonly attributes?: AttributePoints;
+  /**
+   * Lineage (phase 5): the main attributes of the classes that won the finale on this account
+   * and that the player kept switched on. +1 each, on top of the Class Array.
+   */
+  readonly lineage?: readonly Attribute[];
 }
 
 export function newGame(data: GameData, options: NewGameOptions): GameState {
@@ -44,7 +51,8 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
   const offHand = offHandId
     ? rollItem(data.items, { baseId: offHandId, itemLevel: 1, rarity: "normal" }, rng)
     : undefined;
-  const floor = heroClass.startingAttributes;
+  const lineage = options.lineage?.length ? lineagePoints(options.lineage) : undefined;
+  const floor = attributeFloor(heroClass.startingAttributes, lineage);
   const free = options.attributes ?? {};
   if (ATTRIBUTES.some((k) => (free[k] ?? 0) < 0)) fail("Points must be positive");
   const attributes = addAttributes(floor, free);
@@ -52,8 +60,14 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
     floor,
     current: floor,
     points: ATTRIBUTE_RULES.creationPoints,
-    max: ATTRIBUTE_RULES.creationMax,
+    max: ATTRIBUTE_RULES.creationMax + (lineage ? 1 : 0),
   });
+  if (
+    lineage &&
+    ATTRIBUTES.some((k) => attributes[k] > ATTRIBUTE_RULES.creationMax + (lineage[k] ?? 0))
+  ) {
+    fail(`At most ${ATTRIBUTE_RULES.creationMax} points`);
+  }
   if (problem) fail(problem);
   return {
     version: SAVE_VERSION,
@@ -66,6 +80,7 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
       xp: 0,
       attributes,
       unspentAttributePoints: ATTRIBUTE_RULES.creationPoints - sumAttributes(free),
+      ...(lineage ? { lineage } : {}),
       unspentSkillPoints: PROGRESSION.startSkillPoints,
       learned: startingNodes(data.skillTree, heroClass.id),
       weaponId,

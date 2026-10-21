@@ -7409,6 +7409,13 @@
   box-shadow: 0 0 6px var(--heat);
 }
 
+/* Lineage point at creation (Timo 2026-10-21: fire red). */
+.stage .notch.inherited {
+  background: var(--dmg-fire);
+  border-color: var(--dmg-fire);
+  box-shadow: 0 0 6px var(--dmg-fire);
+}
+
 .stage .notch.leaving {
   background: transparent;
   border: 1px dashed var(--life);
@@ -9749,4 +9756,33 @@
 
 .stage .node-points li::before {
   content: "· ";
+}
+
+/* Lineage chips at creation (phase 5): one per class that won The Last Ember, on by default. */
+.stage .cs-lineage {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 4px 0 8px;
+}
+
+.stage .cs-lineage-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px 3px 6px;
+  border: 1px solid var(--edge);
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-sub);
+  font-size: 15px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+
+.stage .cs-lineage-chip.on {
+  border-color: var(--dmg-fire);
+  color: var(--dmg-fire);
+  box-shadow: 0 0 8px rgb(255 106 43 / 0.45);
+  opacity: 1;
 }

@@ -2,7 +2,6 @@ import { GAME_DATA } from "@emberheir/content";
 import {
   type GameState,
   type PlacedItem,
-  LINEAGE_STEPS,
   deserializeGame,
   deserializeStash,
   serializeGame,
@@ -42,8 +41,14 @@ export const LINEAGE_KEY = storageKey("lineage");
 export const POWER_CODEX_KEY = storageKey("powerCodex");
 const powerCodexSchema = z.record(z.string(), z.number().int().positive());
 
-/** The seeds of the finishers; a broken list reads as empty. */
-const lineageSchema = z.object({ finishers: z.array(z.number().int()) });
+/**
+ * The seeds of the finishers and the classes that won (phase 5); a broken list reads as empty.
+ * Wins from before phase 5 have no class: the winner's slot adds it the next time it loads.
+ */
+const lineageSchema = z.object({
+  finishers: z.array(z.number().int()),
+  classes: z.array(z.string()).optional(),
+});
 type SharedLineage = z.infer<typeof lineageSchema>;
 const EMPTY_LINEAGE: SharedLineage = { finishers: [] };
 
@@ -63,7 +68,7 @@ export class SaveStore {
   /** What each slot's key holds right now, by reference (skips writing the same state twice). */
   private readonly written = new Map<number, GameState>();
   private stash: readonly PlacedItem[] | null = null;
-  private finishers: readonly number[] | null = null;
+  private lineage: SharedLineage | null = null;
   private powers: Readonly<Record<string, number>> | null = null;
 
   constructor(private readonly kv: KeyValueStore) {}
@@ -73,7 +78,7 @@ export class SaveStore {
     this.slots.clear();
     this.written.clear();
     this.stash = null;
-    this.finishers = null;
+    this.lineage = null;
     this.powers = null;
   }
 
@@ -152,30 +157,37 @@ export class SaveStore {
     return raw !== null && this.ownSlot(slot) ? slot : null;
   }
 
-  private readFinishers(): readonly number[] {
-    if (this.finishers === null) {
-      this.finishers = parseStored(
-        this.kv.getItem(LINEAGE_KEY),
-        lineageSchema,
-        EMPTY_LINEAGE,
-      ).finishers;
-    }
-    return this.finishers;
+  private readLineage(): SharedLineage {
+    this.lineage ??= parseStored(this.kv.getItem(LINEAGE_KEY), lineageSchema, EMPTY_LINEAGE);
+    return this.lineage;
+  }
+
+  /** The classes that have won the finale on this account (phase 5 Lineage). */
+  lineageClasses(): readonly string[] {
+    return this.readLineage().classes ?? [];
   }
 
   /**
-   * The state with the account's Lineage step. A character that has won the finale joins the
-   * Lineage once (its seed is its name in the list).
+   * The state with the account's Lineage: a character that has won the finale joins it once
+   * (its seed is its name in the list), and its class with it.
    */
   syncLineage(state: GameState): GameState {
-    let finishers = this.readFinishers();
-    if (state.legacy.finaleWon && !finishers.includes(state.seed)) {
-      const shared: SharedLineage = { finishers: [...finishers, state.seed] };
+    let shared = this.readLineage();
+    const classes = shared.classes ?? [];
+    const newSeed = !shared.finishers.includes(state.seed);
+    const newClass = !classes.includes(state.hero.classId);
+    if (state.legacy.finaleWon && (newSeed || newClass)) {
+      shared = {
+        finishers: newSeed ? [...shared.finishers, state.seed] : shared.finishers,
+        classes: newClass ? [...classes, state.hero.classId] : classes,
+      };
       this.kv.setItem(LINEAGE_KEY, JSON.stringify(shared));
-      this.finishers = finishers = shared.finishers;
+      this.lineage = shared;
     }
-    const step = Math.min(LINEAGE_STEPS, finishers.length);
-    return (state.lineage ?? 0) === step ? state : { ...state, lineage: step };
+    const won = shared.classes ?? [];
+    const same =
+      (state.lineage?.length ?? 0) === won.length && won.every((c) => state.lineage?.includes(c));
+    return same ? state : { ...state, lineage: won };
   }
 
   /**
@@ -240,6 +252,8 @@ export const loadSlots = () =>
   );
 export const loadSlot = (slot: number) => withStore((s) => s.slot(slot), null);
 export const loadLastSlot = () => withStore((s) => s.lastSlot(), null);
+/** The classes that won the finale on this account (Lineage points at creation). */
+export const loadLineageClasses = () => withStore((s) => s.lineageClasses(), [] as const);
 /** A new character with the shared stash; without storage it starts with an empty one. */
 export const sharedStashFor = (state: GameState) =>
   withStore((s) => s.withSharedStash(state), state);

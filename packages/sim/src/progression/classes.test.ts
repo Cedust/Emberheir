@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { type HeroClass, classTitle, lineageEffect, lineageScale, mainBranch } from "./classes";
-import { deriveStats } from "../combat/stats";
+import { ATTRIBUTE_RULES, attributeFloor } from "./attributes";
+import { type HeroClass, classTitle, LINEAGE_STEPS, mainBranch } from "./classes";
 import { heroSetup, heroTitle, newGame } from "./game";
 import { TEST_CLASSES, TEST_GAME_DATA as data } from "./test-fixtures";
 
@@ -75,30 +75,42 @@ describe("classes", () => {
 });
 
 describe("Lineage", () => {
-  const iron = { name: "Iron", stat: "Life", percent: 5, lifeMultiplier: 1.05 };
-  const keen = { name: "Keen", stat: "Crit Chance", percent: 3, bonuses: { critChance: 0.03 } };
-
-  it("opens with the first finale win and doubles by step 5", () => {
-    expect(lineageScale(0)).toBe(0);
-    expect(lineageScale(1)).toBe(1);
-    expect(lineageScale(5)).toBe(2);
-    expect(lineageScale(9)).toBe(2);
-    expect(lineageEffect(keen, 0)).toEqual({});
-    expect(lineageEffect(keen, 1).bonuses?.critChance).toBeCloseTo(0.03);
-    expect(lineageEffect(keen, 5).bonuses?.critChance).toBeCloseTo(0.06);
-    expect(lineageEffect(iron, 5).rules?.lifeMultiplier).toBeCloseTo(1.1);
+  it("adds +1 per won class's main attribute at creation, part of the floor", () => {
+    const s = newGame(data, {
+      seed: 1,
+      classId: "test-fighter",
+      lineage: ["strength", "intelligence", "strength"],
+    });
+    expect(s.hero.lineage).toEqual({ strength: 1, intelligence: 1 });
+    expect(s.hero.attributes.strength).toBe(fighter.startingAttributes.strength + 1);
+    expect(s.hero.attributes.intelligence).toBe(fighter.startingAttributes.intelligence + 1);
+    expect(s.hero.unspentAttributePoints).toBe(ATTRIBUTE_RULES.creationPoints);
+    expect(attributeFloor(fighter.startingAttributes, s.hero.lineage).strength).toBe(
+      s.hero.attributes.strength,
+    );
+    // The inherited point may go past the creation max.
+    const room = ATTRIBUTE_RULES.creationMax - fighter.startingAttributes.strength;
+    const full = newGame(data, {
+      seed: 1,
+      classId: "test-fighter",
+      lineage: ["strength"],
+      attributes: { strength: room },
+    });
+    expect(full.hero.attributes.strength).toBe(ATTRIBUTE_RULES.creationMax + 1);
+    expect(() =>
+      newGame(data, {
+        seed: 1,
+        classId: "test-fighter",
+        lineage: ["strength"],
+        attributes: { strength: room + 1 },
+      }),
+    ).toThrow();
   });
 
-  it("the hero gets the bonus of its own class", () => {
-    const withLineage = {
-      ...data,
-      classes: data.classes.map((c, i) => (i === 0 ? { ...c, lineage: iron } : c)),
-    };
-    const s = newGame(withLineage, { seed: 1, classId: "test-fighter" });
-    const life = (lineage: number) =>
-      deriveStats(heroSetup({ ...s, lineage }, withLineage).setup).maxLife;
-    expect(life(3)).toBeGreaterThan(life(0));
-    expect(heroTitle({ ...s, lineage: 4 }, withLineage)).toBe("Fighter");
-    expect(heroTitle({ ...s, lineage: 5 }, withLineage)).toBe("Emberheir Fighter");
+  it("all three classes won put Emberheir in front of the title", () => {
+    const s = newGame(data, { seed: 1, classId: "test-fighter" });
+    expect(heroTitle({ ...s, lineage: ["a", "b"] }, data)).toBe("Fighter");
+    expect(LINEAGE_STEPS).toBe(3);
+    expect(heroTitle({ ...s, lineage: ["a", "b", "c"] }, data)).toBe("Emberheir Fighter");
   });
 });

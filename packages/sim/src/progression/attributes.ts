@@ -28,6 +28,21 @@ export function addAttributes(a: Attributes, b: AttributePoints): Attributes {
 }
 
 /** Points that left an attribute between `before` and `after` (spending never moves points). */
+/**
+ * The lowest the hero's own attributes go (respec, Rekindle): the Class Array plus the Lineage
+ * points taken at creation.
+ */
+export function attributeFloor(classArray: Attributes, lineage?: AttributePoints): Attributes {
+  return lineage ? addAttributes(classArray, lineage) : classArray;
+}
+
+/** Lineage points at creation: +1 in each of these attributes (classes that won), each once. */
+export function lineagePoints(attributes: readonly Attribute[]): AttributePoints {
+  const points: Partial<Record<Attribute, number>> = {};
+  for (const a of attributes) points[a] = 1;
+  return points;
+}
+
 export function movedPoints(before: Attributes, after: Attributes): number {
   return ATTRIBUTES.reduce((sum, k) => sum + Math.max(0, before[k] - after[k]), 0);
 }
