@@ -53,12 +53,12 @@ export const NODE_TEXT: Record<
 > = {
   fight: {
     name: "Fight",
-    text: "Something blocks the road. Now and then it is an Elite.",
+    text: "Something blocks the road. Some of them burn hotter than others.",
     icon: "strike",
   },
   elite: {
     name: "Elite",
-    text: "A hardened foe, burning with ash. Its loot follows its theme.",
+    text: "A hardened foe, burning with ash. It guards something worth taking.",
     icon: "boss",
   },
   thief: { name: "Thief's Trail", text: "The Ember Thief waits here.", icon: "target" },
@@ -77,7 +77,7 @@ export const NODE_TEXT: Record<
   },
   hunt: {
     name: "Hunt",
-    text: "Eldrin spotted its tracks nearby.",
+    text: "Eldrin spotted its tracks.",
     points: [`Counts ${HUNT.nodeFactor}× for its Trail`, "Always drops an item pick"],
     icon: "wolf",
   },
