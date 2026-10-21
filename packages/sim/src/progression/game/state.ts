@@ -41,7 +41,7 @@ import {
  * (`save/migrations.ts`). Started over at 9 with the Klassengerüst: older saves are dropped.
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  */
-export const SAVE_VERSION = 10;
+export const SAVE_VERSION = 11;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -274,6 +274,11 @@ export interface RunState {
    * (`routeForks`). A fork without a choice takes the Shrine path.
    */
   readonly routes?: Readonly<Record<string, RouteKind>>;
+  /**
+   * Times the hero walked on at the Warden's Gate on this trip (laengere-runs-v1.md): the road
+   * through the act starts anew, and its Shrines stay quiet. Missing = the first walk.
+   */
+  readonly wanders?: number;
 }
 
 /**

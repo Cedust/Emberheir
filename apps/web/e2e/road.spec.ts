@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveAfterAct1, saveAtFork, saveWildfire, seedSave } from "./fixtures";
+import { saveAfterAct1, saveAtFork, saveAtWardensGate, saveWildfire, seedSave } from "./fixtures";
 
 test("a fork of the road: the path is chosen in the Intermission", async ({ page }) => {
   const errors: string[] = [];
@@ -22,6 +22,27 @@ test("a fork of the road: the path is chosen in the Intermission", async ({ page
   await expect(page.getByLabel("Up next")).toContainText("Hearth Path");
   await expect(next).not.toHaveAttribute("aria-disabled", "true");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/route-choice.png` });
+  expect(errors).toEqual([]);
+});
+
+test("the Warden's Gate: challenge the boss or wander on through the act", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveAtWardensGate());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  const gate = page.getByLabel("Warden's Gate");
+  await expect(gate).toBeVisible();
+  // The hero is below the boss: its level shows red.
+  await expect(gate.locator(".gate-level.below")).toHaveText(/Level \d+/);
+  await expect(page.getByRole("button", { name: /FACE THE BOSS/ })).toBeVisible();
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/wardens-gate.png` });
+  await gate.getByRole("button", { name: "Wander" }).click();
+  // The road starts anew at Stage 1, no gate until the boss again.
+  await expect(gate).toHaveCount(0);
+  await expect(page.getByLabel("Up next")).toContainText("Stage 15 · in 14");
+  await expect(page.getByRole("button", { name: /NEXT STAGE/ })).toBeVisible();
   expect(errors).toEqual([]);
 });
 

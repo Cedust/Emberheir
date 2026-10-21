@@ -25,6 +25,8 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Balancing restart step 4: three travel nodes of the Ash Tree became the element attacks of
   // weapon fighters. A hero who had one learned keeps the Skill Point in the node's place.
   9: { state: (save) => renameLearned(save, ELEMENT_ATTACK_NODES) },
+  // Längere Runs: a trip may hold its walks past the Warden's Gate (`run.wanders`, optional).
+  10: {},
 };
 
 export interface MigrateOptions {

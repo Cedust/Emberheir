@@ -495,6 +495,13 @@ export function saveAtFork(): string {
   return serializeGame({ ...out, run: out.run && { ...out.run, stage: 3 } });
 }
 
+/** Run 1 at the Warden's Gate: the boss of the Ashen Fields is next, the hero below its level. */
+export function saveAtWardensGate(): string {
+  const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
+  const out = applyAction(base, GAME_DATA, { type: "setOut", actId: "ashen-fields" });
+  return serializeGame({ ...out, run: out.run && { ...out.run, stage: 15, lifeFraction: 0.7 } });
+}
+
 /** A new hero on the road through the Ashen Fields (run 1), Stage 3 ahead: it ends in an item pick. */
 export function saveRun1Stage3(): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });

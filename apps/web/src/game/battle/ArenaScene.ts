@@ -312,6 +312,55 @@ export class ArenaScene {
     return app;
   }
 
+  /**
+   * Wander at the Warden's Gate (laengere-runs-v1.md): the road through the act rolls on. A gust
+   * of ash and embers streams past the hero, glowing footsteps run ahead on the ground. Visual
+   * only; with reduced motion a short, calm gust.
+   */
+  wander(): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const right = this.view().right;
+    const pulses = this.motion ? 6 : 2;
+    for (let i = 0; i < pulses; i++) {
+      this.wait(i * 0.18, () => {
+        fx.burst({
+          x: right + 40,
+          y: GROUND_Y - 220,
+          count: 24,
+          color: [0x6b5a4a, 0x8a7a68, 0x3b3024],
+          spreadX: 60,
+          spreadY: 200,
+          angle: [Math.PI - 0.12, Math.PI + 0.12],
+          speed: [700, 1100],
+          life: [1.4, 2],
+          size: [5, 11],
+          kind: "bit",
+          spin: 4,
+          wobble: 12,
+          drag: 0.85,
+          alpha: 0.85,
+          layer: "front",
+        });
+        fx.burst({
+          x: right + 40,
+          y: GROUND_Y - 160,
+          count: 8,
+          color: [0xff8a1f, 0xffb13b, 0xffd84a],
+          spreadX: 40,
+          spreadY: 140,
+          angle: [Math.PI - 0.05, Math.PI + 0.25],
+          speed: [500, 900],
+          life: [1, 1.6],
+          size: [6, 12],
+          drag: 0.8,
+          layer: "front",
+        });
+        fx.ring(HERO_X + 90 + i * 110, GROUND_Y, 0xffb13b, 8, 46, 0.9, 5);
+      });
+    }
+  }
+
   /** Between fights (Intermission): the hero waits alone in the act's air. */
   hideEnemy(): void {
     if (this.enemy) this.enemy.root.visible = false;

@@ -10,6 +10,7 @@ import {
   salvageValue,
   takeBlockReason,
   targetSlot,
+  wardensGate,
 } from "@emberheir/sim";
 import { Suspense, useState } from "react";
 import { Button } from "../../ui/kit/Button";
@@ -26,6 +27,7 @@ import {
   BountyCard,
   BountyDone,
   DoneCard,
+  GateCards,
   HeroCard,
   nextStageActions,
   PathCards,
@@ -61,26 +63,34 @@ export function IntermissionView(props: {
   const fork = boss ? null : routeAt(run, act, nextStage);
   const forkAhead = fork !== null && !fork.second;
   const pathOpen = forkAhead && openFork(run, act, nextStage) !== null;
+  // The Warden's Gate before the newest act's boss: Challenge or Wander (laengere-runs-v1.md).
+  const gate = !boss && wardensGate(state, GAME_DATA, { ...run, stage: nextStage });
   const step = !rewards
     ? forkAhead
       ? "path"
-      : "ready"
+      : gate
+        ? "gate"
+        : "ready"
     : rewards.itemPick === null
       ? "items"
       : rewards.boonOffer?.length && rewards.boonPick == null
         ? "shrine"
         : forkAhead
           ? "path"
-          : "done";
-  const done = step === "ready" || step === "done" || step === "path";
+          : gate
+            ? "gate"
+            : "done";
+  const done = step === "ready" || step === "done" || step === "path" || step === "gate";
   const title =
     step === "shrine"
       ? "EMBER SHRINE"
       : step === "path"
         ? "CHOOSE A PATH"
-        : step === "ready"
-          ? "READY"
-          : "VICTORY";
+        : step === "gate"
+          ? "WARDEN'S GATE"
+          : step === "ready"
+            ? "READY"
+            : "VICTORY";
   const subtitle =
     step === "path" && fork
       ? `Stages ${fork.fork}–${fork.fork + 1}`
@@ -92,9 +102,13 @@ export function IntermissionView(props: {
             : "Choose 1 of 3 items"
         : step === "shrine"
           ? "Steal 1 of 3 sparks"
-          : boss
-            ? `${act.name} cleared`
-            : "";
+          : step === "gate"
+            ? nextStage >= act.stages
+              ? "Challenge the boss or wander on"
+              : "Challenge the Gatekeeper or wander on"
+            : boss
+              ? `${act.name} cleared`
+              : "";
   const anyBlocked =
     step === "items" &&
     (rewards?.items ?? []).some((it) => takeBlockReason(state, GAME_DATA, it) !== undefined);
@@ -180,6 +194,7 @@ export function IntermissionView(props: {
           )}
           {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
           {step === "path" && <PathCards state={state} run={run} game={game} />}
+          {step === "gate" && <GateCards state={state} run={run} game={game} />}
           {(step === "ready" || step === "done") && <DoneCard state={state} run={run} />}
           {step === "items" && (
             <div className="inventory-line">

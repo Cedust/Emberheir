@@ -52,6 +52,7 @@ export {
   waymarkStages,
   hearthEmbers,
   routeForks,
+  wardensGate,
   routeAt,
   openFork,
   waymarkKey,

@@ -76,6 +76,14 @@ export function IdleArena(props: {
     if (sceneRef.current) sceneRef.current.paused = props.paused;
   }, [props.paused]);
 
+  // A walk past the Warden's Gate: the road rolls on in the arena.
+  const walks = useRef(run.wanders ?? 0);
+  useEffect(() => {
+    const now = run.wanders ?? 0;
+    if (now > walks.current) sceneRef.current?.wander();
+    walks.current = now;
+  }, [run.wanders]);
+
   return (
     <div className="idle-arena" style={arenaStyle(run)} aria-hidden="true">
       <div className="arena-host" ref={hostRef} />

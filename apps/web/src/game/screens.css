@@ -854,6 +854,27 @@
   color: #9fd8ff;
 }
 
+/* The Warden's Gate (laengere-runs-v1.md): Challenge the boss or Wander on. */
+.stage .gate-challenge .path-sigil {
+  color: #ff8a1f;
+}
+
+.stage .gate-wander .path-sigil {
+  color: #e8d3a8;
+}
+
+.stage .gate-level {
+  margin-top: auto;
+  font-family: var(--font-title);
+  font-size: 15px;
+  letter-spacing: 0.06em;
+  color: var(--text-sub);
+}
+
+.stage .gate-level.below {
+  color: var(--life);
+}
+
 .stage .path-card.chosen {
   border-color: var(--heat);
   box-shadow:

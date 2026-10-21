@@ -15,6 +15,7 @@ import {
   ROUTE_KINDS,
   type RouteKind,
   routeAt,
+  stageMonsterLevel,
   thiefTrailOpen,
   heroReactions,
   heroSetup,
@@ -26,6 +27,7 @@ import {
   tripOmenEffects,
 } from "@emberheir/sim";
 import { useEffect, useState } from "react";
+import { useNoteHover } from "../../ui/ItemTooltip";
 import { Icon, type IconName } from "../../ui/Icon";
 import { Potion } from "../../ui/Potion";
 import { Button } from "../../ui/kit/Button";
@@ -298,6 +300,97 @@ export function PathCards(props: { state: GameState; run: RunState; game: GameAp
         </button>
       ))}
     </div>
+  );
+}
+
+/**
+ * The Warden's Gate (laengere-runs-v1.md): before the boss of the run's newest act, Challenge it
+ * (its fall brings The Harvest) or Wander on through the act to farm. The boss's level shows red
+ * while the hero is below it.
+ */
+export function GateCards(props: { state: GameState; run: RunState; game: GameApi }) {
+  const { state, run, game } = props;
+  const act = getAct(GAME_DATA, run.actId);
+  const next = run.phase === "rewards" ? run.stage + 1 : run.stage;
+  const boss = next >= act.stages;
+  const level = stageMonsterLevel(GAME_DATA, act, next, state.legacy.prestige);
+  const gap = level - state.hero.level;
+  const walks = run.wanders ?? 0;
+  const foe = boss
+    ? bossKnown(state, GAME_DATA, act.id)
+      ? act.boss.name
+      : "the boss"
+    : "the Gatekeeper";
+  const challenge = () => game.dispatchAll(nextStageActions(state));
+  const wander = () =>
+    game.dispatchAll([
+      ...(run.phase === "rewards" ? [{ type: "continue" } as const] : []),
+      { type: "wander" },
+    ]);
+  return (
+    <div className="path-cards gate-cards" aria-label="Warden's Gate">
+      <GateCard
+        kind="challenge"
+        icon={boss ? "boss" : "warden"}
+        name="Challenge"
+        text={boss ? `Face ${foe}. Its fall brings The Harvest.` : `Face ${foe} of this Waymark.`}
+        tip={{
+          name: "Challenge",
+          kind: "Warden's Gate",
+          explain: boss
+            ? "Fight the boss now. Win, and the run ends in The Harvest: the next Prestige begins."
+            : "Fight the Gatekeeper now. It guards the Waymark: a wall of the newest act.",
+          status: `Level ${level} · you are ${state.hero.level}`,
+        }}
+        onClick={challenge}
+      >
+        <span className={`gate-level${gap >= 1 ? " below" : ""}`}>Level {level}</span>
+      </GateCard>
+      <GateCard
+        kind="wander"
+        icon="cycle"
+        name="Wander"
+        text="Walk the act again for levels and loot."
+        tip={{
+          name: "Wander",
+          kind: "Warden's Gate",
+          explain:
+            "Back to Stage 1 of this act. Life, Flask and Boons stay, the forks open again. No new Shrines, Waymarks pay only once.",
+          ...(walks ? { status: `Walked ${walks}× on this trip` } : {}),
+        }}
+        onClick={wander}
+      >
+        {walks > 0 && <span className="gate-level">Walked {walks}×</span>}
+      </GateCard>
+    </div>
+  );
+}
+
+function GateCard(props: {
+  kind: string;
+  icon: IconName;
+  name: string;
+  text: string;
+  tip: Parameters<typeof useNoteHover>[0];
+  onClick: () => void;
+  children?: React.ReactNode;
+}) {
+  const hover = useNoteHover(props.tip);
+  return (
+    <button
+      type="button"
+      aria-label={props.name}
+      className={`path-card panel-card gate-${props.kind}`}
+      onClick={props.onClick}
+      {...hover}
+    >
+      <span className="path-sigil">
+        <Icon name={props.icon} size={34} />
+      </span>
+      <strong className="title-font">{props.name}</strong>
+      <span className="sub">{props.text}</span>
+      {props.children}
+    </button>
   );
 }
 

@@ -190,6 +190,23 @@ export function openFork(
   return at && !at.second && !run.routes?.[String(at.fork)] ? at.fork : null;
 }
 
+/**
+ * The Warden's Gate (laengere-runs-v1.md): before each wall of the run's newest act, its
+ * Gatekeepers and its boss, the hero chooses to challenge it (the boss's win brings The Harvest)
+ * or to wander on through the act to farm. Not in the Wildfire, the finale or after the final
+ * Prestige.
+ */
+export function wardensGate(
+  state: GameState,
+  data: GameData,
+  run: { readonly actId: string; readonly stage: number; readonly wildfire?: number },
+): boolean {
+  if (run.wildfire || state.legacy.prestige >= PROGRESSION.finalPrestige) return false;
+  const act = getAct(data, run.actId);
+  const wall = run.stage >= act.stages || gateStages(act).includes(run.stage);
+  return wall && isWallAct(data, act, state.legacy.prestige);
+}
+
 export const waymarkKey = (actId: string, stage: number) => `${actId}:${stage}`;
 
 /**

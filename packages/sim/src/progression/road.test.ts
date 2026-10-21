@@ -12,6 +12,7 @@ import {
   routeAt,
   openFork,
   routeForks,
+  wardensGate,
   tagAffixFactor,
   trainingDummy,
 } from "./game";
@@ -136,6 +137,36 @@ describe("Routes", () => {
       PROGRESSION.hearthPath,
     );
     expect(hearth?.rewards?.boonOffer).toBeUndefined();
+  });
+});
+
+describe("Warden's Gate", () => {
+  it("stands before each wall of the run's newest act: its Gatekeepers and its boss", () => {
+    const run = onRoad(15).run ?? { actId: "long-act", stage: 0 };
+    expect(wardensGate(onRoad(15), data, run)).toBe(true);
+    expect(wardensGate(onRoad(15), data, { ...run, stage: 14 })).toBe(false);
+    expect(wardensGate(onRoad(15), data, { ...run, stage: 5 })).toBe(true);
+    expect(wardensGate(onRoad(15), data, { ...run, wildfire: 1 })).toBe(false);
+    expect(() => applyAction(onRoad(14), data, { type: "wander" })).toThrow();
+    expect(applyAction(onRoad(10), data, { type: "wander" }).run?.stage).toBe(1);
+  });
+
+  it("wandering starts the act anew: Life, Flask and Boons stay, the forks open again", () => {
+    const routed = applyAction(onRoad(3), data, { type: "chooseRoute", route: "elite" });
+    const gate: GameState = {
+      ...routed,
+      flaskCharges: 1,
+      run: routed.run && { ...routed.run, stage: 15, lifeFraction: 0.6 },
+    };
+    const s = applyAction(gate, data, { type: "wander" });
+    expect(s.run).toMatchObject({ stage: 1, lifeFraction: 0.6, phase: "intermission", wanders: 1 });
+    expect(s.run?.routes).toEqual({});
+    expect(s.flaskCharges).toBe(1);
+    expect(s.pendingPrestige).toBeNull();
+    const again = applyAction({ ...s, run: s.run && { ...s.run, stage: 15 } }, data, {
+      type: "wander",
+    });
+    expect(again.run?.wanders).toBe(2);
   });
 });
 

@@ -28,9 +28,10 @@ const XP_PER_MONSTER_LEVEL = 10;
 /**
  * Normal kills of the same Monster Level per level (balance CLI). Raised from 1.5 to 3 with the
  * new walls (balance-grundlagen-v1.md): levels come slower, so a wall takes several trips of
- * level and gear, not one lucky one.
+ * level and gear, not one lucky one. ×1.5 with the Warden's Gate (laengere-runs-v1.md): the
+ * straight road no longer reaches the boss's level, a few walks through the act do.
  */
-const XP_KILLS = (level: number) => 3 * (1.6 + 0.07 * (level - 1));
+const XP_KILLS = (level: number) => 4.5 * (1.6 + 0.07 * (level - 1));
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
