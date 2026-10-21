@@ -47,9 +47,20 @@ import { TrailMark } from "../../ui/TrailMark";
  */
 
 /** What each node holds, in one line for its card and tooltip. */
-export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: IconName }> = {
-  fight: { name: "Fight", text: "An enemy of the act. Sometimes an Elite.", icon: "strike" },
-  elite: { name: "Elite", text: "A sure Elite, with loot of its theme.", icon: "boss" },
+export const NODE_TEXT: Record<
+  NodeKind,
+  { name: string; text: string; icon: IconName; points?: readonly string[] }
+> = {
+  fight: {
+    name: "Fight",
+    text: "Something blocks the road. Now and then it is an Elite.",
+    icon: "strike",
+  },
+  elite: {
+    name: "Elite",
+    text: "A hardened foe, burning with ash. Its loot follows its theme.",
+    icon: "boss",
+  },
   thief: { name: "Thief's Trail", text: "The Ember Thief waits here.", icon: "target" },
   shrine: { name: "Ember Shrine", text: "Steal 1 of 3 Boons. No fight.", icon: "flame" },
   hearth: {
@@ -66,7 +77,8 @@ export const NODE_TEXT: Record<NodeKind, { name: string; text: string; icon: Ico
   },
   hunt: {
     name: "Hunt",
-    text: `Fresh tracks in the ash. Counts ${HUNT.nodeFactor}× for its Trail and always drops an item pick.`,
+    text: "Eldrin spotted its tracks nearby.",
+    points: [`Counts ${HUNT.nodeFactor}× for its Trail`, "Always drops an item pick"],
     icon: "wolf",
   },
 };
@@ -120,7 +132,13 @@ function nodeLabel(
   run: RunState,
   row: number,
   node: MapNode,
-): { name: string; text: string; icon: IconName; marker?: string } {
+): {
+  name: string;
+  text: string;
+  icon: IconName;
+  marker?: string;
+  points?: readonly string[];
+} {
   const act = getAct(GAME_DATA, run.actId);
   if (row === act.stages)
     return { name: "Boss", text: "The act's boss.", icon: "boss", marker: "boss" };
@@ -452,7 +470,7 @@ function MapNodeButton(props: {
     explain:
       props.node.kind === "cache" && homeRuneOf(props.run.actId)
         ? `${label.text} Home Rune: ${runeName(homeRuneOf(props.run.actId) ?? "")}.`
-        : label.text,
+        : [label.text, ...(label.points ?? []).map((p) => `${p}.`)].join(" "),
     ...(props.ahead ? { status: "Click to walk here next" } : {}),
   });
   const cls = [
@@ -572,6 +590,13 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
               {node.kind === "hunt" ? NODE_TEXT.hunt.name : text.name}
             </strong>
             <span className="sub">{text.text}</span>
+            {text.points && (
+              <ul className="node-points sub">
+                {text.points.map((p) => (
+                  <li key={p}>{p}</li>
+                ))}
+              </ul>
+            )}
             {foeOf(node) && <FoeLine state={state} enemyId={foeOf(node) ?? ""} />}
             <span className="node-lane sub">{["Left", "Middle", "Right"][node.lane]}</span>
           </button>
