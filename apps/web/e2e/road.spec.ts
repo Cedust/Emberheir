@@ -46,6 +46,23 @@ test("the act map: the next node is chosen in the Intermission, a Hearth has no 
   const before = await pan.getAttribute("style");
   await page.getByRole("button", { name: "Zoom in" }).click();
   await expect(pan).not.toHaveAttribute("style", before ?? "");
+  // Zoomed in, a drag still reaches the start of the act.
+  await page.getByRole("button", { name: "Zoom in" }).click();
+  const view = page.getByTestId("act-map-viewport");
+  const box = await view.boundingBox();
+  if (box) {
+    await page.mouse.move(box.x + 200, box.y + 100);
+    await page.mouse.down();
+    await page.mouse.move(box.x + 200, box.y - 600, { steps: 8 });
+    await page.mouse.up();
+    const start = await page
+      .getByTestId("act-map-big")
+      .getByLabel("Fight, Stage 1", { exact: true })
+      .boundingBox();
+    if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/map-zoom.png` });
+    // The node and its glow stay clear of the bottom edge.
+    expect(start && start.y + start.height + 20).toBeLessThanOrEqual(box.y + box.height);
+  }
   if (process.env.SHOTS) {
     await page.waitForTimeout(400);
     await page.screenshot({ path: `${process.env.SHOTS}/map-big.png` });

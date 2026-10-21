@@ -9204,12 +9204,13 @@
   background: radial-gradient(circle at 40% 35%, #5a3c22, #22170f);
   border: 2px solid #8a6a3e;
   box-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
-  opacity: 0.8;
+  /* Solid, so the roads never show through; nodes off the path are only dimmer. */
+  filter: brightness(0.82);
 }
 
 .stage .map-node.walked,
 .stage .map-node.current {
-  opacity: 1;
+  filter: none;
   border-color: var(--heat);
   color: #ffd27a;
 }
@@ -9272,7 +9273,7 @@
 }
 
 .stage .map-node.ahead {
-  opacity: 1;
+  filter: none;
   cursor: pointer;
   border-color: #ffd27a;
   animation: map-node-pulse 1.4s ease-in-out infinite;
@@ -9330,34 +9331,6 @@
   top: 0;
   left: 0;
   transform-origin: 0 0;
-}
-
-.stage .act-map-zoom {
-  position: absolute;
-  right: 12px;
-  bottom: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.stage .act-map-zoom button {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  padding: 0;
-  border-radius: 50%;
-  font: 600 20px/1 var(--font-title);
-  color: #f1e2c2;
-  background: radial-gradient(circle at 40% 35%, #5a3c22, #22170f);
-  border: 2px solid #8a6a3e;
-  box-shadow: 0 1px 3px rgb(0 0 0 / 0.6);
-  cursor: pointer;
-}
-
-.stage .act-map-zoom button:hover {
-  border-color: var(--heat);
 }
 
 .stage .act-map.big .map-node {

@@ -104,8 +104,10 @@ export function ActMapView(props: {
   const rows = map.rows.length;
   const rowH = props.big ? BIG_ROW : Math.min(38, 540 / rows);
   const scale = props.big ? 2.4 : 1;
-  const height = rowH * (rows - 1) + NODE + 8;
-  const yOf = (row: number) => 4 + (rows - row) * rowH + NODE / 2;
+  // The planning window keeps room around the first and last row for the nodes' glow.
+  const pad = props.big ? 56 : 4;
+  const height = rowH * (rows - 1) + NODE + 2 * pad;
+  const yOf = (row: number) => pad + (rows - row) * rowH + NODE / 2;
   const xOf = (row: number, lane: number) =>
     ((map.rows[row - 1]?.length ?? 0) === 1 ? (LANE_X[1] ?? 120) : (LANE_X[lane] ?? 120)) * scale;
   const here = currentNode(run);
@@ -245,34 +247,42 @@ function MapViewport(props: {
   const box = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, z: 1 });
-  const [size, setSize] = useState({ w: 0, h: 0 });
 
   // Stage pixels per screen pixel: the stage is scaled to the window (ui/Stage.tsx).
   const unit = () => {
     const el = box.current;
     return el && el.offsetWidth ? el.offsetWidth / el.getBoundingClientRect().width : 1;
   };
-  const clamp = (v: { x: number; y: number; z: number }, w = size.w, h = size.h) => {
+  // Measured live: the window settles its size after it opens.
+  const room = () => ({ w: box.current?.offsetWidth ?? 0, h: box.current?.offsetHeight ?? 0 });
+  const clamp = (v: { x: number; y: number; z: number }) => {
+    const { w, h } = room();
     const z = Math.min(ZOOM.max, Math.max(ZOOM.min, v.z));
-    const fit = (pos: number, content: number, room: number) =>
-      content <= room ? (room - content) / 2 : Math.min(0, Math.max(room - content, pos));
+    const fit = (pos: number, content: number, space: number) =>
+      content <= space ? (space - content) / 2 : Math.min(0, Math.max(space - content, pos));
     return { z, x: fit(v.x, props.width * z, w), y: fit(v.y, props.height * z, h) };
   };
-  const centered = (w: number, h: number, z = 1) =>
-    clamp({ z, x: (w - props.width * z) / 2, y: h / 2 - props.focusY * z }, w, h);
+  const centered = (z: number) => {
+    const { w, h } = room();
+    return clamp({ z, x: (w - props.width * z) / 2, y: h / 2 - props.focusY * z });
+  };
+  const fitted = () => {
+    const { h } = room();
+    return centered(Math.max(ZOOM.min, Math.min(1, (h - 16) / props.height)));
+  };
 
   useEffect(() => {
     const el = box.current;
     if (!el) return;
-    const w = el.offsetWidth;
-    const h = el.offsetHeight;
-    setSize({ w, h });
-    setView(centered(w, h));
-    // Only on open: the view stays where the player put it.
+    setView(centered(1));
+    // The view stays where the player put it, only kept inside the map when the window resizes.
+    const watch = new ResizeObserver(() => setView((v) => clamp(v)));
+    watch.observe(el);
+    return () => watch.disconnect();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const zoomAt = (factor: number, px = size.w / 2, py = size.h / 2) =>
+  const zoomAt = (factor: number, px = room().w / 2, py = room().h / 2) =>
     setView((v) => {
       const z = Math.min(ZOOM.max, Math.max(ZOOM.min, v.z * factor));
       const k = z / v.z;
@@ -337,19 +347,28 @@ function MapViewport(props: {
       >
         {props.children}
       </div>
-      <div className="act-map-zoom" onPointerDown={(e) => e.stopPropagation()}>
-        <button type="button" aria-label="Zoom in" onClick={() => zoomAt(ZOOM.step)}>
+      <div className="tree-controls" onPointerDown={(e) => e.stopPropagation()}>
+        <button
+          type="button"
+          className="btn icon-btn"
+          aria-label="Zoom in"
+          onClick={() => zoomAt(ZOOM.step)}
+        >
           +
-        </button>
-        <button type="button" aria-label="Zoom out" onClick={() => zoomAt(1 / ZOOM.step)}>
-          −
         </button>
         <button
           type="button"
-          aria-label="Back to the road ahead"
-          onClick={() => setView(centered(size.w, size.h, view.z))}
+          className="btn icon-btn"
+          aria-label="Zoom out"
+          onClick={() => zoomAt(1 / ZOOM.step)}
         >
-          <Icon name="eye" size={14} />
+          −
+        </button>
+        <button type="button" className="btn" onClick={() => setView(fitted())}>
+          Fit
+        </button>
+        <button type="button" className="btn" onClick={() => setView(centered(1))}>
+          Ahead
         </button>
       </div>
     </div>
