@@ -9663,31 +9663,41 @@
   gap: 3px;
 }
 
-.stage .road-hunt .hunt-pip {
-  width: 5px;
-  height: 5px;
+/* Timo's painted Trail marks (ui/TrailMark.tsx): a badge on a face, a line of the Bestiary page. */
+.stage .trail-mark {
+  display: block;
+  flex: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.5));
 }
 
-/* Trail pips (Hunts): the battle plaque, the Bestiary and Eldrin. */
-.stage .hunt-pips {
-  display: inline-flex;
-  gap: 3px;
+.stage .bestiary-face,
+.stage .road-hunt {
+  position: relative;
 }
 
-.stage .hunt-pip {
-  width: 7px;
-  height: 7px;
-  border-radius: 50%;
-  border: 1px solid #b8893e;
-  background: transparent;
+.stage .trail-mark.badge {
+  position: absolute;
+  right: -8px;
+  bottom: -8px;
 }
 
-.stage .hunt-pip.on {
-  background: #ffd27a;
-  box-shadow: 0 0 4px #ff9a3c;
+.stage .road-hunt .trail-mark.badge {
+  right: -6px;
+  bottom: -4px;
 }
 
-.stage .hunt-chip.trail-4 .hunt-pip.on {
-  background: #ff5a2b;
-  box-shadow: 0 0 6px #ff5a2b;
+.stage .bestiary-trails li {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .moment-hunt .moment-sigil {
+  background: none;
+  border: 0;
+}
+
+.stage .hunt-brand {
+  display: block;
+  filter: drop-shadow(0 0 3px rgb(255 160 60 / 0.6));
 }

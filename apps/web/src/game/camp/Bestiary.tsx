@@ -2,6 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import { type EnemyDefinition, type GameState } from "@emberheir/sim";
 import { useState } from "react";
 import { EnemyPortrait } from "../../ui/EnemyPortrait";
+import { TrailMark } from "../../ui/TrailMark";
 import {
   BOSS_TRAIL_TEXT,
   TRAIL_NAMES,
@@ -48,11 +49,7 @@ export function Bestiary(props: { state: GameState }) {
                     onClick={() => setSel(e.id)}
                   >
                     <EnemyPortrait enemyId={e.id} size={58} hidden={!known} />
-                    <span className="hunt-pips">
-                      {[1, 2, 3, 4].map((t) => (
-                        <span key={t} className={`hunt-pip${t <= hunt.tier ? " on" : ""}`} />
-                      ))}
-                    </span>
+                    <TrailMark tier={hunt.tier} size={32} className="badge" />
                   </button>
                 );
               })}
@@ -92,10 +89,13 @@ function BestiaryPage(props: { state: GameState; enemy: EnemyDefinition }) {
       <ol className="bestiary-trails">
         {[1, 2, 3, 4].map((t) => (
           <li key={t} className={t <= hunt.tier ? "on" : ""}>
-            <b>
-              {TRAIL_NUMERALS[t]} · {TRAIL_NAMES[t]}
-            </b>{" "}
-            <span className="sub">({hunt.scale[t - 1]})</span> {text[t]}
+            <TrailMark tier={t <= hunt.tier ? t : 0} size={28} />
+            <span>
+              <b>
+                {TRAIL_NUMERALS[t]} · {TRAIL_NAMES[t]}
+              </b>{" "}
+              <span className="sub">({hunt.scale[t - 1]})</span> {text[t]}
+            </span>
           </li>
         ))}
       </ol>

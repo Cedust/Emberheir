@@ -19,6 +19,7 @@ import { ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
 import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
+import { HuntBrand } from "../../ui/TrailMark";
 import { isHighRune } from "../actLoot";
 import { affixName } from "../hunts";
 import { type DropSound, playSound } from "../../ui/sound";
@@ -201,7 +202,7 @@ function HuntRibbon(props: { affix: string; enemyId: string }) {
       data-testid="hunt-ribbon"
       title={`Hunt Affix of the ${enemy?.name ?? "enemy"}: its Trail makes it roll better.`}
     >
-      <Icon name="wolf" size={13} /> Hunt Affix · {affixName(props.affix)}
+      <HuntBrand size={20} /> Hunt Affix · {affixName(props.affix)}
     </span>
   );
 }

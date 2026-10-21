@@ -10,6 +10,7 @@ import {
 } from "@emberheir/sim";
 import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
+import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
 import { skillIcon, skillTint } from "../skills";
 import { useState } from "react";
@@ -560,12 +561,7 @@ function HuntChip(props: { hunt: HuntView }) {
         h.next !== undefined ? `\nNext: ${text[h.tier + 1] ?? ""}` : ""
       }`}
     >
-      <Icon name="wolf" size={14} color="#f3e6c8" />
-      <span className="hunt-pips">
-        {[1, 2, 3, 4].map((t) => (
-          <span key={t} className={`hunt-pip${t <= h.tier ? " on" : ""}`} />
-        ))}
-      </span>
+      <TrailMark tier={h.tier} size={26} />
       <span className="hunt-label">{TRAIL_NAMES[h.tier]}</span>
       <span className="hunt-bar">
         <span style={{ width: `${Math.min(1, part) * 100}%` }} />

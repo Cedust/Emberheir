@@ -24,6 +24,7 @@ import { Icon } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
+import { TrailMark } from "../../ui/TrailMark";
 import { homeRuneNote, homeUniqueNote } from "../actLoot";
 import { Button } from "../../ui/kit/Button";
 import { Wallet } from "../../ui/kit/Currency";
@@ -217,11 +218,7 @@ function ActHunts(props: { state: GameState; act: ActData }) {
             } kills · Hunt Affixes: ${hunt.affixes.join(", ")}`}
           >
             <EnemyPortrait enemyId={e.id} size={30} hidden={hunt.tier === 0} />
-            <span className="hunt-pips">
-              {[1, 2, 3, 4].map((t) => (
-                <span key={t} className={`hunt-pip${t <= hunt.tier ? " on" : ""}`} />
-              ))}
-            </span>
+            <TrailMark tier={hunt.tier} size={22} className="badge" />
           </span>
         );
       })}
