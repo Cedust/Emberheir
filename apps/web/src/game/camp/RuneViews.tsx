@@ -11,7 +11,7 @@ import {
   merchantSlots,
 } from "@emberheir/sim";
 import { ItemArt } from "../../ui/ItemArt";
-import { rarityClass } from "../../ui/items";
+import { emptySlotArt, rarityClass } from "../../ui/items";
 import { useItemHover } from "../../ui/ItemTooltip";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 import { BenchArt } from "./Workbench";
@@ -155,21 +155,45 @@ export function RuneBoard(props: {
   );
 }
 
-/** Gamble: one card per slot; the last gambled item below. */
-export function GamblePanel(props: {
+/** Gamble cards in reading order: armor from head to toe, then the off hand and jewelry. */
+const GAMBLE_ORDER: readonly ItemSlot[] = [
+  "helm",
+  "body",
+  "gloves",
+  "belt",
+  "boots",
+  "offHand",
+  "amulet",
+  "ring",
+  "charm",
+];
+
+/**
+ * Gamble: one card per slot; the Mystery Crate below shows the chosen slot's empty shape, dark,
+ * and on a gamble that shape turns into the item Marisha pulled out.
+ */
+export function GamblePanel({
+  crate,
+  ...props
+}: {
   state: GameState;
   selected: ItemSlot | null;
   onSelect: (slot: ItemSlot) => void;
   last: Item | null;
+  crate?: React.Ref<HTMLDivElement>;
 }) {
-  const slots = merchantSlots(GAME_DATA);
+  const slots = merchantSlots(GAME_DATA).sort(
+    (a, b) => GAMBLE_ORDER.indexOf(a) - GAMBLE_ORDER.indexOf(b),
+  );
   const last = props.last ?? undefined;
   const { active, ...hover } = useItemHover(last, false);
+  const lastSlot = last && getBase(ITEM_CATALOG, last.baseId).slot;
+  const slot = lastSlot ?? props.selected;
+  const shape = slot && slotShape(slot, "gamble-shape");
   return (
     <div className="gamble">
       <div className="gamble-slots" role="radiogroup" aria-label="Gamble slot">
         {slots.map((slot) => {
-          const base = GAME_DATA.lootBases.find((id) => getBase(ITEM_CATALOG, id).slot === slot);
           return (
             <button
               key={slot}
@@ -180,7 +204,7 @@ export function GamblePanel(props: {
               onClick={() => props.onSelect(slot)}
             >
               <span className="gamble-art">
-                {base && <ItemArt baseId={base} slot={slot} />}
+                {slotShape(slot)}
                 <span className="gamble-q title-font">?</span>
               </span>
               <span className="title-font small">{SLOT_NAMES[slot]}</span>
@@ -190,21 +214,39 @@ export function GamblePanel(props: {
       </div>
       <span className="sub small">Item Level {merchantItemLevel(props.state, GAME_DATA)}</span>
       <div
+        ref={crate}
         className={`workbench gamble-crate${last ? ` ${rarityClass(last)}` : ""}`}
         aria-label="Mystery Crate"
       >
         <BenchArt persona="marisha">
-          {last && (
-            <span
-              className="gamble-last"
-              aria-label={`Gambled: ${last.name}`}
-              {...(active ? hover : {})}
-            >
-              <ItemArt baseId={last.baseId} slot={getBase(ITEM_CATALOG, last.baseId).slot} />
+          {slot && (
+            // Keyed by the item, so each gamble plays the change again.
+            <span key={last?.id ?? slot} className={`gamble-reveal${last ? " turned" : ""}`}>
+              {shape}
+              {last && lastSlot && (
+                <>
+                  <span className="gamble-flash" aria-hidden="true" />
+                  <span
+                    className="gamble-last"
+                    aria-label={`Gambled: ${last.name}`}
+                    {...(active ? hover : {})}
+                  >
+                    <ItemArt baseId={last.baseId} slot={lastSlot} />
+                  </span>
+                </>
+              )}
             </span>
           )}
         </BenchArt>
       </div>
     </div>
   );
+}
+
+/** The slot's painted empty-slot icon (base art if it has none). */
+function slotShape(slot: ItemSlot, className?: string) {
+  const art = emptySlotArt(slot);
+  if (art) return <img className={className} src={art} alt="" draggable={false} />;
+  const base = GAME_DATA.lootBases.find((id) => getBase(ITEM_CATALOG, id).slot === slot);
+  return base ? <ItemArt baseId={base} slot={slot} className={className ?? ""} /> : null;
 }

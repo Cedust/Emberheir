@@ -1,4 +1,4 @@
-import { Application } from "pixi.js";
+import { Application, Container } from "pixi.js";
 import { type RefObject, useEffect, useRef } from "react";
 import { Fx } from "../battle/fx";
 import type { PersonaId } from "./personaDefs";
@@ -96,31 +96,56 @@ function play(fx: Fx, persona: PersonaId, x: number, y: number): void {
       });
       break;
     case "marisha":
-      // Coins jump off the table and clatter down again.
+      // The dark shape in the crate draws in gold and violet light, then turns into the item
+      // (screens.css gamble-turn) in a flash, and coins jump off the crate.
       fx.burst({
         x,
         y,
-        count: 30,
-        color: [0xe0c27a, 0xffd86a, 0xc9952a],
-        kind: "bit",
-        speed: [220, 420],
-        angle: [-Math.PI * 0.85, -Math.PI * 0.15],
-        life: [0.8, 1.2],
-        size: [9, 14],
-        endSize: 0.9,
-        gravity: 1100,
-        spin: 10,
-      });
-      fx.burst({
-        x,
-        y,
-        count: 20,
-        color: 0xffe9a0,
+        count: 26,
+        color: [0xb36bff, 0xffd86a, 0xe0c27a],
         kind: "glow",
-        speed: [40, 160],
-        life: [0.3, 0.6],
-        size: [6, 10],
+        spreadX: 80,
+        spreadY: 50,
+        speed: [10, 40],
+        angle: [-Math.PI * 0.75, -Math.PI * 0.25],
+        life: [0.35, 0.5],
+        size: [6, 11],
+        endSize: 0.1,
+        wobble: 10,
       });
+      fx.shape(
+        new Container(),
+        0.4,
+        () => {},
+        "front",
+        () => {
+          fx.ring(x, y, 0xffe9a0, 20, 110, 0.45, 7, 1);
+          fx.burst({
+            x,
+            y,
+            count: 30,
+            color: [0xe0c27a, 0xffd86a, 0xc9952a],
+            kind: "bit",
+            speed: [220, 420],
+            angle: [-Math.PI * 0.85, -Math.PI * 0.15],
+            life: [0.8, 1.2],
+            size: [9, 14],
+            endSize: 0.9,
+            gravity: 1100,
+            spin: 10,
+          });
+          fx.burst({
+            x,
+            y,
+            count: 24,
+            color: [0xffe9a0, 0xd9b8ff],
+            kind: "glow",
+            speed: [60, 200],
+            life: [0.3, 0.6],
+            size: [6, 10],
+          });
+        },
+      );
       break;
   }
 }

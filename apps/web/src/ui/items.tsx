@@ -3,6 +3,7 @@ import {
   type GameState,
   type GridSize,
   type Item,
+  type ItemSlot,
   type PlacedItem,
   RARITY_NAMES,
   SLOT_NAMES,
@@ -75,6 +76,11 @@ const EMPTY_SLOT_ART: Readonly<Record<string, string>> = {
   Ring: ringUrl,
   Charm: charmUrl,
 };
+
+/** The painted empty-slot shape of a slot, if it has one. */
+export function emptySlotArt(slot: ItemSlot): string | undefined {
+  return EMPTY_SLOT_ART[SLOT_NAMES[slot]];
+}
 
 export { rarityClass };
 

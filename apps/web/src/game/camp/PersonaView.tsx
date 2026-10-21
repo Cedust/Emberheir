@@ -378,8 +378,17 @@ export function PersonaView(props: {
                 <RuneBoard state={state} mode={kind} selected={runeId} onSelect={setRuneId} />
               </div>
             ) : kind === "gamble" ? (
-              <div ref={bench} className="bench-anchor">
-                <GamblePanel state={state} selected={slot} onSelect={setSlot} last={gambled} />
+              <div className="bench-anchor">
+                <GamblePanel
+                  state={state}
+                  selected={slot}
+                  onSelect={(s) => {
+                    setSlot(s);
+                    setGambled(null);
+                  }}
+                  last={gambled}
+                  crate={bench}
+                />
               </div>
             ) : !itemCenter ? null : (
               <>
