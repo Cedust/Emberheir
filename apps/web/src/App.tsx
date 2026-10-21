@@ -5,13 +5,26 @@ import { GameApp } from "./game/GameApp";
 const UiKitPreview = lazy(() =>
   import("./ui/kit/UiKitPreview").then((m) => ({ default: m.UiKitPreview })),
 );
-const SHOW_KIT = new URLSearchParams(window.location.search).has("uikit");
+/** `?effects` shows every battle effect on its own (performance-kampfeffekte-v1.md). */
+const EffectGallery = lazy(() =>
+  import("./game/effects/EffectGallery").then((m) => ({ default: m.EffectGallery })),
+);
+const PARAMS = new URLSearchParams(window.location.search);
+const SHOW_KIT = PARAMS.has("uikit");
+const SHOW_EFFECTS = PARAMS.has("effects");
 
 export function App() {
   if (SHOW_KIT) {
     return (
       <Suspense fallback={null}>
         <UiKitPreview />
+      </Suspense>
+    );
+  }
+  if (SHOW_EFFECTS) {
+    return (
+      <Suspense fallback={null}>
+        <EffectGallery />
       </Suspense>
     );
   }
