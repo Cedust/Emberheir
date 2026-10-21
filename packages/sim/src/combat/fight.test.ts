@@ -3,6 +3,7 @@ import { COMBAT } from "./constants";
 import type { CombatEvent } from "./events";
 import { Fight, runFight } from "./fight";
 import { heavyHitCap } from "./fighter";
+import { PERK, type PerkId } from "./perks";
 import { mergeRules } from "./rules";
 import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
@@ -391,6 +392,19 @@ describe("Fight", () => {
       const slam = ofType(fight.events, "hit").find((h) => h.source === "Slam");
       expect(slam?.damage).toBe(heavyHitCap(deriveStats(target), 0.5));
       expect(slam?.damage).toBeGreaterThan(heavyHitCap(deriveStats(target)));
+    });
+
+    it("Stoneguard: a Heavy Attack deals 15 % less", () => {
+      const slam = (perks: PerkId[]) => {
+        const fight = new Fight(
+          dummy({ perks }),
+          { ...boss(), telegraphs: [{ skill: SLAM, interval: 4, windup: 1.5 }] },
+          1,
+        );
+        fight.advance(5.6);
+        return ofType(fight.events, "hit").find((h) => h.source === "Slam")?.damage ?? 0;
+      };
+      expect(slam(["stoneguard"])).toBe(Math.round(slam([]) * (1 - PERK.stoneguardHeavy)));
     });
 
     it("repeats every interval after the wind-up", () => {

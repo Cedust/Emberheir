@@ -102,7 +102,7 @@ export const PERK_FX: Record<
   trueShot: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star", name: true },
   attuned: { color: [0x5b8cff], on: "self", look: "ring" },
   surge: { color: [0x8a5bff, 0x5b8cff], on: "foe", look: "star" },
-  spellfire: { color: [0x5b8cff, 0xb8d0ff], on: "self", look: "ring", name: true },
+  barrierBurst: { color: [0x8fd3ff, 0xe0f4ff, 0x5b8cff], on: "foe", look: "flakes", name: true },
   quickReflexes: { color: [0xd8f0c8, 0xa8d8a0], on: "self", look: "wind", name: true },
   emberDance: { color: [0xffb13b, 0xffd84a], on: "self", look: "wind" },
   doubleTime: { color: [0xffd84a, 0xffffff], on: "self", look: "ring", name: true },
