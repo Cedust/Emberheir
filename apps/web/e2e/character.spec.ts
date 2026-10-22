@@ -44,5 +44,5 @@ test("the Speed note names the hero's own weapon and its start Speed", async ({ 
   const sheet = page.getByRole("dialog", { name: "Character" });
   await sheet.getByRole("tab", { name: "Overview" }).click();
   await sheet.locator(".hero-pill", { hasText: "Speed" }).first().hover();
-  await expect(page.getByText("Your Axe starts at 75")).toBeVisible();
+  await expect(page.getByText("Your Axe starts at 80")).toBeVisible();
 });
