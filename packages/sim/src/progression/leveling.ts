@@ -41,7 +41,8 @@ export function xpLevelFactor(heroLevel: number, monsterLevel: number): number {
 /**
  * How much harder an enemy above the hero's level hits (`PROGRESSION.levelGap`): +4 % per level of
  * the gap, at most +40 %; Elites and bosses +10 %, at most +100 %. 0 when the hero is at or above
- * the enemy's level.
+ * the enemy's level. Levels past the hero's cap (Wildfire VI–X) do not count: a gap the hero can
+ * never farm away is no malus.
  */
 export function levelGapMalus(
   heroLevel: number,
@@ -49,7 +50,8 @@ export function levelGapMalus(
   rank: EnemyRank = "normal",
 ): number {
   const g = rank === "normal" ? PROGRESSION.levelGap : PROGRESSION.levelGap.wall;
-  return Math.min(g.max, Math.max(0, monsterLevel - heroLevel) * g.perLevel);
+  const level = Math.min(monsterLevel, PROGRESSION.maxLevel);
+  return Math.min(g.max, Math.max(0, level - heroLevel) * g.perLevel);
 }
 
 export type { EnemyRank } from "./constants";

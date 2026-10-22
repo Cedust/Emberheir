@@ -144,7 +144,8 @@ export const PROGRESSION = {
   xpMinFactor: 0.1,
   /**
    * Level gap (Timo 2026-10-19, "mild"): an enemy above the hero's level hits this much harder per
-   * level of the gap, at most `max`. Not in the Wildfire, where the hero cannot level past 100.
+   * level of the gap, at most `max`. In the Wildfire only up to level 100 (Timo 2026-10-22): the
+   * hero leaves run 7 below it and can farm the gap away, but not past the cap.
    * Elites and bosses (Gatekeepers, Champions, act bosses) use `wall` (Timo 2026-10-21, longer
    * runs phase 5): far below their level they win the race, close to it gear decides.
    */

@@ -64,6 +64,10 @@ describe("leveling", () => {
     expect(levelGapMalus(42, 50, "elite")).toBeCloseTo(0.8);
     expect(levelGapMalus(42, 50, "boss")).toBeCloseTo(0.8);
     expect(levelGapMalus(1, 40, "boss")).toBe(PROGRESSION.levelGap.wall.max);
+    // Wildfire: levels past the cap do not count.
+    expect(levelGapMalus(89, 92, "boss")).toBeCloseTo(0.3);
+    expect(levelGapMalus(98, 110, "boss")).toBeCloseTo(0.2);
+    expect(levelGapMalus(100, 110, "boss")).toBe(0);
     expect(xpLevelFactor(30, 1)).toBe(PROGRESSION.xpMinFactor);
     expect(xpForKill(2, "normal", 2)).toBe(PROGRESSION.xpBase + PROGRESSION.xpPerMonsterLevel);
     expect(xpForKill(1, "boss", 1)).toBe(PROGRESSION.xpBase * PROGRESSION.bossRewardMultiplier.xp);

@@ -405,7 +405,6 @@ export function BattleView(props: {
         attackIcon={looks.enemyAttackIcon}
         thiefLeft={over ? null : thiefLeft}
         heroLevel={state.hero.level}
-        noLevelMalus={Boolean(state.run?.wildfire)}
         {...(after ? { hunt: after } : {})}
       />
 
