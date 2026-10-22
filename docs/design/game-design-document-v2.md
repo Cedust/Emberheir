@@ -289,12 +289,12 @@ Endgame **Wildfire I–X**.
   Jede Harvest: +2 Punkte. Zurücksetzen bei Old Nan für Acorns, neu verteilt im Character Sheet.
 - **Breakpoints bei 4, 7 und 10** schalten je einen Perk frei (nur eigene Punkte zählen). Ziel (Timo 21.10.2026): ein
   sichtbarer Moment oder Rhythmus, der zur Rolle des Attributs passt, keine weiteren Prozent-Werte; erstrebenswert,
-  aber kein Build stirbt ohne ihn. Phase 5: Armorbreaker an Mighty Hits statt Crits, Stoneguard wirkt auch ohne Schild,
+  aber kein Build stirbt ohne ihn. Phase 5: Armorbreaker an Mighty Hits statt Crits, Stoneguard nur noch Heavy Attacks −25 % (kein Block-Bonus mehr),
   Barrier Burst ersetzt Spellfire.
 
 | Attribut | Wirkung pro Punkt | Perks 4 / 7 / 10 |
 |---|---|---|
-| **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −15 %, Blocks +15 %) / Titan |
+| **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −25 %) / Titan |
 | **Dexterity** | +2 % Evasion; Hauptattribut des Ashstrider: +8 % Damage | Quick Reflexes / Ember Dance / True Shot |
 | **Intelligence** | +8 % Barrier; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
 | **Agility** | +3 % Attack Speed, +1,5 % Crit Chance | Hawkeye / Opportunist / Double Time |
@@ -371,7 +371,7 @@ Endgame **Wildfire I–X**.
 | **Armor** | Gear, STR | Reduktion = Armor / (Armor + 20 × Angreifer-Level), max. 90 % |
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
 | **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 3 s ohne Treffer 10 %/s (Timo 2026-10-19: vorher 1,5 s/20 %, Emberseer in Akt 2–3 zu sicher) |
-| **Block** | Shield | stoppt 50 % des Treffers (Stoneguard mehr), max. 75 % Chance |
+| **Block** | Shield | stoppt 50 % des Treffers, max. 75 % Chance |
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
 | **Tenacity** | Gear, VIT | kürzere Ailments auf dem Helden |

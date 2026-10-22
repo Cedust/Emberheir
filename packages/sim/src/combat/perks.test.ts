@@ -80,9 +80,8 @@ describe("the hero's attribute scale", () => {
     expect(classic.maxLife).toBe(150);
   });
 
-  it("stat Perks: Stoneguard, Attuned and Inner Fire", () => {
-    const stats = deriveStats(setup({ perks: ["stoneguard", "attuned", "innerFire"] }));
-    expect(stats.blockReduction).toBeCloseTo(COMBAT.blockReduction + PERK.stoneguardBlock);
+  it("stat Perks: Attuned and Inner Fire", () => {
+    const stats = deriveStats(setup({ perks: ["attuned", "innerFire"] }));
     expect(stats.elementalPenetration).toBeCloseTo(PERK.attunedPenetration);
     expect(stats.physicalPenetration).toBeCloseTo(PERK.attunedPenetration);
     expect(stats.startingHeat).toBe(PERK.innerFireHeat);

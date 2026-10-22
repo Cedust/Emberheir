@@ -1,5 +1,4 @@
 import { COMBAT } from "../combat/constants";
-import { PERK } from "../combat/perks";
 import { PROGRESSION } from "./constants";
 
 /**
@@ -28,7 +27,7 @@ export const DEFENSE_NOTES = {
   block: {
     name: "Block",
     kind: "Defense · shield",
-    explain: `A shield sometimes blocks a Physical hit and stops ${pct(COMBAT.blockReduction)} of it (Stoneguard: ${pct(COMBAT.blockReduction + PERK.stoneguardBlock)}).`,
+    explain: `A shield sometimes blocks a Physical hit and stops ${pct(COMBAT.blockReduction)} of it.`,
   },
   resistance: {
     name: "Resistance",

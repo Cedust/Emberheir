@@ -41,8 +41,6 @@ export const BREAKPOINTS = [4, 7, 10] as const;
 
 /** Numbers of the Perks. Starting values for the balance CLI. */
 export const PERK = {
-  /** Stoneguard: a block stops this much more of the hit. */
-  stoneguardBlock: 0.15,
   /** Titan: a hit of at least this share of the target's max life stuns. */
   titanThreshold: 0.1,
   titanStun: 0.5,
@@ -54,7 +52,7 @@ export const PERK = {
   /** Barrier Burst: share of the max Barrier the burst deals as a hit. */
   barrierBurst: 0.5,
   /** Stoneguard: telegraphed Heavy Attacks deal this much less. */
-  stoneguardHeavy: 0.15,
+  stoneguardHeavy: 0.25,
   emberDanceHeat: 5,
   doubleTimeEvery: 4,
   innerFireHeat: 10,
@@ -82,8 +80,8 @@ export const PERKS: readonly PerkDefinition[] = [
     name: "Stoneguard",
     attribute: "strength",
     threshold: 7,
-    description: `Heavy Attacks deal ${pct(PERK.stoneguardHeavy)} less. Blocks stop ${pct(PERK.stoneguardBlock)} more.`,
-    explain: `You brace for the big blows: an enemy's announced Heavy Attack deals ${pct(PERK.stoneguardHeavy)} less to you. With a shield, a block also stops ${pct(PERK.stoneguardBlock)} more of the hit.`,
+    description: `Heavy Attacks deal ${pct(PERK.stoneguardHeavy)} less.`,
+    explain: `You brace for the big blows: an enemy's announced Heavy Attack deals ${pct(PERK.stoneguardHeavy)} less to you, with or without a shield.`,
   },
   {
     id: "titan",
