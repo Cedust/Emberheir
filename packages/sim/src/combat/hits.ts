@@ -131,7 +131,14 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
     (f.setup.rules?.defaultAttackMore ?? 0) + (spark?.damage ?? 0),
   );
   if (trueShot) perk(core, f, "trueShot");
-  const roll = weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min);
+  const rolled = weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min);
+  // Armorbreaker: every nth attack rolls at least the Mighty threshold.
+  const breaker =
+    f.perks.has("armorbreaker") &&
+    weapon.mightyAt !== undefined &&
+    nthAttack(PERK.armorbreakerEvery);
+  const roll =
+    breaker && weapon.mightyAt !== undefined ? Math.max(rolled, weapon.mightyAt) : rolled;
   // Glass Cannon: part of the max Barrier hits along with every Default Attack.
   const glass = wr?.glassCannon ? f.glassBarrier * wr.glassCannon.share : 0;
   // Siege Engine: the Bolt sets off every Sunder stack on the target.

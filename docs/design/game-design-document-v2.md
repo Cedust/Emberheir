@@ -280,7 +280,7 @@ Endgame **Wildfire I–X**.
   noch einmal ×1,5 in Phase 5): Die Wände verlangen ihr Level, und das Level braucht Zeit.
 - **Level-Malus** (Timo 19.10., mild): Ein Gegner über dem Level des Helden trifft +4 % härter pro Level Abstand,
   höchstens +40 %. **Elites, Gatekeeper, Champions und Bosse: +10 % pro Level, höchstens +100 %** (Timo 21.10.,
-  Phase 5: weit unter dem Level gewinnt die Wand das Rennen, nah dran entscheidet das Gear) (nicht im Wildfire, dort endet das Level bei 100). Das Gegner-Level steht dann rot, der Tooltip
+  Phase 5: weit unter dem Level gewinnt die Wand das Rennen, nah dran entscheidet das Gear) (im Wildfire nur bis Level 100 gerechnet, Timo 22.10.: Monster-Level über 100 kann niemand wegfarmen). Das Gegner-Level steht dann rot, der Tooltip
   nennt den Aufschlag.
 - Level ist der **sichere, langsame Hebel** gegen eine Wand; Gear der schnelle, glücksabhängige.
 
@@ -289,12 +289,12 @@ Endgame **Wildfire I–X**.
   Jede Harvest: +2 Punkte. Zurücksetzen bei Old Nan für Acorns, neu verteilt im Character Sheet.
 - **Breakpoints bei 4, 7 und 10** schalten je einen Perk frei (nur eigene Punkte zählen). Ziel (Timo 21.10.2026): ein
   sichtbarer Moment oder Rhythmus, der zur Rolle des Attributs passt, keine weiteren Prozent-Werte; erstrebenswert,
-  aber kein Build stirbt ohne ihn. Phase 5: Armorbreaker an Mighty Hits statt Crits, Stoneguard nur noch Heavy Attacks −25 % (kein Block-Bonus mehr),
+  aber kein Build stirbt ohne ihn. Phase 5: Armorbreaker macht jeden 4. Angriff zum Mighty Hit, Mighty Hits geben Sunder (statt Crits), Stoneguard nur noch Heavy Attacks −25 % (kein Block-Bonus mehr),
   Barrier Burst ersetzt Spellfire.
 
 | Attribut | Wirkung pro Punkt | Perks 4 / 7 / 10 |
 |---|---|---|
-| **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −25 %) / Titan |
+| **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (jeder 4. Angriff ist ein Mighty Hit, Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −25 %) / Titan |
 | **Dexterity** | +2 % Evasion; Hauptattribut des Ashstrider: +8 % Damage | Quick Reflexes / Ember Dance / True Shot |
 | **Intelligence** | +8 % Barrier; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
 | **Agility** | +3 % Attack Speed, +1,5 % Crit Chance | Hawkeye / Opportunist / Double Time |

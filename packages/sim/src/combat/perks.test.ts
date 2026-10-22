@@ -97,6 +97,20 @@ describe("Perks in the fight", () => {
     expect(fight.snapshot().enemy.curses[0]).toMatchObject({ name: "Sunder", stacks: 3 });
   });
 
+  it("Armorbreaker: every 4th attack is a Mighty Hit", () => {
+    const weapon = { ...TEST_WEAPON, precision: 1, mightyAt: 12.5 };
+    const fight = play(setup({ perks: ["armorbreaker"], weapon, bonuses: NO_CRIT }), dummy(), 8.05);
+    expect(perkEvents(fight.events, "armorbreaker")).toHaveLength(
+      PERK.armorbreakerEvery === 4 ? 2 : 0,
+    );
+    const hits = fight.events.filter((e) => e.type === "hit");
+    const mighty = hits.map((h) => h.type === "hit" && h.mighty === true);
+    expect(mighty.slice(0, 4)).toEqual([false, false, false, true]);
+    // Without the Perk the roll never reaches the threshold.
+    const plain = play(setup({ weapon, bonuses: NO_CRIT }), dummy(), 8.05);
+    expect(plain.events.some((e) => e.type === "hit" && e.mighty === true)).toBe(false);
+  });
+
   it("Armorbreaker: its Sunder lowers Resistance too", () => {
     const hits = play(
       setup({ perks: ["armorbreaker"], weapon: { ...MIGHTY, damageType: "fire" } }),

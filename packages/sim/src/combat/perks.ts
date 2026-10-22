@@ -46,6 +46,8 @@ export const PERK = {
   titanStun: 0.5,
   titanCooldown: 6,
   hawkeyePrecision: 0.05,
+  /** Armorbreaker: every nth attack is a Mighty Hit. */
+  armorbreakerEvery: 4,
   trueShotEvery: 5,
   attunedPenetration: 0.1,
   surgeChance: 0.1,
@@ -72,8 +74,8 @@ export const PERKS: readonly PerkDefinition[] = [
     name: "Armorbreaker",
     attribute: "strength",
     threshold: 4,
-    description: "Mighty Hits add a Sunder stack. Your Sunder lowers Armor and Resistance.",
-    explain: `Every Mighty Hit cracks the enemy's guard a bit more (Sunder): it lowers its Armor and its Resistances, so all your next hits land harder.`,
+    description: `Every ${PERK.armorbreakerEvery}th attack is a Mighty Hit. Mighty Hits add Sunder.`,
+    explain: `Every ${PERK.armorbreakerEvery}th attack hits as hard as a Mighty Hit, and every Mighty Hit cracks the enemy's guard a bit more (Sunder): it lowers its Armor and its Resistances, so all your next hits land harder.`,
   },
   {
     id: "stoneguard",
