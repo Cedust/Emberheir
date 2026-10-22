@@ -115,7 +115,7 @@ export function CampView(props: {
             h={size.h - 64}
             ox={ox}
             banners={completedCollections(state)}
-            ancestor={(state.lineage ?? 0) >= LINEAGE_STEPS}
+            ancestor={(state.lineage?.length ?? 0) >= LINEAGE_STEPS}
           />
           <CampFx w={size.w} h={size.h - 64} ox={ox} part="back" />
           <CampFx w={size.w} h={size.h - 64} ox={ox} part="hearth" />

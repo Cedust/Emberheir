@@ -131,7 +131,14 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
     (f.setup.rules?.defaultAttackMore ?? 0) + (spark?.damage ?? 0),
   );
   if (trueShot) perk(core, f, "trueShot");
-  const roll = weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min);
+  const rolled = weapon.damage.min + fraction * (weapon.damage.max - weapon.damage.min);
+  // Armorbreaker: every nth attack rolls at least the Mighty threshold.
+  const breaker =
+    f.perks.has("armorbreaker") &&
+    weapon.mightyAt !== undefined &&
+    nthAttack(PERK.armorbreakerEvery);
+  const roll =
+    breaker && weapon.mightyAt !== undefined ? Math.max(rolled, weapon.mightyAt) : rolled;
   // Glass Cannon: part of the max Barrier hits along with every Default Attack.
   const glass = wr?.glassCannon ? f.glassBarrier * wr.glassCannon.share : 0;
   // Siege Engine: the Bolt sets off every Sunder stack on the target.
@@ -389,7 +396,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
         ? { parry: defender.setup.weaponRules.parry }
         : {}),
       cleanMore: cleanMore(attacker, defender, h, rolls),
-      critMore: huntersMarkBonus(attacker),
+      critMore: h.fromSkill ? huntersMarkBonus(attacker) : 0,
       ...conversionOf(attacker, h.type),
       ...(h.critOverride !== undefined ? { critOverride: h.critOverride } : {}),
     },
@@ -419,7 +426,12 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
   const mighty = rolls && h.mighty === true && !glancing;
   if (!glancing && rolls && attacker.cleanLineReady) attacker.cleanLineReady = false;
   // Hunter's Mark: until the first clean hit, Glancing Blows deal nothing.
-  const dealt = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
+  const raw = glancing && wr?.mark && !attacker.marked ? 0 : outcome.damage;
+  // Stoneguard: a telegraphed Heavy Attack deals less.
+  const dealt =
+    core.heavyFrom === attacker.side && defender.perks.has("stoneguard")
+      ? Math.round(raw * (1 - PERK.stoneguardHeavy))
+      : raw;
   const damage =
     core.heavyFrom === attacker.side
       ? Math.min(dealt, heavyHitCap(defender.stats, defender.setup.rules?.heavyHitCap))
@@ -517,7 +529,7 @@ export function landHit(core: FightCore, attacker: Fighter, h: HitOptions): HitR
       inflict(core, attacker, defender, own, ailmentBase);
     }
     core.ailmentSource = before;
-    if (outcome.crit && attacker.perks.has("armorbreaker")) {
+    if (mighty && attacker.perks.has("armorbreaker")) {
       perk(core, attacker, "armorbreaker");
       addSunder(attacker, defender, 1);
     }
@@ -592,8 +604,8 @@ function gainFury(f: Fighter): void {
 }
 
 /**
- * Hunter's Mark (Ashstrider): a Crit spends the Marks (its bonus was in the hit), a clean Default
- * Attack that does not crit adds one.
+ * Hunter's Mark (Ashstrider, phase 5): every clean Default Attack adds a Mark, Crit or not; the
+ * next Crit of a skill or the Innate spends them (its bonus was in the hit).
  */
 function huntersMark(
   core: FightCore,
@@ -604,7 +616,7 @@ function huntersMark(
 ): void {
   const mark = f.setup.rules?.huntersMark;
   if (!mark) return;
-  if (crit) {
+  if (crit && h.fromSkill) {
     if (f.marks > 0) payoff(core, f, "huntersMark");
     f.marks = 0;
   } else if (!glancing && h.source === f.setup.weapon.defaultAttack && f.marks < mark.maxStacks) {
@@ -1141,6 +1153,7 @@ export function rechargeBarrier(core: FightCore, f: Fighter, dt: number): void {
   f.barrierRecharged += gain;
   if (f.barrier >= max - 1e-6) {
     f.barrier = max;
+    f.barrierBurstReady = true;
     emit(core, {
       t: fightTime(core),
       type: "barrier",
@@ -1151,11 +1164,33 @@ export function rechargeBarrier(core: FightCore, f: Fighter, dt: number): void {
   }
 }
 
+/**
+ * Barrier Burst (INT 10): a broken Barrier bursts as a hit of the weapon's element that always
+ * applies its ailment, for a share of the max Barrier. Armed again once the Barrier was full.
+ */
+function barrierBurst(core: FightCore, f: Fighter): void {
+  if (!f.perks.has("barrierBurst") || !f.barrierBurstReady) return;
+  f.barrierBurstReady = false;
+  perk(core, f, "barrierBurst");
+  const weapon = f.setup.weapon;
+  const ailment = weaponAilment(weapon);
+  landHit(core, f, {
+    source: "Barrier Burst",
+    baseDamage: f.stats.barrier * PERK.barrierBurst,
+    type: weapon.damageType,
+    evadable: false,
+    multiplier: 1,
+    ailmentChances: ailment ? [{ ailment, chance: 1 }] : [],
+    fromTrigger: true,
+  });
+}
+
 /** Barrier absorbs damage first, the rest goes to life. */
 export function dealDamage(core: FightCore, f: Fighter, amount: number): void {
   const absorbed = Math.min(f.barrier, amount);
   f.barrier -= absorbed;
-  if (absorbed > 0 && f.barrier <= 0) react(f, "barrierBreaks");
+  const broke = absorbed > 0 && f.barrier <= 0;
+  if (broke) react(f, "barrierBreaks");
   f.life = Math.max(0, f.life - (amount - absorbed));
   if (f.life === 0 && usePerk(f, "undying")) {
     f.life = 1;
@@ -1166,6 +1201,8 @@ export function dealDamage(core: FightCore, f: Fighter, amount: number): void {
     endFight(core, other(f.side));
     return;
   }
+  if (broke) barrierBurst(core, f);
+  if (core.result) return;
   if (f.life / f.stats.maxLife < PERK.secondBreathBelow && usePerk(f, "secondBreath")) {
     perk(core, f, "secondBreath");
     heal(core, f, f.stats.maxLife * PERK.secondBreathHeal);

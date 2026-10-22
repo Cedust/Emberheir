@@ -208,7 +208,14 @@ export function walkQuiet(
     if (run.phase === "intermission" && !run.visit.done) {
       if (run.visit.kind === "marisha") {
         const choice = visitChoice(s, data);
-        if (choice >= 0) s = applyAction(s, data, { type: "visitNode", choice });
+        // A full bag buys nothing (longer runs fill it; the player would skip too).
+        if (choice >= 0) {
+          try {
+            s = applyAction(s, data, { type: "visitNode", choice });
+          } catch {
+            // No room: walk on.
+          }
+        }
         s = applyAction(s, data, { type: "visitNode", choice: -1 });
       } else {
         s = applyAction(s, data, { type: "visitNode", choice: visitChoice(s, data) });

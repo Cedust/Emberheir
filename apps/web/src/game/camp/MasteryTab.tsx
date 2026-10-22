@@ -404,6 +404,42 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             )}
           </section>
         )}
+        {tree.attunable && (
+          <section className="panel-card echo-picker attunement-picker" aria-label="Attunement">
+            <span
+              className="eyebrow"
+              title="The element of your Default Attack, and of all that uses your weapon's element (Overcharge, Barrier Burst). Free to change in the Camp. Your path and Innate keep theirs."
+            >
+              ATTUNEMENT
+            </span>
+            <div className="echo-list">
+              {[undefined, ...tree.paths].map((p) => {
+                const on = (state.hero.mastery.attunement ?? undefined) === p?.id;
+                const infusion = p?.infusion;
+                const label = infusion
+                  ? `${TYPE_NAME[infusion.damageType] ?? infusion.damageType} · ${infusion.ailment[0]?.toUpperCase()}${infusion.ailment.slice(1)}`
+                  : "Like your path";
+                return (
+                  <button
+                    key={p?.id ?? "path"}
+                    type="button"
+                    className={`echo-row ${on ? "on" : ""}`}
+                    disabled={viewOnly}
+                    aria-pressed={on}
+                    onClick={() => game.dispatch({ type: "setAttunement", pathId: p?.id ?? null })}
+                  >
+                    <i
+                      style={
+                        p ? { background: hex(p.color), boxShadow: `0 0 10px ${hex(p.color)}` } : {}
+                      }
+                    />
+                    <span className="echo-name">{label}</span>
+                  </button>
+                );
+              })}
+            </div>
+          </section>
+        )}
         <section className="panel-card echo-picker" aria-label="Echo">
           <span className="eyebrow">ECHO</span>
           {earned.length === 0 && <p className="sub small">None</p>}

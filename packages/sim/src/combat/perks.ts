@@ -13,7 +13,7 @@ export const PERK_IDS = [
   "trueShot",
   "attuned",
   "surge",
-  "spellfire",
+  "barrierBurst",
   "quickReflexes",
   "emberDance",
   "doubleTime",
@@ -41,17 +41,20 @@ export const BREAKPOINTS = [4, 7, 10] as const;
 
 /** Numbers of the Perks. Starting values for the balance CLI. */
 export const PERK = {
-  /** Stoneguard: a block stops this much more of the hit. */
-  stoneguardBlock: 0.15,
   /** Titan: a hit of at least this share of the target's max life stuns. */
   titanThreshold: 0.1,
   titanStun: 0.5,
   titanCooldown: 6,
   hawkeyePrecision: 0.05,
+  /** Armorbreaker: every nth attack is a Mighty Hit. */
+  armorbreakerEvery: 4,
   trueShotEvery: 5,
   attunedPenetration: 0.1,
   surgeChance: 0.1,
-  spellfireDamage: 2,
+  /** Barrier Burst: share of the max Barrier the burst deals as a hit. */
+  barrierBurst: 0.5,
+  /** Stoneguard: telegraphed Heavy Attacks deal this much less. */
+  stoneguardHeavy: 0.25,
   emberDanceHeat: 5,
   doubleTimeEvery: 4,
   innerFireHeat: 10,
@@ -71,16 +74,16 @@ export const PERKS: readonly PerkDefinition[] = [
     name: "Armorbreaker",
     attribute: "strength",
     threshold: 4,
-    description: "Crits add a Sunder stack. Your Sunder lowers Armor and Resistance.",
-    explain: `Every critical hit cracks the enemy's guard a bit more (Sunder): it lowers its Armor and its Resistances, so all your next hits land harder.`,
+    description: `Every ${PERK.armorbreakerEvery}th attack is a Mighty Hit. Mighty Hits add Sunder.`,
+    explain: `Every ${PERK.armorbreakerEvery}th attack hits as hard as a Mighty Hit, and every Mighty Hit cracks the enemy's guard a bit more (Sunder): it lowers its Armor and its Resistances, so all your next hits land harder.`,
   },
   {
     id: "stoneguard",
     name: "Stoneguard",
     attribute: "strength",
     threshold: 7,
-    description: `Blocks stop ${pct(PERK.stoneguardBlock)} more of the hit.`,
-    explain: `When you block with a shield, it stops ${pct(PERK.stoneguardBlock)} more of the hit.`,
+    description: `Heavy Attacks deal ${pct(PERK.stoneguardHeavy)} less.`,
+    explain: `You brace for the big blows: an enemy's announced Heavy Attack deals ${pct(PERK.stoneguardHeavy)} less to you, with or without a shield.`,
   },
   {
     id: "titan",
@@ -131,12 +134,12 @@ export const PERKS: readonly PerkDefinition[] = [
     explain: `Your hits apply their ailments more often, whatever they are: Bleed, Poison, Burn, Chill, Shock or Corruption.`,
   },
   {
-    id: "spellfire",
-    name: "Spellfire",
+    id: "barrierBurst",
+    name: "Barrier Burst",
     attribute: "intelligence",
     threshold: 10,
-    description: "The first Spell of a fight deals double damage.",
-    explain: `The first spell you cast in every fight deals double damage.`,
+    description: `When your Barrier breaks, it bursts for ${pct(PERK.barrierBurst)} of its max as a hit of your element. Again once it was full.`,
+    explain: `When your Barrier breaks, it does not just vanish: it bursts and hits the enemy for ${pct(PERK.barrierBurst)} of your max Barrier, with your weapon's element and always its ailment. It can burst again once your Barrier was full again.`,
   },
   {
     id: "quickReflexes",

@@ -1,4 +1,6 @@
 import { expect, test } from "@playwright/test";
+import { GAME_DATA } from "@emberheir/content";
+import { newGame, serializeGame } from "@emberheir/sim";
 import { saveMastery, seedSave } from "./fixtures";
 
 test("Heirloom: the painted weapon, its points, a Keystone and the Echo", async ({ page }) => {
@@ -139,4 +141,32 @@ test("class select: every weapon on the rack has its tooltip", async ({ page }) 
     await page.waitForTimeout(500);
     await page.screenshot({ path: `${process.env.SHOTS}/weapon-tooltip-class-select.png` });
   }
+});
+
+test("Attunement: a Wand's Default Attack takes another element, free", async ({ page }) => {
+  test.slow();
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  const base = newGame(GAME_DATA, { seed: 42, classId: "emberseer", weapon: "wand" });
+  await seedSave(
+    page,
+    serializeGame({ ...base, progress: { ...base.progress, trainerUnlocked: true } }),
+  );
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.keyboard.press("t");
+  await page.getByRole("tab", { name: "Heirloom" }).click();
+  const picker = page.getByRole("region", { name: "Attunement" });
+  await expect(picker.getByRole("button", { name: "Like your path" })).toHaveAttribute(
+    "aria-pressed",
+    "true",
+  );
+  const shock = picker.getByRole("button", { name: "Lightning · Shock" });
+  await shock.click();
+  await expect(shock).toHaveAttribute("aria-pressed", "true");
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${process.env.SHOTS}/attunement.png` });
+  }
+  expect(errors).toEqual([]);
 });

@@ -25,7 +25,6 @@ import {
   mark,
   payoff,
   rollRange,
-  usePerk,
   weaponAilment,
   weaponDamageOf,
 } from "./fighter";
@@ -87,10 +86,6 @@ export function castSkill(
   if (heatCost > 0 && f.perks.has("afterglow")) {
     f.heat = addHeat(f.heat, heatCost * PERK.afterglowRefund, 1);
     perk(core, f, "afterglow");
-  }
-  if (skill.type === "spell" && usePerk(f, "spellfire")) {
-    perk(core, f, "spellfire");
-    power *= PERK.spellfireDamage;
   }
   fireTriggers(core, f, "onSkillUse");
   if (core.result) return;

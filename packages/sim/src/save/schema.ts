@@ -75,6 +75,7 @@ const mastery = z.object({
   choices: z.partialRecord(z.enum(["heatForm", "innateForm", "keystone"]), id),
   echo: z.string().nullable(),
   bonusPoints: opt(count),
+  attunement: opt(id),
 });
 
 const hero = z.object({
@@ -84,6 +85,7 @@ const hero = z.object({
   xp: num.nonnegative(),
   attributes,
   unspentAttributePoints: count,
+  lineage: opt(z.partialRecord(z.enum(ATTRIBUTES), count)),
   unspentSkillPoints: count,
   learned: numbersById,
   weaponId: id,
@@ -289,7 +291,7 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
   pendingPrestige: z.object({ actId: id, stage: count, enemyName: z.string() }).nullable(),
   boons: z.object({ kept: z.array(boonPick), fresh: z.array(boonPick) }),
   bountyDone: opt(z.object({ id: id, enemyId: opt(id), actId: id })),
-  lineage: opt(count),
+  lineage: opt(z.array(id)),
   draught: opt(id.nullable()),
   powerCodex: opt(z.record(z.string(), int.positive())),
 });

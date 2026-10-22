@@ -1,5 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
+  type Attribute,
   type AttributePoints,
   type Cheat,
   type GameAction,
@@ -18,6 +19,8 @@ export interface NewCharacter {
   readonly weapon: string;
   /** The free points of the creation, on top of the Class Array. */
   readonly attributes?: AttributePoints;
+  /** Lineage points taken (main attributes of classes that won the finale). */
+  readonly lineage?: readonly Attribute[];
 }
 
 /**
@@ -83,6 +86,7 @@ export function useGame() {
             classId: character.classId,
             weapon: character.weapon,
             ...(character.attributes ? { attributes: character.attributes } : {}),
+            ...(character.lineage?.length ? { lineage: character.lineage } : {}),
           }),
         ),
       );

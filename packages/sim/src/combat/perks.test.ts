@@ -5,7 +5,7 @@ import { Fight, runFight } from "./fight";
 import { PERK, PERKS, type PerkId, perksFor } from "./perks";
 import { deriveStats } from "./stats";
 import { TEST_SKILL, TEST_WEAPON, ZERO_ATTRIBUTES, dummy, setup } from "./test-fixtures";
-import type { CombatantSetup, SkillDefinition, TriggerSpec } from "./types";
+import type { CombatantSetup, TriggerSpec } from "./types";
 
 const ofType = <T extends CombatEvent["type"]>(events: readonly CombatEvent[], type: T) =>
   events.filter((e): e is Extract<CombatEvent, { type: T }> => e.type === type);
@@ -15,6 +15,8 @@ const perkEvents = (events: readonly CombatEvent[], perk: PerkId) =>
 
 const NO_CRIT = { critChance: -1 };
 const ALWAYS_CRIT = { critChance: 2 };
+/** Every clean hit is a Mighty Hit. */
+const MIGHTY = { ...TEST_WEAPON, precision: 1, mightyAt: 0 };
 
 /** A fight played for `seconds`. */
 function play(hero: CombatantSetup, enemy: CombatantSetup, seconds: number, seed = 1) {
@@ -78,9 +80,8 @@ describe("the hero's attribute scale", () => {
     expect(classic.maxLife).toBe(150);
   });
 
-  it("stat Perks: Stoneguard, Attuned and Inner Fire", () => {
-    const stats = deriveStats(setup({ perks: ["stoneguard", "attuned", "innerFire"] }));
-    expect(stats.blockReduction).toBeCloseTo(COMBAT.blockReduction + PERK.stoneguardBlock);
+  it("stat Perks: Attuned and Inner Fire", () => {
+    const stats = deriveStats(setup({ perks: ["attuned", "innerFire"] }));
     expect(stats.elementalPenetration).toBeCloseTo(PERK.attunedPenetration);
     expect(stats.physicalPenetration).toBeCloseTo(PERK.attunedPenetration);
     expect(stats.startingHeat).toBe(PERK.innerFireHeat);
@@ -88,16 +89,31 @@ describe("the hero's attribute scale", () => {
 });
 
 describe("Perks in the fight", () => {
-  it("Armorbreaker: Crits add Sunder", () => {
-    const fight = play(setup({ perks: ["armorbreaker"], bonuses: ALWAYS_CRIT }), dummy(), 3.05);
+  it("Armorbreaker: Mighty Hits add Sunder, other hits do not", () => {
+    const plain = play(setup({ perks: ["armorbreaker"], bonuses: ALWAYS_CRIT }), dummy(), 3.05);
+    expect(perkEvents(plain.events, "armorbreaker")).toHaveLength(0);
+    const fight = play(setup({ perks: ["armorbreaker"], weapon: MIGHTY }), dummy(), 3.05);
     expect(perkEvents(fight.events, "armorbreaker")).toHaveLength(3);
     expect(fight.snapshot().enemy.curses[0]).toMatchObject({ name: "Sunder", stacks: 3 });
   });
 
+  it("Armorbreaker: every 4th attack is a Mighty Hit", () => {
+    const weapon = { ...TEST_WEAPON, precision: 1, mightyAt: 12.5 };
+    const fight = play(setup({ perks: ["armorbreaker"], weapon, bonuses: NO_CRIT }), dummy(), 8.05);
+    expect(perkEvents(fight.events, "armorbreaker")).toHaveLength(
+      PERK.armorbreakerEvery === 4 ? 2 : 0,
+    );
+    const hits = fight.events.filter((e) => e.type === "hit");
+    const mighty = hits.map((h) => h.type === "hit" && h.mighty === true);
+    expect(mighty.slice(0, 4)).toEqual([false, false, false, true]);
+    // Without the Perk the roll never reaches the threshold.
+    const plain = play(setup({ weapon, bonuses: NO_CRIT }), dummy(), 8.05);
+    expect(plain.events.some((e) => e.type === "hit" && e.mighty === true)).toBe(false);
+  });
+
   it("Armorbreaker: its Sunder lowers Resistance too", () => {
-    const fire = { ...TEST_WEAPON, damageType: "fire" as const };
     const hits = play(
-      setup({ perks: ["armorbreaker"], bonuses: ALWAYS_CRIT, weapon: fire }),
+      setup({ perks: ["armorbreaker"], weapon: { ...MIGHTY, damageType: "fire" } }),
       dummy({ bonuses: { allResistance: 0.5 } }),
       4.05,
     ).events.filter((e) => e.type === "hit");
@@ -177,19 +193,25 @@ describe("Perks in the fight", () => {
     expect(bleeds(["surge"])).toBeGreaterThan(bleeds([]) * 1.4);
   });
 
-  it("Spellfire: the first Spell of a fight deals double damage", () => {
-    const spell: SkillDefinition = {
-      ...TEST_SKILL,
-      type: "spell",
-      heatCost: 0,
-      hits: [{ kind: "spell", damage: { min: 20, max: 20 }, damageType: "fire" }],
-    };
-    const hero = (perks: PerkId[]) =>
-      setup({ perks, rotation: [{ skill: spell }], bonuses: NO_CRIT });
-    const spellHits = (perks: PerkId[]) =>
-      ofType(play(hero(perks), dummy(), 2.05).events, "hit").map((h) => h.damage);
-    expect(spellHits([])).toEqual([20, 20]);
-    expect(spellHits(["spellfire"])).toEqual([40, 20]);
+  it("Barrier Burst: a broken Barrier hits back once, again after it was full", () => {
+    const hero = dummy({
+      perks: ["barrierBurst"],
+      bonuses: { barrier: 40 },
+      weapon: { ...TEST_WEAPON, attacksPerSecond: 0, damageType: "cold" },
+    });
+    const enemy = setup({
+      weapon: { ...TEST_WEAPON, damage: { min: 30, max: 30 } },
+      bonuses: NO_CRIT,
+      baseLife: 100_000,
+    });
+    const fight = play(hero, enemy, 3.05);
+    const max = deriveStats(hero).barrier;
+    const bursts = ofType(fight.events, "hit").filter((h) => h.source === "Barrier Burst");
+    // The Barrier breaks on the 2nd hit and gets no time to fill up again: one burst.
+    expect(bursts).toHaveLength(1);
+    expect(bursts[0]).toMatchObject({ side: "hero", damageType: "cold" });
+    expect(bursts[0]?.damage).toBe(Math.round(max * PERK.barrierBurst));
+    expect(ofType(fight.events, "ailment").some((a) => a.ailment === "chill")).toBe(true);
   });
 
   it("Quick Reflexes: the first enemy attack of a fight misses", () => {

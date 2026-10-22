@@ -16,12 +16,13 @@ export const SWORD: WeaponDefinition = {
   defaultAttack: "Slash",
   // Step 4 (Timo 2026-10-20): the three Cinderguard weapons each have their own Speed and Power,
   // at about the same damage per second (Fury's old +20 % on every hit moved into the weapons).
-  // Sword: fast and light (was 14-23 at 0.8/s).
-  damage: { min: 13, max: 20 },
+  // Sword: fast and light (was 14-23 at 0.8/s). Phase 5 (Timo 2026-10-21): Speed in steps of 15 by
+  // Speed pip, the average hit by Power pip (see WEAPON_PIPS); was 13-20 at 0.9/s.
+  damage: { min: 12, max: 18 },
   damageType: "physical",
-  attacksPerSecond: 0.9,
+  attacksPerSecond: 0.95,
   heatBehavior: "cooling",
-  // Heat per Hit = 12 Heat/s target rate ÷ 0.9 attacks/s.
+  // Heat per Hit = 12 Heat/s target rate ÷ 0.95 attacks/s.
   heatPerHit: 13,
   range: "melee",
   implicit: { evasion: 0.05 },
@@ -46,12 +47,12 @@ export const WAND: WeaponDefinition = {
   // per second. Wand: fast and light (was 10-16 at 0.75/s). The caster's Default Attack was the
   // weakest in the game (weapon share 10 %), so both gained about 40 % damage per second.
   // Round Speed (Timo 2026-10-21): Speed 100 instead of 90, damage lowered by the same factor
-  // (was 12-19 at 0.9/s).
-  damage: { min: 11, max: 17 },
+  // (was 12-19 at 0.9/s). Phase 5: Speed 95 like the Sword, same average hit (was 11-17 at 1.0/s).
+  damage: { min: 12, max: 18 },
   // Sorcerer without Fire (2026-10-17): Lightning by default, Attunement can make it Cold.
   damageType: "lightning",
   // Warming Heat comes per second, so the faster Spark needs no other Heat.
-  attacksPerSecond: 1,
+  attacksPerSecond: 0.95,
   heatBehavior: "warming",
   heatPerHit: 0,
   range: "ranged",
@@ -63,13 +64,14 @@ export const AXE: WeaponDefinition = {
   id: "axe",
   name: "Axe",
   defaultAttack: "Hack",
-  // Step 4 (see the Sword): in between (was 15-26 at 0.7/s).
-  damage: { min: 14, max: 25 },
+  // Step 4 (see the Sword): in between (was 15-26 at 0.7/s). Phase 5: Speed 80 like the Bow, same
+  // average hit (was 14-25 at 0.75/s).
+  damage: { min: 14, max: 22 },
   damageType: "physical",
-  attacksPerSecond: 0.75,
+  attacksPerSecond: 0.8,
   heatBehavior: "cooling",
-  // 12 Heat/s ÷ 0.75 attacks/s.
-  heatPerHit: 16,
+  // 12 Heat/s ÷ 0.8 attacks/s.
+  heatPerHit: 15,
   range: "melee",
   implicit: { physicalDamage: 0.1 },
   ailmentChances: [{ ailment: "bleed", chance: 0.25 }],
@@ -80,7 +82,8 @@ export const DAGGER: WeaponDefinition = {
   id: "dagger",
   name: "Dagger",
   defaultAttack: "Stab",
-  damage: { min: 11, max: 17 },
+  // Phase 5: average hit by Power pip (was 11-17).
+  damage: { min: 11, max: 15 },
   damageType: "physical",
   attacksPerSecond: 1.1,
   heatBehavior: "cooling",
@@ -100,8 +103,9 @@ export const BOW: WeaponDefinition = {
   name: "Bow",
   defaultAttack: "Shoot",
   // Step 5 (Timo 2026-10-20): the three Ashstrider weapons each have their own Speed and Power,
-  // at about the same damage per second. Bow: in between (was 13-22 at 0.9/s).
-  damage: { min: 15, max: 24 },
+  // at about the same damage per second. Bow: in between (was 13-22 at 0.9/s). Phase 5: average
+  // hit by Power pip (was 15-24).
+  damage: { min: 14, max: 22 },
   damageType: "physical",
   attacksPerSecond: 0.8,
   heatBehavior: "steady",
@@ -120,7 +124,8 @@ export const CROSSBOW: WeaponDefinition = {
   id: "crossbow",
   name: "Crossbow",
   defaultAttack: "Bolt",
-  damage: { min: 21, max: 32 },
+  // Phase 5: average hit by Power pip (was 21-32).
+  damage: { min: 23, max: 34 },
   damageType: "physical",
   attacksPerSecond: 0.5,
   heatBehavior: "steady",
@@ -140,8 +145,9 @@ export const MACE: WeaponDefinition = {
   defaultAttack: "Smash",
   // Step 4 (Timo 2026-10-20): the three Cinderguard weapons each have their own Speed and Power.
   // Mace: slow and heavy (was 14-23 at 0.65/s). Round Speed (Timo 2026-10-21): Speed 65 like the
-  // Staff instead of 60, damage lowered by the same factor (was 18-27 at 0.6/s).
-  damage: { min: 17, max: 25 },
+  // Staff instead of 60, damage lowered by the same factor (was 18-27 at 0.6/s). Phase 5: average
+  // hit by Power pip, like the Staff (was 17-25).
+  damage: { min: 18, max: 26 },
   damageType: "physical",
   attacksPerSecond: 0.65,
   heatBehavior: "cooling",
@@ -168,8 +174,9 @@ export const STAFF: WeaponDefinition = {
   id: "staff",
   name: "Staff",
   defaultAttack: "Channel",
-  // Step 6 (see the Wand): slow and heavy (was 12-20 at 0.6/s).
-  damage: { min: 15, max: 25 },
+  // Step 6 (see the Wand): slow and heavy (was 12-20 at 0.6/s). Phase 5: average hit by Power pip,
+  // like the Mace (was 15-25).
+  damage: { min: 18, max: 26 },
   damageType: "void",
   attacksPerSecond: 0.65,
   heatBehavior: "warming",
@@ -193,7 +200,9 @@ export const HERO_WEAPONS: readonly WeaponDefinition[] = [
 /**
  * The five pips on the class select's weapon card, Speed and Power (Timo 2026-10-21: fixed per
  * weapon, so a small change in numbers never moves a weapon's place on the card). Speed and
- * Power always add up to 6.
+ * Power always add up to 6. Phase 5 (Timo 2026-10-21): the pips set the numbers too. Speed pip 5 to 1
+ * = Speed 110, 95, 80, 65, 50; Power pip 1 to 5 = an average hit of 13, 15, 18, 22, 28.5. Same
+ * pips, same Speed and hit: the weapons differ in Damage Range, Heat Form and their extras.
  */
 export const WEAPON_PIPS: Readonly<
   Record<string, { readonly speed: number; readonly power: number }>

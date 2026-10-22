@@ -10,6 +10,7 @@ import {
 } from "../../items/types";
 import { Rng } from "../../rng";
 import { type AshbornState, type AshbornValue } from "../ashborn";
+import { type AttributePoints } from "../attributes";
 import { type BattlePlanState } from "../battle-plan";
 import {
   type BoonDefinition,
@@ -49,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 13;
+export const SAVE_VERSION = 14;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -164,6 +165,12 @@ export interface HeroState {
   /** Own attributes: start values plus spent points (gear not included). */
   readonly attributes: Attributes;
   readonly unspentAttributePoints: number;
+  /**
+   * Lineage (phase 5, Timo 2026-10-21): +1 point in the main attribute of every class that won the
+   * finale on this account, taken at creation. Part of `attributes` and of the floor below which
+   * no respec goes, like the Class Array.
+   */
+  readonly lineage?: AttributePoints;
   readonly unspentSkillPoints: number;
   readonly learned: LearnedNodes;
   /** The weapon chosen with the class; it never changes (Weapon Mastery). */
@@ -524,10 +531,10 @@ export interface GameState {
   /** A done bounty the Scout has not paid yet; no new bounty until it is turned in. */
   readonly bountyDone?: BountyDone;
   /**
-   * Lineage step of the account (0–5): how many characters have won the finale. The UI keeps it
-   * outside the save (like the shared stash) and puts it into the state it loads.
+   * Lineage of the account: the classes that have won the finale. The UI keeps it outside the
+   * save (like the shared stash) and puts it into the state it loads.
    */
-  readonly lineage?: number;
+  readonly lineage?: readonly string[];
   /** The Draught chosen in the Camp: brewed from a Flask charge at every set-out. */
   readonly draught?: string | null;
   /**

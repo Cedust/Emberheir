@@ -1,5 +1,5 @@
 import { type Attributes } from "../../combat/types";
-import { attributeProblem, sumAttributes } from "../attributes";
+import { attributeFloor, attributeProblem, sumAttributes } from "../attributes";
 import { EMPTY_BOONS } from "../boons";
 import { PROGRESSION } from "../constants";
 import {
@@ -72,7 +72,7 @@ export function doPrestige(
   const points = hero.unspentAttributePoints + rewards.attributePoints;
   const next = attributes ?? hero.attributes;
   const problem = attributeProblem(next, {
-    floor: heroClassOf(state, data).startingAttributes,
+    floor: attributeFloor(heroClassOf(state, data).startingAttributes, hero.lineage),
     current: hero.attributes,
     points,
   });

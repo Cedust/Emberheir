@@ -74,8 +74,11 @@ function prepare(
   return brewDraught(s, data, act);
 }
 
-/** Farm trips per act at most before the autopilot goes in anyway. */
-export const FARM_TRIPS = 3;
+/**
+ * Farm trips per act at most before the autopilot goes in anyway. 8 since phase 5 (XP ×1.5): with
+ * 3 it went in levels too low, like no player would (7.7 attempts per act instead of 3.9).
+ */
+export const FARM_TRIPS = 8;
 
 /**
  * The act to farm before setting out into `act`: the act before it, while the hero is below the

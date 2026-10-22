@@ -108,6 +108,8 @@ export function AttributeStones(props: {
   actions?: ReactNode;
   /** The class's main attribute: its row says it gives Damage. */
   mainAttribute?: Attribute;
+  /** Lineage points inside `base` (character creation): the top ones of `base` glow fire red. */
+  inherited?: AttributePoints;
 }) {
   const next = addAttributes(props.base, props.delta);
   const lit = new Set(heroPerks(next, props.boon ?? {}));
@@ -156,7 +158,9 @@ export function AttributeStones(props: {
                           : n <= own + boon
                             ? "boon"
                             : "empty";
-                  const className = `notch ${state} ${seal ? "seal" : ""} ${perk && lit.has(perk.id) ? "lit" : ""}`;
+                  const inherited =
+                    n <= before && n > before - (props.inherited?.[a] ?? 0) ? "inherited" : "";
+                  const className = `notch ${state} ${inherited} ${seal ? "seal" : ""} ${perk && lit.has(perk.id) ? "lit" : ""}`;
                   return perk ? (
                     <Seal
                       key={n}

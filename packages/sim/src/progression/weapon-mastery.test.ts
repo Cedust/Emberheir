@@ -291,3 +291,46 @@ describe("Weapon Mastery in the game", () => {
     expect(act(earned, { type: "setEcho", echoId: null }).hero.mastery.echo).toBeNull();
   });
 });
+
+describe("Attunement (Wand, Staff)", () => {
+  const frost = {
+    id: "frost",
+    name: "Frost",
+    theme: "",
+    color: 0,
+    infusion: { damageType: "cold" as const, ailment: "chill" as const, chance: 0.25 },
+  };
+  const attunable = { ...tree, attunable: true, paths: [...tree.paths, frost] };
+  const innate = { ...TEST_SKILL, hits: [{ kind: "weapon" as const, multiplier: 1 }] };
+
+  it("sets the element of the weapon's own hits; the Innate keeps the path's", () => {
+    const state = { ...EMPTY_MASTERY, attunement: "frost" };
+    const b = buildMasteryWeapon(TEST_WEAPON, attunable, state, 0, innate);
+    expect(b.weapon.damageType).toBe("cold");
+    expect(b.weapon.ailmentChances).toEqual([{ ailment: "chill", chance: 0.25 }]);
+    // The Innate follows the path (Edge, Physical).
+    expect(b.innate?.hits[0]).not.toHaveProperty("damageType", "cold");
+    // Without it (or on a weapon that cannot be attuned) the path decides.
+    expect(
+      buildMasteryWeapon(TEST_WEAPON, attunable, EMPTY_MASTERY, 0, innate).weapon.damageType,
+    ).toBe("physical");
+    expect(buildMasteryWeapon(TEST_WEAPON, tree, state, 0, innate).weapon.damageType).toBe(
+      "physical",
+    );
+  });
+
+  it("is free in the Camp, only on weapons that can be attuned, only to their paths", () => {
+    const s = newGame(data, { seed: 1, classId: "test-fighter" });
+    expect(() => act(s, { type: "setAttunement", pathId: "edge" })).toThrow(/attuned/);
+    const weaponId = s.hero.weaponId;
+    const withWand = { ...data, weaponMastery: { ...data.weaponMastery, [weaponId]: attunable } };
+    const run = (state: GameState, pathId: string | null) =>
+      applyAction(state, withWand, { type: "setAttunement", pathId });
+    expect(() => run(s, "nope")).toThrow(/Unknown path/);
+    const tuned = run(s, "frost");
+    expect(tuned.hero.mastery.attunement).toBe("frost");
+    expect(tuned.wallet).toEqual(s.wallet);
+    expect(heroSetup(tuned, withWand).setup.weapon.damageType).toBe("cold");
+    expect(run(tuned, null).hero.mastery).not.toHaveProperty("attunement");
+  });
+});

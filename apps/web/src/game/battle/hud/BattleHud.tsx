@@ -543,7 +543,6 @@ export interface EnemyFrameProps {
   thiefLeft: number | null;
   heroLevel: number;
   /** The Wildfire has no Level Malus (the hero's level ends at 100). */
-  noLevelMalus?: boolean;
   /** The enemy's Trail (hunts-entwurf-v1.md); missing for echoes and the finale. */
   hunt?: HuntView;
 }
@@ -641,7 +640,7 @@ export function EnemyFrame(props: EnemyFrameProps) {
           className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
           title={levelHint(
             e.level - props.heroLevel,
-            props.noLevelMalus ? 0 : levelGapMalus(props.heroLevel, e.level),
+            levelGapMalus(props.heroLevel, e.level, props.tag ? "elite" : "normal"),
           )}
         >
           Lv {e.level}

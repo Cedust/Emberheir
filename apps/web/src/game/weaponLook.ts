@@ -3,6 +3,7 @@ import {
   type GameState,
   type MasteryState,
   activePath,
+  attunedInfusion,
   heroWeaponRank,
   masteryRanks,
   weaponBase,
@@ -25,7 +26,10 @@ export const ELEMENT_COLOR: Record<string, number> = {
 export function weaponLookOf(weaponId: string, mastery: MasteryState, rank: number): WeaponLook {
   const tree = GAME_DATA.weaponMastery[weaponId];
   const nodes = tree?.nodes ?? [];
-  const infusion = tree ? activePath(tree, mastery)?.infusion : undefined;
+  // The gem glows in the element of the weapon's own hits: the Attunement, else the path's.
+  const infusion = tree
+    ? (attunedInfusion(tree, mastery) ?? activePath(tree, mastery)?.infusion)
+    : undefined;
   const element = infusion?.damageType ?? weaponBase(GAME_DATA, weaponId).damageType;
   return {
     grade: gradeIndex(rank),

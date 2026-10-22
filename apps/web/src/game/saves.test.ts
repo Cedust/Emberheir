@@ -141,21 +141,22 @@ describe("shared stash", () => {
 });
 
 describe("Lineage", () => {
-  const hero = (seed: number) => newGame(GAME_DATA, { seed, classId: "cinderguard" });
+  const hero = (seed: number, classId = "cinderguard") => newGame(GAME_DATA, { seed, classId });
   const won = (s: GameState): GameState => ({ ...s, legacy: { ...s.legacy, finaleWon: true } });
 
-  it("every character that wins the finale raises it once, up to 5", () => {
-    const kv = memory();
-    const store = new SaveStore(kv);
-    expect(store.syncLineage(hero(1)).lineage ?? 0).toBe(0);
-    expect(store.syncLineage(won(hero(1))).lineage).toBe(1);
-    // The same character again changes nothing.
-    expect(store.syncLineage(won(hero(1))).lineage).toBe(1);
-    expect(store.syncLineage(won(hero(2))).lineage).toBe(2);
-    // A fresh character inherits the step.
-    expect(store.syncLineage(hero(3)).lineage).toBe(2);
-    for (let seed = 4; seed < 10; seed++) store.syncLineage(won(hero(seed)));
-    expect(store.syncLineage(hero(11)).lineage).toBe(5);
+  it("every class that wins the finale joins it once", () => {
+    const store = new SaveStore(memory());
+    expect(store.syncLineage(hero(1)).lineage ?? []).toEqual([]);
+    expect(store.syncLineage(won(hero(1))).lineage).toEqual(["cinderguard"]);
+    // Another winner of the same class changes nothing.
+    expect(store.syncLineage(won(hero(2))).lineage).toEqual(["cinderguard"]);
+    expect(store.syncLineage(won(hero(3, "emberseer"))).lineage).toEqual([
+      "cinderguard",
+      "emberseer",
+    ]);
+    // A fresh character of any class inherits it.
+    expect(store.syncLineage(hero(4, "ashstrider")).lineage).toEqual(["cinderguard", "emberseer"]);
+    expect(store.lineageClasses()).toEqual(["cinderguard", "emberseer"]);
   });
 });
 
@@ -164,11 +165,23 @@ describe("Lineage storage", () => {
     const kv = memory();
     kv.setItem(LINEAGE_KEY, JSON.stringify({ finishers: ["x", 2] }));
     const store = new SaveStore(kv);
-    const won = newGame(GAME_DATA, { seed: 9, classId: "cinderguard" });
-    expect(store.syncLineage(won).lineage ?? 0).toBe(0);
-    const winner = { ...won, legacy: { ...won.legacy, finaleWon: true } };
-    expect(store.syncLineage(winner).lineage).toBe(1);
-    expect(JSON.parse(kv.getItem(LINEAGE_KEY) ?? "")).toEqual({ finishers: [9] });
+    const fresh = newGame(GAME_DATA, { seed: 9, classId: "cinderguard" });
+    expect(store.syncLineage(fresh).lineage ?? []).toEqual([]);
+    const winner = { ...fresh, legacy: { ...fresh.legacy, finaleWon: true } };
+    expect(store.syncLineage(winner).lineage).toEqual(["cinderguard"]);
+    expect(JSON.parse(kv.getItem(LINEAGE_KEY) ?? "")).toEqual({
+      finishers: [9],
+      classes: ["cinderguard"],
+    });
+  });
+
+  it("a win from before the classes counted adds its class when the winner loads", () => {
+    const kv = memory();
+    kv.setItem(LINEAGE_KEY, JSON.stringify({ finishers: [9] }));
+    const store = new SaveStore(kv);
+    const fresh = newGame(GAME_DATA, { seed: 9, classId: "ashstrider" });
+    const winner = { ...fresh, legacy: { ...fresh.legacy, finaleWon: true } };
+    expect(store.syncLineage(winner).lineage).toEqual(["ashstrider"]);
   });
 });
 

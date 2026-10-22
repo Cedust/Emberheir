@@ -1,9 +1,11 @@
 import { GAME_DATA, ITEM_CATALOG, PRESTIGE_BRANCHES, WEAPON_PIPS } from "@emberheir/content";
 import {
   ATTRIBUTE_RULES,
+  addAttributes,
   type Attribute,
   type HeroClass,
   getBase,
+  lineagePoints,
   speedValue,
   sumAttributes,
 } from "@emberheir/sim";
@@ -20,6 +22,7 @@ import { dummyPreview } from "./classPreview";
 import { PreviewArena } from "./lazyViews";
 import type { NewCharacter } from "./useGame";
 import { ELEMENT_COLOR } from "./weaponLook";
+import { loadLineageClasses } from "./saves";
 
 /**
  * Class select: the three classes on the left; the chosen one in the middle, sparring with
@@ -68,6 +71,12 @@ export function ClassSelect(props: {
   const [step, setStep] = useState<"class" | "attributes">("class");
   const [free, setFree] = useState<Record<Attribute, number>>(NO_POINTS);
   const freeLeft = ATTRIBUTE_RULES.creationPoints - sumAttributes(free);
+  // Lineage (phase 5): classes that won the finale give +1 in their main attribute; each can be
+  // switched off, on by default.
+  const won = useMemo(() => classes.filter((c) => loadLineageClasses().includes(c.id)), [classes]);
+  const [lineageOff, setLineageOff] = useState<readonly string[]>([]);
+  const lineage = won.filter((c) => !lineageOff.includes(c.id)).map((c) => c.mainAttribute);
+  const inherited = lineagePoints(lineage);
   const preview = useMemo(() => dummyPreview(classId, weapon), [classId, weapon]);
   const stage = useStageSize();
   // The arena takes what the two side columns leave of the 16:9 area.
@@ -82,6 +91,11 @@ export function ClassSelect(props: {
     setWeapon(next.weapons[0] ?? "");
     setFree(NO_POINTS);
   };
+  const toggleLineage = (id: string) => {
+    setLineageOff((off) => (off.includes(id) ? off.filter((x) => x !== id) : [...off, id]));
+    setFree(NO_POINTS);
+  };
+  const base = addAttributes(heroClass.startingAttributes, inherited);
 
   return (
     <div className="class-select" aria-label="Class select">
@@ -125,13 +139,35 @@ export function ClassSelect(props: {
                   {freeLeft} Points
                 </span>
               </div>
+              {won.length > 0 && (
+                <div className="cs-lineage" role="group" aria-label="Lineage">
+                  {won.map((c) => {
+                    const on = !lineageOff.includes(c.id);
+                    const attr = ATTRIBUTE_INFO[c.mainAttribute].name;
+                    return (
+                      <button
+                        key={c.id}
+                        type="button"
+                        className={`cs-lineage-chip${on ? " on" : ""}`}
+                        aria-pressed={on}
+                        onClick={() => toggleLineage(c.id)}
+                        title={`${c.lineage?.name ?? "Lineage"}: a ${c.name} won The Last Ember. +1 ${attr} for this Heir. Click to ${on ? "leave it" : "take it"}.`}
+                      >
+                        <img src={ATTRIBUTE_ICONS[c.mainAttribute]} width={20} height={20} alt="" />
+                        <span className="title-font">+1 {attr}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              )}
               <AttributeStones
                 mainAttribute={heroClass.mainAttribute}
-                base={heroClass.startingAttributes}
+                base={base}
+                inherited={inherited}
                 delta={free}
                 canAdd={(a) =>
                   freeLeft > 0 &&
-                  heroClass.startingAttributes[a] + free[a] < ATTRIBUTE_RULES.creationMax
+                  base[a] + free[a] < ATTRIBUTE_RULES.creationMax + (inherited[a] ?? 0)
                 }
                 canRemove={(a) => free[a] > 0}
                 onAdd={(a) => setFree((f) => ({ ...f, [a]: f[a] + 1 }))}
@@ -152,7 +188,7 @@ export function ClassSelect(props: {
                   variant="primary"
                   blocked={freeLeft > 0 ? `${freeLeft} Points left` : null}
                   onClick={() =>
-                    props.onBegin({ slot: props.slot, classId, weapon, attributes: free })
+                    props.onBegin({ slot: props.slot, classId, weapon, attributes: free, lineage })
                   }
                 >
                   Begin

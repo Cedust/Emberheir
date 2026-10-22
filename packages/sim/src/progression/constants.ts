@@ -29,9 +29,10 @@ const XP_PER_MONSTER_LEVEL = 10;
  * Normal kills of the same Monster Level per level (balance CLI). Raised from 1.5 to 3 with the
  * new walls (balance-grundlagen-v1.md): levels come slower, so a wall takes several trips of
  * level and gear, not one lucky one. ×1.5 with the Warden's Gate (laengere-runs-v1.md): the
- * straight road no longer reaches the boss's level, a few walks through the act do.
+ * straight road no longer reaches the boss's level, a few walks through the act do. ×1.5 again in
+ * phase 5 (Timo 2026-10-21): walls ask for their level, and the level takes its time.
  */
-const XP_KILLS = (level: number) => 4.5 * (1.6 + 0.07 * (level - 1));
+const XP_KILLS = (level: number) => 6.75 * (1.6 + 0.07 * (level - 1));
 
 /** A rarity window of the item pick for one enemy rank. */
 export interface RarityRange {
@@ -143,9 +144,12 @@ export const PROGRESSION = {
   xpMinFactor: 0.1,
   /**
    * Level gap (Timo 2026-10-19, "mild"): an enemy above the hero's level hits this much harder per
-   * level of the gap, at most `max`. Not in the Wildfire, where the hero cannot level past 100.
+   * level of the gap, at most `max`. In the Wildfire only up to level 100 (Timo 2026-10-22): the
+   * hero leaves run 7 below it and can farm the gap away, but not past the cap.
+   * Elites and bosses (Gatekeepers, Champions, act bosses) use `wall` (Timo 2026-10-21, longer
+   * runs phase 5): far below their level they win the race, close to it gear decides.
    */
-  levelGap: { perLevel: 0.04, max: 0.4 },
+  levelGap: { perLevel: 0.04, max: 0.4, wall: { perLevel: 0.1, max: 1 } },
   /** Playtest 2: enemies above the hero give 5 % more XP per level, at most double. */
   xpBonusPerLevel: 0.05,
   xpMaxFactor: 2,
@@ -324,8 +328,10 @@ export const PROGRESSION = {
      */
     // Step 7 boss round: bosses caused 58 % of the deaths (target 35–55 %) and the newest act's
     // boss fight took 136–200 s from Act 4 on (target 60–100 s); was life 3 / 4.5, damage 3.5 / 6.
-    boss: { firstRun: { life: 3.25, damage: 2.6 }, later: { life: 3.5, damage: 6 } },
-    gates: [0.4, 0.45],
+    // Phase 5 (longer runs): bosses 61 % of the deaths again, Gatekeepers 22 %; was damage 6 and
+    // gates 0.4 / 0.45.
+    boss: { firstRun: { life: 3.25, damage: 2.6 }, later: { life: 3.5, damage: 5.25 } },
+    gates: [0.45, 0.5],
     /** Stages before a Gatekeeper (since the last one) it needs for its full peak. */
     gateStretch: 4,
     ramps: [

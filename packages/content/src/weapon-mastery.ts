@@ -124,6 +124,8 @@ interface TreeSpec {
   readonly paths: readonly [PathSpec, PathSpec, PathSpec];
   readonly innateForms: readonly [InnateFormSpec, InnateFormSpec, InnateFormSpec];
   readonly keystones: readonly [KeystoneSpec, KeystoneSpec, KeystoneSpec, KeystoneSpec];
+  /** The element of the Default Attack is free to pick among the paths' (Wand, Staff). */
+  readonly attunable?: boolean;
 }
 
 const pct = (v: number) => `${Math.round(v * 100)} %`;
@@ -311,6 +313,7 @@ function buildTree(spec: TreeSpec): WeaponMasteryTree {
     damageScale: round4(spec.oldAverage / ((spec.rangeMin + spec.rangeMax) / 2)),
     paths,
     nodes,
+    ...(spec.attunable ? { attunable: true } : {}),
   };
 }
 
@@ -1630,6 +1633,8 @@ const CROSSBOW = buildTree({
 
 const WAND = buildTree({
   weaponId: "wand",
+  // Phase 5 (Timo 2026-10-21): the Spark's element is free to pick (Attunement).
+  attunable: true,
   precision: 0.7,
   rangeMin: 0.4,
   rangeMax: 1.3,
@@ -1833,6 +1838,7 @@ const WAND = buildTree({
 
 const STAFF = buildTree({
   weaponId: "staff",
+  attunable: true,
   precision: 0.65,
   rangeMin: 0.5,
   rangeMax: 1.2,

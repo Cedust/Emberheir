@@ -89,6 +89,8 @@ export interface Fighter {
   readonly perks: ReadonlySet<PerkId>;
   /** Titan: fight time from which the next stun is ready. */
   titanReadyAt: number;
+  /** Barrier Burst: armed while the Barrier was full since its last burst. */
+  barrierBurstReady: boolean;
   /** Once-per-fight Perks already used. */
   perksUsed: Set<PerkId>;
   // Class Traits.
@@ -238,6 +240,7 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     marked: false,
     perks: new Set(setup.perks ?? []),
     titanReadyAt: 0,
+    barrierBurstReady: true,
     perksUsed: new Set(),
     fury: 0,
     marks: 0,

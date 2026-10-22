@@ -218,7 +218,7 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       0,
       COMBAT.maxBlockChance,
     ),
-    blockReduction: COMBAT.blockReduction + (perks.has("stoneguard") ? PERK.stoneguardBlock : 0),
+    blockReduction: COMBAT.blockReduction,
     barrier: Math.round(Math.max(0, b.barrier) * (1 + step.barrier + b.increasedBarrier)),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance, "fire"),
