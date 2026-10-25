@@ -1,16 +1,21 @@
+import ashRevenantUrl from "./enemies/ash-revenant.webp";
 import ashenBruteUrl from "./enemies/ashen-brute.webp";
+import ashenHarvesterUrl from "./enemies/ashen-harvester.webp";
 import ashenSkirmisherUrl from "./enemies/ashen-skirmisher.webp";
 import barkhideUrl from "./enemies/barkhide.webp";
 import blightSpitterUrl from "./enemies/blight-spitter.webp";
 import cinderCasterUrl from "./enemies/cinder-caster.webp";
 import cinderImpUrl from "./enemies/cinder-imp.webp";
+import cinderKnightUrl from "./enemies/cinder-knight.webp";
 import cinderTyrantUrl from "./enemies/cinder-tyrant.webp";
 import emberThiefUrl from "./enemies/ember-thief.webp";
+import emberWraithUrl from "./enemies/ember-wraith.webp";
 import flameCallerUrl from "./enemies/flame-caller.webp";
 import frostWardenUrl from "./enemies/frost-warden.webp";
 import frostWolfUrl from "./enemies/frost-wolf.webp";
 import gloomWeaverUrl from "./enemies/gloom-weaver.webp";
 import gorrakUrl from "./enemies/gorrak.webp";
+import harrowHoundUrl from "./enemies/harrow-hound.webp";
 import hollowBruteUrl from "./enemies/hollow-brute.webp";
 import iceGolemUrl from "./enemies/ice-golem.webp";
 import magmaBruteUrl from "./enemies/magma-brute.webp";
@@ -61,6 +66,11 @@ export const ENEMY_PAINTINGS = {
   "void-seer": voidSeerUrl,
   "gloom-weaver": gloomWeaverUrl,
   "voidborn-maw": voidbornMawUrl,
+  "ash-revenant": ashRevenantUrl,
+  "ember-wraith": emberWraithUrl,
+  "harrow-hound": harrowHoundUrl,
+  "cinder-knight": cinderKnightUrl,
+  "ashen-harvester": ashenHarvesterUrl,
 } as const satisfies Record<string, string>;
 
 export const enemyPainting = (id: string): string | undefined =>
@@ -104,6 +114,11 @@ export const ENEMY_FACES: Record<
   "void-seer": { x: 0.43, y: 0.22, zoom: 2.8 },
   "gloom-weaver": { x: 0.34, y: 0.27, zoom: 2.8 },
   "voidborn-maw": { x: 0.2, y: 0.16, zoom: 2.6 },
+  "ash-revenant": { x: 0.44, y: 0.2, zoom: 2.8 },
+  "ember-wraith": { x: 0.27, y: 0.14, zoom: 2.8 },
+  "harrow-hound": { x: 0.13, y: 0.38, zoom: 2.6 },
+  "cinder-knight": { x: 0.52, y: 0.13, zoom: 2.8 },
+  "ashen-harvester": { x: 0.29, y: 0.26, zoom: 2.8 },
 };
 
 export const enemyFace = (id: string) =>

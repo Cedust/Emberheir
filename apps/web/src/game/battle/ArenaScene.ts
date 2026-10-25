@@ -124,6 +124,11 @@ export class ArenaScene {
   /** Wildfire: the burning ground glow and how hard the edges flame (the tier). */
   private wildfire: { glow: Graphics; tier: number } | null = null;
   private wildfireCarry = 0;
+  /**
+   * The Ashen Harvester's phase (1 full Life, 2 below 66 %, 3 below 33 %, as in the sim): each one
+   * wears the bosses it echoes. Phase 2 burns and frosts over, phase 3 cracks into the void.
+   */
+  private harvester: { phase: 1 | 2 | 3; carry: number } | null = null;
   private echoAura: Container | null = null;
   /** The ember glowing in a carried Ember Focus. */
   private offHandGlow: Container | null = null;
@@ -263,6 +268,7 @@ export class ArenaScene {
       this.gate = drawGate();
       this.world.addChildAt(this.gate.root, 1);
     }
+    if (enemy.id === "ashen-harvester") this.harvester = { phase: 1, carry: 0 };
     if (enemy.wildfire) {
       this.wildfire = { glow: drawWildfireGlow(), tier: enemy.wildfire };
       this.world.addChildAt(this.wildfire.glow, 1);
@@ -729,6 +735,84 @@ export class ArenaScene {
       const sunder = snapshot[side].curses.some((c) => c.armor) ? ["sunder"] : [];
       this.ailments[side] = [...list.map((a) => a.type), ...sunder];
       if (snapshot[side].life <= 0) this.ailments[side] = [];
+    }
+    const h = this.harvester;
+    if (h && snapshot.enemy.life > 0) {
+      const share = snapshot.enemy.life / Math.max(1, snapshot.enemy.maxLife);
+      const phase = share < 0.33 ? 3 : share < 0.66 ? 2 : 1;
+      if (phase !== 1 && phase > h.phase) {
+        h.phase = phase;
+        this.harvesterPhase(phase);
+      }
+    }
+  }
+
+  /** The Harvester enters a new phase: its cloak flares, ash falls, the camera jolts. */
+  private harvesterPhase(phase: 2 | 3): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const c = this.center("enemy");
+    const [main, second] = phase === 2 ? [0xff8a1f, 0x9fe0ff] : [0xa35cff, 0xffe14d];
+    fx.ring(c.x, c.y - 60, 0xffffff, 40, 260, 0.5, 8, 1);
+    fx.ring(c.x, c.y - 60, main, 30, 320, 0.8, 10, 1);
+    fx.ring(ENEMY_X, GROUND_Y, second, 20, 260, 0.9, 7);
+    fx.burst({
+      x: c.x,
+      y: c.y - 80,
+      count: this.motion ? 46 : 16,
+      color: [main, second, 0xd8d4cc],
+      spreadX: 140,
+      spreadY: 200,
+      angle: [RISE - 1.2, RISE + 1.2],
+      speed: [60, 240],
+      life: [0.6, 1.3],
+      size: [8, 16],
+      drag: 0.5,
+    });
+    if (phase === 3 && this.motion) {
+      for (let i = 0; i < 3; i++) {
+        const x = c.x + (i - 1) * 110;
+        this.wait(0.08 * i, () => this.fx?.bolt(x, this.view().top, x + 20, c.y - 120, 0xd2b8ff));
+      }
+    }
+    this.shake(0.5);
+  }
+
+  /** Between phase changes the Harvester's echoes hang around it: fire and rime, then void. */
+  private drawHarvester(dt: number): void {
+    const h = this.harvester;
+    const fx = this.fx;
+    if (!h || h.phase === 1 || !fx || !this.enemy || this.enemy.root.alpha !== 1) return;
+    h.carry += (h.phase === 2 ? 16 : 20) * dt;
+    for (; h.carry >= 1; h.carry--) {
+      const fire = Math.random() < 0.6;
+      fx.burst({
+        x: ENEMY_X + (Math.random() - 0.5) * 260,
+        y: GROUND_Y - Math.random() * 420,
+        count: 1,
+        color:
+          h.phase === 2
+            ? fire
+              ? [0xff6a2b, 0xffb13b]
+              : [0xbfe8ff, 0xffffff]
+            : fire
+              ? [0xa35cff, 0x6a3a9a]
+              : [0xffe14d, 0xd2b8ff],
+        spreadX: 10,
+        spreadY: 10,
+        angle: [RISE - 0.4, RISE + 0.4],
+        speed: fire ? [40, 110] : [10, 40],
+        life: [0.6, 1.2],
+        size: fire ? [14, 24] : [6, 11],
+        endSize: 0.1,
+        layer: Math.random() < 0.5 ? "back" : "front",
+      });
+    }
+    // Phase 3: now and then a small void bolt crackles over the cloak.
+    if (h.phase === 3 && this.motion && Math.random() < dt * 3) {
+      const x = ENEMY_X + (Math.random() - 0.5) * 200;
+      const y = GROUND_Y - 150 - Math.random() * 300;
+      fx.bolt(x, y, x + (Math.random() - 0.5) * 90, y + 40 + Math.random() * 60, 0xd2b8ff);
     }
   }
 
@@ -1795,6 +1879,7 @@ export class ArenaScene {
     }
     this.drawInfusion(dt);
     this.drawMasteryAura(dt);
+    this.drawHarvester(dt);
     if (this.levelGlow && this.motion) {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
     }
