@@ -18,6 +18,11 @@ import obsidianGuardUrl from "./enemies/obsidian-guard.webp";
 import rimeWardenUrl from "./enemies/rime-warden.webp";
 import rimeWitchUrl from "./enemies/rime-witch.webp";
 import rotwoodStalkerUrl from "./enemies/rotwood-stalker.webp";
+import staticGolemUrl from "./enemies/static-golem.webp";
+import stormCallerUrl from "./enemies/storm-caller.webp";
+import stormHeraldUrl from "./enemies/storm-herald.webp";
+import stormSpriteUrl from "./enemies/storm-sprite.webp";
+import thunderBruteUrl from "./enemies/thunder-brute.webp";
 
 /** Timo's painted enemies by id (tools/art/cut_enemies.py): the arena and the Bestiary use them. */
 export const ENEMY_PAINTINGS = {
@@ -41,6 +46,11 @@ export const ENEMY_PAINTINGS = {
   "rime-witch": rimeWitchUrl,
   "frost-warden": frostWardenUrl,
   "rime-warden": rimeWardenUrl,
+  "storm-sprite": stormSpriteUrl,
+  "thunder-brute": thunderBruteUrl,
+  "storm-caller": stormCallerUrl,
+  "static-golem": staticGolemUrl,
+  "storm-herald": stormHeraldUrl,
 } as const satisfies Record<string, string>;
 
 export const enemyPainting = (id: string): string | undefined =>
@@ -74,6 +84,11 @@ export const ENEMY_FACES: Record<
   "rime-witch": { x: 0.32, y: 0.11, zoom: 2.8 },
   "frost-warden": { x: 0.31, y: 0.195, zoom: 2.6 },
   "rime-warden": { x: 0.27, y: 0.18, zoom: 2.6 },
+  "storm-sprite": { x: 0.2, y: 0.17, zoom: 2.8 },
+  "thunder-brute": { x: 0.17, y: 0.25, zoom: 2.6 },
+  "storm-caller": { x: 0.44, y: 0.2, zoom: 2.8 },
+  "static-golem": { x: 0.2, y: 0.42, zoom: 2.6 },
+  "storm-herald": { x: 0.46, y: 0.13, zoom: 2.8 },
 };
 
 export const enemyFace = (id: string) =>
