@@ -4,6 +4,7 @@ import emberWastesUrl from "../../assets/arena/ember-wastes.webp";
 import frostPeaksUrl from "../../assets/arena/frost-peaks.webp";
 import rotwoodUrl from "../../assets/arena/rotwood.webp";
 import stormSpiresUrl from "../../assets/arena/storm-spires.webp";
+import voidRiftUrl from "../../assets/arena/void-rift.webp";
 
 /**
  * Timo's painted arena backdrops (tools/art/cut_arena.py), one per act. `feet` is how far down
@@ -15,6 +16,7 @@ const BACKDROPS: Record<number, { url: string; feet: number }> = {
   3: { url: emberWastesUrl, feet: 0.78 },
   4: { url: frostPeaksUrl, feet: 0.78 },
   5: { url: stormSpiresUrl, feet: 0.78 },
+  6: { url: voidRiftUrl, feet: 0.78 },
 };
 
 /** A little larger than the canvas, so screen shake and camera zoom never show its edges. */
