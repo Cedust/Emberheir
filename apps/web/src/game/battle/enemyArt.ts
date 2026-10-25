@@ -115,6 +115,11 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "cinder-caster": { url: ENEMY_PAINTINGS["cinder-caster"], height: 370, footX: 0.5 },
   gorrak: { url: ENEMY_PAINTINGS.gorrak, height: 470, footX: 0.5 },
   "ember-thief": { url: ENEMY_PAINTINGS["ember-thief"], height: 290, footX: 0.45 },
+  barkhide: { url: ENEMY_PAINTINGS.barkhide, height: 400, footX: 0.62 },
+  "rotwood-stalker": { url: ENEMY_PAINTINGS["rotwood-stalker"], height: 320, footX: 0.59 },
+  "blight-spitter": { url: ENEMY_PAINTINGS["blight-spitter"], height: 350, footX: 0.6 },
+  "mossbound-warden": { url: ENEMY_PAINTINGS["mossbound-warden"], height: 440, footX: 0.62 },
+  "mother-of-rot": { url: ENEMY_PAINTINGS["mother-of-rot"], height: 470, footX: 0.53 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };

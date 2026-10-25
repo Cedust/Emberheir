@@ -1,5 +1,6 @@
 import { Assets, Sprite, type Texture } from "pixi.js";
 import ashenFieldsUrl from "../../assets/arena/ashen-fields.webp";
+import rotwoodUrl from "../../assets/arena/rotwood.webp";
 
 /**
  * Timo's painted arena backdrops (tools/art/cut_arena.py), one per act. `feet` is how far down
@@ -7,6 +8,7 @@ import ashenFieldsUrl from "../../assets/arena/ashen-fields.webp";
  */
 const BACKDROPS: Record<number, { url: string; feet: number }> = {
   1: { url: ashenFieldsUrl, feet: 0.78 },
+  2: { url: rotwoodUrl, feet: 0.78 },
 };
 
 /** A little larger than the canvas, so screen shake and camera zoom never show its edges. */
