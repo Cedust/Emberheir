@@ -12,6 +12,7 @@ IDS = [
   'barkhide', 'rotwood-stalker', 'blight-spitter', 'mossbound-warden', 'mother-of-rot',
   'magma-brute', 'cinder-imp', 'flame-caller', 'obsidian-guard', 'cinder-tyrant',
   'frost-wolf', 'ice-golem', 'rime-witch', 'frost-warden', 'rime-warden',
+  'storm-sprite', 'thunder-brute', 'storm-caller', 'static-golem', 'storm-herald',
 ]
 HEIGHT = 900  # enemies stand up to ~450 stage px tall, the stage scales up to 2.4x on 4K
 
