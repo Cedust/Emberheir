@@ -135,6 +135,11 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "storm-caller": { url: ENEMY_PAINTINGS["storm-caller"], height: 390, footX: 0.56 },
   "static-golem": { url: ENEMY_PAINTINGS["static-golem"], height: 400, footX: 0.42 },
   "storm-herald": { url: ENEMY_PAINTINGS["storm-herald"], height: 540, footX: 0.5 },
+  "rift-stalker": { url: ENEMY_PAINTINGS["rift-stalker"], height: 390, footX: 0.55 },
+  "hollow-brute": { url: ENEMY_PAINTINGS["hollow-brute"], height: 450, footX: 0.5 },
+  "void-seer": { url: ENEMY_PAINTINGS["void-seer"], height: 390, footX: 0.43 },
+  "gloom-weaver": { url: ENEMY_PAINTINGS["gloom-weaver"], height: 370, footX: 0.45 },
+  "voidborn-maw": { url: ENEMY_PAINTINGS["voidborn-maw"], height: 540, footX: 0.5 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };

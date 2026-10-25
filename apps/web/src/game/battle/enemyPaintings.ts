@@ -9,12 +9,15 @@ import emberThiefUrl from "./enemies/ember-thief.webp";
 import flameCallerUrl from "./enemies/flame-caller.webp";
 import frostWardenUrl from "./enemies/frost-warden.webp";
 import frostWolfUrl from "./enemies/frost-wolf.webp";
+import gloomWeaverUrl from "./enemies/gloom-weaver.webp";
 import gorrakUrl from "./enemies/gorrak.webp";
+import hollowBruteUrl from "./enemies/hollow-brute.webp";
 import iceGolemUrl from "./enemies/ice-golem.webp";
 import magmaBruteUrl from "./enemies/magma-brute.webp";
 import mossboundWardenUrl from "./enemies/mossbound-warden.webp";
 import motherOfRotUrl from "./enemies/mother-of-rot.webp";
 import obsidianGuardUrl from "./enemies/obsidian-guard.webp";
+import riftStalkerUrl from "./enemies/rift-stalker.webp";
 import rimeWardenUrl from "./enemies/rime-warden.webp";
 import rimeWitchUrl from "./enemies/rime-witch.webp";
 import rotwoodStalkerUrl from "./enemies/rotwood-stalker.webp";
@@ -23,6 +26,8 @@ import stormCallerUrl from "./enemies/storm-caller.webp";
 import stormHeraldUrl from "./enemies/storm-herald.webp";
 import stormSpriteUrl from "./enemies/storm-sprite.webp";
 import thunderBruteUrl from "./enemies/thunder-brute.webp";
+import voidSeerUrl from "./enemies/void-seer.webp";
+import voidbornMawUrl from "./enemies/voidborn-maw.webp";
 
 /** Timo's painted enemies by id (tools/art/cut_enemies.py): the arena and the Bestiary use them. */
 export const ENEMY_PAINTINGS = {
@@ -51,6 +56,11 @@ export const ENEMY_PAINTINGS = {
   "storm-caller": stormCallerUrl,
   "static-golem": staticGolemUrl,
   "storm-herald": stormHeraldUrl,
+  "rift-stalker": riftStalkerUrl,
+  "hollow-brute": hollowBruteUrl,
+  "void-seer": voidSeerUrl,
+  "gloom-weaver": gloomWeaverUrl,
+  "voidborn-maw": voidbornMawUrl,
 } as const satisfies Record<string, string>;
 
 export const enemyPainting = (id: string): string | undefined =>
@@ -89,6 +99,11 @@ export const ENEMY_FACES: Record<
   "storm-caller": { x: 0.44, y: 0.2, zoom: 2.8 },
   "static-golem": { x: 0.2, y: 0.42, zoom: 2.6 },
   "storm-herald": { x: 0.46, y: 0.13, zoom: 2.8 },
+  "rift-stalker": { x: 0.28, y: 0.18, zoom: 2.8 },
+  "hollow-brute": { x: 0.34, y: 0.15, zoom: 2.6 },
+  "void-seer": { x: 0.43, y: 0.22, zoom: 2.8 },
+  "gloom-weaver": { x: 0.34, y: 0.27, zoom: 2.8 },
+  "voidborn-maw": { x: 0.2, y: 0.16, zoom: 2.6 },
 };
 
 export const enemyFace = (id: string) =>
