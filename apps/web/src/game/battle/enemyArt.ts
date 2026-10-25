@@ -125,6 +125,11 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "flame-caller": { url: ENEMY_PAINTINGS["flame-caller"], height: 390, footX: 0.48 },
   "obsidian-guard": { url: ENEMY_PAINTINGS["obsidian-guard"], height: 430, footX: 0.6 },
   "cinder-tyrant": { url: ENEMY_PAINTINGS["cinder-tyrant"], height: 540, footX: 0.5 },
+  "frost-wolf": { url: ENEMY_PAINTINGS["frost-wolf"], height: 310, footX: 0.34 },
+  "ice-golem": { url: ENEMY_PAINTINGS["ice-golem"], height: 420, footX: 0.5 },
+  "rime-witch": { url: ENEMY_PAINTINGS["rime-witch"], height: 380, footX: 0.38 },
+  "frost-warden": { url: ENEMY_PAINTINGS["frost-warden"], height: 440, footX: 0.5 },
+  "rime-warden": { url: ENEMY_PAINTINGS["rime-warden"], height: 540, footX: 0.46 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };
