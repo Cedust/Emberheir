@@ -120,6 +120,11 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "blight-spitter": { url: ENEMY_PAINTINGS["blight-spitter"], height: 350, footX: 0.6 },
   "mossbound-warden": { url: ENEMY_PAINTINGS["mossbound-warden"], height: 440, footX: 0.62 },
   "mother-of-rot": { url: ENEMY_PAINTINGS["mother-of-rot"], height: 470, footX: 0.53 },
+  "magma-brute": { url: ENEMY_PAINTINGS["magma-brute"], height: 410, footX: 0.42 },
+  "cinder-imp": { url: ENEMY_PAINTINGS["cinder-imp"], height: 300, footX: 0.5 },
+  "flame-caller": { url: ENEMY_PAINTINGS["flame-caller"], height: 390, footX: 0.48 },
+  "obsidian-guard": { url: ENEMY_PAINTINGS["obsidian-guard"], height: 430, footX: 0.6 },
+  "cinder-tyrant": { url: ENEMY_PAINTINGS["cinder-tyrant"], height: 540, footX: 0.5 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };
