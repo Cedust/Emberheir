@@ -1,5 +1,6 @@
 import { Assets, Sprite, type Texture } from "pixi.js";
 import ashenFieldsUrl from "../../assets/arena/ashen-fields.webp";
+import emberWastesUrl from "../../assets/arena/ember-wastes.webp";
 import rotwoodUrl from "../../assets/arena/rotwood.webp";
 
 /**
@@ -9,6 +10,7 @@ import rotwoodUrl from "../../assets/arena/rotwood.webp";
 const BACKDROPS: Record<number, { url: string; feet: number }> = {
   1: { url: ashenFieldsUrl, feet: 0.78 },
   2: { url: rotwoodUrl, feet: 0.78 },
+  3: { url: emberWastesUrl, feet: 0.78 },
 };
 
 /** A little larger than the canvas, so screen shake and camera zoom never show its edges. */

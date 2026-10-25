@@ -3,10 +3,15 @@ import ashenSkirmisherUrl from "./enemies/ashen-skirmisher.webp";
 import barkhideUrl from "./enemies/barkhide.webp";
 import blightSpitterUrl from "./enemies/blight-spitter.webp";
 import cinderCasterUrl from "./enemies/cinder-caster.webp";
+import cinderImpUrl from "./enemies/cinder-imp.webp";
+import cinderTyrantUrl from "./enemies/cinder-tyrant.webp";
 import emberThiefUrl from "./enemies/ember-thief.webp";
+import flameCallerUrl from "./enemies/flame-caller.webp";
 import gorrakUrl from "./enemies/gorrak.webp";
+import magmaBruteUrl from "./enemies/magma-brute.webp";
 import mossboundWardenUrl from "./enemies/mossbound-warden.webp";
 import motherOfRotUrl from "./enemies/mother-of-rot.webp";
+import obsidianGuardUrl from "./enemies/obsidian-guard.webp";
 import rotwoodStalkerUrl from "./enemies/rotwood-stalker.webp";
 
 /** Timo's painted enemies by id (tools/art/cut_enemies.py): the arena and the Bestiary use them. */
@@ -21,6 +26,11 @@ export const ENEMY_PAINTINGS = {
   "blight-spitter": blightSpitterUrl,
   "mossbound-warden": mossboundWardenUrl,
   "mother-of-rot": motherOfRotUrl,
+  "magma-brute": magmaBruteUrl,
+  "cinder-imp": cinderImpUrl,
+  "flame-caller": flameCallerUrl,
+  "obsidian-guard": obsidianGuardUrl,
+  "cinder-tyrant": cinderTyrantUrl,
 } as const satisfies Record<string, string>;
 
 export const enemyPainting = (id: string): string | undefined =>
@@ -44,6 +54,11 @@ export const ENEMY_FACES: Record<
   "blight-spitter": { x: 0.32, y: 0.15, zoom: 2.6 },
   "mossbound-warden": { x: 0.45, y: 0.23, zoom: 3 },
   "mother-of-rot": { x: 0.37, y: 0.15, zoom: 2.4 },
+  "magma-brute": { x: 0.25, y: 0.19, zoom: 2.6 },
+  "cinder-imp": { x: 0.27, y: 0.33, zoom: 2.4 },
+  "flame-caller": { x: 0.35, y: 0.15, zoom: 2.8 },
+  "obsidian-guard": { x: 0.43, y: 0.23, zoom: 2.8 },
+  "cinder-tyrant": { x: 0.41, y: 0.23, zoom: 2.8 },
 };
 
 export const enemyFace = (id: string) =>
