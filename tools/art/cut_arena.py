@@ -6,7 +6,7 @@ from PIL import Image
 
 SRC = '/mnt/project-files/art/arena/'
 OUT = 'apps/web/src/assets/arena/'
-IDS = ['ashen-fields']
+IDS = ['ashen-fields', 'rotwood']
 WIDTH = 1916  # covers a 16:9 stage up to 2.4x on 4K without a visible blur
 
 os.makedirs(OUT, exist_ok=True)

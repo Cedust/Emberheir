@@ -7,7 +7,10 @@ from PIL import Image
 
 SRC = '/mnt/project-files/art/enemies/'
 OUT = 'apps/web/src/game/battle/enemies/'
-IDS = ['ashen-brute', 'ashen-skirmisher', 'cinder-caster', 'gorrak', 'ember-thief']
+IDS = [
+  'ashen-brute', 'ashen-skirmisher', 'cinder-caster', 'gorrak', 'ember-thief',
+  'barkhide', 'rotwood-stalker', 'blight-spitter', 'mossbound-warden', 'mother-of-rot',
+]
 HEIGHT = 900  # enemies stand up to ~450 stage px tall, the stage scales up to 2.4x on 4K
 
 os.makedirs(OUT, exist_ok=True)
