@@ -14,6 +14,8 @@ IDS = [
   'frost-wolf', 'ice-golem', 'rime-witch', 'frost-warden', 'rime-warden',
   'storm-sprite', 'thunder-brute', 'storm-caller', 'static-golem', 'storm-herald',
   'rift-stalker', 'hollow-brute', 'void-seer', 'gloom-weaver', 'voidborn-maw',
+  'ash-revenant', 'ember-wraith', 'harrow-hound', 'cinder-knight', 'ashen-harvester',
+  'harvester-core',
 ]
 HEIGHT = 900  # enemies stand up to ~450 stage px tall, the stage scales up to 2.4x on 4K
 
