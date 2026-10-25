@@ -16,6 +16,7 @@ import frostWolfUrl from "./enemies/frost-wolf.webp";
 import gloomWeaverUrl from "./enemies/gloom-weaver.webp";
 import gorrakUrl from "./enemies/gorrak.webp";
 import harrowHoundUrl from "./enemies/harrow-hound.webp";
+import harvesterCoreUrl from "./enemies/harvester-core.webp";
 import hollowBruteUrl from "./enemies/hollow-brute.webp";
 import iceGolemUrl from "./enemies/ice-golem.webp";
 import magmaBruteUrl from "./enemies/magma-brute.webp";
@@ -71,6 +72,7 @@ export const ENEMY_PAINTINGS = {
   "harrow-hound": harrowHoundUrl,
   "cinder-knight": cinderKnightUrl,
   "ashen-harvester": ashenHarvesterUrl,
+  "harvester-core": harvesterCoreUrl,
 } as const satisfies Record<string, string>;
 
 export const enemyPainting = (id: string): string | undefined =>
@@ -119,6 +121,7 @@ export const ENEMY_FACES: Record<
   "harrow-hound": { x: 0.13, y: 0.38, zoom: 2.6 },
   "cinder-knight": { x: 0.52, y: 0.13, zoom: 2.8 },
   "ashen-harvester": { x: 0.29, y: 0.26, zoom: 2.8 },
+  "harvester-core": { x: 0.42, y: 0.24, zoom: 2.8 },
 };
 
 export const enemyFace = (id: string) =>

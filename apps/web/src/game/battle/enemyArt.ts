@@ -145,6 +145,7 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "harrow-hound": { url: ENEMY_PAINTINGS["harrow-hound"], height: 290, footX: 0.47 },
   "cinder-knight": { url: ENEMY_PAINTINGS["cinder-knight"], height: 450, footX: 0.7 },
   "ashen-harvester": { url: ENEMY_PAINTINGS["ashen-harvester"], height: 600, footX: 0.47 },
+  "harvester-core": { url: ENEMY_PAINTINGS["harvester-core"], height: 500, footX: 0.65 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
 };
