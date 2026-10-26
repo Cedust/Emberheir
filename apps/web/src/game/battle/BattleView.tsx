@@ -117,12 +117,10 @@ function useLooks(state: GameState, run: RunState) {
     sub: `${heroWeaponName(state, GAME_DATA)} · ${HEAT_TEXT[weapon.heatBehavior]}`,
     icon: "user",
   };
-  // An Elite carries the name of its act modifier ("Rootbound Barkhide", neuausrichtung 6.1).
+  // Only the name: an Elite's modifiers stand as chips under the plaque (Timo 2026-10-26).
   const plain = enemyDef?.name ?? "Enemy";
-  const titled =
-    mods.length && !encounter?.boss && !encounter?.gate ? `${mods[0]} ${plain}` : plain;
   const enemyInfo: PlaqueInfo = {
-    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : titled,
+    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : plain,
     sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : ENEMY_TYPE_NAMES[enemyTypeIcon(enemyDef?.archetype)]} · ${enemyDef?.description ?? ""}`,
     typeIcon: echo ? "echo" : enemyTypeIcon(enemyDef?.archetype),
     ...(encounter?.boss

@@ -53,13 +53,6 @@
   text-shadow: 0 2px 6px #000;
 }
 
-.stage .hud-enemy-kind {
-  font-size: 13px;
-  font-style: italic;
-  color: #b3a288;
-  white-space: nowrap;
-}
-
 .stage .hud-enemy-level {
   font-size: 15px;
   color: #e8c07a;
@@ -820,6 +813,8 @@
 /* Painted enemy type (Brute, Caster ...) and rank mark (Elite helm, Champion wreath, gate, boss). */
 .stage .hud-enemy-type {
   flex: none;
+  display: flex;
+  cursor: help;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.7));
 }
 

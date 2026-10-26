@@ -625,7 +625,9 @@ export function EnemyFrame(props: EnemyFrameProps) {
       aria-label={`${props.name} plaque`}
     >
       <div className="hud-enemy-head" title={props.sub}>
-        <EnemyTypeImg type={props.typeIcon} size={26} className="hud-enemy-type" />
+        <span className="hud-enemy-type" title={props.sub.split(" · ")[0]}>
+          <EnemyTypeImg type={props.typeIcon} size={26} />
+        </span>
         {props.tag && (
           <img className="rank-mark" src={RANK_MARKS[props.tag]} alt="" draggable={false} />
         )}
@@ -644,7 +646,7 @@ export function EnemyFrame(props: EnemyFrameProps) {
           </span>
         )}
         <span className="hud-enemy-name title-font">{props.name}</span>
-        <span className="hud-enemy-kind">{props.sub.split(" · ")[0]}</span>
+
         <span
           className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
           title={levelHint(
