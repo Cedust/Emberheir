@@ -128,7 +128,7 @@
 .stage .hud-enemy-rhythm {
   position: absolute;
   left: 20px;
-  top: 88px;
+  top: 91px;
   width: 600px;
   height: 26px;
   display: flex;
@@ -210,6 +210,13 @@
 }
 
 /* --- attack rhythm --------------------------------------------------------------------------- */
+
+/* The enemy's "now" line stays inside its row, so its glow keeps clear of the Heat bar above. */
+.stage .rhythm.enemy .rhythm-now {
+  top: 1px;
+  bottom: 1px;
+  box-shadow: 0 0 6px 1px rgb(255 210 122 / 0.6);
+}
 
 .stage .rhythm {
   position: relative;
