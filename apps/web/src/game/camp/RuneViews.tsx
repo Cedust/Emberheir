@@ -231,7 +231,7 @@ export function GamblePanel({
                     aria-label={`Gambled: ${last.name}`}
                     {...(active ? hover : {})}
                   >
-                    <ItemArt baseId={last.baseId} slot={lastSlot} />
+                    <ItemArt baseId={last.baseId} uniqueId={last.uniqueId} slot={lastSlot} />
                   </span>
                 </>
               )}

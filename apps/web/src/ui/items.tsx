@@ -285,7 +285,7 @@ export function ItemTile(props: {
       {...dragProps}
     >
       {item && base ? (
-        <ItemArt baseId={item.baseId} slot={base.slot} />
+        <ItemArt baseId={item.baseId} uniqueId={item.uniqueId} slot={base.slot} />
       ) : (
         <span className="item-tile-empty" aria-hidden="true">
           {EMPTY_SLOT_ART[props.label] ? (
@@ -362,7 +362,7 @@ function GridItem(props: {
       {...hover}
       {...dragProps}
     >
-      <ItemArt baseId={p.item.baseId} slot={base.slot} />
+      <ItemArt baseId={p.item.baseId} uniqueId={p.item.uniqueId} slot={base.slot} />
       <SocketDots sockets={p.item.sockets ?? 0} runes={p.item.runes ?? []} />
     </button>
   );

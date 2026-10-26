@@ -182,7 +182,11 @@ function TrophyToast(props: { item: Item }) {
   return (
     <div className="trophy-toast" role="status">
       <span className="trophy-toast-art">
-        <ItemArt baseId={item.baseId} slot={getBase(GAME_DATA.items, item.baseId).slot} />
+        <ItemArt
+          baseId={item.baseId}
+          uniqueId={item.uniqueId}
+          slot={getBase(GAME_DATA.items, item.baseId).slot}
+        />
       </span>
       <span className="eyebrow">NEW TROPHY</span>
       <span className="title-font">{item.name}</span>
@@ -270,7 +274,11 @@ export function ItemCards(props: {
               >
                 {item.rarity === "legendary" && <span className="light-pillar" aria-hidden />}
                 <span className="hoard-art">
-                  <ItemArt baseId={item.baseId} slot={getBase(GAME_DATA.items, item.baseId).slot} />
+                  <ItemArt
+                    baseId={item.baseId}
+                    uniqueId={item.uniqueId}
+                    slot={getBase(GAME_DATA.items, item.baseId).slot}
+                  />
                 </span>
                 <span className="title-font rarity-text hoard-name">{item.name}</span>
                 <span className="sub small">

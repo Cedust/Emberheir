@@ -64,7 +64,7 @@ export function TrophyWall(props: { state: GameState }) {
                     onClick={() => setSel(u.id)}
                   >
                     <span className="trophy-art">
-                      <ItemArt baseId={u.baseId} slot={slot} />
+                      <ItemArt baseId={u.baseId} uniqueId={u.id} slot={slot} />
                     </span>
                   </button>
                 );

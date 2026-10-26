@@ -713,8 +713,20 @@ const PAINTED: Readonly<Record<string, string>> = Object.fromEntries(
   ).map(([path, url]) => [path.slice(path.lastIndexOf("/") + 1, -".webp".length), url]),
 );
 
-export function ItemArt(props: { baseId: string; slot: ItemSlot; className?: string }) {
-  const painted = PAINTED[props.baseId];
+/** Painted Uniques (tools/art/cut_uniques.py), named by unique id; they replace their base's icon. */
+const UNIQUES: Readonly<Record<string, string>> = Object.fromEntries(
+  Object.entries(
+    import.meta.glob<string>("../assets/uniques/*.webp", { eager: true, import: "default" }),
+  ).map(([path, url]) => [path.slice(path.lastIndexOf("/") + 1, -".webp".length), url]),
+);
+
+export function ItemArt(props: {
+  baseId: string;
+  slot: ItemSlot;
+  uniqueId?: string | undefined;
+  className?: string;
+}) {
+  const painted = (props.uniqueId && UNIQUES[props.uniqueId]) || PAINTED[props.baseId];
   if (painted) {
     return (
       <img

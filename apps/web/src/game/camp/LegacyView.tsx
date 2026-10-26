@@ -211,7 +211,11 @@ export function LegacyView(props: {
                   >
                     {item ? (
                       <span className="ring-art">
-                        <ItemArt baseId={item.baseId} slot={itemSlotFor(r.slot)} />
+                        <ItemArt
+                          baseId={item.baseId}
+                          uniqueId={item.uniqueId}
+                          slot={itemSlotFor(r.slot)}
+                        />
                       </span>
                     ) : (
                       <Icon name={r.icon} size={30} strokeWidth={1.6} className="rarity-stroke" />
