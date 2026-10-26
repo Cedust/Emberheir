@@ -12,7 +12,7 @@ import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
-import { SkillIcon } from "../SkillIcon";
+import { AttackIcon, SkillIcon } from "../SkillIcon";
 import { skillIcon, skillTint } from "../skills";
 import { useState } from "react";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, ORB_REACH, hudLayout } from "./layout";
@@ -378,6 +378,8 @@ export interface HeroBarProps {
   hero: FighterSnapshot;
   heroTitle: string;
   weaponIcon: IconName;
+  /** The weapon id, for the painted Default Attack. */
+  weaponId: string;
   flaskCharges: number;
   flaskMax: number;
   /** The Draught brewed for this trip, shown in place of the Flask charge it took. */
@@ -468,7 +470,7 @@ export function HeroBar(props: HeroBarProps) {
               style={swingStyle(hero, !skillNext)}
               data-testid="attack-slot"
             >
-              <Icon name={props.weaponIcon} size={30} color="#fff6e4" />
+              <AttackIcon weaponId={props.weaponId} fallback={props.weaponIcon} size={30} />
               {stunned && <span className="stun-mark mono">{hero.stunned.toFixed(1)}</span>}
             </div>
             <span className={`skill-caption${!skillNext ? " next" : ""}`}>

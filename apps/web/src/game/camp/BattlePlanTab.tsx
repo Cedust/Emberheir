@@ -27,7 +27,7 @@ import { type DragEvent, useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { WEAPON_ICON } from "../battle/hud/BattleHud";
-import { SkillIcon } from "../battle/SkillIcon";
+import { AttackIcon, SkillIcon } from "../battle/SkillIcon";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { Price } from "../../ui/kit/Currency";
@@ -353,7 +353,11 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         <section className="chain" aria-label="One rotation">
           <div className="chain-row">
             <span className="skill-slot attack" title={setup.weapon.defaultAttack}>
-              <Icon name={WEAPON_ICON[setup.weapon.id] ?? "strike"} size={26} color="#fff6e4" />
+              <AttackIcon
+                weaponId={setup.weapon.id}
+                fallback={WEAPON_ICON[setup.weapon.id] ?? "strike"}
+                size={26}
+              />
             </span>
             {report && (
               <ShareBar

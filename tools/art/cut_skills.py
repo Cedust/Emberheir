@@ -73,10 +73,9 @@ for sheet, folder, rows in SHEETS:
       keep = [i for i in range(1, n + 1) if i == sizes.argmax() or i not in edge]
       cell[..., 3] *= np.isin(pieces, keep)
       icon = Image.fromarray(cell.astype(np.uint8), 'RGBA')
-      # Framed by the solid paint only: a faint glow or a stray spark far out would shrink the icon.
-      bx0, by0, bx1, by1 = icon.getchannel('A').point(lambda v: 255 if v > 140 else 0).getbbox()
-      m = round(0.04 * max(bx1 - bx0, by1 - by0))
-      icon = icon.crop((bx0 - m, by0 - m, bx1 + m, by1 + m))
+      # Framed by everything that clearly shows (glow included, the neighbour's spill is gone), so
+      # the icon sits in the middle of its slot and fills it (Timo).
+      icon = icon.crop(icon.getchannel('A').point(lambda v: 255 if v > 60 else 0).getbbox())
       side = max(icon.size)
       square = Image.new('RGBA', (side, side))
       square.paste(icon, ((side - icon.width) // 2, (side - icon.height) // 2))

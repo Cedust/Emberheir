@@ -141,8 +141,17 @@ const SKILL_TINTS: Record<string, string> = {
   envenom: "#4f6a12",
 };
 
-export function skillTint(skillId: string): string {
+function flatTint(skillId: string): string {
   const wand = WAND_INNATE.exec(skillId);
   if (wand) return wand[2] ? "#2d6a8a" : "#8a7a20";
   return SKILL_TINTS[skillId] ?? "#6b5a3e";
+}
+
+/**
+ * A skill slot's background. Behind a painting the tint only glows faintly in a dark well, so the
+ * painted colours stand out (Timo: icons must read well in their frame).
+ */
+export function skillTint(skillId: string): string {
+  const tint = flatTint(skillId);
+  return skillArt(skillId) ? `radial-gradient(circle at 50% 45%, ${tint}66, #1a120c 72%)` : tint;
 }

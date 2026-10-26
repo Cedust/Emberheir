@@ -251,3 +251,45 @@ Do NOT include: any text, letters, numbers or runes; any character, hand, animal
 - `tools/art/cut_skills.py` → `apps/web/src/assets/skills/<skillId>.webp`; `skillIcon` in `game/battle/skills.ts` liefert
   das Bild für Battle-Leiste, Battle Plan und Run Cards. Innate Forms zeigen das Bild ihres Innates; Gegner-
   Skills behalten die Platzhalter.
+
+---
+
+## Sheet F: Default Attacks (8, Nachtrag 2026-10-26)
+
+Jede Waffe hat ihren Grundangriff (Default Attack), der links in der Kampfleiste und im Battle Plan steht. Bis dieses
+Sheet da ist, zeigt der Slot die gemalte Waffe. Die Default Attacks sind die schlichtesten Angriffe im Spiel, also
+**ruhiger als die Skills**: Waffe plus eine kurze Bewegungslinie, keine Element-Farbe (Wand und Staff wechseln ihr
+Element per Attunement), nur Stahl, Holz, Messing und ein kleines weiß-goldenes Aufblitzen.
+
+Datei: `art/icons/attack-sheet-v1.png`
+
+| # | Waffe | Default Attack | Motiv |
+|---|---|---|---|
+| 1 | Sword | Slash | ein kurzes Schwert, quer darüber eine einzelne saubere weiße Hieblinie |
+| 2 | Axe | Hack | eine Handaxt hackt schräg nach unten, kurze Bewegungslinie, zwei Holzspäne fliegen |
+| 3 | Mace | Smash | ein Streitkolben mit Flanschen, unter dem Kopf drei kurze Aufprall-Striche |
+| 4 | Dagger | Stab | ein Dolch sticht nach rechts, dünne gerade Tempolinien dahinter |
+| 5 | Bow | Shoot | ein kurzer gespannter Bogen, ein Pfeil verlässt gerade die Sehne |
+| 6 | Crossbow | Bolt | eine kleine Armbrust von der Seite, ein Bolzen fliegt nach rechts heraus |
+| 7 | Wand | Spark | ein schlanker Holzstab, an der Spitze ein kleiner heller Funke |
+| 8 | Staff | Channel | das obere Ende eines Holzstabs mit einer Kugel, aus der ein dünner heller Strahl nach rechts fließt |
+
+```
+A sprite sheet of 8 game skill icons for a 2D fantasy video game, arranged in 2 neat rows of 4 with lots of empty space between them, transparent background (real transparency, not a checkerboard pattern), all seen straight from the front. Each icon is one single free-standing motif: a weapon doing a simple basic attack, no medallion, frame or button around it. The shapes must stay readable at a very small size: simple strong silhouettes, high contrast, few details. These are the plainest attacks in the game: calm, small motion effects only.
+Use the attached image ONLY as a style reference: same hand-painted storybook game art style, same clean dark ink outlines, soft cel shading, same level of detail and same line weight. Do not copy the objects in it.
+Color rule for ALL 8 icons: no fire, ice, lightning, poison or void colors. Only steel grey, warm walnut wood, aged brass, leather and a small white-gold flash.
+Light from the top left.
+
+Top row, left to right:
+1. A short steel sword pointing up to the right, one single clean white slash line crossing in front of it.
+2. A small hand axe chopping diagonally downward, one short curved motion line behind it and two small wood chips flying.
+3. A flanged iron mace pointing down, three short white impact strokes under its head.
+4. A dagger thrusting to the right, thin straight white speed lines behind it.
+Bottom row, left to right:
+5. A short wooden bow at full draw, seen from the side, an arrow just leaving the string to the right.
+6. A small wooden crossbow seen from the side, a short bolt flying out of it to the right with a thin speed line.
+7. A slim wooden wand with a brass band, pointing up to the right, a small bright white-gold spark at its tip.
+8. The top end of a wooden staff with a smooth round crystal orb, a thin bright white-gold beam streaming out of the orb to the right.
+
+Do NOT include: any text, letters, numbers or runes; any character, hand, animal or face; any background, scenery or cast shadow; a checkerboard pattern; photorealism; plastic or modern look.
+```
