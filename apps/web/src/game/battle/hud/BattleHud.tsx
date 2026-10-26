@@ -697,23 +697,25 @@ export function EnemyFrame(props: EnemyFrameProps) {
         </div>
       </div>
       <div className="hud-enemy-below">
+        <div className="hud-enemy-mods">
+          {props.mods.map((m) => (
+            <span key={m} className="mod-chip">
+              {m}
+            </span>
+          ))}
+          {props.thiefLeft !== null && (
+            <span
+              className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
+              role="timer"
+              data-testid="thief-timer"
+            >
+              <Icon name="retreat" size={16} color="#ffd84a" />
+              <span>Flees in {props.thiefLeft}s</span>
+            </span>
+          )}
+          <StatusIcons fighter={e} className="enemy" />
+        </div>
         {props.hunt && <HuntChip hunt={props.hunt} />}
-        {props.mods.map((m) => (
-          <span key={m} className="mod-chip">
-            {m}
-          </span>
-        ))}
-        {props.thiefLeft !== null && (
-          <span
-            className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
-            role="timer"
-            data-testid="thief-timer"
-          >
-            <Icon name="retreat" size={16} color="#ffd84a" />
-            <span>Flees in {props.thiefLeft}s</span>
-          </span>
-        )}
-        <StatusIcons fighter={e} className="enemy" />
       </div>
     </section>
   );

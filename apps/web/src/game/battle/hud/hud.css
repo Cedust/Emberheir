@@ -148,16 +148,28 @@
   border: 1.5px solid #140c06;
 }
 
+/* Under the plaque: the enemy's modifiers and statuses in one row, its Trail on its own below. */
 .stage .hud-enemy-below {
   position: absolute;
   top: 132px;
   left: -60px;
   right: -60px;
   display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .hud-enemy-mods {
+  display: flex;
   justify-content: center;
-  align-items: flex-start;
+  align-items: center;
   flex-wrap: wrap;
   gap: 8px;
+}
+
+.stage .hud-enemy-mods:has(> .hud-status:only-child:empty) {
+  display: none;
 }
 
 .stage .hud-enemy-below .mod-chip {
