@@ -104,7 +104,7 @@ export function ItemHead(props: { item: Item; tip: ItemTooltip }) {
   return (
     <div className="ib-head">
       <span className={`ib-art ${rarityClass(item)}`}>
-        <ItemArt baseId={item.baseId} slot={base.slot} />
+        <ItemArt baseId={item.baseId} uniqueId={item.uniqueId} slot={base.slot} />
         <span className="ib-tier" title={`Tier ${item.tier}`}>
           {TIER_NUMERALS[item.tier] ?? item.tier}
         </span>

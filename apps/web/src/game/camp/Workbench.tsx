@@ -83,7 +83,13 @@ export function Workbench({
       }}
     >
       <BenchArt persona={props.persona}>
-        {item && <ItemArt baseId={item.baseId} slot={getBase(ITEM_CATALOG, item.baseId).slot} />}
+        {item && (
+          <ItemArt
+            baseId={item.baseId}
+            uniqueId={item.uniqueId}
+            slot={getBase(ITEM_CATALOG, item.baseId).slot}
+          />
+        )}
       </BenchArt>
     </div>
   );

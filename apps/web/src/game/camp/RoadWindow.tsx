@@ -254,7 +254,11 @@ function HomeUniqueChip(props: { id: string; act: ActData; found: boolean; prest
       aria-label={unique.name}
       {...hover}
     >
-      <ItemArt baseId={unique.baseId} slot={getBase(ITEM_CATALOG, unique.baseId).slot} />
+      <ItemArt
+        baseId={unique.baseId}
+        uniqueId={unique.id}
+        slot={getBase(ITEM_CATALOG, unique.baseId).slot}
+      />
     </span>
   );
 }
