@@ -17,7 +17,7 @@ export const ORB_REACH = ORB_R + 70;
 export const ENEMY_TOP = 70;
 export const ENEMY_W = 640;
 /** The liquid enemy Life bar inside the enemy frame (relative to the frame). */
-export const ENEMY_LIFE = { x: 20, y: 40, w: 600, h: 24 } as const;
+export const ENEMY_LIFE = { x: 20, y: 44, w: 600, h: 18 } as const;
 
 export interface HudLayout {
   /** Stage size. */

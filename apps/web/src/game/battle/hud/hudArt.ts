@@ -35,10 +35,13 @@ export function orbRing(t: HudTextures, r: number): Sprite {
   return ring;
 }
 
-/** The wooden plate with brass end caps; its slot holds the rectangle (x, y, w, h). */
+/**
+ * The wooden plate with brass end caps; its slot holds the rectangle (x, y, w, h). The slot is a
+ * pixel smaller than the liquid on each side, so the red covers the wood up to the brass.
+ */
 export function enemyPlate(t: HudTextures, x: number, y: number, w: number, h: number): Container {
   const slotH = t.plate.height - PLATE_SLICE.top - PLATE_SLICE.bottom;
-  const s = (h + 6) / slotH;
+  const s = (h - 2) / slotH;
   const plate = new NineSliceSprite({
     texture: t.plate,
     leftWidth: PLATE_SLICE.side,
@@ -49,6 +52,6 @@ export function enemyPlate(t: HudTextures, x: number, y: number, w: number, h: n
   plate.width = w / s + PLATE_SLICE.side * 2 - 40;
   plate.height = t.plate.height;
   plate.scale.set(s);
-  plate.position.set(x - (PLATE_SLICE.side - 20) * s, y - 3 - PLATE_SLICE.top * s);
+  plate.position.set(x - (PLATE_SLICE.side - 20) * s, y + 1 - PLATE_SLICE.top * s);
   return plate;
 }

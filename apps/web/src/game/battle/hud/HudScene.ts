@@ -16,7 +16,7 @@ import {
 import { Fx } from "../fx";
 import { BAR_FRAGMENT, GAUGE_VERTEX, ORB_FRAGMENT } from "./shaders";
 import { type HudTextures, enemyPlate, loadHudTextures, orbRing } from "./hudArt";
-import { BAR_H, ENEMY_TOP, ENEMY_W, ORB_R, type HudLayout, hudLayout } from "./layout";
+import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, type HudLayout, hudLayout } from "./layout";
 
 /**
  * The Diablo-style battle HUD drawn in PixiJS: the bar body, the Life and Heat orbs (liquid
@@ -397,7 +397,7 @@ export class HudScene {
     this.app = app;
     this.life = new Orb(app, "life");
     this.heat = new Orb(app, "heat");
-    this.enemy = new Gauge(app.renderer, "bar", 600, 24, ENEMY_COLORS, boss);
+    this.enemy = new Gauge(app.renderer, "bar", ENEMY_LIFE.w, ENEMY_LIFE.h, ENEMY_COLORS, boss);
     this.root.addChild(this.enemyPlate, this.bar, this.life.root, this.heat.root);
     layer.addChild(this.root);
     this.place();

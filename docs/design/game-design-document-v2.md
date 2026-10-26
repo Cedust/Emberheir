@@ -592,6 +592,8 @@ Endgame **Wildfire I–X**.
   Rootbound, Thornbark), dann allgemeine (Extra Fast, Stone Skin, Vampiric, Thorns, Enraged). Ihre Beute folgt dem
   Thema der Modifier. Besserer Loot, Ember Coal, öffnen eine Ember Shrine.
 - **Champions** (ab Run 3, 4 % pro Elite): drei Modifier, +30 % Life, eigener Hoard (sicher Epic, 15 % Legendary).
+- **Gegner-Plakette:** nur der Name als Titel; Typ als gemaltes Icon (Name beim Hovern), Rang als gemalte Marke +
+  Wort (ELITE, CHAMPION, GATEKEEPER, BOSS), Modifier als Chips darunter.
 - **Ember Thief:** seltener Gegner, der wegläuft; fängt man ihn, gibt es Beute.
 - **Bosse:** pro Act einer mit Phasen und Signatur-Mechanik. Jedes Prestige gibt jedem Boss eine Fähigkeit dazu.
 - **Defense der Gegner:** Armor wächst mit dem Monster Level (×0,27 pro Level), dazu **10 % All Resistance** für

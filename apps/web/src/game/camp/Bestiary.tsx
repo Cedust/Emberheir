@@ -2,6 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import { type EnemyDefinition, type GameState } from "@emberheir/sim";
 import { useState } from "react";
 import { EnemyPortrait } from "../../ui/EnemyPortrait";
+import { ENEMY_TYPE_NAMES, EnemyTypeImg, enemyTypeIcon } from "../../ui/gameIcons";
 import { TrailMark } from "../../ui/TrailMark";
 import {
   BOSS_TRAIL_TEXT,
@@ -74,6 +75,12 @@ function BestiaryPage(props: { state: GameState; enemy: EnemyDefinition }) {
         <EnemyPortrait enemyId={enemy.id} size={86} hidden={!known} />
         <span>
           <span className="title-font trophy-name">{known ? enemy.name : "???"}</span>
+          {known && (
+            <span className="bestiary-type small">
+              <EnemyTypeImg type={enemyTypeIcon(enemy.archetype)} size={22} />
+              {ENEMY_TYPE_NAMES[enemyTypeIcon(enemy.archetype)]}
+            </span>
+          )}
           <span className="sub small">
             {hunt.kills}
             {hunt.next !== undefined ? ` / ${hunt.next}` : ""} {hunt.boss ? "wins" : "kills"}

@@ -2,6 +2,7 @@ import { ACTS, ITEM_CATALOG } from "@emberheir/content";
 import { type CodexHome, type CodexPartKind, type GameState, codexKnows } from "@emberheir/sim";
 import { useState } from "react";
 import { actVisible } from "../labels";
+import { EnemyTypeImg, enemyTypeIcon } from "../../ui/gameIcons";
 
 const ARCHETYPE_NAMES: Record<string, string> = {
   brute: "Brutes",
@@ -82,7 +83,12 @@ export function TriggerCodex(props: { state: GameState }) {
               onClick={() => setPicked(p)}
             >
               <span className="codex-name">{learned ? p.name : "? ? ?"}</span>
-              <span className="codex-meta sub">{homeHint(p.home, props.state)}</span>
+              <span className="codex-meta sub">
+                {p.home.archetypes?.[0] && (
+                  <EnemyTypeImg type={enemyTypeIcon(p.home.archetypes[0])} size={16} />
+                )}
+                {homeHint(p.home, props.state)}
+              </span>
             </button>
           );
         })}

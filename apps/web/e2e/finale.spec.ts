@@ -39,7 +39,7 @@ test("The Last Ember: the gauntlet starts with Gorrak's echo", async ({ page }) 
   await page.getByRole("button", { name: /NEXT STAGE/ }).click();
   const battle = page.getByRole("region", { name: "Battle" });
   await expect(battle).toContainText("Echo of Gorrak, the Pit Brute");
-  await expect(battle).toContainText("Warden Echo");
+  await expect(battle.locator(".hud-enemy-type")).toHaveAttribute("title", "Warden Echo");
   expect(errors).toEqual([]);
 });
 

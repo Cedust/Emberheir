@@ -8,7 +8,13 @@ import {
   type DraughtDefinition,
   type FighterSnapshot,
 } from "@emberheir/sim";
-import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
+import {
+  EnemyTypeImg,
+  type EnemyTypeIcon,
+  GameIcon,
+  type GameIconId,
+  RANK_MARKS,
+} from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
@@ -539,7 +545,7 @@ export interface EnemyFrameProps {
   enemy: FighterSnapshot;
   name: string;
   sub: string;
-  icon: IconName;
+  typeIcon: EnemyTypeIcon;
   tag?: "ELITE" | "BOSS" | "GATEKEEPER" | "CHAMPION";
   mods: readonly string[];
   attackIcon: IconName;
@@ -622,7 +628,12 @@ export function EnemyFrame(props: EnemyFrameProps) {
       aria-label={`${props.name} plaque`}
     >
       <div className="hud-enemy-head" title={props.sub}>
-        <Icon name={props.icon} size={20} color="#f3e6c8" />
+        <span className="hud-enemy-type" title={props.sub.split(" · ")[0]}>
+          <EnemyTypeImg type={props.typeIcon} size={26} />
+        </span>
+        {props.tag && (
+          <img className="rank-mark" src={RANK_MARKS[props.tag]} alt="" draggable={false} />
+        )}
         {props.tag && (
           <span
             className={`rank-tag title-font ${tagClass}`}
@@ -638,7 +649,7 @@ export function EnemyFrame(props: EnemyFrameProps) {
           </span>
         )}
         <span className="hud-enemy-name title-font">{props.name}</span>
-        <span className="hud-enemy-kind">{props.sub.split(" · ")[0]}</span>
+
         <span
           className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
           title={levelHint(
@@ -689,23 +700,25 @@ export function EnemyFrame(props: EnemyFrameProps) {
         </div>
       </div>
       <div className="hud-enemy-below">
+        <div className="hud-enemy-mods">
+          {props.mods.map((m) => (
+            <span key={m} className="mod-chip">
+              {m}
+            </span>
+          ))}
+          {props.thiefLeft !== null && (
+            <span
+              className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
+              role="timer"
+              data-testid="thief-timer"
+            >
+              <Icon name="retreat" size={16} color="#ffd84a" />
+              <span>Flees in {props.thiefLeft}s</span>
+            </span>
+          )}
+          <StatusIcons fighter={e} className="enemy" />
+        </div>
         {props.hunt && <HuntChip hunt={props.hunt} />}
-        {props.mods.map((m) => (
-          <span key={m} className="mod-chip">
-            {m}
-          </span>
-        ))}
-        {props.thiefLeft !== null && (
-          <span
-            className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
-            role="timer"
-            data-testid="thief-timer"
-          >
-            <Icon name="retreat" size={16} color="#ffd84a" />
-            <span>Flees in {props.thiefLeft}s</span>
-          </span>
-        )}
-        <StatusIcons fighter={e} className="enemy" />
       </div>
     </section>
   );

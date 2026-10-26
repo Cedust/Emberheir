@@ -1,4 +1,16 @@
 import type { HeatBehavior } from "@emberheir/sim";
+import afflicterUrl from "../assets/enemy-types/afflicter.webp";
+import bruteUrl from "../assets/enemy-types/brute.webp";
+import casterUrl from "../assets/enemy-types/caster.webp";
+import championUrl from "../assets/enemy-types/champion.webp";
+import echoUrl from "../assets/enemy-types/echo.webp";
+import harvesterUrl from "../assets/enemy-types/harvester.webp";
+import skirmisherUrl from "../assets/enemy-types/skirmisher.webp";
+import thornbackUrl from "../assets/enemy-types/thornback.webp";
+import wardenUrl from "../assets/enemy-types/warden.webp";
+import eliteNodeUrl from "../assets/map/node-elite.webp";
+import bossMarkUrl from "../assets/ui/stage-boss.webp";
+import gateMarkUrl from "../assets/ui/stage-gate.webp";
 import bleedUrl from "../assets/ailments/bleed.webp";
 import burnUrl from "../assets/ailments/burn.webp";
 import chillUrl from "../assets/ailments/chill.webp";
@@ -116,3 +128,54 @@ export const HEAT_FORM_ICONS: Readonly<Record<HeatBehavior, string>> = {
   warming: warmingUrl,
   smoldering: smolderingUrl,
 };
+
+/** Painted enemy types (Timo's sheet 12, tools/art/cut_enemy_types.py): archetypes and echoes. */
+export const ENEMY_TYPE_ICONS = {
+  brute: bruteUrl,
+  skirmisher: skirmisherUrl,
+  caster: casterUrl,
+  afflicter: afflicterUrl,
+  warden: wardenUrl,
+  thornback: thornbackUrl,
+  harvester: harvesterUrl,
+  echo: echoUrl,
+} as const;
+
+export type EnemyTypeIcon = keyof typeof ENEMY_TYPE_ICONS;
+
+export const ENEMY_TYPE_NAMES: Readonly<Record<EnemyTypeIcon, string>> = {
+  brute: "Brute",
+  skirmisher: "Skirmisher",
+  caster: "Caster",
+  afflicter: "Afflicter",
+  warden: "Warden",
+  thornback: "Thornback",
+  harvester: "Harvester",
+  echo: "Warden Echo",
+};
+
+/** An enemy archetype's icon key; unknown archetypes fall back to Brute. */
+export const enemyTypeIcon = (archetype: string | undefined): EnemyTypeIcon =>
+  archetype && archetype in ENEMY_TYPE_ICONS ? (archetype as EnemyTypeIcon) : "brute";
+
+export function EnemyTypeImg(props: { type: EnemyTypeIcon; size?: number; className?: string }) {
+  const size = props.size ?? 20;
+  return (
+    <img
+      className={`game-icon ${props.className ?? ""}`}
+      src={ENEMY_TYPE_ICONS[props.type]}
+      width={size}
+      height={size}
+      alt=""
+      draggable={false}
+    />
+  );
+}
+
+/** Painted rank marks on the enemy plaque: the map's Elite helm, the stage track's gate and boss. */
+export const RANK_MARKS = {
+  ELITE: eliteNodeUrl,
+  CHAMPION: championUrl,
+  GATEKEEPER: gateMarkUrl,
+  BOSS: bossMarkUrl,
+} as const;

@@ -31,6 +31,7 @@ import { ArenaScene } from "./ArenaScene";
 import type { EnemyLook } from "./enemyArt";
 import { BoonBar } from "../Boons";
 import type { IconName } from "../../ui/Icon";
+import { ENEMY_TYPE_NAMES, type EnemyTypeIcon, enemyTypeIcon } from "../../ui/gameIcons";
 import { HudScene } from "./hud/HudScene";
 import { EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
 import { BAR_H } from "./hud/layout";
@@ -41,7 +42,9 @@ import { huntView, trailTitle } from "../hunts";
 interface PlaqueInfo {
   readonly name: string;
   readonly sub: string;
-  readonly icon: IconName;
+  readonly icon?: IconName;
+  /** The enemy's painted type (archetype or Warden Echo). */
+  readonly typeIcon?: EnemyTypeIcon;
   readonly tag?: "ELITE" | "BOSS" | "GATEKEEPER" | "CHAMPION";
   readonly mods?: readonly string[];
 }
@@ -61,14 +64,6 @@ const HEAT_TEXT = {
   steady: "Steady Heat",
   warming: "Warming Heat",
   smoldering: "Smoldering Heat",
-};
-const ARCHETYPE_TEXT: Record<string, string> = {
-  brute: "Brute",
-  skirmisher: "Skirmisher",
-  caster: "Caster",
-  afflicter: "Afflicter",
-  warden: "Warden",
-  thornback: "Thornback",
 };
 
 /** The Last Ember burns in the dark. */
@@ -122,14 +117,12 @@ function useLooks(state: GameState, run: RunState) {
     sub: `${heroWeaponName(state, GAME_DATA)} · ${HEAT_TEXT[weapon.heatBehavior]}`,
     icon: "user",
   };
-  // An Elite carries the name of its act modifier ("Rootbound Barkhide", neuausrichtung 6.1).
+  // Only the name: an Elite's modifiers stand as chips under the plaque (Timo 2026-10-26).
   const plain = enemyDef?.name ?? "Enemy";
-  const titled =
-    mods.length && !encounter?.boss && !encounter?.gate ? `${mods[0]} ${plain}` : plain;
   const enemyInfo: PlaqueInfo = {
-    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : titled,
-    sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : (ARCHETYPE_TEXT[enemyDef?.archetype ?? ""] ?? "")} · ${enemyDef?.description ?? ""}`,
-    icon: encounter?.boss ? "boss" : ((enemyDef?.archetype ?? "brute") as "brute"),
+    name: echo ? `Echo of ${enemyDef?.name ?? ""}` : plain,
+    sub: `${echo ? "Warden Echo" : isFinaleAct(GAME_DATA, act.id) ? "Last Flame" : encounter?.boss ? "Act Boss" : ENEMY_TYPE_NAMES[enemyTypeIcon(enemyDef?.archetype)]} · ${enemyDef?.description ?? ""}`,
+    typeIcon: echo ? "echo" : enemyTypeIcon(enemyDef?.archetype),
     ...(encounter?.boss
       ? { tag: "BOSS" as const }
       : encounter?.gate
@@ -399,7 +392,7 @@ export function BattleView(props: {
         enemy={enemy}
         name={looks.enemyInfo.name}
         sub={looks.enemyInfo.sub}
-        icon={looks.enemyInfo.icon}
+        typeIcon={looks.enemyInfo.typeIcon ?? "brute"}
         {...(looks.enemyInfo.tag ? { tag: looks.enemyInfo.tag } : {})}
         mods={looks.enemyInfo.mods ?? []}
         attackIcon={looks.enemyAttackIcon}
