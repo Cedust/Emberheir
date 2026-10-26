@@ -5733,8 +5733,8 @@
 }
 
 .stage .harvest-gain > img {
-  width: 40px;
-  height: 40px;
+  width: 48px;
+  height: 44px;
   object-fit: contain;
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
 }
@@ -9715,4 +9715,92 @@
   color: var(--dmg-fire);
   box-shadow: 0 0 8px rgb(255 106 43 / 0.45);
   opacity: 1;
+}
+
+/* --- Let It Burn: The Harvest burns away from the bottom up over the Camp ------------------- */
+
+@property --burn {
+  syntax: "<percentage>";
+  inherits: true;
+  initial-value: 0%;
+}
+
+.stage .harvest-burn {
+  position: absolute;
+  inset: 0;
+  z-index: 40;
+  overflow: hidden;
+  pointer-events: none;
+  animation: harvest-burn 2.2s cubic-bezier(0.45, 0.05, 0.75, 0.95) forwards;
+}
+
+@keyframes harvest-burn {
+  from {
+    --burn: -8%;
+  }
+  to {
+    --burn: 112%;
+  }
+}
+
+/* The still copy of the window must not unfold again. */
+.stage .harvest-burn-page * {
+  animation: none !important;
+  transition: none !important;
+}
+
+.stage .harvest-burn-page {
+  position: absolute;
+  inset: 0;
+  mask-image: linear-gradient(to top, transparent var(--burn), #000 calc(var(--burn) + 2%));
+}
+
+/* Paper chars brown above the flame before it catches. */
+.stage .harvest-burn-char {
+  position: absolute;
+  inset: 0;
+  z-index: 50;
+  background: linear-gradient(
+    to top,
+    rgb(20 6 2 / 0.95) var(--burn),
+    rgb(70 24 6 / 0.75) calc(var(--burn) + 4%),
+    rgb(120 50 10 / 0.25) calc(var(--burn) + 12%),
+    transparent calc(var(--burn) + 22%)
+  );
+  mix-blend-mode: multiply;
+}
+
+.stage .harvest-burn-edge {
+  position: absolute;
+  left: 0;
+  width: 100%;
+  height: 150px;
+  bottom: calc(var(--burn) - 75px);
+  z-index: 51;
+  filter: drop-shadow(0 0 14px rgb(255 120 30 / 0.85));
+}
+
+.stage .harvest-burn-spark {
+  position: absolute;
+  bottom: var(--burn);
+  z-index: 52;
+  border-radius: 50%;
+  background: #ffcf6a;
+  box-shadow: 0 0 8px 2px rgb(255 130 40 / 0.9);
+  opacity: 0;
+  animation: harvest-spark 0.9s ease-out infinite !important;
+}
+
+@keyframes harvest-spark {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0);
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(12px, -90px);
+  }
 }

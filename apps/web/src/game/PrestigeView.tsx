@@ -18,15 +18,16 @@ import {
 } from "@emberheir/sim";
 import { useState } from "react";
 import actUrl from "../assets/ui/stage-boss.webp";
-import levelUrl from "../assets/ui/level-ring.webp";
-import slotUrl from "../assets/ui/hud-slot.webp";
+import attributePointsUrl from "../assets/harvest/attribute-points.webp";
+import battlePlanUrl from "../assets/harvest/battle-plan.webp";
+import keystonePlaceUrl from "../assets/harvest/keystone-place.webp";
+import levelCapUrl from "../assets/harvest/level-cap.webp";
 import leafUrl from "../assets/tree/leaves-3.webp";
 import { GAME_ICONS } from "../ui/gameIcons";
 import { useNoteHover } from "../ui/ItemTooltip";
 import { Button } from "../ui/kit/Button";
 import { Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { draughtIconUrl } from "../ui/Potion";
-import { ATTRIBUTE_ICONS } from "./AttributeStones";
 import { backdropUrl } from "./battle/arenaBackdrop";
 import { PersonaPortrait } from "./camp/art/PersonaArt";
 import { PaintDefs } from "./camp/art/paint";
@@ -97,7 +98,6 @@ function harvestGains(state: GameState): Gain[] {
   const final = prestige >= PROGRESSION.finalPrestige;
   const acts = actsInRun(GAME_DATA, prestige);
   const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
-  const main = heroClassOf(state, GAME_DATA).mainAttribute;
   const penalty = emberPenalty({ ...state, legacy: { ...state.legacy, prestige } });
   const vial = draughtIconUrl("vigor-draught");
   return [
@@ -123,7 +123,7 @@ function harvestGains(state: GameState): Gain[] {
       : [
           {
             id: "level-cap",
-            icon: levelUrl,
+            icon: levelCapUrl,
             name: "Level Cap",
             value: `${levelCap(prestige - 1)} → ${r.levelCap}`,
             explain: "How high you can level in this run.",
@@ -138,7 +138,7 @@ function harvestGains(state: GameState): Gain[] {
     },
     {
       id: "attribute-points",
-      icon: ATTRIBUTE_ICONS[main],
+      icon: attributePointsUrl,
       name: "Attribute Points",
       value: `+${r.attributePoints}`,
       explain: "Spend them in the Character Sheet.",
@@ -147,7 +147,7 @@ function harvestGains(state: GameState): Gain[] {
       ? [
           {
             id: "battle-plan",
-            icon: slotUrl,
+            icon: battlePlanUrl,
             name: r.planUpgrade,
             explain: "New in your Battle Plan. Set it up at Kaelen.",
           },
@@ -157,7 +157,7 @@ function harvestGains(state: GameState): Gain[] {
       ? [
           {
             id: "keystones",
-            icon: leafUrl,
+            icon: keystonePlaceUrl,
             name: "Keystone Place",
             value: `${r.keystones}`,
             explain: "You can learn one more Keystone at once.",
@@ -195,28 +195,39 @@ function harvestGains(state: GameState): Gain[] {
  * window with the Mastery pick and everything the next generation gets. Attribute Points wait in
  * the Character Sheet. Let It Burn wakes the Heir in the Camp.
  */
-export function PrestigeView(props: { state: GameState; game: GameApi }) {
-  const { state, game } = props;
+export function PrestigeView(props: {
+  state: GameState;
+  game: GameApi;
+  /** Let It Burn was pressed with this Mastery: the window burns away over the Camp. */
+  onBurn?: (branch: string | undefined) => void;
+  /** A still copy of The Harvest for the burn, with the Mastery that was taken. */
+  frozen?: { branch: string | undefined };
+}) {
+  const { state, game, frozen } = props;
   const pending = state.pendingPrestige;
-  const [step, setStep] = useState<"victory" | "harvest">("victory");
+  const [step, setStep] = useState<"victory" | "harvest">(frozen ? "harvest" : "victory");
   // Only the class's own Masteries grow (klassengeruest-v1.md 5), in the class's order.
   const heroClass = heroClassOf(state, GAME_DATA);
   const open = openBranches(state, GAME_DATA);
   const title = heroTitle(state, GAME_DATA);
   const titleWith = (id: string) =>
     classTitle(heroClass, [...state.legacy.branches, id], GAME_DATA.branchEpithets);
-  const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
+  const [branch, setBranch] = useState<string | undefined>(() =>
+    frozen ? frozen.branch : open[0]?.id,
+  );
   if (!pending) return null;
   const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
   const act = getAct(GAME_DATA, pending.actId);
   const backdrop = {
     "--prestige-art": `url(${backdropUrl(act.number) ?? ""})`,
   } as React.CSSProperties;
-  const finish = () =>
+  const finish = () => {
+    props.onBurn?.(branch);
     game.dispatchAll([
       { type: "prestige", ...(branch ? { branchId: branch } : {}) },
       { type: "dismissNotice" },
     ]);
+  };
 
   if (step === "victory") {
     return (
@@ -310,7 +321,7 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
               big
               variant="primary"
               blocked={open.length > 0 && !branch ? "Choose a Mastery first." : null}
-              onClick={finish}
+              onClick={frozen ? () => {} : finish}
             >
               {final ? "Keep Everything" : "Let It Burn"}
             </Button>
@@ -362,5 +373,76 @@ function MasteryPick(props: {
         ))}
       </span>
     </button>
+  );
+}
+
+/** Drifting sparks along the burning edge: fixed spread, each with its own delay. */
+const SPARKS = Array.from({ length: 28 }, (_, i) => ({
+  x: (i * 37 + 11) % 100,
+  delay: ((i * 53) % 17) / 10,
+  size: 3 + ((i * 7) % 4),
+}));
+
+/**
+ * Let It Burn (Timo): The Harvest burns away from the bottom up over the Camp, a ragged glowing
+ * edge with charred paper above it and sparks rising. Looks only; the Prestige is already done.
+ */
+export function HarvestBurn(props: { children: React.ReactNode; onDone: () => void }) {
+  return (
+    <div
+      className="harvest-burn"
+      aria-hidden="true"
+      inert
+      onAnimationEnd={(e) => e.target === e.currentTarget && props.onDone()}
+    >
+      <div className="harvest-burn-page">
+        {props.children}
+        <div className="harvest-burn-char" />
+      </div>
+      <svg className="harvest-burn-edge" viewBox="0 0 1000 100" preserveAspectRatio="none">
+        <defs>
+          <filter id="harvest-burn-rag" x="0" y="-50%" width="100%" height="200%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.009 0.07" numOctaves="3" seed="7" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              scale="110"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+            <feGaussianBlur stdDeviation="1.2" />
+          </filter>
+          <linearGradient id="harvest-burn-glow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#2a0e04" stopOpacity="0" />
+            <stop offset="0.3" stopColor="#3a1406" stopOpacity="0.95" />
+            <stop offset="0.45" stopColor="#ff7a1e" />
+            <stop offset="0.52" stopColor="#ffe08a" />
+            <stop offset="0.6" stopColor="#ff5a10" />
+            <stop offset="1" stopColor="#ff5a10" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <rect
+          x="-40"
+          y="10"
+          width="1080"
+          height="80"
+          fill="url(#harvest-burn-glow)"
+          filter="url(#harvest-burn-rag)"
+        />
+      </svg>
+      {SPARKS.map((s, i) => (
+        <span
+          key={i}
+          className="harvest-burn-spark"
+          style={
+            {
+              left: `${s.x}%`,
+              width: s.size,
+              height: s.size,
+              animationDelay: `${s.delay}s`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
   );
 }
