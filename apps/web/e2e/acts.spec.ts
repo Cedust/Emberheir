@@ -10,6 +10,8 @@ test("after Gorrak the road leads on: pick an act and set out", async ({ page })
 
   const camp = page.getByRole("region", { name: "Camp" });
   await expect(camp).toContainText("Camp at the Rotwood");
+  // The caravan camps in the Rotwood now: its own painted camp (lager-hintergruende-v1.md).
+  await expect(camp.locator("svg.camp-scene")).toHaveAttribute("data-act", "2");
   const road = camp.getByRole("radiogroup", { name: "Road" });
   // Only the acts of this run: Acts 3 to 7 stay hidden until later Prestiges open them.
   await expect(road.getByRole("radio")).toHaveCount(2);

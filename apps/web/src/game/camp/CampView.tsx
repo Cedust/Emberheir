@@ -1,5 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
+  finaleOpen,
   flaskCapacity,
   type GameState,
   LINEAGE_STEPS,
@@ -62,6 +63,8 @@ export function CampView(props: {
   const plan = useRoadPlan(state, game);
   const { act } = plan;
   const next = nextAct(state, GAME_DATA);
+  // The caravan camps in the next act's land; once the last flame is in reach, in the cold crater.
+  const campAct = finaleOpen(state, GAME_DATA) ? 8 : next.number;
   // Personas who have not joined the caravan yet are not in the Camp at all.
   const list = personas(state, act).filter((p) => !p.locked);
   const hearthY = list.find((p) => p.id === "hearth")?.y ?? 0;
@@ -116,8 +119,9 @@ export function CampView(props: {
             ox={ox}
             banners={completedCollections(state)}
             ancestor={(state.lineage?.length ?? 0) >= LINEAGE_STEPS}
+            act={campAct}
           />
-          <CampFx w={size.w} h={size.h - 64} ox={ox} part="back" />
+          <CampFx w={size.w} h={size.h - 64} ox={ox} part="back" act={campAct} />
           <CampFx w={size.w} h={size.h - 64} ox={ox} part="hearth" />
           {/* Positions are in mock coordinates (1440 × 900), centered; the scene starts below the header. */}
           {list.map((p, i) => {

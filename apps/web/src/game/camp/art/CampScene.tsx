@@ -4,6 +4,13 @@ import type { CSSProperties } from "react";
 import type { CampLightSource } from "./CampLight";
 import type { CollectionId } from "../../collections";
 import campAshenFields from "../../../assets/camp/camp-ashen-fields.webp";
+import campEmberWastes from "../../../assets/camp/camp-ember-wastes.webp";
+import campEmberfall from "../../../assets/camp/camp-emberfall.webp";
+import campFrostPeaks from "../../../assets/camp/camp-frost-peaks.webp";
+import campLastEmber from "../../../assets/camp/camp-last-ember.webp";
+import campRotwood from "../../../assets/camp/camp-rotwood.webp";
+import campStormSpires from "../../../assets/camp/camp-storm-spires.webp";
+import campVoidRift from "../../../assets/camp/camp-void-rift.webp";
 import hearthBowl from "../../../assets/camp/hearthfire-bowl.webp";
 
 /**
@@ -34,6 +41,25 @@ const f = (n: number) => n.toFixed(1);
 const IMG_W = 1916;
 const IMG_H = 821;
 const IMG_RING_X = 945;
+
+/**
+ * One painted camp per act (lager-hintergruende-v1.md, tools/art/cut_camp.py), each an edit of
+ * the Act 1 camp with the same ring, tents, wagons and anvil. 8 is The Last Ember. `air` is the
+ * colour of what drifts through the camp: ash, spores, sparks, snow, motes.
+ */
+const ASHEN_CAMP = { url: campAshenFields, air: "#c9c2b8" };
+const CAMPS: Record<number, { url: string; air: string }> = {
+  1: ASHEN_CAMP,
+  2: { url: campRotwood, air: "#cfe08a" },
+  3: { url: campEmberWastes, air: "#ff9a4a" },
+  4: { url: campFrostPeaks, air: "#f2f6ff" },
+  5: { url: campStormSpires, air: "#c8c0e0" },
+  6: { url: campVoidRift, air: "#e08af0" },
+  7: { url: campEmberfall, air: "#e8dcc8" },
+  8: { url: campLastEmber, air: "#fff2c8" },
+};
+
+const camp = (act: number | undefined) => CAMPS[act ?? 1] ?? ASHEN_CAMP;
 
 /** How far right of x = 1300 Eldrin's painted signpost stands. */
 export const SIGNPOST_DX = 100;
@@ -135,8 +161,11 @@ export function CampBackdrop(props: {
   banners?: readonly CollectionId[];
   /** Full Lineage: the ancestor portrait hangs on the palisade. */
   ancestor?: boolean;
+  /** Whose camp is painted: the act number, 8 for The Last Ember (Act 1 if left out). */
+  act?: number;
 }) {
   const { w, h, ox } = props;
+  const url = camp(props.act).url;
   const k = h / IMG_H;
   const iw = IMG_W * k;
   const left = HEARTH_X - IMG_RING_X * k;
@@ -148,6 +177,7 @@ export function CampBackdrop(props: {
       height={h}
       viewBox={`${-ox} 0 ${w} ${h}`}
       aria-hidden="true"
+      data-act={props.act ?? 1}
     >
       <defs>
         <radialGradient id="camp-vignette" cx="0.5" cy="0.55" r="0.75">
@@ -156,18 +186,11 @@ export function CampBackdrop(props: {
         </radialGradient>
       </defs>
 
-      <image
-        href={campAshenFields}
-        x={left}
-        y="0"
-        width={iw}
-        height={h}
-        preserveAspectRatio="none"
-      />
+      <image href={url} x={left} y="0" width={iw} height={h} preserveAspectRatio="none" />
       {/* Ultrawide: the painting continues mirrored at both sides. */}
       {-ox < left && (
         <image
-          href={campAshenFields}
+          href={url}
           x={-left}
           y="0"
           width={iw}
@@ -178,7 +201,7 @@ export function CampBackdrop(props: {
       )}
       {w - ox > right && (
         <image
-          href={campAshenFields}
+          href={url}
           x={-right - iw}
           y="0"
           width={iw}
@@ -348,20 +371,26 @@ const HEARTH_FIT = `translate(${HEARTH_X} ${HEARTH_Y}) scale(0.85) translate(-${
  * The moving part of the camp: the Hearthfire with its glow and sparks, and drifting ash. The Camp
  * draws it in two parts, so the bowl and flames stand in front of the personas behind the fire.
  */
-export function CampFx(props: { w: number; h: number; ox: number; part?: "back" | "hearth" }) {
+export function CampFx(props: {
+  w: number;
+  h: number;
+  ox: number;
+  part?: "back" | "hearth";
+  act?: number;
+}) {
   const { w, h, ox, part } = props;
   const ash = rand(21);
   const cls = part === "hearth" ? "camp-fx camp-hearth" : "camp-fx";
   return (
     <svg className={cls} width={w} height={h} viewBox={`${-ox} 0 ${w} ${h}`} aria-hidden="true">
-      {part !== "hearth" && <CampAir ash={ash} w={w} h={h} ox={ox} />}
+      {part !== "hearth" && <CampAir ash={ash} w={w} h={h} ox={ox} air={camp(props.act).air} />}
       {part !== "back" && <Hearthfire />}
     </svg>
   );
 }
 
-/** The fire's glow on the ground and the drifting ash. */
-function CampAir(props: { ash: () => number; w: number; h: number; ox: number }) {
+/** The fire's glow on the ground and the drifting ash (or the act's spores, sparks, snow). */
+function CampAir(props: { ash: () => number; w: number; h: number; ox: number; air: string }) {
   const { ash, w, h, ox } = props;
   return (
     <>
@@ -374,7 +403,7 @@ function CampAir(props: { ash: () => number; w: number; h: number; ox: number })
         fill="url(#ember-glow)"
         opacity="0.55"
       />
-      <g fill="#c9c2b8">
+      <g fill={props.air}>
         {Array.from({ length: 34 }, (_, i) => (
           <circle
             key={i}
