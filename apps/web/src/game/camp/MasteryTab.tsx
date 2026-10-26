@@ -17,6 +17,7 @@ import {
   pointsAvailable,
   pointsSpent,
   weaponGrade,
+  masteryRespecAcorns,
 } from "@emberheir/sim";
 import { Button, HoldButton } from "../../ui/kit/Button";
 import { useEffect, useRef, useState } from "react";
@@ -492,7 +493,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                 blocked={
                   !hasSpent
                     ? "Nothing learned yet"
-                    : state.wallet.acorns < MASTERY.respecAcorns
+                    : state.wallet.acorns < masteryRespecAcorns(state.legacy.prestige)
                       ? "Not enough Acorns"
                       : null
                 }
@@ -506,7 +507,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                   setPending([]);
                 }}
               >
-                Respec · <Price id="acorns" amount={MASTERY.respecAcorns} />
+                Respec · <Price id="acorns" amount={masteryRespecAcorns(state.legacy.prestige)} />
               </HoldButton>
             )}
           </section>

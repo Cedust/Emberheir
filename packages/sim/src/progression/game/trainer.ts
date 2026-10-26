@@ -12,7 +12,7 @@ import {
   type BattlePlanState,
 } from "../battle-plan";
 import { PROGRESSION } from "../constants";
-import { autoRewards, bossLevel } from "../leveling";
+import { autoRewards, bossLevel, killPrice } from "../leveling";
 import {
   forgetBlockReason,
   getNode,
@@ -22,13 +22,7 @@ import {
   startingNodes,
   type LearnedNodes,
 } from "../skill-tree";
-import {
-  EMPTY_MASTERY,
-  learnMastery,
-  MASTERY,
-  pointsSpent,
-  type MasteryState,
-} from "../weapon-mastery";
+import { EMPTY_MASTERY, learnMastery, pointsSpent, type MasteryState } from "../weapon-mastery";
 import { requireCamp } from "./guards";
 import { returnLooseWebRunes } from "./web-runes";
 import { heroClassOf, heroSetup, heroWeaponRank, knownSkills, masteryTree } from "./hero-build";
@@ -231,7 +225,8 @@ export function respecMastery(state: GameState, data: GameData): GameState {
   if (pointsSpent(tree, mastery) === 0 && Object.keys(mastery.choices).length === 0) {
     return fail("Nothing to respec");
   }
-  if (state.wallet.acorns < MASTERY.respecAcorns) return fail("Not enough Acorns");
+  const price = masteryRespecAcorns(state.legacy.prestige);
+  if (state.wallet.acorns < price) return fail("Not enough Acorns");
   return {
     ...state,
     hero: {
@@ -243,7 +238,7 @@ export function respecMastery(state: GameState, data: GameData): GameState {
         ...(mastery.bonusPoints ? { bonusPoints: mastery.bonusPoints } : {}),
       },
     },
-    wallet: { ...state.wallet, acorns: state.wallet.acorns - MASTERY.respecAcorns },
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
   };
 }
 
@@ -354,8 +349,9 @@ export function setBattlePlan(state: GameState, data: GameData, plan: BattlePlan
     }
     const old = state.hero.plan.capstone;
     if (old && old.id !== capstone.id) {
-      if (acorns < PROGRESSION.capstoneChangeAcorns) return fail("Not enough Acorns");
-      acorns -= PROGRESSION.capstoneChangeAcorns;
+      const price = capstoneChangeAcorns(state.legacy.prestige);
+      if (acorns < price) return fail("Not enough Acorns");
+      acorns -= price;
     }
   } else if (state.hero.plan.capstone) {
     return fail("A Capstone cannot be removed");
@@ -387,6 +383,14 @@ function validThreshold(t: number): boolean {
  * every respec follows one rule (entschlackung-v1.md).
  */
 export const attributeRespecAcorns = (prestige: number) => respecAcorns(prestige);
+
+/** Acorns for a Mastery respec at Kaelen: the same one rule (economy-audit-v1.md E1). */
+export const masteryRespecAcorns = (prestige: number) => respecAcorns(prestige);
+
+/** Acorns for switching to another Capstone: a few kills at the run's boss level. */
+export function capstoneChangeAcorns(prestige: number): number {
+  return killPrice(bossLevel(prestige), { acorns: PROGRESSION.capstoneChangeKills }).acorns;
+}
 
 /**
  * Attribute respec at Kaelen: every point above the Class Array comes back and is set anew,

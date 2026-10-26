@@ -56,8 +56,6 @@ export interface LootGate {
   readonly legendary: Readonly<Record<EnemyRank, number>>;
   /** Bosses may drop their trophy Uniques. */
   readonly trophies: boolean;
-  /** Highest rarity Marisha's gambling can give. */
-  readonly gambleMax: Rarity;
 }
 
 const LOOT_GATES: readonly LootGate[] = [
@@ -68,7 +66,6 @@ const LOOT_GATES: readonly LootGate[] = [
     boss: { floor: "magic", max: "rare", sure: "rare" },
     legendary: { normal: 0, elite: 0, boss: 0 },
     trophies: false,
-    gambleMax: "rare",
   },
   // Run 2: Rare becomes common, still no Epic (Playtest 2: Epics in runs 1 and 2 were too much).
   {
@@ -77,7 +74,6 @@ const LOOT_GATES: readonly LootGate[] = [
     boss: { floor: "rare", max: "rare" },
     legendary: { normal: 0, elite: 0, boss: 0 },
     trophies: false,
-    gambleMax: "rare",
   },
   // Run 3: the first Epics, from bosses only.
   {
@@ -86,7 +82,6 @@ const LOOT_GATES: readonly LootGate[] = [
     boss: { floor: "rare", max: "epic", topWeight: 0.3 },
     legendary: { normal: 0, elite: 0, boss: 0 },
     trophies: false,
-    gambleMax: "epic",
   },
   // Run 4
   {
@@ -95,7 +90,6 @@ const LOOT_GATES: readonly LootGate[] = [
     boss: { floor: "rare", max: "epic", sure: "epic" },
     legendary: { normal: 0, elite: 0, boss: 0.25 },
     trophies: true,
-    gambleMax: "epic",
   },
   // Run 5
   {
@@ -104,7 +98,6 @@ const LOOT_GATES: readonly LootGate[] = [
     boss: { floor: "epic", max: "epic" },
     legendary: { normal: 0, elite: 0.04, boss: 0.25 },
     trophies: true,
-    gambleMax: "legendary",
   },
   // Run 6 and later
   {
@@ -113,7 +106,6 @@ const LOOT_GATES: readonly LootGate[] = [
     boss: { floor: "epic", max: "epic" },
     legendary: { normal: 0, elite: 0.04, boss: 0.25 },
     trophies: true,
-    gambleMax: "legendary",
   },
 ];
 
@@ -199,11 +191,14 @@ export const PROGRESSION = {
   runeRanksPerActTier: 2,
   /** Each Rune rank drops this much less often than the one below it. */
   runeRankFalloff: 0.5,
-  /** Ember Coal drop on their own like Runes: Elites and bosses always (min, max)... */
-  eliteEmberCoal: [2, 3],
+  /**
+   * Ember Coal drop on their own like Runes: Elites and bosses always (min, max)... Elites 2–3
+   * before the runs grew longer (economy-audit-v1.md E2).
+   */
+  eliteEmberCoal: [1, 2],
   bossEmberCoal: [4, 6],
-  /** ...normal enemies sometimes. */
-  normalEmberCoalChance: 0.15,
+  /** ...normal enemies sometimes (15 % before the runs grew longer, economy-audit-v1.md E2). */
+  normalEmberCoalChance: 0.05,
 
   /** Ash for one item: by rarity, × Item Tier. */
   salvageAsh: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
@@ -401,8 +396,8 @@ export const PROGRESSION = {
   bossPhoenixFeathers: 1,
   elitePhoenixFeatherChance: 0.1,
 
-  /** Switching to another Battle Plan Capstone at Kaelen. */
-  capstoneChangeAcorns: 200,
+  /** Switching to another Battle Plan Capstone at Kaelen: Acorns of this many kills at boss level. */
+  capstoneChangeKills: 2,
 
   /**
    * Skill Tree respec at Kaelen (level-v2.md section 7): moderately priced, about the Acorns of this
@@ -434,8 +429,9 @@ export const PROGRESSION = {
 } as const;
 
 /**
- * Camp crafting costs (docs/design/town-crafting-v1.md section 3). Starting values: a full Act 1
- * run brings roughly 100–150 Acorns and a few hundred Ash.
+ * Camp crafting costs (docs/design/town-crafting-v1.md section 3). Prices in Acorns and Ash are
+ * counted in normal kills at the item's level (`killPrice`, economy-audit-v1.md E1): income and
+ * price grow with the level alike, however long a run takes.
  */
 export const CRAFTING = {
   /**
@@ -443,28 +439,28 @@ export const CRAFTING = {
    * Shift (to another affix, the rank stays), Intensify from rank I, II, III, IV to the next.
    */
   greater: { awaken: 3, shift: 1, intensify: [2, 4, 8, 16] },
-  /** Upgrade (+1 Tier) at Thoric: 1 Phoenix Feather + this much Acorns × current Tier. */
-  upgradeAcornsPerTier: 60,
+  /** Upgrade (+1 Tier) at Thoric: 1 Phoenix Feather + the Acorns of this many kills × current Tier. */
+  upgradeKillsPerTier: 1,
   upgradeFeathers: 1,
-  /** Temper (reroll one affix value) at Liora. */
-  temperAsh: 10,
-  temperAcorns: 15,
+  /** Temper (reroll one affix value) at Liora, in kills. */
+  temperKills: { acorns: 1, ash: 6 },
   /** Reforge (reroll all affixes) at Thoric. */
   emberCoal: 1,
-  /** Add Socket at the Runesmith: Acorns plus Ash × the new Socket count. */
-  addSocketAcorns: 25,
-  addSocketAsh: 15,
-  /** Nyssa: Socket a Rune / combine three into the next rank, Acorns × rank. */
-  socketRuneAcornsPerRank: 8,
-  combineRunesAcornsPerRank: 15,
+  /** Add Socket at the Runesmith, in kills: Acorns plus Ash × the new Socket count. */
+  addSocketKills: { acorns: 2, ash: 3 },
+  /**
+   * Nyssa: Socket a Rune (kills at the item's level) / combine three into the next rank (kills at
+   * the run's boss level), Acorns × rank.
+   */
+  socketRuneKillsPerRank: 0.25,
+  combineRunesKillsPerRank: 0.5,
   combineRunesCount: 3,
-  /** Marisha (Black Market): gamble prices and odds, capped by the run's loot gate. */
+  /**
+   * Marisha (Black Market): gamble prices. Her odds are a normal enemy's card (Timo 2026-10-26,
+   * economy-audit-v1.md E3), Legendaries and Uniques as often as on an Elite's card.
+   */
   gambleFlat: 60,
   gamblePerItemLevel: 12,
-  gambleRarityWeights: { normal: 0, magic: 55, rare: 30, epic: 12, legendary: 3 } satisfies Record<
-    Rarity,
-    number
-  >,
 } as const;
 
 /** Trigger Codex (docs/design/trigger-codex-v1.md). Starting values for the balance CLI. */
@@ -473,7 +469,7 @@ export const CODEX = {
   homeWeight: 4,
   /** Kindled triggers roll at most this share of the range; only drops reach 100 %. */
   kindleMaxQuality: 0.7,
-  /** Kindle at Liora: Ash × the item's tier plus Ember Coal. */
-  kindleAshPerTier: 30,
+  /** Kindle at Liora: the Ash of this many kills at the item's level, plus Ember Coal. */
+  kindleAshKills: 6,
   kindleEmberCoal: 2,
 } as const;

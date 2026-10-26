@@ -10,6 +10,7 @@ import {
   heroSetup,
   learnPower,
   newGame,
+  crucibleBindCost,
 } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
@@ -89,7 +90,7 @@ describe("Ember Crucible", () => {
     ).toThrow();
     const bound = act(ember, { type: "bindPower", slot: "ember", powerId: "echo" });
     expect(bound.hero.crucible).toEqual({ ember: "echo" });
-    expect(bound.wallet.ash).toBe(1000 - CRUCIBLE.bindAsh);
+    expect(bound.wallet.ash).toBe(1000 - crucibleBindCost(ember.legacy.prestige).ash);
     expect(bound.wallet.emberCoal).toBe(10 - CRUCIBLE.bindEmberCoal);
     const emptied = act(bound, { type: "bindPower", slot: "ember", powerId: null });
     expect(emptied.hero.crucible).toEqual({});

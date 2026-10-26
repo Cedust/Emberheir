@@ -177,7 +177,7 @@ export function PersonaView(props: {
   } else if (!request) {
     price =
       kind === "temper"
-        ? craftCost({ kind: "temper", itemId: "", affixIndex: 0 })
+        ? craftCost({ kind: "temper", itemId: "", affixIndex: 0 }, item)
         : craftCost({ kind: "reforge", itemId: "" });
     block = !item ? "Choose an item" : "Choose an affix";
   } else {

@@ -87,6 +87,21 @@ export function autoRewards(
 }
 
 /**
+ * A price counted in fights (economy-audit-v1.md E1): the Acorns and Ash of this many normal
+ * kills at the level. Income and price grow with the level alike, however long a run takes.
+ */
+export function killPrice(
+  level: number,
+  kills: { readonly acorns?: number; readonly ash?: number },
+): { readonly acorns: number; readonly ash: number } {
+  const one = autoRewards(Math.max(1, level), "normal");
+  return {
+    acorns: Math.round(one.acorns * (kills.acorns ?? 0)),
+    ash: Math.round(one.ash * (kills.ash ?? 0)),
+  };
+}
+
+/**
  * Adds XP and returns the new level and leftover XP. XP stops counting at the Level Cap.
  */
 export function gainXp(

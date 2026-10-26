@@ -118,6 +118,7 @@ export { requireCamp } from "./guards";
 export { heroAshborn, spendAshborn, resetAshborn } from "./ashborn";
 export {
   CRUCIBLE,
+  crucibleBindCost,
   CRUCIBLE_SLOTS,
   type CrucibleSlot,
   crucibleLock,
@@ -153,6 +154,8 @@ export {
   respecAcorns,
   forgetAcorns,
   attributeRespecAcorns,
+  masteryRespecAcorns,
+  capstoneChangeAcorns,
 } from "./trainer";
 export { openBranches } from "./prestige";
 export {

@@ -5,7 +5,6 @@ import {
   type BattlePlanState,
   CAPSTONES,
   type GameState,
-  PROGRESSION,
   REACTION_CONDITIONS,
   REACTION_COOLDOWN,
   SLOT_CONDITIONS,
@@ -22,6 +21,7 @@ import {
   reactionConditionAllowed,
   triggerThreshold,
   unlockPrestige,
+  capstoneChangeAcorns,
 } from "@emberheir/sim";
 import { type DragEvent, useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
@@ -729,7 +729,7 @@ function Capstones(props: {
   onPick: (c: { id: (typeof CAPSTONES)[number]["id"]; slot: number }) => void;
 }) {
   const plan = props.state.hero.plan;
-  const cost = plan.capstone ? PROGRESSION.capstoneChangeAcorns : 0;
+  const cost = plan.capstone ? capstoneChangeAcorns(props.state.legacy.prestige) : 0;
   return (
     <section className="panel-card capstones" aria-label="Capstone">
       <div className="section-row">

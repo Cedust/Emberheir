@@ -4,6 +4,7 @@ import { rollItem, rollUnique } from "../items/generate";
 import type { Item } from "../items/types";
 import { Rng } from "../rng";
 import { CRAFTING } from "./constants";
+import { bossLevel, killPrice } from "./leveling";
 import {
   type CraftRequest,
   affixRollRange,
@@ -70,9 +71,10 @@ describe("crafting", () => {
     const s = act(camp(), { type: "craft", request: { kind: "upgrade", itemId: RING.id } });
     expect(ring(s)).toMatchObject({ tier: 2, affixes: RING.affixes });
     expect(s.wallet.phoenixFeathers).toBe(1);
-    expect(s.wallet.acorns).toBe(1000 - CRAFTING.upgradeAcornsPerTier);
+    const oneTier = killPrice(RING.itemLevel, { acorns: CRAFTING.upgradeKillsPerTier }).acorns;
+    expect(s.wallet.acorns).toBe(1000 - oneTier);
     expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).acorns).toBe(
-      2 * CRAFTING.upgradeAcornsPerTier,
+      killPrice(RING.itemLevel, { acorns: 2 * CRAFTING.upgradeKillsPerTier }).acorns,
     );
   });
 
@@ -103,7 +105,7 @@ describe("crafting", () => {
     expect(tempered?.lockedAffix).toBe(1);
     expect(tempered?.affixes[0]).toEqual(RING.affixes[0]);
     expect(tempered?.affixes[1]?.affixId).toBe("life");
-    expect(s.wallet.ash).toBe(1000 - CRAFTING.temperAsh);
+    expect(s.wallet.ash).toBe(1000 - killPrice(RING.itemLevel, CRAFTING.temperKills).ash);
     // Locked: only affix 1 can change now.
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
       "locked",
@@ -164,7 +166,7 @@ describe("crafting", () => {
     const range = affixRollRange(item, "strength", data.items);
     const affix = data.items.affixes.get("strength");
     if (!range || affix?.kind !== "stat") throw new Error("missing");
-    let s: GameState = { ...camp(), inventory: [{ item, x: 0, y: 0 }] };
+    let s: GameState = { ...camp({ ash: 10_000 }), inventory: [{ item, x: 0, y: 0 }] };
     const index = item.affixes.findIndex((a) => a.affixId === "strength");
     if (index < 0) return;
     for (let i = 0; i < 30; i++) {
@@ -206,7 +208,11 @@ describe("Sockets, Runes and Marisha", () => {
     let s = craftIt(runeCamp(), { kind: "addSocket", itemId: AXE.id });
     s = craftIt(s, { kind: "addSocket", itemId: AXE.id });
     expect(axe(s)?.sockets).toBe(2);
-    expect(s.wallet.ash).toBe(1000 - CRAFTING.addSocketAsh * 3);
+    expect(s.wallet.ash).toBe(
+      1000 -
+        killPrice(AXE.itemLevel, { ash: CRAFTING.addSocketKills.ash }).ash -
+        killPrice(AXE.itemLevel, { ash: CRAFTING.addSocketKills.ash * 2 }).ash,
+    );
     expect(craftBlockReason(s, data, { kind: "addSocket", itemId: AXE.id })).toBe("maxSockets");
     expect(craftBlockReason(s, data, { kind: "addSocket", itemId: RING.id })).toBe("notNormal");
   });
@@ -244,7 +250,9 @@ describe("Sockets, Runes and Marisha", () => {
     const s = craftIt(runeCamp(), { kind: "combineRunes", runeId: "ash" });
     expect(s.wallet.runes).toEqual({ ash: 1, thorn: 1, moss: 1 });
     expect(s.legacy.runesFound).toContain("moss");
-    expect(s.wallet.acorns).toBe(1000 - CRAFTING.combineRunesAcornsPerRank);
+    expect(s.wallet.acorns).toBe(
+      1000 - killPrice(bossLevel(0), { acorns: CRAFTING.combineRunesKillsPerRank }).acorns,
+    );
     expect(craftBlockReason(s, data, { kind: "combineRunes", runeId: "ash" })).toBe("runes");
     expect(
       craftBlockReason(runeCamp({ thorn: 3 }), data, { kind: "combineRunes", runeId: "thorn" }),
@@ -256,16 +264,15 @@ describe("Sockets, Runes and Marisha", () => {
     expect(s.inventory).toHaveLength(3);
     const item = s.inventory[2]?.item;
     expect(item?.baseId).toBe("test-ring");
-    expect(item?.rarity).not.toBe("normal");
     expect(s.wallet.acorns).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
-    // Run 1: Marisha gives at most Rare, one step above what its enemies drop.
+    // Run 1: Marisha rolls like a normal enemy's card, at most Magic (economy-audit-v1.md E3).
     const early = new Set<string>();
     for (let seed = 0; seed < 200; seed++) {
       early.add(gambleItem(s, data, "ring", new Rng(seed)).rarity);
     }
-    expect([...early].sort()).toEqual(["magic", "rare"]);
+    expect([...early].sort()).toEqual(["magic", "normal"]);
     expect(gambleRarityWeights(0)).toMatchObject({ epic: 0, legendary: 0 });
-    // From run 5 on, some gambles come out Legendary.
+    // From run 5 on, some gambles come out Legendary, as often as on an Elite's card.
     const late = { ...s, legacy: { ...s.legacy, prestige: 4 } };
     const rarities = new Set<string>();
     for (let seed = 0; seed < 400; seed++) {

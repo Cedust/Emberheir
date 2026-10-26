@@ -12,14 +12,14 @@ import type {
   Rarity,
   RuneDefinition,
 } from "../items/types";
-import { RARITIES } from "../items/types";
 import { Rng } from "../rng";
 import { CODEX, CRAFTING, PROGRESSION } from "./constants";
 import { codexKnows, kindledIndex } from "./codex";
 import { kindledAffixId } from "../items/codex";
 import { nextAct, stageMonsterLevel } from "./game/acts";
 import { requireCamp } from "./game/guards";
-import { addRunes, lootGate } from "./game/loot";
+import { addRunes, itemPickWeights, lootGate } from "./game/loot";
+import { bossLevel, killPrice } from "./leveling";
 import { type GameData, type GameState, fail, nextRng } from "./game/state";
 import { addToGrid } from "./inventory";
 
@@ -158,7 +158,10 @@ const NO_COST: CraftCost = {
   runes: {},
 };
 
-/** What a craft costs. Upgrade gets more expensive with the Tier. */
+/**
+ * What a craft costs. Acorns and Ash are counted in kills at the item's level (`killPrice`), so
+ * prices grow with the world; Upgrade also with the Tier.
+ */
 export function craftCost(
   request: CraftRequest,
   item?: Item,
@@ -166,23 +169,26 @@ export function craftCost(
   state?: GameState,
 ): CraftCost {
   const runeRank = (id: string) => data?.items.runes.get(id)?.rank ?? 1;
+  const at = (kills: { readonly acorns?: number; readonly ash?: number }) =>
+    killPrice(item?.itemLevel ?? 1, kills);
   switch (request.kind) {
-    case "addSocket":
-      return {
-        ...NO_COST,
-        acorns: CRAFTING.addSocketAcorns,
-        ash: CRAFTING.addSocketAsh * ((item?.sockets ?? 0) + 1),
-      };
+    case "addSocket": {
+      const sockets = (item?.sockets ?? 0) + 1;
+      const kills = CRAFTING.addSocketKills;
+      return { ...NO_COST, ...at({ acorns: kills.acorns, ash: kills.ash * sockets }) };
+    }
     case "socketRune":
       return {
         ...NO_COST,
-        acorns: CRAFTING.socketRuneAcornsPerRank * runeRank(request.runeId),
+        acorns: at({ acorns: CRAFTING.socketRuneKillsPerRank * runeRank(request.runeId) }).acorns,
         runes: { [request.runeId]: 1 },
       };
     case "combineRunes":
       return {
         ...NO_COST,
-        acorns: CRAFTING.combineRunesAcornsPerRank * runeRank(request.runeId),
+        acorns: killPrice(bossLevel(state?.legacy.prestige ?? 0), {
+          acorns: CRAFTING.combineRunesKillsPerRank * runeRank(request.runeId),
+        }).acorns,
         runes: { [request.runeId]: CRAFTING.combineRunesCount },
       };
     case "gamble":
@@ -193,17 +199,17 @@ export function craftCost(
     case "upgrade":
       return {
         ...NO_COST,
-        acorns: CRAFTING.upgradeAcornsPerTier * (item?.tier ?? 1),
+        acorns: at({ acorns: CRAFTING.upgradeKillsPerTier * (item?.tier ?? 1) }).acorns,
         phoenixFeathers: CRAFTING.upgradeFeathers,
       };
     case "reforge":
       return { ...NO_COST, emberCoal: CRAFTING.emberCoal };
     case "temper":
-      return { ...NO_COST, ash: CRAFTING.temperAsh, acorns: CRAFTING.temperAcorns };
+      return { ...NO_COST, ...at(CRAFTING.temperKills) };
     case "kindle":
       return {
         ...NO_COST,
-        ash: CODEX.kindleAshPerTier * Math.max(1, item?.tier ?? 1),
+        ash: at({ ash: CODEX.kindleAshKills }).ash,
         emberCoal: CODEX.kindleEmberCoal,
       };
     case "awaken":
@@ -308,7 +314,7 @@ export function craftBlockReason(
     const rune = data.items.runes.get(request.runeId);
     if (!rune) return "unknownRune";
     if (!nextRune(data, rune.rank)) return "maxRank";
-    return costBlockReason(state, craftCost(request, undefined, data));
+    return costBlockReason(state, craftCost(request, undefined, data, state));
   }
   if (request.kind === "gamble") {
     if (!merchantSlots(data).includes(request.slot)) return "noStock";
@@ -423,7 +429,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
   if (reason) return fail(`Cannot ${request.kind}: ${reason}`);
 
   if (request.kind === "combineRunes") {
-    const paid = pay(state, craftCost(request, undefined, data));
+    const paid = pay(state, craftCost(request, undefined, data, state));
     const rank = data.items.runes.get(request.runeId)?.rank ?? fail("Unknown Rune");
     const next = nextRune(data, rank) ?? fail("No higher Rune");
     return {
@@ -619,12 +625,17 @@ export function hasRoomFor(state: GameState, data: GameData, slot: ItemSlot): bo
     });
 }
 
-/** Marisha's rarity odds in a run: one step above what its enemies drop (`gambleMax`). */
+/**
+ * Marisha's rarity odds in a run: those of a normal enemy's card (Timo 2026-10-26,
+ * economy-audit-v1.md E3), no Pity.
+ */
 export function gambleRarityWeights(prestige: number): Readonly<Record<Rarity, number>> {
-  const max = RARITIES.indexOf(lootGate(prestige).gambleMax);
-  const weights = { ...CRAFTING.gambleRarityWeights } as Record<Rarity, number>;
-  for (const r of RARITIES) if (RARITIES.indexOf(r) > max) weights[r] = 0;
-  return weights;
+  return itemPickWeights("normal", 0, prestige);
+}
+
+/** Chance that a gamble turns Legendary (or Unique): as on an Elite's card. */
+export function gambleLegendaryChance(prestige: number): number {
+  return lootGate(prestige).legendary.elite;
 }
 
 /** A gambled item: random base of the slot, rarity by Marisha's odds, Uniques possible. */
@@ -636,7 +647,10 @@ export function gambleItem(
   level = merchantItemLevel(state, data),
 ): Item {
   const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
-  const rarity = rollRarity(rng, gambleRarityWeights(state.legacy.prestige));
+  const prestige = state.legacy.prestige;
+  const rarity = rng.chance(gambleLegendaryChance(prestige))
+    ? "legendary"
+    : rollRarity(rng, gambleRarityWeights(prestige));
   if (rarity === "legendary") {
     const uniques = uniquesFor(data.items, level, bases);
     if (uniques.length && rng.chance(PROGRESSION.uniqueShare)) {
