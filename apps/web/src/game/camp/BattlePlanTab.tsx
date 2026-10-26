@@ -27,6 +27,7 @@ import { type DragEvent, useState } from "react";
 import { Icon, type IconName } from "../../ui/Icon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { WEAPON_ICON } from "../battle/hud/BattleHud";
+import { SkillIcon } from "../battle/SkillIcon";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { Price } from "../../ui/kit/Currency";
@@ -372,7 +373,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                     title={s.name}
                     style={{ background: skillTint(s.id) }}
                   >
-                    <Icon name={skillIcon(s.id)} size={22} color="#fff6e4" />
+                    <SkillIcon skillId={s.id} size={22} />
                   </span>
                 </span>
               );
@@ -490,9 +491,7 @@ function PlanSlot(props: {
         className={`skill-slot${props.reaction ? " reaction" : ""}${props.skillId ? "" : " empty"}`}
         style={props.skillId ? { background: skillTint(props.skillId) } : undefined}
       >
-        {props.skillId && (
-          <Icon name={skillIcon(props.skillId)} size={props.reaction ? 26 : 32} color="#fff6e4" />
-        )}
+        {props.skillId && <SkillIcon skillId={props.skillId} size={props.reaction ? 26 : 32} />}
         <span className="pos mono">{props.pos}</span>
         {props.corner && <span className="corner mono">{props.corner}</span>}
       </span>
@@ -627,6 +626,8 @@ function Library(props: {
     text: string;
     icon: IconName;
     tint?: string;
+    /** A skill: drawn with its painted icon. */
+    skill?: string;
     on: boolean;
     blocked?: boolean;
     drag?: string;
@@ -639,6 +640,7 @@ function Library(props: {
             text: `${k.skill.heatCost} Heat · ${k.skill.description}`,
             icon: skillIcon(k.skill.id),
             tint: skillTint(k.skill.id),
+            skill: k.skill.id,
             on: props.slotSkill === k.skill.id,
             drag: k.skill.id,
           })),
@@ -709,7 +711,11 @@ function Library(props: {
                 className={`skill-chip${t.tint ? "" : " plain"}`}
                 style={t.tint ? { background: t.tint } : undefined}
               >
-                <Icon name={t.icon} size={20} {...(t.tint ? { color: "#fff6e4" } : {})} />
+                {t.skill ? (
+                  <SkillIcon skillId={t.skill} size={20} />
+                ) : (
+                  <Icon name={t.icon} size={20} {...(t.tint ? { color: "#fff6e4" } : {})} />
+                )}
               </span>
               <span className="known-text">
                 <span className="title-font">{t.name}</span>
