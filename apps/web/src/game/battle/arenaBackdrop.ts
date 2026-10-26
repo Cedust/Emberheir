@@ -33,6 +33,9 @@ export function loadBackdrop(act: number): Promise<Texture | null> {
   return Assets.load<Texture>(backdrop.url).catch(() => null);
 }
 
+/** The act's painting as a plain image, e.g. behind the Prestige screens. */
+export const backdropUrl = (act: number): string | undefined => BACKDROPS[act]?.url;
+
 export function backdropFeet(act: number): number {
   return BACKDROPS[act]?.feet ?? 0.78;
 }

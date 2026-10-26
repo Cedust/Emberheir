@@ -1,7 +1,7 @@
 import { expect, test } from "@playwright/test";
 import { saveAfterHarvestBoss, seedSave } from "./fixtures";
 
-test("The harvest boss falls: the caravan saves every item, wake as the next generation", async ({
+test("The harvest boss falls: one Harvest window, wake as the next generation", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -13,39 +13,25 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await expect(page.getByRole("region", { name: "Victory" })).toContainText("GORRAK FALLS");
   await page.getByRole("button", { name: "Pack the Caravan" }).click();
 
-  // The first Harvest picks the main Mastery.
-  const mastery = page.getByRole("region", { name: "Mastery" });
+  // The Harvest: one window with the first Mastery pick and everything the next run brings.
+  const harvest = page.getByRole("region", { name: "The Harvest" });
+  const mastery = harvest.getByRole("group", { name: "Mastery" });
   await expect(mastery.getByRole("button", { pressed: true })).toHaveCount(1);
   // The Cinderguard's three: Vanquisher, Berserker, Ravager.
   await expect(mastery.locator(".branch-pick")).toHaveCount(3);
   await mastery.getByRole("button", { name: /Ravager/ }).click();
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/mastery-pick.png` });
-  await page.getByRole("button", { name: "Take Ravager" }).click();
-
-  // The Harvest: two new Attribute Points.
-  const harvest = page.getByRole("region", { name: "Attributes" });
-  await expect(harvest.getByTestId("harvest-left")).toContainText("2 points left");
-  await harvest.getByRole("button", { name: "Add Agility" }).click();
-  await harvest.getByRole("button", { name: "Add Agility" }).click();
-  await expect(harvest.getByTestId("perks")).toContainText("Hawkeye");
-  // Every Perk explains itself in plain words.
-  await harvest.getByTestId("perks").getByText("Hawkeye").hover();
-  await expect(page.getByTestId("perk-tooltip")).toContainText("Glancing Blows");
-  await expect(page.getByTestId("perk-tooltip")).toContainText("Opens with this change");
-  await harvest.getByTestId("seal-titan").hover();
-  await expect(page.getByTestId("perk-tooltip")).toContainText("Needs Strength 10");
-  await expect(harvest.getByTestId("harvest-left")).toContainText("0 points left");
+  const gains = harvest.getByRole("list", { name: "You gain" });
+  await expect(gains).toContainText("Act 2 · Rotwood");
+  await expect(gains).toContainText("20 → 30");
+  await expect(gains).toContainText("Rotation Slot 2");
+  await expect(gains).toContainText("Attribute Points");
+  await expect(gains).toContainText("Draughts");
+  await expect(gains).toContainText("Ember Penalty");
+  // Every line explains itself.
+  await gains.getByText("Skill Points").hover();
+  await expect(page.getByText("Spend them in the Ash Tree at Kaelen.")).toBeVisible();
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/harvest.png` });
-  await page.getByRole("button", { name: "Let It Burn" }).click();
-
-  const heir = page.getByRole("region", { name: "Inheritance" });
-  await expect(heir).toContainText("GENERATION 2");
-  await expect(heir).toContainText("Rotation Slot 2");
-  await expect(heir).toContainText("Ravager");
-  await expect(heir).toContainText("NEW ACT");
-  await expect(heir).toContainText("Rotwood");
-  await expect(heir).toContainText("20 → 30");
-  await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
+  await harvest.getByRole("button", { name: "Let It Burn" }).click();
 
   // A reload keeps the new generation.
   await page.reload();
@@ -69,12 +55,13 @@ test("The harvest boss falls: the caravan saves every item, wake as the next gen
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
   await expect(page.getByTestId("reaction-slot-0")).toBeVisible();
 
-  // Old Nan gives every point above the Class Array back, for Acorns (neuausrichtung-v1.md 7.3).
+  // Old Nan gives every point above the Class Array back, for Acorns (neuausrichtung-v1.md 7.3);
+  // the two Harvest points still wait unspent.
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
   const reset = page.getByRole("button", { name: /Reset Attributes.*336 Acorns/ });
   await reset.click();
-  await page.getByRole("button", { name: /8 points back\?/ }).click();
+  await page.getByRole("button", { name: /6 points back\?/ }).click();
   // They are spent anew in the Character Sheet.
   await page.keyboard.press("c");
   await expect(page.getByTestId("attribute-points")).toContainText("8 Attribute Points");

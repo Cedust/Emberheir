@@ -1,15 +1,13 @@
-import { MasteryEmblem } from "./ClassEmblem";
+import { ClassEmblem, MasteryEmblem } from "./ClassEmblem";
 import { GAME_DATA, SKILL_TREE } from "@emberheir/content";
 import {
-  ATTRIBUTES,
-  type Attribute,
   type GameState,
   PROGRESSION,
-  addAttributes,
-  attributeProblem,
   actsInRun,
   branchTier,
   classTitle,
+  emberPenalty,
+  getAct,
   heroClassOf,
   heroTitle,
   keystoneLimit,
@@ -19,8 +17,18 @@ import {
   prestigeRewards,
 } from "@emberheir/sim";
 import { useState } from "react";
-import { Icon } from "../ui/Icon";
-import { AttributeStones, NO_POINTS } from "./AttributeStones";
+import actUrl from "../assets/ui/stage-boss.webp";
+import attributePointsUrl from "../assets/harvest/attribute-points.webp";
+import battlePlanUrl from "../assets/harvest/battle-plan.webp";
+import keystonePlaceUrl from "../assets/harvest/keystone-place.webp";
+import levelCapUrl from "../assets/harvest/level-cap.webp";
+import leafUrl from "../assets/tree/leaves-3.webp";
+import { GAME_ICONS } from "../ui/gameIcons";
+import { useNoteHover } from "../ui/ItemTooltip";
+import { Button } from "../ui/kit/Button";
+import { Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { draughtIconUrl } from "../ui/Potion";
+import { backdropUrl } from "./battle/arenaBackdrop";
 import { PersonaPortrait } from "./camp/art/PersonaArt";
 import { PaintDefs } from "./camp/art/paint";
 import type { GameApi } from "./useGame";
@@ -35,26 +43,6 @@ const LAST_WORDS: Record<string, string> = {
   "void-rift": "Even nothing... gets... harvested...",
   emberfall: "You cannot keep... the ember... Heir... It always... grows back...",
 };
-
-type Step = "victory" | "branch" | "attributes";
-const STEPS = [
-  { id: "victory", name: "Victory" },
-  { id: "branch", name: "Mastery" },
-  { id: "attributes", name: "Attributes" },
-  { id: "heir", name: "Inheritance" },
-] as const;
-
-function Crumbs(props: { step: (typeof STEPS)[number]["id"] }) {
-  return (
-    <ol className="prestige-crumbs" aria-label="Prestige steps">
-      {STEPS.map((s) => (
-        <li key={s.id} className={s.id === props.step ? "on" : ""}>
-          {s.name}
-        </li>
-      ))}
-    </ol>
-  );
-}
 
 const ROMAN = ["", "I", "II", "III", "IV", "V"];
 
@@ -81,50 +69,169 @@ const SHARDS = Array.from({ length: 12 }, (_, i) => {
   return `M${p(28)} L${p(r)}`;
 }).join(" ");
 
+interface Gain {
+  readonly id: string;
+  readonly icon: string;
+  readonly name: string;
+  readonly value?: string;
+  readonly explain: string;
+  readonly tone?: "new" | "bad";
+}
+
+/** One line of "You gain": painted icon, name, number; the tooltip says what it does. */
+function GainRow(props: { gain: Gain }) {
+  const g = props.gain;
+  const hover = useNoteHover({ name: g.name, kind: "The Harvest", explain: g.explain });
+  return (
+    <li className={`harvest-gain ${g.tone ?? ""}`} data-gain={g.id} tabIndex={0} {...hover}>
+      <img src={g.icon} alt="" draggable={false} />
+      <span className="title-font harvest-gain-name">{g.name}</span>
+      {g.value && <span className="title-font harvest-gain-value">{g.value}</span>}
+    </li>
+  );
+}
+
+/** Everything the coming generation gets (and the one thing it loses), in the order it matters. */
+function harvestGains(state: GameState): Gain[] {
+  const prestige = state.legacy.prestige + 1;
+  const r = prestigeRewards(GAME_DATA, prestige);
+  const final = prestige >= PROGRESSION.finalPrestige;
+  const acts = actsInRun(GAME_DATA, prestige);
+  const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
+  const penalty = emberPenalty({ ...state, legacy: { ...state.legacy, prestige } });
+  const vial = draughtIconUrl("vigor-draught");
+  return [
+    final
+      ? {
+          id: "act",
+          icon: actUrl,
+          name: "The Last Ember",
+          explain:
+            "Six Warden echoes, then the Harvester's Core. The road to it starts in the Camp.",
+          tone: "new" as const,
+        }
+      : {
+          id: "act",
+          icon: actUrl,
+          name: newAct ? `Act ${newAct.number} · ${newAct.name}` : `${acts.length} Acts`,
+          value: `Lv ${r.levelBand.start}–${r.levelBand.end}`,
+          explain: "The road leads one act further. Monsters of this run have these levels.",
+          tone: "new" as const,
+        },
+    ...(final
+      ? []
+      : [
+          {
+            id: "level-cap",
+            icon: levelCapUrl,
+            name: "Level Cap",
+            value: `${levelCap(prestige - 1)} → ${r.levelCap}`,
+            explain: "How high you can level in this run.",
+          },
+        ]),
+    {
+      id: "skill-points",
+      icon: leafUrl,
+      name: "Skill Points",
+      value: `+${r.skillPoints}`,
+      explain: "Spend them in the Ash Tree at Kaelen.",
+    },
+    {
+      id: "attribute-points",
+      icon: attributePointsUrl,
+      name: "Attribute Points",
+      value: `+${r.attributePoints}`,
+      explain: "Spend them in the Character Sheet.",
+    },
+    ...(r.planUpgrade
+      ? [
+          {
+            id: "battle-plan",
+            icon: battlePlanUrl,
+            name: r.planUpgrade,
+            explain: "New in your Battle Plan. Set it up at Kaelen.",
+          },
+        ]
+      : []),
+    ...(r.keystones > keystoneLimit(prestige - 1)
+      ? [
+          {
+            id: "keystones",
+            icon: keystonePlaceUrl,
+            name: "Keystone Place",
+            value: `${r.keystones}`,
+            explain: "You can learn one more Keystone at once.",
+          },
+        ]
+      : []),
+    ...(prestige === 1 && vial
+      ? [
+          {
+            id: "draughts",
+            icon: vial,
+            name: "Draughts",
+            explain:
+              "Before you set out, turn a Flask charge into a Draught that lasts the whole trip.",
+          },
+        ]
+      : []),
+    ...(penalty > emberPenalty(state)
+      ? [
+          {
+            id: "ember-penalty",
+            icon: GAME_ICONS.elemental,
+            name: "Ember Penalty",
+            value: `−${Math.round(penalty * 100)} % Res`,
+            explain: `Every Resistance is ${Math.round(penalty * 100)} % lower in this run. Gear with Resistance for the next act helps.`,
+            tone: "bad" as const,
+          },
+        ]
+      : []),
+  ];
+}
+
 /**
- * Prestige flow: Victory over the final boss, then the new Skill Tree branch. The world burns,
- * the caravan carries all of the Heir's things out (Playtest 2); the Inheritance screen follows as
- * a notice.
+ * Prestige flow (2 steps): Victory over the act's boss in the burning act, then The Harvest, one
+ * window with the Mastery pick and everything the next generation gets. Attribute Points wait in
+ * the Character Sheet. Let It Burn wakes the Heir in the Camp.
  */
-export function PrestigeView(props: { state: GameState; game: GameApi }) {
-  const { state, game } = props;
+export function PrestigeView(props: {
+  state: GameState;
+  game: GameApi;
+  /** Let It Burn was pressed with this Mastery: the window burns away over the Camp. */
+  onBurn?: (branch: string | undefined) => void;
+  /** A still copy of The Harvest for the burn, with the Mastery that was taken. */
+  frozen?: { branch: string | undefined };
+}) {
+  const { state, game, frozen } = props;
   const pending = state.pendingPrestige;
-  const [step, setStep] = useState<Step>("victory");
-  // Only the class's own branches grow (klassen-v2.md section 8), in the class's order.
+  const [step, setStep] = useState<"victory" | "harvest">(frozen ? "harvest" : "victory");
+  // Only the class's own Masteries grow (klassengeruest-v1.md 5), in the class's order.
   const heroClass = heroClassOf(state, GAME_DATA);
   const open = openBranches(state, GAME_DATA);
   const title = heroTitle(state, GAME_DATA);
   const titleWith = (id: string) =>
     classTitle(heroClass, [...state.legacy.branches, id], GAME_DATA.branchEpithets);
-  const [branch, setBranch] = useState<string | undefined>(() => open[0]?.id);
-  const [delta, setDelta] = useState<Record<Attribute, number>>(NO_POINTS);
+  const [branch, setBranch] = useState<string | undefined>(() =>
+    frozen ? frozen.branch : open[0]?.id,
+  );
   if (!pending) return null;
   const final = state.legacy.prestige + 1 >= PROGRESSION.finalPrestige;
-  // The Harvest (attribute-v1.md section 6): new points to set now or later at Kaelen.
-  const harvest = prestigeRewards(GAME_DATA, state.legacy.prestige + 1);
-  const own = state.hero.attributes;
-  const points = state.hero.unspentAttributePoints + harvest.attributePoints;
-  const rules = {
-    floor: heroClass.startingAttributes,
-    current: own,
-    points,
+  const act = getAct(GAME_DATA, pending.actId);
+  const backdrop = {
+    "--prestige-art": `url(${backdropUrl(act.number) ?? ""})`,
+  } as React.CSSProperties;
+  const finish = () => {
+    props.onBurn?.(branch);
+    game.dispatchAll([
+      { type: "prestige", ...(branch ? { branchId: branch } : {}) },
+      { type: "dismissNotice" },
+    ]);
   };
-  const allowed = (a: Attribute, step: number) =>
-    attributeProblem(addAttributes(own, { ...delta, [a]: delta[a] + step }), rules) === null;
-  const change = (a: Attribute, step: number) => setDelta({ ...delta, [a]: delta[a] + step });
-  const changed = ATTRIBUTES.some((a) => delta[a] !== 0);
-  const left = points - ATTRIBUTES.reduce((n, a) => n + delta[a], 0);
-  const finish = () =>
-    game.dispatch({
-      type: "prestige",
-      ...(branch ? { branchId: branch } : {}),
-      ...(changed ? { attributes: addAttributes(own, delta) } : {}),
-    });
 
   if (step === "victory") {
     return (
-      <section className="screen prestige prestige-victory" aria-label="Victory">
-        <Crumbs step="victory" />
+      <section className="screen prestige prestige-victory" aria-label="Victory" style={backdrop}>
         <div className="victory-content">
           <svg width="220" height="220" viewBox="0 0 220 220" aria-hidden="true">
             <circle cx="110" cy="110" r="100" fill="rgb(255 138 58 / 0.12)" />
@@ -140,278 +247,202 @@ export function PrestigeView(props: { state: GameState; game: GameApi }) {
           </p>
           <p className="victory-sub">
             {final
-              ? "The Harvester breaks apart, but its ember does not scatter. It flees into one last flame, and this time nothing burns."
+              ? "The Harvester breaks apart. Its ember flees into one last flame, and this time nothing burns."
               : pending.actId === "emberfall"
-                ? "The Harvester breaks apart. Its ember scatters over the world, and everything burns down to grow again."
-                : "The ground goes quiet. Then the sky catches fire: the Ashen Harvester has come to reap what grew."}
+                ? "The Harvester breaks apart. Its ember scatters, and the world burns."
+                : "The sky catches fire: the Ashen Harvester comes to reap what grew."}
           </p>
-          <button
-            type="button"
-            className="btn big primary"
-            onClick={() => setStep(open.length ? "branch" : "attributes")}
-          >
+          <Button big variant="primary" onClick={() => setStep("harvest")}>
             {final ? "Keep Everything" : "Pack the Caravan"}
-          </button>
+          </Button>
         </div>
       </section>
     );
   }
 
-  if (step === "branch") {
-    return (
-      <section className="screen prestige prestige-branch" aria-label="Mastery">
-        <Crumbs step="branch" />
-        <header className="seal-head">
-          <h2 className="title-font">
-            {state.legacy.branches.length ? "THE MASTERY GROWS" : "CHOOSE YOUR MASTERY"}
-          </h2>
-          <p className="sub">
-            {state.legacy.branches.length
-              ? "Deepen your main Mastery, or learn the first tier of another. It stays forever."
-              : "Your main Mastery gives your title and grows up to Tier V. It stays forever."}
-          </p>
-        </header>
-        <div className="branch-picks">
-          {open.map((b) => {
-            const tier = branchTier(state.legacy.branches, b.id) + 1;
-            const nodes = prestigeBranchNodes(SKILL_TREE, b.id).filter(
-              (n) => (n.tier ?? 1) === tier,
-            );
-            const skill = nodes.find((n) => n.skill)?.skill;
-            const keystone = nodes.find((n) => n.kind === "keystone");
-            const notable = nodes.find((n) => n.kind === "notable");
-            const on = b.id === branch;
-            return (
-              <button
-                key={b.id}
-                type="button"
-                className={`branch-pick panel-card ${on ? "on" : ""} ${tier > 1 ? `deepen tier-${tier}` : ""}`}
-                aria-pressed={on}
-                style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
-                onClick={() => setBranch(b.id)}
-              >
-                <MasteryEmblem masteryId={b.id} size={56} />
-                <span className="eyebrow">
-                  {tier > 1
-                    ? `DEEPEN · TIER ${ROMAN[tier]}`
-                    : (b.axis?.toUpperCase() ?? b.branch.toUpperCase())}
-                </span>
-                <span className="title-font branch-pick-name">
-                  {b.name}
-                  {tier > 1 ? ` ${ROMAN[tier]}` : ""}
-                </span>
-                <span className="sub">{b.theme}</span>
-                {skill && (
-                  <span className="small">
-                    Skill · <b>{skill.name}</b>
-                  </span>
-                )}
-                {tier > 1 && notable && (
-                  <span className="small">
-                    Notable · <b>{notable.name}</b>
-                  </span>
-                )}
-                {keystone && (
-                  <span className="small">
-                    Keystone · <b>{keystone.name}</b>
-                  </span>
-                )}
-                {titleWith(b.id) !== title && (
-                  <span className="title-change title-font">→ {titleWith(b.id)}</span>
-                )}
-              </button>
-            );
-          })}
-        </div>
-        <div className="branch-footer">
-          <button
-            type="button"
-            className="btn big primary"
-            disabled={!branch}
-            onClick={() => setStep("attributes")}
-          >
-            {branch && state.legacy.branches.includes(branch) ? "Deepen" : "Take"}{" "}
-            {open.find((b) => b.id === branch)?.name ?? "it"}
-          </button>
-        </div>
-      </section>
-    );
-  }
-
+  const gains = harvestGains(state);
   return (
-    <section className="screen prestige prestige-attributes" aria-label="Attributes">
-      <Crumbs step="attributes" />
-      <header className="seal-head">
-        <h2 className="title-font">THE EMBERS SETTLE</h2>
-        <p className="sub">
-          +{harvest.attributePoints} Attribute Points · set them now or later. Kaelen resets them
-          for Acorns.
-        </p>
-      </header>
-      <div className="harvest-stones panel-card">
-        <AttributeStones
-          mainAttribute={heroClass.mainAttribute}
-          base={own}
-          delta={delta}
-          canAdd={(a) => left > 0 && allowed(a, 1)}
-          canRemove={(a) => delta[a] > 0 && allowed(a, -1)}
-          onAdd={(a) => change(a, 1)}
-          onRemove={(a) => change(a, -1)}
-        />
-        <span className="sub small harvest-left" data-testid="harvest-left">
-          {left} {left === 1 ? "point" : "points"} left
-        </span>
-      </div>
-      <div className="grow" />
-      <div className="branch-footer">
-        <button type="button" className="btn big primary" onClick={finish}>
-          {final ? "Keep Everything" : "Let It Burn"}
-        </button>
-      </div>
+    <section className="screen prestige prestige-harvest" aria-label="The Harvest" style={backdrop}>
+      <PaintDefs />
+      <WindowLayer>
+        <Window
+          label="Harvest"
+          className="harvest-window"
+          header={
+            <WindowHeader
+              title="The Harvest"
+              sub={`Generation ${state.legacy.prestige + 2}`}
+              medallion={<ClassEmblem classId={heroClass.id} size={44} />}
+            />
+          }
+        >
+          <div className="harvest-body">
+            {open.length > 0 && (
+              <div className="harvest-col" role="group" aria-label="Mastery">
+                <span className="eyebrow">
+                  {state.legacy.branches.length ? "Grow a Mastery" : "Choose your Mastery"}
+                </span>
+                <div className="branch-picks harvest-picks">
+                  {open.map((b) => (
+                    <MasteryPick
+                      key={b.id}
+                      state={state}
+                      branchId={b.id}
+                      on={b.id === branch}
+                      newTitle={
+                        ![title, b.name].includes(titleWith(b.id)) ? titleWith(b.id) : undefined
+                      }
+                      onPick={() => setBranch(b.id)}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+            <div className="harvest-col">
+              <span className="eyebrow">You gain</span>
+              <ul className="harvest-gains" aria-label="You gain">
+                {gains.map((g) => (
+                  <GainRow key={g.id} gain={g} />
+                ))}
+              </ul>
+            </div>
+          </div>
+          <footer className="harvest-foot">
+            <span className="nan-portrait">
+              <PersonaPortrait id="nan" />
+            </span>
+            <span className="quote">
+              {final
+                ? "Old Nan: \u201cEverything you own is yours to keep. Now go and put it out.\u201d"
+                : "Old Nan: \u201cThe caravan got your things out. Every last one.\u201d"}
+            </span>
+            <div className="grow" />
+            <Button
+              big
+              variant="primary"
+              blocked={open.length > 0 && !branch ? "Choose a Mastery first." : null}
+              onClick={frozen ? () => {} : finish}
+            >
+              {final ? "Keep Everything" : "Let It Burn"}
+            </Button>
+          </footer>
+        </Window>
+      </WindowLayer>
     </section>
   );
 }
 
-/** Inheritance (last Prestige step): Old Nan, the rewards, then wake in the Camp. */
-export function InheritanceView(props: { state: GameState; onWake: () => void }) {
-  const { state } = props;
-  const prestige = state.legacy.prestige;
-  const r = prestigeRewards(GAME_DATA, prestige);
-  const acts = actsInRun(GAME_DATA, prestige);
-  const newAct = acts.length > actsInRun(GAME_DATA, prestige - 1).length ? acts.at(-1) : undefined;
-  const newBranch = SKILL_TREE.prestigeBranches?.find((b) => b.id === state.legacy.branches.at(-1));
-  const newTier = newBranch ? branchTier(state.legacy.branches, newBranch.id) : 0;
-  const final = prestige >= PROGRESSION.finalPrestige;
-  const rewards = [
-    ...(r.planUpgrade
-      ? [
-          {
-            kind: "BATTLE PLAN",
-            name: r.planUpgrade,
-            desc: "Set it up at Kaelen.",
-            tone: "accent",
-          },
-        ]
-      : []),
-    ...(newBranch
-      ? [
-          {
-            kind: "PRESTIGE BRANCH",
-            name: `${newBranch.name}${newTier > 1 ? ` ${ROMAN[newTier]}` : ""}`,
-            desc: newBranch.theme,
-            tone: "accent",
-          },
-        ]
-      : []),
-    {
-      kind: "THE HARVEST",
-      name: `+${r.skillPoints} Skill Points`,
-      desc: "Spend them in the Ash Tree at Kaelen.",
-      tone: "accent",
-    },
-    ...(r.keystones > keystoneLimit(prestige - 1)
-      ? [
-          {
-            kind: "KEYSTONE PLACE",
-            name: `${r.keystones} Keystones at once`,
-            desc: "Another notch in the Ember sigil glows. Learn one more Keystone at Kaelen.",
-            tone: "ember",
-          },
-        ]
-      : []),
-    ...(final
-      ? []
-      : [
-          {
-            kind: "LEVEL CAP",
-            name: `${levelCap(prestige - 1)} → ${r.levelCap}`,
-            desc: `${r.levelCap - levelCap(prestige - 1)} more levels to earn this run.`,
-            tone: "good",
-          },
-        ]),
-    {
-      kind: final ? "THE LAST EMBER" : newAct ? "NEW ACT" : "WORLD",
-      name: final
-        ? "The last flame"
-        : newAct
-          ? `Act ${newAct.number} · ${newAct.name}`
-          : `${acts.length} Acts`,
-      desc: final
-        ? "Six Warden echoes, then the Harvester's Core. Enter it from the Camp."
-        : `Monster Level ${r.levelBand.start}–${r.levelBand.end}. The road leads further.`,
-      tone: "epic",
-    },
-  ];
+/** A Mastery card of The Harvest: emblem, name and tier, what it does, what this tier brings. */
+function MasteryPick(props: {
+  state: GameState;
+  branchId: string;
+  on: boolean;
+  newTitle: string | undefined;
+  onPick: () => void;
+}) {
+  const b = SKILL_TREE.prestigeBranches?.find((x) => x.id === props.branchId);
+  if (!b) return null;
+  const tier = branchTier(props.state.legacy.branches, b.id) + 1;
+  const nodes = prestigeBranchNodes(SKILL_TREE, b.id).filter((n) => (n.tier ?? 1) === tier);
+  const skill = nodes.find((n) => n.skill)?.skill;
+  const keystone = nodes.find((n) => n.kind === "keystone");
+  const notable = nodes.find((n) => n.kind === "notable");
+  const brings = [skill?.name, tier > 1 ? notable?.name : undefined, keystone?.name].filter(
+    (x): x is string => !!x,
+  );
   return (
-    <section className="screen prestige prestige-heir" aria-label="Inheritance">
-      <Crumbs step="heir" />
-      <div className="heir-body">
-        <aside className="heir-nan">
-          <div className="heir-nan-head">
-            <span className="nan-portrait">
-              <PaintDefs />
-              <PersonaPortrait id="nan" />
-            </span>
-            <div>
-              <span className="title-font">Old Nan</span>
-              <span className="sub">Hearthkeeper</span>
-            </div>
-          </div>
-          <div className="heir-nan-lines">
-            {final ? (
-              <>
-                <p>Down again. But look, dear: the field is still there. Nothing caught.</p>
-                <p>
-                  One flame got away. Small, mean and very hot. Everything you own is yours to keep
-                  now, so go and put it out.
-                </p>
-              </>
-            ) : (
-              <>
-                <p>
-                  It&apos;s down. And there it goes, the whole field, up in smoke. Don&apos;t worry,
-                  dear, it&apos;ll grow back. It always does.
-                </p>
-                <p>
-                  The caravan got your things out in time, every last one. The fire can&apos;t take
-                  what you carry.
-                </p>
-                <p>Another harvest, another Heir. Sit down, child. The fire&apos;s warm.</p>
-              </>
-            )}
-          </div>
-          <span className="sub small heir-note">
-            {final
-              ? "You wake in the Camp with everything you had. The Last Ember waits by the road."
-              : "You wake in the Camp before Act 1 and start again at Stage 1, with everything you carried."}
-          </span>
-        </aside>
-        <main className="heir-main">
-          <span className="eyebrow">INHERITANCE · GENERATION {prestige + 1}</span>
-          <div className="heir-rewards">
-            {rewards.map((card) => (
-              <div key={card.kind} className={`heir-card panel-card tone-card-${card.tone}`}>
-                <span className="eyebrow">{card.kind}</span>
-                <span className="title-font heir-card-name">{card.name}</span>
-                <span className="sub">{card.desc}</span>
-              </div>
-            ))}
-          </div>
-          {prestige === 1 && (
-            <div className="heir-caravan panel-card">
-              <Icon name="camp" size={22} />
-              <span>
-                <b>Kaelen and Liora</b> travel with the caravan: Ash Tree and Battle Plan at Kaelen,
-                Temper and Kindle at Liora.
-              </span>
-            </div>
-          )}
-          <div className="grow" />
-          <button type="button" className="btn big primary wake" onClick={props.onWake}>
-            Wake at the Hearthfire
-          </button>
-        </main>
+    <button
+      type="button"
+      className={`branch-pick panel-card ${props.on ? "on" : ""} ${tier > 1 ? `deepen tier-${tier}` : ""}`}
+      aria-pressed={props.on}
+      style={{ "--branch": BRANCH_COLORS[b.branch] } as React.CSSProperties}
+      onClick={props.onPick}
+    >
+      <MasteryEmblem masteryId={b.id} size={60} />
+      <span className="branch-pick-text">
+        <span className="title-font branch-pick-name">
+          {b.name}
+          {tier > 1 ? ` ${ROMAN[tier]}` : ""}
+        </span>
+        <span className="sub">{b.theme}</span>
+        {props.newTitle && <span className="title-change title-font">→ {props.newTitle}</span>}
+      </span>
+      <span className="branch-pick-brings title-font">
+        {brings.map((n) => (
+          <span key={n}>{n}</span>
+        ))}
+      </span>
+    </button>
+  );
+}
+
+/** Drifting sparks along the burning edge: fixed spread, each with its own delay. */
+const SPARKS = Array.from({ length: 28 }, (_, i) => ({
+  x: (i * 37 + 11) % 100,
+  delay: ((i * 53) % 17) / 10,
+  size: 3 + ((i * 7) % 4),
+}));
+
+/**
+ * Let It Burn (Timo): The Harvest burns away from the bottom up over the Camp, a ragged glowing
+ * edge with charred paper above it and sparks rising. Looks only; the Prestige is already done.
+ */
+export function HarvestBurn(props: { children: React.ReactNode; onDone: () => void }) {
+  return (
+    <div
+      className="harvest-burn"
+      aria-hidden="true"
+      inert
+      onAnimationEnd={(e) => e.target === e.currentTarget && props.onDone()}
+    >
+      <div className="harvest-burn-page">
+        {props.children}
+        <div className="harvest-burn-char" />
       </div>
-    </section>
+      <svg className="harvest-burn-edge" viewBox="0 0 1000 100" preserveAspectRatio="none">
+        <defs>
+          <filter id="harvest-burn-rag" x="0" y="-50%" width="100%" height="200%">
+            <feTurbulence type="fractalNoise" baseFrequency="0.009 0.07" numOctaves="3" seed="7" />
+            <feDisplacementMap
+              in="SourceGraphic"
+              scale="110"
+              xChannelSelector="R"
+              yChannelSelector="G"
+            />
+            <feGaussianBlur stdDeviation="1.2" />
+          </filter>
+          <linearGradient id="harvest-burn-glow" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0" stopColor="#2a0e04" stopOpacity="0" />
+            <stop offset="0.3" stopColor="#3a1406" stopOpacity="0.95" />
+            <stop offset="0.45" stopColor="#ff7a1e" />
+            <stop offset="0.52" stopColor="#ffe08a" />
+            <stop offset="0.6" stopColor="#ff5a10" />
+            <stop offset="1" stopColor="#ff5a10" stopOpacity="0" />
+          </linearGradient>
+        </defs>
+        <rect
+          x="-40"
+          y="10"
+          width="1080"
+          height="80"
+          fill="url(#harvest-burn-glow)"
+          filter="url(#harvest-burn-rag)"
+        />
+      </svg>
+      {SPARKS.map((s, i) => (
+        <span
+          key={i}
+          className="harvest-burn-spark"
+          style={
+            {
+              left: `${s.x}%`,
+              width: s.size,
+              height: s.size,
+              animationDelay: `${s.delay}s`,
+            } as React.CSSProperties
+          }
+        />
+      ))}
+    </div>
   );
 }

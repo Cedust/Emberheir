@@ -177,6 +177,10 @@ Endgame **Wildfire I–X**.
 - **Man bekommt:** einen neuen Act · eine Mastery-Wahl (Haupt-Mastery vertiefen oder Tier I einer anderen) · die nächste Battle-Plan-Sprosse ·
   +2 Skill Points · +2 Attributpunkte · ein höheres Level Cap und Level-Band · bei Prestige 2, 4 und 6 einen weiteren
   Keystone-Platz · ab Prestige 1 die Draughts.
+- **Ablauf** (Timo 26.10.2026): zwei Screens. **Victory** vor dem brennenden Act, dann **The Harvest**: ein Fenster mit
+  der Mastery-Wahl links und „You gain" rechts (neuer Act, Level Cap, Skill/Attribute Points, Battle-Plan-Sprosse,
+  Keystone-Platz, Draughts, Ember Penalty in Rot), jede Zeile mit Tooltip. „Let It Burn" führt direkt ins Camp,
+  die Attributpunkte verteilt man danach im Character Sheet.
 
 ### 2.6 Finale und Endgame ✅
 - **The Last Ember** (nach dem 7. Prestige): 7 Stages ohne Loot und Level-Ups. Stage 1–6 sind die **Warden-Echos** der

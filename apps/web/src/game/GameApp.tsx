@@ -1,18 +1,19 @@
 import { Suspense, useEffect, useState } from "react";
+import type { GameState } from "@emberheir/sim";
 import { CombatDebug } from "../combat/CombatDebug";
 import { ItemArtDefs } from "../ui/ItemArt";
 import { ItemHoverLayer } from "../ui/ItemTooltip";
 import { Stage } from "../ui/Stage";
 import { useSettings } from "../ui/settings";
 import { isTypingTarget } from "../ui/kit/hotkeys";
-import { Presence, useUiSounds } from "../ui/kit/juice";
+import { Presence, prefersReducedMotion, useUiSounds } from "../ui/kit/juice";
 import { CHEATS_ENABLED, CheatPanel } from "./CheatPanel";
 import { CharacterOverlay } from "./CharacterOverlay";
 import { Compendium } from "./Compendium";
 import { IntermissionView } from "./intermission/IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
 import { EndingScreen, NoticeScreen } from "./NoticeScreen";
-import { InheritanceView, PrestigeView } from "./PrestigeView";
+import { HarvestBurn, PrestigeView } from "./PrestigeView";
 import { TitleScreen } from "./TitleScreen";
 import { BattleView } from "./lazyViews";
 import { CampView } from "./camp/CampView";
@@ -38,6 +39,10 @@ export function GameApp() {
   const [persona, setPersona] = useState<PersonaId>("thoric");
   const [kaelenTab, setKaelenTab] = useState<"tree" | "plan">("tree");
   const [lab, setLab] = useState(false);
+  // The Harvest as it was when Let It Burn was pressed: it burns away over the Camp.
+  const [burning, setBurning] = useState<{ state: GameState; branch: string | undefined } | null>(
+    null,
+  );
   const { state } = game;
   const run = state?.run ?? null;
   const inFight = run?.phase === "fight";
@@ -140,14 +145,14 @@ export function GameApp() {
       />
     );
   } else if (state.pendingPrestige) {
-    screen = <PrestigeView key={state.nonce} state={state} game={game} />;
-  } else if (state.notice?.kind === "prestige") {
     screen = (
-      <InheritanceView
+      <PrestigeView
+        key={state.nonce}
         state={state}
-        onWake={() => {
+        game={game}
+        onBurn={(branch) => {
           setCampScreen(null);
-          game.dispatch({ type: "dismissNotice" });
+          if (!prefersReducedMotion()) setBurning({ state, branch });
         }}
       />
     );
@@ -272,6 +277,11 @@ export function GameApp() {
         <div className="screen-host" data-covered={overlay || campWindow ? "" : undefined}>
           {screen}
         </div>
+        {burning && (
+          <HarvestBurn onDone={() => setBurning(null)}>
+            <PrestigeView state={burning.state} game={game} frozen={{ branch: burning.branch }} />
+          </HarvestBurn>
+        )}
         <Presence>{campWindow}</Presence>
         {/* On the road, Character and Ash Tree are windows over the arena with the arena
             around them (ui-ux-plan-v1.md 3.4). */}
