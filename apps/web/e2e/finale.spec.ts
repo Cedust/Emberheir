@@ -32,6 +32,8 @@ test("The Last Ember: the gauntlet starts with Gorrak's echo", async ({ page }) 
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
+  // With the last flame in reach the caravan camps in the cold crater.
+  await expect(page.locator("svg.camp-scene")).toHaveAttribute("data-act", "8");
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   await page.getByRole("button", { name: /THE LAST EMBER/ }).click();
   const hall = page.getByRole("region", { name: "Intermission" });
