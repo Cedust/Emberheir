@@ -8,7 +8,13 @@ import {
   type DraughtDefinition,
   type FighterSnapshot,
 } from "@emberheir/sim";
-import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
+import {
+  EnemyTypeImg,
+  type EnemyTypeIcon,
+  GameIcon,
+  type GameIconId,
+  RANK_MARKS,
+} from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
@@ -536,7 +542,7 @@ export interface EnemyFrameProps {
   enemy: FighterSnapshot;
   name: string;
   sub: string;
-  icon: IconName;
+  typeIcon: EnemyTypeIcon;
   tag?: "ELITE" | "BOSS" | "GATEKEEPER" | "CHAMPION";
   mods: readonly string[];
   attackIcon: IconName;
@@ -619,7 +625,10 @@ export function EnemyFrame(props: EnemyFrameProps) {
       aria-label={`${props.name} plaque`}
     >
       <div className="hud-enemy-head" title={props.sub}>
-        <Icon name={props.icon} size={20} color="#f3e6c8" />
+        <EnemyTypeImg type={props.typeIcon} size={30} className="hud-enemy-type" />
+        {props.tag && (
+          <img className="rank-mark" src={RANK_MARKS[props.tag]} alt="" draggable={false} />
+        )}
         {props.tag && (
           <span
             className={`rank-tag title-font ${tagClass}`}

@@ -816,3 +816,18 @@
 .stage .hunt-chip .trail-mark {
   margin: -7px -2px -7px -10px;
 }
+
+/* Painted enemy type (Brute, Caster ...) and rank mark (Elite helm, Champion wreath, gate, boss). */
+.stage .hud-enemy-type {
+  flex: none;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.7));
+}
+
+.stage .hud-enemy .rank-mark {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
+  margin-right: -6px;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.7));
+}

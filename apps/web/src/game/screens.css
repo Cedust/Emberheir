@@ -4793,6 +4793,9 @@
 }
 
 .stage .codex-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
   font-size: 12px;
 }
 
@@ -9569,6 +9572,13 @@
 
 .stage .bestiary-head > span:last-child {
   display: grid;
+}
+
+.stage .bestiary-type {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-style: italic;
 }
 
 .stage .bestiary-trails {
