@@ -42,17 +42,20 @@ test("The Mastery step deepens the main Mastery", async ({ page }) => {
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.getByRole("button", { name: "Pack the Caravan" }).click();
 
-  const mastery = page.getByRole("region", { name: "Mastery" });
+  const mastery = page.getByRole("group", { name: "Mastery" });
   // The Cinderguard's three in class order, Vanquisher as its tier II.
   await expect(mastery.locator(".branch-pick")).toHaveCount(3);
   const deepen = mastery.locator(".branch-pick").nth(0);
-  await expect(deepen).toContainText("DEEPEN · TIER II");
+  await expect(deepen).toContainText("Vanquisher II");
   await expect(deepen).toContainText("Greater Executioner");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/mastery.png` });
   await deepen.click();
-  await page.getByRole("button", { name: "Deepen Vanquisher" }).click();
   await page.getByRole("button", { name: "Let It Burn" }).click();
-  await expect(page.getByRole("region", { name: "Inheritance" })).toContainText("Vanquisher II");
+  await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
+  expect(
+    JSON.parse(await page.evaluate(() => localStorage.getItem("emberheir.slot.0") ?? "{}")).legacy
+      ?.branches,
+  ).toEqual(["vanquisher", "vanquisher"]);
 });
 
 test("The Ash Tree zooms with the mouse wheel and a two-finger pinch", async ({ page }) => {

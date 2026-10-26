@@ -5554,49 +5554,34 @@
   cursor: pointer;
 }
 
-/* --- prestige (Victory, Seal, Inheritance) ------------------------------------------------- */
+/* --- prestige (Victory, The Harvest) ------------------------------------------------------ */
 
+/* Both steps play in front of the act that just fell, set on fire. */
 .stage .prestige {
   align-items: center;
+  background:
+    radial-gradient(ellipse at 50% 115%, rgb(255 110 30 / 0.55), transparent 62%),
+    linear-gradient(transparent 45%, rgb(40 10 0 / 0.7)),
+    var(--prestige-art, none) center / cover no-repeat,
+    #1a0e08;
 }
 
-.stage .prestige-crumbs {
+.stage .prestige::before {
+  content: "";
   position: absolute;
-  top: 24px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 8px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  z-index: 2;
-}
-
-.stage .prestige-crumbs li {
-  padding: 4px 14px;
-  border-radius: 14px;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 1px;
-  color: #c9b896;
-  background: rgb(14 12 10 / 0.4);
-  border: 1.5px solid rgb(201 184 150 / 0.4);
-}
-
-.stage .prestige-crumbs li.on {
-  color: #1c1a18;
-  background: #ff8a3a;
-  border-color: #ff8a3a;
+  inset: 0;
+  background: rgb(60 18 4 / 0.45);
+  backdrop-filter: saturate(1.4) sepia(0.45) brightness(0.6);
+  pointer-events: none;
 }
 
 .stage .prestige-victory {
   justify-content: center;
   color: #ecdfc4;
-  background: radial-gradient(circle at 50% 40%, #6a2a10 0%, #2a120a 55%, #0e0806 100%);
 }
 
 .stage .victory-content {
+  position: relative;
   width: 820px;
   display: flex;
   flex-direction: column;
@@ -5611,228 +5596,194 @@
   font-weight: 900;
   letter-spacing: 8px;
   color: #ffb13b;
+  text-shadow: 0 2px 18px rgb(0 0 0 / 0.7);
 }
 
 .stage .victory-quote {
   margin: 0;
   font-size: 24px;
   font-style: italic;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.8);
 }
 
 .stage .victory-sub {
-  margin: 0;
-  font-size: 17px;
-  color: #b3a288;
+  margin: 0 0 10px;
+  font-size: 18px;
+  color: #d6c3a0;
+  text-shadow: 0 1px 8px rgb(0 0 0 / 0.8);
 }
 
-.stage .prestige-branch,
-.stage .prestige-attributes,
-.stage .prestige-heir {
-  background: linear-gradient(180deg, #e8b48a 0%, #d9c6a0 45%);
+/* The Harvest: one window, the Mastery pick left, everything gained right. */
+.stage .prestige-harvest > .k-layer-panel {
+  padding: 60px calc(var(--safe-x) + 150px);
+  background: none;
 }
 
-:root[data-theme="dark"] .stage .prestige-branch,
-:root[data-theme="dark"] .stage .prestige-attributes,
-:root[data-theme="dark"] .stage .prestige-heir {
-  background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
+.stage .prestige-harvest .harvest-window {
+  align-self: center;
+  flex: 1 1 auto;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root:not([data-theme="light"]) .stage .prestige-branch,
-  :root:not([data-theme="light"]) .stage .prestige-attributes,
-  :root:not([data-theme="light"]) .stage .prestige-heir {
-    background: linear-gradient(180deg, #3a1a0e 0%, #1c1a18 45%);
-  }
+.stage .harvest-body {
+  display: grid;
+  grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr);
+  flex-grow: 0;
+  gap: 40px;
+  padding: 26px 40px 0;
 }
 
-.stage .seal-head {
-  margin-top: 70px;
-  text-align: center;
+.stage .harvest-body:has(> .harvest-col:only-child) {
+  grid-template-columns: minmax(0, 1fr);
+  width: 640px;
+  margin: 0 auto;
 }
 
-.stage .seal-head h2 {
-  margin: 0 0 4px;
-  font-size: 34px;
-  letter-spacing: 4px;
-}
-
-.stage .seal-head p {
-  margin: 0;
-}
-
-.stage .branch-picks {
-  flex-grow: 1;
-  width: 1400px;
-  padding: 28px 0;
+.stage .harvest-col {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-content: center;
-  gap: 14px;
+  flex-direction: column;
+  gap: 12px;
+  min-width: 0;
 }
 
-.stage .branch-picks > .branch-pick {
-  width: 262px;
+.stage .harvest-picks {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
 }
 
 .stage .branch-pick {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  padding: 14px 16px;
-  border-top: 4px solid var(--branch);
   background: var(--panel);
   color: var(--text);
   font: inherit;
-  text-align: left;
   cursor: pointer;
 }
 
 .stage .branch-pick.on {
   border-color: var(--accent);
-  border-top-color: var(--branch);
-  box-shadow: 0 0 14px rgb(255 138 58 / 0.45);
+  box-shadow:
+    0 0 0 2px var(--accent),
+    0 0 18px rgb(255 138 58 / 0.5);
 }
 
-.stage .branch-pick > .class-emblem {
-  align-self: center;
-  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.45));
+.stage .harvest-picks > .branch-pick {
+  display: grid;
+  grid-template-columns: 60px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 16px;
+  flex-shrink: 0;
+  width: 100%;
+  padding: 12px 18px;
+  border-top-width: 1px;
+  border-left: 5px solid var(--branch);
+  text-align: left;
+}
+
+.stage .harvest-picks > .branch-pick.on {
+  border-left-color: var(--branch);
+}
+
+.stage .branch-pick-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.stage .branch-pick-brings {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 2px;
+  font-size: 15px;
+  color: var(--accent);
 }
 
 .stage .branch-pick-name {
-  font-size: 21px;
+  font-size: 24px;
   color: var(--branch);
 }
 
-/* Deepening an owned branch: the tier's rarity colour (II Rare, III Epic). */
+/* Deepening an owned Mastery: the tier's rarity colour (II Rare, III Epic). */
 .stage .branch-pick.deepen.tier-2 {
-  border-top-color: var(--rarity-rare);
+  border-left-color: var(--rarity-rare);
 }
 
-.stage .branch-pick.deepen.tier-3 {
-  border-top-color: var(--rarity-epic);
+.stage .branch-pick.deepen.tier-3,
+.stage .branch-pick.deepen.tier-4,
+.stage .branch-pick.deepen.tier-5 {
+  border-left-color: var(--rarity-epic);
 }
 
-.stage .branch-pick.deepen .eyebrow {
-  color: var(--rarity-text-rare);
-}
-
-.stage .branch-pick.deepen.tier-3 .eyebrow {
-  color: var(--rarity-text-epic);
-}
-
-.stage .branch-footer {
-  padding-bottom: 40px;
-}
-
-.stage .item-detail.sealed {
-  border-color: #ffb13b;
-  box-shadow: 0 0 18px rgb(255 177 59 / 0.35);
-}
-
-.stage .heir-body {
-  flex-grow: 1;
-  width: 1400px;
-  display: grid;
-  grid-template-columns: 420px minmax(0, 1fr);
-  gap: 32px;
-  padding: 80px 0 32px;
-  min-height: 0;
-}
-
-.stage .heir-nan {
+.stage .harvest-gains {
+  margin: 0;
+  padding: 0;
+  list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 8px;
 }
 
-.stage .heir-nan-head {
+.stage .harvest-gain {
   display: flex;
   align-items: center;
   gap: 14px;
+  padding: 6px 14px;
+  border-left: 4px solid var(--accent);
+  background: rgb(255 248 230 / 0.5);
+  cursor: default;
 }
 
-.stage .heir-nan-head > div {
-  display: flex;
-  flex-direction: column;
+.stage .harvest-gain > img {
+  width: 40px;
+  height: 40px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.35));
 }
 
-.stage .heir-nan-head .title-font {
-  font-size: 22px;
-}
-
-.stage .heir-nan-lines p {
-  margin: 0 0 14px;
+.stage .harvest-gain-name {
   font-size: 19px;
-  font-style: italic;
-  line-height: 1.45;
 }
 
-.stage .heir-note {
-  padding: 10px 12px;
-  border: 1.5px dashed var(--edge);
-  border-radius: 4px;
-  line-height: 1.4;
+.stage .harvest-gain-value {
+  margin-left: auto;
+  font-size: 20px;
+  font-weight: 700;
+  white-space: nowrap;
 }
 
-.stage .heir-main {
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
+.stage .harvest-gain.new {
+  border-left-color: var(--rarity-epic);
 }
 
-.stage .heir-rewards {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
+.stage .harvest-gain.bad {
+  border-left-color: var(--k-short);
+  color: var(--k-short);
 }
 
-.stage .heir-card {
-  padding: 14px 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  border-top: 5px solid var(--tone, var(--accent));
-}
-
-.stage .heir-card-name {
-  font-size: 22px;
-}
-
-.stage .tone-card-seal {
-  --tone: #ffb13b;
-}
-
-.stage .tone-card-accent {
-  --tone: #ff8a3a;
-}
-
-.stage .tone-card-ember {
-  --tone: #ff5a1f;
-}
-
-.stage .tone-card-ash {
-  --tone: #c9c2b8;
-}
-
-.stage .tone-card-good {
-  --tone: #4fe08a;
-}
-
-.stage .tone-card-epic {
-  --tone: #b36bff;
-}
-
-.stage .heir-caravan {
-  padding: 12px 16px;
+.stage .harvest-foot {
   display: flex;
   align-items: center;
-  gap: 12px;
-  font-size: 16px;
+  gap: 16px;
+  flex-grow: 0;
+  padding: 40px 40px 26px;
 }
 
-.stage .heir-main .wake {
-  align-self: flex-end;
+.stage .harvest-foot .quote {
+  font-size: 19px;
+}
+
+.stage .harvest-foot .nan-portrait {
+  width: 64px;
+  height: 64px;
+}
+
+:root[data-theme="dark"] .stage .harvest-gain {
+  background: rgb(0 0 0 / 0.22);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stage .harvest-gain {
+    background: rgb(0 0 0 / 0.22);
+  }
 }
 
 /* --- legacy facts --------------------------------------------------------------------------- */
@@ -7472,27 +7423,6 @@
   color: var(--life);
   background: transparent;
   text-decoration: line-through;
-}
-
-/* The Harvest's Attribute Points (Prestige). */
-.stage .harvest-stones {
-  width: 760px;
-  padding: 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.stage .prestige-attributes .harvest-stones {
-  margin: 32px auto 0;
-}
-
-.stage .prestige-attributes .grow-space {
-  flex-grow: 1;
-}
-
-.stage .harvest-left {
-  text-align: right;
 }
 
 /* Breakpoint Perk tooltip: the item tooltip's dark plate with an ember seal on top. */

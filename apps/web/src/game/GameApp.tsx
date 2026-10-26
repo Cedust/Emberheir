@@ -12,7 +12,7 @@ import { Compendium } from "./Compendium";
 import { IntermissionView } from "./intermission/IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
 import { EndingScreen, NoticeScreen } from "./NoticeScreen";
-import { InheritanceView, PrestigeView } from "./PrestigeView";
+import { PrestigeView } from "./PrestigeView";
 import { TitleScreen } from "./TitleScreen";
 import { BattleView } from "./lazyViews";
 import { CampView } from "./camp/CampView";
@@ -141,16 +141,6 @@ export function GameApp() {
     );
   } else if (state.pendingPrestige) {
     screen = <PrestigeView key={state.nonce} state={state} game={game} />;
-  } else if (state.notice?.kind === "prestige") {
-    screen = (
-      <InheritanceView
-        state={state}
-        onWake={() => {
-          setCampScreen(null);
-          game.dispatch({ type: "dismissNotice" });
-        }}
-      />
-    );
   } else if (state.notice?.kind === "ending") {
     screen = (
       <EndingScreen

@@ -152,15 +152,9 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "Victory" })).toBeVisible();
     await check("victory");
     await page.getByRole("button", { name: "Pack the Caravan" }).click();
-    await expect(page.getByRole("region", { name: "Mastery" })).toBeVisible();
-    await check("bloodline");
-    await page.getByRole("button", { name: /^Take / }).click();
-    await expect(page.getByRole("region", { name: "Attributes" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "The Harvest" })).toBeVisible();
     await check("harvest");
     await page.getByRole("button", { name: "Let It Burn" }).click();
-    await expect(page.getByRole("region", { name: "Inheritance" })).toBeVisible();
-    await check("inheritance");
-    await page.getByRole("button", { name: "Wake at the Hearthfire" }).click();
     await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
     await expect(page.getByRole("region", { name: "Legacy" })).toBeVisible();
     await check("legacy");
