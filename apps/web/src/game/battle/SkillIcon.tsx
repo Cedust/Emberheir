@@ -27,8 +27,8 @@ const ATTACK_ART = import.meta.glob<string>("../../assets/attacks/*.webp", {
 });
 
 /**
- * The Default Attack of a weapon: its own painting once Timo's sheet is in, until then the
- * painted weapon itself, the stroke icon only for an unknown weapon.
+ * The Default Attack of a weapon: its painting from Timo's Default Attack sheet, else the painted
+ * weapon, the stroke icon only for an unknown weapon.
  */
 export function AttackIcon(props: { weaponId: string; fallback: IconName; size: number }) {
   const url =

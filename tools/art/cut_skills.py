@@ -7,6 +7,7 @@
 #   art/icons/skill-sheet-c-v1.png  3 x 3 Storm, Frost, Void
 #   art/icons/skill-sheet-d-v1.png  3 x 3 Mastery skills
 #   art/icons/skill-sheet-e-v1.png  2 x 4 Weapon Innates (Frostbolt = the Wand's after Cold Attunement)
+#   art/icons/attack-sheet-v1.png   2 x 4 Default Attacks -> apps/web/src/assets/attacks/<weaponId>.webp
 # Sheets B, D and E came with a baked checkerboard: tools/art/unmix_checker.py made them from the
 # matching *-raw.png first.
 # The glows of the painted effects touch, so every sheet is cut on its grid, not by pieces; the
@@ -21,6 +22,10 @@ SIZE = 128
 FADE = 0.06
 
 SHEETS = [
+  ('attack-sheet-v1.png', 'attacks', [
+    ['sword', 'axe', 'mace', 'dagger'],
+    ['bow', 'crossbow', 'wand', 'staff'],
+  ]),
   ('rune-sheet-v1.png', 'runes', [
     ['ash', 'moss', 'thorn', 'venom'],
     ['ember', 'rime', 'volt', 'dusk'],
