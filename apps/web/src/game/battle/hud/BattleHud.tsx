@@ -12,6 +12,7 @@ import { GameIcon, type GameIconId } from "../../../ui/gameIcons";
 import { Icon, type IconName } from "../../../ui/Icon";
 import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
+import { AttackIcon, SkillIcon } from "../SkillIcon";
 import { skillIcon, skillTint } from "../skills";
 import { useState } from "react";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, ORB_REACH, hudLayout } from "./layout";
@@ -377,6 +378,8 @@ export interface HeroBarProps {
   hero: FighterSnapshot;
   heroTitle: string;
   weaponIcon: IconName;
+  /** The weapon id, for the painted Default Attack. */
+  weaponId: string;
   flaskCharges: number;
   flaskMax: number;
   /** The Draught brewed for this trip, shown in place of the Flask charge it took. */
@@ -467,7 +470,7 @@ export function HeroBar(props: HeroBarProps) {
               style={swingStyle(hero, !skillNext)}
               data-testid="attack-slot"
             >
-              <Icon name={props.weaponIcon} size={30} color="#fff6e4" />
+              <AttackIcon weaponId={props.weaponId} fallback={props.weaponIcon} size={30} />
               {stunned && <span className="stun-mark mono">{hero.stunned.toFixed(1)}</span>}
             </div>
             <span className={`skill-caption${!skillNext ? " next" : ""}`}>
@@ -491,7 +494,7 @@ export function HeroBar(props: HeroBarProps) {
                   data-testid="skill-slot"
                 >
                   <div className="heat-fill" style={{ height: `${fill}%` }} />
-                  <Icon name={skillIcon(slot.skillId)} size={30} color="#fff6e4" />
+                  <SkillIcon skillId={slot.skillId} size={30} />
                   <span className="pos mono">{i + 1}</span>
                   <span className="corner mono">
                     {next ? `${Math.floor(hero.heat)}/${slot.threshold}` : slot.heatCost}
@@ -513,7 +516,7 @@ export function HeroBar(props: HeroBarProps) {
                 style={{ background: skillTint(slot.skillId) }}
                 data-testid="reaction-slot"
               >
-                <Icon name={skillIcon(slot.skillId)} size={24} color="#fff6e4" />
+                <SkillIcon skillId={slot.skillId} size={24} />
                 <span className="pos mono">R{i + 1}</span>
                 {slot.cooldownLeft > 0 && (
                   <span className="cooldown mono">{Math.ceil(slot.cooldownLeft)}</span>
@@ -680,7 +683,7 @@ export function EnemyFrame(props: EnemyFrameProps) {
               title={`${slot.name} · ${slot.heatCost} Heat`}
               style={{ background: skillTint(slot.skillId) }}
             >
-              <Icon name={skillIcon(slot.skillId)} size={18} color="#fff6e4" />
+              <SkillIcon skillId={slot.skillId} size={18} />
             </div>
           ))}
         </div>

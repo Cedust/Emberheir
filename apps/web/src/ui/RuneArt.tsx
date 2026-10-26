@@ -1,9 +1,15 @@
 import { ITEM_CATALOG } from "@emberheir/content";
 
 /**
- * Painted Rune stones: a dark stone with a carved, glowing glyph. Higher ranks glow hotter
- * (ash grey → moss green → ... → dusk violet), so the pouch reads at a glance.
+ * Rune stones: a dark stone with a carved, glowing glyph. Higher ranks glow hotter
+ * (ash grey → moss green → ... → dusk violet), so the pouch reads at a glance. Timo's painted
+ * stones (tools/art/cut_skills.py); the drawn stone stays for a Rune without a painting.
  */
+
+const PAINTED = import.meta.glob<string>("../assets/runes/*.webp", {
+  eager: true,
+  import: "default",
+});
 
 const GLYPHS: Record<string, string> = {
   ash: "M12 5v14M8 9l4-4 4 4",
@@ -40,6 +46,19 @@ export function RuneStone(props: { runeId: string; size?: number; dim?: boolean 
   const size = props.size ?? 36;
   const color = runeColor(props.runeId);
   const glyph = GLYPHS[props.runeId] ?? "M12 6v12";
+  const painted = PAINTED[`../assets/runes/${props.runeId}.webp`];
+  if (painted)
+    return (
+      <img
+        className={`rune-stone${props.dim ? " dim" : ""}`}
+        src={painted}
+        width={size}
+        height={size}
+        alt=""
+        aria-hidden="true"
+        draggable={false}
+      />
+    );
   return (
     <svg
       className={`rune-stone${props.dim ? " dim" : ""}`}

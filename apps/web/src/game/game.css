@@ -1039,6 +1039,13 @@
   position: relative;
 }
 
+/* A painted skill icon (game/battle/SkillIcon.tsx): above the Heat fill, lifted off the tint. */
+.stage .skill-art {
+  position: relative;
+  pointer-events: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.7));
+}
+
 .stage .skill-slot .heat-fill {
   position: absolute;
   left: 0;

@@ -31,7 +31,8 @@ import { Potion } from "../../ui/Potion";
 import { TrailMark } from "../../ui/TrailMark";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
-import { skillIcon, skillTint } from "../battle/skills";
+import { SkillIcon } from "../battle/SkillIcon";
+import { skillTint } from "../battle/skills";
 import { HeirFace } from "../camp/CampFigures";
 import { bountyView } from "../bounty";
 import { ShareBar } from "../camp/BattlePlanTab";
@@ -242,7 +243,7 @@ export function PlanCard(props: { state: GameState; run: RunState; onPlan: () =>
         {rows.map((r) => (
           <li key={`${r.id}-${r.reaction}`} className={r.reaction ? "reaction" : ""}>
             <span className="skill-chip" style={{ background: skillTint(r.id) }}>
-              <Icon name={skillIcon(r.id)} size={16} color="#fff6e4" />
+              <SkillIcon skillId={r.id} size={16} />
             </span>
             <span className="plan-card-name">{r.name}</span>
             {report &&

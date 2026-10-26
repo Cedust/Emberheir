@@ -451,6 +451,7 @@ export function BattleView(props: {
         hero={hero}
         heroTitle={looks.heroInfo.name}
         weaponIcon={WEAPON_ICON[looks.heroLook.weapon] ?? "strike"}
+        weaponId={looks.heroLook.weapon}
         flaskCharges={state.flaskCharges}
         flaskMax={flaskMax}
         draught={flaskDraught}

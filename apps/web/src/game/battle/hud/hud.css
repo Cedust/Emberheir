@@ -771,7 +771,9 @@
   background: #8a5a26;
 }
 
+/* Clear of the swing ring, which reaches 9px below the slot (Timo: it ran over the name). */
 .stage .hud-center .skill-caption {
+  margin-top: 7px;
   max-width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
