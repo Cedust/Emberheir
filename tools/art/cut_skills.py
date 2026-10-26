@@ -8,6 +8,13 @@
 #   art/icons/skill-sheet-d-v1.png  3 x 3 Mastery skills
 #   art/icons/skill-sheet-e-v1.png  2 x 4 Weapon Innates (Frostbolt = the Wand's after Cold Attunement)
 #   art/icons/attack-sheet-v1.png   2 x 4 Default Attacks -> apps/web/src/assets/attacks/<weaponId>.webp
+#   art/icons/enemy-skill-sheet-a-v1.png  3 x 3 Enemy Skills, Ashen Fields and Rotwood
+#   art/icons/enemy-skill-sheet-b-v1.png  2 x 5 Ember Wastes, Frost Peaks, Storm Spires
+#   art/icons/enemy-skill-sheet-c-v1.png  3 x 3 Storm Herald, Void Rift, the Harvester
+#   (gegner-skill-icons-art-v1.md). B and C came with a baked checker that unmix_checker.py leaves
+#   in their glows; key_checker.py made them from the matching *-raw.png:
+#     B: --grey 120,215 --min-area 120 --halo 68,115,40
+#     C: --min-area 400 --keep 590,525,770,700 --halo 60,150,60  (keeps Rift Snap's white flash)
 # Sheets B, D and E came with a baked checkerboard: tools/art/unmix_checker.py made them from the
 # matching *-raw.png first.
 # The glows of the painted effects touch, so every sheet is cut on its grid, not by pieces; the
@@ -51,6 +58,20 @@ SHEETS = [
   ('skill-sheet-e-v1.png', 'skills', [
     ['power-strike', 'lacerate', 'skull-crack', 'barbed-arrow'],
     ['heavy-bolt', 'shockbolt', 'frostbolt', 'void-bolt'],
+  ]),
+  ('enemy-skill-sheet-a-v1.png', 'skills', [
+    ['heavy-swing', 'quick-cuts', 'cinder-spit'],
+    ['gorrak-slam', 'rake', 'blight-spit'],
+    ['moss-mend', 'rot-spray', 'devour'],
+  ]),
+  ('enemy-skill-sheet-b-v1.png', 'skills', [
+    ['flame-dash', 'fireball', 'obsidian-shell', 'eruption', 'pounce'],
+    ['ice-bolt', 'glacial-mend', 'avalanche', 'arc-dash', 'forked-bolt'],
+  ]),
+  ('enemy-skill-sheet-c-v1.png', 'skills', [
+    ['thunderclap', 'void-lance', 'hex'],
+    ['consume', 'rift-snap', 'soul-reap'],
+    ['harvest-swing', 'ashfall', 'last-harvest'],
   ]),
 ]
 

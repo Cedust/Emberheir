@@ -19,7 +19,7 @@ import { Icon, type IconName } from "../../../ui/Icon";
 import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
 import { AttackIcon, SkillIcon } from "../SkillIcon";
-import { skillIcon, skillTint } from "../skills";
+import { skillArt, skillIcon, skillTint } from "../skills";
 import { useState } from "react";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, ORB_REACH, hudLayout } from "./layout";
 
@@ -339,6 +339,7 @@ export function Rhythm(props: {
       )}
       {f.telegraph && (
         <div className="rhythm-hold heavy" style={{ width: px(f.telegraph.remaining) }}>
+          {skillArt(f.telegraph.skillId) && <SkillIcon skillId={f.telegraph.skillId} size={14} />}
           <span>{f.telegraph.skill}</span>
         </div>
       )}
@@ -351,12 +352,12 @@ export function Rhythm(props: {
           }}
           title={heavyTitle(f.nextHeavy.skill)}
         >
-          <Icon name="warning" size={12} color="#ffd9bf" />
+          <HeavyMark skillId={f.nextHeavy.skillId} size={12} />
         </div>
       )}
       {heavyAt !== null && f.nextHeavy && heavyAt >= RHYTHM_WINDOW && (
         <div className="rhythm-heavy later" title={heavyTitle(f.nextHeavy.skill)}>
-          <Icon name="warning" size={11} color="#ffd9bf" />
+          <HeavyMark skillId={f.nextHeavy.skillId} size={11} />
           {Math.ceil(heavyAt)}s
         </div>
       )}
@@ -372,6 +373,12 @@ export function Rhythm(props: {
       <span className="rhythm-now" style={{ transform: `scaleY(${1 + 0.7 * flare})` }} />
     </div>
   );
+}
+
+/** An announced Heavy Attack on the rhythm: its painting, else a warning sign. */
+function HeavyMark(props: { skillId: string; size: number }) {
+  if (skillArt(props.skillId)) return <SkillIcon skillId={props.skillId} size={props.size} />;
+  return <Icon name="warning" size={props.size} color="#ffd9bf" />;
 }
 
 /** A slot with the swing ring: the action that fires when the ring closes. */
