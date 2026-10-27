@@ -39,7 +39,10 @@ test("The harvest boss falls: one Harvest window, wake as the next generation", 
   // Liora brews her first Draughts (draughts-einfuehrung-v1.md).
   const liora = page.getByRole("dialog", { name: "Liora, Mystic" });
   await expect(liora).toContainText("Iron, Ward or Vigor");
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/liora-draughts.png` });
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${process.env.SHOTS}/liora-draughts.png` });
+  }
   await liora.getByRole("button", { name: /Eldrin's Road/ }).click();
   await expect(liora).toBeHidden();
   const camp = page.getByRole("region", { name: "Camp" });

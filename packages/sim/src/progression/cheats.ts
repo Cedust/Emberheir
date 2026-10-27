@@ -325,7 +325,8 @@ function endgameBuild(state: GameState, data: GameData, plan: BuildPlan): GameSt
     const open = openBranchesFor(s, data);
     const branchId = plan.masteries.find((m) => open.includes(m)) ?? open[0];
     s = applyAction(s, data, { type: "prestige", ...(branchId ? { branchId } : {}) });
-    s = { ...s, notice: null };
+    // No Harvest screen and no Story Blip from Liora's first Draughts.
+    s = { ...s, notice: null, blips: (s.blips ?? []).filter((b) => b !== "liora-draughts") };
   }
   s = setLevel(s, CHEAT_MAX_LEVEL);
   // Attribute points in the plan's order, each up to the max.
