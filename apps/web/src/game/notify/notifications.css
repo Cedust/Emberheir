@@ -1,0 +1,173 @@
+/*
+ * Notifications (notification-system-v1): small cards top right, in the tooltips' look (dark
+ * plate in the thin painted brass frame, ui/panel-frame.webp), painted icon left, a Cinzel title
+ * and one short line. They sit over every screen and take clicks only where a card is.
+ */
+.stage .notifications {
+  position: absolute;
+  top: 92px;
+  right: calc(var(--safe-x) + 22px);
+  z-index: 35;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 14px;
+  pointer-events: none;
+}
+
+.stage .notification {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  width: 330px;
+  min-height: 74px;
+  padding: 12px 20px 12px 14px;
+  text-align: left;
+  color: #d6ccbb;
+  font-family: var(--font-text);
+  background: #0e0b08;
+  border: 1px solid #5a4430;
+  outline: 1px solid rgb(0 0 0 / 0.8);
+  border-radius: 3px;
+  box-shadow:
+    0 10px 30px rgb(0 0 0 / 0.6),
+    inset 0 0 24px rgb(0 0 0 / 0.6),
+    inset 3px 0 0 var(--notice-tone, #c9a063);
+  pointer-events: auto;
+  cursor: pointer;
+  animation: notice-in 0.32s cubic-bezier(0.2, 0.9, 0.3, 1.2);
+}
+
+.stage .notification::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-style: solid;
+  border-width: 35px;
+  border-image: url("../../assets/ui/panel-frame.webp") 70 stretch;
+  pointer-events: none;
+}
+
+.stage .notification[data-leaving] {
+  animation: notice-out 0.26s ease-in forwards;
+  pointer-events: none;
+}
+
+.stage .notification-art {
+  flex: none;
+  width: 52px;
+  height: 52px;
+  display: grid;
+  place-items: center;
+}
+
+.stage .notification-art img,
+.stage .notification-art .item-art {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.6));
+}
+
+/* A persona's painted face in a small brass ring. */
+.stage .notification-face {
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid #c9a063;
+  background: #2a1d12;
+  box-shadow: 0 0 12px rgb(255 160 60 / 0.35);
+}
+
+.stage .notification-sigil {
+  width: 46px;
+  height: 46px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffd27a;
+  background: radial-gradient(circle at 40% 35%, #6a4424, #22170f);
+  border: 2px solid #c9a063;
+  box-shadow: 0 0 14px rgb(255 160 60 / 0.6);
+}
+
+.stage .notification-echo {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.stage .notification-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.stage .notification-text strong {
+  color: var(--notice-tone, #e0c27a);
+  font-size: 18px;
+  line-height: 1.15;
+  letter-spacing: 0.03em;
+}
+
+.stage .notification-sub {
+  font-size: 15px;
+  line-height: 1.25;
+  color: #c2b49c;
+}
+
+.stage .notice-bounty {
+  --notice-tone: #ffb347;
+}
+
+.stage .notice-trophy {
+  --notice-tone: var(--rarity-runeword, #e0c27a);
+}
+
+.stage .notice-hearth {
+  --notice-tone: #ff8a4a;
+}
+
+.stage .notice-hunt,
+.stage .notice-waymark,
+.stage .notice-rank {
+  --notice-tone: #ffd27a;
+}
+
+.stage .notice-ashborn,
+.stage .notice-echo {
+  --notice-tone: #ff9a3a;
+}
+
+@keyframes notice-in {
+  from {
+    opacity: 0;
+    transform: translateX(60px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes notice-out {
+  to {
+    opacity: 0;
+    transform: translateX(40px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .notification,
+  .stage .notification[data-leaving] {
+    animation: none;
+  }
+
+  .stage .notification[data-leaving] {
+    opacity: 0;
+  }
+}

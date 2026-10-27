@@ -11,7 +11,7 @@ export interface Settings {
   readonly sound: boolean;
   /** Master volume, 0..1. */
   readonly volume: number;
-  /** Each kind of sound on its own (Hover ticks, Clicks, Windows, Coins, Loot). */
+  /** Each kind of sound on its own (Hover ticks, Clicks, Windows, Coins, Loot, Notifications). */
   readonly sounds: Readonly<Record<SoundGroup, boolean>>;
   /** Screen shake and camera zoom in fights. */
   readonly screenShake: boolean;
@@ -24,7 +24,7 @@ export const DEFAULT_SETTINGS: Settings = {
   damageNumbers: true,
   sound: true,
   volume: 0.5,
-  sounds: { hover: true, click: true, window: true, coin: true, loot: true },
+  sounds: { hover: true, click: true, window: true, coin: true, loot: true, notice: true },
   screenShake: true,
   graphicsQuality: "medium",
 };

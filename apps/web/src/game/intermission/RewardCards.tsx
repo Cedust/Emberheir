@@ -1,4 +1,4 @@
-import { echoStageName, GAME_DATA } from "@emberheir/content";
+import { GAME_DATA } from "@emberheir/content";
 import {
   type EquipmentSlot,
   type GameState,
@@ -26,6 +26,8 @@ import { type DropSound, playSound } from "../../ui/sound";
 import { EQUIP_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
 import { WeaponSlot } from "../WeaponSlot";
+import { useNotify } from "../notify/Notifications";
+import { trophyNotification } from "../notify/notifications";
 import { compareWithEquipped } from "../../ui/itemCompare";
 
 /** The rewards after a won fight: Rune drops, the item cards with their reveal, the worn gear. */
@@ -177,23 +179,6 @@ function CardBack(props: { item: Item; small?: boolean; onReveal: () => void }) 
   );
 }
 
-function TrophyToast(props: { item: Item }) {
-  const { item } = props;
-  return (
-    <div className="trophy-toast" role="status">
-      <span className="trophy-toast-art">
-        <ItemArt
-          baseId={item.baseId}
-          uniqueId={item.uniqueId}
-          slot={getBase(GAME_DATA.items, item.baseId).slot}
-        />
-      </span>
-      <span className="eyebrow">NEW TROPHY</span>
-      <span className="title-font">{item.name}</span>
-    </div>
-  );
-}
-
 /** The card that carries the beaten enemy's Hunt Affix (hunts-entwurf-v1.md). */
 function HuntRibbon(props: { affix: string; enemyId: string; tier: number }) {
   const enemy = [
@@ -211,26 +196,6 @@ function HuntRibbon(props: { affix: string; enemyId: string; tier: number }) {
   );
 }
 
-/** The act boss left its Echo (Weapon Mastery): it is worn on the weapon at once. */
-function EchoToast(props: { echo: { readonly id: string; readonly stage: number } }) {
-  const def = GAME_DATA.echoes.find((e) => e.id === props.echo.id);
-  if (!def) return null;
-  const color = `#${def.color.toString(16).padStart(6, "0")}`;
-  return (
-    <div
-      className="trophy-toast echo-toast"
-      role="status"
-      style={{ borderColor: color, boxShadow: `0 0 32px ${color}` }}
-    >
-      <span className="echo-orb" style={{ background: color, boxShadow: `0 0 18px ${color}` }} />
-      <span className="eyebrow">{props.echo.stage > 1 ? "ECHO GROWS" : "NEW ECHO"}</span>
-      <span className="title-font">
-        {def.name} {echoStageName(props.echo.stage)}
-      </span>
-    </div>
-  );
-}
-
 export function ItemCards(props: {
   state: GameState;
   run: RunState;
@@ -242,11 +207,16 @@ export function ItemCards(props: {
   const items = rewards?.items ?? [];
   const [shown, reveal] = useReveal(items);
   const [selected, setSelected] = useState<number | undefined>(undefined);
+  // A Unique seen for the first time: its notification comes the moment its card turns over.
+  const trophy = items.find(
+    (it, i) => shown[i] && it.uniqueId && rewards?.newTrophies?.includes(it.uniqueId),
+  );
+  const notify = useNotify();
+  useEffect(() => {
+    if (trophy) notify([trophyNotification(trophy)]);
+  }, [trophy, notify]);
   if (!rewards) return null;
   const taken = new Set((rewards.taken ?? []).map((t) => t.index));
-  const trophy = items.find(
-    (it, i) => shown[i] && it.uniqueId && rewards.newTrophies?.includes(it.uniqueId),
-  );
   const focus = (item: Item) => props.onFocus(targetSlot(item, GAME_DATA, state.hero.equipment));
 
   if (items.length > 3) {
@@ -256,8 +226,6 @@ export function ItemCards(props: {
     const detail = pick >= 0 ? items[pick] : undefined;
     return (
       <div className="hoard-layout">
-        {trophy && <TrophyToast item={trophy} />}
-        {rewards.echo && <EchoToast echo={rewards.echo} />}
         <div className={`hoard-cards${items.length <= 4 ? " two" : ""}`}>
           {items.map((item, i) =>
             shown[i] ? (
@@ -322,7 +290,6 @@ export function ItemCards(props: {
 
   return (
     <div className="loot-cards">
-      {trophy && <TrophyToast item={trophy} />}
       {items.map((item, i) => {
         if (!shown[i]) {
           return (
