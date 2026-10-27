@@ -14,7 +14,8 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   await expect(hall).toContainText("Boss Hoard · choose 2 of 6");
   // The cards lie face down, then turn over one by one.
   await expect(page.getByTestId("hoard-card")).toHaveCount(6, { timeout: 10_000 });
-  await expect(page.getByRole("status")).toContainText("Thornsong");
+  await expect(page.getByTestId("notification-trophy")).toContainText("Thornsong");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/notifications.png` });
   // The act's Home Rune shows as such (act-beute-entwurf-v1.md).
   const drops = page.getByTestId("rune-drops");
   await expect(drops).toContainText("Moss Rune");
@@ -52,7 +53,7 @@ test("Ember Shrine: steal one of three Boons, it shows under the hero in the nex
   await page.getByRole("button", { name: /Continue/ }).click();
 
   // The Waymark won before the boss shows its Hearth Embers.
-  await expect(page.getByRole("status").filter({ hasText: "Hearth Embers" })).toBeVisible();
+  await expect(page.getByTestId("notification-hearth")).toContainText("Hearth Embers");
   const hall = page.getByRole("region", { name: "Intermission" });
   await expect(hall).toContainText("EMBER SHRINE");
   await expect(page.getByTestId("shrine").locator(".boon-card")).toHaveCount(3);

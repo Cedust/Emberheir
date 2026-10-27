@@ -80,6 +80,10 @@ const GROUP_LABEL: Readonly<Record<SoundGroup, { name: string; explain: string }
   window: { name: "Windows", explain: "The rustle when a window opens or closes." },
   coin: { name: "Coins", explain: "The ring when your currencies grow." },
   loot: { name: "Loot", explain: "Item and Rune drops, Boons." },
+  notice: {
+    name: "Notifications",
+    explain: "A soft chime when a note slides in at the top right.",
+  },
 };
 
 const QUALITY_LABEL: Readonly<Record<GraphicsQuality, string>> = {

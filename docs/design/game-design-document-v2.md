@@ -152,7 +152,7 @@ Endgame **Wildfire I–X**.
   | IV · Apex | 300 | 200 | 100 | 60 | 15 | das Hunt Affix rollt als Greater Affix (Rang I–V, 110–150 %); Endgame |
 
   Der Kampf zeigt den Trail unter der Gegner-Plakette, ein neuer Trail läuft als Pfotenspur durch die Arena (nicht
-  bei Skip) und steht als Moment über der Beute; die Karte mit dem Hunt Affix trägt ein Band mit der Trail-Marke,
+  bei Skip) und kommt danach als Notification; die Karte mit dem Hunt Affix trägt ein Band mit der Trail-Marke,
   und die Affix-Zeile behält ihr Brandzeichen dauerhaft (`AffixRoll.hunt`, weg nach Reforge oder Temper). Jeder
   Fight- und Elite-Knoten vor dem Boss kennt seinen Gegner schon beim Würfeln der Karte; die Weg-Karten zeigen ihn mit
   Trail und Kills (ungesehene Gegner als Schatten), damit man gezielt jagen kann. Der Ember Thief kann weiter
@@ -255,6 +255,11 @@ Endgame **Wildfire I–X**.
 - **Intermission:** steht in der Arena des Acts (der Heir wartet dort, Wetter läuft weiter). Links der Heir (Life,
   Flask, Battle Plan), in der Mitte die Wahl des Moments (Beute, Shrine, Pfad), rechts der Weg (Up Next, Bounty); bei
   der Item-Wahl steht dort die Paperdoll. Character und Skill Tree öffnen als Fenster über der Arena.
+- **Notifications:** kleine Karten oben rechts (Tooltip-Look, gemaltes Icon, Titel + eine kurze Zeile), über jedem
+  Screen, 4,5 s (Hover hält sie, Klick schickt sie weg), höchstens 3 zugleich, eigener Sound-Schalter. Sie kommen für
+  Bounty done (Turn in at Eldrin), Waymark, Hearth Embers, einen neuen Trail, Ashborn-Level, eine neue oder stärkere
+  Echo, eine neue Trophy (wenn ihre Karte aufgedeckt wird) und einen neuen Weapon Rank (Mastery-Punkt bei Kaelen).
+  Keine für Währungen, Items oder Runes (die haben eigene Drop-Animationen) und keine Erinnerung an offene Punkte.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
   (Iron +25 % Armor, Ward +25 % Barrier, Vigor +10 % Life, Fire/Frost/Storm/Void +20 % Resistance und +5 % max).
 - **Bounties** (`bounties-v2-plan.md`, Timo 27.10.2026): Eldrin bietet für den gewählten Act **zwei**
