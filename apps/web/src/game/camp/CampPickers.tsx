@@ -26,6 +26,8 @@ import { TrailMark } from "../../ui/TrailMark";
 import { draughtIconUrl } from "../../ui/Potion";
 import { type BountyView, bountyView } from "../bounty";
 import { CurrencyIcon, Price } from "../../ui/kit/Currency";
+import cacheClosedUrl from "../../assets/benches/eldrins-cache-closed.webp";
+import cacheOpenUrl from "../../assets/benches/eldrins-cache-open.webp";
 
 /** The Camp's choices before setting out: the Draught, the Wildfire tier, the Scout's bounty. */
 
@@ -225,6 +227,7 @@ export function BountyTurnIn(props: { state: GameState; onTurnIn: () => void }) 
   const waiting = props.state.bountyCache !== undefined;
   return (
     <div className="bounty-note done" aria-label="Bounty">
+      <img className="cache-chest" src={cacheClosedUrl} alt="" draggable={false} />
       <span className="eyebrow">BOUNTY DONE · {view.def.name.toUpperCase()}</span>
       {act && <BountyPay def={view.def} act={act} />}
       <button
@@ -255,6 +258,7 @@ export function BountyCacheView(props: {
   const left = cache.picks - cache.taken.length;
   return (
     <div className="bounty-note paid bounty-cache" aria-label="Eldrin's Cache" role="group">
+      <img className="cache-chest open" src={cacheOpenUrl} alt="" draggable={false} />
       <span className="eyebrow">
         ELDRIN&apos;S CACHE{def ? ` · ${def.name.toUpperCase()}` : ""}
       </span>

@@ -2356,6 +2356,61 @@
   align-self: flex-start;
 }
 
+/* Eldrin's painted Cache (eldrins-cache-art-v1.md): the closed chest waits beside a done bounty,
+   the open one glows beside its cards. */
+.stage .bounty-note.done,
+.stage .bounty-cache {
+  position: relative;
+  padding-right: 150px;
+}
+
+.stage .bounty-note.done {
+  min-height: 128px;
+}
+
+.stage .bounty-cache {
+  padding-right: 230px;
+  min-height: 200px;
+}
+
+.stage .cache-chest {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 136px;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45));
+  pointer-events: none;
+  user-select: none;
+}
+
+.stage .cache-chest.open {
+  right: 18px;
+  width: 196px;
+  animation:
+    cache-open 0.45s ease-out both,
+    cache-glow 2.4s 0.45s ease-in-out infinite;
+}
+
+@keyframes cache-open {
+  from {
+    opacity: 0;
+    transform: translateY(-46%) scale(0.88);
+  }
+}
+
+@keyframes cache-glow {
+  50% {
+    filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45)) drop-shadow(0 0 14px rgb(255 170 60 / 0.55));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .cache-chest.open {
+    animation: none;
+  }
+}
+
 .stage .map-node-bounty {
   position: absolute;
   top: -4px;
