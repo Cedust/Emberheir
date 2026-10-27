@@ -226,7 +226,8 @@ function keystonePosition(i: number): { x: number; y: number } {
 function buildTree(spec: TreeSpec): WeaponMasteryTree {
   const nodes: MasteryNode[] = [];
   for (const { t, ...node } of REFINE) nodes.push({ ...node, ...along(t) });
-  for (const { i, ...node } of HEAT_FORMS) nodes.push({ ...node, x: -1.8 + i * 1.2, y: 3.7 });
+  // Spaced like the bowls of the painted forge they sit in (camp/forgeArt.ts).
+  for (const { i, ...node } of HEAT_FORMS) nodes.push({ ...node, x: -2.25 + i * 1.5, y: 3.9 });
   spec.innateForms.forEach((form, i) => {
     nodes.push({
       id: form.id,
