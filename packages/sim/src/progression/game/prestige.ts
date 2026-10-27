@@ -96,7 +96,10 @@ export function doPrestige(
           ...state.progress,
           actsCleared: [],
           deathsInAct: 0,
-          trainerUnlocked: true,
+          // The act boss fell before every Prestige: Liora is there.
+          met: state.progress.met.includes("liora")
+            ? state.progress.met
+            : [...state.progress.met, "liora"],
           rotationSlots: Math.max(state.progress.rotationSlots, rewards.rotationSlots),
           waymarks: [],
         },

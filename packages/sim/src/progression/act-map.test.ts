@@ -6,6 +6,7 @@ import {
   type ActMap,
   type GameData,
   type GameState,
+  type MapOptions,
   type NodeKind,
   applyAction,
   currentNode,
@@ -85,7 +86,7 @@ const EVENTS: readonly EventDefinition[] = [
 
 const data: GameData = { ...TEST_BOON_DATA, acts: [LONG_ACT, SHORT_ACT], events: EVENTS };
 
-const OPTIONS = { shrines: true, thief: false, events: true };
+const OPTIONS: MapOptions = { shrines: true, thief: false, events: true };
 
 const fights = (kind: NodeKind) => !isQuiet(kind);
 
@@ -322,6 +323,29 @@ describe("Quiet nodes", () => {
     expect(bought.inventory.length).toBe(rich.inventory.length + 1);
     expect(bought.wallet.acorns).toBe(10_000 - roadGamblePrice(s, data));
     expect(() => applyAction(bought, data, { type: "visitNode", choice: 0 })).toThrow();
+  });
+
+  it("Marisha shows up on every map until she joined the caravan", () => {
+    const sure = maps(LONG_ACT, 200, { ...OPTIONS, marisha: true });
+    for (const m of sure) expect(m.rows.flat().some((n) => n.kind === "marisha")).toBe(true);
+    const some = maps(LONG_ACT).filter((m) => m.rows.flat().some((n) => n.kind === "marisha"));
+    expect(some.length).toBeLessThan(200);
+  });
+
+  it("Marisha joins at the third meeting on the road, one scene each", () => {
+    let s = arrive(at(7, "marisha"));
+    expect(s.progress.marishaMeetings).toBe(1);
+    expect(s.blips).toEqual(["marisha-1"]);
+    expect(s.progress.met).not.toContain("marisha");
+    s = arrive({ ...at(7, "marisha"), progress: s.progress, blips: s.blips ?? [] });
+    expect(s.progress.marishaMeetings).toBe(2);
+    s = arrive({ ...at(7, "marisha"), progress: s.progress, blips: s.blips ?? [] });
+    expect(s.progress.met).toContain("marisha");
+    expect(s.blips).toEqual(["marisha-1", "marisha-2", "marisha-3"]);
+    // Met: no more scenes on the road.
+    s = arrive({ ...at(7, "marisha"), progress: s.progress, blips: [] });
+    expect(s.blips).toEqual([]);
+    expect(s.progress.marishaMeetings).toBe(3);
   });
 });
 

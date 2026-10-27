@@ -26,6 +26,8 @@ export interface MapOptions {
   readonly thief: boolean;
   /** Events exist. */
   readonly events: boolean;
+  /** Marisha has not joined the caravan yet: she shows up on every map until she does. */
+  readonly marisha?: boolean;
   /** Hunt nodes (hunts-entwurf-v1.md): the act's enemies that can be hunted and their kills. */
   readonly hunts?: { readonly enemyIds: readonly string[]; readonly kills: HuntKills };
 }
@@ -118,7 +120,9 @@ export function generateActMap(act: ActData, options: MapOptions, rng: Rng): Act
     const at = spot && kinds[spot.row - 1];
     if (spot && at) at[spot.lane] = kind;
   };
-  if (rng.chance(MARISHA_CHANCE)) place("marisha", mixed(1), (k) => isQuiet(k) && k !== "shrine");
+  if (rng.chance(MARISHA_CHANCE) || options.marisha) {
+    place("marisha", mixed(1), (k) => isQuiet(k) && k !== "shrine");
+  }
   if (options.thief) {
     for (const s of [0, 1]) place("thief", mixed(s), (k) => k === "fight");
   }
@@ -162,6 +166,31 @@ export function generateActMap(act: ActData, options: MapOptions, rng: Rng): Act
       });
     const lane = lanes.find(spare) ?? lanes[0] ?? 0;
     last[lane] = "hearth";
+  }
+
+  // Before she joined the caravan Marisha is sure to be met: if a fight path took her spot,
+  // another quiet node of the middle stretch (any stretch if need be) gives way.
+  if (options.marisha && !kinds.some((row) => row.includes("marisha"))) {
+    const quiet = (k: NodeKind) => isQuiet(k) && k !== "shrine" && k !== "hearth";
+    place("marisha", mixed(1), quiet);
+    if (!kinds.some((row) => row.includes("marisha"))) {
+      place("marisha", [...mixed(0), ...mixed(2)], quiet);
+    }
+    // No quiet node at all: a fight gives way where every path into it still has another fight.
+    if (!kinds.some((row) => row.includes("marisha"))) {
+      const spare = mixed(1).flatMap((row) => {
+        const here = kinds[row - 1] ?? [];
+        return here.flatMap((k, lane) => {
+          if (k !== "fight") return [];
+          const into = (next[row - 2] ?? []).filter((ahead) => ahead.includes(lane));
+          const ok = into.every((ahead) => ahead.some((l) => l !== lane && fights(here[l])));
+          return ok ? [{ row, lane }] : [];
+        });
+      });
+      const spot = spare.length ? spare[rng.int(0, spare.length - 1)] : undefined;
+      const at = spot && kinds[spot.row - 1];
+      if (spot && at) at[spot.lane] = "marisha";
+    }
   }
 
   // Hunt nodes on plain fights of two different stretches, each after another quarry.

@@ -1,5 +1,5 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type Attribute, type GameState, finaleOpen } from "@emberheir/sim";
+import { type Attribute, type GameState, finaleOpen, hasMet } from "@emberheir/sim";
 import type { ReactNode } from "react";
 import hearthfireUrl from "../../assets/camp/hearthfire-bowl.webp";
 import attributePointsUrl from "../../assets/harvest/attribute-points.webp";
@@ -68,8 +68,8 @@ const node = (kind: string) => NODE_ART[`../../assets/map/node-${kind}.webp`];
 // When a page opens up.
 const harvested = (s: GameState) => s.legacy.prestige >= 1;
 const runAtLeast = (n: number) => (s: GameState) => s.legacy.prestige + 1 >= n;
-const kaelenHere = (s: GameState) => s.progress.trainerUnlocked;
-const nyssaHere = (s: GameState) => s.progress.runesmithUnlocked;
+const kaelenHere = (s: GameState) => hasMet(s, "kaelen");
+const nyssaHere = (s: GameState) => hasMet(s, "nyssa");
 const finaleKnown = (s: GameState) => finaleOpen(s, GAME_DATA) || s.legacy.finaleWon === true;
 const finaleWon = (s: GameState) => s.legacy.finaleWon === true;
 const runesKnown = (s: GameState) => nyssaHere(s) || s.legacy.runesFound.length > 0;

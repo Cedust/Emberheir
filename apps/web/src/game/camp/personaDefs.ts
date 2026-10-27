@@ -8,6 +8,7 @@ import {
   statAffixValue,
   type GameState,
   type Item,
+  hasMet,
 } from "@emberheir/sim";
 import type { IconName } from "../../ui/Icon";
 
@@ -187,8 +188,7 @@ export const PERSONA_ORDER: readonly PersonaId[] = ["thoric", "liora", "nyssa", 
 
 /** Whether a persona travels with the caravan yet. */
 export function personaPresent(state: GameState, id: PersonaId): boolean {
-  if (id === "liora") return state.progress.trainerUnlocked;
-  if (id === "nyssa") return state.progress.runesmithUnlocked;
+  if (id === "liora" || id === "nyssa" || id === "marisha") return hasMet(state, id);
   return true;
 }
 

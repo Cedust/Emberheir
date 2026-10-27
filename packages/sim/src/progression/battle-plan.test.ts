@@ -28,7 +28,7 @@ function hero(prestige: number): GameState {
     wallet: { ...s.wallet, acorns: 500 },
     progress: {
       ...s.progress,
-      trainerUnlocked: true,
+      met: ["kaelen"],
       rotationSlots: battlePlanUnlocks(prestige).rotationSlots,
     },
     legacy: { ...s.legacy, prestige },

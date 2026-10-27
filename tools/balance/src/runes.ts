@@ -6,6 +6,7 @@ import {
   type GameData,
   type GameState,
   getBase,
+  hasMet,
   type Item,
   missingRequirements,
   requiredLevel,
@@ -100,7 +101,7 @@ export function keptBases(state: GameState, data: GameData): Set<string> {
  * recipe for it is ready and the base is newer than the one kept (or worn) for its slot.
  */
 export function wantsBase(state: GameState, data: GameData, item: Item): boolean {
-  if (!state.progress.runesmithUnlocked) return false;
+  if (!hasMet(state, "nyssa")) return false;
   if (state.hero.level < requiredLevel(item)) return false;
   if (missingRequirements(item, data.items, state.hero.attributes).length) return false;
   if (!wordsFor(data, item).some((w) => ready(state, data, w))) return false;
@@ -184,7 +185,7 @@ export function autopilotRunes(
   act: ActData | undefined,
   memo: RuneMemo,
 ): GameState {
-  if (!state.progress.runesmithUnlocked || state.run) return state;
+  if (!hasMet(state, "nyssa") || state.run) return state;
   const profile = act ? actProfile(act) : undefined;
   let s = forgeRunewords(state, data, profile, memo);
   s = socketSingleRunes(s, data, profile, memo);

@@ -1,7 +1,14 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
-import { type ActData, type GameState, bossKnown, finaleOpen, wildfireTop } from "@emberheir/sim";
+import {
+  type ActData,
+  type GameState,
+  bossKnown,
+  finaleOpen,
+  hasMet,
+  wildfireTop,
+} from "@emberheir/sim";
 import { type IconName } from "../../ui/Icon";
-import { actVisible, visibleActs } from "../labels";
+import { actVisible } from "../labels";
 import { SIGNPOST_DX } from "./art/CampScene";
 import { PAINTED } from "./art/paintedPersonas";
 
@@ -106,18 +113,12 @@ export interface Persona {
   /** A clickable spot in the backdrop; `front` lays it over the personas' spots. */
   readonly object?: { w: number; h: number; front?: boolean };
   readonly figure?: { fs: number };
-  readonly locked?: string;
+  /** Not met on the road yet: not in the Camp at all (camp-personas-freischalten-v1.md). */
+  readonly locked?: boolean;
 }
 
 export function personas(state: GameState, road: ActData): Persona[] {
-  const trainer = state.progress.trainerUnlocked;
-  const runesmith = state.progress.runesmithUnlocked;
-  const later = "Waits further down the road.";
-  const first = visibleActs(state)[0];
-  const afterBoss =
-    first && bossKnown(state, GAME_DATA, first.id)
-      ? `Joins the caravan once ${first.boss.name} falls.`
-      : "Joins the caravan once the first boss falls.";
+  const away = (who: Parameters<typeof hasMet>[1]) => (hasMet(state, who) ? {} : { locked: true });
   const points = state.hero.unspentAttributePoints;
   return [
     {
@@ -180,6 +181,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       quote:
         "“Buy now! Everything comes back stronger after the apocalypse. Especially my prices.”",
       target: "shop",
+      ...away("marisha"),
     },
     {
       id: "liora",
@@ -190,9 +192,9 @@ export function personas(state: GameState, road: ActData): Persona[] {
       icon: "eye",
       cloak: "#2d5bd0",
       figure: { fs: 0.95 },
-      quote: trainer ? "“I foresaw you would come. I also foresee you paying.”" : afterBoss,
+      quote: "“I foresaw you would come. I also foresee you paying.”",
       target: "altar",
-      ...(trainer ? {} : { locked: "boss" }),
+      ...away("liora"),
     },
     {
       id: "kaelen",
@@ -205,6 +207,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       figure: { fs: KAELEN.fs },
       quote: "“Late to one battle. Never late to training.”",
       target: "kaelen",
+      ...away("kaelen"),
     },
     {
       // Painted with Kaelen (his prop); this is only its clickable spot.
@@ -219,6 +222,7 @@ export function personas(state: GameState, road: ActData): Persona[] {
       object: { w: 100, h: 175 },
       quote: "Hit it. It keeps count.",
       target: "dummy",
+      ...away("kaelen"),
     },
     {
       id: "nyssa",
@@ -229,11 +233,9 @@ export function personas(state: GameState, road: ActData): Persona[] {
       icon: "rune",
       cloak: "#4f7a3a",
       figure: { fs: 1 },
-      quote: runesmith
-        ? "“Did you know there are runes older than the Harvester? Nobody asks about those.”"
-        : later,
+      quote: "“Did you know there are runes older than the Harvester? Nobody asks about those.”",
       target: "runes",
-      ...(runesmith ? {} : { locked: later }),
+      ...away("nyssa"),
     },
     {
       id: "eldrin",
