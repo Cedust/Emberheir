@@ -1892,6 +1892,9 @@
 }
 
 .stage .draught-label {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   margin-right: 4px;
   color: #f3e6c8;
 }
@@ -1922,6 +1925,17 @@
   border-color: var(--vial);
   opacity: 1;
   box-shadow: 0 0 10px var(--vial);
+}
+
+.stage .draught-vial.locked {
+  cursor: default;
+  opacity: 0.45;
+  filter: grayscale(1) brightness(0.7);
+}
+
+.stage .draught-vial.locked:hover,
+.stage .draught-vial.locked:focus-visible {
+  transform: none;
 }
 
 .stage .draught-vial img {

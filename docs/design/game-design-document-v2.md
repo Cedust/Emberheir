@@ -176,7 +176,7 @@ Endgame **Wildfire I–X**.
 - **Es bleibt alles** außer dem Act-Fortschritt (Gear, Inventar, Supply Wagon, Level, Währungen, Punkte, Codices).
 - **Man bekommt:** einen neuen Act · eine Mastery-Wahl (Haupt-Mastery vertiefen oder Tier I einer anderen) · die nächste Battle-Plan-Sprosse ·
   +2 Skill Points · +2 Attributpunkte · ein höheres Level Cap und Level-Band · bei Prestige 2, 4 und 6 einen weiteren
-  Keystone-Platz · ab Prestige 1 die Draughts.
+  Keystone-Platz · ab Prestige 1 die Draughts (Iron, Ward, Vigor; Element-Draughts beim ersten Sieg über ihr Element).
 - **Ablauf** (Timo 26.10.2026): zwei Screens. **Victory** vor dem brennenden Act, dann **The Harvest**: ein Fenster mit
   der Mastery-Wahl links und „You gain" rechts (neuer Act, Level Cap, Skill/Attribute Points, Battle-Plan-Sprosse,
   Keystone-Platz, Draughts, Ember Penalty in Rot), jede Zeile mit Tooltip. „Let It Burn" führt direkt ins Camp,
@@ -266,8 +266,13 @@ Endgame **Wildfire I–X**.
   Bounty done (Turn in at Eldrin), Waymark, Hearth Embers, einen neuen Trail, Ashborn-Level, eine neue oder stärkere
   Echo, eine neue Trophy (wenn ihre Karte aufgedeckt wird) und einen neuen Weapon Rank (Mastery-Punkt bei Kaelen).
   Keine für Währungen, Items oder Runes (die haben eigene Drop-Animationen) und keine Erinnerung an offene Punkte.
-- **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
-  (Iron +25 % Armor, Ward +25 % Barrier, Vigor +10 % Life, Fire/Frost/Storm/Void +20 % Resistance und +5 % max).
+- **Draughts** (ab Prestige 1, `draughts-einfuehrung-v1.md`, Timo 27.10.2026): Liora braut sie, gewählt wird bei
+  Eldrin. Vor dem Aufbruch wird eine Flask-Ladung plus ein paar Acorns (3 normale Kills auf Boss-Level des Runs,
+  `killPrice`) zu einem Draught, der bis zur Rückkehr wirkt. Ohne genug Acorns wird nichts gebraut. Iron +25 % Armor,
+  Ward +25 % Barrier, Vigor +10 % Life kommen mit Prestige 1 (Story Blip von Liora). Fire/Frost/Storm/Void (+20 %
+  Resistance und +5 % max) lernt Liora, sobald der Heir zum ersten Mal einen Gegner besiegt, der mit diesem Element
+  zuschlägt (Fire ab Act 1, Void ab Rotwood, Cold ab Act 4, Lightning ab Act 5); dazu eine Notification
+  „New Draught". Nicht gelernte zeigt die Auswahl als Locked mit dem Hinweis, wie man sie bekommt.
 - **Bounties:** Elite Hunt, Culling, Thief Chase (ab Act 2), Dry Throat, Hale and Whole. Einreichen bei Eldrin,
   Belohnung: Acorns, 2 Ember Coal und ein Item ab Rare.
 

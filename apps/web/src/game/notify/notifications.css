@@ -132,6 +132,10 @@
   --notice-tone: #ff8a4a;
 }
 
+.stage .notice-draught {
+  --notice-tone: #8ec8f0;
+}
+
 .stage .notice-hunt,
 .stage .notice-waymark,
 .stage .notice-rank {

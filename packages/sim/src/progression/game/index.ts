@@ -131,7 +131,16 @@ export {
   bindPower,
   crucibleEffects,
 } from "./crucible";
-export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
+export {
+  draughtsOpen,
+  getDraught,
+  draughtKnown,
+  knownDraughts,
+  draughtAcorns,
+  brewedDraught,
+  activeDraught,
+  flaskCapacity,
+} from "./flask";
 export {
   getOmen,
   isOldAct,

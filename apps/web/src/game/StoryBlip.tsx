@@ -61,6 +61,14 @@ const BLIPS: Readonly<
     answer: "Welcome to the caravan.",
     fx: "runes",
   },
+  "liora-draughts": {
+    persona: "liora",
+    name: "Liora",
+    role: "Mystic",
+    line: "“A new run, a hotter fire. I brew you Iron, Ward or Vigor. One Flask charge and a few Acorns. Beat a foe that hits with Fire, Cold, Lightning or Void, and I learn its brew too.”",
+    answer: "Pick one at Eldrin's Road.",
+    fx: "moon",
+  },
 };
 
 export function StoryBlipDialog(props: { blip: BlipId; onDone: () => void }) {

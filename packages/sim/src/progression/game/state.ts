@@ -493,7 +493,10 @@ export interface GameStats {
 export const COMPANIONS = ["kaelen", "marisha", "liora", "nyssa"] as const;
 export type Companion = (typeof COMPANIONS)[number];
 
-/** A short scene when a persona is met: Marisha's three meetings, the others' one. */
+/**
+ * A short scene when a persona is met: Marisha's three meetings, the others' one; and Liora's
+ * first Draughts after the first Prestige.
+ */
 export const STORY_BLIPS = [
   "kaelen",
   "marisha-1",
@@ -501,6 +504,7 @@ export const STORY_BLIPS = [
   "marisha-3",
   "liora",
   "nyssa",
+  "liora-draughts",
 ] as const;
 export type StoryBlip = (typeof STORY_BLIPS)[number];
 

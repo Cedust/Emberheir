@@ -1,18 +1,36 @@
 import { expect, test } from "@playwright/test";
+import type { GameState } from "@emberheir/sim";
 import { saveAfterAct1, seedSave } from "./fixtures";
+
+/** After Act 1 with Acorns for the brew and a Cinder Caster beaten (Fire is learned). */
+function saveWithBrew(): string {
+  const state = JSON.parse(saveAfterAct1()) as GameState;
+  return JSON.stringify({
+    ...state,
+    wallet: { ...state.wallet, acorns: 500 },
+    legacy: { ...state.legacy, hunts: { "cinder-caster": 1 } },
+  });
+}
 
 test("after the first Prestige a Draught is brewed for the trip and shows in the arena", async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await seedSave(page, saveAfterAct1());
+  await seedSave(page, saveWithBrew());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
 
   // Draughts are brewed for the trip at Eldrin.
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   const draughts = page.getByRole("group", { name: "Draught" });
+  // Fire is learned from the Cinder Caster; Frost is still Locked.
+  await expect(draughts.getByRole("button", { name: "Fire Draught" })).toHaveCount(1);
+  await expect(draughts.getByRole("button", { name: "Frost Draught, Locked" })).toHaveCount(1);
+  if (process.env.SHOTS) {
+    await draughts.getByRole("button", { name: "Frost Draught, Locked" }).hover();
+    await page.screenshot({ path: `${process.env.SHOTS}/draught-locked.png` });
+  }
   const iron = draughts.getByRole("button", { name: "Iron Draught" });
   await expect(iron).toHaveAttribute("aria-pressed", "false");
   await iron.click();

@@ -7,6 +7,7 @@ import {
   bossKnown,
   brewedDraught,
   DRAUGHT_FLASK_COST,
+  draughtAcorns,
   draughtsOpen,
   finaleOpen,
   flaskCapacity,
@@ -387,7 +388,7 @@ export function RoadWindow(props: {
             )}
             {draughtsOpen(state, GAME_DATA) && (
               <DraughtPicker
-                chosen={state.draught ?? null}
+                state={state}
                 onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
               />
             )}
@@ -396,7 +397,9 @@ export function RoadWindow(props: {
               <span className="sub">
                 {brewed
                   ? `Flask ${capacity - DRAUGHT_FLASK_COST}/${capacity} + ${brewed.name} · wounds healed`
-                  : "Flask refilled · wounds healed"}
+                  : state.draught && state.wallet.acorns < draughtAcorns(state)
+                    ? "Flask refilled · too few Acorns for the Draught"
+                    : "Flask refilled · wounds healed"}
               </span>
               <Button
                 variant="primary"

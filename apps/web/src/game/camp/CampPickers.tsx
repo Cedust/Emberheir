@@ -5,6 +5,8 @@ import {
   type Item,
   applyAction,
   DRAUGHT_FLASK_COST,
+  draughtAcorns,
+  draughtKnown,
   minPeril,
   type OmenDefinition,
   omenPeril,
@@ -22,35 +24,49 @@ import { Price } from "../../ui/kit/Currency";
 /** The Camp's choices before setting out: the Draught, the Wildfire tier, the Scout's bounty. */
 
 /**
- * Draughts (balance-grundlagen-v1.md F): one vial per Draught; the chosen one is brewed from a
- * Flask charge at every set-out. Clicking it again pours it back (no Draught).
+ * Draughts (balance-grundlagen-v1.md F, draughts-einfuehrung-v1.md): one vial per Draught; the
+ * chosen one is brewed from a Flask charge and a few Acorns at every set-out. Clicking it again
+ * pours it back (no Draught). An element Draught not learned yet stays Locked until a foe of its
+ * element is beaten.
  */
-export function DraughtPicker(props: {
-  chosen: string | null;
-  onPick: (id: string | null) => void;
-}) {
+export function DraughtPicker(props: { state: GameState; onPick: (id: string | null) => void }) {
+  const chosen = props.state.draught ?? null;
   return (
     <div className="draught-picker" role="group" aria-label="Draught">
-      <span className="draught-label sub">Draught</span>
+      <span className="draught-label sub">
+        Draught <Price id="acorns" amount={draughtAcorns(props.state)} />
+      </span>
       {(GAME_DATA.draughts ?? []).map((d) => (
         <DraughtVial
           key={d.id}
           draught={d}
-          on={props.chosen === d.id}
-          onPick={() => props.onPick(props.chosen === d.id ? null : d.id)}
+          known={draughtKnown(props.state, GAME_DATA, d)}
+          on={chosen === d.id}
+          onPick={() => props.onPick(chosen === d.id ? null : d.id)}
         />
       ))}
     </div>
   );
 }
 
-function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: () => void }) {
+const ELEMENT_NAME = { fire: "Fire", cold: "Cold", lightning: "Lightning", void: "Void" } as const;
+
+function DraughtVial(props: {
+  draught: DraughtDefinition;
+  known: boolean;
+  on: boolean;
+  onPick: () => void;
+}) {
   const d = props.draught;
   const hover = useNoteHover({
-    name: d.name,
-    kind: `Draught · ${DRAUGHT_FLASK_COST} Flask charge · until the Camp`,
+    name: props.known ? d.name : `${d.name} · Locked`,
+    kind: `Draught · ${DRAUGHT_FLASK_COST} Flask charge and Acorns · until the Camp`,
     explain: `${d.description}. ${d.explain}`,
-    status: props.on ? "Brewed at every set-out · click to pour it back" : "Click to brew it",
+    status: !props.known
+      ? `Beat a foe that hits with ${d.element ? ELEMENT_NAME[d.element] : "it"} and Liora learns it`
+      : props.on
+        ? "Brewed at every set-out · click to pour it back"
+        : "Click to brew it",
   });
   const color = `#${d.color.toString(16).padStart(6, "0")}`;
   const icon = draughtIconUrl(d.id);
@@ -58,10 +74,11 @@ function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: (
     <button
       type="button"
       aria-pressed={props.on}
-      aria-label={d.name}
-      className={`draught-vial${props.on ? " on" : ""}`}
+      aria-label={props.known ? d.name : `${d.name}, Locked`}
+      aria-disabled={!props.known}
+      className={`draught-vial${props.on ? " on" : ""}${props.known ? "" : " locked"}`}
       style={{ "--vial": color } as React.CSSProperties}
-      onClick={props.onPick}
+      onClick={props.known ? props.onPick : undefined}
       {...hover}
     >
       {icon ? (

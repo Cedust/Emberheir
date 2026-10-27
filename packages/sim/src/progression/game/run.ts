@@ -2,7 +2,6 @@ import { ashbornEffects } from "../ashborn";
 import { EMPTY_BOONS } from "../boons";
 import { bountyAfterFlask, rollBounty } from "../bounties";
 import { PROGRESSION } from "../constants";
-import { DRAUGHT_FLASK_COST } from "../draughts";
 import { type EliteModifier, eliteChance, eliteModifierCount } from "../elites";
 import type { Rng } from "../../rng";
 import {
@@ -22,7 +21,7 @@ import {
 } from "./acts";
 import { getBounty } from "./bounty";
 import { bossAbilities, encounterName, finaleEncounter, wildfireBossAbilities } from "./encounters";
-import { brewedDraught, draughtsOpen, flaskCapacity, getDraught } from "./flask";
+import { brewForTrip, draughtKnown, draughtsOpen, flaskCapacity, getDraught } from "./flask";
 import { requireCamp, requireRun } from "./guards";
 import { checkOmens, tripOmenEffects } from "./omens";
 import { requireRewards, rewardsDone } from "./rewards";
@@ -63,12 +62,11 @@ export function setOut(
           rng,
         )
       : undefined;
-  const draught = brewedDraught(state, data);
+  const brewed = brewForTrip(bounty ? next : state, data);
+  const draught = brewed.draught;
   const out: GameState = {
-    ...(bounty ? next : state),
+    ...brewed.state,
     notice: null,
-    // The Flask leaves the Camp full, as much as the worn Belt allows, minus a brewed Draught.
-    flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),
     run: {
       actId,
       stage: 1,
@@ -77,7 +75,7 @@ export function setOut(
       encounter: null,
       rewards: null,
       ...(bounty ? { bounty } : {}),
-      ...(draught ? { draught: draught.id } : {}),
+      ...(draught ? { draught } : {}),
       ...(omens.length ? { omens } : {}),
     },
   };
@@ -98,7 +96,8 @@ export function chooseDraught(state: GameState, data: GameData, id: string | nul
   requireCamp(state);
   if (id !== null) {
     if (!draughtsOpen(state, data)) return fail("Draughts come with the first Prestige");
-    if (!getDraught(data, id)) return fail(`Unknown Draught "${id}"`);
+    const draught = getDraught(data, id) ?? fail(`Unknown Draught "${id}"`);
+    if (!draughtKnown(state, data, draught)) return fail("Liora has not learned that brew yet");
   }
   return { ...state, draught: id };
 }
@@ -120,11 +119,10 @@ export function setOutWildfire(
   getAct(data, actId);
   // Wildfire Omens: as many as the hero likes, at least the tier's Peril (neuausrichtung-v1.md 7.2).
   const omens = checkOmens(state, data, actId, omenIds, tier);
-  const draught = brewedDraught(state, data);
+  const { state: brewed, draught } = brewForTrip(state, data);
   return {
-    ...state,
+    ...brewed,
     notice: null,
-    flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),
     run: {
       actId,
       stage: 1,
@@ -133,7 +131,7 @@ export function setOutWildfire(
       encounter: null,
       rewards: null,
       wildfire: tier,
-      ...(draught ? { draught: draught.id } : {}),
+      ...(draught ? { draught } : {}),
       ...(omens.length ? { omens } : {}),
     },
   };
@@ -142,12 +140,11 @@ export function setOutWildfire(
 export function enterFinale(state: GameState, data: GameData): GameState {
   requireCamp(state);
   if (!finaleOpen(state, data) || !data.finale) return fail("The last flame is not in reach yet");
-  const draught = brewedDraught(state, data);
+  const { state: brewed, draught } = brewForTrip(state, data);
   return {
-    ...state,
+    ...brewed,
     notice: null,
     boons: EMPTY_BOONS,
-    flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),
     legacy: { ...state.legacy, finaleAttempts: (state.legacy.finaleAttempts ?? 0) + 1 },
     run: {
       actId: data.finale.id,
@@ -156,7 +153,7 @@ export function enterFinale(state: GameState, data: GameData): GameState {
       phase: "intermission",
       encounter: null,
       rewards: null,
-      ...(draught ? { draught: draught.id } : {}),
+      ...(draught ? { draught } : {}),
     },
   };
 }

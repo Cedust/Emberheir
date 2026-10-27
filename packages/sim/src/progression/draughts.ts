@@ -1,4 +1,5 @@
-import type { CombatRules, StatBonuses } from "../combat/types";
+import type { EnemyDefinition } from "../combat/monsters";
+import type { CombatRules, Element, StatBonuses } from "../combat/types";
 
 /**
  * Draughts (balance-grundlagen-v1.md F): before setting out, one charge of the Ember Flask is
@@ -17,10 +18,27 @@ export interface DraughtDefinition {
   readonly color: number;
   readonly bonuses?: StatBonuses;
   readonly rules?: CombatRules;
+  /**
+   * An element Draught is learned the first time the hero beats a foe that hits with this
+   * element (draughts-einfuehrung-v1.md); without one it comes with the first Prestige.
+   */
+  readonly element?: Element;
 }
 
-/** Draughts open with the first Prestige, when the Ember Penalty starts to bite. */
+/** Draughts open with the first Prestige, when the Ember Penalty starts to bite (Liora brews). */
 export const DRAUGHT_FROM_PRESTIGE = 1;
 
 /** Flask charges one Draught costs for the trip. */
 export const DRAUGHT_FLASK_COST = 1;
+
+/** Acorns a brewed Draught costs on top of its Flask charge, in normal kills at the run's boss level. */
+export const DRAUGHT_ACORN_KILLS = 3;
+
+/** Whether a foe hits with an element: its Default Attack, a skill or a telegraphed blow. */
+export function enemyHitsWith(enemy: EnemyDefinition, element: Element): boolean {
+  if (enemy.weapon.damageType === element) return true;
+  const skills = [...enemy.skills, ...(enemy.telegraphs ?? []).map((t) => t.skill)];
+  return skills.some((skill) =>
+    skill.hits.some((hit) => (hit.damageType ?? enemy.weapon.damageType) === element),
+  );
+}
