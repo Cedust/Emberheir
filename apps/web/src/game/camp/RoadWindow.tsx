@@ -409,19 +409,22 @@ export function RoadWindow(props: {
                 />
               )
             )}
-            {draughtsOpen(state, GAME_DATA) && (
-              <DraughtPicker
-                chosen={state.draught ?? null}
-                onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
-              />
-            )}
             <div className="k-grow" />
             <div className="road-go">
-              <span className="sub">
-                {brewed
-                  ? `Flask ${capacity - DRAUGHT_FLASK_COST}/${capacity} + ${brewed.name} · wounds healed`
-                  : "Flask refilled · wounds healed"}
-              </span>
+              {/* The Flask for the trip, apart from Eldrin's bounties: what the hero carries. */}
+              <div className="road-flask">
+                {draughtsOpen(state, GAME_DATA) && (
+                  <DraughtPicker
+                    chosen={state.draught ?? null}
+                    onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
+                  />
+                )}
+                <span className="sub">
+                  {brewed
+                    ? `Flask ${capacity - DRAUGHT_FLASK_COST}/${capacity} + ${brewed.name} · wounds healed`
+                    : "Flask refilled · wounds healed"}
+                </span>
+              </div>
               <Button
                 variant="primary"
                 big

@@ -2205,15 +2205,35 @@
 
 .stage .road-trip .finale-button,
 .stage .road-trip .wildfire-picker,
-.stage .road-trip .draught-picker {
-  align-self: flex-start;
-}
-
 .stage .road-go {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 16px;
+}
+
+/* The Flask for the trip sits by the set-out, apart from the bounties: Draughts on the parchment. */
+.stage .road-flask {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-right: auto;
+}
+
+.stage .road-flask .draught-picker {
+  padding: 2px 10px 2px 4px;
+  border: none;
+  border-right: 1.5px solid var(--border, #6a5a40);
+  border-radius: 0;
+  background: none;
+}
+
+.stage .road-flask .draught-label {
+  color: inherit;
+  font-family: var(--font-title);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Old Nan: the Hades dialogue box at the bottom of the dimmed Camp. */
@@ -2306,8 +2326,31 @@
 .stage .bounty-cards {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
-  margin: 4px 0;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+/* Eldrin's Cache: small cards like the Boss Hoard's, the painted item with room around it. */
+.stage .cache-card {
+  width: 150px;
+  padding: 10px 8px;
+  gap: 4px;
+}
+
+.stage .cache-card:hover,
+.stage .cache-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stage .cache-art {
+  width: 76px;
+  height: 76px;
+}
+
+.stage .cache-name {
+  font-size: 14px;
+  line-height: 1.15;
 }
 
 .stage .bounty-cache .bounty-leave {
@@ -7092,10 +7135,12 @@
 }
 
 .stage .hoard-art .item-art,
+.stage .cache-art .item-art,
 .stage .trophy-art .item-art {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
 }
 

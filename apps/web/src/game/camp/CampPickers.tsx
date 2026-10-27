@@ -5,18 +5,22 @@ import {
   type BountyDefinition,
   type DraughtDefinition,
   type GameState,
+  getBase,
+  type Item,
   DRAUGHT_FLASK_COST,
   minPeril,
   type OmenDefinition,
   omenPeril,
   perilReward,
   salvageValue,
+  SLOT_NAMES,
   wildfireLevel,
   wildfireName,
 } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
-import { ItemTile } from "../../ui/items";
-import { useNoteHover } from "../../ui/ItemTooltip";
+import { ItemArt } from "../../ui/ItemArt";
+import { rarityClass } from "../../ui/items";
+import { useItemHover, useNoteHover } from "../../ui/ItemTooltip";
 import { RuneStone, runeName } from "../../ui/RuneArt";
 import { TrailMark } from "../../ui/TrailMark";
 import { draughtIconUrl } from "../../ui/Potion";
@@ -272,15 +276,7 @@ export function BountyCacheView(props: {
       <div className="bounty-cards">
         {cache.items.map((item, i) =>
           cache.taken.includes(i) ? null : (
-            <ItemTile
-              key={item.id}
-              item={item}
-              label="Take"
-              size={56}
-              equipped={false}
-              onSelect={() => props.onTake(i)}
-              context={{ action: "Take", run: () => props.onTake(i) }}
-            />
+            <CacheCard key={item.id} item={item} onTake={() => props.onTake(i)} />
           ),
         )}
       </div>
@@ -288,6 +284,35 @@ export function BountyCacheView(props: {
         Leave the rest · <Price id="ash" amount={cacheAsh(cache)} />
       </button>
     </div>
+  );
+}
+
+/** One card of Eldrin's Cache: the item with room around it, its name and slot; a click takes it. */
+function CacheCard(props: { item: Item; onTake: () => void }) {
+  const { item } = props;
+  const { active, ...hover } = useItemHover(item, false, "Take");
+  const slot = getBase(GAME_DATA.items, item.baseId).slot;
+  return (
+    <button
+      type="button"
+      className={`hoard-face cache-card ${rarityClass(item)}`}
+      aria-label={`Take: ${item.name}`}
+      title={active ? undefined : item.name}
+      onClick={props.onTake}
+      onContextMenu={(e) => {
+        e.preventDefault();
+        props.onTake();
+      }}
+      {...hover}
+    >
+      <span className="cache-art">
+        <ItemArt baseId={item.baseId} uniqueId={item.uniqueId} slot={slot} />
+      </span>
+      <span className="title-font rarity-text cache-name">{item.name}</span>
+      <span className="sub small">
+        {SLOT_NAMES[slot]} · T{item.tier}
+      </span>
+    </button>
   );
 }
 

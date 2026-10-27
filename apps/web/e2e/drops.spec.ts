@@ -100,7 +100,10 @@ test("Bounty: a done bounty opens Eldrin's Cache, one item goes into the invento
   await expect(cache).toContainText("ELDRIN'S CACHE · ELITE HUNT");
   await expect(cache.getByLabel(/Ember Coal/)).toBeVisible();
   await page.mouse.move(0, 0);
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-cache.png` });
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1200); // the cards turn over
+    await page.screenshot({ path: `${process.env.SHOTS}/bounty-cache.png` });
+  }
   // Taking one card closes the Cache; the other cards turn to Ash.
   await cache
     .getByRole("button", { name: /^Take: / })
