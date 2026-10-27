@@ -129,7 +129,7 @@ Endgame **Wildfire I–X**.
   (sonst werden die Karten sofort zu Ash; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
   Bosse immer. Die DPS-Pfeile auf den Karten misst der
   Training Dummy.
-- Ember Coal und Runes fallen **passiv** in den Beutel (Elite 2–3 Ember Coal, Boss 4–6, normale Gegner 15 % auf 1).
+- Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
 - **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
 - Boss: zusätzlich **Boss Hoard** (15 % auf eine Trophy des eigenen Wardens, ab Run 4; vorher 10 %) und sein **Echo** für das Heirloom.
@@ -216,7 +216,7 @@ Endgame **Wildfire I–X**.
 | **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers), Reforge (Ember Coal), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
 | **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
-| **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot) |
+| **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot). Odds wie die Karte eines normalen Gegners im Run, Legendary/Unique so oft wie auf der Karte eines Elites (Timo 26.10.2026; vorher eine Rarity-Stufe über den Drops) |
 | **Eldrin** | Scout | **The Road**: Act-Wahl, Omen, Wildfire, Draught, **Bounties** (ein optionaler Auftrag pro Zug), The Last Ember, Set Out |
 | **Old Nan** | Hearthkeeper | Ratschläge, Compendium, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
 
@@ -270,6 +270,15 @@ Endgame **Wildfire I–X**.
 | **Phoenix Feathers** | Item-Upgrade um ein Tier (Bosse) |
 | **Runes** | Sockets und Runewords |
 | **Cinderglass** | nur aus dem Wildfire (Boss 1–2, +1 je 3 Peril, +1 ab VIII): Greater Affixes |
+
+- **Preise in Kämpfen** (Economy-Audit, Timo 26.10.2026, `economy-audit-v1.md`): Acorn- und Ash-Preise
+  zählen in normalen Kills auf dem Item Level (bei Resets auf dem Boss-Level des Runs), so wachsen Einnahme und Preis
+  gleich, egal wie lang ein Run ist. Temper 1 Kill Acorns + 6 Kills Ash; Add Socket 2 Kills Acorns + 3 Kills Ash × neue
+  Socket-Zahl; Upgrade 1 Feather + 1 Kill Acorns × Tier; Socket Rune ¼ Kill × Rang; Combine Runes ½ Kill × Rang;
+  Kindle 6 Kills Ash + 2 Coal; Respec von Tree, Attributen und Heirloom 8 Kills; Capstone-Wechsel 2 Kills; Crucible 20
+  Kills Ash. Gamble war schon 60 + 12 × Item Level (≈ 6 Kills). Reforge bleibt 1 Ember Coal, Ashborn-Reset 2.000
+  (nur auf Level 100, ≈ 10 Kills). Die Balance-CLI zeigt pro Run, was ein eifriger Crafter von den Einnahmen des
+  neuesten Acts ausgibt.
 
 ---
 
@@ -577,7 +586,7 @@ Endgame **Wildfire I–X**.
 - **Ember Crucible** (`neuausrichtung-v1.md` 8): Salvage eines Legendary oder Unique lehrt seine Power den **Power
   Codex** (gehört dem ganzen Account, der höchste Tier zählt). Liora bindet gelernte Powers in drei Slots nach Art:
   **Strike** (Treffer, Crits, Execute; offen mit der ersten Power), **Ward** (Defense, Heilung; offen nach The Last
-  Ember), **Ember** (Ailments, Heat, Trigger, Regeln; offen nach Wildfire V). Binden kostet 300 Ash und 3 Ember Coal,
+  Ember), **Ember** (Ailments, Heat, Trigger, Regeln; offen nach Wildfire V). Binden kostet die Ash von 20 Kills auf Boss-Level des Runs und 3 Ember Coal,
   jeder Wechsel erneut. Eine Power wirkt nur einmal: Steckt sie auch auf einem getragenen Item, ruht die Kopie im
   Crucible.
 

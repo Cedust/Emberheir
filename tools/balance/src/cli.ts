@@ -20,6 +20,7 @@ import { type BudgetRow, LAYERS, PLAYED_LAYERS, buildBudget, meanBudget } from "
 import { simulateMatchup } from "./simulate";
 import { type PowerSample, powerCurve, powerProbe } from "./curve";
 import { PLAYTIME, median, runMinutes } from "./playtime";
+import { EAGER, economyRows } from "./economy";
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -323,6 +324,11 @@ function printNewestActs(
   console.log("All builds pooled (targets: ✓ inside, ↑ too low, ↓ too high)");
   console.table(pooled);
   printPlaytime(byPlay, generations, seeds);
+  console.log("");
+  console.log(
+    `Economy: income of the newest act per run, and what an eager crafter spends of it (${EAGER.items} items × ${EAGER.tempers} Temper and ${EAGER.reforges} Reforge, ${EAGER.sockets} Sockets, ${EAGER.gambles} Gambles, every Feather an Upgrade)`,
+  );
+  console.table(economyRows(all, generations));
 }
 
 /**

@@ -1,6 +1,6 @@
 import { ITEM_CATALOG } from "@emberheir/content";
 import {
-  CRUCIBLE,
+  crucibleBindCost,
   CRUCIBLE_SLOTS,
   type CrucibleSlot,
   crucibleLock,
@@ -23,8 +23,8 @@ const SLOT_TEXT: Record<CrucibleSlot, { name: string; text: string }> = {
 export function CruciblePanel(props: { state: GameState; game: GameApi }) {
   const { state, game } = props;
   const codex = state.powerCodex ?? {};
-  const afford =
-    state.wallet.ash >= CRUCIBLE.bindAsh && state.wallet.emberCoal >= CRUCIBLE.bindEmberCoal;
+  const cost = crucibleBindCost(state.legacy.prestige);
+  const afford = state.wallet.ash >= cost.ash && state.wallet.emberCoal >= cost.emberCoal;
   const worn = new Set(
     Object.values(state.hero.equipment).flatMap((i) => (i?.powerId ? [i.powerId] : [])),
   );
@@ -32,8 +32,8 @@ export function CruciblePanel(props: { state: GameState; game: GameApi }) {
     <div className="crucible" aria-label="Ember Crucible">
       <Cost
         parts={[
-          { id: "ash", amount: CRUCIBLE.bindAsh, have: state.wallet.ash },
-          { id: "coal", amount: CRUCIBLE.bindEmberCoal, have: state.wallet.emberCoal },
+          { id: "ash", amount: cost.ash, have: state.wallet.ash },
+          { id: "coal", amount: cost.emberCoal, have: state.wallet.emberCoal },
         ]}
       />
       <div className="crucible-slots">

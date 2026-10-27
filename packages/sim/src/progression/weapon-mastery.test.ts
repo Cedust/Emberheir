@@ -10,6 +10,7 @@ import {
   heroWeaponName,
   masteryPointsLeft,
   newGame,
+  masteryRespecAcorns,
 } from "./game";
 import { TEST_ECHO, TEST_GAME_DATA as data, TEST_MASTERY as tree } from "./test-fixtures";
 import {
@@ -254,7 +255,7 @@ describe("Weapon Mastery in the game", () => {
   });
 
   it("Respec costs Acorns and keeps the Echo", () => {
-    let s = camp(3, MASTERY.respecAcorns);
+    let s = camp(3, masteryRespecAcorns(0));
     s = act(s, { type: "learnMastery", nodeId: "refine" });
     s = { ...s, hero: { ...s.hero, mastery: { ...s.hero.mastery, echo: "test-echo" } } };
     s = act(s, { type: "respecMastery" });

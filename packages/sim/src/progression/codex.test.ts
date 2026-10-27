@@ -6,6 +6,7 @@ import { TEST_CATALOG, TEST_CONDITIONS, TEST_EFFECTS } from "../items/test-fixtu
 import type { Item } from "../items/types";
 import { EMPTY_CODEX, codexAffixFactor, codexKnows, isHome, learnFromItem } from "./codex";
 import { CODEX } from "./constants";
+import { killPrice } from "./leveling";
 import { craftBlockReason, craftCost, kindleTargets } from "./crafting";
 import { type GameAction, type GameState, applyAction, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
@@ -140,7 +141,7 @@ describe("Kindle", () => {
     const s = learned([PLAIN]);
     expect(kindleTargets(PLAIN, TEST_CATALOG)).toEqual([undefined]);
     expect(craftCost(kindle(PLAIN.id), PLAIN, data, s)).toMatchObject({
-      ash: CODEX.kindleAshPerTier * 2,
+      ash: killPrice(PLAIN.itemLevel, { ash: CODEX.kindleAshKills }).ash,
       emberCoal: CODEX.kindleEmberCoal,
     });
     const next = act(s, { type: "craft", request: kindle(PLAIN.id) });

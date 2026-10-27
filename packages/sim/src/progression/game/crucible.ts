@@ -2,6 +2,7 @@ import { resolveTrigger } from "../../items/affixes";
 import { scaledFlatBonuses } from "../../items/equipment";
 import type { LegendaryPowerDefinition, TriggerAffixDefinition } from "../../items/types";
 import type { CombatRules, StatBonuses, TriggerSpec } from "../../combat/types";
+import { bossLevel, killPrice } from "../leveling";
 import { requireCamp } from "./guards";
 import { fail, type GameData, type GameState } from "./state";
 
@@ -16,12 +17,26 @@ export const CRUCIBLE_SLOTS = ["strike", "ward", "ember"] as const;
 export type CrucibleSlot = (typeof CRUCIBLE_SLOTS)[number];
 
 export const CRUCIBLE = {
-  /** What binding a Power costs (every change costs again; emptying a slot is free). */
-  bindAsh: 300,
+  /**
+   * What binding a Power costs (every change costs again; emptying a slot is free): the Ash of
+   * this many kills at the run's boss level (economy-audit-v1.md E1), and Ember Coal.
+   */
+  bindAshKills: 20,
   bindEmberCoal: 3,
   /** Ember opens with Wildfire V cleared. */
   emberFromWildfire: 5,
 } as const;
+
+/** What binding a Power costs in this run. */
+export function crucibleBindCost(prestige: number): {
+  readonly ash: number;
+  readonly emberCoal: number;
+} {
+  return {
+    ash: killPrice(bossLevel(prestige), { ash: CRUCIBLE.bindAshKills }).ash,
+    emberCoal: CRUCIBLE.bindEmberCoal,
+  };
+}
 
 /** Why a Crucible slot is still closed, or null. */
 export function crucibleLock(state: GameState, slot: CrucibleSlot): string | null {
@@ -71,15 +86,16 @@ export function bindPower(
   if (!state.powerCodex?.[powerId]) return fail("Salvage an item with this Power first");
   if (power.crucible !== slot) return fail(`${power.name} belongs in the ${power.crucible} slot`);
   if (crucible[slot] === powerId) return fail("Already bound");
-  if (state.wallet.ash < CRUCIBLE.bindAsh) return fail("Not enough Ash");
-  if (state.wallet.emberCoal < CRUCIBLE.bindEmberCoal) return fail("Not enough Ember Coal");
+  const cost = crucibleBindCost(state.legacy.prestige);
+  if (state.wallet.ash < cost.ash) return fail("Not enough Ash");
+  if (state.wallet.emberCoal < cost.emberCoal) return fail("Not enough Ember Coal");
   return {
     ...state,
     hero: { ...state.hero, crucible: { ...crucible, [slot]: powerId } },
     wallet: {
       ...state.wallet,
-      ash: state.wallet.ash - CRUCIBLE.bindAsh,
-      emberCoal: state.wallet.emberCoal - CRUCIBLE.bindEmberCoal,
+      ash: state.wallet.ash - cost.ash,
+      emberCoal: state.wallet.emberCoal - cost.emberCoal,
     },
   };
 }

@@ -157,7 +157,7 @@ export function saveCrucible(): string {
   return serializeGame({
     ...camp,
     progress: { ...camp.progress, trainerUnlocked: true },
-    wallet: { ...camp.wallet, ash: 2000, emberCoal: 20 },
+    wallet: { ...camp.wallet, ash: 5000, emberCoal: 20 },
     inventory: [{ item: ring, x: 0, y: 0 }],
     powerCodex: { "leech-bloom": 7 },
   });

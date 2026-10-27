@@ -197,8 +197,6 @@ export const MASTERY = {
   /** Points spent that open the Keystone ring. */
   keystonePoints: 12,
   maxEchoStage: 7,
-  /** Acorns to reset the tree at Kaelen. */
-  respecAcorns: 50,
 } as const;
 
 /** Grades of the weapon by Rank (Timo, 2026-10-08). */

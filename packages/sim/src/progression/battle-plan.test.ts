@@ -1,12 +1,18 @@
 import { describe, expect, it } from "vitest";
-import { PROGRESSION } from "./constants";
 import {
   type BattlePlanState,
   EMPTY_PLAN,
   REACTION_COOLDOWN,
   battlePlanUnlocks,
 } from "./battle-plan";
-import { type GameAction, type GameState, applyAction, heroSetup, newGame } from "./game";
+import {
+  type GameAction,
+  type GameState,
+  applyAction,
+  capstoneChangeAcorns,
+  heroSetup,
+  newGame,
+} from "./game";
 import { TEST_GAME_DATA, TREE_SKILL } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
@@ -169,7 +175,7 @@ describe("Battle Plan", () => {
     // Slot 0 and 1 hold the Start Skill once (no duplicates), so slot 2 is the second fight slot.
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "echo", slot: 1 });
     s = act(s, plan({ capstone: { id: "crescendo", slot: 0 } }));
-    expect(s.wallet.acorns).toBe(500 - PROGRESSION.capstoneChangeAcorns);
+    expect(s.wallet.acorns).toBe(500 - capstoneChangeAcorns(s.legacy.prestige));
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "crescendo" });
     expect(() => act(s, plan({}))).toThrow(/removed/);
   });

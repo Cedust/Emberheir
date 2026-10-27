@@ -177,7 +177,7 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
         k: "gamble",
         icon: "coins",
         name: "Gamble",
-        desc: "A random item for a slot. Better odds than loot.",
+        desc: "A random item for the slot you choose. Same odds as loot.",
       },
     ],
   },

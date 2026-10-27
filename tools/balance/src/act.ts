@@ -1,3 +1,4 @@
+import { type Income, NO_INCOME, addIncome } from "./economy";
 import {
   type ActData,
   activeRuneword,
@@ -143,6 +144,8 @@ export interface ActRunReport {
   readonly farmTrips?: number;
   /** Quiet nodes of the act map visited (Shrine, Hearth, Cache, Event, Marisha). */
   readonly visits?: number;
+  /** Acorns, Ash, Ember Coal and Feathers the act's fights paid, farm trips included. */
+  readonly income?: Income;
   /** Hunt kills per enemy when the act ends (hunts-entwurf-v1.md). */
   readonly hunts?: Readonly<Record<string, number>>;
 }
@@ -228,6 +231,12 @@ export function playGenerations(
       let visits = 0;
       let runesDropped = 0;
       let homeRunes = 0;
+      let income = NO_INCOME;
+      // Every step's wallet gain is income: fights, picks (salvaged cards), quiet nodes, the Camp.
+      const earn = (from: GameState, to: GameState) => {
+        income = addIncome(income, from, to);
+        return to;
+      };
       const countRunes = (st: GameState) => {
         const dropped = st.run?.phase === "rewards" ? (st.run.rewards?.runes ?? []) : [];
         const home = data.acts.find((a) => a.id === st.run?.actId)?.homeRune;
@@ -242,7 +251,7 @@ export function playGenerations(
         if (farm && farmTrips < FARM_TRIPS) {
           farmTrips++;
           attempt--;
-          s = prepare(s, data, build, farm, runes, memo);
+          s = earn(s, prepare(s, data, build, farm, runes, memo));
           s = applyAction(s, data, {
             type: "setOut",
             actId: farm.id,
@@ -254,21 +263,21 @@ export function playGenerations(
               s = applyAction(s, data, { type: "useFlask" });
             }
             const quiet = walkQuiet(s, data, runes);
-            s = quiet.state;
+            s = earn(s, quiet.state);
             visits += quiet.visits;
             s = applyAction(s, data, { type: "startStage" });
             const encounter = s.run?.encounter;
             const result = finishedFight(s, data);
-            s = applyAction(s, data, { type: "resolveFight" });
+            s = earn(s, applyAction(s, data, { type: "resolveFight" }));
             const died = !s.run && s.notice?.kind === "death";
             stageFights.push({ kind: stageKind(encounter), seconds: result.duration, died });
             countRunes(s);
-            if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
+            if (s.run?.phase === "rewards") s = earn(s, autopilotRewards(s, data, runes));
           }
           s = applyAction(s, data, { type: "dismissNotice" });
           continue;
         }
-        s = prepare(s, data, build, act, runes, memo);
+        s = earn(s, prepare(s, data, build, act, runes, memo));
         s = applyAction(s, data, {
           type: "setOut",
           actId: act.id,
@@ -280,7 +289,7 @@ export function playGenerations(
             s = applyAction(s, data, { type: "useFlask" });
           }
           const quiet = walkQuiet(s, data, runes);
-          s = quiet.state;
+          s = earn(s, quiet.state);
           visits += quiet.visits;
           const walked = s.run?.wanders ?? 0;
           s = chooseGate(s, data);
@@ -306,7 +315,7 @@ export function playGenerations(
           }
           const stage = s.run?.stage ?? 0;
           const first = s.stats.fights === before.fights;
-          s = applyAction(s, data, { type: "resolveFight" });
+          s = earn(s, applyAction(s, data, { type: "resolveFight" }));
           const died = !s.run && s.notice?.kind === "death";
           stageFights.push({ kind: stageKind(encounter), seconds: result.duration, died });
           if (died) {
@@ -316,7 +325,7 @@ export function playGenerations(
             if (encounter?.boss) bossDeaths++;
           }
           countRunes(s);
-          if (s.run?.phase === "rewards") s = autopilotRewards(s, data, runes);
+          if (s.run?.phase === "rewards") s = earn(s, autopilotRewards(s, data, runes));
         }
         cleared = s.pendingPrestige !== null || s.notice?.kind === "actCleared";
         if (!s.pendingPrestige) s = applyAction(s, data, { type: "dismissNotice" });
@@ -344,6 +353,7 @@ export function playGenerations(
         visits,
         runesDropped,
         homeRunes,
+        income,
         hunts: s.legacy.hunts ?? {},
       });
       if (!cleared) {
