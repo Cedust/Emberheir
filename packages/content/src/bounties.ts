@@ -1,36 +1,40 @@
 import type { BountyDefinition } from "@emberheir/sim";
 
 /**
- * The Scout's Bounties (entschlackung-v1.md): one optional task per trip into an act. `#` is the
- * count, `@` the enemy, `%` the Life share. Elites are rare in the first acts, so the Elite hunt
- * asks for more of them only from Act 4 on.
+ * Eldrin's Bounties (bounties-v2-plan.md): he offers two for a trip into an act, the hero takes
+ * one. `#` is the count, `@` the enemy. Each pays Eldrin's Cache (the act's Home Rune and an item
+ * pick) plus its own bonus, so the choice is about what the hero needs.
  */
 export const BOUNTIES: readonly BountyDefinition[] = [
   {
     id: "elite-hunt",
     name: "Elite Hunt",
-    text: "Slay an Elite on this trip.",
-    goal: { kind: "elites", count: 1 },
+    text: "Slay # Elites on this trip. Gatekeepers do not count.",
+    goal: { kind: "elites", count: 2 },
+    bonus: { kind: "emberCoal", min: 4, max: 6 },
     toAct: 3,
   },
   {
     id: "elite-hunt-2",
     name: "Elite Hunt",
-    text: "Slay # Elites on this trip.",
-    goal: { kind: "elites", count: 2 },
+    text: "Slay # Elites on this trip. Gatekeepers do not count.",
+    goal: { kind: "elites", count: 3 },
+    bonus: { kind: "emberCoal", min: 4, max: 6 },
     fromAct: 4,
   },
   {
-    id: "culling",
-    name: "Culling",
-    text: "Slay # × @.",
-    goal: { kind: "slay", count: 3 },
+    id: "trail-hunt",
+    name: "Trail Hunt",
+    text: "Slay # × @. Its Trail is close.",
+    goal: { kind: "trail" },
+    bonus: { kind: "trail", kills: 5 },
   },
   {
     id: "thief-chase",
     name: "Thief Chase",
-    text: "Catch the Ember Thief. It was seen nearby.",
+    text: "Catch the Ember Thief before it flees. It was seen nearby.",
     goal: { kind: "thief" },
+    bonus: { kind: "picks", picks: 2 },
     fromAct: 2,
   },
   {
@@ -38,11 +42,6 @@ export const BOUNTIES: readonly BountyDefinition[] = [
     name: "Dry Throat",
     text: "Beat the boss without drinking from the Flask.",
     goal: { kind: "bossNoFlask" },
-  },
-  {
-    id: "hale-and-whole",
-    name: "Hale and Whole",
-    text: "Beat the boss with % Life left.",
-    goal: { kind: "bossHale", life: 0.5 },
+    bonus: { kind: "rarity" },
   },
 ];

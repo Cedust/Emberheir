@@ -2338,6 +2338,55 @@
   cursor: help;
 }
 
+/* Bounties v2: what a bounty pays, Eldrin's Cache, the nodes that count on the act map. */
+.stage .bounty-pay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.stage .bounty-bonus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.stage .bounty-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 4px 0;
+}
+
+.stage .bounty-cache .bounty-leave {
+  align-self: flex-start;
+}
+
+.stage .map-node-bounty {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffd27a;
+  background: #3b5a2c;
+  border: 1px solid #9fbf7a;
+  pointer-events: none;
+}
+
+.stage .node-bounty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+}
+
 /* --- persona (Thoric, Liora) ---------------------------------------------------------------- */
 
 .stage .persona-header .eyebrow-big {

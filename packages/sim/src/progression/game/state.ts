@@ -50,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -252,11 +252,24 @@ export interface BountyDone {
   readonly actId: string;
 }
 
-/** What the Scout paid for a turned-in bounty; the item went into the inventory. */
-export interface BountyReward {
-  readonly acorns: number;
+/**
+ * Eldrin's Cache for a turned-in bounty (bounties-v2-plan.md B3): the Runes, Ember Coal and Trail
+ * kills are paid at once; the item cards wait in the Camp until the hero takes `picks` of them
+ * (the rest turns to Ash).
+ */
+export interface BountyCache {
+  readonly id: string;
+  readonly actId: string;
+  readonly enemyId?: string;
+  readonly runes: readonly string[];
   readonly emberCoal: number;
-  readonly item: Item;
+  /** Acorns of a Trail tier the cache's Trail kills filled. */
+  readonly acorns?: number;
+  readonly trailKills?: number;
+  readonly items: readonly Item[];
+  readonly picks: number;
+  /** Cards taken so far (indexes into `items`). */
+  readonly taken: readonly number[];
 }
 
 /** Rewards of a won fight (loot-rewards-v1.md): automatic drops, the item pick, maybe a Boon. */
@@ -487,6 +500,8 @@ export interface GameStats {
   readonly deaths: number;
   readonly retreats: number;
   readonly bossKills: number;
+  /** Bounties turned in at Eldrin (a new offer after each). */
+  readonly bounties?: number;
 }
 
 export interface GameState {
@@ -530,6 +545,8 @@ export interface GameState {
   readonly boons: BoonsState;
   /** A done bounty the Scout has not paid yet; no new bounty until it is turned in. */
   readonly bountyDone?: BountyDone;
+  /** Eldrin's Cache of the last turned-in bounty, while its item cards wait to be taken. */
+  readonly bountyCache?: BountyCache;
   /**
    * Lineage of the account: the classes that have won the finale. The UI keeps it outside the
    * save (like the shared stash) and puts it into the state it loads.

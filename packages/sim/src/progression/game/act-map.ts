@@ -27,7 +27,12 @@ export interface MapOptions {
   /** Events exist. */
   readonly events: boolean;
   /** Hunt nodes (hunts-entwurf-v1.md): the act's enemies that can be hunted and their kills. */
-  readonly hunts?: { readonly enemyIds: readonly string[]; readonly kills: HuntKills };
+  readonly hunts?: {
+    readonly enemyIds: readonly string[];
+    readonly kills: HuntKills;
+    /** A Trail Hunt bounty runs: one more Hunt node, after its enemy. */
+    readonly bounty?: string;
+  };
 }
 
 /** Rows with a single node: the first stage and the Waymarks. */
@@ -170,14 +175,18 @@ export function generateActMap(act: ActData, options: MapOptions, rng: Rng): Act
   if (hunts?.enemyIds.length) {
     const stretches = [0, 1, 2];
     const taken: string[] = [];
-    for (let n = 0; n < HUNT.maxNodes && stretches.length; n++) {
+    const nodes = HUNT.maxNodes + (hunts.bounty ? 1 : 0);
+    for (let n = 0; n < nodes && stretches.length; n++) {
       const [s] = stretches.splice(rng.int(0, stretches.length - 1), 1);
       const spots = mixed(s ?? 0).flatMap((row) =>
         (kinds[row - 1] ?? []).flatMap((k, lane) => (k === "fight" ? [{ row, lane }] : [])),
       );
       const spot = spots.length ? spots[rng.int(0, spots.length - 1)] : undefined;
       const left = hunts.enemyIds.filter((id) => !taken.includes(id));
-      const quarry = huntQuarry(left.length ? left : hunts.enemyIds, hunts.kills, rng);
+      const quarry =
+        n === 0 && hunts.bounty
+          ? hunts.bounty
+          : huntQuarry(left.length ? left : hunts.enemyIds, hunts.kills, rng);
       const at = spot && kinds[spot.row - 1];
       if (!spot || !at || !quarry) continue;
       at[spot.lane] = "hunt";

@@ -5,7 +5,7 @@ import { type EquipmentSlot } from "../../items/types";
 import { type BattlePlanState } from "../battle-plan";
 import { craft, type CraftRequest } from "../crafting";
 import { type GridPosition } from "../inventory";
-import { turnInBounty } from "./bounty";
+import { closeBountyCache, takeBountyItem, turnInBounty } from "./bounty";
 import {
   discard,
   equipFromInventory,
@@ -56,9 +56,15 @@ export type GameAction =
       readonly wildfire?: number;
       /** One of the two Run Omens of an old act, or the Wildfire Omens. */
       readonly omens?: readonly string[];
+      /** The bounty taken from Eldrin's offer for the act (`bountyOffer`); none if missing. */
+      readonly bounty?: string;
     }
-  /** Turn in a done bounty at the Scout. */
+  /** Turn in a done bounty at Eldrin: his Cache opens. */
   | { readonly type: "turnInBounty" }
+  /** Eldrin's Cache: take one of its item cards into the inventory. */
+  | { readonly type: "takeBountyItem"; readonly index: number }
+  /** Eldrin's Cache: close it, the cards not taken turn to Ash. */
+  | { readonly type: "closeBountyCache" }
   /** Camp: the Draught to brew at every set-out (`null` = none). */
   | { readonly type: "chooseDraught"; readonly draughtId: string | null }
   /** The Last Ember: from the Camp into the finale's gauntlet. */
@@ -173,9 +179,13 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
     case "setOut":
       return action.wildfire
         ? setOutWildfire(state, data, action.actId, action.wildfire, action.omens)
-        : setOut(state, data, action.actId, action.omens);
+        : setOut(state, data, action.actId, action.omens, action.bounty);
     case "turnInBounty":
       return turnInBounty(state, data);
+    case "takeBountyItem":
+      return takeBountyItem(state, data, action.index);
+    case "closeBountyCache":
+      return closeBountyCache(state);
     case "chooseDraught":
       return chooseDraught(state, data, action.draughtId);
     case "enterFinale":

@@ -249,7 +249,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         rank,
         enemyId: encounter.enemyId,
         thiefCaught: caught,
-        lifeFraction,
+        ...(encounter.gate ? { gate: true } : {}),
       })
     : undefined;
   const bountyDone = bounty?.status === "done" && run.bounty?.status === "open";

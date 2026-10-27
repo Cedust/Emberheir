@@ -36,7 +36,38 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // (`hero.mastery.attunement`), both optional; the account's Lineage is the
   // classes that won now, not a step (the UI fills it in again on load).
   13: { state: dropLineageStep },
+  // Bounties v2 (bounties-v2-plan.md): Culling and Hale and Whole are gone. An open one of them
+  // is dropped; a done one is paid as its successor (Trail Hunt, Dry Throat). Eldrin's Cache
+  // (`bountyCache`) and the turned-in count (`stats.bounties`) are optional.
+  14: { state: renameOldBounties },
 };
+
+/** Bounties of save version 14 that are gone → the bounty a done one is paid as. */
+export const OLD_BOUNTIES: Readonly<Record<string, string>> = {
+  culling: "trail-hunt",
+  "hale-and-whole": "dry-throat",
+};
+
+function renameOldBounties(save: RawSave): RawSave {
+  const out = { ...save };
+  const done = save["bountyDone"];
+  if (isRecord(done) && typeof done["id"] === "string" && done["id"] in OLD_BOUNTIES) {
+    out["bountyDone"] = { ...done, id: OLD_BOUNTIES[done["id"]] };
+  }
+  const run = save["run"];
+  const bounty = isRecord(run) ? run["bounty"] : undefined;
+  if (isRecord(run) && isRecord(bounty) && typeof bounty["id"] === "string") {
+    const next = OLD_BOUNTIES[bounty["id"]];
+    if (next && bounty["status"] === "done") {
+      out["run"] = { ...run, bounty: { ...bounty, id: next } };
+    } else if (next) {
+      const rest = { ...run };
+      delete rest["bounty"];
+      out["run"] = rest;
+    }
+  }
+  return out;
+}
 
 function dropLineageStep(save: RawSave): RawSave {
   if (!("lineage" in save)) return save;
@@ -102,7 +133,10 @@ const mapPlaced = (list: unknown, item: (i: RawSave) => RawSave): unknown =>
       )
     : list;
 
-/** Runs `item` on every item a save holds: equipment, inventory, stash and the item pick. */
+/**
+ * Runs `item` on every item a save holds: equipment, inventory, stash, the item pick and Eldrin's
+ * Cache.
+ */
 function mapSaveItems(save: RawSave, item: (i: RawSave) => RawSave): RawSave {
   const out: RawSave = {
     ...save,
@@ -115,6 +149,11 @@ function mapSaveItems(save: RawSave, item: (i: RawSave) => RawSave): RawSave {
       Object.entries(hero["equipment"]).map(([slot, i]) => [slot, isRecord(i) ? item(i) : i]),
     );
     out["hero"] = { ...hero, equipment };
+  }
+  const cache = save["bountyCache"];
+  if (isRecord(cache) && Array.isArray(cache["items"])) {
+    const items = cache["items"].map((i: unknown) => (isRecord(i) ? item(i) : i));
+    out["bountyCache"] = { ...cache, items };
   }
   const run = save["run"];
   const rewards = isRecord(run) ? run["rewards"] : undefined;
