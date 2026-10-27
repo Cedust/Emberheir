@@ -5,7 +5,7 @@
 export type DropSound = "flip" | "rare" | "legendary" | "unique" | "rune" | "highRune";
 
 /** Kinds of sound the player can switch off one by one (Settings). */
-export const SOUND_GROUPS = ["hover", "click", "window", "coin", "loot"] as const;
+export const SOUND_GROUPS = ["hover", "click", "window", "coin", "loot", "notice"] as const;
 export type SoundGroup = (typeof SOUND_GROUPS)[number];
 
 let enabled = true;
@@ -16,6 +16,7 @@ let groups: Readonly<Record<SoundGroup, boolean>> = {
   window: true,
   coin: true,
   loot: true,
+  notice: true,
 };
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -152,7 +153,7 @@ export function playSound(kind: DropSound) {
  * swish when a window opens or closes, a page turn for tabs, a coin for a gain and a dull knock
  * for a blocked button. Quieter than the drop sounds, so they never cover them.
  */
-export type UiSound = "hover" | "click" | "blocked" | "open" | "close" | "tab" | "coin";
+export type UiSound = "hover" | "click" | "blocked" | "open" | "close" | "tab" | "coin" | "notice";
 
 /** Few milliseconds apart, the same sound would only buzz (five currencies counting at once). */
 const UI_GAP_MS: Readonly<Record<UiSound, number>> = {
@@ -163,6 +164,7 @@ const UI_GAP_MS: Readonly<Record<UiSound, number>> = {
   close: 120,
   tab: 60,
   coin: 140,
+  notice: 200,
 };
 const lastPlayed = new Map<UiSound, number>();
 
@@ -175,6 +177,7 @@ export const UI_SOUND_GROUP: Readonly<Record<UiSound, SoundGroup>> = {
   open: "window",
   close: "window",
   coin: "coin",
+  notice: "notice",
 };
 
 export function playUiSound(kind: UiSound) {
@@ -210,6 +213,12 @@ export function playUiSound(kind: UiSound) {
     case "coin":
       tone(ac, 1568, t, 0.12, { type: "triangle", gain: 0.035 });
       tone(ac, 2093, t + 0.05, 0.16, { type: "triangle", gain: 0.03 });
+      break;
+    case "notice":
+      // A small brass chime with a breath of parchment: something happened on the side.
+      swish(ac, t, 0.12, 2200, 0.03, true);
+      tone(ac, 880, t + 0.02, 0.4, { type: "sine", gain: 0.05 });
+      tone(ac, 1318, t + 0.1, 0.5, { type: "sine", gain: 0.04 });
       break;
   }
 }

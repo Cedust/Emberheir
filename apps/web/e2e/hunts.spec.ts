@@ -48,8 +48,8 @@ test("a win that fills a Trail: its moment, then the card with the Hunt Affix", 
     timeout: 20_000,
   });
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/hunt-trail-up.png` });
-  const intermission = page.getByRole("region", { name: "Intermission" });
-  await expect(intermission).toContainText(/Trail II · Hunted!/i);
+  await expect(page.getByTestId("notification-hunt")).toContainText(/Trail II · Hunted!/i);
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/notification.png` });
   // The Hunt node always gives an item pick; one card carries a Hunt Affix of the Prowler.
   await expect(page.getByTestId("item-card")).toHaveCount(3, { timeout: 15_000 });
   await expect(page.getByTestId("hunt-ribbon")).toHaveCount(1);

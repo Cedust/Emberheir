@@ -25,6 +25,8 @@ import { LegacyView } from "./camp/LegacyView";
 import { PersonaView } from "./camp/PersonaView";
 import type { PersonaId } from "./camp/personaDefs";
 import { StashView } from "./camp/StashView";
+import { NotificationLayer, useStateNotifications } from "./notify/Notifications";
+import { notificationsFor } from "./notify/notifications";
 import { useGame } from "./useGame";
 
 type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "cheats" | null;
@@ -279,85 +281,94 @@ export function GameApp() {
     <Stage>
       <ItemArtDefs />
       <ItemHoverLayer state={state}>
-        {/* Under an open overlay the screen's idle animations wait (screens.css). */}
-        <div className="screen-host" data-covered={overlay || campWindow ? "" : undefined}>
-          {screen}
-        </div>
-        {burning && (
-          <HarvestBurn onDone={() => setBurning(null)}>
-            <PrestigeView state={burning.state} game={game} frozen={{ branch: burning.branch }} />
-          </HarvestBurn>
-        )}
-        <Presence>{campWindow}</Presence>
-        <Presence>
-          {blip && (
-            <StoryBlipDialog
-              key={`${blip}-${state?.blips?.length ?? 0}`}
-              blip={blip}
-              onDone={() => game.dispatch({ type: "dismissBlip" })}
-            />
-          )}
-        </Presence>
-        {/* On the road, Character and Ash Tree are windows over the arena with the arena
-            around them (ui-ux-plan-v1.md 3.4). */}
-        <div className={run ? "road-windows" : "camp-windows"}>
-          <Presence>
-            {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
-              <CharacterOverlay
-                state={state}
-                game={game}
-                inFight={inFight}
-                onClose={() => setOverlay(null)}
-              />
-            )}
-          </Presence>
-          <Presence>
-            {state && (overlay === "tree" || overlay === "plan") && (
-              <KaelenView
-                key={overlay}
-                state={state}
-                game={game}
-                viewOnly
-                planEditable={!inFight}
-                initialTab={overlay === "plan" ? "plan" : "tree"}
-                onClose={() => setOverlay(null)}
-              />
-            )}
-          </Presence>
-        </div>
-        <Presence>
-          {state && overlay === "compendium" && (
-            <Compendium state={state} onClose={() => setOverlay(null)} />
-          )}
-        </Presence>
-        <Presence>
-          {state && overlay === "menu" && (
-            <MenuOverlay
-              settings={settings}
-              inFight={inFight}
-              onResume={() => setOverlay(null)}
-              onCompendium={() => setOverlay("compendium")}
-              onCheats={CHEATS_ENABLED ? () => setOverlay("cheats") : undefined}
-              onQuit={() => {
-                setOverlay(null);
-                setCampScreen(null);
-                game.quit();
-              }}
-            />
-          )}
-        </Presence>
-        {state && overlay === "cheats" && (
-          <CheatPanel state={state} game={game} onClose={() => setOverlay(null)} />
-        )}
-        {game.error && (
-          <div className="toast" role="alert">
-            {game.error}
-            <button type="button" className="btn" onClick={game.clearError}>
-              OK
-            </button>
+        <NotificationLayer>
+          <StateNotifications state={state} />
+          {/* Under an open overlay the screen's idle animations wait (screens.css). */}
+          <div className="screen-host" data-covered={overlay || campWindow ? "" : undefined}>
+            {screen}
           </div>
-        )}
+          {burning && (
+            <HarvestBurn onDone={() => setBurning(null)}>
+              <PrestigeView state={burning.state} game={game} frozen={{ branch: burning.branch }} />
+            </HarvestBurn>
+          )}
+          <Presence>{campWindow}</Presence>
+          <Presence>
+            {blip && (
+              <StoryBlipDialog
+                key={`${blip}-${state?.blips?.length ?? 0}`}
+                blip={blip}
+                onDone={() => game.dispatch({ type: "dismissBlip" })}
+              />
+            )}
+          </Presence>
+          {/* On the road, Character and Ash Tree are windows over the arena with the arena
+            around them (ui-ux-plan-v1.md 3.4). */}
+          <div className={run ? "road-windows" : "camp-windows"}>
+            <Presence>
+              {state && !state.notice && !state.pendingPrestige && overlay === "character" && (
+                <CharacterOverlay
+                  state={state}
+                  game={game}
+                  inFight={inFight}
+                  onClose={() => setOverlay(null)}
+                />
+              )}
+            </Presence>
+            <Presence>
+              {state && (overlay === "tree" || overlay === "plan") && (
+                <KaelenView
+                  key={overlay}
+                  state={state}
+                  game={game}
+                  viewOnly
+                  planEditable={!inFight}
+                  initialTab={overlay === "plan" ? "plan" : "tree"}
+                  onClose={() => setOverlay(null)}
+                />
+              )}
+            </Presence>
+          </div>
+          <Presence>
+            {state && overlay === "compendium" && (
+              <Compendium state={state} onClose={() => setOverlay(null)} />
+            )}
+          </Presence>
+          <Presence>
+            {state && overlay === "menu" && (
+              <MenuOverlay
+                settings={settings}
+                inFight={inFight}
+                onResume={() => setOverlay(null)}
+                onCompendium={() => setOverlay("compendium")}
+                onCheats={CHEATS_ENABLED ? () => setOverlay("cheats") : undefined}
+                onQuit={() => {
+                  setOverlay(null);
+                  setCampScreen(null);
+                  game.quit();
+                }}
+              />
+            )}
+          </Presence>
+          {state && overlay === "cheats" && (
+            <CheatPanel state={state} game={game} onClose={() => setOverlay(null)} />
+          )}
+          {game.error && (
+            <div className="toast" role="alert">
+              {game.error}
+              <button type="button" className="btn" onClick={game.clearError}>
+                OK
+              </button>
+            </div>
+          )}
+        </NotificationLayer>
       </ItemHoverLayer>
     </Stage>
   );
+}
+
+/** Turns what changed in the game into notifications (Bounty done, Waymark, Weapon Rank...). */
+function StateNotifications(props: { state: GameState | null }) {
+  useStateNotifications(props.state, notificationsFor);
+  return null;
 }

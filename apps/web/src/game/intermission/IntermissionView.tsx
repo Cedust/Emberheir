@@ -27,13 +27,11 @@ import { EquippedPanel, ItemCards, RuneDrops } from "./RewardCards";
 import { homeRuneOf } from "../actLoot";
 import {
   BountyCard,
-  BountyDone,
   DoneCard,
   GateCards,
   HeroCard,
   nextStageActions,
   PlanCard,
-  RunMoments,
   UpNext,
 } from "./RunCards";
 import { ActMapView, ActMapWindow, NodeCards, VisitCards, visitTitle } from "./ActMap";
@@ -204,12 +202,6 @@ export function IntermissionView(props: {
                 </>
               )}
             </p>
-          )}
-          {rewards && step !== "ready" && (
-            <div className="moment-row">
-              <RunMoments state={state} run={run} />
-              {rewards.bountyDone && <BountyDone />}
-            </div>
           )}
           {rewards && step !== "ready" && rewards.runes.length > 0 && (
             <RuneDrops
