@@ -81,7 +81,7 @@ test("Ember Thief: a countdown shows how long until it runs off", async ({ page 
   expect(errors).toEqual([]);
 });
 
-test("Bounty: a done bounty is turned in at Eldrin, the item goes into the inventory", async ({
+test("Bounty: a done bounty opens Eldrin's Cache, one item goes into the inventory", async ({
   page,
 }) => {
   const errors: string[] = [];
@@ -96,17 +96,31 @@ test("Bounty: a done bounty is turned in at Eldrin, the item goes into the inven
   await expect(note).toContainText("BOUNTY DONE · ELITE HUNT");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-done.png` });
   await note.getByRole("button", { name: "Turn In" }).click();
-  await expect(note).toContainText("BOUNTY PAID");
-  await expect(note.getByLabel("2 Ember Coal")).toBeVisible();
-  await expect(note).toContainText("in your inventory");
-  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-paid.png` });
-  // Eldrin hands out a new bounty for the next trip.
+  const cache = page.getByLabel("Eldrin's Cache");
+  await expect(cache).toContainText("ELDRIN'S CACHE · ELITE HUNT");
+  await expect(cache.getByLabel(/Ember Coal/)).toBeVisible();
+  await page.mouse.move(0, 0);
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1200); // the cards turn over
+    await page.screenshot({ path: `${process.env.SHOTS}/bounty-cache.png` });
+  }
+  // Taking one card closes the Cache; the other cards turn to Ash.
+  await cache
+    .getByRole("button", { name: /^Take: / })
+    .first()
+    .click();
+  await expect(cache).toHaveCount(0);
+  // Eldrin offers two new bounties for the next trip.
   await expect(page.getByLabel("Bounty done")).toHaveCount(0);
+  const offer = page.getByRole("radiogroup", { name: "Bounty" });
+  await expect(offer.getByRole("radio")).toHaveCount(2);
+  await page.mouse.move(0, 0);
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-offer.png` });
   await page.keyboard.press("Escape");
   // Wait until Eldrin's window is gone: a click during its closing animation brought the same
   // window back, paid note and all.
   await expect(page.getByLabel("Eldrin, The Road")).toHaveCount(0);
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
-  await expect(page.getByLabel("Bounty", { exact: true })).toContainText("BOUNTY ·");
+  await expect(page.getByRole("radiogroup", { name: "Bounty" })).toContainText("BOUNTY ·");
   expect(errors).toEqual([]);
 });

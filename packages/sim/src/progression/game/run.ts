@@ -1,6 +1,6 @@
 import { ashbornEffects } from "../ashborn";
 import { EMPTY_BOONS } from "../boons";
-import { bountyAfterFlask, rollBounty } from "../bounties";
+import { bountyAfterFlask } from "../bounties";
 import { PROGRESSION } from "../constants";
 import { DRAUGHT_FLASK_COST } from "../draughts";
 import { type EliteModifier, eliteChance, eliteModifierCount } from "../elites";
@@ -20,7 +20,7 @@ import {
   wildfirePressure,
   wildfireTop,
 } from "./acts";
-import { getBounty } from "./bounty";
+import { getBounty, takeBounty } from "./bounty";
 import { bossAbilities, encounterName, finaleEncounter, wildfireBossAbilities } from "./encounters";
 import { brewedDraught, draughtsOpen, flaskCapacity, getDraught } from "./flask";
 import { requireCamp, requireRun } from "./guards";
@@ -46,26 +46,18 @@ export function setOut(
   data: GameData,
   actId: string,
   omenIds: readonly string[] = [],
+  bountyId?: string,
 ): GameState {
   requireCamp(state);
-  const act = getAct(data, actId);
+  getAct(data, actId);
   if (!actUnlocked(state, data, actId)) fail("The road there is still closed");
   // An old act of the run burns under one of the two Omens Eldrin shows (neuausrichtung-v1.md 5.2).
   const omens = checkOmens(state, data, actId, omenIds);
-  // The Scout hands out a bounty for this trip.
-  const [rng, next] = nextRng(state);
-  const bounty =
-    data.bounties?.length && !state.bountyDone
-      ? rollBounty(
-          data.bounties,
-          act.number,
-          act.enemies.map((e) => e.id),
-          rng,
-        )
-      : undefined;
+  // The bounty the hero took from Eldrin's offer for this trip.
+  const bounty = takeBounty(state, data, actId, bountyId);
   const draught = brewedDraught(state, data);
   const out: GameState = {
-    ...(bounty ? next : state),
+    ...state,
     notice: null,
     // The Flask leaves the Camp full, as much as the worn Belt allows, minus a brewed Draught.
     flaskCharges: flaskCapacity(state, data) - (draught ? DRAUGHT_FLASK_COST : 0),

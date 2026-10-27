@@ -16,6 +16,7 @@ import {
   type Encounter,
   newGame,
   PROGRESSION,
+  type BountyCache,
 } from "@emberheir/sim";
 import {
   autopilotPrestige,
@@ -23,6 +24,8 @@ import {
   bestBoon,
   brewDraught,
   bindPowers,
+  campBounty,
+  chooseBounty,
   chooseGate,
   walkQuiet,
   spendCinderglass,
@@ -66,8 +69,10 @@ function prepare(
   act: ActData | undefined,
   runes: boolean,
   memo: RuneMemo,
+  onCache?: (cache: BountyCache) => void,
 ): GameState {
   let s = campSalvage(state, data, runes);
+  s = campBounty(s, data, onCache);
   s = spendSkillPoints(s, data, build);
   if (runes) s = autopilotRunes(s, data, act, memo);
   s = spendCinderglass(s, data);
@@ -148,6 +153,36 @@ export interface ActRunReport {
   readonly income?: Income;
   /** Hunt kills per enemy when the act ends (hunts-entwurf-v1.md). */
   readonly hunts?: Readonly<Record<string, number>>;
+  /** Eldrin's Bounties of the act's trips (bounties-v2-plan.md B5). */
+  readonly bounties?: BountyTally;
+}
+
+/**
+ * Bounties taken and done by id on the act's trips, and what the Caches turned in before them
+ * paid (a bounty done in one act is turned in before the next trip, maybe in the next act).
+ */
+export interface BountyTally {
+  readonly taken: Record<string, number>;
+  readonly done: Record<string, number>;
+  caches: number;
+  emberCoal: number;
+  runes: number;
+  homeRunes: number;
+  trailKills: number;
+}
+
+export function newBountyTally(): BountyTally {
+  return { taken: {}, done: {}, caches: 0, emberCoal: 0, runes: 0, homeRunes: 0, trailKills: 0 };
+}
+
+/** Counts a Cache into the tally. */
+function tallyCache(tally: BountyTally, data: GameData, cache: BountyCache): void {
+  const home = data.acts.find((a) => a.id === cache.actId)?.homeRune;
+  tally.caches++;
+  tally.emberCoal += cache.emberCoal;
+  tally.runes += cache.runes.length;
+  tally.homeRunes += cache.runes.filter((id) => id === home).length;
+  tally.trailKills += cache.trailKills ?? 0;
 }
 
 /** The Runewords and the count of socketed Runes on the hero right now. */
@@ -232,6 +267,18 @@ export function playGenerations(
       let runesDropped = 0;
       let homeRunes = 0;
       let income = NO_INCOME;
+      const bounties = newBountyTally();
+      const onCache = (cache: BountyCache) => tallyCache(bounties, data, cache);
+      // A trip's bounty: taken at the set-out, done when the trip ends with it done.
+      const took = (st: GameState) => {
+        const id = st.run?.bounty?.id;
+        if (id) bounties.taken[id] = (bounties.taken[id] ?? 0) + 1;
+        return st;
+      };
+      const ended = (st: GameState) => {
+        const id = st.bountyDone?.id;
+        if (id) bounties.done[id] = (bounties.done[id] ?? 0) + 1;
+      };
       // Every step's wallet gain is income: fights, picks (salvaged cards), quiet nodes, the Camp.
       const earn = (from: GameState, to: GameState) => {
         income = addIncome(income, from, to);
@@ -251,12 +298,16 @@ export function playGenerations(
         if (farm && farmTrips < FARM_TRIPS) {
           farmTrips++;
           attempt--;
-          s = earn(s, prepare(s, data, build, farm, runes, memo));
-          s = applyAction(s, data, {
-            type: "setOut",
-            actId: farm.id,
-            omens: chooseRunOmen(s, data, farm.id),
-          });
+          s = earn(s, prepare(s, data, build, farm, runes, memo, onCache));
+          const farmBounty = chooseBounty(s, data, farm.id);
+          s = took(
+            applyAction(s, data, {
+              type: "setOut",
+              actId: farm.id,
+              omens: chooseRunOmen(s, data, farm.id),
+              ...(farmBounty ? { bounty: farmBounty } : {}),
+            }),
+          );
           while (s.run) {
             s = spendPoints(s, data, options.starterWeapon);
             if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
@@ -274,15 +325,20 @@ export function playGenerations(
             countRunes(s);
             if (s.run?.phase === "rewards") s = earn(s, autopilotRewards(s, data, runes));
           }
+          ended(s);
           s = applyAction(s, data, { type: "dismissNotice" });
           continue;
         }
-        s = earn(s, prepare(s, data, build, act, runes, memo));
-        s = applyAction(s, data, {
-          type: "setOut",
-          actId: act.id,
-          omens: chooseRunOmen(s, data, act.id),
-        });
+        s = earn(s, prepare(s, data, build, act, runes, memo, onCache));
+        const bounty = chooseBounty(s, data, act.id);
+        s = took(
+          applyAction(s, data, {
+            type: "setOut",
+            actId: act.id,
+            omens: chooseRunOmen(s, data, act.id),
+            ...(bounty ? { bounty } : {}),
+          }),
+        );
         while (s.run) {
           s = spendPoints(s, data, options.starterWeapon);
           if ((s.run?.lifeFraction ?? 1) < 0.5 && s.flaskCharges > 0 && flaskWorks(s, data)) {
@@ -327,6 +383,7 @@ export function playGenerations(
           countRunes(s);
           if (s.run?.phase === "rewards") s = earn(s, autopilotRewards(s, data, runes));
         }
+        ended(s);
         cleared = s.pendingPrestige !== null || s.notice?.kind === "actCleared";
         if (!s.pendingPrestige) s = applyAction(s, data, { type: "dismissNotice" });
       }
@@ -355,6 +412,7 @@ export function playGenerations(
         homeRunes,
         income,
         hunts: s.legacy.hunts ?? {},
+        bounties,
       });
       if (!cleared) {
         allCleared = false;
@@ -492,10 +550,12 @@ function farmLastAct(
   const act = actsInOrder(data).at(-1);
   if (!act) return state;
   let s = prepare(state, data, build, act, runes, memo);
+  const bounty = chooseBounty(s, data, act.id);
   s = applyAction(s, data, {
     type: "setOut",
     actId: act.id,
     omens: chooseRunOmen(s, data, act.id),
+    ...(bounty ? { bounty } : {}),
   });
   while (s.run) {
     s = spendPoints(s, data, starterWeapon);

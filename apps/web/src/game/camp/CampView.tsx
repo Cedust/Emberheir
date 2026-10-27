@@ -83,7 +83,7 @@ export function CampView(props: {
   const markers: Partial<Record<string, number | "!">> = {
     heir: state.hero.unspentAttributePoints,
     kaelen: state.hero.unspentSkillPoints + masteryPointsLeft(state, GAME_DATA),
-    eldrin: state.bountyDone ? "!" : 0,
+    eldrin: state.bountyDone || state.bountyCache ? "!" : 0,
   };
   return (
     <section className="screen camp" aria-label="Camp">

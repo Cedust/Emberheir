@@ -140,6 +140,29 @@ describe("hunts in the game", () => {
     expect(found).toBeGreaterThan(30);
   });
 
+  it("a Trail Hunt bounty adds a Hunt node for its enemy", () => {
+    const long = { ...TEST_ACT, enemies: [WEAK_ENEMY, OTHER], stages: 15, shrineStages: [5, 10] };
+    for (let seed = 1; seed <= 20; seed++) {
+      const map = generateActMap(
+        long,
+        {
+          shrines: false,
+          thief: false,
+          events: false,
+          hunts: {
+            enemyIds: ["weakling", "other"],
+            kills: { other: 0, weakling: 50 },
+            bounty: "weakling",
+          },
+        },
+        new Rng(seed),
+      );
+      const hunts = map.rows.flat().filter((n) => n.kind === "hunt");
+      expect(hunts.length).toBeLessThanOrEqual(HUNT.maxNodes + 1);
+      expect(hunts.some((n) => n.quarry === "weakling")).toBe(true);
+    }
+  });
+
   it("every fight before the boss names its enemy, and the fight brings it", () => {
     const map = generateActMap(
       { ...TEST_ACT, enemies: [WEAK_ENEMY, OTHER] },

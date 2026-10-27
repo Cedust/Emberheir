@@ -96,7 +96,7 @@ Endgame **Wildfire I–X**.
   | Cache | nein | ein Item-Pick, eine Rune oder Ember Coal |
   | Event | nein | eins von 8 Events (`content/src/events.ts`), jedes mit freiem **Walk On**; was man nicht bezahlen kann, ist ausgegraut mit Tooltip. Kein Preis nimmt mehr als die Hälfte einer Schicht |
   | Marisha | nein | Gamble für 3 zufällige Slots, 25 % günstiger als im Camp; höchstens einmal pro Karte, im zweiten Abschnitt (sicher, solange sie noch nicht im Camp ist) |
-  | Hunt | ja | ein gewählter Gegner des Acts (der mit den wenigsten Kills), ohne Elite/Thief; zählt 2× für seinen Trail und gibt immer einen Item-Pick. 0–2 pro Karte, nicht im Wildfire (siehe 2.3 Hunts) |
+  | Hunt | ja | ein gewählter Gegner des Acts (der mit den wenigsten Kills), ohne Elite/Thief; zählt 2× für seinen Trail und gibt immer einen Item-Pick. 0–2 pro Karte (mit offener Trail-Hunt-Bounty einer mehr, nach ihrem Gegner), nicht im Wildfire (siehe 2.3 Hunts) |
 
   Events: Smoldering Altar (−20 % Life → Rune einen Rang höher), Ember Spring (+30 % Life oder +1 Flask), Trapped
   Chest (Item-Pick, 50 % −25 % Life), Ashen Challenger (nächster Kampf ein Elite mit 2 Items), Hedgehog Peddler
@@ -268,8 +268,23 @@ Endgame **Wildfire I–X**.
   Keine für Währungen, Items oder Runes (die haben eigene Drop-Animationen) und keine Erinnerung an offene Punkte.
 - **Draughts** (ab Prestige 1): Vor dem Aufbruch wird eine Flask-Ladung zu einem Draught, der bis zur Rückkehr wirkt
   (Iron +25 % Armor, Ward +25 % Barrier, Vigor +10 % Life, Fire/Frost/Storm/Void +20 % Resistance und +5 % max).
-- **Bounties:** Elite Hunt, Culling, Thief Chase (ab Act 2), Dry Throat, Hale and Whole. Einreichen bei Eldrin,
-  Belohnung: Acorns, 2 Ember Coal und ein Item ab Rare.
+- **Bounties** (`bounties-v2-plan.md`, Timo 27.10.2026): Eldrin bietet für den gewählten Act **zwei**
+  Bounties an, man nimmt eine oder keine. Das Angebot bleibt gleich, bis man eine Bounty einreicht oder das nächste
+  Prestige kommt. Nicht im Wildfire und im Finale. Wander behält die Bounty, eine erfüllte bleibt erfüllt (auch nach
+  Tod), gescheitert ist sie einfach weg. Solange eine erfüllte nicht eingereicht ist, gibt es keine neue.
+
+  | Bounty | Ziel | Bonus im Cache |
+  |---|---|---|
+  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 4–6 Ember Coal |
+  | Trail Hunt | 4–8 Kills auf den Gegner des Acts, dessen nächster Trail am nächsten ist (so viele Kills, wie ihm fehlen); die Karte bekommt einen Hunt-Knoten mehr für ihn | +5 Trail-Kills, eine Karte trägt sicher sein Hunt Affix |
+  | Thief Chase (ab Act 2) | den Ember Thief fangen, bevor er flieht (Thief ×5 häufiger, Thief's Trail auf der Karte) | 4 Karten, 2 nehmen |
+  | Dry Throat | den Boss schlagen, ohne auf diesem Zug aus der Flask zu trinken | alle Karten eine Rarity höher (im Boss-Fenster des Runs) |
+
+  Einreichen bei Eldrin öffnet **Eldrin's Cache**: die **Home Rune** des Acts (Volt und Dusk nur zu 25 %, sonst eine
+  Rune wie am Cache-Knoten), ein **Item-Pick 1 aus 3** in Elite-Qualität auf Boss-Level des Acts (Home Uniques ×3) und
+  der Bonus. Rune, Coal und Trail-Kills gibt es sofort, die Karten warten im Eldrin-Fenster; was nicht genommen
+  wird, wird zu Ash. Die Act-Karte markiert die Knoten, die für die Bounty zählen. Der Autopilot nimmt Bounties
+  (Trail Hunt vor Elite Hunt vor Thief vor Dry Throat), die CLI zeigt sie pro Run.
 
 ### 2.8 Währungen ✅
 
@@ -715,7 +730,8 @@ Endgame **Wildfire I–X**.
 | `archiv/skilltree-v2.md` | Prestige-Äste, Vertiefen | **überholt** durch Masteries (`klassengeruest-v1.md` 5) |
 | `skills-v1.md` | Skills, Battle Plan | gültig (Sprossen siehe 4.4) |
 | `prestige-acts-v1.md` | Acts öffnen pro Prestige | gültig (Gear-Verlust und Seals überholt) |
-| `entschlackung-v1.md` | Währungen, Personas, Bounties, Keystone-Limit | gültig |
+| `entschlackung-v1.md` | Währungen, Personas, Bounties, Keystone-Limit | gültig (Bounties siehe `bounties-v2-plan.md`) |
+| `bounties-v2-plan.md` | Bounties v2: Angebot 1 aus 2, Katalog, Eldrin's Cache | gebaut |
 | `balance-grundlagen-v1.md` | Defense, Ember Penalty, Wände, Draughts | gültig |
 | `endgame-balance-v1.md` | Finale, Wildfire, Poison, Deflect | gültig |
 | `item-system-v1.md`, `legendary-runes-v1.md`, `trigger-codex-v1.md` | Items, Legendary, Runes, Trigger Codex | teils überholt (Quarry, Kindling, Mastery gestrichen) |
