@@ -26,7 +26,7 @@ export function isOldAct(state: GameState, data: GameData, actId: string): boole
 }
 
 /** A small stable hash, so every act draws its own offer. */
-function hashId(id: string): number {
+export function hashId(id: string): number {
   let h = 0;
   for (let i = 0; i < id.length; i++) h = (Math.imul(h, 31) + id.charCodeAt(i)) >>> 0;
   return h;

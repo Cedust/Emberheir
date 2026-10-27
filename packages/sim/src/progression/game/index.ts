@@ -19,7 +19,7 @@ export {
   type Encounter,
   type ItemPick,
   type BountyDone,
-  type BountyReward,
+  type BountyCache,
   type Rewards,
   type HuntReward,
   type RunPhase,
@@ -141,7 +141,7 @@ export {
   tripOmenEffects,
   omenEffectsOf,
 } from "./omens";
-export { getBounty, bountyReward } from "./bounty";
+export { getBounty, bountyOffer, bountyCache, countsForBounty } from "./bounty";
 export {
   lootGate,
   itemPickWeights,

@@ -51,7 +51,7 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
   eldrin: {
     url: eldrinUrl,
     h: 340,
-    face: { size: "425% auto", pos: "2% 1.5%" },
+    face: { size: "255% auto", pos: "3% -1%" },
     head: -37,
     shift: 0.136,
     turn: false,
