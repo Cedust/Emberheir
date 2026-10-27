@@ -130,13 +130,16 @@ export function WildfirePicker(props: {
 }
 
 /** What a bounty adds to Eldrin's Cache, besides the Home Rune and the item pick. */
+/** One size for every icon in a bounty's pay line: Rune, Cache, Ember Coal, Trail. */
+const PAY_ICON = 26;
+
 function BountyBonus(props: { def: BountyDefinition }) {
   const b = props.def.bonus;
   switch (b.kind) {
     case "emberCoal":
       return (
         <span className="k-price" title={`${b.min}–${b.max} Ember Coal`}>
-          <CurrencyIcon id="coal" size={18} />
+          <CurrencyIcon id="coal" size={PAY_ICON} />
           <b className="mono">
             +{b.min}–{b.max}
           </b>
@@ -148,7 +151,7 @@ function BountyBonus(props: { def: BountyDefinition }) {
           className="bounty-bonus"
           title={`+${b.kills} Trail kills, one card with its Hunt Affix`}
         >
-          <TrailMark tier={2} size={18} /> +{b.kills}
+          <TrailMark tier={2} size={PAY_ICON} /> +{b.kills}
         </span>
       );
     case "picks":
@@ -165,7 +168,7 @@ function BountyPay(props: { def: BountyDefinition; act: ActData }) {
     <span className="bounty-pay">
       {rune && (
         <span title={`Home Rune: ${runeName(rune)}`}>
-          <RuneStone runeId={rune} size={18} />
+          <RuneStone runeId={rune} size={PAY_ICON} />
         </span>
       )}
       <span className="bounty-bonus" title="An item pick from Eldrin's Cache">
@@ -265,14 +268,16 @@ export function BountyCacheView(props: {
       <span className="bounty-pay">
         {cache.runes.map((id, i) => (
           <span key={i} title={runeName(id)}>
-            <RuneStone runeId={id} size={20} />
+            <RuneStone runeId={id} size={PAY_ICON} />
           </span>
         ))}
-        {cache.emberCoal > 0 && <Price id="coal" amount={cache.emberCoal} plus />}
-        {(cache.acorns ?? 0) > 0 && <Price id="acorns" amount={cache.acorns ?? 0} plus />}
+        {cache.emberCoal > 0 && <Price id="coal" amount={cache.emberCoal} plus size={PAY_ICON} />}
+        {(cache.acorns ?? 0) > 0 && (
+          <Price id="acorns" amount={cache.acorns ?? 0} plus size={PAY_ICON} />
+        )}
         {cache.trailKills && cache.enemyId ? (
           <span className="bounty-bonus" title="Trail kills">
-            <TrailMark tier={2} size={18} /> +{cache.trailKills}
+            <TrailMark tier={2} size={PAY_ICON} /> +{cache.trailKills}
           </span>
         ) : null}
       </span>

@@ -2300,7 +2300,7 @@
 .stage .bounty-pay {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   margin-top: 4px;
 }
 
@@ -2308,7 +2308,7 @@
   display: inline-flex;
   align-items: center;
   gap: 4px;
-  font-size: 13px;
+  font-size: 14px;
   color: var(--text-sub);
 }
 
@@ -2386,8 +2386,9 @@
 
 /* The item pick on a bounty card: Eldrin's Cache in small. */
 .stage .cache-mini {
-  width: 28px;
-  height: auto;
+  width: 30px;
+  height: 26px;
+  object-fit: contain;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
 }
 
