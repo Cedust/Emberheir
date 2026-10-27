@@ -11,7 +11,7 @@ import {
 } from "../../ui/kit/Window";
 import { HoldButton } from "../../ui/kit/Button";
 import { CurrencyChip, Price } from "../../ui/kit/Currency";
-import { useNoteHover } from "../../ui/ItemTooltip";
+import { PointChip } from "../../ui/kit/Points";
 import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
@@ -69,16 +69,12 @@ export function KaelenView(props: {
               <>
                 <div className="wallet-row small-wallet k-wallet">
                   <PointChip
+                    id="skill"
                     testId="skill-points"
                     value={state.hero.unspentSkillPoints}
-                    name="Skill Points"
-                    explain="Learn nodes in the Ash Tree. You earn them at Waymarks on the road."
+                    glow
                   />
-                  <PointChip
-                    value={masteryPointsLeft(state, GAME_DATA)}
-                    name="Heirloom Points"
-                    explain="Spend them in your weapon's Mastery tree. Weapon Ranks give more."
-                  />
+                  <PointChip id="heirloom" value={masteryPointsLeft(state, GAME_DATA)} glow />
                   <CurrencyChip id="acorns" amount={state.wallet.acorns} />
                 </div>
                 {!viewOnly && (tab === "tree" || tab === "plan") && (
@@ -118,20 +114,5 @@ export function KaelenView(props: {
         </Suspense>
       </Window>
     </WindowLayer>
-  );
-}
-
-/** Unspent points in the header, explained on hover. */
-function PointChip(props: { value: number; name: string; explain: string; testId?: string }) {
-  const hover = useNoteHover({
-    name: props.name,
-    kind: "Points",
-    explain: props.explain,
-    status: `${props.value} left to spend`,
-  });
-  return (
-    <span className="k-currency" data-testid={props.testId} tabIndex={0} {...hover}>
-      <b className="mono">{props.value}</b> <span className="sub">{props.name}</span>
-    </span>
   );
 }

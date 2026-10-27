@@ -28,7 +28,7 @@ import {
   nodeRanks,
 } from "@emberheir/sim";
 import { Button, HoldButton } from "../../ui/kit/Button";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { type ReactNode, useEffect, useMemo, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
 import { FORGET_BLOCK_TEXT, LEARN_BLOCK_TEXT } from "../labels";
 import type { GameApi } from "../useGame";
@@ -36,6 +36,7 @@ import { type TreeLabel, type TreeNodeView, TreeScene, type TreeView } from "./T
 import { canvasResolution } from "../pixiPacing";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 import { Price } from "../../ui/kit/Currency";
+import { PointPrice } from "../../ui/kit/Points";
 
 const hexColor = (css: string) => Number.parseInt(css.replace("#", ""), 16);
 
@@ -520,16 +521,22 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                     disabled={reason !== undefined}
                     onClick={() => setPending((p) => [...p, selected.id])}
                   >
-                    {selected.kind === "keystone"
-                      ? `Learn · ${KEYSTONE.skillPoints} Points`
-                      : "Learn · 1 Point"}
+                    Learn ·{" "}
+                    <PointPrice
+                      id="skill"
+                      amount={selected.kind === "keystone" ? KEYSTONE.skillPoints : 1}
+                    />
                   </button>
                 )}
                 {reason && !(canWalk && reason === "notConnected") && (
                   <p className="block warn">
-                    {reason === "notConnected" && selectedCost
-                      ? `${LEARN_BLOCK_TEXT[reason]} (path: ${pointsText(selectedCost)})`
-                      : LEARN_BLOCK_TEXT[reason]}
+                    {reason === "notConnected" && selectedCost ? (
+                      <>
+                        {LEARN_BLOCK_TEXT[reason]} (path: {pointsText(selectedCost)})
+                      </>
+                    ) : (
+                      LEARN_BLOCK_TEXT[reason]
+                    )}
                   </p>
                 )}
                 {committed && pending.length === 0 && forgetReason !== "start" && (
@@ -586,8 +593,12 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
   );
 }
 
-/** "3 Points", "7 Points · Keystone". */
-function pointsText(cost: { skillPoints: number; keystones: number }): string {
-  const points = `${cost.skillPoints} Point${cost.skillPoints === 1 ? "" : "s"}`;
-  return cost.keystones ? `${points} · Keystone` : points;
+/** "[leaf] 3", "[leaf] 7 · Keystone". */
+function pointsText(cost: { skillPoints: number; keystones: number }): ReactNode {
+  return (
+    <>
+      <PointPrice id="skill" amount={cost.skillPoints} />
+      {cost.keystones ? " · Keystone" : ""}
+    </>
+  );
 }
