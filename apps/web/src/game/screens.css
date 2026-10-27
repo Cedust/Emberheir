@@ -2221,9 +2221,8 @@
 }
 
 .stage .road-flask .draught-picker {
-  padding: 2px 10px 2px 4px;
+  padding: 2px 4px;
   border: none;
-  border-right: 1.5px solid var(--border, #6a5a40);
   border-radius: 0;
   background: none;
 }

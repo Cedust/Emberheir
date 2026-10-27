@@ -5,11 +5,8 @@ import {
   type ActData,
   actUnlocked,
   bossKnown,
-  brewedDraught,
-  DRAUGHT_FLASK_COST,
   draughtsOpen,
   finaleOpen,
-  flaskCapacity,
   type GameState,
   getBase,
   minPeril,
@@ -294,8 +291,6 @@ export function RoadWindow(props: {
   const lines = eldrinLines(state);
   const [line, setLine] = useState(() => Math.floor(Math.random() * lines.length));
   const info = ACTS.find((a) => a.id === act.id);
-  const capacity = flaskCapacity(state, GAME_DATA);
-  const brewed = brewedDraught(state, GAME_DATA);
   return (
     <WindowLayer>
       <Window
@@ -419,11 +414,6 @@ export function RoadWindow(props: {
                     onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
                   />
                 )}
-                <span className="sub">
-                  {brewed
-                    ? `Flask ${capacity - DRAUGHT_FLASK_COST}/${capacity} + ${brewed.name} · wounds healed`
-                    : "Flask refilled · wounds healed"}
-                </span>
               </div>
               <Button
                 variant="primary"
