@@ -168,7 +168,9 @@ export function bountyCache(
     actId: act.id,
     ...(enemyId ? { enemyId } : {}),
     runes: rune ? [rune] : [],
+    // Like a Cache node: 1–2 Ember Coal, plus the bonus.
     emberCoal:
+      rng.int(...PROGRESSION.eliteEmberCoal) +
       (bonus.kind === "emberCoal" ? rng.int(bonus.min, bonus.max) : 0) +
       paid.reduce((n, r) => n + r.emberCoal, 0),
     ...(paid.some((r) => r.acorns) ? { acorns: paid.reduce((n, r) => n + r.acorns, 0) } : {}),

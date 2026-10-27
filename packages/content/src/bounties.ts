@@ -25,7 +25,7 @@ export const BOUNTIES: readonly BountyDefinition[] = [
   {
     id: "trail-hunt",
     name: "Trail Hunt",
-    text: "Slay # × @. Its Trail is close.",
+    text: "# Trail kills on @. Elites and its Hunt node count more.",
     goal: { kind: "trail" },
     bonus: { kind: "trail", kills: 5 },
   },

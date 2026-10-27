@@ -30,7 +30,7 @@ const ELITES: BountyDefinition = {
 const TRAIL: BountyDefinition = {
   id: "trail",
   name: "Trail Hunt",
-  text: "Slay # × @",
+  text: "# Trail kills on @",
   goal: { kind: "trail" },
   bonus: { kind: "trail", kills: 5 },
 };
@@ -71,7 +71,7 @@ describe("Bounties", () => {
     expect(rollBountyOffer([TRAIL], 1, quarry, new Rng(1))).toEqual([
       { id: "trail", enemyId: "weakling", count: 5, progress: 0, status: "open" },
     ]);
-    expect(bountyText(TRAIL, "Weakling", quarry)).toBe("Slay 5 × Weakling");
+    expect(bountyText(TRAIL, "Weakling", quarry)).toBe("5 Trail kills on Weakling");
     expect(bountyText(ELITES)).toBe("Slay 2 Elites");
   });
 
@@ -107,7 +107,13 @@ describe("Bounties", () => {
     } as const;
     expect(bountyAfterWin(trail, TRAIL.goal, win("normal", "other"))).toBe(trail);
     expect(bountyAfterWin(trail, TRAIL.goal, win("boss"))).toBe(trail);
-    expect(bountyAfterWin(trail, TRAIL.goal, win("elite"))).toMatchObject({ status: "done" });
+    expect(bountyAfterWin(trail, TRAIL.goal, win("normal"))).toMatchObject({ status: "done" });
+    // An Elite of the quarry counts 3 Trail kills.
+    const four = { ...trail, count: 4 };
+    expect(bountyAfterWin(four, TRAIL.goal, { ...win("elite"), trailKills: 3 })).toMatchObject({
+      progress: 4,
+      status: "done",
+    });
 
     const dry = { id: "dry", progress: 0, status: "open" } as const;
     expect(bountyAfterFlask(dry, DRY.goal).status).toBe("failed");

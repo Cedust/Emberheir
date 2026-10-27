@@ -12,7 +12,10 @@ import type { Rng } from "../rng";
 export type BountyGoal =
   /** Slay this many Elites; Gatekeepers do not count (the act map has Elite nodes). */
   | { readonly kind: "elites"; readonly count: number }
-  /** Slay one enemy of the act a number of times: the one whose next Trail is closest. */
+  /**
+   * Trail kills on one enemy of the act, the one whose next Trail is closest. They count like
+   * its Trail: an Elite of it 3, a win on its Hunt node twice.
+   */
   | { readonly kind: "trail" }
   /** Catch the Ember Thief before it flees (it shows up more often while this bounty is open). */
   | { readonly kind: "thief" }
@@ -46,7 +49,7 @@ export interface BountyState {
   readonly id: string;
   /** "trail": the enemy to hunt. */
   readonly enemyId?: string;
-  /** "trail": how many kills it asks for. */
+  /** "trail": how many Trail kills it asks for. */
   readonly count?: number;
   readonly progress: number;
   readonly status: "open" | "done" | "failed";
@@ -60,6 +63,8 @@ export interface BountyWin {
   readonly thiefCaught: boolean;
   /** A Gatekeeper of a Waymark (not an Elite for "elites"). */
   readonly gate?: boolean;
+  /** Trail kills the win counts for its enemy (an Elite 3, a Hunt node twice); default 1. */
+  readonly trailKills?: number;
 }
 
 /** A Trail Hunt asks for this many kills at least and at most. */
@@ -145,7 +150,9 @@ export function bountyAfterWin(state: BountyState, goal: BountyGoal, win: Bounty
     case "elites":
       return win.rank === "elite" && !win.gate ? advance(state, goal, 1) : state;
     case "trail":
-      return win.rank !== "boss" && win.enemyId === state.enemyId ? advance(state, goal, 1) : state;
+      return win.rank !== "boss" && win.enemyId === state.enemyId
+        ? advance(state, goal, win.trailKills ?? 1)
+        : state;
     case "thief":
       return win.thiefCaught ? advance(state, goal, 1) : state;
     case "bossNoFlask":
