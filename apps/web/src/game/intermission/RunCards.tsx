@@ -1,5 +1,4 @@
 import { GAME_DATA } from "@emberheir/content";
-import { BOSS_TRAIL_TEXT, TRAIL_TEXT, trailTitle } from "../hunts";
 import {
   type GameAction,
   type GameState,
@@ -12,7 +11,6 @@ import {
   gateStages,
   currentNode,
   getAct,
-  hearthEmbers,
   isQuiet,
   stageMonsterLevel,
   heroReactions,
@@ -28,7 +26,6 @@ import { useEffect, useState } from "react";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { Icon, type IconName } from "../../ui/Icon";
 import { Potion } from "../../ui/Potion";
-import { TrailMark } from "../../ui/TrailMark";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
 import { SkillIcon } from "../battle/SkillIcon";
@@ -477,93 +474,6 @@ export function BountyCard(props: { run: RunState }) {
       </div>
       <span className="small">{view.text}</span>
     </section>
-  );
-}
-
-/**
- * The big moments of the last fight, in the middle under the title (Timo: not hidden in the
- * hero card): a Waymark, the Hearth Embers before the boss, an Ashborn level.
- */
-export function RunMoments(props: { state: GameState; run: RunState }) {
-  const { state, run } = props;
-  const rewards = run.rewards;
-  if (!rewards) return null;
-  // A won Waymark before the boss heals (neuausrichtung-v1.md 5.4).
-  const hearth = hearthEmbers(getAct(GAME_DATA, run.actId), run.stage, run.wildfire);
-  const moments: { key: string; icon: IconName; name: string; sub: string; trail?: number }[] = [
-    ...(rewards.waymark
-      ? [{ key: "waymark", icon: "tree" as const, name: "Waymark!", sub: "+1 Skill Point" }]
-      : []),
-    ...(hearth
-      ? [
-          {
-            key: "hearth",
-            icon: "fire" as const,
-            name: "Hearth Embers",
-            sub: `+${Math.round(PROGRESSION.hearthEmbers * 100)} % Life`,
-          },
-        ]
-      : []),
-    ...(rewards.hunt?.tierUp
-      ? [
-          {
-            key: "hunt",
-            icon: "wolf" as const,
-            trail: rewards.hunt.tier,
-            name: `${trailTitle(rewards.hunt.tier)}!`,
-            sub: [
-              (rewards.hunt.boss ? BOSS_TRAIL_TEXT : TRAIL_TEXT)[rewards.hunt.tier] ?? "",
-              rewards.hunt.acorns ? `+${rewards.hunt.acorns} Acorns` : "",
-              rewards.hunt.emberCoal ? `+${rewards.hunt.emberCoal} Ember Coal` : "",
-            ]
-              .filter(Boolean)
-              .join(" "),
-          },
-        ]
-      : []),
-    ...(rewards.ashbornLevels
-      ? [
-          {
-            key: "ashborn",
-            icon: "flame" as const,
-            name: `Ashborn ${state.hero.ashborn?.level ?? ""}!`,
-            sub: "+1 Ashborn point",
-          },
-        ]
-      : []),
-  ];
-  if (!moments.length) return null;
-  return (
-    <div className="run-moments" role="status">
-      {moments.map((m) => (
-        <div key={m.key} className={`run-moment panel-card moment-${m.key}`}>
-          <span className="moment-sigil">
-            {m.trail !== undefined ? (
-              <TrailMark tier={m.trail} size={46} />
-            ) : (
-              <Icon name={m.icon} size={26} />
-            )}
-          </span>
-          <div className="bounty-paid-text">
-            <strong className="title-font">{m.name}</strong>
-            <span className="sub">{m.sub}</span>
-          </div>
-        </div>
-      ))}
-    </div>
-  );
-}
-
-/** The moment a Bounty is done: Eldrin pays it back in the Camp. */
-export function BountyDone() {
-  return (
-    <div className="bounty-paid panel-card" role="status">
-      <Icon name="target" size={28} color="var(--accent)" />
-      <div className="bounty-paid-text">
-        <strong className="title-font">Bounty done!</strong>
-        <span className="sub">Turn it in at Eldrin in the Camp.</span>
-      </div>
-    </div>
   );
 }
 
