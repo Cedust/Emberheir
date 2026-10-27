@@ -6,11 +6,9 @@ import {
   actUnlocked,
   bossKnown,
   brewedDraught,
-  DRAUGHT_FLASK_COST,
   draughtAcorns,
   draughtsOpen,
   finaleOpen,
-  flaskCapacity,
   type GameState,
   getBase,
   minPeril,
@@ -30,18 +28,17 @@ import { homeRuneNote, homeUniqueNote } from "../actLoot";
 import { Button } from "../../ui/kit/Button";
 import { Wallet } from "../../ui/kit/Currency";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
-import { bountyPreview } from "../bounty";
+import { type BountyView, bountyOfferViews } from "../bounty";
 import { bossName, visibleActs } from "../labels";
 import type { GameApi } from "../useGame";
 import { PersonaPortrait } from "./art/PersonaArt";
 import { eldrinLines } from "./campPersonas";
 import {
-  BountyNote,
+  BountyCacheView,
+  BountyChoice,
   BountyTurnIn,
   DraughtPicker,
   OmenChoice,
-  turnInPreview,
-  type TurnInReward,
   WildfireOmens,
   WildfirePicker,
 } from "./CampPickers";
@@ -63,6 +60,10 @@ export interface RoadPlan {
   readonly pickOmen: (id: string) => void;
   readonly wildOmens: readonly string[];
   readonly toggleWildOmen: (id: string) => void;
+  /** Eldrin's two Bounties for the act (none in the Wildfire) and the one taken. */
+  readonly bounties: readonly BountyView[];
+  readonly bounty: string | null;
+  readonly pickBounty: (id: string | null) => void;
   readonly ready: boolean;
   /** Text of the Set Out button: what the trip is, or what it still needs. */
   readonly label: string;
@@ -88,6 +89,10 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
   const peril = omenPeril(
     wildOmens.flatMap((id) => GAME_DATA.omens?.find((o) => o.id === id) ?? []),
   );
+  // Eldrin's Bounties (bounties-v2-plan.md B1): one of two, or none.
+  const [bountyPick, setBounty] = useState<string | null>(null);
+  const bounties = tier > 0 ? [] : bountyOfferViews(state, act.id);
+  const bounty = bounties.some((b) => b.def.id === bountyPick) ? bountyPick : null;
   const ready = tier > 0 ? peril >= minPeril(tier) : offer.length === 0 || runOmen !== null;
   const label = !ready
     ? tier > 0
@@ -110,6 +115,9 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
     wildOmens,
     toggleWildOmen: (id) =>
       setWildOmens((list) => (list.includes(id) ? list.filter((x) => x !== id) : [...list, id])),
+    bounties,
+    bounty,
+    pickBounty: setBounty,
     ready,
     label,
     setOut: () => {
@@ -117,7 +125,12 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
       game.dispatch(
         tier > 0
           ? { type: "setOut", actId: act.id, wildfire: tier, omens: wildOmens }
-          : { type: "setOut", actId: act.id, ...(runOmen ? { omens: [runOmen] } : {}) },
+          : {
+              type: "setOut",
+              actId: act.id,
+              ...(runOmen ? { omens: [runOmen] } : {}),
+              ...(bounty ? { bounty } : {}),
+            },
       );
     },
   };
@@ -276,21 +289,11 @@ export function RoadWindow(props: {
 }) {
   const { state, game, plan } = props;
   const { act } = plan;
-  // What Eldrin just paid for a turned-in bounty (shown until the window closes).
-  const [paid, setPaid] = useState<TurnInReward | null>(null);
   // A new word every visit, and another when the raven is poked.
   const lines = eldrinLines(state);
   const [line, setLine] = useState(() => Math.floor(Math.random() * lines.length));
-  const bounty = bountyPreview(state, act.id);
   const info = ACTS.find((a) => a.id === act.id);
-  const capacity = flaskCapacity(state, GAME_DATA);
   const brewed = brewedDraught(state, GAME_DATA);
-  const turnIn = () => {
-    const reward = turnInPreview(state);
-    if (!reward) return;
-    setPaid(reward);
-    game.dispatch({ type: "turnInBounty" });
-  };
   return (
     <WindowLayer>
       <Window
@@ -381,26 +384,43 @@ export function RoadWindow(props: {
             {plan.offer.length > 0 && (
               <OmenChoice offer={plan.offer} chosen={plan.omen} onPick={plan.pickOmen} />
             )}
-            {state.bountyDone || paid ? (
-              <BountyTurnIn state={state} paid={paid} onTurnIn={turnIn} />
-            ) : (
-              bounty && <BountyNote bounty={bounty} />
-            )}
-            {draughtsOpen(state, GAME_DATA) && (
-              <DraughtPicker
+            {state.bountyCache && (
+              <BountyCacheView
                 state={state}
-                onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
+                onTake={(index) => game.dispatch({ type: "takeBountyItem", index })}
+                onClose={() => game.dispatch({ type: "closeBountyCache" })}
               />
+            )}
+            {state.bountyDone ? (
+              <BountyTurnIn
+                state={state}
+                onTurnIn={() => game.dispatch({ type: "turnInBounty" })}
+              />
+            ) : (
+              !state.bountyCache &&
+              plan.bounties.length > 0 && (
+                <BountyChoice
+                  offer={plan.bounties}
+                  act={act}
+                  chosen={plan.bounty}
+                  onPick={plan.pickBounty}
+                />
+              )
             )}
             <div className="k-grow" />
             <div className="road-go">
-              <span className="sub">
-                {brewed
-                  ? `Flask ${capacity - DRAUGHT_FLASK_COST}/${capacity} + ${brewed.name} · wounds healed`
-                  : state.draught && state.wallet.acorns < draughtAcorns(state)
-                    ? "Flask refilled · too few Acorns for the Draught"
-                    : "Flask refilled · wounds healed"}
-              </span>
+              {/* The Flask for the trip, apart from Eldrin's bounties: what the hero carries. */}
+              <div className="road-flask">
+                {draughtsOpen(state, GAME_DATA) && (
+                  <DraughtPicker
+                    state={state}
+                    onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
+                  />
+                )}
+                {state.draught && !brewed && state.wallet.acorns < draughtAcorns(state) && (
+                  <span className="sub">Too few Acorns for the Draught</span>
+                )}
+              </div>
               <Button
                 variant="primary"
                 big

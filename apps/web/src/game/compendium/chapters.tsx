@@ -1023,12 +1023,14 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Eldrin hands out one Bounty for each trip: slay Elites, cull an enemy, catch the Ember
-              Thief, or beat the boss in style.
+              Eldrin offers two Bounties for each trip, take one if you like: hunt Elites, follow an
+              enemy&apos;s Trail, catch the Ember Thief, or beat the boss without the Flask. The act
+              map marks what counts.
             </p>
             <p>
-              Done? Turn it in with him back in the Camp for <C id="acorns" />, <C id="coal" /> and
-              an item of at least Rare. He has a new one only after that. Failed, nothing is lost.
+              Done? Turn it in with him back in the Camp. His Cache holds the act&apos;s Home Rune,
+              an item to pick, and what the Bounty promised: <C id="coal" />, Trail kills, more
+              items or rarer ones. He has new Bounties only after that. Failed, nothing is lost.
             </p>
           </>
         ),

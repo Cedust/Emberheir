@@ -52,16 +52,17 @@ export function shrinesBurn(state: GameState, data: GameData, run: RunState): bo
 
 /** What the act map of a walk may hold. */
 export function mapOptions(state: GameState, data: GameData, run: RunState): MapOptions {
-  const bounty = run.bounty;
+  const bounty = run.bounty?.status === "open" ? run.bounty : undefined;
+  const goal = bounty ? getBounty(data, bounty.id).goal.kind : undefined;
+  const hunts = huntOptions(state, data, run);
   return {
     shrines: shrinesBurn(state, data, run),
-    thief:
-      data.thief !== undefined &&
-      bounty?.status === "open" &&
-      getBounty(data, bounty.id).goal.kind === "thief",
+    thief: data.thief !== undefined && goal === "thief",
     events: (data.events?.length ?? 0) > 0,
     ...(hasMet(state, "marisha") ? {} : { marisha: true }),
-    ...huntOptions(state, data, run),
+    ...(hunts.hunts && goal === "trail" && bounty?.enemyId
+      ? { hunts: { ...hunts.hunts, bounty: bounty.enemyId } }
+      : hunts),
   };
 }
 

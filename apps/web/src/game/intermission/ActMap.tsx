@@ -7,6 +7,7 @@ import {
   type RunState,
   type VisitBlockReason,
   chosenNext,
+  countsForBounty,
   currentNode,
   eventBlockReason,
   eventPrice,
@@ -464,13 +465,15 @@ function MapNodeButton(props: {
   onPick: () => void;
 }) {
   const label = nodeLabel(props.state, props.run, props.stage, props.node);
+  const bounty = countsForBounty(GAME_DATA, props.run, props.node);
   const hover = useNoteHover({
     name: label.name,
     kind: `Stage ${props.stage}`,
     explain:
-      props.node.kind === "cache" && homeRuneOf(props.run.actId)
+      (props.node.kind === "cache" && homeRuneOf(props.run.actId)
         ? `${label.text} Home Rune: ${runeName(homeRuneOf(props.run.actId) ?? "")}.`
-        : [label.text, ...(label.points ?? []).map((p) => `${p}.`)].join(" "),
+        : [label.text, ...(label.points ?? []).map((p) => `${p}.`)].join(" ")) +
+      (bounty ? " Counts for your Bounty." : ""),
     ...(props.ahead ? { status: "Click to walk here next" } : {}),
   });
   const cls = [
@@ -489,6 +492,11 @@ function MapNodeButton(props: {
       {props.node.quarry && (
         <span className="map-node-quarry">
           <EnemyPortrait enemyId={props.node.quarry} size={NODE * 0.62} />
+        </span>
+      )}
+      {bounty && (
+        <span className="map-node-bounty" data-testid="bounty-node">
+          <Icon name="target" size={11} />
         </span>
       )}
     </>
@@ -598,6 +606,11 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
               </ul>
             )}
             {foeOf(node) && <FoeLine state={state} enemyId={foeOf(node) ?? ""} />}
+            {countsForBounty(GAME_DATA, run, node) && (
+              <span className="node-bounty sub small">
+                <Icon name="target" size={12} /> Counts for your Bounty
+              </span>
+            )}
             <span className="node-lane sub">{["Left", "Middle", "Right"][node.lane]}</span>
           </button>
         );

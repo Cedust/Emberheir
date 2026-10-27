@@ -140,3 +140,24 @@ describe("version 10: element attacks", () => {
     expect(migrated.hero.learned["storm-steady-mind"]).toBeUndefined();
   });
 });
+
+describe("version 16: Bounties v2", () => {
+  it("pays a done Culling as a Trail Hunt and drops an open Hale and Whole", () => {
+    const s = act(start(), { type: "setOut", actId: "test-act" });
+    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
+    const run = raw["run"] as Record<string, unknown>;
+    const old = {
+      ...raw,
+      version: 15,
+      bountyDone: { id: "culling", enemyId: "weakling", actId: "test-act" },
+      run: { ...run, bounty: { id: "hale-and-whole", progress: 0, status: "open" } },
+    };
+    const migrated = deserializeGame(JSON.stringify(old), data);
+    expect(migrated.bountyDone).toEqual({
+      id: "trail-hunt",
+      enemyId: "weakling",
+      actId: "test-act",
+    });
+    expect(migrated.run?.bounty).toBeUndefined();
+  });
+});

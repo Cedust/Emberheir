@@ -3,36 +3,47 @@ import { describe, expect, it } from "vitest";
 import { playAct, playGenerations } from "./act";
 import { BUILDS } from "./builds";
 
-describe("act autopilot", () => {
-  it("plays Act 1 to the end and reports it", () => {
-    const report = playAct(GAME_DATA, {
-      seed: 1,
-      starterWeapon: "sword",
-      upToAct: 1,
-      maxAttempts: 20,
-    });
-    expect(report.act).toBe(1);
-    expect(report.fights).toBeGreaterThanOrEqual(15);
-    expect(report.fightSeconds.length).toBeGreaterThan(0);
-  });
+/** These play whole runs (Bounties, Hunts, Caches): seconds locally, more on a busy CI runner. */
+const RUN_TIMEOUT = 30_000;
 
-  it("each run is one act longer: prestiges after the newest act's boss and starts again", () => {
-    const reports = playGenerations(GAME_DATA, {
-      seed: 2,
-      starterWeapon: "wand",
-      upToAct: 2,
-      maxAttempts: 30,
-      generations: 2,
-    });
-    expect(reports.map((r) => [r.generation, r.act])).toEqual([
-      [1, 1],
-      [2, 1],
-      [2, 2],
-    ]);
-    expect(reports[0]?.cleared).toBe(true);
-    // Every stage of the act: a fight or a quiet node of the map.
-    expect((reports[1]?.fights ?? 0) + (reports[1]?.visits ?? 0)).toBeGreaterThanOrEqual(15);
-  });
+describe("act autopilot", () => {
+  it(
+    "plays Act 1 to the end and reports it",
+    () => {
+      const report = playAct(GAME_DATA, {
+        seed: 1,
+        starterWeapon: "sword",
+        upToAct: 1,
+        maxAttempts: 20,
+      });
+      expect(report.act).toBe(1);
+      expect(report.fights).toBeGreaterThanOrEqual(15);
+      expect(report.fightSeconds.length).toBeGreaterThan(0);
+    },
+    RUN_TIMEOUT,
+  );
+
+  it(
+    "each run is one act longer: prestiges after the newest act's boss and starts again",
+    () => {
+      const reports = playGenerations(GAME_DATA, {
+        seed: 2,
+        starterWeapon: "wand",
+        upToAct: 2,
+        maxAttempts: 30,
+        generations: 2,
+      });
+      expect(reports.map((r) => [r.generation, r.act])).toEqual([
+        [1, 1],
+        [2, 1],
+        [2, 2],
+      ]);
+      expect(reports[0]?.cleared).toBe(true);
+      // Every stage of the act: a fight or a quiet node of the map.
+      expect((reports[1]?.fights ?? 0) + (reports[1]?.visits ?? 0)).toBeGreaterThanOrEqual(15);
+    },
+    RUN_TIMEOUT,
+  );
 });
 
 describe("autopilot builds", () => {

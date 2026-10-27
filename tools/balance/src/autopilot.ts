@@ -8,6 +8,9 @@ import {
   type Attributes,
   BOON_GRADES,
   type BoonPick,
+  type BountyCache,
+  bountyOffer,
+  countsForBounty,
   craftBlockReason,
   craftCost,
   CRUCIBLE_SLOTS,
@@ -113,10 +116,21 @@ function nodeValue(kind: MapNode["kind"], life: number): number {
   }
 }
 
+/** A node that counts for the trip's bounty is worth this much more (bounties-v2-plan.md B5). */
+const BOUNTY_NODE_VALUE = 2;
+
 /** The best sum of node values on the paths from a node to the next single row. */
-function pathValue(state: GameState, node: MapNode, stage: number, life: number): number {
+function pathValue(
+  state: GameState,
+  data: GameData,
+  node: MapNode,
+  stage: number,
+  life: number,
+): number {
   const map = state.run?.map;
-  const here = nodeValue(node.kind, life);
+  const bounty =
+    state.run && life >= 0.5 && countsForBounty(data, state.run, node) ? BOUNTY_NODE_VALUE : 0;
+  const here = nodeValue(node.kind, life) + bounty;
   const row = map?.rows[stage];
   if (!map || !row || row.length === 1) return here;
   // Further ahead the hero is a little more hurt, unless it rests.
@@ -124,7 +138,7 @@ function pathValue(state: GameState, node: MapNode, stage: number, life: number)
   let best = -Infinity;
   for (const lane of node.next) {
     const next = row.find((n) => n.lane === lane);
-    if (next) best = Math.max(best, pathValue(state, next, stage + 1, later));
+    if (next) best = Math.max(best, pathValue(state, data, next, stage + 1, later));
   }
   return here + (best === -Infinity ? 0 : best);
 }
@@ -139,7 +153,7 @@ export function choosePath(state: GameState, data: GameData): GameState {
   let best = ahead[0];
   let bestValue = -Infinity;
   for (const node of ahead) {
-    const value = pathValue(state, node, run.stage + 1, run.lifeFraction);
+    const value = pathValue(state, data, node, run.stage + 1, run.lifeFraction);
     if (value > bestValue) {
       best = node;
       bestValue = value;
@@ -448,6 +462,47 @@ export function bindPowers(state: GameState, data: GameData): GameState {
       }
     }
     if (best) s = best;
+  }
+  return s;
+}
+
+/** The autopilot's taste in Eldrin's Bounties: what it can steer for on the map comes first. */
+const BOUNTY_TASTE = ["trail-hunt", "elite-hunt", "elite-hunt-2", "thief-chase", "dry-throat"];
+
+/** The bounty the autopilot takes from Eldrin's offer for a trip into `actId`. */
+export function chooseBounty(state: GameState, data: GameData, actId: string): string | undefined {
+  const offer = bountyOffer(state, data, actId).map((b) => b.id);
+  return BOUNTY_TASTE.find((id) => offer.includes(id)) ?? offer[0];
+}
+
+/**
+ * In the Camp: turns a done bounty in and takes the best upgrade of Eldrin's Cache (worn at once);
+ * without one the cards turn to Ash. `onCache` sees the Cache before anything is taken.
+ */
+export function campBounty(
+  state: GameState,
+  data: GameData,
+  onCache?: (cache: BountyCache) => void,
+): GameState {
+  let s = state;
+  if (s.bountyDone && !s.bountyCache) s = applyAction(s, data, { type: "turnInBounty" });
+  if (s.bountyCache) onCache?.(s.bountyCache);
+  for (let guard = 0; s.bountyCache && guard < 8; guard++) {
+    const cache: BountyCache = s.bountyCache;
+    let best = -1;
+    let bestGain = 0;
+    cache.items.forEach((item, i) => {
+      if (cache.taken.includes(i) || equipBlockReason(s, data, item, "pick")) return;
+      const gain = upgradeGain(s, data, item);
+      if (gain > bestGain + 1e-6) {
+        best = i;
+        bestGain = gain;
+      }
+    });
+    const item = cache.items[best];
+    if (!item) return applyAction(s, data, { type: "closeBountyCache" });
+    s = applyAction(s, data, { type: "takeBountyItem", index: best });
+    s = applyAction(s, data, { type: "equip", itemId: item.id });
   }
   return s;
 }

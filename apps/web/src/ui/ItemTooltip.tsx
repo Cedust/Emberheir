@@ -80,14 +80,30 @@ const HoverContext = createContext<HoverApi | null>(null);
 /** Mouse handlers that show an item's tooltip; no-ops outside an `ItemHoverLayer`. */
 export function useItemHover(item: Item | undefined, equipped = false, action?: string) {
   const api = useContext(HoverContext);
+  // A tooltip shown by this element goes away with it (a card taken from Eldrin's Cache).
+  const shown = useRef(false);
+  useEffect(
+    () => () => {
+      if (shown.current) api?.hide();
+    },
+    [api],
+  );
   return useMemo(() => {
     if (!api || !item) return { active: false as const };
+    const show = (target: Element) => {
+      shown.current = true;
+      api.show({ item, equipped, action }, target);
+    };
+    const hide = () => {
+      shown.current = false;
+      api.hide();
+    };
     return {
       active: true as const,
-      onMouseEnter: (e: React.MouseEvent) => api.show({ item, equipped, action }, e.currentTarget),
-      onMouseLeave: () => api.hide(),
-      onFocus: (e: React.FocusEvent) => api.show({ item, equipped, action }, e.currentTarget),
-      onBlur: () => api.hide(),
+      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
+      onMouseLeave: hide,
+      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
+      onBlur: hide,
     };
   }, [api, item, equipped, action]);
 }

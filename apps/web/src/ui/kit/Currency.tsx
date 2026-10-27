@@ -181,11 +181,11 @@ export function Cost(props: {
  * An amount inside text or a button: icon and number, the name on hover and for screen readers.
  * `plus` writes a gain ("+3").
  */
-export function Price(props: { id: CurrencyId; amount: number; plus?: boolean }) {
+export function Price(props: { id: CurrencyId; amount: number; plus?: boolean; size?: number }) {
   const label = `${fmt(props.amount)} ${CURRENCIES[props.id].name}`;
   return (
     <span className="k-price" aria-label={label} title={label}>
-      <CurrencyIcon id={props.id} size={20} />
+      <CurrencyIcon id={props.id} size={props.size ?? 20} />
       <b className="mono">
         {props.plus ? "+" : ""}
         {fmt(props.amount)}
