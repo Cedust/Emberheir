@@ -30,7 +30,7 @@ const FORM_OF: Record<string, string> = Object.fromEntries(
 );
 
 /**
- * The painted icon of a hero skill, or undefined (enemy skills keep the placeholder). An infused
+ * The painted icon of a hero or enemy skill, or undefined (the stroke icon stays). An infused
  * skill ("shock-lance@cold-chill") shows its base; the Wand's bolt turns into Frostbolt in Cold.
  */
 export function skillArt(skillId: string): string | undefined {
@@ -42,7 +42,7 @@ export function skillArt(skillId: string): string | undefined {
   return art(base);
 }
 
-/** Skill icons and slot tints (placeholder art). */
+/** Stroke icons (for skills without a painting) and slot tints. */
 const SKILL_ICONS: Record<string, IconName> = {
   "power-strike": "strike",
   flurry: "flurry",

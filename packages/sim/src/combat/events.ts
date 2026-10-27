@@ -207,6 +207,7 @@ export interface FighterSnapshot {
   /** A Heavy Attack that is winding up right now. */
   readonly telegraph: {
     readonly skill: string;
+    readonly skillId: string;
     readonly remaining: number;
     readonly windup: number;
   } | null;
@@ -217,6 +218,7 @@ export interface FighterSnapshot {
   /** The next telegraphed Heavy Attack: starts winding up in `in` seconds (not while one winds up). */
   readonly nextHeavy: {
     readonly skill: string;
+    readonly skillId: string;
     readonly in: number;
     readonly windup: number;
   } | null;

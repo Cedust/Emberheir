@@ -83,6 +83,7 @@ export function fighterSnapshot(core: FightCore, f: Fighter): FighterSnapshot {
     telegraph: f.windup
       ? {
           skill: f.setup.telegraphs?.[f.windup.index]?.skill.name ?? "",
+          skillId: f.setup.telegraphs?.[f.windup.index]?.skill.id ?? "",
           remaining: Math.max(0, f.windup.remaining),
           windup: f.setup.telegraphs?.[f.windup.index]?.windup ?? 0,
         }
@@ -120,7 +121,13 @@ function nextHeavy(f: Fighter): FighterSnapshot["nextHeavy"] {
   (f.setup.telegraphs ?? []).forEach((spec, i) => {
     if (!phaseActive(f, spec.belowLife)) return;
     const left = Math.max(0, spec.interval - (f.telegraphTimers[i] ?? 0));
-    if (!best || left < best.in) best = { skill: spec.skill.name, in: left, windup: spec.windup };
+    if (!best || left < best.in)
+      best = {
+        skill: spec.skill.name,
+        skillId: spec.skill.id,
+        in: left,
+        windup: spec.windup,
+      };
   });
   return best;
 }

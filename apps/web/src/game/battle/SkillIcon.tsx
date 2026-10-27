@@ -2,7 +2,7 @@ import { Icon, type IconName } from "../../ui/Icon";
 import { weaponIconUrl } from "../../ui/gameIcons";
 import { skillArt, skillIcon } from "./skills";
 
-/** A skill's painted icon; skills without a painting (enemy skills) keep the stroke icon. */
+/** A skill's painted icon (hero and enemy skills); a skill without a painting keeps the stroke icon. */
 export function SkillIcon(props: { skillId: string; size: number }) {
   const url = skillArt(props.skillId);
   if (!url) return <Icon name={skillIcon(props.skillId)} size={props.size} color="#fff6e4" />;
