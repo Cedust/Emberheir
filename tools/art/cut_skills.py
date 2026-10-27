@@ -3,20 +3,18 @@
 # Run from the repo root: python3 tools/art/cut_skills.py  (needs Pillow, numpy and scipy)
 #   art/icons/rune-sheet-v1.png     2 x 4 Runes, lowest rank first
 #   art/icons/skill-sheet-a-v1.png  2 x 4 Steel, Blood, Iron Bastion, Rally
-#   art/icons/skill-sheet-b-v1.png  3 + 4 Venom, Flame
+#   art/icons/skill-sheet-b-v2.png  3 + 4 Venom, Flame
 #   art/icons/skill-sheet-c-v1.png  3 x 3 Storm, Frost, Void
-#   art/icons/skill-sheet-d-v1.png  3 x 3 Mastery skills
-#   art/icons/skill-sheet-e-v1.png  2 x 4 Weapon Innates (Frostbolt = the Wand's after Cold Attunement)
+#   art/icons/skill-sheet-d-v2.png  3 x 3 Mastery skills
+#   art/icons/skill-sheet-e-v2.png  2 x 4 Weapon Innates (Frostbolt = the Wand's after Cold Attunement)
 #   art/icons/attack-sheet-v1.png   2 x 4 Default Attacks -> apps/web/src/assets/attacks/<weaponId>.webp
 #   art/icons/enemy-skill-sheet-a-v1.png  3 x 3 Enemy Skills, Ashen Fields and Rotwood
-#   art/icons/enemy-skill-sheet-b-v1.png  2 x 5 Ember Wastes, Frost Peaks, Storm Spires
-#   art/icons/enemy-skill-sheet-c-v1.png  3 x 3 Storm Herald, Void Rift, the Harvester
-#   (gegner-skill-icons-art-v1.md). B and C came with a baked checker that unmix_checker.py leaves
-#   in their glows; key_checker.py made them from the matching *-raw.png:
-#     B: --grey 120,215 --min-area 120 --halo 68,115,40
-#     C: --min-area 400 --keep 590,525,770,700 --halo 60,150,60  (keeps Rift Snap's white flash)
-# Sheets B, D and E came with a baked checkerboard: tools/art/unmix_checker.py made them from the
-# matching *-raw.png first.
+#   art/icons/enemy-skill-sheet-b-v2.png  2 x 5 Ember Wastes, Frost Peaks, Storm Spires
+#   art/icons/enemy-skill-sheet-c-v2.png  3 x 3 Storm Herald, Void Rift, the Harvester
+#   (gegner-skill-icons-art-v1.md).
+# The v1 sheets B, D, E and Enemy B, C came with a baked checkerboard (unmix_checker.py and
+# key_checker.py made them from the *-raw.png); Timo regenerated them as v2 with a real
+# transparent background, which needs no keying.
 # The glows of the painted effects touch, so every sheet is cut on its grid, not by pieces; the
 # alpha fades out at the cell edge so a neighbour's glow never ends in a hard line. Every icon is
 # centred on a square canvas: skill slots draw 18 to 32 stage pixels, up to 2.4x on 4K.
@@ -41,7 +39,7 @@ SHEETS = [
     ['flurry', 'execute', 'crushing-blow', 'rend'],
     ['serrated-edge', 'cleave', 'iron-bastion', 'rally'],
   ]),
-  ('skill-sheet-b-v1.png', 'skills', [
+  ('skill-sheet-b-v2.png', 'skills', [
     ['envenom', 'wither', 'toxic-burst'],
     ['immolate', 'meteor', 'inferno', 'searing-blow'],
   ]),
@@ -50,12 +48,12 @@ SHEETS = [
     ['ice-lance', 'frost-strike', 'frost-nova'],
     ['corrupt', 'soul-harvest', 'void-rift'],
   ]),
-  ('skill-sheet-d-v1.png', 'skills', [
+  ('skill-sheet-d-v2.png', 'skills', [
     ['earthsplitter', 'rampage', 'rupture'],
     ['deadly-aim', 'hit-and-run', 'dirty-trick'],
     ['arcane-blast', 'spell-volley', 'malediction'],
   ]),
-  ('skill-sheet-e-v1.png', 'skills', [
+  ('skill-sheet-e-v2.png', 'skills', [
     ['power-strike', 'lacerate', 'skull-crack', 'barbed-arrow'],
     ['heavy-bolt', 'shockbolt', 'frostbolt', 'void-bolt'],
   ]),
@@ -64,11 +62,11 @@ SHEETS = [
     ['gorrak-slam', 'rake', 'blight-spit'],
     ['moss-mend', 'rot-spray', 'devour'],
   ]),
-  ('enemy-skill-sheet-b-v1.png', 'skills', [
+  ('enemy-skill-sheet-b-v2.png', 'skills', [
     ['flame-dash', 'fireball', 'obsidian-shell', 'eruption', 'pounce'],
     ['ice-bolt', 'glacial-mend', 'avalanche', 'arc-dash', 'forked-bolt'],
   ]),
-  ('enemy-skill-sheet-c-v1.png', 'skills', [
+  ('enemy-skill-sheet-c-v2.png', 'skills', [
     ['thunderclap', 'void-lance', 'hex'],
     ['consume', 'rift-snap', 'soul-reap'],
     ['harvest-swing', 'ashfall', 'last-harvest'],
@@ -91,12 +89,13 @@ for sheet, folder, rows in SHEETS:
       cell = np.asarray(im.crop((x0, y0, x1, y1))).astype(float)
       cell[..., 3] *= edge_fade(x1 - x0, y1 - y0)
       # A neighbour's spill reaches in from the cell edge: keep the icon (the biggest piece) and the
-      # sparks around it, drop the other pieces that touch the edge.
+      # sparks around it, drop the other pieces that touch the edge. A piece at least half as big as
+      # the icon is part of it (Spell Volley's three arrows).
       pieces, n = ndimage.label(ndimage.binary_dilation(cell[..., 3] > 30, iterations=4))
       sizes = np.bincount(pieces.ravel())
       sizes[0] = 0
       edge = set(np.unique(np.concatenate([pieces[0], pieces[-1], pieces[:, 0], pieces[:, -1]])))
-      keep = [i for i in range(1, n + 1) if i == sizes.argmax() or i not in edge]
+      keep = [i for i in range(1, n + 1) if i not in edge or sizes[i] * 2 >= sizes.max()]
       cell[..., 3] *= np.isin(pieces, keep)
       icon = Image.fromarray(cell.astype(np.uint8), 'RGBA')
       # Framed by everything that clearly shows (glow included, the neighbour's spill is gone), so
