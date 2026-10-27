@@ -155,9 +155,9 @@ function BountyBonus(props: { def: BountyDefinition }) {
         </span>
       );
     case "picks":
-      return <span className="bounty-bonus">Take {b.picks} items</span>;
+      return <span className="bounty-bonus words">Take {b.picks} items</span>;
     case "rarity":
-      return <span className="bounty-bonus">Rarer items</span>;
+      return <span className="bounty-bonus words">Rarer items</span>;
   }
 }
 

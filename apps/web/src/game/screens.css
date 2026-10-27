@@ -2299,9 +2299,25 @@
 /* Bounties v2: what a bounty pays, Eldrin's Cache, the nodes that count on the act map. */
 .stage .bounty-pay {
   display: flex;
-  align-items: center;
+  align-items: flex-end;
   gap: 12px;
   margin-top: 4px;
+}
+
+/* Every icon of the pay line as a box of its own, so all of them sit on one line (an inline image
+   sits on the text's baseline and floats above the others). */
+.stage .bounty-pay > span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stage .bounty-pay img,
+.stage .bounty-pay svg {
+  display: block;
+}
+
+.stage .bounty-pay > .words {
+  align-self: center;
 }
 
 .stage .bounty-bonus {
@@ -2386,8 +2402,8 @@
 
 /* The item pick on a bounty card: Eldrin's Cache in small. */
 .stage .cache-mini {
-  width: 30px;
-  height: 26px;
+  width: 36px;
+  height: 31px;
   object-fit: contain;
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
 }
