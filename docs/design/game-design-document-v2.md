@@ -235,6 +235,9 @@ Endgame **Wildfire I–X**.
   Bibliothek wählen (oder einen Skill auf den Slot ziehen); Modifier sitzen als Sockel unter dem Slot, „Fires at Heat“
   ist ein Regler am Heat-Balken, Bedingungen sind kleine Schilder. Unten läuft „One rotation“ als dunkle Kampf-Leiste.
   Respec und Forget werden gehalten.
+- **Compendium** (Timo 27.10.2026): Old Nans Buch mit acht Kapiteln (The Journey, The Fight, Your Heir, Loot, Enemies,
+  Gifts of the Road, The Camp, Beyond the Harvest). Ein Kapitel klappt beim Anklicken seine Seiten auf, die
+  Pfeiltasten blättern. Die Seiten sind kurz und benutzen die gemalten Icons (Währungen, Stats, Attribute, Runes …).
 - **Old Nan** spricht in einer Dialog-Box (Hades): großes Porträt, ihr Spruch, Antworten mit Zifferntasten
   („Tell me more.“, Compendium, die Resets mit Acorn-Preis, „Farewell.“). Ein Reset fragt einmal nach.
 - **Title Screen** und **Class Select** stehen vor dem nächtlichen Camp; Menu und Settings sind Fenster im selben Rahmen.
@@ -659,7 +662,7 @@ Endgame **Wildfire I–X**.
   zeigt der Rahmen, nicht das Bild.
 - **Keine Spoiler:** Die UI zeigt nur die Acts des aktuellen Runs (Run n = Acts 1..n). Ein Boss heißt „???“,
   bis der Heir ihm begegnet ist (oder der Act in diesem/einem früheren Run fiel). Gilt für Road, Camp-Kopf, Eldrin,
-  Up Next, Old Nans Sprüche, Trophy Wall, Trigger Codex und das Compendium (The Last Ember erst, wenn sie offen ist).
+  Up Next, Old Nans Sprüche, Trophy Wall, Trigger Codex und das Compendium (noch nicht gesehene Seiten und Kapitel stehen dort als „Locked“, ohne Namen).
 
 ---
 
