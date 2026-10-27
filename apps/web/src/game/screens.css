@@ -2293,6 +2293,16 @@
   color: var(--text-sub);
 }
 
+.stage .bounty-offer .bounty-text {
+  font-size: 13px;
+  line-height: 1.3;
+  color: #e8dcc4;
+}
+
+.stage .bounty-offer .bounty-bonus {
+  color: #e8dcc4;
+}
+
 .stage .bounty-cards {
   display: flex;
   flex-wrap: wrap;

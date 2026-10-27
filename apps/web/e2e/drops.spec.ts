@@ -99,6 +99,7 @@ test("Bounty: a done bounty opens Eldrin's Cache, one item goes into the invento
   const cache = page.getByLabel("Eldrin's Cache");
   await expect(cache).toContainText("ELDRIN'S CACHE · ELITE HUNT");
   await expect(cache.getByLabel(/Ember Coal/)).toBeVisible();
+  await page.mouse.move(0, 0);
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-cache.png` });
   // Taking one card closes the Cache; the other cards turn to Ash.
   await cache
@@ -110,6 +111,7 @@ test("Bounty: a done bounty opens Eldrin's Cache, one item goes into the invento
   await expect(page.getByLabel("Bounty done")).toHaveCount(0);
   const offer = page.getByRole("radiogroup", { name: "Bounty" });
   await expect(offer.getByRole("radio")).toHaveCount(2);
+  await page.mouse.move(0, 0);
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/bounty-offer.png` });
   await page.keyboard.press("Escape");
   // Wait until Eldrin's window is gone: a click during its closing animation brought the same

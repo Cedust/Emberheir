@@ -197,7 +197,7 @@ export function BountyChoice(props: {
               onClick={() => props.onPick(on ? null : b.def.id)}
             >
               <span className="omen-name title-font">{b.def.name}</span>
-              <span className="omen-price">{b.text}</span>
+              <span className="bounty-text sub">{b.text}</span>
               <BountyPay def={b.def} act={props.act} />
             </button>
           );

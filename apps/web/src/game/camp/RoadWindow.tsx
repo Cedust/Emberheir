@@ -399,6 +399,7 @@ export function RoadWindow(props: {
                 onTurnIn={() => game.dispatch({ type: "turnInBounty" })}
               />
             ) : (
+              !state.bountyCache &&
               plan.bounties.length > 0 && (
                 <BountyChoice
                   offer={plan.bounties}

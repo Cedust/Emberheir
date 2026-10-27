@@ -186,3 +186,25 @@ Knoten-Tabelle aktualisieren. Unit-Tests für Angebot, Fortschritt, Cache und Mi
 | **E3** | Lohn: Home Rune + Item-Pick 1 aus 3 + Typ-Bonus statt Acorns + 2 Coal + zufälliges Rare ins Inventar? | **Ja** |
 | **E4** | Bounties im Wildfire? a) nein, b) später nach Messung, c) gleich mit (ohne Trail Hunt, Lohn mit Cinderglass statt Home Rune) | **b** |
 | **E5** | Arena-Moment: Rabe mit Feder, wenn die Bounty erfüllt ist? | **Ja** |
+
+---
+
+## 8. Ergebnis der Messung (27.10.2026)
+
+Balance-CLI `--act 7 --generations 7 --build all --runs 2`, Seeds 31 und 41, main gegen diesen Branch. Der Autopilot
+nimmt Bounties (Trail Hunt vor Elite Hunt vor Thief Chase vor Dry Throat) und läuft auf Feder-Knoten, wenn er
+mindestens halbes Life hat; im Camp reicht er ein und trägt das beste Item aus dem Cache.
+
+| | main | Bounties v2 |
+|---|---|---|
+| Anläufe im neuesten Act (alle Runs) | 3,3 / 3,1 | 3,2 / 3,3 |
+| Spielzeit bis Ende Run 7 | 14,4 / 14,2 h | 14,2 / 14,1 h |
+
+Bounties (zweite Messung, nach dem Nachjustieren): pro Run erfüllt 69–97 % (Run 7 am wenigsten, dort sterben die
+meisten Züge). Elite Hunt 60–100 %, Trail Hunt 76–96 %, Thief Chase 60–95 %. Die Caches bringen **15–21 %** des
+Ember Coal eines Runs (Run 1: 5 %) und rund **40 %** seiner Home Runes. Dry Throat nimmt der Autopilot nie (er wählt
+immer die andere), sie ist also ungemessen.
+
+Nachjustiert nach der ersten Messung: Trail Hunt zählt **Trail-Kills** wie der Trail selbst (Elite 3, Hunt-Knoten 2;
+vorher 1 pro Sieg, nur 35–50 % erfüllt), und jeder Cache hat wie ein Cache-Knoten **1–2 Ember Coal** (vorher nur
+Elite Hunt; 5–12 % des Coal).
