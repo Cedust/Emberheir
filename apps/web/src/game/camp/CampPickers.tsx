@@ -168,8 +168,8 @@ function BountyPay(props: { def: BountyDefinition; act: ActData }) {
           <RuneStone runeId={rune} size={18} />
         </span>
       )}
-      <span className="bounty-bonus" title="An item pick">
-        <Icon name="box" size={16} />
+      <span className="bounty-bonus" title="An item pick from Eldrin's Cache">
+        <img className="cache-mini" src={cacheClosedUrl} alt="" draggable={false} />
       </span>
       <BountyBonus def={props.def} />
     </span>

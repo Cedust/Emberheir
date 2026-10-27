@@ -2384,6 +2384,13 @@
   user-select: none;
 }
 
+/* The item pick on a bounty card: Eldrin's Cache in small. */
+.stage .cache-mini {
+  width: 28px;
+  height: auto;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+}
+
 .stage .cache-chest.open {
   right: 18px;
   width: 196px;
