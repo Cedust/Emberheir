@@ -15,6 +15,8 @@ import {
   masteryPointsLeft,
   nextAct,
   weaponGrade,
+  COMPANIONS,
+  hasMet,
 } from "@emberheir/sim";
 import { useState } from "react";
 import { PREVIEW_PR } from "../storage";
@@ -206,7 +208,7 @@ function HeroTab(props: { state: GameState; game: GameApi }) {
         <button
           type="button"
           className="btn"
-          disabled={state.progress.trainerUnlocked && state.progress.runesmithUnlocked}
+          disabled={COMPANIONS.every((who) => hasMet(state, who))}
           onClick={() => game.cheat({ kind: "unlockCamp" })}
         >
           Kaelen and Nyssa join

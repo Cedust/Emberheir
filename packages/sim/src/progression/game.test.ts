@@ -168,7 +168,7 @@ describe("game loop", () => {
     expect(s.progress).toMatchObject({
       actsCleared: ["test-act"],
       deathsInAct: 0,
-      trainerUnlocked: true,
+      met: ["kaelen", "liora"],
     });
     expect(s.stats.bossKills).toBe(1);
   });
@@ -255,7 +255,7 @@ describe("game loop", () => {
 
   it("Kaelen teaches the Skill Tree from the first Camp on", () => {
     let s = { ...start(), hero: { ...start().hero, unspentSkillPoints: 3 } };
-    expect(s.progress.trainerUnlocked).toBe(false);
+    expect(s.progress.met).toEqual([]);
     s = act(s, { type: "learnNodes", nodeIds: ["a", "b", "b"] });
     expect(s.hero.unspentSkillPoints).toBe(0);
     const weapon = heroSetup(s, data).setup.weapon;
@@ -434,7 +434,7 @@ describe("game loop", () => {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 6 },
       wallet: { ...s.wallet, acorns: respecAcorns(0) },
-      progress: { ...s.progress, trainerUnlocked: true },
+      progress: { ...s.progress, met: ["liora"] },
     };
     s = act(
       s,
@@ -456,7 +456,7 @@ describe("game loop", () => {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 6 },
       wallet: { ...s.wallet, acorns: 3 * forgetAcorns(0) },
-      progress: { ...s.progress, trainerUnlocked: true },
+      progress: { ...s.progress, met: ["liora"] },
     };
     s = act(s, { type: "learnNodes", nodeIds: ["a", "b", "b", "k"] });
     // "a" holds "b" and "k".
@@ -511,7 +511,6 @@ describe("game loop", () => {
     expect(s.wallet).toEqual(wallet);
     expect(s.progress).toMatchObject({
       actsCleared: [],
-      trainerUnlocked: true,
       rotationSlots: 2,
     });
     expect(s.legacy.prestige).toBe(1);
@@ -721,12 +720,11 @@ describe("Runes in the run", () => {
     expect(addRunes({ ash: 1 }, ["ash", "moss"])).toEqual({ ash: 2, moss: 1 });
   });
 
-  it("Nyssa joins after the first trip into her act, even a deadly one", () => {
+  it("Nyssa does not join after a death in her act", () => {
     let s = act(unlocked(start()), { type: "setOut", actId: "deadly-act" });
-    expect(s.progress.runesmithUnlocked).toBe(false);
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run).toBeNull();
-    expect(s.progress.runesmithUnlocked).toBe(true);
+    expect(s.progress.met).not.toContain("nyssa");
   });
 });
 

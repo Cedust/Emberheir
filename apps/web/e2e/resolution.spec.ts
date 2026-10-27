@@ -86,10 +86,6 @@ for (const screen of SCREENS) {
     await page.getByRole("button", { name: "Supply Wagon, Stash" }).click();
     await check("stash");
     await page.keyboard.press("Escape");
-    await page.getByRole("button", { name: "Marisha, Black Market" }).click();
-    // Marisha only gambles: the Black Market opens on it.
-    await check("gamble");
-    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Eldrin, Scout" }).click();
     await check("road");
     await page.keyboard.press("Escape");
@@ -139,7 +135,9 @@ test("1080p and 4K show the same picture", async ({ page }) => {
 });
 
 for (const screen of SCREENS) {
-  test(`${screen.name}: the Prestige flow and Legacy fit without scrolling`, async ({ page }) => {
+  test(`${screen.name}: the Prestige flow, Black Market and Legacy fit without scrolling`, async ({
+    page,
+  }) => {
     const errors: string[] = [];
     page.on("pageerror", (e) => errors.push(e.message));
     await page.setViewportSize({ width: screen.width, height: screen.height });
@@ -155,6 +153,10 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "The Harvest" })).toBeVisible();
     await check("harvest");
     await page.getByRole("button", { name: "Let It Burn" }).click();
+    // Marisha joined on the road by now; she only gambles: the Black Market opens on it.
+    await page.getByRole("button", { name: "Marisha, Black Market" }).click();
+    await check("gamble");
+    await page.keyboard.press("Escape");
     await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
     await expect(page.getByRole("region", { name: "Legacy" })).toBeVisible();
     await check("legacy");

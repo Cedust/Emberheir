@@ -102,9 +102,8 @@ export function newGame(data: GameData, options: NewGameOptions): GameState {
     progress: {
       actsCleared: [],
       deathsInAct: 0,
-      trainerUnlocked: false,
       rotationSlots: battlePlanUnlocks(0).rotationSlots,
-      runesmithUnlocked: false,
+      met: [],
       waymarks: [],
     },
     run: null,

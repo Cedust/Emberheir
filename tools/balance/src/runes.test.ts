@@ -24,7 +24,7 @@ function camp(runes: Record<string, number>, withBase = true): GameState {
     },
     inventory: withBase ? (addToGrid([], base, GAME_DATA.items) ?? []) : [],
     wallet: { ...s.wallet, acorns: 1000, ash: 1000, runes },
-    progress: { ...s.progress, runesmithUnlocked: true },
+    progress: { ...s.progress, met: ["nyssa"] },
     legacy: { ...s.legacy, runesFound: [...GAME_DATA.items.runes.keys()] },
   };
 }
@@ -65,7 +65,7 @@ describe("autopilot Runes", () => {
     );
     const base = { ...card, sockets: 0 };
     expect(wantsBase(s, GAME_DATA, base)).toBe(true);
-    const early = { ...s, progress: { ...s.progress, runesmithUnlocked: false } };
+    const early = { ...s, progress: { ...s.progress, met: [] } };
     expect(wantsBase(early, GAME_DATA, base)).toBe(false);
   });
 });

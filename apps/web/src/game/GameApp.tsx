@@ -14,6 +14,7 @@ import { IntermissionView } from "./intermission/IntermissionView";
 import { MenuOverlay } from "./MenuOverlay";
 import { EndingScreen, NoticeScreen } from "./NoticeScreen";
 import { HarvestBurn, PrestigeView } from "./PrestigeView";
+import { StoryBlipDialog } from "./StoryBlip";
 import { TitleScreen } from "./TitleScreen";
 import { BattleView } from "./lazyViews";
 import { CampView } from "./camp/CampView";
@@ -48,6 +49,11 @@ export function GameApp() {
   const { state } = game;
   const run = state?.run ?? null;
   const inFight = run?.phase === "fight";
+  // A persona met on the road: their Story Blip waits until the fight and the Harvest are over.
+  const blip =
+    state && !inFight && !state.notice && !state.pendingPrestige && !burning
+      ? (state.blips?.[0] ?? null)
+      : null;
 
   const toggle = (o: Exclude<Overlay, null>) => setOverlay((cur) => (cur === o ? null : o));
 
@@ -62,7 +68,7 @@ export function GameApp() {
         setOverlay((cur) => (cur === "cheats" ? null : "cheats"));
         return;
       }
-      if (state.notice || state.pendingPrestige) return;
+      if (state.notice || state.pendingPrestige || blip) return;
       const key = e.key.toLowerCase();
       if (key === "escape") {
         if (overlay) setOverlay(null);
@@ -89,7 +95,7 @@ export function GameApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state, lab, overlay, run, campScreen, inFight]);
+  }, [state, lab, overlay, run, campScreen, inFight, blip]);
 
   if (lab) {
     return (
@@ -262,7 +268,7 @@ export function GameApp() {
         run={run}
         game={game}
         settings={settings.settings}
-        covered={overlay !== null}
+        covered={overlay !== null || blip !== null}
         onCharacter={() => toggle("character")}
         onTree={() => toggle("tree")}
         onPlan={() => toggle("plan")}
@@ -287,6 +293,15 @@ export function GameApp() {
             </HarvestBurn>
           )}
           <Presence>{campWindow}</Presence>
+          <Presence>
+            {blip && (
+              <StoryBlipDialog
+                key={`${blip}-${state?.blips?.length ?? 0}`}
+                blip={blip}
+                onDone={() => game.dispatch({ type: "dismissBlip" })}
+              />
+            )}
+          </Presence>
           {/* On the road, Character and Ash Tree are windows over the arena with the arena
             around them (ui-ux-plan-v1.md 3.4). */}
           <div className={run ? "road-windows" : "camp-windows"}>

@@ -50,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 14;
+export const SAVE_VERSION = 15;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -489,6 +489,21 @@ export interface GameStats {
   readonly bossKills: number;
 }
 
+/** Personas the hero meets on the road before they join the caravan. */
+export const COMPANIONS = ["kaelen", "marisha", "liora", "nyssa"] as const;
+export type Companion = (typeof COMPANIONS)[number];
+
+/** A short scene when a persona is met: Marisha's three meetings, the others' one. */
+export const STORY_BLIPS = [
+  "kaelen",
+  "marisha-1",
+  "marisha-2",
+  "marisha-3",
+  "liora",
+  "nyssa",
+] as const;
+export type StoryBlip = (typeof STORY_BLIPS)[number];
+
 export interface GameState {
   readonly version: number;
   readonly seed: number;
@@ -507,11 +522,14 @@ export interface GameState {
     readonly actsCleared: readonly string[];
     /** Deaths in the current act since its boss last fell (Pity). */
     readonly deathsInAct: number;
-    /** Kaelen (Skill Tree, Battle Plan) joins after the first act boss. */
-    readonly trainerUnlocked: boolean;
     readonly rotationSlots: number;
-    /** Nyssa (Runesmith) joined the caravan. Stays through every Prestige. */
-    readonly runesmithUnlocked: boolean;
+    /**
+     * Personas met on the road who joined the caravan (camp-personas-freischalten-v1.md). They
+     * stay through every Prestige; Nan, Thoric and Eldrin are there from the start.
+     */
+    readonly met: readonly Companion[];
+    /** Times Marisha was met on the road before she joined (she joins at the third). */
+    readonly marishaMeetings?: number;
     /**
      * Waymarks reached in this run (`waymarkKey`): each gave a Skill Point. They open again at
      * the Prestige, so every run pays its Waymarks anew (level-v2.md section 7).
@@ -522,6 +540,8 @@ export interface GameState {
   /** `null` = in the Camp. */
   readonly run: RunState | null;
   readonly notice: Notice | null;
+  /** Story Blips still to show, oldest first (one short scene each, then gone). */
+  readonly blips?: readonly StoryBlip[];
   readonly stats: GameStats;
   readonly legacy: LegacyState;
   /** Set between the final boss and the Prestige. Blocks the Camp until it is done. */

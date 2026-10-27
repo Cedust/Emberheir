@@ -19,7 +19,7 @@ describe("Rune Sockets in the web", () => {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 20 },
       wallet: { ...s.wallet, acorns: 10_000, runes: { rime: 1 } },
-      progress: { ...s.progress, trainerUnlocked: true },
+      progress: { ...s.progress, met: ["kaelen", "marisha", "liora"] },
     };
     const socket = "steel-rune-socket";
     const path = learnPath(GAME_DATA.skillTree, s.hero.learned, socket) ?? [];
@@ -44,7 +44,7 @@ describe("Rune Sockets in the web", () => {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 60 },
       wallet: { ...s.wallet, acorns: 10_000, runes: { rime: 2, moss: 1 } },
-      progress: { ...s.progress, trainerUnlocked: true },
+      progress: { ...s.progress, met: ["kaelen", "marisha", "liora"] },
     };
     const [first, second] = ["steel-rune-socket", "blood-rune-socket"];
     for (const socket of [first, second]) {

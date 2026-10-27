@@ -308,7 +308,6 @@ export function startStage(state: GameState, data: GameData): GameState {
 
 /** Back to the Camp: flask refilled, life full, act progress and the trip's bounty gone. */
 export function toCamp(state: GameState, data: GameData, notice: Notice | null): GameState {
-  const fromRunesmithAct = state.run ? getAct(data, state.run.actId).runesmith === true : false;
   // Boons of the current act burn on death and Retreat; a cleared act keeps them.
   const lost = notice?.kind === "death" || notice?.kind === "retreat";
   const { kept, fresh } = state.boons;
@@ -329,10 +328,6 @@ export function toCamp(state: GameState, data: GameData, notice: Notice | null):
     notice,
     boons: { kept: lost ? kept : [...kept, ...fresh], fresh: [] },
     flaskCharges: flaskCapacity(state, data),
-    progress: {
-      ...state.progress,
-      runesmithUnlocked: state.progress.runesmithUnlocked || fromRunesmithAct,
-    },
   };
 }
 
@@ -390,7 +385,6 @@ export function continueRun(state: GameState, data: GameData): GameState {
           ...state.progress,
           actsCleared: cleared,
           deathsInAct: 0,
-          trainerUnlocked: true,
         },
       },
       data,
