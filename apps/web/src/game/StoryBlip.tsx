@@ -65,7 +65,7 @@ const BLIPS: Readonly<
     persona: "liora",
     name: "Liora",
     role: "Mystic",
-    line: "“I foresaw a thirsty Heir. Before each trip I brew you a Draught: harder skin, a stronger Barrier or more Life, until you’re back at the fire. Costs a Flask charge. And Acorns, of course.”",
+    line: "“I foresaw a thirsty Heir. Before each trip I can brew you a Draught: harder skin, a stronger Barrier or more Life, until you’re back at the fire. Costs a Flask charge. And Acorns, of course.”",
     answer: "I’ll pick one at Eldrin’s.",
     fx: "moon",
   },
