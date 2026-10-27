@@ -116,7 +116,7 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   // Colossus sits four nodes out from the Cinderguard's start: the whole path is learned at once.
   await tree.getByRole("button", { name: "Colossus" }).press("Enter");
   await expect(detail).toContainText("Fork: only this or Killer Instinct");
-  await detail.getByRole("button", { name: "Learn path · 4 Points" }).click();
+  await detail.getByRole("button", { name: "Learn path · 4 Skill Points" }).click();
   await expect(page.getByText("4 new nodes pending")).toBeVisible();
   await page.getByRole("button", { name: "Confirm" }).click();
 
@@ -134,7 +134,7 @@ test("The web: a path at once, a fork closes its other side, a node is forgotten
   await expect(forget).toBeHidden({ timeout: 10_000 });
   await page.mouse.up();
   await tree.getByRole("button", { name: "Killer Instinct" }).press("Enter");
-  await expect(detail.getByRole("button", { name: "Learn · 1 Point" })).toBeEnabled();
+  await expect(detail.getByRole("button", { name: "Learn · 1 Skill Point" })).toBeEnabled();
   if (process.env.SHOTS) {
     await page.getByRole("button", { name: "Fit" }).click();
     await page.waitForTimeout(1200);

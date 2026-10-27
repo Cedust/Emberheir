@@ -66,6 +66,7 @@ import {
   type WeaponNumbers,
 } from "./character/StatTabs";
 import { AshbornPanel } from "./AshbornPanel";
+import { PointChip } from "../ui/kit/Points";
 import { AttributeStones, NO_POINTS } from "./AttributeStones";
 
 type Tab = "Overview" | "Attributes" | "Stats" | "Ashborn";
@@ -358,12 +359,7 @@ export function CharacterOverlay(props: {
                 <>
                   <div className="section-row">
                     <span className="title-font section-title">Attributes</span>
-                    <span
-                      className={`points ${left > 0 ? "has" : ""}`}
-                      data-testid="attribute-points"
-                    >
-                      {left} Attribute Points
-                    </span>
+                    <PointChip id="attribute" value={left} testId="attribute-points" glow />
                   </div>
                   <AttributeStones
                     perkBoard

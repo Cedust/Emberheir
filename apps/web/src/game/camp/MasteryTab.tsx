@@ -34,6 +34,7 @@ import {
 } from "./MasteryScene";
 import { canvasResolution } from "../pixiPacing";
 import { Price } from "../../ui/kit/Currency";
+import { PointChip, PointPrice } from "../../ui/kit/Points";
 import { useWeaponHover } from "../../ui/ItemTooltip";
 import { heroWeaponTip } from "../../ui/weaponTip";
 
@@ -327,9 +328,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
         <section className="panel-card weapon-stats" aria-label="Weapon">
           <div className="section-row">
             <span className="eyebrow">WEAPON</span>
-            <span className="eyebrow" data-testid="mastery-points">
-              {left} Heirloom Point{left === 1 ? "" : "s"}
-            </span>
+            <PointChip id="heirloom" value={left} testId="mastery-points" glow />
           </div>
           <dl className="stat-grid">
             <dt>Damage</dt>
@@ -381,18 +380,26 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
                   disabled={reason !== undefined}
                   onClick={() => setPending((p) => [...p, selected.id])}
                 >
-                  {reason === "chosen"
-                    ? "Chosen"
-                    : reason === "maxed"
-                      ? "Learned"
-                      : selected.group
-                        ? selected.default
-                          ? "Choose · free"
-                          : masteryRanks(tree, preview, selected.id) === 0 &&
-                              preview.choices[selected.group]
-                            ? "Switch · free"
-                            : "Choose · 1 Point"
-                        : "Learn · 1 Point"}
+                  {reason === "chosen" ? (
+                    "Chosen"
+                  ) : reason === "maxed" ? (
+                    "Learned"
+                  ) : selected.group ? (
+                    selected.default ? (
+                      "Choose · free"
+                    ) : masteryRanks(tree, preview, selected.id) === 0 &&
+                      preview.choices[selected.group] ? (
+                      "Switch · free"
+                    ) : (
+                      <>
+                        Choose · <PointPrice id="heirloom" amount={1} />
+                      </>
+                    )
+                  ) : (
+                    <>
+                      Learn · <PointPrice id="heirloom" amount={1} />
+                    </>
+                  )}
                 </button>
                 {reason && reason !== "chosen" && reason !== "maxed" && (
                   <p className="block warn">

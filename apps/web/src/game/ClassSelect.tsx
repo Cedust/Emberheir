@@ -22,6 +22,7 @@ import { dummyPreview } from "./classPreview";
 import { PreviewArena } from "./lazyViews";
 import type { NewCharacter } from "./useGame";
 import { ELEMENT_COLOR } from "./weaponLook";
+import { PointChip } from "../ui/kit/Points";
 import { loadLineageClasses } from "./saves";
 
 /**
@@ -135,9 +136,7 @@ export function ClassSelect(props: {
             <div className="cs-attributes" aria-label="Attributes">
               <div className="cs-side-head">
                 <span className="title-font">Attributes</span>
-                <span className={`points ${freeLeft > 0 ? "has" : ""}`} data-testid="free-points">
-                  {freeLeft} Points
-                </span>
+                <PointChip id="attribute" value={freeLeft} testId="free-points" glow />
               </div>
               {won.length > 0 && (
                 <div className="cs-lineage" role="group" aria-label="Lineage">

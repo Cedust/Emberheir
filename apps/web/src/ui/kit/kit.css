@@ -555,6 +555,15 @@
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
 }
 
+/* Points (Skill, Heirloom, Attribute) wear their painted icon like a coin; some are wider. */
+.stage .k-point {
+  object-fit: contain;
+}
+
+.stage .k-points.has b {
+  color: var(--accent);
+}
+
 .stage .k-gain {
   font-size: 13px;
   color: var(--heal);

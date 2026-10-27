@@ -64,7 +64,10 @@ test("The harvest boss falls: one Harvest window, wake as the next generation", 
   await page.getByRole("button", { name: /6 points back\?/ }).click();
   // They are spent anew in the Character Sheet.
   await page.keyboard.press("c");
-  await expect(page.getByTestId("attribute-points")).toContainText("8 Attribute Points");
+  await expect(page.getByTestId("attribute-points")).toHaveAttribute(
+    "aria-label",
+    "8 Attribute Points",
+  );
   for (const a of ["Dexterity", "Dexterity", "Intelligence"]) {
     await page.getByRole("button", { name: `Add ${a}` }).click();
   }
