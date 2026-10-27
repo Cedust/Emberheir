@@ -45,12 +45,12 @@ const SHIELD = rollItem(
   new Rng(1),
 );
 
-/** Camp, Liora present, a full wallet, the shield worn and the ring in the inventory. */
+/** Camp, Liora and Marisha present, a full wallet, the shield worn and the ring in the inventory. */
 function camp(overrides: Partial<GameState["wallet"]> = {}): GameState {
   const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
     ...s,
-    progress: { ...s.progress, trainerUnlocked: true },
+    progress: { ...s.progress, met: ["liora", "marisha"] },
     wallet: {
       ...s.wallet,
       acorns: 1000,
@@ -144,7 +144,7 @@ describe("crafting", () => {
   });
 
   it("Liora's crafts wait for her, Thoric's do not; all crafting is Camp only", () => {
-    const early = { ...camp(), progress: { ...camp().progress, trainerUnlocked: false } };
+    const early = { ...camp(), progress: { ...camp().progress, met: [] } };
     expect(craftBlockReason(early, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
       "mystic",
     );
@@ -197,7 +197,7 @@ describe("Sockets, Runes and Marisha", () => {
     const s = camp({ runes });
     return {
       ...s,
-      progress: { ...s.progress, runesmithUnlocked: true },
+      progress: { ...s.progress, met: [...s.progress.met, "nyssa"] },
       inventory: [...s.inventory, { item: AXE, x: 2, y: 0 }],
     };
   }
@@ -226,7 +226,7 @@ describe("Sockets, Runes and Marisha", () => {
       ),
     };
     expect(
-      craftBlockReason({ ...s, progress: { ...s.progress, runesmithUnlocked: false } }, data, {
+      craftBlockReason({ ...s, progress: { ...s.progress, met: [] } }, data, {
         kind: "socketRune",
         itemId: AXE.id,
         runeId: "ash",

@@ -5,6 +5,7 @@ import type { CombatRules, StatBonuses, TriggerSpec } from "../../combat/types";
 import { bossLevel, killPrice } from "../leveling";
 import { requireCamp } from "./guards";
 import { fail, type GameData, type GameState } from "./state";
+import { hasMet } from "./companions";
 
 /**
  * Ember Crucible (neuausrichtung-v1.md 8): salvaging a Legendary or Unique teaches its Power to
@@ -74,7 +75,7 @@ export function bindPower(
   powerId: string | null,
 ): GameState {
   requireCamp(state);
-  if (!state.progress.trainerUnlocked) return fail("Liora joins after the act boss falls");
+  if (!hasMet(state, "liora")) return fail("Liora joins after the act boss falls");
   const lock = crucibleLock(state, slot);
   if (lock) return fail(lock);
   const crucible = { ...state.hero.crucible };

@@ -36,13 +36,16 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // (`hero.mastery.attunement`), both optional; the account's Lineage is the
   // classes that won now, not a step (the UI fills it in again on load).
   13: { state: dropLineageStep },
+  // Camp personas met on the road (camp-personas-freischalten-v1.md): who was in the Camp stays.
+  // Kaelen and Marisha were there from the start; Liora and Nyssa had their own flags.
+  14: { state: metFromFlags },
   // Bounties v2 (bounties-v2-plan.md): Culling and Hale and Whole are gone. An open one of them
   // is dropped; a done one is paid as its successor (Trail Hunt, Dry Throat). Eldrin's Cache
   // (`bountyCache`) and the turned-in count (`stats.bounties`) are optional.
-  14: { state: renameOldBounties },
+  15: { state: renameOldBounties },
 };
 
-/** Bounties of save version 14 that are gone → the bounty a done one is paid as. */
+/** Bounties of save version 15 that are gone → the bounty a done one is paid as. */
 export const OLD_BOUNTIES: Readonly<Record<string, string>> = {
   culling: "trail-hunt",
   "hale-and-whole": "dry-throat",
@@ -67,6 +70,21 @@ function renameOldBounties(save: RawSave): RawSave {
     }
   }
   return out;
+}
+
+function metFromFlags(save: RawSave): RawSave {
+  const progress = save["progress"];
+  if (!isRecord(progress)) return save;
+  const rest = { ...progress };
+  delete rest["trainerUnlocked"];
+  delete rest["runesmithUnlocked"];
+  const met = [
+    "kaelen",
+    "marisha",
+    ...(progress["trainerUnlocked"] === true ? ["liora"] : []),
+    ...(progress["runesmithUnlocked"] === true ? ["nyssa"] : []),
+  ];
+  return { ...save, progress: { ...rest, met } };
 }
 
 function dropLineageStep(save: RawSave): RawSave {

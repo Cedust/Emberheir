@@ -21,6 +21,7 @@ import { requireCamp } from "./game/guards";
 import { addRunes, itemPickWeights, lootGate } from "./game/loot";
 import { bossLevel, killPrice } from "./leveling";
 import { type GameData, type GameState, fail, nextRng } from "./game/state";
+import { hasMet } from "./game/companions";
 import { addToGrid } from "./inventory";
 
 /**
@@ -64,7 +65,7 @@ export type CraftRequest =
 
 export type CraftKind = CraftRequest["kind"];
 
-/** Liora joins the caravan with Kaelen, after the first act boss. */
+/** Liora joins the caravan after the first act boss. */
 export const MYSTIC_CRAFTS: readonly CraftKind[] = [
   "temper",
   "kindle",
@@ -91,6 +92,8 @@ export type CraftBlockReason =
   | "mystic"
   /** Nyssa has not joined the caravan yet. */
   | "runesmith"
+  /** Marisha has not joined the caravan yet. */
+  | "merchant"
   /** Sockets and Runes are for Normal items only. */
   | "notNormal"
   | "maxSockets"
@@ -306,10 +309,9 @@ export function craftBlockReason(
   request: CraftRequest,
 ): CraftBlockReason | undefined {
   if (state.run) return "camp";
-  if (MYSTIC_CRAFTS.includes(request.kind) && !state.progress.trainerUnlocked) return "mystic";
-  if (RUNESMITH_CRAFTS.includes(request.kind) && !state.progress.runesmithUnlocked) {
-    return "runesmith";
-  }
+  if (MYSTIC_CRAFTS.includes(request.kind) && !hasMet(state, "liora")) return "mystic";
+  if (RUNESMITH_CRAFTS.includes(request.kind) && !hasMet(state, "nyssa")) return "runesmith";
+  if (request.kind === "gamble" && !hasMet(state, "marisha")) return "merchant";
   if (request.kind === "combineRunes") {
     const rune = data.items.runes.get(request.runeId);
     if (!rune) return "unknownRune";

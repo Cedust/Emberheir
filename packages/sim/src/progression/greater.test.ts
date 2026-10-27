@@ -30,7 +30,7 @@ function camp(cinderglass: number, item: Item = RING): GameState {
   const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
     ...s,
-    progress: { ...s.progress, trainerUnlocked: true },
+    progress: { ...s.progress, met: ["liora"] },
     wallet: { ...s.wallet, cinderglass },
     inventory: [{ item, x: 0, y: 0 }],
   };

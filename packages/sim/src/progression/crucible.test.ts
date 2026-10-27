@@ -35,7 +35,7 @@ function camp(extra: Partial<GameState> = {}): GameState {
   const s = newGame(data, { seed: 4, classId: "test-fighter" });
   return {
     ...s,
-    progress: { ...s.progress, trainerUnlocked: true },
+    progress: { ...s.progress, met: ["liora"] },
     wallet: { ...s.wallet, ash: 1000, emberCoal: 10 },
     ...extra,
   };

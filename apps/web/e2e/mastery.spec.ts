@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import { GAME_DATA } from "@emberheir/content";
-import { newGame, serializeGame } from "@emberheir/sim";
+import { COMPANIONS, newGame, serializeGame } from "@emberheir/sim";
 import { saveMastery, seedSave } from "./fixtures";
 
 test("Heirloom: the painted weapon, its points, a Keystone and the Echo", async ({ page }) => {
@@ -150,7 +150,7 @@ test("Attunement: a Wand's Default Attack takes another element, free", async ({
   const base = newGame(GAME_DATA, { seed: 42, classId: "emberseer", weapon: "wand" });
   await seedSave(
     page,
-    serializeGame({ ...base, progress: { ...base.progress, trainerUnlocked: true } }),
+    serializeGame({ ...base, progress: { ...base.progress, met: [...COMPANIONS] } }),
   );
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();

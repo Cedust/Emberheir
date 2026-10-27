@@ -6,6 +6,7 @@ import { type BattlePlanState } from "../battle-plan";
 import { craft, type CraftRequest } from "../crafting";
 import { type GridPosition } from "../inventory";
 import { closeBountyCache, takeBountyItem, turnInBounty } from "./bounty";
+import { dismissBlip } from "./companions";
 import {
   discard,
   equipFromInventory,
@@ -171,7 +172,9 @@ export type GameAction =
   | { readonly type: "resetAshborn" }
   /** Liora, Ember Crucible: a learned Power into its slot, or the slot emptied (`null`). */
   | { readonly type: "bindPower"; readonly slot: CrucibleSlot; readonly powerId: string | null }
-  | { readonly type: "dismissNotice" };
+  | { readonly type: "dismissNotice" }
+  /** The oldest Story Blip was shown. */
+  | { readonly type: "dismissBlip" };
 
 /** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
 export function applyAction(state: GameState, data: GameData, action: GameAction): GameState {
@@ -262,5 +265,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
       return bindPower(state, data, action.slot, action.powerId);
     case "dismissNotice":
       return { ...state, notice: null };
+    case "dismissBlip":
+      return dismissBlip(state);
   }
 }

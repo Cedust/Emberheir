@@ -5,16 +5,25 @@ import {
   Container,
   type FederatedPointerEvent,
   type FederatedWheelEvent,
-  FillGradient,
   Graphics,
   Rectangle,
+  Sprite,
   Text,
 } from "pixi.js";
+import type { HeatBehavior } from "@emberheir/sim";
 import { Fx } from "../battle/fx";
 import { type WeaponLook, drawWeapon } from "./weaponArt";
 import { type SceneWeaponArt, drawPaintedWeapon, paintedTextures } from "./paintedWeapon";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
 import { arcPath } from "../pixiShapes";
+import {
+  FORGE_BED,
+  FORGE_BOWLS,
+  FORGE_BOWL_Y,
+  FORGE_LID,
+  type ForgeTextures,
+  forgeTextures,
+} from "./forgeArt";
 
 /**
  * Weapon Mastery as a PixiJS scene, the "anatomy" look (waffe-als-system-v1.md): the painted
@@ -67,8 +76,6 @@ const KEYSTONE = 0xff8a1f;
 const EMBER = 0xff8a3a;
 const GOLD = 0xffd27a;
 const DIM = 0x4f4842;
-const IRON: readonly string[] = ["#4a4f58", "#2a2d33", "#16171a", "#0c0c0e"];
-const STONE: readonly string[] = ["#6a6058", "#3e3832", "#221e1a"];
 /** The weapon is painted this much thicker than its axis length would give. */
 const ART_SCALE = 1.22;
 /** Stage pixels kept free at the top for the nameplate. */
@@ -114,7 +121,20 @@ interface NodeSprite {
   readonly g: Graphics;
   readonly flame: Graphics;
   readonly name: Text;
+  /** A Heat Form's painted icon in its bowl, and the lid on a bowl that is not open yet. */
+  icon?: Sprite;
+  lid?: Sprite;
   view: MasteryNodeView;
+}
+
+/** Where the painted forge lies, in stage pixels; bowls sit on the Heat Form nodes. */
+interface ForgeGeometry {
+  readonly left: number;
+  readonly top: number;
+  readonly w: number;
+  readonly h: number;
+  /** The bowls' row (the Heat Form nodes' y). */
+  readonly y: number;
 }
 
 const reducedMotion = () =>
@@ -125,6 +145,13 @@ export class MasteryScene {
   private destroyed = false;
   private readonly world = new Container();
   private readonly forgeBed = new Graphics();
+  /** The painted forge behind the Heat Form icons, its front rims over them, lids and names on top. */
+  private readonly forgeBack = new Container();
+  private readonly forgeFront = new Container();
+  private readonly forgeTop = new Container();
+  private forgeTex: ForgeTextures | null = null;
+  private forge: ForgeGeometry | null = null;
+  private hoverId: string | null = null;
   private readonly filigreeGlow = new Graphics();
   /** The blurred glow baked into a texture: the blur runs on a redraw, not in every frame. */
   private readonly filigreeGlowBake = new Container();
@@ -175,13 +202,18 @@ export class MasteryScene {
     this.filigreeGlow.filters = [new BlurFilter({ strength: 4, quality: 2 })];
     this.filigreeGlowBake.blendMode = "add";
     this.filigreeGlowBake.addChild(this.filigreeGlowRoom, this.filigreeGlow);
+    this.forgeFront.eventMode = "none";
+    this.forgeTop.eventMode = "none";
     this.world.addChild(
       this.forgeBed,
+      this.forgeBack,
       this.labelLayer,
       this.filigreeGlowBake,
       this.filigree,
       this.weaponLayer,
       this.nodeLayer,
+      this.forgeFront,
+      this.forgeTop,
     );
   }
 
@@ -254,8 +286,15 @@ export class MasteryScene {
     if (key === this.viewKey && this.app) return;
     this.viewKey = this.app ? key : "";
     const before = new Map(this.view?.nodes.map((n) => [n.node.id, n]) ?? []);
+    const burning = (nodes: readonly MasteryNodeView[]) =>
+      nodes.find((n) => n.node.kind === "heatForm" && (n.state === "learned" || n.pending));
+    const oldForm = this.view && burning(this.view.nodes);
     this.view = view;
     this.rebuild();
+    const newForm = burning(view.nodes);
+    if (oldForm && newForm && oldForm.node.id !== newForm.node.id) {
+      this.leap(oldForm.node, newForm);
+    }
     for (const n of view.nodes) {
       const old = before.get(n.node.id);
       if (!old) continue;
@@ -294,6 +333,9 @@ export class MasteryScene {
     if (!v?.nodes.length) return;
     const xs = [...v.nodes.map((n) => n.node.x), v.pommel.x, v.tip.x];
     const ys = [...v.nodes.map((n) => n.node.y), v.pommel.y, v.tip.y];
+    // The painted forge and its title reach about a unit below the Heat Forms.
+    const form = v.nodes.find((n) => n.node.kind === "heatForm");
+    if (form) ys.push(form.node.y + 1);
     const [minX, maxX, minY, maxY] = [
       Math.min(...xs) * U - 90,
       Math.max(...xs) * U + 90,
@@ -484,6 +526,7 @@ export class MasteryScene {
     }
     for (const [id, s] of this.sprites) {
       if (seen.has(id)) continue;
+      if (s.name.parent !== s.root) s.name.destroy();
       s.root.destroy({ children: true });
       this.sprites.delete(id);
     }
@@ -570,81 +613,48 @@ export class MasteryScene {
     }
   }
 
+  /**
+   * Timo's painted forge (forgeArt.ts) under the weapon: its four bowls sit on the Heat Form
+   * nodes, which put their icons into the coals (drawNode); the chosen one burns (drawFlame).
+   */
   private drawForge(v: MasteryView): void {
+    const tex = forgeTextures();
+    if (tex instanceof Promise) {
+      void tex.then(() => {
+        if (this.app && this.view) this.rebuild();
+      });
+      return;
+    }
+    if (!this.forgeTex) {
+      this.forgeTex = tex;
+      this.forgeBack.addChild(new Sprite(tex.forge));
+      this.forgeFront.addChild(new Sprite(tex.front));
+    }
     const forms = v.nodes.filter((n) => n.node.kind === "heatForm");
-    const chosen = forms.find((n) => n.state === "learned" || n.pending);
-    const color = chosen ? this.colorOf(chosen) : EMBER;
-    const xs = forms.map((n) => n.node.x * U);
-    const y = (forms[0]?.node.y ?? 4.3) * U;
-    const [x0, x1] = [Math.min(...xs, 0) - 70, Math.max(...xs, 0) + 70];
-    // The forge light itself is CSS behind the canvas (cheap on weak GPUs), see MasteryTab.
-    // An iron fire trough on stone feet, a bed of coals whose cracks glow in the Heat Form's
-    // colour, the flames of the forms burning out of it.
-    const bed = this.forgeBed.clear();
-    const top = y + 6;
-    const depth = 40;
-    const lip = 14;
-    // Soft shadow on the floor.
-    bed.ellipse((x0 + x1) / 2, top + depth + 10, (x1 - x0) / 2 + 30, 16).fill({
-      color: 0x000000,
-      alpha: 0.45,
-    });
-    // Stone feet.
-    for (const fx of [x0 + 30, x1 - 30]) {
-      bed.roundRect(fx - 16, top + depth - 6, 32, 20, 4).fill(this.gradient(STONE));
-      bed.roundRect(fx - 16, top + depth - 6, 32, 20, 4).stroke({ color: 0x0b0705, width: 2 });
-    }
-    // The trough: wider at the rim, iron with a bronze lip and rivets.
-    const body = [x0 - lip, top, x1 + lip, top, x1 - 8, top + depth, x0 + 8, top + depth];
-    bed.poly(body).fill(this.gradient(IRON));
-    bed.poly(body).stroke({ color: 0x0b0705, width: 3 });
-    for (let k = 0; k <= 8; k++) {
-      const rx = x0 + 4 + ((x1 - x0 - 8) * k) / 8;
-      bed.circle(rx, top + depth * 0.55, 2.6).fill(0x8a5a22);
-      bed.circle(rx - 0.8, top + depth * 0.55 - 0.8, 1).fill({ color: 0xffe0a0, alpha: 0.7 });
-    }
-    // Coals heaped above the rim: dark lumps with glowing cracks.
-    const coalTop = top - 10;
-    bed.ellipse((x0 + x1) / 2, top + 2, (x1 - x0) / 2 + lip - 4, 12).fill(0x0e0806);
-    let seed = 7;
-    const rnd = () => {
-      seed = (seed * 16807) % 2147483647;
-      return seed / 2147483647;
+    const [a, b] = forms;
+    if (!a || !b) return;
+    // Sized so its bowls lie exactly as far apart as the Heat Form nodes.
+    const w = ((b.node.x - a.node.x) * U) / ((FORGE_BOWLS[1] ?? 0) - (FORGE_BOWLS[0] ?? 0));
+    const h = (w * tex.forge.height) / tex.forge.width;
+    const y = a.node.y * U;
+    const g = {
+      left: a.node.x * U - (FORGE_BOWLS[0] ?? 0) * w,
+      top: y - FORGE_BOWL_Y * h,
+      w,
+      h,
+      y,
     };
-    for (let k = 0; k < 34; k++) {
-      const cx = x0 - lip + 10 + rnd() * (x1 - x0 + lip * 2 - 20);
-      const cy = coalTop + rnd() * 16;
-      const r = 7 + rnd() * 7;
-      const pts: number[] = [];
-      for (let p = 0; p < 6; p++) {
-        const a = (p / 6) * Math.PI * 2 + rnd() * 0.5;
-        const rr = r * (0.7 + rnd() * 0.4);
-        pts.push(cx + Math.cos(a) * rr, cy + Math.sin(a) * rr * 0.7);
-      }
-      const hot = rnd() < 0.45;
-      bed.poly(pts).fill(hot ? 0x3a160c : 0x1a1210);
-      bed.poly(pts).stroke({ color: hot ? color : 0x2a1a12, width: hot ? 1.6 : 1, alpha: 0.9 });
-      if (hot) bed.circle(cx, cy, r * 0.35).fill({ color, alpha: 0.55 });
+    this.forge = g;
+    for (const layer of [this.forgeBack, this.forgeFront]) {
+      const sprite = layer.children[0];
+      sprite?.position.set(g.left, g.top);
+      sprite?.setSize(w, h);
     }
-    // Bronze lip in front of the coals.
-    bed
-      .moveTo(x0 - lip, top)
-      .lineTo(x1 + lip, top)
-      .stroke({ color: 0xc9a063, width: 4 });
-    bed
-      .moveTo(x0 - lip, top - 1.5)
-      .lineTo(x1 + lip, top - 1.5)
-      .stroke({ color: 0xfff0c8, width: 1, alpha: 0.4 });
-  }
-
-  private gradient(stops: readonly string[]): FillGradient {
-    return new FillGradient({
-      type: "linear",
-      start: { x: 0, y: 0 },
-      end: { x: 0, y: 1 },
-      colorStops: stops.map((c, k) => ({ offset: k / (stops.length - 1), color: c })),
-      textureSpace: "local",
-    });
+    // A soft shadow on the floor.
+    this.forgeBed
+      .clear()
+      .ellipse(g.left + w / 2, g.top + h - 4, w / 2 + 24, 14)
+      .fill({ color: 0x000000, alpha: 0.5 });
   }
 
   /**
@@ -832,7 +842,7 @@ export class MasteryScene {
 
   private drawLabels(v: MasteryView): void {
     // Labels depend only on the weapon's paths: rebuilt when the weapon changes.
-    const key = `${v.weaponId}:${v.paths.map((p) => p.id).join()}`;
+    const key = `${v.weaponId}:${v.paths.map((p) => p.id).join()}:${this.forge ? 1 : 0}`;
     if (key === this.labelKey) return;
     this.labelKey = key;
     for (const t of this.labels) t.destroy();
@@ -866,7 +876,9 @@ export class MasteryScene {
       );
     }
     const forms = v.nodes.filter((n) => n.node.kind === "heatForm");
-    if (forms[0]) add("HEAT FORM", 0, forms[0].node.y * U + 74, EMBER, 15);
+    const forge = this.forge;
+    if (forms[0] && forge)
+      add("HEAT FORM", forge.left + forge.w / 2, forge.top + forge.h + 16, EMBER, 15);
     const seals = v.nodes.filter((n) => n.node.kind === "innateForm");
     if (seals.length) {
       // Above the middle seal, a little further out from the weapon.
@@ -886,7 +898,11 @@ export class MasteryScene {
     root.eventMode = "static";
     root.cursor = "pointer";
     const r = RADIUS[n.node.kind] + 8;
-    root.hitArea = new Rectangle(-r, -r, r * 2, r * 2);
+    // A Heat Form is its bowl and the icon standing in it.
+    root.hitArea =
+      n.node.kind === "heatForm"
+        ? new Rectangle(-r * 1.8, -r * 3.4, r * 3.6, r * 4.4)
+        : new Rectangle(-r, -r, r * 2, r * 2);
     const flame = new Graphics();
     flame.blendMode = "add";
     const g = new Graphics();
@@ -906,9 +922,13 @@ export class MasteryScene {
     root.on("pointertap", () => this.tap(n.node.id));
     root.on("pointerover", () => {
       const p = root.getGlobalPosition();
+      this.hoverId = n.node.id;
       this.callbacks.onHover(n.node.id, p.x, p.y);
     });
-    root.on("pointerout", () => this.callbacks.onHover(null, 0, 0));
+    root.on("pointerout", () => {
+      this.hoverId = null;
+      this.callbacks.onHover(null, 0, 0);
+    });
     this.nodeLayer.addChild(root);
     return { root, g, flame, name, view: n };
   }
@@ -936,7 +956,9 @@ export class MasteryScene {
     if (lit && kind !== "heatForm") {
       for (let i = 3; i > 0; i--) g.circle(0, 0, r + 4 + i * 5).fill({ color, alpha: 0.08 });
     }
-    if (n.selected) g.circle(0, 0, r + 8).stroke({ color: 0xfff3d6, width: 2, alpha: 0.9 });
+    if (n.selected && kind !== "heatForm") {
+      g.circle(0, 0, r + 8).stroke({ color: 0xfff3d6, width: 2, alpha: 0.9 });
+    }
 
     switch (kind) {
       case "refine": {
@@ -1017,21 +1039,9 @@ export class MasteryScene {
         else g.circle(0, 0, r * 0.55).stroke({ color, width: 2, alpha: dim ? 0.5 : 0.9 });
         break;
       }
-      case "heatForm": {
-        // A brazier on the coal bed; the chosen Heat Form burns (animated in tick).
-        // A glowing ring set into the coals.
-        g.ellipse(0, r * 0.7, r * 0.95, r * 0.34).fill({ color: 0x1a0e08 });
-        g.ellipse(0, r * 0.7, r * 0.95, r * 0.34).stroke({
-          color: dim ? 0x4a3828 : lit ? color : 0xa8732e,
-          width: 2.5,
-        });
-        if (!lit) {
-          g.moveTo(-r * 0.4, r * 0.5)
-            .quadraticCurveTo(0, -r * 0.6, r * 0.4, r * 0.5)
-            .stroke({ color, width: 2.5, alpha: dim ? 0.6 : 0.9 });
-        }
+      case "heatForm":
+        this.drawBowl(s, lit, dim);
         break;
-      }
       case "innateForm": {
         // A rune seal: wax-red disc with a glyph.
         const idx = this.view?.nodes.filter((v) => v.node.kind === "innateForm").indexOf(n) ?? 0;
@@ -1057,6 +1067,7 @@ export class MasteryScene {
     const always = kind !== "technique" && kind !== "refine";
     s.name.visible = always || n.selected;
     s.name.position.set(0, r + (kind === "refine" ? 14 : 8));
+    if (kind === "heatForm") this.placeBowlName(s);
     // Text styles re-render their texture: only touch them when they change.
     const fill = lit ? 0xfff0c8 : dim ? 0x9a8c78 : 0xecdfc4;
     const fontSize = kind === "notable" || kind === "keystone" || kind === "master" ? 14 : 12;
@@ -1183,30 +1194,154 @@ export class MasteryScene {
     }
   }
 
-  /** The chosen Heat Form burns; the others glow as embers. */
+  /**
+   * A Heat Form's bowl in the painted forge: its icon stands in the coals, a lid closes the bowl
+   * until the Weapon Rank opens it. The ring around the rim marks the selected or open bowl.
+   */
+  private drawBowl(s: NodeSprite, lit: boolean, dim: boolean): void {
+    const tex = this.forgeTex;
+    const forge = this.forge;
+    const behavior: HeatBehavior | undefined = s.view.node.effect.heatForm;
+    if (!tex || !forge || !behavior) return;
+    const a = FORGE_BED.a * forge.w;
+    const b = FORGE_BED.b * forge.w;
+    if (!s.icon) {
+      s.icon = new Sprite(tex.icons[behavior]);
+      s.icon.anchor.set(0.5, 0.86);
+      s.root.addChildAt(s.icon, s.root.getChildIndex(s.g) + 1);
+    }
+    if (!s.lid) {
+      s.lid = new Sprite(tex.lid);
+      s.lid.anchor.set(0.5, 0.58);
+      this.forgeTop.addChild(s.lid);
+    }
+    const size = a * 1.9;
+    s.icon.setSize(size, size);
+    s.icon.position.set(0, b * 0.35);
+    const closed = s.view.state === "locked";
+    s.icon.visible = !closed;
+    s.lid.visible = closed;
+    s.lid.position.set(s.root.x, s.root.y - b * 0.2);
+    s.lid.scale.set((FORGE_LID * forge.w) / tex.lid.width);
+    const g = s.g;
+    if (s.view.selected) {
+      g.ellipse(0, 0, a + 9, b + 7).stroke({ color: 0xfff3d6, width: 2, alpha: 0.9 });
+    } else if (!lit && !dim && !closed) {
+      g.ellipse(0, 0, a + 6, b + 5).stroke({ color: this.colorOf(s.view), width: 2, alpha: 0.5 });
+    }
+  }
+
+  /** A Heat Form's name, carved on the forge's stones under its bowl (over the front piece). */
+  private placeBowlName(s: NodeSprite): void {
+    const forge = this.forge;
+    if (!forge) return;
+    if (s.name.parent !== this.forgeTop) this.forgeTop.addChild(s.name);
+    s.name.anchor.set(0.5);
+    s.name.visible = true;
+    s.name.position.set(s.root.x, forge.y + forge.w * 0.118);
+    s.name.alpha = s.view.state === "locked" ? 0.7 : 1;
+  }
+
+  /** The chosen Heat Form burns in its bowl; the others glimmer, brighter under the pointer. */
   private drawFlame(s: NodeSprite): void {
     const f = s.flame.clear();
+    const forge = this.forge;
+    if (!forge) return;
     const n = s.view;
-    const r = RADIUS.heatForm;
-    const color = this.colorOf(n);
+    // The fire keeps the form's own colour, also while the choice waits to be confirmed.
+    const color = HEAT_FORM_COLOR[n.node.id] ?? EMBER;
     const lit = n.state === "learned" || n.pending;
+    const hovered = this.hoverId === n.node.id;
     const t = this.motion ? this.time : 0;
+    const a = FORGE_BED.a * forge.w;
+    const b = FORGE_BED.b * forge.w;
+    if (s.icon) s.icon.tint = lit ? 0xffffff : hovered ? 0xb4a494 : 0x443b35;
     if (!lit) {
-      f.circle(0, r * 0.55, r * 0.35).fill({
+      if (n.state === "locked") return;
+      f.ellipse(0, 0, a * 0.7, b * 0.6).fill({
         color: EMBER,
-        alpha: 0.18 + 0.06 * Math.sin(t * 2 + r),
+        alpha: (hovered ? 0.32 : 0.14) + 0.05 * Math.sin(t * 2 + n.node.x),
       });
       return;
     }
-    for (let i = 0; i < 3; i++) {
-      const h = r * (2.1 - i * 0.45) * (1 + 0.12 * Math.sin(t * (7 + i * 3) + i));
-      const w = r * (0.95 - i * 0.22);
-      const sway = Math.sin(t * (5 + i) + i * 2) * 4;
-      f.moveTo(-w, r * 0.6)
-        .bezierCurveTo(-w * 1.1, -h * 0.3, sway - w * 0.2, -h * 0.7, sway, -h + r * 0.6)
-        .bezierCurveTo(sway + w * 0.2, -h * 0.7, w * 1.1, -h * 0.3, w, r * 0.6)
-        .fill({ color: i === 2 ? 0xfff3d6 : color, alpha: i === 0 ? 0.45 : i === 1 ? 0.6 : 0.8 });
+    // The coals glow in the form's colour and light the forge around the bowl.
+    for (let i = 1; i <= 6; i++) {
+      f.ellipse(0, -a * 0.5, a * (0.6 + i * 0.22), a * (0.5 + i * 0.2)).fill({
+        color,
+        alpha: 0.03,
+      });
     }
+    f.ellipse(0, 0, a, b).fill({ color, alpha: 0.55 });
+    f.ellipse(0, 0, a * 0.6, b * 0.6).fill({
+      color: 0xfff3d6,
+      alpha: 0.35 + 0.1 * Math.sin(t * 4.3),
+    });
+    // Tongues of fire behind the icon: a wide outer flame, smaller ones flickering at its sides,
+    // a white-hot core.
+    const tongues = [
+      { x: 0, w: 0.85, h: 2.1, alpha: 0.22, core: false },
+      { x: -0.45, w: 0.4, h: 1.4, alpha: 0.3, core: false },
+      { x: 0.45, w: 0.4, h: 1.5, alpha: 0.3, core: false },
+      { x: 0, w: 0.55, h: 1.6, alpha: 0.38, core: false },
+      { x: 0, w: 0.28, h: 1.0, alpha: 0.55, core: true },
+    ];
+    const base = b * 0.3;
+    tongues.forEach((tg, i) => {
+      const h = a * tg.h * (1 + 0.14 * Math.sin(t * (7 + i * 2.3) + i * 1.7));
+      const w = a * tg.w;
+      const x = a * tg.x;
+      const sway = Math.sin(t * (4.5 + i) + i * 2) * a * 0.12;
+      f.moveTo(x - w, base)
+        .bezierCurveTo(
+          x - w * 1.15,
+          base - h * 0.5,
+          x + sway - w * 0.55,
+          base - h * 0.95,
+          x + sway,
+          base - h,
+        )
+        .bezierCurveTo(
+          x + sway + w * 0.55,
+          base - h * 0.95,
+          x + w * 1.15,
+          base - h * 0.5,
+          x + w,
+          base,
+        )
+        .fill({ color: tg.core ? 0xfff3d6 : color, alpha: tg.alpha });
+    });
+  }
+
+  /** Switching the Heat Form: a spark leaps from the old bowl into the new one. */
+  private leap(from: MasteryNode, to: MasteryNodeView): void {
+    const fx = this.fx;
+    if (!fx || !this.motion) return;
+    const a = this.pos(from);
+    const b = this.pos(to.node);
+    const color = this.colorOf(to);
+    const lift = 50 + Math.abs(b.x - a.x) * 0.25;
+    const dot = new Graphics().circle(0, 0, 9).fill({ color, alpha: 0.6 });
+    dot.circle(0, 0, 4).fill({ color: 0xffffff });
+    dot.blendMode = "add";
+    fx.shape(
+      dot,
+      0.45,
+      (t) => {
+        const x = a.x + (b.x - a.x) * t;
+        const y = a.y - 10 + (b.y - a.y) * t - Math.sin(Math.PI * t) * lift;
+        dot.position.set(x, y);
+        fx.burst({
+          x,
+          y,
+          count: 1,
+          color: [color, GOLD],
+          speed: [5, 30],
+          life: [0.2, 0.45],
+          size: [5, 10],
+        });
+      },
+      "front",
+    );
   }
 
   private forgeEmbers(v: MasteryView): void {
@@ -1214,13 +1349,28 @@ export class MasteryScene {
     const forms = v.nodes.filter((n) => n.node.kind === "heatForm");
     const chosen = forms.find((n) => n.state === "learned" || n.pending);
     const p = chosen ? this.pos(chosen.node) : { x: 0, y: 4.3 * U };
-    const color = chosen ? this.colorOf(chosen) : EMBER;
+    const color = chosen ? (HEAT_FORM_COLOR[chosen.node.id] ?? EMBER) : EMBER;
+    const bed = this.forge ? FORGE_BED.a * this.forge.w : 30;
+    // Soft flames lick up out of the bowl, embers fly higher.
+    this.fx.burst({
+      x: p.x,
+      y: p.y - 4,
+      count: 2,
+      color: [color, 0xfff3d6],
+      spreadX: bed * 0.6,
+      speed: [40, 90],
+      angle: [-Math.PI / 2 - 0.2, -Math.PI / 2 + 0.2],
+      life: [0.35, 0.7],
+      size: [bed * 0.5, bed * 0.9],
+      endSize: 0.1,
+      alpha: 0.6,
+    });
     this.fx.burst({
       x: p.x,
       y: p.y - 10,
       count: 1,
       color: [color, GOLD, EMBER],
-      spreadX: 14,
+      spreadX: bed * 0.7,
       speed: [50, 120],
       angle: [-Math.PI / 2 - 0.35, -Math.PI / 2 + 0.35],
       life: [0.8, 1.6],

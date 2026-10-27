@@ -103,7 +103,7 @@ describe("Prestige branches", () => {
 
   it("their nodes are locked until the branch is unlocked, then give bonuses and triggers", () => {
     const locked = { ...pending(), pendingPrestige: null };
-    const camp = { ...locked, progress: { ...locked.progress, trainerUnlocked: true } };
+    const camp: GameState = { ...locked, progress: { ...locked.progress, met: ["liora"] } };
     expect(() => applyAction(camp, data, { type: "learnNodes", nodeIds: ["pb-guard"] })).toThrow(
       /branchLocked/,
     );
@@ -162,7 +162,7 @@ describe("Prestige branch tiers", () => {
       ...s,
       pendingPrestige: null,
       hero: { ...s.hero, unspentSkillPoints: points },
-      progress: { ...s.progress, trainerUnlocked: true },
+      progress: { ...s.progress, met: ["liora"] },
       legacy: { ...s.legacy, branches },
     };
   };

@@ -9,13 +9,20 @@ import {
   applyAction,
   learnBlockReason,
   learnNodes,
-  newGame,
+  newGame as freshGame,
+  COMPANIONS,
   omenOffer,
   rollItem,
   rollUnique,
   Rng,
   serializeGame,
 } from "@emberheir/sim";
+
+/** A new game in which the caravan is complete (every persona met on the road already). */
+const newGame = (...args: Parameters<typeof freshGame>): GameState => {
+  const s = freshGame(...args);
+  return { ...s, progress: { ...s.progress, met: [...COMPANIONS] } };
+};
 
 /** A save right after Gorrak fell in the first run (the harvest boss), in a Rare Body Armor. */
 export function saveAfterHarvestBoss(): string {
@@ -37,7 +44,7 @@ export function saveAfterHarvestBoss(): string {
       equipment: { ...base.hero.equipment, body: armor },
     },
     wallet: { ...base.wallet, acorns: 400, ash: 380, emberCoal: 6, phoenixFeathers: 1 },
-    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"] },
     stats: { fights: 16, wins: 15, deaths: 1, retreats: 0, bossKills: 1 },
     pendingPrestige: { actId: "ashen-fields", stage: 15, enemyName: "Gorrak, the Pit Brute" },
   };
@@ -61,7 +68,7 @@ export function saveAfterAct1(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15, unspentSkillPoints: 5 },
-    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"] },
     legacy: { ...base.legacy, prestige: 1 },
   };
   return serializeGame(state);
@@ -83,8 +90,6 @@ export function saveWithRunes(): string {
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields"],
-      trainerUnlocked: true,
-      runesmithUnlocked: true,
     },
     legacy: { ...base.legacy, prestige: 1, runesFound: ["ash"] },
   };
@@ -108,7 +113,7 @@ export function saveWithCodex(): string {
     hero: { ...base.hero, level: 20 },
     wallet: { ...base.wallet, ash: 400, emberCoal: 4 },
     inventory: [{ item: ring, x: 0, y: 0 }],
-    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"] },
     legacy: {
       ...base.legacy,
       prestige: 1,
@@ -135,7 +140,7 @@ export function saveGreater(): string {
   };
   return serializeGame({
     ...camp,
-    progress: { ...camp.progress, trainerUnlocked: true },
+    progress: { ...camp.progress },
     wallet: { ...camp.wallet, cinderglass: 10 },
     inventory: [{ item: ring, x: 0, y: 0 }],
   });
@@ -156,7 +161,7 @@ export function saveCrucible(): string {
   };
   return serializeGame({
     ...camp,
-    progress: { ...camp.progress, trainerUnlocked: true },
+    progress: { ...camp.progress },
     wallet: { ...camp.wallet, ash: 5000, emberCoal: 20 },
     inventory: [{ item: ring, x: 0, y: 0 }],
     powerCodex: { "leech-bloom": 7 },
@@ -182,7 +187,7 @@ export function saveBossHoard(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 30 },
-    progress: { ...base.progress, actsCleared: ["ashen-fields"], trainerUnlocked: true },
+    progress: { ...base.progress, actsCleared: ["ashen-fields"] },
     legacy: { ...base.legacy, prestige: 2, trophies: ["thornsong"] },
     run: {
       actId: act.id,
@@ -295,7 +300,6 @@ function lateGame(prestige: number): GameState {
     progress: {
       ...base.progress,
       actsCleared: GAME_DATA.acts.map((a) => a.id),
-      trainerUnlocked: true,
       rotationSlots: 4,
     },
     stats: { fights: 2841, wins: 2790, deaths: 51, retreats: 4, bossKills: 88 },
@@ -361,7 +365,7 @@ export function saveDeepTree(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 75, learned, unspentSkillPoints: 6 },
-    progress: { ...base.progress, actsCleared: [], trainerUnlocked: true, rotationSlots: 4 },
+    progress: { ...base.progress, actsCleared: [], rotationSlots: 4 },
     legacy: { ...base.legacy, prestige: 5, branches },
   };
   return serializeGame(state);
@@ -397,7 +401,6 @@ export function saveMastery(extra: readonly string[] = []): string {
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields", "rotwood", "ember-wastes"],
-      trainerUnlocked: true,
     },
     legacy: {
       ...base.legacy,
@@ -435,7 +438,7 @@ export function saveWebTree(runes: Readonly<Record<string, number>> = {}): strin
     ...base,
     hero: { ...base.hero, level: 12, unspentSkillPoints: 8 },
     wallet: { ...base.wallet, acorns: 5000, runes },
-    progress: { ...base.progress, trainerUnlocked: true },
+    progress: { ...base.progress },
   });
 }
 
@@ -658,4 +661,10 @@ export function saveAtHuntFork(prowlerKills = 12): string {
 export function saveHunter(): string {
   const state = JSON.parse(saveAfterAct1()) as GameState;
   return serializeGame({ ...state, legacy: { ...state.legacy, hunts: HUNT_KILLS } });
+}
+
+/** The first Camp of a new Heir, nobody met on the road yet; `blips` wait to be shown. */
+export function saveFirstCamp(blips: GameState["blips"] = []): string {
+  const base = freshGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
+  return serializeGame({ ...base, blips });
 }

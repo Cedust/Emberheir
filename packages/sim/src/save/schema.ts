@@ -2,7 +2,7 @@ import { z } from "zod";
 import { ATTRIBUTES } from "../combat/types";
 import { EQUIPMENT_SLOTS, ITEM_SLOTS, type Item, RARITIES } from "../items/types";
 import type { PlacedItem } from "../progression/inventory";
-import { type GameState, NODE_KINDS } from "../progression/game/state";
+import { COMPANIONS, type GameState, NODE_KINDS, STORY_BLIPS } from "../progression/game/state";
 
 /**
  * The shape of a save game (zod). `deserializeGame` parses every save with it, so a broken or
@@ -274,13 +274,14 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
   progress: z.object({
     actsCleared: z.array(id),
     deathsInAct: count,
-    trainerUnlocked: z.boolean(),
     rotationSlots: count,
-    runesmithUnlocked: z.boolean(),
+    met: z.array(z.enum(COMPANIONS)),
+    marishaMeetings: opt(count),
     waymarks: z.array(z.string()),
   }),
   run: run.nullable(),
   notice: notice.nullable(),
+  blips: opt(z.array(z.enum(STORY_BLIPS))),
   stats: z.object({
     fights: count,
     wins: count,

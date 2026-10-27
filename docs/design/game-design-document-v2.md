@@ -95,7 +95,7 @@ Endgame **Wildfire I–X**.
   | Hearth | nein | Rast +25 % Life (Dry Season +60 %) **oder** +1 Flask-Ladung |
   | Cache | nein | ein Item-Pick, eine Rune oder Ember Coal |
   | Event | nein | eins von 8 Events (`content/src/events.ts`), jedes mit freiem **Walk On**; was man nicht bezahlen kann, ist ausgegraut mit Tooltip. Kein Preis nimmt mehr als die Hälfte einer Schicht |
-  | Marisha | nein | Gamble für 3 zufällige Slots, 25 % günstiger als im Camp; höchstens einmal pro Karte, im zweiten Abschnitt |
+  | Marisha | nein | Gamble für 3 zufällige Slots, 25 % günstiger als im Camp; höchstens einmal pro Karte, im zweiten Abschnitt (sicher, solange sie noch nicht im Camp ist) |
   | Hunt | ja | ein gewählter Gegner des Acts (der mit den wenigsten Kills), ohne Elite/Thief; zählt 2× für seinen Trail und gibt immer einen Item-Pick. 0–2 pro Karte (mit offener Trail-Hunt-Bounty einer mehr, nach ihrem Gegner), nicht im Wildfire (siehe 2.3 Hunts) |
 
   Events: Smoldering Altar (−20 % Life → Rune einen Rang höher), Ember Spring (+30 % Life oder +1 Flask), Trapped
@@ -222,8 +222,14 @@ Endgame **Wildfire I–X**.
 
 - **Hearthfire** (Legacy): Worn Gear, **Collections** (Trophy Wall, Runeword Codex, Trigger Codex, Bestiary: links Fortschritt
   und Belohnung, rechts die gewählte Sammlung im Detail) und Lineage, alles, was das Feuer übersteht.
+- **Wer ab wann dabei ist** (`notes/camp-personas-freischalten-v1.md`, Timo 27.10.2026): ab Start nur Old Nan, Thoric,
+  Eldrin (plus Hearthfire, Supply Wagon). Die anderen trifft man unterwegs, jedes Treffen ist ein **Story Blip**
+  (gemaltes Portrait, eine Zeile, ein Knopf, einmal pro Save): **Kaelen** + Training Dummy nach dem ersten
+  gewonnenen Waymark-Kampf (kommt zu spät), **Marisha** beim dritten Treffen auf ihrem Karten-Knoten (bis dahin auf
+  jeder Karte sicher, drei kleine Szenen; ihr Camp-Gamble erst danach), **Liora** nach dem ersten Act-Boss, **Nyssa**
+  nach dem ersten gewonnenen Kampf in Rotwood. Wer einmal dabei ist, bleibt über jedes Prestige.
 - **Bedienung:** Ein Klick auf eine Persona öffnet ihr Fenster; Hover zeigt ein Namensschild. Personas, die noch nicht
-  zur Karawane gestoßen sind (Liora, Nyssa), stehen erst im Camp, wenn sie da sind. Marker über den Köpfen
+  zur Karawane gestoßen sind, stehen erst im Camp, wenn sie da sind. Marker über den Köpfen
   zeigen wartende Punkte (Heir: Attribute Points, Kaelen: Skill/Mastery Points) und eine fertige Bounty (Eldrin „!“).
   Unten im Camp stehen nur die Act-Leiste und Set Out; braucht der Zug noch ein Omen, öffnet Set Out Eldrins Fenster.
 - **Werkstätten** (Thoric, Liora, Nyssa, Marisha): links die Persona mit Spruch und ihren Diensten als Kacheln, in der

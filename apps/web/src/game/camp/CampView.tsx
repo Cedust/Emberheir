@@ -6,6 +6,7 @@ import {
   LINEAGE_STEPS,
   masteryPointsLeft,
   nextAct,
+  hasMet,
 } from "@emberheir/sim";
 import { Icon } from "../../ui/Icon";
 import { KeyHint } from "../../ui/kit/Button";
@@ -179,7 +180,7 @@ export function CampView(props: {
             w={size.w}
             h={size.h - 64}
             ox={ox}
-            lights={campLights({ orb: state.progress.trainerUnlocked })}
+            lights={campLights({ orb: hasMet(state, "liora") })}
           />
         </div>
 

@@ -141,14 +141,14 @@ describe("version 10: element attacks", () => {
   });
 });
 
-describe("version 15: Bounties v2", () => {
+describe("version 16: Bounties v2", () => {
   it("pays a done Culling as a Trail Hunt and drops an open Hale and Whole", () => {
     const s = act(start(), { type: "setOut", actId: "test-act" });
     const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
     const run = raw["run"] as Record<string, unknown>;
     const old = {
       ...raw,
-      version: 14,
+      version: 15,
       bountyDone: { id: "culling", enemyId: "weakling", actId: "test-act" },
       run: { ...run, bounty: { id: "hale-and-whole", progress: 0, status: "open" } },
     };

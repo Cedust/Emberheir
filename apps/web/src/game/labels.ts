@@ -64,6 +64,7 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   emberCoal: "Not enough Ember Coal",
   phoenixFeathers: "Not enough Phoenix Feathers",
   runesmith: "Nyssa is not here yet",
+  merchant: "Marisha is not here yet",
   notNormal: "Only Normal items take Sockets and Runes",
   maxSockets: "No more Sockets fit this base",
   hasRunes: "Runes are already socketed",

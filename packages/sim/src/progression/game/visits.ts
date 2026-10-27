@@ -18,6 +18,7 @@ import {
 } from "./act-map";
 import { getAct, stageMonsterLevel } from "./acts";
 import { getBounty } from "./bounty";
+import { hasMet, meetMarisha } from "./companions";
 import { flaskCapacity } from "./flask";
 import { requireRun } from "./guards";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
@@ -58,6 +59,7 @@ export function mapOptions(state: GameState, data: GameData, run: RunState): Map
     shrines: shrinesBurn(state, data, run),
     thief: data.thief !== undefined && goal === "thief",
     events: (data.events?.length ?? 0) > 0,
+    ...(hasMet(state, "marisha") ? {} : { marisha: true }),
     ...(hunts.hunts && goal === "trail" && bounty?.enemyId
       ? { hunts: { ...hunts.hunts, bounty: bounty.enemyId } }
       : hunts),
@@ -182,7 +184,11 @@ export function enterNode(state: GameState, data: GameData, run: RunState): Game
         const [slot] = pool.splice(rng.int(0, pool.length - 1), 1);
         if (slot) slots.push(slot);
       }
-      return { ...next, run: { ...run, visit: { kind: "marisha", slots, bought: [] } } };
+      // Before she joined the caravan, every meeting on the road is one of her scenes.
+      return meetMarisha({
+        ...next,
+        run: { ...run, visit: { kind: "marisha", slots, bought: [] } },
+      });
     }
     default:
       return { ...next, run: { ...run, visit: { kind: node.kind } } };

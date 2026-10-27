@@ -6,6 +6,7 @@ import {
   type GameData,
   type GameState,
   type Wallet,
+  COMPANIONS,
   actsInRun,
   applyAction,
   newGame,
@@ -144,7 +145,7 @@ export function applyCheat(state: GameState, data: GameData, cheat: Cheat): Game
     case "unlockCamp":
       return {
         ...state,
-        progress: { ...state.progress, trainerUnlocked: true, runesmithUnlocked: true },
+        progress: { ...state.progress, met: [...COMPANIONS] },
       };
   }
 }
@@ -267,8 +268,14 @@ function clearActs(state: GameState, data: GameData, all: boolean): GameState {
         waymarks: [...s.progress.waymarks, ...waymarks],
         actsCleared: cleared ? s.progress.actsCleared : [...s.progress.actsCleared, act.id],
         deathsInAct: 0,
-        trainerUnlocked: true,
-        runesmithUnlocked: s.progress.runesmithUnlocked || act.runesmith === true,
+        met: [
+          ...new Set([
+            ...s.progress.met,
+            "kaelen" as const,
+            "liora" as const,
+            ...(act.runesmith ? ["nyssa" as const] : []),
+          ]),
+        ],
       },
       legacy:
         echoDef && echoBefore?.prestige !== s.legacy.prestige

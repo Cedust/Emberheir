@@ -37,7 +37,12 @@ export {
   type MapNode,
   type ActMap,
   type NodeVisit,
+  COMPANIONS,
+  type Companion,
+  STORY_BLIPS,
+  type StoryBlip,
 } from "./state";
+export { MARISHA_MEETINGS, hasMet } from "./companions";
 export { newGame, type NewGameOptions } from "./new-game";
 export {
   getAct,

@@ -35,8 +35,17 @@ import {
   signatureCard,
   tagAffixFactor,
 } from "./loot";
+import { meet } from "./companions";
 import { toCamp } from "./run";
-import { fail, nextRng, type GameData, type GameState, type GameStats, runWithout } from "./state";
+import {
+  type ActData,
+  fail,
+  nextRng,
+  type GameData,
+  type GameState,
+  type GameStats,
+  runWithout,
+} from "./state";
 
 /** The end of a fight: death, rewards and The Last Ember's fights. */
 
@@ -360,7 +369,24 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       },
     },
   };
-  return won;
+  return meetOnTheRoad(won, act, { waymark, boss: rank === "boss" });
+}
+
+/**
+ * Personas met after a won fight (camp-personas-freischalten-v1.md): Kaelen arrives late at the
+ * first Waymark, Liora steps out of the first act boss's ash, Nyssa watched the first fight in
+ * her act (the Rotwood).
+ */
+function meetOnTheRoad(
+  state: GameState,
+  act: ActData,
+  fight: { waymark: boolean; boss: boolean },
+): GameState {
+  let out = state;
+  if (fight.waymark) out = meet(out, "kaelen");
+  if (fight.boss) out = meet(out, "liora");
+  if (act.runesmith) out = meet(out, "nyssa");
+  return out;
 }
 
 /**
