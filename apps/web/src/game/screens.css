@@ -1892,6 +1892,9 @@
 }
 
 .stage .draught-label {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   margin-right: 4px;
   color: #f3e6c8;
 }

@@ -8,6 +8,8 @@ import {
   getBase,
   type Item,
   DRAUGHT_FLASK_COST,
+  draughtAcorns,
+  knownDraughts,
   minPeril,
   type OmenDefinition,
   omenPeril,
@@ -32,34 +34,40 @@ import cacheOpenUrl from "../../assets/benches/eldrins-cache-open.webp";
 /** The Camp's choices before setting out: the Draught, the Wildfire tier, the Scout's bounty. */
 
 /**
- * Draughts (balance-grundlagen-v1.md F): one vial per Draught; the chosen one is brewed from a
- * Flask charge at every set-out. Clicking it again pours it back (no Draught).
+ * Draughts (balance-grundlagen-v1.md F, draughts-einfuehrung-v1.md): one vial per Draught Liora
+ * knows; the chosen one is brewed from a Flask charge and a few Acorns at every set-out. Clicking
+ * it again pours it back (no Draught). Element Draughts not learned yet are not shown.
  */
-export function DraughtPicker(props: {
-  chosen: string | null;
-  onPick: (id: string | null) => void;
-}) {
+export function DraughtPicker(props: { state: GameState; onPick: (id: string | null) => void }) {
+  const chosen = props.state.draught ?? null;
   return (
     <div className="draught-picker" role="group" aria-label="Draught">
-      <span className="draught-label sub">Draught</span>
-      {(GAME_DATA.draughts ?? []).map((d) => (
+      <span className="draught-label sub">
+        Draught <Price id="acorns" amount={draughtAcorns(props.state)} />
+      </span>
+      {knownDraughts(props.state, GAME_DATA).map((d) => (
         <DraughtVial
           key={d.id}
           draught={d}
-          on={props.chosen === d.id}
-          onPick={() => props.onPick(props.chosen === d.id ? null : d.id)}
+          on={chosen === d.id}
+          onPick={() => props.onPick(chosen === d.id ? null : d.id)}
         />
       ))}
     </div>
   );
 }
 
+/** "+20 % Fire Resistance, +5 % max Fire Resistance" as one bullet per bonus. */
+const draughtBullets = (d: DraughtDefinition): string[] =>
+  d.description.split(", ").map((line) => line[0]?.toUpperCase() + line.slice(1));
+
 function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: () => void }) {
   const d = props.draught;
   const hover = useNoteHover({
     name: d.name,
-    kind: `Draught · ${DRAUGHT_FLASK_COST} Flask charge · until the Camp`,
-    explain: `${d.description}. ${d.explain}`,
+    kind: `Draught · ${DRAUGHT_FLASK_COST} Flask charge and Acorns · until the Camp`,
+    bullets: draughtBullets(d),
+    explain: d.explain,
     status: props.on ? "Brewed at every set-out · click to pour it back" : "Click to brew it",
   });
   const color = `#${d.color.toString(16).padStart(6, "0")}`;

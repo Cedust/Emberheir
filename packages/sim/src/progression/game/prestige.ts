@@ -9,6 +9,7 @@ import {
   SIDE_BRANCH_TIER,
 } from "../skill-tree";
 import { prestigeRewards } from "./acts";
+import { DRAUGHT_FROM_PRESTIGE } from "../draughts";
 import { flaskCapacity } from "./flask";
 import { heroClassOf, heroTitle } from "./hero-build";
 import { fail, type GameData, type GameState, type Notice } from "./state";
@@ -114,5 +115,9 @@ export function doPrestige(
     // The Boons burn with the rest of the run.
     boons: EMPTY_BOONS,
     notice,
+    // Liora brews her first Draughts (draughts-einfuehrung-v1.md).
+    ...(prestige === DRAUGHT_FROM_PRESTIGE && data.draughts?.length
+      ? { blips: [...(state.blips ?? []), "liora-draughts" as const] }
+      : {}),
   };
 }

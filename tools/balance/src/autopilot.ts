@@ -16,6 +16,7 @@ import {
   CRUCIBLE_SLOTS,
   crucibleLock,
   draughtsOpen,
+  knownDraughts,
   equipBlockReason,
   currentNode,
   getAct,
@@ -55,8 +56,8 @@ const ATTRIBUTE_PLAN: Record<string, (keyof Attributes)[]> = {
 };
 
 /**
- * The Draught for the coming trip: the one that adds the most effective Life against the act's
- * damage mix (balance-grundlagen-v1.md F).
+ * The Draught for the coming trip: of those Liora knows, the one that adds the most effective Life
+ * against the act's damage mix (balance-grundlagen-v1.md F).
  */
 export function brewDraught(state: GameState, data: GameData, act: ActData | undefined): GameState {
   if (!draughtsOpen(state, data) || !act) return state;
@@ -74,7 +75,7 @@ export function brewDraught(state: GameState, data: GameData, act: ActData | und
     );
   let best: string | null = null;
   let bestValue = tryWith(undefined);
-  for (const d of data.draughts ?? []) {
+  for (const d of knownDraughts(state, data)) {
     const value = tryWith(d.id);
     if (value > bestValue + 1e-9) {
       best = d.id;

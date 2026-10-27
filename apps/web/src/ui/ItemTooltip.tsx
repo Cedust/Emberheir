@@ -40,6 +40,8 @@ export interface NoteHover {
   /** Small line under the name, e.g. "Defense" or "Draught · 1 Flask charge". */
   readonly kind: string;
   readonly explain: string;
+  /** Effect lines shown as bullets like an item's affixes, e.g. a Draught's "+25 % Armor". */
+  readonly bullets?: readonly string[];
   /** Last line, e.g. "Run 4: −30 % on every Resistance". */
   readonly status?: string;
   /** The key that does the same, shown as a key cap (ui-ux-plan-v1.md 3.5). */
@@ -125,7 +127,12 @@ export function usePerkHover(perk: PerkHover) {
 /** Mouse and focus handlers that show a game note (mechanics, stats, Draughts). */
 export function useNoteHover(note: NoteHover | undefined) {
   const api = useContext(HoverContext);
-  const { name, kind, explain, status, hotkey } = note ?? { name: "", kind: "", explain: "" };
+  const { name, kind, explain, bullets, status, hotkey } = note ?? {
+    name: "",
+    kind: "",
+    explain: "",
+  };
+  const bulletKey = bullets?.join("\n") ?? "";
   // A note shown by this element goes away with it (closing the sheet with Escape, setting out).
   const shown = useRef(false);
   useEffect(
@@ -137,7 +144,14 @@ export function useNoteHover(note: NoteHover | undefined) {
   return useMemo(() => {
     if (!api || !name) return {};
     const hover = {
-      note: { name, kind, explain, ...(status ? { status } : {}), ...(hotkey ? { hotkey } : {}) },
+      note: {
+        name,
+        kind,
+        explain,
+        ...(bullets?.length ? { bullets } : {}),
+        ...(status ? { status } : {}),
+        ...(hotkey ? { hotkey } : {}),
+      },
     };
     const show = (element: Element) => {
       shown.current = true;
@@ -153,7 +167,9 @@ export function useNoteHover(note: NoteHover | undefined) {
       onFocus: (e: React.FocusEvent) => show(e.currentTarget),
       onBlur: hide,
     };
-  }, [api, name, kind, explain, status, hotkey]);
+    // The bullets come as a new array on every render: compare them by content.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [api, name, kind, explain, bulletKey, status, hotkey]);
 }
 
 /**
@@ -314,6 +330,16 @@ function NoteTooltipCard(props: NoteHover) {
     <div className="item-tooltip perk-tooltip note-tooltip" data-testid="note-tooltip">
       <span className="tip-name">{props.name}</span>
       {props.kind && <span className="tip-kind">{props.kind}</span>}
+      {props.bullets?.length ? (
+        <>
+          <span className="tip-rule" />
+          <ul className="ib-lines ib-affixes note-bullets">
+            {props.bullets.map((line) => (
+              <li key={line}>{line}</li>
+            ))}
+          </ul>
+        </>
+      ) : null}
       {props.explain && (
         <>
           <span className="tip-rule" />

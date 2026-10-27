@@ -528,8 +528,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Before you set out, Eldrin can brew one Flask charge into a Draught. It holds for the
-              whole trip.
+              Before you set out, Liora brews one Flask charge and a few <C id="acorns" /> into a
+              Draught. It holds for the whole trip. Pick it at Eldrin&apos;s Road.
             </p>
             <Facts
               rows={[

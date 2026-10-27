@@ -5,6 +5,8 @@ import {
   type ActData,
   actUnlocked,
   bossKnown,
+  brewedDraught,
+  draughtAcorns,
   draughtsOpen,
   finaleOpen,
   type GameState,
@@ -291,6 +293,7 @@ export function RoadWindow(props: {
   const lines = eldrinLines(state);
   const [line, setLine] = useState(() => Math.floor(Math.random() * lines.length));
   const info = ACTS.find((a) => a.id === act.id);
+  const brewed = brewedDraught(state, GAME_DATA);
   return (
     <WindowLayer>
       <Window
@@ -410,9 +413,12 @@ export function RoadWindow(props: {
               <div className="road-flask">
                 {draughtsOpen(state, GAME_DATA) && (
                   <DraughtPicker
-                    chosen={state.draught ?? null}
+                    state={state}
                     onPick={(id) => game.dispatch({ type: "chooseDraught", draughtId: id })}
                   />
+                )}
+                {state.draught && !brewed && state.wallet.acorns < draughtAcorns(state) && (
+                  <span className="sub">Too few Acorns for the Draught</span>
                 )}
               </div>
               <Button

@@ -14,6 +14,7 @@ import { Icon } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { TrailMark } from "../../ui/TrailMark";
 import { weaponIconUrl } from "../../ui/gameIcons";
+import { draughtIconUrl } from "../../ui/Potion";
 import { playUiSound } from "../../ui/sound";
 import { PersonaPortrait } from "../camp/art/PersonaArt";
 import type { GameNotification, NotificationArt } from "./notifications";
@@ -181,6 +182,14 @@ function NotificationArtView(props: { art: NotificationArt }) {
       return <TrailMark tier={art.tier} size={48} />;
     case "waymark":
       return <img src={waymarkUrl} alt="" draggable={false} />;
+    case "draught": {
+      const url = draughtIconUrl(art.id);
+      return url ? (
+        <img src={url} alt="" draggable={false} />
+      ) : (
+        <span className="notification-echo" style={{ background: art.color }} />
+      );
+    }
     case "icon":
       return (
         <span className="notification-sigil">
