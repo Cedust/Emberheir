@@ -1927,17 +1927,6 @@
   box-shadow: 0 0 10px var(--vial);
 }
 
-.stage .draught-vial.locked {
-  cursor: default;
-  opacity: 0.45;
-  filter: grayscale(1) brightness(0.7);
-}
-
-.stage .draught-vial.locked:hover,
-.stage .draught-vial.locked:focus-visible {
-  transform: none;
-}
-
 .stage .draught-vial img {
   height: 38px;
   filter: drop-shadow(0 1px 2px #000);

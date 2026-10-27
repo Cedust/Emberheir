@@ -154,7 +154,7 @@ for (const screen of SCREENS) {
     await check("harvest");
     await page.getByRole("button", { name: "Let It Burn" }).click();
     // Liora tells of her first Draughts.
-    await page.getByRole("button", { name: /Eldrin's Road/ }).click();
+    await page.getByRole("button", { name: /Pour me one/ }).click();
     // Marisha joined on the road by now; she only gambles: the Black Market opens on it.
     await page.getByRole("button", { name: "Marisha, Black Market" }).click();
     await check("gamble");

@@ -563,7 +563,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: big(draughtIconUrl("fire-draught")),
                   name: "Fire, Frost, Storm, Void",
-                  text: "More of that one Resistance. Liora learns it once you beat a foe that hits with that element.",
+                  text: "More of that one Resistance.",
                 },
               ]}
             />

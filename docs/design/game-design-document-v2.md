@@ -272,7 +272,7 @@ Endgame **Wildfire I–X**.
   Ward +25 % Barrier, Vigor +10 % Life kommen mit Prestige 1 (Story Blip von Liora). Fire/Frost/Storm/Void (+20 %
   Resistance und +5 % max) lernt Liora, sobald der Heir zum ersten Mal einen Gegner besiegt, der mit diesem Element
   zuschlägt (Fire ab Act 1, Void ab Rotwood, Cold ab Act 4, Lightning ab Act 5); dazu eine Notification
-  „New Draught". Nicht gelernte zeigt die Auswahl als Locked mit dem Hinweis, wie man sie bekommt.
+  „New Draught". Nicht gelernte zeigt die Auswahl gar nicht (Timo); im Tooltip stehen die Boni als Stichpunkte.
 - **Bounties:** Elite Hunt, Culling, Thief Chase (ab Act 2), Dry Throat, Hale and Whole. Einreichen bei Eldrin,
   Belohnung: Acorns, 2 Ember Coal und ein Item ab Rare.
 

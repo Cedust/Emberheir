@@ -24,13 +24,18 @@ test("after the first Prestige a Draught is brewed for the trip and shows in the
   // Draughts are brewed for the trip at Eldrin.
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   const draughts = page.getByRole("group", { name: "Draught" });
-  // Fire is learned from the Cinder Caster; Frost is still Locked.
-  await expect(draughts.getByRole("button", { name: "Fire Draught" })).toHaveCount(1);
-  await expect(draughts.getByRole("button", { name: "Frost Draught, Locked" })).toHaveCount(1);
-  if (process.env.SHOTS) {
-    await draughts.getByRole("button", { name: "Frost Draught, Locked" }).hover();
-    await page.screenshot({ path: `${process.env.SHOTS}/draught-locked.png` });
-  }
+  // Fire is learned from the Cinder Caster; Frost is not shown before a Cold foe is beaten.
+  const fire = draughts.getByRole("button", { name: "Fire Draught" });
+  await expect(fire).toHaveCount(1);
+  await expect(draughts.getByRole("button", { name: "Frost Draught" })).toHaveCount(0);
+  // The tooltip lists the bonuses as bullets.
+  await fire.hover();
+  await expect(page.getByTestId("note-tooltip").locator("li")).toHaveText([
+    "+20 % Fire Resistance",
+    "+5 % max Fire Resistance",
+  ]);
+  if (process.env.SHOTS)
+    await page.screenshot({ path: `${process.env.SHOTS}/draught-tooltip.png` });
   const iron = draughts.getByRole("button", { name: "Iron Draught" });
   await expect(iron).toHaveAttribute("aria-pressed", "false");
   await iron.click();

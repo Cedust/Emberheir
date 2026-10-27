@@ -6,7 +6,7 @@ import {
   applyAction,
   DRAUGHT_FLASK_COST,
   draughtAcorns,
-  draughtKnown,
+  knownDraughts,
   minPeril,
   type OmenDefinition,
   omenPeril,
@@ -24,10 +24,9 @@ import { Price } from "../../ui/kit/Currency";
 /** The Camp's choices before setting out: the Draught, the Wildfire tier, the Scout's bounty. */
 
 /**
- * Draughts (balance-grundlagen-v1.md F, draughts-einfuehrung-v1.md): one vial per Draught; the
- * chosen one is brewed from a Flask charge and a few Acorns at every set-out. Clicking it again
- * pours it back (no Draught). An element Draught not learned yet stays Locked until a foe of its
- * element is beaten.
+ * Draughts (balance-grundlagen-v1.md F, draughts-einfuehrung-v1.md): one vial per Draught Liora
+ * knows; the chosen one is brewed from a Flask charge and a few Acorns at every set-out. Clicking
+ * it again pours it back (no Draught). Element Draughts not learned yet are not shown.
  */
 export function DraughtPicker(props: { state: GameState; onPick: (id: string | null) => void }) {
   const chosen = props.state.draught ?? null;
@@ -36,11 +35,10 @@ export function DraughtPicker(props: { state: GameState; onPick: (id: string | n
       <span className="draught-label sub">
         Draught <Price id="acorns" amount={draughtAcorns(props.state)} />
       </span>
-      {(GAME_DATA.draughts ?? []).map((d) => (
+      {knownDraughts(props.state, GAME_DATA).map((d) => (
         <DraughtVial
           key={d.id}
           draught={d}
-          known={draughtKnown(props.state, GAME_DATA, d)}
           on={chosen === d.id}
           onPick={() => props.onPick(chosen === d.id ? null : d.id)}
         />
@@ -49,24 +47,18 @@ export function DraughtPicker(props: { state: GameState; onPick: (id: string | n
   );
 }
 
-const ELEMENT_NAME = { fire: "Fire", cold: "Cold", lightning: "Lightning", void: "Void" } as const;
+/** "+20 % Fire Resistance, +5 % max Fire Resistance" as one bullet per bonus. */
+const draughtBullets = (d: DraughtDefinition): string[] =>
+  d.description.split(", ").map((line) => line[0]?.toUpperCase() + line.slice(1));
 
-function DraughtVial(props: {
-  draught: DraughtDefinition;
-  known: boolean;
-  on: boolean;
-  onPick: () => void;
-}) {
+function DraughtVial(props: { draught: DraughtDefinition; on: boolean; onPick: () => void }) {
   const d = props.draught;
   const hover = useNoteHover({
-    name: props.known ? d.name : `${d.name} · Locked`,
+    name: d.name,
     kind: `Draught · ${DRAUGHT_FLASK_COST} Flask charge and Acorns · until the Camp`,
-    explain: `${d.description}. ${d.explain}`,
-    status: !props.known
-      ? `Beat a foe that hits with ${d.element ? ELEMENT_NAME[d.element] : "it"} and Liora learns it`
-      : props.on
-        ? "Brewed at every set-out · click to pour it back"
-        : "Click to brew it",
+    bullets: draughtBullets(d),
+    explain: d.explain,
+    status: props.on ? "Brewed at every set-out · click to pour it back" : "Click to brew it",
   });
   const color = `#${d.color.toString(16).padStart(6, "0")}`;
   const icon = draughtIconUrl(d.id);
@@ -74,11 +66,10 @@ function DraughtVial(props: {
     <button
       type="button"
       aria-pressed={props.on}
-      aria-label={props.known ? d.name : `${d.name}, Locked`}
-      aria-disabled={!props.known}
-      className={`draught-vial${props.on ? " on" : ""}${props.known ? "" : " locked"}`}
+      aria-label={d.name}
+      className={`draught-vial${props.on ? " on" : ""}`}
       style={{ "--vial": color } as React.CSSProperties}
-      onClick={props.known ? props.onPick : undefined}
+      onClick={props.onPick}
       {...hover}
     >
       {icon ? (

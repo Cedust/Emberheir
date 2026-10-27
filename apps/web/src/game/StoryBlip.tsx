@@ -65,8 +65,8 @@ const BLIPS: Readonly<
     persona: "liora",
     name: "Liora",
     role: "Mystic",
-    line: "“A new run, a hotter fire. I brew you Iron, Ward or Vigor. One Flask charge and a few Acorns. Beat a foe that hits with Fire, Cold, Lightning or Void, and I learn its brew too.”",
-    answer: "Pick one at Eldrin's Road.",
+    line: "“I foresaw a thirsty Heir. I brew Iron, Ward and Vigor now. Your Flask pays a charge, your purse pays Acorns.”",
+    answer: "Pour me one.",
     fx: "moon",
   },
 };

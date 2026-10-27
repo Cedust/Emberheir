@@ -21,5 +21,6 @@ mehr). Im Harvest-Screen gab es dazu eine Zeile, eine Notification nicht.
 
 ## UI
 
-Die Auswahl bei Eldrin zeigt alle sieben Fläschchen. Nicht gelernte sind grau und Locked, ihr Tooltip sagt, wie man
-sie lernt. Neben „Draught" steht der Preis (Icon + Zahl). Reichen die Acorns nicht, sagt das die Zeile über Set Out.
+Die Auswahl bei Eldrin zeigt nur gelernte Draughts (Timo: gesperrte gar nicht anzeigen). Ihr Tooltip listet die
+Boni als Stichpunkte wie Item-Affixe, darunter die Erklärung. Neben „Draught" steht der Preis (Icon + Zahl). Reichen
+die Acorns nicht, sagt das die Zeile über Set Out.

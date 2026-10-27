@@ -171,7 +171,7 @@ function harvestGains(state: GameState): Gain[] {
             icon: vial,
             name: "Draughts",
             explain:
-              "Liora brews Iron, Ward and Vigor: a Flask charge and a few Acorns for a Draught that lasts the whole trip. Beat a foe of an element to learn its brew too.",
+              "Liora brews Iron, Ward and Vigor: a Flask charge and a few Acorns for a Draught that lasts the whole trip.",
           },
         ]
       : []),
