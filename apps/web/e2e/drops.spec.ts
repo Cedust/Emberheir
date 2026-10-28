@@ -90,8 +90,9 @@ for (const screen of [
     await expect(cards).toHaveCount(6);
     // Every card in full next to the Hoard, the long Uniques too.
     for (let i = 0; i < 6; i++) {
-      // The Legendary and Unique faces tremble as they land: no need to wait for them to settle.
-      await cards.nth(i).click({ force: true });
+      // A plain click event: with the arena drawing behind the Hoard, Playwright's own click can
+      // wait seconds per card for a quiet frame (scroll into view, stable box).
+      await cards.nth(i).dispatchEvent("click");
       await expect(cards.nth(i)).toHaveAttribute("aria-pressed", "true");
       expect(await lootOverlaps(page), `Hoard card ${i + 1}`).toEqual([]);
     }
