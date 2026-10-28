@@ -3,6 +3,8 @@ import {
   AILMENT_SOURCE,
   BATTLE_PLAN_LADDER,
   type BattlePlanState,
+  type WeaponDefinition,
+  type SkillDefinition,
   CAPSTONES,
   type GameState,
   REACTION_CONDITIONS,
@@ -31,6 +33,7 @@ import { AttackIcon, SkillIcon } from "../battle/SkillIcon";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { Price } from "../../ui/kit/Currency";
+import { SkillMeta, skillText } from "../../ui/SkillMeta";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -407,6 +410,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         <Library
           target={target}
           known={known}
+          weapon={setup.weapon}
           slotSkill={
             target.row === "rotation"
               ? rotationSkill(target.index)?.skill.id
@@ -607,6 +611,7 @@ type Known = ReturnType<typeof knownSkills>;
 function Library(props: {
   target: Target;
   known: Known;
+  weapon: WeaponDefinition;
   slotSkill: string | null | undefined;
   mods: readonly SlotModifier[];
   cond: string | null;
@@ -630,8 +635,9 @@ function Library(props: {
     text: string;
     icon: IconName;
     tint?: string;
-    /** A skill: drawn with its painted icon. */
+    /** A skill: drawn with its painted icon, its Heat cost and kind under the name. */
     skill?: string;
+    def?: SkillDefinition;
     on: boolean;
     blocked?: boolean;
     drag?: string;
@@ -641,10 +647,11 @@ function Library(props: {
           ...props.known.map((k) => ({
             id: k.skill.id,
             name: `${k.skill.name} · Lv ${k.level}`,
-            text: `${k.skill.heatCost} Heat · ${k.skill.description}`,
+            text: skillText(k.skill, props.weapon),
             icon: skillIcon(k.skill.id),
             tint: skillTint(k.skill.id),
             skill: k.skill.id,
+            def: k.skill,
             on: props.slotSkill === k.skill.id,
             drag: k.skill.id,
           })),
@@ -723,6 +730,7 @@ function Library(props: {
               </span>
               <span className="known-text">
                 <span className="title-font">{t.name}</span>
+                {t.def && <SkillMeta skill={t.def} weaponType={props.weapon.damageType} />}
                 {t.text && <span className="sub small">{t.text}</span>}
               </span>
             </button>

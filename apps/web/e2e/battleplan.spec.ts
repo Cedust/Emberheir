@@ -17,6 +17,10 @@ test("the Battle Plan has no dropdowns: skills, sockets, Heat slider and conditi
   const slot2 = page.getByTestId("rotation-slot-1");
   await slot2.getByRole("button", { name: "Rotation Slot 2" }).click();
   const skills = page.getByRole("region", { name: "Skills" });
+  // Heat cost as icon and number, the skill's kind in plain words (no "25 Heat · direct · any").
+  await expect(skills.getByRole("button", { name: /^Power Strike/ })).toContainText("Attack");
+  await expect(skills.getByLabel("Costs 25 Heat").first()).toBeVisible();
+  await expect(skills).not.toContainText(/direct|any\b/);
   await skills.getByRole("button", { name: /^Flurry/ }).click();
   await expect(slot2).toContainText("Flurry");
 

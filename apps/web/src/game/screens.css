@@ -10835,6 +10835,32 @@
   height: 220px;
 }
 
+/* A skill's facts: Heat icon and cost, damage type icons, its kind; each explains itself on hover. */
+.stage .skill-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.stage .skill-meta-part {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  cursor: help;
+}
+
+.stage .skill-meta-part b {
+  font-weight: 600;
+}
+
+.stage .skill-meta-kind {
+  font-variant: small-caps;
+  letter-spacing: 0.5px;
+  opacity: 0.8;
+}
+
 /* Export and Import under the title's Characters (BackupPanel.tsx) and damaged slots (TitleScreen.tsx). */
 .stage .backup-panel {
   display: flex;
