@@ -11,7 +11,8 @@ import {
 } from "../../ui/kit/Window";
 import { HoldButton } from "../../ui/kit/Button";
 import { CurrencyChip, Price } from "../../ui/kit/Currency";
-import { PointChip, PointIcon } from "../../ui/kit/Points";
+import { PointChip } from "../../ui/kit/Points";
+import { actionIcon } from "../../ui/actionIcons";
 import battlePlanUrl from "../../assets/harvest/battle-plan.webp";
 import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
@@ -39,8 +40,8 @@ export function KaelenView(props: {
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
-    { id: "tree", name: "Ash Tree", art: <PointIcon id="skill" size={26} /> },
-    { id: "mastery", name: "Heirloom", art: <PointIcon id="heirloom" size={26} /> },
+    { id: "tree", name: "Ash Tree", art: <TabIcon id="ash-tree" /> },
+    { id: "mastery", name: "Heirloom", art: <TabIcon id="heirloom" /> },
     ...(planEditable
       ? [
           {
@@ -122,4 +123,9 @@ export function KaelenView(props: {
       </Window>
     </WindowLayer>
   );
+}
+
+/** A painted tab icon (tools/art/cut_menu_icons.py). */
+function TabIcon(props: { id: string }) {
+  return <img src={actionIcon(props.id)} width={28} height={28} alt="" draggable={false} />;
 }
