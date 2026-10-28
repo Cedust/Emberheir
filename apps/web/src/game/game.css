@@ -86,6 +86,22 @@
   --hud-chip: var(--panel);
   --hud-shadow: none;
   --hud-name-shadow: none;
+  /* Ash Tree and Heirloom canvases (read by TreeScene/MasteryScene via themeColors.ts). */
+  --tree-ground: var(--panel);
+  --tree-ground-edge: var(--bg);
+  --tree-glow: rgb(255 138 58 / 0.1);
+  --tree-vignette: rgb(90 62 34 / 0.28);
+  --tree-ink: #2a1f17;
+  --tree-ink-stroke: #efe2c4;
+  --tree-ink-lit: #6e2f0c;
+  --tree-ink-dim: #6a5a48;
+  --tree-label-mix: 0.45;
+  --tree-label-alpha: 0.85;
+  --tree-earth: rgba(122, 92, 60, 0.26);
+  --tree-earth-deep: rgba(122, 92, 60, 0.12);
+  --tree-legend: var(--text-sub);
+  --forge-ground: var(--panel);
+  --forge-ground-edge: var(--bg);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -169,6 +185,21 @@
     --hud-chip: rgb(20 14 10 / 0.82);
     --hud-shadow: 0 1px 2px #000;
     --hud-name-shadow: 0 2px 6px #000;
+    --tree-ground: #1f1915;
+    --tree-ground-edge: #0e0b09;
+    --tree-glow: rgb(255 138 58 / 0.14);
+    --tree-vignette: rgb(0 0 0 / 0.7);
+    --tree-ink: #ecdfc4;
+    --tree-ink-stroke: #0d0a08;
+    --tree-ink-lit: #fff0c8;
+    --tree-ink-dim: #9a8c78;
+    --tree-label-mix: 0;
+    --tree-label-alpha: 0.6;
+    --tree-earth: rgba(30, 20, 13, 0.7);
+    --tree-earth-deep: rgba(18, 11, 7, 0.5);
+    --tree-legend: #b9ab92;
+    --forge-ground: #221a14;
+    --forge-ground-edge: #0b0806;
   }
 }
 
@@ -251,6 +282,21 @@
   --hud-chip: rgb(20 14 10 / 0.82);
   --hud-shadow: 0 1px 2px #000;
   --hud-name-shadow: 0 2px 6px #000;
+  --tree-ground: #1f1915;
+  --tree-ground-edge: #0e0b09;
+  --tree-glow: rgb(255 138 58 / 0.14);
+  --tree-vignette: rgb(0 0 0 / 0.7);
+  --tree-ink: #ecdfc4;
+  --tree-ink-stroke: #0d0a08;
+  --tree-ink-lit: #fff0c8;
+  --tree-ink-dim: #9a8c78;
+  --tree-label-mix: 0;
+  --tree-label-alpha: 0.6;
+  --tree-earth: rgba(30, 20, 13, 0.7);
+  --tree-earth-deep: rgba(18, 11, 7, 0.5);
+  --tree-legend: #b9ab92;
+  --forge-ground: #221a14;
+  --forge-ground-edge: #0b0806;
 }
 
 /* --- stage ---------------------------------------------------------------------------------- */

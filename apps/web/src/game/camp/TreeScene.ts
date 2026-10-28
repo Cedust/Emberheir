@@ -15,12 +15,14 @@ import {
   type AshTreeArt,
   type AshTreeTextures,
   dressAshTree,
+  drawEarth,
   drawTwigs,
   loadAshTreeTextures,
   paintAshTree,
   SIGIL_SCALE,
 } from "./ashTreeArt";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
+import { cssHex, cssNumber, cssVar, mixColor, onThemeChange } from "../themeColors";
 
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
@@ -180,6 +182,9 @@ export class TreeScene {
   private time = 0;
   private spark = 0;
   private fitted = false;
+  /** Text and branch-name colours of the theme (game.css `--tree-*`). */
+  private ink = { text: 0xecdfc4, stroke: 0x0d0a08, labelMix: 0, labelAlpha: 0.6 };
+  private unwatchTheme: (() => void) | null = null;
   /** Particles and the gliding camera; off for prefers-reduced-motion. */
   motion = true;
 
@@ -274,6 +279,8 @@ export class TreeScene {
     app.stage.on("wheel", (e) => this.wheel(e));
     // The page must not scroll while the wheel zooms the tree.
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+    this.unwatchTheme = onThemeChange(() => this.applyTheme());
+    this.applyTheme();
     this.rebuild();
     this.fit(true);
     this.pacer = new FramePacer(app.ticker);
@@ -283,9 +290,42 @@ export class TreeScene {
 
   destroy(): void {
     this.destroyed = true;
+    this.unwatchTheme?.();
     this.fx?.destroy();
     this.app?.destroy(true, { children: true });
     this.app = null;
+  }
+
+  /** Reads the theme's colours and repaints what depends on them: earth, names, branch names. */
+  private applyTheme(): void {
+    if (this.destroyed) return;
+    this.ink = {
+      text: cssHex("--tree-ink", 0xecdfc4),
+      stroke: cssHex("--tree-ink-stroke", 0x0d0a08),
+      labelMix: cssNumber("--tree-label-mix", 0),
+      labelAlpha: cssNumber("--tree-label-alpha", 0.6),
+    };
+    drawEarth(this.art.earth, UNIT, {
+      top: cssVar("--tree-earth", "rgba(30, 20, 13, 0.7)"),
+      deep: cssVar("--tree-earth-deep", "rgba(18, 11, 7, 0.5)"),
+    });
+    for (const s of this.sprites.values()) {
+      for (const t of [s.name, s.rank]) {
+        t.style.fill = this.ink.text;
+        t.style.stroke = { color: this.ink.stroke, width: 4 };
+      }
+    }
+    for (const l of this.view.labels) {
+      const t = this.labels.get(l.key);
+      if (t) this.styleLabel(t, l.color);
+    }
+  }
+
+  /** Branch names: in light mode their colour is darkened towards the ink to read on parchment. */
+  private styleLabel(t: Text, color: number): void {
+    const fill = mixColor(color, this.ink.text, this.ink.labelMix);
+    if (t.style.fill !== fill) t.style.fill = fill;
+    t.alpha = this.ink.labelAlpha;
   }
 
   setView(view: TreeView): void {
@@ -521,17 +561,15 @@ export class TreeScene {
             fontWeight: "900",
             fontSize: l.size,
             letterSpacing: 4,
-            fill: l.color,
           },
           resolution: 2 * this.size.resolution,
         });
         t.anchor.set(0.5);
-        t.alpha = 0.6;
         this.labelLayer.addChild(t);
         this.labels.set(l.key, t);
       }
       t.text = l.text;
-      t.style.fill = l.color;
+      this.styleLabel(t, l.color);
       t.position.set(l.x * UNIT, l.y * UNIT);
     }
     this.applyCamera();
@@ -631,8 +669,8 @@ export class TreeScene {
         fontFamily: "Alegreya Sans, sans-serif",
         fontWeight: "700",
         fontSize: 13,
-        fill: 0xecdfc4,
-        stroke: { color: 0x0d0a08, width: 4 },
+        fill: this.ink.text,
+        stroke: { color: this.ink.stroke, width: 4 },
       },
       resolution: 2 * this.size.resolution,
     });
@@ -644,8 +682,8 @@ export class TreeScene {
         fontFamily: "monospace",
         fontWeight: "700",
         fontSize: 12,
-        fill: 0xecdfc4,
-        stroke: { color: 0x0d0a08, width: 4 },
+        fill: this.ink.text,
+        stroke: { color: this.ink.stroke, width: 4 },
       },
       resolution: 2 * this.size.resolution,
     });

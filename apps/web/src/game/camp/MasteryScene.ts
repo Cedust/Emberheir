@@ -15,6 +15,7 @@ import { Fx } from "../battle/fx";
 import { type WeaponLook, drawWeapon } from "./weaponArt";
 import { type SceneWeaponArt, drawPaintedWeapon, paintedTextures } from "./paintedWeapon";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
+import { cssHex, cssNumber, mixColor, onThemeChange } from "../themeColors";
 import { arcPath } from "../pixiShapes";
 import {
   FORGE_BED,
@@ -173,6 +174,16 @@ export class MasteryScene {
   private viewKey = "";
   private runeLight: Container | null = null;
   private view: MasteryView | null = null;
+  /** Text and path-name colours of the theme (game.css `--tree-*`). */
+  private ink = {
+    text: 0xecdfc4,
+    lit: 0xfff0c8,
+    dim: 0x9a8c78,
+    stroke: 0x0d0a08,
+    labelMix: 0,
+    labelAlpha: 0.6,
+  };
+  private unwatchTheme: (() => void) | null = null;
   private size = { w: 900, h: 700, resolution: 1 };
   /** Camera: world offset (stage pixels) and zoom, with targets the camera glides to. */
   private cam = { x: 0, y: 0, zoom: 1 };
@@ -258,7 +269,8 @@ export class MasteryScene {
     app.stage.on("wheel", (e) => this.wheel(e));
     // The page must not scroll while the wheel zooms the weapon.
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
-    this.rebuild();
+    this.unwatchTheme = onThemeChange(() => this.applyTheme());
+    this.applyTheme();
     this.fit(true);
     this.pacer = new FramePacer(app.ticker);
     app.ticker.add((t) => this.tick(t.deltaMS / 1000));
@@ -267,9 +279,28 @@ export class MasteryScene {
 
   destroy(): void {
     this.destroyed = true;
+    this.unwatchTheme?.();
     this.fx?.destroy();
     this.app?.destroy(true, { children: true });
     this.app = null;
+  }
+
+  /** Reads the theme's colours and redraws the names and path names with them. */
+  private applyTheme(): void {
+    if (this.destroyed) return;
+    this.ink = {
+      text: cssHex("--tree-ink", 0xecdfc4),
+      lit: cssHex("--tree-ink-lit", 0xfff0c8),
+      dim: cssHex("--tree-ink-dim", 0x9a8c78),
+      stroke: cssHex("--tree-ink-stroke", 0x0d0a08),
+      labelMix: cssNumber("--tree-label-mix", 0),
+      labelAlpha: cssNumber("--tree-label-alpha", 0.6),
+    };
+    for (const s of this.sprites.values()) {
+      s.name.style.stroke = { color: this.ink.stroke, width: 4 };
+    }
+    this.labelKey = "";
+    this.rebuild();
   }
 
   setView(view: MasteryView): void {
@@ -855,12 +886,13 @@ export class MasteryScene {
           fontWeight: "900",
           fontSize: size,
           letterSpacing: 4,
-          fill: color,
+          // In light mode darkened towards the ink to read on parchment.
+          fill: mixColor(color, this.ink.text, this.ink.labelMix),
         },
         resolution: 2 * this.size.resolution,
       });
       t.anchor.set(0.5);
-      t.alpha = 0.6;
+      t.alpha = this.ink.labelAlpha;
       t.position.set(x, y);
       this.labelLayer.addChild(t);
       this.labels.push(t);
@@ -912,8 +944,8 @@ export class MasteryScene {
         fontFamily: "Alegreya Sans, sans-serif",
         fontWeight: "700",
         fontSize: 13,
-        fill: 0xecdfc4,
-        stroke: { color: 0x0d0a08, width: 4 },
+        fill: this.ink.text,
+        stroke: { color: this.ink.stroke, width: 4 },
       },
       resolution: 2 * this.size.resolution,
     });
@@ -1069,7 +1101,7 @@ export class MasteryScene {
     s.name.position.set(0, r + (kind === "refine" ? 14 : 8));
     if (kind === "heatForm") this.placeBowlName(s);
     // Text styles re-render their texture: only touch them when they change.
-    const fill = lit ? 0xfff0c8 : dim ? 0x9a8c78 : 0xecdfc4;
+    const fill = lit ? this.ink.lit : dim ? this.ink.dim : this.ink.text;
     const fontSize = kind === "notable" || kind === "keystone" || kind === "master" ? 14 : 12;
     if (s.name.style.fill !== fill) s.name.style.fill = fill;
     if (s.name.style.fontSize !== fontSize) s.name.style.fontSize = fontSize;

@@ -14,6 +14,7 @@ import {
   UniformGroup,
 } from "pixi.js";
 import { Fx } from "../fx";
+import { cssNumber, cssVar, onThemeChange } from "../../themeColors";
 import { BAR_FRAGMENT, GAUGE_VERTEX, ORB_FRAGMENT } from "./shaders";
 import { type HudTextures, enemyPlate, loadHudTextures, orbRing } from "./hudArt";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, type HudLayout, hudLayout } from "./layout";
@@ -363,11 +364,6 @@ function drawFrame(R: number, gem: number): Container {
   return root;
 }
 
-function cssColor(name: string, fallback: string): string {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || fallback;
-}
-
 export class HudScene {
   private app: Application | null = null;
   private destroyed = false;
@@ -384,11 +380,7 @@ export class HudScene {
   private last: FightSnapshot | null = null;
   private prevHero: FighterSnapshot | null = null;
   /** Redraws the bar and enemy plate when the theme flips (OS setting or the Settings switch). */
-  private readonly onTheme = () => {
-    if (this.app && !this.destroyed) this.place();
-  };
-  private readonly darkQuery = window.matchMedia("(prefers-color-scheme: dark)");
-  private readonly themeWatch = new MutationObserver(this.onTheme);
+  private unwatchTheme: (() => void) | null = null;
   paused = false;
 
   /** Stage size in stage pixels (the arena canvas covers the whole stage). */
@@ -409,8 +401,9 @@ export class HudScene {
     this.place();
     if (this.last) this.onSnapshot(this.last, true);
     app.ticker.add(this.onTick);
-    this.darkQuery.addEventListener("change", this.onTheme);
-    this.themeWatch.observe(document.documentElement, { attributeFilter: ["data-theme"] });
+    this.unwatchTheme = onThemeChange(() => {
+      if (this.app && !this.destroyed) this.place();
+    });
     void loadHudTextures().then((art) => {
       if (this.destroyed || !art) return;
       this.art = art;
@@ -423,8 +416,7 @@ export class HudScene {
   destroy(): void {
     this.destroyed = true;
     this.app?.ticker?.remove(this.onTick);
-    this.darkQuery.removeEventListener("change", this.onTheme);
-    this.themeWatch.disconnect();
+    this.unwatchTheme?.();
     this.life?.fx.destroy();
     this.heat?.fx.destroy();
     this.life?.gauge.destroy();
@@ -445,12 +437,12 @@ export class HudScene {
 
     // The bar and the enemy plate follow the theme (--hud-* in game.css): parchment in light
     // mode, a dark well in dark mode; trimmed in the theme's edge.
-    const panel = cssColor("--hud-bar-top", "#32271d");
-    const deep = cssColor("--hud-bar-bottom", "#0c0a08");
-    const fadeTo = cssColor("--hud-fade", "rgba(0,0,0,0.55)");
-    const glass = cssColor("--hud-glass", "#0e0b09");
-    const glassAlpha = Number(cssColor("--hud-glass-alpha", "0.72"));
-    const edge = cssColor("--edge", "#6a4a2c");
+    const panel = cssVar("--hud-bar-top", "#32271d");
+    const deep = cssVar("--hud-bar-bottom", "#0c0a08");
+    const fadeTo = cssVar("--hud-fade", "rgba(0,0,0,0.55)");
+    const glass = cssVar("--hud-glass", "#0e0b09");
+    const glassAlpha = cssNumber("--hud-glass-alpha", 0.72);
+    const edge = cssVar("--edge", "#6a4a2c");
     this.bar.removeChildren().forEach((c) => c.destroy());
     const top = h - BAR_H;
     const x0 = L.lifeOrb.x;

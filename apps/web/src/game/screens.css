@@ -4069,12 +4069,12 @@
   background: var(--side);
 }
 
-/* The Skill Tree canvas stays dark in both modes: the rarity colours need a dark ground. */
+/* The Ash Tree and Heirloom canvases: parchment in light mode, charred in dark mode. */
 .stage .tree-pixi {
   background:
-    radial-gradient(circle at 50% 50%, rgb(255 138 58 / 0.14), transparent 55%),
-    radial-gradient(circle at 50% 50%, #1f1915, #0e0b09 85%);
-  box-shadow: inset 0 0 60px rgb(0 0 0 / 0.7);
+    radial-gradient(circle at 50% 50%, var(--tree-glow), transparent 55%),
+    radial-gradient(circle at 50% 50%, var(--tree-ground), var(--tree-ground-edge) 85%);
+  box-shadow: inset 0 0 60px var(--tree-vignette);
 }
 
 .stage .tree-host {
@@ -4090,7 +4090,7 @@
 
 .stage .tree-fallback {
   position: relative;
-  color: #ecdfc4;
+  color: var(--tree-ink);
 }
 
 .stage .tree-controls {
@@ -4106,7 +4106,7 @@
 }
 
 .stage .tree-pixi .tree-legend {
-  color: #b9ab92;
+  color: var(--tree-legend);
   pointer-events: none;
 }
 
@@ -4583,7 +4583,7 @@
       color-mix(in srgb, var(--grade, #d0803a) 14%, transparent),
       transparent 70%
     ),
-    radial-gradient(circle at 50% 50%, #221a14, #0b0806 88%);
+    radial-gradient(circle at 50% 50%, var(--forge-ground), var(--forge-ground-edge) 88%);
   transition: background 0.4s;
 }
 
