@@ -126,7 +126,7 @@ Endgame **Wildfire I–X**.
 
 ### 2.3 Nach jedem Kampf ✅ (`entschlackung-v1.md`)
 - XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe in jedem Run nur **jeder dritte normale Kampf 1 aus 3** (seit der Act-Karte, vorher jede dritte Stage)
-  (sonst werden die Karten sofort zu Ash; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
+  (sonst gibt es keine Items und nur die normale Stage-Belohnung, keine Extra-Ash, Timo 28.10.2026; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
   Bosse immer. Die DPS-Pfeile auf den Karten misst der
   Training Dummy.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
