@@ -148,16 +148,29 @@
   border: 1.5px solid #140c06;
 }
 
-/* Under the plaque: the enemy's modifiers and statuses in one row. */
+/* Under the plaque: the enemy's own status rail, mirrored like the hero's (buffs left, its
+   modifiers in the middle, debuffs right). */
 .stage .hud-enemy-below {
   position: absolute;
-  top: 132px;
+  top: 136px;
   left: -60px;
   right: -60px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 8px;
+  justify-content: center;
+}
+
+.stage .status-rail.enemy {
+  height: 44px;
+  transform: none;
+}
+
+/* Under the plaque both sides gather at the modifiers instead of running to the edges. */
+.stage .status-rail.enemy .rail-side.good {
+  justify-content: flex-end;
+}
+
+.stage .status-rail.enemy .rail-side.bad {
+  flex-direction: row;
 }
 
 .stage .hud-enemy-mods {
@@ -168,14 +181,11 @@
   gap: 8px;
 }
 
-.stage .hud-enemy-mods:has(> .hud-status:only-child:empty) {
-  display: none;
-}
-
 .stage .hud-enemy-below .mod-chip {
   background: #2a180a;
   color: #ffd84a;
   border-color: #ffd84a;
+  cursor: help;
 }
 
 /*
@@ -423,95 +433,10 @@
     0 2px 4px #000;
 }
 
-.stage .hud-status {
-  display: flex;
-  gap: 5px;
-}
-
-.stage .hud-status-icon {
-  position: relative;
-  width: 34px;
-  height: 34px;
-  border-radius: 5px;
-  border: 2px solid #e8c07a;
-  background: #4a3410;
-  box-shadow:
-    inset 0 0 8px rgb(0 0 0 / 0.7),
-    0 2px 4px rgb(0 0 0 / 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.stage .hud-status-icon > b {
-  position: absolute;
-  right: 1px;
-  top: -2px;
-  font-size: 11px;
-  color: #fff;
-  text-shadow: 0 1px 2px #000;
-}
-
-.stage .hud-status-icon > i {
-  position: absolute;
-  bottom: -15px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-style: normal;
-  font-size: 10px;
-  color: #f3e6c8;
-  text-shadow: 0 1px 2px #000;
-}
-
-.stage .hud-status-icon.fading {
-  animation: status-fade 0.3s ease-in-out infinite alternate;
-}
-
 @keyframes status-fade {
   to {
     opacity: 0.45;
   }
-}
-
-.stage .hud-status-icon.curse {
-  border-color: #a35cff;
-  background: #2e1448;
-}
-
-.stage .hud-status-icon.stun {
-  border-color: #d8d0c4;
-  background: #3a3a40;
-}
-
-.stage .hud-status-icon.ailment-burn {
-  border-color: #ff6a2b;
-  background: #5a1e08;
-}
-
-.stage .hud-status-icon.ailment-chill {
-  border-color: #6fd3ff;
-  background: #123a4e;
-}
-
-.stage .hud-status-icon.ailment-shock {
-  border-color: #ffe14d;
-  background: #4a420c;
-}
-
-.stage .hud-status-icon.ailment-bleed {
-  border-color: #e0314b;
-  background: #4a0c16;
-}
-
-.stage .hud-status-icon.ailment-poison {
-  border-color: #b5d82c;
-  background: #2e3a08;
-}
-
-.stage .hud-status-icon.ailment-corruption {
-  border-color: #a35cff;
-  background: #2a1048;
 }
 
 /* --- the hero's status rail: buffs from the left, Boons in the middle, debuffs from the right - */
@@ -587,6 +512,12 @@
 
 .stage .rail-status.trait > b {
   font-size: 14px;
+}
+
+/* A curse's skill painting fills the socket like a skill slot. */
+.stage .rail-status > img.rail-art {
+  width: 38px;
+  height: 38px;
 }
 
 /* A soft light rim, so dark painted icons (Burn, Bleed) stand out from the socket. */

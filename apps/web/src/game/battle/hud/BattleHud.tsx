@@ -132,6 +132,8 @@ type Status = {
   icon: IconName;
   /** Ailments and stun use painted icons. */
   painted?: GameIconId;
+  /** A curse shows the painting of the skill that cast it (Wither, Hex). */
+  art?: string;
   /** The Class Trait shows its class's emblem. */
   emblem?: string;
   name: string;
@@ -146,6 +148,10 @@ type Status = {
 };
 
 const pct = (v: number) => `${Math.round(v * 100)} %`;
+
+/** Buffs that last the whole fight (Enrage: `duration: 999`) show no timer. */
+const PERMANENT = 900;
+const timeLeft = (remaining: number) => (remaining >= PERMANENT ? Infinity : remaining);
 
 /** The Class Trait as a buff while it holds stacks (Fury, Hunter's Marks, Overcharge charges). */
 function traitStatus(f: FighterSnapshot): Status | undefined {
@@ -192,10 +198,13 @@ function statusesOf(f: FighterSnapshot): Status[] {
       remaining: a.remaining,
       explain: AILMENT_EXPLAIN[a.type] ?? "",
     });
-  for (const c of f.curses)
+  for (const c of f.curses) {
+    const art = c.armor ? undefined : skillArt(c.id);
     out.push({
-      key: `c-${c.name}`,
+      key: `c-${c.id}`,
       icon: c.armor ? "hammer" : "curse",
+      ...(c.armor ? { painted: "armor" as const } : {}),
+      ...(art ? { art } : {}),
       name: c.name,
       kind: "curse",
       ...(c.stacks && c.stacks > 1 ? { stacks: c.stacks } : {}),
@@ -204,6 +213,7 @@ function statusesOf(f: FighterSnapshot): Status[] {
         ? `${pct(c.armor)} of Armor no longer counts.`
         : `Takes ${pct(c.dotDamageTaken)} more damage over time.`,
     });
+  }
   for (const b of f.buffs)
     out.push({
       key: `b-${b.name}`,
@@ -212,43 +222,13 @@ function statusesOf(f: FighterSnapshot): Status[] {
       name: b.name,
       kind: "buff",
       ...(b.stacks > 1 ? { stacks: b.stacks } : {}),
-      remaining: b.remaining,
+      remaining: timeLeft(b.remaining),
       explain: describeBonuses({ [b.stat]: b.amount * b.stacks }).join(", "),
     });
   return out;
 }
 
-/** Buffs, curses, ailments and stun as ARPG status icons with stacks and seconds left. */
-export function StatusIcons(props: {
-  fighter: FighterSnapshot;
-  className?: string;
-  style?: React.CSSProperties;
-}) {
-  const list = statusesOf(props.fighter).filter((s) => s.kind !== "trait");
-  return (
-    <div className={`hud-status ${props.className ?? ""}`} style={props.style}>
-      {list.map((s) => (
-        <span
-          key={s.key}
-          className={`hud-status-icon ${s.kind}${s.remaining < 1.5 ? " fading" : ""}`}
-          title={s.name}
-        >
-          {s.painted ? (
-            <GameIcon id={s.painted} size={28} />
-          ) : (
-            <Icon name={s.icon} size={18} color="#fff6e4" />
-          )}
-          {s.stacks && <b className="mono">{s.stacks}</b>}
-          <i className="mono">
-            {s.remaining < 10 ? s.remaining.toFixed(1) : Math.ceil(s.remaining)}
-          </i>
-        </span>
-      ))}
-    </div>
-  );
-}
-
-/** One timed status on the hero's rail: painted socket, a dark sweep for the time used up. */
+/** One timed status on a rail: painted socket, a dark sweep for the time used up. */
 function RailStatus(props: { status: Status }) {
   const { status: s } = props;
   // The snapshot only tells the time left: what it was when the status (re)started is its length.
@@ -277,6 +257,8 @@ function RailStatus(props: { status: Status }) {
     >
       {s.emblem ? (
         <ClassEmblem classId={s.emblem} size={32} />
+      ) : s.art ? (
+        <img className="rail-art" src={s.art} alt="" draggable={false} />
       ) : s.painted ? (
         <GameIcon id={s.painted} size={32} />
       ) : (
@@ -300,12 +282,18 @@ export function StatusRail(props: {
   fighter: FighterSnapshot;
   boons: React.ReactNode;
   width: number;
+  /** The enemy's rail under its plaque: its modifiers sit in the middle instead of Boons. */
+  enemy?: boolean;
 }) {
   const list = statusesOf(props.fighter);
   const good = list.filter((s) => s.kind === "buff" || s.kind === "trait");
   const bad = list.filter((s) => s.kind !== "buff" && s.kind !== "trait");
   return (
-    <div className="status-rail" style={{ width: props.width }} data-testid="status-rail">
+    <div
+      className={`status-rail${props.enemy ? " enemy" : ""}`}
+      style={{ width: props.width }}
+      data-testid={props.enemy ? "enemy-status-rail" : "status-rail"}
+    >
       <div className="rail-side good">
         {good.map((s) => (
           <RailStatus key={s.key} status={s} />
@@ -588,13 +576,32 @@ export interface EnemyFrameProps {
   sub: string;
   typeIcon: EnemyTypeIcon;
   tag?: "ELITE" | "BOSS" | "GATEKEEPER" | "CHAMPION";
-  mods: readonly string[];
+  mods: readonly EliteMod[];
   attackIcon: IconName;
   thiefLeft: number | null;
   heroLevel: number;
   /** The Wildfire has no Level Malus (the hero's level ends at 100). */
   /** The enemy's Trail (hunts-entwurf-v1.md); missing for echoes and the finale. */
   hunt?: HuntView;
+}
+
+/** An Elite modifier: its name, what it does on hover. */
+export interface EliteMod {
+  readonly name: string;
+  readonly description: string;
+}
+
+function ModChip(props: { mod: EliteMod }) {
+  const hover = useNoteHover({
+    name: props.mod.name,
+    kind: "Elite Modifier",
+    explain: props.mod.description,
+  });
+  return (
+    <span className="mod-chip" tabIndex={0} {...hover}>
+      {props.mod.name}
+    </span>
+  );
 }
 
 /** The enemy's Trail at the top left, clear of the plaque's statuses: its mark, the bar to the next one. */
@@ -747,24 +754,28 @@ export function EnemyFrame(props: EnemyFrameProps) {
           </div>
         </div>
         <div className="hud-enemy-below">
-          <div className="hud-enemy-mods">
-            {props.mods.map((m) => (
-              <span key={m} className="mod-chip">
-                {m}
-              </span>
-            ))}
-            {props.thiefLeft !== null && (
-              <span
-                className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
-                role="timer"
-                data-testid="thief-timer"
-              >
-                <Icon name="retreat" size={16} color="#ffd84a" />
-                <span>Flees in {props.thiefLeft}s</span>
-              </span>
-            )}
-            <StatusIcons fighter={e} className="enemy" />
-          </div>
+          <StatusRail
+            fighter={e}
+            width={ENEMY_W + 120}
+            enemy
+            boons={
+              <div className="hud-enemy-mods">
+                {props.mods.map((m) => (
+                  <ModChip key={m.name} mod={m} />
+                ))}
+                {props.thiefLeft !== null && (
+                  <span
+                    className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
+                    role="timer"
+                    data-testid="thief-timer"
+                  >
+                    <Icon name="retreat" size={16} color="#ffd84a" />
+                    <span>Flees in {props.thiefLeft}s</span>
+                  </span>
+                )}
+              </div>
+            }
+          />
         </div>
       </section>
       {props.hunt && <HuntChip hunt={props.hunt} />}

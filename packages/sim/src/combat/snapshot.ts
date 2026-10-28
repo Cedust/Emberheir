@@ -65,6 +65,7 @@ export function fighterSnapshot(core: FightCore, f: Fighter): FighterSnapshot {
       return state ? [{ type, remaining: state.remaining }] : [];
     }),
     curses: f.curses.map((c) => ({
+      id: c.id,
       name: c.name,
       dotDamageTaken: c.dotDamageTaken,
       ...(c.armor ? { armor: c.armor } : {}),

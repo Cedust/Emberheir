@@ -799,7 +799,9 @@ describe("Affliction effects", () => {
     const hero = setup({ weapon: bleeding, bonuses: NO_CRIT, rotation: [{ skill: wither }] });
     const fight = new Fight(hero, dummy(), 1);
     fight.advance(3.1);
-    expect(fight.snapshot().enemy.curses).toMatchObject([{ name: "X", dotDamageTaken: 1 }]);
+    expect(fight.snapshot().enemy.curses).toMatchObject([
+      { id: "x", name: "X", dotDamageTaken: 1 },
+    ]);
     const dots = ofType(fight.events, "dot").map((d) => d.damage);
     expect(dots.at(0)).toBe(5);
     expect(dots.at(-1)).toBe(10);
