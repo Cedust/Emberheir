@@ -11,6 +11,7 @@ import { CampBackdrop, CampFx, SCENE_W, campLights } from "./camp/art/CampScene"
 import { PaintDefs } from "./camp/art/paint";
 import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
+import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
 import { loadLastSlot, loadSlots, saveSlot } from "./saves";
 import type { NewCharacter } from "./useGame";
@@ -51,7 +52,7 @@ export function TitleScreen(props: {
   const last = loadLastSlot();
   const lastSave = last !== null ? slots[last] : null;
   const free = slots.findIndex((s) => s === null);
-  const [page, setPage] = useState<"main" | "characters" | "new" | "settings">("main");
+  const [page, setPage] = useState<"main" | "characters" | "new" | "settings" | "credits">("main");
   const [newSlot, setNewSlot] = useState(Math.max(0, free));
   const [selected, setSelected] = useState(
     last ??
@@ -119,6 +120,9 @@ export function TitleScreen(props: {
             </Button>
             <Button big icon="gear" onClick={() => setPage("settings")}>
               Settings
+            </Button>
+            <Button big icon="star" onClick={() => setPage("credits")}>
+              Credits
             </Button>
             {DEV && (
               <Button variant="ghost" onClick={props.onLab}>
@@ -211,6 +215,17 @@ export function TitleScreen(props: {
           </div>
         )}
 
+        {page === "credits" && (
+          <div className="title-settings k-window">
+            <CreditsPanel />
+            <div className="menu-foot">
+              <Button icon="prev" onClick={() => setPage("main")}>
+                Back
+              </Button>
+            </div>
+          </div>
+        )}
+
         {page === "settings" && (
           <div className="title-settings k-window">
             <SettingsPanel api={props.settings} />
@@ -223,8 +238,9 @@ export function TitleScreen(props: {
         )}
       </div>
       <footer className="build-info mono">
-        Dev Preview · {PREVIEW_PR ? `PR #${PREVIEW_PR}` : "M4"} · {__BUILD_COMMIT__} · {buildDate} ·
-        Sim {SIM_VERSION}
+        v{__APP_VERSION__}
+        {PREVIEW_PR ? ` · PR #${PREVIEW_PR}` : ""} · {__BUILD_COMMIT__} · {buildDate} · Sim{" "}
+        {SIM_VERSION}
       </footer>
     </section>
   );

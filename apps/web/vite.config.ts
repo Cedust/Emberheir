@@ -1,4 +1,5 @@
 import { execSync } from "node:child_process";
+import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -12,6 +13,13 @@ function gitCommit(): string {
     return "dev";
   }
 }
+
+/** The game's version lives in the root package.json (Release 1.0: shown on the title and in the Menu). */
+const APP_VERSION = (
+  JSON.parse(readFileSync(new URL("../../package.json", import.meta.url), "utf8")) as {
+    version: string;
+  }
+).version;
 
 // GitHub Pages serves the site under /<repo>/, set via BASE_PATH in the deploy workflow.
 export default defineConfig({
@@ -32,6 +40,7 @@ export default defineConfig({
     },
   },
   define: {
+    __APP_VERSION__: JSON.stringify(APP_VERSION),
     __BUILD_COMMIT__: JSON.stringify(gitCommit()),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
   },
