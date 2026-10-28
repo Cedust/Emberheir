@@ -368,7 +368,6 @@ export function BattleView(props: {
     flaskCapacity(state, GAME_DATA) - (flaskDraught ? DRAUGHT_FLASK_COST : 0),
     state.flaskCharges,
   );
-  const stages = looks.act.stages;
 
   return (
     <section className="screen battle" aria-label="Battle" style={arenaStyle(run)}>
@@ -376,7 +375,6 @@ export function BattleView(props: {
       <RunHeader
         act={looks.act}
         stage={run.stage}
-        sub={`Stage ${run.stage} / ${stages}`}
         cleared={false}
         attributePoints={state.hero.unspentAttributePoints}
         skillPoints={state.hero.unspentSkillPoints}
