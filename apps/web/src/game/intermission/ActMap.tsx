@@ -603,7 +603,7 @@ export function ActMapWindow(props: {
           <WindowHeader
             title={act.name}
             sub="Act map"
-            medallion={<Medallion image={actionIcon("map")} tint="#3b5a2c" />}
+            medallion={<Medallion image={actionIcon("map")} tint="#5a4218" />}
             onClose={props.onClose}
           />
         }

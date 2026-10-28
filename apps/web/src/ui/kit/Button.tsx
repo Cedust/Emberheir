@@ -19,6 +19,8 @@ export function Button(props: {
   variant?: Variant;
   big?: boolean;
   icon?: IconName;
+  /** A painted icon instead of the line icon. */
+  art?: ReactNode;
   /** Key cap shown on the button, e.g. "C". */
   hotkey?: string;
   /** Tooltip: what the button does, in plain words. */
@@ -46,7 +48,11 @@ export function Button(props: {
       data-blocked={blocked ? "" : undefined}
       {...hover}
     >
-      {props.icon && <Icon name={props.icon} size={props.big ? 20 : 17} />}
+      {props.art ? (
+        <span className="k-btn-art">{props.art}</span>
+      ) : (
+        props.icon && <Icon name={props.icon} size={props.big ? 20 : 17} />
+      )}
       <span>{props.children}</span>
       {props.hotkey && <KeyHint k={props.hotkey} />}
     </button>

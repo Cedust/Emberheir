@@ -45,11 +45,19 @@ for name, (x0, x1) in zip(
   out = save(im, name, SIZE / max(im.width, im.height))
   print(f'{name} {out.width}x{out.height}')
 
-# Sheet D: 3 x 2 window medallions.
+# Sheet D: 3 x 2 window medallions, but the wagon and the scroll reach past an even grid: cut
+# at the empty gaps between the icons instead.
 sheet = load('menu-sheet-d-v1.png')
-cw, ch = sheet.width // 3, sheet.height // 2
-for i, name in enumerate(['legacy', 'wagon', 'menu', 'settings', 'credits', 'map']):
-  x, y = i % 3 * cw, i // 3 * ch
-  im = trim(sheet.crop((x, y, x + cw, y + ch)))
+ROW = 482
+D_BOXES = {
+  'legacy': (0, 0, 520, ROW),
+  'wagon': (520, 0, 1082, ROW),
+  'menu': (1082, 0, sheet.width, ROW),
+  'settings': (0, ROW, 550, sheet.height),
+  'credits': (550, ROW, 1005, sheet.height),
+  'map': (1005, ROW, sheet.width, sheet.height),
+}
+for name, box in D_BOXES.items():
+  im = trim(sheet.crop(box))
   out = save(im, name, SIZE / max(im.width, im.height))
   print(f'{name} {out.width}x{out.height}')

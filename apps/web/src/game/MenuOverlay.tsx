@@ -3,7 +3,7 @@ import type { GraphicsQuality } from "./pixiPacing";
 import { useNoteHover } from "../ui/ItemTooltip";
 import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
-import { actionIcon } from "../ui/actionIcons";
+import { ActionIcon, actionIcon } from "../ui/actionIcons";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { useEffect, useState } from "react";
 import { CreditsPanel } from "./Credits";
@@ -234,7 +234,11 @@ export function MenuOverlay(props: {
             <Button big variant="primary" onClick={props.onResume}>
               Resume
             </Button>
-            <Button big icon="gear" onClick={() => setPage("settings")}>
+            <Button
+              big
+              art={<ActionIcon id="settings" size={32} />}
+              onClick={() => setPage("settings")}
+            >
               Settings
             </Button>
             <Button big icon="book" onClick={props.onCompendium}>
@@ -245,7 +249,11 @@ export function MenuOverlay(props: {
                 Cheats
               </Button>
             )}
-            <Button big icon="star" onClick={() => setPage("credits")}>
+            <Button
+              big
+              art={<ActionIcon id="credits" size={32} />}
+              onClick={() => setPage("credits")}
+            >
               Credits
             </Button>
             <Button big variant="ghost" onClick={props.onQuit}>
