@@ -338,6 +338,18 @@
   display: block;
 }
 
+/* A painted icon (not a face) stands free, without the round frame. */
+.stage .k-tab-art:has(> img) {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.5));
+}
+
 .stage .k-tab .k-marker {
   margin-left: 2px;
 }

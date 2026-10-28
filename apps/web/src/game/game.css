@@ -1265,3 +1265,45 @@
 .stage .fight-banner.escaped {
   color: #ffd84a;
 }
+
+/* Top bar buttons: painted plates with art, the name on hover. */
+.stage .hud-icon-btn {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+  color: var(--k-on-wood);
+  border: 2px solid transparent;
+  border-image: url("../assets/ui/btn-close.webp") 30 fill / 12px / 0 stretch;
+  background: url("../assets/ui/btn-close.webp") border-box center / 100% 100% no-repeat;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
+  cursor: pointer;
+}
+
+.stage .hud-icon-btn:hover {
+  color: #fff;
+  filter: brightness(1.15) drop-shadow(0 0 8px rgb(255 160 70 / 0.55));
+}
+
+.stage .hud-icon-btn .hud-face {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  overflow: hidden;
+  display: block;
+}
+
+.stage .hud-icon-btn kbd {
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 0 4px;
+  font-size: 10px;
+  line-height: 14px;
+  background: var(--bg);
+}

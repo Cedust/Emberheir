@@ -11,7 +11,8 @@ import {
 } from "../../ui/kit/Window";
 import { HoldButton } from "../../ui/kit/Button";
 import { CurrencyChip, Price } from "../../ui/kit/Currency";
-import { PointChip } from "../../ui/kit/Points";
+import { PointChip, PointIcon } from "../../ui/kit/Points";
+import battlePlanUrl from "../../assets/harvest/battle-plan.webp";
 import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
@@ -38,10 +39,16 @@ export function KaelenView(props: {
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
-    { id: "tree", name: "Ash Tree", icon: "tree" },
-    { id: "mastery", name: "Heirloom", icon: "sword" },
+    { id: "tree", name: "Ash Tree", art: <PointIcon id="skill" size={26} /> },
+    { id: "mastery", name: "Heirloom", art: <PointIcon id="heirloom" size={26} /> },
     ...(planEditable
-      ? [{ id: "plan" as const, name: "Battle Plan", icon: "strike" as const }]
+      ? [
+          {
+            id: "plan" as const,
+            name: "Battle Plan",
+            art: <img src={battlePlanUrl} width={30} alt="" draggable={false} />,
+          },
+        ]
       : []),
   ];
 

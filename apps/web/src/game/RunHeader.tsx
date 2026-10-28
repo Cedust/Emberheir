@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GAME_DATA } from "@emberheir/content";
 import {
   type ActData,
@@ -9,6 +10,8 @@ import {
   wildfireName,
 } from "@emberheir/sim";
 import { Icon } from "../ui/Icon";
+import { PointIcon } from "../ui/kit/Points";
+import { PaintedFace } from "./camp/art/PersonaArt";
 import { actTitle, finaleFoe, inFinale } from "./finale";
 
 /**
@@ -151,36 +154,45 @@ export function RunHeader(props: {
           : {})}
       />
       <div className="grow" />
-      <button type="button" className="hud-button" onClick={props.onCharacter}>
-        <Icon name="user" size={18} />
-        <span>Character</span>
-        <kbd>C</kbd>
+      <HudButton name="Character" k="C" onClick={props.onCharacter}>
+        <span className="hud-face">
+          <PaintedFace id="heir" />
+        </span>
         {props.attributePoints > 0 && (
           <span className="badge" aria-label={`${props.attributePoints} unspent points`}>
             {props.attributePoints}
           </span>
         )}
-      </button>
-      <button
-        type="button"
-        className="hud-button"
-        onClick={props.onTree}
-        title="Ash Tree and Battle Plan"
-      >
-        <Icon name="tree" size={18} />
-        <span>Ash Tree</span>
-        <kbd>T</kbd>
+      </HudButton>
+      <HudButton name="Ash Tree" tip="Ash Tree and Battle Plan" k="T" onClick={props.onTree}>
+        <PointIcon id="skill" size={34} />
         {props.skillPoints > 0 && <span className="badge">{props.skillPoints}</span>}
-      </button>
-      <button
-        type="button"
-        className="icon-button"
-        aria-label="Menu"
-        title="Menu (Esc)"
-        onClick={props.onMenu}
-      >
-        <Icon name="menu" size={20} />
-      </button>
+      </HudButton>
+      <HudButton name="Menu" tip="Menu" k="Esc" onClick={props.onMenu}>
+        <Icon name="menu" size={22} />
+      </HudButton>
     </header>
+  );
+}
+
+/** A painted square button in the top bar: art only, the name and key on hover (Timo). */
+function HudButton(props: {
+  name: string;
+  tip?: string;
+  k: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      className="hud-icon-btn"
+      aria-label={props.name}
+      title={`${props.tip ?? props.name} (${props.k})`}
+      onClick={props.onClick}
+    >
+      {props.children}
+      <kbd>{props.k}</kbd>
+    </button>
   );
 }
