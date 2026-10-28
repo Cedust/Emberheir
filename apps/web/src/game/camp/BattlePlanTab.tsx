@@ -1,7 +1,7 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
   AILMENT_SOURCE,
-  BATTLE_PLAN_LADDER,
+  COMBAT,
   type BattlePlanState,
   type WeaponDefinition,
   type SkillDefinition,
@@ -25,7 +25,15 @@ import {
   unlockPrestige,
   capstoneChangeAcorns,
 } from "@emberheir/sim";
-import { type DragEvent, useState } from "react";
+import {
+  type CSSProperties,
+  type DragEvent,
+  type ReactNode,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+import { GameIcon } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { WEAPON_ICON } from "../battle/hud/BattleHud";
@@ -33,6 +41,8 @@ import { AttackIcon, SkillIcon } from "../battle/SkillIcon";
 import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { Price } from "../../ui/kit/Currency";
+import { prefersReducedMotion } from "../../ui/kit/juice";
+import { storageKey } from "../../storage";
 import { SkillMeta, skillText } from "../../ui/SkillMeta";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
@@ -94,24 +104,63 @@ export function ShareBar(props: { share: number; label?: string }) {
   );
 }
 
+/** A plain span with a game tooltip (instead of the browser's `title`). */
+function Tip(props: {
+  note: NoteHover;
+  className?: string;
+  style?: CSSProperties;
+  children: ReactNode;
+}) {
+  const hover = useNoteHover(props.note);
+  return (
+    <span className={props.className} style={props.style} {...hover}>
+      {props.children}
+    </span>
+  );
+}
+
+/** A section heading whose tooltip says in plain words how the row works. */
+function SectionTitle(props: { name: string; explain: string }) {
+  return (
+    <Tip
+      className="title-font section-title"
+      note={{ name: props.name, kind: "Battle Plan", explain: props.explain }}
+    >
+      {props.name}
+    </Tip>
+  );
+}
+
 function Flames(props: { wait: number }) {
   if (props.wait < 0.3) {
     return (
-      <span className="chain-plus" title="Back to back">
+      <Tip
+        className="chain-plus"
+        note={{
+          name: "Back to back",
+          kind: "Rotation",
+          explain: "Enough Heat left to fire right away.",
+        }}
+      >
         +
-      </span>
+      </Tip>
     );
   }
   const n = props.wait < 2.5 ? 1 : props.wait < 5 ? 2 : 3;
   return (
-    <span
+    <Tip
       className="chain-flames"
-      title={n === 1 ? "Short wait" : n === 2 ? "Medium wait" : "Long wait"}
+      note={{
+        name: n === 1 ? "Short wait" : n === 2 ? "Medium wait" : "Long wait",
+        kind: "Rotation",
+        explain: "Waits until you have the Heat.",
+        status: `${props.wait.toFixed(1)} s`,
+      }}
     >
       {Array.from({ length: n }, (_, i) => (
         <Icon key={i} name="flame" size={14} />
       ))}
-    </span>
+    </Tip>
   );
 }
 
@@ -139,8 +188,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     threshold: triggerThreshold(r.skill.heatCost, r.threshold),
   }));
   const chain = estimateRotation(slots, rate, stats.startingHeat);
-  const prestige = state.legacy.prestige;
-  const unlocks = battlePlanUnlocks(prestige);
+  const unlocks = battlePlanUnlocks(state.legacy.prestige);
   const plan = state.hero.plan;
   const report = state.run?.rewards?.report;
   const setPlan = (patch: Partial<BattlePlanState>) =>
@@ -156,6 +204,26 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     return id === null ? known.find((k) => k.startSkill) : known.find((k) => k.skill.id === id);
   };
   const skillOf = (id: string | null | undefined) => known.find((k) => k.skill.id === id);
+  // A skill fires once per rotation: a later slot with the same skill is skipped in the fight.
+  const rotationIds = Array.from(
+    { length: state.progress.rotationSlots },
+    (_, i) => rotationSkill(i)?.skill.id,
+  );
+  const dupOf = (i: number) => {
+    const j = rotationIds.indexOf(rotationIds[i]);
+    return j < i ? j : -1;
+  };
+  /** Rotation Slot (column) of each fight slot, for the preview. */
+  const columns = rotationIds.flatMap((id, i) => (id && dupOf(i) < 0 ? [i] : []));
+  /** The fight slot the preview fired last; `n` restarts the slot's flash. */
+  const [firing, setFiring] = useState<{ slot: number; n: number } | null>(null);
+  const firedColumn = firing ? columns[firing.slot] : undefined;
+  /** Where each skill sits, shown as a badge on the library tile. */
+  const placed = new Map<string, string>();
+  rotationIds.forEach((id, i) => id && dupOf(i) < 0 && placed.set(id, String(i + 1)));
+  plan.reactions.slice(0, unlocks.reactionSlots).forEach((r, i) => {
+    if (r && !placed.has(r.skillId)) placed.set(r.skillId, `R${i + 1}`);
+  });
   const echoSlot = target.row === "rotation" ? target.index : 0;
 
   /** Puts a skill into a slot (rotation, reaction or opening move); null empties it. */
@@ -226,7 +294,11 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
               note={
                 def
                   ? { name: def.name, kind: "Modifier", explain: def.text }
-                  : { name: "Modifier", kind: "Empty socket", explain: "" }
+                  : {
+                      name: "Modifier",
+                      kind: "Empty socket",
+                      explain: "Put a Modifier here to change how this slot fires.",
+                    }
               }
               onClick={() => pick({ row, index: i, part: "mod", socket: m })}
             />
@@ -239,13 +311,42 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     <div className="plan-layout">
       <main className="plan-main">
         <section aria-label="Rotation">
-          <span className="title-font section-title">Rotation</span>
+          <SectionTitle
+            name="Rotation"
+            explain="Your skills fire in order, left to right, as soon as you have the Heat. Then it starts over."
+          />
           <div className="plan-slots">
             {ROTATION_UNLOCK.map((p, i) => {
               const k = i < state.progress.rotationSlots ? rotationSkill(i) : undefined;
               if (!k) return <LockedSlot key={i} prestige={p} />;
+              const dup = dupOf(i);
+              if (dup >= 0) {
+                return (
+                  <div
+                    key={i}
+                    className={`plan-col panel-card${target.row === "rotation" && target.index === i ? " on" : ""}`}
+                    data-testid={`rotation-slot-${i}`}
+                  >
+                    <PlanSlot
+                      label={`Rotation Slot ${i + 1}`}
+                      pos={String(i + 1)}
+                      skillId={undefined}
+                      name="Empty"
+                      note={{
+                        name: "Empty",
+                        kind: `Rotation Slot ${i + 1}`,
+                        explain: "Put a skill here. Each skill fires only once per rotation.",
+                      }}
+                      on={on("rotation", i, "skill")}
+                      onClick={() => pick({ row: "rotation", index: i })}
+                      drop={dropSkill("rotation", i)}
+                    />
+                  </div>
+                );
+              }
               const cost = k.skill.heatCost;
               const fires = plan.thresholds[i] ?? cost;
+              const flash = firing && firedColumn === i ? `fire-${firing.n % 2}` : undefined;
               return (
                 <div
                   key={i}
@@ -258,6 +359,13 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                     skillId={k.skill.id}
                     name={k.skill.name}
                     corner={String(cost)}
+                    flash={flash}
+                    note={{
+                      name: k.skill.name,
+                      kind: `Rotation Slot ${i + 1}`,
+                      explain: skillText(k.skill, setup.weapon),
+                      status: `Costs ${cost} Heat`,
+                    }}
                     on={on("rotation", i, "skill")}
                     onClick={() => pick({ row: "rotation", index: i })}
                     drop={dropSkill("rotation", i)}
@@ -277,14 +385,34 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                   )}
                   {sockets("rotation", i)}
                   {unlocks.conditions && (
-                    <ConditionChip
-                      id={plan.conditions[i] ?? null}
-                      list={SLOT_CONDITIONS}
-                      empty="Always"
-                      kind="Only if"
-                      on={on("rotation", i, "cond")}
-                      onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
-                    />
+                    <div className="plan-cond-row">
+                      {plan.conditions[i] ? (
+                        <ConditionChip
+                          id={plan.conditions[i] ?? null}
+                          list={SLOT_CONDITIONS}
+                          empty="Always"
+                          kind="Only if"
+                          explain="Skipped when this is not true. The next slot fires instead."
+                          on={on("rotation", i, "cond")}
+                          onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
+                        />
+                      ) : (
+                        <Chip
+                          className="plan-socket cond-socket"
+                          icon="eye"
+                          label="Only if"
+                          filled={false}
+                          on={on("rotation", i, "cond")}
+                          note={{
+                            name: "Only if",
+                            kind: "Empty socket",
+                            explain:
+                              "Put a condition here: the slot is skipped while it is not true.",
+                          }}
+                          onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
+                        />
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -293,7 +421,10 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         </section>
 
         <section aria-label="Reactions">
-          <span className="title-font section-title">Reactions</span>
+          <SectionTitle
+            name="Reactions"
+            explain={`Fire on their own the moment their sign comes, before the next Rotation skill. Then they rest ${REACTION_COOLDOWN} s.`}
+          />
           <div className="plan-slots reactions">
             {REACTION_UNLOCK.map((p, i) => {
               if (i >= unlocks.reactionSlots) return <LockedSlot key={p} prestige={p} small />;
@@ -313,22 +444,30 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                     skillId={k?.skill.id}
                     name={k?.skill.name ?? "Empty"}
                     corner={fired !== undefined ? `×${fired}` : undefined}
-                    tip={`${REACTION_COOLDOWN} s cooldown`}
+                    note={{
+                      name: k?.skill.name ?? "Empty",
+                      kind: `Reaction Slot ${i + 1}`,
+                      explain: k
+                        ? skillText(k.skill, setup.weapon)
+                        : "Put a skill here, then pick when it fires.",
+                      status: `Rests ${REACTION_COOLDOWN} s after it fires`,
+                    }}
                     on={on("reaction", i, "skill")}
                     onClick={() => pick({ row: "reaction", index: i })}
                     drop={dropSkill("reaction", i)}
                   />
+                  {sockets("reaction", i)}
                   {r && (
                     <ConditionChip
                       id={r.conditionId}
                       list={REACTION_CONDITIONS}
                       empty=""
                       kind="When"
+                      explain="Fires the moment this happens."
                       on={on("reaction", i, "cond")}
                       onClick={() => pick({ row: "reaction", index: i, part: "cond" })}
                     />
                   )}
-                  {sockets("reaction", i)}
                 </div>
               );
             })}
@@ -342,8 +481,12 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                   pos="◆"
                   reaction
                   skillId={skillOf(plan.openingMove)?.skill.id}
-                  name={skillOf(plan.openingMove)?.skill.name ?? "Empty"}
-                  tip="Opening Move · free at fight start"
+                  name={skillOf(plan.openingMove)?.skill.name ?? "Opening Move"}
+                  note={{
+                    name: "Opening Move",
+                    kind: skillOf(plan.openingMove)?.skill.name ?? "Empty",
+                    explain: "Fires once for free when the fight starts.",
+                  }}
                   on={on("opening", 0, "skill")}
                   onClick={() => pick({ row: "opening", index: 0 })}
                   drop={dropSkill("opening", 0)}
@@ -355,13 +498,20 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
 
         <section className="chain" aria-label="One rotation">
           <div className="chain-row">
-            <span className="skill-slot attack" title={setup.weapon.defaultAttack}>
+            <Tip
+              className="skill-slot attack"
+              note={{
+                name: setup.weapon.defaultAttack,
+                kind: "Default Attack",
+                explain: "Your weapon strikes on its own. It builds the Heat your skills spend.",
+              }}
+            >
               <AttackIcon
                 weaponId={setup.weapon.id}
                 fallback={WEAPON_ICON[setup.weapon.id] ?? "strike"}
                 size={26}
               />
-            </span>
+            </Tip>
             {report && (
               <ShareBar
                 share={damageShare(report, setup.weapon.defaultAttack)}
@@ -372,23 +522,36 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             {chain.map((step, i) => {
               const s = slots[step.slot];
               if (!s) return null;
+              const flash = firing?.slot === step.slot ? ` fire-${firing.n % 2}` : "";
               return (
                 <span key={i} className="chain-step">
                   <Flames wait={step.wait} />
-                  <span
-                    className="skill-chip"
-                    title={s.name}
+                  <Tip
+                    className={`skill-chip${flash}`}
                     style={{ background: skillTint(s.id) }}
+                    note={{
+                      name: s.name,
+                      kind: "Rotation",
+                      explain: "",
+                      status: `Costs ${s.heatCost} Heat`,
+                    }}
                   >
                     <SkillIcon skillId={s.id} size={22} />
-                  </span>
+                  </Tip>
                 </span>
               );
             })}
             {chain.length > 0 ? (
-              <span className="chain-cycle" title="Starts over">
+              <Tip
+                className="chain-cycle"
+                note={{
+                  name: "Starts over",
+                  kind: "Rotation",
+                  explain: "After the last slot, the first fires again.",
+                }}
+              >
                 <Icon name="cycle" size={20} />
-              </span>
+              </Tip>
             ) : (
               <Icon name="warning" size={22} />
             )}
@@ -399,10 +562,13 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                 <ShareBar share={damageShare(report, AILMENT_SOURCE)} label={AILMENT_SOURCE} />
               </span>
             )}
-            <span className="mono sub" title="Heat per second">
-              {rate.toFixed(1)}/s
-            </span>
           </div>
+          <HeatPreview
+            slots={slots}
+            rate={rate}
+            startingHeat={stats.startingHeat}
+            onFire={(slot) => setFiring((f) => ({ slot, n: (f?.n ?? 0) + 1 }))}
+          />
         </section>
       </main>
 
@@ -410,6 +576,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
         <Library
           target={target}
           known={known}
+          placed={placed}
           weapon={setup.weapon}
           slotSkill={
             target.row === "rotation"
@@ -440,25 +607,126 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             }
           }}
         />
-        {unlocks.capstone ? (
+        {unlocks.capstone && (
           <Capstones
             state={state}
             echoSlot={echoSlot}
             onPick={(capstone) => setPlan({ capstone })}
           />
-        ) : (
-          <section className="panel-card ladder" aria-label="Battle Plan upgrades">
-            <span className="title-font section-title">Upgrades</span>
-            <ol>
-              {BATTLE_PLAN_LADDER.map((u, i) => (
-                <li key={u.name} className={i < prestige ? "done" : i === prestige ? "next" : ""}>
-                  <span className="mono">P{i + 1}</span> {u.name}
-                </li>
-              ))}
-            </ol>
-          </section>
         )}
       </aside>
+    </div>
+  );
+}
+
+const PAUSE_KEY = storageKey("planPreviewPaused");
+
+/** Whether the player paused the Heat preview (kept per browser, like a setting). */
+function readPaused(): boolean {
+  try {
+    return localStorage.getItem(PAUSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writePaused(paused: boolean) {
+  try {
+    localStorage.setItem(PAUSE_KEY, paused ? "1" : "0");
+  } catch {
+    // Storage blocked: the pause still holds until the window closes.
+  }
+}
+
+/**
+ * The fight's Heat bar, played at the hero's Heat per second: it fills, the next Rotation Slot
+ * fires once its Heat is there and spends its cost. Shows how Heat, cost and order work without
+ * words. Still (filled to the start) with `prefers-reduced-motion`.
+ */
+function HeatPreview(props: {
+  slots: readonly {
+    readonly name: string;
+    readonly heatCost: number;
+    readonly threshold: number;
+  }[];
+  rate: number;
+  startingHeat: number;
+  onFire: (slot: number) => void;
+}) {
+  const fill = useRef<HTMLSpanElement>(null);
+  const mark = useRef<HTMLSpanElement>(null);
+  const value = useRef<HTMLSpanElement>(null);
+  const onFire = useRef(props.onFire);
+  onFire.current = props.onFire;
+  const [paused, setPaused] = useState(readPaused);
+  const key = props.slots.map((s) => `${s.heatCost}/${s.threshold}`).join(",");
+  const { rate, startingHeat } = props;
+  const slots = useRef(props.slots);
+  slots.current = props.slots;
+  /** Heat and next slot survive a pause; a changed plan starts over. */
+  const run = useRef({ key: "", heat: 0, pointer: 0 });
+  useEffect(() => {
+    const list = slots.current;
+    const max = COMBAT.maxHeat;
+    const r = run.current;
+    if (r.key !== key) Object.assign(r, { key, heat: Math.min(max, startingHeat), pointer: 0 });
+    const need = (i: number) => {
+      const s = list[i % list.length];
+      return s ? Math.min(max, Math.max(s.heatCost, s.threshold)) : max;
+    };
+    const draw = () => {
+      if (fill.current) fill.current.style.width = `${(r.heat / max) * 100}%`;
+      if (mark.current) mark.current.style.left = `${(need(r.pointer) / max) * 100}%`;
+      if (value.current) value.current.textContent = String(Math.floor(r.heat));
+    };
+    draw();
+    if (paused || list.length === 0 || rate <= 0 || prefersReducedMotion()) return;
+    let last = performance.now();
+    let frame = requestAnimationFrame(function tick(now) {
+      const dt = Math.min(0.1, (now - last) / 1000);
+      last = now;
+      r.heat = Math.min(max, r.heat + rate * dt);
+      const s = list[r.pointer % list.length];
+      if (s && r.heat >= need(r.pointer)) {
+        r.heat -= s.heatCost;
+        onFire.current(r.pointer % list.length);
+        r.pointer++;
+      }
+      draw();
+      frame = requestAnimationFrame(tick);
+    });
+    return () => cancelAnimationFrame(frame);
+  }, [key, rate, startingHeat, paused]);
+  const toggle = () => {
+    setPaused(!paused);
+    writePaused(!paused);
+  };
+  const hover = useNoteHover({
+    name: "Heat",
+    kind: "Fight preview",
+    explain: "Your Default Attack fills it. Each skill waits for its Heat, then spends it.",
+    status: `+${props.rate.toFixed(1)} Heat per second`,
+  });
+  return (
+    <div className="heat-preview">
+      <button
+        type="button"
+        className="heat-preview-toggle"
+        aria-label={paused ? "Play preview" : "Pause preview"}
+        aria-pressed={paused}
+        onClick={toggle}
+      >
+        <Icon name={paused ? "play" : "pause"} size={16} />
+      </button>
+      <span className="heat-preview-icon" {...hover}>
+        <GameIcon id="heat" size={30} />
+      </span>
+      <span className="heat-preview-track" aria-hidden="true" {...hover}>
+        <span ref={fill} className="heat-preview-fill" />
+        <span ref={mark} className="heat-preview-mark" />
+      </span>
+      <span ref={value} className="mono heat-preview-value" />
+      <span className="mono sub">+{props.rate.toFixed(1)}/s</span>
     </div>
   );
 }
@@ -471,20 +739,23 @@ function PlanSlot(props: {
   name: string;
   corner?: string | undefined;
   reaction?: boolean;
-  tip?: string;
+  /** The preview just fired this slot: "fire-0" / "fire-1" take turns to restart the flash. */
+  flash?: string | undefined;
+  note: NoteHover;
   on: boolean;
   onClick: () => void;
   drop: { onDragOver: (e: DragEvent) => void; onDrop: (e: DragEvent) => void };
 }) {
   const [over, setOver] = useState(false);
+  const hover = useNoteHover(props.note);
   return (
     <button
       type="button"
-      className={`plan-slot-btn${props.on ? " on" : ""}${over ? " over" : ""}`}
+      className={`plan-slot-btn${props.on ? " on" : ""}${over ? " over" : ""}${props.flash ? ` ${props.flash}` : ""}`}
       aria-label={props.label}
       aria-pressed={props.on}
-      title={props.tip}
       onClick={props.onClick}
+      {...hover}
       onDragOver={(e) => {
         props.drop.onDragOver(e);
         if (e.defaultPrevented) setOver(true);
@@ -509,11 +780,14 @@ function PlanSlot(props: {
 }
 
 function LockedSlot(props: { prestige: number; small?: boolean }) {
+  const hover = useNoteHover({
+    name: "Locked",
+    kind: props.small ? "Reaction Slot" : "Rotation Slot",
+    explain: "",
+    status: `Opens with Prestige ${props.prestige}`,
+  });
   return (
-    <div
-      className={`plan-col panel-card locked${props.small ? " small" : ""}`}
-      title={`Prestige ${props.prestige}`}
-    >
+    <div className={`plan-col panel-card locked${props.small ? " small" : ""}`} {...hover}>
       <span className="skill-slot empty">
         <Icon name="lock" size={22} />
       </span>
@@ -532,7 +806,8 @@ function HeatSlider(props: {
   const hover = useNoteHover({
     name: "Fires at Heat",
     kind: props.name,
-    explain: "",
+    explain:
+      "Waits until you have this much Heat, so Heat is left for what comes next. Never less than the skill costs.",
     status: `${props.value} Heat`,
   });
   return (
@@ -585,11 +860,12 @@ function ConditionChip(props: {
   list: readonly { readonly id: string; readonly name: string }[];
   empty: string;
   kind: string;
+  explain: string;
   on: boolean;
   onClick: () => void;
 }) {
   const name = props.list.find((c) => c.id === props.id)?.name ?? props.empty;
-  const hover = useNoteHover({ name, kind: props.kind, explain: "" });
+  const hover = useNoteHover({ name, kind: props.kind, explain: props.explain });
   return (
     <button
       type="button"
@@ -611,6 +887,8 @@ type Known = ReturnType<typeof knownSkills>;
 function Library(props: {
   target: Target;
   known: Known;
+  /** Slot a skill already sits in ("2", "R1"). */
+  placed: ReadonlyMap<string, string>;
   weapon: WeaponDefinition;
   slotSkill: string | null | undefined;
   mods: readonly SlotModifier[];
@@ -641,6 +919,7 @@ function Library(props: {
     on: boolean;
     blocked?: boolean;
     drag?: string;
+    badge?: string | undefined;
   }[] =
     target.part === "skill"
       ? [
@@ -654,6 +933,7 @@ function Library(props: {
             def: k.skill,
             on: props.slotSkill === k.skill.id,
             drag: k.skill.id,
+            badge: props.placed.get(k.skill.id),
           })),
           ...(target.row !== "rotation" && props.slotSkill
             ? [{ id: null, name: "Empty", text: "", icon: "close" as IconName, on: false }]
@@ -726,6 +1006,11 @@ function Library(props: {
                   <SkillIcon skillId={t.skill} size={20} />
                 ) : (
                   <Icon name={t.icon} size={20} {...(t.tint ? { color: "#fff6e4" } : {})} />
+                )}
+                {t.badge && (
+                  <span className="tile-badge mono" aria-hidden="true">
+                    {t.badge}
+                  </span>
                 )}
               </span>
               <span className="known-text">

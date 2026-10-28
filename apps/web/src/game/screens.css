@@ -4948,6 +4948,20 @@
     0 0 8px rgb(226 170 54 / 0.45);
 }
 
+/* The "Only if" row under the Modifier sockets: same height empty (socket) or set (pill). */
+.stage .plan-cond-row {
+  min-height: 36px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* The empty "Only if" socket: same as a Modifier socket, its eye dimmed. */
+.stage .plan-socket.cond-socket {
+  opacity: 0.8;
+}
+
 .stage .plan-socket.on,
 .stage .plan-cond.on {
   outline: 2px solid var(--accent);
@@ -5151,24 +5165,118 @@
   cursor: default;
 }
 
-.stage .ladder {
-  padding: 14px 16px;
-}
-
-.stage .ladder ol {
-  list-style: none;
-  padding: 0;
-  margin: 8px 0 0;
+/* The preview's Heat bar: fills at the hero's Heat per second, the mark is the next slot's Heat. */
+.stage .heat-preview {
+  margin-top: 10px;
   display: grid;
-  grid-template-columns: 1fr;
-  gap: 4px;
-  font-size: 13px;
-  color: var(--text-sub);
+  grid-template-columns: auto auto minmax(0, 1fr) 34px auto;
+  align-items: center;
+  gap: 10px;
+  color: var(--heat);
 }
 
-.stage .ladder li.next {
-  color: var(--accent);
+.stage .heat-preview-toggle {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid #8a6a3a;
+  background: rgb(0 0 0 / 0.35);
+  color: var(--heat);
+  cursor: pointer;
+}
+
+.stage .heat-preview-icon {
+  display: flex;
+}
+
+.stage .heat-preview-toggle:hover {
+  border-color: var(--heat);
+}
+
+.stage .heat-preview-track {
+  position: relative;
+  height: 14px;
+  border-radius: 7px;
+  background: rgb(0 0 0 / 0.45);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.6);
+  overflow: hidden;
+}
+
+.stage .heat-preview-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: var(--heat-gradient);
+}
+
+.stage .heat-preview-mark {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  margin-left: -1px;
+  background: #fff1c8;
+  box-shadow: 0 0 6px rgb(255 241 200 / 0.8);
+}
+
+.stage .heat-preview-value {
   font-weight: 700;
+  text-align: right;
+}
+
+/* A slot the preview just fired flashes like a skill in the fight (two names restart it). */
+.stage .plan-slot-btn.fire-0 .skill-slot,
+.stage .chain .skill-chip.fire-0 {
+  animation: plan-fire-0 0.5s ease-out;
+}
+
+.stage .plan-slot-btn.fire-1 .skill-slot,
+.stage .chain .skill-chip.fire-1 {
+  animation: plan-fire-1 0.5s ease-out;
+}
+
+@keyframes plan-fire-0 {
+  0% {
+    transform: scale(1.12);
+    box-shadow: 0 0 22px rgb(255 177 59 / 0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+@keyframes plan-fire-1 {
+  0% {
+    transform: scale(1.12);
+    box-shadow: 0 0 22px rgb(255 177 59 / 0.95);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Where a library skill already sits ("2", "R1"). */
+.stage .library-tile .skill-chip {
+  position: relative;
+}
+
+.stage .tile-badge {
+  position: absolute;
+  right: -7px;
+  bottom: -7px;
+  min-width: 20px;
+  padding: 0 4px;
+  border-radius: 999px;
+  border: 1.5px solid var(--ink);
+  background: var(--accent);
+  color: #fff6e4;
+  font-size: 11px;
+  font-weight: 700;
+  line-height: 16px;
+  text-align: center;
 }
 
 .stage .view-only-hint {
