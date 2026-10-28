@@ -31,6 +31,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { GameIcon } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { WEAPON_ICON } from "../battle/hud/BattleHud";
@@ -39,6 +40,7 @@ import { skillIcon, skillTint } from "../battle/skills";
 import type { GameApi } from "../useGame";
 import { Price } from "../../ui/kit/Currency";
 import { prefersReducedMotion } from "../../ui/kit/juice";
+import { storageKey } from "../../storage";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -272,8 +274,9 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     },
   });
 
-  const sockets = (row: Target["row"], i: number) =>
-    unlocks.modifiers > 0 && (
+  /** Modifier sockets; `extra` sits at the end of the row (an empty "Only if" socket). */
+  const sockets = (row: Target["row"], i: number, extra?: ReactNode) =>
+    (unlocks.modifiers > 0 || extra) && (
       <div className="plan-sockets" role="group" aria-label="Modifiers">
         {Array.from({ length: unlocks.modifiers }, (_, m) => {
           const id = mods(row, i)[m];
@@ -299,6 +302,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             />
           );
         })}
+        {extra}
       </div>
     );
 
@@ -378,18 +382,33 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       }
                     />
                   )}
-                  {sockets("rotation", i)}
-                  {unlocks.conditions && (
+                  {sockets(
+                    "rotation",
+                    i,
+                    unlocks.conditions && !plan.conditions[i] && (
+                      <Chip
+                        className="plan-socket cond-socket"
+                        icon="eye"
+                        label="Only if"
+                        filled={false}
+                        on={on("rotation", i, "cond")}
+                        note={{
+                          name: "Only if",
+                          kind: "Empty socket",
+                          explain:
+                            "Put a condition here: the slot is skipped while it is not true.",
+                        }}
+                        onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
+                      />
+                    ),
+                  )}
+                  {unlocks.conditions && plan.conditions[i] && (
                     <ConditionChip
                       id={plan.conditions[i] ?? null}
                       list={SLOT_CONDITIONS}
                       empty="Always"
                       kind="Only if"
-                      explain={
-                        plan.conditions[i]
-                          ? "Skipped when this is not true. The next slot fires instead."
-                          : "Always fires on its turn."
-                      }
+                      explain="Skipped when this is not true. The next slot fires instead."
                       on={on("rotation", i, "cond")}
                       onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
                     />
@@ -598,6 +617,25 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
   );
 }
 
+const PAUSE_KEY = storageKey("planPreviewPaused");
+
+/** Whether the player paused the Heat preview (kept per browser, like a setting). */
+function readPaused(): boolean {
+  try {
+    return localStorage.getItem(PAUSE_KEY) === "1";
+  } catch {
+    return false;
+  }
+}
+
+function writePaused(paused: boolean) {
+  try {
+    localStorage.setItem(PAUSE_KEY, paused ? "1" : "0");
+  } catch {
+    // Storage blocked: the pause still holds until the window closes.
+  }
+}
+
 /**
  * The fight's Heat bar, played at the hero's Heat per second: it fills, the next Rotation Slot
  * fires once its Heat is there and spends its cost. Shows how Heat, cost and order work without
@@ -618,42 +656,49 @@ function HeatPreview(props: {
   const value = useRef<HTMLSpanElement>(null);
   const onFire = useRef(props.onFire);
   onFire.current = props.onFire;
+  const [paused, setPaused] = useState(readPaused);
   const key = props.slots.map((s) => `${s.heatCost}/${s.threshold}`).join(",");
   const { rate, startingHeat } = props;
   const slots = useRef(props.slots);
   slots.current = props.slots;
+  /** Heat and next slot survive a pause; a changed plan starts over. */
+  const run = useRef({ key: "", heat: 0, pointer: 0 });
   useEffect(() => {
     const list = slots.current;
     const max = COMBAT.maxHeat;
-    let heat = Math.min(max, startingHeat);
-    let pointer = 0;
+    const r = run.current;
+    if (r.key !== key) Object.assign(r, { key, heat: Math.min(max, startingHeat), pointer: 0 });
     const need = (i: number) => {
       const s = list[i % list.length];
       return s ? Math.min(max, Math.max(s.heatCost, s.threshold)) : max;
     };
     const draw = () => {
-      if (fill.current) fill.current.style.width = `${(heat / max) * 100}%`;
-      if (mark.current) mark.current.style.left = `${(need(pointer) / max) * 100}%`;
-      if (value.current) value.current.textContent = String(Math.floor(heat));
+      if (fill.current) fill.current.style.width = `${(r.heat / max) * 100}%`;
+      if (mark.current) mark.current.style.left = `${(need(r.pointer) / max) * 100}%`;
+      if (value.current) value.current.textContent = String(Math.floor(r.heat));
     };
     draw();
-    if (list.length === 0 || rate <= 0 || prefersReducedMotion()) return;
+    if (paused || list.length === 0 || rate <= 0 || prefersReducedMotion()) return;
     let last = performance.now();
     let frame = requestAnimationFrame(function tick(now) {
       const dt = Math.min(0.1, (now - last) / 1000);
       last = now;
-      heat = Math.min(max, heat + rate * dt);
-      const s = list[pointer % list.length];
-      if (s && heat >= need(pointer)) {
-        heat -= s.heatCost;
-        onFire.current(pointer % list.length);
-        pointer++;
+      r.heat = Math.min(max, r.heat + rate * dt);
+      const s = list[r.pointer % list.length];
+      if (s && r.heat >= need(r.pointer)) {
+        r.heat -= s.heatCost;
+        onFire.current(r.pointer % list.length);
+        r.pointer++;
       }
       draw();
       frame = requestAnimationFrame(tick);
     });
     return () => cancelAnimationFrame(frame);
-  }, [key, rate, startingHeat]);
+  }, [key, rate, startingHeat, paused]);
+  const toggle = () => {
+    setPaused(!paused);
+    writePaused(!paused);
+  };
   const hover = useNoteHover({
     name: "Heat",
     kind: "Fight preview",
@@ -661,9 +706,20 @@ function HeatPreview(props: {
     status: `+${props.rate.toFixed(1)} Heat per second`,
   });
   return (
-    <div className="heat-preview" aria-hidden="true" {...hover}>
-      <Icon name="flame" size={18} />
-      <span className="heat-preview-track">
+    <div className="heat-preview">
+      <button
+        type="button"
+        className="heat-preview-toggle"
+        aria-label={paused ? "Play preview" : "Pause preview"}
+        aria-pressed={paused}
+        onClick={toggle}
+      >
+        <Icon name={paused ? "play" : "pause"} size={16} />
+      </button>
+      <span className="heat-preview-icon" {...hover}>
+        <GameIcon id="heat" size={30} />
+      </span>
+      <span className="heat-preview-track" aria-hidden="true" {...hover}>
         <span ref={fill} className="heat-preview-fill" />
         <span ref={mark} className="heat-preview-mark" />
       </span>

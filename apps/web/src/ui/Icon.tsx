@@ -32,6 +32,8 @@ export const ICONS = {
   box: "M21 8l-9-5-9 5v8l9 5 9-5z M3 8l9 5 9-5 M12 13v8",
   lock: "M4 11h16v10H4z M8 11V7a4 4 0 0 1 8 0v4",
   check: "M20 6L9 17l-5-5",
+  play: "M7 4l13 8-13 8z",
+  pause: "M6 4h4v16H6z M14 4h4v16h-4z",
   prev: "M15 18l-6-6 6-6",
   next: "M9 18l6-6-6-6",
   warning:

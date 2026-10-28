@@ -39,7 +39,7 @@ test("the Battle Plan has no dropdowns: skills, sockets, Heat slider and conditi
   await expect(slot2.getByRole("button", { name: "Thrifty" })).toBeVisible();
 
   // The condition chip opens "Only if".
-  await slot2.getByRole("button", { name: "Only if: Always" }).click();
+  await slot2.getByRole("button", { name: "Only if", exact: true }).click();
   await page
     .getByRole("region", { name: "Only if" })
     .getByRole("button", { name: "Enemy below 50 %" })
@@ -52,5 +52,8 @@ test("the Battle Plan has no dropdowns: skills, sockets, Heat slider and conditi
   await expect(heat).toHaveValue("80");
   await heat.fill("0");
   await expect(heat).toHaveValue("50");
+  // The Heat preview can be paused.
+  await page.getByRole("button", { name: "Pause preview" }).click();
+  await expect(page.getByRole("button", { name: "Play preview" })).toBeVisible();
   expect(errors).toEqual([]);
 });

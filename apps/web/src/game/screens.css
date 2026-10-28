@@ -4938,6 +4938,11 @@
     0 0 8px rgb(226 170 54 / 0.45);
 }
 
+/* The empty "Only if" socket: same as a Modifier socket, its eye dimmed. */
+.stage .plan-socket.cond-socket {
+  opacity: 0.8;
+}
+
 .stage .plan-socket.on,
 .stage .plan-cond.on {
   outline: 2px solid var(--accent);
@@ -5145,10 +5150,31 @@
 .stage .heat-preview {
   margin-top: 10px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) 34px auto;
+  grid-template-columns: auto auto minmax(0, 1fr) 34px auto;
   align-items: center;
   gap: 10px;
   color: var(--heat);
+}
+
+.stage .heat-preview-toggle {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  border: 1.5px solid #8a6a3a;
+  background: rgb(0 0 0 / 0.35);
+  color: var(--heat);
+  cursor: pointer;
+}
+
+.stage .heat-preview-icon {
+  display: flex;
+}
+
+.stage .heat-preview-toggle:hover {
+  border-color: var(--heat);
 }
 
 .stage .heat-preview-track {
