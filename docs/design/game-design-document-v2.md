@@ -129,6 +129,11 @@ Endgame **Wildfire I–X**.
   (sonst gibt es keine Items und nur die normale Stage-Belohnung, keine Extra-Ash, Timo 28.10.2026; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
   Bosse immer. Die DPS-Pfeile auf den Karten misst der
   Training Dummy.
+- **Smart Base** (`notes/smart-loot-v1.md`, Timo 28.10.2026): Hat ein Slot Bases, die der Held nicht tragen
+  kann (Requirements nach den eigenen Attributen, Off Hand passt nicht zur Waffe), würfelt eine Karte zu **75 %** nur
+  unter den tragbaren. Die übrigen 25 % bleiben offen, damit der geteilte Stash auch Gear für andere Helden bekommt.
+  Affixe bleiben frei. Gilt für alle Item-Picks (auch Cache, Eldrin's Cache) und Marishas Gamble. Vorher war gut jede
+  dritte Karte nicht tragbar, bei Rüstung zwei von drei.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
 - **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
@@ -592,7 +597,8 @@ Endgame **Wildfire I–X**.
   Start-Off-Hand nach Waffe: Sword/Axe/Mace Round Shield (Axe seit Schritt 4, Timo 20.10.2026), Dagger Blood Talisman (+5 % Ailment Effect, +2 % Lifesteal),
   Bow/Crossbow Quiver, Wand Ember Focus, Staff Grimoire (+10 % Ailment Effect).
 - **Grundtypen (Bases):** 30 ohne Waffen, jeder mit festem Bonus (Implicit) und eigenem gemalten Icon. Armor-Slots haben
-  je eine leichte (AGI), schwere (STR) und Caster-Variante (INT), Body zusätzlich den **Leather Cuirass** (STR + AGI).
+  je eine Variante pro Hauptattribut der Klassen: Leather (DEX, seit 28.10.2026; vorher AGI), Iron (STR) und Silk
+  (INT), Body zusätzlich den **Leather Cuirass** (STR + DEX).
   Schmuck: Bone Amulet, Ember Pendant, **Gold Medallion** (+5 % Physical Damage); Iron Ring, Garnet Ring, **Gold Ring**
   (+4 % Elemental Damage). Charms: War, Ward, Ember und **Leaf Charm** (würfelt bevorzugt Ailment-Trigger).
 - **Item Level = Monster Level**, daraus das **Item Tier** (T1–T10). **Required Level** = Item Level − 5, bei einem hochgeschmiedeten Item der erste Item Level seines Tiers − 5

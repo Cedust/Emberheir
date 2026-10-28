@@ -28,6 +28,7 @@ import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
 import {
   actAffixFactor,
   addRunes,
+  heroCanWear,
   itemPickAt,
   rollItemChoices,
   rollRuneDrops,
@@ -188,6 +189,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         : {}),
       ...(huntBoss && huntAfter >= 2 ? { trophyChance: HUNT.bossTrophyChance } : {}),
     },
+    heroCanWear(state, data),
   );
   // Fewer, weightier picks: most normal fights drop no items, only their usual rewards. Every
   // `pickEvery`'th normal fight of the trip offers a pick (act-karte-entwurf-v1.md, K4).
