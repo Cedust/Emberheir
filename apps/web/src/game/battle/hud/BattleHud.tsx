@@ -725,7 +725,12 @@ export function EnemyFrame(props: EnemyFrameProps) {
         >
           <span className="mono">
             {fmt(e.life)} / {fmt(e.maxLife)}
-            {e.barrier > 0 ? ` · +${fmt(e.barrier)}` : ""}
+            {e.barrier > 0 && (
+              <>
+                {" · "}
+                <b className="life-barrier">+{fmt(e.barrier)}</b>
+              </>
+            )}
           </span>
         </div>
         <div

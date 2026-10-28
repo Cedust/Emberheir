@@ -416,14 +416,24 @@
   opacity: 0.85;
 }
 
-.stage .orb-shield {
-  margin-top: 2px;
-  font-size: 14px;
-  font-weight: 700;
+/* Barrier numbers in the icy color of the Barrier layer (orb and enemy Life bar). */
+.stage .orb-shield,
+.stage .life-barrier {
   color: #d4f1ff;
   text-shadow:
     0 0 8px #6fd3ff,
     0 1px 2px #000;
+}
+
+.stage .orb-shield {
+  margin-top: 2px;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+/* On the red Life bar the pale ice would wash out: a deeper ice blue. */
+.stage .life-barrier {
+  color: #8fd8ff;
 }
 
 .stage .orb-readout.heat.ready .orb-num {
