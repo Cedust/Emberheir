@@ -46,15 +46,12 @@ export function BackupPanel() {
   return (
     <div className="backup-panel">
       <div className="backup-row">
-        <span className="title-font">Save Files</span>
-        <span className="backup-buttons">
-          <Button icon="box" onClick={download}>
-            Export
-          </Button>
-          <Button icon="inventory" onClick={() => file.current?.click()}>
-            Import
-          </Button>
-        </span>
+        <Button icon="box" onClick={download}>
+          Export
+        </Button>
+        <Button icon="inventory" onClick={() => file.current?.click()}>
+          Import
+        </Button>
       </div>
       <input
         ref={file}

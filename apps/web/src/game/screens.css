@@ -10393,7 +10393,7 @@
   height: 220px;
 }
 
-/* Save Files under the title's Characters (BackupPanel.tsx) and damaged slots (TitleScreen.tsx). */
+/* Export and Import under the title's Characters (BackupPanel.tsx) and damaged slots (TitleScreen.tsx). */
 .stage .backup-panel {
   display: flex;
   flex-direction: column;
@@ -10405,13 +10405,6 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 16px;
-  color: var(--k-on-wood-sub);
-  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
-}
-
-.stage .backup-buttons {
-  display: flex;
   gap: 10px;
 }
 
