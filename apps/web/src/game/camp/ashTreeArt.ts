@@ -136,7 +136,7 @@ export interface AshTreeArt {
 export const SIGIL_Y = SIGIL.y;
 const SIGIL_R = SIGIL.radius;
 /** The sigil's lines are drawn for a radius of 0.95 and scaled to its size. */
-export const SIGIL_SCALE = SIGIL.radius / 0.95;
+const SIGIL_SCALE = SIGIL.radius / 0.95;
 
 /**
  * A tapered limb along a curve, painted in layers: a soft cast shadow, the dark bark, a lit
@@ -231,8 +231,17 @@ const isRoot = (region: TreeRegion) => TREE_PLACEMENT[region].origin.y > 0;
 const ROOT_HUB = "roots-taproot";
 const LEADER = new Set(Object.keys(LEADER_NODES));
 
+/** The earth's colours at the ground line and a little below it (theme tokens). */
+export interface EarthColors {
+  readonly top: string;
+  readonly deep: string;
+}
+
+const DARK_EARTH: EarthColors = { top: "rgba(30, 20, 13, 0.7)", deep: "rgba(18, 11, 7, 0.5)" };
+
 /** The earth under the root collar: the roots grow into it. */
-function drawEarth(g: Graphics, unit: number): void {
+export function drawEarth(g: Graphics, unit: number, colors: EarthColors = DARK_EARTH): void {
+  g.clear();
   const u = (v: number) => v * unit;
   const top = TRUNK.bottom + 0.35;
   g.rect(u(-80), u(top), u(160), u(16)).fill(
@@ -241,8 +250,8 @@ function drawEarth(g: Graphics, unit: number): void {
       start: { x: 0, y: 0 },
       end: { x: 0, y: 1 },
       colorStops: [
-        { offset: 0, color: "rgba(30, 20, 13, 0.7)" },
-        { offset: 0.25, color: "rgba(18, 11, 7, 0.5)" },
+        { offset: 0, color: colors.top },
+        { offset: 0.25, color: colors.deep },
         { offset: 1, color: "rgba(8, 5, 3, 0)" },
       ],
       textureSpace: "local",

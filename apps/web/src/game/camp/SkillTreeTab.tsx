@@ -288,11 +288,6 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
       };
     }),
     labels: treeLabels(branches),
-    keystones: {
-      active: activeKeystones(SKILL_TREE, preview.learned),
-      limit: keystonePlaces,
-      max: keystoneLimit(Number.POSITIVE_INFINITY),
-    },
     ...(hoverPath?.from ? { path: [hoverPath.from, ...hoverPath.steps] } : {}),
   };
 
@@ -456,7 +451,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
           </span>
           <span
             data-testid="keystone-places"
-            title={`Keystones active at once. The notches in the Ember sigil show the places; one more opens at Prestige ${KEYSTONE.extraAtPrestige.join(", ")}.`}
+            title={`Keystones active at once. One more place opens at Prestige ${KEYSTONE.extraAtPrestige.join(", ")}.`}
           >
             <i className="lg st-keystone" /> Places {activeKeystones(SKILL_TREE, preview.learned)}/
             {keystonePlaces}

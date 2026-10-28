@@ -15,12 +15,13 @@ import {
   type AshTreeArt,
   type AshTreeTextures,
   dressAshTree,
+  drawEarth,
   drawTwigs,
   loadAshTreeTextures,
   paintAshTree,
-  SIGIL_SCALE,
 } from "./ashTreeArt";
 import { FramePacer, wantsAntialias } from "../pixiPacing";
+import { cssHex, cssNumber, cssVar, mixColor, onThemeChange } from "../themeColors";
 
 /**
  * The Skill Tree as a PixiJS scene (skilltree-v2.md): one tree that grows with every Prestige,
@@ -64,11 +65,6 @@ export interface TreeView {
   readonly labels: readonly TreeLabel[];
   /** Path preview of the hovered node: a learned node first, then the nodes it would cost. */
   readonly path?: readonly string[];
-  /**
-   * Keystone places as notches in the Ember sigil: `active` of `limit` taken, `max` places in
-   * the game (the rest stay dark until a Prestige opens them).
-   */
-  readonly keystones?: { readonly active: number; readonly limit: number; readonly max: number };
 }
 
 export interface TreeCallbacks {
@@ -146,10 +142,6 @@ export class TreeScene {
   /** The Ash Tree behind the web. */
   private readonly art: AshTreeArt = paintAshTree(UNIT);
   private readonly sigilLight = new Container();
-  /** The Keystone places: carved notches in the sigil, glowing once taken. */
-  private readonly keystoneMarks = new Graphics();
-  private readonly keystoneGlow = new Graphics();
-  private keystoneKey = "";
   private twigKey = "";
   /** Timo's painted bark and leaves, once loaded. */
   private painted: AshTreeTextures | null = null;
@@ -180,6 +172,9 @@ export class TreeScene {
   private time = 0;
   private spark = 0;
   private fitted = false;
+  /** Text and branch-name colours of the theme (game.css `--tree-*`). */
+  private ink = { text: 0xecdfc4, stroke: 0x0d0a08, labelMix: 0, labelAlpha: 0.6 };
+  private unwatchTheme: (() => void) | null = null;
   /** Particles and the gliding camera; off for prefers-reduced-motion. */
   motion = true;
 
@@ -192,8 +187,6 @@ export class TreeScene {
       this.art.leaves,
       this.art.sigil,
       this.sigilLight,
-      this.keystoneMarks,
-      this.keystoneGlow,
       this.labelLayer,
       this.linkGlow,
       this.links,
@@ -217,7 +210,6 @@ export class TreeScene {
     bloomWrap.cacheAsTexture(true);
     this.sigilLight.addChild(bloomWrap, this.art.sigilGlow);
     this.sigilLight.blendMode = "add";
-    this.keystoneGlow.blendMode = "add";
   }
 
   layout(w: number, h: number, resolution: number): void {
@@ -274,6 +266,8 @@ export class TreeScene {
     app.stage.on("wheel", (e) => this.wheel(e));
     // The page must not scroll while the wheel zooms the tree.
     app.canvas.addEventListener("wheel", (e) => e.preventDefault(), { passive: false });
+    this.unwatchTheme = onThemeChange(() => this.applyTheme());
+    this.applyTheme();
     this.rebuild();
     this.fit(true);
     this.pacer = new FramePacer(app.ticker);
@@ -283,56 +277,54 @@ export class TreeScene {
 
   destroy(): void {
     this.destroyed = true;
+    this.unwatchTheme?.();
     this.fx?.destroy();
     this.app?.destroy(true, { children: true });
     this.app = null;
+  }
+
+  /** Reads the theme's colours and repaints what depends on them: earth, names, branch names. */
+  private applyTheme(): void {
+    if (this.destroyed) return;
+    this.ink = {
+      text: cssHex("--tree-ink", 0xecdfc4),
+      stroke: cssHex("--tree-ink-stroke", 0x0d0a08),
+      labelMix: cssNumber("--tree-label-mix", 0),
+      labelAlpha: cssNumber("--tree-label-alpha", 0.6),
+    };
+    drawEarth(this.art.earth, UNIT, {
+      top: cssVar("--tree-earth", "rgba(30, 20, 13, 0.7)"),
+      deep: cssVar("--tree-earth-deep", "rgba(18, 11, 7, 0.5)"),
+    });
+    for (const s of this.sprites.values()) {
+      for (const t of [s.name, s.rank]) {
+        t.style.fill = this.ink.text;
+        t.style.stroke = { color: this.ink.stroke, width: 4 };
+      }
+    }
+    for (const l of this.view.labels) {
+      const t = this.labels.get(l.key);
+      if (t) this.styleLabel(t, l.color);
+    }
+  }
+
+  /** Branch names: in light mode their colour is darkened towards the ink to read on parchment. */
+  private styleLabel(t: Text, color: number): void {
+    const fill = mixColor(color, this.ink.text, this.ink.labelMix);
+    if (t.style.fill !== fill) t.style.fill = fill;
+    t.alpha = this.ink.labelAlpha;
   }
 
   setView(view: TreeView): void {
     const before = new Map(this.view.nodes.map((n) => [n.node.id, n]));
     this.view = view;
     this.rebuild();
-    this.drawKeystones(view.keystones);
     // A new point lights the node up.
     for (const n of view.nodes) {
       const old = before.get(n.node.id);
       if (!old) continue;
       const gained = n.ranks > old.ranks || (n.pending && !old.pending);
       if (gained) this.burstAt(n, n.pending ? PENDING : this.colorOf(n));
-    }
-  }
-
-  /**
-   * The Keystone places sit in the sigil's four diagonal notches, clockwise from the upper
-   * right: taken ones burn bright, open ones glow faintly, closed ones are only carved.
-   */
-  private drawKeystones(places: TreeView["keystones"]): void {
-    const key = places ? `${places.active}/${places.limit}/${places.max}` : "";
-    if (key === this.keystoneKey) return;
-    this.keystoneKey = key;
-    this.keystoneMarks.clear();
-    this.keystoneGlow.clear();
-    if (!places) return;
-    const at = this.art.sigilAt;
-    const r = 0.79 * SIGIL_SCALE * UNIT;
-    const size = 0.11 * SIGIL_SCALE * UNIT;
-    for (let k = 0; k < places.max; k++) {
-      const a = -Math.PI / 4 + (k * Math.PI) / 2;
-      const x = at.x + Math.cos(a) * r;
-      const y = at.y + Math.sin(a) * r;
-      const shape = diamond(size).map((v, i) => v + (i % 2 === 0 ? x : y));
-      const taken = k < places.active;
-      const open = k < places.limit;
-      this.keystoneMarks
-        .poly(shape)
-        .fill({ color: taken ? KEYSTONE : open ? 0x5a1e08 : 0x2a160c, alpha: 1 })
-        .stroke({ color: open ? EMBER : 0x1a0c06, width: 2, alpha: open ? 0.9 : 1 });
-      if (taken) {
-        this.keystoneGlow.circle(x, y, size * 2.2).fill({ color: KEYSTONE, alpha: 0.18 });
-        this.keystoneGlow.poly(shape).fill({ color: 0xffd08a, alpha: 0.55 });
-      } else if (open) {
-        this.keystoneGlow.poly(shape).stroke({ color: EMBER, width: 2, alpha: 0.45 });
-      }
     }
   }
 
@@ -521,17 +513,15 @@ export class TreeScene {
             fontWeight: "900",
             fontSize: l.size,
             letterSpacing: 4,
-            fill: l.color,
           },
           resolution: 2 * this.size.resolution,
         });
         t.anchor.set(0.5);
-        t.alpha = 0.6;
         this.labelLayer.addChild(t);
         this.labels.set(l.key, t);
       }
       t.text = l.text;
-      t.style.fill = l.color;
+      this.styleLabel(t, l.color);
       t.position.set(l.x * UNIT, l.y * UNIT);
     }
     this.applyCamera();
@@ -631,8 +621,8 @@ export class TreeScene {
         fontFamily: "Alegreya Sans, sans-serif",
         fontWeight: "700",
         fontSize: 13,
-        fill: 0xecdfc4,
-        stroke: { color: 0x0d0a08, width: 4 },
+        fill: this.ink.text,
+        stroke: { color: this.ink.stroke, width: 4 },
       },
       resolution: 2 * this.size.resolution,
     });
@@ -644,8 +634,8 @@ export class TreeScene {
         fontFamily: "monospace",
         fontWeight: "700",
         fontSize: 12,
-        fill: 0xecdfc4,
-        stroke: { color: 0x0d0a08, width: 4 },
+        fill: this.ink.text,
+        stroke: { color: this.ink.stroke, width: 4 },
       },
       resolution: 2 * this.size.resolution,
     });
@@ -818,7 +808,6 @@ export class TreeScene {
 
     // The carved Ember sigil glows like breathing coals.
     this.sigilLight.alpha = this.motion ? 0.6 + 0.4 * Math.sin(this.time * 1.6) ** 2 : 0.85;
-    this.keystoneGlow.alpha = this.motion ? 0.7 + 0.3 * Math.sin(this.time * 1.6 + 0.8) ** 2 : 1;
 
     // Available nodes breathe.
     const pulse = this.motion ? 0.82 + 0.18 * Math.sin(this.time * 3.2) : 1;

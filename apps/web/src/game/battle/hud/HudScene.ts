@@ -14,6 +14,7 @@ import {
   UniformGroup,
 } from "pixi.js";
 import { Fx } from "../fx";
+import { cssNumber, cssVar, onThemeChange } from "../../themeColors";
 import { BAR_FRAGMENT, GAUGE_VERTEX, ORB_FRAGMENT } from "./shaders";
 import { type HudTextures, enemyPlate, loadHudTextures, orbRing } from "./hudArt";
 import { BAR_H, ENEMY_LIFE, ENEMY_TOP, ENEMY_W, ORB_R, type HudLayout, hudLayout } from "./layout";
@@ -363,11 +364,6 @@ function drawFrame(R: number, gem: number): Container {
   return root;
 }
 
-function cssColor(name: string, fallback: string): string {
-  const v = getComputedStyle(document.documentElement).getPropertyValue(name).trim();
-  return v || fallback;
-}
-
 export class HudScene {
   private app: Application | null = null;
   private destroyed = false;
@@ -383,6 +379,8 @@ export class HudScene {
   private hot = 0;
   private last: FightSnapshot | null = null;
   private prevHero: FighterSnapshot | null = null;
+  /** Redraws the bar and enemy plate when the theme flips (OS setting or the Settings switch). */
+  private unwatchTheme: (() => void) | null = null;
   paused = false;
 
   /** Stage size in stage pixels (the arena canvas covers the whole stage). */
@@ -403,6 +401,9 @@ export class HudScene {
     this.place();
     if (this.last) this.onSnapshot(this.last, true);
     app.ticker.add(this.onTick);
+    this.unwatchTheme = onThemeChange(() => {
+      if (this.app && !this.destroyed) this.place();
+    });
     void loadHudTextures().then((art) => {
       if (this.destroyed || !art) return;
       this.art = art;
@@ -415,6 +416,7 @@ export class HudScene {
   destroy(): void {
     this.destroyed = true;
     this.app?.ticker?.remove(this.onTick);
+    this.unwatchTheme?.();
     this.life?.fx.destroy();
     this.heat?.fx.destroy();
     this.life?.gauge.destroy();
@@ -433,9 +435,14 @@ export class HudScene {
     this.life?.root.position.set(L.lifeOrb.x, L.lifeOrb.y);
     this.heat?.root.position.set(L.heatOrb.x, L.heatOrb.y);
 
-    // The bar is a dark well in both modes (like the item slots), trimmed in the theme's edge.
-    const panel = cssColor("--slot-bg", "#32271d");
-    const edge = cssColor("--edge", "#6a4a2c");
+    // The bar and the enemy plate follow the theme (--hud-* in game.css): parchment in light
+    // mode, a dark well in dark mode; trimmed in the theme's edge.
+    const panel = cssVar("--hud-bar-top", "#32271d");
+    const deep = cssVar("--hud-bar-bottom", "#0c0a08");
+    const fadeTo = cssVar("--hud-fade", "rgba(0,0,0,0.55)");
+    const glass = cssVar("--hud-glass", "#0e0b09");
+    const glassAlpha = cssNumber("--hud-glass-alpha", 0.72);
+    const edge = cssVar("--edge", "#6a4a2c");
     this.bar.removeChildren().forEach((c) => c.destroy());
     const top = h - BAR_H;
     const x0 = L.lifeOrb.x;
@@ -448,7 +455,7 @@ export class HudScene {
         end: { x: 0, y: 1 },
         colorStops: [
           { offset: 0, color: "rgba(0,0,0,0)" },
-          { offset: 1, color: "rgba(0,0,0,0.55)" },
+          { offset: 1, color: fadeTo },
         ],
         textureSpace: "local",
       }),
@@ -459,7 +466,7 @@ export class HudScene {
       end: { x: 0, y: 1 },
       colorStops: [
         { offset: 0, color: panel },
-        { offset: 1, color: "#0c0a08" },
+        { offset: 1, color: deep },
       ],
       textureSpace: "local",
     });
@@ -522,13 +529,13 @@ export class HudScene {
     this.bar.cacheAsTexture(cache);
     this.bar.updateCacheTexture();
 
-    // The enemy plate: dark glass panel with a bronze rim, behind the DOM enemy frame.
+    // The enemy plate: a glass panel with a bronze rim, behind the DOM enemy frame.
     // The enemy gauge is kept; only the drawn plate is rebuilt.
     this.enemyPlate.removeChildren().forEach((c) => c !== this.enemy?.view && c.destroy());
     const px = cx - ENEMY_W / 2;
     const plate = new Graphics()
       .roundRect(px, ENEMY_TOP, ENEMY_W, ENEMY_PLATE_H, 10)
-      .fill({ color: 0x0e0b09, alpha: 0.72 })
+      .fill({ color: glass, alpha: glassAlpha })
       .stroke({ color: edge, width: 2 })
       .roundRect(px + 4, ENEMY_TOP + 4, ENEMY_W - 8, ENEMY_PLATE_H - 8, 7)
       .stroke({ color: 0xd9a55a, width: 1, alpha: 0.3 });

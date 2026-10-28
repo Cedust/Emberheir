@@ -13,7 +13,7 @@ async function backgroundLight(page: Page, selector: string): Promise<number> {
     });
 }
 
-test("light mode keeps the Character Sheet's plaques and Eldrin's Omens on parchment", async ({
+test("light mode keeps the Character Sheet's plaques, tooltips and Eldrin's Omens on parchment", async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: "light" });
@@ -25,6 +25,10 @@ test("light mode keeps the Character Sheet's plaques and Eldrin's Omens on parch
   await sheet.getByRole("tab", { name: "Stats" }).click();
   expect(await backgroundLight(page, ".hero-card")).toBeGreaterThan(0.6);
   expect(await backgroundLight(page, ".stat-pages")).toBeGreaterThan(0.6);
+  // Tooltips too: the item tooltip is a parchment plate in light mode.
+  await sheet.locator(".grid-item").first().hover();
+  expect(await backgroundLight(page, ".item-tooltip")).toBeGreaterThan(0.6);
+  await page.mouse.move(5, 5);
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/stats-light.png` });
 
   // Dark mode keeps the dark plaques.
@@ -35,4 +39,28 @@ test("light mode keeps the Character Sheet's plaques and Eldrin's Omens on parch
 
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   expect(await backgroundLight(page, ".omen-choice")).toBeGreaterThan(0.6);
+});
+
+test("light mode puts the Ash Tree and the Heirloom on parchment", async ({ page }) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await seedSave(page, saveCrafting());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page
+    .getByRole("button", { name: /Kaelen/ })
+    .first()
+    .click();
+  const kaelen = page.getByRole("dialog", { name: "Kaelen" });
+  const ground = () =>
+    page
+      .locator(".tree-pixi")
+      .first()
+      .evaluate((el) => getComputedStyle(el).backgroundImage);
+  // The canvas ground is the parchment panel colour (#e6d6b4) in light mode only. The canvas
+  // keeps software GL busy, so the page answers slowly.
+  await expect.poll(ground, { timeout: 20_000 }).toContain("rgb(230, 214, 180)");
+  await kaelen.getByRole("tab", { name: "Heirloom" }).click();
+  await expect.poll(ground, { timeout: 20_000 }).toContain("rgb(230, 214, 180)");
+  await page.emulateMedia({ colorScheme: "dark" });
+  await expect.poll(ground, { timeout: 20_000 }).not.toContain("rgb(230, 214, 180)");
 });

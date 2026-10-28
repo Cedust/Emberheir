@@ -173,7 +173,7 @@ export function WeaponTooltipCard(props: { tip: WeaponTip; tag?: string }) {
   return (
     <div
       className={`item-tooltip item-tip weapon-tip grade-${tip.grade}`}
-      style={{ "--tip-name": color, "--gem": glow } as CSSProperties}
+      style={{ "--grade": color, "--gem": glow } as CSSProperties}
       data-testid="weapon-tooltip"
     >
       {props.tag && <span className="tip-tag">{props.tag}</span>}

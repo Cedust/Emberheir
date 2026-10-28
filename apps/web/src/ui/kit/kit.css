@@ -191,6 +191,9 @@
 }
 
 .stage .k-window-head {
+  /* Above the body, so the medallion's hanging acorn is never painted over (Kaelen's canvas). */
+  position: relative;
+  z-index: 3;
   flex-shrink: 0;
   height: 68px;
   padding: 0 14px 0 16px;
@@ -801,11 +804,11 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #8f8170;
+  color: var(--tip-sub, #8f8170);
 }
 
 .stage .tip-hotkey .k-key {
-  color: #e8e2d6;
+  color: var(--tip-bright, #e8e2d6);
 }
 
 /* --- Touch (tablet-plan-v1.md) -------------------------------------------------------------------- */
