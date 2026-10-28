@@ -1,10 +1,12 @@
 import { ITEM_CATALOG } from "@emberheir/content";
 import {
+  type AffixRoll,
   type CodexPartKind,
   type GameState,
   type Item,
   type LearnedPart,
   CODEX,
+  affixRollRange,
   codexKnows,
   describeBonuses,
   describeTrigger,
@@ -12,7 +14,6 @@ import {
   kindledAffixId,
   matchRuneword,
   resolveTrigger,
-  runeGroup,
   salvageValue,
   upgradedItem,
 } from "@emberheir/sim";
@@ -46,6 +47,8 @@ export function AfterCard(props: {
   kindle: { conditionId: string; effectId: string; index: number } | undefined;
   /** Salvage: the Legendary Power this item teaches the Power Codex (a new one or a better tier). */
   power?: { name: string; tier: number } | undefined;
+  /** Temper: takes an option of the waiting offer, or keeps the affix (`null`). */
+  onChoose?: (option: number | null) => void;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
@@ -71,9 +74,7 @@ export function AfterCard(props: {
         <SocketRow sockets={item.sockets ?? 0} runes={runes} highlight={runes.length - 1} />
         {props.runeId && (
           <span className="after-line new">
-            {describeBonuses(
-              ITEM_CATALOG.runes.get(props.runeId)?.bonuses[runeGroup(slot)] ?? {},
-            ).join(" · ")}
+            {describeBonuses(ITEM_CATALOG.runes.get(props.runeId)?.bonuses ?? {}).join(" · ")}
           </span>
         )}
         {word && <span className="after-line new runeword-line">Runeword: {word.name}</span>}
@@ -164,18 +165,63 @@ export function AfterCard(props: {
     );
   }
   if (kind === "reforge") {
+    // The stat affixes roll anew, the triggers stay (crafting-audit-v1.md).
+    const lines = item.affixes.map((_, i) => affixText(item, i));
+    const stats = lines.filter((t) => !t.trigger).length;
     return (
       <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
         <ItemHead item={{ ...item, name: "New name" }} label="AFTER" />
-        {item.affixes.map((_, i) => (
-          <span key={i} className="after-line new">
+        {Array.from({ length: stats }, (_, i) => (
+          <span key={`s${i}`} className="after-line new">
             ? new random affix
           </span>
         ))}
+        {lines.map(
+          (t, i) =>
+            t.trigger && (
+              <span key={i} className="after-line">
+                {t.text} <span className="locked-in">STAYS</span>
+              </span>
+            ),
+        )}
       </div>
     );
   }
-  // Temper: only the chosen affix changes.
+  const offer = item.temperOffer;
+  if (offer && item.lockedAffix !== undefined) {
+    // Temper paid: pick one option or keep the affix.
+    const index = item.lockedAffix;
+    const optionText = (roll: AffixRoll) =>
+      affixText({ ...item, affixes: item.affixes.map((r, i) => (i === index ? roll : r)) }, index)
+        .text;
+    return (
+      <div
+        className={`craft-card panel-card dashed ${rarityClass(item)}`}
+        data-testid="temper-offer"
+      >
+        <ItemHead item={item} label="CHOOSE ONE" />
+        {offer.map((roll, i) => (
+          <button
+            key={i}
+            type="button"
+            className="affix-line temper-option"
+            onClick={() => props.onChoose?.(i)}
+          >
+            <span className="grow">{optionText(roll)}</span>
+          </button>
+        ))}
+        <button
+          type="button"
+          className="affix-line temper-option"
+          onClick={() => props.onChoose?.(null)}
+        >
+          <span className="grow">{affixText(item, index).text}</span>
+          <span className="locked-in">KEEP</span>
+        </button>
+      </div>
+    );
+  }
+  // Temper: only the chosen affix changes, into a new affix or a new value.
   return (
     <div className={`craft-card panel-card dashed ${rarityClass(item)}`}>
       <ItemHead item={item} label="AFTER" />
@@ -187,9 +233,14 @@ export function AfterCard(props: {
             </span>
           );
         }
+        const fixed = (() => {
+          const range = affixRollRange(item, roll.affixId, ITEM_CATALOG);
+          return !range || range.min === range.max;
+        })();
         return (
           <span key={i} className="after-line new">
-            {rangeText(item, roll.affixId)} <span className="locked-in">LOCKED IN</span>
+            {fixed ? "? two new affixes" : `? a new affix or ${rangeText(item, roll.affixId)}`}{" "}
+            <span className="locked-in">LOCKED IN</span>
           </span>
         );
       })}

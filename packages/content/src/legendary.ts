@@ -35,7 +35,7 @@ const WARDENS: Readonly<Record<string, string>> = {
 
 /**
  * Eight Runes, lowest rank first. Act 1 drops up to rank 3, Act 2 up to rank 5; each Prestige
- * reaches two ranks higher. Weapon bonus first, armor bonus (Off Hand, Helm, Body) second.
+ * reaches two ranks higher. The socket bonus counts in any socketed item (Off Hand, Helm, Body).
  */
 export const RUNES: readonly RuneDefinition[] = [
   // Id "ash" from before the currency of that name; the Rune is called Bark.
@@ -43,7 +43,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "ash",
     "Bark",
     1,
-    { physicalDamage: 0.06 },
     { armor: 6 },
     {
       description: "Below 50 % Life your hits deal 12 % more damage.",
@@ -56,7 +55,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "moss",
     "Moss",
     2,
-    { lifesteal: 0.015 },
     { life: 12 },
     {
       description: "Heal 2 % of the damage your ailments deal.",
@@ -67,7 +65,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "thorn",
     "Thorn",
     3,
-    { bleedChance: 0.06 },
     { thorns: 2 },
     {
       description: "Your Bleeds deal 20 % more damage to enemies below 50 % Life.",
@@ -82,7 +79,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "venom",
     "Venom",
     4,
-    { poisonChance: 0.08 },
     { tenacity: 0.06 },
     {
       description: "Your hits deal 10 % more damage to enemies with 10 or more Poison stacks.",
@@ -97,7 +93,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "ember",
     "Ember",
     5,
-    { elementalDamage: 0.08 },
     { fireResistance: 0.1 },
     {
       description: "Your Burns deal 15 % more damage.",
@@ -108,7 +103,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "rime",
     "Rime",
     6,
-    { chillChance: 0.08 },
     { coldResistance: 0.1 },
     {
       description: "Your hits deal 12 % more damage to Chilled enemies.",
@@ -121,7 +115,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "volt",
     "Volt",
     7,
-    { attackSpeed: 0.05 },
     { lightningResistance: 0.1 },
     {
       description: "Your hits deal 12 % more damage to Shocked enemies.",
@@ -134,7 +127,6 @@ export const RUNES: readonly RuneDefinition[] = [
     "dusk",
     "Dusk",
     8,
-    { critChance: 0.03 },
     { allResistance: 0.06 },
     {
       description: "Within 3 s after a Crit, your hits deal 15 % more damage.",
@@ -151,11 +143,10 @@ function rune(
   id: string,
   name: string,
   rank: number,
-  weapon: RuneDefinition["bonuses"]["weapon"],
-  armor: RuneDefinition["bonuses"]["armor"],
+  bonuses: RuneDefinition["bonuses"],
   web: NonNullable<RuneDefinition["web"]>,
 ): RuneDefinition {
-  return { id, name, rank, bonuses: { weapon, armor }, web };
+  return { id, name, rank, bonuses, web };
 }
 
 /** A trigger only a Legendary Power grants: fixed magnitude `value`, `perTier` more per tier. */

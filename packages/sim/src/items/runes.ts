@@ -1,18 +1,13 @@
 import { sumBonuses } from "../combat/stats";
 import type { StatBonuses } from "../combat/types";
 import { getBase } from "./generate";
-import type { Item, ItemCatalog, ItemSlot, RuneGroup, RunewordDefinition } from "./types";
+import type { Item, ItemCatalog, ItemSlot, RunewordDefinition } from "./types";
 
 /**
  * Sockets, Runes and Runewords (docs/design/item-system-v1.md section 7). Only Normal items
- * have Sockets. Each socketed Rune gives its small bonus; the exact Runes in order, filling
+ * have Sockets (never the fixed weapon). Each socketed Rune gives its small bonus; the exact Runes in order, filling
  * every Socket of a fitting base, also make a Runeword.
  */
-
-/** Which bonus of a Rune a slot uses. */
-export function runeGroup(slot: ItemSlot): RuneGroup {
-  return slot === "mainHand" ? "weapon" : "armor";
-}
 
 /** Free Sockets of an item. */
 export function freeSockets(item: Item): number {
@@ -44,6 +39,5 @@ export function activeRuneword(item: Item, catalog: ItemCatalog): RunewordDefini
 
 /** The single bonuses of all socketed Runes (they stay on top of a Runeword, as in D2). */
 export function runeBonuses(item: Item, catalog: ItemCatalog): StatBonuses {
-  const group = runeGroup(getBase(catalog, item.baseId).slot);
-  return sumBonuses(...(item.runes ?? []).map((id) => catalog.runes.get(id)?.bonuses[group]));
+  return sumBonuses(...(item.runes ?? []).map((id) => catalog.runes.get(id)?.bonuses));
 }

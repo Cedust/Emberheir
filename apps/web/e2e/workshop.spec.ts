@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveWithCodex, seedSave } from "./fixtures";
+import { saveCrafting, saveWithCodex, seedSave } from "./fixtures";
 
 test("a right-click puts an item on Thoric's Anvil; Salvage is held and sparks fly", async ({
   page,
@@ -47,5 +47,42 @@ test("the crafters say something new when poked", async ({ page }) => {
   expect(first.length).toBeGreaterThan(4);
   await page.getByRole("button", { name: "Thoric", exact: true }).click();
   await expect(bubble).not.toHaveText(first);
+  expect(errors).toEqual([]);
+});
+
+test("Liora's Temper offers two choices; Thoric's Reforge keeps the trigger", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveCrafting());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  await page.getByRole("button", { name: "Liora, Mystic" }).click();
+  await page
+    .getByRole("group", { name: "Services" })
+    .getByRole("button", { name: "Temper" })
+    .click();
+  await page.getByRole("button", { name: "Lucky Iron Ring" }).click();
+  await page.getByTestId("craft-now").locator(".affix-line").nth(1).click();
+  await page.locator(".cost-bar").getByRole("button", { name: "Temper" }).click();
+  const offer = page.getByTestId("temper-offer");
+  await expect(offer.locator(".temper-option")).toHaveCount(3);
+  await expect(offer).toContainText("KEEP");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/temper-offer.png` });
+  await offer.locator(".temper-option").first().click();
+  await expect(page.getByRole("status")).toContainText("→");
+  await expect(offer).toHaveCount(0);
+
+  await page.keyboard.press("Escape");
+  await page.getByRole("button", { name: "Thoric, Blacksmith" }).click();
+  await page
+    .getByRole("group", { name: "Services" })
+    .getByRole("button", { name: "Reforge" })
+    .click();
+  await page.getByRole("button", { name: "Lucky Iron Ring" }).click();
+  await expect(page.locator(".craft-card").last()).toContainText("STAYS");
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/reforge-keeps.png` });
+  await page.locator(".cost-bar").getByRole("button", { name: "Reforge" }).click();
+  await expect(page.getByTestId("craft-now")).toContainText("Life below 35 %");
   expect(errors).toEqual([]);
 });

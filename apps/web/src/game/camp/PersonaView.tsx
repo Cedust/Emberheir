@@ -263,11 +263,7 @@ export function PersonaView(props: {
         break;
       }
       case "temper":
-        if (item && next) {
-          setLast(
-            `${affixText(item, request.affixIndex).text} → ${affixText(next, request.affixIndex).text}`,
-          );
-        }
+        setLast("Choose a new affix, or keep the old one");
         break;
     }
     game.dispatch({ type: "craft", request });
@@ -453,6 +449,22 @@ export function PersonaView(props: {
                       runeId={runeId}
                       learned={learned}
                       power={teaches}
+                      onChoose={(option) => {
+                        if (!item?.temperOffer || item.lockedAffix === undefined) return;
+                        const index = item.lockedAffix;
+                        const roll = option === null ? undefined : item.temperOffer[option];
+                        const from = affixText(item, index).text;
+                        setLast(
+                          roll
+                            ? `${from} → ${affixText({ ...item, affixes: item.affixes.map((r, i) => (i === index ? roll : r)) }, index).text}`
+                            : `Kept ${from}`,
+                        );
+                        game.dispatch({
+                          type: "craft",
+                          request: { kind: "temperChoose", itemId: item.id, option },
+                        });
+                        setPulse((n) => n + 1);
+                      }}
                       kindle={
                         item && conditionId && effectId && kindleIndex !== null
                           ? {
