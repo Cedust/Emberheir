@@ -103,7 +103,7 @@ export function LegacyView(props: {
           <WindowHeader
             title="Legacy"
             sub="Everything that survives the fire"
-            medallion={<Medallion image={actionIcon("legacy")} tint="#4a2a1c" />}
+            medallion={<Medallion image={actionIcon("legacy")} tint="#5a4218" />}
             tabs={
               <Tabs
                 label="Legacy"

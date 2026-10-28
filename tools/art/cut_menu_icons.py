@@ -57,7 +57,29 @@ D_BOXES = {
   'credits': (550, ROW, 1005, sheet.height),
   'map': (1005, ROW, sheet.width, sheet.height),
 }
+
+
+def centered(im):
+  """Pads the icon so the weight of its paint sits in the middle (the wagon's flag sticks out right)."""
+  from PIL import Image
+  a = im.getchannel('A')
+  w, h = im.size
+  px = a.load()
+  total = sx = sy = 0
+  for y in range(0, h, 2):
+    for x in range(0, w, 2):
+      v = px[x, y]
+      total += v
+      sx += v * x
+      sy += v * y
+  cx, cy = sx / total, sy / total
+  dx, dy = round(w - 2 * cx), round(h - 2 * cy)
+  out = Image.new('RGBA', (w + abs(dx), h + abs(dy)), (0, 0, 0, 0))
+  out.paste(im, (max(dx, 0), max(dy, 0)))
+  return out
+
+
 for name, box in D_BOXES.items():
-  im = trim(sheet.crop(box))
+  im = centered(trim(sheet.crop(box)))
   out = save(im, name, SIZE / max(im.width, im.height))
   print(f'{name} {out.width}x{out.height}')
