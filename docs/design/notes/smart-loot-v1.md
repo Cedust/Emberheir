@@ -63,3 +63,21 @@ wie in PoE), damit die Regel "STR = Iron, DEX = Leather, INT = Silk" klar ist.
 
 **B + Leather auf DEX.** Löst die Ursache (zufällige Base trotz knapper Attribute), ohne den Reiz der Affixe zu
 nehmen, und bleibt Diablo-typisch. C nur, falls nach dem Spielen von B noch "das passt nie zu meinem Build" kommt.
+
+## 6. Umgesetzt und gemessen (28.10.2026)
+
+Timo wählte **B + Leather auf DEX**. Smart Base: 75 % der Karten eines Slots mit untragbaren Bases würfeln unter den
+tragbaren (eigene Attribute, Off Hand passt zur Waffe). Gilt für Item-Picks, Cache, Eldrin's Cache und Marisha.
+
+Balance-CLI `--act 7 --generations 7 --build all --runs 2 --seed 31`, main gegen Branch:
+
+| | main | Smart Base |
+|---|---|---|
+| Versuche pro neuestem Act (alle) | 3,2 | 2,4 |
+| Tode gesamt | 734 | 457 |
+| Cinderguard / Ashstrider / Emberseer (Ø Versuche) | 3,5 / 3,2 / 2,7 | 2,4 / 2,3 / 2,4 |
+| Spielzeit bis Ende Run 7 | 14,1 h | 12,7 h |
+| Act 7 in Run 7 | 4,3 | 4,1 |
+
+Das Spiel wird spürbar leichter (mehr nutzbares Gear = mehr Power), die Klassen liegen dafür enger beieinander.
+Offen: ob die Gegner das ausgleichen sollen (Timos Entscheidung).
