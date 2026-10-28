@@ -19,7 +19,7 @@ function camp(runes: Record<string, number>, withBase = true): GameState {
     ...s,
     hero: {
       ...s.hero,
-      attributes: { ...s.hero.attributes, agility: 5, strength: 5 },
+      attributes: { ...s.hero.attributes, dexterity: 5, strength: 5 },
       equipment,
     },
     inventory: withBase ? (addToGrid([], base, GAME_DATA.items) ?? []) : [],

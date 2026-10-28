@@ -22,7 +22,7 @@ import { hasMet, meetMarisha } from "./companions";
 import { flaskCapacity } from "./flask";
 import { requireRun } from "./guards";
 import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
-import { actAffixFactor, addRunes, rollItemChoices, rollRune } from "./loot";
+import { actAffixFactor, addRunes, heroCanWear, rollItemChoices, rollRune } from "./loot";
 import { tripOmenEffects } from "./omens";
 import {
   type ActData,
@@ -407,6 +407,10 @@ function withItemPick(state: GameState, data: GameData, run: RunState): GameStat
     state.legacy.prestige,
     rng,
     actAffixFactor(act, () => 1),
+    1,
+    undefined,
+    {},
+    heroCanWear(state, data),
   );
   const rest = runWithout(run, "lucky");
   return {

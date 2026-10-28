@@ -18,7 +18,7 @@ import { codexKnows, kindledIndex } from "./codex";
 import { kindledAffixId } from "../items/codex";
 import { nextAct, stageMonsterLevel } from "./game/acts";
 import { requireCamp } from "./game/guards";
-import { addRunes, itemPickWeights, lootGate } from "./game/loot";
+import { addRunes, heroCanWear, itemPickWeights, lootGate, smartBases } from "./game/loot";
 import { bossLevel, killPrice } from "./leveling";
 import { type GameData, type GameState, fail, nextRng } from "./game/state";
 import { hasMet } from "./game/companions";
@@ -648,7 +648,11 @@ export function gambleItem(
   rng: Rng,
   level = merchantItemLevel(state, data),
 ): Item {
-  const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
+  const bases = smartBases(
+    data.lootBases.filter((id) => getBase(data.items, id).slot === slot),
+    heroCanWear(state, data),
+    rng,
+  );
   const prestige = state.legacy.prestige;
   const rarity = rng.chance(gambleLegendaryChance(prestige))
     ? "legendary"

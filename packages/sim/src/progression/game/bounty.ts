@@ -8,7 +8,7 @@ import { addToGrid } from "../inventory";
 import { getAct, isFinaleAct, stageMonsterLevel } from "./acts";
 import { requireCamp } from "./guards";
 import { salvageValue } from "./item-rules";
-import { lootGate, maxRuneRank, rollItemChoices, rollRune } from "./loot";
+import { heroCanWear, lootGate, maxRuneRank, rollItemChoices, rollRune } from "./loot";
 import { hashId } from "./omens";
 import {
   type ActData,
@@ -149,6 +149,7 @@ export function bountyCache(
     1,
     undefined,
     signature ? { signature } : {},
+    heroCanWear(state, data),
   );
   // Dry Throat: every card one rarity higher, inside what the run's bosses may drop.
   if (bonus.kind === "rarity") {

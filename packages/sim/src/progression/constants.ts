@@ -157,6 +157,12 @@ export const PROGRESSION = {
   bossRewardMultiplier: { xp: 6, acorns: 5, ash: 4 },
   /** Share of those Legendary cards that become a Unique (if one fits). */
   uniqueShare: 0.35,
+  /**
+   * Smart Base (smart-loot-v1.md): this share of the cards of a slot with bases the hero cannot
+   * wear rolls among the ones they can (Requirements, an off hand that fits the weapon). The rest
+   * stays random, so the shared stash still gets gear for other heroes.
+   */
+  smartBaseShare: 0.75,
   /** Boss Hoard: cards after a boss and how many of them the hero takes. */
   bossHoardCards: 6,
   bossHoardPicks: 2,
