@@ -37,7 +37,7 @@ import { canvasResolution } from "../pixiPacing";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 import { Price } from "../../ui/kit/Currency";
 import { PointPrice } from "../../ui/kit/Points";
-import { HeroSkillMeta } from "../../ui/SkillMeta";
+import { HeroSkillMeta, heroSkillText } from "../../ui/SkillMeta";
 
 const hexColor = (css: string) => Number.parseInt(css.replace("#", ""), 16);
 
@@ -475,10 +475,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
               </p>
             )}
             {selected.skill && (
-              <p className="skill-info">
-                {selected.skill.name !== selected.name && <b>{selected.skill.name} </b>}
-                <HeroSkillMeta state={state} skill={selected.skill} />
-              </p>
+              <div className="skill-info">
+                <p>
+                  {selected.skill.name !== selected.name && <b>{selected.skill.name} </b>}
+                  <HeroSkillMeta state={state} skill={selected.skill} />
+                </p>
+                <p>{heroSkillText(state, selected.skill)}</p>
+              </div>
             )}
             {selected.kind === "keystone" && (
               <p className="sub small">

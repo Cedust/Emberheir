@@ -545,7 +545,7 @@ const SWORD = buildTree({
     },
   ],
   innateForms: [
-    form("cleaving-strike", "Cleaving Strike", "300 % Weapon Damage. Costs 10 more Heat.", {
+    form("cleaving-strike", "Cleaving Strike", "Strike for 300 % Weapon Damage.", {
       ...POWER_STRIKE,
       id: "cleaving-strike",
       name: "Cleaving Strike",
@@ -555,7 +555,7 @@ const SWORD = buildTree({
     form(
       "rising-strike",
       "Rising Strike",
-      "220 % Weapon Damage. A clean hit gives back half its Heat.",
+      "Strike for 220 % Weapon Damage. A clean hit gives back half its Heat.",
       {
         ...POWER_STRIKE,
         id: "rising-strike",
@@ -563,12 +563,17 @@ const SWORD = buildTree({
         effects: [{ kind: "refundHeat", fraction: 0.5 }],
       },
     ),
-    form("sundering-strike", "Sundering Strike", "220 % Weapon Damage. Adds 3 Sunder stacks.", {
-      ...POWER_STRIKE,
-      id: "sundering-strike",
-      name: "Sundering Strike",
-      effects: [{ kind: "sunderStacks", stacks: 3 }],
-    }),
+    form(
+      "sundering-strike",
+      "Sundering Strike",
+      "Strike for 220 % Weapon Damage and add 3 Sunder stacks.",
+      {
+        ...POWER_STRIKE,
+        id: "sundering-strike",
+        name: "Sundering Strike",
+        effects: [{ kind: "sunderStacks", stacks: 3 }],
+      },
+    ),
   ],
   keystones: [
     {
@@ -750,7 +755,7 @@ const MACE = buildTree({
     },
   ],
   innateForms: [
-    form("concussion", "Concussion", "126 % Weapon Damage. Stuns for 1 s.", {
+    form("concussion", "Concussion", "Smash for 126 % Weapon Damage and Stun for 1 s.", {
       ...SKULL_CRACK,
       id: "concussion",
       name: "Concussion",
@@ -760,7 +765,7 @@ const MACE = buildTree({
     form(
       "bone-breaker",
       "Bone Breaker",
-      "180 % Weapon Damage. Stuns for 0.5 s, adds 3 Sunder stacks.",
+      "Smash for 180 % Weapon Damage, Stun for 0.5 s and add 3 Sunder stacks.",
       {
         ...SKULL_CRACK,
         id: "bone-breaker",
@@ -768,20 +773,25 @@ const MACE = buildTree({
         effects: [...(SKULL_CRACK.effects ?? []), { kind: "sunderStacks", stacks: 3 }],
       },
     ),
-    form("thunder-crack", "Thunder Crack", "180 % Weapon Damage as Lightning. Always Shocks.", {
-      ...SKULL_CRACK,
-      id: "thunder-crack",
-      name: "Thunder Crack",
-      tags: ["lightning", "direct", "any"],
-      hits: [
-        {
-          kind: "weapon",
-          multiplier: 1.8,
-          damageType: "lightning",
-          ailmentChances: [{ ailment: "shock", chance: 1 }],
-        },
-      ],
-    }),
+    form(
+      "thunder-crack",
+      "Thunder Crack",
+      "Smash for 180 % Weapon Damage as Lightning. Always Shocks.",
+      {
+        ...SKULL_CRACK,
+        id: "thunder-crack",
+        name: "Thunder Crack",
+        tags: ["lightning", "direct", "any"],
+        hits: [
+          {
+            kind: "weapon",
+            multiplier: 1.8,
+            damageType: "lightning",
+            ailmentChances: [{ ailment: "shock", chance: 1 }],
+          },
+        ],
+      },
+    ),
   ],
   keystones: [
     {
@@ -950,7 +960,7 @@ const AXE = buildTree({
     form(
       "gutting-lacerate",
       "Gutting Lacerate",
-      "150 % Weapon Damage. Always Bleeds, 60 % stronger.",
+      "Slash for 150 % Weapon Damage. Always Bleeds, 60 % stronger.",
       {
         ...LACERATE,
         id: "gutting-lacerate",
@@ -968,7 +978,7 @@ const AXE = buildTree({
     form(
       "rending-lacerate",
       "Rending Lacerate",
-      "Two cuts of 75 % Weapon Damage. Each always Bleeds.",
+      "Slash twice for 75 % Weapon Damage each. Each cut always Bleeds.",
       {
         ...LACERATE,
         id: "rending-lacerate",
@@ -986,7 +996,7 @@ const AXE = buildTree({
     form(
       "hemorrhage",
       "Hemorrhage",
-      "150 % Weapon Damage. Always Bleeds, then the Bleed bursts at once.",
+      "Slash for 150 % Weapon Damage. Always Bleeds, and the Bleed deals all its damage at once.",
       {
         ...LACERATE,
         id: "hemorrhage",
@@ -1164,7 +1174,7 @@ const DAGGER = buildTree({
     form(
       "virulent-coat",
       "Virulent Coat",
-      "A coat instead of a cut: for 6 s, every hit Poisons. 30 Heat.",
+      "Coat your blade instead of stabbing: for 6 s, every hit Poisons.",
       {
         ...VENOM_COAT,
         id: "virulent-coat",
@@ -1176,7 +1186,7 @@ const DAGGER = buildTree({
     form(
       "paralytic-coat",
       "Paralytic Coat",
-      "A coat instead of a cut: for 8 s, every hit Poisons and often Chills. 40 Heat.",
+      "Coat your blade instead of stabbing: for 8 s, every hit Poisons and often Chills.",
       {
         ...VENOM_COAT,
         id: "paralytic-coat",
@@ -1190,7 +1200,7 @@ const DAGGER = buildTree({
     form(
       "lingering-coat",
       "Lingering Coat",
-      "A coat instead of a cut: for 12 s, every hit Poisons. 45 Heat.",
+      "Coat your blade instead of stabbing: for 12 s, every hit Poisons.",
       {
         ...VENOM_COAT,
         id: "lingering-coat",
@@ -1358,36 +1368,46 @@ const BOW = buildTree({
     },
   ],
   innateForms: [
-    form("hooked-arrow", "Hooked Arrow", "180 % Weapon Damage. Always Bleeds, 30 % stronger.", {
-      ...BARBED_ARROW,
-      id: "hooked-arrow",
-      name: "Hooked Arrow",
-      hits: [
-        {
-          kind: "weapon",
-          multiplier: 1.8,
-          ailmentPower: 1.3,
-          ailmentChances: [{ ailment: "bleed", chance: 1 }],
-        },
-      ],
-    }),
-    form("toxic-arrow", "Toxic Arrow", "Two hits of 90 % Weapon Damage. Each always Poisons.", {
-      ...BARBED_ARROW,
-      id: "toxic-arrow",
-      name: "Toxic Arrow",
-      hits: [
-        {
-          kind: "weapon",
-          multiplier: 0.9,
-          count: 2,
-          ailmentChances: [{ ailment: "poison", chance: 1 }],
-        },
-      ],
-    }),
+    form(
+      "hooked-arrow",
+      "Hooked Arrow",
+      "Shoot for 180 % Weapon Damage. Always Bleeds, 30 % stronger.",
+      {
+        ...BARBED_ARROW,
+        id: "hooked-arrow",
+        name: "Hooked Arrow",
+        hits: [
+          {
+            kind: "weapon",
+            multiplier: 1.8,
+            ailmentPower: 1.3,
+            ailmentChances: [{ ailment: "bleed", chance: 1 }],
+          },
+        ],
+      },
+    ),
+    form(
+      "toxic-arrow",
+      "Toxic Arrow",
+      "Shoot twice for 90 % Weapon Damage each. Each arrow always Poisons.",
+      {
+        ...BARBED_ARROW,
+        id: "toxic-arrow",
+        name: "Toxic Arrow",
+        hits: [
+          {
+            kind: "weapon",
+            multiplier: 0.9,
+            count: 2,
+            ailmentChances: [{ ailment: "poison", chance: 1 }],
+          },
+        ],
+      },
+    ),
     form(
       "split-arrow",
       "Split Arrow",
-      "Three arrows of 65 % Weapon Damage. 25 % chance each to Bleed or Poison.",
+      "Shoot 3 arrows for 65 % Weapon Damage each. 25 % chance each to Bleed or Poison.",
       {
         ...BARBED_ARROW,
         id: "split-arrow",
@@ -1565,30 +1585,40 @@ const CROSSBOW = buildTree({
     },
   ],
   innateForms: [
-    form("ballista-bolt", "Ballista Bolt", "380 % Weapon Damage that ignores 50 % Armor.", {
-      ...HEAVY_BOLT,
-      id: "ballista-bolt",
-      name: "Ballista Bolt",
-      hits: [{ kind: "weapon", multiplier: 3.8, penetration: 0.5 }],
-    }),
-    form("explosive-bolt", "Explosive Bolt", "240 % Weapon Damage as Fire. Always Burns.", {
-      ...HEAVY_BOLT,
-      id: "explosive-bolt",
-      name: "Explosive Bolt",
-      tags: ["fire", "direct", "any"],
-      hits: [
-        {
-          kind: "weapon",
-          multiplier: 2.4,
-          damageType: "fire",
-          ailmentChances: [{ ailment: "burn", chance: 1 }],
-        },
-      ],
-    }),
+    form(
+      "ballista-bolt",
+      "Ballista Bolt",
+      "Fire a huge bolt for 380 % Weapon Damage. Ignores 50 % of the enemy's Armor.",
+      {
+        ...HEAVY_BOLT,
+        id: "ballista-bolt",
+        name: "Ballista Bolt",
+        hits: [{ kind: "weapon", multiplier: 3.8, penetration: 0.5 }],
+      },
+    ),
+    form(
+      "explosive-bolt",
+      "Explosive Bolt",
+      "Fire a bolt for 240 % Weapon Damage as Fire. Always Burns.",
+      {
+        ...HEAVY_BOLT,
+        id: "explosive-bolt",
+        name: "Explosive Bolt",
+        tags: ["fire", "direct", "any"],
+        hits: [
+          {
+            kind: "weapon",
+            multiplier: 2.4,
+            damageType: "fire",
+            ailmentChances: [{ ailment: "burn", chance: 1 }],
+          },
+        ],
+      },
+    ),
     form(
       "pinning-bolt",
       "Pinning Bolt",
-      "240 % Weapon Damage that ignores 30 % Armor. Stuns for 0.7 s.",
+      "Fire a bolt for 240 % Weapon Damage. Ignores 30 % of the enemy's Armor and Stuns for 0.7 s.",
       {
         ...HEAVY_BOLT,
         id: "pinning-bolt",
@@ -1762,7 +1792,7 @@ const WAND = buildTree({
   ],
   innateForms: [
     // A Spear, not a Lance: a Void Wand would cast the Staff's "Void Lance".
-    form("lance", "Spear", "One bolt with 70 % more damage. Costs 10 more Heat.", {
+    form("lance", "Spear", "Fire one big bolt with 70 % more damage.", {
       ...SHOCKBOLT,
       id: "shock-lance",
       name: "Shock Spear",
@@ -1773,7 +1803,7 @@ const WAND = buildTree({
           : h,
       ),
     }),
-    form("barrage", "Barrage", "Three bolts of 45 % each.", {
+    form("barrage", "Barrage", "Fire 3 small bolts for 45 % damage each.", {
       ...SHOCKBOLT,
       id: "shock-barrage",
       name: "Shock Barrage",
@@ -1783,7 +1813,7 @@ const WAND = buildTree({
           : h,
       ),
     }),
-    form("seeking-bolt", "Seeking Bolt", "Never a Glancing Blow.", {
+    form("seeking-bolt", "Seeking Bolt", "Fire a bolt that is never a Glancing Blow.", {
       ...SHOCKBOLT,
       id: "seeking-shockbolt",
       name: "Seeking Shockbolt",
@@ -1973,7 +2003,7 @@ const STAFF = buildTree({
     },
   ],
   innateForms: [
-    form("void-lance", "Void Lance", "A Void hit with 60 % more damage. Always Corrupts.", {
+    form("void-lance", "Void Lance", "Hurl a Void lance with 60 % more damage. Always Corrupts.", {
       ...VOID_BOLT,
       id: "void-lance",
       name: "Void Lance",
@@ -1987,7 +2017,7 @@ const STAFF = buildTree({
           : h,
       ),
     }),
-    form("rift-bolt", "Rift Bolt", "A Void hit that always Corrupts and Burns.", {
+    form("rift-bolt", "Rift Bolt", "Hurl a Void bolt. Always Corrupts and Burns.", {
       ...VOID_BOLT,
       id: "rift-bolt",
       name: "Rift Bolt",
@@ -2003,12 +2033,17 @@ const STAFF = buildTree({
           : h,
       ),
     }),
-    form("draining-bolt", "Draining Bolt", "A Void hit. 50 % chance to Corrupt. Heals 4 % Life.", {
-      ...VOID_BOLT,
-      id: "draining-bolt",
-      name: "Draining Bolt",
-      effects: [{ kind: "heal", fraction: 0.04 }],
-    }),
+    form(
+      "draining-bolt",
+      "Draining Bolt",
+      "Hurl a Void bolt. 50 % chance that it Corrupts. You heal for 4 % of your Life.",
+      {
+        ...VOID_BOLT,
+        id: "draining-bolt",
+        name: "Draining Bolt",
+        effects: [{ kind: "heal", fraction: 0.04 }],
+      },
+    ),
   ],
   keystones: [
     {

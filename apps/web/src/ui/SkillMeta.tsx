@@ -4,7 +4,9 @@ import {
   type GameState,
   type SkillDefinition,
   type SkillType,
+  type WeaponDefinition,
   heroWeapon,
+  weaponAilment,
 } from "@emberheir/sim";
 import { GameIcon } from "./gameIcons";
 import { useNoteHover } from "./ItemTooltip";
@@ -101,6 +103,30 @@ export function SkillMeta(props: {
   );
 }
 
+const AILMENT_NAMES: Readonly<Record<string, string>> = {
+  bleed: "Bleed",
+  poison: "Poison",
+  burn: "Burn",
+  chill: "Chill",
+  shock: "Shock",
+  corruption: "Corruption",
+  stun: "Stun",
+};
+
+/**
+ * A skill's text for this weapon: Mastery skills say "your ailment" and "your element"; with
+ * a weapon they name it ("your Bleed", "as Lightning").
+ */
+export function skillText(skill: SkillDefinition, weapon?: WeaponDefinition): string {
+  if (!weapon) return skill.description;
+  const ailment = weaponAilment(weapon);
+  const name = ailment ? AILMENT_NAMES[ailment] : undefined;
+  let out = skill.description.split("as your element").join(`as ${TYPE_NAMES[weapon.damageType]}`);
+  if (name)
+    out = out.split("your ailment").join(`your ${name}`).split("Your ailment").join(`Your ${name}`);
+  return out;
+}
+
 /** The hero's own skills: hits with the weapon's damage show the weapon's damage type. */
 export function HeroSkillMeta(props: {
   state: GameState;
@@ -114,4 +140,9 @@ export function HeroSkillMeta(props: {
       {...(props.className ? { className: props.className } : {})}
     />
   );
+}
+
+/** A skill's text with the hero's weapon ailment and element filled in. */
+export function heroSkillText(state: GameState, skill: SkillDefinition): string {
+  return skillText(skill, heroWeapon(state, GAME_DATA).weapon);
 }

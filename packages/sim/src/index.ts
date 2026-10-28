@@ -22,7 +22,7 @@ export {
 } from "./combat/damage";
 export { triggerThreshold } from "./combat/heat";
 export { Fight, runFight } from "./combat/fight";
-export { heavyHitCap, skillCost } from "./combat/fighter";
+export { heavyHitCap, skillCost, weaponAilment } from "./combat/fighter";
 export type {
   CombatEvent,
   FightResult,
