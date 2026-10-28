@@ -15,6 +15,9 @@ test("the Battle Plan has no dropdowns: skills, sockets, Heat slider and conditi
 
   // Pick a slot, then a skill from the library.
   const slot2 = page.getByTestId("rotation-slot-1");
+  // A slot that repeats an earlier slot's skill is skipped in the fight, so it shows as Empty.
+  await expect(slot2).toContainText("Empty");
+  await expect(page.getByText("Upgrades")).toHaveCount(0);
   await slot2.getByRole("button", { name: "Rotation Slot 2" }).click();
   const skills = page.getByRole("region", { name: "Skills" });
   await skills.getByRole("button", { name: /^Flurry/ }).click();
