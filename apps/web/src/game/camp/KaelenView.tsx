@@ -1,5 +1,12 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type GameState, masteryPointsLeft, respecAcorns, spentInTree } from "@emberheir/sim";
+import {
+  type GameState,
+  masteryPointsLeft,
+  masteryRespecAcorns,
+  pointsSpent,
+  respecAcorns,
+  spentInTree,
+} from "@emberheir/sim";
 import { Suspense, useState } from "react";
 import {
   type TabItem,
@@ -39,6 +46,11 @@ export function KaelenView(props: {
   const [tab, setTab] = useState<"tree" | "plan" | "mastery">(props.initialTab ?? "tree");
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
   const respecPrice = respecAcorns(state.legacy.prestige);
+  const heirloom = GAME_DATA.weaponMastery[state.hero.weaponId];
+  const heirloomSpent =
+    (heirloom ? pointsSpent(heirloom, state.hero.mastery) : 0) > 0 ||
+    Object.keys(state.hero.mastery.choices).length > 0;
+  const heirloomPrice = masteryRespecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
     { id: "tree", name: "Ash Tree", art: <ActionIcon id="ash-tree" /> },
     { id: "mastery", name: "Heirloom", art: <ActionIcon id="heirloom" /> },
@@ -103,6 +115,26 @@ export function KaelenView(props: {
                     onConfirm={() => game.dispatch({ type: "respecTree" })}
                   >
                     Respec · <Price id="acorns" amount={respecPrice} />
+                  </HoldButton>
+                )}
+                {!viewOnly && tab === "mastery" && (
+                  <HoldButton
+                    icon="cycle"
+                    blocked={
+                      !heirloomSpent
+                        ? "Nothing learned yet"
+                        : state.wallet.acorns < heirloomPrice
+                          ? "Not enough Acorns"
+                          : null
+                    }
+                    tip={{
+                      name: "Respec",
+                      kind: "Hold to confirm",
+                      explain: "All Heirloom Points come back. The Echo stays.",
+                    }}
+                    onConfirm={() => game.dispatch({ type: "respecMastery" })}
+                  >
+                    Respec · <Price id="acorns" amount={heirloomPrice} />
                   </HoldButton>
                 )}
               </>

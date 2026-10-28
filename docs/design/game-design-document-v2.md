@@ -126,9 +126,14 @@ Endgame **Wildfire I–X**.
 
 ### 2.3 Nach jedem Kampf ✅ (`entschlackung-v1.md`)
 - XP, Acorns, Ash. **Item-Picks** (`elites-routen-v1.md` 3): normale Kämpfe in jedem Run nur **jeder dritte normale Kampf 1 aus 3** (seit der Act-Karte, vorher jede dritte Stage)
-  (sonst werden die Karten sofort zu Ash; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
+  (sonst gibt es keine Items und nur die normale Stage-Belohnung, keine Extra-Ash, Timo 28.10.2026; auch in Run 1, Timo 15.10.2026), Elites, Gatekeeper und
   Bosse immer. Die DPS-Pfeile auf den Karten misst der
   Training Dummy.
+- **Smart Base** (`notes/smart-loot-v1.md`, Timo 28.10.2026): Hat ein Slot Bases, die der Held nicht tragen
+  kann (Requirements nach den eigenen Attributen, Off Hand passt nicht zur Waffe), würfelt eine Karte zu **75 %** nur
+  unter den tragbaren. Die übrigen 25 % bleiben offen, damit der geteilte Stash auch Gear für andere Helden bekommt.
+  Affixe bleiben frei. Gilt für alle Item-Picks (auch Cache, Eldrin's Cache) und Marishas Gamble. Vorher war gut jede
+  dritte Karte nicht tragbar, bei Rüstung zwei von drei.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
 - **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
@@ -213,8 +218,8 @@ Endgame **Wildfire I–X**.
 | Persona | Rolle | Aufgaben |
 |---|---|---|
 | **Kaelen** | Trainer | Ash Tree, Heirloom, Battle Plan (jeder Respec kostet Acorns). Sein **Training Dummy** steht links vom Feuer und ist ein eigener Klickpunkt im Camp (Schaden/s nach Quelle, Items live anprobieren; Timo 19.10.2026) |
-| **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers), Reforge (Ember Coal), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
-| **Liora** | Mystic | Temper (einen Affix-Wert neu würfeln), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
+| **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers; hebt den Required Level mit), Reforge (Ember Coal; würfelt nur die Stat-Affixe neu, alle Trigger bleiben, Charms nicht), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
+| **Liora** | Mystic | Temper (wie der Enchant aus Diablo 3: zwei Angebote für ein Stat-Affix, ein neues Affix oder derselbe Affix mit neuem Wert, oder behalten; bei festen Werten wie „+1 Strength“ zwei neue Affixe), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
 | **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot). Odds wie die Karte eines normalen Gegners im Run, Legendary/Unique so oft wie auf der Karte eines Elites (Timo 26.10.2026; vorher eine Rarity-Stufe über den Drops) |
 | **Eldrin** | Scout | **The Road**: Act-Wahl, Omen, Wildfire, Draught, **Bounties** (ein optionaler Auftrag pro Zug), The Last Ember, Set Out |
@@ -592,10 +597,12 @@ Endgame **Wildfire I–X**.
   Start-Off-Hand nach Waffe: Sword/Axe/Mace Round Shield (Axe seit Schritt 4, Timo 20.10.2026), Dagger Blood Talisman (+5 % Ailment Effect, +2 % Lifesteal),
   Bow/Crossbow Quiver, Wand Ember Focus, Staff Grimoire (+10 % Ailment Effect).
 - **Grundtypen (Bases):** 30 ohne Waffen, jeder mit festem Bonus (Implicit) und eigenem gemalten Icon. Armor-Slots haben
-  je eine leichte (AGI), schwere (STR) und Caster-Variante (INT), Body zusätzlich den **Leather Cuirass** (STR + AGI).
+  je eine Variante pro Hauptattribut der Klassen: Leather (DEX, seit 28.10.2026; vorher AGI), Iron (STR) und Silk
+  (INT), Body zusätzlich den **Leather Cuirass** (STR + DEX).
   Schmuck: Bone Amulet, Ember Pendant, **Gold Medallion** (+5 % Physical Damage); Iron Ring, Garnet Ring, **Gold Ring**
   (+4 % Elemental Damage). Charms: War, Ward, Ember und **Leaf Charm** (würfelt bevorzugt Ailment-Trigger).
-- **Item Level = Monster Level**, daraus das **Item Tier** (T1–T10). **Required Level** = Item Level − 5.
+- **Item Level = Monster Level**, daraus das **Item Tier** (T1–T10). **Required Level** = Item Level − 5, bei einem hochgeschmiedeten Item der erste Item Level seines Tiers − 5
+  (T10 braucht Level 86; Crafting-Audit, Timo 28.10.2026), damit der Shared Stash keinen frischen Heir stark macht.
 - **Rarities:** Normal (Sockets, Basis für Runewords) · Magic (1 Prefix + 1 Suffix) · Rare (4–5 Stat-Affixe) · Epic
   (5–6 und garantiert Trigger) · Legendary (4–5 Affixe + Legendary Power) · Unique (fest, oft mit Power; Boss-Uniques
   „Dropped by …“). Gear ist die **Hauptquelle der Zahlen** (Damage %, Crit, Attack Speed, Trigger Chance), die Bäume geben
@@ -606,6 +613,10 @@ Endgame **Wildfire I–X**.
   Trigger auf ein Item (ein gekindelter Trigger pro Item, Roll bis 70 %).
 - **Runes und Runewords:** 8 Runes (Bark, Moss, Thorn, Venom, Ember, Rime, Volt, Dusk), 10 Runewords. Runeword Codex
   bei Nyssa, permanent.
+- **Crafting** (`notes/crafting/crafting-audit-v1.md`, Timo 28.10.2026): Reforge würfelt nur die Stat-Affixe neu,
+  alle Trigger (gedroppt und gekindelt) bleiben mit ihrer Qualität, ein Greater auf einem Trigger auch; Charms haben nur
+  Trigger und werden nicht reforged. Temper bietet zwei Optionen an (das Angebot wartet am Item), Wählen ist gratis.
+  Runes haben nur noch einen Socket-Bonus (der Waffen-Bonus war seit der festen Waffe tot).
 - **Crafting-Grenzen:** Reforge löst den Affix-Lock, Legendary Powers und Runewords sind unveränderbar,
   Uniques können nicht reforged/tempered werden.
 - **Trophy Wall:** Sammlung aller gefundenen Uniques.
@@ -706,6 +717,9 @@ Endgame **Wildfire I–X**.
 - **First Steps (Release 1.0):** Old Nan sagt neuen Spielern beim ersten Mal je einen kurzen Satz (Camp, Road, erster Kampf,
   Skill Points, Item Pick, Tod, Rückkehr ins Camp). Jeder Tipp kommt einmal pro Browser, „No more tips.“ oder Settings → Tips schaltet sie ab.
   Nur UI. Dazu Absturzschutz („The fire flickered“ mit Reload), Versionsnummer im Titel und Menü und Credits („Kindled by Cedust“).
+- **Spielstände (Release 1.0):** im Browser und in Backups versiegelt (gepackt und verschlüsselt, kein Klartext); ein von Hand
+  geänderter Spielstand lädt nicht und steht als „Damaged save“ im Slot, bis man ihn löscht. Unter Characters → Save Files
+  gehen alle Heirs in eine `.ember`-Datei (Export) und zurück (Import ersetzt alle Heirs nach Rückfrage).
 
 ---
 

@@ -146,6 +146,29 @@ export function saveGreater(): string {
   });
 }
 
+/** A Camp with Liora: a Rare ring with a perfect trigger, Ash and Ember Coal to craft. */
+export function saveCrafting(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  const ring: Item = {
+    id: "craft-ring",
+    baseId: "iron-ring",
+    name: "Lucky Iron Ring",
+    rarity: "rare",
+    itemLevel: 98,
+    tier: 10,
+    affixes: [
+      { affixId: "life", quality: 0.4 },
+      { affixId: "crit-chance", quality: 0.2 },
+      { affixId: "second-wind", quality: 1 },
+    ],
+  };
+  return serializeGame({
+    ...camp,
+    wallet: { ...camp.wallet, ash: 50_000, acorns: 50_000, emberCoal: 20 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+  });
+}
+
 /** After The Last Ember: a Legendary ring to salvage, Leech Bloom already in the Power Codex. */
 export function saveCrucible(): string {
   const camp = JSON.parse(saveWildfire()) as GameState;
@@ -210,6 +233,70 @@ export function saveBossHoard(): string {
         itemPick: null,
         salvagedAsh: 0,
         newTrophies: ["thornsong"],
+      },
+    },
+  };
+  return serializeGame(state);
+}
+
+/**
+ * The fullest boss reward there is: the Harvester's Hoard on a Wildfire trip, a Legendary and two
+ * Uniques among the six cards, three Runes and every currency, a Waymark and levels on top. With
+ * `pick`, an Elite before the boss instead: the first three of those cards as a normal item pick.
+ */
+export function saveRichLoot(kind: "hoard" | "pick" = "hoard"): string {
+  const hoard = kind === "hoard";
+  const base = newGame(GAME_DATA, { seed: 42, classId: "emberseer" });
+  const rng = new Rng(11);
+  const act = GAME_DATA.acts[6];
+  if (!act) throw new Error("No Emberfall");
+  const roll = (baseId: string, rarity: Item["rarity"]) =>
+    rollItem(GAME_DATA.items, { baseId, itemLevel: 80, rarity }, rng);
+  const items: Item[] = [
+    roll("chain-mail", "legendary"),
+    rollUnique(GAME_DATA.items, "reapers-due", 80, rng),
+    roll("silk-wraps", "epic"),
+    rollUnique(GAME_DATA.items, "the-stolen-flame", 80, rng),
+    roll("iron-helm", "epic"),
+    roll("garnet-ring", "epic"),
+  ];
+  const state: GameState = {
+    ...base,
+    hero: { ...base.hero, level: 90 },
+    progress: {
+      ...base.progress,
+      actsCleared: GAME_DATA.acts.map((a) => a.id),
+    },
+    legacy: { ...base.legacy, prestige: 7, trophies: [] },
+    run: {
+      actId: act.id,
+      stage: hoard ? act.stages : act.stages - 1,
+      lifeFraction: 0.4,
+      phase: "rewards",
+      wildfire: 6,
+      encounter: {
+        enemyId: hoard ? act.boss.id : (act.enemies[0]?.id ?? ""),
+        level: 80,
+        boss: hoard,
+        eliteModifiers: [],
+        seed: 13,
+      },
+      rewards: {
+        rank: hoard ? "boss" : "elite",
+        xp: 184_000,
+        acorns: 2_480,
+        ash: 960,
+        emberCoal: 6,
+        phoenixFeathers: 2,
+        cinderglass: 3,
+        runes: ["dusk", "volt", "rime"],
+        levelsGained: 2,
+        waymark: true,
+        items: hoard ? items : items.slice(0, 3),
+        ...(hoard ? { picks: 2 } : {}),
+        itemPick: null,
+        salvagedAsh: 0,
+        newTrophies: ["reapers-due", "the-stolen-flame"],
       },
     },
   };
@@ -539,14 +626,14 @@ function wonFight(state: GameState): Partial<RunState> {
     rank: "normal",
     xp: 30,
     acorns: 10,
-    ash: 4,
+    ash: 16,
     emberCoal: 0,
     phoenixFeathers: 0,
     runes: [],
     levelsGained: 0,
     items: [],
     itemPick: { kind: "salvageAll" },
-    salvagedAsh: 12,
+    salvagedAsh: 0,
   };
   return {
     phase: "rewards",

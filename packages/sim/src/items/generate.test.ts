@@ -103,6 +103,24 @@ describe("rollItem", () => {
   });
 });
 
+describe("Reforge keeps triggers", () => {
+  it("rolls no new trigger and leaves room for the kept one on a Magic item", () => {
+    const kept = [{ affixId: "searing-crit", quality: 0.9, kindled: true as const }];
+    for (let seed = 1; seed <= 30; seed++) {
+      const item = rollItem(
+        TEST_CATALOG,
+        { baseId: "test-ring", itemLevel: 8, rarity: "magic", keepTriggers: kept },
+        new Rng(seed),
+      );
+      expect(item.affixes.at(-1)).toEqual(kept[0]);
+      const stats = item.affixes.slice(0, -1).map((r) => TEST_CATALOG.affixes.get(r.affixId));
+      // The trigger is the suffix, so the stats can only be one prefix.
+      expect(stats.length).toBeLessThanOrEqual(1);
+      for (const a of stats) expect(a && affixPosition(a)).toBe("prefix");
+    }
+  });
+});
+
 describe("weighted picks", () => {
   it("follows the weights", () => {
     const rng = new Rng(1);

@@ -197,7 +197,7 @@ export const LEATHER_JERKIN: ItemBaseDefinition = {
   slot: "body",
   baseStats: { armor: 6 },
   implicit: { evasion: 0.03 },
-  requirements: { agility: 3 },
+  requirements: { dexterity: 3 },
   affixWeights: { speed: 1.5 },
   maxSockets: 3,
 };
@@ -232,7 +232,7 @@ export const LEATHER_CUIRASS: ItemBaseDefinition = {
   slot: "body",
   baseStats: { armor: 10 },
   implicit: { evasion: 0.02 },
-  requirements: { strength: 3, agility: 3 },
+  requirements: { strength: 3, dexterity: 3 },
   affixWeights: { defense: 1.2, speed: 1.2 },
   maxSockets: 3,
 };
@@ -243,7 +243,7 @@ export const LEATHER_CAP: ItemBaseDefinition = {
   slot: "helm",
   baseStats: { armor: 3 },
   implicit: { evasion: 0.02 },
-  requirements: { agility: 3 },
+  requirements: { dexterity: 3 },
   affixWeights: { speed: 1.5 },
   maxSockets: 2,
 };
@@ -275,7 +275,7 @@ export const LEATHER_GLOVES: ItemBaseDefinition = {
   slot: "gloves",
   baseStats: { armor: 2 },
   implicit: { attackSpeed: 0.03 },
-  requirements: { agility: 3 },
+  requirements: { dexterity: 3 },
   affixWeights: { speed: 1.5, crit: 1.5 },
 };
 
@@ -304,7 +304,7 @@ export const LEATHER_BOOTS: ItemBaseDefinition = {
   slot: "boots",
   baseStats: { armor: 2 },
   implicit: { evasion: 0.02 },
-  requirements: { agility: 3 },
+  requirements: { dexterity: 3 },
   affixWeights: { speed: 1.5 },
 };
 

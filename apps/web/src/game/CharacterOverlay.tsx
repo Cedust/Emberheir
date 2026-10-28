@@ -55,6 +55,7 @@ import { aimedSlot, preferredSlotFor, resetRingSlot, useRingSlot } from "../ui/r
 import { itemDrops } from "./itemDrops";
 import { EQUIP_BLOCK_TEXT, UNEQUIP_BLOCK_TEXT } from "./labels";
 import type { GameApi } from "./useGame";
+import { ClassChips } from "./character/ClassChips";
 import { HeroDoll, type HeroSlotProps } from "./character/HeroDoll";
 import { PinContext, usePins } from "./character/pins";
 import {
@@ -136,6 +137,7 @@ export function CharacterOverlay(props: {
   const next = xpToNextLevel(state.hero.level, cap);
   const boss = bossLevel(state.legacy.prestige);
   const max = PROGRESSION.maxLevel;
+  const heroClass = heroClassOf(state, GAME_DATA);
   const xpText = Number.isFinite(next)
     ? `${Math.floor((state.hero.xp / next) * 100)}% to Lv ${state.hero.level + 1} · Cap ${cap}`
     : `Level cap ${cap} reached`;
@@ -329,6 +331,9 @@ export function CharacterOverlay(props: {
                     size={26}
                   />
                   <span className="title-font">{heroTitle(state, GAME_DATA)}</span>
+                  {heroClass.name !== heroTitle(state, GAME_DATA) && (
+                    <span className="title-font hero-class-name">{heroClass.name}</span>
+                  )}
                   <span className="k-grow" />
                   <span className="sub">{xpText}</span>
                 </div>
@@ -353,6 +358,7 @@ export function CharacterOverlay(props: {
                 </div>
               </div>
             </div>
+            <ClassChips state={state} />
             <HeroDoll state={state} slot={slotProps} />
           </section>
 
@@ -366,7 +372,7 @@ export function CharacterOverlay(props: {
                   </div>
                   <AttributeStones
                     perkBoard
-                    mainAttribute={heroClassOf(state, GAME_DATA).mainAttribute}
+                    mainAttribute={heroClass.mainAttribute}
                     actions={
                       !inFight &&
                       state.hero.unspentAttributePoints > 0 && (

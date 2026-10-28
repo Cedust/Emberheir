@@ -1045,3 +1045,41 @@ html[data-input="touch"] .stage .ib-compare-hint {
   background: url("../../assets/ui/btn-close.webp") border-box center / 100% 100% no-repeat;
   filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.4));
 }
+
+/* ?uikit Items page: every item icon in every frame (ItemFramesPage.tsx). */
+.stage .kit-items {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px calc(var(--safe-x) + 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.stage .kit-items-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+}
+
+.stage .kit-item {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border-radius: 6px;
+  background: rgb(0 0 0 / 0.12);
+}
+
+.stage .kit-item-frames {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+}
+
+.stage .kit-item-frames .item-tile,
+.stage .kit-item-frames .ib-art {
+  position: relative;
+  flex-shrink: 0;
+}

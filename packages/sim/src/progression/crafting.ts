@@ -1,9 +1,25 @@
-import { GREATER, rollQuality, statAffixValue, unlockedStages } from "../items/affixes";
+import {
+  GREATER,
+  affixPool,
+  affixWeight,
+  rollQuality,
+  statAffixValue,
+  unlockedStages,
+} from "../items/affixes";
 import { ITEMS } from "../items/constants";
-import { missingRequirements } from "../items/equipment";
-import { getBase, rollItem, rollRarity, rollUnique, uniquesFor } from "../items/generate";
+import { missingRequirements, requiredLevel } from "../items/equipment";
+import {
+  affixPosition,
+  getBase,
+  pickWeighted,
+  rollItem,
+  rollRarity,
+  rollUnique,
+  uniquesFor,
+} from "../items/generate";
 import { freeSockets, matchRuneword } from "../items/runes";
 import type {
+  AffixDefinition,
   AffixRoll,
   EquipmentSlot,
   Item,
@@ -18,7 +34,7 @@ import { codexKnows, kindledIndex } from "./codex";
 import { kindledAffixId } from "../items/codex";
 import { nextAct, stageMonsterLevel } from "./game/acts";
 import { requireCamp } from "./game/guards";
-import { addRunes, itemPickWeights, lootGate } from "./game/loot";
+import { addRunes, heroCanWear, itemPickWeights, lootGate, smartBases } from "./game/loot";
 import { bossLevel, killPrice } from "./leveling";
 import { type GameData, type GameState, fail, nextRng } from "./game/state";
 import { hasMet } from "./game/companions";
@@ -30,13 +46,20 @@ import { addToGrid } from "./inventory";
  * affixes (Temper, Kindle), the Runesmith everything about Sockets. There is no Undo.
  *
  * Affix Lock (like the Mystic in Diablo 3): after Temper or Kindle, only that affix can be
- * changed again; Reforge clears the lock.
+ * changed again; Reforge clears the lock. Reforge rerolls the stat affixes only: the triggers stay
+ * (crafting-audit-v1.md), so a Charm has nothing to reforge.
  */
 
 export type CraftRequest =
   | { readonly kind: "upgrade"; readonly itemId: string }
   | { readonly kind: "reforge"; readonly itemId: string }
+  /**
+   * Liora, like the Enchant of Diablo 3 (crafting-audit-v1.md K2): two options for one stat affix,
+   * a new affix or the same one with a new value. They wait on the item (`temperOffer`).
+   */
   | { readonly kind: "temper"; readonly itemId: string; readonly affixIndex: number }
+  /** Liora: takes option `option` of the waiting Temper offer, or keeps the affix (`null`). Free. */
+  | { readonly kind: "temperChoose"; readonly itemId: string; readonly option: number | null }
   /** Runesmith: +1 Socket on a Normal item without Runes, up to the base's maximum. */
   | { readonly kind: "addSocket"; readonly itemId: string }
   /** Nyssa: a Rune from the pouch into the next free Socket. Runes never come out again. */
@@ -68,6 +91,7 @@ export type CraftKind = CraftRequest["kind"];
 /** Liora joins the caravan after the first act boss. */
 export const MYSTIC_CRAFTS: readonly CraftKind[] = [
   "temper",
+  "temperChoose",
   "kindle",
   "awaken",
   "shift",
@@ -113,6 +137,14 @@ export type CraftBlockReason =
   | "maxTier"
   /** An equipped item would stop working: its new requirements are not met. */
   | "requirements"
+  /** Upgrade: an equipped item would need a higher hero level than the Heir has. */
+  | "level"
+  /** Reforge: a Charm has only triggers, and triggers stay. */
+  | "charm"
+  /** Temper: no other affix and no other value to offer. */
+  | "noOptions"
+  /** Temper choice: no offer waits on the item, or no such option. */
+  | "noOffer"
   | "noAffixes"
   | "noAffix"
   | "locked"
@@ -209,6 +241,8 @@ export function craftCost(
       return { ...NO_COST, emberCoal: CRAFTING.emberCoal };
     case "temper":
       return { ...NO_COST, ...at(CRAFTING.temperKills) };
+    case "temperChoose":
+      return NO_COST;
     case "kindle":
       return {
         ...NO_COST,
@@ -289,6 +323,71 @@ function affixBlockReason(
   return undefined;
 }
 
+/** Whether an affix always shows the same number on this item (e.g. "+1 Strength"). */
+function fixedValue(affix: AffixDefinition, item: Item): boolean {
+  if (affix.kind !== "stat") return true;
+  if (affix.epicValue !== undefined && (item.rarity === "epic" || item.rarity === "legendary")) {
+    return true;
+  }
+  return affix.value.min === affix.value.max;
+}
+
+/**
+ * Affixes a Temper can offer in place of the affix at `index`: stat affixes of the slot the item
+ * does not carry yet, on a Magic item of the same kind (prefix or suffix). A Greater place never
+ * gets an affix with a fixed value, which would waste its rank.
+ */
+function temperPool(item: Item, index: number, catalog: ItemCatalog): AffixDefinition[] {
+  const roll = item.affixes[index];
+  const current = roll ? catalog.affixes.get(roll.affixId) : undefined;
+  if (!current) return [];
+  const slot = getBase(catalog, item.baseId).slot;
+  const taken = new Set(item.affixes.map((r) => r.affixId));
+  return affixPool(catalog.affixes.values(), slot, "stat").filter(
+    (a) =>
+      !taken.has(a.id) &&
+      (item.rarity !== "magic" || affixPosition(a) === affixPosition(current)) &&
+      !(item.greater?.index === index && fixedValue(a, item)),
+  );
+}
+
+/** How many options a Temper of this affix would show (0, 1 or 2). */
+export function temperOptionCount(item: Item, index: number, catalog: ItemCatalog): number {
+  const roll = item.affixes[index];
+  const current = roll ? catalog.affixes.get(roll.affixId) : undefined;
+  if (!current) return 0;
+  const sameValue = fixedValue(current, item) ? 0 : 1;
+  return Math.min(2, temperPool(item, index, catalog).length + sameValue);
+}
+
+/**
+ * The two options of a Temper: a new affix, and the same affix with a new value. An affix with a
+ * fixed value (like "+1 Strength") gets a second new affix instead.
+ */
+export function temperOptions(
+  item: Item,
+  index: number,
+  catalog: ItemCatalog,
+  rng: Rng,
+): AffixRoll[] {
+  const roll = item.affixes[index] ?? fail("No such affix");
+  const current = catalog.affixes.get(roll.affixId) ?? fail("Unknown affix");
+  const base = getBase(catalog, item.baseId);
+  const quality = () => Number(rollQuality(item.itemLevel, item.rarity, rng).toFixed(4));
+  const pool = temperPool(item, index, catalog);
+  const options: AffixRoll[] = [];
+  const pickNew = () => {
+    const affix = pickWeighted(pool, (a) => affixWeight(a, base), rng);
+    if (!affix) return;
+    pool.splice(pool.indexOf(affix), 1);
+    options.push({ affixId: affix.id, quality: quality() });
+  };
+  pickNew();
+  if (fixedValue(current, item)) pickNew();
+  else options.push({ affixId: roll.affixId, quality: quality() });
+  return options;
+}
+
 function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | undefined {
   const w = state.wallet;
   if ((w.cinderglass ?? 0) < (cost.cinderglass ?? 0)) return "cinderglass";
@@ -335,10 +434,12 @@ export function craftBlockReason(
       if (slot && missingRequirements(upgradedItem(item), catalog, state.hero.attributes).length) {
         return "requirements";
       }
+      if (slot && state.hero.level < requiredLevel(upgradedItem(item))) return "level";
       break;
     }
     case "reforge":
       if (item.uniqueId) return "fixed";
+      if (getBase(catalog, item.baseId).slot === "charm") return "charm";
       if (item.affixes.length === 0) return "noAffixes";
       break;
     case "addSocket": {
@@ -359,6 +460,13 @@ export function craftBlockReason(
       if (item.uniqueId) return "fixed";
       const reason = affixBlockReason(item, request.affixIndex, catalog);
       if (reason) return reason;
+      if (temperOptionCount(item, request.affixIndex, catalog) === 0) return "noOptions";
+      break;
+    }
+    case "temperChoose": {
+      const offer = item.temperOffer;
+      if (!offer || item.lockedAffix === undefined) return "noOffer";
+      if (request.option !== null && !offer[request.option]) return "noOffer";
       break;
     }
     case "kindle": {
@@ -416,6 +524,11 @@ function replaceItem(state: GameState, location: CraftItemLocation, next: Item):
     ...state,
     inventory: state.inventory.map((p) => (p.item.id === next.id ? { ...p, item: next } : p)),
   };
+}
+
+function withoutOffer(item: Item): Item {
+  const { temperOffer, ...rest } = item;
+  return temperOffer ? rest : item;
 }
 
 const withAffix = (item: Item, index: number, roll: AffixRoll): Item => ({
@@ -481,12 +594,20 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
     }
     case "reforge": {
       const [rng, next] = nextRng(paid);
+      const isTrigger = (r: AffixRoll) => data.items.affixes.get(r.affixId)?.kind === "trigger";
+      const triggers = item.affixes.filter(isTrigger);
       const rolled = rollItem(
         data.items,
-        { baseId: item.baseId, itemLevel: item.itemLevel, rarity: item.rarity },
+        {
+          baseId: item.baseId,
+          itemLevel: item.itemLevel,
+          rarity: item.rarity,
+          keepTriggers: triggers,
+        },
         rng,
       );
-      // Base, Tier, Rarity, Sockets, Runes and the Legendary Power stay; the lock is gone.
+      // Base, Tier, Rarity, Sockets, Runes, the Legendary Power and every trigger stay; the lock
+      // and a waiting Temper offer are gone.
       const reforged: Item = {
         id: item.id,
         baseId: item.baseId,
@@ -499,21 +620,35 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         ...(item.runes ? { runes: item.runes } : {}),
         ...(item.powerId ? { powerId: item.powerId } : {}),
       };
-      // The Greater Affix keeps its rank on a random new affix (neuausrichtung-v1.md 7.5).
-      const targets = item.greater ? greaterTargets(reforged, data.items) : [];
-      const index = targets[rng.int(0, Math.max(0, targets.length - 1))];
+      // A Greater trigger stays where its trigger went; a Greater stat keeps its rank on a random
+      // new stat affix (neuausrichtung-v1.md 7.5).
+      const old = item.greater ? item.affixes[item.greater.index] : undefined;
+      const stats = rolled.affixes.length - triggers.length;
+      const targets = item.greater
+        ? greaterTargets(reforged, data.items).filter((i) => i < stats)
+        : [];
+      const index =
+        old && isTrigger(old)
+          ? stats + triggers.indexOf(old)
+          : targets[rng.int(0, Math.max(0, targets.length - 1))];
       const greater =
         item.greater && index !== undefined ? { greater: { index, rank: item.greater.rank } } : {};
       return replaceItem(next, location, { ...reforged, ...greater });
     }
     case "temper": {
       const [rng, next] = nextRng(paid);
-      const old = item.affixes[request.affixIndex] ?? fail("No such affix");
-      return replaceItem(
-        next,
-        location,
-        withAffix(item, request.affixIndex, { affixId: old.affixId, quality: quality(rng) }),
-      );
+      const temperOffer = temperOptions(item, request.affixIndex, data.items, rng);
+      return replaceItem(next, location, {
+        ...item,
+        lockedAffix: request.affixIndex,
+        temperOffer,
+      });
+    }
+    case "temperChoose": {
+      const roll = request.option === null ? undefined : item.temperOffer?.[request.option];
+      const index = item.lockedAffix ?? fail("No locked affix");
+      const rest = withoutOffer(item);
+      return replaceItem(paid, location, roll ? withAffix(rest, index, roll) : rest);
     }
     case "kindle": {
       const [rng, next] = nextRng(paid);
@@ -528,7 +663,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         index < item.affixes.length
           ? item.affixes.map((r, i) => (i === index ? roll : r))
           : [...item.affixes, roll];
-      return replaceItem(next, location, { ...item, affixes, lockedAffix: index });
+      return replaceItem(next, location, { ...withoutOffer(item), affixes, lockedAffix: index });
     }
     case "awaken":
     case "shift": {
@@ -648,7 +783,11 @@ export function gambleItem(
   rng: Rng,
   level = merchantItemLevel(state, data),
 ): Item {
-  const bases = data.lootBases.filter((id) => getBase(data.items, id).slot === slot);
+  const bases = smartBases(
+    data.lootBases.filter((id) => getBase(data.items, id).slot === slot),
+    heroCanWear(state, data),
+    rng,
+  );
   const prestige = state.legacy.prestige;
   const rarity = rng.chance(gambleLegendaryChance(prestige))
     ? "legendary"

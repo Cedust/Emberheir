@@ -50,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 16;
+export const SAVE_VERSION = 17;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {

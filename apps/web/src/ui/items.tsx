@@ -14,7 +14,12 @@ import {
   slotsFor,
   greaterName,
 } from "@emberheir/sim";
-import { type MouseEvent as ReactMouseEvent, type ReactNode, useState } from "react";
+import {
+  type CSSProperties,
+  type MouseEvent as ReactMouseEvent,
+  type ReactNode,
+  useState,
+} from "react";
 import {
   type DragSource,
   type GridDrop,
@@ -233,6 +238,8 @@ export function ItemTile(props: {
   const { item } = props;
   const w = props.width ?? props.size ?? 68;
   const h = props.height ?? props.size ?? 68;
+  // The brass rim narrows on small tiles, so a Ring in the loot card's mini doll still shows.
+  const rim = Math.round(Math.min(11, Math.max(5, Math.min(w, h) * 0.14)));
   const {
     active,
     hide: hideTip,
@@ -275,7 +282,7 @@ export function ItemTile(props: {
     <button
       type="button"
       className={`item-tile ${item ? rarityClass(item) : "empty"}${props.selected ? " selected" : ""}${props.inactive ? " inactive" : ""}${over ? ` drop-${over}` : ""}${props.aimed ? " aimed" : ""}`}
-      style={{ width: w, height: h }}
+      style={{ width: w, height: h, "--rim": `${rim}px` } as CSSProperties}
       aria-label={item ? `${props.label}: ${item.name}` : `${props.label}: empty`}
       title={active ? undefined : item ? `${props.label}: ${item.name}` : props.label}
       onClick={(e) => {
@@ -322,7 +329,7 @@ export function ItemTile(props: {
         </span>
       )}
       {item && <SocketDots sockets={item.sockets ?? 0} runes={item.runes ?? []} />}
-      {item && <span className="item-tile-tier">T{item.tier}</span>}
+      {item && Math.min(w, h) >= 56 && <span className="item-tile-tier">T{item.tier}</span>}
     </button>
   );
 }

@@ -1,5 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
+  type ActData,
   type EquipmentSlot,
   type GameState,
   type Item,
@@ -15,12 +16,13 @@ import { useCallback, useEffect, useState } from "react";
 import { Icon } from "../../ui/Icon";
 import { Button } from "../../ui/kit/Button";
 import { ItemArt } from "../../ui/ItemArt";
+import { useNoteHover } from "../../ui/ItemTooltip";
 import { ItemDetail, ItemTile, rarityClass, RingSwitch } from "../../ui/items";
 import { dollBox, Paperdoll } from "../../ui/Paperdoll";
 import { preferredSlotFor, resetRingSlot, useRingSlot } from "../../ui/ringSlot";
 import { runeColor, runeName, RuneStone } from "../../ui/RuneArt";
 import { TrailMark } from "../../ui/TrailMark";
-import { isHighRune } from "../actLoot";
+import { isHighRune, runeNote } from "../actLoot";
 import { affixName, trailTitle } from "../hunts";
 import { type DropSound, playSound } from "../../ui/sound";
 import { EQUIP_BLOCK_TEXT } from "../labels";
@@ -33,10 +35,10 @@ import { compareWithEquipped } from "../../ui/itemCompare";
 /** The rewards after a won fight: Rune drops, the item cards with their reveal, the worn gear. */
 
 /**
- * Runes fall onto the ground with a glowing glyph and a clink before they go to the pouch. The
- * act's Home Rune gets a burst of sparks in its color and a "Home Rune" tag.
+ * Runes fall into the reward line with a glowing glyph and a clink before they go to the pouch,
+ * what it gives on hover. The act's Home Rune gets a burst of sparks in its color.
  */
-export function RuneDrops(props: { runes: readonly string[]; home?: string | undefined }) {
+export function RuneDrops(props: { runes: readonly string[]; act: ActData }) {
   useEffect(() => {
     const timers = props.runes.map((id, i) =>
       window.setTimeout(
@@ -47,26 +49,35 @@ export function RuneDrops(props: { runes: readonly string[]; home?: string | und
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [props.runes]);
   return (
-    <div className="rune-drops" data-testid="rune-drops">
+    <span className="rune-drops" data-testid="rune-drops">
       {props.runes.map((id, i) => (
-        <span
-          key={i}
-          className={`rune-drop${isHighRune(id) ? " high" : ""}${id === props.home ? " home" : ""}`}
-          style={
-            {
-              animationDelay: `${0.2 + i * 0.25}s`,
-              "--rune": runeColor(id),
-            } as React.CSSProperties
-          }
-        >
-          <span className="rune-glyph-glow" aria-hidden />
-          {id === props.home && <span className="rune-home-burst" aria-hidden />}
-          <RuneStone runeId={id} size={40} />
-          <span className="title-font">{runeName(id)} Rune</span>
-          {id === props.home && <span className="rune-home-tag small">Home Rune</span>}
-        </span>
+        <RuneDrop key={i} id={id} index={i} act={props.act} />
       ))}
-    </div>
+    </span>
+  );
+}
+
+function RuneDrop(props: { id: string; index: number; act: ActData }) {
+  const { id } = props;
+  const home = id === props.act.homeRune;
+  const hover = useNoteHover(runeNote(id, props.act));
+  return (
+    <span
+      className={`rune-drop${isHighRune(id) ? " high" : ""}${home ? " home" : ""}`}
+      tabIndex={0}
+      aria-label={`${runeName(id)} Rune`}
+      style={
+        {
+          animationDelay: `${0.2 + props.index * 0.25}s`,
+          "--rune": runeColor(id),
+        } as React.CSSProperties
+      }
+      {...hover}
+    >
+      <span className="rune-glyph-glow" aria-hidden />
+      {home && <span className="rune-home-burst" aria-hidden />}
+      <RuneStone runeId={id} size={34} />
+    </span>
   );
 }
 

@@ -566,6 +566,21 @@
   background: radial-gradient(circle at 50% 45%, #5e3226, #2e1610 60%, #120706);
 }
 
+/* The Class Trait: an ember-gold frame, no timer; it flares when its stacks are full. */
+.stage .rail-status.trait {
+  --frame: #f0a640;
+  --glow: rgb(240 166 64 / 0.45);
+}
+
+.stage .rail-status.trait.full {
+  --glow: rgb(255 170 60 / 0.95);
+  border-color: #ffd27a;
+}
+
+.stage .rail-status.trait > b {
+  font-size: 14px;
+}
+
 /* A soft light rim, so dark painted icons (Burn, Bleed) stand out from the socket. */
 .stage .rail-status > img {
   filter: drop-shadow(0 0 2px rgb(255 236 200 / 0.55)) drop-shadow(0 1px 1px rgb(0 0 0 / 0.8));

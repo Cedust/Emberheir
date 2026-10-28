@@ -37,6 +37,8 @@ import { canvasResolution } from "../pixiPacing";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 import { Price } from "../../ui/kit/Currency";
 import { PointPrice } from "../../ui/kit/Points";
+import { SkillIcon } from "../battle/SkillIcon";
+import { type NodeShape, type NodeStatus, NodePlaque, TreeDock } from "./TreeSide";
 
 const hexColor = (css: string) => Number.parseInt(css.replace("#", ""), 16);
 
@@ -58,7 +60,7 @@ function WebSocketPanel(props: {
       .map(([, runeId]) => runeId),
   );
   const web = (id: string) => ITEM_CATALOG.runes.get(id)?.web?.description ?? "";
-  if (!learned) return <p className="sub small">Rune Socket</p>;
+  if (!learned) return <p className="node-note">Learn it, then set a Rune from your pouch.</p>;
   return (
     <div className="web-socket" aria-label="Rune Socket">
       {current ? (
@@ -131,6 +133,18 @@ const KIND_LABEL: Record<SkillNode["kind"], string> = {
   keystone: "Keystone",
   socket: "Rune Socket",
 };
+/** The plaque's gem has the node's shape on the tree. */
+const SHAPE: Record<SkillNode["kind"], NodeShape> = {
+  minor: "circle",
+  notable: "ring",
+  skill: "diamond",
+  keystone: "octagon",
+  socket: "hexagon",
+};
+/** Like the tree: not learned yet is white while it can be learned, grey while it cannot. */
+const NODE_AVAILABLE = "#f2ead8";
+const NODE_UNAVAILABLE = "#8f857a";
+const hexCss = (c: number) => `#${c.toString(16).padStart(6, "0")}`;
 const ROMAN = ["", "I", "II", "III", "IV", "V"];
 const TIER_NAME = ["", "Magic", "Rare", "Epic", "Legendary", "Runeword"];
 
@@ -334,6 +348,35 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
     sceneRef.current?.setView(view);
   });
 
+  // Forget takes the Learn button's place once the node is fully learned.
+  const forgetShown = committed && pending.length === 0 && forgetReason !== "start";
+  const selectedRanks = selected ? nodeRanks(SKILL_TREE, preview.learned, selected.id) : 0;
+  const status: { kind: NodeStatus; text: ReactNode } = !selected
+    ? { kind: "locked", text: "" }
+    : pending.includes(selected.id)
+      ? { kind: "pending", text: "Pending: Confirm to learn" }
+      : selectedRanks > 0 && (reason === undefined || reason === "maxed")
+        ? {
+            kind: "learned",
+            text: reason === "maxed" ? "Learned" : "Learned · more ranks open",
+          }
+        : reason === undefined
+          ? { kind: "available", text: "Available" }
+          : reason === "notConnected" && canWalk && selectedPath
+            ? {
+                kind: "available",
+                text: `${selectedPath.steps.length} nodes away · learn the whole path`,
+              }
+            : reason === "notConnected" && selectedCost
+              ? {
+                  kind: "locked",
+                  text: (
+                    <>
+                      {LEARN_BLOCK_TEXT[reason]} (path: {pointsText(selectedCost)})
+                    </>
+                  ),
+                }
+              : { kind: "locked", text: LEARN_BLOCK_TEXT[reason] };
   const hovered = hover ? SKILL_TREE.nodes.find((n) => n.id === hover.id) : undefined;
   const selectedTier = selected ? (selected.tier ?? 1) : 1;
 
@@ -441,153 +484,188 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
       </div>
       <aside className="tree-side">
         {selected && (
-          <section
-            className="node-detail panel-card"
-            aria-label="Node details"
-            style={{
-              borderTopColor:
+          <section className="node-detail" aria-label="Node details">
+            <NodePlaque
+              tag={(
+                (SKILL_TREE.prestigeBranches?.find((b) => b.id === selected.prestigeBranch)?.name ??
+                  BRANCHES.find((b) => b.id === selected.branch)?.name ??
+                  selected.branch) + (selected.prestigeBranch ? ` ${ROMAN[selectedTier]}` : "")
+              ).toUpperCase()}
+              tagColor={hexCss(BRANCHES.find((b) => b.id === selected.branch)?.color ?? 0xc9a063)}
+              kind={KIND_LABEL[selected.kind]}
+              name={selected.name}
+              color={
                 selected.kind === "keystone"
                   ? "var(--rarity-legendary)"
-                  : `var(--rarity-${TIER_NAME[selectedTier]?.toLowerCase() ?? "magic"})`,
-            }}
-          >
-            <div className="section-row">
-              <span className="eyebrow">
-                {(
-                  (SKILL_TREE.prestigeBranches?.find((b) => b.id === selected.prestigeBranch)
-                    ?.name ?? selected.branch) +
-                  (selected.prestigeBranch ? ` ${ROMAN[selectedTier]}` : "")
-                ).toUpperCase()}
-              </span>
-              <span className="eyebrow">
-                {KIND_LABEL[selected.kind]}
-                {nodeMaxRanks(selected, branches) > 1
-                  ? ` · Rank ${nodeRanks(SKILL_TREE, preview.learned, selected.id)}/${nodeMaxRanks(selected, branches)}`
-                  : ""}
-              </span>
-            </div>
-            <h3 className="title-font">{selected.name}</h3>
-            <p>{selected.description}</p>
-            {selected.replaces && (
-              <p className="sub small">
-                Replaces {SKILL_TREE.nodes.find((n) => n.id === selected.replaces)?.name}.
-              </p>
-            )}
-            {selected.skill && (
-              <p className="skill-info">
-                <b>{selected.skill.name}</b> · {selected.skill.heatCost} Heat ·{" "}
-                {selected.skill.tags.join(" · ")}
-              </p>
-            )}
-            {selected.kind === "keystone" && (
-              <p className="sub small">
-                Costs {KEYSTONE.skillPoints} Skill Points and one of your Keystone places (
-                {activeKeystones(SKILL_TREE, preview.learned)}/{keystonePlaces} taken).
-              </p>
-            )}
-            {selected.kind === "socket" && (
-              <WebSocketPanel
-                state={state}
-                game={game}
-                nodeId={selected.id}
-                learned={committed && (state.hero.learned[selected.id] ?? 0) > 0}
-                viewOnly={viewOnly}
-              />
-            )}
-            {selected.fork && (
-              <p className="sub small">
-                Fork: only this or{" "}
-                {
-                  SKILL_TREE.nodes.find((n) => n.fork === selected.fork && n.id !== selected.id)
-                    ?.name
-                }
-                .
-              </p>
-            )}
+                  : status.kind === "learned" || status.kind === "pending"
+                    ? `var(--rarity-${TIER_NAME[selectedTier]?.toLowerCase() ?? "magic"})`
+                    : status.kind === "available"
+                      ? NODE_AVAILABLE
+                      : NODE_UNAVAILABLE
+              }
+              shape={SHAPE[selected.kind]}
+              status={status.kind}
+              statusText={status.text}
+              ranks={{
+                have: nodeRanks(SKILL_TREE, preview.learned, selected.id),
+                max: nodeMaxRanks(selected, branches),
+              }}
+              description={selected.description}
+              art={
+                selected.skill ? (
+                  <SkillIcon skillId={selected.skill.id} size={30} />
+                ) : state.hero.webRunes?.[selected.id] ? (
+                  <RuneStone runeId={state.hero.webRunes[selected.id] ?? ""} size={30} />
+                ) : undefined
+              }
+            >
+              {selected.replaces && (
+                <p className="node-note">
+                  Replaces {SKILL_TREE.nodes.find((n) => n.id === selected.replaces)?.name}.
+                </p>
+              )}
+              {selected.skill && (
+                <p className="node-note skill-info">
+                  <b>{selected.skill.name}</b> · {selected.skill.heatCost} Heat ·{" "}
+                  {selected.skill.tags.join(" · ")}
+                </p>
+              )}
+              {selected.kind === "keystone" && (
+                <p className="node-note">
+                  Costs {KEYSTONE.skillPoints} Skill Points and one of your Keystone places (
+                  {activeKeystones(SKILL_TREE, preview.learned)}/{keystonePlaces} taken).
+                </p>
+              )}
+              {selected.fork && (
+                <p className="node-note">
+                  Fork: only this or{" "}
+                  {
+                    SKILL_TREE.nodes.find((n) => n.fork === selected.fork && n.id !== selected.id)
+                      ?.name
+                  }
+                  .
+                </p>
+              )}
+              {selected.kind === "socket" && (
+                <WebSocketPanel
+                  state={state}
+                  game={game}
+                  nodeId={selected.id}
+                  learned={committed}
+                  viewOnly={viewOnly}
+                />
+              )}
+            </NodePlaque>
             {!viewOnly && (
-              <>
-                {canWalk && selectedPath && selectedCost && reason === "notConnected" ? (
-                  <button
-                    type="button"
-                    className="btn primary"
-                    onClick={() => setPending((p) => [...p, ...selectedPath.steps])}
-                  >
-                    Learn path · {pointsText(selectedCost)}
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    className="btn primary"
-                    disabled={reason !== undefined}
-                    onClick={() => setPending((p) => [...p, selected.id])}
-                  >
-                    Learn ·{" "}
-                    <PointPrice
-                      id="skill"
-                      amount={selected.kind === "keystone" ? KEYSTONE.skillPoints : 1}
-                    />
-                  </button>
-                )}
-                {reason && !(canWalk && reason === "notConnected") && (
-                  <p className="block warn">
-                    {reason === "notConnected" && selectedCost ? (
-                      <>
-                        {LEARN_BLOCK_TEXT[reason]} (path: {pointsText(selectedCost)})
-                      </>
-                    ) : (
-                      LEARN_BLOCK_TEXT[reason]
-                    )}
-                  </p>
-                )}
-                {committed && pending.length === 0 && forgetReason !== "start" && (
+              <TreeDock
+                action={
                   <>
-                    <HoldButton
-                      icon="cycle"
-                      blocked={
-                        forgetReason
-                          ? FORGET_BLOCK_TEXT[forgetReason]
-                          : state.wallet.acorns < forgetPrice
-                            ? "Not enough Acorns"
+                    {forgetShown && reason === "maxed" ? null : canWalk &&
+                      selectedPath &&
+                      selectedCost &&
+                      reason === "notConnected" ? (
+                      <Button
+                        variant="primary"
+                        className="tree-dock-learn"
+                        onClick={() => setPending((p) => [...p, ...selectedPath.steps])}
+                      >
+                        Learn path · {pointsText(selectedCost)}
+                      </Button>
+                    ) : (
+                      <Button
+                        variant="primary"
+                        className="tree-dock-learn"
+                        blocked={
+                          reason
+                            ? reason === "maxed"
+                              ? pending.includes(selected.id)
+                                ? "Pending: Confirm or Undo"
+                                : "Learned"
+                              : LEARN_BLOCK_TEXT[reason]
                             : null
-                      }
-                      onConfirm={() => game.dispatch({ type: "forgetNode", nodeId: selected.id })}
-                    >
-                      Forget · <Price id="acorns" amount={forgetPrice} />
-                    </HoldButton>
-                    {forgetReason && (
-                      <p className="block sub small">{FORGET_BLOCK_TEXT[forgetReason]}</p>
+                        }
+                        onClick={() => setPending((p) => [...p, selected.id])}
+                      >
+                        {reason === "maxed" ? (
+                          pending.includes(selected.id) ? (
+                            "Pending"
+                          ) : (
+                            "Learned"
+                          )
+                        ) : (
+                          <>
+                            Learn ·{" "}
+                            <PointPrice
+                              id="skill"
+                              amount={selected.kind === "keystone" ? KEYSTONE.skillPoints : 1}
+                            />
+                          </>
+                        )}
+                      </Button>
+                    )}
+                    {forgetShown && (
+                      <HoldButton
+                        icon="cycle"
+                        blocked={
+                          forgetReason
+                            ? FORGET_BLOCK_TEXT[forgetReason]
+                            : state.wallet.acorns < forgetPrice
+                              ? "Not enough Acorns"
+                              : null
+                        }
+                        tip={{
+                          name: "Forget",
+                          kind: "Hold to confirm",
+                          explain: "Unlearn this node. Its Skill Points come back.",
+                        }}
+                        onConfirm={() => game.dispatch({ type: "forgetNode", nodeId: selected.id })}
+                      >
+                        Forget · <Price id="acorns" amount={forgetPrice} />
+                      </HoldButton>
                     )}
                   </>
-                )}
-              </>
+                }
+                hasPending={pending.length > 0}
+                pendingText={
+                  pending.length ? (
+                    <>
+                      <span className="strong">
+                        {pending.length} new node{pending.length === 1 ? "" : "s"} pending
+                      </span>
+                      <PointPrice
+                        id="skill"
+                        amount={state.hero.unspentSkillPoints - preview.budget.skillPoints}
+                      />
+                    </>
+                  ) : (
+                    <span className="sub">Nothing pending</span>
+                  )
+                }
+                commit={
+                  <>
+                    <Button
+                      blocked={pending.length === 0 ? "Nothing pending" : null}
+                      onClick={() => setPending([])}
+                    >
+                      Undo
+                    </Button>
+                    <Button
+                      variant="primary"
+                      blocked={pending.length === 0 ? "Nothing pending" : null}
+                      onClick={() => {
+                        game.dispatch({ type: "learnNodes", nodeIds: pending });
+                        setPending([]);
+                      }}
+                    >
+                      Confirm
+                    </Button>
+                  </>
+                }
+              />
             )}
+            {viewOnly && <p className="sub small view-only-hint">View only</p>}
           </section>
         )}
-        {!viewOnly && (
-          <section className="pending-bar panel-card">
-            <span className={pending.length ? "strong" : "sub"}>
-              {pending.length} new node{pending.length === 1 ? "" : "s"} pending
-            </span>
-            <div className="grow" />
-            <Button
-              blocked={pending.length === 0 ? "Nothing pending" : null}
-              onClick={() => setPending([])}
-            >
-              Undo
-            </Button>
-            <Button
-              variant="primary"
-              blocked={pending.length === 0 ? "Nothing pending" : null}
-              onClick={() => {
-                game.dispatch({ type: "learnNodes", nodeIds: pending });
-                setPending([]);
-              }}
-            >
-              Confirm
-            </Button>
-          </section>
-        )}
-        {viewOnly && <p className="sub small view-only-hint">View only</p>}
       </aside>
     </div>
   );

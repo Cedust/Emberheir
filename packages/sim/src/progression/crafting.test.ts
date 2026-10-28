@@ -14,8 +14,10 @@ import {
   gambleRarityWeights,
   gamblePrice,
   merchantItemLevel,
+  temperOptionCount,
   upgradedItem,
 } from "./crafting";
+import { requiredLevel } from "../items/equipment";
 import { type GameAction, type GameState, applyAction, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
@@ -88,7 +90,7 @@ describe("crafting", () => {
     expect(craftBlockReason(s, data, { kind: "upgrade", itemId: shield })).toBe("requirements");
     const strong = {
       ...s,
-      hero: { ...s.hero, attributes: { ...s.hero.attributes, strength: 99 } },
+      hero: { ...s.hero, level: 10, attributes: { ...s.hero.attributes, strength: 99 } },
     };
     expect(
       act(strong, { type: "craft", request: { kind: "upgrade", itemId: shield } }).hero.equipment
@@ -96,22 +98,123 @@ describe("crafting", () => {
     ).toBe(2);
   });
 
-  it("Temper rerolls one stat affix and locks it in", () => {
+  it("Upgrade raises the Required Level with the Tier, so a worn item needs the level", () => {
+    const low: Item = { ...RING, itemLevel: 5, tier: 1 };
+    expect(requiredLevel(low)).toBe(1);
+    expect(requiredLevel({ ...low, tier: 2 })).toBe(6);
+    expect(requiredLevel({ ...low, tier: 10 })).toBe(86);
+    // A drop above its Tier start keeps its own Item Level.
+    expect(requiredLevel({ ...low, itemLevel: 15, tier: 2 })).toBe(10);
+    const s = camp();
+    const worn = { ...s, hero: { ...s.hero, equipment: { ring1: low } } };
+    expect(craftBlockReason(worn, data, { kind: "upgrade", itemId: RING.id })).toBe("level");
+    expect(craftBlockReason(s, data, { kind: "upgrade", itemId: RING.id })).toBeUndefined();
+  });
+
+  it("Temper offers a new affix and a new value, locks the affix and waits for a choice", () => {
     let s = act(camp(), {
       type: "craft",
       request: { kind: "temper", itemId: RING.id, affixIndex: 1 },
     });
-    const tempered = ring(s);
-    expect(tempered?.lockedAffix).toBe(1);
-    expect(tempered?.affixes[0]).toEqual(RING.affixes[0]);
-    expect(tempered?.affixes[1]?.affixId).toBe("life");
+    const offered = ring(s);
+    expect(offered?.lockedAffix).toBe(1);
+    expect(offered?.affixes).toEqual(RING.affixes);
+    const offer = offered?.temperOffer ?? [];
+    expect(offer).toHaveLength(2);
+    // A new affix the ring does not carry, then the same affix with a new value.
+    expect(["crit", "elemental"]).toContain(offer[0]?.affixId);
+    expect(offer[1]?.affixId).toBe("life");
     expect(s.wallet.ash).toBe(1000 - killPrice(RING.itemLevel, CRAFTING.temperKills).ash);
     // Locked: only affix 1 can change now.
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
       "locked",
     );
-    s = act(s, { type: "craft", request: { kind: "temper", itemId: RING.id, affixIndex: 1 } });
+    // Choosing is free and takes the option.
+    const wallet = s.wallet;
+    s = act(s, { type: "craft", request: { kind: "temperChoose", itemId: RING.id, option: 0 } });
+    expect(ring(s)?.affixes[1]).toEqual(offer[0]);
+    expect(ring(s)?.temperOffer).toBeUndefined();
     expect(ring(s)?.lockedAffix).toBe(1);
+    expect(s.wallet).toEqual(wallet);
+    expect(craftBlockReason(s, data, { kind: "temperChoose", itemId: RING.id, option: 0 })).toBe(
+      "noOffer",
+    );
+  });
+
+  it("Temper can be kept, and a new Temper replaces the waiting offer", () => {
+    let s = act(camp(), {
+      type: "craft",
+      request: { kind: "temper", itemId: RING.id, affixIndex: 1 },
+    });
+    const first = ring(s)?.temperOffer;
+    s = act(s, { type: "craft", request: { kind: "temper", itemId: RING.id, affixIndex: 1 } });
+    expect(ring(s)?.temperOffer).not.toEqual(first);
+    s = act(s, {
+      type: "craft",
+      request: { kind: "temperChoose", itemId: RING.id, option: null },
+    });
+    expect(ring(s)?.affixes).toEqual(RING.affixes);
+    expect(ring(s)?.temperOffer).toBeUndefined();
+  });
+
+  it("an affix with a fixed value gets two new affixes; with nothing left there is no Temper", () => {
+    const fixed: Item = {
+      ...RING,
+      rarity: "rare",
+      affixes: [{ affixId: "flat-str", quality: 0 }, ...RING.affixes.slice(1)],
+    };
+    const fixedData = {
+      ...data,
+      items: {
+        ...data.items,
+        affixes: new Map([
+          ...data.items.affixes,
+          [
+            "flat-str",
+            {
+              kind: "stat" as const,
+              id: "flat-str",
+              stat: "strength" as const,
+              suffix: "of One",
+              slots: ["ring" as const],
+              weight: 10,
+              tags: [],
+              value: { min: 1, max: 1 },
+              perTier: 0,
+            },
+          ],
+        ]),
+      },
+    };
+    const s = { ...camp(), inventory: [{ item: fixed, x: 0, y: 0 }] };
+    const next = applyAction(s, fixedData, {
+      type: "craft",
+      request: { kind: "temper", itemId: RING.id, affixIndex: 0 },
+    });
+    const offer = ring(next)?.temperOffer ?? [];
+    const ids = offer.map((r) => r.affixId);
+    expect(ids).toHaveLength(2);
+    expect(new Set(ids).size).toBe(2);
+    for (const id of ids) expect(["strength", "crit", "elemental"]).toContain(id);
+    // A ring that already carries every ring affix has nothing to offer for a fixed one.
+    const full: Item = {
+      ...fixed,
+      affixes: [
+        { affixId: "flat-str", quality: 0 },
+        { affixId: "strength", quality: 0 },
+        { affixId: "life", quality: 0 },
+        { affixId: "crit", quality: 0 },
+        { affixId: "elemental", quality: 0 },
+      ],
+    };
+    expect(temperOptionCount(full, 0, fixedData.items)).toBe(0);
+    expect(
+      craftBlockReason({ ...s, inventory: [{ item: full, x: 0, y: 0 }] }, fixedData, {
+        kind: "temper",
+        itemId: RING.id,
+        affixIndex: 0,
+      }),
+    ).toBe("noOptions");
   });
 
   it("Trigger affixes cannot be tempered", () => {
@@ -119,6 +222,43 @@ describe("crafting", () => {
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 2 })).toBe(
       "trigger",
     );
+  });
+
+  it("Reforge rerolls the stat affixes, keeps every trigger and the Greater on a trigger", () => {
+    const item: Item = {
+      ...RING,
+      affixes: [...RING.affixes, { affixId: "second-wind", quality: 0.9, kindled: true }],
+      greater: { index: 2, rank: 3 },
+      temperOffer: [{ affixId: "crit", quality: 1 }],
+      lockedAffix: 1,
+    };
+    let s: GameState = { ...camp(), inventory: [{ item, x: 0, y: 0 }] };
+    for (let n = 0; n < 5; n++) {
+      const next = act(s, { type: "craft", request: { kind: "reforge", itemId: RING.id } });
+      const reforged = ring(next);
+      const stats = (reforged?.affixes ?? []).slice(0, -2);
+      expect(reforged?.affixes.slice(-2)).toEqual(item.affixes.slice(2));
+      expect(stats.length).toBeGreaterThan(0);
+      expect(stats.every((r) => data.items.affixes.get(r.affixId)?.kind === "stat")).toBe(true);
+      expect(reforged?.greater).toEqual({ index: stats.length, rank: 3 });
+      expect(reforged?.temperOffer).toBeUndefined();
+      expect(reforged?.lockedAffix).toBeUndefined();
+      s = { ...s, nonce: next.nonce };
+    }
+  });
+
+  it("Charms carry only triggers, so Thoric does not reforge them", () => {
+    const charm: Item = {
+      id: "charm-1",
+      baseId: "test-charm",
+      name: "Test Charm",
+      rarity: "magic",
+      itemLevel: 5,
+      tier: 1,
+      affixes: [{ affixId: "searing-crit", quality: 0.5 }],
+    };
+    const s = { ...camp(), inventory: [{ item: charm, x: 0, y: 0 }] };
+    expect(craftBlockReason(s, data, { kind: "reforge", itemId: charm.id })).toBe("charm");
   });
 
   it("Reforge rerolls all affixes, keeps base, tier and rarity, and clears the lock", () => {
@@ -174,7 +314,9 @@ describe("crafting", () => {
         type: "craft",
         request: { kind: "temper", itemId: item.id, affixIndex: index },
       });
-      const q = s.inventory[0]?.item.affixes[index]?.quality ?? -1;
+      // One option is the same affix with a new value.
+      const same = s.inventory[0]?.item.temperOffer?.find((r) => r.affixId === "strength");
+      const q = same?.quality ?? -1;
       const value = statAffixValue(affix, item.tier, q);
       expect(value).toBeGreaterThanOrEqual(range.min);
       expect(value).toBeLessThanOrEqual(range.max);

@@ -79,6 +79,8 @@ export function PersonaView(props: {
     () => state.hero.equipment.offHand?.id ?? state.hero.equipment.body?.id ?? null,
   );
   const [affixIndex, setAffixIndex] = useState<number | null>(null);
+  /** Temper offer: the picked option, `null` = keep the old affix (the default, on top). */
+  const [pick, setPick] = useState<number | null>(null);
   // What the last craft did; shown in the cost bar until another item or service is picked.
   const [lastDone, setLastDone] = useState<{ persona: PersonaId; text: string } | null>(null);
   const setLast = (text: string) => setLastDone({ persona: props.persona, text });
@@ -110,11 +112,13 @@ export function PersonaView(props: {
 
   const pickItem = (id: string) => {
     setItemId(id);
+    setPick(null);
     setAffixIndex(null);
     setLastDone(null);
   };
   const pickKind = (k: ActionKind) => {
     setKinds((prev) => ({ ...prev, [props.persona]: k }));
+    setPick(null);
     setLastDone(null);
     setAffixIndex(item?.lockedAffix ?? null);
   };
@@ -134,6 +138,8 @@ export function PersonaView(props: {
       kind === "intensify")
   ) {
     request = { kind, itemId: item.id };
+  } else if (item && kind === "temper" && item.temperOffer) {
+    request = { kind: "temperChoose", itemId: item.id, option: pick };
   } else if (item && kind === "temper" && affixIndex !== null) {
     request = { kind, itemId: item.id, affixIndex };
   } else if (item && kind === "kindle" && conditionId && effectId && kindleIndex !== null) {
@@ -182,7 +188,7 @@ export function PersonaView(props: {
         : craftCost({ kind: "reforge", itemId: "" });
     block = !item ? "Choose an item" : "Choose an affix";
   } else {
-    price = craftCost(request, item, GAME_DATA, state);
+    price = request.kind === "temperChoose" ? null : craftCost(request, item, GAME_DATA, state);
     const reason = craftBlockReason(state, GAME_DATA, request);
     block = reason ? CRAFT_BLOCK_TEXT[reason] : null;
   }
@@ -264,18 +270,32 @@ export function PersonaView(props: {
         break;
       }
       case "temper":
-        if (item && next) {
+        setPick(null);
+        setLast("Pick a new affix, or keep the old one");
+        break;
+      case "temperChoose": {
+        const index = item?.lockedAffix;
+        const roll = request.option === null ? undefined : item?.temperOffer?.[request.option];
+        if (item && index !== undefined) {
+          const from = affixText(item, index).text;
           setLast(
-            `${affixText(item, request.affixIndex).text} → ${affixText(next, request.affixIndex).text}`,
+            roll
+              ? `${from} → ${affixText({ ...item, affixes: item.affixes.map((r, i) => (i === index ? roll : r)) }, index).text}`
+              : `Kept ${from}`,
           );
         }
+        setPick(null);
         break;
+      }
     }
     game.dispatch({ type: "craft", request });
     setPulse((n) => n + 1);
   };
 
-  const actionName = def.actions.find((a) => a.k === kind)?.name ?? "";
+  const actionName =
+    request?.kind === "temperChoose"
+      ? "Choose"
+      : (def.actions.find((a) => a.k === kind)?.name ?? "");
   const after = item;
   const itemCenter = [
     "upgrade",
@@ -454,6 +474,8 @@ export function PersonaView(props: {
                       runeId={runeId}
                       learned={learned}
                       power={teaches}
+                      picked={pick}
+                      onPick={setPick}
                       kindle={
                         item && conditionId && effectId && kindleIndex !== null
                           ? {

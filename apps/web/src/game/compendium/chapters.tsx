@@ -1070,9 +1070,13 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               {
                 icon: currencyIcon("feathers"),
                 name: "Upgrade",
-                text: "Raises an item by one Tier. Its lines grow with it.",
+                text: "Raises an item by one Tier. Its lines grow with it, and so does its level.",
               },
-              { icon: currencyIcon("coal"), name: "Reforge", text: "Rolls all affixes anew." },
+              {
+                icon: currencyIcon("coal"),
+                name: "Reforge",
+                text: "Rolls all stat affixes anew. Triggers stay.",
+              },
               {
                 icon: currencyIcon("ash"),
                 name: "Salvage",
@@ -1090,8 +1094,9 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              <B>Temper</B> rolls one affix value again. After that, only that affix can change
-              until Thoric reforges the item.
+              <B>Temper</B> offers two choices for one affix: a new affix or a new value. Pick one
+              or keep the old line. After that, only that affix can change until Thoric reforges the
+              item.
             </p>
             <p>
               <B>Kindle</B> builds a trigger from the Trigger Codex onto an item, for <C id="ash" />{" "}
