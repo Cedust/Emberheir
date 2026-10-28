@@ -8,6 +8,7 @@
 #                                  Collections, Lineage (Character Sheet and Legacy tabs)
 #   art/icons/menu-sheet-d-v1.png  3 x 2: window medallions Legacy, Supply Wagon, Menu,
 #                                  Settings, Credits, Act Map
+#   art/icons/menu-compendium-v1.png  one icon: Compendium (menu button)
 # Sparks and glow are loose pieces, so each icon is its grid cell of the sheet, trimmed.
 
 # Only the helpers of cut_ui.py, not its cutting run.
@@ -83,3 +84,8 @@ for name, box in D_BOXES.items():
   im = centered(trim(sheet.crop(box)))
   out = save(im, name, SIZE / max(im.width, im.height))
   print(f'{name} {out.width}x{out.height}')
+
+# One more icon on its own sheet: Old Nan's Compendium for the menu button.
+im = trim(load('menu-compendium-v1.png'))
+out = save(im, 'compendium', SIZE / max(im.width, im.height))
+print(f'compendium {out.width}x{out.height}')

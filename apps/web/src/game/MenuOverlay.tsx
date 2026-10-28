@@ -241,7 +241,7 @@ export function MenuOverlay(props: {
             >
               Settings
             </Button>
-            <Button big icon="book" onClick={props.onCompendium}>
+            <Button big art={<ActionIcon id="compendium" size={32} />} onClick={props.onCompendium}>
               Compendium
             </Button>
             {props.onCheats && (
