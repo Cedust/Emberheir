@@ -12,6 +12,7 @@ import {
   unequipBlockReason,
 } from "@emberheir/sim";
 import { type MouseEvent, useState } from "react";
+import { actionIcon } from "../../ui/actionIcons";
 import { Button } from "../../ui/kit/Button";
 import { type GridContext, ItemGrid, ItemTile } from "../../ui/items";
 import { Wallet } from "../../ui/kit/Currency";
@@ -110,7 +111,7 @@ export function StashView(props: { state: GameState; game: GameApi; onClose: () 
           <WindowHeader
             title="Supply Wagon"
             sub="Stash"
-            medallion={<Medallion icon="box" tint="#5a4218" />}
+            medallion={<Medallion image={actionIcon("wagon")} tint="#5a4218" />}
             right={<Wallet state={state} />}
             onClose={props.onClose}
           />

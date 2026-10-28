@@ -256,6 +256,22 @@
   object-fit: cover;
 }
 
+/* A painted icon on a button, in place of the line icon. */
+.stage .k-btn-art {
+  display: inline-flex;
+  margin: -6px 0;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.5));
+}
+
+/* A painted icon (not a portrait) sits whole inside the ring. */
+.stage .k-medallion img.k-medallion-icon {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  clip-path: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+
 /* The painted brass ring (portrait-ring.webp 170 x 181) with its acorn hanging below. */
 .stage .k-medallion::after {
   content: "";
@@ -286,7 +302,8 @@
 .stage .k-tab {
   position: relative;
   height: 46px;
-  padding: 0 16px;
+  /* Room past the painted tab's curved ends, so icon and name never touch them. */
+  padding: 0 28px;
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -336,6 +353,24 @@
 
 .stage .k-tab-art svg {
   display: block;
+}
+
+/* A painted icon (not a face) stands free, without the round frame. */
+.stage .k-tab-art:has(> img) {
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: visible;
+  border: none;
+  border-radius: 0;
+  background: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.5));
+}
+
+.stage .k-tab-art > img {
+  object-fit: contain;
 }
 
 .stage .k-tab .k-marker {

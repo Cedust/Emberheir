@@ -18,7 +18,8 @@ import {
   SLOT_NAMES,
 } from "@emberheir/sim";
 import { useRef, useState } from "react";
-import { Icon, type IconName } from "../../ui/Icon";
+import { actionIcon } from "../../ui/actionIcons";
+import { Icon } from "../../ui/Icon";
 import { ItemGrid, ItemTile, rarityClass } from "../../ui/items";
 import { Button, HoldButton } from "../../ui/kit/Button";
 import { Cost, type CurrencyId, Wallet } from "../../ui/kit/Currency";
@@ -375,7 +376,7 @@ export function PersonaView(props: {
               {actions.map((a) => (
                 <ActionTile
                   key={a.k}
-                  icon={a.icon}
+                  k={a.k}
                   name={a.name}
                   note={{ name: a.name, kind: def.name, explain: a.desc }}
                   on={kind === a.k}
@@ -580,7 +581,7 @@ export function PersonaView(props: {
 
 /** One service of the crafter: a big icon tile, what it does in the tooltip. */
 function ActionTile(props: {
-  icon: IconName;
+  k: ActionKind;
   name: string;
   note: NoteHover;
   on: boolean;
@@ -595,7 +596,7 @@ function ActionTile(props: {
       onClick={props.onPick}
       {...hover}
     >
-      <Icon name={props.icon} size={28} />
+      <img src={actionIcon(props.k)} width={48} height={48} alt="" draggable={false} />
       <span className="title-font">{props.name}</span>
     </button>
   );

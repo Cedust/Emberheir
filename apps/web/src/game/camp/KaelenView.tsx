@@ -19,6 +19,8 @@ import {
 import { HoldButton } from "../../ui/kit/Button";
 import { CurrencyChip, Price } from "../../ui/kit/Currency";
 import { PointChip } from "../../ui/kit/Points";
+import { ActionIcon } from "../../ui/actionIcons";
+import battlePlanUrl from "../../assets/harvest/battle-plan.webp";
 import type { GameApi } from "../useGame";
 import { MasteryTab, SkillTreeTab } from "../lazyViews";
 import { PersonaPortrait } from "./art/PersonaArt";
@@ -50,10 +52,16 @@ export function KaelenView(props: {
     Object.keys(state.hero.mastery.choices).length > 0;
   const heirloomPrice = masteryRespecAcorns(state.legacy.prestige);
   const tabs: TabItem<typeof tab>[] = [
-    { id: "tree", name: "Ash Tree", icon: "tree" },
-    { id: "mastery", name: "Heirloom", icon: "sword" },
+    { id: "tree", name: "Ash Tree", art: <ActionIcon id="ash-tree" /> },
+    { id: "mastery", name: "Heirloom", art: <ActionIcon id="heirloom" /> },
     ...(planEditable
-      ? [{ id: "plan" as const, name: "Battle Plan", icon: "strike" as const }]
+      ? [
+          {
+            id: "plan" as const,
+            name: "Battle Plan",
+            art: <img src={battlePlanUrl} width={40} alt="" draggable={false} />,
+          },
+        ]
       : []),
   ];
 
