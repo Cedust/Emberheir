@@ -33,7 +33,9 @@ import {
 import type { NoteHover } from "../ui/ItemTooltip";
 import { heroWeaponTip } from "../ui/weaponTip";
 import { useState } from "react";
-import { HeirEmblem } from "./ClassEmblem";
+import { ClassEmblem, HeirEmblem } from "./ClassEmblem";
+import attributePointsUrl from "../assets/harvest/attribute-points.webp";
+import levelCapUrl from "../assets/harvest/level-cap.webp";
 import {
   type GridContext,
   ItemGrid,
@@ -230,12 +232,12 @@ export function CharacterOverlay(props: {
     {
       id: "Overview",
       name: "Overview",
-      icon: "eye",
+      art: <ClassEmblem classId={state.hero.classId} size={28} />,
     },
     {
       id: "Attributes",
       name: "Attributes",
-      icon: "user",
+      art: <TabArt src={attributePointsUrl} />,
       ...(left > 0 && !inFight ? { marker: left } : {}),
     },
     { id: "Stats", name: "Stats", icon: "target" },
@@ -244,7 +246,7 @@ export function CharacterOverlay(props: {
           {
             id: "Ashborn" as const,
             name: "Ashborn",
-            icon: "fire" as const,
+            art: <TabArt src={levelCapUrl} />,
           },
         ]
       : []),
@@ -505,4 +507,9 @@ export function CharacterOverlay(props: {
       </Window>
     </WindowLayer>
   );
+}
+
+/** A painted tab icon from the Harvest sheet. */
+function TabArt(props: { src: string }) {
+  return <img src={props.src} width={28} height={28} alt="" draggable={false} />;
 }
