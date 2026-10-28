@@ -256,6 +256,15 @@
   object-fit: cover;
 }
 
+/* A painted icon (not a portrait) sits whole inside the ring. */
+.stage .k-medallion img.k-medallion-icon {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  clip-path: none;
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.6));
+}
+
 /* The painted brass ring (portrait-ring.webp 170 x 181) with its acorn hanging below. */
 .stage .k-medallion::after {
   content: "";

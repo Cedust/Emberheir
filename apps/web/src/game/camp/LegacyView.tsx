@@ -11,7 +11,7 @@ import {
   levelCap,
 } from "@emberheir/sim";
 import { useState } from "react";
-import { ActionIcon } from "../../ui/actionIcons";
+import { ActionIcon, actionIcon } from "../../ui/actionIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
@@ -103,7 +103,7 @@ export function LegacyView(props: {
           <WindowHeader
             title="Legacy"
             sub="Everything that survives the fire"
-            medallion={<Medallion icon="fire" />}
+            medallion={<Medallion image={actionIcon("legacy")} tint="#4a2a1c" />}
             tabs={
               <Tabs
                 label="Legacy"

@@ -43,7 +43,7 @@ export function WindowLayer(props: { mode?: "panel" | "full"; children: ReactNod
 /** Portrait medallion: a painted portrait, or an icon until the art exists. */
 export function Medallion(props: {
   icon?: IconName;
-  image?: string;
+  image?: string | undefined;
   tint?: string;
   /** Drawn art (e.g. a code-drawn persona portrait). */
   children?: ReactNode;
@@ -52,7 +52,7 @@ export function Medallion(props: {
     <span className="k-medallion" style={props.tint ? { background: props.tint } : undefined}>
       {props.children ??
         (props.image ? (
-          <img src={props.image} alt="" />
+          <img className="k-medallion-icon" src={props.image} alt="" draggable={false} />
         ) : (
           props.icon && <Icon name={props.icon} size={26} color="#fff6e4" />
         ))}

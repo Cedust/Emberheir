@@ -6,6 +6,8 @@
 #   art/icons/menu-sheet-b-v1.png  4 x 2: Crucible, Nyssa's crafts, Gamble, Ash Tree, Heirloom
 #   art/icons/menu-sheet-c-v1.png  1 row of 4 (cut at the empty gaps): Stats, Worn Gear,
 #                                  Collections, Lineage (Character Sheet and Legacy tabs)
+#   art/icons/menu-sheet-d-v1.png  3 x 2: window medallions Legacy, Supply Wagon, Menu,
+#                                  Settings, Credits, Act Map
 # Sparks and glow are loose pieces, so each icon is its grid cell of the sheet, trimmed.
 
 # Only the helpers of cut_ui.py, not its cutting run.
@@ -40,5 +42,14 @@ for name, (x0, x1) in zip(
   [(0, 464), (464, 867), (867, 1456), (1456, sheet.width)],
 ):
   im = trim(sheet.crop((x0, 0, x1, sheet.height)))
+  out = save(im, name, SIZE / max(im.width, im.height))
+  print(f'{name} {out.width}x{out.height}')
+
+# Sheet D: 3 x 2 window medallions.
+sheet = load('menu-sheet-d-v1.png')
+cw, ch = sheet.width // 3, sheet.height // 2
+for i, name in enumerate(['legacy', 'wagon', 'menu', 'settings', 'credits', 'map']):
+  x, y = i % 3 * cw, i // 3 * ch
+  im = trim(sheet.crop((x, y, x + cw, y + ch)))
   out = save(im, name, SIZE / max(im.width, im.height))
   print(f'{name} {out.width}x{out.height}')
