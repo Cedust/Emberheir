@@ -96,7 +96,7 @@ describe("Item picks: fewer, but weightier", () => {
     const rewards = s.run?.rewards;
     expect(rewards?.items).toEqual([]);
     expect(rewards?.itemPick).toEqual({ kind: "salvageAll" });
-    // The cards are paid as plain Ash, not shown as a salvage.
+    // No items and no Ash for them: only the stage's usual rewards.
     expect(rewards?.salvagedAsh).toBe(0);
     expect(s.wallet.ash).toBe(ash + (rewards?.ash ?? 0));
     expect(s.run?.fights).toBe(1);

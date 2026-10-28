@@ -505,7 +505,7 @@ export function DoneCard(props: { state: GameState; run: RunState }) {
         ? `${pick?.kind === "equip" ? "Equipped" : "Taken"}: ${item.name}`
         : rewards.items.length
           ? "All items salvaged"
-          : // A fight without an item pick: its cards were paid as plain Ash, shown above.
+          : // A fight without an item pick drops no items, only its usual rewards.
             "The road goes on";
     sub = "";
     const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
