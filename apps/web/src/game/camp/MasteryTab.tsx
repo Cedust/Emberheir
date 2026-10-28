@@ -1,6 +1,7 @@
 import { GAME_DATA, MASTERY_LAYOUT, echoStageName } from "@emberheir/content";
 import {
   type GameState,
+  type HeatBehavior,
   MASTERY,
   type Infusion,
   type MasteryBlockReason,
@@ -15,11 +16,9 @@ import {
   masteryBlockReason,
   masteryRanks,
   pointsAvailable,
-  pointsSpent,
   weaponGrade,
-  masteryRespecAcorns,
 } from "@emberheir/sim";
-import { Button, HoldButton } from "../../ui/kit/Button";
+import { Button } from "../../ui/kit/Button";
 import { useEffect, useRef, useState } from "react";
 import { useStageSize } from "../../ui/Stage";
 import { useSettings } from "../../ui/settings";
@@ -33,10 +32,11 @@ import {
   type MasteryView,
 } from "./MasteryScene";
 import { canvasResolution } from "../pixiPacing";
-import { Price } from "../../ui/kit/Currency";
 import { PointChip, PointPrice } from "../../ui/kit/Points";
-import { useWeaponHover } from "../../ui/ItemTooltip";
+import { useNoteHover, useWeaponHover } from "../../ui/ItemTooltip";
 import { heroWeaponTip } from "../../ui/weaponTip";
+import { HEAT_FORM_ICONS } from "../../ui/gameIcons";
+import { type NodeShape, type NodeStatus, NodePlaque, TreeDock } from "./TreeSide";
 
 const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   refine: "Refine",
@@ -46,6 +46,17 @@ const KIND_LABEL: Record<MasteryNode["kind"], string> = {
   keystone: "Keystone",
   heatForm: "Heat Form",
   innateForm: "Innate Form",
+};
+
+/** The plaque's gem has the node's shape on the weapon. */
+const SHAPE: Record<MasteryNode["kind"], NodeShape> = {
+  refine: "circle",
+  technique: "diamond",
+  notable: "hexagon",
+  master: "star",
+  keystone: "octagon",
+  heatForm: "circle",
+  innateForm: "ring",
 };
 
 const BLOCK_TEXT: Record<MasteryBlockReason, string> = {
@@ -71,6 +82,12 @@ const TYPE_NAME: Record<string, string> = {
 export function infusionText(infusion: Infusion): string {
   const ailment = infusion.ailment[0]?.toUpperCase() + infusion.ailment.slice(1);
   return `Build: ${TYPE_NAME[infusion.damageType] ?? infusion.damageType} · ${ailment}. Your first point in this path makes it your weapon's damage and ailment.`;
+}
+
+/** Why a node cannot be learned, in plain words. */
+function blockText(reason: MasteryBlockReason, node: MasteryNode): string {
+  if (reason !== "rankLocked") return BLOCK_TEXT[reason];
+  return `Opens at Weapon Rank ${node.group === "heatForm" ? MASTERY.heatFormRank : MASTERY.innateFormRank}`;
 }
 
 const hex = (c: number) => `#${c.toString(16).padStart(6, "0")}`;
@@ -218,8 +235,20 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
   const hovered = hover ? nodes.find((n) => n.id === hover.id) : undefined;
   const path = selected?.path ? tree.paths.find((p) => p.id === selected.path) : undefined;
   const earned = GAME_DATA.echoes.filter((e) => (state.legacy.echoes[e.id]?.stage ?? 0) > 0);
-  const hasSpent =
-    pointsSpent(tree, state.hero.mastery) > 0 || Object.keys(state.hero.mastery.choices).length > 0;
+  const selectedRanks = selected ? masteryRanks(tree, preview, selected.id) : 0;
+  const status: { kind: NodeStatus; text: string } = !selected
+    ? { kind: "locked", text: "" }
+    : pending.includes(selected.id) && selectedRanks > 0
+      ? { kind: "pending", text: "Pending: Confirm to learn" }
+      : reason === "chosen"
+        ? { kind: "learned", text: "Chosen" }
+        : reason === "maxed"
+          ? { kind: "learned", text: "Learned" }
+          : reason === undefined
+            ? selectedRanks > 0
+              ? { kind: "learned", text: "Learned · more ranks open" }
+              : { kind: "available", text: "Available" }
+            : { kind: "locked", text: blockText(reason, selected) };
   const nextGrade = WEAPON_GRADES[gradeIndex + 1];
   const accentOf = (n: MasteryNode) =>
     n.kind === "heatForm"
@@ -330,7 +359,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             <span className="eyebrow">WEAPON</span>
             <PointChip id="heirloom" value={left} testId="mastery-points" glow />
           </div>
-          <dl className="stat-grid">
+          <dl className="stat-grid weapon-grid">
             <dt>Damage</dt>
             <dd className="mono">
               {Math.round(build.weapon.damage.min)}–{Math.round(build.weapon.damage.max)}
@@ -346,72 +375,6 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             <dd>{build.innate?.name ?? "—"}</dd>
           </dl>
         </section>
-        {selected && (
-          <section
-            className="node-detail panel-card"
-            aria-label="Node details"
-            style={{ borderTopColor: accentOf(selected) }}
-          >
-            <div className="section-row">
-              <span className="eyebrow">
-                {(path?.name ?? KIND_LABEL[selected.kind]).toUpperCase()}
-              </span>
-              <span className="eyebrow">
-                {path ? KIND_LABEL[selected.kind] : ""}
-                {(selected.maxRanks ?? 1) > 1
-                  ? ` · ${masteryRanks(tree, preview, selected.id)}/${selected.maxRanks}`
-                  : ""}
-              </span>
-            </div>
-            <h3 className="title-font">{selected.name}</h3>
-            <p>{selected.description}</p>
-            {selected.form && <p className="sub small">Names the weapon: {selected.form}.</p>}
-            {path && (
-              <p className="sub small" data-testid="path-infusion">
-                {infusionText(path.infusion)}
-              </p>
-            )}
-            {selected.fork && <p className="sub small">Fork</p>}
-            {!viewOnly && (
-              <>
-                <button
-                  type="button"
-                  className="btn primary"
-                  disabled={reason !== undefined}
-                  onClick={() => setPending((p) => [...p, selected.id])}
-                >
-                  {reason === "chosen" ? (
-                    "Chosen"
-                  ) : reason === "maxed" ? (
-                    "Learned"
-                  ) : selected.group ? (
-                    selected.default ? (
-                      "Choose · free"
-                    ) : masteryRanks(tree, preview, selected.id) === 0 &&
-                      preview.choices[selected.group] ? (
-                      "Switch · free"
-                    ) : (
-                      <>
-                        Choose · <PointPrice id="heirloom" amount={1} />
-                      </>
-                    )
-                  ) : (
-                    <>
-                      Learn · <PointPrice id="heirloom" amount={1} />
-                    </>
-                  )}
-                </button>
-                {reason && reason !== "chosen" && reason !== "maxed" && (
-                  <p className="block warn">
-                    {reason === "rankLocked"
-                      ? `Opens at Weapon Rank ${selected.group === "heatForm" ? MASTERY.heatFormRank : MASTERY.innateFormRank}`
-                      : BLOCK_TEXT[reason]}
-                  </p>
-                )}
-              </>
-            )}
-          </section>
-        )}
         {tree.attunable && (
           <section className="panel-card echo-picker attunement-picker" aria-label="Attunement">
             <span
@@ -420,7 +383,7 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
             >
               ATTUNEMENT
             </span>
-            <div className="echo-list">
+            <div className="echo-list attune-chips">
               {[undefined, ...tree.paths].map((p) => {
                 const on = (state.hero.mastery.attunement ?? undefined) === p?.id;
                 const infusion = p?.infusion;
@@ -452,75 +415,177 @@ export function MasteryTab(props: { state: GameState; game: GameApi; viewOnly: b
           <span className="eyebrow">ECHO</span>
           {earned.length === 0 && <p className="sub small">None</p>}
           <div className="echo-list">
-            {earned.map((e) => {
-              const stageNo = state.legacy.echoes[e.id]?.stage ?? 1;
-              const worn = state.hero.mastery.echo === e.id;
-              return (
-                <button
-                  key={e.id}
-                  type="button"
-                  className={`echo-row ${worn ? "on" : ""}`}
-                  disabled={viewOnly}
-                  aria-pressed={worn}
-                  title={e.description(stageNo)}
-                  onClick={() => game.dispatch({ type: "setEcho", echoId: worn ? null : e.id })}
-                >
-                  <i style={{ background: hex(e.color), boxShadow: `0 0 10px ${hex(e.color)}` }} />
-                  <span className="echo-name">
-                    {e.name} <span className="mono">{echoStageName(stageNo)}</span>
-                  </span>
-                  <span className="small sub">{e.description(stageNo)}</span>
-                </button>
-              );
-            })}
+            {earned.map((e) => (
+              <EchoRow
+                key={e.id}
+                name={e.name}
+                stage={state.legacy.echoes[e.id]?.stage ?? 1}
+                color={hex(e.color)}
+                description={e.description(state.legacy.echoes[e.id]?.stage ?? 1)}
+                worn={state.hero.mastery.echo === e.id}
+                disabled={viewOnly}
+                onClick={() =>
+                  game.dispatch({
+                    type: "setEcho",
+                    echoId: state.hero.mastery.echo === e.id ? null : e.id,
+                  })
+                }
+              />
+            ))}
           </div>
         </section>
-        {!viewOnly && (
-          <section className="pending-bar panel-card">
-            <span className={pending.length ? "strong" : "sub"}>{pending.length} pending</span>
-            <div className="grow" />
-            {pending.length ? (
-              <>
-                <Button onClick={() => setPending([])}>Undo</Button>
-                <Button
-                  variant="primary"
-                  onClick={() => {
-                    game.dispatchAll(
-                      pending.map((nodeId) => ({ type: "learnMastery" as const, nodeId })),
-                    );
-                    setPending([]);
-                  }}
-                >
-                  Confirm
-                </Button>
-              </>
-            ) : (
-              <HoldButton
-                icon="cycle"
-                blocked={
-                  !hasSpent
-                    ? "Nothing learned yet"
-                    : state.wallet.acorns < masteryRespecAcorns(state.legacy.prestige)
-                      ? "Not enough Acorns"
-                      : null
+        {selected && (
+          <section className="node-detail" aria-label="Node details">
+            <NodePlaque
+              tag={(path?.name ?? KIND_LABEL[selected.kind]).toUpperCase()}
+              kind={path ? KIND_LABEL[selected.kind] : ""}
+              name={selected.name}
+              color={accentOf(selected)}
+              shape={SHAPE[selected.kind]}
+              status={status.kind}
+              statusText={status.text}
+              ranks={{
+                have: masteryRanks(tree, preview, selected.id),
+                max: selected.maxRanks ?? 1,
+              }}
+              description={selected.description}
+              art={
+                selected.kind === "heatForm" ? (
+                  <img
+                    src={HEAT_FORM_ICONS[selected.id.replace("heat-", "") as HeatBehavior]}
+                    width={44}
+                    height={44}
+                    alt=""
+                    draggable={false}
+                  />
+                ) : undefined
+              }
+            >
+              {selected.form && <p className="node-note">Names the weapon: {selected.form}.</p>}
+              {path && (
+                <p className="node-note" data-testid="path-infusion">
+                  {infusionText(path.infusion)}
+                </p>
+              )}
+              {selected.fork && <p className="node-note">Fork</p>}
+            </NodePlaque>
+            {!viewOnly && (
+              <TreeDock
+                action={
+                  <Button
+                    variant="primary"
+                    className="tree-dock-learn"
+                    blocked={
+                      reason === "chosen"
+                        ? "Chosen"
+                        : reason === "maxed"
+                          ? "Learned"
+                          : reason
+                            ? blockText(reason, selected)
+                            : null
+                    }
+                    onClick={() => setPending((p) => [...p, selected.id])}
+                  >
+                    {reason === "chosen" ? (
+                      "Chosen"
+                    ) : reason === "maxed" ? (
+                      status.kind === "pending" ? (
+                        "Pending"
+                      ) : (
+                        "Learned"
+                      )
+                    ) : selected.group ? (
+                      selected.default ? (
+                        "Choose · free"
+                      ) : masteryRanks(tree, preview, selected.id) === 0 &&
+                        preview.choices[selected.group] ? (
+                        "Switch · free"
+                      ) : (
+                        <>
+                          Choose · <PointPrice id="heirloom" amount={1} />
+                        </>
+                      )
+                    ) : (
+                      <>
+                        Learn · <PointPrice id="heirloom" amount={1} />
+                      </>
+                    )}
+                  </Button>
                 }
-                tip={{
-                  name: "Respec",
-                  kind: "Hold to confirm",
-                  explain: "All Heirloom Points come back. The Echo stays.",
-                }}
-                onConfirm={() => {
-                  game.dispatch({ type: "respecMastery" });
-                  setPending([]);
-                }}
-              >
-                Respec · <Price id="acorns" amount={masteryRespecAcorns(state.legacy.prestige)} />
-              </HoldButton>
+                hasPending={pending.length > 0}
+                pendingText={
+                  pending.length ? (
+                    <>
+                      <span className="strong">{pending.length} pending</span>
+                      <PointPrice
+                        id="heirloom"
+                        amount={pointsAvailable(tree, state.hero.mastery, rank) - left}
+                      />
+                    </>
+                  ) : (
+                    <span className="sub">Nothing pending</span>
+                  )
+                }
+                commit={
+                  <>
+                    <Button
+                      blocked={pending.length === 0 ? "Nothing pending" : null}
+                      onClick={() => setPending([])}
+                    >
+                      Undo
+                    </Button>
+                    <Button
+                      variant="primary"
+                      blocked={pending.length === 0 ? "Nothing pending" : null}
+                      onClick={() => {
+                        game.dispatchAll(
+                          pending.map((nodeId) => ({ type: "learnMastery" as const, nodeId })),
+                        );
+                        setPending([]);
+                      }}
+                    >
+                      Confirm
+                    </Button>
+                  </>
+                }
+              />
             )}
+            {viewOnly && <p className="sub small view-only-hint">View only</p>}
           </section>
         )}
-        {viewOnly && <p className="sub small view-only-hint">View only</p>}
       </aside>
     </div>
+  );
+}
+
+/** A worn or earned Echo: one line, what it does on hover. */
+function EchoRow(props: {
+  name: string;
+  stage: number;
+  color: string;
+  description: string;
+  worn: boolean;
+  disabled: boolean;
+  onClick: () => void;
+}) {
+  const hover = useNoteHover({
+    name: `${props.name} ${echoStageName(props.stage)}`,
+    kind: props.worn ? "Echo · worn" : "Echo",
+    explain: props.description,
+  });
+  return (
+    <button
+      type="button"
+      className={`echo-row ${props.worn ? "on" : ""}`}
+      disabled={props.disabled}
+      aria-pressed={props.worn}
+      onClick={props.onClick}
+      {...hover}
+    >
+      <i style={{ background: props.color, boxShadow: `0 0 10px ${props.color}` }} />
+      <span className="echo-name">
+        {props.name} <span className="mono">{echoStageName(props.stage)}</span>
+      </span>
+    </button>
   );
 }

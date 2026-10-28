@@ -20,7 +20,7 @@ export const HERO_H = 604;
  * Diablo IV's character screen (ui-ux-plan-v1.md 4.2): the painted Heir in the middle, armor
  * down the left, jewelry down the right, weapon, Belt and off hand at the feet.
  */
-const HERO_SLOTS: Readonly<Record<EquipmentSlot, DollBox>> = {
+export const HERO_SLOTS: Readonly<Record<EquipmentSlot, DollBox>> = {
   helm: { x: 10, y: 8, w: 96, h: 96 },
   body: { x: 10, y: 120, w: 96, h: 140 },
   gloves: { x: 10, y: 276, w: 96, h: 96 },

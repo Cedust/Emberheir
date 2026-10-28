@@ -98,7 +98,7 @@ describe("item content", () => {
     }
   });
 
-  it("every item slot has bases, armor slots a light, a heavy and a caster one", () => {
+  it("every item slot has bases, armor slots one per class main attribute (STR, DEX, INT)", () => {
     for (const slot of ITEM_SLOTS) {
       expect(basesForSlot(ITEM_CATALOG, slot).length, slot).toBeGreaterThan(0);
     }
@@ -106,8 +106,10 @@ describe("item content", () => {
       const needs = basesForSlot(ITEM_CATALOG, slot).map((b) =>
         Object.keys(b.requirements ?? {}).join(),
       );
-      // Hybrid bases (Leather Cuirass: strength + agility) come on top of the three.
-      expect(needs, slot).toEqual(expect.arrayContaining(["agility", "intelligence", "strength"]));
+      // Hybrid bases (Leather Cuirass: strength + dexterity) come on top of the three.
+      expect(needs, slot).toEqual(
+        expect.arrayContaining(["dexterity", "intelligence", "strength"]),
+      );
     }
   });
 

@@ -13,7 +13,8 @@ import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
 import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
-import { loadLastSlot, loadSlots, saveSlot } from "./saves";
+import { BackupPanel } from "./BackupPanel";
+import { loadDamagedSlots, loadLastSlot, loadSlots, saveSlot } from "./saves";
 import type { NewCharacter } from "./useGame";
 
 /** One line about where a character stands. */
@@ -49,9 +50,11 @@ export function TitleScreen(props: {
   onLab: () => void;
 }) {
   const [slots, setSlots] = useState(loadSlots);
+  // A save that does not load (changed by hand, broken) keeps its slot until it is deleted.
+  const [damaged, setDamaged] = useState(loadDamagedSlots);
   const last = loadLastSlot();
   const lastSave = last !== null ? slots[last] : null;
-  const free = slots.findIndex((s) => s === null);
+  const free = slots.findIndex((s, i) => s === null && !damaged.includes(i));
   const [page, setPage] = useState<"main" | "characters" | "new" | "settings" | "credits">("main");
   const [newSlot, setNewSlot] = useState(Math.max(0, free));
   const [selected, setSelected] = useState(
@@ -63,12 +66,13 @@ export function TitleScreen(props: {
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
   const buildDate = new Date(__BUILD_TIME__).toLocaleDateString("en-GB");
-  const hasCharacters = slots.some((s) => s !== null);
+  const hasCharacters = slots.some((s) => s !== null) || damaged.length > 0;
   const createIn = (slot: number) => {
     setNewSlot(slot);
     setPage("new");
   };
   const selectedSave = slots[selected] ?? null;
+  const selectedDamaged = damaged.includes(selected);
 
   if (page === "new") {
     return (
@@ -105,11 +109,9 @@ export function TitleScreen(props: {
                 </small>
               </Button>
             )}
-            {hasCharacters && (
-              <Button big icon="user" onClick={() => setPage("characters")}>
-                Characters
-              </Button>
-            )}
+            <Button big icon="user" onClick={() => setPage("characters")}>
+              Characters
+            </Button>
             <Button
               big
               variant={lastSave ? "secondary" : "primary"}
@@ -136,7 +138,27 @@ export function TitleScreen(props: {
           <div className="character-select">
             <div className="slot-grid" role="listbox" aria-label="Characters">
               {slots.map((save, i) =>
-                save ? (
+                damaged.includes(i) ? (
+                  <button
+                    key={i}
+                    type="button"
+                    role="option"
+                    aria-selected={i === selected}
+                    className={`slot-card panel-card damaged ${i === selected ? "on" : ""}`}
+                    onClick={() => {
+                      setSelected(i);
+                      setConfirmDelete(false);
+                    }}
+                  >
+                    <Icon name="warning" size={36} color="var(--accent)" />
+                    <span className="slot-text">
+                      <strong className="title-font">Damaged save</strong>
+                      <span className="sub small">
+                        It was changed or broke. Delete it to free the slot.
+                      </span>
+                    </span>
+                  </button>
+                ) : save ? (
                   <button
                     key={i}
                     type="button"
@@ -172,7 +194,7 @@ export function TitleScreen(props: {
                 ),
               )}
             </div>
-            {confirmDelete && selectedSave ? (
+            {confirmDelete && (selectedSave || selectedDamaged) ? (
               <div className="delete-confirm panel-card" role="alertdialog" aria-label="Delete">
                 <span>Delete this Heir for good?</span>
                 <Button onClick={() => setConfirmDelete(false)}>Keep</Button>
@@ -181,9 +203,11 @@ export function TitleScreen(props: {
                   onConfirm={() => {
                     saveSlot(selected, null);
                     const next = loadSlots();
+                    const broken = loadDamagedSlots();
                     setSlots(next);
+                    setDamaged(broken);
                     setConfirmDelete(false);
-                    if (!next.some((s) => s !== null)) setPage("main");
+                    if (!next.some((s) => s !== null) && broken.length === 0) setPage("main");
                   }}
                 >
                   Delete
@@ -197,7 +221,7 @@ export function TitleScreen(props: {
                 <Button
                   variant="ghost"
                   icon="trash"
-                  blocked={selectedSave ? null : "No Heir chosen"}
+                  blocked={selectedSave || selectedDamaged ? null : "No Heir chosen"}
                   onClick={() => setConfirmDelete(true)}
                 >
                   Delete
@@ -212,6 +236,7 @@ export function TitleScreen(props: {
                 </Button>
               </div>
             )}
+            <BackupPanel />
           </div>
         )}
 

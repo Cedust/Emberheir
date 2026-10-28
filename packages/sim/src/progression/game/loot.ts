@@ -15,10 +15,12 @@ import {
   type ItemSlot,
   type Rarity,
 } from "../../items/types";
+import { offHandFits, requirementsFor } from "../../items/equipment";
+import { ATTRIBUTES } from "../../combat/types";
 import { Rng } from "../../rng";
 import { PROGRESSION, type LootGate } from "../constants";
 import { type EnemyRank } from "../leveling";
-import { fail, type ActData, type Encounter, type GameData } from "./state";
+import { fail, type ActData, type Encounter, type GameData, type GameState } from "./state";
 
 /** Loot rolls: the item pick, act affix weights and Rune drops. */
 
@@ -72,6 +74,8 @@ export function rollItemChoices(
   buildFactor?: (affix: AffixDefinition) => number,
   /** Hunts: the first card that can carry it gets a Signature Affix; a hunted Warden's trophy chance. */
   hunt: HuntLoot = {},
+  /** Smart Base: the bases the hero can wear (`heroCanWear`). */
+  canWear?: (baseId: string) => boolean,
 ): Item[] {
   const champion = encounter.champion === true;
   const homeUniques = data.acts.find((a) => a.id === actId)?.homeUniques ?? [];
@@ -128,7 +132,7 @@ export function rollItemChoices(
     const slot = pickWeighted(pool, (s) => PROGRESSION.lootSlotWeights[s], rng);
     if (!slot) break;
     slots.splice(slots.indexOf(slot), 1);
-    const bases = bySlot.get(slot) ?? [];
+    const bases = smartBases(bySlot.get(slot) ?? [], canWear, rng);
     if (i === legendaryCard) {
       const uniques = uniquesFor(data.items, encounter.level, bases);
       // Home Uniques of the act come up more often (act-beute-entwurf-v1.md A2).
@@ -206,6 +210,36 @@ export function rollItemChoices(
     }
   }
   return items;
+}
+
+/**
+ * Smart Base (smart-loot-v1.md): whether the hero can wear a base, by their own attributes (like
+ * `missingRequirements`) and, for an off hand, their weapon.
+ */
+export function heroCanWear(state: GameState, data: GameData): (baseId: string) => boolean {
+  const weapon = data.items.bases.get(state.hero.weaponId)?.weapon;
+  const own = state.hero.attributes;
+  return (baseId) => {
+    const base = getBase(data.items, baseId);
+    const required = requirementsFor(base, 1);
+    if (ATTRIBUTES.some((a) => (required[a] ?? 0) > own[a])) return false;
+    return base.slot !== "offHand" || offHandFits(base, weapon);
+  };
+}
+
+/**
+ * The bases one card rolls from: mostly (`PROGRESSION.smartBaseShare`) the ones the hero can
+ * wear, when only some of the slot's bases fit.
+ */
+export function smartBases(
+  bases: readonly string[],
+  canWear: ((baseId: string) => boolean) | undefined,
+  rng: Rng,
+): readonly string[] {
+  if (!canWear) return bases;
+  const wearable = bases.filter(canWear);
+  if (wearable.length === 0 || wearable.length === bases.length) return bases;
+  return rng.chance(PROGRESSION.smartBaseShare) ? wearable : bases;
 }
 
 /** What a hunt adds to an item pick (hunts-entwurf-v1.md). */

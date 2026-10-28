@@ -108,7 +108,8 @@ export function ActProgress(props: {
 export function RunHeader(props: {
   act: ActData;
   stage: number;
-  sub: string;
+  /** A line under the act's name; the Battle has none, its stage shows on the act bar (Timo). */
+  sub?: string;
   cleared: boolean;
   attributePoints: number;
   skillPoints: number;
@@ -126,18 +127,20 @@ export function RunHeader(props: {
     <header className="run-header bar-top">
       <div className="run-title">
         <span className="title-font">{actTitle(props.act)}</span>
-        <span className="sub">
-          {props.wildfire ? (
-            <span
-              className="wildfire-badge"
-              title={`Monster Level ${wildfireLevel(props.wildfire)}`}
-            >
-              <Icon name="fire" size={12} />
-              {wildfireName(props.wildfire)}
-            </span>
-          ) : null}
-          {props.sub}
-        </span>
+        {(props.sub || !!props.wildfire) && (
+          <span className="sub">
+            {props.wildfire ? (
+              <span
+                className="wildfire-badge"
+                title={`Monster Level ${wildfireLevel(props.wildfire)}`}
+              >
+                <Icon name="fire" size={12} />
+                {wildfireName(props.wildfire)}
+              </span>
+            ) : null}
+            {props.sub}
+          </span>
+        )}
       </div>
       <ActProgress
         act={props.act}

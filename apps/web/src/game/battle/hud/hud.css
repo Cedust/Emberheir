@@ -148,7 +148,7 @@
   border: 1.5px solid #140c06;
 }
 
-/* Under the plaque: the enemy's modifiers and statuses in one row, its Trail on its own below. */
+/* Under the plaque: the enemy's modifiers and statuses in one row. */
 .stage .hud-enemy-below {
   position: absolute;
   top: 132px;
@@ -178,8 +178,16 @@
   border-color: #ffd84a;
 }
 
-/* The enemy's Trail (Hunts): four pips and the way to the next one. */
+/*
+ * The enemy's Trail (Hunts): its mark and the way to the next one, alone in the free top left
+ * corner beside the plaque (the right one belongs to notifications), so the timers of the enemy's
+ * statuses under the plaque never run into it (Timo).
+ */
 .stage .hunt-chip {
+  position: absolute;
+  top: 84px;
+  left: calc(var(--safe-x, 0px) + 22px);
+  z-index: 5;
   display: inline-flex;
   align-items: center;
   gap: 6px;
@@ -564,6 +572,21 @@
   --frame: #e2412b;
   --glow: rgb(226 65 43 / 0.55);
   background: radial-gradient(circle at 50% 45%, #5e3226, #2e1610 60%, #120706);
+}
+
+/* The Class Trait: an ember-gold frame, no timer; it flares when its stacks are full. */
+.stage .rail-status.trait {
+  --frame: #f0a640;
+  --glow: rgb(240 166 64 / 0.45);
+}
+
+.stage .rail-status.trait.full {
+  --glow: rgb(255 170 60 / 0.95);
+  border-color: #ffd27a;
+}
+
+.stage .rail-status.trait > b {
+  font-size: 14px;
 }
 
 /* A soft light rim, so dark painted icons (Burn, Bleed) stand out from the socket. */

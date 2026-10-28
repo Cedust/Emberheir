@@ -15,7 +15,9 @@ import {
   type GameIconId,
   RANK_MARKS,
 } from "../../../ui/gameIcons";
+import { GAME_DATA } from "@emberheir/content";
 import { Icon, type IconName } from "../../../ui/Icon";
+import { ClassEmblem } from "../../ClassEmblem";
 import { TrailMark } from "../../../ui/TrailMark";
 import { fmt } from "../../../ui/items";
 import { AttackIcon, SkillIcon } from "../SkillIcon";
@@ -130,18 +132,45 @@ type Status = {
   icon: IconName;
   /** Ailments and stun use painted icons. */
   painted?: GameIconId;
+  /** The Class Trait shows its class's emblem. */
+  emblem?: string;
   name: string;
-  kind: "buff" | "curse" | "stun" | `ailment-${string}`;
+  kind: "buff" | "trait" | "curse" | "stun" | `ailment-${string}`;
   stacks?: number;
+  /** Seconds left; the Class Trait has none. */
   remaining: number;
+  /** The trait's stacks are full. */
+  full?: boolean;
   /** One line for the tooltip on the status rail. */
   explain: string;
 };
 
 const pct = (v: number) => `${Math.round(v * 100)} %`;
 
+/** The Class Trait as a buff while it holds stacks (Fury, Hunter's Marks, Overcharge charges). */
+function traitStatus(f: FighterSnapshot): Status | undefined {
+  const t = f.trait;
+  if (!t || t.value <= 0) return undefined;
+  // The snapshot's trait kind is the trait's rule key.
+  const heroClass = GAME_DATA.classes.find((c) => t.kind in (c.trait.rules ?? {}));
+  if (!heroClass) return undefined;
+  return {
+    key: "trait",
+    icon: "flame",
+    emblem: heroClass.id,
+    name: heroClass.trait.name,
+    kind: "trait",
+    stacks: t.value,
+    remaining: Infinity,
+    full: t.value >= t.max,
+    explain: heroClass.trait.description,
+  };
+}
+
 function statusesOf(f: FighterSnapshot): Status[] {
   const out: Status[] = [];
+  const trait = traitStatus(f);
+  if (trait) out.push(trait);
   if (f.stunned > 0)
     out.push({
       key: "stun",
@@ -195,7 +224,7 @@ export function StatusIcons(props: {
   className?: string;
   style?: React.CSSProperties;
 }) {
-  const list = statusesOf(props.fighter);
+  const list = statusesOf(props.fighter).filter((s) => s.kind !== "trait");
   return (
     <div className={`hud-status ${props.className ?? ""}`} style={props.style}>
       {list.map((s) => (
@@ -229,30 +258,35 @@ function RailStatus(props: { status: Status }) {
     setLast(s.remaining);
     if (s.remaining > last + 0.05) setTotal(s.remaining);
   }
-  const bad = s.kind !== "buff";
+  const bad = s.kind !== "buff" && s.kind !== "trait";
+  const timed = Number.isFinite(s.remaining);
   const hover = useNoteHover({
     name: s.stacks ? `${s.name} ×${s.stacks}` : s.name,
-    kind: bad ? "Debuff" : "Buff",
+    kind: s.kind === "trait" ? "Class Trait" : bad ? "Debuff" : "Buff",
     explain: s.explain,
   });
-  const used = total > 0 ? Math.min(1, Math.max(0, 1 - s.remaining / total)) : 0;
+  const used = timed && total > 0 ? Math.min(1, Math.max(0, 1 - s.remaining / total)) : 0;
   return (
     <span
-      className={`rail-status ${s.kind}${bad ? " bad" : ""}${s.remaining < 1.5 ? " fading" : ""}`}
+      className={`rail-status ${s.kind}${bad ? " bad" : ""}${s.full ? " full" : ""}${s.remaining < 1.5 ? " fading" : ""}`}
       style={{ "--used": `${Math.round(used * 360)}deg` } as React.CSSProperties}
       tabIndex={0}
       aria-label={s.name}
       data-testid="rail-status"
       {...hover}
     >
-      {s.painted ? (
+      {s.emblem ? (
+        <ClassEmblem classId={s.emblem} size={32} />
+      ) : s.painted ? (
         <GameIcon id={s.painted} size={32} />
       ) : (
         <Icon name={s.icon} size={20} color="#fff6e4" />
       )}
-      <span className="rail-sweep" aria-hidden="true" />
+      {timed && <span className="rail-sweep" aria-hidden="true" />}
       {s.stacks && <b className="mono">{s.stacks}</b>}
-      <i className="mono">{s.remaining < 10 ? s.remaining.toFixed(1) : Math.ceil(s.remaining)}</i>
+      {timed && (
+        <i className="mono">{s.remaining < 10 ? s.remaining.toFixed(1) : Math.ceil(s.remaining)}</i>
+      )}
     </span>
   );
 }
@@ -268,8 +302,8 @@ export function StatusRail(props: {
   width: number;
 }) {
   const list = statusesOf(props.fighter);
-  const good = list.filter((s) => s.kind === "buff");
-  const bad = list.filter((s) => s.kind !== "buff");
+  const good = list.filter((s) => s.kind === "buff" || s.kind === "trait");
+  const bad = list.filter((s) => s.kind !== "buff" && s.kind !== "trait");
   return (
     <div className="status-rail" style={{ width: props.width }} data-testid="status-rail">
       <div className="rail-side good">
@@ -563,7 +597,7 @@ export interface EnemyFrameProps {
   hunt?: HuntView;
 }
 
-/** The enemy's Trail under its plaque: four pips and the kills to the next one. */
+/** The enemy's Trail at the top left, clear of the plaque's statuses: its mark, the bar to the next one. */
 function HuntChip(props: { hunt: HuntView }) {
   const h = props.hunt;
   const part = h.next !== undefined ? (h.kills - h.from) / Math.max(1, h.next - h.from) : 1;
@@ -629,104 +663,111 @@ export function EnemyFrame(props: EnemyFrameProps) {
             ? "elite champion"
             : "";
   return (
-    <section
-      className={`hud-enemy ${tagClass}${e.telegraph ? " charging" : ""}`}
-      style={{ top: ENEMY_TOP, width: ENEMY_W, marginLeft: -ENEMY_W / 2 }}
-      aria-label={`${props.name} plaque`}
-    >
-      <div className="hud-enemy-head" title={props.sub}>
-        <span className="hud-enemy-type" title={props.sub.split(" · ")[0]}>
-          <EnemyTypeImg type={props.typeIcon} size={26} />
-        </span>
-        {props.tag && (
-          <img className="rank-mark" src={RANK_MARKS[props.tag]} alt="" draggable={false} />
-        )}
-        {props.tag && (
-          <span
-            className={`rank-tag title-font ${tagClass}`}
-            title={
-              props.tag === "GATEKEEPER"
-                ? GATEKEEPER_HINT
-                : props.tag === "CHAMPION"
-                  ? CHAMPION_HINT
-                  : undefined
-            }
-          >
-            {props.tag}
+    <>
+      <section
+        className={`hud-enemy ${tagClass}${e.telegraph ? " charging" : ""}`}
+        style={{ top: ENEMY_TOP, width: ENEMY_W, marginLeft: -ENEMY_W / 2 }}
+        aria-label={`${props.name} plaque`}
+      >
+        <div className="hud-enemy-head" title={props.sub}>
+          <span className="hud-enemy-type" title={props.sub.split(" · ")[0]}>
+            <EnemyTypeImg type={props.typeIcon} size={26} />
           </span>
-        )}
-        <span className="hud-enemy-name title-font">{props.name}</span>
-
-        <span
-          className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
-          title={levelHint(
-            e.level - props.heroLevel,
-            levelGapMalus(props.heroLevel, e.level, props.tag ? "elite" : "normal"),
+          {props.tag && (
+            <img className="rank-mark" src={RANK_MARKS[props.tag]} alt="" draggable={false} />
           )}
-        >
-          Lv {e.level}
-        </span>
-      </div>
-      <div
-        className="hud-enemy-life"
-        style={{ left: ENEMY_LIFE.x, top: ENEMY_LIFE.y, width: ENEMY_LIFE.w, height: ENEMY_LIFE.h }}
-        role="meter"
-        aria-label="Life"
-        aria-valuemin={0}
-        aria-valuemax={e.maxLife}
-        aria-valuenow={Math.round(e.life)}
-      >
-        <span className="mono">
-          {fmt(e.life)} / {fmt(e.maxLife)}
-          {e.barrier > 0 ? ` · +${fmt(e.barrier)}` : ""}
-        </span>
-      </div>
-      <div
-        className={`hud-enemy-heat${e.telegraph ? " charging" : ""}`}
-        role="meter"
-        aria-label="Heat"
-        aria-valuemin={0}
-        aria-valuemax={e.maxHeat}
-        aria-valuenow={Math.round(e.heat)}
-      >
-        <div className="fill" style={{ width: `${(e.heat / e.maxHeat) * 100}%` }} />
-      </div>
-      <div className="hud-enemy-rhythm">
-        <Rhythm fighter={e} width={440} attackIcon={props.attackIcon} enemy />
-        <div className="hud-enemy-skills">
-          {e.rotation.map((slot, i) => (
-            <div
-              key={slot.skillId}
-              className={`enemy-slot ${i === e.nextSlot ? "next" : ""}`}
-              title={`${slot.name} · costs ${slot.heatCost} Heat`}
-              style={{ background: skillTint(slot.skillId) }}
-            >
-              <SkillIcon skillId={slot.skillId} size={18} />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="hud-enemy-below">
-        <div className="hud-enemy-mods">
-          {props.mods.map((m) => (
-            <span key={m} className="mod-chip">
-              {m}
-            </span>
-          ))}
-          {props.thiefLeft !== null && (
+          {props.tag && (
             <span
-              className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
-              role="timer"
-              data-testid="thief-timer"
+              className={`rank-tag title-font ${tagClass}`}
+              title={
+                props.tag === "GATEKEEPER"
+                  ? GATEKEEPER_HINT
+                  : props.tag === "CHAMPION"
+                    ? CHAMPION_HINT
+                    : undefined
+              }
             >
-              <Icon name="retreat" size={16} color="#ffd84a" />
-              <span>Flees in {props.thiefLeft}s</span>
+              {props.tag}
             </span>
           )}
-          <StatusIcons fighter={e} className="enemy" />
+          <span className="hud-enemy-name title-font">{props.name}</span>
+
+          <span
+            className={`hud-enemy-level title-font ${levelClass(e.level - props.heroLevel)}`}
+            title={levelHint(
+              e.level - props.heroLevel,
+              levelGapMalus(props.heroLevel, e.level, props.tag ? "elite" : "normal"),
+            )}
+          >
+            Lv {e.level}
+          </span>
         </div>
-        {props.hunt && <HuntChip hunt={props.hunt} />}
-      </div>
-    </section>
+        <div
+          className="hud-enemy-life"
+          style={{
+            left: ENEMY_LIFE.x,
+            top: ENEMY_LIFE.y,
+            width: ENEMY_LIFE.w,
+            height: ENEMY_LIFE.h,
+          }}
+          role="meter"
+          aria-label="Life"
+          aria-valuemin={0}
+          aria-valuemax={e.maxLife}
+          aria-valuenow={Math.round(e.life)}
+        >
+          <span className="mono">
+            {fmt(e.life)} / {fmt(e.maxLife)}
+            {e.barrier > 0 ? ` · +${fmt(e.barrier)}` : ""}
+          </span>
+        </div>
+        <div
+          className={`hud-enemy-heat${e.telegraph ? " charging" : ""}`}
+          role="meter"
+          aria-label="Heat"
+          aria-valuemin={0}
+          aria-valuemax={e.maxHeat}
+          aria-valuenow={Math.round(e.heat)}
+        >
+          <div className="fill" style={{ width: `${(e.heat / e.maxHeat) * 100}%` }} />
+        </div>
+        <div className="hud-enemy-rhythm">
+          <Rhythm fighter={e} width={440} attackIcon={props.attackIcon} enemy />
+          <div className="hud-enemy-skills">
+            {e.rotation.map((slot, i) => (
+              <div
+                key={slot.skillId}
+                className={`enemy-slot ${i === e.nextSlot ? "next" : ""}`}
+                title={`${slot.name} · costs ${slot.heatCost} Heat`}
+                style={{ background: skillTint(slot.skillId) }}
+              >
+                <SkillIcon skillId={slot.skillId} size={18} />
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="hud-enemy-below">
+          <div className="hud-enemy-mods">
+            {props.mods.map((m) => (
+              <span key={m} className="mod-chip">
+                {m}
+              </span>
+            ))}
+            {props.thiefLeft !== null && (
+              <span
+                className={`thief-timer${props.thiefLeft <= 5 ? " hurry" : ""}`}
+                role="timer"
+                data-testid="thief-timer"
+              >
+                <Icon name="retreat" size={16} color="#ffd84a" />
+                <span>Flees in {props.thiefLeft}s</span>
+              </span>
+            )}
+            <StatusIcons fighter={e} className="enemy" />
+          </div>
+        </div>
+      </section>
+      {props.hunt && <HuntChip hunt={props.hunt} />}
+    </>
   );
 }
