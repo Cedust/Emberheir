@@ -9,13 +9,14 @@ import {
   getBase,
   greaterName,
 } from "@emberheir/sim";
-import { COMPARE_KEY, useCompareShown } from "./compareToggle";
+import { COMPARE_KEY, setCompareShown, useCompareShown } from "./compareToggle";
 import { GameIcon, type GameIconId } from "./gameIcons";
 import { Icon } from "./Icon";
 import { ItemArt } from "./ItemArt";
 import { huntAffixTitle } from "./TrailMark";
 import type { CompareView } from "./itemCompare";
 import { RuneStone } from "./RuneArt";
+import { currentInput } from "./touch";
 
 /**
  * The parts every item view shares (hover tooltips, loot cards, the worn-gear sheet), laid out
@@ -254,9 +255,16 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
 export function CompareList(props: { view: CompareView }) {
   const { view } = props;
   const shown = useCompareShown();
+  // Touch has no Shift: tapping the hint (or the comparison) flips it.
+  const flip = (e: React.MouseEvent) => {
+    if (currentInput() !== "touch") return;
+    e.preventDefault();
+    e.stopPropagation();
+    setCompareShown(!shown);
+  };
   if (!shown) {
     return (
-      <span className="tip-hotkey ib-compare-hint" data-testid="compare-hint">
+      <span className="tip-hotkey ib-compare-hint" data-testid="compare-hint" onClick={flip}>
         <kbd className="k-key">{COMPARE_KEY}</kbd> Compare
       </span>
     );
@@ -265,6 +273,7 @@ export function CompareList(props: { view: CompareView }) {
     <div
       className={`ib-compare ${view.inactive ? "inactive" : view.better ? "better" : "worse"}`}
       data-testid="item-compare"
+      onClick={flip}
     >
       {view.empty && <span className="ib-compare-note">Empty slot</span>}
       {view.inactive ? (
