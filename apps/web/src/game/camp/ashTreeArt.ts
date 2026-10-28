@@ -136,7 +136,7 @@ export interface AshTreeArt {
 export const SIGIL_Y = SIGIL.y;
 const SIGIL_R = SIGIL.radius;
 /** The sigil's lines are drawn for a radius of 0.95 and scaled to its size. */
-export const SIGIL_SCALE = SIGIL.radius / 0.95;
+const SIGIL_SCALE = SIGIL.radius / 0.95;
 
 /**
  * A tapered limb along a curve, painted in layers: a soft cast shadow, the dark bark, a lit

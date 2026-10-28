@@ -749,7 +749,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               Keystones change the rules of a fight. Each one costs 3 Skill Points and a Keystone
               place. You start with one place; Harvests 2, 4 and 6 add another.
             </p>
-            <p>The notches in the Ember sigil at the heart of the tree show your places.</p>
+            <p>The tree's legend shows how many places are taken.</p>
           </>
         ),
       },
