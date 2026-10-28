@@ -47,8 +47,9 @@ export function AfterCard(props: {
   kindle: { conditionId: string; effectId: string; index: number } | undefined;
   /** Salvage: the Legendary Power this item teaches the Power Codex (a new one or a better tier). */
   power?: { name: string; tier: number } | undefined;
-  /** Temper: takes an option of the waiting offer, or keeps the affix (`null`). */
-  onChoose?: (option: number | null) => void;
+  /** Temper offer: the picked option (`null` = keep the old affix, on top) and how to pick. */
+  picked?: number | null;
+  onPick?: (option: number | null) => void;
 }) {
   const { item, kind } = props;
   if (!item) return <div className="craft-card panel-card dashed" />;
@@ -189,35 +190,39 @@ export function AfterCard(props: {
   }
   const offer = item.temperOffer;
   if (offer && item.lockedAffix !== undefined) {
-    // Temper paid: pick one option or keep the affix.
+    // Temper paid: Liora's offer for the one locked line. No item head, so it never reads as
+    // a new item; the old line sits on top and is picked until another tile is.
     const index = item.lockedAffix;
+    const current = item.affixes[index];
     const optionText = (roll: AffixRoll) =>
       affixText({ ...item, affixes: item.affixes.map((r, i) => (i === index ? roll : r)) }, index)
         .text;
-    return (
-      <div
-        className={`craft-card panel-card dashed ${rarityClass(item)}`}
-        data-testid="temper-offer"
+    const tile = (key: string, option: number | null, label: string, text: string) => (
+      <button
+        key={key}
+        type="button"
+        className={`temper-tile ${props.picked === option ? "on" : ""}`}
+        aria-pressed={props.picked === option}
+        onClick={() => props.onPick?.(option)}
       >
-        <ItemHead item={item} label="CHOOSE ONE" />
-        {offer.map((roll, i) => (
-          <button
-            key={i}
-            type="button"
-            className="affix-line temper-option"
-            onClick={() => props.onChoose?.(i)}
-          >
-            <span className="grow">{optionText(roll)}</span>
-          </button>
-        ))}
-        <button
-          type="button"
-          className="affix-line temper-option"
-          onClick={() => props.onChoose?.(null)}
-        >
-          <span className="grow">{affixText(item, index).text}</span>
-          <span className="locked-in">KEEP</span>
-        </button>
+        <span className="eyebrow">{label}</span>
+        <span className="temper-tile-text">{text}</span>
+      </button>
+    );
+    return (
+      <div className="craft-card panel-card dashed temper-offer" data-testid="temper-offer">
+        <span className="eyebrow">LIORA&apos;S OFFER</span>
+        <span className="sub">Only this line changes. Pick one.</span>
+        <div className="item-detail-rule" />
+        {tile("keep", null, "KEEP", affixText(item, index).text)}
+        {offer.map((roll, i) =>
+          tile(
+            String(i),
+            i,
+            roll.affixId === current?.affixId ? "NEW VALUE" : "NEW AFFIX",
+            optionText(roll),
+          ),
+        )}
       </div>
     );
   }

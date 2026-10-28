@@ -66,10 +66,14 @@ test("Liora's Temper offers two choices; Thoric's Reforge keeps the trigger", as
   await page.getByTestId("craft-now").locator(".affix-line").nth(1).click();
   await page.locator(".cost-bar").getByRole("button", { name: "Temper" }).click();
   const offer = page.getByTestId("temper-offer");
-  await expect(offer.locator(".temper-option")).toHaveCount(3);
+  await expect(offer.locator(".temper-tile")).toHaveCount(3);
   await expect(offer).toContainText("KEEP");
+  await expect(offer).not.toContainText("Lucky Iron Ring");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/temper-offer.png` });
-  await offer.locator(".temper-option").first().click();
+  // The old affix sits on top and is picked; an offer is picked, then confirmed.
+  await expect(offer.locator(".temper-tile").first()).toHaveAttribute("aria-pressed", "true");
+  await offer.locator(".temper-tile").nth(1).click();
+  await page.locator(".cost-bar").getByRole("button", { name: "Choose" }).click();
   await expect(page.getByRole("status")).toContainText("→");
   await expect(offer).toHaveCount(0);
 
