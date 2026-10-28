@@ -15,6 +15,7 @@ import {
 import { Suspense, useEffect, useState } from "react";
 import { isTypingTarget } from "../../ui/kit/hotkeys";
 import { Button } from "../../ui/kit/Button";
+import { FitBox } from "../../ui/kit/FitBox";
 import { fmt } from "../../ui/items";
 import { type CurrencyId, Price, Wallet } from "../../ui/kit/Currency";
 import { BoonPanel, ShrineCards } from "../Boons";
@@ -179,62 +180,59 @@ export function IntermissionView(props: {
         <main className="intermission-center">
           <h2 className="screen-title title-font">{title}</h2>
           {subtitle && <p className="screen-sub">{subtitle}</p>}
-          {rewards && step !== "ready" && !inFinale(act) && !(run.visit && !rewards.xp) && (
-            <p className="auto-rewards sub" data-testid="auto-rewards">
-              +{fmt(rewards.xp)} XP <Price id="acorns" amount={rewards.acorns} plus />{" "}
-              <Price id="ash" amount={rewards.ash} plus />
-              {rewards.emberCoal > 0 && (
-                <>
-                  {" "}
-                  <Price id="coal" amount={rewards.emberCoal} plus />
-                </>
+          {/* What the fight paid on its own, in one line: XP, currencies, then the Runes. */}
+          {rewards && step !== "ready" && (
+            <div className="reward-row">
+              {!inFinale(act) && !(run.visit && !rewards.xp) && (
+                <p className="auto-rewards sub" data-testid="auto-rewards">
+                  +{fmt(rewards.xp)} XP <Price id="acorns" amount={rewards.acorns} plus />{" "}
+                  <Price id="ash" amount={rewards.ash} plus />
+                  {rewards.emberCoal > 0 && (
+                    <>
+                      {" "}
+                      <Price id="coal" amount={rewards.emberCoal} plus />
+                    </>
+                  )}
+                  {rewards.phoenixFeathers > 0 && (
+                    <>
+                      {" "}
+                      <Price id="feathers" amount={rewards.phoenixFeathers} plus />
+                    </>
+                  )}
+                  {!!rewards.cinderglass && (
+                    <>
+                      {" "}
+                      <Price id="glass" amount={rewards.cinderglass} plus />
+                    </>
+                  )}
+                </p>
               )}
-              {rewards.phoenixFeathers > 0 && (
-                <>
-                  {" "}
-                  <Price id="feathers" amount={rewards.phoenixFeathers} plus />
-                </>
+              {rewards.runes.length > 0 && (
+                <RuneDrops
+                  key={`runes-${run.encounter?.seed ?? run.stage}`}
+                  runes={rewards.runes}
+                  home={homeRuneOf(run.actId)}
+                />
               )}
-              {!!rewards.cinderglass && (
-                <>
-                  {" "}
-                  <Price id="glass" amount={rewards.cinderglass} plus />
-                </>
-              )}
-            </p>
+            </div>
           )}
-          {rewards && step !== "ready" && rewards.runes.length > 0 && (
-            <RuneDrops
-              key={`runes-${run.encounter?.seed ?? run.stage}`}
-              runes={rewards.runes}
-              home={homeRuneOf(run.actId)}
-            />
-          )}
+          {/* The cards get the rest of the column and shrink before they would run off it. */}
           {step === "items" && (
-            <ItemCards
-              key={run.encounter?.seed ?? run.stage}
-              state={state}
-              run={run}
-              game={game}
-              onFocus={setFocus}
-            />
+            <FitBox className="loot-fit">
+              <ItemCards
+                key={run.encounter?.seed ?? run.stage}
+                state={state}
+                run={run}
+                game={game}
+                onFocus={setFocus}
+              />
+            </FitBox>
           )}
           {step === "shrine" && <ShrineCards state={state} run={run} game={game} />}
           {step === "visit" && <VisitCards state={state} run={run} game={game} />}
           {step === "path" && <NodeCards state={state} run={run} game={game} />}
           {step === "gate" && <GateCards state={state} run={run} game={game} />}
           {(step === "ready" || step === "done") && <DoneCard state={state} run={run} />}
-          {step === "items" && (
-            <div className="inventory-line">
-              <Button icon="hammer" onClick={() => game.dispatch({ type: "salvageAll" })}>
-                {rewards?.taken?.length ? "Salvage the Rest" : "Salvage All"} · +
-                {(rewards?.items ?? [])
-                  .filter((_, i) => !rewards?.taken?.some((t) => t.index === i))
-                  .reduce((n, it) => n + salvageValue(it), 0)}{" "}
-                Ash
-              </Button>
-            </div>
-          )}
         </main>
         {/* During the item pick the paperdoll takes the road's place. */}
         {step !== "items" && (
@@ -264,6 +262,18 @@ export function IntermissionView(props: {
       <footer className="intermission-footer bar-bottom">
         <Wallet state={state} gains={gains} />
         <div className="grow" />
+        {step === "items" && (
+          <Button icon="hammer" onClick={() => game.dispatch({ type: "salvageAll" })}>
+            {rewards?.taken?.length ? "Salvage the Rest" : "Salvage All"}{" "}
+            <Price
+              id="ash"
+              amount={(rewards?.items ?? [])
+                .filter((_, i) => !rewards?.taken?.some((t) => t.index === i))
+                .reduce((n, it) => n + salvageValue(it), 0)}
+              plus
+            />
+          </Button>
+        )}
         {!boss && (
           <Button
             variant="ghost"

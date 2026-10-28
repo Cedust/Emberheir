@@ -33,8 +33,8 @@ import { compareWithEquipped } from "../../ui/itemCompare";
 /** The rewards after a won fight: Rune drops, the item cards with their reveal, the worn gear. */
 
 /**
- * Runes fall onto the ground with a glowing glyph and a clink before they go to the pouch. The
- * act's Home Rune gets a burst of sparks in its color and a "Home Rune" tag.
+ * Runes fall into the reward line with a glowing glyph and a clink before they go to the pouch,
+ * the name on hover. The act's Home Rune gets a burst of sparks in its color and a "Home Rune" tag.
  */
 export function RuneDrops(props: { runes: readonly string[]; home?: string | undefined }) {
   useEffect(() => {
@@ -47,11 +47,13 @@ export function RuneDrops(props: { runes: readonly string[]; home?: string | und
     return () => timers.forEach((t) => window.clearTimeout(t));
   }, [props.runes]);
   return (
-    <div className="rune-drops" data-testid="rune-drops">
+    <span className="rune-drops" data-testid="rune-drops">
       {props.runes.map((id, i) => (
         <span
           key={i}
           className={`rune-drop${isHighRune(id) ? " high" : ""}${id === props.home ? " home" : ""}`}
+          title={`${runeName(id)} Rune${id === props.home ? " · Home Rune" : ""}`}
+          aria-label={`${runeName(id)} Rune`}
           style={
             {
               animationDelay: `${0.2 + i * 0.25}s`,
@@ -61,12 +63,11 @@ export function RuneDrops(props: { runes: readonly string[]; home?: string | und
         >
           <span className="rune-glyph-glow" aria-hidden />
           {id === props.home && <span className="rune-home-burst" aria-hidden />}
-          <RuneStone runeId={id} size={40} />
-          <span className="title-font">{runeName(id)} Rune</span>
+          <RuneStone runeId={id} size={34} />
           {id === props.home && <span className="rune-home-tag small">Home Rune</span>}
         </span>
       ))}
-    </div>
+    </span>
   );
 }
 

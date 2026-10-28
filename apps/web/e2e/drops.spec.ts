@@ -1,5 +1,12 @@
-import { expect, test } from "@playwright/test";
-import { saveBossHoard, saveBountyDone, saveShrine, saveThiefFight, seedSave } from "./fixtures";
+import { type Page, expect, test } from "@playwright/test";
+import {
+  saveBossHoard,
+  saveBountyDone,
+  saveRichLoot,
+  saveShrine,
+  saveThiefFight,
+  seedSave,
+} from "./fixtures";
 
 test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Trophy Wall", async ({
   page,
@@ -18,8 +25,8 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/notifications.png` });
   // The act's Home Rune shows as such (act-beute-entwurf-v1.md).
   const drops = page.getByTestId("rune-drops");
-  await expect(drops).toContainText("Moss Rune");
-  await expect(drops.locator(".rune-drop.home")).toContainText("Thorn Rune");
+  await expect(drops.getByLabel("Moss Rune")).toBeVisible();
+  await expect(drops.locator(".rune-drop.home")).toHaveAccessibleName("Thorn Rune");
   await expect(drops.locator(".rune-drop.home")).toContainText("Home Rune");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/home-rune-drop.png` });
 
@@ -42,6 +49,65 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   await expect(page.getByTestId("trophy-tyrants-crown")).toBeDisabled();
   expect(errors).toEqual([]);
 });
+
+/** Where the item pick overlaps the hero column, the Equipped panel or the footer. */
+async function lootOverlaps(page: Page): Promise<string[]> {
+  return page.evaluate(() => {
+    const box = (sel: string) => document.querySelector(sel)?.getBoundingClientRect();
+    const left = box(".intermission-left .hero-card") ?? box(".intermission-left");
+    const right = box(".intermission-right");
+    const footer = box(".intermission-footer");
+    if (!left || !right || !footer) return ["missing parts"];
+    const out: string[] = [];
+    for (const card of document.querySelectorAll(
+      ".intermission-center .loot-card, .intermission-center .hoard-face",
+    )) {
+      const r = card.getBoundingClientRect();
+      if (r.left < left.right - 1) out.push("a card covers the hero column");
+      if (r.right > right.left + 1) out.push("a card covers the Equipped panel");
+      if (r.bottom > footer.top + 1) out.push("a card runs under the footer");
+    }
+    for (const button of document.querySelectorAll(".intermission-center button")) {
+      if (button.getBoundingClientRect().bottom > footer.top + 1) {
+        out.push("a button runs under the footer");
+      }
+    }
+    return [...new Set(out)];
+  });
+}
+
+for (const screen of [
+  { name: "1080p", width: 1920, height: 1080 },
+  { name: "16:10", width: 1280, height: 800 },
+]) {
+  test(`the richest Boss Hoard fits on ${screen.name}`, async ({ page }) => {
+    await page.setViewportSize(screen);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await seedSave(page, saveRichLoot("hoard"));
+    await page.goto("/");
+    await page.getByRole("button", { name: /Continue/ }).click();
+    const cards = page.getByTestId("hoard-card");
+    await expect(cards).toHaveCount(6);
+    // Every card in full next to the Hoard, the long Uniques too.
+    for (let i = 0; i < 6; i++) {
+      // The Legendary and Unique faces tremble as they land: no need to wait for them to settle.
+      await cards.nth(i).click({ force: true });
+      await expect(cards.nth(i)).toHaveAttribute("aria-pressed", "true");
+      expect(await lootOverlaps(page), `Hoard card ${i + 1}`).toEqual([]);
+    }
+  });
+
+  test(`the richest item pick fits on ${screen.name}`, async ({ page }) => {
+    await page.setViewportSize(screen);
+    await page.emulateMedia({ reducedMotion: "reduce" });
+    await seedSave(page, saveRichLoot("pick"));
+    await page.goto("/");
+    await page.getByRole("button", { name: /Continue/ }).click();
+    await expect(page.getByTestId("item-card")).toHaveCount(3);
+    expect(await lootOverlaps(page)).toEqual([]);
+    await expect(page.getByRole("button", { name: /Salvage All/ })).toBeVisible();
+  });
+}
 
 test("Ember Shrine: steal one of three Boons, it shows under the hero in the next fight", async ({
   page,

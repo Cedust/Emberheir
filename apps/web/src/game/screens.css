@@ -967,6 +967,33 @@
   align-items: center;
   gap: 10px;
   min-width: 0;
+  min-height: 0;
+}
+
+/* XP, currencies and Runes of the fight in one line. */
+.stage .reward-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 8px 20px;
+  min-height: 34px;
+}
+
+/* The item pick takes the rest of the column and shrinks as a whole when it would not fit. */
+.stage .fit-box {
+  flex: 1 1 0;
+  min-height: 0;
+  align-self: stretch;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.stage .fit-inner {
+  min-width: 0;
+  max-width: 100%;
+  transform-origin: top center;
 }
 
 .stage .screen-title {
@@ -988,9 +1015,11 @@
 
 .stage .loot-cards {
   display: grid;
-  grid-template-columns: repeat(3, 280px);
+  /* As wide as there is room for (16:10 has less), at most 280 each. */
+  grid-template-columns: repeat(3, minmax(0, 280px));
   gap: 18px;
-  margin-top: 10px;
+  /* Room for the Hunt Affix ribbon above a card. */
+  padding-top: 10px;
 }
 
 .stage .loot-card-wrap {
@@ -1015,14 +1044,6 @@
 
 .stage .done-card strong {
   font-size: 24px;
-}
-
-.stage .inventory-line {
-  margin-top: 16px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-  font-size: 14px;
 }
 
 .stage .inv-full {
@@ -6558,18 +6579,17 @@
   }
 }
 
+/* The Runes sit in the reward line next to the currencies: the stone, the name on hover. */
 .stage .rune-drops {
-  display: flex;
-  justify-content: center;
-  gap: 18px;
-  margin: -4px 0 8px;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
 }
 
 .stage .rune-drop {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 15px;
+  gap: 6px;
   animation: rune-drop 0.6s cubic-bezier(0.2, 1.6, 0.4, 1) both;
 }
 
@@ -6831,15 +6851,15 @@
 .stage .hoard-layout {
   position: relative;
   display: grid;
-  grid-template-columns: auto 300px;
+  grid-template-columns: minmax(0, auto) 300px;
   gap: 22px;
-  margin-top: 8px;
+  padding-top: 8px;
   align-items: start;
 }
 
 .stage .hoard-cards {
   display: grid;
-  grid-template-columns: repeat(3, 172px);
+  grid-template-columns: repeat(3, minmax(0, 172px));
   grid-auto-rows: 226px;
   gap: 12px;
 }
@@ -6921,16 +6941,9 @@
   line-height: 1.15;
 }
 
+/* A long Unique shows all its lines: the whole Hoard shrinks to fit instead (FitBox). */
 .stage .hoard-detail .loot-card {
   min-height: 0;
-  /* As tall as the two rows of cards: a long Unique scrolls its lines, the buttons stay. */
-  max-height: 464px;
-}
-
-.stage .hoard-detail .item-detail-scroll {
-  flex-shrink: 1;
-  min-height: 0;
-  overflow-y: auto;
 }
 
 .stage .hoard-wait {
@@ -6947,7 +6960,7 @@
 
 .stage .rune-glyph-glow {
   position: absolute;
-  left: -6px;
+  left: -9px;
   top: 50%;
   width: 52px;
   height: 52px;
@@ -6965,7 +6978,7 @@
 .stage .rune-drop.high .rune-glyph-glow {
   width: 90px;
   height: 90px;
-  left: -25px;
+  left: -28px;
   background: radial-gradient(
     circle,
     color-mix(in srgb, var(--rarity-legendary) 80%, transparent),
@@ -6974,14 +6987,10 @@
   animation: glyph-glow 2.2s ease-out infinite;
 }
 
-.stage .rune-drop.high .title-font {
-  color: var(--r-legendary);
-}
-
 /* The act's Home Rune (act-beute-entwurf-v1.md A3): a ring of sparks in the Rune's color. */
 .stage .rune-home-burst {
   position: absolute;
-  left: -16px;
+  left: -19px;
   top: 50%;
   width: 72px;
   height: 72px;
@@ -7021,7 +7030,7 @@
   border-radius: 999px;
   border: 1px solid var(--rune);
   color: var(--text);
-  background: color-mix(in srgb, var(--rune) 22%, transparent);
+  background: color-mix(in srgb, var(--rune) 22%, var(--panel));
   font-family: var(--font-title);
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -7416,7 +7425,7 @@
 }
 
 .stage .hoard-cards.two {
-  grid-template-columns: repeat(2, 172px);
+  grid-template-columns: repeat(2, minmax(0, 172px));
 }
 
 .stage .branch-pick .title-change {
