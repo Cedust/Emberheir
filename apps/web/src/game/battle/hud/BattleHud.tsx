@@ -499,7 +499,7 @@ export function HeroBar(props: HeroBarProps) {
               <div
                 key={slot.skillId}
                 className="skill-slot-wrap"
-                title={`${slot.name} · ${slot.heatCost} Heat`}
+                title={`${slot.name} · costs ${slot.heatCost} Heat`}
               >
                 <div
                   className={`skill-slot ${next ? "next" : ""}${ready ? " ready swing" : ""}${stunned && ready ? " stunned" : ""} ${props.flash?.slot === i ? `fired-${props.flash.n % 2}` : ""}`}
@@ -522,7 +522,7 @@ export function HeroBar(props: HeroBarProps) {
             <div
               key={`r-${slot.skillId}`}
               className="skill-slot-wrap reaction"
-              title={`Reaction: ${slot.name} · ${slot.heatCost} Heat`}
+              title={`Reaction: ${slot.name} · costs ${slot.heatCost} Heat`}
             >
               <div
                 className={`skill-slot reaction ${slot.cooldownLeft > 0 ? "cooling" : ""}${slot.pending ? " pending" : ""} ${props.flash?.slot === 10 + i ? `fired-${props.flash.n % 2}` : ""}`}
@@ -698,7 +698,7 @@ export function EnemyFrame(props: EnemyFrameProps) {
             <div
               key={slot.skillId}
               className={`enemy-slot ${i === e.nextSlot ? "next" : ""}`}
-              title={`${slot.name} · ${slot.heatCost} Heat`}
+              title={`${slot.name} · costs ${slot.heatCost} Heat`}
               style={{ background: skillTint(slot.skillId) }}
             >
               <SkillIcon skillId={slot.skillId} size={18} />

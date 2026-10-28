@@ -24,6 +24,7 @@ import type { NewCharacter } from "./useGame";
 import { ELEMENT_COLOR } from "./weaponLook";
 import { PointChip } from "../ui/kit/Points";
 import { loadLineageClasses } from "./saves";
+import { SkillMeta } from "../ui/SkillMeta";
 
 /**
  * Class select: the three classes on the left; the chosen one in the middle, sparring with
@@ -314,6 +315,7 @@ function ClassFacts(props: { heroClass: HeroClass; weapon: string }) {
           <div className="cs-innate">
             <span className="cs-innate-label">Innate</span>
             <strong className="title-font">{skill?.name}</strong>
+            {skill && <SkillMeta skill={skill} weaponType={w.damageType} />}
             <p>{skill?.description}</p>
           </div>
           <div className="cs-weapon-facts">
