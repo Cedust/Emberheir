@@ -274,9 +274,8 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     },
   });
 
-  /** Modifier sockets; `extra` sits at the end of the row (an empty "Only if" socket). */
-  const sockets = (row: Target["row"], i: number, extra?: ReactNode) =>
-    (unlocks.modifiers > 0 || extra) && (
+  const sockets = (row: Target["row"], i: number) =>
+    unlocks.modifiers > 0 && (
       <div className="plan-sockets" role="group" aria-label="Modifiers">
         {Array.from({ length: unlocks.modifiers }, (_, m) => {
           const id = mods(row, i)[m];
@@ -302,7 +301,6 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             />
           );
         })}
-        {extra}
       </div>
     );
 
@@ -382,36 +380,36 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       }
                     />
                   )}
-                  {sockets(
-                    "rotation",
-                    i,
-                    unlocks.conditions && !plan.conditions[i] && (
-                      <Chip
-                        className="plan-socket cond-socket"
-                        icon="eye"
-                        label="Only if"
-                        filled={false}
-                        on={on("rotation", i, "cond")}
-                        note={{
-                          name: "Only if",
-                          kind: "Empty socket",
-                          explain:
-                            "Put a condition here: the slot is skipped while it is not true.",
-                        }}
-                        onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
-                      />
-                    ),
-                  )}
-                  {unlocks.conditions && plan.conditions[i] && (
-                    <ConditionChip
-                      id={plan.conditions[i] ?? null}
-                      list={SLOT_CONDITIONS}
-                      empty="Always"
-                      kind="Only if"
-                      explain="Skipped when this is not true. The next slot fires instead."
-                      on={on("rotation", i, "cond")}
-                      onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
-                    />
+                  {sockets("rotation", i)}
+                  {unlocks.conditions && (
+                    <div className="plan-cond-row">
+                      {plan.conditions[i] ? (
+                        <ConditionChip
+                          id={plan.conditions[i] ?? null}
+                          list={SLOT_CONDITIONS}
+                          empty="Always"
+                          kind="Only if"
+                          explain="Skipped when this is not true. The next slot fires instead."
+                          on={on("rotation", i, "cond")}
+                          onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
+                        />
+                      ) : (
+                        <Chip
+                          className="plan-socket cond-socket"
+                          icon="eye"
+                          label="Only if"
+                          filled={false}
+                          on={on("rotation", i, "cond")}
+                          note={{
+                            name: "Only if",
+                            kind: "Empty socket",
+                            explain:
+                              "Put a condition here: the slot is skipped while it is not true.",
+                          }}
+                          onClick={() => pick({ row: "rotation", index: i, part: "cond" })}
+                        />
+                      )}
+                    </div>
                   )}
                 </div>
               );
@@ -455,6 +453,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                     onClick={() => pick({ row: "reaction", index: i })}
                     drop={dropSkill("reaction", i)}
                   />
+                  {sockets("reaction", i)}
                   {r && (
                     <ConditionChip
                       id={r.conditionId}
@@ -466,7 +465,6 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       onClick={() => pick({ row: "reaction", index: i, part: "cond" })}
                     />
                   )}
-                  {sockets("reaction", i)}
                 </div>
               );
             })}

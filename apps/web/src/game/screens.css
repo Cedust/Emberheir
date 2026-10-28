@@ -4938,6 +4938,15 @@
     0 0 8px rgb(226 170 54 / 0.45);
 }
 
+/* The "Only if" row under the Modifier sockets: same height empty (socket) or set (pill). */
+.stage .plan-cond-row {
+  min-height: 36px;
+  max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
 /* The empty "Only if" socket: same as a Modifier socket, its eye dimmed. */
 .stage .plan-socket.cond-socket {
   opacity: 0.8;
