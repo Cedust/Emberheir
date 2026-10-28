@@ -426,7 +426,7 @@ Endgame **Wildfire I–X**.
 |---|---|---|
 | **Armor** | Gear, STR | Reduktion = Armor / (Armor + 20 × Angreifer-Level), max. 90 % |
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
-| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt), jedes % Life zählt auch für die Barrier (28.10.2026: sie fiel von 80 % des Life in Act 2 auf 35 % in Act 7) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 3 s ohne Treffer 10 %/s (Timo 2026-10-19: vorher 1,5 s/20 %, Emberseer in Akt 2–3 zu sicher) |
+| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 3 s ohne Treffer 10 %/s (Timo 2026-10-19: vorher 1,5 s/20 %, Emberseer in Akt 2–3 zu sicher) |
 | **Block** | Shield | stoppt 50 % des Treffers, max. 75 % Chance |
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
@@ -672,11 +672,12 @@ Endgame **Wildfire I–X**.
     30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Ein Gatekeeper braucht 4 Stages
     Anlauf für seine volle Spitze, sonst anteilig (Schritt 7: Emberfall hat 10 Stages, Gatekeeper auf Stage 3 und 7, der
     erste stand nach 2 Stages schon voll da und war der häufigste Tod in Act 7).
-  - Der Harvester trifft mit 45 % eines Bosses seines Levels (seine Phasen tragen sechs Boss-Mechaniken; Schritt 7,
-    vorher 50 %). **Er mischt die Schadensarten wie seine Echos** (Timo 28.10.2026: „gegen jede Klasse gleich fair“;
-    vorher kamen 55–60 % seines Schadens als physischer Reap, das traf den Emberseer ohne Armor und Evasion am
-    härtesten): Reap (Harvest Scythe) 1,9–2,7 statt 2,95–4,15, **Soul Reap ist Fire** (2,4–3,6, vorher Void 1,6–2,4),
-    Ash Aura 0,75–1,1 (vorher 0,6–0,9), am Core Last Flame 0,65–1,0 (vorher 0,5–0,8). Physical (Reap), Void (Harvest
+  - Der Harvester trifft mit 40 % eines Bosses seines Levels (seine Phasen tragen sechs Boss-Mechaniken; Schritt 7
+    vorher 50 %, bis 28.10.2026 45 %). **Er mischt die Schadensarten wie seine Echos** (Timo 28.10.2026: „gegen jede
+    Klasse gleich fair“, nur am Harvester, die Barrier bleibt; vorher kamen 55–60 % seines Schadens als physischer
+    Reap, das traf den Emberseer ohne Armor und Evasion am härtesten): Reap (Harvest Scythe) 1,5–2,1 statt 2,95–4,15,
+    Harvest Swing 500 % (vorher 400 %), **Soul Reap ist Fire** (2,4–3,6, vorher Void 1,6–2,4), Ash Aura 1,25–1,8
+    (vorher 0,6–0,9), am Core Last Flame 0,8–1,2 (vorher 0,5–0,8). Physical (Reap), Void (Harvest
     Swing, The Last Harvest), Fire (Soul Reap, Ash Aura, Ashfall) und Lightning (Storm Mirror) kommen jetzt alle vor.
   - Boss-Runde Schritt 7: Cinder Tyrant Fire Aura 0,45–0,7 (vorher 0,6–0,9), Enrage +30 % Attack Speed (vorher +50 %);
     Rime Warden Ice Barrier bei 75/50/25 % Life je 10 % (vorher 15 %).

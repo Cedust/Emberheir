@@ -685,9 +685,10 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   skills: [SOUL_REAP],
   baseLife: 260,
   boss: true,
-  // Its three phases echo six bosses at once: it hits like 45 % of a boss of its level (step 7:
-  // half made it half of the Act 7 deaths).
-  damage: 0.45,
+  // Its three phases echo six bosses at once: it hits like 40 % of a boss of its level (step 7:
+  // half made it half of the Act 7 deaths; 45 % until the endgame measurement 2026-10-28 moved
+  // damage from its attacks into Ash Aura).
+  damage: 0.4,
   // As tough against Physical as against Elemental (Timo): about 15 % each at the hero's level
   // (its Strength gives the Armor, COMBAT.monsterArmorPerLevel).
   bonuses: { allResistance: 0.15 },
@@ -705,7 +706,7 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
       effect: {
         kind: "spellHit",
         name: "Ash Aura",
-        damage: { min: 0.75, max: 1.1 },
+        damage: { min: 1.25, max: 1.8 },
         damageType: "fire",
       },
     },
@@ -774,7 +775,7 @@ export const HARVESTER_CORE: EnemyDefinition = {
       effect: {
         kind: "spellHit",
         name: "Last Flame",
-        damage: { min: 0.65, max: 1.0 },
+        damage: { min: 0.8, max: 1.2 },
         damageType: "fire",
       },
     },

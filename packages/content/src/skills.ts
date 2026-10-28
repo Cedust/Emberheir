@@ -971,9 +971,9 @@ export const HARVEST_SWING: SkillDefinition = {
   type: "attack",
   heatCost: 0,
   tags: ["void", "direct", "melee"],
-  description: "An announced sweep for 400 % Weapon Damage as Void.",
+  description: "An announced sweep for 500 % Weapon Damage as Void.",
   // Reap cuts flesh, the Swing cuts souls: the Harvester mixes Physical and Void (Timo).
-  hits: [{ kind: "weapon", multiplier: 4, damageType: "void" }],
+  hits: [{ kind: "weapon", multiplier: 5, damageType: "void" }],
 };
 
 /** Phase 2 telegraph: the Tyrant's Eruption and the Warden's cold. */
