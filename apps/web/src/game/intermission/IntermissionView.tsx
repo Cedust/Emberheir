@@ -25,7 +25,6 @@ import type { Settings } from "../../ui/settings";
 import { RunHeader } from "../RunHeader";
 import type { GameApi } from "../useGame";
 import { EquippedPanel, ItemCards, RuneDrops } from "./RewardCards";
-import { homeRuneOf } from "../actLoot";
 import {
   BountyCard,
   DoneCard,
@@ -211,7 +210,7 @@ export function IntermissionView(props: {
                 <RuneDrops
                   key={`runes-${run.encounter?.seed ?? run.stage}`}
                   runes={rewards.runes}
-                  home={homeRuneOf(run.actId)}
+                  act={act}
                 />
               )}
             </div>

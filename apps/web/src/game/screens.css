@@ -7025,17 +7025,6 @@
   }
 }
 
-.stage .rune-home-tag {
-  padding: 1px 7px;
-  border-radius: 999px;
-  border: 1px solid var(--rune);
-  color: var(--text);
-  background: color-mix(in srgb, var(--rune) 22%, var(--panel));
-  font-family: var(--font-title);
-  font-weight: 700;
-  letter-spacing: 0.04em;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .stage .rune-home-burst {
     display: none;
