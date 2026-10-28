@@ -33,7 +33,7 @@ import { BoonBar } from "../Boons";
 import type { IconName } from "../../ui/Icon";
 import { ENEMY_TYPE_NAMES, type EnemyTypeIcon, enemyTypeIcon } from "../../ui/gameIcons";
 import { HudScene } from "./hud/HudScene";
-import { EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
+import { type EliteMod, EnemyFrame, HeroBar, WEAPON_ICON } from "./hud/BattleHud";
 import { BAR_H } from "./hud/layout";
 import "./hud/hud.css";
 import { QUALITY, canvasResolution } from "../pixiPacing";
@@ -46,7 +46,7 @@ interface PlaqueInfo {
   /** The enemy's painted type (archetype or Warden Echo). */
   readonly typeIcon?: EnemyTypeIcon;
   readonly tag?: "ELITE" | "BOSS" | "GATEKEEPER" | "CHAMPION";
-  readonly mods?: readonly string[];
+  readonly mods?: readonly EliteMod[];
 }
 
 /** `?dev` in the URL shows fight speed and Skip for testing (not part of the game design). */
@@ -98,7 +98,9 @@ function useLooks(state: GameState, run: RunState) {
     ...(mastery?.axis ? { mastery: mastery.axis } : {}),
   };
   const weapon = heroWeapon(state, GAME_DATA).weapon;
-  const mods = encounter ? eliteModifiersOf(encounter, GAME_DATA).map((m) => m.name) : [];
+  const mods = encounter
+    ? eliteModifiersOf(encounter, GAME_DATA).map(({ name, description }) => ({ name, description }))
+    : [];
   const enemyLook: EnemyLook = {
     ...(enemyDef ? { id: enemyDef.id } : {}),
     archetype: enemyDef?.archetype ?? "brute",

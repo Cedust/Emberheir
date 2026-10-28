@@ -192,6 +192,8 @@ export interface FighterSnapshot {
   }[];
   /** Curses on this fighter (Wither) and Sunder. */
   readonly curses: readonly {
+    /** The skill that cast it (Wither, Hex, Crushing Blow) or Weapon Mastery's stacking Sunder. */
+    readonly id: string;
     readonly name: string;
     readonly dotDamageTaken: number;
     /** Sunder: share of Armor that no longer counts. */
