@@ -7,6 +7,7 @@ import {
   getBase,
   hearthEmbers,
   heroWeaponRank,
+  knownDraughts,
 } from "@emberheir/sim";
 import { BOSS_TRAIL_TEXT, TRAIL_TEXT, trailTitle } from "../hunts";
 
@@ -22,12 +23,14 @@ export type NotificationArt =
   | { readonly kind: "echo"; readonly color: string }
   | { readonly kind: "trail"; readonly tier: number }
   | { readonly kind: "waymark" }
+  | { readonly kind: "draught"; readonly id: string; readonly color: string }
   | { readonly kind: "icon"; readonly icon: "fire" | "flame" };
 
 export interface GameNotification {
   /** The same key is shown only once (a reload of the same rewards screen excepted). */
   readonly key: string;
-  readonly kind: "bounty" | "waymark" | "hearth" | "hunt" | "ashborn" | "echo" | "trophy" | "rank";
+  readonly kind:
+    "bounty" | "waymark" | "hearth" | "hunt" | "ashborn" | "echo" | "trophy" | "rank" | "draught";
   readonly title: string;
   readonly sub?: string;
   readonly art: NotificationArt;
@@ -125,6 +128,21 @@ export function notificationsFor(prev: GameState | null, next: GameState): GameN
   const rewards = next.run?.rewards;
   if (rewards && rewards !== prev?.run?.rewards && !prev?.run?.rewards) {
     out.push(...rewardNotifications(next));
+  }
+  // An element Draught learned (draughts-einfuehrung-v1.md). Iron, Ward and Vigor come with
+  // Liora's Story Blip instead.
+  if (prev) {
+    const before = new Set(knownDraughts(prev, GAME_DATA).map((d) => d.id));
+    for (const d of knownDraughts(next, GAME_DATA)) {
+      if (before.has(d.id) || !d.element) continue;
+      out.push({
+        key: `draught:${d.id}`,
+        kind: "draught",
+        title: "New Draught",
+        sub: `${d.name} · brew it at Eldrin`,
+        art: { kind: "draught", id: d.id, color: hex(d.color) },
+      });
+    }
   }
   if (prev && prev.hero.weaponId === next.hero.weaponId) {
     const before = heroWeaponRank(prev);

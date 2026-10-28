@@ -5,6 +5,7 @@ import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { useEffect, useState } from "react";
+import { CreditsPanel } from "./Credits";
 
 export function SettingsPanel(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
@@ -40,6 +41,13 @@ export function SettingsPanel(props: { api: SettingsApi }) {
       />
       <QualityRow api={props.api} />
       <FullscreenRow />
+      <OnOffRow
+        label="Tips"
+        tip="Old Nan's short tips the first time you reach something new."
+        kind="Game"
+        value={settings.tips}
+        onChange={(v) => update({ tips: v })}
+      />
 
       <h3 className="settings-head title-font">Sound</h3>
       <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
@@ -127,11 +135,13 @@ function OnOffRow(props: {
   value: boolean;
   onChange: (v: boolean) => void;
   tip?: string;
+  /** The tooltip's kind line (default Sound). */
+  kind?: string;
   sub?: boolean;
   muted?: boolean;
 }) {
   const hover = useNoteHover(
-    props.tip ? { name: props.label, kind: "Sound", explain: props.tip } : undefined,
+    props.tip ? { name: props.label, kind: props.kind ?? "Sound", explain: props.tip } : undefined,
   );
   return (
     <div className={`setting-row${props.sub ? " sub-row" : ""}${props.muted ? " muted" : ""}`}>
@@ -200,7 +210,7 @@ export function MenuOverlay(props: {
   onCheats?: (() => void) | undefined;
   onQuit: () => void;
 }) {
-  const [page, setPage] = useState<"main" | "settings">("main");
+  const [page, setPage] = useState<"main" | "settings" | "credits">("main");
   return (
     <WindowLayer>
       <Window
@@ -209,8 +219,13 @@ export function MenuOverlay(props: {
         className="menu-window"
         header={
           <WindowHeader
-            title={page === "main" ? "Menu" : "Settings"}
-            medallion={<Medallion icon={page === "main" ? "menu" : "gear"} tint="#5a4218" />}
+            title={page === "main" ? "Menu" : page === "settings" ? "Settings" : "Credits"}
+            medallion={
+              <Medallion
+                icon={page === "main" ? "menu" : page === "settings" ? "gear" : "star"}
+                tint="#5a4218"
+              />
+            }
             right={props.inFight && <span className="view-only title-font">FIGHT PAUSED</span>}
             onClose={props.onResume}
           />
@@ -232,9 +247,22 @@ export function MenuOverlay(props: {
                 Cheats
               </Button>
             )}
+            <Button big icon="star" onClick={() => setPage("credits")}>
+              Credits
+            </Button>
             <Button big variant="ghost" onClick={props.onQuit}>
               Quit to Title
             </Button>
+            <span className="menu-version mono">v{__APP_VERSION__}</span>
+          </div>
+        ) : page === "credits" ? (
+          <div className="menu-settings">
+            <CreditsPanel />
+            <div className="menu-foot">
+              <Button icon="prev" onClick={() => setPage("main")}>
+                Back
+              </Button>
+            </div>
           </div>
         ) : (
           <div className="menu-settings">

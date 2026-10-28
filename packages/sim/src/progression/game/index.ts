@@ -19,7 +19,7 @@ export {
   type Encounter,
   type ItemPick,
   type BountyDone,
-  type BountyReward,
+  type BountyCache,
   type Rewards,
   type HuntReward,
   type RunPhase,
@@ -131,7 +131,16 @@ export {
   bindPower,
   crucibleEffects,
 } from "./crucible";
-export { draughtsOpen, getDraught, brewedDraught, activeDraught, flaskCapacity } from "./flask";
+export {
+  draughtsOpen,
+  getDraught,
+  draughtKnown,
+  knownDraughts,
+  draughtAcorns,
+  brewedDraught,
+  activeDraught,
+  flaskCapacity,
+} from "./flask";
 export {
   getOmen,
   isOldAct,
@@ -141,7 +150,7 @@ export {
   tripOmenEffects,
   omenEffectsOf,
 } from "./omens";
-export { getBounty, bountyReward } from "./bounty";
+export { getBounty, bountyOffer, bountyCache, countsForBounty } from "./bounty";
 export {
   lootGate,
   itemPickWeights,

@@ -78,4 +78,16 @@ describe("notifications", () => {
     expect(n?.title).toMatch(/ Rank \d+$/);
     expect(notificationsFor(null, up)).toEqual([]);
   });
+
+  it("an element Draught learned from a beaten foe, never Iron, Ward or Vigor", () => {
+    const camp: GameState = { ...base, legacy: { ...base.legacy, prestige: 1 } };
+    expect(kinds(base, camp)).toEqual([]);
+    const beaten: GameState = {
+      ...camp,
+      legacy: { ...camp.legacy, hunts: { "cinder-caster": 1 } },
+    };
+    const out = notificationsFor(camp, beaten);
+    expect(out.map((n) => n.sub)).toEqual(["Fire Draught · brew it at Eldrin"]);
+    expect(kinds(beaten, beaten)).toEqual([]);
+  });
 });

@@ -528,8 +528,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Before you set out, Eldrin can brew one Flask charge into a Draught. It holds for the
-              whole trip.
+              Before you set out, Liora brews one Flask charge and a few <C id="acorns" /> into a
+              Draught. It holds for the whole trip. Pick it at Eldrin&apos;s Road.
             </p>
             <Facts
               rows={[
@@ -1023,12 +1023,14 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Eldrin hands out one Bounty for each trip: slay Elites, cull an enemy, catch the Ember
-              Thief, or beat the boss in style.
+              Eldrin offers two Bounties for each trip, take one if you like: hunt Elites, follow an
+              enemy&apos;s Trail, catch the Ember Thief, or beat the boss without the Flask. The act
+              map marks what counts.
             </p>
             <p>
-              Done? Turn it in with him back in the Camp for <C id="acorns" />, <C id="coal" /> and
-              an item of at least Rare. He has a new one only after that. Failed, nothing is lost.
+              Done? Turn it in with him back in the Camp. His Cache holds the act&apos;s Home Rune,
+              an item to pick, and what the Bounty promised: <C id="coal" />, Trail kills, more
+              items or rarer ones. He has new Bounties only after that. Failed, nothing is lost.
             </p>
           </>
         ),
@@ -1068,9 +1070,13 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               {
                 icon: currencyIcon("feathers"),
                 name: "Upgrade",
-                text: "Raises an item by one Tier. Its lines grow with it.",
+                text: "Raises an item by one Tier. Its lines grow with it, and so does its level.",
               },
-              { icon: currencyIcon("coal"), name: "Reforge", text: "Rolls all affixes anew." },
+              {
+                icon: currencyIcon("coal"),
+                name: "Reforge",
+                text: "Rolls all stat affixes anew. Triggers stay.",
+              },
               {
                 icon: currencyIcon("ash"),
                 name: "Salvage",
@@ -1088,8 +1094,9 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              <B>Temper</B> rolls one affix value again. After that, only that affix can change
-              until Thoric reforges the item.
+              <B>Temper</B> offers two choices for one affix: a new affix or a new value. Pick one
+              or keep the old line. After that, only that affix can change until Thoric reforges the
+              item.
             </p>
             <p>
               <B>Kindle</B> builds a trigger from the Trigger Codex onto an item, for <C id="ash" />{" "}

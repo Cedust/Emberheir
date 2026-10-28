@@ -59,9 +59,14 @@ export function missingRequirements(
 }
 
 /** Base values at a tier: flat values grow with the tier, percentages do not. */
-/** Hero level an item needs to be equipped (`ITEMS.requiredLevelGap` below its Item Level). */
+/**
+ * Hero level an item needs to be equipped: `ITEMS.requiredLevelGap` below its Item Level, or
+ * below the first Item Level of its Tier if Thoric upgraded it higher (crafting-audit-v1.md K3),
+ * so an upgraded item cannot make a fresh Heir strong through the shared stash.
+ */
 export function requiredLevel(item: Item): number {
-  return Math.max(1, item.itemLevel - ITEMS.requiredLevelGap);
+  const tierStart = (item.tier - 1) * ITEMS.itemLevelsPerTier + 1;
+  return Math.max(1, Math.max(item.itemLevel, tierStart) - ITEMS.requiredLevelGap);
 }
 
 /** Extra Ember Flask charges an item gives (the Belt affix "+1–2 Flask Charges"). */

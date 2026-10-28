@@ -22,7 +22,7 @@ import attributePointsUrl from "../assets/harvest/attribute-points.webp";
 import battlePlanUrl from "../assets/harvest/battle-plan.webp";
 import keystonePlaceUrl from "../assets/harvest/keystone-place.webp";
 import levelCapUrl from "../assets/harvest/level-cap.webp";
-import leafUrl from "../assets/tree/leaves-3.webp";
+import skillPointsUrl from "../assets/points/skill.webp";
 import { GAME_ICONS } from "../ui/gameIcons";
 import { useNoteHover } from "../ui/ItemTooltip";
 import { Button } from "../ui/kit/Button";
@@ -131,7 +131,7 @@ function harvestGains(state: GameState): Gain[] {
         ]),
     {
       id: "skill-points",
-      icon: leafUrl,
+      icon: skillPointsUrl,
       name: "Skill Points",
       value: `+${r.skillPoints}`,
       explain: "Spend them in the Ash Tree at Kaelen.",
@@ -171,7 +171,7 @@ function harvestGains(state: GameState): Gain[] {
             icon: vial,
             name: "Draughts",
             explain:
-              "Before you set out, turn a Flask charge into a Draught that lasts the whole trip.",
+              "Liora brews Iron, Ward and Vigor: a Flask charge and a few Acorns for a Draught that lasts the whole trip.",
           },
         ]
       : []),

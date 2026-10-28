@@ -226,6 +226,11 @@ export interface Item {
    * until a Reforge clears it.
    */
   readonly lockedAffix?: number;
+  /**
+   * Temper (like the Enchant of Diablo 3): the paid offer for the locked affix, waiting for a
+   * choice. Each option replaces that affix; keeping it drops the offer.
+   */
+  readonly temperOffer?: readonly AffixRoll[];
   /** Normal items only: empty Sockets plus socketed Runes (`runes.length` ≤ `sockets`). */
   readonly sockets?: number;
   /** Socketed Rune ids in order. The right order in the right base makes a Runeword. */
@@ -241,16 +246,14 @@ export interface Item {
   readonly greater?: { readonly index: number; readonly rank: number };
 }
 
-/** Which bonus of a Rune applies: in a weapon, or in armor (Off Hand, Helm, Body Armor). */
-export type RuneGroup = "weapon" | "armor";
-
 /** A Rune (docs/design/item-system-v1.md section 7): a small bonus, more in a Runeword. */
 export interface RuneDefinition {
   readonly id: string;
   readonly name: string;
   /** 1 = most common. Three of one rank combine into one of the next. */
   readonly rank: number;
-  readonly bonuses: Readonly<Record<RuneGroup, StatBonuses>>;
+  /** Its bonus in a socketed item (Off Hand, Helm, Body; the weapon has no Sockets). */
+  readonly bonuses: StatBonuses;
   /** Its third effect, in a Rune Socket of the Skill Web (neuausrichtung-v1.md 4.2). */
   readonly web?: RuneWebEffect;
 }

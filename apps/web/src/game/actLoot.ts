@@ -27,7 +27,7 @@ export function homeRuneNote(act: ActData): NoteHover | undefined {
       (high
         ? `In ${act.name}, 1 in ${every} Runes from Elites, Gatekeepers, Bosses and Caches is ${rune.name}.`
         : `In ${act.name}, 1 in ${every} Runes is ${rune.name}.`) +
-      ` Weapon: ${describeBonuses(rune.bonuses.weapon).join(", ")}.`,
+      ` Socketed: ${describeBonuses(rune.bonuses).join(", ")}.`,
   };
 }
 

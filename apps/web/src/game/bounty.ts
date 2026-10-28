@@ -3,11 +3,10 @@ import {
   type BountyDefinition,
   type BountyState,
   type GameState,
-  applyAction,
+  bountyOffer,
   bountyTarget,
   bountyText,
   getBounty,
-  omenOffer,
 } from "@emberheir/sim";
 
 export interface BountyView {
@@ -33,22 +32,16 @@ export function bountyView(state: BountyState): BountyView {
   return {
     def,
     state,
-    text: bountyText(def, enemyName(state.enemyId)),
-    target: bountyTarget(def.goal),
+    text: bountyText(def, enemyName(state.enemyId), state),
+    target: bountyTarget(def.goal, state),
   };
 }
 
-/**
- * The bounty the Scout hands out when the hero sets out for `actId` now. The sim is
- * deterministic, so this is exactly the bounty the trip will carry.
- */
-export function bountyPreview(state: GameState, actId: string): BountyView | undefined {
+/** The two bounties Eldrin offers for a trip to `actId` (none while one waits to be turned in). */
+export function bountyOfferViews(state: GameState, actId: string): BountyView[] {
   try {
-    // The Omen does not change the bounty; an old act just needs one to set out.
-    const omens = omenOffer(state, GAME_DATA, actId).slice(0, 1);
-    const bounty = applyAction(state, GAME_DATA, { type: "setOut", actId, omens }).run?.bounty;
-    return bounty ? bountyView(bounty) : undefined;
+    return bountyOffer(state, GAME_DATA, actId).map(bountyView);
   } catch {
-    return undefined;
+    return [];
   }
 }

@@ -36,6 +36,15 @@ test("The harvest boss falls: one Harvest window, wake as the next generation", 
   // A reload keeps the new generation.
   await page.reload();
   await page.getByRole("button", { name: /Continue/ }).click();
+  // Liora brews her first Draughts (draughts-einfuehrung-v1.md).
+  const liora = page.getByRole("dialog", { name: "Liora, Mystic" });
+  await expect(liora).toContainText("can brew you a Draught");
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(1500);
+    await page.screenshot({ path: `${process.env.SHOTS}/liora-draughts.png` });
+  }
+  await liora.getByRole("button", { name: /pick one at Eldrin/ }).click();
+  await expect(liora).toBeHidden();
   const camp = page.getByRole("region", { name: "Camp" });
   await expect(camp).toContainText("Generation 2");
 
@@ -64,7 +73,10 @@ test("The harvest boss falls: one Harvest window, wake as the next generation", 
   await page.getByRole("button", { name: /6 points back\?/ }).click();
   // They are spent anew in the Character Sheet.
   await page.keyboard.press("c");
-  await expect(page.getByTestId("attribute-points")).toContainText("8 Attribute Points");
+  await expect(page.getByTestId("attribute-points")).toHaveAttribute(
+    "aria-label",
+    "8 Attribute Points",
+  );
   for (const a of ["Dexterity", "Dexterity", "Intelligence"]) {
     await page.getByRole("button", { name: `Add ${a}` }).click();
   }

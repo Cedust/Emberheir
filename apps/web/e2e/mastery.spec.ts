@@ -20,7 +20,10 @@ test("Heirloom: the painted weapon, its points, a Keystone and the Echo", async 
   const plate = page.getByTestId("weapon-name");
   await expect(plate).toContainText("ASCENDANT · RANK 13");
   await expect(plate).toContainText("Ascendant Sword of Ashfall Wrath");
-  await expect(page.getByTestId("mastery-points")).toContainText("3 Heirloom Points");
+  await expect(page.getByTestId("mastery-points")).toHaveAttribute(
+    "aria-label",
+    "3 Heirloom Points",
+  );
   if (process.env.SHOTS) {
     await page.waitForTimeout(1500);
     await page.screenshot({ path: `${process.env.SHOTS}/mastery.png` });
@@ -37,7 +40,10 @@ test("Heirloom: the painted weapon, its points, a Keystone and the Echo", async 
   await detail.getByRole("button", { name: /Choose/ }).click();
   await expect(plate).toContainText("Ascendant Parrying Blade of Ashfall Wrath");
   await page.getByRole("button", { name: "Confirm" }).click();
-  await expect(page.getByTestId("mastery-points")).toContainText("0 Heirloom Points");
+  await expect(page.getByTestId("mastery-points")).toHaveAttribute(
+    "aria-label",
+    "0 Heirloom Points",
+  );
 
   // Another Echo.
   const echo = page.getByRole("region", { name: "Echo" });

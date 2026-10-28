@@ -1,8 +1,9 @@
 import type { DraughtDefinition } from "@emberheir/sim";
 
 /**
- * Draughts (balance-grundlagen-v1.md F): one Flask charge brewed before setting out, working
- * until the Camp. Defensive only. Starting values for the balance CLI.
+ * Draughts (balance-grundlagen-v1.md F): one Flask charge and a few Acorns brewed before setting
+ * out, working until the Camp. Defensive only. Iron, Ward and Vigor come with the first Prestige,
+ * an element Draught with the first beaten foe of its element (draughts-einfuehrung-v1.md).
  */
 const element = (
   id: "fire" | "cold" | "lightning" | "void",
@@ -15,6 +16,7 @@ const element = (
     name,
     description: `+20 % ${label} Resistance, +5 % max ${label} Resistance`,
     explain: `Brewed against ${label}: your ${label} Resistance rises, and its cap goes up from 75 % to 80 %. Pick it for an act whose boss hits with ${label}.`,
+    element: id,
     color,
     bonuses: { [`${id}Resistance`]: 0.2 },
     rules: { maxResistance: { [id]: 0.05 } },

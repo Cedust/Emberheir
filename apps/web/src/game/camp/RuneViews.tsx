@@ -107,9 +107,7 @@ export function RuneBoard(props: {
                 <span className="rune-next sub">→ {found.has(next.id) ? next.name : "?"}</span>
               )}
               {known && (
-                <span className="rune-bonus sub">
-                  {describeBonuses(r.bonuses.weapon).join(", ")}
-                </span>
+                <span className="rune-bonus sub">{describeBonuses(r.bonuses).join(", ")}</span>
               )}
             </button>
           );
@@ -186,7 +184,7 @@ export function GamblePanel({
     (a, b) => GAMBLE_ORDER.indexOf(a) - GAMBLE_ORDER.indexOf(b),
   );
   const last = props.last ?? undefined;
-  const { active, ...hover } = useItemHover(last, false);
+  const { active, tip: hover } = useItemHover(last, false);
   const lastSlot = last && getBase(ITEM_CATALOG, last.baseId).slot;
   const slot = lastSlot ?? props.selected;
   const shape = slot && slotShape(slot, "gamble-shape");

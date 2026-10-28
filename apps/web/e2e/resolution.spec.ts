@@ -14,6 +14,8 @@ const SCREENS = [
   { name: "16:10", width: 1680, height: 1050 },
   { name: "4K", width: 3840, height: 2160 },
   { name: "21:9", width: 2560, height: 1080 },
+  // Tablets (tablet-plan-v1.md): 4:3 is the narrowest landscape screen.
+  { name: "iPad", width: 1024, height: 768 },
 ];
 
 /** Problems on the current screen: page scroll, a scrolling panel or a stage that misses the window. */
@@ -153,6 +155,8 @@ for (const screen of SCREENS) {
     await expect(page.getByRole("region", { name: "The Harvest" })).toBeVisible();
     await check("harvest");
     await page.getByRole("button", { name: "Let It Burn" }).click();
+    // Liora tells of her first Draughts.
+    await page.getByRole("button", { name: /pick one at Eldrin/ }).click();
     // Marisha joined on the road by now; she only gambles: the Black Market opens on it.
     await page.getByRole("button", { name: "Marisha, Black Market" }).click();
     await check("gamble");

@@ -1913,6 +1913,9 @@
 }
 
 .stage .draught-label {
+  display: grid;
+  justify-items: center;
+  gap: 2px;
   margin-right: 4px;
   color: #f3e6c8;
 }
@@ -2226,15 +2229,34 @@
 
 .stage .road-trip .finale-button,
 .stage .road-trip .wildfire-picker,
-.stage .road-trip .draught-picker {
-  align-self: flex-start;
-}
-
 .stage .road-go {
   display: flex;
   align-items: center;
   justify-content: flex-end;
   gap: 16px;
+}
+
+/* The Flask for the trip sits by the set-out, apart from the bounties: Draughts on the parchment. */
+.stage .road-flask {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-right: auto;
+}
+
+.stage .road-flask .draught-picker {
+  padding: 2px 4px;
+  border: none;
+  border-radius: 0;
+  background: none;
+}
+
+.stage .road-flask .draught-label {
+  color: inherit;
+  font-family: var(--font-title);
+  font-size: 13px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 /* Old Nan: the Hades dialogue box at the bottom of the dimmed Camp. */
@@ -2413,6 +2435,167 @@
 
 .stage .bounty-item {
   cursor: help;
+}
+
+/* Bounties v2: what a bounty pays, Eldrin's Cache, the nodes that count on the act map. */
+.stage .bounty-pay {
+  display: flex;
+  align-items: flex-end;
+  gap: 12px;
+  margin-top: 4px;
+}
+
+/* Every icon of the pay line as a box of its own, so all of them sit on one line (an inline image
+   sits on the text's baseline and floats above the others). */
+.stage .bounty-pay > span {
+  display: inline-flex;
+  align-items: center;
+}
+
+.stage .bounty-pay img,
+.stage .bounty-pay svg {
+  display: block;
+}
+
+.stage .bounty-pay > .words {
+  align-self: center;
+}
+
+.stage .bounty-bonus {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: var(--text-sub);
+}
+
+.stage .bounty-offer .bounty-text {
+  font-size: 13px;
+  line-height: 1.3;
+  color: #e8dcc4;
+}
+
+.stage .bounty-offer .bounty-bonus {
+  color: #e8dcc4;
+}
+
+.stage .bounty-cards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 6px 0;
+}
+
+/* Eldrin's Cache: small cards like the Boss Hoard's, the painted item with room around it. */
+.stage .cache-card {
+  width: 150px;
+  padding: 10px 8px;
+  gap: 4px;
+}
+
+.stage .cache-card:hover,
+.stage .cache-card:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.stage .cache-art {
+  width: 76px;
+  height: 76px;
+}
+
+.stage .cache-name {
+  font-size: 14px;
+  line-height: 1.15;
+}
+
+.stage .bounty-cache .bounty-leave {
+  align-self: flex-start;
+}
+
+/* Eldrin's painted Cache (eldrins-cache-art-v1.md): the closed chest waits beside a done bounty,
+   the open one glows beside its cards. */
+.stage .bounty-note.done,
+.stage .bounty-cache {
+  position: relative;
+  padding-right: 150px;
+}
+
+.stage .bounty-note.done {
+  min-height: 128px;
+}
+
+.stage .bounty-cache {
+  padding-right: 230px;
+  min-height: 200px;
+}
+
+.stage .cache-chest {
+  position: absolute;
+  top: 50%;
+  right: 14px;
+  width: 136px;
+  transform: translateY(-50%);
+  filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45));
+  pointer-events: none;
+  user-select: none;
+}
+
+/* The item pick on a bounty card: Eldrin's Cache in small. */
+.stage .cache-mini {
+  width: 36px;
+  height: 31px;
+  object-fit: contain;
+  filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.5));
+}
+
+.stage .cache-chest.open {
+  right: 18px;
+  width: 196px;
+  animation:
+    cache-open 0.45s ease-out both,
+    cache-glow 2.4s 0.45s ease-in-out infinite;
+}
+
+@keyframes cache-open {
+  from {
+    opacity: 0;
+    transform: translateY(-46%) scale(0.88);
+  }
+}
+
+@keyframes cache-glow {
+  50% {
+    filter: drop-shadow(0 3px 4px rgb(0 0 0 / 0.45)) drop-shadow(0 0 14px rgb(255 170 60 / 0.55));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .cache-chest.open {
+    animation: none;
+  }
+}
+
+.stage .map-node-bounty {
+  position: absolute;
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: #ffd27a;
+  background: #3b5a2c;
+  border: 1px solid #9fbf7a;
+  pointer-events: none;
+}
+
+.stage .node-bounty {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
 }
 
 /* --- persona (Thoric, Liora) ---------------------------------------------------------------- */
@@ -2636,6 +2819,37 @@
 .stage .affix-line.on {
   border-color: var(--accent);
   background: rgb(255 138 58 / 0.12);
+}
+
+.stage .temper-offer {
+  gap: 8px;
+}
+
+.stage .temper-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--edge);
+  background: transparent;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .temper-tile:hover {
+  border-color: var(--accent);
+}
+
+.stage .temper-tile.on {
+  border-color: var(--accent);
+  background: rgb(255 138 58 / 0.12);
+}
+
+.stage .temper-tile-text {
+  font-weight: 600;
 }
 
 .stage .locked-in {
@@ -7148,10 +7362,12 @@
 }
 
 .stage .hoard-art .item-art,
+.stage .cache-art .item-art,
 .stage .trophy-art .item-art {
   display: block;
   width: 100%;
   height: 100%;
+  object-fit: contain;
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
 }
 
@@ -10091,4 +10307,88 @@
     opacity: 0;
     transform: translate(12px, -90px);
   }
+}
+
+/* Credits (Credits.tsx): Kindled by Cedust on top, then code, art, fonts and libraries. */
+.stage .credits {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 0 32px;
+  text-align: center;
+}
+
+.stage .credits-kindled {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+}
+
+.stage .credits-kicker {
+  font-size: 15px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+}
+
+.stage .credits-name {
+  font-size: 40px;
+  font-weight: 900;
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.stage .credits-name:hover,
+.stage .credits-name:focus-visible {
+  text-decoration: underline;
+}
+
+.stage .credits-role,
+.stage .credits-note {
+  font-size: 15px;
+  color: var(--text-sub);
+}
+
+.stage .credits-list {
+  display: grid;
+  grid-template-columns: max-content 1fr;
+  gap: 10px 20px;
+  margin: 0;
+  text-align: left;
+}
+
+.stage .credits-list dt {
+  font-size: 15px;
+  color: var(--accent-2);
+}
+
+.stage .credits-list dd {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  font-size: 17px;
+}
+
+.stage .credits-thanks {
+  margin: 0;
+  font-style: italic;
+}
+
+.stage .credits-version {
+  margin: 0;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+.stage .menu-version {
+  align-self: center;
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+/* First Steps (tips/TipDialog.tsx): Old Nan's tip sits low, like her window by the fire. */
+.stage .tip-stage .k-dialog-portrait {
+  width: 220px;
+  height: 220px;
 }

@@ -292,11 +292,11 @@ export const PROGRESSION = {
   flaskHeal: 0.35,
 
   /**
-   * Bounties from the Scout: a done bounty pays this many normal kills' worth of Acorns at the act
-   * boss's level, Ember Coal and one item of at least Rare. While "catch the Ember Thief" is
-   * open, the thief shows up this much more often.
+   * Eldrin's Bounties (bounties-v2-plan.md): while "catch the Ember Thief" is open, the thief
+   * shows up this much more often. A Cache holds the act's Home Rune; a top-rank one (Volt, Dusk)
+   * only this often, otherwise a Rune rolls like at a Cache node.
    */
-  bounty: { acornKills: 10, emberCoal: 2, thiefBoost: 5 },
+  bounty: { thiefBoost: 5, highHomeRuneChance: 0.25 },
   /**
    * The world burns anew (neuausrichtung-v1.md 5.1): from run 2 on every act of a run is at the
    * new level. Act 1 starts this many levels below the Level Cap of the run before (the hero's

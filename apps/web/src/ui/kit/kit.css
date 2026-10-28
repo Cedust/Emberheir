@@ -555,6 +555,15 @@
   filter: drop-shadow(0 1px 1px rgb(0 0 0 / 0.35));
 }
 
+/* Points (Skill, Heirloom, Attribute) wear their painted icon like a coin; some are wider. */
+.stage .k-point {
+  object-fit: contain;
+}
+
+.stage .k-points.has b {
+  color: var(--accent);
+}
+
 .stage .k-gain {
   font-size: 13px;
   color: var(--heal);
@@ -762,6 +771,65 @@
 
 .stage .tip-hotkey .k-key {
   color: #e8e2d6;
+}
+
+/* --- Touch (tablet-plan-v1.md) -------------------------------------------------------------------- */
+
+/* No text selection, long-press callout, tap flash or double-tap zoom: it is a game, not a page. */
+html {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
+}
+
+.stage-viewport {
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.stage-viewport input,
+.stage-viewport textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.stage-viewport img {
+  -webkit-user-drag: none;
+}
+
+/* Items are picked up with a tap, never dragged by a finger (Safari would lift them). */
+html[data-input="touch"] .stage [draggable="true"] {
+  -webkit-user-drag: none;
+}
+
+/* Key caps and right-click hints only mean something with a keyboard and a mouse. */
+html[data-input="touch"] .stage kbd,
+html[data-input="touch"] .stage .tip-mouse-only,
+html[data-input="touch"] .stage .tip-hotkey:not(.ib-compare-hint) {
+  display: none;
+}
+
+/* A long press opens a tooltip that stays: its buttons take taps. */
+html[data-input="touch"] .stage .item-tooltip-row {
+  pointer-events: auto;
+}
+
+.stage .tip-touch-action {
+  display: none;
+}
+
+html[data-input="touch"] .stage .tip-touch-action {
+  display: inline-flex;
+  justify-content: center;
+  align-self: stretch;
+  margin-top: 10px;
+}
+
+html[data-input="touch"] .stage .ib-compare-hint {
+  padding: 4px 12px;
+  border: 1px solid currentColor;
+  border-radius: 4px;
 }
 
 /* --- ?uikit preview page (not part of the game) -------------------------------------------------- */

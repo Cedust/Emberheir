@@ -146,6 +146,29 @@ export function saveGreater(): string {
   });
 }
 
+/** A Camp with Liora: a Rare ring with a perfect trigger, Ash and Ember Coal to craft. */
+export function saveCrafting(): string {
+  const camp = JSON.parse(saveWildfire()) as GameState;
+  const ring: Item = {
+    id: "craft-ring",
+    baseId: "iron-ring",
+    name: "Lucky Iron Ring",
+    rarity: "rare",
+    itemLevel: 98,
+    tier: 10,
+    affixes: [
+      { affixId: "life", quality: 0.4 },
+      { affixId: "crit-chance", quality: 0.2 },
+      { affixId: "second-wind", quality: 1 },
+    ],
+  };
+  return serializeGame({
+    ...camp,
+    wallet: { ...camp.wallet, ash: 50_000, acorns: 50_000, emberCoal: 20 },
+    inventory: [{ item: ring, x: 0, y: 0 }],
+  });
+}
+
 /** After The Last Ember: a Legendary ring to salvage, Leech Bloom already in the Power Codex. */
 export function saveCrucible(): string {
   const camp = JSON.parse(saveWildfire()) as GameState;
