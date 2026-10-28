@@ -86,6 +86,8 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   await expect(page.getByText("Stage 1 cleared")).toBeVisible();
   await expect(page.getByTestId("auto-rewards")).toContainText("XP");
   await expect(page.getByTestId("item-card")).toHaveCount(0);
+  // No loot was shown, so nothing reads as taken away (offene-punkte.md, 2026-10-16).
+  await expect(page.getByRole("region", { name: "Intermission" })).not.toContainText(/salvage/i);
   // Stage 2 forks into three lanes: the road waits for a choice.
   await expect(
     page.getByRole("radiogroup", { name: "Choose a path" }).getByRole("radio"),

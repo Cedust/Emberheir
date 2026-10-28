@@ -539,14 +539,14 @@ function wonFight(state: GameState): Partial<RunState> {
     rank: "normal",
     xp: 30,
     acorns: 10,
-    ash: 4,
+    ash: 16,
     emberCoal: 0,
     phoenixFeathers: 0,
     runes: [],
     levelsGained: 0,
     items: [],
     itemPick: { kind: "salvageAll" },
-    salvagedAsh: 12,
+    salvagedAsh: 0,
   };
   return {
     phase: "rewards",

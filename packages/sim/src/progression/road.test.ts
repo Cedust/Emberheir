@@ -96,8 +96,9 @@ describe("Item picks: fewer, but weightier", () => {
     const rewards = s.run?.rewards;
     expect(rewards?.items).toEqual([]);
     expect(rewards?.itemPick).toEqual({ kind: "salvageAll" });
-    expect(rewards?.salvagedAsh).toBeGreaterThan(0);
-    expect(s.wallet.ash).toBeGreaterThan(ash);
+    // The cards are paid as plain Ash, not shown as a salvage.
+    expect(rewards?.salvagedAsh).toBe(0);
+    expect(s.wallet.ash).toBe(ash + (rewards?.ash ?? 0));
     expect(s.run?.fights).toBe(1);
     // Salvage All is a no-op there, so the usual flow goes on.
     expect(applyAction(s, data, { type: "salvageAll" })).toBe(s);

@@ -190,7 +190,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       ...(huntBoss && huntAfter >= 2 ? { trophyChance: HUNT.bossTrophyChance } : {}),
     },
   );
-  // Fewer, weightier picks: most normal fights pay Ash for their cards at once. Every
+  // Fewer, weightier picks: most normal fights pay their cards as plain Ash (no items shown). Every
   // `pickEvery`'th normal fight of the trip offers a pick (act-karte-entwurf-v1.md, K4).
   const normalFights = (run.fights ?? 0) + (rank === "normal" ? 1 : 0);
   // A Hunt node's quarry always offers a pick.
@@ -330,7 +330,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         rank,
         xp,
         acorns: auto.acorns,
-        ash: auto.ash,
+        ash: auto.ash + autoAsh,
         emberCoal: stones,
         phoenixFeathers: feathers,
         runes,
@@ -365,7 +365,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
           : {}),
         ...(pick
           ? { itemPick: null, salvagedAsh: 0 }
-          : { itemPick: { kind: "salvageAll" as const }, salvagedAsh: autoAsh }),
+          : { itemPick: { kind: "salvageAll" as const }, salvagedAsh: 0 }),
       },
     },
   };
