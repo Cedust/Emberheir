@@ -307,7 +307,7 @@ export function BountyCacheView(props: {
 /** One card of Eldrin's Cache: the item with room around it, its name and slot; a click takes it. */
 function CacheCard(props: { item: Item; onTake: () => void }) {
   const { item } = props;
-  const { active, ...hover } = useItemHover(item, false, "Take");
+  const { active, tip: hover } = useItemHover(item, false, "Take", props.onTake);
   const slot = getBase(GAME_DATA.items, item.baseId).slot;
   return (
     <button

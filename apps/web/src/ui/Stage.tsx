@@ -65,6 +65,11 @@ export function Stage(props: { children: ReactNode }) {
         >
           {props.children}
         </div>
+        {/* Tablets in portrait: the game is laid out for landscape (game.css shows this). */}
+        <div className="rotate-hint" aria-hidden="true">
+          <span className="rotate-hint-icon" />
+          <span>Turn your tablet sideways</span>
+        </div>
       </div>
     </StageContext.Provider>
   );

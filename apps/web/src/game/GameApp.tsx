@@ -16,6 +16,8 @@ import { EndingScreen, NoticeScreen } from "./NoticeScreen";
 import { HarvestBurn, PrestigeView } from "./PrestigeView";
 import { StoryBlipDialog } from "./StoryBlip";
 import { TitleScreen } from "./TitleScreen";
+import { TipDialog } from "./tips/TipDialog";
+import { type TipId, loadSeenTips, pickTip, saveSeenTips } from "./tips/tips";
 import { BattleView } from "./lazyViews";
 import { CampView } from "./camp/CampView";
 import type { CampTarget } from "./camp/campPersonas";
@@ -54,6 +56,24 @@ export function GameApp() {
     state && !inFight && !state.notice && !state.pendingPrestige && !burning
       ? (state.blips?.[0] ?? null)
       : null;
+  // Old Nan's First Steps: one line the first time a new player reaches each moment.
+  const [seenTips, setSeenTips] = useState(loadSeenTips);
+  const tip =
+    state && settings.settings.tips
+      ? pickTip(
+          {
+            state,
+            covered:
+              overlay !== null || (!run && campScreen !== null) || blip !== null || !!burning,
+          },
+          seenTips,
+        )
+      : null;
+  const doneTip = (id: TipId) => {
+    const next = new Set(seenTips).add(id);
+    setSeenTips(next);
+    saveSeenTips(next);
+  };
 
   const toggle = (o: Exclude<Overlay, null>) => setOverlay((cur) => (cur === o ? null : o));
 
@@ -68,7 +88,7 @@ export function GameApp() {
         setOverlay((cur) => (cur === "cheats" ? null : "cheats"));
         return;
       }
-      if (state.notice || state.pendingPrestige || blip) return;
+      if (state.notice || state.pendingPrestige || blip || tip) return;
       const key = e.key.toLowerCase();
       if (key === "escape") {
         if (overlay) setOverlay(null);
@@ -95,7 +115,7 @@ export function GameApp() {
     };
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
-  }, [state, lab, overlay, run, campScreen, inFight, blip]);
+  }, [state, lab, overlay, run, campScreen, inFight, blip, tip]);
 
   if (lab) {
     return (
@@ -254,7 +274,7 @@ export function GameApp() {
           run={run}
           game={game}
           settings={settings.settings}
-          paused={overlay !== null}
+          paused={overlay !== null || tip !== null}
           onCharacter={() => toggle("character")}
           onTree={() => toggle("tree")}
           onMenu={() => setOverlay("menu")}
@@ -268,7 +288,7 @@ export function GameApp() {
         run={run}
         game={game}
         settings={settings.settings}
-        covered={overlay !== null || blip !== null}
+        covered={overlay !== null || blip !== null || tip !== null}
         onCharacter={() => toggle("character")}
         onTree={() => toggle("tree")}
         onPlan={() => toggle("plan")}
@@ -299,6 +319,19 @@ export function GameApp() {
                 key={`${blip}-${state?.blips?.length ?? 0}`}
                 blip={blip}
                 onDone={() => game.dispatch({ type: "dismissBlip" })}
+              />
+            )}
+          </Presence>
+          <Presence>
+            {tip && (
+              <TipDialog
+                key={tip}
+                tip={tip}
+                onDone={() => doneTip(tip)}
+                onNoMore={() => {
+                  doneTip(tip);
+                  settings.update({ tips: false });
+                }}
               />
             )}
           </Presence>

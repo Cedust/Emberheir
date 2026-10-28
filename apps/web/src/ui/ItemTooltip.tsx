@@ -14,6 +14,7 @@ import { useCompareKey } from "./compareToggle";
 import { CompareList, ItemBody, ItemHead, itemTip, rarityClass } from "./ItemBody";
 import { aimedSlot, useRingSlot } from "./ringSlot";
 import { useStageSize } from "./Stage";
+import { closePressedTip, installTouch, setTitleTip, tipHandlers } from "./touch";
 import { type CompareView, compareWithEquipped } from "./itemCompare";
 import { WeaponTooltipCard } from "./WeaponTooltip";
 import type { WeaponTip } from "./weaponTip";
@@ -65,6 +66,8 @@ interface Hover {
   readonly equipped: boolean;
   /** What a right-click does here, e.g. "Equip" (ui-ux-plan-v1.md 3.5). */
   readonly action?: string | undefined;
+  /** Runs the right-click action; on touch the tooltip shows it as a button. */
+  readonly run?: (() => void) | undefined;
 }
 
 interface HoverApi {
@@ -77,8 +80,19 @@ interface HoverApi {
 
 const HoverContext = createContext<HoverApi | null>(null);
 
-/** Mouse handlers that show an item's tooltip; no-ops outside an `ItemHoverLayer`. */
-export function useItemHover(item: Item | undefined, equipped = false, action?: string) {
+/** No tooltip here: no handlers, typed like the real ones. */
+const NO_TIP: Partial<ReturnType<typeof tipHandlers>> = {};
+
+/**
+ * Handlers that show an item's tooltip; no-ops outside an `ItemHoverLayer`. `run` is what a
+ * right-click does (named by `action`); on touch the tooltip offers it as a button.
+ */
+export function useItemHover(
+  item: Item | undefined,
+  equipped = false,
+  action?: string,
+  run?: () => void,
+) {
   const api = useContext(HoverContext);
   // A tooltip shown by this element goes away with it (a card taken from Eldrin's Cache).
   const shown = useRef(false);
@@ -89,23 +103,19 @@ export function useItemHover(item: Item | undefined, equipped = false, action?: 
     [api],
   );
   return useMemo(() => {
-    if (!api || !item) return { active: false as const };
+    if (!api || !item) return { active: false as const, hide: undefined, tip: NO_TIP };
     const show = (target: Element) => {
       shown.current = true;
-      api.show({ item, equipped, action }, target);
+      api.show({ item, equipped, action, run }, target);
     };
     const hide = () => {
       shown.current = false;
       api.hide();
     };
-    return {
-      active: true as const,
-      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
-      onMouseLeave: hide,
-      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
-      onBlur: hide,
-    };
-  }, [api, item, equipped, action]);
+    // The handlers read the ref only in events, never while rendering.
+    // eslint-disable-next-line react-hooks/refs
+    return { active: true as const, hide, tip: tipHandlers(show, hide) };
+  }, [api, item, equipped, action, run]);
 }
 
 /** Mouse and focus handlers that show a Breakpoint Perk's tooltip. */
@@ -113,14 +123,9 @@ export function usePerkHover(perk: PerkHover) {
   const api = useContext(HoverContext);
   const { perk: id, status, value } = perk;
   return useMemo(() => {
-    if (!api) return {};
+    if (!api) return NO_TIP;
     const hover = { perk: { perk: id, status, value } };
-    return {
-      onMouseEnter: (e: React.MouseEvent) => api.show(hover, e.currentTarget),
-      onMouseLeave: () => api.hide(),
-      onFocus: (e: React.FocusEvent) => api.show(hover, e.currentTarget),
-      onBlur: () => api.hide(),
-    };
+    return tipHandlers((element) => api.show(hover, element), api.hide);
   }, [api, id, status, value]);
 }
 
@@ -142,7 +147,7 @@ export function useNoteHover(note: NoteHover | undefined) {
     [api],
   );
   return useMemo(() => {
-    if (!api || !name) return {};
+    if (!api || !name) return NO_TIP;
     const hover = {
       note: {
         name,
@@ -161,12 +166,9 @@ export function useNoteHover(note: NoteHover | undefined) {
       shown.current = false;
       api.hide();
     };
-    return {
-      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
-      onMouseLeave: hide,
-      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
-      onBlur: hide,
-    };
+    // The handlers read the ref only in events, never while rendering.
+    // eslint-disable-next-line react-hooks/refs
+    return tipHandlers(show, hide);
     // The bullets come as a new array on every render: compare them by content.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [api, name, kind, explain, bulletKey, status, hotkey]);
@@ -179,14 +181,8 @@ export function useNoteHover(note: NoteHover | undefined) {
 export function useWeaponHover(tip: () => WeaponTip) {
   const api = useContext(HoverContext);
   return useMemo(() => {
-    if (!api) return {};
-    const show = (element: Element) => api.show({ weapon: tip() }, element);
-    return {
-      onMouseEnter: (e: React.MouseEvent) => show(e.currentTarget),
-      onMouseLeave: () => api.hide(),
-      onFocus: (e: React.FocusEvent) => show(e.currentTarget),
-      onBlur: () => api.hide(),
-    };
+    if (!api) return NO_TIP;
+    return tipHandlers((element) => api.show({ weapon: tip() }, element), api.hide);
   }, [api, tip]);
 }
 
@@ -225,6 +221,15 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
   );
   const hide = useCallback(() => setHover(null), []);
   const api = useMemo(() => ({ show, hide }), [show, hide]);
+  // Touch: a long press on anything with a plain `title` shows it like a note.
+  useEffect(() => {
+    installTouch();
+    setTitleTip((element, text) => {
+      show({ note: { name: text, kind: "", explain: "" } }, element);
+      return hide;
+    });
+    return () => setTitleTip(null);
+  }, [show, hide]);
 
   // Place the tooltip right of the item, or left when there is no room; keep it on screen.
   useLayoutEffect(() => {
@@ -266,6 +271,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
           <div
             ref={boxRef}
             className="item-tooltip-row"
+            data-tip-box=""
             style={pos ? { left: pos.left, top: pos.top } : { left: 0, top: 0, opacity: 0 }}
             data-testid="item-tooltip"
           >
@@ -280,6 +286,7 @@ export function ItemHoverLayer(props: { state: GameState | null; children: React
                   !hover.equipped && state ? compareWithEquipped(state, hover.item) : undefined
                 }
                 action={hover.action}
+                run={hover.run}
               />
             )}
             {worn && <ItemTooltipCard item={worn} state={state} tag="Equipped" />}
@@ -369,6 +376,8 @@ export function ItemTooltipCard(props: {
   compare?: CompareView | undefined;
   /** What a right-click does where the item sits. */
   action?: string | undefined;
+  /** Runs it: a button on touch, where there is no right-click. */
+  run?: (() => void) | undefined;
 }) {
   const { item } = props;
   const tip = itemTip(item, props.state);
@@ -379,10 +388,29 @@ export function ItemTooltipCard(props: {
       <ItemBody item={item} tip={tip} />
       {props.compare && <CompareList view={props.compare} />}
       {props.action && (
-        <span className="tip-hotkey">
+        <span className="tip-hotkey tip-mouse-only">
           <kbd className="k-key">Right-click</kbd> {props.action}
         </span>
       )}
+      {props.action && props.run && <TouchAction label={props.action} run={props.run} />}
     </div>
+  );
+}
+
+/** On touch: the right-click action as a button at the foot of the tooltip. */
+function TouchAction(props: { label: string; run: () => void }) {
+  const run = props.run;
+  return (
+    <button
+      type="button"
+      className="k-btn k-primary tip-touch-action"
+      data-testid="tip-action"
+      onClick={() => {
+        closePressedTip();
+        run();
+      }}
+    >
+      <span>{props.label}</span>
+    </button>
   );
 }

@@ -708,6 +708,9 @@ Endgame **Wildfire I–X**.
 - **Keine Spoiler:** Die UI zeigt nur die Acts des aktuellen Runs (Run n = Acts 1..n). Ein Boss heißt „???“,
   bis der Heir ihm begegnet ist (oder der Act in diesem/einem früheren Run fiel). Gilt für Road, Camp-Kopf, Eldrin,
   Up Next, Old Nans Sprüche, Trophy Wall, Trigger Codex und das Compendium (noch nicht gesehene Seiten und Kapitel stehen dort als „Locked“, ohne Namen).
+- **First Steps (Release 1.0):** Old Nan sagt neuen Spielern beim ersten Mal je einen kurzen Satz (Camp, Road, erster Kampf,
+  Skill Points, Item Pick, Tod, Rückkehr ins Camp). Jeder Tipp kommt einmal pro Browser, „No more tips.“ oder Settings → Tips schaltet sie ab.
+  Nur UI. Dazu Absturzschutz („The fire flickered“ mit Reload), Versionsnummer im Titel und Menü und Credits („Kindled by Cedust“).
 
 ---
 

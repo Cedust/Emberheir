@@ -184,7 +184,7 @@ export function GamblePanel({
     (a, b) => GAMBLE_ORDER.indexOf(a) - GAMBLE_ORDER.indexOf(b),
   );
   const last = props.last ?? undefined;
-  const { active, ...hover } = useItemHover(last, false);
+  const { active, tip: hover } = useItemHover(last, false);
   const lastSlot = last && getBase(ITEM_CATALOG, last.baseId).slot;
   const slot = lastSlot ?? props.selected;
   const shape = slot && slotShape(slot, "gamble-shape");

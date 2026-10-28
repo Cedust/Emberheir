@@ -17,6 +17,8 @@ export interface Settings {
   readonly screenShake: boolean;
   /** Arena sharpness, particles and weather (`QUALITY` in pixiPacing.ts). */
   readonly graphicsQuality: GraphicsQuality;
+  /** Old Nan's First Steps tips for new players (game/tips). */
+  readonly tips: boolean;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
@@ -27,6 +29,7 @@ export const DEFAULT_SETTINGS: Settings = {
   sounds: { hover: true, click: true, window: true, coin: true, loot: true, notice: true },
   screenShake: true,
   graphicsQuality: "medium",
+  tips: true,
 };
 
 const soundsSchema = z.object(
@@ -51,6 +54,7 @@ const settingsSchema: z.ZodType<Settings> = z
     sounds: soundsSchema.catch(DEFAULT_SETTINGS.sounds),
     screenShake: z.boolean().catch(DEFAULT_SETTINGS.screenShake),
     graphicsQuality: z.enum(["high", "medium", "low"]).catch(DEFAULT_SETTINGS.graphicsQuality),
+    tips: z.boolean().catch(DEFAULT_SETTINGS.tips),
   })
   .catch(DEFAULT_SETTINGS);
 
