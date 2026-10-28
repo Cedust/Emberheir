@@ -219,7 +219,12 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
       COMBAT.maxBlockChance,
     ),
     blockReduction: COMBAT.blockReduction,
-    barrier: Math.round(Math.max(0, b.barrier) * (1 + step.barrier + b.increasedBarrier)),
+    // Life % raises the hero's Barrier too, so it keeps its share of Life all game (endgame
+    // measurement 2026-10-28: from 80 % of Life in Act 2 it fell to 35 % in Act 7).
+    barrier: Math.round(
+      Math.max(0, b.barrier) *
+        (1 + step.barrier + b.increasedBarrier + (heir ? b.increasedLife : 0)),
+    ),
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance, "fire"),
     coldResistance: resist(b.coldResistance, "cold"),

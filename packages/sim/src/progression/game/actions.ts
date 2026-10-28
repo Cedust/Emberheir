@@ -181,7 +181,7 @@ export function applyAction(state: GameState, data: GameData, action: GameAction
   switch (action.type) {
     case "setOut":
       return action.wildfire
-        ? setOutWildfire(state, data, action.actId, action.wildfire, action.omens)
+        ? setOutWildfire(state, data, action.actId, action.wildfire, action.omens, action.bounty)
         : setOut(state, data, action.actId, action.omens, action.bounty);
     case "turnInBounty":
       return turnInBounty(state, data);

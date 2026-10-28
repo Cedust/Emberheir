@@ -705,7 +705,7 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
       effect: {
         kind: "spellHit",
         name: "Ash Aura",
-        damage: { min: 0.6, max: 0.9 },
+        damage: { min: 0.75, max: 1.1 },
         damageType: "fire",
       },
     },
@@ -774,7 +774,7 @@ export const HARVESTER_CORE: EnemyDefinition = {
       effect: {
         kind: "spellHit",
         name: "Last Flame",
-        damage: { min: 0.5, max: 0.8 },
+        damage: { min: 0.65, max: 1.0 },
         damageType: "fire",
       },
     },

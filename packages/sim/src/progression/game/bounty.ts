@@ -5,7 +5,7 @@ import { type BountyDefinition, type BountyState, rollBountyOffer, trailQuarry }
 import { PROGRESSION } from "../constants";
 import { HUNT, huntThresholds, huntTier } from "../hunts";
 import { addToGrid } from "../inventory";
-import { getAct, isFinaleAct, stageMonsterLevel } from "./acts";
+import { getAct, isFinaleAct, stageMonsterLevel, wildfireLevel } from "./acts";
 import { requireCamp } from "./guards";
 import { salvageValue } from "./item-rules";
 import { heroCanWear, lootGate, maxRuneRank, rollItemChoices, rollRune } from "./loot";
@@ -34,13 +34,20 @@ export function getBounty(data: GameData, id: string): BountyDefinition {
 /**
  * The two bounties Eldrin offers for an act. The offer stays the same until a bounty is turned in
  * or the next Prestige comes, so hopping between acts does not roll new ones. None while a done
- * bounty waits to be turned in, none for the finale.
+ * bounty waits to be turned in, none for the finale. In the Wildfire (`tier`) the Trails are done
+ * with, so there is no Trail Hunt (endgame measurement 2026-10-28, V3).
  */
-export function bountyOffer(state: GameState, data: GameData, actId: string): BountyState[] {
+export function bountyOffer(
+  state: GameState,
+  data: GameData,
+  actId: string,
+  tier = 0,
+): BountyState[] {
   if (!data.bounties?.length || state.bountyDone || isFinaleAct(data, actId)) return [];
   const act = getAct(data, actId);
   const nonce = 104_729 * (state.legacy.prestige + 1) + (state.stats.bounties ?? 0);
-  const rng = new Rng(mixSeed(state.seed ^ hashId(`bounty:${actId}`), nonce));
+  const rng = new Rng(mixSeed(state.seed ^ hashId(`bounty:${actId}:${tier}`), nonce));
+  const defs = tier > 0 ? data.bounties.filter((b) => b.goal.kind !== "trail") : data.bounties;
   const huntable = act.enemies
     .map((e) => e.id)
     .filter((id) => !data.huntSignatures || data.huntSignatures[id]?.length);
@@ -50,7 +57,7 @@ export function bountyOffer(state: GameState, data: GameData, actId: string): Bo
     (id) => huntThresholds(data.acts, id),
     rng,
   );
-  return rollBountyOffer(data.bounties, act.number, quarry, rng);
+  return rollBountyOffer(defs, act.number, quarry, rng);
 }
 
 /** The bounty a set-out takes from Eldrin's offer; none without a choice. */
@@ -59,12 +66,21 @@ export function takeBounty(
   data: GameData,
   actId: string,
   id: string | undefined,
+  tier = 0,
 ): BountyState | undefined {
   if (!id) return undefined;
   if (state.bountyDone) return fail("Turn in the done Bounty at Eldrin first");
   return (
-    bountyOffer(state, data, actId).find((b) => b.id === id) ?? fail("Eldrin offers no such Bounty")
+    bountyOffer(state, data, actId, tier).find((b) => b.id === id) ??
+    fail("Eldrin offers no such Bounty")
   );
+}
+
+/** Cinderglass a Wildfire bounty pays at `tier`: like a Wildfire boss without Omens. */
+export function bountyCinderglass(tier: number): { readonly min: number; readonly max: number } {
+  const glass = PROGRESSION.wildfire.cinderglass;
+  const extra = tier >= glass.pinnacleFrom ? glass.pinnacle : 0;
+  return { min: glass.boss[0] + extra, max: glass.boss[1] + extra };
 }
 
 /** One rarity higher, at most `max`. */
@@ -93,7 +109,9 @@ function cacheRune(data: GameData, act: ActData, tier: number, rng: Rng): string
 
 /**
  * Eldrin's Cache for a done bounty (bounties-v2-plan.md B3): the act's Home Rune and an item pick
- * at Elite quality at the act boss's level, plus the bounty's own bonus.
+ * at Elite quality at the act boss's level, plus the bounty's own bonus. A Wildfire bounty pays
+ * Cinderglass like a Wildfire boss instead of the Home Rune, and its cards come at the tier's
+ * Monster Level and Legendary chance.
  */
 export function bountyCache(
   state: GameState,
@@ -105,9 +123,14 @@ export function bountyCache(
   const def = getBounty(data, done.id);
   const bonus = def.bonus;
   const prestige = state.legacy.prestige;
-  const level = stageMonsterLevel(data, act, act.stages, prestige);
+  const wildfire = done.wildfire ?? 0;
+  const level = wildfire
+    ? wildfireLevel(wildfire)
+    : stageMonsterLevel(data, act, act.stages, prestige);
   const tier = act.number + prestige;
-  const rune = cacheRune(data, act, tier, rng);
+  const glass = bountyCinderglass(wildfire);
+  const cinderglass = wildfire ? rng.int(glass.min, glass.max) : 0;
+  const rune = wildfire ? undefined : cacheRune(data, act, tier, rng);
 
   // Trail Hunt: Trail kills on its enemy, and one card carries its Hunt Affix for sure.
   const enemyId = done.enemyId;
@@ -146,7 +169,7 @@ export function bountyCache(
     prestige,
     rng,
     undefined,
-    1,
+    1 + PROGRESSION.wildfire.legendaryPerTier * wildfire,
     undefined,
     signature ? { signature } : {},
     heroCanWear(state, data),
@@ -169,6 +192,7 @@ export function bountyCache(
     actId: act.id,
     ...(enemyId ? { enemyId } : {}),
     runes: rune ? [rune] : [],
+    ...(cinderglass ? { cinderglass } : {}),
     // Like a Cache node: 1–2 Ember Coal, plus the bonus.
     emberCoal:
       rng.int(...PROGRESSION.eliteEmberCoal) +
@@ -204,6 +228,9 @@ export function turnInBounty(state: GameState, data: GameData): GameState {
       ...state.wallet,
       acorns: state.wallet.acorns + (cache.acorns ?? 0),
       emberCoal: state.wallet.emberCoal + cache.emberCoal,
+      ...(cache.cinderglass
+        ? { cinderglass: (state.wallet.cinderglass ?? 0) + cache.cinderglass }
+        : {}),
       runes,
     },
     stats: { ...state.stats, bounties: (state.stats.bounties ?? 0) + 1 },

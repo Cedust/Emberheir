@@ -383,6 +383,12 @@ export const PROGRESSION = {
      * attempts and then stuck at VIII.
      */
     steep: { from: 5, life: 0.2, damage: 0.25 },
+    /**
+     * I–IV start closer to V (Timo 2026-10-28: "Wildfire I bis IV sind zu leicht", 1.3–1.9
+     * attempts): this much more Life and damage on every tier below V, so V–X stay as they were.
+     * Fading from +25 % at I to none at V made I a wall (4 attempts) and left IV at 1.2.
+     */
+    early: { life: 0.12, damage: 0.18 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,

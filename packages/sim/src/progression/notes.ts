@@ -11,7 +11,7 @@ export const DEFENSE_NOTES = {
   barrier: {
     name: "Barrier",
     kind: "Defense · caster gear",
-    explain: `A shield that takes hits before your Life. It comes from caster gear (Silk Robe, Circlet, Silk Wraps, Silk Slippers, Focus, Grimoire); each point of Intelligence raises it by ${pct(COMBAT.heir.barrierPerIntelligence)}. It trickles back all fight and fills up fast after ${COMBAT.barrierRecharge.delay} s without a hit.`,
+    explain: `A shield that takes hits before your Life. It comes from caster gear (Silk Robe, Circlet, Silk Wraps, Silk Slippers, Focus, Grimoire); each point of Intelligence raises it by ${pct(COMBAT.heir.barrierPerIntelligence)}, and every % Life raises it too. It trickles back all fight and fills up fast after ${COMBAT.barrierRecharge.delay} s without a hit.`,
   },
   armor: {
     name: "Armor",

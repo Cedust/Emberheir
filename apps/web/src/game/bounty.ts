@@ -37,10 +37,13 @@ export function bountyView(state: BountyState): BountyView {
   };
 }
 
-/** The two bounties Eldrin offers for a trip to `actId` (none while one waits to be turned in). */
-export function bountyOfferViews(state: GameState, actId: string): BountyView[] {
+/**
+ * The two bounties Eldrin offers for a trip to `actId`, at Wildfire `tier` (0 = a normal trip);
+ * none while one waits to be turned in.
+ */
+export function bountyOfferViews(state: GameState, actId: string, tier = 0): BountyView[] {
   try {
-    return bountyOffer(state, GAME_DATA, actId).map(bountyView);
+    return bountyOffer(state, GAME_DATA, actId, tier).map(bountyView);
   } catch {
     return [];
   }

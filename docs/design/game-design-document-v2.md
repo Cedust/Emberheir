@@ -194,7 +194,9 @@ Endgame **Wildfire I–X**.
 - **Wildfire I–X** (nach dem Finale): Ein gewählter Act brennt erneut auf einer Stufe. Monster Level 92 (I) bis 110 (X).
   Mehr Legendaries und Runes, keine Shrines. Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
   Min-Maxing (`endgame-balance-v1.md`). Pro Stufe bis V +8 % Life, +6 % Schaden; darüber +20 % Life und +25 % Schaden
-  pro Stufe (Schritt 7, vorher +35 % Life, +8 % Schaden: VI–VII waren zu leicht).
+  pro Stufe (Schritt 7, vorher +35 % Life, +8 % Schaden: VI–VII waren zu leicht). **I–IV mit Vorsprung** (Timo
+  28.10.2026, „I bis IV sind zu leicht“, 1,3–1,9 Versuche): I–IV haben +12 % Life und +18 % Schaden mehr, ab V
+  fällt der Vorsprung weg, V–X bleiben gleich (`notes/endgame-messung/`).
 - **Wildfire-Omens** (`neuausrichtung-v1.md` 7.2): Vor jedem Wildfire-Zug wählt man beliebig viele aus 20 Omens, jedes mit
   **Peril 1–3**. Mindest-Peril: I–V 0, VI 2, VII 4, VIII 6, IX 8, X 10. **Jeder Punkt Peril** gibt +8 % XP und +5 %
   Legendary-Chance, je 4 Peril einen Rune-Rang mehr, je 3 Peril ein Cinderglass mehr am Boss.
@@ -280,7 +282,9 @@ Endgame **Wildfire I–X**.
   „New Draught". Nicht gelernte zeigt die Auswahl gar nicht (Timo); im Tooltip stehen die Boni als Stichpunkte.
 - **Bounties** (`bounties-v2-plan.md`, Timo 27.10.2026): Eldrin bietet für den gewählten Act **zwei**
   Bounties an, man nimmt eine oder keine. Das Angebot bleibt gleich, bis man eine Bounty einreicht oder das nächste
-  Prestige kommt. Nicht im Wildfire und im Finale. Wander behält die Bounty, eine erfüllte bleibt erfüllt (auch nach
+  Prestige kommt. Nicht im Finale. **Im Wildfire** (Timo 28.10.2026, E4 c) ohne Trail Hunt; der Cache zahlt dort
+  **Cinderglass** wie ein Wildfire-Boss (1–2, ab VIII 2–3) statt der Home Rune, die Karten haben Level und
+  Legendary-Chance der Stufe. Kein XP-Lohn, damit die Level-Wand bei V bleibt. Wander behält die Bounty, eine erfüllte bleibt erfüllt (auch nach
   Tod), gescheitert ist sie einfach weg. Solange eine erfüllte nicht eingereicht ist, gibt es keine neue.
 
   | Bounty | Ziel | Bonus im Cache |
@@ -422,7 +426,7 @@ Endgame **Wildfire I–X**.
 |---|---|---|
 | **Armor** | Gear, STR | Reduktion = Armor / (Armor + 20 × Angreifer-Level), max. 90 % |
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
-| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 3 s ohne Treffer 10 %/s (Timo 2026-10-19: vorher 1,5 s/20 %, Emberseer in Akt 2–3 zu sicher) |
+| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt), jedes % Life zählt auch für die Barrier (28.10.2026: sie fiel von 80 % des Life in Act 2 auf 35 % in Act 7) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 3 s ohne Treffer 10 %/s (Timo 2026-10-19: vorher 1,5 s/20 %, Emberseer in Akt 2–3 zu sicher) |
 | **Block** | Shield | stoppt 50 % des Treffers, max. 75 % Chance |
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
@@ -669,7 +673,11 @@ Endgame **Wildfire I–X**.
     Anlauf für seine volle Spitze, sonst anteilig (Schritt 7: Emberfall hat 10 Stages, Gatekeeper auf Stage 3 und 7, der
     erste stand nach 2 Stages schon voll da und war der häufigste Tod in Act 7).
   - Der Harvester trifft mit 45 % eines Bosses seines Levels (seine Phasen tragen sechs Boss-Mechaniken; Schritt 7,
-    vorher 50 %).
+    vorher 50 %). **Er mischt die Schadensarten wie seine Echos** (Timo 28.10.2026: „gegen jede Klasse gleich fair“;
+    vorher kamen 55–60 % seines Schadens als physischer Reap, das traf den Emberseer ohne Armor und Evasion am
+    härtesten): Reap (Harvest Scythe) 1,9–2,7 statt 2,95–4,15, **Soul Reap ist Fire** (2,4–3,6, vorher Void 1,6–2,4),
+    Ash Aura 0,75–1,1 (vorher 0,6–0,9), am Core Last Flame 0,65–1,0 (vorher 0,5–0,8). Physical (Reap), Void (Harvest
+    Swing, The Last Harvest), Fire (Soul Reap, Ash Aura, Ashfall) und Lightning (Storm Mirror) kommen jetzt alle vor.
   - Boss-Runde Schritt 7: Cinder Tyrant Fire Aura 0,45–0,7 (vorher 0,6–0,9), Enrage +30 % Attack Speed (vorher +50 %);
     Rime Warden Ice Barrier bei 75/50/25 % Life je 10 % (vorher 15 %).
   - Entfallen: Run Pressure, Kampfdauer- und Boss-Life-Faktoren, Elite-Faktoren, Harvester-Anteil, `endgameBoss`.

@@ -706,7 +706,8 @@ export const HARVEST_SCYTHE: WeaponDefinition = {
   id: "harvest-scythe",
   name: "Harvest Scythe",
   defaultAttack: "Reap",
-  damage: { min: 2.95, max: 4.15 },
+  // Was 2.95-4.15: the Harvester's Physical share is smaller now (see SOUL_REAP).
+  damage: { min: 1.9, max: 2.7 },
   damageType: "physical",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",

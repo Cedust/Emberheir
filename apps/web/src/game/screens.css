@@ -2487,6 +2487,16 @@
   color: var(--plaque-text);
 }
 
+/* In the Wildfire the Omens take the room: name and pay in one row, the task on hover. */
+.stage .bounty-offer.compact {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: auto;
+  white-space: nowrap;
+}
+
 .stage .bounty-cards {
   display: flex;
   flex-wrap: wrap;

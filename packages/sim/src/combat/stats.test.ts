@@ -98,7 +98,10 @@ describe("deriveStats", () => {
     );
     expect(s.maxLife).toBe(Math.round(100 * (1 + 5 * COMBAT.heir.lifePerVitality + 0.2)));
     expect(s.armor).toBeCloseTo(100 * (1 + 5 * COMBAT.heir.armorPerStrength + 0.2));
-    expect(s.barrier).toBe(Math.round(100 * (1 + 5 * COMBAT.heir.barrierPerIntelligence + 0.2)));
+    // % Life raises the hero's Barrier too (endgame measurement 2026-10-28).
+    expect(s.barrier).toBe(
+      Math.round(100 * (1 + 5 * COMBAT.heir.barrierPerIntelligence + 0.2 + 0.2)),
+    );
   });
 
   it("uses the hero life curve when no base life is given", () => {

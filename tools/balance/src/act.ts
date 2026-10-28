@@ -479,11 +479,13 @@ export function playWildfire(
   let cleared = false;
   for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
     s = prepare(s, data, build, act, runes, memo);
+    const bounty = chooseBounty(s, data, act.id, tier);
     s = applyAction(s, data, {
       type: "setOut",
       actId: act.id,
       wildfire: tier,
       omens: chooseWildfireOmens(s, data, act.id, tier),
+      ...(bounty ? { bounty } : {}),
     });
     while (s.run) {
       s = spendPoints(s, data, options.starterWeapon);

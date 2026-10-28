@@ -60,7 +60,7 @@ export interface RoadPlan {
   readonly pickOmen: (id: string) => void;
   readonly wildOmens: readonly string[];
   readonly toggleWildOmen: (id: string) => void;
-  /** Eldrin's two Bounties for the act (none in the Wildfire) and the one taken. */
+  /** Eldrin's two Bounties for the act (no Trail Hunt in the Wildfire) and the one taken. */
   readonly bounties: readonly BountyView[];
   readonly bounty: string | null;
   readonly pickBounty: (id: string | null) => void;
@@ -91,7 +91,7 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
   );
   // Eldrin's Bounties (bounties-v2-plan.md B1): one of two, or none.
   const [bountyPick, setBounty] = useState<string | null>(null);
-  const bounties = tier > 0 ? [] : bountyOfferViews(state, act.id);
+  const bounties = bountyOfferViews(state, act.id, tier);
   const bounty = bounties.some((b) => b.def.id === bountyPick) ? bountyPick : null;
   const ready = tier > 0 ? peril >= minPeril(tier) : offer.length === 0 || runOmen !== null;
   const label = !ready
@@ -124,7 +124,13 @@ export function useRoadPlan(state: GameState, game: GameApi): RoadPlan {
       if (!ready) return;
       game.dispatch(
         tier > 0
-          ? { type: "setOut", actId: act.id, wildfire: tier, omens: wildOmens }
+          ? {
+              type: "setOut",
+              actId: act.id,
+              wildfire: tier,
+              omens: wildOmens,
+              ...(bounty ? { bounty } : {}),
+            }
           : {
               type: "setOut",
               actId: act.id,
@@ -402,6 +408,7 @@ export function RoadWindow(props: {
                 <BountyChoice
                   offer={plan.bounties}
                   act={act}
+                  wildfire={plan.tier}
                   chosen={plan.bounty}
                   onPick={plan.pickBounty}
                 />
