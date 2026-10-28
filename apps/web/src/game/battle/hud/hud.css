@@ -148,7 +148,7 @@
   border: 1.5px solid #140c06;
 }
 
-/* Under the plaque: the enemy's modifiers and statuses in one row, its Trail on its own below. */
+/* Under the plaque: the enemy's modifiers and statuses in one row. */
 .stage .hud-enemy-below {
   position: absolute;
   top: 132px;
@@ -178,8 +178,16 @@
   border-color: #ffd84a;
 }
 
-/* The enemy's Trail (Hunts): four pips and the way to the next one. */
+/*
+ * The enemy's Trail (Hunts): its mark and the way to the next one, alone in the free top left
+ * corner beside the plaque (the right one belongs to notifications), so the timers of the enemy's
+ * statuses under the plaque never run into it (Timo).
+ */
 .stage .hunt-chip {
+  position: absolute;
+  top: 84px;
+  left: calc(var(--safe-x, 0px) + 22px);
+  z-index: 5;
   display: inline-flex;
   align-items: center;
   gap: 6px;
