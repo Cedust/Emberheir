@@ -34,6 +34,7 @@ import type { NoteHover } from "../ui/ItemTooltip";
 import { heroWeaponTip } from "../ui/weaponTip";
 import { useState } from "react";
 import { ClassEmblem, HeirEmblem } from "./ClassEmblem";
+import { ActionIcon } from "../ui/actionIcons";
 import attributePointsUrl from "../assets/harvest/attribute-points.webp";
 import levelCapUrl from "../assets/harvest/level-cap.webp";
 import {
@@ -240,7 +241,7 @@ export function CharacterOverlay(props: {
       art: <TabArt src={attributePointsUrl} />,
       ...(left > 0 && !inFight ? { marker: left } : {}),
     },
-    { id: "Stats", name: "Stats", icon: "target" },
+    { id: "Stats", name: "Stats", art: <ActionIcon id="stats" /> },
     ...(ashbornOpen
       ? [
           {

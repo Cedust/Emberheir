@@ -11,6 +11,7 @@ import {
   levelCap,
 } from "@emberheir/sim";
 import { useState } from "react";
+import { ActionIcon } from "../../ui/actionIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { ItemArt } from "../../ui/ItemArt";
 import { ItemDetail } from "../../ui/items";
@@ -107,9 +108,13 @@ export function LegacyView(props: {
               <Tabs
                 label="Legacy"
                 items={[
-                  { id: "gear", name: "Worn Gear", icon: "shield" },
-                  { id: "collections", name: `Collections · ${full}/${goals.length}`, icon: "box" },
-                  { id: "lineage", name: "Lineage", icon: "flame" },
+                  { id: "gear", name: "Worn Gear", art: <ActionIcon id="worn-gear" /> },
+                  {
+                    id: "collections",
+                    name: `Collections · ${full}/${goals.length}`,
+                    art: <ActionIcon id="collections" size={34} />,
+                  },
+                  { id: "lineage", name: "Lineage", art: <ActionIcon id="lineage" /> },
                 ]}
                 active={tab}
                 onChange={setTab}

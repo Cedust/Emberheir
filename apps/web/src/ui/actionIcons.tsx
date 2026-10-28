@@ -10,3 +10,9 @@ const ART = import.meta.glob<string>("../assets/actions/*.webp", {
 export function actionIcon(id: string): string | undefined {
   return ART[`../assets/actions/${id}.webp`];
 }
+
+/** A painted icon as a small image, e.g. on a window tab. */
+export function ActionIcon(props: { id: string; size?: number }) {
+  const s = props.size ?? 28;
+  return <img src={actionIcon(props.id)} width={s} height={s} alt="" draggable={false} />;
+}
