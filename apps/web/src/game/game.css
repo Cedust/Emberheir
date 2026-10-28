@@ -24,6 +24,27 @@
   --r-epic: #7a3fcf;
   --r-legendary: #b84a00;
   --r-unique: #8a6a1c;
+  /* Stat plaques (Character Sheet): parchment cards with a brass top edge in light mode. */
+  --plaque-bg: var(--panel);
+  --plaque-edge: var(--edge);
+  --plaque-text: var(--text);
+  --plaque-strong: var(--text);
+  --plaque-sub: var(--text-sub);
+  --plaque-faint: var(--text-sub);
+  --plaque-label: var(--accent-2);
+  --plaque-well: rgb(42 31 23 / 0.06);
+  --plaque-rule: rgb(168 141 98 / 0.35);
+  --plaque-star: var(--accent);
+  --plaque-gauge: var(--track);
+  --plaque-ink-shadow: none;
+  --plaque-number: linear-gradient(180deg, #d9662a, #a8401a 70%, #7d2b0e);
+  /* How much of an element's own color its tint keeps; the rest is ink, so yellow stays legible. */
+  --plaque-tint: 60%;
+  --plaque-title: var(--accent);
+  --plaque-hot: var(--accent);
+  /* Eldrin's Omens and the Wildfire picker: a parchment card in light mode, embers in dark. */
+  --ember-panel: var(--panel);
+  --ember-panel-edge: var(--edge);
 }
 
 @media (prefers-color-scheme: dark) {
@@ -49,6 +70,30 @@
     --r-epic: #c48cff;
     --r-legendary: #ff9d45;
     --r-unique: #e0c27a;
+    --plaque-bg:
+      radial-gradient(120% 90% at 50% 0%, rgb(255 170 90 / 0.12), transparent 60%),
+      linear-gradient(180deg, #3a2a1d, #241a12);
+    --plaque-edge: var(--k-brass-dark, #6e4f22);
+    --plaque-text: #efe3cb;
+    --plaque-strong: #f6ead2;
+    --plaque-sub: #cdbd9d;
+    --plaque-faint: #9d8e72;
+    --plaque-label: var(--k-brass, #c9a063);
+    --plaque-well: rgb(0 0 0 / 0.25);
+    --plaque-rule: rgb(201 160 99 / 0.18);
+    --plaque-star: #ffc861;
+    --plaque-gauge: linear-gradient(180deg, #1c130c, #2a1c12);
+    --plaque-ink-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+    --plaque-number: linear-gradient(180deg, #fff2c8, #ffb24a 70%, #e0702a);
+    --plaque-tint: 100%;
+    --plaque-title: #ffd27a;
+    --plaque-hot: #ffb13b;
+    --ember-panel: linear-gradient(180deg, rgb(32 14 8 / 0.9), rgb(16 8 4 / 0.9));
+    --ember-panel-edge: #6a3a1a;
+    --plaque-title: #ffd27a;
+    --plaque-hot: #ffb13b;
+    --ember-panel: linear-gradient(180deg, rgb(32 14 8 / 0.9), rgb(16 8 4 / 0.9));
+    --ember-panel-edge: #6a3a1a;
   }
 }
 
@@ -73,6 +118,26 @@
   --r-epic: #c48cff;
   --r-legendary: #ff9d45;
   --r-unique: #e0c27a;
+  --plaque-bg:
+    radial-gradient(120% 90% at 50% 0%, rgb(255 170 90 / 0.12), transparent 60%),
+    linear-gradient(180deg, #3a2a1d, #241a12);
+  --plaque-edge: var(--k-brass-dark, #6e4f22);
+  --plaque-text: #efe3cb;
+  --plaque-strong: #f6ead2;
+  --plaque-sub: #cdbd9d;
+  --plaque-faint: #9d8e72;
+  --plaque-label: var(--k-brass, #c9a063);
+  --plaque-well: rgb(0 0 0 / 0.25);
+  --plaque-rule: rgb(201 160 99 / 0.18);
+  --plaque-star: #ffc861;
+  --plaque-gauge: linear-gradient(180deg, #1c130c, #2a1c12);
+  --plaque-ink-shadow: 0 1px 2px rgb(0 0 0 / 0.8);
+  --plaque-number: linear-gradient(180deg, #fff2c8, #ffb24a 70%, #e0702a);
+  --plaque-tint: 100%;
+  --plaque-title: #ffd27a;
+  --plaque-hot: #ffb13b;
+  --ember-panel: linear-gradient(180deg, rgb(32 14 8 / 0.9), rgb(16 8 4 / 0.9));
+  --ember-panel-edge: #6a3a1a;
 }
 
 /* --- stage ---------------------------------------------------------------------------------- */
