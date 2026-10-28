@@ -2,6 +2,7 @@ import { GAME_DATA } from "@emberheir/content";
 import {
   type GameState,
   type PlacedItem,
+  SAVE_VERSION,
   deserializeGame,
   deserializeStash,
   serializeGame,
@@ -9,6 +10,7 @@ import {
 } from "@emberheir/sim";
 import { z } from "zod";
 import { parseStored, storageKey } from "../storage";
+import { SaveSealError, isSealed, seal, unseal } from "./saveCodec";
 
 /**
  * Character slots (klassen-v2.md section 5): up to six characters, each its own bloodline with
@@ -41,6 +43,64 @@ export const LINEAGE_KEY = storageKey("lineage");
 export const POWER_CODEX_KEY = storageKey("powerCodex");
 const powerCodexSchema = z.record(z.string(), z.number().int().positive());
 
+/** The storage names of everything that belongs to the save games (sealed, and in a backup). */
+const SAVE_NAMES = [
+  ...Array.from({ length: SLOT_COUNT }, (_, i) => `slot.${i}`),
+  "stash",
+  "lineage",
+  "powerCodex",
+];
+const SEALED_KEYS = new Set(SAVE_NAMES.map((n) => storageKey(n)));
+/** Set once the plain saves from before 1.0 were sealed. */
+const SEALED_MARK = storageKey("sealed");
+
+/**
+ * The browser storage with the save games sealed (saveCodec.ts): they go in sealed and come out
+ * as JSON. Other keys (settings, last slot) stay as they are. A sealed save that was changed
+ * throws `SaveSealError`.
+ *
+ * Saves from before 1.0 are plain JSON: the first start seals them once. After that a plain save
+ * does not load, unless `allowPlain` (the Playwright tests seed plain saves).
+ */
+export class SealedStore implements KeyValueStore {
+  constructor(
+    private readonly kv: KeyValueStore,
+    private readonly allowPlain = false,
+  ) {
+    if (kv.getItem(SEALED_MARK) === "1") return;
+    for (const key of SEALED_KEYS) {
+      const text = kv.getItem(key);
+      if (text !== null && !isSealed(text)) kv.setItem(key, seal(text));
+    }
+    kv.setItem(SEALED_MARK, "1");
+  }
+
+  getItem(key: string): string | null {
+    const text = this.kv.getItem(key);
+    if (text === null || !SEALED_KEYS.has(key)) return text;
+    if (isSealed(text)) return unseal(text);
+    if (this.allowPlain) return text;
+    throw new SaveSealError("This save is damaged");
+  }
+
+  setItem(key: string, value: string): void {
+    this.kv.setItem(key, SEALED_KEYS.has(key) ? seal(value) : value);
+  }
+
+  removeItem(key: string): void {
+    this.kv.removeItem(key);
+  }
+}
+
+/** Reads a key; a damaged one reads as missing. */
+function readOrNull(kv: KeyValueStore, key: string): string | null {
+  try {
+    return kv.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
 /**
  * The seeds of the finishers and the classes that won (phase 5); a broken list reads as empty.
  * Wins from before phase 5 have no class: the winner's slot adds it the next time it loads.
@@ -65,6 +125,8 @@ const EMPTY_LINEAGE: SharedLineage = { finishers: [] };
  */
 export class SaveStore {
   private readonly slots = new Map<number, GameState | null>();
+  /** Slots whose key holds a save that does not load (changed, broken, from a newer game). */
+  private readonly damaged = new Set<number>();
   /** What each slot's key holds right now, by reference (skips writing the same state twice). */
   private readonly written = new Map<number, GameState>();
   private stash: readonly PlacedItem[] | null = null;
@@ -76,6 +138,7 @@ export class SaveStore {
   /** Drops everything read so far (the storage changed behind this store's back). */
   forget(): void {
     this.slots.clear();
+    this.damaged.clear();
     this.written.clear();
     this.stash = null;
     this.lineage = null;
@@ -85,12 +148,13 @@ export class SaveStore {
   /** One slot's own save game, without the shared stash. */
   private ownSlot(slot: number): GameState | null {
     if (!this.slots.has(slot)) {
-      const json = this.kv.getItem(slotKey(slot));
       let state: GameState | null;
       try {
+        const json = this.kv.getItem(slotKey(slot));
         state = json === null ? null : deserializeGame(json, GAME_DATA);
       } catch {
         state = null;
+        this.damaged.add(slot);
       }
       this.slots.set(slot, state);
     }
@@ -100,8 +164,8 @@ export class SaveStore {
   /** The shared stash; a broken one reads as empty. */
   sharedStash(): readonly PlacedItem[] {
     if (this.stash === null) {
-      const json = this.kv.getItem(STASH_KEY);
       try {
+        const json = this.kv.getItem(STASH_KEY);
         this.stash = json === null ? [] : deserializeStash(json, GAME_DATA);
       } catch {
         this.stash = [];
@@ -122,6 +186,14 @@ export class SaveStore {
     return state ? { ...state, stash: this.sharedStash() } : null;
   }
 
+  /** Slots that hold a save that does not load: shown as damaged, never overwritten silently. */
+  damagedSlots(): number[] {
+    return Array.from({ length: SLOT_COUNT }, (_, i) => i).filter((i) => {
+      this.ownSlot(i);
+      return this.damaged.has(i);
+    });
+  }
+
   allSlots(): (GameState | null)[] {
     return Array.from({ length: SLOT_COUNT }, (_, i) => this.slot(i));
   }
@@ -136,6 +208,7 @@ export class SaveStore {
     if (!state) {
       this.kv.removeItem(slotKey(slot));
       this.slots.set(slot, null);
+      this.damaged.delete(slot);
       this.written.delete(slot);
       if (this.kv.getItem(LAST_KEY) === String(slot)) this.kv.removeItem(LAST_KEY);
       return;
@@ -158,7 +231,7 @@ export class SaveStore {
   }
 
   private readLineage(): SharedLineage {
-    this.lineage ??= parseStored(this.kv.getItem(LINEAGE_KEY), lineageSchema, EMPTY_LINEAGE);
+    this.lineage ??= parseStored(readOrNull(this.kv, LINEAGE_KEY), lineageSchema, EMPTY_LINEAGE);
     return this.lineage;
   }
 
@@ -196,7 +269,7 @@ export class SaveStore {
    */
   syncPowerCodex(state: GameState): GameState {
     if (this.powers === null) {
-      this.powers = parseStored(this.kv.getItem(POWER_CODEX_KEY), powerCodexSchema, {});
+      this.powers = parseStored(readOrNull(this.kv, POWER_CODEX_KEY), powerCodexSchema, {});
     }
     const merged: Record<string, number> = { ...this.powers };
     for (const [id, tier] of Object.entries(state.powerCodex ?? {})) {
@@ -222,11 +295,13 @@ export class SaveStore {
 // The browser's storage; private windows can block it, then nothing is saved.
 
 let browserStore: SaveStore | null | undefined;
+let browserKv: SealedStore | null = null;
 
 function store(): SaveStore | null {
   if (browserStore === undefined) {
     try {
-      browserStore = new SaveStore(window.localStorage);
+      browserKv = new SealedStore(window.localStorage, navigator.webdriver);
+      browserStore = new SaveStore(browserKv);
       window.addEventListener("storage", () => browserStore?.forget());
     } catch {
       browserStore = null;
@@ -263,3 +338,70 @@ export const saveSlot = (slot: number, state: GameState | null) =>
 /** The state with the account's Lineage and Power Codex; without storage it stays as it is. */
 export const accountFor = (state: GameState) =>
   withStore((s) => s.syncPowerCodex(s.syncLineage(state)), state);
+export const loadDamagedSlots = () => withStore((s) => s.damagedSlots(), [] as number[]);
+
+/**
+ * Backup (Release 1.0): every save game of this browser (the six slots, the Supply Wagon, the
+ * Lineage and the Power Codex) in one sealed text, by storage name, so a backup from a PR
+ * preview loads on the main game too.
+ */
+const backupSchema = z.object({
+  game: z.literal("emberheir"),
+  version: z.number().int(),
+  saves: z.record(z.string(), z.string()),
+});
+export type Backup = z.infer<typeof backupSchema>;
+
+export class BackupError extends Error {}
+
+export function backupOf(kv: KeyValueStore): string {
+  const saves: Record<string, string> = {};
+  for (const name of SAVE_NAMES) {
+    const text = readOrNull(kv, storageKey(name));
+    if (text !== null) saves[name] = text;
+  }
+  return seal(JSON.stringify({ game: "emberheir", version: SAVE_VERSION, saves }));
+}
+
+/** Opens a backup file's text. Throws `BackupError` with what to tell the player. */
+export function readBackup(text: string): Backup {
+  let json: string;
+  try {
+    json = unseal(text.trim());
+  } catch {
+    throw new BackupError("This is not an Emberheir backup, or it was changed.");
+  }
+  const parsed = parseStored<Backup | null>(json, backupSchema, null);
+  if (!parsed) throw new BackupError("This is not an Emberheir backup.");
+  if (parsed.version > SAVE_VERSION) {
+    throw new BackupError("This backup is from a newer version of Emberheir.");
+  }
+  return parsed;
+}
+
+/** Replaces every save game with the backup's (a name it does not hold is removed). */
+export function restoreBackup(kv: KeyValueStore, backup: Backup): void {
+  for (const name of SAVE_NAMES) {
+    const text = backup.saves[name];
+    if (text === undefined) kv.removeItem(storageKey(name));
+    else kv.setItem(storageKey(name), text);
+  }
+  // Continue picks up the backup's first Heir.
+  const first = Array.from({ length: SLOT_COUNT }, (_, i) => i).find(
+    (i) => backup.saves[`slot.${i}`] !== undefined,
+  );
+  if (first === undefined) kv.removeItem(LAST_KEY);
+  else kv.setItem(LAST_KEY, String(first));
+}
+
+/** The backup of this browser's save games; null without storage. */
+export const exportBackup = (): string | null =>
+  withStore(() => (browserKv ? backupOf(browserKv) : null), null);
+
+/** Loads a backup into this browser (the page reloads afterwards). */
+export const importBackup = (backup: Backup): void =>
+  withStore((s) => {
+    if (!browserKv) return;
+    restoreBackup(browserKv, backup);
+    s.forget();
+  }, undefined);

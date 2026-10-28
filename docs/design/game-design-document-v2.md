@@ -706,6 +706,9 @@ Endgame **Wildfire I–X**.
 - **First Steps (Release 1.0):** Old Nan sagt neuen Spielern beim ersten Mal je einen kurzen Satz (Camp, Road, erster Kampf,
   Skill Points, Item Pick, Tod, Rückkehr ins Camp). Jeder Tipp kommt einmal pro Browser, „No more tips.“ oder Settings → Tips schaltet sie ab.
   Nur UI. Dazu Absturzschutz („The fire flickered“ mit Reload), Versionsnummer im Titel und Menü und Credits („Kindled by Cedust“).
+- **Spielstände (Release 1.0):** im Browser und in Backups versiegelt (gepackt und verschlüsselt, kein Klartext); ein von Hand
+  geänderter Spielstand lädt nicht und steht als „Damaged save“ im Slot, bis man ihn löscht. Unter Characters → Save Files
+  gehen alle Heirs in eine `.ember`-Datei (Export) und zurück (Import ersetzt alle Heirs nach Rückfrage).
 
 ---
 

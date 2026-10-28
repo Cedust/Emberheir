@@ -31,6 +31,9 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
 - Save games go through `packages/sim/src/save/`: a zod schema typed against `GameState`, and a
   migration table. A change to the save shape bumps `SAVE_VERSION` and adds a migration step; a
   change to items goes into the step's `item` function, so it reaches the shared stash too.
+  Add the ended version's real saves to `tools/balance/fixtures/old-saves/` (README there). In
+  the browser and in backups the saves are sealed (`apps/web/src/game/saveCodec.ts`): never change
+  its key.
 - No import cycles (`npm run deps`, `.dependency-cruiser.cjs`): shared helpers go into small leaf
   modules. The only allowed cycle is the fight's own recursion (hit → trigger/Reaction → skill →
   hit) between `combat/hits`, `rotation`, `skills` and `trigger-effects`.
