@@ -3964,10 +3964,12 @@
 }
 
 .stage .tree-side {
-  padding: 20px;
+  padding: 18px 18px 16px;
   display: flex;
   flex-direction: column;
-  gap: 14px;
+  gap: 12px;
+  min-height: 0;
+  overflow: hidden;
   border-left: 2px solid var(--edge);
   background: var(--side);
 }
@@ -4070,20 +4072,312 @@
   white-space: nowrap;
 }
 
+/*
+ * The selected node (TreeSide.tsx): a dark plaque in the painted brass frame of the item
+ * tooltips, dark in both modes like the tree beside it. --node is the node's colour (tier, path,
+ * Heat Form), --tag the region's.
+ */
 .stage .node-detail {
-  padding: 16px;
-  border-top-width: 5px;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.stage .node-plaque {
+  position: relative;
+  flex: 0 1 auto;
+  min-height: 0;
+  margin: 6px 6px 0;
+  padding: 0 18px 16px;
+  display: flex;
+  flex-direction: column;
+  background:
+    radial-gradient(
+      ellipse 90% 60% at 20% 0%,
+      color-mix(in srgb, var(--node) 18%, transparent),
+      transparent 70%
+    ),
+    #0e0b08;
+  border: 1px solid color-mix(in srgb, var(--node) 45%, #5a4430);
+  outline: 1px solid rgb(0 0 0 / 0.8);
+  border-radius: 3px;
+  box-shadow:
+    0 10px 26px rgb(0 0 0 / 0.45),
+    inset 0 0 24px rgb(0 0 0 / 0.6);
+  color: #d6ccbb;
+}
+
+.stage .node-plaque::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
+  border-style: solid;
+  border-width: 35px;
+  border-image: url("../assets/ui/panel-frame.webp") 70 stretch;
+  pointer-events: none;
+}
+
+.stage .node-plaque-tag {
+  margin: 0 -18px 12px;
+  padding: 9px 22px 7px;
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: #b9ab92;
+  background: rgb(255 255 255 / 0.05);
+  border-bottom: 1px solid rgb(201 160 99 / 0.25);
+}
+
+.stage .node-plaque-tag > :first-child {
+  color: var(--tag);
+}
+
+.stage .node-plaque-head {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.stage .node-gem {
+  position: relative;
+  flex: none;
+  width: 68px;
+  height: 68px;
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--node) 55%, transparent));
+}
+
+.stage .node-gem svg {
+  display: block;
+  overflow: visible;
+}
+
+.stage .node-gem .gem-base {
+  fill: #17120e;
+  stroke: var(--node);
+  stroke-width: 3;
+}
+
+.stage .node-gem .gem-core {
+  fill: transparent;
+}
+
+.stage .node-gem .gem-ring {
+  fill: none;
+  stroke: var(--node);
+  stroke-width: 2;
+  opacity: 0.8;
+}
+
+.stage .node-learned .gem-core {
+  fill: var(--node);
+  opacity: 0.85;
+}
+
+.stage .node-pending .gem-core {
+  fill: #4fe08a;
+  opacity: 0.75;
+}
+
+.stage .node-pending .gem-base {
+  stroke: #4fe08a;
+}
+
+.stage .node-locked .node-gem {
+  filter: grayscale(0.7) brightness(0.7);
+}
+
+.stage .node-available .node-gem {
+  animation: node-gem-pulse 1.8s ease-in-out infinite;
+}
+
+@keyframes node-gem-pulse {
+  50% {
+    filter: drop-shadow(0 0 14px color-mix(in srgb, var(--node) 80%, transparent));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .node-available .node-gem {
+    animation: none;
+  }
+}
+
+.stage .node-gem-art {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.stage .node-gem-art img {
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 0.7));
+}
+
+.stage .node-plaque-title {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.stage .node-plaque h3 {
+  margin: 0;
+  font-size: 23px;
+  line-height: 1.15;
+  color: var(--node);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--node) 35%, transparent);
+}
+
+.stage .node-pips {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.stage .node-pips i {
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  background: #2a1f17;
+  box-shadow: inset 0 0 0 1px rgb(201 160 99 / 0.45);
+}
+
+.stage .node-pips i.on {
+  background: var(--node);
+  box-shadow: 0 0 6px var(--node);
+}
+
+.stage .node-pips b {
+  margin-left: 4px;
+  font-size: 13px;
+  color: #b9ab92;
+}
+
+.stage .node-status {
+  margin: 14px 0 0;
+  padding: 5px 10px;
+  border-radius: 3px;
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+  color: #ecdfc4;
+  background: rgb(255 255 255 / 0.06);
+  border: 1px solid rgb(255 255 255 / 0.1);
+}
+
+.stage .node-learned .node-status {
+  color: #f0d29a;
+  background: rgb(201 160 99 / 0.14);
+  border-color: rgb(201 160 99 / 0.35);
+}
+
+.stage .node-pending .node-status {
+  color: #7ff0ac;
+  background: rgb(79 224 138 / 0.12);
+  border-color: rgb(79 224 138 / 0.4);
+}
+
+.stage .node-locked .node-status {
+  color: #ff9a8a;
+  background: rgb(179 38 30 / 0.16);
+  border-color: rgb(255 122 106 / 0.35);
+}
+
+.stage .node-plaque-body {
+  min-height: 0;
+  margin-top: 14px;
+  padding-top: 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  overflow-y: auto;
+  border-top: 1px solid rgb(201 160 99 / 0.25);
+}
+
+.stage .node-desc {
+  margin: 0;
+  font-size: 17px;
+  line-height: 1.4;
+  color: #efe5d2;
+}
+
+.stage .node-note {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.35;
+  color: #b9ab92;
+}
+
+.stage .node-plaque .sub {
+  color: #9d8f78;
+}
+
+/* The dock: always at the bottom right, the node's action over Undo / Confirm. */
+.stage .tree-dock {
+  margin-top: auto;
+  flex: none;
+  padding: 14px 14px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  color: var(--k-on-wood);
+  border: 2px solid transparent;
+  border-image: url("../assets/ui/tile-wood.webp") 30 fill / 13px / 0 stretch;
+  /* The same image stretched underneath hides hairline seams between the slices. */
+  background: url("../assets/ui/tile-wood.webp") border-box center / 100% 100% no-repeat;
+  filter: drop-shadow(0 3px 6px rgb(0 0 0 / 0.35));
+}
+
+.stage .tree-dock-action {
   display: flex;
   flex-direction: column;
   gap: 8px;
 }
 
-.stage .node-detail h3 {
-  font-size: 21px;
+.stage .tree-dock-action > .k-btn {
+  justify-content: center;
 }
 
-.stage .node-detail .btn {
-  align-self: flex-start;
+.stage .tree-dock-commit {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgb(201 160 99 / 0.35);
+}
+
+.stage .tree-dock-pending {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 14px;
+  line-height: 1.2;
+}
+
+.stage .tree-dock-pending .sub {
+  color: var(--k-on-wood-sub);
+}
+
+.stage .tree-dock-commit.has .tree-dock-pending .strong {
+  color: #7ff0ac;
+}
+
+.stage .tree-dock-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.stage .tree-side .view-only-hint {
+  margin-top: auto;
 }
 
 .stage .skill-info {
@@ -4262,6 +4556,28 @@
 
 .stage .echo-row > .small {
   grid-column: 2;
+}
+
+/* Heirloom side: Weapon, Attunement and Echo stay compact so the node plaque has room. */
+.stage .weapon-stats .weapon-grid {
+  grid-template-columns: auto 1fr auto 1fr;
+  gap: 4px 12px;
+}
+
+.stage .tree-side .weapon-stats,
+.stage .tree-side .echo-picker {
+  flex: none;
+  padding: 12px 14px;
+  gap: 6px;
+}
+
+.stage .tree-side .echo-row {
+  padding: 6px 10px;
+}
+
+.stage .attune-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
 }
 
 .stage .echo-row.on {
