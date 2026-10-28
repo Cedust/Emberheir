@@ -2800,6 +2800,37 @@
   background: rgb(255 138 58 / 0.12);
 }
 
+.stage .temper-offer {
+  gap: 8px;
+}
+
+.stage .temper-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  border: 1.5px solid var(--edge);
+  background: transparent;
+  font-size: 15px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .temper-tile:hover {
+  border-color: var(--accent);
+}
+
+.stage .temper-tile.on {
+  border-color: var(--accent);
+  background: rgb(255 138 58 / 0.12);
+}
+
+.stage .temper-tile-text {
+  font-weight: 600;
+}
+
 .stage .locked-in {
   font-size: 11px;
   font-weight: 800;
