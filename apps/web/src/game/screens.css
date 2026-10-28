@@ -3255,6 +3255,66 @@
   font-size: 15px;
 }
 
+.stage .hero-class-name {
+  font-size: 13px;
+  color: var(--text-sub);
+}
+
+/* Who the Heir is (ClassChips): parchment chips under the level line, in both themes. */
+.stage .class-chips {
+  width: 560px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  padding-left: 18px;
+}
+
+.stage .class-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 34px;
+  padding: 0 12px 0 6px;
+  border-radius: 17px;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--panel);
+  border: 1px solid var(--edge);
+  box-shadow: 0 1px 3px rgb(0 0 0 / 0.25);
+}
+
+.stage .class-chip:hover,
+.stage .class-chip:focus-visible {
+  border-color: var(--accent);
+}
+
+.stage .class-chip-mastery {
+  padding: 0 10px 0 3px;
+  gap: 3px;
+}
+
+.stage .class-chip-mastery b {
+  font-size: 12px;
+}
+
+.stage .class-chip-lineage {
+  padding: 0 10px;
+  gap: 2px;
+}
+
+.stage .class-chip-flame {
+  display: grid;
+  color: var(--edge);
+  opacity: 0.7;
+}
+
+.stage .class-chip-flame.lit {
+  color: var(--accent);
+  opacity: 1;
+  filter: drop-shadow(0 0 3px var(--accent));
+}
+
 .stage .hero-level-bars .xp-bar,
 .stage .hero-level-bars .level-track {
   width: 100%;
