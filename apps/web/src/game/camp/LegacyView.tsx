@@ -112,7 +112,7 @@ export function LegacyView(props: {
                   {
                     id: "collections",
                     name: `Collections · ${full}/${goals.length}`,
-                    art: <ActionIcon id="collections" size={34} />,
+                    art: <ActionIcon id="collections" size={42} />,
                   },
                   { id: "lineage", name: "Lineage", art: <ActionIcon id="lineage" /> },
                 ]}

@@ -47,7 +47,7 @@ export function KaelenView(props: {
           {
             id: "plan" as const,
             name: "Battle Plan",
-            art: <img src={battlePlanUrl} width={30} alt="" draggable={false} />,
+            art: <img src={battlePlanUrl} width={40} alt="" draggable={false} />,
           },
         ]
       : []),

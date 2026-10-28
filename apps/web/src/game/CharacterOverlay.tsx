@@ -233,7 +233,7 @@ export function CharacterOverlay(props: {
     {
       id: "Overview",
       name: "Overview",
-      art: <ClassEmblem classId={state.hero.classId} size={28} />,
+      art: <ClassEmblem classId={state.hero.classId} size={32} />,
     },
     {
       id: "Attributes",
@@ -512,5 +512,5 @@ export function CharacterOverlay(props: {
 
 /** A painted tab icon from the Harvest sheet. */
 function TabArt(props: { src: string }) {
-  return <img src={props.src} width={28} height={28} alt="" draggable={false} />;
+  return <img src={props.src} width={34} height={34} alt="" draggable={false} />;
 }
