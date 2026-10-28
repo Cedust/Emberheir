@@ -37,6 +37,7 @@ import { canvasResolution } from "../pixiPacing";
 import { RuneStone, runeColor, runeName } from "../../ui/RuneArt";
 import { Price } from "../../ui/kit/Currency";
 import { PointPrice } from "../../ui/kit/Points";
+import { HeroSkillMeta, heroSkillText } from "../../ui/SkillMeta";
 import { SkillIcon } from "../battle/SkillIcon";
 import { type NodeShape, type NodeStatus, NodePlaque, TreeDock } from "./TreeSide";
 
@@ -525,10 +526,13 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
                 </p>
               )}
               {selected.skill && (
-                <p className="node-note skill-info">
-                  <b>{selected.skill.name}</b> · {selected.skill.heatCost} Heat ·{" "}
-                  {selected.skill.tags.join(" · ")}
-                </p>
+                <div className="node-note skill-info">
+                  <p>
+                    {selected.skill.name !== selected.name && <b>{selected.skill.name} </b>}
+                    <HeroSkillMeta state={state} skill={selected.skill} />
+                  </p>
+                  <p>{heroSkillText(state, selected.skill)}</p>
+                </div>
               )}
               {selected.kind === "keystone" && (
                 <p className="node-note">

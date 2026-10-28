@@ -10,7 +10,6 @@ import {
   type Item,
   hasMet,
 } from "@emberheir/sim";
-import type { IconName } from "../../ui/Icon";
 
 /** The Camp's traders and trainers: their names, actions and the texts of their offers. */
 
@@ -44,7 +43,6 @@ interface PersonaDef {
   readonly quotes: readonly string[];
   readonly actions: readonly {
     k: ActionKind;
-    icon: IconName;
     name: string;
     desc: string;
     /** Only after The Last Ember (Greater Affixes need Cinderglass from the Wildfire). */
@@ -69,16 +67,14 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
       "I don't do small talk. I do big hammers.",
     ],
     actions: [
-      { k: "upgrade", icon: "hammer", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
+      { k: "upgrade", name: "Upgrade", desc: "+1 Tier. Rolls keep their quality." },
       {
         k: "reforge",
-        icon: "cycle",
         name: "Reforge",
         desc: "Reroll all stat affixes. Triggers stay. Removes the lock.",
       },
       {
         k: "salvage",
-        icon: "trash",
         name: "Salvage",
         desc: "Break an inventory item down into Ash.",
       },
@@ -100,40 +96,34 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     actions: [
       {
         k: "temper",
-        icon: "gear",
         name: "Temper",
         desc: "Two offers for one affix: a new affix or a new value. Or keep it.",
       },
       {
         k: "kindle",
-        icon: "fire",
         name: "Kindle",
         desc: "Build a trigger from the Trigger Codex.",
       },
       {
         k: "awaken",
-        icon: "eye",
         name: "Awaken",
         desc: "A random affix becomes Greater I: 110 % of its best roll.",
         endgame: true,
       },
       {
         k: "shift",
-        icon: "next",
         name: "Shift",
         desc: "The Greater moves to another random affix. Its rank stays.",
         endgame: true,
       },
       {
         k: "intensify",
-        icon: "flame",
         name: "Intensify",
         desc: "Greater one rank higher: +10 % up to Greater V (150 %).",
         endgame: true,
       },
       {
         k: "crucible",
-        icon: "flask",
         name: "Ember Crucible",
         desc: "Bind Legendary Powers you learned by salvaging.",
         powers: true,
@@ -154,15 +144,14 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
       "If you hear humming from my bag, that's normal. If it stops, run.",
     ],
     actions: [
-      { k: "socket", icon: "shell", name: "Add Socket", desc: "+1 Socket on a Normal item." },
-      { k: "rune", icon: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
+      { k: "socket", name: "Add Socket", desc: "+1 Socket on a Normal item." },
+      { k: "rune", name: "Socket Rune", desc: "A Rune into a free Socket. Forever." },
       {
         k: "combine",
-        icon: "stone",
         name: "Combine Runes",
         desc: "Three of a kind make the next Rune.",
       },
-      { k: "codex", icon: "book", name: "Runeword Codex", desc: "Every Runeword you know." },
+      { k: "codex", name: "Runeword Codex", desc: "Every Runeword you know." },
     ],
   },
   marisha: {
@@ -181,7 +170,6 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
     actions: [
       {
         k: "gamble",
-        icon: "coins",
         name: "Gamble",
         desc: "A random item for the slot you choose. Same odds as loot.",
       },

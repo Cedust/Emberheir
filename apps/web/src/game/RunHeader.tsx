@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { GAME_DATA } from "@emberheir/content";
 import {
   type ActData,
@@ -9,6 +10,9 @@ import {
   wildfireName,
 } from "@emberheir/sim";
 import { Icon } from "../ui/Icon";
+import { actionIcon } from "../ui/actionIcons";
+import { useNoteHover } from "../ui/ItemTooltip";
+import { PaintedFace } from "./camp/art/PersonaArt";
 import { actTitle, finaleFoe, inFinale } from "./finale";
 
 /**
@@ -108,7 +112,8 @@ export function ActProgress(props: {
 export function RunHeader(props: {
   act: ActData;
   stage: number;
-  sub: string;
+  /** A line under the act's name; the Battle has none, its stage shows on the act bar (Timo). */
+  sub?: string;
   cleared: boolean;
   attributePoints: number;
   skillPoints: number;
@@ -126,18 +131,20 @@ export function RunHeader(props: {
     <header className="run-header bar-top">
       <div className="run-title">
         <span className="title-font">{actTitle(props.act)}</span>
-        <span className="sub">
-          {props.wildfire ? (
-            <span
-              className="wildfire-badge"
-              title={`Monster Level ${wildfireLevel(props.wildfire)}`}
-            >
-              <Icon name="fire" size={12} />
-              {wildfireName(props.wildfire)}
-            </span>
-          ) : null}
-          {props.sub}
-        </span>
+        {(props.sub || !!props.wildfire) && (
+          <span className="sub">
+            {props.wildfire ? (
+              <span
+                className="wildfire-badge"
+                title={`Monster Level ${wildfireLevel(props.wildfire)}`}
+              >
+                <Icon name="fire" size={12} />
+                {wildfireName(props.wildfire)}
+              </span>
+            ) : null}
+            {props.sub}
+          </span>
+        )}
       </div>
       <ActProgress
         act={props.act}
@@ -151,36 +158,61 @@ export function RunHeader(props: {
           : {})}
       />
       <div className="grow" />
-      <button type="button" className="hud-button" onClick={props.onCharacter}>
-        <Icon name="user" size={18} />
-        <span>Character</span>
-        <kbd>C</kbd>
+      <HudButton
+        name="Character"
+        explain="Gear, Attributes and Stats."
+        k="C"
+        onClick={props.onCharacter}
+      >
+        <span className="hud-face">
+          <PaintedFace id="heir" />
+        </span>
         {props.attributePoints > 0 && (
           <span className="badge" aria-label={`${props.attributePoints} unspent points`}>
             {props.attributePoints}
           </span>
         )}
-      </button>
-      <button
-        type="button"
-        className="hud-button"
+      </HudButton>
+      <HudButton
+        name="Ash Tree"
+        explain="Skill Points and the Battle Plan."
+        k="T"
         onClick={props.onTree}
-        title="Ash Tree and Battle Plan"
       >
-        <Icon name="tree" size={18} />
-        <span>Ash Tree</span>
-        <kbd>T</kbd>
+        <img src={actionIcon("ash-tree")} width={38} height={38} alt="" draggable={false} />
         {props.skillPoints > 0 && <span className="badge">{props.skillPoints}</span>}
-      </button>
-      <button
-        type="button"
-        className="icon-button"
-        aria-label="Menu"
-        title="Menu (Esc)"
-        onClick={props.onMenu}
-      >
-        <Icon name="menu" size={20} />
-      </button>
+      </HudButton>
+      <HudButton name="Menu" explain="" k="Esc" onClick={props.onMenu}>
+        <Icon name="menu" size={22} />
+      </HudButton>
     </header>
+  );
+}
+
+/** A painted square button in the top bar: art only, the name and key on hover (Timo). */
+function HudButton(props: {
+  name: string;
+  explain: string;
+  k: string;
+  onClick: () => void;
+  children: ReactNode;
+}) {
+  const hover = useNoteHover({
+    name: props.name,
+    kind: "",
+    explain: props.explain,
+    hotkey: props.k,
+  });
+  return (
+    <button
+      type="button"
+      className="hud-icon-btn"
+      aria-label={props.name}
+      onClick={props.onClick}
+      {...hover}
+    >
+      {props.children}
+      <kbd>{props.k}</kbd>
+    </button>
   );
 }

@@ -30,7 +30,8 @@ import {
 } from "@emberheir/sim";
 import { type ReactNode, useEffect, useRef, useState } from "react";
 import { useNoteHover } from "../../ui/ItemTooltip";
-import { Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
+import { actionIcon } from "../../ui/actionIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { Price } from "../../ui/kit/Currency";
 import { emptySlotArt } from "../../ui/items";
@@ -598,7 +599,14 @@ export function ActMapWindow(props: {
         label="Act map"
         role="dialog"
         className="act-map-window"
-        header={<WindowHeader title={act.name} sub="Act map" onClose={props.onClose} />}
+        header={
+          <WindowHeader
+            title={act.name}
+            sub="Act map"
+            medallion={<Medallion image={actionIcon("map")} tint="#5a4218" />}
+            onClose={props.onClose}
+          />
+        }
       >
         <ActMapView state={props.state} run={props.run} game={props.game} big />
         <p className="sub act-map-legend">

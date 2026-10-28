@@ -3,6 +3,8 @@ import {
   AILMENT_SOURCE,
   COMBAT,
   type BattlePlanState,
+  type WeaponDefinition,
+  type SkillDefinition,
   CAPSTONES,
   type GameState,
   REACTION_CONDITIONS,
@@ -41,6 +43,7 @@ import type { GameApi } from "../useGame";
 import { Price } from "../../ui/kit/Currency";
 import { prefersReducedMotion } from "../../ui/kit/juice";
 import { storageKey } from "../../storage";
+import { SkillMeta, skillText } from "../../ui/SkillMeta";
 
 /** Prestige that opens each Rotation / Reaction Slot (from the Battle Plan ladder). */
 const unlocksOf = (upgrade: "rotationSlot" | "reactionSlot", max: number) =>
@@ -360,7 +363,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                     note={{
                       name: k.skill.name,
                       kind: `Rotation Slot ${i + 1}`,
-                      explain: k.skill.description,
+                      explain: skillText(k.skill, setup.weapon),
                       status: `Costs ${cost} Heat`,
                     }}
                     on={on("rotation", i, "skill")}
@@ -445,7 +448,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
                       name: k?.skill.name ?? "Empty",
                       kind: `Reaction Slot ${i + 1}`,
                       explain: k
-                        ? k.skill.description
+                        ? skillText(k.skill, setup.weapon)
                         : "Put a skill here, then pick when it fires.",
                       status: `Rests ${REACTION_COOLDOWN} s after it fires`,
                     }}
@@ -574,6 +577,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
           target={target}
           known={known}
           placed={placed}
+          weapon={setup.weapon}
           slotSkill={
             target.row === "rotation"
               ? rotationSkill(target.index)?.skill.id
@@ -885,6 +889,7 @@ function Library(props: {
   known: Known;
   /** Slot a skill already sits in ("2", "R1"). */
   placed: ReadonlyMap<string, string>;
+  weapon: WeaponDefinition;
   slotSkill: string | null | undefined;
   mods: readonly SlotModifier[];
   cond: string | null;
@@ -908,8 +913,9 @@ function Library(props: {
     text: string;
     icon: IconName;
     tint?: string;
-    /** A skill: drawn with its painted icon. */
+    /** A skill: drawn with its painted icon, its Heat cost and kind under the name. */
     skill?: string;
+    def?: SkillDefinition;
     on: boolean;
     blocked?: boolean;
     drag?: string;
@@ -920,10 +926,11 @@ function Library(props: {
           ...props.known.map((k) => ({
             id: k.skill.id,
             name: `${k.skill.name} · Lv ${k.level}`,
-            text: `${k.skill.heatCost} Heat · ${k.skill.description}`,
+            text: skillText(k.skill, props.weapon),
             icon: skillIcon(k.skill.id),
             tint: skillTint(k.skill.id),
             skill: k.skill.id,
+            def: k.skill,
             on: props.slotSkill === k.skill.id,
             drag: k.skill.id,
             badge: props.placed.get(k.skill.id),
@@ -1000,10 +1007,15 @@ function Library(props: {
                 ) : (
                   <Icon name={t.icon} size={20} {...(t.tint ? { color: "#fff6e4" } : {})} />
                 )}
-                {t.badge && <span className="tile-badge mono">{t.badge}</span>}
+                {t.badge && (
+                  <span className="tile-badge mono" aria-hidden="true">
+                    {t.badge}
+                  </span>
+                )}
               </span>
               <span className="known-text">
                 <span className="title-font">{t.name}</span>
+                {t.def && <SkillMeta skill={t.def} weaponType={props.weapon.damageType} />}
                 {t.text && <span className="sub small">{t.text}</span>}
               </span>
             </button>

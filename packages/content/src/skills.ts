@@ -10,7 +10,7 @@ export const POWER_STRIKE: SkillDefinition = {
   type: "attack",
   heatCost: 25,
   tags: ["physical", "direct", "any"],
-  description: "220 % Weapon Damage.",
+  description: "Strike for 220 % Weapon Damage.",
   hits: [{ kind: "weapon", multiplier: 2.2 }],
 };
 
@@ -20,7 +20,7 @@ export const FLURRY: SkillDefinition = {
   type: "attack",
   heatCost: 50,
   tags: ["physical", "direct", "any"],
-  description: "4 quick hits for 90 % Weapon Damage each. Every hit can crit.",
+  description: "Strike 4 times for 90 % Weapon Damage each. Every hit can crit.",
   hits: [{ kind: "weapon", multiplier: 0.9, count: 4 }],
 };
 
@@ -30,7 +30,7 @@ export const EXECUTE: SkillDefinition = {
   type: "attack",
   heatCost: 90,
   tags: ["physical", "direct", "any"],
-  description: "400 % Weapon Damage, doubled against enemies below 30 % Life.",
+  description: "Strike for 400 % Weapon Damage. Double damage if the enemy is below 30 % Life.",
   hits: [{ kind: "weapon", multiplier: 4, lowLifeBonus: { threshold: 0.3, multiplier: 2 } }],
 };
 
@@ -41,7 +41,7 @@ export const SHOCKBOLT: SkillDefinition = {
   type: "spell",
   heatCost: 30,
   tags: ["lightning", "direct", "any"],
-  description: "A cheap bolt of the Wand's element. 25 % chance for its ailment.",
+  description: "Fire a quick bolt that deals damage as Lightning. 25 % chance that it Shocks.",
   hits: [
     {
       kind: "spell",
@@ -58,7 +58,7 @@ export const ICE_LANCE: SkillDefinition = {
   type: "spell",
   heatCost: 35,
   tags: ["cold", "direct", "any"],
-  description: "A medium Cold hit that always Chills.",
+  description: "Hurl a spear of ice for Cold damage. Always Chills.",
   hits: [
     {
       kind: "spell",
@@ -75,7 +75,8 @@ export const CHAIN_LIGHTNING: SkillDefinition = {
   type: "spell",
   heatCost: 50,
   tags: ["lightning", "direct", "any"],
-  description: "3 Lightning hits, each 25 % weaker. Each hit has a 30 % chance to Shock.",
+  description:
+    "Lightning jumps to the enemy 3 times, each hit 25 % weaker than the last. 30 % chance each to Shock.",
   hits: [
     {
       kind: "spell",
@@ -94,7 +95,7 @@ export const METEOR: SkillDefinition = {
   type: "spell",
   heatCost: 100,
   tags: ["fire", "direct", "any"],
-  description: "A huge Fire hit. 50 % chance to Burn.",
+  description: "Call down a meteor for huge Fire damage. 50 % chance to Burn.",
   hits: [
     {
       kind: "spell",
@@ -113,7 +114,7 @@ export const LACERATE: SkillDefinition = {
   type: "attack",
   heatCost: 25,
   tags: ["physical", "over-time", "any"],
-  description: "150 % Weapon Damage. Always Bleeds.",
+  description: "Slash for 150 % Weapon Damage. Always Bleeds.",
   hits: [{ kind: "weapon", multiplier: 1.5, ailmentChances: [{ ailment: "bleed", chance: 1 }] }],
 };
 
@@ -135,7 +136,7 @@ export const REND: SkillDefinition = {
   heatCost: 60,
   tags: ["physical", "over-time", "melee"],
   description:
-    "120 % Weapon Damage, then ends the Bleed and deals the rest at once, ×1.5. Heals you for 15 % of that burst.",
+    "Strike for 120 % Weapon Damage. Then the enemy's Bleed ends and deals all its remaining damage at once, +50 %. You heal for 15 % of it.",
   hits: [{ kind: "weapon", multiplier: 1.2 }],
   effects: [{ kind: "consumeBleed", multiplier: 1.5, leech: 0.15 }],
 };
@@ -147,7 +148,7 @@ export const TOXIC_BURST: SkillDefinition = {
   heatCost: 80,
   tags: ["physical", "over-time", "any"],
   description:
-    "100 % Weapon Damage that Poisons, then doubles the Poison stacks. Stacks over the limit burst at once.",
+    "Strike for 100 % Weapon Damage and Poison the enemy. Then double its Poison stacks. Stacks above the limit deal their damage at once.",
   hits: [{ kind: "weapon", multiplier: 1, ailmentChances: [{ ailment: "poison", chance: 1 }] }],
   effects: [{ kind: "multiplyPoison", factor: 2 }],
 };
@@ -160,7 +161,8 @@ export const IMMOLATE: SkillDefinition = {
   type: "spell",
   heatCost: 30,
   tags: ["fire", "over-time", "any"],
-  description: "A small Fire hit that sets a strong Burn, then Combusts it three times over.",
+  description:
+    "Hit for a little Fire damage and set a strong Burn. Then the Burn flares up 3 times, each dealing part of it at once.",
   hits: [
     {
       kind: "spell",
@@ -179,7 +181,7 @@ export const CORRUPT: SkillDefinition = {
   type: "spell",
   heatCost: 40,
   tags: ["void", "over-time", "any"],
-  description: "A Void hit that Corrupts. The Corruption starts four steps stronger.",
+  description: "Hit for Void damage and Corrupt the enemy. The Corruption starts 4 steps stronger.",
   hits: [
     {
       kind: "spell",
@@ -198,7 +200,7 @@ export const WITHER: SkillDefinition = {
   type: "curse",
   heatCost: 35,
   tags: ["over-time", "any"],
-  description: "Curse: the enemy takes 30 % more damage over time for 8 s.",
+  description: "Curse the enemy for 8 s. It takes 30 % more damage over time.",
   hits: [],
   effects: [{ kind: "curse", dotDamageTaken: 0.3, duration: 8 }],
 };
@@ -210,7 +212,7 @@ export const SOUL_HARVEST: SkillDefinition = {
   heatCost: 70,
   tags: ["void", "over-time", "any"],
   description:
-    "Deals 4 seconds of all damage over time at once and heals you for 25 % of it. The ailments keep running.",
+    "Every ailment on the enemy deals 4 seconds of its damage at once. You heal for 25 % of it. The ailments keep running.",
   hits: [],
   effects: [{ kind: "detonateDots", seconds: 4, leech: 0.25 }],
 };
@@ -221,7 +223,7 @@ export const CLEAVE: SkillDefinition = {
   type: "attack",
   heatCost: 55,
   tags: ["physical", "over-time", "melee"],
-  description: "180 % Weapon Damage that always Bleeds, half again as hard.",
+  description: "Cleave for 180 % Weapon Damage. Always Bleeds, 50 % stronger.",
   hits: [
     {
       kind: "weapon",
@@ -238,7 +240,7 @@ export const THUNDERSTRIKE: SkillDefinition = {
   type: "spell",
   heatCost: 55,
   tags: ["lightning", "direct", "any"],
-  description: "A heavy Lightning hit. 50 % chance to Shock.",
+  description: "Call down a heavy bolt of Lightning. 50 % chance to Shock.",
   hits: [
     {
       kind: "spell",
@@ -255,7 +257,7 @@ export const FROST_NOVA: SkillDefinition = {
   type: "spell",
   heatCost: 50,
   tags: ["cold", "direct", "any"],
-  description: "A Cold hit that always Chills and freezes the enemy for 0.8 s.",
+  description: "Blast the enemy with Cold. Always Chills and freezes it for 0.8 s.",
   hits: [
     {
       kind: "spell",
@@ -273,7 +275,7 @@ export const INFERNO: SkillDefinition = {
   type: "spell",
   heatCost: 60,
   tags: ["fire", "over-time", "any"],
-  description: "A Fire hit that sets a very strong Burn.",
+  description: "Engulf the enemy in Fire and set a very strong Burn.",
   hits: [
     {
       kind: "spell",
@@ -291,7 +293,8 @@ export const VOID_RIFT: SkillDefinition = {
   type: "spell",
   heatCost: 55,
   tags: ["void", "over-time", "any"],
-  description: "A Void hit that Corrupts. The Corruption starts six steps stronger.",
+  description:
+    "Tear open a rift for Void damage and Corrupt the enemy. The Corruption starts 6 steps stronger.",
   hits: [
     {
       kind: "spell",
@@ -310,7 +313,7 @@ export const IRON_BASTION: SkillDefinition = {
   type: "buff",
   heatCost: 45,
   tags: ["any"],
-  description: "Gain Barrier worth 20 % of your max Life.",
+  description: "Gain Barrier equal to 20 % of your max Life.",
   hits: [],
   effects: [{ kind: "barrier", fraction: 0.2 }],
 };
@@ -338,7 +341,7 @@ export const SKULL_CRACK: SkillDefinition = {
   type: "attack",
   heatCost: 30,
   tags: ["physical", "direct", "any"],
-  description: "180 % Weapon Damage. Stuns for 0.5 s.",
+  description: "Smash for 180 % Weapon Damage and Stun for 0.5 s.",
   hits: [{ kind: "weapon", multiplier: 1.8 }],
   effects: [{ kind: "stun", seconds: 0.5 }],
 };
@@ -350,7 +353,7 @@ export const BARBED_ARROW: SkillDefinition = {
   type: "attack",
   heatCost: 25,
   tags: ["physical", "over-time", "any"],
-  description: "180 % Weapon Damage. 50 % chance to Bleed, 50 % chance to Poison.",
+  description: "Shoot for 180 % Weapon Damage. 50 % chance to Bleed, 50 % chance to Poison.",
   hits: [
     {
       kind: "weapon",
@@ -371,7 +374,7 @@ export const HEAVY_BOLT: SkillDefinition = {
   type: "attack",
   heatCost: 30,
   tags: ["physical", "direct", "any"],
-  description: "240 % Weapon Damage that ignores 30 % Armor.",
+  description: "Fire a heavy bolt for 240 % Weapon Damage. Ignores 30 % of the enemy's Armor.",
   hits: [{ kind: "weapon", multiplier: 2.4, penetration: 0.3 }],
 };
 
@@ -384,7 +387,8 @@ export const CRUSHING_BLOW: SkillDefinition = {
   type: "attack",
   heatCost: 30,
   tags: ["physical", "direct", "any"],
-  description: "170 % Weapon Damage. Sunders: the enemy's Armor counts 30 % less for 6 s.",
+  description:
+    "Strike for 170 % Weapon Damage and Sunder the enemy: its Armor is 30 % weaker for 6 s.",
   hits: [{ kind: "weapon", multiplier: 1.7 }],
   effects: [{ kind: "sunder", armor: 0.3, duration: 6 }],
 };
@@ -408,7 +412,7 @@ export const ENVENOM: SkillDefinition = {
   type: "attack",
   heatCost: 30,
   tags: ["physical", "over-time", "any"],
-  description: "2 quick hits for 50 % Weapon Damage each. Both Poison.",
+  description: "Stab twice for 50 % Weapon Damage each. Each stab Poisons.",
   hits: [
     {
       kind: "weapon",
@@ -431,7 +435,7 @@ export const SEARING_BLOW: SkillDefinition = {
   type: "attack",
   heatCost: 40,
   tags: ["fire", "over-time", "any"],
-  description: "160 % Weapon Damage as Fire. Always Burns.",
+  description: "Strike for 160 % Weapon Damage as Fire. Always Burns.",
   hits: [
     {
       kind: "weapon",
@@ -448,7 +452,8 @@ export const STORM_STRIKE: SkillDefinition = {
   type: "attack",
   heatCost: 45,
   tags: ["lightning", "direct", "any"],
-  description: "3 quick hits for 70 % Weapon Damage as Lightning. Each has a 50 % chance to Shock.",
+  description:
+    "Strike 3 times for 70 % Weapon Damage each as Lightning. 50 % chance each to Shock.",
   hits: [
     {
       kind: "weapon",
@@ -466,7 +471,7 @@ export const FROST_STRIKE: SkillDefinition = {
   type: "attack",
   heatCost: 50,
   tags: ["cold", "direct", "any"],
-  description: "240 % Weapon Damage as Cold. Always Chills.",
+  description: "Strike for 240 % Weapon Damage as Cold. Always Chills.",
   hits: [
     {
       kind: "weapon",
@@ -521,7 +526,7 @@ export const VOID_BOLT: SkillDefinition = {
   type: "spell",
   heatCost: 35,
   tags: ["void", "over-time", "any"],
-  description: "A Void hit. 50 % chance to Corrupt.",
+  description: "Hurl an orb that deals damage as Void. 50 % chance that it Corrupts.",
   hits: [
     {
       kind: "spell",
