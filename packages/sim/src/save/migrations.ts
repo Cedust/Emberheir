@@ -43,6 +43,9 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // is dropped; a done one is paid as its successor (Trail Hunt, Dry Throat). Eldrin's Cache
   // (`bountyCache`) and the turned-in count (`stats.bounties`) are optional.
   15: { state: renameOldBounties },
+  // Crafting audit (crafting-audit-v1.md): Temper offers a choice that waits on the item
+  // (`item.temperOffer`, optional).
+  16: {},
 };
 
 /** Bounties of save version 15 that are gone → the bounty a done one is paid as. */

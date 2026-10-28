@@ -503,7 +503,10 @@ export function DoneCard(props: { state: GameState; run: RunState }) {
       ? `${finaleFoe(run.stage)} fades`
       : item
         ? `${pick?.kind === "equip" ? "Equipped" : "Taken"}: ${item.name}`
-        : "All items salvaged";
+        : rewards.items.length
+          ? "All items salvaged"
+          : // A fight without an item pick drops no items, only its usual rewards.
+            "The road goes on";
     sub = "";
     const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
     const boonName = boon && GAME_DATA.boons?.find((b) => b.id === boon.id)?.name;

@@ -34,13 +34,10 @@ describe("Runes and Runewords", () => {
     expect(freeSockets({ ...axe([]), sockets: 0 })).toBe(0);
   });
 
-  it("each socketed Rune gives its weapon or armor bonus", () => {
-    expect(runeBonuses(axe(["ash", "ash"]), TEST_CATALOG)).toMatchObject({
-      physicalDamage: 0.2,
-      armor: 0,
-    });
+  it("each socketed Rune gives its bonus", () => {
+    expect(runeBonuses(axe(["ash", "ash"]), TEST_CATALOG)).toMatchObject({ armor: 10 });
     const shield: Item = { ...axe(["ash"]), baseId: "test-shield" };
-    expect(runeBonuses(shield, TEST_CATALOG)).toMatchObject({ armor: 5, physicalDamage: 0 });
+    expect(runeBonuses(shield, TEST_CATALOG)).toMatchObject({ armor: 5 });
   });
 
   it("a Runeword needs the exact Runes in order, all Sockets filled, a fitting base", () => {
@@ -55,7 +52,7 @@ describe("Runes and Runewords", () => {
 
   it("a Runeword adds its bonuses, attributes, triggers and rules on top of the Runes", () => {
     const mods = itemModifiers(axe(["ash", "thorn"]), TEST_CATALOG);
-    expect(mods.bonuses).toMatchObject({ physicalDamage: 0.1, bleedChance: 0.1, attackSpeed: 0.2 });
+    expect(mods.bonuses).toMatchObject({ armor: 5, thorns: 2, attackSpeed: 0.2 });
     expect(mods.attributes.strength).toBe(3);
     expect(mods.triggers.map((t) => t.id)).toEqual(["searing-crit"]);
     expect(mods.rules?.critsApplyBleed).toBe(true);

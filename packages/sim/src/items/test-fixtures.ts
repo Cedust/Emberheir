@@ -53,19 +53,19 @@ export const TEST_RUNES: readonly RuneDefinition[] = [
     id: "ash",
     name: "Ash",
     rank: 1,
-    bonuses: { weapon: { physicalDamage: 0.1 }, armor: { armor: 5 } },
+    bonuses: { armor: 5 },
   },
   {
     id: "moss",
     name: "Moss",
     rank: 2,
-    bonuses: { weapon: { lifesteal: 0.02 }, armor: { life: 10 } },
+    bonuses: { life: 10 },
   },
   {
     id: "thorn",
     name: "Thorn",
     rank: 3,
-    bonuses: { weapon: { bleedChance: 0.1 }, armor: { thorns: 2 } },
+    bonuses: { thorns: 2 },
   },
 ];
 
@@ -129,6 +129,13 @@ export const TEST_RING: ItemBaseDefinition = {
   name: "Test Ring",
   slot: "ring",
   implicit: { critChance: 0.01 },
+};
+
+/** A Charm: trigger affixes only. */
+export const TEST_CHARM: ItemBaseDefinition = {
+  id: "test-charm",
+  name: "Test Charm",
+  slot: "charm",
 };
 
 export const TEST_AFFIXES: readonly AffixDefinition[] = [
@@ -260,7 +267,7 @@ export const TEST_EFFECTS: readonly TriggerEffectPart[] = [
 ];
 
 export const TEST_CATALOG = createItemCatalog({
-  bases: [TEST_SWORD, TEST_WAND, TEST_SHIELD, TEST_RING, TEST_AXE],
+  bases: [TEST_SWORD, TEST_WAND, TEST_SHIELD, TEST_RING, TEST_AXE, TEST_CHARM],
   affixes: TEST_AFFIXES,
   rareNames: { first: ["Ash"], second: ["Bite"] },
   runes: TEST_RUNES,

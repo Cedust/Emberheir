@@ -39,6 +39,7 @@ export const itemSchema: z.ZodType<Item> = z.object({
   tier: count,
   affixes: z.array(affixRoll),
   lockedAffix: opt(count),
+  temperOffer: opt(z.array(affixRoll)),
   greater: opt(z.object({ index: count, rank: int.positive() })),
   sockets: opt(count),
   runes: opt(z.array(id)),

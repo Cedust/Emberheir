@@ -14,7 +14,7 @@ and `PROGRESSION` / `CRAFTING` in `packages/sim/src/progression/constants.ts`.
 ## Runes
 
 - Eight runes, ranked: Ash 1, Moss 2, Thorn 3, Venom 4, Ember 5, Rime 6, Volt 7, Dusk 8.
-- Each rune has a weapon bonus (Main Hand) and an armor bonus (Off Hand, Helm, Body).
+- Each rune has one socket bonus (Off Hand, Helm, Body; the weapon bonus is gone since the weapon is fixed).
 - Drops: normal enemies 6 %, Elites 50 %, bosses 1.5 runes on average. Highest rank =
   1 + 2 × Act Tier (Act 1 up to Thorn, Act 2 up to Ember); each rank is half as likely as the
   one below.

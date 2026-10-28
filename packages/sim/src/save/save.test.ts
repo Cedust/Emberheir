@@ -30,7 +30,17 @@ function rich(): GameState {
   return {
     ...won,
     hero: { ...won.hero, equipment: { ...won.hero.equipment, offHand: shield("worn") } },
-    inventory: [{ item: shield("bag"), x: 0, y: 0 }],
+    inventory: [
+      {
+        item: {
+          ...shield("bag"),
+          lockedAffix: 0,
+          temperOffer: [{ affixId: "life", quality: 0.5 }],
+        },
+        x: 0,
+        y: 0,
+      },
+    ],
     stash: [{ item: shield("wagon"), x: 2, y: 1 }],
   };
 }

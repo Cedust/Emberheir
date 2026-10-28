@@ -107,9 +107,7 @@ export function RuneBoard(props: {
                 <span className="rune-next sub">→ {found.has(next.id) ? next.name : "?"}</span>
               )}
               {known && (
-                <span className="rune-bonus sub">
-                  {describeBonuses(r.bonuses.weapon).join(", ")}
-                </span>
+                <span className="rune-bonus sub">{describeBonuses(r.bonuses).join(", ")}</span>
               )}
             </button>
           );

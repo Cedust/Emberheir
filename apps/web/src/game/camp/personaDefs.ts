@@ -74,7 +74,7 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
         k: "reforge",
         icon: "cycle",
         name: "Reforge",
-        desc: "Reroll all affixes. Removes the lock.",
+        desc: "Reroll all stat affixes. Triggers stay. Removes the lock.",
       },
       {
         k: "salvage",
@@ -98,7 +98,12 @@ export const PERSONAS: Record<PersonaId, PersonaDef> = {
       "Breathe in. Breathe out. Now, which affix are we being mean to today?",
     ],
     actions: [
-      { k: "temper", icon: "gear", name: "Temper", desc: "Reroll the value of one affix." },
+      {
+        k: "temper",
+        icon: "gear",
+        name: "Temper",
+        desc: "Two offers for one affix: a new affix or a new value. Or keep it.",
+      },
       {
         k: "kindle",
         icon: "fire",

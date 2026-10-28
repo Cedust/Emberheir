@@ -180,6 +180,11 @@ export interface RollItemOptions {
     /** The Trail it is rolled at, kept on the affix (`AffixRoll.hunt`). */
     readonly trail?: number;
   };
+  /**
+   * Reforge: these trigger rolls stay as they are (after the new stat affixes) and no trigger is
+   * rolled anew.
+   */
+  readonly keepTriggers?: readonly AffixRoll[];
 }
 
 /**
@@ -194,18 +199,20 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
   const rarity = charm && options.rarity === "normal" ? "magic" : options.rarity;
   const counts = ITEMS.affixCounts[rarity];
   const statCount = charm ? 0 : rng.int(counts.stat[0], counts.stat[1]);
+  const kept = options.keepTriggers ?? [];
+  const keptDefs = kept.flatMap((r) => catalog.affixes.get(r.affixId) ?? []);
   const rolledTriggers = charm
     ? ITEMS.charmTriggers[rarity]
     : rng.int(counts.trigger[0], counts.trigger[1]) +
       (rng.chance(counts.extraTriggerChance) ? 1 : 0);
-  const triggerCount = rolledTriggers;
+  const triggerCount = options.keepTriggers ? 0 : rolledTriggers;
 
   const all = [...catalog.affixes.values()];
   const chosen: AffixDefinition[] = [];
   // Magic items carry one prefix and one suffix at most, like in D2.
   const allowed = (affix: AffixDefinition, picked: readonly AffixDefinition[]) =>
     rarity !== "magic" ||
-    [...chosen, ...picked].every((c) => affixPosition(c) !== affixPosition(affix));
+    [...chosen, ...picked, ...keptDefs].every((c) => affixPosition(c) !== affixPosition(affix));
   const factor = options.affixFactor;
   const triggerPool = affixPool(all, base.slot, "trigger");
   const statPool = affixPool(all, base.slot, "stat");
@@ -241,6 +248,7 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
     ),
     ...(a === signature && sign?.trail ? { hunt: sign.trail } : {}),
   }));
+  rolls.push(...kept);
   const power =
     rarity === "legendary"
       ? pickWeighted(powersForSlot(catalog, base.slot), () => 1, rng)
@@ -250,7 +258,7 @@ export function rollItem(catalog: ItemCatalog, options: RollItemOptions, rng: Rn
   return {
     id: rng.int(0, 0x7fffffff).toString(36).padStart(6, "0"),
     baseId: base.id,
-    name: itemName(catalog, base, rarity, chosen, rng),
+    name: itemName(catalog, base, rarity, [...chosen, ...keptDefs], rng),
     rarity: rarity,
     itemLevel,
     tier: tierForItemLevel(itemLevel),

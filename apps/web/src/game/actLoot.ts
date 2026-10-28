@@ -27,7 +27,20 @@ export function homeRuneNote(act: ActData): NoteHover | undefined {
       (high
         ? `In ${act.name}, 1 in ${every} Runes from Elites, Gatekeepers, Bosses and Caches is ${rune.name}.`
         : `In ${act.name}, 1 in ${every} Runes is ${rune.name}.`) +
-      ` Weapon: ${describeBonuses(rune.bonuses.weapon).join(", ")}.`,
+      ` Socketed: ${describeBonuses(rune.bonuses).join(", ")}.`,
+  };
+}
+
+/** A Rune's tooltip in the reward line: what it gives, the act's own Rune as its Home Rune. */
+export function runeNote(id: string, act: ActData): NoteHover | undefined {
+  if (id === act.homeRune) return homeRuneNote(act);
+  const rune = ITEM_CATALOG.runes.get(id);
+  if (!rune) return undefined;
+  return {
+    name: `${rune.name} Rune`,
+    kind: "Rune",
+    // Only gear takes Runes: the Heirloom weapon has no sockets.
+    explain: `Socketed: ${describeBonuses(rune.bonuses).join(", ")}.`,
   };
 }
 

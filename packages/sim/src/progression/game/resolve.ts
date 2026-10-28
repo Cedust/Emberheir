@@ -21,7 +21,6 @@ import {
   encounterName,
   encounterRank,
 } from "./encounters";
-import { salvageValue } from "./item-rules";
 import { requireRun } from "./guards";
 import { tripOmenEffects, tripOmens } from "./omens";
 import { omenPeril } from "../omens";
@@ -190,7 +189,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       ...(huntBoss && huntAfter >= 2 ? { trophyChance: HUNT.bossTrophyChance } : {}),
     },
   );
-  // Fewer, weightier picks: most normal fights pay Ash for their cards at once. Every
+  // Fewer, weightier picks: most normal fights drop no items, only their usual rewards. Every
   // `pickEvery`'th normal fight of the trip offers a pick (act-karte-entwurf-v1.md, K4).
   const normalFights = (run.fights ?? 0) + (rank === "normal" ? 1 : 0);
   // A Hunt node's quarry always offers a pick.
@@ -198,7 +197,6 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   const signed =
     pick && signatures?.length && huntAfter >= 2 ? signatureCard(rolled, signatures) : undefined;
   const items = pick ? rolled : [];
-  const autoAsh = pick ? 0 : rolled.reduce((sum, it) => sum + salvageValue(it), 0);
   const runes = rollRuneDrops(
     data,
     rank,
@@ -301,7 +299,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     wallet: {
       ...state.wallet,
       acorns: state.wallet.acorns + auto.acorns + huntAcorns,
-      ash: state.wallet.ash + auto.ash + autoAsh,
+      ash: state.wallet.ash + auto.ash,
       emberCoal: state.wallet.emberCoal + stones + huntCoal,
       phoenixFeathers: state.wallet.phoenixFeathers + feathers,
       runes: addRunes(state.wallet.runes, runes),
@@ -365,7 +363,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
           : {}),
         ...(pick
           ? { itemPick: null, salvagedAsh: 0 }
-          : { itemPick: { kind: "salvageAll" as const }, salvagedAsh: autoAsh }),
+          : { itemPick: { kind: "salvageAll" as const }, salvagedAsh: 0 }),
       },
     },
   };
