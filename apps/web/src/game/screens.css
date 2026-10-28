@@ -383,7 +383,7 @@
 }
 
 .stage .item-tooltip {
-  --tip-name: #e8e2d6;
+  --tip-name: var(--tip-bright);
   position: relative;
   box-sizing: border-box;
   width: 300px;
@@ -393,14 +393,12 @@
   align-items: center;
   gap: 2px;
   text-align: center;
-  background: #0e0b08;
-  border: 1px solid #5a4430;
+  background: var(--tip-bg);
+  border: 1px solid var(--tip-edge);
   outline: 1px solid rgb(0 0 0 / 0.8);
   border-radius: 3px;
-  box-shadow:
-    0 10px 30px rgb(0 0 0 / 0.6),
-    inset 0 0 24px rgb(0 0 0 / 0.6);
-  color: #d6ccbb;
+  box-shadow: var(--tip-shadow);
+  color: var(--tip-text);
   font-family: var(--font-text);
   font-size: 15px;
   line-height: 1.3;
@@ -418,50 +416,48 @@
 }
 
 .stage .item-tooltip.tip-magic {
-  --tip-name: #6f9bff;
+  --tip-name: var(--r-magic);
   border-color: #3b5aa8;
 }
 
 .stage .item-tooltip.tip-rare {
-  --tip-name: #ffd84a;
+  --tip-name: var(--r-rare);
   border-color: #8a7420;
 }
 
 .stage .item-tooltip.tip-epic {
-  --tip-name: #c18aff;
+  --tip-name: var(--r-epic);
   border-color: #6a3fa8;
   box-shadow:
     0 0 22px rgb(179 107 255 / 0.3),
-    0 10px 30px rgb(0 0 0 / 0.6),
-    inset 0 0 24px rgb(0 0 0 / 0.6);
+    var(--tip-shadow);
 }
 
 .stage .item-tooltip.tip-legendary {
-  --tip-name: #ff9a3a;
+  --tip-name: var(--r-legendary);
   border-color: #a8561a;
 }
 
 .stage .item-tooltip.tip-unique,
 .stage .item-tooltip.tip-runeword {
-  --tip-name: #e0c27a;
+  --tip-name: var(--r-unique);
   border-color: #8a6a2c;
   box-shadow:
     0 0 22px rgb(201 160 99 / 0.28),
-    0 10px 30px rgb(0 0 0 / 0.6),
-    inset 0 0 24px rgb(0 0 0 / 0.6);
+    var(--tip-shadow);
 }
 
 .stage .tip-tag {
   align-self: stretch;
   margin: -12px -16px 6px;
   padding: 4px 0;
-  background: rgb(255 255 255 / 0.06);
-  border-bottom: 1px solid #3a2c20;
+  background: var(--tip-well);
+  border-bottom: 1px solid var(--tip-line);
   font-family: var(--font-title);
   font-size: 11px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #9a8a72;
+  color: var(--tip-sub);
 }
 
 .stage .tip-name {
@@ -469,19 +465,19 @@
   font-size: 19px;
   font-weight: 700;
   color: var(--tip-name);
-  text-shadow: 0 0 10px rgb(0 0 0 / 0.9);
+  text-shadow: var(--tip-ink-shadow);
 }
 
 .stage .tip-kind {
   font-size: 13px;
-  color: #8f8170;
+  color: var(--tip-sub);
 }
 
 .stage .tip-rule {
   align-self: stretch;
   height: 1px;
   margin: 6px 12px;
-  background: linear-gradient(90deg, transparent, #6a4a2c, transparent);
+  background: linear-gradient(90deg, transparent, var(--tip-rule), transparent);
 }
 
 .stage .equipped-row {
@@ -4989,14 +4985,14 @@
   margin-top: auto;
   padding: 12px 18px;
   border-radius: 8px;
-  border: 2px solid var(--slot-edge);
-  background: var(--slot-bg);
-  box-shadow: var(--slot-inset);
-  color: #ecdfc4;
+  border: 2px solid var(--bar-edge);
+  background: var(--bar-bg);
+  box-shadow: var(--bar-inset);
+  color: var(--text);
 }
 
 .stage .chain .sub {
-  color: #b3a288;
+  color: var(--text-sub);
 }
 
 .stage .chain-row {
@@ -8375,7 +8371,7 @@
 
 /* Breakpoint Perk tooltip: the item tooltip's dark plate with an ember seal on top. */
 .stage .perk-tooltip {
-  --tip-name: #ffb13b;
+  --tip-name: var(--tip-hot);
   width: 280px;
   padding-top: 26px;
   border-color: #7a4a1c;
@@ -8391,12 +8387,12 @@
 }
 
 .stage .perk-tooltip.perk-locked {
-  --tip-name: #c9b89a;
+  --tip-name: var(--tip-plain);
   border-color: #5a4430;
 }
 
 .stage .perk-tooltip.perk-lost {
-  --tip-name: #ff7a6a;
+  --tip-name: var(--k-short, #ff7a6a);
   border-color: #8a2a20;
 }
 
@@ -8404,8 +8400,7 @@
 .stage .perk-tooltip.perk-gained {
   box-shadow:
     0 0 20px rgb(255 138 58 / 0.28),
-    0 10px 30px rgb(0 0 0 / 0.6),
-    inset 0 0 24px rgb(0 0 0 / 0.6);
+    var(--tip-shadow);
 }
 
 .stage .perk-tip-seal {
@@ -8432,26 +8427,26 @@
 }
 
 .stage .perk-tip-explain {
-  color: #ece4d4;
+  color: var(--tip-bright);
   font-size: 15px;
   line-height: 1.35;
 }
 
 .stage .perk-tip-status {
   font-size: 13px;
-  color: #9a8a72;
+  color: var(--tip-sub);
 }
 
 .stage .perk-active .perk-tip-status {
-  color: #4fe08a;
+  color: var(--good);
 }
 
 .stage .perk-gained .perk-tip-status {
-  color: #ffb13b;
+  color: var(--tip-hot);
 }
 
 .stage .perk-lost .perk-tip-status {
-  color: #ff7a6a;
+  color: var(--k-short, #ff7a6a);
 }
 
 .stage .notch.seal,
@@ -9269,18 +9264,18 @@
 
 /* Colors per surface: the dark tooltip plate and the parchment cards. */
 .stage .item-tooltip.item-tip {
-  --ib-text: #ece4d4;
-  --ib-sub: #9a8b76;
-  --ib-affix: #8fb0ff;
-  --ib-implicit: #b9ad98;
-  --ib-trigger: #ffb070;
-  --ib-power: #ff9a3a;
-  --ib-flavor: #c9a063;
-  --ib-rule: rgb(255 220 170 / 0.12);
-  --ib-well: rgb(255 255 255 / 0.045);
-  --ib-up: #4fd88a;
-  --ib-down: #ff6a5a;
-  --ib-unmet: #ff5a5a;
+  --ib-text: var(--tip-bright);
+  --ib-sub: var(--tip-sub);
+  --ib-affix: var(--tip-affix);
+  --ib-implicit: var(--tip-plain);
+  --ib-trigger: var(--tip-trigger);
+  --ib-power: var(--tip-power);
+  --ib-flavor: var(--tip-flavor);
+  --ib-rule: var(--tip-line);
+  --ib-well: var(--tip-well);
+  --ib-up: var(--tip-up);
+  --ib-down: var(--tip-down);
+  --ib-unmet: var(--tip-unmet);
   width: 340px;
   padding: 0 16px 12px;
   align-items: stretch;
@@ -9412,7 +9407,7 @@
 
 .stage .item-tip .ib-name {
   color: var(--tip-name);
-  text-shadow: 0 1px 6px rgb(0 0 0 / 0.9);
+  text-shadow: var(--tip-ink-shadow);
 }
 
 .stage .ib-kind {
@@ -9630,6 +9625,8 @@
 /* --- the Heirloom weapon's tooltip (ui/WeaponTooltip.tsx) ------------------------------------ */
 
 .stage .item-tooltip.weapon-tip {
+  /* The grade's colour (WeaponTooltip.tsx), mixed with ink on parchment so pale grades stay legible. */
+  --tip-name: color-mix(in srgb, var(--grade) var(--tip-tint), var(--tip-bright));
   width: 380px;
 }
 
@@ -9728,7 +9725,7 @@
   color: var(--tip-name);
   text-shadow:
     0 0 12px color-mix(in srgb, var(--tip-name) 40%, transparent),
-    0 1px 6px rgb(0 0 0 / 0.9);
+    var(--tip-ink-shadow);
 }
 
 .stage .wt-grade {
@@ -9752,7 +9749,7 @@
   flex: 1;
   height: 5px;
   border-radius: 1px;
-  background: #2a2019;
+  background: var(--tip-track);
   box-shadow: inset 0 0 0 1px rgb(0 0 0 / 0.6);
 }
 
@@ -9786,7 +9783,7 @@
   place-items: center;
   width: 28px;
   height: 28px;
-  color: #e0b45a;
+  color: var(--tip-icon);
 }
 
 .stage .wt-stat .ib-big-value {
@@ -9823,7 +9820,7 @@
   position: relative;
   height: 8px;
   border-radius: 4px;
-  background: #2a2019;
+  background: var(--tip-track);
   box-shadow: inset 0 1px 2px rgb(0 0 0 / 0.8);
 }
 
@@ -9846,7 +9843,7 @@
   bottom: -3px;
   width: 2px;
   margin-left: -1px;
-  background: #f4ead8;
+  background: var(--tip-mark);
   box-shadow: 0 0 3px rgb(0 0 0 / 0.9);
 }
 
@@ -9936,15 +9933,15 @@
 .stage .wt-feature-text {
   font-size: 13px;
   line-height: 1.28;
-  color: #b9ad98;
+  color: var(--tip-plain);
 }
 
 .stage .wt-innate {
-  --tone: #ffb070;
+  --tone: var(--tip-trigger);
 }
 
 .stage .wt-keystone {
-  --tone: #ff9a3a;
+  --tone: var(--tip-power);
 }
 
 .stage .wt-keystone-gem {

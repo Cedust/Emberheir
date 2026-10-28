@@ -1,6 +1,6 @@
 /*
- * Notifications (notification-system-v1): small cards top right, in the tooltips' look (dark
- * plate in the thin painted brass frame, ui/panel-frame.webp), painted icon left, a Cinzel title
+ * Notifications (notification-system-v1): small cards top right, in the tooltips' look (plate
+ * in the thin painted brass frame, ui/panel-frame.webp), painted icon left, a Cinzel title
  * and one short line. They sit over every screen and take clicks only where a card is.
  */
 .stage .notifications {
@@ -24,15 +24,14 @@
   min-height: 74px;
   padding: 12px 20px 12px 14px;
   text-align: left;
-  color: #d6ccbb;
+  color: var(--tip-text);
   font-family: var(--font-text);
-  background: #0e0b08;
-  border: 1px solid #5a4430;
+  background: var(--tip-bg);
+  border: 1px solid var(--tip-edge);
   outline: 1px solid rgb(0 0 0 / 0.8);
   border-radius: 3px;
   box-shadow:
-    0 10px 30px rgb(0 0 0 / 0.6),
-    inset 0 0 24px rgb(0 0 0 / 0.6),
+    var(--tip-shadow),
     inset 3px 0 0 var(--notice-tone, #c9a063);
   pointer-events: auto;
   cursor: pointer;
@@ -108,7 +107,8 @@
 }
 
 .stage .notification-text strong {
-  color: var(--notice-tone, #e0c27a);
+  /* Bright tones keep only part of their colour on parchment, the rest is ink. */
+  color: color-mix(in srgb, var(--notice-tone, #e0c27a) var(--tip-tint), var(--tip-text));
   font-size: 18px;
   line-height: 1.15;
   letter-spacing: 0.03em;
@@ -117,7 +117,7 @@
 .stage .notification-sub {
   font-size: 15px;
   line-height: 1.25;
-  color: #c2b49c;
+  color: var(--tip-plain);
 }
 
 .stage .notice-bounty {

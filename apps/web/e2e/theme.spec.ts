@@ -13,7 +13,7 @@ async function backgroundLight(page: Page, selector: string): Promise<number> {
     });
 }
 
-test("light mode keeps the Character Sheet's plaques and Eldrin's Omens on parchment", async ({
+test("light mode keeps the Character Sheet's plaques, tooltips and Eldrin's Omens on parchment", async ({
   page,
 }) => {
   await page.emulateMedia({ colorScheme: "light" });
@@ -25,6 +25,10 @@ test("light mode keeps the Character Sheet's plaques and Eldrin's Omens on parch
   await sheet.getByRole("tab", { name: "Stats" }).click();
   expect(await backgroundLight(page, ".hero-card")).toBeGreaterThan(0.6);
   expect(await backgroundLight(page, ".stat-pages")).toBeGreaterThan(0.6);
+  // Tooltips too: the item tooltip is a parchment plate in light mode.
+  await sheet.locator(".grid-item").first().hover();
+  expect(await backgroundLight(page, ".item-tooltip")).toBeGreaterThan(0.6);
+  await page.mouse.move(5, 5);
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/stats-light.png` });
 
   // Dark mode keeps the dark plaques.

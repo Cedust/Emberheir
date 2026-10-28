@@ -13,7 +13,7 @@
   height: 124px;
   z-index: 5;
   border-radius: 10px;
-  color: #f3e6c8;
+  color: var(--hud-ink);
 }
 
 .stage .hud-enemy.elite {
@@ -50,12 +50,12 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  text-shadow: 0 2px 6px #000;
+  text-shadow: var(--hud-name-shadow);
 }
 
 .stage .hud-enemy-level {
   font-size: 15px;
-  color: #e8c07a;
+  color: var(--hud-level);
 }
 
 .stage .hud-enemy-level.lv-hard {
@@ -194,8 +194,8 @@
   padding: 4px 12px;
   border-radius: 999px;
   font-size: 13px;
-  color: #f3e6c8;
-  background: rgb(20 14 10 / 0.82);
+  color: var(--hud-ink);
+  background: var(--hud-chip);
   border: 1px solid rgb(184 137 62 / 0.7);
   pointer-events: auto;
 }
@@ -214,7 +214,7 @@
   width: 64px;
   height: 5px;
   border-radius: 2px;
-  background: rgb(255 255 255 / 0.12);
+  background: var(--tip-track);
   overflow: hidden;
 }
 
@@ -685,8 +685,8 @@
 .stage .hud-flask-count {
   margin-left: 4px;
   font-size: 13px;
-  color: #e8c07a;
-  text-shadow: 0 1px 2px #000;
+  color: var(--hud-level);
+  text-shadow: var(--hud-shadow);
 }
 
 .stage .hud-center {
@@ -814,12 +814,12 @@
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 12px;
-  color: #cbbca0;
-  text-shadow: 0 1px 2px #000;
+  color: var(--hud-ink-sub);
+  text-shadow: var(--hud-shadow);
 }
 
 .stage .hud-center .skill-caption.next {
-  color: #ffe9c0;
+  color: var(--hud-ink-hot);
 }
 
 .stage .hud-right {

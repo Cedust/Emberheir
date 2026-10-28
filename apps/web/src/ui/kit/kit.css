@@ -801,11 +801,11 @@
   align-items: center;
   gap: 6px;
   font-size: 13px;
-  color: #8f8170;
+  color: var(--tip-sub, #8f8170);
 }
 
 .stage .tip-hotkey .k-key {
-  color: #e8e2d6;
+  color: var(--tip-bright, #e8e2d6);
 }
 
 /* --- Touch (tablet-plan-v1.md) -------------------------------------------------------------------- */
