@@ -139,9 +139,17 @@ export function HoldButton(props: {
       className={`k-btn ${props.primary ? "k-primary" : "k-secondary"} k-hold`}
       aria-disabled={blocked ? true : undefined}
       data-blocked={blocked ? "" : undefined}
-      onPointerDown={begin}
+      {...hover}
+      onPointerDown={(e) => {
+        // A finger on a blocked button reads why; otherwise holding is the action itself.
+        if (blocked) hover.onPointerDown?.(e);
+        begin();
+      }}
       onPointerUp={stop}
-      onPointerLeave={stop}
+      onPointerLeave={(e) => {
+        hover.onPointerLeave?.(e);
+        stop();
+      }}
       onKeyDown={(e) => {
         if ((e.key === " " || e.key === "Enter") && !e.repeat) {
           e.preventDefault();
@@ -151,7 +159,6 @@ export function HoldButton(props: {
       onKeyUp={(e) => {
         if (e.key === " " || e.key === "Enter") stop();
       }}
-      {...hover}
     >
       <span className="k-hold-fill" style={{ transform: `scaleX(${progress})` }} />
       {props.icon && <Icon name={props.icon} size={17} />}

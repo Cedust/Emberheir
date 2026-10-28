@@ -303,7 +303,7 @@ export function ActMapView(props: {
 }
 
 /**
- * The planning window's view on the map: the wheel zooms around the cursor, a drag pans, the
+ * The planning window's view on the map: the wheel or two fingers zoom, a drag pans, the
  * buttons zoom and bring the next row back into view. Opens on the row ahead.
  */
 function MapViewport(props: {
@@ -314,6 +314,22 @@ function MapViewport(props: {
 }) {
   const box = useRef<HTMLDivElement>(null);
   const drag = useRef<{ x: number; y: number; moved: boolean } | null>(null);
+  /** Fingers on the map (screen pixels); two of them pinch-zoom. */
+  const fingers = useRef(new Map<number, { x: number; y: number }>());
+  const pinch = useRef<{ dist: number; x: number; y: number } | null>(null);
+  const pinchOf = () => {
+    const [a, b] = [...fingers.current.values()];
+    if (!a || !b) return { dist: 1, x: 0, y: 0 };
+    return {
+      dist: Math.max(1, Math.hypot(a.x - b.x, a.y - b.y)),
+      x: (a.x + b.x) / 2,
+      y: (a.y + b.y) / 2,
+    };
+  };
+  const lift = (id: number) => {
+    fingers.current.delete(id);
+    if (fingers.current.size < 2) pinch.current = null;
+  };
   const [view, setView] = useState({ x: 0, y: 0, z: 1 });
 
   // Stage pixels per screen pixel: the stage is scaled to the window (ui/Stage.tsx).
@@ -384,9 +400,38 @@ function MapViewport(props: {
       onMouseDown={(e) => e.preventDefault()}
       onPointerDown={(e) => {
         if (e.button !== 0) return;
+        fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        if (fingers.current.size >= 2) {
+          // Two fingers pinch: zoom around their middle; neither of them picks a node.
+          pinch.current = pinchOf();
+          box.current?.setPointerCapture(e.pointerId);
+          if (drag.current) drag.current.moved = true;
+          return;
+        }
         drag.current = { x: e.clientX, y: e.clientY, moved: false };
       }}
       onPointerMove={(e) => {
+        if (fingers.current.has(e.pointerId))
+          fingers.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+        const from = pinch.current;
+        if (from && fingers.current.size >= 2) {
+          const next = pinchOf();
+          const r = box.current?.getBoundingClientRect();
+          if (!r) return;
+          const u = unit();
+          const k = next.dist / from.dist;
+          const px = (next.x - r.left) * u;
+          const py = (next.y - r.top) * u;
+          const dx = (next.x - from.x) * u;
+          const dy = (next.y - from.y) * u;
+          setView((v) => {
+            const z = Math.min(ZOOM.max, Math.max(ZOOM.min, v.z * k));
+            const f = z / v.z;
+            return clamp({ z, x: px - (px - v.x - dx) * f, y: py - (py - v.y - dy) * f });
+          });
+          pinch.current = next;
+          return;
+        }
         const d = drag.current;
         if (!d) return;
         const dx = e.clientX - d.x;
@@ -399,17 +444,21 @@ function MapViewport(props: {
         const u = unit();
         setView((v) => clamp({ ...v, x: v.x + dx * u, y: v.y + dy * u }));
       }}
-      onPointerUp={() => {
+      onPointerUp={(e) => {
+        lift(e.pointerId);
         // A drag that moved keeps its click from picking the node under the cursor.
         const moved = drag.current?.moved;
-        drag.current = null;
+        if (fingers.current.size === 0) drag.current = null;
         if (moved) {
           const stop = (ev: MouseEvent) => ev.stopPropagation();
           window.addEventListener("click", stop, { capture: true, once: true });
           setTimeout(() => window.removeEventListener("click", stop, { capture: true }), 0);
         }
       }}
-      onPointerCancel={() => (drag.current = null)}
+      onPointerCancel={(e) => {
+        lift(e.pointerId);
+        if (fingers.current.size === 0) drag.current = null;
+      }}
     >
       <div
         className="act-map-pan"

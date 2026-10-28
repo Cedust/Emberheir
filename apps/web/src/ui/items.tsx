@@ -21,6 +21,8 @@ import {
   type SlotDrop,
   dragging,
   endDrag,
+  heldItem,
+  holdItem,
   startDrag,
 } from "./dragItems";
 import amuletUrl from "../assets/slots/amulet.webp";
@@ -37,6 +39,7 @@ import { ItemArt } from "./ItemArt";
 import { CompareList, ItemBody, ItemHead, rarityClass } from "./ItemBody";
 import type { CompareView } from "./itemCompare";
 import { useItemHover } from "./ItemTooltip";
+import { currentInput } from "./touch";
 import { SocketDots } from "./RuneArt";
 import { aimedSlot, switchSlot, useRingSlot } from "./ringSlot";
 
@@ -230,7 +233,11 @@ export function ItemTile(props: {
   const { item } = props;
   const w = props.width ?? props.size ?? 68;
   const h = props.height ?? props.size ?? 68;
-  const { active, ...hover } = useItemHover(item, props.equipped ?? true, props.context?.action);
+  const {
+    active,
+    hide: hideTip,
+    tip: hover,
+  } = useItemHover(item, props.equipped ?? true, props.context?.action, props.context?.run);
   const [over, setOver] = useState<"ok" | "no" | null>(null);
   const base = item ? getBase(ITEM_CATALOG, item.baseId) : undefined;
   const drag = props.drag;
@@ -238,8 +245,9 @@ export function ItemTile(props: {
     ? {
         draggable: !!drag.source,
         onDragStart: (e: React.DragEvent) => {
-          if (!drag.source) return;
-          hover.onMouseLeave?.();
+          // Touch picks up with a tap; a long press reads the tooltip.
+          if (!drag.source || currentInput() === "touch") return e.preventDefault();
+          hideTip?.();
           startDrag(drag.source, e);
         },
         onDragEnd: () => {
@@ -270,12 +278,24 @@ export function ItemTile(props: {
       style={{ width: w, height: h }}
       aria-label={item ? `${props.label}: ${item.name}` : `${props.label}: empty`}
       title={active ? undefined : item ? `${props.label}: ${item.name}` : props.label}
-      onClick={props.onSelect}
+      onClick={(e) => {
+        // Touch: a picked up item goes into this slot.
+        const source = heldItem();
+        if (drag && source && currentInput() === "touch" && source.itemId !== item?.id) {
+          holdItem(null);
+          if (drag.drop.canDrop(source)) {
+            drag.drop.onDrop(source);
+            return;
+          }
+        }
+        if (drag?.source && currentInput() === "touch") holdItem(drag.source);
+        props.onSelect?.(e);
+      }}
       onContextMenu={
         props.context
           ? (e) => {
               e.preventDefault();
-              hover.onMouseLeave?.();
+              hideTip?.();
               props.context?.run();
             }
           : undefined
@@ -318,12 +338,23 @@ function GridItem(props: {
   const { placed: p, cell, grid, context } = props;
   const base = getBase(ITEM_CATALOG, p.item.baseId);
   const s = itemSize(p.item, ITEM_CATALOG);
-  const { active, ...hover } = useItemHover(p.item, false, context?.action(p.item));
+  const action = context?.action(p.item);
+  const {
+    active,
+    hide: hideTip,
+    tip: hover,
+  } = useItemHover(
+    p.item,
+    false,
+    action,
+    action && context ? () => context.run(p.item) : undefined,
+  );
   const dragProps = grid
     ? {
         draggable: true,
         onDragStart: (e: React.DragEvent<HTMLButtonElement>) => {
-          hover.onMouseLeave?.();
+          if (currentInput() === "touch") return e.preventDefault();
+          hideTip?.();
           const r = e.currentTarget.getBoundingClientRect();
           const cw = r.width / s.w || 1;
           const ch = r.height / s.h || 1;
@@ -349,12 +380,16 @@ function GridItem(props: {
       }}
       aria-label={p.item.name}
       title={active ? undefined : p.item.name}
-      onClick={(e) => props.onSelect(p.item.id, e)}
+      onClick={(e) => {
+        if (grid && currentInput() === "touch")
+          holdItem({ kind: "grid", grid, itemId: p.item.id, offset: { x: 0, y: 0 }, size: s });
+        props.onSelect(p.item.id, e);
+      }}
       onContextMenu={
         context
           ? (e) => {
               e.preventDefault();
-              hover.onMouseLeave?.();
+              hideTip?.();
               context.run(p.item);
             }
           : undefined
@@ -443,6 +478,21 @@ export function ItemGrid(props: {
         backgroundSize: `${cell}px ${cell}px`,
       }}
       {...dropProps}
+      onClick={(e) => {
+        // Touch: the picked up item (also the selected one) goes to the free spot tapped.
+        const source = heldItem();
+        if (!drop || !source || e.target !== e.currentTarget || currentInput() !== "touch") return;
+        if (source.itemId !== props.selected) return;
+        const r = e.currentTarget.getBoundingClientRect();
+        const px = r.width / (props.size.w * cell) || 1;
+        const at = {
+          x: Math.floor((e.clientX - r.left) / (cell * px)),
+          y: Math.floor((e.clientY - r.top) / (cell * px)),
+        };
+        if (!drop.canDrop(source, at)) return;
+        holdItem(null);
+        drop.onDrop(source, at);
+      }}
     >
       {props.placed.map((p) => (
         <GridItem

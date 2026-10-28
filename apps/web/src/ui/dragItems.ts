@@ -32,6 +32,18 @@ export function endDrag(): void {
   current = null;
 }
 
+/**
+ * Touch has no drag and drop (tablet-plan-v1.md): tapping an item picks it up, tapping a free
+ * spot of a grid or an equipment slot puts it there. Tapping it again lets go.
+ */
+let held: DragSource | null = null;
+
+export const heldItem = (): DragSource | null => held;
+
+export function holdItem(source: DragSource | null): void {
+  held = source && held?.itemId === source.itemId ? null : source;
+}
+
 /** Drop handlers for a grid: is `at` a valid spot for the dragged item, and what happens. */
 export interface GridDrop {
   readonly grid: "inventory" | "stash";
