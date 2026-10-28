@@ -597,7 +597,7 @@ export interface EnemyFrameProps {
   hunt?: HuntView;
 }
 
-/** The enemy's Trail at the top right, clear of the plaque's statuses: its mark, the bar to the next one. */
+/** The enemy's Trail at the top left, clear of the plaque's statuses: its mark, the bar to the next one. */
 function HuntChip(props: { hunt: HuntView }) {
   const h = props.hunt;
   const part = h.next !== undefined ? (h.kills - h.from) / Math.max(1, h.next - h.from) : 1;

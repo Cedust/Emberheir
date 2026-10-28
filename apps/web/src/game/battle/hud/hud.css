@@ -179,14 +179,14 @@
 }
 
 /*
- * The enemy's Trail (Hunts): its mark and the way to the next one, alone in the free top right
- * corner beside the plaque (under the dev speed buttons with ?dev), so the timers of the enemy's
+ * The enemy's Trail (Hunts): its mark and the way to the next one, alone in the free top left
+ * corner beside the plaque (the right one belongs to notifications), so the timers of the enemy's
  * statuses under the plaque never run into it (Timo).
  */
 .stage .hunt-chip {
   position: absolute;
   top: 84px;
-  right: calc(var(--safe-x, 0px) + 22px);
+  left: calc(var(--safe-x, 0px) + 22px);
   z-index: 5;
   display: inline-flex;
   align-items: center;
@@ -198,10 +198,6 @@
   background: rgb(20 14 10 / 0.82);
   border: 1px solid rgb(184 137 62 / 0.7);
   pointer-events: auto;
-}
-
-.stage .battle:has(.dev-tools) .hunt-chip {
-  top: 150px;
 }
 
 .stage .hunt-label {
