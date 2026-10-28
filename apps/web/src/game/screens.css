@@ -112,13 +112,13 @@
 /* Painted socket (ui/slot.webp): a brass rim; the rarity shows as a line just inside it. */
 .stage .item-tile {
   border: 2px solid transparent;
-  border-image: url("../assets/ui/slot.webp") 30 / 11px / 0 stretch;
+  border-image: url("../assets/ui/slot.webp") 30 / var(--rim, 11px) / 0 stretch;
 }
 
 .stage .item-tile::after {
   content: "";
   position: absolute;
-  inset: 7px;
+  inset: calc(var(--rim, 11px) * 0.64);
   border: 1.5px solid var(--frame, transparent);
   border-radius: 3px;
   pointer-events: none;
@@ -142,6 +142,14 @@
   height: 86%;
   filter: drop-shadow(0 2px 2px rgb(0 0 0 / 0.55));
   pointer-events: none;
+}
+
+/* In a painted socket the icon stays inside the brass rim and the rarity line, whatever the slot's
+   shape: a square Shield in the tall Off Hand slot is as wide as the space between the rims. */
+.stage .item-tile .item-art {
+  inset: var(--rim, 11px);
+  width: calc(100% - 2 * var(--rim, 11px));
+  height: calc(100% - 2 * var(--rim, 11px));
 }
 
 .stage .rarity-magic.item-tile,
@@ -184,7 +192,7 @@
 }
 
 .stage .item-tile .socket-dots {
-  bottom: 9px;
+  bottom: calc(var(--rim, 11px) - 2px);
 }
 
 .stage .socket-dot {
@@ -231,8 +239,8 @@
 
 .stage .item-tile-tier {
   position: absolute;
-  right: 12px;
-  bottom: 12px;
+  right: calc(var(--rim, 11px) + 1px);
+  bottom: calc(var(--rim, 11px) + 1px);
   z-index: 1;
   padding: 0 3px;
   border-radius: 3px;

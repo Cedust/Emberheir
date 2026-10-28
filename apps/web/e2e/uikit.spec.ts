@@ -13,7 +13,7 @@ test("the UI kit preview shows every piece and Q/E flip its tabs", async ({ page
   await expect(page.getByTestId("note-tooltip")).toContainText("craft with it");
   await page.keyboard.press("q");
   await page.keyboard.press("q");
-  await expect(tabs.getByRole("tab", { name: /Keys/ })).toHaveAttribute("aria-selected", "true");
+  await expect(tabs.getByRole("tab", { name: /Items/ })).toHaveAttribute("aria-selected", "true");
   expect(errors).toEqual([]);
 });
 
@@ -45,4 +45,31 @@ test("one key scheme in the Camp: B, L, Q/E and Esc", async ({ page }) => {
   await page.keyboard.press("Escape");
   await page.keyboard.press("i");
   await expect(page.getByRole("dialog", { name: "Character" })).toBeVisible();
+});
+
+test("the UI kit's Items page shows every icon inside its frames", async ({ page }) => {
+  await page.goto("/?uikit");
+  await page.getByRole("tab", { name: /Items/ }).click();
+  const items = page.getByTestId("kit-item");
+  await expect(items.first()).toBeVisible();
+  // In every painted socket the icon stays inside the brass rim.
+  const outside = await page.$$eval(
+    ".kit-item .item-tile",
+    (tiles) =>
+      tiles.filter((tile) => {
+        const art = tile.querySelector(".item-art");
+        if (!art) return false;
+        const rim = parseFloat(getComputedStyle(tile).getPropertyValue("--rim")) || 11;
+        const t = tile.getBoundingClientRect();
+        const a = art.getBoundingClientRect();
+        const k = t.width / (tile as HTMLElement).offsetWidth;
+        return (
+          a.left < t.left + rim * k - 0.5 ||
+          a.right > t.right - rim * k + 0.5 ||
+          a.top < t.top + rim * k - 0.5 ||
+          a.bottom > t.bottom - rim * k + 0.5
+        );
+      }).length,
+  );
+  expect(outside).toBe(0);
 });

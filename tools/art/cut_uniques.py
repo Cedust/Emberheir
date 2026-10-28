@@ -2,26 +2,25 @@
 # for apps/web/src/ui/ItemArt.tsx. Run from the repo root: python3 tools/art/cut_uniques.py  (needs Pillow + numpy)
 # The items sit in an even grid, but pairs (gloves, boots) have gaps and some items reach into the
 # next row, so every painted blob goes to the grid cell its centre lies in, and only those pixels are cut.
-# Sheet C holds square items (one square icon each, like item sheet A); sheet D keeps each item's own
-# shape (Body Armor, Belts, Amulets, Rings, like item sheet B).
+# Every icon keeps its own shape (cropped to its painted pixels), so it fits any frame by its real
+# outline: a tall candle fills a tall Off Hand slot instead of shrinking inside a square canvas.
 from collections import deque
 import numpy as np
 from PIL import Image
 
 SHEETS = [
-  ('/mnt/project-files/art/items/unique-sheet-c-v1.png', False, [
+  ('/mnt/project-files/art/items/unique-sheet-c-v1.png', [
     ['gorraks-knuckles', 'heirloom-blade', 'avalanche-bow', 'rotfang'],
     ['thornsong', 'ashwalkers', 'stormcallers-greaves', 'riftwalker-wraps'],
     ['barkhide-bulwark', 'wardenshell', 'tyrants-crown', 'cinderwick'],
   ]),
-  ('/mnt/project-files/art/items/unique-sheet-d-v1.png', True, [
+  ('/mnt/project-files/art/items/unique-sheet-d-v1.png', [
     ['mossgrown-mail', 'ashmaw-pauldron', 'rotmothers-cradle', 'reapers-due'],
     ['eruption-core', 'the-stolen-flame', 'maws-hunger', 'nans-lucky-ring', 'heraldic-coil'],
   ]),
 ]
 OUT = 'apps/web/src/assets/uniques/'
-SIZE = 192  # square icons, as cut_items.py
-TALL = 288  # longest side of a shaped icon, as cut_items.py sheet B
+TALL = 288  # longest side of an icon, as cut_items.py sheet B
 PAD = 0.02
 C = 3  # blob search grid in sheet pixels
 
@@ -54,7 +53,7 @@ def blobs(alpha):
   return found, (gh, gw)
 
 
-for src, keep_shape, rows in SHEETS:
+for src, rows in SHEETS:
   im = Image.open(src).convert('RGBA')
   # The generator leaves faint smudges around the icons: drop nearly invisible pixels.
   im.putalpha(im.getchannel('A').point(lambda a: 0 if a < 20 else a))
@@ -77,16 +76,10 @@ for src, keep_shape, rows in SHEETS:
     part[~full, 3] = 0
     ys, xs = np.nonzero(part[:, :, 3] > 8)
     part = Image.fromarray(part[ys.min():ys.max() + 1, xs.min():xs.max() + 1])
-    if keep_shape:
-      pad = round(max(part.size) * PAD)
-      sq = Image.new('RGBA', (part.width + 2 * pad, part.height + 2 * pad), (0, 0, 0, 0))
-      sq.paste(part, (pad, pad))
-      scale = TALL / max(sq.size)
-      out = sq.resize((round(sq.width * scale), round(sq.height * scale)), Image.Resampling.LANCZOS)
-    else:
-      side = round(max(part.size) * (1 + 2 * PAD))
-      sq = Image.new('RGBA', (side, side), (0, 0, 0, 0))
-      sq.paste(part, ((side - part.width) // 2, (side - part.height) // 2))
-      out = sq.resize((SIZE, SIZE), Image.Resampling.LANCZOS)
+    pad = round(max(part.size) * PAD)
+    sq = Image.new('RGBA', (part.width + 2 * pad, part.height + 2 * pad), (0, 0, 0, 0))
+    sq.paste(part, (pad, pad))
+    scale = TALL / max(sq.size)
+    out = sq.resize((round(sq.width * scale), round(sq.height * scale)), Image.Resampling.LANCZOS)
     out.save(f'{OUT}{name}.webp', quality=90, method=6)
     print(name, out.size)
