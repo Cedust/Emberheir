@@ -5,6 +5,7 @@ import campUrl from "../../assets/camp/camp-ashen-fields.webp";
 import { PersonaPortrait } from "../../game/camp/art/PersonaArt";
 import { PaintDefs } from "../../game/camp/art/paint";
 import { ItemHoverLayer } from "../ItemTooltip";
+import { ItemFramesPage } from "./ItemFramesPage";
 import { ItemTile } from "../items";
 import { Paperdoll, dollBox } from "../Paperdoll";
 import { Stage } from "../Stage";
@@ -60,6 +61,7 @@ export function UiKitPreview() {
               {page === "buttons" && <ButtonsPage state={state} />}
               {page === "dialog" && <DialogPage />}
               {page === "keys" && <KeysPage />}
+              {page === "items" && <ItemFramesPage />}
             </div>
           </Window>
         </div>
@@ -71,13 +73,14 @@ export function UiKitPreview() {
 /** The Camp stays visible, dimmed, behind every window (ui-ux-plan-v1.md 3.2). */
 const DIM = "linear-gradient(rgb(14 10 6 / 0.6), rgb(14 10 6 / 0.6))";
 
-type Page = "window" | "buttons" | "dialog" | "keys";
+type Page = "window" | "buttons" | "dialog" | "keys" | "items";
 
 const PAGES: readonly TabItem<Page>[] = [
   { id: "window", name: "Window", icon: "box" },
   { id: "buttons", name: "Buttons", icon: "strike", marker: 3 },
   { id: "dialog", name: "Dialog", icon: "nan", marker: "!" },
   { id: "keys", name: "Keys", icon: "menu" },
+  { id: "items", name: "Items", icon: "inventory" },
 ];
 
 function demoState(): GameState {
