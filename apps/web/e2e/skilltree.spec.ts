@@ -1,4 +1,5 @@
 import { expect, test } from "@playwright/test";
+import { unseal } from "../src/game/saveCodec";
 import { saveAfterHarvestBoss, saveDeepTree, saveWebTree, seedSave } from "./fixtures";
 
 test("The Ash Tree grows with the Masteries and their tiers", async ({ page }) => {
@@ -53,8 +54,8 @@ test("The Mastery step deepens the main Mastery", async ({ page }) => {
   await page.getByRole("button", { name: "Let It Burn" }).click();
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
   expect(
-    JSON.parse(await page.evaluate(() => localStorage.getItem("emberheir.slot.0") ?? "{}")).legacy
-      ?.branches,
+    JSON.parse(unseal(await page.evaluate(() => localStorage.getItem("emberheir.slot.0") ?? "")))
+      .legacy?.branches,
   ).toEqual(["vanquisher", "vanquisher"]);
 });
 

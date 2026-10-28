@@ -10392,3 +10392,29 @@
   width: 220px;
   height: 220px;
 }
+
+/* Export and Import under the title's Characters (BackupPanel.tsx) and damaged slots (TitleScreen.tsx). */
+.stage .backup-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.stage .backup-row {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+}
+
+.stage .backup-problem {
+  margin: 0;
+  text-align: center;
+  color: #ff9a4a;
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+
+.stage .slot-card.damaged {
+  border-style: dashed;
+}
