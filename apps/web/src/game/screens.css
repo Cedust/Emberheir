@@ -4073,9 +4073,10 @@
 }
 
 /*
- * The selected node (TreeSide.tsx): a dark plaque in the painted brass frame of the item
- * tooltips, dark in both modes like the tree beside it. --node is the node's colour (tier, path,
- * Heat Form), --tag the region's.
+ * The selected node (TreeSide.tsx): a plaque in the painted brass frame of the item tooltips,
+ * parchment in light mode and charred in dark mode. --node is the node's colour (tier, path,
+ * Heat Form; bright, for the gem and its glow), --tag the region's; names and tags mix it with
+ * ink in light mode so bright colours stay readable on parchment.
  */
 .stage .node-detail {
   flex: 1;
@@ -4086,6 +4087,22 @@
 }
 
 .stage .node-plaque {
+  --np-bg: var(--panel);
+  --np-glow: 14%;
+  --np-text: var(--text);
+  --np-desc: var(--text);
+  --np-sub: var(--text-sub);
+  --np-line: rgb(122 90 36 / 0.3);
+  --np-band: rgb(122 90 36 / 0.1);
+  --np-ink: 50%;
+  --np-learned: #7a5a24;
+  --np-learned-bg: rgb(201 160 99 / 0.22);
+  --np-pending: #1d7a45;
+  --np-locked: #b3261e;
+  --np-shadow: 0 6px 18px rgb(42 31 23 / 0.25), inset 0 0 24px rgb(120 80 30 / 0.15);
+  --node-ink: color-mix(in srgb, var(--node) var(--np-ink), #2a1f17);
+  --tag-ink: color-mix(in srgb, var(--tag) var(--np-ink), #2a1f17);
+
   position: relative;
   flex: 0 1 auto;
   min-height: 0;
@@ -4096,17 +4113,47 @@
   background:
     radial-gradient(
       ellipse 90% 60% at 20% 0%,
-      color-mix(in srgb, var(--node) 18%, transparent),
+      color-mix(in srgb, var(--node) var(--np-glow), transparent),
       transparent 70%
     ),
-    #0e0b08;
-  border: 1px solid color-mix(in srgb, var(--node) 45%, #5a4430);
-  outline: 1px solid rgb(0 0 0 / 0.8);
+    var(--np-bg);
+  border: 1px solid color-mix(in srgb, var(--node) 45%, var(--edge));
+  outline: 1px solid rgb(0 0 0 / 0.35);
   border-radius: 3px;
-  box-shadow:
-    0 10px 26px rgb(0 0 0 / 0.45),
-    inset 0 0 24px rgb(0 0 0 / 0.6);
-  color: #d6ccbb;
+  box-shadow: var(--np-shadow);
+  color: var(--np-text);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .stage .node-plaque {
+    --np-bg: #0e0b08;
+    --np-glow: 18%;
+    --np-desc: #efe5d2;
+    --np-sub: #b9ab92;
+    --np-line: rgb(201 160 99 / 0.25);
+    --np-band: rgb(255 255 255 / 0.05);
+    --np-ink: 100%;
+    --np-learned: #f0d29a;
+    --np-learned-bg: rgb(201 160 99 / 0.14);
+    --np-pending: #7ff0ac;
+    --np-locked: #ff9a8a;
+    --np-shadow: 0 10px 26px rgb(0 0 0 / 0.45), inset 0 0 24px rgb(0 0 0 / 0.6);
+  }
+}
+
+:root[data-theme="dark"] .stage .node-plaque {
+  --np-bg: #0e0b08;
+  --np-glow: 18%;
+  --np-desc: #efe5d2;
+  --np-sub: #b9ab92;
+  --np-line: rgb(201 160 99 / 0.25);
+  --np-band: rgb(255 255 255 / 0.05);
+  --np-ink: 100%;
+  --np-learned: #f0d29a;
+  --np-learned-bg: rgb(201 160 99 / 0.14);
+  --np-pending: #7ff0ac;
+  --np-locked: #ff9a8a;
+  --np-shadow: 0 10px 26px rgb(0 0 0 / 0.45), inset 0 0 24px rgb(0 0 0 / 0.6);
 }
 
 .stage .node-plaque::after {
@@ -4129,13 +4176,13 @@
   font-weight: 800;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: #b9ab92;
-  background: rgb(255 255 255 / 0.05);
-  border-bottom: 1px solid rgb(201 160 99 / 0.25);
+  color: var(--np-sub);
+  background: var(--np-band);
+  border-bottom: 1px solid var(--np-line);
 }
 
 .stage .node-plaque-tag > :first-child {
-  color: var(--tag);
+  color: var(--tag-ink);
 }
 
 .stage .node-plaque-head {
@@ -4231,8 +4278,8 @@
   margin: 0;
   font-size: 23px;
   line-height: 1.15;
-  color: var(--node);
-  text-shadow: 0 0 14px color-mix(in srgb, var(--node) 35%, transparent);
+  color: var(--node-ink);
+  text-shadow: 0 0 14px color-mix(in srgb, var(--node) 30%, transparent);
 }
 
 .stage .node-pips {
@@ -4245,7 +4292,7 @@
   width: 9px;
   height: 9px;
   transform: rotate(45deg);
-  background: #2a1f17;
+  background: var(--slot-bg);
   box-shadow: inset 0 0 0 1px rgb(201 160 99 / 0.45);
 }
 
@@ -4257,7 +4304,7 @@
 .stage .node-pips b {
   margin-left: 4px;
   font-size: 13px;
-  color: #b9ab92;
+  color: var(--np-sub);
 }
 
 .stage .node-status {
@@ -4267,27 +4314,27 @@
   font-size: 14px;
   font-weight: 700;
   text-align: center;
-  color: #ecdfc4;
-  background: rgb(255 255 255 / 0.06);
-  border: 1px solid rgb(255 255 255 / 0.1);
+  color: var(--np-text);
+  background: var(--np-band);
+  border: 1px solid var(--np-line);
 }
 
 .stage .node-learned .node-status {
-  color: #f0d29a;
-  background: rgb(201 160 99 / 0.14);
-  border-color: rgb(201 160 99 / 0.35);
+  color: var(--np-learned);
+  background: var(--np-learned-bg);
+  border-color: rgb(201 160 99 / 0.45);
 }
 
 .stage .node-pending .node-status {
-  color: #7ff0ac;
-  background: rgb(79 224 138 / 0.12);
-  border-color: rgb(79 224 138 / 0.4);
+  color: var(--np-pending);
+  background: rgb(79 224 138 / 0.14);
+  border-color: rgb(79 224 138 / 0.45);
 }
 
 .stage .node-locked .node-status {
-  color: #ff9a8a;
-  background: rgb(179 38 30 / 0.16);
-  border-color: rgb(255 122 106 / 0.35);
+  color: var(--np-locked);
+  background: rgb(179 38 30 / 0.12);
+  border-color: rgb(179 38 30 / 0.35);
 }
 
 .stage .node-plaque-body {
@@ -4298,28 +4345,29 @@
   flex-direction: column;
   gap: 8px;
   overflow-y: auto;
-  border-top: 1px solid rgb(201 160 99 / 0.25);
+  border-top: 1px solid var(--np-line);
 }
 
 .stage .node-desc {
   margin: 0;
   font-size: 17px;
   line-height: 1.4;
-  color: #efe5d2;
+  color: var(--np-desc);
 }
 
 .stage .node-note {
   margin: 0;
   font-size: 14px;
   line-height: 1.35;
-  color: #b9ab92;
+  color: var(--np-sub);
 }
 
 .stage .node-plaque .sub {
-  color: #9d8f78;
+  color: var(--np-sub);
 }
 
-/* The dock: always at the bottom right, the node's action over Undo / Confirm. */
+/* The dock: always at the bottom right, the node's action over Undo / Confirm. Painted tile:
+   parchment in light mode, walnut in dark mode (--k-tile). */
 .stage .tree-dock {
   margin-top: auto;
   flex: none;
@@ -4327,11 +4375,11 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
-  color: var(--k-on-wood);
+  color: var(--text);
   border: 2px solid transparent;
-  border-image: url("../assets/ui/tile-wood.webp") 30 fill / 13px / 0 stretch;
+  border-image: var(--k-tile) 30 fill / 13px / 0 stretch;
   /* The same image stretched underneath hides hairline seams between the slices. */
-  background: url("../assets/ui/tile-wood.webp") border-box center / 100% 100% no-repeat;
+  background: var(--k-tile) border-box center / 100% 100% no-repeat;
   filter: drop-shadow(0 3px 6px rgb(0 0 0 / 0.35));
 }
 
@@ -4364,11 +4412,11 @@
 }
 
 .stage .tree-dock-pending .sub {
-  color: var(--k-on-wood-sub);
+  color: var(--text-sub);
 }
 
 .stage .tree-dock-commit.has .tree-dock-pending .strong {
-  color: #7ff0ac;
+  color: var(--accent);
 }
 
 .stage .tree-dock-buttons {
