@@ -1,7 +1,7 @@
 # Smart Loot – Analyse und Vorschlag (v1)
 
 Stand: 28.10.2026, Thread "Smart Loot prüfen". Backlog-Punkt vom 16.10.2026: "Loot ist kaum klassenbezogen".
-Spielbegriffe englisch, Erklärungen deutsch. Noch nichts umgesetzt, wartet auf Timos Entscheidung.
+Spielbegriffe englisch, Erklärungen deutsch. Umgesetzt in PR #127 (Option B).
 
 ## 1. Wie Loot heute funktioniert (Code-Stand main, c4794d0)
 
@@ -80,4 +80,4 @@ Balance-CLI `--act 7 --generations 7 --build all --runs 2 --seed 31`, main gegen
 | Act 7 in Run 7 | 4,3 | 4,1 |
 
 Das Spiel wird spürbar leichter (mehr nutzbares Gear = mehr Power), die Klassen liegen dafür enger beieinander.
-Offen: ob die Gegner das ausgleichen sollen (Timos Entscheidung).
+Timo 28.10.2026: so lassen, die Gegner werden nicht stärker.
