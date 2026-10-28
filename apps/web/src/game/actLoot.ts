@@ -39,9 +39,8 @@ export function runeNote(id: string, act: ActData): NoteHover | undefined {
   return {
     name: `${rune.name} Rune`,
     kind: "Rune",
-    explain:
-      `Weapon: ${describeBonuses(rune.bonuses.weapon).join(", ")}.` +
-      ` Armor: ${describeBonuses(rune.bonuses.armor).join(", ")}.`,
+    // Only gear takes Runes: the Heirloom weapon has no sockets.
+    explain: `Socketed: ${describeBonuses(rune.bonuses.armor).join(", ")}.`,
   };
 }
 
