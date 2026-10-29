@@ -1,4 +1,6 @@
-import { Container, Graphics } from "pixi.js";
+import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import gateBrokenUrl from "../../assets/arena/gatekeeper-gate-broken.webp";
+import gateUrl from "../../assets/arena/gatekeeper-gate.webp";
 import { BLEED, ENEMY_X, GROUND_Y, H, HERO_X, INK, lighten, W } from "./arenaLayout";
 
 /** Arena props: ground, stun stars, the Gatekeeper's gate and the glows around the fight. */
@@ -62,72 +64,88 @@ export function drawGround(): Container {
   return c;
 }
 
+/** Timo's painted gate, whole and broken, in one frame (tools/art/cut_gate.py). */
+const GATE_URLS = { whole: gateUrl, broken: gateBrokenUrl } as const;
+
+export type GateTextures = { readonly whole: Texture; readonly broken: Texture };
+
+export function loadGateTextures(): Promise<GateTextures | null> {
+  return Promise.all([
+    Assets.load<Texture>(GATE_URLS.whole),
+    Assets.load<Texture>(GATE_URLS.broken),
+  ])
+    .then(([whole, broken]) => ({ whole, broken }))
+    .catch(() => null);
+}
+
+/** Painting px → stage px; the gate stands a little wider than a big enemy. */
+const GATE_SCALE = 0.5;
+/** Where the painting's fire bowls and carved sigils sit, in painting px. */
+const GATE_BOWLS = [
+  { x: 245, y: 562 },
+  { x: 1200, y: 562 },
+];
+const GATE_SIGILS = [
+  { x: 243, y: 385 },
+  { x: 1188, y: 385 },
+];
+
+export interface Gate {
+  readonly root: Container;
+  /** The whole and the broken painting; the broken one shows once the keeper fell. */
+  readonly whole: Sprite;
+  readonly broken: Sprite;
+  /** Glow on the carved sigils, pulsing while the keeper stands. */
+  readonly sigil: Graphics;
+  /** The warm light over the fire bowls, out when the gate breaks. */
+  readonly light: Graphics;
+  readonly fires: { x: number; y: number }[];
+}
+
 /**
- * The Gatekeeper's gate (spielzeit-v1.md, walls): two ash-stone pillars carved with the Ember
- * sigil, fire bowls and a lintel, standing behind the enemy on the Waymark stages of a run's
- * newest act.
+ * The Gatekeeper's gate (spielzeit-v1.md, walls): two ash-stone pillars with carved Ember
+ * sigils, fire bowls and a stone arch, standing behind the enemy on the Waymark stages of a
+ * run's newest act. The painting has empty bowls and dark sigils: the fire and glow are drawn
+ * here, so they can go out when the gate breaks.
  */
-export function drawGate(): {
-  root: Container;
-  sigil: Graphics;
-  fires: { x: number; y: number }[];
-} {
+export function drawGate(tex: GateTextures): Gate {
   const root = new Container();
-  const stone = 0x6b625a;
-  const dark = 0x3a332d;
-  const top = GROUND_Y - 470;
-  const fires: { x: number; y: number }[] = [];
-  for (const dx of [-250, 250]) {
-    const x = ENEMY_X + dx;
-    root.addChild(
-      new Graphics()
-        .roundRect(x - 34, top, 68, GROUND_Y - top + 10, 8)
-        .fill(stone)
-        .stroke({ color: INK, width: 5 }),
-      new Graphics()
-        .moveTo(x - 20, top + 60)
-        .lineTo(x - 8, top + 140)
-        .lineTo(x - 22, top + 230)
-        .moveTo(x + 14, top + 300)
-        .lineTo(x + 4, top + 380)
-        .stroke({ color: dark, width: 3, cap: "round" }),
-    );
-    // A fire bowl on an iron bracket halfway up the pillar.
-    const by = top + 210;
-    root.addChild(
-      new Graphics()
-        .moveTo(x, by + 40)
-        .lineTo(x, by + 10)
-        .stroke({ color: INK, width: 6, cap: "round" }),
-      new Graphics()
-        .poly([x - 34, by - 4, x + 34, by - 4, x + 22, by + 22, x - 22, by + 22])
-        .fill(dark)
-        .stroke({ color: INK, width: 4 }),
-    );
-    const glow = new Graphics().ellipse(x, by - 14, 40, 26).fill({ color: 0xff8a1f, alpha: 0.4 });
-    glow.blendMode = "add";
-    root.addChild(glow);
-    fires.push({ x, y: by - 8 });
+  const left = ENEMY_X - (tex.whole.width * GATE_SCALE) / 2;
+  const top = GROUND_Y + 12 - tex.whole.height * GATE_SCALE;
+  const at = (p: { x: number; y: number }) => ({
+    x: left + p.x * GATE_SCALE,
+    y: top + p.y * GATE_SCALE,
+  });
+  const sprite = (t: Texture) => {
+    const s = new Sprite(t);
+    s.position.set(left, top);
+    s.scale.set(GATE_SCALE);
+    root.addChild(s);
+    return s;
+  };
+  const whole = sprite(tex.whole);
+  const broken = sprite(tex.broken);
+  broken.visible = false;
+  const fires = GATE_BOWLS.map(at);
+  const light = new Graphics();
+  for (const f of fires) {
+    light.ellipse(f.x, f.y - 12, 40, 24).fill({ color: 0xff8a1f, alpha: 0.28 });
   }
-  root.addChild(
-    new Graphics()
-      .roundRect(ENEMY_X - 302, top + 20, 604, 56, 10)
-      .fill(stone)
-      .stroke({ color: INK, width: 5 }),
-  );
-  // The Ember sigil carved into both pillars, glowing while the keeper stands.
+  light.blendMode = "add";
+  // The Ember sigil glows in its carving while the keeper stands.
   const sigil = new Graphics();
-  for (const x of [ENEMY_X - 250, ENEMY_X + 250]) {
-    const y = top + 110;
+  for (const p of GATE_SIGILS.map(at)) {
     sigil
-      .circle(x, y, 18)
-      .stroke({ color: 0xffb13b, width: 4 })
-      .poly([x, y - 14, x + 9, y + 5, x, y + 13, x - 9, y + 5])
-      .fill(0xff8a1f);
+      .circle(p.x, p.y, 28)
+      .fill({ color: 0xff8a1f, alpha: 0.14 })
+      .circle(p.x, p.y, 25)
+      .stroke({ color: 0xffb13b, width: 3, alpha: 0.85 })
+      .poly([p.x, p.y - 17, p.x + 8, p.y + 4, p.x, p.y + 13, p.x - 8, p.y + 4])
+      .fill({ color: 0xff8a1f, alpha: 0.85 });
   }
   sigil.blendMode = "add";
-  root.addChild(sigil);
-  return { root, sigil, fires };
+  root.addChild(light, sigil);
+  return { root, whole, broken, sigil, light, fires };
 }
 
 /**
