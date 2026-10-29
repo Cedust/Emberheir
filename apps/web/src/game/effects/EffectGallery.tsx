@@ -16,6 +16,7 @@ import {
   type Player,
   VERDICT_LABEL,
 } from "./effectList";
+import { CHOICE_LABEL, type Choice, exportReview, loadReview, saveReview, setPick } from "./review";
 import "./effects.css";
 
 const PANEL_W = 560;
@@ -38,7 +39,8 @@ const reducedMotion = () =>
 /**
  * `?effects`: the effect gallery (performance-kampfeffekte-v1.md). Every arena effect of a
  * fight, played on its own in the real arena, with a plain explanation and the review's verdict.
- * A developer page: no fight runs, nothing is saved.
+ * A developer page: no fight runs. Timo's own picks (keep or remove) stay in this browser and
+ * export as JSON.
  */
 export function EffectGallery() {
   return (
@@ -57,6 +59,8 @@ function Gallery() {
   const [numbers, setNumbers] = useState(true);
   const [mountId, setMountId] = useState(0);
   const [ready, setReady] = useState<number | null>(null);
+  const [review, setReview] = useState(loadReview);
+  const [copied, setCopied] = useState(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<ArenaScene | null>(null);
 
@@ -135,6 +139,34 @@ function Gallery() {
   }, [ready, picked, repeat, base]);
 
   const list = EFFECTS.filter((e) => e.group === group);
+  const pick = review[picked.id] ?? {};
+  const decided = EFFECTS.filter((e) => review[e.id]?.choice).length;
+  const update = (change: { choice?: Choice | undefined; note?: string }) => {
+    const next = setPick(review, picked.id, {
+      ...pick,
+      ...change,
+    });
+    setReview(next);
+    saveReview(next);
+  };
+  const json = () => exportReview(EFFECTS, review, new Date());
+  const download = () => {
+    const url = URL.createObjectURL(new Blob([json()], { type: "application/json" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `effekt-auswahl-${new Date().toISOString().slice(0, 10)}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+  const copy = () => {
+    void navigator.clipboard
+      ?.writeText(json())
+      .then(() => {
+        setCopied(true);
+        window.setTimeout(() => setCopied(false), 1600);
+      })
+      .catch(() => {});
+  };
   const counts = { keep: 0, change: 0, cut: 0 };
   for (const e of EFFECTS) counts[e.verdict] += 1;
   const act = enemyLook.act;
@@ -182,10 +214,29 @@ function Gallery() {
               >
                 <span className={`fx-verdict ${e.verdict}`}>{VERDICT_LABEL[e.verdict]}</span>
                 <span className="fx-name">{e.name}</span>
+                {review[e.id]?.choice && (
+                  <span
+                    className={`fx-mine ${review[e.id]?.choice}`}
+                    title={`Deine Wahl: ${CHOICE_LABEL[review[e.id]?.choice ?? "keep"]}`}
+                  >
+                    {review[e.id]?.choice === "keep" ? "✓" : "✗"}
+                  </span>
+                )}
               </button>
             </li>
           ))}
         </ul>
+        <div className="fx-export">
+          <span className="mono" data-testid="fx-progress">
+            {decided} / {EFFECTS.length} entschieden
+          </span>
+          <button type="button" onClick={download}>
+            Exportieren (JSON)
+          </button>
+          <button type="button" onClick={copy}>
+            {copied ? "Kopiert" : "Kopieren"}
+          </button>
+        </div>
         <footer className="fx-foot">
           <label>
             <input type="checkbox" checked={repeat} onChange={(e) => setRepeat(e.target.checked)} />
@@ -224,6 +275,31 @@ function Gallery() {
             <dt>Vorschlag</dt>
             <dd>{picked.plan}</dd>
           </dl>
+          <div className="fx-choice" role="radiogroup" aria-label="Deine Wahl">
+            <span>Deine Wahl</span>
+            {(["keep", "remove"] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                role="radio"
+                aria-checked={pick.choice === c}
+                className={`${c}${pick.choice === c ? " on" : ""}`}
+                onClick={() => update({ choice: pick.choice === c ? undefined : c })}
+              >
+                {CHOICE_LABEL[c]}
+              </button>
+            ))}
+          </div>
+          <textarea
+            key={picked.id}
+            className="fx-note"
+            aria-label="Anmerkung"
+            placeholder="Anmerkung (optional), z. B. „kleiner machen“"
+            defaultValue={pick.note ?? ""}
+            onBlur={(e) => {
+              if (e.target.value !== (pick.note ?? "")) update({ note: e.target.value });
+            }}
+          />
           {!picked.play && (
             <p className="fx-hint">Ein Zustand: er bleibt, solange er gewählt ist.</p>
           )}
