@@ -61,6 +61,7 @@ export const SKILL_FX: Record<string, Delivery> = {
   Eruption: "fall",
   "Ice Bolt": "orb",
   Avalanche: "fall",
+  Shatter: "nova",
   "Forked Bolt": "bolt",
   Thunderclap: "nova",
   "Void Lance": "orb",

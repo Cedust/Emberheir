@@ -404,7 +404,8 @@ export const RIME_WARDEN: EnemyDefinition = {
   id: "rime-warden",
   name: "Rime Warden",
   archetype: "warden",
-  description: "Chills you, hides behind ice at 75, 50 and 25 % Life, Avalanche every 12 seconds.",
+  description:
+    "Chills you, hides behind ice at 75, 50 and 25 % Life that shatters at you. Avalanche every 12 seconds.",
   attributes: { strength: 8, dexterity: 4, agility: 2, intelligence: 6, wisdom: 6, vitality: 14 },
   weapon: WARDEN_HALBERD,
   skills: [ICE_BOLT],
@@ -412,13 +413,35 @@ export const RIME_WARDEN: EnemyDefinition = {
   boss: true,
   bonuses: { blockChance: 0.07, coldResistance: 0.15 },
   telegraphs: [{ skill: AVALANCHE, interval: 12, windup: 2.5 }],
-  triggers: [0.75, 0.5, 0.25].map((threshold) => ({
-    id: `ice-barrier-${threshold * 100}`,
-    name: "Ice Barrier",
-    condition: { kind: "lifeBelow", threshold } as const,
-    oncePerFight: true,
-    effect: { kind: "barrier", fraction: 0.1 } as const,
-  })),
+  triggers: [
+    ...[0.75, 0.5, 0.25].map((threshold) => ({
+      id: `ice-barrier-${threshold * 100}`,
+      name: "Ice Barrier",
+      condition: { kind: "lifeBelow", threshold } as const,
+      oncePerFight: true,
+      effect: { kind: "barrier", fraction: 0.1 } as const,
+    })),
+    // Shatter (endgame measurement 2026-10-28, Timo): the ice made the fight longer but never
+    // hurt, so the Warden was the weakest boss in the Wildfire. Now a broken Ice Barrier flies
+    // back at you as shards.
+    {
+      id: "shatter",
+      name: "Shatter",
+      condition: { kind: "barrierBreaks" },
+      effect: {
+        kind: "spellHit",
+        name: "Shatter",
+        damage: { min: 1.6, max: 2.4 },
+        damageType: "cold",
+      },
+    },
+    {
+      id: "shatter-chill",
+      name: "Shatter",
+      condition: { kind: "barrierBreaks" },
+      effect: { kind: "ailment", ailment: "chill" },
+    },
+  ],
 };
 
 /**

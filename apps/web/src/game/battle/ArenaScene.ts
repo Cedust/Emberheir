@@ -672,6 +672,12 @@ export class ArenaScene {
         }
         case "trigger": {
           const c = this.center(e.side);
+          // The Rime Warden's Shatter: its broken ice flies at the foe. Its Chill half
+          // (no hit follows) only shows the Chill puff.
+          if (e.name === "Shatter") {
+            if (events[i + 1]?.type === "hit") this.shatter(e.side);
+            break;
+          }
           this.fx?.ring(c.x, c.y, 0xffd84a, 30, 120, 0.3, 5, 1);
           // An extra attack (Riposte, "strike back" affixes) names itself, so its number does
           // not read as a faster attack speed.
@@ -1287,6 +1293,46 @@ export class ArenaScene {
     if (look.shake) this.shake(look.shake);
     if (!look.quiet)
       this.float(owner === side ? owner : side, PAYOFF_NAMES[kind], main, false, 0.8);
+  }
+
+  /** A broken Ice Barrier bursts into shards that fly at the foe. */
+  private shatter(side: Side): void {
+    const fx = this.fx;
+    if (!fx) return;
+    const from = this.center(side);
+    const to = this.center(side === "hero" ? "enemy" : "hero");
+    const toward = Math.atan2(to.y - from.y, to.x - from.x);
+    fx.ring(from.x, from.y, 0xe8f4ff, 50, 230, 0.4, 9, 1);
+    fx.burst({
+      x: from.x,
+      y: from.y,
+      count: 26,
+      kind: "bit",
+      color: [0xb8e4ff, 0xffffff, 0x6ab8f0],
+      spreadY: 80,
+      angle: [toward - 0.35, toward + 0.35],
+      speed: [520, 900],
+      gravity: 300,
+      life: [0.35, 0.6],
+      size: [7, 14],
+      stretch: 0.8,
+      spin: 12,
+    });
+    fx.burst({
+      x: from.x,
+      y: from.y,
+      count: 14,
+      color: [0x9fe0ff, 0xe8f4ff],
+      spreadX: 40,
+      spreadY: 60,
+      angle: [0, Math.PI * 2],
+      speed: [60, 180],
+      life: [0.4, 0.8],
+      size: [14, 26],
+      drag: 0.3,
+    });
+    this.float(side, "Shatter", 0x9fe0ff, false, 0.8);
+    this.shake(0.25);
   }
 
   private shake(amount: number): void {

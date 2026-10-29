@@ -681,6 +681,10 @@ Endgame **Wildfire I–X**.
     Swing, The Last Harvest), Fire (Soul Reap, Ash Aura, Ashfall) und Lightning (Storm Mirror) kommen jetzt alle vor.
   - Boss-Runde Schritt 7: Cinder Tyrant Fire Aura 0,45–0,7 (vorher 0,6–0,9), Enrage +30 % Attack Speed (vorher +50 %);
     Rime Warden Ice Barrier bei 75/50/25 % Life je 10 % (vorher 15 %).
+  - **Shatter** (Timo 29.10.2026): Bricht eine Ice Barrier des Rime Warden, fliegt sie als Splitter zurück, ein Cold-Treffer
+    1,6–2,4 (so stark wie sein Ice Bolt) mit Chill. Vorher verlängerte das Eis den Kampf nur, im Wildfire war er der schwächste Boss (Waffe 0,8 Schaden
+    pro Sekunde, Gorrak 1,6, Avalanche nur 11 % seines Schadens). Ein Trigger, der ein Ailment ohne Treffer setzt
+    (Ember Brand, Endless Hunger), nimmt bei Monstern ihren Schadensfaktor mit; vorher brannte Ember Brand für fast nichts.
   - Entfallen: Run Pressure, Kampfdauer- und Boss-Life-Faktoren, Elite-Faktoren, Harvester-Anteil, `endgameBoss`.
   - Ziele im neuesten Act (Balance-CLI, `--newest 1`): **etwa 5 Anläufe** (Timo, 12.10.: Richtwert, mit Runes), Tode Boss 35–55 %, Gatekeeper 20–30 %, Elites 10–20 %,
     normal 5–15 %; Kampfdauer normal 20–30 s, Elite 35–50 s, Gatekeeper 45–70 s, Boss 60–100 s.

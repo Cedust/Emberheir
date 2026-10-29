@@ -1203,6 +1203,8 @@ export function dealDamage(core: FightCore, f: Fighter, amount: number): void {
   }
   if (broke) barrierBurst(core, f);
   if (core.result) return;
+  if (broke) fireTriggers(core, f, "barrierBreaks");
+  if (core.result) return;
   if (f.life / f.stats.maxLife < PERK.secondBreathBelow && usePerk(f, "secondBreath")) {
     perk(core, f, "secondBreath");
     heal(core, f, f.stats.maxLife * PERK.secondBreathHeal);

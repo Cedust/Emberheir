@@ -120,7 +120,9 @@ export type TriggerCondition =
   /** The opponent starts winding up a telegraphed Heavy Attack (Ice Shell). */
   | { readonly kind: "enemyWindup" }
   /** Parried an attack: it became a Glancing Blow (Weapon Mastery, `WeaponRules.parry`). */
-  | { readonly kind: "onParry" };
+  | { readonly kind: "onParry" }
+  /** Own Barrier was used up by damage (the Rime Warden's Shatter). */
+  | { readonly kind: "barrierBreaks" };
 
 export type TriggerEffect =
   /**

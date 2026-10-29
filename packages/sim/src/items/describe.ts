@@ -153,7 +153,8 @@ const TRIGGER_ORDER: Readonly<Record<TriggerCondition["kind"], number>> = {
   onBlock: 9,
   onParry: 10,
   enemyWindup: 11,
-  lifeBelow: 12,
+  barrierBreaks: 12,
+  lifeBelow: 13,
 };
 
 const DAMAGE_TYPE_NAMES: Readonly<Record<DamageType, string>> = {
@@ -226,6 +227,8 @@ export function describeCondition(condition: TriggerCondition): string {
       return "When the enemy winds up";
     case "onParry":
       return "On Parry";
+    case "barrierBreaks":
+      return "When your Barrier breaks";
   }
 }
 
