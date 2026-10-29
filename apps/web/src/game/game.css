@@ -691,10 +691,13 @@
   white-space: nowrap;
 }
 
+/* Centered on the screen (not after the act's name), on the same axis as the enemy's Life bar. */
 .stage .act-progress {
-  position: relative;
+  position: absolute;
+  left: 50%;
+  top: 50%;
   height: 40px;
-  flex-shrink: 0;
+  margin-top: -20px;
 }
 
 /* Painted stage markers (sheet 9, tools/art/cut_stage_markers.py). A brass rail with an ember

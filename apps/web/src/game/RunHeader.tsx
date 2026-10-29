@@ -34,6 +34,9 @@ export function ActProgress(props: {
   // Room after the Camp, so a current Stage 1 never covers it and the rail shows between them.
   const left0 = 68;
   const span = width - left0 - 20;
+  // The rail (16 to width - 8) sits on the screen's middle axis, like the enemy's Life bar.
+  const railLeft = 16;
+  const railRight = 8;
   const done = props.cleared ? stage : stage - 1;
   // The Last Ember: every stage is a boss, each dot names its echo.
   const finale = inFinale(act);
@@ -43,9 +46,9 @@ export function ActProgress(props: {
       className="act-progress"
       role="img"
       aria-label={`Stage ${stage} of ${stages}`}
-      style={{ width }}
+      style={{ width, marginLeft: -(railLeft + width - railRight) / 2 }}
     >
-      <div className="act-track" style={{ left: 16, right: 8 }} />
+      <div className="act-track" style={{ left: railLeft, right: railRight }} />
       <div
         className="act-track-fill"
         style={{ left: left0, width: (Math.max(0, done) / (stages - 1)) * span }}
