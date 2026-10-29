@@ -277,9 +277,12 @@ export function wildfirePressure(
   const p = boss ? w.boss : { life: 1, damage: 1 };
   const gentle = Math.min(tier, w.steep.from) - 1;
   const steep = Math.max(0, tier - w.steep.from);
+  // I–IV: a head start that is gone at V.
+  const early = tier < w.steep.from ? 1 : 0;
   return {
-    life: p.life * (1 + w.life * gentle + w.steep.life * steep),
-    damage: p.damage * (1 + w.damage * gentle + w.steep.damage * steep),
+    life: p.life * (1 + w.life * gentle + w.steep.life * steep) * (1 + w.early.life * early),
+    damage:
+      p.damage * (1 + w.damage * gentle + w.steep.damage * steep) * (1 + w.early.damage * early),
   };
 }
 

@@ -50,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 17;
+export const SAVE_VERSION = 18;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -250,6 +250,8 @@ export interface BountyDone {
   readonly enemyId?: string;
   /** The act it was done in (sets the level of the reward item). */
   readonly actId: string;
+  /** Done in the Wildfire at this tier: the Cache pays Cinderglass and cards of that tier. */
+  readonly wildfire?: number;
 }
 
 /**
@@ -263,6 +265,8 @@ export interface BountyCache {
   readonly enemyId?: string;
   readonly runes: readonly string[];
   readonly emberCoal: number;
+  /** Cinderglass of a Wildfire bounty (instead of the Home Rune). */
+  readonly cinderglass?: number;
   /** Acorns of a Trail tier the cache's Trail kills filled. */
   readonly acorns?: number;
   readonly trailKills?: number;

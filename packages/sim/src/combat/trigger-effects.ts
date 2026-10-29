@@ -132,11 +132,13 @@ export function applyEffect(
       return;
     case "ailment": {
       const weapon = f.setup.weapon.damage;
+      // Without a hit, a monster's weapon roll is only a share of its hit: its level and kind
+      // come from the damage multiplier (Ember Brand burned for almost nothing before).
       const hit =
         context.ailmentDamage ??
         (context.damage !== undefined
           ? context.damage / (1 + damageTaken(target))
-          : (weapon.min + weapon.max) / 2);
+          : ((weapon.min + weapon.max) / 2) * (f.setup.damageMultiplier ?? 1));
       const before = core.ailmentSource;
       if (context.source) core.ailmentSource = context.source;
       inflict(core, f, target, effect.ailment, hit);

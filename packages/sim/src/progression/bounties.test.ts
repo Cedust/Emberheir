@@ -15,9 +15,13 @@ import {
   type GameData,
   type GameState,
   applyAction,
+  bountyCinderglass,
   bountyOffer,
+  fail,
   newGame,
+  wildfireLevel,
 } from "./game";
+import { PROGRESSION } from "./constants";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
 const ELITES: BountyDefinition = {
@@ -202,5 +206,46 @@ describe("Eldrin's offer and Cache", () => {
     expect(() => applyAction(s, thief, { type: "takeBountyItem", index: 0 })).toThrow(/taken/);
     s = applyAction(s, thief, { type: "takeBountyItem", index: 3 });
     expect(s.bountyCache).toBeUndefined();
+  });
+
+  it("Wildfire: no Trail Hunt, Cinderglass instead of the Home Rune, cards of the tier", () => {
+    const won: GameState = {
+      ...start,
+      legacy: {
+        ...start.legacy,
+        prestige: PROGRESSION.finalPrestige,
+        finaleWon: true,
+        wildfire: 3,
+      },
+    };
+    const offer = bountyOffer(won, data, "test-act", 4);
+    expect(offer.map((b) => b.id)).toEqual(["elites"]);
+    expect(() =>
+      act(won, { type: "setOut", actId: "test-act", wildfire: 4, bounty: "trail" }),
+    ).toThrow(/no such Bounty/);
+    const out = act(won, { type: "setOut", actId: "test-act", wildfire: 4, bounty: "elites" });
+    expect(out.run?.bounty?.id).toBe("elites");
+    // Done and back in the Camp, it remembers the tier.
+    const run = out.run ?? fail("no run");
+    const taken = run.bounty ?? fail("no bounty");
+    const back = act(
+      { ...out, run: { ...run, bounty: { ...taken, status: "done" } } },
+      {
+        type: "retreat",
+      },
+    );
+    expect(back.bountyDone).toEqual({ id: "elites", actId: "test-act", wildfire: 4 });
+    const paid = act(back, { type: "turnInBounty" });
+    const glass = bountyCinderglass(4);
+    expect(paid.bountyCache?.runes).toEqual([]);
+    expect(paid.bountyCache?.cinderglass).toBeGreaterThanOrEqual(glass.min);
+    expect(paid.bountyCache?.cinderglass).toBeLessThanOrEqual(glass.max);
+    expect(paid.wallet.cinderglass ?? 0).toBe(
+      (back.wallet.cinderglass ?? 0) + (paid.bountyCache?.cinderglass ?? 0),
+    );
+    expect(paid.bountyCache?.items.every((it) => it.itemLevel === wildfireLevel(4))).toBe(true);
+    expect(bountyCinderglass(PROGRESSION.wildfire.cinderglass.pinnacleFrom).min).toBe(
+      glass.min + PROGRESSION.wildfire.cinderglass.pinnacle,
+    );
   });
 });

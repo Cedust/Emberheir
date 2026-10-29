@@ -469,9 +469,14 @@ export function bindPowers(state: GameState, data: GameData): GameState {
 /** The autopilot's taste in Eldrin's Bounties: what it can steer for on the map comes first. */
 const BOUNTY_TASTE = ["trail-hunt", "elite-hunt", "elite-hunt-2", "thief-chase", "dry-throat"];
 
-/** The bounty the autopilot takes from Eldrin's offer for a trip into `actId`. */
-export function chooseBounty(state: GameState, data: GameData, actId: string): string | undefined {
-  const offer = bountyOffer(state, data, actId).map((b) => b.id);
+/** The bounty the autopilot takes from Eldrin's offer for a trip into `actId` (Wildfire `tier`). */
+export function chooseBounty(
+  state: GameState,
+  data: GameData,
+  actId: string,
+  tier = 0,
+): string | undefined {
+  const offer = bountyOffer(state, data, actId, tier).map((b) => b.id);
   return BOUNTY_TASTE.find((id) => offer.includes(id)) ?? offer[0];
 }
 

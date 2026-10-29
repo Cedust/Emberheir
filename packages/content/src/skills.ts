@@ -946,13 +946,16 @@ export const SOUL_REAP: SkillDefinition = {
   name: "Soul Reap",
   type: "spell",
   heatCost: 50,
-  tags: ["void", "over-time", "any"],
-  description: "A Void hit that Poisons and Corrupts.",
+  tags: ["fire", "over-time", "any"],
+  description: "A Fire hit that Poisons and Corrupts.",
+  // Fire since the endgame measurement (2026-10-28): the Harvester mixes Physical (Reap), Void
+  // (Harvest Swing, The Last Harvest) and Fire like the bosses it echoes; before, 55-60 % of its
+  // damage was Physical Reap and the Emberseer, with neither Armor nor Evasion, fell hardest.
   hits: [
     {
       kind: "spell",
-      damage: { min: 1.6, max: 2.4 },
-      damageType: "void",
+      damage: { min: 2.4, max: 3.6 },
+      damageType: "fire",
       ailmentChances: [
         { ailment: "poison", chance: 1 },
         { ailment: "corruption", chance: 0.5 },
@@ -968,9 +971,9 @@ export const HARVEST_SWING: SkillDefinition = {
   type: "attack",
   heatCost: 0,
   tags: ["void", "direct", "melee"],
-  description: "An announced sweep for 400 % Weapon Damage as Void.",
+  description: "An announced sweep for 500 % Weapon Damage as Void.",
   // Reap cuts flesh, the Swing cuts souls: the Harvester mixes Physical and Void (Timo).
-  hits: [{ kind: "weapon", multiplier: 4, damageType: "void" }],
+  hits: [{ kind: "weapon", multiplier: 5, damageType: "void" }],
 };
 
 /** Phase 2 telegraph: the Tyrant's Eruption and the Warden's cold. */

@@ -101,6 +101,7 @@ export function setOutWildfire(
   actId: string,
   tier: number,
   omenIds: readonly string[] = [],
+  bountyId?: string,
 ): GameState {
   requireCamp(state);
   if (!wildfireOpen(state)) return fail("Wildfire opens after The Last Ember");
@@ -111,6 +112,8 @@ export function setOutWildfire(
   getAct(data, actId);
   // Wildfire Omens: as many as the hero likes, at least the tier's Peril (neuausrichtung-v1.md 7.2).
   const omens = checkOmens(state, data, actId, omenIds, tier);
+  // Eldrin's bounties burn in the Wildfire too (endgame measurement 2026-10-28, V3).
+  const bounty = takeBounty(state, data, actId, bountyId, tier);
   const { state: brewed, draught } = brewForTrip(state, data);
   return {
     ...brewed,
@@ -123,6 +126,7 @@ export function setOutWildfire(
       encounter: null,
       rewards: null,
       wildfire: tier,
+      ...(bounty ? { bounty } : {}),
       ...(draught ? { draught } : {}),
       ...(omens.length ? { omens } : {}),
     },
@@ -310,6 +314,7 @@ export function toCamp(state: GameState, data: GameData, notice: Notice | null):
             id: done.id,
             ...(done.enemyId ? { enemyId: done.enemyId } : {}),
             actId: state.run?.actId ?? "",
+            ...(state.run?.wildfire ? { wildfire: state.run.wildfire } : {}),
           },
         }
       : {}),

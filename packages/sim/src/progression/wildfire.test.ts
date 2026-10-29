@@ -71,9 +71,12 @@ describe("Wildfire", () => {
     // Above V each tier climbs at the steep rate.
     const w = PROGRESSION.wildfire;
     const step = (t: number) => wildfirePressure(t + 1).life - wildfirePressure(t).life;
-    const base = wildfirePressure(1).life;
-    expect(step(2)).toBeCloseTo(base * w.life);
-    expect(step(w.steep.from)).toBeCloseTo(base * w.steep.life);
+    expect(step(w.steep.from)).toBeCloseTo(w.steep.life);
+    // I–IV get a head start that is gone at V: V climbs from I as if there were none.
+    expect(wildfirePressure(1).life).toBeCloseTo(1 + w.early.life);
+    expect(wildfirePressure(1).damage).toBeCloseTo(1 + w.early.damage);
+    expect(wildfirePressure(w.steep.from).life).toBeCloseTo(1 + w.life * (w.steep.from - 1));
+    expect(step(1)).toBeCloseTo(w.life * (1 + w.early.life));
     const tierOne = enemySetup({ ...encounter, pressure: wildfirePressure(1) }, "final-act", data);
     expect(enemySetup(encounter, "final-act", data).baseLife).toBeGreaterThan(
       tierOne.baseLife ?? 0,

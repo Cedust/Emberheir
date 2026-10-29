@@ -241,6 +241,57 @@ describe("triggers in a fight", () => {
     expect(fight.snapshot().hero.barrier).toBe(10);
   });
 
+  it("When the Barrier breaks fires once the Barrier is used up (Shatter)", () => {
+    const hero = setup({ bonuses: NO_CRIT });
+    const enemy = dummy({
+      triggers: [
+        trigger({
+          condition: { kind: "fightStart" },
+          effect: { kind: "barrier", fraction: 0.0002 },
+        }),
+        trigger({
+          name: "Shatter",
+          condition: { kind: "barrierBreaks" },
+          effect: {
+            kind: "spellHit",
+            name: "Shatter",
+            damage: { min: 7, max: 7 },
+            damageType: "cold",
+          },
+        }),
+      ],
+    });
+    // 20 Barrier: the hero's second hit (10 each) breaks it, the shards fly back once.
+    const shards = ofType(play(hero, enemy, 5.01).events, "hit").filter(
+      (h) => h.source === "Shatter",
+    );
+    expect(shards.map((h) => [h.t, h.damage])).toEqual([[2, 7]]);
+  });
+
+  it("an ailment from a timed trigger grows with the monster's damage", () => {
+    const burnOf = (damageMultiplier: number) => {
+      const enemy = dummy({
+        damageMultiplier,
+        triggers: [
+          trigger({
+            name: "Ember Brand",
+            condition: { kind: "everySeconds", seconds: 1 },
+            effect: { kind: "ailment", ailment: "burn" },
+          }),
+        ],
+      });
+      const dots = ofType(play(dummy(), enemy, 10.01).events, "dot").filter(
+        (d) => d.side === "hero",
+      );
+      return dots.reduce((sum, d) => sum + d.damage, 0);
+    };
+    expect(burnOf(10)).toBeGreaterThan(0);
+    // Ticks round to whole numbers, so the ratio is about 10.
+    const ratio = burnOf(100) / burnOf(10);
+    expect(ratio).toBeGreaterThan(9);
+    expect(ratio).toBeLessThan(11);
+  });
+
   it("Life below X % heals once on crossing", () => {
     const hero = dummy({
       baseLife: 100,

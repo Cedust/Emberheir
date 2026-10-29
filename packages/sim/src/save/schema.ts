@@ -294,7 +294,7 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
   legacy,
   pendingPrestige: z.object({ actId: id, stage: count, enemyName: z.string() }).nullable(),
   boons: z.object({ kept: z.array(boonPick), fresh: z.array(boonPick) }),
-  bountyDone: opt(z.object({ id: id, enemyId: opt(id), actId: id })),
+  bountyDone: opt(z.object({ id: id, enemyId: opt(id), actId: id, wildfire: opt(int.positive()) })),
   bountyCache: opt(
     z.object({
       id: id,
@@ -302,6 +302,7 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
       enemyId: opt(id),
       runes: z.array(id),
       emberCoal: count,
+      cinderglass: opt(count),
       acorns: opt(count),
       trailKills: opt(count),
       items: z.array(itemSchema),

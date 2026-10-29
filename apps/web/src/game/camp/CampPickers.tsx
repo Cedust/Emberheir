@@ -3,6 +3,7 @@ import {
   type ActData,
   type BountyCache,
   type BountyDefinition,
+  bountyCinderglass,
   type DraughtDefinition,
   type GameState,
   getBase,
@@ -169,15 +170,35 @@ function BountyBonus(props: { def: BountyDefinition }) {
   }
 }
 
-/** What a bounty pays, as icons: the act's Home Rune, the item pick, the bounty's own bonus. */
-function BountyPay(props: { def: BountyDefinition; act: ActData }) {
+/** The Cinderglass of a Wildfire bounty, like the Ember Coal bonus: icon and range. */
+function GlassPay(props: { tier: number }) {
+  const { min, max } = bountyCinderglass(props.tier);
+  return (
+    <span className="k-price" title={`${min}–${max} Cinderglass`}>
+      <CurrencyIcon id="glass" size={PAY_ICON} />
+      <b className="mono">
+        +{min}–{max}
+      </b>
+    </span>
+  );
+}
+
+/**
+ * What a bounty pays, as icons: the act's Home Rune (Cinderglass in the Wildfire), the item pick,
+ * the bounty's own bonus.
+ */
+function BountyPay(props: { def: BountyDefinition; act: ActData; wildfire?: number }) {
   const rune = props.act.homeRune;
   return (
     <span className="bounty-pay">
-      {rune && (
-        <span title={`Home Rune: ${runeName(rune)}`}>
-          <RuneStone runeId={rune} size={PAY_ICON} />
-        </span>
+      {props.wildfire ? (
+        <GlassPay tier={props.wildfire} />
+      ) : (
+        rune && (
+          <span title={`Home Rune: ${runeName(rune)}`}>
+            <RuneStone runeId={rune} size={PAY_ICON} />
+          </span>
+        )
       )}
       <span className="bounty-bonus" title="An item pick from Eldrin's Cache">
         <img className="cache-mini" src={cacheClosedUrl} alt="" draggable={false} />
@@ -194,9 +215,12 @@ function BountyPay(props: { def: BountyDefinition; act: ActData }) {
 export function BountyChoice(props: {
   offer: readonly BountyView[];
   act: ActData;
+  /** Wildfire tier of the trip (0 = a normal trip). */
+  wildfire?: number;
   chosen: string | null;
   onPick: (id: string | null) => void;
 }) {
+  const wild = (props.wildfire ?? 0) > 0;
   return (
     <div className="omen-choice bounty-choice" role="radiogroup" aria-label="Bounty">
       <span className="eyebrow">BOUNTY · TAKE ONE IF YOU LIKE</span>
@@ -210,12 +234,14 @@ export function BountyChoice(props: {
               role="radio"
               aria-checked={on}
               aria-label={b.def.name}
-              className={`omen-card bounty-offer${on ? " on" : ""}`}
+              // The Wildfire's Omens fill the window: there the task is on hover only.
+              title={wild ? b.text : undefined}
+              className={`omen-card bounty-offer${wild ? " compact" : ""}${on ? " on" : ""}`}
               onClick={() => props.onPick(on ? null : b.def.id)}
             >
               <span className="omen-name title-font">{b.def.name}</span>
-              <span className="bounty-text sub">{b.text}</span>
-              <BountyPay def={b.def} act={props.act} />
+              {!wild && <span className="bounty-text sub">{b.text}</span>}
+              <BountyPay def={b.def} act={props.act} wildfire={props.wildfire ?? 0} />
             </button>
           );
         })}
@@ -240,7 +266,7 @@ export function BountyTurnIn(props: { state: GameState; onTurnIn: () => void }) 
     <div className="bounty-note done" aria-label="Bounty">
       <img className="cache-chest" src={cacheClosedUrl} alt="" draggable={false} />
       <span className="eyebrow">BOUNTY DONE · {view.def.name.toUpperCase()}</span>
-      {act && <BountyPay def={view.def} act={act} />}
+      {act && <BountyPay def={view.def} act={act} wildfire={done.wildfire ?? 0} />}
       <button
         type="button"
         className="btn primary bounty-turn-in"
@@ -279,6 +305,9 @@ export function BountyCacheView(props: {
             <RuneStone runeId={id} size={PAY_ICON} />
           </span>
         ))}
+        {(cache.cinderglass ?? 0) > 0 && (
+          <Price id="glass" amount={cache.cinderglass ?? 0} plus size={PAY_ICON} />
+        )}
         {cache.emberCoal > 0 && <Price id="coal" amount={cache.emberCoal} plus size={PAY_ICON} />}
         {(cache.acorns ?? 0) > 0 && (
           <Price id="acorns" amount={cache.acorns ?? 0} plus size={PAY_ICON} />

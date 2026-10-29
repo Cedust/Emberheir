@@ -150,7 +150,7 @@ export {
   tripOmenEffects,
   omenEffectsOf,
 } from "./omens";
-export { getBounty, bountyOffer, bountyCache, countsForBounty } from "./bounty";
+export { getBounty, bountyOffer, bountyCache, bountyCinderglass, countsForBounty } from "./bounty";
 export {
   lootGate,
   itemPickWeights,

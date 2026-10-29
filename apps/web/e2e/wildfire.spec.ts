@@ -18,6 +18,12 @@ test("after The Last Ember any act burns again in the Wildfire", async ({ page }
   await expect(picker.getByRole("button", { name: "Raise Wildfire" })).toBeDisabled();
   // Every act is open in the Wildfire.
   await trip.getByRole("radio", { name: /Act 7/ }).click();
+  // Eldrin's Bounties burn in the Wildfire too, without the Trail Hunt; they pay Cinderglass.
+  const bounties = trip.getByRole("radiogroup", { name: "Bounty" });
+  await expect(bounties.getByRole("radio")).not.toHaveCount(0);
+  await expect(bounties.getByRole("radio", { name: "Trail Hunt" })).toHaveCount(0);
+  await expect(bounties.getByTitle(/Cinderglass/).first()).toBeVisible();
+  await bounties.getByRole("radio").first().click();
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/wildfire-camp.png` });
   await trip.getByRole("button", { name: "WILDFIRE IV · ACT 7" }).click();
 
