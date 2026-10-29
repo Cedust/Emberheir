@@ -28,9 +28,15 @@ describe("effect gallery catalogue", () => {
         },
         after: (_s, run) => later.push(run),
         state: (change) => {
-          if (change) change(base);
+          if (change) {
+            change(base);
+            events += 1;
+          }
         },
         reset: () => {},
+        arena: () => {
+          events += 1;
+        },
       };
       e.play?.(player);
       for (const run of later) run();

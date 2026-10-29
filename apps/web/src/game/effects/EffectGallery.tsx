@@ -65,7 +65,8 @@ function Gallery() {
   const base = useMemo(() => new Fight(preview.hero, preview.enemy, 1).snapshot(), [preview]);
   const heroLook = picked.hero ? picked.hero(preview.heroLook) : preview.heroLook;
   const enemyLook = picked.enemy ? picked.enemy(BASE_ENEMY) : BASE_ENEMY;
-  const lookKey = JSON.stringify([heroLook, enemyLook, numbers, mountId]);
+  const noEnemy = picked.noEnemy === true;
+  const lookKey = JSON.stringify([heroLook, enemyLook, noEnemy, numbers, mountId]);
 
   const arenaW = stage.w - PANEL_W;
   const arenaH = stage.h;
@@ -85,6 +86,7 @@ function Gallery() {
     setReady(null);
     let live = true;
     void scene.mount(host, heroLook, enemyLook).then((app) => {
+      if (noEnemy) scene.hideEnemy();
       if (live && app) setReady(mountId);
     });
     return () => {
@@ -119,6 +121,7 @@ function Gallery() {
       reset: (seconds) => {
         timers.push(window.setTimeout(() => setMountId((n) => n + 1), seconds * 1000));
       },
+      arena: (run) => run(scene),
     };
     show();
     const play = () => picked.play?.(player);
