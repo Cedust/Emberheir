@@ -6,6 +6,7 @@ import type {
   PayoffKind,
   PerkId,
 } from "@emberheir/sim";
+import type { ArenaScene } from "../battle/ArenaScene";
 import type { EnemyLook } from "../battle/enemyArt";
 import type { HeroLook } from "../battle/heroArt";
 
@@ -27,6 +28,8 @@ export interface Player {
   state(change: ((s: FightSnapshot) => FightSnapshot) | null): void;
   /** Builds the arena again (after a death, so the fighter stands up). */
   reset(afterSeconds: number): void;
+  /** Calls the arena itself, for moments outside a fight (the road, map nodes, Trails). */
+  arena(run: (scene: ArenaScene) => void): void;
 }
 
 export interface Kit {
@@ -49,6 +52,8 @@ export interface EffectEntry {
   readonly kit?: Kit;
   readonly hero?: (h: HeroLook) => HeroLook;
   readonly enemy?: (e: EnemyLook) => EnemyLook;
+  /** The arena between fights: only the hero stands there. */
+  readonly noEnemy?: boolean;
   /** Played on pick and, with Repeat on, again every few seconds. */
   readonly play?: (p: Player) => void;
   /** A lasting state: held while the effect is picked. */
@@ -64,6 +69,7 @@ export const GROUPS = [
   { id: "states", name: "Zustände" },
   { id: "hero", name: "Am Helden" },
   { id: "enemy", name: "Gegner" },
+  { id: "road", name: "Unterwegs" },
   { id: "weather", name: "Wetter" },
   { id: "numbers", name: "Zahlen" },
 ] as const;
@@ -114,6 +120,17 @@ function side(
 const onFoe = (type: FighterSnapshot["ailments"][number]["type"]) => (s: FightSnapshot) =>
   side(s, "enemy", { ailments: [{ type, remaining: 5 }] });
 
+/** Marks effects that came into the game after the effect review (2026-10-20). */
+const NEW = " · neu";
+
+const HARVESTER: EnemyLook = {
+  id: "ashen-harvester",
+  archetype: "boss",
+  boss: true,
+  elite: false,
+  act: 7,
+};
+
 const BOW: Kit = { classId: "ashstrider", weapon: "bow" };
 const CROSSBOW: Kit = { classId: "ashstrider", weapon: "crossbow" };
 const DAGGER: Kit = { classId: "ashstrider", weapon: "dagger" };
@@ -121,7 +138,7 @@ const WAND: Kit = { classId: "emberseer", weapon: "wand" };
 
 /** Heavy Attack: the wind-up ring pulses, then the blow lands. */
 function heavyAttack(p: Player, capped: boolean): void {
-  const telegraph = { skill: "Heavy Slam", remaining: 1.4, windup: 1.4 };
+  const telegraph = { skill: "Heavy Slam", skillId: "heavy-slam", remaining: 1.4, windup: 1.4 };
   p.state((s) => side(s, "enemy", { telegraph }));
   p.events([{ t: 0, type: "telegraph", side: "enemy", skill: "Heavy Slam", windup: 1.4 }]);
   p.after(1.4, () => {
@@ -178,6 +195,17 @@ const commonPerk = (id: PerkId, name: string, what: string, see: string): Effect
   play: (p) => p.events([perk(id)]),
 });
 
+/** A painted enemy of each act stands in the weather of its act. */
+const ACT_ENEMY: Record<number, string> = {
+  1: "ashen-brute",
+  2: "barkhide",
+  3: "magma-brute",
+  4: "frost-wolf",
+  5: "thunder-brute",
+  6: "hollow-brute",
+  7: "ash-revenant",
+};
+
 const weather = (act: number, verdict: Verdict, see: string, plan: string): EffectEntry => {
   const name = act === 8 ? "The Last Ember" : (ACTS.find((a) => a.number === act)?.name ?? "");
   return {
@@ -188,12 +216,12 @@ const weather = (act: number, verdict: Verdict, see: string, plan: string): Effe
     what: "Die Luft des Acts: läuft im ganzen Kampf und in der Intermission im Hintergrund.",
     see,
     plan,
-    enemy: (e) => ({
+    enemy: () => ({
       archetype: "brute",
       boss: false,
       elite: false,
       act,
-      ...(e.id && act === 1 ? { id: e.id } : {}),
+      ...(ACT_ENEMY[act] ? { id: ACT_ENEMY[act] } : {}),
     }),
   };
 };
@@ -226,7 +254,7 @@ export const EFFECTS: readonly EffectEntry[] = [
     group: "hits",
     name: "Kugel-Geschoss (Orb)",
     verdict: "change",
-    what: "Zauber wie Ice Lance, Fireball oder Void Bolt fliegen als Kugel zum Ziel.",
+    what: "Zauber wie Ice Lance, Fireball oder Void Orb fliegen als Kugel zum Ziel.",
     see: "Eine leuchtende Kugel mit Schweif aus Partikeln (2 pro Frame).",
     plan: "Der Schweif wird ein einziges gestrecktes Bild statt vieler Partikel. Sieht fast gleich aus.",
     play: (p) => p.events([hit({ source: "Ice Lance", damageType: "cold", damage: 540 })]),
@@ -481,6 +509,42 @@ export const EFFECTS: readonly EffectEntry[] = [
     play: (p) => p.events([hit({ source: "Heavy Bolt", damage: 980 })]),
   },
   {
+    id: "searing-blow",
+    group: "skills",
+    name: `Signature: Searing Blow${NEW}`,
+    verdict: "keep",
+    what: "Element-Angriff mit der Waffe (Fire): ein Schlag, der immer Burn auflegt.",
+    see: "Ein Vorhang aus Glut steigt vom Gegner auf (26 Funken).",
+    plan: "Behalten, die Glut halbieren.",
+    play: (p) => p.events(cast("Searing Blow", 40, "fire")),
+  },
+  {
+    id: "storm-strike",
+    group: "skills",
+    name: `Signature: Storm Strike${NEW}`,
+    verdict: "keep",
+    what: "Element-Angriff mit der Waffe (Lightning): drei schnelle Schläge, die Shock auflegen können.",
+    see: "Bei jedem der drei Schläge fährt ein kurzer Blitz vom Himmel ins Ziel.",
+    plan: "Behalten, kostet wenig.",
+    play: (p) =>
+      p.events([
+        { t: 0, type: "skill", side: "hero", skill: "Storm Strike", heatCost: 45 },
+        hit({ source: "Storm Strike", damageType: "lightning", damage: 210 }),
+        hit({ source: "Storm Strike", damageType: "lightning", damage: 220 }),
+        hit({ source: "Storm Strike", damageType: "lightning", damage: 205 }),
+      ]),
+  },
+  {
+    id: "frost-strike",
+    group: "skills",
+    name: `Signature: Frost Strike${NEW}`,
+    verdict: "keep",
+    what: "Element-Angriff mit der Waffe (Cold): ein schwerer Schlag, der immer Chill auflegt.",
+    see: "Eissplitter springen weg (20), ein kalter Ring am Boden, kurzes Anhalten.",
+    plan: "Behalten, 10 Splitter.",
+    play: (p) => p.events(cast("Frost Strike", 50, "cold")),
+  },
+  {
     id: "barbed",
     group: "skills",
     name: "Signature: Barbed Arrow, Envenom",
@@ -621,14 +685,18 @@ export const EFFECTS: readonly EffectEntry[] = [
   // ---------------------------------------------------------------- Perks
   rarePerk("titan", "Titan (STR 10)", "Sehr harte Treffer betäuben den Gegner.", true),
   rarePerk("trueShot", "True Shot (DEX 10)", "Jeder n-te Angriff ist ein sicherer Crit."),
-  rarePerk(
-    "spellfire",
-    "Spellfire (INT 10)",
-    "Der erste Zauber des Kampfs macht doppelten Schaden.",
-  ),
+  {
+    id: "perk-barrierBurst",
+    group: "perks",
+    name: "Barrier Burst (INT 10) · neu",
+    verdict: "change",
+    what: "Neu seit dem 20.10. (ersetzt Spellfire): bricht die Barrier des Helden, platzt sie und trifft den Gegner mit 50 % der max Barrier im Element der Waffe.",
+    see: "Hellblaue Splitter fallen vom Gegner, der Name schwebt hoch.",
+    plan: "Wie alle seltenen Perks: Ring in Perk-Farbe und der Name. Die Splitter passen aber gut zum Platzen, die könnten als Ausnahme bleiben.",
+    play: (p) => p.events([perk("barrierBurst")]),
+  },
   rarePerk("quickReflexes", "Quick Reflexes (DEX 4)", "Der erste Angriff des Gegners verfehlt."),
   rarePerk("doubleTime", "Double Time (AGI 10)", "Jeder n-te Angriff schlägt zweimal zu."),
-  rarePerk("innerFire", "Inner Fire", "Der Held startet mit etwas Heat in den Kampf."),
   rarePerk("secondBreath", "Second Breath", "Einmal pro Kampf bei wenig Life: eine große Heilung."),
   rarePerk(
     "undying",
@@ -639,28 +707,14 @@ export const EFFECTS: readonly EffectEntry[] = [
   commonPerk(
     "armorbreaker",
     "Armorbreaker (STR 4)",
-    "Crits legen einen Sunder-Stack auf (weniger Armor und Resistance beim Gegner).",
-    "Graue Splitter fallen vom Gegner.",
+    "Jeder 4. Angriff ist ein Mighty Hit, und Mighty Hits legen Sunder auf (weniger Armor und Resistance beim Gegner).",
+    "Graue Splitter fallen vom Gegner, zusätzlich zum Mighty Hit.",
   ),
-  commonPerk(
-    "stoneguard",
-    "Stoneguard (STR 7)",
-    "Blocks halten mehr ab.",
-    "Ein grauer Ring um den Helden.",
-  ),
-  commonPerk("hawkeye", "Hawkeye (AGI 4)", "Mehr Precision.", "Ein weißer Ring um den Gegner."),
   commonPerk(
     "opportunist",
     "Opportunist (AGI 7)",
     "Auch Glancing Blows lösen On-Hit-Trigger aus.",
     "Ein goldener Funkenstern am Gegner.",
-  ),
-  commonPerk("attuned", "Attuned (INT 4)", "Mehr Penetration.", "Ein blauer Ring um den Helden."),
-  commonPerk(
-    "surge",
-    "Surge (INT 7)",
-    "Mehr Chance auf Ailments.",
-    "Ein violetter Funkenstern am Gegner.",
   ),
   commonPerk(
     "emberDance",
@@ -679,12 +733,6 @@ export const EFFECTS: readonly EffectEntry[] = [
     "Clarity",
     "Payoffs machen mehr Schaden.",
     "Ein violetter Ring um den Gegner.",
-  ),
-  commonPerk(
-    "thickSkin",
-    "Thick Skin",
-    "Weniger Schaden durch Ailments.",
-    "Ein grauer Ring um den Helden.",
   ),
 
   // ---------------------------------------------------------------- Payoffs
@@ -787,6 +835,24 @@ export const EFFECTS: readonly EffectEntry[] = [
     play: (p) => p.events([payoff("cashIn")]),
   },
 
+  {
+    id: "hunters-mark-crit",
+    group: "payoffs",
+    name: `Hunter's Mark: Crit${NEW}`,
+    verdict: "keep",
+    what: "Class Trait des Ashstrider: ein Crit verbraucht die gesammelten Marks und trifft dafür härter.",
+    see: "Das Visier über dem Gegner bricht wie ein Stern auf, leichtes Wackeln, Name.",
+    plan: "Behalten: der Moment, auf den der Ashstrider hinarbeitet.",
+    kit: BOW,
+    state: (s) =>
+      side(s, "hero", { trait: { kind: "huntersMark", value: 5, max: 5, damageType: "physical" } }),
+    play: (p) => {
+      p.state(null);
+      p.events([hit({ crit: true, damage: 940 }), payoff("huntersMark")]);
+      p.after(1.6, () => p.state(null));
+    },
+  },
+
   // ---------------------------------------------------------------- Zustände
   ailment(
     "Burn",
@@ -839,7 +905,7 @@ export const EFFECTS: readonly EffectEntry[] = [
     plan: "Behalten, mit derselben kleineren Rate wie Ailments.",
     state: (s) =>
       side(s, "enemy", {
-        curses: [{ name: "Sunder", dotDamageTaken: 0, armor: 0.3, remaining: 5 }],
+        curses: [{ id: "sunder", name: "Sunder", dotDamageTaken: 0, armor: 0.3, remaining: 5 }],
       }),
   },
   {
@@ -871,12 +937,12 @@ export const EFFECTS: readonly EffectEntry[] = [
     group: "states",
     name: "Hunter's Mark (Ashstrider)",
     verdict: "keep",
-    what: "Class Trait des Ashstrider: der Gegner ist markiert, solange er deine Ailments trägt.",
-    see: "Ein drehendes Visier über dem Gegner.",
+    what: "Class Trait des Ashstrider: Treffer sammeln Marks auf dem Gegner (bis 5), der nächste Crit verbraucht sie.",
+    see: "Ein drehendes Visier über dem Gegner, ein Punkt leuchtet pro Mark; bei 5 Marks glüht es orange. Hier: 3 Marks.",
     plan: "Behalten, als fertiges Bild.",
     kit: BOW,
     state: (s) =>
-      side(s, "hero", { trait: { kind: "huntersMark", value: 1, max: 1, damageType: "physical" } }),
+      side(s, "hero", { trait: { kind: "huntersMark", value: 3, max: 5, damageType: "physical" } }),
   },
   {
     id: "telegraph",
@@ -952,9 +1018,21 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Off-Hand-Glanz",
     verdict: "keep",
     what: "Off Hands wie Ember Focus oder Grimoire.",
-    see: "Die Glut im Ember Focus glimmt, ein Grimoire schwebt und wippt.",
+    see: "Die Glut im Ember Focus glimmt, ein Grimoire schwebt und wippt. Neu: bei jedem Zauber flammt sie kurz auf.",
     plan: "Behalten, kostet fast nichts.",
     kit: WAND,
+    play: (p) => p.events(cast("Ice Bolt", 20, "cold")),
+  },
+  {
+    id: "caster-pose",
+    group: "hero",
+    name: `Zauber-Pose (Wand, Staff)${NEW}`,
+    verdict: "keep",
+    what: "Der Held mit Wand oder Staff wirkt einen Zauber.",
+    see: "Eigene gemalte Pose: der Arm hebt die Waffe, der Zauber löst sich aus ihr.",
+    plan: "Behalten, kostet nichts.",
+    kit: { classId: "emberseer", weapon: "staff" },
+    play: (p) => p.events(cast("Fireball", 30, "fire")),
   },
   {
     id: "draught-ring",
@@ -1053,6 +1131,47 @@ export const EFFECTS: readonly EffectEntry[] = [
     },
   },
   {
+    id: "shatter",
+    group: "enemy",
+    name: `Shatter (Rime Warden)${NEW}`,
+    verdict: "keep",
+    what: "Boss in Act 4: bricht seine Ice Barrier, fliegen die Eisstücke auf den Helden.",
+    see: "Ein heller Ring, 26 Eissplitter fliegen zum Helden, 14 Frostwolken, „Shatter“, Wackeln.",
+    plan: "Behalten: Boss-Mechanik, die man sehen muss. Frostwolken halbieren.",
+    enemy: () => ({ id: "rime-warden", archetype: "warden", boss: true, elite: false, act: 4 }),
+    play: (p) =>
+      p.events([
+        { t: 0, type: "trigger", side: "enemy", name: "Shatter" },
+        hit({ side: "enemy", source: "Shatter", damageType: "cold", damage: 520 }),
+      ]),
+  },
+  {
+    id: "harvester-phase",
+    group: "enemy",
+    name: `Harvester: neue Phase${NEW}`,
+    verdict: "keep",
+    what: "Endboss The Ashen Harvester: unter 66 % und unter 33 % Life beginnt eine neue Phase.",
+    see: "Weißer und farbiger Ring, Glut- und Frostfunken (46), starkes Wackeln; in Phase 3 fahren drei Void-Blitze herab. Hier: erst Phase 2, dann 3.",
+    plan: "Behalten: seltener großer Moment.",
+    enemy: () => HARVESTER,
+    play: (p) => {
+      p.state((s) => side(s, "enemy", { life: s.enemy.maxLife * 0.6 }));
+      p.after(1.8, () => p.state((s) => side(s, "enemy", { life: s.enemy.maxLife * 0.3 })));
+      p.reset(4.5);
+    },
+  },
+  {
+    id: "harvester-aura",
+    group: "enemy",
+    name: `Harvester: Echo-Aura${NEW}`,
+    verdict: "change",
+    what: "Ab Phase 2 trägt der Harvester die Bosse, die er spiegelt.",
+    see: "Dauernd 16 bis 20 Flammen und Frostflocken pro Sekunde um ihn, in Phase 3 Void und Blitze, ab und zu ein kleiner Void-Blitz.",
+    plan: "Ein gebackener Glanz um den Harvester (Feuer und Frost, dann Void) mit wenigen Funken, wie bei der Fury-Aura.",
+    enemy: () => HARVESTER,
+    state: (s) => side(s, "enemy", { life: s.enemy.maxLife * 0.5 }),
+  },
+  {
     id: "death",
     group: "enemy",
     name: "Tod",
@@ -1084,6 +1203,51 @@ export const EFFECTS: readonly EffectEntry[] = [
     see: "Große Flammen lecken an den Rändern ((4 + Tier) × 2 pro Sekunde), dazu Glut und Ruß in der Luft. Hier: Tier X.",
     plan: "Ein gemalter oder fertiger Flammenrand, der flackert, ohne Partikel. Glut und Ruß höchstens 40 + 30, egal welcher Tier.",
     enemy: (e) => ({ ...e, wildfire: 10 }),
+  },
+
+  // ---------------------------------------------------------------- Unterwegs
+  {
+    id: "wander",
+    group: "road",
+    name: `Weiterwandern${NEW}`,
+    verdict: "change",
+    what: "Auf der Act-Karte zieht der Held zum nächsten Ort (am Warden's Gate und zwischen Knoten).",
+    see: "Ein Windstoß aus Asche und Glut zieht am Helden vorbei (6 Stöße mit je 32 Partikeln), leuchtende Fußspuren laufen voraus.",
+    plan: "Gefällt mir, aber 3 Stöße reichen.",
+    noEnemy: true,
+    play: (p) => p.arena((a) => a.wander()),
+  },
+  ...(
+    [
+      ["hearth", "Hearth", "Ein Lagerfeuer flammt auf, warme Funken steigen um den Helden."],
+      ["cache", "Cache", "Eine Truhe springt in Gold auf, Münzen fliegen."],
+      ["event", "Event", "Ein seltsamer Nebel zieht herein."],
+      ["marisha", "Marisha", "Münzen regnen von ihrem Wagen."],
+      ["shrine", "Shrine", "Gestohlenes Feuer wirbelt am Helden hoch."],
+    ] as const
+  ).map(([kind, name, see]): EffectEntry => ({
+    id: `visit-${kind}`,
+    group: "road",
+    name: `Ruhiger Ort: ${name}${NEW}`,
+    verdict: "keep",
+    what: "Der Held kommt auf der Act-Karte an einem ruhigen Ort ohne Kampf an.",
+    see,
+    plan: "Behalten: einmal pro Ort, kostet wenig.",
+    noEnemy: true,
+    play: (p) => p.arena((a) => a.visit(kind)),
+  })),
+  {
+    id: "trail",
+    group: "road",
+    name: `Neuer Trail (Hunt)${NEW}`,
+    verdict: "keep",
+    what: "Nach einem Sieg bekommt der Gegner einen neuen Trail für die Hunt.",
+    see: "Leuchtende Pfotenspuren laufen zum Gegner, goldene Ringe steigen auf, mehr Funken je Trail. Hier: erst Trail 1, dann Apex (rot).",
+    plan: "Behalten.",
+    play: (p) => {
+      p.arena((a) => a.trail(1));
+      p.after(1.6, () => p.arena((a) => a.trail(4)));
+    },
   },
 
   // ---------------------------------------------------------------- Wetter
