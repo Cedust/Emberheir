@@ -82,12 +82,12 @@ export function loadGateTextures(): Promise<GateTextures | null> {
 const GATE_SCALE = 0.5;
 /** Where the painting's fire bowls and carved sigils sit, in painting px. */
 const GATE_BOWLS = [
-  { x: 245, y: 562 },
-  { x: 1200, y: 562 },
+  { x: 245, y: 560 },
+  { x: 1210, y: 560 },
 ];
 const GATE_SIGILS = [
-  { x: 243, y: 385 },
-  { x: 1188, y: 385 },
+  { x: 250, y: 395 },
+  { x: 1200, y: 393 },
 ];
 
 export interface Gate {
@@ -127,23 +127,30 @@ export function drawGate(tex: GateTextures): Gate {
   const broken = sprite(tex.broken);
   broken.visible = false;
   const fires = GATE_BOWLS.map(at);
-  const light = new Graphics();
-  for (const f of fires) {
-    light.ellipse(f.x, f.y - 12, 40, 24).fill({ color: 0xff8a1f, alpha: 0.28 });
+  // Light and sigil glow are drawn in painting px on the painting's own frame.
+  const painted = (g: Graphics) => {
+    g.position.set(left, top);
+    g.scale.set(GATE_SCALE);
+    g.blendMode = "add";
+    return g;
+  };
+  const light = painted(new Graphics());
+  for (const b of GATE_BOWLS) {
+    light.ellipse(b.x, b.y - 10, 92, 34).fill({ color: 0xff8a1f, alpha: 0.28 });
   }
-  light.blendMode = "add";
-  // The Ember sigil glows in its carving while the keeper stands.
-  const sigil = new Graphics();
-  for (const p of GATE_SIGILS.map(at)) {
+  // The Ember sigil glows in its carving while the keeper stands: the ring and the drop.
+  const sigil = painted(new Graphics());
+  for (const p of GATE_SIGILS) {
     sigil
-      .circle(p.x, p.y, 28)
-      .fill({ color: 0xff8a1f, alpha: 0.14 })
-      .circle(p.x, p.y, 25)
-      .stroke({ color: 0xffb13b, width: 3, alpha: 0.85 })
-      .poly([p.x, p.y - 17, p.x + 8, p.y + 4, p.x, p.y + 13, p.x - 8, p.y + 4])
+      .circle(p.x, p.y, 76)
+      .fill({ color: 0xff8a1f, alpha: 0.12 })
+      .circle(p.x, p.y, 72)
+      .stroke({ color: 0xffb13b, width: 7, alpha: 0.85 })
+      .poly([p.x, p.y - 48, p.x + 19, p.y + 16, p.x - 19, p.y + 16])
+      .fill({ color: 0xff8a1f, alpha: 0.85 })
+      .circle(p.x, p.y + 22, 20)
       .fill({ color: 0xff8a1f, alpha: 0.85 });
   }
-  sigil.blendMode = "add";
   root.addChild(light, sigil);
   return { root, whole, broken, sigil, light, fires };
 }
