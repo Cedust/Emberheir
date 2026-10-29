@@ -38,6 +38,8 @@ import {
   drawDraughtRing,
   drawGate,
   drawGround,
+  type Gate,
+  loadGateTextures,
   drawLevelGlow,
   drawStars,
   drawWildfireGlow,
@@ -117,9 +119,8 @@ export class ArenaScene {
   private echoCarry = 0;
   private draught: { ring: Graphics; color: number } | null = null;
   private draughtCarry = 0;
-  /** The Gatekeeper's stone gate, its fire bowls and the Ember sigil on the lintel. */
-  private gate: { root: Container; sigil: Graphics; fires: { x: number; y: number }[] } | null =
-    null;
+  /** The Gatekeeper's painted stone gate, its fire bowls and the glowing Ember sigils. */
+  private gate: Gate | null = null;
   private gateCarry = 0;
   /** Wildfire: the burning ground glow and how hard the edges flame (the tier). */
   private wildfire: { glow: Graphics; tier: number } | null = null;
@@ -199,11 +200,12 @@ export class ArenaScene {
   /** Resolves with the Pixi app, or null without WebGL or when destroyed meanwhile. */
   async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<Application | null> {
     this.echoColor = hero.echo ?? null;
-    const [heir, weapon, painting, backdrop] = await Promise.all([
+    const [heir, weapon, painting, backdrop, gate] = await Promise.all([
       loadHeirTextures(),
       loadHeroWeapon(hero),
       loadEnemyTexture(enemy),
       loadBackdrop(enemy.act),
+      enemy.gate ? loadGateTextures() : null,
       prepareFloaterFonts(),
     ]);
     if (this.destroyed) return null;
@@ -264,8 +266,8 @@ export class ArenaScene {
       this.ward[side] = ward;
       this.world.addChild(ward);
     }
-    if (enemy.gate) {
-      this.gate = drawGate();
+    if (gate) {
+      this.gate = drawGate(gate);
       this.world.addChildAt(this.gate.root, 1);
     }
     if (enemy.id === "ashen-harvester") this.harvester = { phase: 1, carry: 0 };
@@ -1723,10 +1725,29 @@ export class ArenaScene {
     this.fx.burst({ ...style, x: c.x, y: c.y + 20, count });
   }
 
-  /** The Gatekeeper fell: its gate cracks, the fires go out in a rain of stone and sparks. */
-  private breakGate(gate: NonNullable<ArenaScene["gate"]>): void {
-    gate.root.alpha = 0.3;
-    gate.sigil.alpha = 0;
+  /** The Gatekeeper fell: its arch breaks, the fires go out in a rain of stone and sparks. */
+  private breakGate(gate: Gate): void {
+    if (gate.broken.visible) return;
+    gate.whole.visible = false;
+    gate.broken.visible = true;
+    gate.sigil.visible = false;
+    gate.light.visible = false;
+    // The arch comes down between the pillars.
+    this.fx?.burst({
+      x: gate.whole.x + gate.whole.width / 2,
+      y: gate.whole.y + gate.whole.height * 0.12,
+      count: 36,
+      kind: "bit",
+      color: [0x5e5750, 0x8a8178, 0x3a332d],
+      spreadX: 160,
+      spreadY: 20,
+      angle: [RISE - 1.4, RISE + 1.4],
+      speed: [20, 120],
+      life: [0.9, 1.6],
+      size: [10, 20],
+      gravity: 700,
+      spin: 4,
+    });
     for (const f of gate.fires) {
       this.fx?.burst({
         x: f.x,
@@ -1930,7 +1951,7 @@ export class ArenaScene {
       this.levelGlow.alpha = 0.75 + 0.25 * Math.sin(this.clock * 1.1);
     }
     // The Gatekeeper's gate: the fire bowls burn, the sigil glows while the keeper stands.
-    if (this.gate && this.gate.root.alpha === 1) {
+    if (this.gate && !this.gate.broken.visible) {
       if (this.motion) this.gate.sigil.alpha = 0.7 + 0.3 * Math.sin(this.clock * 2.4);
       this.gateCarry += 14 * dt;
       for (; this.fx && this.gateCarry >= 1; this.gateCarry--) {
