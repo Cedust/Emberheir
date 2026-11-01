@@ -219,7 +219,7 @@ Endgame **Wildfire I–X**.
 
 | Persona | Rolle | Aufgaben |
 |---|---|---|
-| **Kaelen** | Trainer | Ash Tree, Heirloom, Battle Plan (jeder Respec kostet Acorns). Sein **Training Dummy** steht links vom Feuer und ist ein eigener Klickpunkt im Camp (Schaden/s nach Quelle, Items live anprobieren; Timo 19.10.2026) |
+| **Kaelen** | Trainer | Ash Tree, Heirloom, Battle Plan (jeder Respec kostet Acorns). Sein **Training Dummy** steht links vom Feuer und ist ein eigener Klickpunkt im Camp: Live-Arena mit dem echten Kampf, Schaden/s nach Quelle, Items live anprobieren (Timo 19.10.2026). Zwei Modi: **Straw Man** (steht still) und **Sparring** gegen Kaelen (schlägt zurück, neutral auf Monster-Level, kein Boss-Bezug; Boss Hide wegen Spoiler entfernt, Timo 01.11.2026) |
 | **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers; hebt den Required Level mit), Reforge (Ember Coal; würfelt nur die Stat-Affixe neu, alle Trigger bleiben, Charms nicht), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
 | **Liora** | Mystic | Temper (wie der Enchant aus Diablo 3: zwei Angebote für ein Stat-Affix, ein neues Affix oder derselbe Affix mit neuem Wert, oder behalten; bei festen Werten wie „+1 Strength“ zwei neue Affixe), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |

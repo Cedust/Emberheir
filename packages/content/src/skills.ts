@@ -684,6 +684,17 @@ export const GORRAK_SLAM: SkillDefinition = {
   hits: [{ kind: "weapon", multiplier: 4, damageType: "fire" }],
 };
 
+/** Kaelen's sparring lunge at the Training Dummy: his sword glows with the Hearthfire. */
+export const EMBER_LUNGE: SkillDefinition = {
+  id: "ember-lunge",
+  name: "Ember Lunge",
+  type: "attack",
+  heatCost: 50,
+  tags: ["fire", "direct", "melee"],
+  description: "A lunge for 180 % Weapon Damage as Fire.",
+  hits: [{ kind: "weapon", multiplier: 1.8, damageType: "fire" }],
+};
+
 // Act 3 (Ember Wastes) enemy skills.
 
 /** Cinder Imp: a flurry of burning swipes. */

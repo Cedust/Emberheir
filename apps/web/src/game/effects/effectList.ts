@@ -893,6 +893,33 @@ export const EFFECTS: readonly EffectEntry[] = [
       ]),
   },
   {
+    id: "straw",
+    group: "enemy",
+    name: `Stroh (Training Dummy)${NEW}`,
+    verdict: "keep",
+    what: "Im Camp schlägt der Held auf Kaelens Training Dummy.",
+    see: "Bei jedem Treffer fliegen 10 Strohhalme vom Dummy weg, bei Crit 26.",
+    enemy: (e) => ({ ...e, id: "training-dummy", archetype: "brute", boss: false }),
+    play: (p) => {
+      p.events([hit()]);
+      p.after(1.1, () => p.events([hit({ crit: true, damage: 612 })]));
+    },
+  },
+  {
+    id: "ember-lunge",
+    group: "enemy",
+    name: `Ember Lunge (Kaelen, Sparring)${NEW}`,
+    verdict: "keep",
+    what: "Beim Training Dummy kämpft Kaelen gegen den Helden und stößt mit glühender Klinge zu.",
+    see: "Kaelen springt nach vorn, am Helden sprühen 12 Glutfunken und ein oranger Ring.",
+    enemy: (e) => ({ ...e, id: "kaelen", archetype: "brute", boss: false }),
+    play: (p) =>
+      p.events([
+        { t: 0, type: "skill", side: "enemy", skill: "Ember Lunge", heatCost: 50 },
+        hit({ side: "enemy", source: "Ember Lunge", damageType: "fire", damage: 180 }),
+      ]),
+  },
+  {
     id: "harvester-phase",
     group: "enemy",
     name: `Harvester: neue Phase${NEW}`,

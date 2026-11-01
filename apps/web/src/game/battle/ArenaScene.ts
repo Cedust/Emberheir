@@ -176,11 +176,15 @@ export class ArenaScene {
     return this.freeze > 0;
   }
 
+  /** Kaelen's straw man: hits throw straw (`straw`). */
+  private strawMan = false;
+
   /** Screen-fixed layer above the arena (the battle HUD): no camera shake or zoom. */
   readonly overlay = new Container();
 
   /** Resolves with the Pixi app, or null without WebGL or when destroyed meanwhile. */
   async mount(host: HTMLElement, hero: HeroLook, enemy: EnemyLook): Promise<Application | null> {
+    this.strawMan = enemy.id === "training-dummy";
     const [heir, weapon, painting, backdrop, gate] = await Promise.all([
       loadHeirTextures(),
       loadHeroWeapon(hero),
@@ -908,10 +912,49 @@ export class ArenaScene {
   }
 
   /** Signature looks of the weapon Innates and their Skill Tree stand-ins (klassen-v2.md). */
+  /** Kaelen's Training Dummy: straw and splinters fly off with every hit. */
+  private straw(at: { x: number; y: number }, away: number, big: boolean): void {
+    this.fx?.burst({
+      x: at.x,
+      y: at.y,
+      count: big ? 26 : 10,
+      kind: "bit",
+      color: [0xe8c872, 0xd4a84a, 0xb8863a, 0xf2dc9a],
+      spreadY: 50,
+      angle: [away - 1.2, away + 1.2],
+      speed: [120, big ? 520 : 340],
+      gravity: 620,
+      life: [0.6, 1.2],
+      size: [7, 14],
+      stretch: 0.8,
+      spin: 10,
+      wobble: 30,
+      drag: 0.4,
+    });
+  }
+
   private signature(source: string, at: { x: number; y: number }, away: number): void {
     const fx = this.fx;
     if (!fx) return;
     switch (source) {
+      case "Ember Lunge":
+        // Kaelen sparring: his blade carries the Hearthfire, embers trail the lunge.
+        fx.burst({
+          x: at.x,
+          y: at.y,
+          count: 12,
+          color: [0xffb13b, 0xff8a1f, 0xffe9a8],
+          spreadX: 40,
+          spreadY: 24,
+          angle: [away - 0.6, away + 0.6],
+          speed: [200, 520],
+          life: [0.3, 0.7],
+          size: [8, 16],
+          drag: 0.1,
+          gravity: -120,
+        });
+        fx.ring(at.x, at.y, 0xff8a1f, 20, 120, 0.3, 6, 1);
+        break;
       case "Crushing Blow":
         // Armor plates crack off: Sunder.
         fx.burst({
@@ -1109,6 +1152,7 @@ export class ArenaScene {
       gravity: 700,
     });
     this.signature(e.source, at, away);
+    if (target === "enemy" && this.strawMan) this.straw(at, away, big);
     if (e.blocked)
       fx.ring(at.x + (target === "hero" ? -56 : 56), at.y, 0xffe9a8, 20, 80, 0.25, 6, 1);
     if (e.deflected) {

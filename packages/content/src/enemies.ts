@@ -15,6 +15,7 @@ import {
   BLIGHT_SPIT,
   CINDER_SPIT,
   DEVOUR,
+  EMBER_LUNGE,
   ERUPTION,
   FIREBALL,
   FLAME_DASH,
@@ -107,6 +108,27 @@ export const EMBER_THIEF: EnemyDefinition = {
   skills: [],
   baseLife: 175,
   bonuses: { evasion: 0.1 },
+};
+
+/**
+ * Kaelen sparring at the Training Dummy (training-dummy-v2-konzept.md): no boss behind him, only
+ * a fair test of the build. Sword cuts (Physical) and a glowing Ember Lunge (Fire). He never falls.
+ */
+export const KAELEN_SPARRING: EnemyDefinition = {
+  id: "kaelen",
+  name: "Kaelen",
+  archetype: "brute",
+  description: "Kaelen spars with you: sword cuts and a burning lunge.",
+  attributes: { strength: 6, dexterity: 6, agility: 4, intelligence: 0, wisdom: 2, vitality: 8 },
+  weapon: {
+    ...RUSTY_CLEAVER,
+    id: "kaelen-sword",
+    name: "Kaelen's Sword",
+    defaultAttack: "Slash",
+    attacksPerSecond: 0.6,
+  },
+  skills: [EMBER_LUNGE],
+  baseLife: 300,
 };
 
 export const CINDER_CASTER: EnemyDefinition = {

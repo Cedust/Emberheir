@@ -1,6 +1,6 @@
 import { expect, test } from "@playwright/test";
 import {
-  saveAfterAct1,
+  saveDummyBag,
   saveAtEvent,
   saveAtFork,
   saveAtMarisha,
@@ -139,14 +139,26 @@ test("the Warden's Gate: challenge the boss or wander on through the act", async
 test("the Training Dummy by Kaelen measures the build", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await seedSave(page, saveAfterAct1());
+  await seedSave(page, saveDummyBag());
   await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.getByRole("button", { name: /Training Dummy/ }).click();
   await expect(page.getByTestId("dummy-dps")).toHaveText(/\d/);
-  await page.getByRole("radio", { name: "Striking" }).click();
-  await expect(page.getByRole("region", { name: "Dummy numbers" })).toContainText("Damage taken");
+  // No Boss mode: the dummy never shows what a later act holds.
+  await expect(page.getByRole("tab", { name: /Boss/ })).toHaveCount(0);
+  await expect(page.locator(".dummy-arena canvas")).toBeVisible();
+  const tryOn = page.getByRole("region", { name: "Try on" });
+  await expect(tryOn.locator(".dummy-try").first()).toBeVisible();
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/training-dummy.png` });
+  await page.getByRole("tab", { name: /Sparring/ }).click();
+  await expect(page.getByLabel("Damage taken", { exact: true })).toBeVisible();
+  await page.waitForTimeout(2500);
+  if (process.env.SHOTS) {
+    await page.screenshot({ path: `${process.env.SHOTS}/training-dummy-sparring.png` });
+    await page.emulateMedia({ colorScheme: "dark" });
+    await page.waitForTimeout(400);
+    await page.screenshot({ path: `${process.env.SHOTS}/training-dummy-dark.png` });
+  }
   expect(errors).toEqual([]);
 });
 
