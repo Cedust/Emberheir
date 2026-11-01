@@ -68,7 +68,7 @@ const NOTES = {
   },
   mighty: { name: "Mighty Hits", kind: "", explain: "Share of your hits that struck hardest." },
   heat: { name: "Heat spent", kind: "", explain: "Heat your skills burn each second." },
-  trigger: { name: "Triggers", kind: "", explain: "How often your triggers fire each minute." },
+  trigger: { name: "Triggers", kind: "", explain: "How often your triggers fire each second." },
   taken: { name: "Damage taken", kind: "", explain: "What Kaelen deals you each second." },
   healed: { name: "Healing", kind: "", explain: "What you heal each second." },
 } satisfies Record<string, NoteHover>;
@@ -188,14 +188,11 @@ function DummyNumbers(props: {
           value={`${Math.round(report.mightyRate * 100)}%`}
         />
         <Chip icon="heat" note={NOTES.heat} value={`${report.heatPerSecond.toFixed(1)}/s`} />
-        {/* Only a trigger build fires them; a 0 there would just be noise. */}
-        {report.triggersPerMinute >= 1 && (
-          <Chip
-            icon="trigger"
-            note={NOTES.trigger}
-            value={`${report.triggersPerMinute.toFixed(0)}/min`}
-          />
-        )}
+        <Chip
+          icon="trigger"
+          note={NOTES.trigger}
+          value={`${(report.triggersPerMinute / 60).toFixed(1)}/s`}
+        />
       </div>
       <ul className="dummy-sources" aria-label="Damage sources">
         {top.map((s) => (
