@@ -6012,23 +6012,18 @@
   gap: 18px;
 }
 
-.stage .logo-row {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-}
-
-.stage .logo-row .diamond {
-  width: 14px;
-  height: 14px;
-}
-
+/* Timo's painted logo: the Hearthfire over the word EMBERHEIR, glowing like the fire behind it. */
 .stage .title-logo {
-  font-size: 96px;
-  font-weight: 900;
-  letter-spacing: 12px;
-  color: var(--accent);
-  text-shadow: 0 0 40px rgb(255 138 58 / 0.35);
+  margin: 0;
+  line-height: 0;
+}
+
+.stage .title-logo img {
+  display: block;
+  height: 230px;
+  width: auto;
+  user-select: none;
+  filter: drop-shadow(0 0 28px rgb(255 120 40 / 0.45)) drop-shadow(0 4px 8px rgb(0 0 0 / 0.7));
 }
 
 .stage .title-sub {
@@ -6681,13 +6676,6 @@
 .stage .title-screen .build-info {
   color: var(--k-on-wood-sub);
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
-}
-
-.stage .title-screen .title-logo {
-  color: #ff9a4a;
-  text-shadow:
-    0 0 40px rgb(255 138 58 / 0.55),
-    0 3px 6px rgb(0 0 0 / 0.8);
 }
 
 .stage .build-info {
