@@ -83,36 +83,19 @@ export const SKILL_FX: Record<string, Delivery> = {
 export const RISE = -Math.PI / 2;
 
 /**
- * Breakpoint Perks (attribute-v1.md): each one that fires gets its own flash. `on` says whether it
- * lands on the Perk's owner or on the foe; `name` floats the Perk's name for the rare ones.
+ * The rare Breakpoint Perks (attribute-v1.md) that show in the arena: a ring in their colour and
+ * their name. `on` says whether it lands on the Perk's owner or on the foe. The common ones fire
+ * on almost every hit and are left out (Timo 2026-11-01).
  */
-export const PERK_FX: Record<
-  PerkId,
-  {
-    color: readonly number[];
-    on: "self" | "foe";
-    look: "flakes" | "ring" | "rise" | "wind" | "star";
-    name?: boolean;
-  }
-> = {
-  armorbreaker: { color: [0x9a9088, 0x6b625a], on: "foe", look: "flakes" },
-  stoneguard: { color: [0xc9c2b8], on: "self", look: "ring" },
-  titan: { color: [0xffd84a, 0xffb13b], on: "foe", look: "star", name: true },
-  hawkeye: { color: [0xffffff], on: "foe", look: "ring" },
-  opportunist: { color: [0xffd84a, 0xfff2b0], on: "foe", look: "star" },
-  trueShot: { color: [0xffffff, 0xffe9a8], on: "foe", look: "star", name: true },
-  attuned: { color: [0x5b8cff], on: "self", look: "ring" },
-  surge: { color: [0x8a5bff, 0x5b8cff], on: "foe", look: "star" },
-  barrierBurst: { color: [0x8fd3ff, 0xe0f4ff, 0x5b8cff], on: "foe", look: "flakes", name: true },
-  quickReflexes: { color: [0xd8f0c8, 0xa8d8a0], on: "self", look: "wind", name: true },
-  emberDance: { color: [0xffb13b, 0xffd84a], on: "self", look: "wind" },
-  doubleTime: { color: [0xffd84a, 0xffffff], on: "self", look: "ring", name: true },
-  innerFire: { color: [0xff8a3a, 0xffb13b], on: "self", look: "rise", name: true },
-  afterglow: { color: [0xff8a3a, 0xffd84a], on: "self", look: "rise" },
-  clarity: { color: [0xa35cff], on: "foe", look: "ring" },
-  secondBreath: { color: [0x4fe08a, 0xffb13b], on: "self", look: "rise", name: true },
-  thickSkin: { color: [0x9a9088], on: "self", look: "ring" },
-  undying: { color: [0xff4a2a, 0xffd84a], on: "self", look: "star", name: true },
+export const PERK_FX: Partial<Record<PerkId, { color: readonly number[]; on: "self" | "foe" }>> = {
+  titan: { color: [0xffd84a, 0xffb13b], on: "foe" },
+  trueShot: { color: [0xffffff, 0xffe9a8], on: "foe" },
+  barrierBurst: { color: [0x8fd3ff, 0xe0f4ff, 0x5b8cff], on: "foe" },
+  quickReflexes: { color: [0xd8f0c8, 0xa8d8a0], on: "self" },
+  doubleTime: { color: [0xffd84a, 0xffffff], on: "self" },
+  innerFire: { color: [0xff8a3a, 0xffb13b], on: "self" },
+  secondBreath: { color: [0x4fe08a, 0xffb13b], on: "self" },
+  undying: { color: [0xff4a2a, 0xffd84a], on: "self" },
 };
 
 /**

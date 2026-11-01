@@ -136,8 +136,10 @@ type Status = {
   art?: string;
   /** The Class Trait shows its class's emblem. */
   emblem?: string;
+  /** A painted picture of its own (the Draught's vial). */
+  img?: string;
   name: string;
-  kind: "buff" | "trait" | "curse" | "stun" | `ailment-${string}`;
+  kind: "buff" | "trait" | "draught" | "curse" | "stun" | `ailment-${string}`;
   stacks?: number;
   /** Seconds left; the Class Trait has none. */
   remaining: number;
@@ -173,8 +175,23 @@ function traitStatus(f: FighterSnapshot): Status | undefined {
   };
 }
 
-function statusesOf(f: FighterSnapshot): Status[] {
+/** The Draught brewed for the trip: a buff on the rail until the Camp. */
+function draughtStatus(d: DraughtDefinition): Status {
+  const img = draughtIconUrl(d.id);
+  return {
+    key: "draught",
+    icon: "flask",
+    ...(img ? { img } : {}),
+    name: d.name,
+    kind: "draught",
+    remaining: Infinity,
+    explain: `${d.description}. ${d.explain}`,
+  };
+}
+
+function statusesOf(f: FighterSnapshot, draught?: DraughtDefinition): Status[] {
   const out: Status[] = [];
+  if (draught) out.push(draughtStatus(draught));
   const trait = traitStatus(f);
   if (trait) out.push(trait);
   if (f.stunned > 0)
@@ -238,11 +255,18 @@ function RailStatus(props: { status: Status }) {
     setLast(s.remaining);
     if (s.remaining > last + 0.05) setTotal(s.remaining);
   }
-  const bad = s.kind !== "buff" && s.kind !== "trait";
+  const bad = s.kind !== "buff" && s.kind !== "trait" && s.kind !== "draught";
   const timed = Number.isFinite(s.remaining);
   const hover = useNoteHover({
     name: s.stacks ? `${s.name} ×${s.stacks}` : s.name,
-    kind: s.kind === "trait" ? "Class Trait" : bad ? "Debuff" : "Buff",
+    kind:
+      s.kind === "trait"
+        ? "Class Trait"
+        : s.kind === "draught"
+          ? "Draught · until the Camp"
+          : bad
+            ? "Debuff"
+            : "Buff",
     explain: s.explain,
   });
   const used = timed && total > 0 ? Math.min(1, Math.max(0, 1 - s.remaining / total)) : 0;
@@ -259,6 +283,8 @@ function RailStatus(props: { status: Status }) {
         <ClassEmblem classId={s.emblem} size={32} />
       ) : s.art ? (
         <img className="rail-art" src={s.art} alt="" draggable={false} />
+      ) : s.img ? (
+        <img className="rail-vial" src={s.img} alt="" draggable={false} />
       ) : s.painted ? (
         <GameIcon id={s.painted} size={32} />
       ) : (
@@ -284,10 +310,13 @@ export function StatusRail(props: {
   width: number;
   /** The enemy's rail under its plaque: its modifiers sit in the middle instead of Boons. */
   enemy?: boolean;
+  /** The hero's Draught of the trip, a buff for the whole fight. */
+  draught?: DraughtDefinition | undefined;
 }) {
-  const list = statusesOf(props.fighter);
-  const good = list.filter((s) => s.kind === "buff" || s.kind === "trait");
-  const bad = list.filter((s) => s.kind !== "buff" && s.kind !== "trait");
+  const list = statusesOf(props.fighter, props.draught);
+  const isGood = (s: Status) => s.kind === "buff" || s.kind === "trait" || s.kind === "draught";
+  const good = list.filter(isGood);
+  const bad = list.filter((s) => !isGood(s));
   return (
     <div
       className={`status-rail${props.enemy ? " enemy" : ""}`}
@@ -497,7 +526,12 @@ export function HeroBar(props: HeroBarProps) {
       </div>
 
       <div className="hud-center">
-        <StatusRail fighter={hero} boons={props.boons} width={L.plateHalf * 2} />
+        <StatusRail
+          fighter={hero}
+          boons={props.boons}
+          width={L.plateHalf * 2}
+          draught={props.draught}
+        />
         <div className="skillbar" aria-label="Battle Plan">
           <div className="skill-slot-wrap" title={`${hero.defaultAttack} · Default Attack`}>
             <div

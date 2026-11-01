@@ -1,7 +1,7 @@
-import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
+import { Assets, BlurFilter, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import gateBrokenUrl from "../../assets/arena/gatekeeper-gate-broken.webp";
 import gateUrl from "../../assets/arena/gatekeeper-gate.webp";
-import { BLEED, ENEMY_X, GROUND_Y, H, HERO_X, INK, lighten, W } from "./arenaLayout";
+import { BLEED, ENEMY_X, GROUND_Y, H, INK, W } from "./arenaLayout";
 
 /** Arena props: ground, stun stars, the Gatekeeper's gate and the glows around the fight. */
 
@@ -155,10 +155,6 @@ export function drawGate(tex: GateTextures): Gate {
   return { root, whole, broken, sigil, light, fires };
 }
 
-/**
- * Level gap on the ground: a warm gold light under the hero who has outlevelled a foe by 3 or
- * more (a wall farmed down, level-v2.md), a red one under an enemy 5 or more levels above.
- */
 /** Wildfire: a wide ember glow over the ground, brightest at the edges where the fire stands. */
 export function drawWildfireGlow(): Graphics {
   const g = new Graphics();
@@ -174,26 +170,52 @@ export function drawWildfireGlow(): Graphics {
   return g;
 }
 
-/** The Draught's brew ring: a glowing pool of its colour under the hero, with a thin rim. */
-export function drawDraughtRing(color: number): Graphics {
+/**
+ * Wildfire's flame edge: a wall of flame tongues baked once into a soft glow, standing on the
+ * ground at the left edge of the view (mirror it for the right). The scene lets it flicker; the
+ * higher the tier, the taller it burns.
+ */
+export function drawWildfireEdge(tier: number): Container {
   const g = new Graphics();
-  for (let i = 4; i > 0; i--) {
-    g.ellipse(HERO_X, GROUND_Y + 4, 60 + i * 18, 12 + i * 5).fill({ color, alpha: 0.07 });
+  const tall = 0.7 + 0.03 * Math.min(10, tier);
+  const tongues: readonly [number, number, number][] = [
+    // x, width, height
+    [-20, 150, 300],
+    [60, 110, 220],
+    [120, 90, 160],
+    [10, 80, 380],
+    [170, 70, 110],
+  ];
+  for (const [layer, color, alpha, shrink] of [
+    [0, 0xff4a1a, 0.55, 1],
+    [1, 0xff8a1f, 0.6, 0.72],
+    [2, 0xffd84a, 0.55, 0.42],
+  ] as const) {
+    for (const [x, w, h] of tongues) {
+      const hh = h * tall * shrink;
+      const ww = w * (0.6 + 0.4 * shrink);
+      g.moveTo(x - ww / 2, GROUND_Y + 30)
+        .quadraticCurveTo(x - ww / 2, GROUND_Y - hh * 0.45, x + layer * 4, GROUND_Y - hh)
+        .quadraticCurveTo(x + ww / 2, GROUND_Y - hh * 0.45, x + ww / 2, GROUND_Y + 30)
+        .closePath()
+        .fill({ color, alpha });
+    }
   }
-  g.ellipse(HERO_X, GROUND_Y + 4, 118, 28).stroke({ color, width: 2.5, alpha: 0.7 });
-  g.ellipse(HERO_X, GROUND_Y + 4, 100, 22).stroke({ color: lighten(color), width: 1, alpha: 0.5 });
-  g.blendMode = "add";
-  g.label = "draught-ring";
-  return g;
-}
-
-export function drawLevelGlow(gap: number): Graphics | null {
-  const hero = gap <= -3;
-  if (!hero && gap < 5) return null;
-  const [x, color] = hero ? [HERO_X, 0xffd27a] : [ENEMY_X, 0xff4a3a];
-  const g = new Graphics();
-  for (let i = 5; i > 0; i--) {
-    g.ellipse(x, GROUND_Y + 6, 70 + i * 26, 16 + i * 7).fill({ color, alpha: 0.08 });
-  }
-  return g;
+  const inner = new Container();
+  inner.addChild(g);
+  inner.filters = [new BlurFilter({ strength: 10, quality: 2 })];
+  const b = inner.getLocalBounds();
+  const room = new Graphics()
+    .rect(b.minX - 40, b.minY - 40, b.width + 80, b.height + 80)
+    .fill({ color: 0x000000, alpha: 0.001 });
+  const wrap = new Container();
+  wrap.addChild(room, inner);
+  wrap.blendMode = "add";
+  wrap.cacheAsTexture(true);
+  // Flickers from the ground up.
+  const edge = new Container();
+  edge.pivot.set(0, GROUND_Y + 30);
+  edge.y = GROUND_Y + 30;
+  edge.addChild(wrap);
+  return edge;
 }

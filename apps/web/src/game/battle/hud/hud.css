@@ -524,6 +524,13 @@
   font-size: 14px;
 }
 
+/* The Draught of the trip: its painted vial, no timer (it lasts until the Camp). */
+.stage .rail-status > img.rail-vial {
+  width: 30px;
+  height: 36px;
+  object-fit: contain;
+}
+
 /* A curse's skill painting fills the socket like a skill slot. */
 .stage .rail-status > img.rail-art {
   width: 38px;

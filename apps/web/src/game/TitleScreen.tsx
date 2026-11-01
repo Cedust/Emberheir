@@ -131,6 +131,11 @@ export function TitleScreen(props: {
                 Combat Lab
               </Button>
             )}
+            {DEV && (
+              <Button variant="ghost" onClick={() => window.location.assign("?effects")}>
+                Effect Gallery
+              </Button>
+            )}
           </div>
         )}
 

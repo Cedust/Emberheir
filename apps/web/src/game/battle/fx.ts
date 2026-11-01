@@ -276,8 +276,8 @@ export class Fx {
   }
 
   /**
-   * A projectile from (x0, y0) to (x1, y1). Arrows fly on a slight arc; orbs leave a glowing
-   * trail. `arrive` runs on impact.
+   * A projectile from (x0, y0) to (x1, y1). Arrows fly on a slight arc; orbs draw a glowing
+   * tail, falling stars leave a trail of light. `arrive` runs on impact.
    */
   projectile(
     style: "arrow" | "orb" | "fall",
@@ -298,6 +298,12 @@ export class Fx {
         .stroke({ color: 0x2a1f17, width: 2 });
     } else {
       g.blendMode = "add";
+      if (style === "orb") {
+        // The orb's tail: one stretched glow behind it instead of a stream of particles.
+        g.ellipse(-46, 0, 58, 13).fill({ color, alpha: 0.18 });
+        g.ellipse(-30, 0, 38, 8).fill({ color, alpha: 0.3 });
+        g.ellipse(-16, 0, 20, 5).fill({ color: 0xffffff, alpha: 0.35 });
+      }
       g.circle(0, 0, style === "fall" ? 34 : 22).fill({ color, alpha: 0.35 });
       g.circle(0, 0, style === "fall" ? 20 : 12).fill({ color: 0xffffff, alpha: 0.9 });
     }
@@ -310,18 +316,18 @@ export class Fx {
         const x = from.x + (to.x - from.x) * t;
         const y = from.y + (to.y - from.y) * t - Math.sin(t * Math.PI) * lift;
         g.position.set(x, y);
-        if (style === "arrow") g.rotation = Math.atan2(y - last.y, x - last.x || 1);
-        if (style !== "arrow" && t > 0) {
+        if (style !== "fall") g.rotation = Math.atan2(y - last.y, x - last.x || 1);
+        if (style === "fall" && t > 0) {
           this.burst({
             x,
             y,
-            count: style === "fall" ? 3 : 2,
+            count: 3,
             color,
             spreadX: 6,
             spreadY: 6,
             speed: [10, 40],
             life: [0.18, 0.35],
-            size: style === "fall" ? [18, 30] : [12, 20],
+            size: [18, 30],
           });
         }
         last = { x, y };
