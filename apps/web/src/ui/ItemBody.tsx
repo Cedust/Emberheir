@@ -13,6 +13,7 @@ import { COMPARE_KEY, setCompareShown, useCompareShown } from "./compareToggle";
 import { GameIcon, type GameIconId } from "./gameIcons";
 import { Icon } from "./Icon";
 import { ItemArt } from "./ItemArt";
+import { PowerIcon } from "./PowerIcon";
 import { huntAffixTitle } from "./TrailMark";
 import type { CompareView } from "./itemCompare";
 import { RuneStone } from "./RuneArt";
@@ -210,8 +211,11 @@ export function ItemBody(props: { item: Item; tip: ItemTooltip }) {
       )}
       {tip.power && (
         <div className="ib-power">
-          <b>{tip.power.name}</b>
-          <span>{tip.power.text}</span>
+          <PowerIcon powerId={tip.power.id} size={36} />
+          <span className="ib-power-text">
+            <b>{tip.power.name}</b>
+            <span>{tip.power.text}</span>
+          </span>
         </div>
       )}
       {tip.sockets && (
