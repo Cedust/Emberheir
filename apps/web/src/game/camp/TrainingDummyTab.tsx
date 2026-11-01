@@ -188,11 +188,14 @@ function DummyNumbers(props: {
           value={`${Math.round(report.mightyRate * 100)}%`}
         />
         <Chip icon="heat" note={NOTES.heat} value={`${report.heatPerSecond.toFixed(1)}/s`} />
-        <Chip
-          icon="trigger"
-          note={NOTES.trigger}
-          value={`${report.triggersPerMinute.toFixed(0)}/min`}
-        />
+        {/* Only a trigger build fires them; a 0 there would just be noise. */}
+        {report.triggersPerMinute >= 1 && (
+          <Chip
+            icon="trigger"
+            note={NOTES.trigger}
+            value={`${report.triggersPerMinute.toFixed(0)}/min`}
+          />
+        )}
       </div>
       <ul className="dummy-sources" aria-label="Damage sources">
         {top.map((s) => (
