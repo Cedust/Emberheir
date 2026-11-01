@@ -21,7 +21,7 @@ import type { GameApi } from "../useGame";
 import { CampLight } from "./art/CampLight";
 import { CampBackdrop, CampFx, campLights, SCENE_W } from "./art/CampScene";
 import { PaintDefs } from "./art/paint";
-import { FIG_H, Figure, heirGear, markerSpot, tipSpot } from "./CampFigures";
+import { FIG_H, Figure, heirGear, markerSpot, PropFigure, tipSpot } from "./CampFigures";
 import { type CampTarget, type Persona, personas } from "./campPersonas";
 import { NanWindow } from "./NanWindow";
 import { RoadStrip, RoadWindow, useRoadPlan } from "./RoadWindow";
@@ -69,6 +69,7 @@ export function CampView(props: {
   // Personas who have not joined the caravan yet are not in the Camp at all.
   const list = personas(state, act).filter((p) => !p.locked);
   const hearthY = list.find((p) => p.id === "hearth")?.y ?? 0;
+  const kaelen = list.find((p) => p.id === "kaelen");
   const gear = heirGear(state);
   const cleared = state.progress.actsCleared.includes(act.id);
   const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
@@ -136,6 +137,7 @@ export function CampView(props: {
                 key={p.id}
                 type="button"
                 className="camp-target"
+                data-spot={p.id}
                 style={{
                   left: ox + p.x - w / 2,
                   top: p.y - h - 64,
@@ -156,6 +158,7 @@ export function CampView(props: {
                   delay={i * 0.7}
                   {...(p.id === "eldrin" ? { sign: act.name } : {})}
                 />
+                {p.id === "dummy" && kaelen && <PropFigure of={kaelen} />}
                 {marker !== 0 && (
                   <span
                     className={`camp-marker${marker === "!" ? " quest" : ""}`}

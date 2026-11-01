@@ -48,21 +48,11 @@ export function Figure(props: {
     const h = Math.round(painted.h * f.fs);
     const cls = `figure painted${flip ? " mirror" : ""}${props.on ? " on" : ""}`;
     const board = painted.sign;
-    const prop = painted.prop;
     return (
       <span
         className={cls}
         style={{ height: h, ...(painted.shift ? { translate: `${painted.shift * 100}% 0` } : {}) }}
       >
-        {prop && (
-          <img
-            className="figure-prop"
-            src={prop.url}
-            alt=""
-            height={Math.round(prop.h * f.fs)}
-            style={{ left: `calc(50% + ${Math.round(prop.x * f.fs)}px)` }}
-          />
-        )}
         <span className="figure-shadow" />
         <img
           className="figure-body"
@@ -85,6 +75,13 @@ export function Figure(props: {
             {props.sign}
           </span>
         )}
+        {painted.hit?.map((b, i) => (
+          <span
+            key={i}
+            className="figure-hit"
+            style={{ left: `${b[0]}%`, top: `${b[1]}%`, width: `${b[2]}%`, height: `${b[3]}%` }}
+          />
+        ))}
       </span>
     );
   }
@@ -104,6 +101,24 @@ export function Figure(props: {
         </g>
       </g>
     </svg>
+  );
+}
+
+/**
+ * A painted prop that belongs to a persona's painting but is its own camp spot (Kaelen's Training
+ * Dummy): drawn in the prop's button, so its hover glow is its own and Kaelen's leaves it out.
+ */
+export function PropFigure(props: { of: Persona }) {
+  const { of } = props;
+  const painted = PAINTED[of.id];
+  const prop = painted?.prop;
+  if (!painted || !prop || !of.figure) return null;
+  const flip = paintedFlip(painted, of.x, HEARTH_X);
+  const h = Math.round(prop.h * of.figure.fs);
+  return (
+    <span className={`figure painted${flip ? " mirror" : ""}`} style={{ height: h }}>
+      <img src={prop.url} alt="" height={h} />
+    </span>
   );
 }
 

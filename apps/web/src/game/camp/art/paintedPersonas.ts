@@ -40,6 +40,9 @@ export interface PaintedPersona {
   /** A painted prop beside the figure, behind it and turned with it (Kaelen's Training Dummy):
    * its height and where its middle stands right of the figure's middle at fs = 1 (stage px). */
   readonly prop?: { readonly url: string; readonly h: number; readonly x: number };
+  /** Parts of the painting that also take hover and click, beyond the persona's spot at the
+   * bottom: % of the image (left, top, w, h). Eldrin sits on top of his tall signpost. */
+  readonly hit?: readonly (readonly [number, number, number, number])[];
 }
 
 /** Whether the painted figure of a persona standing at `x` is mirrored (painted facing right). */
@@ -56,6 +59,11 @@ export const PAINTED: Partial<Record<string, PaintedPersona>> = {
     shift: 0.136,
     turn: false,
     sign: [6, 38.7, 82, 12, 2.1],
+    // The raven on top of the post, and the whole board with its arrow tip.
+    hit: [
+      [2, 0, 84, 38],
+      [0, 37, 100, 15],
+    ],
   },
   heir: { url: heirUrl, h: 168, face: { size: "277% auto", pos: "66% 2%" }, head: 16 },
   nan: {

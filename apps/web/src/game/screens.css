@@ -1320,6 +1320,11 @@
   z-index: 1;
 }
 
+/* The Hearthfire is drawn apart from its (empty) camp spot: the spot's hover lights the fire. */
+.stage .camp-camera:has(.camp-target[data-spot="hearth"]:is(:hover, :focus-visible)) .camp-hearth {
+  filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
+}
+
 /* Lighting sits over the scene and the personas, but under name plates and cards. */
 .stage .camp-dark {
   z-index: 4;
@@ -1653,11 +1658,10 @@
   pointer-events: none;
 }
 
-/* A painted prop beside a figure (Kaelen's Training Dummy), standing behind it. */
-.stage .figure.painted img.figure-prop {
+/* Parts of a tall painting that take hover and click too (Eldrin on his signpost). */
+.stage .figure.painted .figure-hit {
   position: absolute;
-  bottom: 0;
-  translate: -50% 0;
+  pointer-events: auto;
 }
 
 /* The act's name on Eldrin's painted signpost. */
@@ -1754,6 +1758,22 @@
 
 .stage .camp-target:hover:not(.locked) .figure {
   filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
+}
+
+/* The Supply Wagon is painted into the backdrop: hovering its spot brightens the painted wagon. */
+.stage .camp-target[data-spot="wagon"]::after {
+  content: "";
+  position: absolute;
+  inset: 8% -6% 0;
+  backdrop-filter: brightness(1.6) saturate(1.2) sepia(0.25);
+  mask-image: radial-gradient(closest-side, #000 65%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.stage .camp-target[data-spot="wagon"]:is(:hover, :focus-visible)::after {
+  opacity: 1;
 }
 
 /* WoW quest marker over a head: points or a bounty wait there. */
