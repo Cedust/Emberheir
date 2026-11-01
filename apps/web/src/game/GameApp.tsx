@@ -259,7 +259,9 @@ export function GameApp() {
         />
       );
     } else if (campScreen === "dummy") {
-      screen = <TrainingDummyView state={state} game={game} onClose={close} />;
+      screen = (
+        <TrainingDummyView state={state} game={game} settings={settings.settings} onClose={close} />
+      );
     } else if (campScreen === "legacy") {
       screen = <LegacyView state={state} onClose={close} />;
     } else {

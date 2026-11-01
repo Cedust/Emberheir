@@ -17,10 +17,11 @@ import type { GameData, GameState } from "./state";
  */
 
 /**
- * Plain: no defenses. Boss: the defenses of the next act's boss (Armor, Resistances), it does not
- * hit back. Striking: that boss hitting back, to see damage taken against healing.
+ * Plain: the straw man, no defenses, it does not hit back. Sparring: Kaelen hits back
+ * (`data.sparring`), to see damage taken against healing. Neither is tied to a boss: the Training
+ * Dummy never shows what a later act holds (no spoilers, Timo 2026-11-01).
  */
-export const DUMMY_PROFILES = ["plain", "boss", "striking"] as const;
+export const DUMMY_PROFILES = ["plain", "sparring"] as const;
 export type DummyProfile = (typeof DUMMY_PROFILES)[number];
 
 export interface DummyReport {
@@ -36,17 +37,18 @@ export interface DummyReport {
   readonly glancingRate: number;
   /** Share of own hits that were Mighty Hits. */
   readonly mightyRate: number;
-  /** Striking dummy only: damage taken and healing per second. */
+  /** Sparring only: damage taken and healing per second. */
   readonly takenPerSecond: number;
   readonly healedPerSecond: number;
   /** Max Life plus Barrier. */
   readonly life: number;
 }
 
-const DUMMY_SEED = 7;
+/** The seed every dummy fight plays: the Training Dummy window replays this very fight. */
+export const DUMMY_SEED = 7;
 const DUMMY_LIFE = 1e9;
 
-/** The straw man for a profile, at the level of the next act's boss. */
+/** The straw man, or Kaelen sparring, at the Monster Level of the next act's last stage. */
 export function dummySetup(
   state: GameState,
   data: GameData,
@@ -54,20 +56,17 @@ export function dummySetup(
 ): CombatantSetup {
   const act = nextAct(state, data);
   const level = stageMonsterLevel(data, act, act.stages, state.legacy.prestige);
-  const boss = createEnemySetup(act.boss, level);
-  if (profile === "striking") return { ...boss, name: "Training Dummy", baseLife: DUMMY_LIFE };
-  const still = {
-    ...boss,
+  const partner = data.sparring ?? act.enemies[0] ?? act.boss;
+  const setup = createEnemySetup(partner, level);
+  if (profile === "sparring") return { ...setup, name: "Kaelen", baseLife: DUMMY_LIFE };
+  return {
+    ...setup,
     name: "Training Dummy",
-    weapon: { ...boss.weapon, attacksPerSecond: 0, triggers: [], ailmentChances: [] },
+    weapon: { ...setup.weapon, attacksPerSecond: 0, triggers: [], ailmentChances: [] },
     rotation: [],
     telegraphs: [],
     triggers: [],
     baseLife: DUMMY_LIFE,
-  };
-  if (profile === "boss") return still;
-  return {
-    ...still,
     attributes: { strength: 0, dexterity: 0, agility: 0, intelligence: 0, wisdom: 0, vitality: 0 },
     bonuses: {},
   };
@@ -145,7 +144,7 @@ export function gearDelta(
   state: GameState,
   data: GameData,
   item: Item,
-  profile: DummyProfile = "boss",
+  profile: DummyProfile = "plain",
   seconds = 20,
 ): { readonly dps: number; readonly life: number } | null {
   const tried = wearing(state, data, item);

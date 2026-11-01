@@ -20,6 +20,9 @@ const INNATES: Record<string, string> = {
   staff: "void-bolt",
 };
 
+/** Skills that share another skill's painting (Kaelen's sparring Lunge burns like Flame Dash). */
+const SHARED_ART: Record<string, string> = { "ember-lunge": "flame-dash" };
+
 const FORM_OF: Record<string, string> = Object.fromEntries(
   Object.values(WEAPON_MASTERY).flatMap((tree) =>
     tree.nodes.flatMap((n) => {
@@ -35,7 +38,7 @@ const FORM_OF: Record<string, string> = Object.fromEntries(
  */
 export function skillArt(skillId: string): string | undefined {
   const [id = skillId, infusion] = skillId.split("@");
-  const base = FORM_OF[id] ?? id;
+  const base = FORM_OF[id] ?? SHARED_ART[id] ?? id;
   const element = infusion?.split("-")[0];
   if (base === "shockbolt" && element === "cold") return art("frostbolt");
   if (base === "shockbolt" && element === "void") return art("void-bolt");
@@ -67,6 +70,7 @@ const SKILL_ICONS: Record<string, IconName> = {
   "quick-cuts": "flurry",
   "cinder-spit": "fire",
   "flame-dash": "flame",
+  "ember-lunge": "flame",
   fireball: "fire",
   "obsidian-shell": "shell",
   eruption: "meteor",

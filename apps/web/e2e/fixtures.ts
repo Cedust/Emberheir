@@ -74,6 +74,27 @@ export function saveAfterAct1(): string {
   return serializeGame(state);
 }
 
+/** The Camp after Act 1 with a few rolled items in the bag, to try on at the Training Dummy. */
+export function saveDummyBag(): string {
+  const state = JSON.parse(saveAfterAct1()) as GameState;
+  const rng = new Rng(11);
+  const roll = (baseId: string, rarity: Item["rarity"]) =>
+    rollItem(GAME_DATA.items, { baseId, itemLevel: 18, rarity }, rng);
+  const items: Item[] = [
+    roll("iron-helm", "rare"),
+    roll("leather-boots", "magic"),
+    roll("sash", "rare"),
+    roll("garnet-ring", "rare"),
+    roll("iron-ring", "magic"),
+    roll("leather-gloves", "rare"),
+  ];
+  return serializeGame({
+    ...state,
+    hero: { ...state.hero, attributes: { ...state.hero.attributes, strength: 6, dexterity: 6 } },
+    inventory: items.map((item, i) => ({ item, x: (i % 3) * 2, y: Math.floor(i / 3) * 2 })),
+  });
+}
+
 /** Back in the Camp after Act 2 with a done bounty that Eldrin has not paid yet. */
 export function saveBountyDone(): string {
   const state = JSON.parse(saveAfterAct1()) as GameState;

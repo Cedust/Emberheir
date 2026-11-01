@@ -121,6 +121,8 @@ export interface GameData {
   readonly bounties?: readonly BountyDefinition[];
   /** The Ember Thief (runs away after `PROGRESSION.thiefFleeSeconds`); none without it. */
   readonly thief?: EnemyDefinition;
+  /** Kaelen, sparring at the Training Dummy; the act's first enemy without him. */
+  readonly sparring?: EnemyDefinition;
   /**
    * The Last Ember (M11): a short gauntlet after the final Prestige. Its act holds one stage per
    * Warden echo plus the last one, the Harvester's Core (`boss`). Not on the road.

@@ -164,8 +164,8 @@ describe("Training Dummy", () => {
     expect(report.dps).toBeGreaterThan(0);
     expect(report.sources.length).toBeGreaterThan(0);
     expect(report.takenPerSecond).toBe(0);
-    expect(dummySetup(s, data, "striking").weapon.attacksPerSecond).toBeGreaterThan(0);
-    expect(trainingDummy(s, data, "striking", 10).takenPerSecond).toBeGreaterThan(0);
+    expect(dummySetup(s, data, "sparring").weapon.attacksPerSecond).toBeGreaterThan(0);
+    expect(trainingDummy(s, data, "sparring", 10).takenPerSecond).toBeGreaterThan(0);
   });
 
   it("compares an item with the worn one: damage per second and Life", () => {

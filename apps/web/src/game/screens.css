@@ -8752,42 +8752,91 @@
 }
 
 /* Kaelen's Training Dummy (neuausrichtung-v1.md 9). */
+/* Training Dummy (training-dummy-v2-konzept.md): live arena left, the fight's numbers right on a
+   plaque, the try-on row below. */
 .stage .dummy-tab {
   flex-grow: 1;
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 24px calc(var(--safe-x, 0px) + 32px);
+  gap: 16px;
+  padding: 20px calc(var(--safe-x, 0px) + 32px);
   min-height: 0;
 }
 
-.stage .dummy-head {
+.stage .dummy-stage {
   display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.stage .dummy-head .route-options {
-  width: 420px;
-}
-
-.stage .dummy-body {
-  display: flex;
-  gap: 16px;
+  gap: 20px;
   min-height: 0;
 }
 
-.stage .dummy-numbers {
-  width: 340px;
-  padding: 16px;
+.stage .dummy-arena {
+  position: relative;
+  flex-shrink: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #4a3a2a 0%, #1c1a18 100%);
+  box-shadow: 0 18px 40px rgb(0 0 0 / 0.5);
+}
+
+.stage .dummy-arena::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-style: solid;
+  border-width: 34px;
+  border-image: url("../assets/ui/panel-frame.webp") 72 stretch;
+  pointer-events: none;
+}
+
+.stage .dummy-side {
+  width: 400px;
+  flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  gap: 12px;
+  gap: 14px;
+  padding: 16px 18px 18px;
+  border: 1.5px solid var(--plaque-edge);
+  border-top: 3px solid var(--k-brass, #c9a063);
+  border-radius: 6px;
+  color: var(--plaque-text);
+  background: var(--plaque-bg);
+  box-shadow:
+    inset 0 1px 0 rgb(255 230 180 / 0.12),
+    0 2px 6px rgb(0 0 0 / 0.25);
+}
+
+.stage .dummy-dps {
+  display: flex;
+  align-items: baseline;
+  justify-content: center;
+  gap: 8px;
+  cursor: help;
 }
 
 .stage .dummy-dps b {
-  font-size: 40px;
-  margin-right: 8px;
+  font-size: 64px;
+  line-height: 1;
+  background: var(--plaque-number);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  filter: drop-shadow(0 0 8px rgb(255 140 50 / 0.4));
+  transition: filter 0.3s;
+}
+
+.stage .dummy-dps.up b {
+  filter: drop-shadow(0 0 14px rgb(79 224 138 / 0.8));
+}
+
+.stage .dummy-dps.down b {
+  filter: drop-shadow(0 0 14px rgb(229 72 77 / 0.8));
+}
+
+.stage .dummy-unit {
+  font-family: var(--font-title);
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  color: var(--plaque-label);
 }
 
 .stage .dummy-sources {
@@ -8796,49 +8845,198 @@
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 14px;
+  gap: 8px;
 }
 
 .stage .dummy-sources li {
-  display: flex;
-  justify-content: space-between;
-}
-
-.stage .dummy-items {
-  flex-grow: 1;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 10px;
-  min-height: 0;
-}
-
-.stage .dummy-item-list {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 10px;
-  overflow: hidden;
-}
-
-.stage .dummy-item {
   display: flex;
   align-items: center;
   gap: 10px;
 }
 
-.stage .dummy-item-delta {
+.stage .dummy-source-icon {
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  background: var(--slot-bg);
+  border: 2px solid var(--k-brass, #c9a063);
+  box-shadow: var(--slot-inset);
+  overflow: hidden;
+}
+
+.stage .dummy-source-icon img {
+  width: 48px;
+  height: 48px;
+}
+
+.stage .dummy-source-main {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.stage .dummy-source-name {
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.stage .dummy-source-track,
+.stage .dummy-duel-track {
+  height: 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 0.3);
+  overflow: hidden;
+}
+
+.stage .dummy-source-fill {
+  display: block;
+  height: 100%;
+  border-radius: 4px;
+  background: var(--heat-gradient);
+  transition: width 0.5s ease-out;
+}
+
+.stage .dummy-source-dps {
+  width: 56px;
+  text-align: right;
+  font-size: 15px;
+}
+
+.stage .dummy-duel {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-top: 10px;
+  border-top: 1px solid var(--plaque-edge);
+}
+
+.stage .dummy-duel-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: help;
+}
+
+.stage .dummy-duel-row .dummy-duel-track {
   flex-grow: 1;
+  height: 12px;
+  border-radius: 6px;
 }
 
-.stage .dummy-item-delta .better {
-  color: #3fa56a;
+.stage .dummy-duel-fill {
+  display: block;
+  height: 100%;
+  transition: width 0.5s ease-out;
 }
 
-.stage .dummy-item-delta .worse {
+.stage .dummy-duel-row.taken .dummy-duel-fill {
+  background: var(--life);
+}
+
+.stage .dummy-duel-row.healed .dummy-duel-fill {
+  background: var(--heal);
+}
+
+.stage .dummy-duel-row b {
+  width: 70px;
+  text-align: right;
+}
+
+.stage .dummy-chips {
+  display: flex;
+  justify-content: space-between;
+  gap: 6px;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--plaque-edge);
+}
+
+.stage .dummy-chip {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 58px;
+  cursor: help;
+  font-size: 14px;
+}
+
+.stage .dummy-tryon {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 18px;
+  border: 2px solid var(--edge);
+  border-radius: 6px;
+  background: var(--panel);
+  box-shadow: var(--card-shadow);
+}
+
+.stage .dummy-tryon-label {
+  font-size: 15px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--text-sub);
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.stage .dummy-tryon-row {
+  flex-grow: 1;
+  display: flex;
+  gap: 14px;
+}
+
+.stage .dummy-try {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.stage .dummy-delta {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.stage .dummy-delta-what {
+  font-family: var(--font-text);
+  font-weight: 400;
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.stage .dummy-delta.better {
+  color: #2f8a55;
+}
+
+.stage .dummy-delta.worse {
   color: var(--warn);
+}
+
+.stage .dummy-delta.same {
+  color: var(--text-sub);
+}
+
+.stage .dummy-tryon-pages {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stage .dummy-face {
+  display: block;
+  border-radius: 50%;
 }
 
 /* Omens (neuausrichtung-v1.md 5.2, 7.2): one of two for an old act, any for the Wildfire. */

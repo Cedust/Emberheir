@@ -22,8 +22,14 @@ export function PreviewArena(props: {
   width: number;
   height: number;
   settings: Settings;
+  /** A round that never ends (the Training Dummy) starts over after this many seconds. */
+  roundSeconds?: number;
+  /** Plays this seed every round: the very fight a report measured. Default: a new seed each. */
+  seed?: number;
 }) {
   const { preview, width, height, settings } = props;
+  const roundSeconds = props.roundSeconds ?? ROUND_SECONDS;
+  const seed = props.seed;
   const hostRef = useRef<HTMLDivElement | null>(null);
   const stage = useStageSize();
   const resolution = canvasResolution(stage.scale, QUALITY[settings.graphicsQuality].maxResolution);
@@ -38,13 +44,14 @@ export function PreviewArena(props: {
     scene.layout(width, height, resolution, height / 620);
     void scene.mount(host, preview.heroLook, preview.enemyLook);
     let round = 0;
-    let fight = new Fight(preview.hero, preview.enemy, 1);
+    const seedOf = (n: number) => seed ?? 1 + n;
+    let fight = new Fight(preview.hero, preview.enemy, seedOf(0));
     let frame = 0;
     let timer = 0;
     let last = performance.now();
     const next = () => {
       round += 1;
-      fight = new Fight(preview.hero, preview.enemy, 1 + round);
+      fight = new Fight(preview.hero, preview.enemy, seedOf(round));
     };
     const loop = (now: number) => {
       const dt = Math.min(0.25, (now - last) / 1000);
@@ -64,7 +71,7 @@ export function PreviewArena(props: {
         }, 1800);
         return;
       }
-      if (fight.time >= ROUND_SECONDS) next();
+      if (fight.time >= roundSeconds) next();
       frame = requestAnimationFrame(loop);
     };
     frame = requestAnimationFrame(loop);
@@ -75,7 +82,7 @@ export function PreviewArena(props: {
     };
     // Settings changes apply on the next preview.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [preview, width, height, resolution]);
+  }, [preview, width, height, resolution, roundSeconds, seed]);
 
   return <div className="preview-arena" ref={hostRef} style={{ width, height }} />;
 }

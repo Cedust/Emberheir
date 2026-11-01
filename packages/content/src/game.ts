@@ -25,6 +25,7 @@ import {
   STORM_HERALD,
   VOIDBORN_MAW,
   EMBER_THIEF,
+  KAELEN_SPARRING,
 } from "./enemies";
 import { STARTING_ATTRIBUTES } from "./heroes";
 import { ITEM_BASES, ITEM_CATALOG } from "./items";
@@ -179,6 +180,7 @@ export const GAME_DATA: GameData = {
   events: EVENTS,
   ashbornValues: ASHBORN_VALUES,
   thief: EMBER_THIEF,
+  sparring: KAELEN_SPARRING,
   finale: LAST_EMBER,
   boonFamilies: BOON_FAMILIES,
   huntSignatures: HUNT_SIGNATURES,

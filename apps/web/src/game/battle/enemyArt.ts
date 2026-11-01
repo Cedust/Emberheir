@@ -2,6 +2,7 @@ import { Assets, Container, Graphics, Sprite, type Texture } from "pixi.js";
 import { INK } from "./arenaLayout";
 import { ENEMY_PAINTINGS } from "./enemyPaintings";
 import trainingDummyUrl from "../../assets/camp/personas/training-dummy.webp";
+import kaelenUrl from "../../assets/camp/personas/kaelen.webp";
 
 /** The enemy in the arena: archetype body in its act's colors, Elite and boss marks. */
 
@@ -109,7 +110,10 @@ const BODY: Record<string, "robe" | "broad" | "lean"> = {
  * figure's height in stage px (the painted Heir stands ~390 tall), `footX` where its feet are
  * between left (0) and right (1) edge of the painting.
  */
-const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: number }> = {
+const PAINTED_ENEMIES: Record<
+  string,
+  { url: string; height: number; footX: number; flip?: boolean }
+> = {
   "ashen-brute": { url: ENEMY_PAINTINGS["ashen-brute"], height: 400, footX: 0.55 },
   "ashen-skirmisher": { url: ENEMY_PAINTINGS["ashen-skirmisher"], height: 300, footX: 0.55 },
   "cinder-caster": { url: ENEMY_PAINTINGS["cinder-caster"], height: 370, footX: 0.5 },
@@ -148,6 +152,8 @@ const PAINTED_ENEMIES: Record<string, { url: string; height: number; footX: numb
   "harvester-core": { url: ENEMY_PAINTINGS["harvester-core"], height: 500, footX: 0.65 },
   // Kaelen's straw man from the Camp: the class select's sparring partner.
   "training-dummy": { url: trainingDummyUrl, height: 360, footX: 0.53 },
+  // Kaelen sparring at the Training Dummy: his Camp lunge, turned to face the hero.
+  kaelen: { url: kaelenUrl, height: 340, footX: 0.36, flip: true },
 };
 
 /** The painting for this enemy, or null: it is drawn as its archetype body then. */
@@ -166,6 +172,7 @@ export function drawEnemy(look: EnemyLook, painting?: Texture | null): Container
     const sprite = new Sprite(painting);
     sprite.anchor.set(painted.footX, 1);
     sprite.scale.set(painted.height / painting.height);
+    if (painted.flip) sprite.scale.x *= -1;
     c.addChild(sprite);
     return c;
   }
