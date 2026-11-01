@@ -171,7 +171,8 @@ export class TreeScene {
   private lastTap = { id: "", t: 0 };
   private time = 0;
   private spark = 0;
-  private fitted = false;
+  /** The player moved the camera since the last fit: a new size no longer refits the tree. */
+  private moved = false;
   /** Text and branch-name colours of the theme (game.css `--tree-*`). */
   private ink = { text: 0xecdfc4, stroke: 0x0d0a08, labelMix: 0, labelAlpha: 0.6 };
   private unwatchTheme: (() => void) | null = null;
@@ -213,11 +214,12 @@ export class TreeScene {
   }
 
   layout(w: number, h: number, resolution: number): void {
-    const first = this.size.w === 800 && this.size.h === 600;
     this.size = { w, h, resolution };
     this.app?.renderer.resize(w, h, resolution);
     if (this.app?.stage) this.app.stage.hitArea = new Rectangle(0, 0, w, h);
-    if (first || !this.fitted) this.fit(true);
+    // The window settles its size after the first fit: keep the tree centred until the player
+    // moves the camera.
+    if (!this.moved) this.fit(true);
   }
 
   async mount(host: HTMLElement): Promise<boolean> {
@@ -343,19 +345,23 @@ export class TreeScene {
       Math.min(...ys) - 70,
       Math.max(...ys) + 70,
     ];
+    // The trunk (x = 0) stands in the middle, however lopsided the grown branches are.
+    const halfW = Math.max(-minX, maxX, 1);
     const zoom = clamp(
-      Math.min(this.size.w / (maxX - minX), this.size.h / (maxY - minY)),
+      Math.min(this.size.w / (2 * halfW), this.size.h / (maxY - minY)),
       MIN_ZOOM,
       1.1,
     );
-    this.look((minX + maxX) / 2, (minY + maxY) / 2, zoom, instant);
-    this.fitted = true;
+    this.look(0, (minY + maxY) / 2, zoom, instant);
+    this.moved = false;
   }
 
   /** Centers a node (or the tree's heart). */
   focus(id: string, zoom = Math.max(this.goal.zoom, 1)): void {
     const n = this.view.nodes.find((v) => v.node.id === id);
-    if (n) this.look(n.node.x * UNIT, n.node.y * UNIT, zoom, false);
+    if (!n) return;
+    this.look(n.node.x * UNIT, n.node.y * UNIT, zoom, false);
+    this.moved = true;
   }
 
   zoomBy(factor: number): void {
@@ -371,6 +377,7 @@ export class TreeScene {
   private zoomAround(sx: number, sy: number, factor: number): void {
     const zoom = clamp(this.goal.zoom * factor, MIN_ZOOM, MAX_ZOOM);
     const k = zoom / this.goal.zoom;
+    this.moved = true;
     this.goal = { x: sx - (sx - this.goal.x) * k, y: sy - (sy - this.goal.y) * k, zoom };
     if (!this.motion) this.cam = { ...this.goal };
   }
@@ -427,6 +434,7 @@ export class TreeScene {
       moved: this.drag.moved + Math.hypot(dx, dy),
       t: now,
     };
+    if (dx || dy) this.moved = true;
     this.goal.x += dx;
     this.goal.y += dy;
     this.cam.x += dx;
