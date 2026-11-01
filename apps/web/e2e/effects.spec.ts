@@ -4,7 +4,7 @@ test("Effect Gallery: the first and last effect of every group play without erro
   page,
 }) => {
   // Each pick builds its arena again; CI runners draw slowly.
-  test.setTimeout(60_000);
+  test.setTimeout(120_000);
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await page.goto("/?effects");

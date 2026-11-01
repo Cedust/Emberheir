@@ -103,6 +103,8 @@ export class ArenaScene {
   private later: Later[] = [];
   private clock = 0;
   private telegraphOn = false;
+  /** Draws the enemy's art again, for the glows baked from its outline. */
+  private enemyArt: (() => Container) | null = null;
   private tint: Record<Side, number> = { hero: 0xffffff, enemy: 0xffffff };
   private ailments: Record<Side, readonly string[]> = { hero: [], enemy: [] };
   /** The hero's Class Trait as the last snapshot showed it, and its drawing. */
@@ -241,21 +243,10 @@ export class ArenaScene {
     this.offHandGlow = this.hero.body.getChildByLabel("off-hand-glow", true) ?? null;
     this.offHandFloat = this.hero.body.getChildByLabel("off-hand-float", true) ?? null;
     this.enemy = makeFigure("enemy", drawEnemy(enemy, painting), ENEMY_X);
-    // The Heavy Attack wind-up: a red glow around the enemy's own outline.
-    // It stands behind the figure, so it is wider than the figure: a halo shows around it.
-    this.telegraph = silhouetteGlow(drawEnemy(enemy, painting), 26);
-    this.telegraph.tint = 0xff2a12;
-    this.telegraph.scale.set(1.12);
-    this.telegraph.alpha = 0;
-    this.enemy.body.addChildAt(this.telegraph, 0);
-    if (enemy.id === "ashen-harvester") {
-      // The echoes it wears glow around it from phase 2 on (fire and rime, then void).
-      const glow = silhouetteGlow(drawEnemy(enemy, painting), 28);
-      glow.scale.set(1.1);
-      glow.alpha = 0;
-      this.enemy.body.addChildAt(glow, 0);
-      this.harvester = { phase: 1, carry: 0, glow };
-    }
+    // Glows around the enemy's outline are baked only when first needed (a Heavy Attack
+    // wind-up, a Harvester phase): baking a blurred silhouette costs a moment.
+    this.enemyArt = () => drawEnemy(enemy, painting);
+    if (enemy.id === "ashen-harvester") this.harvester = { phase: 1, carry: 0, glow: null };
     this.traitGfx = new Graphics();
     this.world.addChild(this.hero.root, this.enemy.root, this.traitGfx, fx.front);
 
@@ -457,6 +448,12 @@ export class ArenaScene {
   /** Current state: telegraph wind-up and ailment tints. */
   onSnapshot(snapshot: FightSnapshot): void {
     this.telegraphOn = snapshot.enemy.telegraph !== null;
+    if (this.telegraphOn && !this.telegraph) {
+      // The Heavy Attack wind-up: a red glow around the enemy's own outline. It stands behind
+      // the figure, so it is wider than the figure: a halo shows around it.
+      this.telegraph = this.enemyGlow(26, 1.12);
+      if (this.telegraph) this.telegraph.tint = 0xff2a12;
+    }
     this.trait = snapshot.over ? undefined : snapshot.hero.trait;
     for (const side of ["hero", "enemy"] as const) {
       const list = snapshot[side].ailments;
@@ -473,10 +470,22 @@ export class ArenaScene {
       const phase = share < 0.33 ? 3 : share < 0.66 ? 2 : 1;
       if (phase !== 1 && phase > h.phase) {
         h.phase = phase;
+        // The echoes it wears glow around it from phase 2 on (fire and rime, then void).
+        h.glow ??= this.enemyGlow(28, 1.1);
         if (h.glow) h.glow.tint = phase === 2 ? 0xff7a2a : 0xa35cff;
         this.harvesterPhase(phase);
       }
     }
+  }
+
+  /** A glow baked from the enemy's outline, behind the figure, still dark. */
+  private enemyGlow(blur: number, scale: number): Container | null {
+    if (!this.enemy || !this.enemyArt) return null;
+    const glow = silhouetteGlow(this.enemyArt(), blur);
+    glow.scale.set(scale);
+    glow.alpha = 0;
+    this.enemy.body.addChildAt(glow, 0);
+    return glow;
   }
 
   /** The Harvester enters a new phase: its cloak flares, ash falls, the camera jolts. */

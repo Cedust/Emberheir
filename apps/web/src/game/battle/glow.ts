@@ -10,7 +10,7 @@ export function silhouetteGlow(art: Container, blur: number): Container {
   white.matrix = [0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 1, 0];
   const inner = new Container();
   inner.addChild(art);
-  inner.filters = [white, new BlurFilter({ strength: blur, quality: 3 })];
+  inner.filters = [white, new BlurFilter({ strength: blur, quality: 2 })];
   const b = inner.getLocalBounds();
   const pad = blur * 4;
   const room = new Graphics()
