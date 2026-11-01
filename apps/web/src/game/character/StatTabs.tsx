@@ -11,6 +11,7 @@ import {
 import { GameIcon, type GameIconId, HEAT_FORM_ICONS, weaponIconUrl } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
 import { EmptyState } from "../../ui/kit/Marker";
+import { PowerIcon } from "../../ui/PowerIcon";
 import { playUiSound } from "../../ui/sound";
 import type { PanelId } from "./pins";
 import { type NoteHover, useNoteHover, useWeaponHover } from "../../ui/ItemTooltip";
@@ -462,6 +463,7 @@ export interface GearTrigger {
 
 /** A Legendary Power of a worn item. */
 export interface GearPower {
+  readonly id: string;
   readonly name: string;
   readonly text: string;
   readonly item: string;
@@ -515,6 +517,7 @@ export function TriggersPanel(props: {
             {props.powers.map((p, i) => (
               <li key={i}>
                 <span className="hero-effect-head">
+                  <PowerIcon powerId={p.id} size={24} className="hero-power-icon" />
                   <b className="hero-power-name">{p.name}</b>
                   <span className="hero-effect-item">{p.item}</span>
                 </span>

@@ -12,7 +12,6 @@ import {
   heroSetup,
   nextAct,
   wearing,
-  wornEcho,
 } from "@emberheir/sim";
 import { Suspense, useMemo, useState } from "react";
 import { GameIcon, type GameIconId } from "../../ui/gameIcons";
@@ -107,22 +106,15 @@ export function TrainingDummyTab(props: {
   const report = useMemo(() => dummyReport(hero, foe, MEASURE_SECONDS), [hero, foe]);
   const preview = useMemo(() => {
     const act = finaleOpen(state, GAME_DATA) ? 8 : nextAct(state, GAME_DATA).number;
-    const mastery = GAME_DATA.skillTree.prestigeBranches?.find(
-      (b) => b.id === state.legacy.branches[0],
-    );
     return {
       hero,
       enemy: foe,
-      heroLook: {
-        ...heroLookOf(
-          state.hero.classId,
-          state.hero.weaponId,
-          state.hero.equipment,
-          wornEcho(state, GAME_DATA)?.def.color,
-          heroWeaponLook(state),
-        ),
-        ...(mastery?.axis ? { mastery: mastery.axis } : {}),
-      },
+      heroLook: heroLookOf(
+        state.hero.classId,
+        state.hero.weaponId,
+        state.hero.equipment,
+        heroWeaponLook(state),
+      ),
       enemyLook:
         profile === "sparring" ? { ...DUMMY_LOOK, id: "kaelen", act } : { ...DUMMY_LOOK, act },
     };

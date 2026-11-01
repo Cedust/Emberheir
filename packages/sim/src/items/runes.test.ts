@@ -102,6 +102,7 @@ describe("Legendary items and Uniques", () => {
     const mods = itemModifiers(item, TEST_CATALOG);
     expect(mods.rules?.ailmentEcho).toEqual([{ from: "bleed", to: "poison" }]);
     expect(describeItem(item, TEST_CATALOG).power).toEqual({
+      id: "echo",
       name: "Echo",
       text: "Your Bleed also Poisons.",
     });

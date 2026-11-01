@@ -1320,6 +1320,11 @@
   z-index: 1;
 }
 
+/* The Hearthfire is drawn apart from its (empty) camp spot: the spot's hover lights the fire. */
+.stage .camp-camera:has(.camp-target[data-spot="hearth"]:is(:hover, :focus-visible)) .camp-hearth {
+  filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
+}
+
 /* Lighting sits over the scene and the personas, but under name plates and cards. */
 .stage .camp-dark {
   z-index: 4;
@@ -1653,11 +1658,10 @@
   pointer-events: none;
 }
 
-/* A painted prop beside a figure (Kaelen's Training Dummy), standing behind it. */
-.stage .figure.painted img.figure-prop {
+/* Parts of a tall painting that take hover and click too (Eldrin on his signpost). */
+.stage .figure.painted .figure-hit {
   position: absolute;
-  bottom: 0;
-  translate: -50% 0;
+  pointer-events: auto;
 }
 
 /* The act's name on Eldrin's painted signpost. */
@@ -1754,6 +1758,22 @@
 
 .stage .camp-target:hover:not(.locked) .figure {
   filter: drop-shadow(0 0 6px #ffb13b) drop-shadow(0 0 14px rgb(255 138 58 / 0.7));
+}
+
+/* The Supply Wagon is painted into the backdrop: hovering its spot brightens the painted wagon. */
+.stage .camp-target[data-spot="wagon"]::after {
+  content: "";
+  position: absolute;
+  inset: 8% -6% 0;
+  backdrop-filter: brightness(1.6) saturate(1.2) sepia(0.25);
+  mask-image: radial-gradient(closest-side, #000 65%, transparent);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease;
+}
+
+.stage .camp-target[data-spot="wagon"]:is(:hover, :focus-visible)::after {
+  opacity: 1;
 }
 
 /* WoW quest marker over a head: points or a bounty wait there. */
@@ -5992,23 +6012,18 @@
   gap: 18px;
 }
 
-.stage .logo-row {
-  display: flex;
-  align-items: center;
-  gap: 22px;
-}
-
-.stage .logo-row .diamond {
-  width: 14px;
-  height: 14px;
-}
-
+/* Timo's painted logo: the Hearthfire over the word EMBERHEIR, glowing like the fire behind it. */
 .stage .title-logo {
-  font-size: 96px;
-  font-weight: 900;
-  letter-spacing: 12px;
-  color: var(--accent);
-  text-shadow: 0 0 40px rgb(255 138 58 / 0.35);
+  margin: 0;
+  line-height: 0;
+}
+
+.stage .title-logo img {
+  display: block;
+  height: 230px;
+  width: auto;
+  user-select: none;
+  filter: drop-shadow(0 0 28px rgb(255 120 40 / 0.45)) drop-shadow(0 4px 8px rgb(0 0 0 / 0.7));
 }
 
 .stage .title-sub {
@@ -6658,13 +6673,6 @@
 .stage .title-screen .build-info {
   color: var(--k-on-wood-sub);
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
-}
-
-.stage .title-screen .title-logo {
-  color: #ff9a4a;
-  text-shadow:
-    0 0 40px rgb(255 138 58 / 0.55),
-    0 3px 6px rgb(0 0 0 / 0.8);
 }
 
 .stage .build-info {
@@ -7912,6 +7920,13 @@
 
 .stage .trophy-power {
   margin: 6px 0 0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+}
+
+.stage .trophy-power .power-icon {
+  flex: none;
 }
 
 .stage .hoard-art .item-art,
@@ -9289,8 +9304,8 @@
 
 .stage .crucible-power {
   display: flex;
-  flex-direction: column;
-  gap: 2px;
+  align-items: center;
+  gap: 10px;
   padding: 6px 8px;
   border: 1.5px solid var(--edge);
   border-radius: 6px;
@@ -9303,6 +9318,17 @@
 .stage .crucible-power.on {
   border-color: #ff8a1f;
   box-shadow: 0 0 10px rgb(255 138 31 / 0.4);
+}
+
+.stage .crucible-power .power-icon {
+  flex: none;
+}
+
+.stage .crucible-power-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
 }
 
 .stage .crucible-power-name {
@@ -9342,6 +9368,20 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 12px;
+}
+
+.stage .hero-powers .hero-effect-head {
+  align-items: center;
+  justify-content: flex-start;
+  gap: 8px;
+}
+
+.stage .hero-powers .hero-effect-item {
+  margin-left: auto;
+}
+
+.stage .hero-power-icon {
+  flex: none;
 }
 
 .stage .hero-effect-head b {
@@ -9840,8 +9880,8 @@
   margin-top: 8px;
   padding: 6px 10px;
   display: flex;
-  flex-direction: column;
-  gap: 1px;
+  align-items: center;
+  gap: 10px;
   border-left: 3px solid var(--ib-power);
   border-radius: 0 4px 4px 0;
   background: var(--ib-well);
@@ -9849,6 +9889,17 @@
   font-size: 14px;
   font-style: italic;
   line-height: 1.3;
+}
+
+.stage .ib-power .power-icon {
+  flex: none;
+}
+
+.stage .ib-power-text {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
 }
 
 .stage .ib-power b {

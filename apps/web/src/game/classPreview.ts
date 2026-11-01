@@ -30,13 +30,7 @@ export function dummyPreview(classId: string, weapon: string): ClassPreview {
   return {
     hero: heroSetup(state, GAME_DATA).setup,
     enemy: dummySetup(state, GAME_DATA, "plain"),
-    heroLook: heroLookOf(
-      classId,
-      state.hero.weaponId,
-      state.hero.equipment,
-      undefined,
-      heroWeaponLook(state),
-    ),
+    heroLook: heroLookOf(classId, state.hero.weaponId, state.hero.equipment, heroWeaponLook(state)),
     enemyLook: DUMMY_LOOK,
   };
 }

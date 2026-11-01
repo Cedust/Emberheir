@@ -2,6 +2,7 @@ import { GAME_DATA, ITEM_CATALOG } from "@emberheir/content";
 import { type GameState, type UniqueDefinition, bossKnown, getBase } from "@emberheir/sim";
 import { useState } from "react";
 import { ItemArt } from "../../ui/ItemArt";
+import { PowerIcon } from "../../ui/PowerIcon";
 import { actVisible } from "../labels";
 
 interface Row {
@@ -81,7 +82,10 @@ export function TrophyWall(props: { state: GameState }) {
             <span className="sub small">{getBase(ITEM_CATALOG, unique.baseId).name}</span>
             {power && (
               <p className="trophy-power">
-                <b>{power.name}.</b> {power.description}
+                <PowerIcon powerId={power.id} size={44} />
+                <span>
+                  <b>{power.name}.</b> {power.description}
+                </span>
               </p>
             )}
             {unique.flavor && <p className="sub small flavor">&ldquo;{unique.flavor}&rdquo;</p>}

@@ -7,6 +7,7 @@ import {
   type GameState,
 } from "@emberheir/sim";
 import { Cost } from "../../ui/kit/Currency";
+import { PowerIcon } from "../../ui/PowerIcon";
 import type { GameApi } from "../useGame";
 
 const SLOT_TEXT: Record<CrucibleSlot, { name: string; text: string }> = {
@@ -78,13 +79,16 @@ export function CruciblePanel(props: { state: GameState; game: GameApi }) {
                           game.dispatch({ type: "bindPower", slot, powerId: on ? null : p.id })
                         }
                       >
-                        <span className="crucible-power-name">
-                          {p.name} <span className="mono sub">T{codex[p.id]}</span>
+                        <PowerIcon powerId={p.id} size={40} />
+                        <span className="crucible-power-text">
+                          <span className="crucible-power-name">
+                            {p.name} <span className="mono sub">T{codex[p.id]}</span>
+                          </span>
+                          <span className="sub small">{p.description}</span>
+                          {on && worn.has(p.id) && (
+                            <span className="sub small warn">Worn on an item: this copy rests</span>
+                          )}
                         </span>
-                        <span className="sub small">{p.description}</span>
-                        {on && worn.has(p.id) && (
-                          <span className="sub small warn">Worn on an item: this copy rests</span>
-                        )}
                       </button>
                     );
                   })}

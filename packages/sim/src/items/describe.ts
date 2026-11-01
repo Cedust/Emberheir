@@ -303,8 +303,8 @@ export interface ItemTooltip {
   }[];
   /** "unique" and "runeword" items show their own label and color. */
   readonly special?: "unique" | "runeword";
-  /** Legendary Power: name and rule text. */
-  readonly power?: { readonly name: string; readonly text: string };
+  /** Legendary Power: id (for its icon), name and rule text. */
+  readonly power?: { readonly id: string; readonly name: string; readonly text: string };
   /** Sockets with the socketed Runes in order (Normal items only). */
   readonly sockets?: { readonly total: number; readonly runes: readonly string[] };
   /** Runeword recipe shown under the name, e.g. "Ash · Ember". */
@@ -454,7 +454,7 @@ export function describeItem(
     rarity: item.rarity,
     rarityName: unique ? "Unique" : word ? "Runeword" : RARITY_NAMES[item.rarity],
     ...(special ? { special } : {}),
-    ...(power ? { power: { name: power.name, text: power.description } } : {}),
+    ...(power ? { power: { id: power.id, name: power.name, text: power.description } } : {}),
     ...(item.sockets
       ? { sockets: { total: item.sockets, runes: (item.runes ?? []).map(runeName) } }
       : {}),

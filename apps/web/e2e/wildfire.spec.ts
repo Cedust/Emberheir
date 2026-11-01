@@ -137,6 +137,8 @@ test("salvaging a Legendary teaches its Power; Liora binds it in the Ember Cruci
   await page.getByRole("button", { name: /^Ember Crucible/ }).click();
   const strike = page.getByRole("region", { name: "Strike slot" });
   await strike.getByRole("button", { name: "Executioner" }).click();
+  // Every Power shows its painted icon.
+  await expect(strike.locator(".power-icon")).toBeVisible();
   await expect(strike.getByRole("button", { name: "Executioner" })).toHaveAttribute(
     "aria-pressed",
     "true",

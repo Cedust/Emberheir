@@ -11,7 +11,6 @@ import {
   getAct,
   heroWeapon,
   heroWeaponName,
-  wornEcho,
   heroTitle,
   isFinaleAct,
   activeDraught,
@@ -82,21 +81,12 @@ function useLooks(state: GameState, run: RunState) {
   const act = getAct(GAME_DATA, run.actId);
   const enemyDef = encounter ? encounterEnemy(encounter, act, GAME_DATA) : undefined;
   const echo = encounter?.echo ? getAct(GAME_DATA, encounter.echo) : undefined;
-  const draught = activeDraught(state, GAME_DATA);
-  const mastery = GAME_DATA.skillTree.prestigeBranches?.find(
-    (b) => b.id === state.legacy.branches[0],
+  const heroLook = heroLookOf(
+    state.hero.classId,
+    state.hero.weaponId,
+    state.hero.equipment,
+    heroWeaponLook(state),
   );
-  const heroLook = {
-    ...heroLookOf(
-      state.hero.classId,
-      state.hero.weaponId,
-      state.hero.equipment,
-      wornEcho(state, GAME_DATA)?.def.color,
-      heroWeaponLook(state),
-    ),
-    ...(draught ? { draught: draught.color } : {}),
-    ...(mastery?.axis ? { mastery: mastery.axis } : {}),
-  };
   const weapon = heroWeapon(state, GAME_DATA).weapon;
   const mods = encounter
     ? eliteModifiersOf(encounter, GAME_DATA).map(({ name, description }) => ({ name, description }))
@@ -327,10 +317,6 @@ export function BattleView(props: {
         )
       : hunt;
   const trailUp = hunt && after && after.tier > hunt.tier ? after.tier : 0;
-  const skipped = useRef(false);
-  useEffect(() => {
-    if (trailUp && !skipped.current) sceneRef.current?.trail(trailUp);
-  }, [trailUp]);
 
   // When the fight is over, show the banner briefly, then let the sim resolve it.
   const over = snapshot.over;
@@ -344,7 +330,6 @@ export function BattleView(props: {
   }, [over, game, bossFight, snapshot.winner]);
 
   const skip = () => {
-    skipped.current = true;
     sceneRef.current?.onEvents(fight.finish());
     hudRef.current?.onSnapshot(fight.snapshot(), true);
     setSnapshot(fight.snapshot());
