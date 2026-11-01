@@ -60,14 +60,16 @@ npm run test:e2e   # Playwright smoke tests (builds the web app)
   controls stay in the centered 16:9 area (`var(--safe-x)`). `e2e/resolution.spec.ts` checks it.
 - Use the UI tokens from `docs/design/ui-look-v1.md` (already defined in
   `apps/web/src/theme.css`). Light mode = Aged Parchment, dark mode = Scorched Parchment.
-- Use PixiJS to the full (Timo): anything that happens in a fight should be visible in the
-  arena, not only in numbers or the log. Every new skill, ailment, mechanic, enemy ability or
-  act gets its own look via the effect toolkit in `apps/web/src/game/battle/` (`fx.ts`
-  particles and shapes, `weather.ts` per-act air, `SKILL_FX`/`AILMENT_FX` in
-  `arenaEffects.ts`). Prefer Pixi features (particles, filters, blend modes, meshes, camera)
-  over plain shapes when they make it feel better. Effects stay visual only, never change the
-  sim, respect the Screen shake setting and `prefers-reduced-motion`, and keep the arena smooth
-  (particle cap, no effects for a Skip).
+- Battle effects are curated (Timo 2026-11-01): he picked every arena effect in the Effect
+  Gallery (`?effects`, `apps/web/src/game/effects/effectList.ts`). A new skill, mechanic,
+  enemy ability or act gets an arena effect only when it shows something the player must see
+  (a big hit, a warning, a boss moment); everything else shows in the HUD (status rail,
+  numbers). Never bring back an effect he removed. Every new or changed effect goes into the
+  gallery with a plain German explanation. Build effects with the toolkit in
+  `apps/web/src/game/battle/` (`fx.ts`, `weather.ts`, `glow.ts`, `SKILL_FX`/`AILMENT_FX` in
+  `arenaEffects.ts`); prefer baked textures over constant particles. Effects stay visual
+  only, never change the sim, respect the Screen shake setting and `prefers-reduced-motion`,
+  and keep the arena smooth (particle cap, no effects for a Skip).
 
 ## Commands
 
