@@ -103,15 +103,11 @@
 }
 
 .stage .fx-verdict.keep {
-  background: #3f7a3a;
+  background: #6b6258;
 }
 
 .stage .fx-verdict.change {
-  background: #a8701c;
-}
-
-.stage .fx-verdict.cut {
-  background: #9a2a1e;
+  background: #3f7a3a;
 }
 
 .stage .fx-foot {

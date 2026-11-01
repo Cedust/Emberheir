@@ -34,9 +34,6 @@ describe("effect gallery catalogue", () => {
           }
         },
         reset: () => {},
-        arena: () => {
-          events += 1;
-        },
       };
       e.play?.(player);
       for (const run of later) run();

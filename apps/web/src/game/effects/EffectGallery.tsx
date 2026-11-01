@@ -38,7 +38,8 @@ const reducedMotion = () =>
 
 /**
  * `?effects`: the effect gallery (performance-kampfeffekte-v1.md). Every arena effect of a
- * fight, played on its own in the real arena, with a plain explanation and the review's verdict.
+ * fight, played on its own in the real arena, with a plain explanation; changed ones say how they
+ * looked before Timo's cleanup.
  * A developer page: no fight runs. Timo's own picks (keep or remove) stay in this browser and
  * export as JSON.
  */
@@ -125,7 +126,6 @@ function Gallery() {
       reset: (seconds) => {
         timers.push(window.setTimeout(() => setMountId((n) => n + 1), seconds * 1000));
       },
-      arena: (run) => run(scene),
     };
     show();
     const play = () => picked.play?.(player);
@@ -167,7 +167,7 @@ function Gallery() {
       })
       .catch(() => {});
   };
-  const counts = { keep: 0, change: 0, cut: 0 };
+  const counts = { keep: 0, change: 0 };
   for (const e of EFFECTS) counts[e.verdict] += 1;
   const act = enemyLook.act;
   const gradient =
@@ -179,10 +179,10 @@ function Gallery() {
         <header className="fx-head">
           <h1 className="title-font">Effect Gallery</h1>
           <p>
-            Jeder Kampfeffekt einzeln. Klick einen an, er spielt in der Arena rechts.{" "}
+            Jeder Kampfeffekt einzeln, so wie er jetzt im Spiel ist. Klick einen an, er spielt in
+            der Arena rechts.{" "}
             <span className="fx-sum">
-              {counts.keep} {VERDICT_LABEL.keep} · {counts.change} {VERDICT_LABEL.change} ·{" "}
-              {counts.cut} {VERDICT_LABEL.cut}
+              {counts.change} {VERDICT_LABEL.change} · {counts.keep} {VERDICT_LABEL.keep}
             </span>
           </p>
         </header>
@@ -272,8 +272,12 @@ function Gallery() {
             <dd>{picked.what}</dd>
             <dt>Was man sieht</dt>
             <dd>{picked.see}</dd>
-            <dt>Vorschlag</dt>
-            <dd>{picked.plan}</dd>
+            {picked.before && (
+              <>
+                <dt>Vorher</dt>
+                <dd>{picked.before}</dd>
+              </>
+            )}
           </dl>
           <div className="fx-choice" role="radiogroup" aria-label="Deine Wahl">
             <span>Deine Wahl</span>

@@ -1,5 +1,5 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type GameState, type RunState, activeDraught, getAct, wornEcho } from "@emberheir/sim";
+import { type GameState, type RunState, getAct } from "@emberheir/sim";
 import { useEffect, useRef } from "react";
 import { useStageSize } from "../../ui/Stage";
 import type { Settings } from "../../ui/settings";
@@ -33,17 +33,12 @@ export function IdleArena(props: {
     const host = hostRef.current;
     if (!host) return;
     const act = getAct(GAME_DATA, run.actId);
-    const draught = activeDraught(state, GAME_DATA);
-    const heroLook = {
-      ...heroLookOf(
-        state.hero.classId,
-        state.hero.weaponId,
-        state.hero.equipment,
-        wornEcho(state, GAME_DATA)?.def.color,
-        heroWeaponLook(state),
-      ),
-      ...(draught ? { draught: draught.color } : {}),
-    };
+    const heroLook = heroLookOf(
+      state.hero.classId,
+      state.hero.weaponId,
+      state.hero.equipment,
+      heroWeaponLook(state),
+    );
     const scene = new ArenaScene();
     scene.showNumbers = false;
     scene.motion = settings.screenShake && !reducedMotion();
@@ -78,23 +73,6 @@ export function IdleArena(props: {
   useEffect(() => {
     if (sceneRef.current) sceneRef.current.paused = props.paused;
   }, [props.paused]);
-
-  // A walk past the Warden's Gate: the road rolls on in the arena.
-  const walks = useRef(run.wanders ?? 0);
-  useEffect(() => {
-    const now = run.wanders ?? 0;
-    if (now > walks.current) sceneRef.current?.wander();
-    walks.current = now;
-  }, [run.wanders]);
-
-  // A quiet node of the act map: its moment once the hero arrives (and the arena is up).
-  const visit = run.visit?.kind;
-  const stageKey = `${run.wanders ?? 0}:${run.stage}`;
-  useEffect(() => {
-    if (!visit) return;
-    const timer = window.setTimeout(() => sceneRef.current?.visit(visit), 350);
-    return () => window.clearTimeout(timer);
-  }, [visit, stageKey]);
 
   return (
     <div className="idle-arena" style={arenaStyle(run)} aria-hidden="true">

@@ -31,12 +31,6 @@ export interface HeroLook {
   readonly weaponId: string;
   /** Its build: grade metal, path runes, Keystone shape. */
   readonly weaponLook: WeaponLook;
-  /** Colour of the Echo worn on the weapon: its aura wraps the weapon, its motes the hero. */
-  readonly echo?: number;
-  /** Colour of the Draught brewed for the trip: a brew ring at the hero's feet, rising bubbles. */
-  readonly draught?: number;
-  /** The main Mastery's style: its aura in the arena (klassengeruest-v1.md 5). */
-  readonly mastery?: "burst" | "tempo" | "ailment";
 }
 
 /** Colors per class (klassengeruest-v1.md 2): body, chest piece, headgear. */
@@ -132,15 +126,6 @@ function weaponArt(
   outline.tint = INK;
   outline.scale.set(1.02);
   holder.addChild(outline);
-  if (look.echo !== undefined) {
-    // The worn Echo wraps the weapon in its colour; the scene lets it breathe.
-    const shape = art.silhouette();
-    shape.tint = look.echo;
-    const aura = bakedGlow([shape], 14);
-    aura.label = "weapon-echo";
-    aura.alpha = 0.55;
-    holder.addChild(aura);
-  }
   // A painting's edge is its whole silhouette: its light shines from behind the weapon.
   if ("glowBehind" in art && art.glowBehind) holder.addChild(edge, art.body, runes);
   else holder.addChild(art.body, edge, runes);

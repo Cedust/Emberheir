@@ -8,7 +8,10 @@ export interface View {
   readonly ground: number;
 }
 
-/** One kind of drifting particle; `rate` is per second across a 1440 px wide arena. */
+/**
+ * One kind of drifting particle; `rate` is per second across a 1440 px wide arena. Rate times
+ * mean life is how many float at once (Ashen Fields about 40, Frost Peaks 60, Emberfall 50).
+ */
 interface Drift {
   readonly rate: number;
   readonly from: "top" | "ground" | "air";
@@ -23,7 +26,7 @@ const WEATHER: Record<number, readonly Drift[]> = {
   // Ashen Fields: grey ash sinking slowly.
   1: [
     {
-      rate: 9,
+      rate: 3.6,
       from: "top",
       burst: {
         kind: "bit",
@@ -94,7 +97,7 @@ const WEATHER: Record<number, readonly Drift[]> = {
   // Frost Peaks: snow on the wind.
   4: [
     {
-      rate: 26,
+      rate: 8,
       from: "top",
       burst: {
         kind: "bit",
@@ -150,7 +153,7 @@ const WEATHER: Record<number, readonly Drift[]> = {
   // Emberfall: golden embers falling from a burning sky.
   7: [
     {
-      rate: 14,
+      rate: 6.5,
       from: "top",
       burst: {
         color: [0xffb13b, 0xffd84a, 0xff6a2b],
@@ -184,12 +187,13 @@ const WEATHER: Record<number, readonly Drift[]> = {
 
 /**
  * Wildfire (spielzeit-v1.md, C): on top of the act's own air, embers rise from the burning ground
- * and soot falls from the sky. Both grow with the tier.
+ * and soot falls from the sky: about 40 embers and 30 flakes, whatever the tier (the tier shows
+ * in the flame edge).
  */
-function wildfireDrifts(tier: number): Drift[] {
+function wildfireDrifts(): Drift[] {
   return [
     {
-      rate: 10 + 4 * tier,
+      rate: 17,
       from: "ground",
       burst: {
         color: [0xff6a2b, 0xffb13b, 0xffd84a],
@@ -204,7 +208,7 @@ function wildfireDrifts(tier: number): Drift[] {
       },
     },
     {
-      rate: 3 + tier,
+      rate: 3,
       from: "top",
       burst: {
         kind: "bit",
@@ -236,7 +240,7 @@ export class Weather {
   ) {
     this.drifts = [
       ...(WEATHER[act] ?? WEATHER[1] ?? []),
-      ...(wildfire > 0 ? wildfireDrifts(wildfire) : []),
+      ...(wildfire > 0 ? wildfireDrifts() : []),
     ];
   }
 

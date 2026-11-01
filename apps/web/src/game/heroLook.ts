@@ -15,13 +15,12 @@ const CLASSES = new Set<HeroLook["heroClass"]>(["cinderguard", "ashstrider", "em
 
 /**
  * How the Heir looks in the arena: the class's body, its own weapon in the build's look and the
- * off hand, and the colour of the Echo worn on the weapon.
+ * off hand.
  */
 export function heroLookOf(
   classId: string,
   weaponId: string,
   equipment: Equipment,
-  echo?: number,
   weaponLook: WeaponLook = PLAIN_LOOK,
 ): HeroLook {
   const main = getBase(ITEM_CATALOG, weaponId);
@@ -37,6 +36,5 @@ export function heroLookOf(
     offHand: off
       ? (OFF_HANDS[off.id] ?? (off.fitsWeaponRange === "ranged" ? "focus" : "shield"))
       : null,
-    ...(echo !== undefined ? { echo } : {}),
   };
 }

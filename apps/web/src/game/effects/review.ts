@@ -54,7 +54,7 @@ export function setPick(review: Review, id: string, pick: Pick): Review {
   };
 }
 
-/** The review as JSON: every effect with my suggestion and Timo's pick (null = still open). */
+/** The review as JSON: every effect with its state and Timo's pick (null = still open). */
 export function exportReview(effects: readonly EffectEntry[], review: Review, now: Date): string {
   const rows = effects.map((e) => {
     const pick = review[e.id];

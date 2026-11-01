@@ -22,7 +22,7 @@ describe("effect review", () => {
     expect(out.effects.find((e) => e.id === "slash")).toMatchObject({
       choice: "remove",
       note: "zu viel",
-      suggestion: "Behalten",
+      suggestion: "Wie bisher",
     });
     expect(out.effects.find((e) => e.id === "crit")?.choice).toBeNull();
   });
