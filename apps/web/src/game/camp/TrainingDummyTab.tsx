@@ -385,8 +385,8 @@ function Delta(props: { value: number; what: string }) {
 }
 
 const PROFILE_ART: Record<DummyProfile, { url: string; size: string; pos: string }> = {
-  plain: { url: dummyUrl, size: "303% auto", pos: "59% 7%" },
-  sparring: { url: kaelenFace, size: "360% auto", pos: "76% 4%" },
+  plain: { url: dummyUrl, size: "235% auto", pos: "62% 0%" },
+  sparring: { url: kaelenFace, size: "250% auto", pos: "78% 0%" },
 };
 
 function ProfileFace(props: { profile: DummyProfile; size: number }) {
@@ -417,7 +417,7 @@ export function TrainingDummyView(props: {
   const tabs: TabItem<DummyProfile>[] = (["plain", "sparring"] as const).map((id) => ({
     id,
     name: PROFILES[id].name,
-    art: <ProfileFace profile={id} size={40} />,
+    art: <ProfileFace profile={id} size={30} />,
   }));
   return (
     <WindowLayer mode="full">
@@ -436,8 +436,8 @@ export function TrainingDummyView(props: {
                   className="painted-portrait"
                   style={{
                     backgroundImage: `url(${dummyUrl})`,
-                    backgroundSize: "303% auto",
-                    backgroundPosition: "59% 7%",
+                    backgroundSize: PROFILE_ART.plain.size,
+                    backgroundPosition: PROFILE_ART.plain.pos,
                   }}
                   aria-hidden="true"
                 />
