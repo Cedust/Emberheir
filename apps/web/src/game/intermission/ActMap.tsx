@@ -10,6 +10,7 @@ import {
   countsForBounty,
   currentNode,
   eventBlockReason,
+  isQuiet,
   eventPrice,
   gateStages,
   getAct,
@@ -121,7 +122,9 @@ function FoeLine(props: { state: GameState; enemyId: string }) {
   );
 }
 
-const foeOf = (node: MapNode) => (node.kind === "hunt" ? node.quarry : node.enemy);
+// A quiet node has no foe, even if the map rolled one for it.
+const foeOf = (node: MapNode) =>
+  isQuiet(node.kind) ? undefined : node.kind === "hunt" ? node.quarry : node.enemy;
 
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
@@ -540,7 +543,7 @@ function MapNodeButton(props: {
   const art = label.marker ? null : (
     <>
       <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
-      {props.node.quarry && (
+      {props.node.kind === "hunt" && props.node.quarry && (
         <span className="map-node-quarry">
           <EnemyPortrait enemyId={props.node.quarry} size={NODE * 0.62} />
         </span>
@@ -645,7 +648,7 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
           >
             <span className="path-sigil painted">
               <img src={nodeArt(node.kind)} alt="" />
-              {node.quarry && (
+              {node.kind === "hunt" && node.quarry && (
                 <span className="map-node-quarry">
                   <EnemyPortrait enemyId={node.quarry} size={46} />
                 </span>
