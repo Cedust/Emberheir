@@ -9,6 +9,7 @@ import type { MusicPlayer } from "./musicPlayer";
  * - A trip picks one battle song and starts it at `entry`; on the map and after the Menu it
  *   goes on where it was. The next trip takes the next battle song.
  * - Title and Camp go on where they were faded out; boss, finale and harvest start fresh.
+ * - The title plays its songs one after another as a playlist; every other mood loops its song.
  */
 export interface MusicController {
   update: (cue: MusicCue, trip: number) => void;
@@ -17,7 +18,7 @@ export interface MusicController {
 }
 
 /** Crossfades in seconds. */
-export const FADE_S = { change: 2, silence: 2.5 } as const;
+export const FADE_S = { change: 2, playlist: 3, silence: 2.5 } as const;
 /** A kept spot this close to the loop's end is not worth it: the song starts fresh. */
 const RESUME_TAIL_S = 5;
 const RESUMES: ReadonlySet<MusicMood> = new Set(["title", "camp", "battle"]);
@@ -63,9 +64,26 @@ export function createMusicController(player: MusicPlayer): MusicController {
     const sameTrip = cue.mood !== "battle" || tripSong?.trip === trip;
     if (!force && playing?.mood === cue.mood && sameTrip) return;
     const track = force && playing?.mood === cue.mood ? playing.track : songFor(cue.mood, trip);
-    if (!track) return;
+    if (!track) {
+      // A mood without a song is quiet rather than carrying on the last one.
+      if (playing) player.stop(FADE_S.silence);
+      playing = null;
+      return;
+    }
     playing = { mood: cue.mood, track };
-    player.play(track, { at: startAt(track), fadeS: FADE_S.change });
+    player.play(track, {
+      at: startAt(track),
+      fadeS: FADE_S.change,
+      onNearEnd: cue.mood === "title" ? advanceTitle : undefined,
+    });
+  }
+
+  /** The title playlist: the next song starts fresh once one is over. */
+  function advanceTitle() {
+    const track = next("title");
+    if (!track) return;
+    playing = { mood: "title", track };
+    player.play(track, { at: track.entry, fadeS: FADE_S.playlist, onNearEnd: advanceTitle });
   }
 
   return {

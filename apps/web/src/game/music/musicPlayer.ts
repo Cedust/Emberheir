@@ -26,6 +26,8 @@ export interface PlayOptions {
   readonly at: number;
   /** Length of the crossfade from the song that plays now. */
   readonly fadeS: number;
+  /** Called shortly before `loopEnd` instead of looping (a playlist takes its next song). */
+  readonly onNearEnd?: (() => void) | undefined;
 }
 
 export interface MusicPlayer {
@@ -123,6 +125,8 @@ export function createMusicPlayer({
   let mix: MusicMix = { on: true, volume: 0.5 };
   let active: Deck | null = null;
   let watchTimer: ReturnType<typeof setInterval> | null = null;
+  let nearEnd: (() => void) | null = null;
+  let nearEndFired = false;
   let suspendTimer: ReturnType<typeof setTimeout> | null = null;
   let dampened = false;
   const positions = new Map<string, number>();
@@ -224,8 +228,9 @@ export function createMusicPlayer({
 
   function watch() {
     const track = active?.track;
-    if (active && track && isNearEnd(track, active.element.currentTime))
-      play(track, { at: track.loopStart, fadeS: LOOP_CROSSFADE_S });
+    if (!active || !track || nearEndFired || !isNearEnd(track, active.element.currentTime)) return;
+    nearEndFired = true;
+    nearEnd?.();
   }
 
   function play(track: MusicTrack, options: PlayOptions) {
@@ -242,6 +247,15 @@ export function createMusicPlayer({
     void target.element.play().catch(() => {});
     fadeTo(target.gain.gain, dbToGain(track.gainDb), now, options.fadeS);
     active = target;
+    nearEndFired = false;
+    nearEnd =
+      options.onNearEnd ??
+      (() => {
+        // The check runs every 200 ms: start the jump as late as it was noticed, so the two
+        // decks stay on the same beat.
+        const late = Math.max(0, target.element.currentTime - (track.loopEnd - LOOP_CROSSFADE_S));
+        play(track, { at: track.loopStart + late, fadeS: LOOP_CROSSFADE_S });
+      });
     watchTimer ??= setInterval(watch, WATCH_MS);
   }
 
@@ -264,6 +278,7 @@ export function createMusicPlayer({
       if (!rig || !active) return;
       release(active, rig.context.currentTime, fadeS);
       active = null;
+      nearEnd = null;
       if (watchTimer) clearInterval(watchTimer);
       watchTimer = null;
     },

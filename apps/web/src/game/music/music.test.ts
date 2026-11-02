@@ -42,7 +42,7 @@ describe("music catalog", () => {
   it("every mood has a song, and each loop window fits its file", () => {
     for (const m of MUSIC_MOODS) expect(tracksOf(m).length).toBeGreaterThan(0);
     for (const t of MUSIC_TRACKS) {
-      expect(t.loopStart).toBeLessThanOrEqual(t.entry);
+      expect(t.loopStart).toBeLessThan(t.loopEnd);
       expect(t.entry).toBeLessThan(t.loopEnd);
       expect(t.loopEnd).toBeLessThanOrEqual(t.durationS);
     }
@@ -72,6 +72,11 @@ describe("music director", () => {
     });
     expect(mood(game({ run: fight({ boss: true, enemyId: HARVESTER_ID }) })).mood).toBe("finale");
     expect(mood(game({ run: run({ actId: FINALE_ACT_ID }) })).mood).toBe("finale");
+  });
+
+  it("a new Heir's story intro and class select already play the Camp's song", () => {
+    expect(selectMusicCue(null, { menu: false, title: "newHeir" }).mood).toBe("camp");
+    expect(selectMusicCue(null, { menu: false, title: "menu" }).mood).toBe("title");
   });
 
   it("the Menu dampens whatever plays", () => {
@@ -104,17 +109,21 @@ function fakePlayer() {
   const played: { id: string; at: number }[] = [];
   const spots = new Map<string, number>();
   let stops = 0;
+  let nearEnd: (() => void) | null = null;
   const player: MusicPlayer = {
     install: () => () => {},
     setMix: () => {},
-    play: (track, o) => played.push({ id: track.id, at: o.at }),
+    play: (track, o) => {
+      played.push({ id: track.id, at: o.at });
+      nearEnd = o.onNearEnd ?? null;
+    },
     stop: () => void stops++,
     setDampened: () => {},
     positionOf: (id) => spots.get(id) ?? null,
     forget: (id) => void spots.delete(id),
     onReady: () => {},
   };
-  return { player, played, spots, stops: () => stops };
+  return { player, played, spots, stops: () => stops, end: () => nearEnd?.() };
 }
 
 describe("music controller", () => {
@@ -146,6 +155,18 @@ describe("music controller", () => {
     ]);
   });
 
+  it("the title plays its songs one after another; other moods loop", () => {
+    const f = fakePlayer();
+    const c = createMusicController(f.player);
+    c.update(cue("title"), 0);
+    f.end();
+    f.end();
+    expect(f.played.map((p) => p.id)).toEqual(["title-01", "title-02", "title-01"]);
+    c.update(cue("boss"), 1);
+    f.end();
+    expect(f.played).toHaveLength(4);
+  });
+
   it("silence stops, and refresh replays the song once sound is unlocked", () => {
     const f = fakePlayer();
     const c = createMusicController(f.player);
@@ -156,6 +177,6 @@ describe("music controller", () => {
     expect(f.stops()).toBe(1);
     c.update(cue("title"), 0);
     c.refresh();
-    expect(f.played.map((p) => p.id)).toEqual(["title-01", "title-01", "title-01"]);
+    expect(f.played.map((p) => p.id)).toEqual(["title-01", "title-02", "title-02"]);
   });
 });

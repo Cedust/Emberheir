@@ -30,7 +30,11 @@ export function CreditsPanel() {
         <dt className="title-font">Art</dt>
         <dd>Painted with AI image tools, chosen and cut by Cedust</dd>
         <dt className="title-font">Music</dt>
-        <dd>Made with Suno, chosen by Cedust</dd>
+        <dd>
+          Made with Suno, chosen by Cedust
+          <span className="credits-line">Camp: “The Old Tower Inn” by RandomMind</span>
+          <span className="credits-note">CC0</span>
+        </dd>
         <dt className="title-font">Fonts</dt>
         <dd>
           {FONTS.map((f) => (

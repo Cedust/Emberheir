@@ -5,7 +5,7 @@ import type { MusicMood } from "./musicCatalog";
  * The music director: which mood a moment of the game carries. Pure; which song of a mood
  * plays is the controller's call (musicController.ts).
  *
- * Title (and the story intro) → title; Camp → camp; a trip's fights and the map between them →
+ * Title → title; the story intro, the class select and the Camp → camp; a trip's fights and the map between them →
  * battle (dampened off the fight); a boss → boss; the Harvester and The Last Ember → finale;
  * the Harvest and the ending → harvest; a death fades to silence.
  */
@@ -22,12 +22,20 @@ export const HARVESTER_ID = "ashen-harvester";
 /** The finale act (`LAST_EMBER` in content). */
 export const FINALE_ACT_ID = "last-ember";
 
-export function selectMusicCue(state: GameState | null, options: { menu: boolean }): MusicCue {
+export interface MusicOptions {
+  /** The Menu is open. */
+  readonly menu: boolean;
+  /** Before a game: the title, or the story intro and the class select of a new Heir. */
+  readonly title?: "menu" | "newHeir";
+}
+
+export function selectMusicCue(state: GameState | null, options: MusicOptions): MusicCue {
   const cue = (mood: MusicCueMood, dampened = false): MusicCue => ({
     mood,
     dampened: dampened || options.menu,
   });
-  if (!state) return cue("title");
+  // A new Heir leaves the title behind: Old Nan's tale and the class select sit by the fire.
+  if (!state) return cue(options.title === "newHeir" ? "camp" : "title");
   if (state.pendingPrestige || state.notice?.kind === "ending" || state.notice?.kind === "prestige")
     return cue("harvest");
   if (state.notice?.kind === "death") return cue("silence");

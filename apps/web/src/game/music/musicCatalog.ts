@@ -2,12 +2,13 @@ import battle01 from "../../assets/music/battle-01.m4a?url";
 import battle02 from "../../assets/music/battle-02.m4a?url";
 import boss01 from "../../assets/music/boss-01.m4a?url";
 import camp01 from "../../assets/music/camp-01.m4a?url";
+import title02 from "../../assets/music/title-02.m4a?url";
 import finale01 from "../../assets/music/finale-01.m4a?url";
 import harvest01 from "../../assets/music/harvest-01.m4a?url";
 import title01 from "../../assets/music/title-01.m4a?url";
 
 /**
- * The game's songs (Suno, by Cedust) and the moments they play at (musicDirector.ts).
+ * The game's songs (Suno, by Cedust; the Camp's is CC0) and the moments they play at (musicDirector.ts).
  *
  * `entry` is where a fresh start begins, `loopStart`..`loopEnd` the window a song circles in
  * (it fades back to `loopStart` shortly before `loopEnd`, before its fade-out), `gainDb` evens
@@ -40,14 +41,26 @@ export const MUSIC_TRACKS: readonly MusicTrack[] = [
     loopEnd: 204,
   },
   {
-    id: "camp-01",
-    mood: "camp",
-    url: camp01,
+    id: "title-02",
+    mood: "title",
+    url: title02,
     durationS: 277.2,
     gainDb: -0.9,
     entry: 0.5,
     loopStart: 0.5,
     loopEnd: 274,
+  },
+  // "The Old Tower Inn" by RandomMind (CC0): its 49.95 s loop four times over. The loop window
+  // is a whole number of loops long, so the jump back lands on the same bar.
+  {
+    id: "camp-01",
+    mood: "camp",
+    url: camp01,
+    durationS: 199.8,
+    gainDb: 1,
+    entry: 0,
+    loopStart: 46.146,
+    loopEnd: 196,
   },
   {
     id: "battle-01",

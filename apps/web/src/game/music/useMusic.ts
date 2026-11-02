@@ -3,6 +3,7 @@ import type { GameState } from "@emberheir/sim";
 import { createMusicController } from "./musicController";
 import { type MusicCue, sameCue, selectMusicCue } from "./musicDirector";
 import { createMusicPlayer } from "./musicPlayer";
+import { useCurrentTitleScene } from "./titleScene";
 
 /** The one music player and controller of the app. */
 const player = createMusicPlayer();
@@ -27,14 +28,15 @@ export function useMusic(
   // Each trip from the Camp counts once: it picks its own battle song.
   const trip = useRef({ inRun: false, count: 0 });
   const lastCue = useRef<MusicCue | null>(null);
+  const title = useCurrentTitleScene();
   useEffect(() => {
     const t = trip.current;
     const inRun = !!state?.run;
     if (inRun && !t.inRun) t.count += 1;
     t.inRun = inRun;
-    const cue = selectMusicCue(state, { menu });
+    const cue = selectMusicCue(state, { menu, title });
     if (sameCue(lastCue.current, cue)) return;
     lastCue.current = cue;
     controller.update(cue, t.count);
-  }, [state, menu]);
+  }, [state, menu, title]);
 }
