@@ -104,13 +104,15 @@
 .stage .story-intro .si-star::before {
   content: "";
   position: absolute;
-  right: 50%;
-  bottom: 50%;
+  /* The tail trails behind: up and to the right, where the star came from. */
+  left: 50%;
+  top: 50%;
   width: 260px;
   height: 6px;
-  transform-origin: 100% 50%;
+  margin-top: -3px;
+  transform-origin: 0 50%;
   transform: rotate(-35deg);
-  background: linear-gradient(90deg, transparent, rgb(255 170 70 / 0.85));
+  background: linear-gradient(90deg, rgb(255 170 70 / 0.85), transparent);
   border-radius: 3px;
   filter: blur(2px);
 }
