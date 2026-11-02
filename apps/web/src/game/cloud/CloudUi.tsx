@@ -1,8 +1,8 @@
 import { GAME_DATA } from "@emberheir/content";
 import { type GameState, deserializeGame, heroTitle } from "@emberheir/sim";
 import { useState, useSyncExternalStore } from "react";
-import { Icon } from "../../ui/Icon";
 import { Button, HoldButton } from "../../ui/kit/Button";
+import { CurrencyIcon } from "../../ui/kit/Currency";
 import { whereText } from "../heirLine";
 import { LegalLinks } from "../LegalLinks";
 import { AUTH_ERROR_TEXT, PROVIDERS, PROVIDER_LABELS, type Provider, toAuthError } from "./auth";
@@ -161,7 +161,7 @@ export function CloudPlate() {
           aria-expanded={panel === "account"}
           onClick={() => setPanel(panel ? null : "account")}
         >
-          <Icon name="user" size={22} />
+          <CurrencyIcon id="feathers" size={32} />
           <span className="cloud-account-text">
             <strong className="title-font">{account.name ?? "Signed in"}</strong>
             {sync && <span className="sub small">{SYNC_TEXT[sync]}</span>}
