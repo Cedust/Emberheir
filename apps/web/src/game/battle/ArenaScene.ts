@@ -318,11 +318,10 @@ export class ArenaScene {
           const n = order.get(key) ?? 0;
           order.set(key, n + 1);
           this.hit(e, n * 0.08);
-          // The Heavy Attack cap held part of the blow back: an ember shield flares on the target.
+          // The Heavy Attack cap held part of the blow back: embers flare on the target.
           if (e.capped) {
             const target = e.side === "hero" ? "enemy" : "hero";
             const c = this.center(target);
-            this.fx?.ring(c.x, c.y, 0xffc46b, 50, 170, 0.45, 9, 1);
             this.fx?.burst({
               x: c.x,
               y: c.y,
@@ -1105,6 +1104,10 @@ export class ArenaScene {
           fx.projectile("fall", { x: to.x + dir * 180, y: top - 40 }, to, color, land);
           break;
         }
+        case "shards":
+          // The Rime Warden's Shatter: `shatter` sends the shards, the blow lands as they arrive.
+          this.wait(0.25, land);
+          break;
         case "nova":
           attacker.recoil = 1;
           fx.ring(to.x, GROUND_Y - 4, color, 30, 260, 0.45, 10);
@@ -1153,19 +1156,11 @@ export class ArenaScene {
     });
     this.signature(e.source, at, away);
     if (target === "enemy" && this.strawMan) this.straw(at, away, big);
-    if (e.blocked)
-      fx.ring(at.x + (target === "hero" ? -56 : 56), at.y, 0xffe9a8, 20, 80, 0.25, 6, 1);
-    if (e.deflected) {
-      // A Deflect: the victim half-dodges and the spell glances off in a pale ring.
-      victim.dodge = Math.max(victim.dodge, 0.5);
-      fx.ring(at.x, at.y, 0xd8f0c8, 24, 110, 0.3, 5, 1);
-    }
-    if (e.mighty) {
-      // A Mighty Hit: the blow drives down into the ground, a wide amber shock ring.
-      fx.ring(at.x, GROUND_Y - 4, 0xffb13b, 40, 260, 0.4, 10, 1);
-    }
+    // No rings on a hit (Timo 2026-11-02): Block, Deflect, Crit and Mighty Hit show in the
+    // number (its mark, colour and size), a big hit also in shake and hit-stop.
+    // A Deflect: the victim half-dodges.
+    if (e.deflected) victim.dodge = Math.max(victim.dodge, 0.5);
     if (big) {
-      fx.ring(at.x, at.y, 0xffffff, 30, heavy ? 220 : 160, 0.3, 8, 1);
       this.shake(heavy ? 0.7 : 0.35);
       this.hitStop(heavy ? 0.12 : 0.06);
     } else {
@@ -1173,7 +1168,14 @@ export class ArenaScene {
     }
     if (this.showNumbers) {
       const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}${e.mighty ? " ⚒" : ""}`;
-      this.float(target, e.blocked ? `${text} ⛨` : e.deflected ? `${text} ↺` : text, color, e.crit);
+      // Crits float orange, Mighty Hits dark orange-red, both big and tilted.
+      const tone = e.mighty
+        ? (DAMAGE_COLORS.mighty ?? color)
+        : e.crit
+          ? (DAMAGE_COLORS.crit ?? color)
+          : color;
+      const label = e.blocked ? `${text} ⛨` : e.deflected ? `${text} ↺` : text;
+      this.float(target, label, tone, e.crit || e.mighty === true);
     }
   }
 
@@ -1357,7 +1359,7 @@ export class ArenaScene {
       x,
       y: GROUND_Y - 260 + spread(this.clock * 3.1) * 40,
       label,
-      color: crit ? lighten(color) : color,
+      color,
       fontSize: Math.round((crit ? 46 : 28) * scale),
       crit,
       vx: spread(this.clock * 5.7) * 12,

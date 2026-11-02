@@ -293,9 +293,10 @@ export const EFFECTS: readonly EffectEntry[] = [
     id: "crit",
     group: "hits",
     name: "Crit (kritischer Treffer)",
-    verdict: "keep",
+    verdict: "change",
     what: "Ein Treffer macht 150 % Schaden.",
-    see: "Weißer Ring, kurzes Bild-Anhalten (Hit-Stop), spürbares Wackeln, große Zahl mit „!“.",
+    see: "Große, schräge Zahl in Orange mit „!“, kurzes Bild-Anhalten (Hit-Stop), spürbares Wackeln.",
+    before: "Weißer Ring, Hit-Stop, Wackeln, große Zahl in hellerer Schadensfarbe mit „!“.",
     play: (p) => p.events([hit({ crit: true, damage: 612 })]),
   },
   {
@@ -341,9 +342,10 @@ export const EFFECTS: readonly EffectEntry[] = [
     id: "block",
     group: "hits",
     name: "Block",
-    verdict: "keep",
+    verdict: "change",
     what: "Ein Shield hält einen Teil des Treffers ab.",
-    see: "Ein kleiner Ring am Schild, „⛨“ an der Zahl.",
+    see: "„⛨“ an der Zahl. Kein Ring mehr.",
+    before: "Ein kleiner Ring am Schild, „⛨“ an der Zahl.",
     play: (p) => p.events([hit({ side: "enemy", blocked: true, damage: 140 })]),
   },
   {
@@ -352,8 +354,8 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Deflect",
     verdict: "change",
     what: "Evasion lässt den Helden Zauber ablenken: sie machen nur halben Schaden.",
-    see: "Der Held weicht halb aus, ein blasser Ring, „↺“ an der Zahl.",
-    before: "Der Held weicht halb aus, ein blasser Ring und 10 Partikel, „↺“ an der Zahl.",
+    see: "Der Held weicht halb aus, „↺“ an der Zahl. Kein Ring mehr.",
+    before: "Der Held weicht halb aus, ein blasser Ring, „↺“ an der Zahl.",
     play: (p) =>
       p.events([
         hit({
@@ -371,8 +373,8 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Mighty Hit",
     verdict: "change",
     what: "Weapon Mastery: ein sauberer Treffer mit besonders hohem Waffenschaden.",
-    see: "Ein breiter Bodenring, „⚒“ an der Zahl.",
-    before: "Ein breiter Bodenring, Erdbrocken springen hoch, „⚒“ an der Zahl.",
+    see: "Große, schräge Zahl in dunklem Orangerot mit „⚒“, Hit-Stop und Wackeln. Kein Ring mehr.",
+    before: "Ein breiter Bodenring und ein weißer Ring, „⚒“ an der kleinen Zahl.",
     play: (p) => p.events([hit({ mighty: true, damage: 480 })]),
   },
   {
@@ -381,8 +383,8 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Heavy Attack gedeckelt („Held“)",
     verdict: "change",
     what: "Ein Heavy Attack des Gegners kann höchstens einen Teil deines Lebens nehmen. Der Rest wird zurückgehalten.",
-    see: "Ein Glutschild-Ring am Helden, 8 Funken und das Wort „Held“.",
-    before: "Ein Glutschild-Ring am Helden, 22 Funken und das Wort „Held“.",
+    see: "8 Glutfunken am Helden und das Wort „Held“. Kein Ring mehr.",
+    before: "Ein Glutschild-Ring und ein weißer Ring am Helden, 8 Funken und das Wort „Held“.",
     play: (p) => heavyAttack(p, true),
   },
   {
@@ -890,9 +892,10 @@ export const EFFECTS: readonly EffectEntry[] = [
     id: "shatter",
     group: "enemy",
     name: `Shatter (Rime Warden)${NEW}`,
-    verdict: "keep",
+    verdict: "change",
     what: "Boss in Act 4: bricht seine Ice Barrier, fliegen die Eisstücke auf den Helden.",
-    see: "Ein heller Ring, 26 Eissplitter fliegen zum Helden, 14 Frostwolken, „Shatter“, Wackeln.",
+    see: "Ein heller Ring am Rime Warden, 26 Eissplitter fliegen zum Helden, der Treffer landet, wenn sie ankommen. 14 Frostwolken, „Shatter“, Wackeln.",
+    before: "Dazu ein Bodenring unter den Füßen des Helden (wie bei einer Nova).",
     enemy: () => ({ id: "rime-warden", archetype: "warden", boss: true, elite: false, act: 4 }),
     play: (p) =>
       p.events([
