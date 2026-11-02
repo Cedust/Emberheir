@@ -15,6 +15,7 @@ import { ActionIcon, actionIcon } from "../ui/actionIcons";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
+import { StoryIntro } from "./intro/StoryIntro";
 import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
 import { BackupPanel } from "./BackupPanel";
@@ -25,6 +26,12 @@ import type { NewCharacter } from "./useGame";
 
 /** The Combat Lab is a developer tool: it only shows with ?dev in the address. */
 const DEV = new URLSearchParams(window.location.search).has("dev");
+
+/**
+ * The story intro plays before every new Heir. Browser tests start straight at the class
+ * select, unless they ask for the intro with ?intro.
+ */
+const PLAY_INTRO = !navigator.webdriver || new URLSearchParams(window.location.search).has("intro");
 
 /** The Camp at night behind the title: the same painting, fire and light as the Camp. */
 function TitleScene() {
@@ -76,7 +83,12 @@ function TitleMenu(props: TitleProps) {
   const last = loadLastSlot();
   const lastSave = last !== null ? slots[last] : null;
   const free = slots.findIndex((s, i) => s === null && !damaged.includes(i));
-  const [page, setPage] = useState<"main" | "characters" | "new" | "settings" | "credits">("main");
+  const [page, setPage] = useState<
+    "main" | "characters" | "intro" | "new" | "settings" | "credits"
+  >("main");
+  // The class the Heir remembered in the story intro.
+  const [remembered, setRemembered] = useState<string | null>(null);
+  const [fromIntro, setFromIntro] = useState(false);
   const [newSlot, setNewSlot] = useState(Math.max(0, free));
   const [selected, setSelected] = useState(
     last ??
@@ -90,17 +102,34 @@ function TitleMenu(props: TitleProps) {
   const hasCharacters = slots.some((s) => s !== null) || damaged.length > 0;
   const createIn = (slot: number) => {
     setNewSlot(slot);
-    setPage("new");
+    setRemembered(null);
+    setFromIntro(PLAY_INTRO);
+    setPage(PLAY_INTRO ? "intro" : "new");
   };
   const selectedSave = slots[selected] ?? null;
   const selectedDamaged = damaged.includes(selected);
 
+  if (page === "intro") {
+    return (
+      <StoryIntro
+        onDone={(classId) => {
+          setRemembered(classId);
+          setPage("new");
+        }}
+      />
+    );
+  }
+
   if (page === "new") {
     return (
-      <section className="screen title-screen class-screen" aria-label="New Heir">
+      <section
+        className={`screen title-screen class-screen${fromIntro ? " from-intro" : ""}`}
+        aria-label="New Heir"
+      >
         <TitleScene />
         <ClassSelect
           slot={newSlot}
+          initialClass={remembered}
           settings={props.settings.settings}
           onBegin={props.onNewGame}
           onBack={() => setPage(hasCharacters ? "characters" : "main")}
