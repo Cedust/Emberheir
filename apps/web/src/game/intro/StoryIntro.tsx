@@ -158,15 +158,21 @@ export function StoryIntro(props: { onDone: (classId: string | null) => void }) 
           <Typed text={text} shown={typed.shown} more={more} />
         </p>
       ) : (
-        <div className="si-nan">
+        // The answers keep their place while the question is typed, so the box never grows.
+        <div className={`si-nan${asking && !typed.done ? " si-asking" : ""}`}>
           <Dialog
             name="Old Nan"
             role="Hearthkeeper"
             label="Old Nan"
             portrait={<PersonaPortrait id="nan" />}
             answers={
-              asking && typed.done
-                ? MEMORIES.map((m, i) => ({ label: m.answer, onPick: () => remember(i) }))
+              asking
+                ? MEMORIES.map((m, i) => ({
+                    label: m.answer,
+                    onPick: () => {
+                      if (typed.done) remember(i);
+                    },
+                  }))
                 : []
             }
           >
