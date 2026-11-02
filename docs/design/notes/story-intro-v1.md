@@ -35,7 +35,10 @@ sofort ganz, keine Partikel.
 
 Keine Spoiler: nur Ashen Fields und der Harvester (steht schon im Titel und Compendium) kommen vor.
 
-## Optionales Bild: „Found in the Ash“
+## Bild: „Found in the Ash“
+
+Geliefert 2026-11-02 (`art/intro/found-in-the-ash-v1.png`), im Spiel `assets/intro/found-in-the-ash.webp` als Szene 2.
+
 
 Heute zeigt Szene 2 die Ashen Fields näher am Boden, ohne den Heir. Ein eigenes Bild würde den
 Moment zeigen, in dem Nan uns findet. Wenn du es malst, tauscht der Code nur das Bild der Szene 2.

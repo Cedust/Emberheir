@@ -36,11 +36,15 @@
   filter: saturate(0.6) brightness(0.32);
 }
 
+/* Found in the Ash: the Heir sits in the upper half, above Old Nan's dialogue. */
 .stage .si-found .si-painting {
-  animation: none;
-  transform: scale(1.18) translateY(-4%);
-  transform-origin: 50% 80%;
-  filter: saturate(0.95) brightness(0.78);
+  inset: 0;
+  background-size: max(100%, 1700px) auto;
+  background-position: 50% 0;
+  background-repeat: no-repeat;
+  background-color: #231d21;
+  filter: saturate(0.95) brightness(0.9);
+  animation-duration: 60s;
 }
 
 @keyframes si-drift {

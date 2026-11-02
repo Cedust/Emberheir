@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import fieldsUrl from "../../assets/arena/ashen-fields.webp";
+import foundUrl from "../../assets/intro/found-in-the-ash.webp";
 import { Button } from "../../ui/kit/Button";
 import { Dialog } from "../../ui/kit/Dialog";
 import { isTypingTarget } from "../../ui/kit/hotkeys";
@@ -108,7 +109,12 @@ export function StoryIntro(props: { onDone: (classId: string | null) => void }) 
       }}
     >
       <div className="si-backdrop" aria-hidden="true">
-        <div className="si-painting" style={{ backgroundImage: `url(${fieldsUrl})` }} />
+        {/* Timo's painting "Found in the Ash": the Heir in the ash by Old Nan's lantern. */}
+        <div
+          className="si-painting"
+          key={scene}
+          style={{ backgroundImage: `url(${scene === "found" ? foundUrl : fieldsUrl})` }}
+        />
         <div className="si-glow" />
         {sky === "fall" && <div className="si-star" key={step} />}
         <div className="si-ash">
