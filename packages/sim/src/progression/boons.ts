@@ -142,12 +142,27 @@ export function boonScale(rank: number, grade: BoonGrade): number {
  * show their points at `rank`.
  */
 export function boonText(def: BoonDefinition, scale: number, rank = 1): string {
+  return def.text.replace("#", boonNumber(def, scale, rank));
+}
+
+/** The number on the card at this scale (see `boonText`). */
+export function boonNumber(def: BoonDefinition, scale: number, rank = 1): string {
   // Attributes grow with the rank only.
-  if (def.attributes) return def.text.replace("#", String(def.value * rank));
+  if (def.attributes) return String(def.value * rank);
   const flat = def.trigger?.effect.kind === "ailment" || def.trigger?.effect.kind === "extraAttack";
   const v = flat ? Math.min(100, def.value * scale) : def.value * scale;
-  const shown = Math.abs(v) >= 10 ? Math.round(v) : Math.round(v * 10) / 10;
-  return def.text.replace("#", String(shown));
+  return String(Math.abs(v) >= 10 ? Math.round(v) : Math.round(v * 10) / 10);
+}
+
+/** The card text of a rank-up: the number before and after (`+# %` → `+20 → 26 %`). */
+export function boonRankUpText(
+  def: BoonDefinition,
+  before: { readonly scale: number; readonly rank: number },
+  after: { readonly scale: number; readonly rank: number },
+): string {
+  const a = boonNumber(def, before.scale, before.rank);
+  const b = boonNumber(def, after.scale, after.rank);
+  return def.text.replace("#", a === b ? b : `${a} → ${b}`);
 }
 
 function scaleBonuses(bonuses: StatBonuses, scale: number): StatBonuses {
@@ -235,10 +250,37 @@ export function boonEffects(active: readonly ActiveBoon[]): {
   };
 }
 
+/** True when the family suits one of the build's damage types (Hearth suits every build). */
+export function boonFamilyFits(
+  family: BoonFamilyDefinition,
+  damageTypes: readonly DamageType[],
+): boolean {
+  return family.damageTypes.length === 0 || family.damageTypes.some((t) => damageTypes.includes(t));
+}
+
+/** What taking `pick` does to the Boons in effect. */
+export type BoonPickOutcome =
+  | { readonly kind: "new" }
+  | { readonly kind: "rankUp"; readonly owned: ActiveBoon }
+  | { readonly kind: "replaces"; readonly owned: ActiveBoon };
+
+export function boonPickOutcome(
+  def: BoonDefinition,
+  active: readonly ActiveBoon[],
+): BoonPickOutcome {
+  const owned = active.find((b) => b.def.id === def.id);
+  if (owned) return { kind: "rankUp", owned };
+  const taken = EXCLUSIVE_BOON_SLOTS.includes(def.slot)
+    ? active.find((b) => b.def.slot === def.slot)
+    : undefined;
+  return taken ? { kind: "replaces", owned: taken } : { kind: "new" };
+}
+
 /**
  * Rolls a Shrine offer: three different Boons from the open families. A Boon at max rank, a
  * Reaction Boon before the Reaction Slot is unlocked, and a Fusion Boon without both families
- * never show up. Families that fit the weapon are preferred, the grade is rolled per card.
+ * never show up. Families that fit the build's damage types are preferred, the grade is rolled per
+ * card.
  */
 export function rollBoonOffer(
   defs: readonly BoonDefinition[],
@@ -246,7 +288,8 @@ export function rollBoonOffer(
   options: {
     readonly open: readonly string[];
     readonly active: readonly ActiveBoon[];
-    readonly damageType: DamageType;
+    /** The damage types the hero's build deals (`boonAffinity`): their families are preferred. */
+    readonly damageTypes: readonly DamageType[];
     readonly reactionSlot: boolean;
     /** Weight of Fusion Boons (the finale raises it). */
     readonly fusionWeight?: number;
@@ -255,9 +298,7 @@ export function rollBoonOffer(
 ): BoonPick[] {
   const held = new Set(options.active.map((b) => b.def.family));
   const preferred = new Set(
-    families
-      .filter((f) => f.damageTypes.includes(options.damageType) || f.damageTypes.length === 0)
-      .map((f) => f.id),
+    families.filter((f) => boonFamilyFits(f, options.damageTypes)).map((f) => f.id),
   );
   const pool = defs.filter((d) => {
     const owned = options.active.find((b) => b.def.id === d.id);

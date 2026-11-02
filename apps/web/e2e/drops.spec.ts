@@ -126,8 +126,14 @@ test("Ember Shrine: steal one of three Boons, it shows under the hero in the nex
   const hall = page.getByRole("region", { name: "Intermission" });
   await expect(hall).toContainText("EMBER SHRINE");
   await expect(page.getByTestId("shrine").locator(".boon-card")).toHaveCount(3);
-  // Brutality is held already: taking it again raises it to rank II.
-  await expect(page.getByTestId("boon-brutality")).toContainText("+15 % Physical Damage");
+  // Brutality is held already: taking it again raises it to rank II, the card shows before → after.
+  await expect(page.getByTestId("boon-brutality")).toContainText("+10 → 15 % Physical Damage");
+  await expect(page.getByTestId("boon-brutality").getByTestId("boon-band")).toHaveText(
+    "Rank I → II",
+  );
+  // Nothing sits in the Strike slot yet: Crushing Blow is new; the board shows the free slots.
+  await expect(page.getByTestId("boon-crushing-blow").getByTestId("boon-band")).toHaveText("New");
+  await expect(page.getByTestId("boon-socket-strike")).toContainText("Strike");
   await expect(page.getByRole("button", { name: /NEXT STAGE/ })).toBeDisabled();
   await page.getByTestId("boon-crushing-blow").click();
   await expect(page.getByTestId("done-card")).toContainText("Boon: Crushing Blow");
@@ -136,6 +142,21 @@ test("Ember Shrine: steal one of three Boons, it shows under the hero in the nex
     page.getByRole("region", { name: "Battle" }).getByTestId("boon-bar").locator(".boon-chip"),
   ).toHaveCount(2);
   expect(errors).toEqual([]);
+});
+
+test("Ember Shrine: a card for a taken slot says what it replaces and lights the old Boon", async ({
+  page,
+}) => {
+  const save = JSON.parse(saveShrine()) as { boons: { kept: unknown[]; fresh: unknown[] } };
+  save.boons.fresh.push({ id: "kindled-strikes", grade: "spark" });
+  await seedSave(page, JSON.stringify(save));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  const card = page.getByTestId("boon-crushing-blow");
+  await expect(card.getByTestId("boon-band")).toHaveText("Replaces Kindled Strikes");
+  await expect(card.getByTestId("boon-lost")).toContainText("Kindled Strikes");
+  await card.hover();
+  await expect(page.getByTestId("boon-tile-kindled-strikes")).toHaveClass(/lit-replaces/);
 });
 
 test("Ember Thief: a countdown shows how long until it runs off", async ({ page }) => {

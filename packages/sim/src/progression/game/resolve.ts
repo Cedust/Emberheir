@@ -24,7 +24,7 @@ import {
 import { requireRun } from "./guards";
 import { tripOmenEffects, tripOmens } from "./omens";
 import { omenPeril } from "../omens";
-import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
+import { boonAffinity, heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
 import {
   actAffixFactor,
   addRunes,
@@ -244,7 +244,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         {
           open: openBoonFamilies(data, act.number),
           active: heroBoons(state, data),
-          damageType: hero.weapon.damageType,
+          damageTypes: boonAffinity(state, data),
           reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
         },
         rng,
@@ -427,7 +427,7 @@ function resolveFinaleFight(
     {
       open: (data.boonFamilies ?? []).map((f) => f.id),
       active: heroBoons(state, data),
-      damageType: heroSetup(state, data).setup.weapon.damageType,
+      damageTypes: boonAffinity(state, data),
       reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
       fusionWeight: PROGRESSION.finaleFusionWeight,
     },

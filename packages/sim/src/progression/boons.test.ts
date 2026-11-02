@@ -6,6 +6,9 @@ import {
   EMPTY_BOONS,
   activeBoons,
   boonEffects,
+  boonFamilyFits,
+  boonPickOutcome,
+  boonRankUpText,
   boonScale,
   boonText,
   rollBoonOffer,
@@ -14,6 +17,7 @@ import {
   type GameAction,
   type GameState,
   applyAction,
+  boonAffinity,
   heroSetup,
   newGame,
   openBoonFamilies,
@@ -85,7 +89,7 @@ describe("Stolen Fire Boons", () => {
         {
           open,
           active: activeBoons(active, TEST_BOONS),
-          damageType: "physical",
+          damageTypes: ["physical"],
           reactionSlot,
         },
         new Rng(seed),
@@ -199,5 +203,48 @@ describe("Boon chance scaling", () => {
     );
     expect(boonEffects(three).triggers[0]?.chance).toBe(1);
     expect(boonText(def, three[0]?.scale ?? 1)).toBe("Attacks: 100 % chance to Poison");
+  });
+});
+
+function need<T>(x: T | undefined): T {
+  if (x === undefined) throw new Error("missing test data");
+  return x;
+}
+
+describe("Boon-Auswahl (boon-auswahl-v1.md)", () => {
+  it("a pick is new, a rank-up of a held Boon, or replaces the Boon in its exclusive slot", () => {
+    const def = (id: string) => need(TEST_BOONS.find((b) => b.id === id));
+    const active = activeBoons(
+      { kept: [spark("crushing-blow"), spark("grit")], fresh: [] },
+      TEST_BOONS,
+    );
+    expect(boonPickOutcome(def("banked-coals"), active).kind).toBe("new");
+    const up = boonPickOutcome(def("grit"), active);
+    expect(up.kind === "rankUp" && up.owned.def.id).toBe("grit");
+    const swap = boonPickOutcome(def("kindled-strikes"), active);
+    expect(swap.kind === "replaces" && swap.owned.def.id).toBe("crushing-blow");
+    // A stacking slot never replaces.
+    expect(boonPickOutcome(def("grit"), []).kind).toBe("new");
+  });
+
+  it("a rank-up card shows the number before and after", () => {
+    const grit = need(TEST_BOONS.find((b) => b.id === "grit"));
+    expect(boonRankUpText(grit, { scale: 1, rank: 1 }, { scale: 1.5, rank: 2 })).toBe(
+      "+10 → 15 Armor",
+    );
+  });
+
+  it("the build's damage types: the weapon's, plus every ailment it can apply", () => {
+    const s = act(start(), { type: "setOut", actId: "test-act" });
+    expect(boonAffinity(s, data)).toEqual(["physical"]);
+    const burning = { ...s, boons: { kept: [spark("kindled-strikes")], fresh: [] } };
+    expect(boonAffinity(burning, data)).toEqual(["physical", "fire"]);
+  });
+
+  it("a family fits when it shares a damage type; Hearth fits every build", () => {
+    const family = (id: string) => need(TEST_BOON_FAMILIES.find((f) => f.id === id));
+    expect(boonFamilyFits(family("hearth"), ["physical"])).toBe(true);
+    expect(boonFamilyFits(family("ash"), ["physical", "fire"])).toBe(true);
+    expect(boonFamilyFits(family("cinder"), ["physical"])).toBe(false);
   });
 });

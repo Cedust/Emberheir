@@ -643,6 +643,17 @@ Endgame **Wildfire I–X**.
 - Funken aus dem Feuer der Wardens: eine Familie pro Boss (Ash, Rot, Cinder, Rime, Storm, Void) plus Hearth.
 - Biegen den Build bis zum Prestige (Slots Strike, Skill, Reaction, Heat exklusiv; Trigger, Passive stapeln),
   Güte Spark/Flame/Blaze, Fusion Boons im Finale.
+- **48 Boons** (`notes/boon-auswahl-v1.md`, Timo 2026-11-02): jede Warden-Familie hat **einen Boon pro festem Slot**
+  und **einen, der stapelt**; Hearth hat Heat, Reaction und drei stapelnde; 7 Fusion, 6 Stolen (Attribute).
+  Boons ohne Zahl (Cold Heart, Fever, Galvanic Rot) haben nur Rang I.
+- **Bevorzugte Familien** (≈70 % des Angebots) folgen dem **Build**: Schadenstyp der Waffe (mit Attunement), Schadens-
+  typen und Ailments der Skills im Battle Plan und alle Ailments aus Gear, Tree, Triggern und Boons (Burn → Cinder,
+  Chill → Rime, Shock → Storm, Corruption → Void, Bleed/Poison → Ash/Rot). Hearth passt immer.
+- **Shrine-Karte:** ein Band oben sagt, was die Wahl tut: **New** (freier Slot) / **New · Stacks**, **Rank I → II**
+  (Wert vorher → nachher) oder **Replaces <Boon>** (der alte Effekt steht durchgestrichen darunter). Hover über eine
+  Karte lässt im Boons-Panel den betroffenen Boon oder den freien Slot leuchten.
+- **Boons-Panel** zwischen den Stages: 4 feste Sockel (Strike, Skill, Heat, Reaction; leer sichtbar, Reaction
+  gesperrt bis zum Reaction Slot), darunter alle stapelnden Boons.
 
 ---
 

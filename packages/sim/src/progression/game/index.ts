@@ -89,6 +89,7 @@ export {
   heroReactions,
   heroBoons,
   openBoonFamilies,
+  boonAffinity,
   heroClassOf,
   heroTitle,
   heroSetup,

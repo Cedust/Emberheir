@@ -996,7 +996,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             </p>
             <p>
               Strike, Skill, Reaction and Heat Boons hold one each; a new one replaces the old. The
-              rest stack. Every boss you meet adds its family of Boons.
+              rest stack. Every boss you meet adds its family of Boons: one for each of these slots
+              and one that stacks. Shrines favor the families that fit your damage and ailments.
             </p>
             <p>
               Boons from the act you are in burn when you fall. All of them burn at the Harvest.

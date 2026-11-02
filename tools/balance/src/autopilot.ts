@@ -32,7 +32,8 @@ import {
   type GameState,
   heroAshborn,
   heroBoons,
-  heroSetup,
+  boonAffinity,
+  boonFamilyFits,
   learnHeirloom,
   openBranches,
   takeBlockReason,
@@ -262,15 +263,14 @@ export function chooseGate(state: GameState, data: GameData): GameState {
   return applyAction(state, data, { type: "wander" });
 }
 
-/** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */
+/** Boon choice: a family that fits the build (or Hearth) first, then rank-ups, then the grade. */
 export function bestBoon(state: GameState, data: GameData, offer: readonly BoonPick[]): number {
-  const damageType = heroSetup(state, data).setup.weapon.damageType;
+  const damageTypes = boonAffinity(state, data);
   const owned = new Set(heroBoons(state, data).map((b) => b.def.id));
   const value = (pick: BoonPick) => {
     const def = data.boons?.find((b) => b.id === pick.id);
     const family = data.boonFamilies?.find((f) => f.id === def?.family);
-    const fits =
-      !family || family.damageTypes.length === 0 || family.damageTypes.includes(damageType);
+    const fits = !family || boonFamilyFits(family, damageTypes);
     return (fits ? 10 : 0) + (owned.has(pick.id) ? 3 : 0) + BOON_GRADES.indexOf(pick.grade);
   };
   let best = 0;

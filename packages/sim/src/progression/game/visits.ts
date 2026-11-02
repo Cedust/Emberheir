@@ -21,7 +21,7 @@ import { getBounty } from "./bounty";
 import { hasMet, meetMarisha } from "./companions";
 import { flaskCapacity } from "./flask";
 import { requireRun } from "./guards";
-import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
+import { boonAffinity, heroBoons, openBoonFamilies } from "./hero-build";
 import { actAffixFactor, addRunes, heroCanWear, rollItemChoices, rollRune } from "./loot";
 import { tripOmenEffects } from "./omens";
 import {
@@ -84,7 +84,7 @@ export function shrineOffer(state: GameState, data: GameData, act: ActData, rng:
     {
       open: openBoonFamilies(data, act.number),
       active: heroBoons(state, data),
-      damageType: heroSetup(state, data).setup.weapon.damageType,
+      damageTypes: boonAffinity(state, data),
       reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
     },
     rng,
