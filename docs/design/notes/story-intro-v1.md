@@ -19,8 +19,8 @@ sofort ganz, keine Partikel.
    - But the fire always leaves something behind… *(das Bild wird dunkel)*
 2. **Gefunden** (Schwarzblende, dann dieselben Felder nah am Boden, Old Nans Dialog-Box):
    - Oh! This one's still breathing. Good. The last one I poked just crumbled.
-   - Easy, dear. You were lying in the ash like a burnt sausage. I'm Old Nan. Nobody remembers my
-     real name. Not even me.
+   - Easy, dear. You were lying in the ash like a burnt sausage. You can call me Old Nan. Nobody remembers my
+     real name anyway. Not even me.
    - My caravan carries the Hearthfire, the last true flame. And after every harvest, the fire
      leaves an Heir in the ash. Too stubborn to stay dead.
    - That's you, dear. So tell me: do you remember who you were?

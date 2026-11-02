@@ -37,7 +37,7 @@ export const INTRO_LINES: readonly IntroLine[] = [
   },
   {
     scene: "found",
-    text: "Easy, dear. You were lying in the ash like a burnt sausage. I’m Old Nan. Nobody remembers my real name. Not even me.",
+    text: "Easy, dear. You were lying in the ash like a burnt sausage. You can call me Old Nan. Nobody remembers my real name anyway. Not even me.",
   },
   {
     scene: "found",
