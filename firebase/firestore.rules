@@ -1,0 +1,42 @@
+rules_version = '2';
+
+// Security Rules of the cloud saves (docs/cloud-setup.md, apps/web/src/game/cloud/).
+// Every account reads and writes only its own document `saves/{uid}`.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+
+    // Shape and size of a cloud save. `updatedAt` comes from the server, never from the client.
+    // `payload` is the sealed backup of every Heir; Firestore allows 1 MiB per document.
+    function isValidSave(data) {
+      return data.keys().hasOnly(['payload', 'revision', 'saveVersion', 'clientVersion', 'updatedAt'])
+        && data.keys().hasAll(['payload', 'revision', 'saveVersion', 'clientVersion', 'updatedAt'])
+        && data.payload is string && data.payload.size() < 900000
+        && data.revision is int
+        && data.saveVersion is int && data.saveVersion >= 1
+        && data.clientVersion is string && data.clientVersion.size() <= 32
+        && data.updatedAt == request.time;
+    }
+
+    match /saves/{uid} {
+      allow read, delete: if isOwner(uid);
+
+      allow create: if isOwner(uid)
+        && isValidSave(request.resource.data)
+        && request.resource.data.revision == 1;
+
+      // A write builds on exactly the revision it knows; an older game never lowers the save
+      // version.
+      allow update: if isOwner(uid)
+        && isValidSave(request.resource.data)
+        && request.resource.data.revision == resource.data.revision + 1
+        && request.resource.data.saveVersion >= resource.data.saveVersion;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

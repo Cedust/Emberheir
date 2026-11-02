@@ -62,6 +62,27 @@ test("the title shows the version and the Credits name Cedust with a link", asyn
   await expect(page.getByRole("button", { name: "New Game" })).toBeVisible();
 });
 
+test("the Credits link the Legal Notice and Privacy; a build without cloud offers no sign-in", async ({
+  page,
+}) => {
+  await page.goto("/");
+  // This build has no Firebase setup: the game plays as a guest only.
+  await expect(page.getByRole("button", { name: "New Game" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Cloud Save" })).toHaveCount(0);
+  await page.getByRole("button", { name: "Credits" }).click();
+  for (const [name, heading] of [
+    ["Legal Notice", "Impressum"],
+    ["Privacy", "Datenschutzerklärung"],
+  ] as const) {
+    const href = await page.getByRole("link", { name }).getAttribute("href");
+    const legal = await page.context().newPage();
+    await legal.goto(href ?? "");
+    await expect(legal.getByRole("heading", { level: 1 })).toHaveText(heading);
+    await expect(legal.locator("body")).not.toContainText("%LEGAL_");
+    await legal.close();
+  }
+});
+
 test("a crash shows the crash screen with Reload instead of an empty page", async ({ page }) => {
   page.on("pageerror", () => {});
   await page.goto("/?crashtest");

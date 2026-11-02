@@ -1,3 +1,4 @@
+import "../pixiNoEval";
 import type { MasteryNode, MasteryPath } from "@emberheir/sim";
 import {
   Application,

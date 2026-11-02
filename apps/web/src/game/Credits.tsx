@@ -1,3 +1,5 @@
+import { LegalLinks } from "./LegalLinks";
+
 /**
  * Credits (Release 1.0): who made the game, and the fonts and libraries it is built with
  * (their licenses ask to be named). Shown on the title and in the Menu.
@@ -40,10 +42,13 @@ export function CreditsPanel() {
         <dd>
           {LIBRARIES.join(", ")}
           <span className="credits-note">MIT License</span>
+          <span className="credits-line">Firebase (cloud saves)</span>
+          <span className="credits-note">Apache License 2.0</span>
         </dd>
       </dl>
       <p className="credits-thanks">Thank you for keeping the Ember alive.</p>
       <p className="credits-version mono">Version {__APP_VERSION__}</p>
+      <LegalLinks />
     </div>
   );
 }
