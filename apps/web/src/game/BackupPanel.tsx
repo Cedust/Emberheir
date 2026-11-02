@@ -1,3 +1,6 @@
+import cacheClosedUrl from "../assets/benches/eldrins-cache-closed.webp";
+import cacheOpenUrl from "../assets/benches/eldrins-cache-open.webp";
+import { ActionIcon } from "../ui/actionIcons";
 import { useRef, useState } from "react";
 import { Button, HoldButton } from "../ui/kit/Button";
 import { type Backup, BackupError, exportBackup, importBackup, readBackup } from "./saves";
@@ -46,10 +49,13 @@ export function BackupPanel() {
   return (
     <div className="backup-panel">
       <div className="backup-row">
-        <Button icon="box" onClick={download}>
+        <Button art={<ActionIcon src={cacheClosedUrl} size={34} />} onClick={download}>
           Export
         </Button>
-        <Button icon="inventory" onClick={() => file.current?.click()}>
+        <Button
+          art={<ActionIcon src={cacheOpenUrl} size={34} />}
+          onClick={() => file.current?.click()}
+        >
           Import
         </Button>
       </div>
@@ -68,7 +74,7 @@ export function BackupPanel() {
           </span>
           <Button onClick={() => setPending(null)}>Keep</Button>
           <HoldButton
-            icon="inventory"
+            art={<ActionIcon src={cacheOpenUrl} size={34} />}
             onConfirm={() => {
               importBackup(pending);
               window.location.reload();

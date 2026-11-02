@@ -10,7 +10,8 @@ import { useStageSize } from "../ui/Stage";
 import { CampLight } from "./camp/art/CampLight";
 import { CampBackdrop, CampFx, SCENE_W, campLights } from "./camp/art/CampScene";
 import { PaintDefs } from "./camp/art/paint";
-import { actionIcon } from "../ui/actionIcons";
+import feathersUrl from "../assets/currency/feathers.webp";
+import { ActionIcon, actionIcon } from "../ui/actionIcons";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
@@ -111,21 +112,33 @@ export function TitleScreen(props: {
                 </small>
               </Button>
             )}
-            <Button big icon="user" onClick={() => setPage("characters")}>
+            <Button
+              big
+              art={<ActionIcon id="lineage" size={32} />}
+              onClick={() => setPage("characters")}
+            >
               Characters
             </Button>
             <Button
               big
               variant={lastSave ? "secondary" : "primary"}
-              icon="fire"
+              art={<ActionIcon src={feathersUrl} size={32} />}
               onClick={() => (free >= 0 ? createIn(free) : setPage("characters"))}
             >
               New Game
             </Button>
-            <Button big icon="gear" onClick={() => setPage("settings")}>
+            <Button
+              big
+              art={<ActionIcon id="settings" size={32} />}
+              onClick={() => setPage("settings")}
+            >
               Settings
             </Button>
-            <Button big icon="star" onClick={() => setPage("credits")}>
+            <Button
+              big
+              art={<ActionIcon id="credits" size={32} />}
+              onClick={() => setPage("credits")}
+            >
               Credits
             </Button>
             {DEV && (
@@ -195,7 +208,7 @@ export function TitleScreen(props: {
                     className="slot-card panel-card empty"
                     onClick={() => createIn(i)}
                   >
-                    <Icon name="user" size={36} color="var(--text-sub)" />
+                    <ActionIcon src={feathersUrl} size={40} />
                     <span className="title-font">New Heir</span>
                   </button>
                 ),

@@ -98,6 +98,8 @@ export function HoldButton(props: {
   blocked?: string | null;
   tip?: NoteHover;
   icon?: IconName;
+  /** A painted icon instead of the line icon. */
+  art?: ReactNode;
   /** The screen's main action (Confirm) instead of a destructive one (Salvage, Discard). */
   primary?: boolean;
 }) {
@@ -167,7 +169,11 @@ export function HoldButton(props: {
       }}
     >
       <span className="k-hold-fill" style={{ transform: `scaleX(${progress})` }} />
-      {props.icon && <Icon name={props.icon} size={17} />}
+      {props.art ? (
+        <span className="k-btn-art">{props.art}</span>
+      ) : (
+        props.icon && <Icon name={props.icon} size={17} />
+      )}
       <span>{props.children}</span>
     </button>
   );
