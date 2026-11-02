@@ -1,0 +1,20 @@
+# Cloudflare Pages: headers of the site (docs/cloud-setup.md). GitHub Pages ignores this file.
+# The CSP allows the game's own files and only what Firebase Auth and Firestore need for the
+# cloud saves. `same-origin-allow-popups` keeps the sign-in window able to answer.
+
+/*
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://apis.google.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; media-src 'self' blob: data:; worker-src 'self' blob:; connect-src 'self' data: blob: https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firestore.googleapis.com https://apis.google.com; frame-src https://*.firebaseapp.com https://*.web.app; object-src 'none'; base-uri 'self'; form-action 'self'; frame-ancestors 'none'
+  Cross-Origin-Opener-Policy: same-origin-allow-popups
+  Referrer-Policy: strict-origin-when-cross-origin
+  X-Content-Type-Options: nosniff
+  Permissions-Policy: camera=(), microphone=(), geolocation=()
+
+# Vite's bundles carry a hash in their names and may stay in the cache for good.
+/assets/*
+  Cache-Control: public, max-age=31536000, immutable
+
+# The page itself is checked on every visit: a new build reaches the players at once.
+/
+  Cache-Control: no-cache
+/index.html
+  Cache-Control: no-cache
