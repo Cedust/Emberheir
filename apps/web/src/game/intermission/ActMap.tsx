@@ -10,6 +10,7 @@ import {
   countsForBounty,
   currentNode,
   eventBlockReason,
+  isQuiet,
   eventPrice,
   gateStages,
   getAct,
@@ -33,11 +34,12 @@ import { useNoteHover } from "../../ui/ItemTooltip";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../../ui/kit/Window";
 import { actionIcon } from "../../ui/actionIcons";
 import { Icon, type IconName } from "../../ui/Icon";
-import { Price } from "../../ui/kit/Currency";
+import { CurrencyIcon, Price } from "../../ui/kit/Currency";
+import { ChoiceIcon } from "../../ui/ChoiceIcon";
 import { emptySlotArt } from "../../ui/items";
 import type { GameApi } from "../useGame";
 import { homeRuneOf } from "../actLoot";
-import { runeName } from "../../ui/RuneArt";
+import { RuneStone, runeName } from "../../ui/RuneArt";
 import { EnemyPortrait } from "../../ui/EnemyPortrait";
 import { TRAIL_NAMES, huntView } from "../hunts";
 import { TrailMark } from "../../ui/TrailMark";
@@ -120,7 +122,9 @@ function FoeLine(props: { state: GameState; enemyId: string }) {
   );
 }
 
-const foeOf = (node: MapNode) => (node.kind === "hunt" ? node.quarry : node.enemy);
+// A quiet node has no foe, even if the map rolled one for it.
+const foeOf = (node: MapNode) =>
+  isQuiet(node.kind) ? undefined : node.kind === "hunt" ? node.quarry : node.enemy;
 
 /** Map geometry in stage pixels. */
 const LANE_X = [36, 120, 204];
@@ -539,7 +543,7 @@ function MapNodeButton(props: {
   const art = label.marker ? null : (
     <>
       <img src={nodeArt(props.node.kind)} alt="" className="map-node-art" draggable={false} />
-      {props.node.quarry && (
+      {props.node.kind === "hunt" && props.node.quarry && (
         <span className="map-node-quarry">
           <EnemyPortrait enemyId={props.node.quarry} size={NODE * 0.62} />
         </span>
@@ -644,7 +648,7 @@ export function NodeCards(props: { state: GameState; run: RunState; game: GameAp
           >
             <span className="path-sigil painted">
               <img src={nodeArt(node.kind)} alt="" />
-              {node.quarry && (
+              {node.kind === "hunt" && node.quarry && (
                 <span className="map-node-quarry">
                   <EnemyPortrait enemyId={node.quarry} size={46} />
                 </span>
@@ -721,7 +725,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
     <ChoiceCard
       key="walk"
       kind="walk"
-      icon="next"
+      icon={<ChoiceIcon id="walk" />}
       name="Walk On"
       text="Leave it and go on."
       onClick={() => choose(-1)}
@@ -733,7 +737,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
       <ChoiceCard
         key="rest"
         kind="rest"
-        icon="fire"
+        icon={<ChoiceIcon id="heal" />}
         name="Rest"
         text={`Heal ${Math.round(hearthHeal(state, GAME_DATA) * 100)} % Life.`}
         blocked={run.lifeFraction >= 1 ? "Life is full" : undefined}
@@ -742,7 +746,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
       <ChoiceCard
         key="flask"
         kind="flask"
-        icon="flask"
+        icon={<CurrencyIcon id="flask" size={48} />}
         name="Kindle the Flask"
         text="Gain 1 Ember Flask charge."
         blocked={reason(nodeBlockReason(state, GAME_DATA, 1))}
@@ -755,7 +759,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
       <ChoiceCard
         key="item"
         kind="item"
-        icon="armor"
+        icon={<ChoiceIcon id="item" />}
         name="Item"
         text="Choose 1 of 3 items."
         onClick={() => choose(0)}
@@ -763,7 +767,9 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
       <ChoiceCard
         key="rune"
         kind="rune"
-        icon="rune"
+        icon={
+          rune ? <RuneStone runeId={rune.id} size={48} /> : <CurrencyIcon id="runes" size={48} />
+        }
         name={rune ? `${rune.name} Rune` : "Runes"}
         text={
           rune && rune.id === homeRuneOf(run.actId)
@@ -776,7 +782,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
       <ChoiceCard
         key="coal"
         kind="coal"
-        icon="stone"
+        icon={<CurrencyIcon id="coal" size={48} />}
         name="Ember Coal"
         text=""
         onClick={() => choose(2)}
@@ -812,7 +818,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
         <ChoiceCard
           key={slot}
           kind="gamble"
-          icon="coins"
+          icon={null}
           name={SLOT_NAMES[slot]}
           text={sold ? "Bought: it waits in your inventory." : "A random item for this slot."}
           art={art}
@@ -834,22 +840,24 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
 
 const reason = (r: VisitBlockReason | undefined) => (r ? BLOCK_TEXT[r] : undefined);
 
-function eventIcon(gain: EventGain | undefined): IconName {
-  if (!gain) return "eye";
-  if (gain.boons) return "flame";
-  if (gain.items) return "box";
-  if (gain.rune !== undefined) return "rune";
-  if (gain.flask) return "flask";
-  if (gain.challenge) return "boss";
-  if (gain.xpFights || gain.lucky) return "star";
-  if (gain.emberCoal) return "stone";
-  if (gain.life) return "fire";
-  return "eye";
+function eventIcon(gain: EventGain | undefined): ReactNode {
+  if (!gain) return <Icon name="eye" size={34} />;
+  if (gain.boons) return <ChoiceIcon id="boon" />;
+  if (gain.items) return <ChoiceIcon id="item" />;
+  if (gain.rune !== undefined) return <CurrencyIcon id="runes" size={48} />;
+  if (gain.flask) return <CurrencyIcon id="flask" size={48} />;
+  if (gain.challenge) return <ChoiceIcon id="challenge" />;
+  if (gain.xpFights) return <ChoiceIcon id="train" />;
+  if (gain.lucky) return <ChoiceIcon id="lucky" />;
+  if (gain.emberCoal) return <CurrencyIcon id="coal" size={48} />;
+  if (gain.life) return <ChoiceIcon id="heal" />;
+  return <Icon name="eye" size={34} />;
 }
 
 function ChoiceCard(props: {
   kind: string;
-  icon: IconName;
+  /** A painted icon in the round sigil; a card with `art` shows that instead. */
+  icon: ReactNode;
   name: string;
   text: string;
   art?: string | undefined;
@@ -870,11 +878,7 @@ function ChoiceCard(props: {
       {...hover}
     >
       <span className="path-sigil">
-        {props.art ? (
-          <img src={props.art} alt="" className="choice-art" />
-        ) : (
-          <Icon name={props.icon} size={34} />
-        )}
+        {props.art ? <img src={props.art} alt="" className="choice-art" /> : props.icon}
       </span>
       <strong className="title-font">{props.name}</strong>
       {props.text && <span className="sub">{props.text}</span>}

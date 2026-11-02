@@ -32,6 +32,8 @@ import {
   B,
   C,
   Facts,
+  Hint,
+  LockedRow,
   Nan,
   R,
   S,
@@ -70,6 +72,8 @@ const harvested = (s: GameState) => s.legacy.prestige >= 1;
 const runAtLeast = (n: number) => (s: GameState) => s.legacy.prestige + 1 >= n;
 const kaelenHere = (s: GameState) => hasMet(s, "kaelen");
 const nyssaHere = (s: GameState) => hasMet(s, "nyssa");
+const lioraHere = (s: GameState) => hasMet(s, "liora");
+const marishaHere = (s: GameState) => hasMet(s, "marisha");
 const finaleKnown = (s: GameState) => finaleOpen(s, GAME_DATA) || s.legacy.finaleWon === true;
 const finaleWon = (s: GameState) => s.legacy.finaleWon === true;
 const runesKnown = (s: GameState) => nyssaHere(s) || s.legacy.runesFound.length > 0;
@@ -85,21 +89,33 @@ const painting = (src: string | undefined) =>
   src ? <img className="cp-painting" src={src} alt="" draggable={false} /> : null;
 
 const ATTRIBUTE_TEXT: Record<Attribute, string> = {
-  strength: "More Armor. The Cinderguard's main attribute: more damage too.",
-  dexterity: "More Evasion. The Ashstrider's main attribute: more damage too.",
-  intelligence: "More Barrier. The Emberseer's main attribute: more damage too.",
-  agility: "Faster attacks and more Crits.",
-  wisdom: "More Heat, stronger ailments and triggers that go off more often.",
-  vitality: "More Life, and ailments on you wear off sooner.",
+  strength: "Thicker skin, so more Armor. A Cinderguard also hits harder with it.",
+  dexterity: "Lighter feet, so more Evasion. An Ashstrider also hits harder with it.",
+  intelligence: "A sharper mind, so more Barrier. An Emberseer also hits harder with it.",
+  agility: "Quicker hands: faster Attacks and more Crits.",
+  wisdom: "More Heat, stronger Ailments, and Triggers that go off more often.",
+  vitality: "A tougher body: more Life, and Ailments on you wear off sooner.",
 };
 
 const ENEMY_TEXT: Record<Exclude<EnemyTypeIcon, "harvester" | "echo">, string> = {
   brute: "Lots of Life and Armor, slow heavy blows. Armor-breaking hits wear it down.",
   skirmisher: "Quick and hard to hit. Many hits and Chill keep up with it.",
   caster: "Spells and little Life. Resistances help, and so does ending it fast.",
-  afflicter: "Covers you in ailments. Tenacity and Lifesteal outlast it.",
+  afflicter: "Covers you in Ailments. Tenacity and Lifesteal outlast it.",
   warden: "Barrier and Block, and it heals itself. Burn spoils the healing.",
   thornback: "Thorns hurt you on every hit. Fewer, bigger hits are better here.",
+};
+
+/** What each currency is, a little playful; the wallet tooltips say what it buys. */
+const CURRENCY_TEXT: Partial<Record<CurrencyId, string>> = {
+  acorns:
+    "The caravan's coin. Everyone in the Camp takes them, for almost anything, and you never seem to have enough.",
+  ash: "What is left when an item burns. Crafters swear it still remembers what it used to be.",
+  coal: "A coal that never quite goes out. Hot enough to melt an item's Affixes and pour them anew.",
+  feathers: "Rare and still warm to the touch. One feather lifts an item a whole Tier higher.",
+  runes:
+    "Small stones with an old word on each. Alone they help a little. In the right order, they speak a Runeword.",
+  glass: "Ash so hot it turned to glass. It wakes the strongest Affixes an item can have.",
 };
 
 const CURRENCY_ORDER: readonly CurrencyId[] = ["acorns", "ash", "coal", "feathers", "runes"];
@@ -120,16 +136,18 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         id: "runs-acts",
         title: "Runs and Acts",
         art: painting(node("fight")),
-        body: () => (
+        body: (s) => (
           <>
             <p>
               A run is one trip from the Camp through every act that is open. Your first run is only
-              the Ashen Fields. Each Harvest opens one more act, so every new run is a little longer
-              than the one before.
+              the Ashen Fields.{" "}
+              {harvested(s)
+                ? "Each Harvest opens one more act, so every new run is a little longer than the one before."
+                : "Beat the boss at the end, and the road will not stay this short for long."}
             </p>
             <p>
-              Every act ends with its boss. On the way you pass <B>Waymarks</B>. The first time you
-              reach one in a run, it gives you a Skill Point. Win a Waymark before the boss and the
+              Every act ends with its Boss. On the way you pass <B>Waymarks</B>. The first time you
+              reach one in a run, it gives you a Skill Point. Win a Waymark before the Boss and the
               Hearth Embers heal you a little, every time.
             </p>
             <Nan>Walk the old acts again whenever you like. The road remembers you.</Nan>
@@ -200,7 +218,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              In the newest act, the Gatekeepers and the boss stand behind a gate. The gate shows
+              In the newest act, the Gatekeepers and the Boss stand behind a gate. The gate shows
               their level, red while you are below it.
             </p>
             <p>
@@ -223,7 +241,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             </p>
             <p>
               The Boons of the act you were in burn. Each death in an act makes its loot a little
-              better, until its boss falls.
+              better, until its Boss falls.
             </p>
             <Nan>Dying costs you the road, not your things. Keep walking.</Nan>
           </>
@@ -232,11 +250,12 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
       {
         id: "harvest",
         title: "The Harvest",
+        when: harvested,
         art: painting(levelCapUrl),
         body: () => (
           <>
             <p>
-              When the boss of the newest act falls, the Harvester burns the world. You keep
+              When the Boss of the newest act falls, the Harvester burns the world. You keep
               everything you carry and start again from the first act, with more to work with:
             </p>
             <Facts
@@ -278,8 +297,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               Before you set out into an older act, Eldrin offers two Omens. Each one makes the act
-              harder in one way and pays you back in another: tougher enemies for more Ember Coal,
-              say, or a weaker Flask for stronger Hearths.
+              harder in one way and pays you back in another, for example tougher enemies for more
+              Ember Coal, or a weaker Flask for stronger Hearths.
             </p>
             <p>The newest act never has an Omen. The one you chose is shown under Up Next.</p>
           </>
@@ -303,10 +322,10 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             </p>
             <p>
               Both sides swing their weapon over and over (the <B>Default Attack</B>). Once there is
-              enough <S id="heat" />, the next skill in the Battle Plan goes off instead.
+              enough <S id="heat" />, the next Skill in the Battle Plan goes off instead.
             </p>
             <p>
-              Watch for <B>Charging</B> over an enemy: a heavy attack is coming. It hurts, but it
+              Watch for <B>Charging</B> over an enemy: a heavy Attack is coming. It hurts, but it
               never takes more than about a third of your Life at once.
             </p>
           </>
@@ -357,16 +376,19 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         id: "plan",
         title: "Battle Plan",
         art: painting(battlePlanUrl),
-        body: () => (
+        body: (s) => (
           <>
             <p>
-              The Battle Plan is your skill bar. <B>Rotation</B> slots fire one after another, as
+              The Battle Plan is your Skill bar. <B>Rotation</B> slots fire one after another, as
               soon as there is enough Heat. <B>Reaction</B> slots wait for a moment you choose: the
               fight starts, your Life drops, the enemy is charging.
             </p>
             <p>
-              You start with one slot that holds your weapon's Innate skill. Every Harvest adds
-              something: more slots, conditions, modifiers. Press <B>B</B> to look at it.
+              You start with one slot that holds your weapon&apos;s Innate Skill.{" "}
+              {harvested(s)
+                ? "Every Harvest adds something: more slots, Conditions and Modifiers."
+                : "It grows with you: more slots and more ways to use them come later."}{" "}
+              Press <B>B</B> to look at it.
             </p>
           </>
         ),
@@ -378,15 +400,15 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Not every swing lands clean. A sloppy one is a <B>Glancing Blow</B>: half damage, and
-              it sets off no triggers. Spells never glance.
+              Not every swing lands clean. A sloppy one is a <B>Glancing Blow</B>: half Damage, and
+              it sets off no Triggers. Spells never glance.
             </p>
             <p>
-              Each weapon rolls its damage in a range. A clean hit at the top of it is a{" "}
+              Each weapon rolls its Damage in a range. A clean hit at the top of it is a{" "}
               <B>Mighty Hit</B>, and some nodes care about those.
             </p>
             <p>
-              A Crit deals 150 % damage, always. Only the chance grows: <S id="crit" />.
+              A Crit deals 150 % Damage, always. Only the chance grows: <S id="crit" />.
             </p>
           </>
         ),
@@ -396,7 +418,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         title: "Damage and Ailments",
         body: () => (
           <>
-            <p>Every hit has a damage type, and every type has its ailment:</p>
+            <p>Every hit has a Damage type, and every type has its Ailment:</p>
             <Facts
               rows={[
                 {
@@ -422,7 +444,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                   name: "Cold",
                   text: (
                     <>
-                      <S id="chill" /> slows attacks and Heat.
+                      <S id="chill" /> slows Attacks and Heat.
                     </>
                   ),
                 },
@@ -448,7 +470,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             />
             <p>
               Maces can <S id="stun" /> instead: the enemy freezes in place for a moment.{" "}
-              <S id="ailment-effect" /> makes all your ailments stronger, not longer.
+              <S id="ailment-effect" /> makes all your Ailments stronger, not longer.
             </p>
           </>
         ),
@@ -463,7 +485,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: statIcon("life"),
                   name: "Life",
-                  text: "Hits it zero and you fall. It does not come back by itself.",
+                  text: "When it hits zero, you fall. It does not come back by itself.",
                 },
                 {
                   icon: statIcon("armor"),
@@ -473,12 +495,12 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: statIcon("evasion"),
                   name: "Evasion",
-                  text: "Dodges attacks. Spells can't be dodged, but you halve them with the same chance.",
+                  text: "Dodges Attacks. Spells can't be dodged, but you halve them with the same chance.",
                 },
                 {
                   icon: statIcon("barrier"),
                   name: "Barrier",
-                  text: "Takes damage before your Life and fills up again after a moment without hits.",
+                  text: "Takes Damage before your Life and fills up again after a moment without hits.",
                 },
                 {
                   icon: statIcon("block"),
@@ -488,7 +510,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: statIcon("elemental"),
                   name: "Resistances",
-                  text: "Cut Fire, Cold, Lightning and Void damage. They only come from gear.",
+                  text: "Cut Fire, Cold, Lightning and Void Damage. They only come from gear.",
                 },
                 {
                   icon: statIcon("tenacity"),
@@ -516,7 +538,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               <S id="flask" />: each charge heals about a third of your Life. It holds 3 charges, a
               good Belt adds more, and the Camp fills it up again.
             </p>
-            <p>Hearths on the map and Waymarks before the boss heal you too.</p>
+            <p>Hearths on the map and Waymarks before the Boss heal you too.</p>
           </>
         ),
       },
@@ -610,7 +632,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                   name: "Ashstrider",
                   text: (
                     <>
-                      Bow, Crossbow or Dagger. Clean hits leave <B>Hunter's Marks</B> that a skill
+                      Bow, Crossbow or Dagger. Clean hits leave <B>Hunter's Marks</B> that a Skill
                       Crit cashes in.
                     </>
                   ),
@@ -620,7 +642,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                   name: "Emberseer",
                   text: (
                     <>
-                      Wand or Staff. Every skill builds <B>Overcharge</B> until it breaks loose as a
+                      Wand or Staff. Every Skill builds <B>Overcharge</B> until it breaks loose as a
                       Nova.
                     </>
                   ),
@@ -629,7 +651,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             />
             <p>
               Each class has a main attribute: <A id="strength" />, <A id="dexterity" /> or{" "}
-              <A id="intelligence" />. Only that one adds to your damage.
+              <A id="intelligence" />. Only that one adds to your Damage.
             </p>
           </>
         ),
@@ -641,7 +663,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Every level gives you more Life and more weapon damage. That's all it does, and it's
+              Every level gives you more Life and more weapon Damage. That's all it does, and it's
               the safest way past a wall that won't fall.
             </p>
             <p>
@@ -688,7 +710,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               it gains XP like you do, and every <B>Weapon Rank</B> gives a point for its tree.
             </p>
             <p>
-              The tree has three paths. The first point you spend picks one, and with it your damage
+              The tree has three paths. The first point you spend picks one, and with it your Damage
               type and ailment. Later ranks bring a new Heat Form, new forms of your Innate skill
               and a Keystone that changes how the weapon fights. Bosses leave <B>Echoes</B> in it
               that grow every run.
@@ -710,8 +732,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              At your first Harvest you choose a Mastery: big hits, many fast hits, or ailments. It
-              gives you a title, a skill and a Keystone.
+              At your first Harvest you choose a Mastery: big hits, many fast hits, or Ailments. It
+              gives you a title, a Skill and a Keystone.
             </p>
             <p>
               Every Harvest after that, you either go deeper into it or take the first step of
@@ -727,12 +749,12 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Kaelen trains you in the Ash Tree (<B>T</B>). The crown holds one region per damage
-              type, with its skills. The trunk holds defense, the roots hold Heat.
+              Kaelen trains you in the Ash Tree (<B>T</B>). The crown holds one region per Damage
+              type, with its Skills. The trunk holds Defense, the roots hold Heat.
             </p>
             <p>
               Skill Points come from Waymarks and Harvests, not from levels. Each region also has a
-              socket for a Rune. Resetting costs Acorns.
+              Socket for a Rune. Resetting costs Acorns.
             </p>
             <Nan>Every branch is open to you. Only climb the ones that carry your weight.</Nan>
           </>
@@ -749,7 +771,6 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               Keystones change the rules of a fight. Each one costs 3 Skill Points and a Keystone
               place. You start with one place; Harvests 2, 4 and 6 add another.
             </p>
-            <p>The tree's legend shows how many places are taken.</p>
           </>
         ),
       },
@@ -766,7 +787,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Elites, Gatekeepers and bosses always let you pick 1 of 3 items. Normal fights do
+              Elites, Gatekeepers and Bosses always let you pick 1 of 3 items. Normal fights do
               every third time. <B>Equip</B> wears it, <B>Take</B> puts it in your bag, and the rest
               turns into <C id="ash" />.
             </p>
@@ -774,6 +795,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               An item is as strong as the enemy that dropped it. You can wear it once your level is
               no more than 5 below its Item Level.
             </p>
+            <Nan>Take what fits you, not what shines.</Nan>
           </>
         ),
       },
@@ -784,26 +806,42 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <ul className="cp-rarities">
               <li className="rarity-normal">
-                <b className="rarity-text">Normal</b> Plain, but it can carry Sockets for Runes.
+                <b className="rarity-text">Normal</b> No Affixes, nothing fancy. But only Normal
+                items can hold Sockets, and many of them come with some. A plain shirt with the
+                right Runes beats plenty of Rares.
               </li>
               <li className="rarity-magic">
-                <b className="rarity-text">Magic</b> Two affixes.
+                <b className="rarity-text">Magic</b> One or two Affixes, but each was rolled twice
+                and kept the better roll. Fewer Affixes, bigger numbers. Now and then a Trigger
+                slips in.
               </li>
               <li className="rarity-rare">
-                <b className="rarity-text">Rare</b> Four or five affixes.
+                <b className="rarity-text">Rare</b> Four or five Affixes and a name of its own. The
+                bread and butter of every Heir, and now and then one carries a Trigger.
               </li>
-              {runAtLeast(3)(s) && (
+              {runAtLeast(3)(s) ? (
                 <li className="rarity-epic">
-                  <b className="rarity-text">Epic</b> Even more, and always a trigger.
+                  <b className="rarity-text">Epic</b> Five or six Affixes and always a Trigger,
+                  sometimes two.
                 </li>
+              ) : (
+                <LockedRow />
               )}
-              {runAtLeast(4)(s) && (
+              {runAtLeast(4)(s) ? (
                 <li className="rarity-legendary">
-                  <b className="rarity-text">Legendary</b> A Legendary Power that bends a rule.
+                  <b className="rarity-text">Legendary</b> Fewer Affixes than an Epic, but a
+                  Legendary Power that bends a rule of the fight. They never drop from common
+                  enemies: Bosses guard them, and gamblers sometimes get lucky.
                 </li>
+              ) : (
+                <LockedRow />
               )}
             </ul>
-            <p>Better rarities open up from run to run. The frame of an item shows its rarity.</p>
+            <p>
+              Charms play by their own rules: they carry only Triggers, more the rarer they are. The
+              frame of an item shows its Rarity.
+            </p>
+            <Nan>A golden frame is pretty. Read the Affixes anyway.</Nan>
           </>
         ),
       },
@@ -813,14 +851,20 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         art: painting(GAME_ICONS.trigger),
         body: () => (
           <>
-            <p>Affixes are the lines on an item. Most give numbers: damage, Life, Crit, Speed.</p>
             <p>
-              <B>Trigger Affixes</B> do something when something happens: "When you Crit, 20 %
-              chance to cast a Fireball." <S id="trigger" /> makes them go off more often. The Charm
-              slot holds only triggers.
+              Every item above Normal carries Affixes, listed under its name. Most of them add
+              something you can count, like Damage, Life, Crit or Speed. Two Swords of the same kind
+              can be worlds apart because of them.
             </p>
             <p>
-              Salvage an item with a trigger at Thoric and the <B>Trigger Codex</B> learns it.
+              Some Affixes do more than add. <B>Trigger Affixes</B> wait for their moment and then
+              act on their own: &quot;When you Crit, 20 % chance to cast a Fireball.&quot;{" "}
+              <S id="trigger" /> makes them go off more often. The Charm slot holds nothing but
+              Triggers.
+            </p>
+            <p>
+              Break an item with a Trigger apart and the <B>Trigger Codex</B> remembers it, so you
+              can build it onto another item later.
             </p>
           </>
         ),
@@ -832,8 +876,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Uniques always roll the same lines and often carry a Power no other item has. Some
-              drop only from one boss, and some turn up more often in their home act.
+              Uniques always roll the same Affixes and often carry a Power no other item has. Some
+              drop only from one Boss, and some turn up more often in their home act.
             </p>
             <p>Every Unique you find hangs on the Trophy Wall at the Hearthfire.</p>
           </>
@@ -859,8 +903,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               parts. Three Runes of a kind combine into the next one.
             </p>
             <p>
-              Every act has its <B>Home Rune</B>, which drops more often there. The Ashen Fields
-              give <R id="ash" />.
+              Every act has a Rune that turns up there more often. In the Ashen Fields it is{" "}
+              <R id="ash" />.
             </p>
           </>
         ),
@@ -873,7 +917,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             rows={[...CURRENCY_ORDER, ...(finaleWon(s) ? (["glass"] as const) : [])].map((id) => ({
               icon: currencyIcon(id),
               name: CURRENCIES[id].name,
-              text: CURRENCIES[id].explain,
+              text: CURRENCY_TEXT[id] ?? CURRENCIES[id].explain,
             }))}
           />
         ),
@@ -897,7 +941,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 text: ENEMY_TEXT[t],
               }))}
             />
-            <p>Enemies play by your rules: they have Heat, skills and ailments too.</p>
+            <p>Enemies play by your rules: they have Heat, Skills and Ailments too.</p>
           </>
         ),
       },
@@ -908,12 +952,13 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: (s) => (
           <>
             <p>
-              Elites carry one to three modifiers, shown under their name. They hit harder, drop
-              better loot and some <C id="coal" />, and a Shrine waits after a random one.
+              Elites carry one to three Modifiers, shown under their name. They hit harder and drop
+              better loot and some <C id="coal" />. An Elite that ambushes you on a normal fight
+              leaves a Shrine behind, as long as the act is new to you.
             </p>
             {runAtLeast(3)(s) && (
               <p>
-                Sometimes an Elite is a <B>Champion</B>: three modifiers, more Life, and a hoard of
+                Sometimes an Elite is a <B>Champion</B>: three Modifiers, more Life, and a Hoard of
                 its own.
               </p>
             )}
@@ -927,12 +972,12 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Gatekeepers guard the middle of an act. They are walls: a big step up from the fights
-              around them.
+              Gatekeepers guard the middle of an act. They are walls, much tougher than the fights
+              around them. If one won&apos;t fall, come back a few levels taller.
             </p>
             <p>
-              Every act ends with its boss. Bosses always drop a <C id="feathers" />, leave a Hoard
-              and shake off stuns twice as fast. Each Harvest teaches every boss something new.
+              Every act ends with its Boss. Bosses always drop a <C id="feathers" />, leave a Hoard
+              and shake off Stuns twice as fast. Each Harvest teaches every Boss something new.
             </p>
             <Nan>A wall is only a wall until you are a level taller.</Nan>
           </>
@@ -947,8 +992,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               From the second act on, the Ember Thief sometimes crosses your path. It doesn't fight
-              back, it runs. Kill it before it gets away and its sack holds 4 items: take 2, one of
-              them at least Rare.
+              back, it runs. Catch it before it gets away and open its sack: 4 items, and you keep
+              2. One of them is always Rare or better.
             </p>
           </>
         ),
@@ -991,13 +1036,14 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Ember Shrines offer 1 of 3 Boons: sparks stolen from the bosses' fires. Take the same
+              Ember Shrines offer 1 of 3 Boons: sparks stolen from the Bosses' fires. Take the same
               Boon again and it ranks up, up to III.
             </p>
             <p>
-              Strike, Skill, Reaction and Heat Boons hold one each; a new one replaces the old. The
-              rest stack. Every boss you meet adds its family of Boons: one for each of these slots
-              and one that stacks. Shrines favor the families that fit your damage and ailments.
+              Some Boons are picky: you carry only one Strike Boon, one Skill Boon, one Reaction
+              Boon and one Heat Boon at a time. A new one pushes the old one out. All other Boons
+              pile up. Every Boss you meet adds its family of Boons: one for each of those slots and
+              one that piles up. Shrines favor the families that fit your weapon and skills.
             </p>
             <p>
               Boons from the act you are in burn when you fall. All of them burn at the Harvest.
@@ -1011,8 +1057,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              A fallen boss leaves a Hoard of 6 items, and you take 2. Some bosses guard their own
-              Uniques, the trophies, which can turn up in their Hoard.
+              A fallen Boss leaves a Hoard of 6 items, and you take 2. Some Bosses keep a Unique of
+              their own, a trophy. Now and then it lies in the Hoard.
             </p>
           </>
         ),
@@ -1025,13 +1071,14 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               Eldrin offers two Bounties for each trip, take one if you like: hunt Elites, follow an
-              enemy&apos;s Trail, catch the Ember Thief, or beat the boss without the Flask. The act
+              enemy&apos;s Trail, catch the Ember Thief, or beat the Boss without the Flask. The act
               map marks what counts.
             </p>
             <p>
-              Done? Turn it in with him back in the Camp. His Cache holds the act&apos;s Home Rune,
-              an item to pick, and what the Bounty promised: <C id="coal" />, Trail kills, more
-              items or rarer ones. He has new Bounties only after that. Failed, nothing is lost.
+              Done? Turn it in with him back in the Camp. His Cache holds the Rune found often in
+              that act, an item to pick, and what the Bounty promised: <C id="coal" />, Trail kills,
+              more items or rarer ones. He has new Bounties only after that. Failed, nothing is
+              lost.
             </p>
           </>
         ),
@@ -1056,7 +1103,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             </p>
             <p>
               His <B>Training Dummy</B> stands on the other side of the fire. Hit it to see where
-              your damage comes from, and try on items before you wear them.
+              your Damage comes from, and try on items before you wear them.
             </p>
           </>
         ),
@@ -1066,41 +1113,44 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         title: "Thoric, the Blacksmith",
         art: portrait("thoric"),
         body: () => (
-          <Facts
-            rows={[
-              {
-                icon: currencyIcon("feathers"),
-                name: "Upgrade",
-                text: "Raises an item by one Tier. Its lines grow with it, and so does its level.",
-              },
-              {
-                icon: currencyIcon("coal"),
-                name: "Reforge",
-                text: "Rolls all stat affixes anew. Triggers stay.",
-              },
-              {
-                icon: currencyIcon("ash"),
-                name: "Salvage",
-                text: "Breaks an item into Ash. Hold the button.",
-              },
-            ]}
-          />
+          <>
+            <p>Thoric doesn&apos;t talk much. He hammers, and your gear gets better.</p>
+            <Facts
+              rows={[
+                {
+                  icon: currencyIcon("feathers"),
+                  name: "Upgrade",
+                  text: "Raises an item by one Tier. Its Affixes grow with it, and so does its level.",
+                },
+                {
+                  icon: currencyIcon("coal"),
+                  name: "Reforge",
+                  text: "Rolls all stat Affixes anew. Triggers stay.",
+                },
+                {
+                  icon: currencyIcon("ash"),
+                  name: "Salvage",
+                  text: "Breaks an item into Ash. Hold the button.",
+                },
+              ]}
+            />
+          </>
         ),
       },
       {
         id: "liora",
         title: "Liora, the Mystic",
-        when: kaelenHere,
+        when: lioraHere,
         art: portrait("liora"),
         body: () => (
           <>
             <p>
-              <B>Temper</B> offers two choices for one affix: a new affix or a new value. Pick one
-              or keep the old line. After that, only that affix can change until Thoric reforges the
-              item.
+              <B>Temper</B> offers two choices for one Affix: a new Affix or a new value. Pick one
+              or keep the old Affix. After that, only that Affix can change until Thoric reforges
+              the item.
             </p>
             <p>
-              <B>Kindle</B> builds a trigger from the Trigger Codex onto an item, for <C id="ash" />{" "}
+              <B>Kindle</B> builds a Trigger from the Trigger Codex onto an item, for <C id="ash" />{" "}
               and <C id="coal" />. There is no undo.
             </p>
           </>
@@ -1124,6 +1174,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
       {
         id: "marisha",
         title: "Marisha, the Black Market",
+        when: marishaHere,
         art: portrait("marisha"),
         body: () => (
           <>
@@ -1170,7 +1221,9 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               The Stash is shared by all your Heirs, so a good find helps the next one too.
               Currencies stay with each Heir.
             </p>
-            <p>Right-click or Ctrl+click moves an item across. Q and E flip through the tabs.</p>
+            <Hint>
+              Right-click or Ctrl+click moves an item across. Q and E flip through the tabs.
+            </Hint>
           </>
         ),
       },
@@ -1221,7 +1274,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             <p>
               Eldrin can set any act ablaze again, from Wildfire I up to X. The enemies are far
               above your level, and the loot is better: more Legendaries, more Runes, and{" "}
-              <C id="glass" /> from the boss.
+              <C id="glass" /> from the Boss.
             </p>
             <p>
               Before each trip you can add Wildfire Omens. Each one has a Peril; more Peril, more
@@ -1252,8 +1305,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         body: () => (
           <>
             <p>
-              Liora can wake one affix of an item into a <B>Greater Affix</B>, stronger than any
-              roll can be. <B>Awaken</B> makes one, <B>Shift</B> moves it to another line,{" "}
+              Liora can wake one Affix of an item into a <B>Greater Affix</B>, stronger than any
+              roll can be. <B>Awaken</B> makes one, <B>Shift</B> moves it to another Affix,{" "}
               <B>Intensify</B> raises it up to Greater V. All of it costs <C id="glass" />.
             </p>
           </>

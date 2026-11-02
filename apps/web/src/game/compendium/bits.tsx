@@ -1,5 +1,6 @@
 import type { Attribute } from "@emberheir/sim";
 import type { ReactNode } from "react";
+import { Icon } from "../../ui/Icon";
 import { useNoteHover } from "../../ui/ItemTooltip";
 import { CURRENCIES, type CurrencyId, CurrencyIcon } from "../../ui/kit/Currency";
 import {
@@ -111,4 +112,19 @@ export const enemyIcon = (id: EnemyTypeIcon) => big(ENEMY_TYPE_ICONS[id]);
 /** Old Nan's word at the end of a page. */
 export function Nan(props: { children: ReactNode }) {
   return <p className="cp-nan">“{props.children}”</p>;
+}
+
+/** A row of a list the game has not shown yet: a lock, no name (Timo: show that more exists). */
+export function LockedRow() {
+  return (
+    <li className="cp-locked-row" title="Not found yet.">
+      <Icon name="lock" size={14} />
+      Locked
+    </li>
+  );
+}
+
+/** A small grey note under a page: keys and clicks, apart from the text that explains. */
+export function Hint(props: { children: ReactNode }) {
+  return <p className="cp-hint">{props.children}</p>;
 }
