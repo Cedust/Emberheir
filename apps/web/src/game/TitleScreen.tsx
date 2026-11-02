@@ -20,7 +20,7 @@ import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
 import { BackupPanel } from "./BackupPanel";
 import { CloudChoice, CloudPlate, useCloudStart } from "./cloud/CloudUi";
-import { wherePlace, whereText } from "./heirLine";
+import { continueLine, whereText } from "./heirLine";
 import { loadDamagedSlots, loadLastSlot, loadSlots, saveSlot } from "./saves";
 import type { NewCharacter } from "./useGame";
 
@@ -158,10 +158,7 @@ function TitleMenu(props: TitleProps) {
                 onClick={() => props.onContinue(last)}
               >
                 Continue
-                <small>
-                  {heroTitle(lastSave, GAME_DATA)} · Level {lastSave.hero.level}
-                </small>
-                <small>{wherePlace(lastSave)}</small>
+                <small>{continueLine(lastSave)}</small>
               </Button>
             )}
             <Button

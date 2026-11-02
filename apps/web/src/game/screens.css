@@ -6252,19 +6252,16 @@
   padding: 0;
 }
 
-/* Continue carries two quiet lines about the last character; give them room to breathe. */
+/* Continue carries one quiet line about the last character, with a little air above it. */
 .stage .title-screen .menu-buttons .k-btn.continue-btn {
-  min-height: 92px;
-  padding: 14px 32px 16px;
+  min-height: 68px;
+  padding: 8px 32px 10px;
 }
 
 .stage .title-screen .menu-buttons .continue-btn small {
+  margin-top: 3px;
   line-height: 1.3;
   opacity: 0.9;
-}
-
-.stage .title-screen .menu-buttons .continue-btn small:first-of-type {
-  margin-top: 6px;
 }
 
 .stage .title-screen .link-button {
