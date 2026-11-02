@@ -1,5 +1,6 @@
 import { type PayoffKind, type PerkId } from "@emberheir/sim";
 import { type Burst } from "./fx";
+import { CRIT_ORANGE, MIGHTY_RED } from "./floaters";
 
 /** How each skill, Perk and ailment looks in the arena (the effect tables of `ArenaScene`). */
 
@@ -19,8 +20,8 @@ export const DAMAGE_COLORS: Record<string, number> = {
   heal: 0x4fe08a,
   barrier: 0xe8e2d6,
   miss: 0xd8d0c4,
-  crit: 0xff9a2e,
-  mighty: 0xe5532a,
+  crit: CRIT_ORANGE,
+  mighty: MIGHTY_RED,
   trigger: 0xf0b44c,
 };
 

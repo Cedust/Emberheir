@@ -1168,14 +1168,15 @@ export class ArenaScene {
     }
     if (this.showNumbers) {
       const text = `${e.damage.toLocaleString("en-US")}${e.crit ? "!" : ""}${e.mighty ? " ⚒" : ""}`;
-      // Crits float orange, Mighty Hits dark orange-red, both big and tilted.
+      // Crits float orange, Mighty Hits dark orange-red, both big and tilted; a Mighty Crit
+      // runs from orange to dark orange-red.
       const tone = e.mighty
         ? (DAMAGE_COLORS.mighty ?? color)
         : e.crit
           ? (DAMAGE_COLORS.crit ?? color)
           : color;
       const label = e.blocked ? `${text} ⛨` : e.deflected ? `${text} ↺` : text;
-      this.float(target, label, tone, e.crit || e.mighty === true);
+      this.float(target, label, tone, e.crit || e.mighty === true, 1, e.crit && e.mighty === true);
     }
   }
 
@@ -1349,7 +1350,14 @@ export class ArenaScene {
     this.shake(0.4);
   }
 
-  private float(side: Side, label: string, color: number, crit: boolean, scale = 1): void {
+  private float(
+    side: Side,
+    label: string,
+    color: number,
+    crit: boolean,
+    scale = 1,
+    mightyCrit = false,
+  ): void {
     if (!this.app) return;
     const x =
       (side === "hero" ? HERO_X : ENEMY_X) +
@@ -1362,6 +1370,7 @@ export class ArenaScene {
       color,
       fontSize: Math.round((crit ? 46 : 28) * scale),
       crit,
+      mightyCrit,
       vx: spread(this.clock * 5.7) * 12,
       vy: -55,
       life: crit ? 1.3 : 1.05,

@@ -1,4 +1,4 @@
-import { BitmapFont, BitmapText, type Container } from "pixi.js";
+import { BitmapFont, BitmapText, FillGradient, type Container } from "pixi.js";
 
 /**
  * Floating numbers and names over the fighters. They are BitmapText from two fonts drawn once
@@ -9,6 +9,8 @@ import { BitmapFont, BitmapText, type Container } from "pixi.js";
 
 const PLAIN = "arena-float";
 const CRIT = "arena-float-crit";
+/** A Mighty Crit: the crit font with a baked fill, orange on top to dark orange-red below. */
+const MIGHTY_CRIT = "arena-float-mighty-crit";
 /** Size the fonts are drawn at; numbers scale from it. */
 const BASE = 48;
 const CHARS = "0123456789,.!+-% ⚒⛨↺⚔ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz'";
@@ -42,7 +44,32 @@ function installFonts(): void {
     resolution: 2,
     padding: 12,
   });
+  BitmapFont.install({
+    name: MIGHTY_CRIT,
+    style: {
+      ...common,
+      fill: new FillGradient({
+        type: "linear",
+        start: { x: 0, y: 0 },
+        end: { x: 0, y: 1 },
+        colorStops: [
+          { offset: 0.15, color: CRIT_ORANGE },
+          { offset: 0.85, color: MIGHTY_RED },
+        ],
+        textureSpace: "local",
+      }),
+      stroke: { color: 0x1c1a18, width: (5 * BASE) / 46 },
+      dropShadow: { color: 0xffffff, alpha: 0.45, blur: 10, distance: 0 },
+    },
+    chars: CHARS,
+    resolution: 2,
+    padding: 12,
+  });
 }
+
+/** Crit and Mighty Hit number colours (also in `DAMAGE_COLORS`). */
+export const CRIT_ORANGE = 0xff9a2e;
+export const MIGHTY_RED = 0xe5532a;
 
 /** Loads the number font before the fonts are drawn (else the canvas falls back to another). */
 export async function prepareFloaterFonts(): Promise<void> {
@@ -53,6 +80,9 @@ export async function prepareFloaterFonts(): Promise<void> {
   }
   installFonts();
 }
+
+type Kind = "plain" | "crit" | "mighty";
+const FONT: Record<Kind, string> = { plain: PLAIN, crit: CRIT, mighty: MIGHTY_CRIT };
 
 interface Floater {
   readonly text: BitmapText;
@@ -70,6 +100,8 @@ export interface FloatOptions {
   readonly color: number;
   readonly fontSize: number;
   readonly crit: boolean;
+  /** A Mighty Crit: the gradient font, not tinted. */
+  readonly mightyCrit?: boolean;
   readonly vx: number;
   readonly vy: number;
   readonly life: number;
@@ -77,7 +109,7 @@ export interface FloatOptions {
 
 export class Floaters {
   private live: Floater[] = [];
-  private readonly spare: Record<"plain" | "crit", BitmapText[]> = { plain: [], crit: [] };
+  private readonly spare: Record<Kind, BitmapText[]> = { plain: [], crit: [], mighty: [] };
 
   constructor(private readonly parent: Container) {}
 
@@ -87,22 +119,22 @@ export class Floaters {
 
   spawn(o: FloatOptions): void {
     installFonts();
-    const kind = o.crit ? "crit" : "plain";
+    const kind: Kind = o.mightyCrit ? "mighty" : o.crit ? "crit" : "plain";
     const text =
       this.spare[kind].pop() ??
-      new BitmapText({ text: "", style: { fontFamily: o.crit ? CRIT : PLAIN, fontSize: BASE } });
+      new BitmapText({ text: "", style: { fontFamily: FONT[kind], fontSize: BASE } });
     text.text = o.label;
     text.style.fontSize = o.fontSize;
-    text.tint = o.color;
+    text.tint = kind === "mighty" ? 0xffffff : o.color;
     text.anchor.set(0.5);
     text.position.set(o.x, o.y);
-    text.rotation = o.crit ? -0.14 : 0;
+    text.rotation = kind === "plain" ? 0 : -0.14;
     text.scale.set(1);
     text.alpha = 1;
     text.visible = true;
     text.label = kind;
     this.parent.addChild(text);
-    this.live.push({ text, vx: o.vx, vy: o.vy, age: 0, life: o.life, pop: o.crit });
+    this.live.push({ text, vx: o.vx, vy: o.vy, age: 0, life: o.life, pop: kind !== "plain" });
   }
 
   update(dt: number): void {
@@ -114,7 +146,7 @@ export class Floaters {
       const t = f.age / f.life;
       if (t >= 1) {
         f.text.removeFromParent();
-        this.spare[f.text.label === "crit" ? "crit" : "plain"].push(f.text);
+        this.spare[f.text.label as Kind].push(f.text);
         continue;
       }
       f.text.scale.set(f.pop && f.age < 0.15 ? 1 + (0.15 - f.age) * 3 : 1);
@@ -125,9 +157,10 @@ export class Floaters {
   }
 
   destroy(): void {
-    for (const t of [...this.spare.plain, ...this.spare.crit]) t.destroy();
+    for (const t of [...this.spare.plain, ...this.spare.crit, ...this.spare.mighty]) t.destroy();
     this.spare.plain = [];
     this.spare.crit = [];
+    this.spare.mighty = [];
     this.live = [];
   }
 }
