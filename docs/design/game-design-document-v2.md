@@ -1,6 +1,6 @@
 # Game Design Document – v2
 
-**Titel:** Emberheir · **Stand:** 18.10.2026 (Klassengerüst v1: drei Klassen, Heirloom, Masteries, Ash Tree) · **Genre:** 1v1-Auto-Battler mit ARPG-Loot,
+**Titel:** Emberheir: Rise from the Ashes · **Stand:** 18.10.2026 (Klassengerüst v1: drei Klassen, Heirloom, Masteries, Ash Tree) · **Genre:** 1v1-Auto-Battler mit ARPG-Loot,
 Rogue-Lite-Runs und Prestige
 
 Dieses Dokument beschreibt den **aktuellen Stand des Spiels**, wie er im Code gebaut ist. Es ersetzt

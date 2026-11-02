@@ -1,4 +1,4 @@
-import { GAME_DATA, GAME_TITLE } from "@emberheir/content";
+import { GAME_DATA, GAME_SUBTITLE, GAME_TITLE } from "@emberheir/content";
 import titleLogoUrl from "../assets/logo/title-logo.webp";
 import { SIM_VERSION, heroTitle } from "@emberheir/sim";
 import { useState } from "react";
@@ -10,6 +10,9 @@ import { useStageSize } from "../ui/Stage";
 import { CampLight } from "./camp/art/CampLight";
 import { CampBackdrop, CampFx, SCENE_W, campLights } from "./camp/art/CampScene";
 import { PaintDefs } from "./camp/art/paint";
+import feathersUrl from "../assets/currency/feathers.webp";
+import { ActionIcon, actionIcon } from "../ui/actionIcons";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
 import { CreditsPanel } from "./Credits";
@@ -114,9 +117,9 @@ function TitleMenu(props: TitleProps) {
           <img src={titleLogoUrl} alt="" draggable={false} />
           <span className="sr-only">{GAME_TITLE}</span>
         </h1>
-        <p className="title-sub">An heir. An ember. A harvest that never ends.</p>
+        <p className="title-subtitle">{GAME_SUBTITLE}</p>
 
-        {page === "main" && (
+        {(page === "main" || page === "settings" || page === "credits") && (
           <div className="menu-buttons">
             {lastSave && last !== null && (
               <Button big variant="primary" onClick={() => props.onContinue(last)}>
@@ -126,21 +129,33 @@ function TitleMenu(props: TitleProps) {
                 </small>
               </Button>
             )}
-            <Button big icon="user" onClick={() => setPage("characters")}>
+            <Button
+              big
+              art={<ActionIcon id="lineage" size={32} />}
+              onClick={() => setPage("characters")}
+            >
               Characters
             </Button>
             <Button
               big
               variant={lastSave ? "secondary" : "primary"}
-              icon="fire"
+              art={<ActionIcon src={feathersUrl} size={32} />}
               onClick={() => (free >= 0 ? createIn(free) : setPage("characters"))}
             >
               New Game
             </Button>
-            <Button big icon="gear" onClick={() => setPage("settings")}>
+            <Button
+              big
+              art={<ActionIcon id="settings" size={32} />}
+              onClick={() => setPage("settings")}
+            >
               Settings
             </Button>
-            <Button big icon="star" onClick={() => setPage("credits")}>
+            <Button
+              big
+              art={<ActionIcon id="credits" size={32} />}
+              onClick={() => setPage("credits")}
+            >
               Credits
             </Button>
             {DEV && (
@@ -210,7 +225,7 @@ function TitleMenu(props: TitleProps) {
                     className="slot-card panel-card empty"
                     onClick={() => createIn(i)}
                   >
-                    <Icon name="user" size={36} color="var(--text-sub)" />
+                    <ActionIcon src={feathersUrl} size={40} />
                     <span className="title-font">New Heir</span>
                   </button>
                 ),
@@ -261,30 +276,33 @@ function TitleMenu(props: TitleProps) {
             <BackupPanel />
           </div>
         )}
-
-        {page === "credits" && (
-          <div className="title-settings k-window">
-            <CreditsPanel />
-            <div className="menu-foot">
-              <Button icon="prev" onClick={() => setPage("main")}>
-                Back
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {page === "settings" && (
-          <div className="title-settings k-window">
-            <SettingsPanel api={props.settings} />
-            <div className="menu-foot">
-              <Button icon="prev" onClick={() => setPage("main")}>
-                Back
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
       <CloudPlate />
+      {(page === "settings" || page === "credits") && (
+        <WindowLayer>
+          <Window
+            label={page === "settings" ? "Settings" : "Credits"}
+            role="dialog"
+            className="menu-window"
+            header={
+              <WindowHeader
+                title={page === "settings" ? "Settings" : "Credits"}
+                medallion={<Medallion image={actionIcon(page)} tint="#5a4218" />}
+                onClose={() => setPage("main")}
+              />
+            }
+          >
+            <div className="menu-settings">
+              {page === "settings" ? <SettingsPanel api={props.settings} /> : <CreditsPanel />}
+              <div className="menu-foot">
+                <Button icon="prev" onClick={() => setPage("main")}>
+                  Back
+                </Button>
+              </div>
+            </div>
+          </Window>
+        </WindowLayer>
+      )}
       <footer className="build-info mono">
         v{__APP_VERSION__}
         {PREVIEW_PR ? ` · PR #${PREVIEW_PR}` : ""} · {__BUILD_COMMIT__} · {buildDate} · Sim{" "}

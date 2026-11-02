@@ -46,10 +46,10 @@ export function BackupPanel() {
   return (
     <div className="backup-panel">
       <div className="backup-row">
-        <Button icon="box" onClick={download}>
+        <Button icon="download" onClick={download}>
           Export
         </Button>
-        <Button icon="inventory" onClick={() => file.current?.click()}>
+        <Button icon="upload" onClick={() => file.current?.click()}>
           Import
         </Button>
       </div>
@@ -68,7 +68,7 @@ export function BackupPanel() {
           </span>
           <Button onClick={() => setPending(null)}>Keep</Button>
           <HoldButton
-            icon="inventory"
+            icon="upload"
             onConfirm={() => {
               importBackup(pending);
               window.location.reload();

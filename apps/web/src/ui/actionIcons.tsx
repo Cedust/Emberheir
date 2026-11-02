@@ -11,8 +11,9 @@ export function actionIcon(id: string): string | undefined {
   return ART[`../assets/actions/${id}.webp`];
 }
 
-/** A painted icon as a small image, e.g. on a window tab. */
-export function ActionIcon(props: { id: string; size?: number }) {
+/** A painted icon as a small image, e.g. on a window tab. `src` takes any other painted asset. */
+export function ActionIcon(props: { id?: string; src?: string; size?: number }) {
   const s = props.size ?? 34;
-  return <img src={actionIcon(props.id)} width={s} height={s} alt="" draggable={false} />;
+  const src = props.src ?? (props.id ? actionIcon(props.id) : undefined);
+  return <img src={src} width={s} height={s} alt="" draggable={false} />;
 }
