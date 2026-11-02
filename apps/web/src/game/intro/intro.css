@@ -1,0 +1,378 @@
+/* The story intro of a new game (StoryIntro.tsx): the Ashen Fields at dusk, falling ash, a told
+   world in the middle, then Old Nan's dialogue at the bottom. Always dark like the title scene:
+   it is a painting at night, in both modes. */
+.stage .story-intro {
+  align-items: center;
+  justify-content: flex-end;
+  overflow: hidden;
+  background: #0e0a08;
+  cursor: pointer;
+  user-select: none;
+}
+
+.stage .story-intro .si-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  isolation: isolate;
+}
+
+/* The painting drifts slowly closer while the world is told, then settles low on the ground
+   where Old Nan finds the Heir. */
+.stage .story-intro .si-painting {
+  position: absolute;
+  inset: -4%;
+  background-size: cover;
+  background-position: 50% 40%;
+  transform-origin: 50% 45%;
+  filter: saturate(0.85) brightness(0.62);
+  animation: si-drift 40s linear both;
+  transition:
+    filter 2.4s ease,
+    transform 2.4s ease;
+}
+
+.stage .si-dusk .si-painting {
+  filter: saturate(0.6) brightness(0.32);
+}
+
+.stage .si-found .si-painting {
+  animation: none;
+  transform: scale(1.18) translateY(-4%);
+  transform-origin: 50% 80%;
+  filter: saturate(0.95) brightness(0.78);
+}
+
+@keyframes si-drift {
+  from {
+    transform: scale(1);
+  }
+  to {
+    transform: scale(1.1);
+  }
+}
+
+/* The burning: a red breath over the horizon. */
+.stage .story-intro .si-glow {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(
+    ellipse 80% 45% at 50% 38%,
+    rgb(255 92 24 / 0.55),
+    rgb(200 40 10 / 0.2) 50%,
+    transparent 75%
+  );
+  mix-blend-mode: screen;
+  opacity: 0;
+  transition: opacity 2s ease;
+}
+
+.stage .si-burning .si-glow {
+  opacity: 1;
+  animation: si-flicker 2.8s ease-in-out infinite alternate;
+}
+
+@keyframes si-flicker {
+  from {
+    filter: brightness(0.85);
+  }
+  to {
+    filter: brightness(1.15);
+  }
+}
+
+/* The Harvester falls: a burning star streaks down from the top right and flashes at the
+   horizon. */
+.stage .story-intro .si-star {
+  position: absolute;
+  left: 78%;
+  top: -8%;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: #fff4d0;
+  box-shadow:
+    0 0 18px 8px #ffb347,
+    0 0 60px 24px rgb(255 90 20 / 0.6);
+  animation: si-fall 1.8s 0.4s cubic-bezier(0.5, 0, 0.9, 0.6) both;
+}
+
+.stage .story-intro .si-star::before {
+  content: "";
+  position: absolute;
+  right: 50%;
+  bottom: 50%;
+  width: 260px;
+  height: 6px;
+  transform-origin: 100% 50%;
+  transform: rotate(-35deg);
+  background: linear-gradient(90deg, transparent, rgb(255 170 70 / 0.85));
+  border-radius: 3px;
+  filter: blur(2px);
+}
+
+.stage .story-intro .si-star::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  width: 600px;
+  height: 300px;
+  translate: -50% -50%;
+  border-radius: 50%;
+  background: radial-gradient(rgb(255 210 140 / 0.9), rgb(255 110 30 / 0.4) 40%, transparent 70%);
+  opacity: 0;
+  animation: si-impact 1.6s 2.1s ease-out both;
+}
+
+@keyframes si-fall {
+  0% {
+    transform: translate(0, 0) scale(0.6);
+    opacity: 0;
+  }
+  10% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate(-520px, 370px) scale(1.2);
+    opacity: 1;
+  }
+}
+
+@keyframes si-impact {
+  0% {
+    opacity: 0;
+    transform: scale(0.2);
+  }
+  15% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: scale(1.4);
+  }
+}
+
+/* Ash drifting down. */
+.stage .story-intro .si-ash i {
+  position: absolute;
+  left: var(--x);
+  top: -2%;
+  width: var(--s);
+  height: var(--s);
+  border-radius: 50%;
+  background: rgb(210 200 190 / 0.55);
+  animation: si-ash 11s var(--d) linear infinite;
+}
+
+@keyframes si-ash {
+  to {
+    transform: translate(var(--w), 960px) rotate(200deg);
+  }
+}
+
+/* Embers rising from the burnt ground. */
+.stage .story-intro .si-embers i {
+  position: absolute;
+  left: var(--x);
+  bottom: 0;
+  width: 4px;
+  height: 4px;
+  border-radius: 50%;
+  background: #ffb347;
+  box-shadow: 0 0 8px #ff7a1a;
+  mix-blend-mode: screen;
+  opacity: 0;
+  animation: si-ember 7s var(--d) ease-out infinite;
+}
+
+@keyframes si-ember {
+  0% {
+    transform: translate(0, 0);
+    opacity: 0;
+  }
+  15% {
+    opacity: 0.9;
+  }
+  100% {
+    transform: translate(30px, -520px);
+    opacity: 0;
+  }
+}
+
+/* Dark at the edges, so the told lines read over the painting. */
+.stage .story-intro .si-veil {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 70% 60% at 50% 50%, transparent 40%, rgb(8 6 4 / 0.7) 100%),
+    linear-gradient(180deg, rgb(8 6 4 / 0.35), transparent 40%, rgb(8 6 4 / 0.75));
+}
+
+.stage .story-intro .si-curtain {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  background: #0e0a08;
+  pointer-events: none;
+  animation: si-open 1.6s ease-out both;
+}
+
+@keyframes si-open {
+  0%,
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+
+.stage .si-leaving .si-curtain {
+  animation: si-close 0.7s ease-in forwards;
+}
+
+@keyframes si-close {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.stage .story-intro .si-skip {
+  position: absolute;
+  top: 24px;
+  right: calc(var(--safe-x) + 28px);
+  z-index: 5;
+}
+
+/* Over the night painting the quiet button stays light in both modes. */
+.stage .story-intro .si-skip .k-btn {
+  color: #f4e4c6;
+  text-shadow: 0 1px 4px rgb(0 0 0 / 0.8);
+}
+
+/* The told world: big italic lines in the middle of the painting. */
+.stage .story-intro .si-told {
+  position: relative;
+  z-index: 2;
+  align-self: center;
+  width: 1000px;
+  max-width: calc(100% - 2 * var(--safe-x) - 80px);
+  margin: 0 0 230px;
+  font-family: var(--font-title);
+  font-size: 34px;
+  line-height: 1.5;
+  text-align: center;
+  color: #f4e4c6;
+  text-shadow:
+    0 2px 6px rgb(0 0 0 / 0.9),
+    0 0 24px rgb(0 0 0 / 0.7);
+  animation: si-line 0.5s ease-out both;
+}
+
+@keyframes si-line {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+}
+
+.stage .story-intro .si-unseen {
+  visibility: hidden;
+}
+
+/* "There is more": a small glowing chevron after the last letter. */
+.stage .story-intro .si-more {
+  display: inline-block;
+  width: 0.5em;
+  height: 0.5em;
+  margin-left: 0.35em;
+  border-right: 3px solid #ffb347;
+  border-bottom: 3px solid #ffb347;
+  transform: rotate(45deg);
+  filter: drop-shadow(0 0 4px #ff7a1a);
+  animation: si-bob 1s ease-in-out infinite alternate;
+}
+
+@keyframes si-bob {
+  from {
+    translate: 0 -0.15em;
+  }
+  to {
+    translate: 0 0.1em;
+  }
+}
+
+/* Old Nan at the Heir's side: the dialogue at the bottom, her face arrives first. */
+.stage .story-intro .si-nan {
+  position: relative;
+  z-index: 2;
+  width: 1100px;
+  max-width: 100%;
+  margin-bottom: 60px;
+  cursor: default;
+}
+
+.stage .story-intro .si-nan .k-dialog-portrait {
+  width: 260px;
+  height: 260px;
+  animation: si-nan 0.7s 0.9s cubic-bezier(0.2, 0.9, 0.3, 1.2) both;
+}
+
+.stage .story-intro .si-nan .k-dialog-box {
+  min-height: 120px;
+  animation: si-line 0.5s 1.1s ease-out both;
+}
+
+.stage .story-intro .si-nan .k-dialog-plate {
+  padding-right: 52px;
+}
+
+.stage .story-intro .si-nan .k-dialog-line {
+  font-size: 22px;
+}
+
+.stage .story-intro .si-nan .si-more {
+  border-color: var(--accent, #c8641e);
+  filter: none;
+}
+
+@keyframes si-nan {
+  from {
+    transform: translateY(40px) scale(0.85);
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .stage .story-intro .si-painting,
+  .stage .si-burning .si-glow,
+  .stage .story-intro .si-told,
+  .stage .story-intro .si-more,
+  .stage .story-intro .si-nan .k-dialog-portrait,
+  .stage .story-intro .si-nan .k-dialog-box {
+    animation: none;
+  }
+  .stage .story-intro .si-ash,
+  .stage .story-intro .si-embers,
+  .stage .story-intro .si-star {
+    display: none;
+  }
+  .stage .story-intro .si-curtain {
+    animation-duration: 0.3s;
+  }
+}
+
+/* The class select right after the intro opens out of the same black. */
+.stage .class-screen.from-intro::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  background: #0e0a08;
+  pointer-events: none;
+  animation: si-open 1.2s ease-out both;
+}

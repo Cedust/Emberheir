@@ -61,12 +61,16 @@ const DAMAGE_NAMES: Record<string, string> = {
 
 export function ClassSelect(props: {
   slot: number;
+  /** The class the Heir remembered in the story intro. */
+  initialClass?: string | null;
   settings: Settings;
   onBegin: (character: NewCharacter) => void;
   onBack: () => void;
 }) {
   const classes = GAME_DATA.classes;
-  const [classId, setClassId] = useState(classes[0]?.id ?? "cinderguard");
+  const [classId, setClassId] = useState(
+    classes.find((c) => c.id === props.initialClass)?.id ?? classes[0]?.id ?? "cinderguard",
+  );
   const heroClass = classes.find((c) => c.id === classId) ?? classes[0];
   const [weapon, setWeapon] = useState(heroClass?.weapons[0] ?? "sword");
   // Second step: the creation's free points (attribute-v1.md section 5).

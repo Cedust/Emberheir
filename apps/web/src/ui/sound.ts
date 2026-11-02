@@ -153,7 +153,8 @@ export function playSound(kind: DropSound) {
  * swish when a window opens or closes, a page turn for tabs, a coin for a gain and a dull knock
  * for a blocked button. Quieter than the drop sounds, so they never cover them.
  */
-export type UiSound = "hover" | "click" | "blocked" | "open" | "close" | "tab" | "coin" | "notice";
+export type UiSound =
+  "hover" | "click" | "blocked" | "open" | "close" | "tab" | "coin" | "notice" | "type";
 
 /** Few milliseconds apart, the same sound would only buzz (five currencies counting at once). */
 const UI_GAP_MS: Readonly<Record<UiSound, number>> = {
@@ -165,6 +166,7 @@ const UI_GAP_MS: Readonly<Record<UiSound, number>> = {
   tab: 60,
   coin: 140,
   notice: 200,
+  type: 55,
 };
 const lastPlayed = new Map<UiSound, number>();
 
@@ -178,6 +180,7 @@ export const UI_SOUND_GROUP: Readonly<Record<UiSound, SoundGroup>> = {
   close: "window",
   coin: "coin",
   notice: "notice",
+  type: "click",
 };
 
 export function playUiSound(kind: UiSound) {
@@ -219,6 +222,10 @@ export function playUiSound(kind: UiSound) {
       swish(ac, t, 0.12, 2200, 0.03, true);
       tone(ac, 880, t + 0.02, 0.4, { type: "sine", gain: 0.05 });
       tone(ac, 1318, t + 0.1, 0.5, { type: "sine", gain: 0.04 });
+      break;
+    case "type":
+      // The story intro's letters: a very soft quill tick, a little different each time.
+      tone(ac, 620 + Math.random() * 160, t, 0.03, { type: "triangle", gain: 0.02 });
       break;
   }
 }
