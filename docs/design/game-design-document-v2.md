@@ -731,8 +731,15 @@ Endgame **Wildfire I–X**.
   Skill Points, Item Pick, Tod, Rückkehr ins Camp). Jeder Tipp kommt einmal pro Browser, „No more tips.“ oder Settings → Tips schaltet sie ab.
   Nur UI. Dazu Absturzschutz („The fire flickered“ mit Reload), Versionsnummer im Titel und Menü und Credits („Kindled by Cedust“).
 - **Spielstände (Release 1.0):** im Browser und in Backups versiegelt (gepackt und verschlüsselt, kein Klartext); ein von Hand
-  geänderter Spielstand lädt nicht und steht als „Damaged save“ im Slot, bis man ihn löscht. Unter Characters → Save Files
+  geänderter Spielstand lädt nicht und steht als „Damaged save“ im Slot, bis man ihn löscht. Unter Characters
   gehen alle Heirs in eine `.ember`-Datei (Export) und zurück (Import ersetzt alle Heirs nach Rückfrage).
+- **Cloud Save (Release 1.0, wie Crucible):** freiwillige Anmeldung mit Google oder GitHub (Button oben rechts im Titel).
+  Ein Konto hält seine Heirs getrennt von denen des Gasts; sie liegen zuerst lokal und gehen 30 s nach der letzten
+  Änderung (sofort beim Verlassen des Tabs) als ein versiegeltes Dokument nach Firestore. Beim Start gleicht das Spiel
+  ab; haben Gerät und Cloud sich beide weiterbewegt, wählt der Spieler („Which Heirs play on?“). Die erste Anmeldung
+  nimmt die Heirs des Gasts mit. Offline und als Gast spielt man wie bisher. „Delete account“ löscht Konto,
+  Cloud-Stand und die Kopie auf dem Gerät. Impressum und Datenschutzerklärung hängen in den Credits und im
+  Anmeldefeld. Einrichtung: `docs/cloud-setup.md`.
 
 ---
 

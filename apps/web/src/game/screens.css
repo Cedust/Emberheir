@@ -11256,3 +11256,122 @@
 .stage .slot-card.damaged {
   border-style: dashed;
 }
+
+/* --- cloud saves and legal pages (Release 1.0, cloud/CloudUi.tsx) --------------------------- */
+
+.stage .legal-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  font-size: 14px;
+}
+
+.stage .legal-links a {
+  color: var(--accent);
+}
+
+.stage .cloud-plate {
+  position: absolute;
+  top: 24px;
+  right: calc(var(--safe-x) + 24px);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 10px;
+  z-index: 3;
+}
+
+.stage .cloud-account {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.stage .cloud-account-text {
+  display: flex;
+  flex-direction: column;
+}
+
+.stage .cloud-panel {
+  width: 320px;
+  padding: 18px 20px;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 12px;
+  text-align: center;
+}
+
+.stage .cloud-panel p {
+  margin: 0;
+}
+
+.stage .cloud-providers {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage .cloud-problem {
+  color: var(--accent);
+}
+
+.stage .cloud-waiting {
+  margin: 0;
+  font-size: 22px;
+  color: var(--k-on-wood-sub);
+  text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);
+}
+
+.stage .cloud-choice {
+  width: 860px;
+  padding: 24px 28px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  text-align: center;
+}
+
+.stage .cloud-choice > p {
+  margin: 0;
+  font-size: 22px;
+}
+
+.stage .cloud-sides {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+}
+
+.stage .cloud-sides section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.stage .cloud-sides h2 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.stage .cloud-heirs {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 120px;
+}
+
+.stage .cloud-heirs li {
+  display: flex;
+  flex-direction: column;
+}

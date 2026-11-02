@@ -1,3 +1,4 @@
+import "../pixiNoEval";
 import { Application } from "pixi.js";
 import { MAX_FPS, wantsAntialias } from "../pixiPacing";
 

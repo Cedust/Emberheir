@@ -33,7 +33,9 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
   change to items goes into the step's `item` function, so it reaches the shared stash too.
   Add the ended version's real saves to `tools/balance/fixtures/old-saves/` (README there). In
   the browser and in backups the saves are sealed (`apps/web/src/game/saveCodec.ts`): never change
-  its key.
+  its key. Cloud saves (sign-in, Firestore, Cloudflare Pages, legal pages) are set up as in
+  `docs/cloud-setup.md`; Pixi modules that create an `Application` import `pixiNoEval.ts` (the
+  site's CSP forbids eval).
 - No import cycles (`npm run deps`, `.dependency-cruiser.cjs`): shared helpers go into small leaf
   modules. The only allowed cycle is the fight's own recursion (hit → trigger/Reaction → skill →
   hit) between `combat/hits`, `rotation`, `skills` and `trigger-effects`.

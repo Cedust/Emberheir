@@ -1,6 +1,6 @@
 import { GAME_DATA, GAME_TITLE } from "@emberheir/content";
 import titleLogoUrl from "../assets/logo/title-logo.webp";
-import { type GameState, SIM_VERSION, getAct, heroTitle } from "@emberheir/sim";
+import { SIM_VERSION, heroTitle } from "@emberheir/sim";
 import { useState } from "react";
 import { PREVIEW_PR } from "../storage";
 import { Icon } from "../ui/Icon";
@@ -15,16 +15,10 @@ import { ClassSelect } from "./ClassSelect";
 import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
 import { BackupPanel } from "./BackupPanel";
+import { CloudChoice, CloudPlate, useCloudStart } from "./cloud/CloudUi";
+import { whereText } from "./heirLine";
 import { loadDamagedSlots, loadLastSlot, loadSlots, saveSlot } from "./saves";
 import type { NewCharacter } from "./useGame";
-
-/** One line about where a character stands. */
-function whereText(save: GameState): string {
-  const act = save.run ? getAct(GAME_DATA, save.run.actId) : undefined;
-  return `Generation ${save.legacy.prestige + 1} · Level ${save.hero.level} · ${
-    act && save.run ? `${act.name}, Stage ${save.run.stage}` : "In the Camp"
-  }`;
-}
 
 /** The Combat Lab is a developer tool: it only shows with ?dev in the address. */
 const DEV = new URLSearchParams(window.location.search).has("dev");
@@ -44,12 +38,35 @@ function TitleScene() {
   );
 }
 
-export function TitleScreen(props: {
+interface TitleProps {
   settings: SettingsApi;
   onContinue: (slot: number) => void;
   onNewGame: (character: NewCharacter) => void;
   onLab: () => void;
-}) {
+}
+
+/**
+ * The title. A signed-in device first syncs its saves with the cloud (cloud/CloudUi.tsx): the
+ * menu reads the slots only after that.
+ */
+export function TitleScreen(props: TitleProps) {
+  const start = useCloudStart();
+  if (start.kind === "ready" || start.kind === "guest") return <TitleMenu {...props} />;
+  return (
+    <section className="screen title-screen" aria-label="Main menu">
+      <TitleScene />
+      <div className="title-content">
+        <h1 className="title-logo">
+          <img src={titleLogoUrl} alt="" draggable={false} />
+          <span className="sr-only">{GAME_TITLE}</span>
+        </h1>
+        <CloudChoice start={start} />
+      </div>
+    </section>
+  );
+}
+
+function TitleMenu(props: TitleProps) {
   const [slots, setSlots] = useState(loadSlots);
   // A save that does not load (changed by hand, broken) keeps its slot until it is deleted.
   const [damaged, setDamaged] = useState(loadDamagedSlots);
@@ -267,6 +284,7 @@ export function TitleScreen(props: {
           </div>
         )}
       </div>
+      <CloudPlate />
       <footer className="build-info mono">
         v{__APP_VERSION__}
         {PREVIEW_PR ? ` · PR #${PREVIEW_PR}` : ""} · {__BUILD_COMMIT__} · {buildDate} · Sim{" "}

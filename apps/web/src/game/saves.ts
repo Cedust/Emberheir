@@ -10,6 +10,7 @@ import {
 } from "@emberheir/sim";
 import { z } from "zod";
 import { parseStored, storageKey } from "../storage";
+import { saveStorage, savesWritten } from "./cloud/account";
 import { SaveSealError, isSealed, seal, unseal } from "./saveCodec";
 
 /**
@@ -89,6 +90,25 @@ export class SealedStore implements KeyValueStore {
 
   removeItem(key: string): void {
     this.kv.removeItem(key);
+  }
+}
+
+/** Tells the cloud sync (cloud/account.ts) when a save game changes. */
+class WatchedStore implements KeyValueStore {
+  constructor(private readonly kv: KeyValueStore) {}
+
+  getItem(key: string): string | null {
+    return this.kv.getItem(key);
+  }
+
+  setItem(key: string, value: string): void {
+    this.kv.setItem(key, value);
+    if (SEALED_KEYS.has(key)) savesWritten();
+  }
+
+  removeItem(key: string): void {
+    this.kv.removeItem(key);
+    if (SEALED_KEYS.has(key)) savesWritten();
   }
 }
 
@@ -292,7 +312,8 @@ export class SaveStore {
   }
 }
 
-// The browser's storage; private windows can block it, then nothing is saved.
+// The browser's storage (the guest's, or the signed-in account's keys: cloud/account.ts);
+// private windows can block it, then nothing is saved.
 
 let browserStore: SaveStore | null | undefined;
 let browserKv: SealedStore | null = null;
@@ -300,8 +321,8 @@ let browserKv: SealedStore | null = null;
 function store(): SaveStore | null {
   if (browserStore === undefined) {
     try {
-      browserKv = new SealedStore(window.localStorage, navigator.webdriver);
-      browserStore = new SaveStore(browserKv);
+      browserKv = new SealedStore(saveStorage(window.localStorage), navigator.webdriver);
+      browserStore = new SaveStore(new WatchedStore(browserKv));
       window.addEventListener("storage", () => browserStore?.forget());
     } catch {
       browserStore = null;
@@ -354,13 +375,18 @@ export type Backup = z.infer<typeof backupSchema>;
 
 export class BackupError extends Error {}
 
-export function backupOf(kv: KeyValueStore): string {
+/** Every save game in `kv` by storage name (a damaged one is left out). */
+export function savesOf(kv: KeyValueStore): Record<string, string> {
   const saves: Record<string, string> = {};
   for (const name of SAVE_NAMES) {
     const text = readOrNull(kv, storageKey(name));
     if (text !== null) saves[name] = text;
   }
-  return seal(JSON.stringify({ game: "emberheir", version: SAVE_VERSION, saves }));
+  return saves;
+}
+
+export function backupOf(kv: KeyValueStore): string {
+  return seal(JSON.stringify({ game: "emberheir", version: SAVE_VERSION, saves: savesOf(kv) }));
 }
 
 /** Opens a backup file's text. Throws `BackupError` with what to tell the player. */
@@ -398,10 +424,20 @@ export function restoreBackup(kv: KeyValueStore, backup: Backup): void {
 export const exportBackup = (): string | null =>
   withStore(() => (browserKv ? backupOf(browserKv) : null), null);
 
+/**
+ * The sealed storage of this browser's save games without the cloud sync's watch (the sync
+ * itself writes through it); null without storage.
+ */
+export const savesStorage = (): KeyValueStore | null => withStore(() => browserKv, null);
+
+/** Drops what the store read (the cloud sync replaced the saves before the game started). */
+export const forgetSaves = (): void => withStore((s) => s.forget(), undefined);
+
 /** Loads a backup into this browser (the page reloads afterwards). */
 export const importBackup = (backup: Backup): void =>
   withStore((s) => {
     if (!browserKv) return;
     restoreBackup(browserKv, backup);
     s.forget();
+    savesWritten();
   }, undefined);

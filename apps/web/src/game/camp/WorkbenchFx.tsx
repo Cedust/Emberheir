@@ -1,3 +1,4 @@
+import "../pixiNoEval";
 import { Application, Container } from "pixi.js";
 import { type RefObject, useEffect, useRef } from "react";
 import { Fx } from "../battle/fx";
