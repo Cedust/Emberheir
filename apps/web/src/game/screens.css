@@ -6032,7 +6032,7 @@
   align-items: center;
   justify-content: center;
   gap: 16px;
-  margin: -20px 0 0;
+  margin: -20px 0 24px;
   font-family: var(--font-title);
   font-size: 26px;
   font-weight: 600;
@@ -6059,13 +6059,6 @@
   background: linear-gradient(90deg, rgb(243 194 122 / 0.85), transparent);
   /* letter-spacing leaves a gap after the last letter; pull the right line back by it. */
   margin-left: -0.32em;
-}
-
-.stage .title-sub {
-  font-size: 20px;
-  font-style: italic;
-  color: var(--text-sub);
-  margin-bottom: 20px;
 }
 
 .stage .title-screen .menu-buttons {
@@ -6704,7 +6697,6 @@
     );
 }
 
-.stage .title-screen .title-sub,
 .stage .title-screen .build-info {
   color: var(--k-on-wood-sub);
   text-shadow: 0 1px 3px rgb(0 0 0 / 0.8);

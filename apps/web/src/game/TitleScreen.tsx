@@ -98,7 +98,6 @@ export function TitleScreen(props: {
           <span className="sr-only">{GAME_TITLE}</span>
         </h1>
         <p className="title-subtitle">{GAME_SUBTITLE}</p>
-        <p className="title-sub">An heir. An ember. A harvest that never ends.</p>
 
         {page === "main" && (
           <div className="menu-buttons">
