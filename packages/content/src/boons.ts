@@ -10,8 +10,8 @@ import type {
 /**
  * Stolen Fire Boons (docs/design/archiv/spielspass-umsetzung.md): one family per Warden, Hearth is always
  * open. Every Warden family holds one Boon per exclusive slot (Strike, Skill, Heat, Reaction) and
- * one that stacks; Hearth has a Heat and a Reaction Boon and three that stack
- * (docs/design/notes/boon-auswahl-v1.md: 69 → 48 Boons). Values are rank I at Spark grade; rank and grade scale them (see `BOONS` in the sim).
+ * one that stacks; Hearth has a Heat and a Reaction Boon and four that stack
+ * (docs/design/notes/boon-auswahl-v1.md: 69 → 49 Boons). Values are rank I at Spark grade; rank and grade scale them (see `BOONS` in the sim).
  * Percent stats are fractions (0.1 = 10 %), `value` is the number on the card.
  */
 export const BOON_FAMILIES: readonly BoonFamilyDefinition[] = [
@@ -105,6 +105,15 @@ const HEARTH: readonly BoonDefinition[] = [
     trigger: {
       when: { kind: "everySeconds", seconds: 5 },
       effect: { kind: "heal", fraction: 0.02 },
+    },
+  }),
+  // Kept for casters: their defense is Barrier (boon-auswahl-v1.md, balance check 2026-11-02).
+  boon("hearth", "trigger", "Ember Ward", "Hit taken: Barrier of # % Life", 5, {
+    trigger: {
+      when: { kind: "whenHit" },
+      effect: { kind: "barrier", fraction: 0.05 },
+      chance: 0.2,
+      cooldown: 4,
     },
   }),
 ];

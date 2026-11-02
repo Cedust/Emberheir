@@ -234,11 +234,12 @@ describe("Boon-Auswahl (boon-auswahl-v1.md)", () => {
     );
   });
 
-  it("the build's damage types: the weapon's, plus every ailment it can apply", () => {
+  it("the build's damage types come from the weapon and the Battle Plan, not from stray procs", () => {
     const s = act(start(), { type: "setOut", actId: "test-act" });
     expect(boonAffinity(s, data)).toEqual(["physical"]);
     const burning = { ...s, boons: { kept: [spark("kindled-strikes")], fresh: [] } };
-    expect(boonAffinity(burning, data)).toEqual(["physical", "fire"]);
+    // A Burn chance from a Boon (or gear) does not pull Cinder into the offer.
+    expect(boonAffinity(burning, data)).toEqual(["physical"]);
   });
 
   it("a family fits when it shares a damage type; Hearth fits every build", () => {

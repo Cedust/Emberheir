@@ -173,7 +173,7 @@ Punkte 3, 4 und 6 ändern Balance; vorher und nachher wird mit `npm run balance 
 (Strike, Skill, Heat, Reaction) und **einen Signature-Boon, der stapelt**. Hearth hat keinen Strike/Skill,
 dafür drei stapelnde. Wer also einen Strike einer anderen Family nimmt, tauscht immer genau diesen einen.
 
-69 → **48** Boons (Hearth 5, sechs Warden-Families je 5, 7 Fusion, 6 Stolen).
+69 → **49** Boons (Hearth 6 nach dem Balance-Check, siehe 6; sechs Warden-Families je 5, 7 Fusion, 6 Stolen).
 
 | Family | Strike | Skill | Heat | Reaction | stapelt | fällt weg |
 |---|---|---|---|---|---|---|
@@ -197,3 +197,14 @@ keine Kopien mehr. Fever, Galvanic Rot und Cold Heart bekommen max Rang I.
 - Laufende Saves: wer einen gestrichenen Boon hält, bekommt beim Laden den Boon desselben Slots seiner Family
   (Save-Migration). Am Prestige verbrennen Boons ohnehin.
 - Family-Bevorzugung nach Build (Punkt 4.6) und neue Balance-Messung vorher/nachher gehören dazu.
+
+## 6. Balance-Check beim Bau (2026-11-02)
+
+Gemessen mit `--act 7 --build all --runs 1`, Seeds 31 und 41, vorher (main) und nachher.
+- Erster Stand: Staff (Emberseer) in Act 7 deutlich schwerer (Hollow 3,3 → 15 Anläufe, 4 Seeds).
+  Ursache 1: Ember Ward und Hearthguard fehlten, Barrier ist die Defense der Caster (der Autopilot hatte Ember Ward
+  auf Rang III). Ursache 2: die Build-Regel zählte auch einzelne Gear-Procs (ein Ring mit Burn-Trigger), dadurch
+  bekam der Staff Brutality und Static Echo statt Hearth.
+- Fix: **Ember Ward bleibt** (Hearth hat vier stapelnde, 49 Boons). Die Build-Regel zählt nur Waffe
+  (mit Ailment/Attunement) und Skills im Battle Plan.
+- Danach Staff Act 7 (4 Seeds): vorher 4,6 / nachher 4,2 Anläufe.

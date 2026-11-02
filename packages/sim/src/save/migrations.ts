@@ -49,7 +49,7 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Wildfire Bounties (endgame measurement 2026-10-28, V3): a done bounty may carry its Wildfire
   // tier (`bountyDone.wildfire`) and Eldrin's Cache its Cinderglass, both optional.
   17: {},
-  // Boon-Auswahl (boon-auswahl-v1.md): 69 → 48 Boons. A held Boon that is gone becomes the Boon of
+  // Boon-Auswahl (boon-auswahl-v1.md): 69 → 49 Boons. A held Boon that is gone becomes the Boon of
   // its family in the same slot (or the family's stacking Boon), so a running trip keeps its
   // strength; an open Shrine offer gets the same swap and loses doubles.
   18: { state: renameOldBoons },
@@ -59,7 +59,6 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
 export const OLD_BOONS: Readonly<Record<string, string>> = {
   hearthguard: "second-wind",
   "warm-hands": "banked-coals",
-  "ember-ward": "slow-embers",
   "sundering-weight": "crushing-blow",
   grit: "brutality",
   stagger: "brutality",

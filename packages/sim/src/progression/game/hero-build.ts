@@ -1,5 +1,5 @@
 import { mergeRules } from "../../combat/rules";
-import { deriveStats, sumBonuses } from "../../combat/stats";
+import { sumBonuses } from "../../combat/stats";
 import {
   type AilmentType,
   type Capstone,
@@ -262,16 +262,16 @@ const AILMENT_DAMAGE: Readonly<Record<AilmentType, DamageType>> = {
 
 /**
  * The damage types the hero's build deals (boon-auswahl-v1.md 4.6): the weapon's (with its
- * Attunement), every damage type and ailment of the skills in the Battle Plan, and every ailment
- * the hero can apply from gear, tree, triggers and Boons. A Shrine prefers the Boon families of
- * these types, so a Burn build sees Cinder even with a physical weapon.
+ * Attunement and its ailment), and every damage type and ailment of the skills in the Battle Plan.
+ * A Shrine prefers the Boon families of these types, so a Burn build sees Cinder even with a
+ * physical weapon. Gear triggers and stray ailment chances do not count: a lone proc on a ring
+ * would spread the offer over families the build never uses (balance check 2026-11-02).
  */
 export function boonAffinity(state: GameState, data: GameData): DamageType[] {
   const { setup } = heroSetup(state, data);
   const types = new Set<DamageType>([setup.weapon.damageType]);
   const ailment = (a: AilmentType) => types.add(AILMENT_DAMAGE[a]);
   if (setup.weapon.ailment) ailment(setup.weapon.ailment);
-  for (const c of setup.weapon.ailmentChances ?? []) if (c.chance > 0) ailment(c.ailment);
   const skills = [
     ...setup.rotation.map((s) => s.skill),
     ...(setup.reactions ?? []).map((r) => r.skill),
@@ -279,17 +279,10 @@ export function boonAffinity(state: GameState, data: GameData): DamageType[] {
   for (const skill of skills) {
     for (const hit of skill.hits) {
       if (hit.damageType && !hit.infused) types.add(hit.damageType);
+      if (hit.infused) continue;
       for (const c of hit.ailmentChances ?? []) if (c.chance > 0) ailment(c.ailment);
     }
   }
-  for (const t of setup.triggers ?? []) if (t.effect.kind === "ailment") ailment(t.effect.ailment);
-  const stats = deriveStats(setup);
-  if (stats.burnChance > 0) ailment("burn");
-  if (stats.chillChance > 0) ailment("chill");
-  if (stats.shockChance > 0) ailment("shock");
-  if (stats.corruptionChance > 0) ailment("corruption");
-  if (stats.bleedChance > 0) ailment("bleed");
-  if (stats.poisonChance > 0) ailment("poison");
   return [...types];
 }
 

@@ -11,14 +11,14 @@ import { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 import { GAME_DATA } from "./game";
 
 describe("Stolen Fire Boons", () => {
-  it("5 Boons per family plus Fusions and the Blaze attribute Boons, unique ids, a number on every card that has one", () => {
+  it("5 Boons per Warden family (Hearth 6) plus Fusions and the Blaze attribute Boons, unique ids, a number on every card that has one", () => {
     const families = new Set(BOON_FAMILIES.map((f) => f.id));
     expect(new Set(BOONS_CONTENT.map((b) => b.id)).size).toBe(BOONS_CONTENT.length);
     for (const f of families) {
       expect(
         BOONS_CONTENT.filter((b) => b.family === f && !b.fusion && !b.attributes),
         f,
-      ).toHaveLength(5);
+      ).toHaveLength(f === "hearth" ? 6 : 5);
     }
     const fusions = BOONS_CONTENT.filter((b) => b.fusion);
     expect(fusions.length).toBeGreaterThanOrEqual(6);
