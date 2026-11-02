@@ -38,4 +38,12 @@ describe("stored settings", () => {
     });
     expect(parseSettings(JSON.stringify({ volume: 7 })).volume).toBe(DEFAULT_SETTINGS.volume);
   });
+
+  it("keeps the Music switch and its volume apart from Sound", () => {
+    const json = JSON.stringify({ music: false, musicVolume: 0.8, sound: true });
+    expect(parseSettings(json)).toMatchObject({ music: false, musicVolume: 0.8, sound: true });
+    expect(parseSettings(JSON.stringify({ musicVolume: -1 })).musicVolume).toBe(
+      DEFAULT_SETTINGS.musicVolume,
+    );
+  });
 });

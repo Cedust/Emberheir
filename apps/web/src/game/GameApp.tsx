@@ -30,6 +30,7 @@ import { StashView } from "./camp/StashView";
 import { NotificationLayer, useStateNotifications } from "./notify/Notifications";
 import { notificationsFor } from "./notify/notifications";
 import { useGame } from "./useGame";
+import { useMusic } from "./music/useMusic";
 
 type Overlay = "character" | "tree" | "plan" | "menu" | "compendium" | "cheats" | null;
 type CampScreen = "legacy" | "persona" | "kaelen" | "dummy" | "stash" | "road" | "nan" | null;
@@ -51,6 +52,11 @@ export function GameApp() {
   const { state } = game;
   const run = state?.run ?? null;
   const inFight = run?.phase === "fight";
+  useMusic(state, {
+    menu: overlay === "menu",
+    on: settings.settings.music,
+    volume: settings.settings.musicVolume,
+  });
   // A persona met on the road: their Story Blip waits until the fight and the Harvest are over.
   const blip =
     state && !inFight && !state.notice && !state.pendingPrestige && !burning

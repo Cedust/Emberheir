@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { saveAfterAct1, seedSave } from "./fixtures";
+import { saveAfterAct1, saveFirstCamp, seedSave } from "./fixtures";
 
 test("the Compendium unfolds a chapter's pages and hides what the Heir has not seen", async ({
   page,
@@ -51,4 +51,36 @@ test("the Compendium unfolds a chapter's pages and hides what the Heir has not s
   await page.keyboard.press("Escape");
   await expect(book).toHaveCount(0);
   expect(errors).toEqual([]);
+});
+
+test("in the first run the Compendium keeps the Harvest and unmet personas locked", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await seedSave(page, saveFirstCamp());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
+  await page.getByRole("button", { name: "Compendium" }).click();
+  const book = page.getByRole("dialog", { name: "Compendium" });
+  await expect(book.getByText("the road will not stay this short")).toBeVisible();
+  await expect(book.getByRole("button", { name: "The Harvest" })).toHaveCount(0);
+
+  await book.getByRole("button", { name: "Loot" }).click();
+  await book.getByRole("button", { name: "Rarities" }).click();
+  // Epic and Legendary are not shown yet, but the reader sees that more exists.
+  await expect(book.getByRole("heading", { name: "Rarities" })).toBeVisible();
+  await expect(book.locator(".cp-locked-row")).toHaveCount(2);
+  if (process.env.SHOTS) {
+    await page.waitForTimeout(600);
+    await page.screenshot({ path: `${process.env.SHOTS}/compendium-rarities.png` });
+  }
+  await book.getByRole("button", { name: "Affixes and Triggers" }).click();
+  await expect(book.getByRole("heading", { name: "Affixes and Triggers" })).toBeVisible();
+  if (process.env.SHOTS)
+    await page.screenshot({ path: `${process.env.SHOTS}/compendium-affixes.png` });
+
+  await book.getByRole("button", { name: "The Camp" }).click();
+  await expect(book.getByRole("button", { name: "Marisha, the Black Market" })).toHaveCount(0);
+  await expect(book.getByRole("button", { name: "Liora, the Mystic" })).toHaveCount(0);
 });

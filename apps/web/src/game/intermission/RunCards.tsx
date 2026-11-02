@@ -24,7 +24,8 @@ import {
 } from "@emberheir/sim";
 import { useEffect, useState } from "react";
 import { useNoteHover } from "../../ui/ItemTooltip";
-import { Icon, type IconName } from "../../ui/Icon";
+import { Icon } from "../../ui/Icon";
+import { ChoiceIcon, type ChoiceIconId } from "../../ui/ChoiceIcon";
 import { Potion } from "../../ui/Potion";
 import { Button } from "../../ui/kit/Button";
 import { fmt } from "../../ui/items";
@@ -289,7 +290,7 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
     <div className="path-cards gate-cards" aria-label="Warden's Gate">
       <GateCard
         kind="challenge"
-        icon={boss ? "boss" : "warden"}
+        icon={boss ? "challenge-boss" : "challenge"}
         name="Challenge"
         text={boss ? `Face ${foe}. Its fall brings The Harvest.` : `Face ${foe} of this Waymark.`}
         tip={{
@@ -306,7 +307,7 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
       </GateCard>
       <GateCard
         kind="wander"
-        icon="cycle"
+        icon="wander"
         name="Wander"
         text="Walk the act again for levels and loot."
         tip={{
@@ -326,7 +327,7 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
 
 function GateCard(props: {
   kind: string;
-  icon: IconName;
+  icon: ChoiceIconId;
   name: string;
   text: string;
   tip: Parameters<typeof useNoteHover>[0];
@@ -343,7 +344,7 @@ function GateCard(props: {
       {...hover}
     >
       <span className="path-sigil">
-        <Icon name={props.icon} size={34} />
+        <ChoiceIcon id={props.icon} />
       </span>
       <strong className="title-font">{props.name}</strong>
       <span className="sub">{props.text}</span>
@@ -516,7 +517,7 @@ export function DoneCard(props: { state: GameState; run: RunState }) {
   }
   return (
     <div className="done-card panel-card" data-testid="done-card">
-      <Icon name="fire" size={40} color="var(--accent)" />
+      <ChoiceIcon id="flame" size={44} />
       <strong className="title-font">{line}</strong>
       {sub && <span className="sub">{sub}</span>}
     </div>

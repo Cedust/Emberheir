@@ -16,6 +16,7 @@ import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
 import { StoryIntro } from "./intro/StoryIntro";
+import { useTitleScene } from "./music/titleScene";
 import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
 import { BackupPanel } from "./BackupPanel";
@@ -98,6 +99,7 @@ function TitleMenu(props: TitleProps) {
       ),
   );
   const [confirmDelete, setConfirmDelete] = useState(false);
+  useTitleScene(page === "intro" || page === "new" ? "newHeir" : "menu");
   const buildDate = new Date(__BUILD_TIME__).toLocaleDateString("en-GB");
   const hasCharacters = slots.some((s) => s !== null) || damaged.length > 0;
   const createIn = (slot: number) => {

@@ -35,6 +35,7 @@ import {
 } from "react";
 import { GameIcon } from "../../ui/gameIcons";
 import { Icon, type IconName } from "../../ui/Icon";
+import { ChoiceIcon } from "../../ui/ChoiceIcon";
 import { type NoteHover, useNoteHover } from "../../ui/ItemTooltip";
 import { WEAPON_ICON } from "../battle/hud/BattleHud";
 import { AttackIcon, SkillIcon } from "../battle/SkillIcon";
@@ -161,7 +162,7 @@ function Flames(props: { wait: number }) {
       }}
     >
       {Array.from({ length: n }, (_, i) => (
-        <Icon key={i} name="flame" size={14} />
+        <ChoiceIcon key={i} id="flame" size={16} />
       ))}
     </Tip>
   );
