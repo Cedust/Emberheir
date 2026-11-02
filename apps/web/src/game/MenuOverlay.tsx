@@ -4,81 +4,103 @@ import { useNoteHover } from "../ui/ItemTooltip";
 import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
 import { ActionIcon, actionIcon } from "../ui/actionIcons";
-import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { useEffect, useState } from "react";
 import { CreditsPanel } from "./Credits";
 
+type SettingsTab = "display" | "sound";
+
+/** Settings in two tabs. Both pages share one grid cell, so the window keeps its height. */
 export function SettingsPanel(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
+  const [tab, setTab] = useState<SettingsTab>("display");
   return (
     <div className="settings">
-      <h3 className="settings-head title-font">Display</h3>
-      <div className="setting-row">
-        <span>Theme</span>
-        <div className="segmented" role="radiogroup" aria-label="Theme">
-          {(["system", "light", "dark"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={settings.theme === t}
-              className={settings.theme === t ? "on" : ""}
-              onClick={() => update({ theme: t })}
-            >
-              {t === "system" ? "System" : t === "light" ? "Parchment" : "Scorched"}
-            </button>
+      <Tabs
+        label="Settings"
+        keys={false}
+        items={[
+          { id: "display", name: "Display" },
+          { id: "sound", name: "Sound" },
+        ]}
+        active={tab}
+        onChange={setTab}
+      />
+      <div className="settings-pages">
+        <div
+          className="settings-page"
+          role="tabpanel"
+          aria-label="Display"
+          hidden={tab !== "display"}
+        >
+          <div className="setting-row">
+            <span>Theme</span>
+            <div className="segmented" role="radiogroup" aria-label="Theme">
+              {(["system", "light", "dark"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={settings.theme === t}
+                  className={settings.theme === t ? "on" : ""}
+                  onClick={() => update({ theme: t })}
+                >
+                  {t === "system" ? "System" : t === "light" ? "Parchment" : "Scorched"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <OnOffRow
+            label="Damage Numbers"
+            value={settings.damageNumbers}
+            onChange={(v) => update({ damageNumbers: v })}
+          />
+          <OnOffRow
+            label="Screen Shake"
+            value={settings.screenShake}
+            onChange={(v) => update({ screenShake: v })}
+          />
+          <QualityRow api={props.api} />
+          <FullscreenRow />
+          <OnOffRow
+            label="Tips"
+            tip="Old Nan's short tips the first time you reach something new."
+            kind="Game"
+            value={settings.tips}
+            onChange={(v) => update({ tips: v })}
+          />
+        </div>
+        <div className="settings-page" role="tabpanel" aria-label="Sound" hidden={tab !== "sound"}>
+          <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
+          <div className={`setting-row${settings.sound ? "" : " muted"}`}>
+            <span>Volume</span>
+            <span className="setting-volume">
+              <input
+                type="range"
+                min={0}
+                max={100}
+                step={5}
+                aria-label="Volume"
+                disabled={!settings.sound}
+                value={Math.round(settings.volume * 100)}
+                onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
+              />
+              <b className="mono">{Math.round(settings.volume * 100)}%</b>
+            </span>
+          </div>
+          {SOUND_GROUPS.map((g) => (
+            <OnOffRow
+              key={g}
+              label={GROUP_LABEL[g].name}
+              tip={GROUP_LABEL[g].explain}
+              sub
+              muted={!settings.sound}
+              value={settings.sounds[g]}
+              onChange={(v) => update({ sounds: { ...settings.sounds, [g]: v } })}
+            />
           ))}
         </div>
       </div>
-      <OnOffRow
-        label="Damage numbers"
-        value={settings.damageNumbers}
-        onChange={(v) => update({ damageNumbers: v })}
-      />
-      <OnOffRow
-        label="Screen shake"
-        value={settings.screenShake}
-        onChange={(v) => update({ screenShake: v })}
-      />
-      <QualityRow api={props.api} />
-      <FullscreenRow />
-      <OnOffRow
-        label="Tips"
-        tip="Old Nan's short tips the first time you reach something new."
-        kind="Game"
-        value={settings.tips}
-        onChange={(v) => update({ tips: v })}
-      />
-
-      <h3 className="settings-head title-font">Sound</h3>
-      <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
-      <div className={`setting-row${settings.sound ? "" : " muted"}`}>
-        <span>Volume</span>
-        <span className="setting-volume">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            aria-label="Volume"
-            disabled={!settings.sound}
-            value={Math.round(settings.volume * 100)}
-            onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
-          />
-          <b className="mono">{Math.round(settings.volume * 100)}%</b>
-        </span>
-      </div>
-      {SOUND_GROUPS.map((g) => (
-        <OnOffRow
-          key={g}
-          label={GROUP_LABEL[g].name}
-          tip={GROUP_LABEL[g].explain}
-          sub
-          muted={!settings.sound}
-          value={settings.sounds[g]}
-          onChange={(v) => update({ sounds: { ...settings.sounds, [g]: v } })}
-        />
-      ))}
     </div>
   );
 }
@@ -105,14 +127,14 @@ const QUALITY_LABEL: Readonly<Record<GraphicsQuality, string>> = {
 function QualityRow(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
   const hover = useNoteHover({
-    name: "Graphics quality",
+    name: "Graphics Quality",
     kind: "Display",
     explain: "Lower it if fights stutter: the arena draws a little softer, with fewer particles.",
   });
   return (
     <div className="setting-row">
-      <span {...hover}>Graphics quality</span>
-      <div className="segmented" role="radiogroup" aria-label="Graphics quality">
+      <span {...hover}>Graphics Quality</span>
+      <div className="segmented" role="radiogroup" aria-label="Graphics Quality">
         {(["high", "medium", "low"] as const).map((q) => (
           <button
             key={q}
@@ -182,8 +204,8 @@ function FullscreenRow() {
   };
   return (
     <div className="setting-row">
-      <span>Display</span>
-      <div className="segmented" role="radiogroup" aria-label="Display">
+      <span>Window Mode</span>
+      <div className="segmented" role="radiogroup" aria-label="Window Mode">
         {[false, true].map((v) => (
           <button
             key={String(v)}

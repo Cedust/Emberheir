@@ -1,6 +1,7 @@
 import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type ActData,
+  type Companion,
   type GameState,
   bossKnown,
   finaleOpen,
@@ -37,6 +38,8 @@ const NAN_LINES: readonly {
   readonly text: string;
   readonly act?: string;
   readonly boss?: string;
+  /** A line about a persona only once that persona is in the Camp. */
+  readonly who?: Companion;
 }[] = [
   { text: "Sit, child. The fire remembers every one of you, even the clumsy ones." },
   {
@@ -52,13 +55,16 @@ const NAN_LINES: readonly {
   },
   { text: "The Mother of Rot feeds whenever she can. Fire spoils her meal.", boss: "rotwood" },
   { text: "Dying costs you the road, not your things. Keep walking." },
-  { text: "Thoric fixes steel. Liora fixes moods. Neither fixes you." },
+  { text: "Thoric fixes steel. Liora fixes moods. Neither fixes you.", who: "liora" },
 ];
 
 /** The lines Old Nan may say to this Heir. */
 export function nanLines(state: GameState): string[] {
   return NAN_LINES.filter(
-    (l) => (!l.act || actVisible(state, l.act)) && (!l.boss || bossKnown(state, GAME_DATA, l.boss)),
+    (l) =>
+      (!l.act || actVisible(state, l.act)) &&
+      (!l.boss || bossKnown(state, GAME_DATA, l.boss)) &&
+      (!l.who || hasMet(state, l.who)),
   ).map((l) => l.text);
 }
 
@@ -83,7 +89,11 @@ const ELDRIN_LINES: readonly {
   { text: "Back already? Good. I hate scouting for nobody." },
   {
     text: "Bounty done! I knew you'd make it. I even bet on it. Against Marisha.",
-    when: (s) => Boolean(s.bountyDone),
+    when: (s) => Boolean(s.bountyDone) && hasMet(s, "marisha"),
+  },
+  {
+    text: "Bounty done! I knew you'd make it. I even bet on it. Against myself, to be safe.",
+    when: (s) => Boolean(s.bountyDone) && !hasMet(s, "marisha"),
   },
   {
     text: "The whole world burns again. Lovely view. Terrible smell.",

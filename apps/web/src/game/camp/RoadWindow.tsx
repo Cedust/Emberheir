@@ -185,7 +185,10 @@ export function RoadStrip(props: { state: GameState; plan: RoadPlan; vertical?: 
               </span>
             </span>
             {props.vertical && a.homeRune && (
-              <span className="road-home-rune" title={`Home Rune: ${runeName(a.homeRune)}`}>
+              <span
+                className="road-home-rune"
+                title={`${runeName(a.homeRune)} Rune · Found often here`}
+              >
                 <RuneStone runeId={a.homeRune} size={22} />
               </span>
             )}

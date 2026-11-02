@@ -46,7 +46,7 @@ test("The harvest boss falls: one Harvest window, wake as the next generation", 
   await liora.getByRole("button", { name: /pick one at Eldrin/ }).click();
   await expect(liora).toBeHidden();
   const camp = page.getByRole("region", { name: "Camp" });
-  await expect(camp).toContainText("Generation 2");
+  await expect(camp).toContainText("Harvest 2");
 
   await page.getByRole("button", { name: "Hearthfire, Legacy" }).click();
   const legacy = page.getByRole("region", { name: "Legacy" });

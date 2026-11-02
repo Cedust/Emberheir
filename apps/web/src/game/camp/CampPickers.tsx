@@ -195,7 +195,7 @@ function BountyPay(props: { def: BountyDefinition; act: ActData; wildfire?: numb
         <GlassPay tier={props.wildfire} />
       ) : (
         rune && (
-          <span title={`Home Rune: ${runeName(rune)}`}>
+          <span title={`${runeName(rune)} Rune · Found often in this act`}>
             <RuneStone runeId={rune} size={PAY_ICON} />
           </span>
         )

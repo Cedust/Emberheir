@@ -92,10 +92,13 @@ interface Target {
 const SKILL_DRAG = "application/x-emberheir-skill";
 
 /** Damage share of one slot in the last fight ("Plan-Feedback ohne Text"). */
-export function ShareBar(props: { share: number; label?: string }) {
+export function ShareBar(props: { share: number; label?: string; plain?: boolean }) {
   const pct = Math.round(props.share * 100);
   return (
-    <span className="share-bar" title={`${props.label ?? "Damage"} last fight: ${pct} %`}>
+    <span
+      className="share-bar"
+      title={props.plain ? undefined : `${props.label ?? "Damage"} last fight: ${pct} %`}
+    >
       <span className="share-track">
         <span className="share-fill" style={{ width: `${pct}%` }} />
       </span>
@@ -316,9 +319,10 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             explain="Your skills fire in order, left to right, as soon as you have the Heat. Then it starts over."
           />
           <div className="plan-slots">
-            {ROTATION_UNLOCK.map((p, i) => {
+            {ROTATION_UNLOCK.map((_p, i) => {
+              // Slots not open yet are not shown at all (Timo): they appear when they open.
               const k = i < state.progress.rotationSlots ? rotationSkill(i) : undefined;
-              if (!k) return <LockedSlot key={i} prestige={p} />;
+              if (!k) return null;
               const dup = dupOf(i);
               if (dup >= 0) {
                 return (
@@ -420,81 +424,83 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
           </div>
         </section>
 
-        <section aria-label="Reactions">
-          <SectionTitle
-            name="Reactions"
-            explain={`Fire on their own the moment their sign comes, before the next Rotation skill. Then they rest ${REACTION_COOLDOWN} s.`}
-          />
-          <div className="plan-slots reactions">
-            {REACTION_UNLOCK.map((p, i) => {
-              if (i >= unlocks.reactionSlots) return <LockedSlot key={p} prestige={p} small />;
-              const r = plan.reactions[i] ?? null;
-              const k = skillOf(r?.skillId);
-              const fired = report?.reactions.find((x) => x.skill === k?.skill.name)?.casts;
-              return (
+        {(unlocks.reactionSlots > 0 || unlocks.openingMove) && (
+          <section aria-label="Reactions">
+            <SectionTitle
+              name="Reactions"
+              explain={`Fire on their own the moment their sign comes, before the next Rotation skill. Then they rest ${REACTION_COOLDOWN} s.`}
+            />
+            <div className="plan-slots reactions">
+              {REACTION_UNLOCK.map((p, i) => {
+                if (i >= unlocks.reactionSlots) return null;
+                const r = plan.reactions[i] ?? null;
+                const k = skillOf(r?.skillId);
+                const fired = report?.reactions.find((x) => x.skill === k?.skill.name)?.casts;
+                return (
+                  <div
+                    key={p}
+                    className={`plan-col panel-card${target.row === "reaction" && target.index === i ? " on" : ""}`}
+                    data-testid={`reaction-slot-${i}`}
+                  >
+                    <PlanSlot
+                      label={`Reaction Slot ${i + 1}`}
+                      pos={`R${i + 1}`}
+                      reaction
+                      skillId={k?.skill.id}
+                      name={k?.skill.name ?? "Empty"}
+                      corner={fired !== undefined ? `×${fired}` : undefined}
+                      note={{
+                        name: k?.skill.name ?? "Empty",
+                        kind: `Reaction Slot ${i + 1}`,
+                        explain: k
+                          ? skillText(k.skill, setup.weapon)
+                          : "Put a skill here, then pick when it fires.",
+                        status: `Rests ${REACTION_COOLDOWN} s after it fires`,
+                      }}
+                      on={on("reaction", i, "skill")}
+                      onClick={() => pick({ row: "reaction", index: i })}
+                      drop={dropSkill("reaction", i)}
+                    />
+                    {sockets("reaction", i)}
+                    {r && (
+                      <ConditionChip
+                        id={r.conditionId}
+                        list={REACTION_CONDITIONS}
+                        empty=""
+                        kind="When"
+                        explain="Fires the moment this happens."
+                        on={on("reaction", i, "cond")}
+                        onClick={() => pick({ row: "reaction", index: i, part: "cond" })}
+                      />
+                    )}
+                  </div>
+                );
+              })}
+              {unlocks.openingMove && (
                 <div
-                  key={p}
-                  className={`plan-col panel-card${target.row === "reaction" && target.index === i ? " on" : ""}`}
-                  data-testid={`reaction-slot-${i}`}
+                  className={`plan-col panel-card${target.row === "opening" ? " on" : ""}`}
+                  data-testid="opening-move"
                 >
                   <PlanSlot
-                    label={`Reaction Slot ${i + 1}`}
-                    pos={`R${i + 1}`}
+                    label="Opening Move"
+                    pos="◆"
                     reaction
-                    skillId={k?.skill.id}
-                    name={k?.skill.name ?? "Empty"}
-                    corner={fired !== undefined ? `×${fired}` : undefined}
+                    skillId={skillOf(plan.openingMove)?.skill.id}
+                    name={skillOf(plan.openingMove)?.skill.name ?? "Opening Move"}
                     note={{
-                      name: k?.skill.name ?? "Empty",
-                      kind: `Reaction Slot ${i + 1}`,
-                      explain: k
-                        ? skillText(k.skill, setup.weapon)
-                        : "Put a skill here, then pick when it fires.",
-                      status: `Rests ${REACTION_COOLDOWN} s after it fires`,
+                      name: "Opening Move",
+                      kind: skillOf(plan.openingMove)?.skill.name ?? "Empty",
+                      explain: "Fires once for free when the fight starts.",
                     }}
-                    on={on("reaction", i, "skill")}
-                    onClick={() => pick({ row: "reaction", index: i })}
-                    drop={dropSkill("reaction", i)}
+                    on={on("opening", 0, "skill")}
+                    onClick={() => pick({ row: "opening", index: 0 })}
+                    drop={dropSkill("opening", 0)}
                   />
-                  {sockets("reaction", i)}
-                  {r && (
-                    <ConditionChip
-                      id={r.conditionId}
-                      list={REACTION_CONDITIONS}
-                      empty=""
-                      kind="When"
-                      explain="Fires the moment this happens."
-                      on={on("reaction", i, "cond")}
-                      onClick={() => pick({ row: "reaction", index: i, part: "cond" })}
-                    />
-                  )}
                 </div>
-              );
-            })}
-            {unlocks.openingMove && (
-              <div
-                className={`plan-col panel-card${target.row === "opening" ? " on" : ""}`}
-                data-testid="opening-move"
-              >
-                <PlanSlot
-                  label="Opening Move"
-                  pos="◆"
-                  reaction
-                  skillId={skillOf(plan.openingMove)?.skill.id}
-                  name={skillOf(plan.openingMove)?.skill.name ?? "Opening Move"}
-                  note={{
-                    name: "Opening Move",
-                    kind: skillOf(plan.openingMove)?.skill.name ?? "Empty",
-                    explain: "Fires once for free when the fight starts.",
-                  }}
-                  on={on("opening", 0, "skill")}
-                  onClick={() => pick({ row: "opening", index: 0 })}
-                  drop={dropSkill("opening", 0)}
-                />
-              </div>
-            )}
-          </div>
-        </section>
+              )}
+            </div>
+          </section>
+        )}
 
         <section className="chain" aria-label="One rotation">
           <div className="chain-row">
@@ -557,10 +563,23 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
             )}
             <span className="grow" />
             {report && (
-              <span className="chain-report" title={`${AILMENT_SOURCE} last fight`}>
-                <Icon name="toxic" size={18} />
-                <ShareBar share={damageShare(report, AILMENT_SOURCE)} label={AILMENT_SOURCE} />
-              </span>
+              <Tip
+                className="chain-report"
+                note={{
+                  name: "Ailment Damage",
+                  kind: "Last fight",
+                  explain:
+                    "How much of your damage came from Ailments like Bleed, Burn and Poison, not from hits.",
+                  status: `${Math.round(damageShare(report, AILMENT_SOURCE) * 100)} % of your damage`,
+                }}
+              >
+                <GameIcon id="ailment-effect" size={26} />
+                <ShareBar
+                  share={damageShare(report, AILMENT_SOURCE)}
+                  label={AILMENT_SOURCE}
+                  plain
+                />
+              </Tip>
             )}
           </div>
           <HeatPreview
@@ -776,23 +795,6 @@ function PlanSlot(props: {
       </span>
       <span className="skill-caption">{props.name}</span>
     </button>
-  );
-}
-
-function LockedSlot(props: { prestige: number; small?: boolean }) {
-  const hover = useNoteHover({
-    name: "Locked",
-    kind: props.small ? "Reaction Slot" : "Rotation Slot",
-    explain: "",
-    status: `Opens with Prestige ${props.prestige}`,
-  });
-  return (
-    <div className={`plan-col panel-card locked${props.small ? " small" : ""}`} {...hover}>
-      <span className="skill-slot empty">
-        <Icon name="lock" size={22} />
-      </span>
-      <span className="sub small">Prestige {props.prestige}</span>
-    </div>
   );
 }
 
