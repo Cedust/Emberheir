@@ -6026,6 +6026,41 @@
   filter: drop-shadow(0 0 28px rgb(255 120 40 / 0.45)) drop-shadow(0 4px 8px rgb(0 0 0 / 0.7));
 }
 
+/* The subtitle: small Cinzel caps glowing like embers, framed by two fading ash lines. */
+.stage .title-subtitle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  margin: -20px 0 0;
+  font-family: var(--font-title);
+  font-size: 26px;
+  font-weight: 600;
+  line-height: 1.2;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: #f3c27a;
+  text-shadow:
+    0 0 14px rgb(255 120 40 / 0.55),
+    0 2px 4px rgb(0 0 0 / 0.85);
+}
+
+.stage .title-subtitle::before,
+.stage .title-subtitle::after {
+  content: "";
+  width: 90px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgb(243 194 122 / 0.85));
+  box-shadow: 0 0 6px rgb(255 120 40 / 0.5);
+}
+
+.stage .title-subtitle::after {
+  background: linear-gradient(90deg, rgb(243 194 122 / 0.85), transparent);
+  /* letter-spacing leaves a gap after the last letter; pull the right line back by it. */
+  margin-left: -0.32em;
+}
+
 .stage .title-sub {
   font-size: 20px;
   font-style: italic;

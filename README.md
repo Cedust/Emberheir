@@ -1,4 +1,4 @@
-# Emberheir
+# Emberheir: Rise from the Ashes
 
 A browser auto-battler with rogue-lite and prestige systems. Proof of concept in development.
 

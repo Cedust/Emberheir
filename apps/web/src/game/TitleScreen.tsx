@@ -1,4 +1,4 @@
-import { GAME_DATA, GAME_TITLE } from "@emberheir/content";
+import { GAME_DATA, GAME_SUBTITLE, GAME_TITLE } from "@emberheir/content";
 import titleLogoUrl from "../assets/logo/title-logo.webp";
 import { type GameState, SIM_VERSION, getAct, heroTitle } from "@emberheir/sim";
 import { useState } from "react";
@@ -97,6 +97,7 @@ export function TitleScreen(props: {
           <img src={titleLogoUrl} alt="" draggable={false} />
           <span className="sr-only">{GAME_TITLE}</span>
         </h1>
+        <p className="title-subtitle">{GAME_SUBTITLE}</p>
         <p className="title-sub">An heir. An ember. A harvest that never ends.</p>
 
         {page === "main" && (

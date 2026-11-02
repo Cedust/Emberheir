@@ -23,6 +23,8 @@ export { ACT1, ACT2, GAME_DATA, LAST_EMBER } from "./game";
 export { STARTING_ATTRIBUTES, createHeroSetup, resolveHeroGear, type HeroLoadout } from "./heroes";
 
 export const GAME_TITLE = "Emberheir";
+/** The subtitle under the logo (Timo 2026-11-02). */
+export const GAME_SUBTITLE = "Rise from the Ashes";
 export { PRESTIGE_BRANCHES } from "./masteries";
 export { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 export { BOUNTIES } from "./bounties";

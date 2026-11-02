@@ -55,7 +55,7 @@ test("a new game: set out, win a fight, pick loot, and the save survives a reloa
   });
   // ?dev shows the Skip button in fights.
   await page.goto("/?dev");
-  await expect(page).toHaveTitle("Emberheir");
+  await expect(page).toHaveTitle("Emberheir: Rise from the Ashes");
   await expect(page.getByRole("heading", { level: 1 })).toHaveText("Emberheir");
   await page.getByRole("button", { name: "New Game" }).click();
   if (process.env.SHOTS) {
