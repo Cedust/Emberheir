@@ -17,6 +17,7 @@ import {
   startCloud,
   useSyncState,
 } from "./cloud";
+import { ProviderMark } from "./ProviderMark";
 import type { SaveSide, SyncState } from "./sync";
 
 // The start: a signed-in device syncs before the title reads the slots; once per page.
@@ -178,6 +179,7 @@ export function CloudPlate() {
             {PROVIDERS.map((p: Provider) => (
               <Button
                 key={p}
+                art={<ProviderMark provider={p} />}
                 blocked={busy ? "Signing in…" : null}
                 onClick={() => void run(() => signIn(p))}
               >
