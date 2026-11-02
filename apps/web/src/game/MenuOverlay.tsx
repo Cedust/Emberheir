@@ -4,28 +4,43 @@ import { useNoteHover } from "../ui/ItemTooltip";
 import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
 import { ActionIcon, actionIcon } from "../ui/actionIcons";
-import { Medallion, Tabs, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { playUiSound } from "../ui/sound";
 import { useEffect, useState } from "react";
 import { CreditsPanel } from "./Credits";
 
-type SettingsTab = "display" | "sound";
+type SettingsTab = "display" | "gameplay" | "sound";
 
-/** Settings in two tabs. Both pages share one grid cell, so the window keeps its height. */
+/** Plain text tabs with an underline: inside a window the painted tab plates look out of place. */
+const SETTINGS_TABS: readonly { id: SettingsTab; name: string }[] = [
+  { id: "display", name: "Display" },
+  { id: "gameplay", name: "Gameplay" },
+  { id: "sound", name: "Sound" },
+];
+
+/** Settings in three tabs. Both pages share one grid cell, so the window keeps its height. */
 export function SettingsPanel(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
   const [tab, setTab] = useState<SettingsTab>("display");
   return (
     <div className="settings">
-      <Tabs
-        label="Settings"
-        keys={false}
-        items={[
-          { id: "display", name: "Display" },
-          { id: "sound", name: "Sound" },
-        ]}
-        active={tab}
-        onChange={setTab}
-      />
+      <div className="settings-tabs" role="tablist" aria-label="Settings">
+        {SETTINGS_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`settings-tab title-font${tab === t.id ? " on" : ""}`}
+            onClick={() => {
+              if (t.id !== tab) playUiSound("tab");
+              setTab(t.id);
+            }}
+          >
+            {t.name}
+          </button>
+        ))}
+      </div>
       <div className="settings-pages">
         <div
           className="settings-page"
@@ -33,6 +48,7 @@ export function SettingsPanel(props: { api: SettingsApi }) {
           aria-label="Display"
           hidden={tab !== "display"}
         >
+          <FullscreenRow />
           <div className="setting-row">
             <span>Theme</span>
             <div className="segmented" role="radiogroup" aria-label="Theme">
@@ -50,22 +66,32 @@ export function SettingsPanel(props: { api: SettingsApi }) {
               ))}
             </div>
           </div>
+          <QualityRow api={props.api} />
+        </div>
+        <div
+          className="settings-page"
+          role="tabpanel"
+          aria-label="Gameplay"
+          hidden={tab !== "gameplay"}
+        >
           <OnOffRow
             label="Damage Numbers"
+            tip="The numbers that fly up when a hit lands."
+            kind="Gameplay"
             value={settings.damageNumbers}
             onChange={(v) => update({ damageNumbers: v })}
           />
           <OnOffRow
             label="Screen Shake"
+            tip="The arena shakes and zooms on big hits."
+            kind="Gameplay"
             value={settings.screenShake}
             onChange={(v) => update({ screenShake: v })}
           />
-          <QualityRow api={props.api} />
-          <FullscreenRow />
           <OnOffRow
             label="Tips"
             tip="Old Nan's short tips the first time you reach something new."
-            kind="Game"
+            kind="Gameplay"
             value={settings.tips}
             onChange={(v) => update({ tips: v })}
           />

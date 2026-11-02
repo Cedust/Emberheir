@@ -5604,6 +5604,42 @@
   gap: 16px;
 }
 
+.stage .settings-tabs {
+  display: flex;
+  gap: 28px;
+  border-bottom: 1px solid var(--edge);
+}
+
+.stage .settings-tab {
+  position: relative;
+  padding: 4px 2px 10px;
+  border: 0;
+  background: none;
+  font-size: 17px;
+  letter-spacing: 0.06em;
+  color: var(--text-sub);
+  cursor: pointer;
+}
+
+.stage .settings-tab:hover {
+  color: var(--text);
+}
+
+.stage .settings-tab.on {
+  color: var(--accent);
+}
+
+.stage .settings-tab.on::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: -1px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--accent);
+}
+
 /* Both settings pages in one grid cell: the taller one sets the height, tabs never jump. */
 .stage .settings-pages {
   display: grid;
