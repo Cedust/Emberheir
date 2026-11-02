@@ -335,7 +335,7 @@
 
 .stage .story-intro .si-nan .k-dialog-box {
   /* As tall as the question with its answers: no line makes the box jump. */
-  min-height: 200px;
+  min-height: 170px;
   animation: si-line 0.5s 1.1s ease-out both;
 }
 
@@ -346,6 +346,18 @@
 
 .stage .story-intro .si-nan .k-dialog-answers {
   animation: si-line 0.4s ease-out both;
+}
+
+/* Old Nan's whole head, ears and all: no round crop, the body fades out at the bottom. */
+.stage .story-intro .si-nan .painted-portrait {
+  border-radius: 0;
+  background-size: 165% auto !important;
+  background-position: 42% 0 !important;
+  mask-image: radial-gradient(ellipse 62% 62% at 50% 40%, #000 70%, transparent 100%);
+}
+
+.stage .story-intro .si-nan .k-dialog-portrait {
+  z-index: 5;
 }
 
 .stage .story-intro .si-nan .k-dialog-plate {
