@@ -6667,14 +6667,6 @@
   gap: 12px;
 }
 
-.stage .title-settings {
-  width: 620px;
-  padding: 20px 0;
-  display: flex;
-  flex-direction: column;
-  gap: 16px;
-}
-
 .stage .title-scene {
   position: absolute;
   inset: 0;

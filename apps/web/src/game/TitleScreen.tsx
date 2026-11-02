@@ -10,6 +10,8 @@ import { useStageSize } from "../ui/Stage";
 import { CampLight } from "./camp/art/CampLight";
 import { CampBackdrop, CampFx, SCENE_W, campLights } from "./camp/art/CampScene";
 import { PaintDefs } from "./camp/art/paint";
+import { actionIcon } from "../ui/actionIcons";
+import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
 import { HeirEmblem } from "./ClassEmblem";
 import { ClassSelect } from "./ClassSelect";
 import { CreditsPanel } from "./Credits";
@@ -99,7 +101,7 @@ export function TitleScreen(props: {
         </h1>
         <p className="title-subtitle">{GAME_SUBTITLE}</p>
 
-        {page === "main" && (
+        {(page === "main" || page === "settings" || page === "credits") && (
           <div className="menu-buttons">
             {lastSave && last !== null && (
               <Button big variant="primary" onClick={() => props.onContinue(last)}>
@@ -244,29 +246,32 @@ export function TitleScreen(props: {
             <BackupPanel />
           </div>
         )}
-
-        {page === "credits" && (
-          <div className="title-settings k-window">
-            <CreditsPanel />
-            <div className="menu-foot">
-              <Button icon="prev" onClick={() => setPage("main")}>
-                Back
-              </Button>
-            </div>
-          </div>
-        )}
-
-        {page === "settings" && (
-          <div className="title-settings k-window">
-            <SettingsPanel api={props.settings} />
-            <div className="menu-foot">
-              <Button icon="prev" onClick={() => setPage("main")}>
-                Back
-              </Button>
-            </div>
-          </div>
-        )}
       </div>
+      {(page === "settings" || page === "credits") && (
+        <WindowLayer>
+          <Window
+            label={page === "settings" ? "Settings" : "Credits"}
+            role="dialog"
+            className="menu-window"
+            header={
+              <WindowHeader
+                title={page === "settings" ? "Settings" : "Credits"}
+                medallion={<Medallion image={actionIcon(page)} tint="#5a4218" />}
+                onClose={() => setPage("main")}
+              />
+            }
+          >
+            <div className="menu-settings">
+              {page === "settings" ? <SettingsPanel api={props.settings} /> : <CreditsPanel />}
+              <div className="menu-foot">
+                <Button icon="prev" onClick={() => setPage("main")}>
+                  Back
+                </Button>
+              </div>
+            </div>
+          </Window>
+        </WindowLayer>
+      )}
       <footer className="build-info mono">
         v{__APP_VERSION__}
         {PREVIEW_PR ? ` · PR #${PREVIEW_PR}` : ""} · {__BUILD_COMMIT__} · {buildDate} · Sim{" "}
