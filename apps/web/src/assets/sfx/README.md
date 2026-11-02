@@ -1,0 +1,19 @@
+# Battle sounds: sources
+
+All files are cuts from CC0 packs, made for Crucible (same owner) and taken over unchanged.
+Element hits, spell casts and the Evade whoosh are drawn with Web Audio in
+`src/game/battle/battleSfx.ts` and need no file.
+
+| File                          | Crucible cue        | Cut from                                                                   | Pack (CC0 1.0)                                                                                                                                         |
+| ----------------------------- | ------------------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `battle/swing-blade-1..3.mp3` | `attack.twinBlades` | `Dagger Swing.wav`                                                         | [Medieval Weapons](https://opengameart.org/content/medieval-sound-effects-weapon-textures) (Ben Jaszczak, Brian Nelson)                                |
+| `battle/swing-heavy-1..2.mp3` | `attack.warhammer`  | `Axe Swing.wav`                                                            | Medieval Weapons                                                                                                                                       |
+| `battle/shot-bow-1..3.mp3`    | `attack.longbow`    | `English Longbow Shoot.wav` + `Scythian Recurve Arrow Pass.wav`            | Medieval Weapons                                                                                                                                       |
+| `battle/impact-1.mp3`         | `enemy.impact`      | `hit_03.ogg` + `impactSoft_heavy_004.ogg`                                  | [100 CC0 SFX](https://opengameart.org/content/100-cc0-sfx) (rubberduck), [Kenney Impact](https://kenney.nl/assets/impact-sounds)                       |
+| `battle/clash-1.mp3`          | `hit.counter`       | `sword-clash-02.wav`                                                       | [Tinysized](https://opengameart.org/content/fantasy-sound-effects-tinysized-sfx) (Vehicle)                                                             |
+| `battle/break-1.mp3`          | `shieldBreak`       | `impactMetal_heavy_001.ogg` + `impactPlate_heavy_002.ogg` + `chain_02.ogg` | Kenney Impact, [80 CC0 RPG SFX](https://opengameart.org/content/80-cc0-rpg-sfx) (rubberduck)                                                           |
+| `battle/death-enemy-1..2.mp3` | `defeat.enemy`      | `impactSoft_heavy_000/003.ogg` + `chainmail1/2.wav` + `dropLeather.ogg`    | Kenney Impact, [RPG Sound Pack](https://opengameart.org/content/rpg-sound-pack) (artisticdude), [Kenney RPG Audio](https://kenney.nl/assets/rpg-audio) |
+| `battle/death-hero-1.mp3`     | `defeat.hero`       | `gong_02.ogg`                                                              | 100 CC0 SFX                                                                                                                                            |
+| `battle/telegraph-1.mp3`      | `boss.charge`       | `gong_01.ogg`, reversed                                                    | 100 CC0 SFX                                                                                                                                            |
+| `battle/victory-1.mp3`        | `victory.floor`     | `jingles_PIZZI02.ogg`                                                      | [Kenney Music Jingles](https://kenney.nl/assets/music-jingles)                                                                                         |
+| `battle/defeat-1.mp3`         | `wipe`              | `jingles_PIZZI07.ogg`                                                      | Kenney Music Jingles                                                                                                                                   |

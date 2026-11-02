@@ -57,6 +57,14 @@ import {
   loadHeroWeapon,
 } from "./heroArt";
 import { type View, Weather } from "./weather";
+import {
+  type BattleCue,
+  type PlayOptions,
+  impactCues,
+  playBattleSfx,
+  preloadBattleSfx,
+  swingCue,
+} from "./battleSfx";
 
 /** A Skip resolves the rest of the fight at once: then only the outcome is shown. */
 const FLOOD = 40;
@@ -129,6 +137,10 @@ export class ArenaScene {
   /** Damage over time adds up per fighter and ailment for half a second, then floats as one. */
   private dots = new Map<string, number>();
   private ranged: Record<Side, boolean> = { hero: false, enemy: false };
+  /** Battle sounds on: the real fight and the Effect Gallery; previews and the Dummy stay quiet. */
+  sound = false;
+  /** The hero's weapon, for the sound of its swing. */
+  private heroWeapon: HeroLook["weapon"] | null = null;
   /** The telegraphed Heavy Attack and until when its hit counts as heavy. */
   private heavy: { skill: string; until: number } | null = null;
   private trauma = 0;
@@ -220,6 +232,8 @@ export class ArenaScene {
     this.fx = fx;
     this.weather = new Weather(enemy.act, enemy.wildfire ?? 0, QUALITY[this.quality].weather);
     this.ranged = { hero: RANGED_WEAPONS.has(hero.weapon), enemy: enemy.ranged ?? false };
+    this.heroWeapon = hero.weapon;
+    if (this.sound) preloadBattleSfx();
 
     if (!backdrop) this.world.addChild(drawGround());
     this.world.addChild(fx.back);
@@ -291,6 +305,10 @@ export class ArenaScene {
     this.app = null;
   }
 
+  private sfx(cue: BattleCue, options?: PlayOptions): void {
+    if (this.sound) playBattleSfx(cue, options);
+  }
+
   /** New fight events since the last call. */
   onEvents(events: readonly CombatEvent[]): void {
     if (!this.app) return;
@@ -312,6 +330,8 @@ export class ArenaScene {
           break;
         case "telegraph":
           this.heavy = { skill: e.skill, until: this.clock + e.windup + 1 };
+          // The warning must be heard as well as seen.
+          this.sfx("telegraph");
           break;
         case "hit": {
           const key = `${e.side}:${e.source}`;
@@ -415,6 +435,7 @@ export class ArenaScene {
           // `side` is the fighter who evaded.
           const evader = e.side;
           this.figure(evader).dodge = 1;
+          this.sfx("evade");
           this.fx?.burst({
             x: this.center(evader).x,
             y: GROUND_Y - 6,
@@ -442,6 +463,10 @@ export class ArenaScene {
           break;
         case "death":
           this.die(e.side);
+          this.sfx(e.side === "enemy" ? "death.enemy" : "death.hero");
+          break;
+        case "fightEnd":
+          if (e.winner) this.sfx(e.winner === "hero" ? "victory" : "defeat", { delay: 0.5 });
           break;
         default:
           break;
@@ -1076,11 +1101,19 @@ export class ArenaScene {
       this.heavy.skill === e.source &&
       this.clock <= this.heavy.until;
     const how = this.delivery(e.side, e.source, e.damageType);
-    const land = () => this.impact(e, how, heavy);
+    const land = () => {
+      this.impact(e, how, heavy);
+      // The enemy's blows land a little deeper; a telegraphed Heavy Attack deeper still.
+      const rate = heavy ? 0.8 : e.side === "enemy" ? 0.92 : 1;
+      const gainDb = e.glancing || e.deflected ? -8 : heavy ? 2 : 0;
+      for (const cue of impactCues(e)) this.sfx(cue, { rate, gainDb });
+    };
     const attacker = this.figure(e.side);
     const from = this.hand(e.side);
     const to = this.center(target);
     this.wait(delay, () => {
+      const swing = swingCue(how, e.side === "hero" ? this.heroWeapon : null, e.damageType);
+      if (swing) this.sfx(swing, e.side === "enemy" ? { gainDb: -4, rate: 0.9 } : { gainDb: 0 });
       switch (how) {
         case "slash":
           attacker.lunge = 1;

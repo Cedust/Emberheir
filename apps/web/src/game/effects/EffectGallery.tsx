@@ -83,6 +83,7 @@ function Gallery() {
     const host = hostRef.current;
     if (!host) return;
     const scene = new ArenaScene();
+    scene.sound = true;
     scene.showNumbers = numbers;
     scene.motion = settings.screenShake && !reducedMotion();
     scene.quality = settings.graphicsQuality;

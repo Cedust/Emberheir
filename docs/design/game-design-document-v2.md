@@ -747,6 +747,10 @@ Endgame **Wildfire I–X**.
   (einer pro Trip, er läuft auf der Karte gedämpft weiter), Boss, Finale (Harvester und The Last Ember) und Harvest
   (Prestige und Ende); Song 1 und 2 laufen im Titel als Playlist, Camp, Intro und Class Select spielen „The Old Tower Inn“ (RandomMind, CC0). Ein Tod blendet in Stille aus, das Menü dämpft. Die Songs loopen nahtlos und blenden ineinander
   über. Settings: „Music“ an/aus und „Music Volume“, getrennt von Sound und Volume.
+- **Battle-Sounds (Release 1.0):** Schwung beim Ausholen (Klinge, schwere Waffe, Bogen, Zauber), Einschlag beim Treffer
+  (Fleisch, Element, Krachen beim Crit, Stahl bei Block/Parry), Evade-Whoosh, Warnung beim Heavy-Attack-Telegraph,
+  Tod und Sieg/Niederlage. Gegnerschläge klingen tiefer. CC0-Schnitte aus Crucible, Elemente per Web Audio. Pro Cue
+  Stimmenlimit und Mindestabstand; Skip bleibt still. Schalter „Battle“ unter Sound.
 
 ---
 
