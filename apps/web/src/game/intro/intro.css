@@ -348,20 +348,6 @@
   animation: si-line 0.4s ease-out both;
 }
 
-/* Old Nan's whole head, ears and all: no round crop, the body fades out at the bottom. */
-.stage .story-intro .si-nan .painted-portrait {
-  border-radius: 0;
-  background-size: 165% auto !important;
-  background-position: 42% 0 !important;
-  mask-image: radial-gradient(ellipse 56% 52% at 50% 36%, #000 68%, transparent 100%);
-}
-
-.stage .story-intro .si-nan .k-dialog-portrait {
-  z-index: 5;
-  /* Beside the box, not over it: only her head rises above its edge. */
-  margin-right: -4px;
-}
-
 .stage .story-intro .si-nan .k-dialog-plate {
   padding-right: 52px;
 }

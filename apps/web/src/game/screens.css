@@ -2296,6 +2296,28 @@
   height: 260px;
 }
 
+/* Old Nan's whole head, ears and all (Timo 2026-11-02): no round crop, her body fades out at
+   the bottom, and she stands beside the box, not over it. The same in the intro, her window
+   by the fire and her First Steps tips. */
+.stage .nan-stage .painted-portrait,
+.stage .story-intro .si-nan .painted-portrait {
+  border-radius: 0;
+  background-size: 165% auto !important;
+  background-position: 42% 0 !important;
+  mask-image: radial-gradient(ellipse 56% 52% at 50% 36%, #000 68%, transparent 100%);
+}
+
+.stage .nan-stage .k-dialog-portrait,
+.stage .story-intro .si-nan .k-dialog-portrait {
+  z-index: 5;
+  margin-right: -4px;
+}
+
+/* Room for "Hearthkeeper" / "First Steps" on her name plate. */
+.stage .nan-stage .k-dialog-plate {
+  padding-right: 52px;
+}
+
 /* Story Blips: a persona met on the road (StoryBlip.tsx). The portrait arrives, a few motes
    in the persona's colour drift up behind the dialogue. */
 .stage .blip-stage {
