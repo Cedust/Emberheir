@@ -2,6 +2,7 @@ import { execSync } from "node:child_process";
 import { readFileSync } from "node:fs";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+import { legalPages } from "./scripts/legalPages.ts";
 
 function gitCommit(): string {
   if (process.env.GITHUB_SHA) return process.env.GITHUB_SHA.slice(0, 7);
@@ -24,7 +25,7 @@ const APP_VERSION = (
 // GitHub Pages serves the site under /<repo>/, set via BASE_PATH in the deploy workflow.
 export default defineConfig({
   base: process.env.BASE_PATH ?? "/",
-  plugins: [react()],
+  plugins: [react(), legalPages()],
   build: {
     // The PixiJS views load on demand (src/game/lazyViews.tsx); PixiJS gets a chunk of its own.
     rolldownOptions: {

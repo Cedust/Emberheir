@@ -1,0 +1,50 @@
+name: Deploy to Cloudflare
+
+# Builds the game with the Firebase setup and serves the release (main) from Cloudflare Pages
+# (docs/cloud-setup.md). PR previews stay on GitHub Pages (pr-preview.yml, Timo 2026-11-02).
+# Runs only once the repository variable CLOUDFLARE_PAGES_PROJECT is set.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: cloudflare-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    if: vars.CLOUDFLARE_PAGES_PROJECT != ''
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      deployments: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Build
+        run: npm run build
+        env:
+          VITE_FIREBASE_API_KEY: ${{ secrets.VITE_FIREBASE_API_KEY }}
+          VITE_FIREBASE_AUTH_DOMAIN: ${{ secrets.VITE_FIREBASE_AUTH_DOMAIN }}
+          VITE_FIREBASE_PROJECT_ID: ${{ secrets.VITE_FIREBASE_PROJECT_ID }}
+          VITE_FIREBASE_APP_ID: ${{ secrets.VITE_FIREBASE_APP_ID }}
+          # Legal Notice and Privacy; without them the build fails.
+          LEGAL_NAME: ${{ secrets.LEGAL_NAME }}
+          LEGAL_STREET: ${{ secrets.LEGAL_STREET }}
+          LEGAL_CITY: ${{ secrets.LEGAL_CITY }}
+          LEGAL_EMAIL: ${{ secrets.LEGAL_EMAIL }}
+          LEGAL_REQUIRED: "true"
+      - name: Deploy to Cloudflare Pages
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
+          command: >-
+            pages deploy apps/web/dist
+            --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
+            --branch=main

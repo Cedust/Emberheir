@@ -163,6 +163,8 @@ test("Attunement: a Wand's Default Attack takes another element, free", async ({
   await page.keyboard.press("t");
   await page.getByRole("tab", { name: "Heirloom" }).click();
   const picker = page.getByRole("region", { name: "Attunement" });
+  // The Heirloom tab and its Pixi scene load on demand: on a busy CI runner that takes a while.
+  await expect(picker).toBeVisible({ timeout: 20_000 });
   await expect(picker.getByRole("button", { name: "Like your path" })).toHaveAttribute(
     "aria-pressed",
     "true",

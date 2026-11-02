@@ -27,6 +27,11 @@ jobs:
       - run: npm run build
         env:
           BASE_PATH: /${{ github.event.repository.name }}/
+          # Legal Notice and Privacy (docs/cloud-setup.md); empty until the secrets are set.
+          LEGAL_NAME: ${{ secrets.LEGAL_NAME }}
+          LEGAL_STREET: ${{ secrets.LEGAL_STREET }}
+          LEGAL_CITY: ${{ secrets.LEGAL_CITY }}
+          LEGAL_EMAIL: ${{ secrets.LEGAL_EMAIL }}
       - run: touch apps/web/dist/.nojekyll
       - uses: JamesIves/github-pages-deploy-action@v4
         with:

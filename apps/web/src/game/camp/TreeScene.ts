@@ -1,3 +1,4 @@
+import "../pixiNoEval";
 import { SKILL_TREE, type TreeRegion } from "@emberheir/content";
 import type { SkillNode } from "@emberheir/sim";
 import {
