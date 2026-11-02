@@ -131,6 +131,7 @@ const HARVESTER: EnemyLook = {
 const BOW: Kit = { classId: "ashstrider", weapon: "bow" };
 const CROSSBOW: Kit = { classId: "ashstrider", weapon: "crossbow" };
 const WAND: Kit = { classId: "emberseer", weapon: "wand" };
+const STAFF: Kit = { classId: "emberseer", weapon: "staff" };
 
 /** Heavy Attack: the wind-up ring pulses, then the blow lands. */
 function heavyAttack(p: Player, capped: boolean): void {
@@ -236,6 +237,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "orb",
     group: "hits",
+    kit: WAND,
     name: "Kugel-Geschoss (Orb)",
     verdict: "change",
     what: "Zauber wie Ice Lance, Fireball oder Void Orb fliegen als Kugel zum Ziel.",
@@ -246,6 +248,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "bolt",
     group: "hits",
+    kit: WAND,
     name: "Blitz (Bolt)",
     verdict: "keep",
     what: "Blitz-Zauber wie Chain Lightning springen sofort zum Ziel.",
@@ -256,6 +259,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "fall",
     group: "hits",
+    kit: STAFF,
     name: "Meteor (Fall)",
     verdict: "keep",
     what: "Meteor, Eruption, Avalanche und Ashfall fallen von oben auf das Ziel.",
@@ -265,6 +269,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "nova",
     group: "hits",
+    kit: STAFF,
     name: "Bodenring (Nova)",
     verdict: "keep",
     what: "Frost Nova, Toxic Burst, Immolate und ähnliche treffen direkt am Ziel.",
@@ -514,6 +519,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "barrier-gain",
     group: "defense",
+    kit: WAND,
     name: "Barrier-Gewinn",
     verdict: "keep",
     what: "Der Held bekommt Barrier (eine Schicht vor dem Life, z. B. durch INT).",
@@ -598,6 +604,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "perk-barrierBurst",
     group: "perks",
+    kit: WAND,
     name: "Barrier Burst (INT 10) · neu",
     verdict: "change",
     what: "Neu seit dem 20.10. (ersetzt Spellfire): bricht die Barrier des Helden, platzt sie und trifft den Gegner mit 50 % der max Barrier im Element der Waffe.",
@@ -637,6 +644,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "collapse",
     group: "payoffs",
+    kit: STAFF,
     name: "Collapse (Corruption)",
     verdict: "keep",
     what: "Corruption fällt in sich zusammen und macht großen Schaden.",
@@ -842,7 +850,7 @@ export const EFFECTS: readonly EffectEntry[] = [
     verdict: "keep",
     what: "Der Held mit Wand oder Staff wirkt einen Zauber.",
     see: "Eigene gemalte Pose: der Arm hebt die Waffe, der Zauber löst sich aus ihr.",
-    kit: { classId: "emberseer", weapon: "staff" },
+    kit: STAFF,
     play: (p) => p.events(cast("Fireball", 30, "fire")),
   },
   {
