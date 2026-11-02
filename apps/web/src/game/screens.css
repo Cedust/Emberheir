@@ -11424,3 +11424,18 @@
   border-radius: 50%;
   background: #fff;
 }
+
+.stage .cp-rarities .cp-locked-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-style: italic;
+  color: var(--text-sub);
+  opacity: 0.6;
+}
+
+.stage .cp-hint {
+  margin-top: 14px;
+  font-size: 0.85em;
+  color: var(--text-sub);
+}
