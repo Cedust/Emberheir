@@ -29,6 +29,8 @@ export function CreditsPanel() {
         <dd>Written by Claude (Anthropic)</dd>
         <dt className="title-font">Art</dt>
         <dd>Painted with AI image tools, chosen and cut by Cedust</dd>
+        <dt className="title-font">Music</dt>
+        <dd>Made with Suno, chosen by Cedust</dd>
         <dt className="title-font">Fonts</dt>
         <dd>
           {FONTS.map((f) => (

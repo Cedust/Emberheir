@@ -743,6 +743,10 @@ Endgame **Wildfire I–X**.
   nimmt die Heirs des Gasts mit. Offline und als Gast spielt man wie bisher. „Delete account“ löscht Konto,
   Cloud-Stand und die Kopie auf dem Gerät. Impressum und Datenschutzerklärung hängen in den Credits und im
   Anmeldefeld. Einrichtung: `docs/cloud-setup.md`.
+- **Musik (Release 1.0):** sieben Suno-Songs von Cedust (`apps/web/src/game/music/`): Title, Camp, zwei Battle-Songs
+  (einer pro Trip, er läuft auf der Karte gedämpft weiter), Boss, Finale (Harvester und The Last Ember) und Harvest
+  (Prestige und Ende). Ein Tod blendet in Stille aus, das Menü dämpft. Die Songs loopen nahtlos und blenden ineinander
+  über. Settings: „Music“ an/aus und „Music Volume“, getrennt von Sound und Volume.
 
 ---
 

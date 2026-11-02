@@ -13,6 +13,10 @@ export interface Settings {
   readonly volume: number;
   /** Each kind of sound on its own (Hover ticks, Clicks, Windows, Coins, Loot, Notifications). */
   readonly sounds: Readonly<Record<SoundGroup, boolean>>;
+  /** Game music (game/music), on its own switch and volume beside the UI sounds. */
+  readonly music: boolean;
+  /** Music volume, 0..1. */
+  readonly musicVolume: number;
   /** Screen shake and camera zoom in fights. */
   readonly screenShake: boolean;
   /** Arena sharpness, particles and weather (`QUALITY` in pixiPacing.ts). */
@@ -27,6 +31,8 @@ export const DEFAULT_SETTINGS: Settings = {
   sound: true,
   volume: 0.5,
   sounds: { hover: true, click: true, window: true, coin: true, loot: true, notice: true },
+  music: true,
+  musicVolume: 0.5,
   screenShake: true,
   graphicsQuality: "medium",
   tips: true,
@@ -52,6 +58,8 @@ const settingsSchema: z.ZodType<Settings> = z
     sound: z.boolean().catch(DEFAULT_SETTINGS.sound),
     volume: z.number().min(0).max(1).catch(DEFAULT_SETTINGS.volume),
     sounds: soundsSchema.catch(DEFAULT_SETTINGS.sounds),
+    music: z.boolean().catch(DEFAULT_SETTINGS.music),
+    musicVolume: z.number().min(0).max(1).catch(DEFAULT_SETTINGS.musicVolume),
     screenShake: z.boolean().catch(DEFAULT_SETTINGS.screenShake),
     graphicsQuality: z.enum(["high", "medium", "low"]).catch(DEFAULT_SETTINGS.graphicsQuality),
     tips: z.boolean().catch(DEFAULT_SETTINGS.tips),
