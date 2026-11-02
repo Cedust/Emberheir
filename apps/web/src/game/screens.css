@@ -10794,6 +10794,26 @@
   filter: brightness(0.35) sepia(0.4);
 }
 
+/* Timo's painted choice icons (wahlkarten-icons-art-v1.md) sit in the round sigil. */
+.stage .path-sigil > .choice-icon,
+.stage .path-sigil > .k-coin,
+.stage .path-sigil > .rune-stone {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  filter: drop-shadow(0 2px 3px rgb(0 0 0 / 0.6));
+}
+
+.stage .done-card .choice-icon {
+  object-fit: contain;
+  filter: drop-shadow(0 0 10px rgb(255 140 50 / 0.45));
+}
+
+.stage .chain-flames .choice-icon {
+  object-fit: contain;
+  margin-right: -3px;
+}
+
 .stage .choice-walk .path-sigil {
   color: #e8d3a8;
 }

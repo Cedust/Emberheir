@@ -698,6 +698,21 @@ export function saveAtEvent(eventId = "hedgehog-peddler"): string {
   });
 }
 
+/** A Cache on the act map: an item pick, the act's Rune or Ember Coal. */
+export function saveAtCache(): string {
+  const out = oldActTrip();
+  const state = onMap(out, 7, undefined, {
+    visit: { kind: "cache", runes: ["ash"], emberCoal: 2 },
+  });
+  const rows = state.run?.map?.rows.map((row, r) =>
+    r === 6 ? row.map((n) => ({ ...n, kind: "cache" as const })) : row,
+  );
+  return serializeGame({
+    ...state,
+    run: state.run && rows ? { ...state.run, map: { rows } } : state.run,
+  });
+}
+
 /** Marisha on the road: three slots a quarter cheaper. */
 export function saveAtMarisha(): string {
   const out = oldActTrip();

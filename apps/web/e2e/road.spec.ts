@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 import {
   saveDummyBag,
+  saveAtCache,
   saveAtEvent,
   saveAtFork,
   saveAtMarisha,
@@ -185,5 +186,26 @@ test("Eldrin talks in his Road window, and says something new when poked", async
     await page.waitForTimeout(300);
     await page.screenshot({ path: `${process.env.SHOTS}/eldrin-home-unique.png` });
   }
+  expect(errors).toEqual([]);
+});
+
+test("a Cache: painted choices, the act's Rune shows its own stone", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveAtCache());
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+
+  const cards = page.getByLabel("Choose");
+  await expect(
+    cards.getByRole("button", { name: "Item" }).locator("img.choice-icon"),
+  ).toBeVisible();
+  await expect(
+    cards.getByRole("button", { name: "Bark Rune" }).locator("img.rune-stone"),
+  ).toBeVisible();
+  await expect(
+    cards.getByRole("button", { name: "Walk On" }).locator("img.choice-icon"),
+  ).toBeVisible();
+  if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/map-cache.png` });
   expect(errors).toEqual([]);
 });
