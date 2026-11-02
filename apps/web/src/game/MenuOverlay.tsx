@@ -51,23 +51,25 @@ export function SettingsPanel(props: { api: SettingsApi }) {
       />
 
       <h3 className="settings-head title-font">Sound</h3>
+      <OnOffRow
+        label="Music"
+        tip="The songs of the title, the Camp and the fights."
+        value={settings.music}
+        onChange={(v) => update({ music: v })}
+      />
+      <VolumeRow
+        label="Music Volume"
+        on={settings.music}
+        value={settings.musicVolume}
+        onChange={(v) => update({ musicVolume: v })}
+      />
       <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
-      <div className={`setting-row${settings.sound ? "" : " muted"}`}>
-        <span>Volume</span>
-        <span className="setting-volume">
-          <input
-            type="range"
-            min={0}
-            max={100}
-            step={5}
-            aria-label="Volume"
-            disabled={!settings.sound}
-            value={Math.round(settings.volume * 100)}
-            onChange={(e) => update({ volume: Number(e.target.value) / 100 })}
-          />
-          <b className="mono">{Math.round(settings.volume * 100)}%</b>
-        </span>
-      </div>
+      <VolumeRow
+        label="Volume"
+        on={settings.sound}
+        value={settings.volume}
+        onChange={(v) => update({ volume: v })}
+      />
       {SOUND_GROUPS.map((g) => (
         <OnOffRow
           key={g}
@@ -126,6 +128,34 @@ function QualityRow(props: { api: SettingsApi }) {
           </button>
         ))}
       </div>
+    </div>
+  );
+}
+
+/** A 0..100 % slider, greyed out while its switch is off. */
+function VolumeRow(props: {
+  label: string;
+  on: boolean;
+  value: number;
+  onChange: (v: number) => void;
+}) {
+  const percent = Math.round(props.value * 100);
+  return (
+    <div className={`setting-row${props.on ? "" : " muted"}`}>
+      <span>{props.label}</span>
+      <span className="setting-volume">
+        <input
+          type="range"
+          min={0}
+          max={100}
+          step={5}
+          aria-label={props.label}
+          disabled={!props.on}
+          value={percent}
+          onChange={(e) => props.onChange(Number(e.target.value) / 100)}
+        />
+        <b className="mono">{percent}%</b>
+      </span>
     </div>
   );
 }
