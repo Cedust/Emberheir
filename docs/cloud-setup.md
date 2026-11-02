@@ -24,8 +24,7 @@ never mix.
    `VITE_FIREBASE_API_KEY`, `VITE_FIREBASE_AUTH_DOMAIN`, `VITE_FIREBASE_PROJECT_ID`,
    `VITE_FIREBASE_APP_ID` (template: `apps/web/.env.example`).
 5. **Authorized domains:** under Authentication → Settings add the game's domain, e.g.
-   `emberheir.pages.dev` (and an own domain if there is one). Firebase has no wildcards: a
-   Cloudflare preview whose sign-in you want to test needs its own entry.
+   `emberheir.pages.dev` (and an own domain if there is one).
 
 ## 2. Sign-in providers
 
@@ -42,9 +41,10 @@ first signed in with the other provider".
 
 ## 3. Cloudflare Pages
 
-`.github/workflows/deploy-cloudflare.yml` builds and deploys: a push to `main` goes live, every
-PR from this repository gets a preview at `<branch>.<project>.pages.dev`. It only runs once the
-variable `CLOUDFLARE_PAGES_PROJECT` is set; GitHub Pages keeps running next to it.
+`.github/workflows/deploy-cloudflare.yml` builds and deploys the release: every push to `main`
+goes live (it can also be started by hand under Actions). PR previews stay on GitHub Pages
+(`pr-preview.yml`) and have no sign-in. It only runs once the variable `CLOUDFLARE_PAGES_PROJECT`
+is set; GitHub Pages keeps running next to it.
 
 1. In Cloudflare under Workers & Pages create a Pages project with "Direct Upload" (e.g.
    `emberheir`).

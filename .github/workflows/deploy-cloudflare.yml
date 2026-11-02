@@ -1,13 +1,12 @@
 name: Deploy to Cloudflare
 
-# Builds the game with the Firebase setup and serves it from Cloudflare Pages
-# (docs/cloud-setup.md): main goes live, every PR from this repository gets a preview at
-# <branch>.<project>.pages.dev. Runs only once the repository variable CLOUDFLARE_PAGES_PROJECT is
-# set; until then GitHub Pages (deploy-pages.yml) stays the only site.
+# Builds the game with the Firebase setup and serves the release (main) from Cloudflare Pages
+# (docs/cloud-setup.md). PR previews stay on GitHub Pages (pr-preview.yml, Timo 2026-11-02).
+# Runs only once the repository variable CLOUDFLARE_PAGES_PROJECT is set.
 on:
   push:
     branches: [main]
-  pull_request:
+  workflow_dispatch:
 
 concurrency:
   group: cloudflare-${{ github.ref }}
@@ -15,10 +14,7 @@ concurrency:
 
 jobs:
   deploy:
-    # PRs from forks see no secrets and do not deploy.
-    if: >-
-      vars.CLOUDFLARE_PAGES_PROJECT != '' &&
-      (github.event_name == 'push' || github.event.pull_request.head.repo.full_name == github.repository)
+    if: vars.CLOUDFLARE_PAGES_PROJECT != ''
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -51,4 +47,4 @@ jobs:
           command: >-
             pages deploy apps/web/dist
             --project-name=${{ vars.CLOUDFLARE_PAGES_PROJECT }}
-            --branch=${{ github.head_ref || github.ref_name }}
+            --branch=main
