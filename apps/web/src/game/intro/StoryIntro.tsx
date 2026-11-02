@@ -116,7 +116,12 @@ export function StoryIntro(props: { onDone: (classId: string | null) => void }) 
           style={{ backgroundImage: `url(${scene === "found" ? foundUrl : fieldsUrl})` }}
         />
         <div className="si-glow" />
-        {sky === "fall" && <div className="si-star" key={step} />}
+        {sky === "fall" && (
+          <>
+            <div className="si-star" key={`star-${step}`} />
+            <div className="si-impact" key={`impact-${step}`} />
+          </>
+        )}
         <div className="si-ash">
           {FLAKES.map((f, i) => (
             <i

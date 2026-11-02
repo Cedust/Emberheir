@@ -115,16 +115,16 @@
   filter: blur(2px);
 }
 
-.stage .story-intro .si-star::after {
-  content: "";
+.stage .story-intro .si-impact {
   position: absolute;
-  left: 50%;
-  top: 50%;
+  left: calc(78% - 511px);
+  top: calc(-8% + 379px);
   width: 600px;
   height: 300px;
   translate: -50% -50%;
   border-radius: 50%;
   background: radial-gradient(rgb(255 210 140 / 0.9), rgb(255 110 30 / 0.4) 40%, transparent 70%);
+  mix-blend-mode: screen;
   opacity: 0;
   animation: si-impact 1.6s 2.1s ease-out both;
 }
@@ -137,9 +137,14 @@
   10% {
     opacity: 1;
   }
-  100% {
+  92% {
     transform: translate(-520px, 370px) scale(1.2);
     opacity: 1;
+  }
+  /* Gone into the hills: only the flash stays a moment. */
+  100% {
+    transform: translate(-520px, 370px) scale(0.4);
+    opacity: 0;
   }
 }
 
@@ -362,7 +367,8 @@
   }
   .stage .story-intro .si-ash,
   .stage .story-intro .si-embers,
-  .stage .story-intro .si-star {
+  .stage .story-intro .si-star,
+  .stage .story-intro .si-impact {
     display: none;
   }
   .stage .story-intro .si-curtain {

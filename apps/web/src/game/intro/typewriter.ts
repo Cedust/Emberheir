@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { prefersReducedMotion } from "../../ui/kit/juice";
 import { playUiSound } from "../../ui/sound";
 
@@ -54,10 +54,11 @@ export function useTypewriter(
   const reduced = useMemo(() => prefersReducedMotion(), []);
   const shown = reduced ? letters.length : state.text === text ? state.shown : 0;
   const done = shown >= letters.length;
+  // The running letter loop, so a click that shows the whole line also stops its ticking.
+  const frame = useRef(0);
 
   useEffect(() => {
     if (reduced) return;
-    let frame = 0;
     let last = 0;
     const start = performance.now();
     const step = (now: number) => {
@@ -68,11 +69,15 @@ export function useTypewriter(
         last = n;
         setState((s) => (s.text === text && s.shown >= n ? s : { text, shown: n }));
       }
-      if (n < letters.length) frame = requestAnimationFrame(step);
+      if (n < letters.length) frame.current = requestAnimationFrame(step);
     };
-    frame = requestAnimationFrame(step);
-    return () => cancelAnimationFrame(frame);
+    frame.current = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(frame.current);
   }, [text, letters, times, delay, reduced]);
 
-  return { shown, done, finish: () => setState({ text, shown: letters.length }) };
+  const finish = () => {
+    cancelAnimationFrame(frame.current);
+    setState({ text, shown: letters.length });
+  };
+  return { shown, done, finish };
 }
