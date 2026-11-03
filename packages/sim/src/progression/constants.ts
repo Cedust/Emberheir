@@ -200,8 +200,8 @@ export const PROGRESSION = {
   /**
    * Ember Coal drops on its own like Runes, sized to what Reforge and Kindle need
    * (economy-v2-plan.md W4; before: bosses 4–6, Elites 1–2, normal enemies 5 %): bosses always
-   * (min, max), Elites sometimes one, normal enemies never. Cache nodes and Eldrin's Caches pay
-   * `cacheEmberCoal`.
+   * (min, max), Elites sometimes one, normal enemies never. Cache nodes pay `cacheEmberCoal`;
+   * Eldrin's Caches only through an Elite Hunt.
    */
   /**
    * Currency Caps (economy-v2-plan.md, Timo 2026-11-03: fixed caps, none that grow): the most the
