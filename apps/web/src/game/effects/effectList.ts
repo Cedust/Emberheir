@@ -373,7 +373,7 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Mighty Hit",
     verdict: "change",
     what: "Weapon Mastery: ein sauberer Treffer mit besonders hohem Waffenschaden.",
-    see: "Große, schräge Zahl in dunklem Orangerot mit „⚒“, Hit-Stop und Wackeln. Kein Ring mehr. Ein Mighty Crit hat „!“ und einen Verlauf von Orange nach dunklem Orangerot. Hier: erst Mighty Hit, dann Mighty Crit.",
+    see: "Große, schräge Zahl in dunklem Orangerot mit kleinem Hammer daneben, Hit-Stop und Wackeln. Kein Ring mehr. Ein Mighty Crit hat „!“ und einen Verlauf von Orange nach dunklem Orangerot. Hier: erst Mighty Hit, dann Mighty Crit.",
     before: "Ein breiter Bodenring und ein weißer Ring, „⚒“ an der kleinen Zahl.",
     play: (p) => {
       p.events([hit({ mighty: true, damage: 480 })]);
