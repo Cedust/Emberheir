@@ -1,10 +1,10 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type GameState, getAct, heroTitle } from "@emberheir/sim";
+import { type GameState, getAct } from "@emberheir/sim";
 
-/** The short line under Continue: class title, level and the act (or the Camp). */
-export function continueLine(save: GameState): string {
+/** The act a character stands in, or the Camp. */
+export function continuePlace(save: GameState): string {
   const act = save.run ? getAct(GAME_DATA, save.run.actId) : undefined;
-  return `${heroTitle(save, GAME_DATA)} · Level ${save.hero.level} · ${act?.name ?? "Camp"}`;
+  return act?.name ?? "Camp";
 }
 
 /** One line about where a character stands. */
