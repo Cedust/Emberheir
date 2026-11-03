@@ -220,6 +220,7 @@ export function BattleView(props: {
     const host = hostRef.current;
     if (!host) return;
     const scene = new ArenaScene();
+    scene.sound = true;
     scene.showNumbers = settings.damageNumbers;
     scene.motion = settings.screenShake && !reducedMotion();
     scene.quality = settings.graphicsQuality;

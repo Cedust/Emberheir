@@ -110,6 +110,19 @@
   background: #3f7a3a;
 }
 
+.stage .fx-verdict.new {
+  background: #8a5a1c;
+}
+
+.stage .fx-sound-off {
+  margin: 8px 0 0;
+  padding: 6px 10px;
+  border-radius: 4px;
+  background: #7a2a1c;
+  color: #fff8ec;
+  font-size: 15px;
+}
+
 .stage .fx-foot {
   display: flex;
   align-items: center;

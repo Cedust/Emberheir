@@ -10,9 +10,14 @@ const UiKitPreview = lazy(() =>
 const EffectGallery = lazy(() =>
   import("./game/effects/EffectGallery").then((m) => ({ default: m.EffectGallery })),
 );
+/** `?sfx` plays every battle sound with its arena moment. */
+const SfxGallery = lazy(() =>
+  import("./game/effects/SfxGallery").then((m) => ({ default: m.SfxGallery })),
+);
 const PARAMS = new URLSearchParams(window.location.search);
 const SHOW_KIT = PARAMS.has("uikit");
 const SHOW_EFFECTS = PARAMS.has("effects");
+const SHOW_SFX = PARAMS.has("sfx");
 /** `?crashtest` breaks the game on purpose, to see (and test) the crash screen. */
 const CRASH_TEST = PARAMS.has("crashtest");
 
@@ -25,6 +30,13 @@ export function App() {
     return (
       <Suspense fallback={null}>
         <UiKitPreview />
+      </Suspense>
+    );
+  }
+  if (SHOW_SFX) {
+    return (
+      <Suspense fallback={null}>
+        <SfxGallery />
       </Suspense>
     );
   }

@@ -35,6 +35,11 @@ export function CreditsPanel() {
           <span className="credits-line">Camp: “The Old Tower Inn” by RandomMind</span>
           <span className="credits-note">CC0</span>
         </dd>
+        <dt className="title-font">Sounds</dt>
+        <dd>
+          Kenney, rubberduck, artisticdude, Vehicle, Ben Jaszczak and Brian Nelson
+          <span className="credits-note">CC0</span>
+        </dd>
         <dt className="title-font">Fonts</dt>
         <dd>
           {FONTS.map((f) => (

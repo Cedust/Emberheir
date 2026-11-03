@@ -24,20 +24,22 @@ const REVIEW_SCHEMA = z.record(
 );
 
 const KEY = storageKey("effect-review");
+/** Timo's picks in the SFX Gallery (`?sfx`), apart from the effects'. */
+export const SFX_REVIEW_KEY = storageKey("sfx-review");
 
 export const CHOICE_LABEL: Record<Choice, string> = { keep: "Behalten", remove: "Entfernen" };
 
-export function loadReview(): Review {
+export function loadReview(key = KEY): Review {
   try {
-    return parseStored(localStorage.getItem(KEY), REVIEW_SCHEMA, {}) as Review;
+    return parseStored(localStorage.getItem(key), REVIEW_SCHEMA, {}) as Review;
   } catch {
     return {};
   }
 }
 
-export function saveReview(review: Review): void {
+export function saveReview(review: Review, key = KEY): void {
   try {
-    localStorage.setItem(KEY, JSON.stringify(review));
+    localStorage.setItem(key, JSON.stringify(review));
   } catch {
     // Private window or blocked storage: the picks last until the page closes.
   }
@@ -55,7 +57,12 @@ export function setPick(review: Review, id: string, pick: Pick): Review {
 }
 
 /** The review as JSON: every effect with its state and Timo's pick (null = still open). */
-export function exportReview(effects: readonly EffectEntry[], review: Review, now: Date): string {
+export function exportReview(
+  effects: readonly EffectEntry[],
+  review: Review,
+  now: Date,
+  kind = "emberheir-effect-review",
+): string {
   const rows = effects.map((e) => {
     const pick = review[e.id];
     return {
@@ -69,7 +76,7 @@ export function exportReview(effects: readonly EffectEntry[], review: Review, no
   });
   return JSON.stringify(
     {
-      kind: "emberheir-effect-review",
+      kind,
       version: 1,
       exportedAt: now.toISOString(),
       decided: rows.filter((r) => r.choice !== null).length,
