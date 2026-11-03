@@ -131,6 +131,7 @@ const HARVESTER: EnemyLook = {
 const BOW: Kit = { classId: "ashstrider", weapon: "bow" };
 const CROSSBOW: Kit = { classId: "ashstrider", weapon: "crossbow" };
 const WAND: Kit = { classId: "emberseer", weapon: "wand" };
+const STAFF: Kit = { classId: "emberseer", weapon: "staff" };
 
 /** Heavy Attack: the wind-up ring pulses, then the blow lands. */
 function heavyAttack(p: Player, capped: boolean): void {
@@ -236,6 +237,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "orb",
     group: "hits",
+    kit: WAND,
     name: "Kugel-Geschoss (Orb)",
     verdict: "change",
     what: "Zauber wie Ice Lance, Fireball oder Void Orb fliegen als Kugel zum Ziel.",
@@ -246,6 +248,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "bolt",
     group: "hits",
+    kit: WAND,
     name: "Blitz (Bolt)",
     verdict: "keep",
     what: "Blitz-Zauber wie Chain Lightning springen sofort zum Ziel.",
@@ -256,6 +259,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "fall",
     group: "hits",
+    kit: STAFF,
     name: "Meteor (Fall)",
     verdict: "keep",
     what: "Meteor, Eruption, Avalanche und Ashfall fallen von oben auf das Ziel.",
@@ -265,6 +269,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "nova",
     group: "hits",
+    kit: STAFF,
     name: "Bodenring (Nova)",
     verdict: "keep",
     what: "Frost Nova, Toxic Burst, Immolate und ähnliche treffen direkt am Ziel.",
@@ -288,9 +293,10 @@ export const EFFECTS: readonly EffectEntry[] = [
     id: "crit",
     group: "hits",
     name: "Crit (kritischer Treffer)",
-    verdict: "keep",
+    verdict: "change",
     what: "Ein Treffer macht 150 % Schaden.",
-    see: "Weißer Ring, kurzes Bild-Anhalten (Hit-Stop), spürbares Wackeln, große Zahl mit „!“.",
+    see: "Große, schräge Zahl in Orange mit „!“, kurzes Bild-Anhalten (Hit-Stop), spürbares Wackeln.",
+    before: "Weißer Ring, Hit-Stop, Wackeln, große Zahl in hellerer Schadensfarbe mit „!“.",
     play: (p) => p.events([hit({ crit: true, damage: 612 })]),
   },
   {
@@ -336,9 +342,10 @@ export const EFFECTS: readonly EffectEntry[] = [
     id: "block",
     group: "hits",
     name: "Block",
-    verdict: "keep",
+    verdict: "change",
     what: "Ein Shield hält einen Teil des Treffers ab.",
-    see: "Ein kleiner Ring am Schild, „⛨“ an der Zahl.",
+    see: "„⛨“ an der Zahl. Kein Ring mehr.",
+    before: "Ein kleiner Ring am Schild, „⛨“ an der Zahl.",
     play: (p) => p.events([hit({ side: "enemy", blocked: true, damage: 140 })]),
   },
   {
@@ -347,8 +354,8 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Deflect",
     verdict: "change",
     what: "Evasion lässt den Helden Zauber ablenken: sie machen nur halben Schaden.",
-    see: "Der Held weicht halb aus, ein blasser Ring, „↺“ an der Zahl.",
-    before: "Der Held weicht halb aus, ein blasser Ring und 10 Partikel, „↺“ an der Zahl.",
+    see: "Der Held weicht halb aus, „↺“ an der Zahl. Kein Ring mehr.",
+    before: "Der Held weicht halb aus, ein blasser Ring, „↺“ an der Zahl.",
     play: (p) =>
       p.events([
         hit({
@@ -366,9 +373,12 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Mighty Hit",
     verdict: "change",
     what: "Weapon Mastery: ein sauberer Treffer mit besonders hohem Waffenschaden.",
-    see: "Ein breiter Bodenring, „⚒“ an der Zahl.",
-    before: "Ein breiter Bodenring, Erdbrocken springen hoch, „⚒“ an der Zahl.",
-    play: (p) => p.events([hit({ mighty: true, damage: 480 })]),
+    see: "Große, schräge Zahl in dunklem Orangerot mit kleinem Hammer daneben, Hit-Stop und Wackeln. Kein Ring mehr. Ein Mighty Crit hat „!“ und einen Verlauf von Orange nach dunklem Orangerot. Hier: erst Mighty Hit, dann Mighty Crit.",
+    before: "Ein breiter Bodenring und ein weißer Ring, „⚒“ an der kleinen Zahl.",
+    play: (p) => {
+      p.events([hit({ mighty: true, damage: 480 })]);
+      p.after(1.2, () => p.events([hit({ mighty: true, crit: true, damage: 720 })]));
+    },
   },
   {
     id: "capped",
@@ -376,8 +386,8 @@ export const EFFECTS: readonly EffectEntry[] = [
     name: "Heavy Attack gedeckelt („Held“)",
     verdict: "change",
     what: "Ein Heavy Attack des Gegners kann höchstens einen Teil deines Lebens nehmen. Der Rest wird zurückgehalten.",
-    see: "Ein Glutschild-Ring am Helden, 8 Funken und das Wort „Held“.",
-    before: "Ein Glutschild-Ring am Helden, 22 Funken und das Wort „Held“.",
+    see: "8 Glutfunken am Helden und das Wort „Held“. Kein Ring mehr.",
+    before: "Ein Glutschild-Ring und ein weißer Ring am Helden, 8 Funken und das Wort „Held“.",
     play: (p) => heavyAttack(p, true),
   },
   {
@@ -514,6 +524,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "barrier-gain",
     group: "defense",
+    kit: WAND,
     name: "Barrier-Gewinn",
     verdict: "keep",
     what: "Der Held bekommt Barrier (eine Schicht vor dem Life, z. B. durch INT).",
@@ -598,6 +609,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "perk-barrierBurst",
     group: "perks",
+    kit: WAND,
     name: "Barrier Burst (INT 10) · neu",
     verdict: "change",
     what: "Neu seit dem 20.10. (ersetzt Spellfire): bricht die Barrier des Helden, platzt sie und trifft den Gegner mit 50 % der max Barrier im Element der Waffe.",
@@ -637,6 +649,7 @@ export const EFFECTS: readonly EffectEntry[] = [
   {
     id: "collapse",
     group: "payoffs",
+    kit: STAFF,
     name: "Collapse (Corruption)",
     verdict: "keep",
     what: "Corruption fällt in sich zusammen und macht großen Schaden.",
@@ -842,7 +855,7 @@ export const EFFECTS: readonly EffectEntry[] = [
     verdict: "keep",
     what: "Der Held mit Wand oder Staff wirkt einen Zauber.",
     see: "Eigene gemalte Pose: der Arm hebt die Waffe, der Zauber löst sich aus ihr.",
-    kit: { classId: "emberseer", weapon: "staff" },
+    kit: STAFF,
     play: (p) => p.events(cast("Fireball", 30, "fire")),
   },
   {
@@ -882,9 +895,10 @@ export const EFFECTS: readonly EffectEntry[] = [
     id: "shatter",
     group: "enemy",
     name: `Shatter (Rime Warden)${NEW}`,
-    verdict: "keep",
+    verdict: "change",
     what: "Boss in Act 4: bricht seine Ice Barrier, fliegen die Eisstücke auf den Helden.",
-    see: "Ein heller Ring, 26 Eissplitter fliegen zum Helden, 14 Frostwolken, „Shatter“, Wackeln.",
+    see: "Ein heller Ring am Rime Warden, 26 Eissplitter fliegen zum Helden, der Treffer landet, wenn sie ankommen. 14 Frostwolken, „Shatter“, Wackeln.",
+    before: "Dazu ein Bodenring unter den Füßen des Helden (wie bei einer Nova).",
     enemy: () => ({ id: "rime-warden", archetype: "warden", boss: true, elite: false, act: 4 }),
     play: (p) =>
       p.events([
