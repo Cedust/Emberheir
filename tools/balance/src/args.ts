@@ -31,6 +31,8 @@ export interface BalanceArgs {
   wildfire: number;
   /** Act mode: 1 = the autopilot uses Runes and Runewords (default), 0 = it leaves them. */
   runes: number;
+  /** Act mode: 1 = Shrines offer Boons (default), 0 = a game without Boons (how much they carry). */
+  boons: number;
   /** Act mode: 1 = only the newest-act tables (deaths and fight lengths per stage kind). */
   newest: number;
   /** Act mode: write every report as JSON to this file ("" = none). */
@@ -70,6 +72,7 @@ const DEFAULTS: BalanceArgs = {
   finale: 0,
   wildfire: 0,
   runes: 1,
+  boons: 1,
   newest: 0,
   json: "",
   budget: 0,
@@ -87,6 +90,7 @@ const NUMBER_FLAGS = {
   "--finale": "finale",
   "--wildfire": "wildfire",
   "--runes": "runes",
+  "--boons": "boons",
   "--newest": "newest",
   "--budget": "budget",
   "--curve": "curve",
