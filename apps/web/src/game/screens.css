@@ -6272,13 +6272,18 @@
 
 .stage .continue-chip {
   min-width: 22px;
-  height: 18px;
-  padding: 0 5px;
-  display: inline-grid;
-  place-items: center;
-  border-radius: 9px;
+  height: 22px;
+  padding: 0 6px;
+  box-sizing: border-box;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 11px;
+  /* Cinzel's lining figures sit on one line; Alegreya's old-style figures bob up and down. */
+  font-family: var(--font-title);
   font-size: 12px;
-  font-weight: 800;
+  font-weight: 700;
+  font-variant-numeric: lining-nums tabular-nums;
   line-height: 1;
   color: #ffe9c4;
   background: rgb(40 14 4 / 0.55);

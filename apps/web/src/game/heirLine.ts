@@ -1,10 +1,10 @@
 import { GAME_DATA } from "@emberheir/content";
-import { type GameState, getAct } from "@emberheir/sim";
+import { type GameState, getAct, nextAct } from "@emberheir/sim";
 
-/** The act a character stands in, or the Camp. */
+/** The act a character stands in; in the Camp, the act the caravan camps in. */
 export function continuePlace(save: GameState): string {
-  const act = save.run ? getAct(GAME_DATA, save.run.actId) : undefined;
-  return act?.name ?? "Camp";
+  const act = save.run ? getAct(GAME_DATA, save.run.actId) : nextAct(save, GAME_DATA);
+  return act.name;
 }
 
 /** One line about where a character stands. */
