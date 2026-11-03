@@ -44,6 +44,7 @@ test("Old Nan greets a new Heir once, and No more tips turns them off", async ({
   await expect(nan).toBeHidden();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Settings" }).click();
+  await page.getByRole("tab", { name: "Gameplay" }).click();
   await expect(
     page.getByRole("radiogroup", { name: "Tips" }).getByRole("radio", { name: "Off" }),
   ).toHaveAttribute("aria-checked", "true");

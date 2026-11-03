@@ -1524,6 +1524,12 @@
   display: block;
 }
 
+/* The top bar buttons sit 4px under the window edge: keep the point badge inside the screen. */
+.stage .hud-icon-btn .badge {
+  top: -3px;
+  right: -7px;
+}
+
 .stage .hud-icon-btn kbd {
   position: absolute;
   bottom: -7px;

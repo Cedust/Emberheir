@@ -525,7 +525,7 @@ function MapNodeButton(props: {
     kind: `Stage ${props.stage}`,
     explain:
       (props.node.kind === "cache" && homeRuneOf(props.run.actId)
-        ? `${label.text} Home Rune: ${runeName(homeRuneOf(props.run.actId) ?? "")}.`
+        ? `${label.text} The ${runeName(homeRuneOf(props.run.actId) ?? "")} Rune is found often in this act.`
         : [label.text, ...(label.points ?? []).map((p) => `${p}.`)].join(" ")) +
       (bounty ? " Counts for your Bounty." : ""),
     ...(props.ahead ? { status: "Click to walk here next" } : {}),
@@ -702,7 +702,7 @@ export function visitTitle(run: RunState): { title: string; sub: string } {
     case "hearth":
       return { title: "HEARTH", sub: "A quiet fire by the road" };
     case "cache":
-      return { title: "CACHE", sub: "Take 1 of 3" };
+      return { title: "CACHE", sub: "Something left by the road. Take one thing." };
     case "marisha":
       return {
         title: "MARISHA",
@@ -773,7 +773,7 @@ export function VisitCards(props: { state: GameState; run: RunState; game: GameA
         name={rune ? `${rune.name} Rune` : "Runes"}
         text={
           rune && rune.id === homeRuneOf(run.actId)
-            ? "The Home Rune of this act. Into the Rune pouch."
+            ? "Found often in this act. Into the Rune pouch."
             : "Into the Rune pouch."
         }
         blocked={rune ? undefined : "Empty"}

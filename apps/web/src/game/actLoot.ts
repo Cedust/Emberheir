@@ -22,7 +22,7 @@ export function homeRuneNote(act: ActData): NoteHover | undefined {
   const every = Math.round(1 / (high ? PROGRESSION.homeHighRuneShare : PROGRESSION.homeRuneShare));
   return {
     name: `${rune.name} Rune`,
-    kind: "Home Rune",
+    kind: "Rune · Found often here",
     explain:
       (high
         ? `In ${act.name}, 1 in ${every} Runes from Elites, Gatekeepers, Bosses and Caches is ${rune.name}.`
@@ -56,7 +56,7 @@ export function homeUniqueNote(
   const open = Object.values(lootGate(prestige).legendary).some((c) => c > 0);
   return {
     name: unique?.name ?? id,
-    kind: "Home Unique",
+    kind: "Unique · Found often here",
     explain: `Drops ${PROGRESSION.homeUniqueWeight}× as often in ${act.name}.${power ? ` ${power.description}` : ""}`,
     status: !open ? "Uniques drop from run 4 on" : found ? "Found" : "Not found yet",
   };
