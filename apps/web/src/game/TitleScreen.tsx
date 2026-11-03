@@ -357,9 +357,7 @@ function ContinueLine(props: { save: GameState }) {
         <span className="sr-only">Level </span>
         {save.hero.level}
       </span>
-      <span className="continue-dot" aria-hidden="true">
-        ·
-      </span>
+      <span className="continue-dot" aria-hidden="true" />
       <span>{continuePlace(save)}</span>
       <span className="continue-chip" title={`Harvest ${harvest}`}>
         <span className="sr-only">Harvest </span>
