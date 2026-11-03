@@ -166,3 +166,21 @@ er langsam weiter (~900 Kills nach Wildfire X), dort ist Temper die offene Senke
 12 Spielen stark; die Act-Balance wird weiter ohne Crafting gemessen.
 
 Offen: Messung auf dem Boon-Umbau (Thread „Boon-Auswahl verbessern“) wiederholen, wenn beide PRs gemerged sind.
+
+## Nachtrag: Upgrade kostet auch Ash (Timo 03.11.2026)
+
+Nach Run 7 lagen noch 58.000 Ash (~3 h Einkommen) herum, weil Temper die einzige echte Senke war. Timo
+wählte: **Tier Upgrade = 1 Feather + Acorns von 3 Kills × neues Tier + Ash von 4 Kills × neues Tier.**
+
+Min-Maxer, gleiche 12 Spiele:
+
+| | ohne Upgrade-Ash | mit Upgrade-Ash |
+|---|---|---|
+| Ash ausgegeben Run 4 / 5 / 6 / 7 | 70 / 63 / 43 / 60 % | 84 / 99 / 87 / 99 % |
+| Ash im Wallet nach Run 7 | 58.554 (651 Kills) | 10.063 (112 Kills, ~30 min Einkommen) |
+| Upgrades pro Run 4–7 | 11–17 | 12–15 |
+| Tode Run 1–7 (Summe) | 3,3 | 5,0 |
+
+Damit trifft Ash das Ziel (70–90 %+, Rest unter 1 h). Salvage musste nicht weiter sinken. Offen: In
+Wildfire VIII–X wächst Ash wieder (Rest ~600 Kills nach Wildfire X), vermutlich weil die Items dort weitgehend ausgebaut sind (nicht einzeln geprüft); das ist
+der Endgame-Grind und kein Release-Blocker. Die Tode schwanken mit 12 Spielen um ±1.

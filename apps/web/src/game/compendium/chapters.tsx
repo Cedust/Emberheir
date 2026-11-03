@@ -1119,7 +1119,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: currencyIcon("feathers"),
                   name: "Upgrade",
-                  text: "Raises an item by one Tier. Its Affixes grow with it, and so does its level.",
+                  text: "Raises an item by one Tier. Its Affixes grow with it, and so does its level. Each Tier costs more than the last.",
                 },
                 {
                   icon: currencyIcon("coal"),

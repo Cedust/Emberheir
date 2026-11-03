@@ -320,7 +320,7 @@ Endgame **Wildfire I–X**.
   große Viertelstunden.
   - **Temper** (Liora): nur Ash, der n-te Temper auf demselben Item kostet n × 4 Kills (wie Enchant in Diablo 3).
   - **Reforge** (Thoric): der n-te Reforge auf demselben Item kostet 2 × n Ember Coal.
-  - **Upgrade** (Thoric): 1 Phoenix Feather + Acorns von 3 Kills × neues Tier.
+  - **Upgrade** (Thoric): 1 Phoenix Feather + Acorns von 3 Kills × neues Tier + Ash von 4 Kills × neues Tier (Timo 03.11.2026: Ash braucht spät eine zweite Senke).
   - **Respecs nach investierten Punkten**: Ash Tree 1 Kill pro Skill Point (ein einzelner Node genauso pro Punkt),
     Heirloom 4 Kills pro Mastery Point, Attribute 4 Kills pro Punkt, Ashborn 1 Kill pro Punkt auf Level 100,
     Capstone-Wechsel 5 Kills.
