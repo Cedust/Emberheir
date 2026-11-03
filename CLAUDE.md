@@ -72,6 +72,9 @@ npm run test:e2e   # Playwright smoke tests (builds the web app)
   `arenaEffects.ts`); prefer baked textures over constant particles. Effects stay visual
   only, never change the sim, respect the Screen shake setting and `prefers-reduced-motion`,
   and keep the arena smooth (particle cap, no effects for a Skip).
+- Battle sounds (`apps/web/src/game/battle/battleSfx.ts`) work the same way: every new or changed
+  sound goes into the SFX Gallery (`?sfx`, `apps/web/src/game/effects/sfxList.ts`) with its arena
+  moment and a plain German explanation, and a Skip stays quiet.
 
 ## Commands
 

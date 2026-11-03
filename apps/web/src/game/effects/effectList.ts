@@ -17,7 +17,7 @@ import type { HeroLook } from "../battle/heroArt";
  */
 
 /** Since the effect cleanup (Timo 2026-11-01): kept as it was, or changed by his pick. */
-export type Verdict = "keep" | "change";
+export type Verdict = "keep" | "change" | "new";
 
 /** What an effect can do to the gallery's arena while it plays. */
 export interface Player {
@@ -38,7 +38,8 @@ export interface Kit {
 
 export interface EffectEntry {
   readonly id: string;
-  readonly group: GroupId;
+  /** A `GROUPS` id here, an `SFX_GROUPS` id in the SFX Gallery (checked by the tests). */
+  readonly group: string;
   readonly name: string;
   readonly verdict: Verdict;
   /** What happens in the game, in simple words. */
@@ -76,6 +77,7 @@ export type GroupId = (typeof GROUPS)[number]["id"];
 export const VERDICT_LABEL: Record<Verdict, string> = {
   keep: "Wie bisher",
   change: "Geändert",
+  new: "Neu",
 };
 
 type Hit = Extract<CombatEvent, { type: "hit" }>;
