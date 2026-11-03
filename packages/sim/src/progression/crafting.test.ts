@@ -9,6 +9,7 @@ import {
   type CraftRequest,
   affixRollRange,
   craftBlockReason,
+  maxCombines,
   craftCost,
   gambleItem,
   gambleRarityWeights,
@@ -416,6 +417,19 @@ describe("Sockets, Runes and Marisha", () => {
     expect(
       craftBlockReason(runeCamp({ thorn: 3 }), data, { kind: "combineRunes", runeId: "thorn" }),
     ).toBe("maxRank");
+  });
+
+  it("Combine All: every Combine the pouch can pay in one go, at that many times the price", () => {
+    const camp = runeCamp({ ash: 7 });
+    expect(maxCombines(camp, data, "ash")).toBe(2);
+    expect(maxCombines(camp, data, "thorn")).toBe(0);
+    const one = killPrice(bossLevel(0), { acorns: CRAFTING.combineRunesKillsPerRank }).acorns;
+    const s = craftIt(camp, { kind: "combineRunes", runeId: "ash", times: 2 });
+    expect(s.wallet.runes).toEqual({ ash: 1, moss: 2 });
+    expect(s.wallet.acorns).toBe(camp.wallet.acorns - 2 * one);
+    expect(craftBlockReason(camp, data, { kind: "combineRunes", runeId: "ash", times: 3 })).toBe(
+      "runes",
+    );
   });
 
   it("Gamble: a random item for the chosen slot into the inventory", () => {

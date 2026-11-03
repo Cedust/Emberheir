@@ -900,7 +900,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             <p>
               Runes drop by themselves. Set one into a Socket of a Normal item and it stays there.
               The right Runes in the right order make a <B>Runeword</B>, a lot stronger than its
-              parts. Three Runes of a kind combine into the next one.
+              parts. A Runeword in a better base is stronger, so forge it anew as your gear grows.
+              Three Runes of a kind combine into the next one. Later acts drop the higher Runes.
             </p>
             <p>
               Every act has a Rune that turns up there more often. In the Ashen Fields it is{" "}

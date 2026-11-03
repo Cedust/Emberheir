@@ -157,6 +157,7 @@ export {
   itemPickAt,
   addRunes,
   maxRuneRank,
+  minRuneRank,
   rollRuneDrops,
   rollRune,
   tagAffixFactor,

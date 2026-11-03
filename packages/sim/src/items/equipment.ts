@@ -95,6 +95,39 @@ export function scaledBaseStats(base: ItemBaseDefinition, tier: number): StatBon
   return result;
 }
 
+/** Runeword stats that grow with the tier (ITEMS.runewordDamagePerTier). */
+const RUNEWORD_GROWING: ReadonlySet<keyof StatBonuses> = new Set<keyof StatBonuses>([
+  "physicalDamage",
+  "elementalDamage",
+  "ailmentEffect",
+]);
+
+/**
+ * Bonuses of socketed Runes or of a Runeword at the item's tier (runen-review-v1.md R1/R4): Life,
+ * Barrier and Thorns grow like affixes, Armor like the base's Armor, and a Runeword's damage
+ * stats by `ITEMS.runewordDamagePerTier`. Resistances and chances stay as written.
+ */
+export function scaledRuneBonuses(
+  bonuses: StatBonuses | undefined,
+  tier: number,
+  runeword: boolean,
+): StatBonuses {
+  if (!bonuses) return {};
+  const result: Partial<Record<keyof StatBonuses, number>> = { ...bonuses };
+  for (const key of Object.keys(bonuses) as (keyof StatBonuses)[]) {
+    const value = bonuses[key];
+    if (value === undefined) continue;
+    const stat = key as AffixStat;
+    if (isLifeLikeStat(stat)) result[key] = Math.round(value * lifeGrowth(tier));
+    else if (!isPercentStat(stat)) {
+      result[key] = Math.round(value * tierGrowth(ITEMS.baseScalePerTier, tier));
+    } else if (runeword && RUNEWORD_GROWING.has(key)) {
+      result[key] = Number((value * tierGrowth(ITEMS.runewordDamagePerTier, tier)).toFixed(3));
+    }
+  }
+  return result;
+}
+
 /**
  * Flat Life, Barrier and Thorns of an item's implicit, Runes, Runeword and Legendary Power grow
  * with its tier like its affixes do; everything else stays as written.
@@ -189,8 +222,8 @@ export function itemModifiers(item: Item, catalog: ItemCatalog): ItemModifiers {
       scaledBaseStats(base, item.tier),
       base.weapon ? undefined : scaledFlatBonuses(base.implicit, item.tier),
       bonuses,
-      scaledFlatBonuses(runeBonuses(item, catalog), item.tier),
-      scaledFlatBonuses(word?.bonuses, item.tier),
+      scaledRuneBonuses(runeBonuses(item, catalog), item.tier, false),
+      scaledRuneBonuses(word?.bonuses, item.tier, true),
       scaledFlatBonuses(power?.bonuses, item.tier),
     ),
     triggers,

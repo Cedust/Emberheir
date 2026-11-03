@@ -16,6 +16,7 @@ import {
   requirementsFor,
   scaledBaseStats,
   scaledFlatBonuses,
+  scaledRuneBonuses,
 } from "./equipment";
 import { getBase } from "./generate";
 import { activeRuneword, runeBonuses } from "./runes";
@@ -404,9 +405,10 @@ export function describeItem(
     ];
   });
   // Runeword and Rune bonuses read like affixes.
-  const extra = scaledFlatBonuses(
-    sumBonuses(word?.bonuses, runeBonuses(item, catalog), power?.bonuses),
-    item.tier,
+  const extra = sumBonuses(
+    scaledRuneBonuses(word?.bonuses, item.tier, true),
+    scaledRuneBonuses(runeBonuses(item, catalog), item.tier, false),
+    scaledFlatBonuses(power?.bonuses, item.tier),
   );
   const bonusStats: [AffixStat, number][] = [
     ...ATTRIBUTES.flatMap((a): [AffixStat, number][] =>

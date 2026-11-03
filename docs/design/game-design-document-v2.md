@@ -141,7 +141,10 @@ Endgame **Wildfire I–X**.
 - **Act-Beute** (`notes/laengere-runs/act-beute-entwurf-v1.md`, Timo 21.10.2026): jeder Act hat eine **Home Rune**
   (Ashen Fields Bark, Rotwood Thorn, Ember Wastes Ember, Frost Peaks Rime, Storm Spires Volt, Void Rift Venom,
   Emberfall Dusk). Dort ist jede 5. Rune die Home Rune (Kampf, Cache, Smoldering Altar), Volt und Dusk jede 10. und
-  nur von Elites, Gatekeepern, Bossen und Caches; die Anzahl Runes bleibt gleich. **Home Uniques** fallen im eigenen
+  nur von Elites, Gatekeepern, Bossen und Caches; die Anzahl Runes bleibt gleich. **Drop-Boden** (Runen-Review
+  03.11.2026, `notes/runen/runen-review-v1.md` R2): der niedrigste Rang steigt mit dem Act-Tier (höchster Rang − 7,
+  höchstens Ember), späte Acts droppen also Ember bis Dusk statt Bark; die Home Rune droppt weiter im eigenen Act.
+  Weniger Stück: normale Gegner 4 %, Elites 0,35, Bosse 1,2 Runes (vorher 6 %, 0,5, 1,5). **Home Uniques** fallen im eigenen
   Act 3-mal so oft (Ashen Fields Ashwalkers, Rotwood Barkhide Bulwark und Mossgrown Mail, Ember Wastes Cinderwick).
   Eldrin zeigt beides im Act-Text, der Cache-Knoten nennt die Home Rune.
 - **Hunts** (`notes/hunts-entwurf-v1.md`, Längere Runs Phase 4, Timo 21.10.2026): jeder Gegner hat einen
@@ -629,8 +632,13 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 - **Affixe:** Stat-Affixe (Prefix oder Suffix) und **Trigger-Affixe** (Condition → Chance → Effect → Cooldown).
 - **Trigger Codex:** Salvage eines Items mit Trigger lehrt Condition und Effect. Liora baut daraus per **Kindle** einen
   Trigger auf ein Item (ein gekindelter Trigger pro Item, Roll bis 70 %).
-- **Runes und Runewords:** 8 Runes (Bark, Moss, Thorn, Venom, Ember, Rime, Volt, Dusk), 10 Runewords. Runeword Codex
-  bei Nyssa, permanent.
+- **Runes und Runewords:** 8 Runes (Bark, Moss, Thorn, Venom, Ember, Rime, Volt, Dusk), 13 Runewords. Runeword Codex
+  bei Nyssa, permanent. Runen-Review 03.11.2026 (`notes/runen/runen-review-v1.md`): Runeword-Damage (Physical,
+  Elemental, Ailment Effect) wächst mit dem Tier der Basis (+8 % je Tier), Armor der Runes wie die Basis-Armor, damit
+  ein Runeword in einer besseren Basis besser ist. Drei späte Runewords aus den hohen Runes: **Eventide** (Volt + Dusk,
+  Helm/Off Hand, Damage + Crit), **Rimeguard** (Rime + Volt, Helm/Off Hand, Life, Barrier, Resistances), **Gloaming**
+  (Rime + Dusk + Volt, Body, Damage + Life + Resistances). Kindling 15 % statt 25 % Physical Damage, Bulwark (Shield)
+  und Warden (Barrier-Helm für Caster) neu. Nyssa kann **Combine All** (alle bezahlbaren Dreier auf einmal).
 - **Crafting** (`notes/crafting/crafting-audit-v1.md`, Timo 28.10.2026): Reforge würfelt nur die Stat-Affixe neu,
   alle Trigger (gedroppt und gekindelt) bleiben mit ihrer Qualität, ein Greater auf einem Trigger auch; Charms haben nur
   Trigger und werden nicht reforged. Temper bietet zwei Optionen an (das Angebot wartet am Item), Wählen ist gratis.
@@ -722,7 +730,8 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
   Resistances) 43,7 / 36,4 / 32,3. Schwächste Stellen: Cinderguard-Axt und Cold/Lightning-Paths in Act 4
   (Frost Warden, Ice Golem), Staff-Smolder in Act 5–6; der Emberseer ist im Schnitt am leichtesten.
 - Der Autopilot nutzt Runes und Runewords (behält Normal-Basen, schmiedet ein Runeword, wenn es das getragene Item
-  schlägt, kombiniert übrige Runes), aber kein Crafting (Reforge, Temper, Kindle). `--runes 0` misst ohne Runes.
+  schlägt, kombiniert übrige Runes, setzt in Ash Tree Sockets die Rune mit dem größten Wert), aber kein Crafting
+  (Reforge, Temper, Kindle). `--runes 0` misst ohne Runes.
 - Die CLI misst im neuesten Act die **Tode und Kampfdauern je Stage-Art** (normal, Elite, Gatekeeper, Boss; Median und
   p90) gegen die Ziele aus `neuausrichtung-v1.md` 5.3 und 5.5 (`--newest 1` zeigt nur diese Tabellen). Stand: `balance-messung-v1.md`.
 

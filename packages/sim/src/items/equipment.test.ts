@@ -9,6 +9,7 @@ import {
   resolveEquipment,
   scaledBaseStats,
   scaledFlatBonuses,
+  scaledRuneBonuses,
 } from "./equipment";
 import { lifeGrowth } from "./affixes";
 import { ITEMS } from "./constants";
@@ -54,6 +55,21 @@ describe("equipment stats", () => {
       armor: 10,
       critChance: 0.1,
     });
+  });
+
+  it("Runes and Runewords grow with the tier: Armor like the base, a Runeword's damage too", () => {
+    const bonuses = { armor: 6, life: 10, physicalDamage: 0.2, allResistance: 0.1 };
+    // A socketed Rune: Armor and Life grow, percentages stay.
+    expect(scaledRuneBonuses(bonuses, 5, false)).toEqual({
+      armor: 6 * 5,
+      life: Math.round(10 * lifeGrowth(5)),
+      physicalDamage: 0.2,
+      allResistance: 0.1,
+    });
+    // A Runeword: its damage grows by ITEMS.runewordDamagePerTier, Resistances stay.
+    const word = scaledRuneBonuses(bonuses, 5, true);
+    expect(word.physicalDamage).toBeCloseTo(0.2 * (1 + 4 * ITEMS.runewordDamagePerTier), 3);
+    expect(word.allResistance).toBe(0.1);
   });
 
   it("weapon damage scales with the tier and gets local Added Weapon Damage", () => {

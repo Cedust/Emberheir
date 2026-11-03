@@ -64,8 +64,11 @@ export type CraftRequest =
   | { readonly kind: "addSocket"; readonly itemId: string }
   /** Nyssa: a Rune from the pouch into the next free Socket. Runes never come out again. */
   | { readonly kind: "socketRune"; readonly itemId: string; readonly runeId: string }
-  /** Nyssa: three Runes of one kind into one Rune of the next rank. */
-  | { readonly kind: "combineRunes"; readonly runeId: string }
+  /**
+   * Nyssa: three Runes of one kind into one Rune of the next rank; `times` does it that often in
+   * one go (Combine All), at that many times the price.
+   */
+  | { readonly kind: "combineRunes"; readonly runeId: string; readonly times?: number }
   /** Marisha (Black Market): a random item for a slot, with better rarity odds than loot. */
   | { readonly kind: "gamble"; readonly slot: ItemSlot }
   /**
@@ -219,14 +222,17 @@ export function craftCost(
         acorns: at({ acorns: CRAFTING.socketRuneKillsPerRank * runeRank(request.runeId) }).acorns,
         runes: { [request.runeId]: 1 },
       };
-    case "combineRunes":
+    case "combineRunes": {
+      const times = combineTimes(request);
       return {
         ...NO_COST,
-        acorns: killPrice(bossLevel(state?.legacy.prestige ?? 0), {
-          acorns: CRAFTING.combineRunesKillsPerRank * runeRank(request.runeId),
-        }).acorns,
-        runes: { [request.runeId]: CRAFTING.combineRunesCount },
+        acorns:
+          killPrice(bossLevel(state?.legacy.prestige ?? 0), {
+            acorns: CRAFTING.combineRunesKillsPerRank * runeRank(request.runeId),
+          }).acorns * times,
+        runes: { [request.runeId]: CRAFTING.combineRunesCount * times },
       };
+    }
     case "gamble":
       return {
         ...NO_COST,
@@ -408,6 +414,21 @@ function costBlockReason(state: GameState, cost: CraftCost): CraftBlockReason | 
   return undefined;
 }
 
+/** How many Combines one request does (at least one). */
+function combineTimes(request: { readonly times?: number }): number {
+  return Math.max(1, Math.floor(request.times ?? 1));
+}
+
+/** How many Combines of this Rune the pouch can pay right now (Runes and Acorns): Combine All. */
+export function maxCombines(state: GameState, data: GameData, runeId: string): number {
+  const rune = data.items.runes.get(runeId);
+  if (!rune || !nextRune(data, rune.rank)) return 0;
+  const byRunes = Math.floor((state.wallet.runes[runeId] ?? 0) / CRAFTING.combineRunesCount);
+  const one = craftCost({ kind: "combineRunes", runeId }, undefined, data, state).acorns;
+  const byAcorns = one > 0 ? Math.floor(state.wallet.acorns / one) : byRunes;
+  return Math.max(0, Math.min(byRunes, byAcorns));
+}
+
 /** Why a craft is not possible right now, or undefined if it is. */
 export function craftBlockReason(
   state: GameState,
@@ -555,9 +576,10 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
     const paid = pay(state, craftCost(request, undefined, data, state));
     const rank = data.items.runes.get(request.runeId)?.rank ?? fail("Unknown Rune");
     const next = nextRune(data, rank) ?? fail("No higher Rune");
+    const made = Array.from({ length: combineTimes(request) }, () => next.id);
     return {
       ...paid,
-      wallet: { ...paid.wallet, runes: addRunes(paid.wallet.runes, [next.id]) },
+      wallet: { ...paid.wallet, runes: addRunes(paid.wallet.runes, made) },
       legacy: {
         ...paid.legacy,
         runesFound: [...new Set([...paid.legacy.runesFound, next.id])],

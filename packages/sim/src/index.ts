@@ -93,6 +93,7 @@ export {
   resolveEquipment,
   scaledBaseStats,
   scaledFlatBonuses,
+  scaledRuneBonuses,
   type InactiveReason,
   type ItemModifiers,
   type ResolvedEquipment,
