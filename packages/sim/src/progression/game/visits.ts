@@ -160,7 +160,7 @@ export function enterNode(state: GameState, data: GameData, run: RunState): Game
           visit: {
             kind: "cache",
             runes: rune ? [rune] : [],
-            emberCoal: rng.int(...PROGRESSION.eliteEmberCoal),
+            emberCoal: rng.int(...PROGRESSION.cacheEmberCoal),
           },
         },
       };

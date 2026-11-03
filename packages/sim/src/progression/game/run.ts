@@ -40,6 +40,14 @@ import { mapOptions, walkOn } from "./visits";
 
 /** A trip out of the Camp: set out, stages, drinking from the Ember Flask, back to the Camp. */
 
+/** Leaving the Camp: Marisha restocks for the next visit (economy-v2-plan.md W6). */
+function leaveCamp(state: GameState): GameState {
+  if (state.gambled === undefined) return state;
+  const rest = { ...state };
+  delete (rest as { gambled?: number }).gambled;
+  return rest;
+}
+
 export function setOut(
   state: GameState,
   data: GameData,
@@ -54,7 +62,7 @@ export function setOut(
   const omens = checkOmens(state, data, actId, omenIds);
   // The bounty the hero took from Eldrin's offer for this trip.
   const bounty = takeBounty(state, data, actId, bountyId);
-  const brewed = brewForTrip(state, data);
+  const brewed = brewForTrip(leaveCamp(state), data);
   const draught = brewed.draught;
   const out: GameState = {
     ...brewed.state,
@@ -114,7 +122,7 @@ export function setOutWildfire(
   const omens = checkOmens(state, data, actId, omenIds, tier);
   // Eldrin's bounties burn in the Wildfire too (endgame measurement 2026-10-28, V3).
   const bounty = takeBounty(state, data, actId, bountyId, tier);
-  const { state: brewed, draught } = brewForTrip(state, data);
+  const { state: brewed, draught } = brewForTrip(leaveCamp(state), data);
   return {
     ...brewed,
     notice: null,
@@ -136,7 +144,7 @@ export function setOutWildfire(
 export function enterFinale(state: GameState, data: GameData): GameState {
   requireCamp(state);
   if (!finaleOpen(state, data) || !data.finale) return fail("The last flame is not in reach yet");
-  const { state: brewed, draught } = brewForTrip(state, data);
+  const { state: brewed, draught } = brewForTrip(leaveCamp(state), data);
   return {
     ...brewed,
     notice: null,

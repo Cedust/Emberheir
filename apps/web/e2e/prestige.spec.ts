@@ -64,11 +64,11 @@ test("The harvest boss falls: one Harvest window, wake as the next generation", 
   await expect(page.getByRole("button", { name: "Rotation Slot 2" })).toBeEnabled();
   await expect(page.getByTestId("reaction-slot-0")).toBeVisible();
 
-  // Old Nan gives every point above the Class Array back, for Acorns (neuausrichtung-v1.md 7.3);
+  // Old Nan gives every point above the Class Array back, for Acorns per point (economy v2 W1);
   // the two Harvest points still wait unspent.
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: "Old Nan, Hearthkeeper" }).click();
-  const reset = page.getByRole("button", { name: /Reset Attributes.*336 Acorns/ });
+  const reset = page.getByRole("button", { name: /Reset Attributes.*1,008 Acorns/ });
   await reset.click();
   await page.getByRole("button", { name: /6 points back\?/ }).click();
   // They are spent anew in the Character Sheet.

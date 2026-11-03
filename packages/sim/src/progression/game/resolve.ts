@@ -106,10 +106,10 @@ export function resolveFight(state: GameState, data: GameData): GameState {
     rank === "boss"
       ? rng.int(...PROGRESSION.bossEmberCoal)
       : rank === "elite"
-        ? rng.int(...PROGRESSION.eliteEmberCoal)
-        : rng.chance(PROGRESSION.normalEmberCoalChance)
+        ? rng.chance(PROGRESSION.eliteEmberCoalChance)
           ? 1
-          : 0;
+          : 0
+        : 0;
   const stones = Math.ceil(coal * (1 + omen.bonus.emberCoal));
   const feathers =
     rank === "boss"

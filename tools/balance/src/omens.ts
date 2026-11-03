@@ -1,5 +1,4 @@
 import {
-  applyAction,
   encounterFight,
   getAct,
   getOmen,
@@ -10,6 +9,7 @@ import {
   type GameState,
   stagesInAct,
 } from "@emberheir/sim";
+import { applyAction } from "./ledger";
 
 /**
  * The autopilot's Omens (neuausrichtung-v1.md 5.2 and 7.2): it fights the act boss once under

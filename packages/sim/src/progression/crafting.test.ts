@@ -18,7 +18,7 @@ import {
   upgradedItem,
 } from "./crafting";
 import { requiredLevel } from "../items/equipment";
-import { type GameAction, type GameState, applyAction, newGame } from "./game";
+import { type GameAction, type GameState, applyAction, itemPickWeights, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
@@ -73,10 +73,15 @@ describe("crafting", () => {
     const s = act(camp(), { type: "craft", request: { kind: "upgrade", itemId: RING.id } });
     expect(ring(s)).toMatchObject({ tier: 2, affixes: RING.affixes });
     expect(s.wallet.phoenixFeathers).toBe(1);
-    const oneTier = killPrice(RING.itemLevel, { acorns: CRAFTING.upgradeKillsPerTier }).acorns;
-    expect(s.wallet.acorns).toBe(1000 - oneTier);
+    // The price follows the new Tier: T1 → T2 costs 2 × the kills, T2 → T3 3 ×.
+    const toT2 = killPrice(RING.itemLevel, { acorns: 2 * CRAFTING.upgradeKillsPerTier }).acorns;
+    expect(s.wallet.acorns).toBe(1000 - toT2);
     expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).acorns).toBe(
-      killPrice(RING.itemLevel, { acorns: 2 * CRAFTING.upgradeKillsPerTier }).acorns,
+      killPrice(RING.itemLevel, { acorns: 3 * CRAFTING.upgradeKillsPerTier }).acorns,
+    );
+    // Ash as well, by the new Tier (W8).
+    expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).ash).toBe(
+      killPrice(RING.itemLevel, { ash: 3 * CRAFTING.upgradeAshKillsPerTier }).ash,
     );
   });
 
@@ -124,7 +129,14 @@ describe("crafting", () => {
     // A new affix the ring does not carry, then the same affix with a new value.
     expect(["crit", "elemental"]).toContain(offer[0]?.affixId);
     expect(offer[1]?.affixId).toBe("life");
-    expect(s.wallet.ash).toBe(1000 - killPrice(RING.itemLevel, CRAFTING.temperKills).ash);
+    const first = killPrice(RING.itemLevel, { ash: CRAFTING.temperAshKills }).ash;
+    expect(s.wallet.ash).toBe(1000 - first);
+    expect(s.wallet.acorns).toBe(1000);
+    // Each further Temper on the same item costs one step more (like Enchant in Diablo 3).
+    expect(offered?.tempers).toBe(1);
+    expect(craftCost({ kind: "temper", itemId: RING.id, affixIndex: 1 }, offered).ash).toBe(
+      killPrice(RING.itemLevel, { ash: 2 * CRAFTING.temperAshKills }).ash,
+    );
     // Locked: only affix 1 can change now.
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
       "locked",
@@ -269,7 +281,12 @@ describe("crafting", () => {
     expect(reforged).toMatchObject({ id: RING.id, baseId: "test-ring", rarity: "rare", tier: 3 });
     expect(reforged?.lockedAffix).toBeUndefined();
     expect(reforged?.affixes).not.toEqual(RING.affixes);
-    expect(next.wallet.emberCoal).toBe(2);
+    expect(next.wallet.emberCoal).toBe(s.wallet.emberCoal - CRAFTING.emberCoal);
+    // The second Reforge of the same item costs twice as much, the third three times (W4).
+    expect(reforged?.reforges).toBe(1);
+    expect(craftCost({ kind: "reforge", itemId: RING.id }, reforged).emberCoal).toBe(
+      2 * CRAFTING.emberCoal,
+    );
     // Same seed and nonce: same result.
     expect(act(s, { type: "craft", request: { kind: "reforge", itemId: RING.id } })).toEqual(next);
   });
@@ -306,7 +323,7 @@ describe("crafting", () => {
     const range = affixRollRange(item, "strength", data.items);
     const affix = data.items.affixes.get("strength");
     if (!range || affix?.kind !== "stat") throw new Error("missing");
-    let s: GameState = { ...camp({ ash: 10_000 }), inventory: [{ item, x: 0, y: 0 }] };
+    let s: GameState = { ...camp({ ash: 1_000_000 }), inventory: [{ item, x: 0, y: 0 }] };
     const index = item.affixes.findIndex((a) => a.affixId === "strength");
     if (index < 0) return;
     for (let i = 0; i < 30; i++) {
@@ -407,12 +424,21 @@ describe("Sockets, Runes and Marisha", () => {
     const item = s.inventory[2]?.item;
     expect(item?.baseId).toBe("test-ring");
     expect(s.wallet.acorns).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
-    // Run 1: Marisha rolls like a normal enemy's card, at most Magic (economy-audit-v1.md E3).
+    // Run 1: Marisha rolls like an Elite's card, Magic or Rare (economy-v2-plan.md W6).
     const early = new Set<string>();
     for (let seed = 0; seed < 200; seed++) {
       early.add(gambleItem(s, data, "ring", new Rng(seed)).rarity);
     }
-    expect([...early].sort()).toEqual(["magic", "normal"]);
+    expect([...early].sort()).toEqual(["magic", "rare"]);
+    expect(gambleRarityWeights(0)).toEqual(itemPickWeights("elite", 0, 0));
+    // Three gambles per Camp visit, then she is sold out until the next set-out.
+    let three = s;
+    for (let i = 0; i < 2; i++) three = craftIt(three, { kind: "gamble", slot: "ring" });
+    expect(three.gambled).toBe(3);
+    expect(craftBlockReason(three, data, { kind: "gamble", slot: "ring" })).toBe("soldOut");
+    const away = applyAction(three, data, { type: "setOut", actId: "test-act" });
+    expect(away.gambled).toBeUndefined();
+    expect(gamblePrice(10)).toBe(killPrice(10, { acorns: CRAFTING.gambleKills }).acorns);
     expect(gambleRarityWeights(0)).toMatchObject({ epic: 0, legendary: 0 });
     // From run 5 on, some gambles come out Legendary, as often as on an Elite's card.
     const late = { ...s, legacy: { ...s.legacy, prestige: 4 } };

@@ -1,10 +1,6 @@
-import {
-  ASHBORN,
-  ashbornBlockReason,
-  ashbornSpent,
-  EMPTY_ASHBORN,
-  type AshbornState,
-} from "../ashborn";
+import { ashbornBlockReason, ashbornSpent, EMPTY_ASHBORN, type AshbornState } from "../ashborn";
+import { PROGRESSION } from "../constants";
+import { killPrice } from "../leveling";
 import { requireCamp } from "./guards";
 import { fail, type GameData, type GameState } from "./state";
 
@@ -33,15 +29,26 @@ export function spendAshborn(
   return { ...state, hero: { ...state.hero, ashborn } };
 }
 
+/**
+ * Acorns Old Nan takes to give every Ashborn Point back: the spent points, each worth
+ * `respecKillsPerPoint.ashborn` normal kills at the hero's level (economy-v2-plan.md W1).
+ */
+export function ashbornResetAcorns(state: GameState): number {
+  const points = Math.max(1, ashbornSpent(heroAshborn(state)));
+  return killPrice(state.hero.level, { acorns: points * PROGRESSION.respecKillsPerPoint.ashborn })
+    .acorns;
+}
+
 /** Old Nan (Camp only): every Ashborn Point comes back, for Acorns. */
 export function resetAshborn(state: GameState): GameState {
   requireCamp(state);
   const ashborn = heroAshborn(state);
   if (ashbornSpent(ashborn) === 0) return fail("No Ashborn Points spent");
-  if (state.wallet.acorns < ASHBORN.resetAcorns) return fail("Not enough Acorns");
+  const price = ashbornResetAcorns(state);
+  if (state.wallet.acorns < price) return fail("Not enough Acorns");
   return {
     ...state,
     hero: { ...state.hero, ashborn: { ...ashborn, points: {} } },
-    wallet: { ...state.wallet, acorns: state.wallet.acorns - ASHBORN.resetAcorns },
+    wallet: { ...state.wallet, acorns: state.wallet.acorns - price },
   };
 }

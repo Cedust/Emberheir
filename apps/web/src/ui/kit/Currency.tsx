@@ -1,4 +1,4 @@
-import type { GameState } from "@emberheir/sim";
+import { fullCurrencies, type GameState, walletCap } from "@emberheir/sim";
 import { type NoteHover, useNoteHover } from "../ItemTooltip";
 import { useRollingNumber } from "./juice";
 import acornsUrl from "../../assets/currency/acorns.webp";
@@ -98,9 +98,35 @@ export function walletAmounts(state: GameState): [CurrencyId, number][] {
   ];
 }
 
-function currencyNote(id: CurrencyId, amount: string): NoteHover {
+function currencyNote(id: CurrencyId, amount: string, cap?: CurrencyCap): NoteHover {
   const def = CURRENCIES[id];
-  return { name: def.name, kind: def.kind, explain: def.explain, status: `You have ${amount}` };
+  const status = !cap
+    ? `You have ${amount}`
+    : cap.full
+      ? `Full (${fmt(cap.max)})`
+      : `You have ${amount} of ${fmt(cap.max)}`;
+  return { name: def.name, kind: def.kind, explain: def.explain, status };
+}
+
+/** A currency's cap (Currency Caps): the most the hero carries, and whether it is reached. */
+interface CurrencyCap {
+  readonly max: number;
+  readonly full: boolean;
+}
+
+/** Caps per wallet chip; Runes count per kind, so their chip is full when any kind is. */
+function currencyCaps(state: GameState): Partial<Record<CurrencyId, CurrencyCap>> {
+  const cap = walletCap();
+  const full = fullCurrencies(state);
+  const runesFull = Object.values(state.wallet.runes).some((n) => n >= cap.runes);
+  return {
+    acorns: { max: cap.acorns, full: full.has("acorns") },
+    ash: { max: cap.ash, full: full.has("ash") },
+    coal: { max: cap.emberCoal, full: full.has("emberCoal") },
+    feathers: { max: cap.phoenixFeathers, full: full.has("phoenixFeathers") },
+    glass: { max: cap.cinderglass, full: full.has("cinderglass") },
+    runes: { max: cap.runes, full: runesFull },
+  };
 }
 
 /** One currency: icon and amount; the name shows in the tooltip (Timo: no names next to icons). */
@@ -110,16 +136,18 @@ export function CurrencyChip(props: {
   amount: number | string;
   /** Gained since the last fight, shown as "+n". */
   gain?: number | undefined;
+  /** The currency's cap: a full pouch shows orange, the tooltip says it is full. */
+  cap?: CurrencyCap | undefined;
 }) {
   const exact = typeof props.amount === "number" ? fmt(props.amount) : props.amount;
   // Numbers count to their new value (Diablo gold); text like the Flask's "3/3" just changes.
   const roll = useRollingNumber(typeof props.amount === "number" ? props.amount : 0);
   const shown = typeof props.amount === "number" ? fmt(roll.value) : props.amount;
-  const hover = useNoteHover(currencyNote(props.id, exact));
+  const hover = useNoteHover(currencyNote(props.id, exact, props.cap));
   const name = CURRENCIES[props.id].name;
   return (
     <span
-      className={`k-currency${roll.trend ? ` k-${roll.trend}` : ""}`}
+      className={`k-currency${roll.trend ? ` k-${roll.trend}` : ""}${props.cap?.full ? " k-full" : ""}`}
       data-currency={props.id}
       tabIndex={0}
       aria-label={`${name}: ${exact}`}
@@ -144,10 +172,11 @@ export function Wallet(props: {
   className?: string;
 }) {
   const rows = walletAmounts(props.state).filter(([id]) => !props.only || props.only.includes(id));
+  const caps = currencyCaps(props.state);
   return (
     <div className={`k-wallet ${props.className ?? ""}`} aria-label="Wallet">
       {rows.map(([id, amount]) => (
-        <CurrencyChip key={id} id={id} amount={amount} gain={props.gains?.[id]} />
+        <CurrencyChip key={id} id={id} amount={amount} gain={props.gains?.[id]} cap={caps[id]} />
       ))}
       {props.extra?.map((e) => (
         <CurrencyChip key={e.id} id={e.id} amount={e.amount} />

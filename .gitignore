@@ -7,3 +7,6 @@ test-results/
 .vite/
 .env.local
 .env.*.local
+
+# Scratch output of balance measurements
+tools/balance/tmp/

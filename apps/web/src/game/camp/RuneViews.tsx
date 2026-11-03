@@ -210,7 +210,11 @@ export function GamblePanel({
           );
         })}
       </div>
-      <span className="sub small">Item Level {merchantItemLevel(props.state, GAME_DATA)}</span>
+      <span className="sub small">
+        Item Level {merchantItemLevel(props.state, GAME_DATA)} ·{" "}
+        {Math.max(0, CRAFTING.gambleStock - (props.state.gambled ?? 0))} of {CRAFTING.gambleStock}{" "}
+        left this visit
+      </span>
       <div
         ref={crate}
         className={`workbench gamble-crate${last ? ` ${rarityClass(last)}` : ""}`}

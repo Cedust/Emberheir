@@ -12,7 +12,7 @@ import {
   type BattlePlanState,
 } from "../battle-plan";
 import { PROGRESSION } from "../constants";
-import { autoRewards, bossLevel, killPrice } from "../leveling";
+import { bossLevel, killPrice } from "../leveling";
 import {
   forgetBlockReason,
   getNode,
@@ -108,24 +108,32 @@ export function spentInTree(data: GameData, learned: LearnedNodes, classId?: str
   return skillPoints;
 }
 
-/**
- * Acorns for a full Skill Tree respec at Kaelen (level-v2.md section 7): moderate, about the Acorns of
- * a few normal kills at the run's boss level, so it grows with every run.
- */
-export function respecAcorns(prestige: number): number {
-  return autoRewards(bossLevel(prestige), "normal").acorns * PROGRESSION.respecKills;
+/** Acorns of `kills` normal kills per point at the run's boss level (economy-v2-plan.md W1). */
+function pointsPrice(prestige: number, points: number, kills: number): number {
+  return killPrice(bossLevel(prestige), { acorns: Math.max(1, points) * kills }).acorns;
 }
 
-/** Acorns to forget one rank of one node. */
-export function forgetAcorns(prestige: number): number {
-  return Math.max(1, Math.round(respecAcorns(prestige) * PROGRESSION.respecNodeShare));
+/**
+ * Acorns for a full Skill Tree respec at Kaelen: the Skill Points it gives back, each worth
+ * `respecKillsPerPoint.tree` kills at the run's boss level.
+ */
+export function respecAcorns(state: GameState, data: GameData): number {
+  const points = spentInTree(data, state.hero.learned, state.hero.classId);
+  return pointsPrice(state.legacy.prestige, points, PROGRESSION.respecKillsPerPoint.tree);
+}
+
+/** Acorns to forget one rank of one node: its Skill Points at the same price per point. */
+export function forgetAcorns(state: GameState, data: GameData, nodeId: string): number {
+  const node = data.skillTree.nodes.find((n) => n.id === nodeId);
+  const points = node ? learnCost(node).skillPoints : 1;
+  return pointsPrice(state.legacy.prestige, points, PROGRESSION.respecKillsPerPoint.tree);
 }
 
 export function respecTree(state: GameState, data: GameData): GameState {
   requireTrainer(state);
   const spent = spentInTree(data, state.hero.learned, state.hero.classId);
   if (spent === 0) return fail("Nothing to respec");
-  const price = respecAcorns(state.legacy.prestige);
+  const price = respecAcorns(state, data);
   if (state.wallet.acorns < price) return fail("Not enough Acorns");
   return returnLooseWebRunes({
     ...state,
@@ -148,7 +156,7 @@ export function forgetNode(state: GameState, data: GameData, nodeId: string): Ga
   const start = tree.classStarts?.[state.hero.classId];
   const reason = forgetBlockReason(tree, state.hero.learned, nodeId, start);
   if (reason) return fail(`Cannot forget "${nodeId}": ${reason}`);
-  const price = forgetAcorns(state.legacy.prestige);
+  const price = forgetAcorns(state, data, nodeId);
   if (state.wallet.acorns < price) return fail("Not enough Acorns");
   const ranks = (state.hero.learned[nodeId] ?? 0) - 1;
   const learned = Object.fromEntries(
@@ -225,7 +233,7 @@ export function respecMastery(state: GameState, data: GameData): GameState {
   if (pointsSpent(tree, mastery) === 0 && Object.keys(mastery.choices).length === 0) {
     return fail("Nothing to respec");
   }
-  const price = masteryRespecAcorns(state.legacy.prestige);
+  const price = masteryRespecAcorns(state, data);
   if (state.wallet.acorns < price) return fail("Not enough Acorns");
   return {
     ...state,
@@ -378,14 +386,18 @@ function validThreshold(t: number): boolean {
   return Number.isFinite(t) && t >= 0 && t <= COMBAT.maxHeat;
 }
 
-/**
- * Acorns for setting all Attribute Points anew at Kaelen: the same as a full Skill Tree respec, so
- * every respec follows one rule (entschlackung-v1.md).
- */
-export const attributeRespecAcorns = (prestige: number) => respecAcorns(prestige);
+/** Acorns for setting all Attribute Points anew at Kaelen: the points above the floor. */
+export function attributeRespecAcorns(state: GameState, data: GameData): number {
+  const floor = attributeFloor(heroClassOf(state, data).startingAttributes, state.hero.lineage);
+  const points = sumAttributes(state.hero.attributes) - sumAttributes(floor);
+  return pointsPrice(state.legacy.prestige, points, PROGRESSION.respecKillsPerPoint.attributes);
+}
 
-/** Acorns for a Mastery respec at Kaelen: the same one rule (economy-audit-v1.md E1). */
-export const masteryRespecAcorns = (prestige: number) => respecAcorns(prestige);
+/** Acorns for a Heirloom (Mastery) respec at Kaelen: the Mastery Points it gives back. */
+export function masteryRespecAcorns(state: GameState, data: GameData): number {
+  const points = pointsSpent(masteryTree(data, state.hero.weaponId), state.hero.mastery);
+  return pointsPrice(state.legacy.prestige, points, PROGRESSION.respecKillsPerPoint.heirloom);
+}
 
 /** Acorns for switching to another Capstone: a few kills at the run's boss level. */
 export function capstoneChangeAcorns(prestige: number): number {
@@ -402,7 +414,7 @@ export function respecAttributes(
   attributes: Attributes,
 ): GameState {
   requireTrainer(state);
-  const price = attributeRespecAcorns(state.legacy.prestige);
+  const price = attributeRespecAcorns(state, data);
   if (state.wallet.acorns < price) fail("Not enough Acorns");
   const { hero } = state;
   const floor = attributeFloor(heroClassOf(state, data).startingAttributes, hero.lineage);
