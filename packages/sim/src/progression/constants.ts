@@ -287,6 +287,12 @@ export const PROGRESSION = {
     boss: { life: 3, damage: 0.75 },
   },
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
+  /**
+   * Life and damage of every foe in the acts (not the finale, not the Wildfire) on top of its stage
+   * kind. The acts lost their Boons (Timo 2026-11-03, boon-auswahl-v1.md 7): without them the
+   * autopilot needed 4.4 attempts per newest act; this gives part of it back.
+   */
+  actPressure: { life: 0.93, damage: 0.93 },
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
@@ -296,6 +302,11 @@ export const PROGRESSION = {
    */
   flaskStartCharges: 3,
   flaskHeal: 0.35,
+  /**
+   * An Ember Shrine in the acts (after Stage 5 and 10) and after each fight of the finale gives
+   * this many Flask charges back (boon-auswahl-v1.md 7; Boons burn only in the Wildfire).
+   */
+  shrineFlaskCharges: 1,
 
   /**
    * Eldrin's Bounties (bounties-v2-plan.md): while "catch the Ember Thief" is open, the thief
@@ -401,8 +412,6 @@ export const PROGRESSION = {
   },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
-  /** Fusion Boons are this much likelier in the finale's Stolen Fire. */
-  finaleFusionWeight: 1,
 
   /** Phoenix Feathers (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossPhoenixFeathers: 1,

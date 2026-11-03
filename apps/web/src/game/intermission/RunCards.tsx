@@ -314,7 +314,7 @@ export function GateCards(props: { state: GameState; run: RunState; game: GameAp
           name: "Wander",
           kind: "Warden's Gate",
           explain:
-            "Back to Stage 1 of this act on a new map. Life, Flask and Boons stay. No new Shrines, Waymarks pay only once.",
+            "Back to Stage 1 of this act on a new map. Life and Flask stay. No new Shrines, Waymarks pay only once.",
           ...(walks ? { status: `Walked ${walks}× on this trip` } : {}),
         }}
         onClick={wander}
@@ -388,8 +388,9 @@ export function UpNext(props: { state: GameState; run: RunState; prestige: numbe
       </section>
     );
   }
-  // The Wildfire has no Shrines and no Gatekeepers.
-  const shrine = run.wildfire ? undefined : act.shrineStages.find((s) => s >= next);
+  // Ember Shrines: Boons in the Wildfire, a Flask charge in the acts. The Wildfire has no
+  // Gatekeepers; a walk past the Warden's Gate no Shrines.
+  const shrine = run.wanders ? undefined : act.shrineStages.find((s) => s >= next);
   const gate =
     !run.wildfire && isWallAct(GAME_DATA, act, props.prestige)
       ? gateStages(act).find((s) => s >= next)
@@ -419,7 +420,10 @@ export function UpNext(props: { state: GameState; run: RunState; prestige: numbe
         ) : null;
       })}
       {shrine !== undefined && (
-        <div className="up-row">
+        <div
+          className="up-row"
+          title={run.wildfire ? "1 of 3 Boons for this trip." : "Refills 1 Ember Flask charge."}
+        >
           <span className="shrine-mark" />
           <span>Ember Shrine</span>
           <span className="sub">
@@ -478,6 +482,9 @@ export function BountyCard(props: { run: RunState }) {
   );
 }
 
+/** The Ember Shrine's gift in the acts and the finale, in the done card's line. */
+const flaskLine = (n: number) => `+${n} Flask charge${n > 1 ? "s" : ""}`;
+
 export function DoneCard(props: { state: GameState; run: RunState }) {
   const { run } = props;
   const act = getAct(GAME_DATA, run.actId);
@@ -497,6 +504,7 @@ export function DoneCard(props: { state: GameState; run: RunState }) {
   } else if (run.visit && !rewards.items.length && rewards.boonPick == null) {
     line = "The road goes on";
     sub = rewards.xp ? `+${fmt(rewards.xp)} XP` : "";
+    if (rewards.flask) sub += `${sub ? " · " : ""}${flaskLine(rewards.flask)}`;
   } else {
     const pick = rewards.itemPick;
     const item = pick && pick.kind !== "salvageAll" ? rewards.items[pick.index] : undefined;
@@ -512,6 +520,7 @@ export function DoneCard(props: { state: GameState; run: RunState }) {
     const boon = rewards.boonPick != null ? rewards.boonOffer?.[rewards.boonPick] : undefined;
     const boonName = boon && GAME_DATA.boons?.find((b) => b.id === boon.id)?.name;
     if (boonName) sub += `${sub ? " · " : ""}Boon: ${boonName}`;
+    if (rewards.flask) sub += `${sub ? " · " : ""}${flaskLine(rewards.flask)}`;
     if (rewards.salvagedAsh > 0)
       sub += `${sub ? " · " : ""}+${rewards.salvagedAsh} Ash from salvage`;
   }

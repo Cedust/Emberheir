@@ -150,6 +150,7 @@ const rewards = z.object({
   ashbornLevels: opt(count),
   cinderglass: opt(count),
   waymark: opt(z.boolean()),
+  flask: opt(z.number()),
   items: z.array(itemSchema),
   picks: opt(count),
   thief: opt(z.enum(["caught", "escaped"])),

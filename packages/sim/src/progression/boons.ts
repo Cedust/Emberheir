@@ -83,6 +83,12 @@ export interface BoonsState {
 export const EMPTY_BOONS: BoonsState = { kept: [], fresh: [] };
 
 export const BOONS = {
+  /**
+   * Every Boon's effect is scaled by this (Timo 2026-11-03: Boons are a bonus, a run must not
+   * hang on Shrine luck). Without Boons the autopilot needed 4.2 attempts per newest act and 10 of
+   * 48 build runs got stuck; the monsters of the acts took the power back (`PROGRESSION.actPressure`).
+   */
+  strength: 0.5,
   maxRank: 3,
   /** Each rank above I adds this much of the base effect. */
   perRank: 0.5,
@@ -134,7 +140,7 @@ export function activeBoons(
 }
 
 export function boonScale(rank: number, grade: BoonGrade): number {
-  return (1 + BOONS.perRank * (rank - 1)) * BOONS.gradeScale[grade];
+  return (1 + BOONS.perRank * (rank - 1)) * BOONS.gradeScale[grade] * BOONS.strength;
 }
 
 /**

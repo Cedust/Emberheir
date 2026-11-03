@@ -15,7 +15,7 @@ import {
 } from "./game";
 import { TEST_BOON_DATA, TEST_BOSS } from "./test-fixtures";
 
-// Harmless bosses keep the test about the flow, not the fight.
+// Harmless foes keep the test about the flow, not the fight.
 const harmless = {
   ...TEST_BOSS,
   baseLife: 0.001,
@@ -23,7 +23,15 @@ const harmless = {
 };
 const data: GameData = {
   ...TEST_BOON_DATA,
-  acts: TEST_BOON_DATA.acts.map((a) => ({ ...a, boss: harmless })),
+  acts: TEST_BOON_DATA.acts.map((a) => ({
+    ...a,
+    boss: harmless,
+    enemies: a.enemies.map((e) => ({
+      ...e,
+      baseLife: 0.001,
+      weapon: { ...e.weapon, attacksPerSecond: 0 },
+    })),
+  })),
 };
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -85,6 +93,21 @@ describe("Wildfire", () => {
     expect(s.run?.rewards?.waymark).toBeUndefined();
     expect(s.run?.rewards?.boonOffer).toBeUndefined();
     expect(s.progress.waymarks).toEqual([]);
+  });
+
+  it("Shrines burn Boons only here, and the trip's Boons go out with it", () => {
+    let s = act(finaleWon(), { type: "setOut", actId: "test-act", wildfire: 1 });
+    expect(s.boons).toEqual({ kept: [], fresh: [] });
+    const shrine = data.acts.find((a) => a.id === "test-act")?.shrineStages[0] ?? 0;
+    s = { ...s, run: { ...(s.run ?? fail("missing")), stage: shrine } };
+    s = act(s, { type: "startStage" }, { type: "resolveFight" });
+    expect(s.run?.rewards?.flask).toBeUndefined();
+    expect(s.run?.rewards?.boonOffer?.length).toBeGreaterThan(0);
+    while (s.run?.rewards && !s.run.rewards.itemPick) s = act(s, { type: "salvageAll" });
+    s = act(s, { type: "pickBoon", index: 0 });
+    expect(s.boons.fresh).toHaveLength(1);
+    s = act(s, { type: "continue" }, { type: "retreat" });
+    expect(s.boons).toEqual({ kept: [], fresh: [] });
   });
 
   it("the act boss takes the Wildfire boss pressure on top of the tier", () => {

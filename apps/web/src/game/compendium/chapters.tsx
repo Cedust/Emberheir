@@ -171,7 +171,11 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                   text: "A normal fight. Sometimes an Elite turns up.",
                 },
                 { icon: big(node("elite")), name: "Elite", text: "A sure Elite and better loot." },
-                { icon: big(node("shrine")), name: "Shrine", text: "Pick 1 of 3 Boons." },
+                {
+                  icon: big(node("shrine")),
+                  name: "Shrine",
+                  text: "Wildfire only: pick 1 of 3 Boons.",
+                },
                 {
                   icon: big(node("hearth")),
                   name: "Hearth",
@@ -223,8 +227,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             </p>
             <p>
               <B>Challenge</B> and you fight. <B>Wander</B> and you go back to the start of the act
-              to grow stronger first. You keep your Life, Flask, Boons and Bounty, but no new
-              Shrines appear while you wander.
+              to grow stronger first. You keep your Life, Flask and Bounty, but no new Shrines
+              appear while you wander.
             </p>
           </>
         ),
@@ -239,10 +243,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               currencies and points. Only the way through the act starts over. A Retreat works the
               same, just without the dying.
             </p>
-            <p>
-              The Boons of the act you were in burn. Each death in an act makes its loot a little
-              better, until its Boss falls.
-            </p>
+            <p>Each death in an act makes its loot a little better, until its Boss falls.</p>
             <Nan>Dying costs you the road, not your things. Keep walking.</Nan>
           </>
         ),
@@ -953,8 +954,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               Elites carry one to three Modifiers, shown under their name. They hit harder and drop
-              better loot and some <C id="coal" />. An Elite that ambushes you on a normal fight
-              leaves a Shrine behind, as long as the act is new to you.
+              better loot and some <C id="coal" />.
             </p>
             {runAtLeast(3)(s) && (
               <p>
@@ -1030,14 +1030,27 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
     icon: chapterIcon(node("shrine")),
     pages: [
       {
-        id: "boons",
-        title: "Stolen Fire Boons",
+        id: "shrines",
+        title: "Ember Shrines",
         art: painting(node("shrine")),
         body: () => (
           <>
             <p>
-              Ember Shrines offer 1 of 3 Boons: sparks stolen from the Bosses' fires. Take the same
-              Boon again and it ranks up, up to III.
+              After Stage 5 and 10 of an act an Ember Shrine refills one charge of your Ember Flask.
+              In The Last Ember every fallen Echo does the same. Drink now, or save it for the Boss.
+            </p>
+          </>
+        ),
+      },
+      {
+        id: "boons",
+        title: "Stolen Fire Boons",
+        when: finaleWon,
+        body: () => (
+          <>
+            <p>
+              In the Wildfire the Shrines burn hotter: they offer 1 of 3 Boons, sparks stolen from
+              the Bosses' fires. Take the same Boon again and it ranks up, up to III.
             </p>
             <p>
               Some Boons are picky: you carry only one Strike Boon, one Skill Boon, one Reaction
@@ -1045,9 +1058,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               pile up. Every Boss you meet adds its family of Boons: one for each of those slots and
               one that piles up. Shrines favor the families that fit your weapon and skills.
             </p>
-            <p>
-              Boons from the act you are in burn when you fall. All of them burn at the Harvest.
-            </p>
+            <p>Boons last one Wildfire trip: they burn when you come back to the Camp.</p>
           </>
         ),
       },
@@ -1259,8 +1270,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               it, each hotter than the last, and then the Harvester's Core.
             </p>
             <p>
-              There is no loot here, only a Shrine after each Echo. Fall, and you start again at the
-              entrance, with your Boons burned.
+              There is no loot here. Each fallen Echo refills one Flask charge. Fall, and you start
+              again at the entrance.
             </p>
           </>
         ),

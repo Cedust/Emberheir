@@ -53,6 +53,8 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // its family in the same slot (or the family's stacking Boon), so a running trip keeps its
   // strength; an open Shrine offer gets the same swap and loses doubles.
   18: { state: renameOldBoons },
+  // Boons burn only in the Wildfire (boon-auswahl-v1.md 7): an act's Boons and offers go out.
+  19: { state: boonsOnlyInWildfire },
 };
 
 /** Boons of save version 18 that are gone → the Boon that takes their place. */
@@ -120,6 +122,20 @@ function renameOldBoons(save: RawSave): RawSave {
         ...(picked !== null ? { boonPick: Math.min(picked, offer.length - 1) } : {}),
       },
     };
+  }
+  return out;
+}
+
+function boonsOnlyInWildfire(save: RawSave): RawSave {
+  const run = save["run"];
+  if (isRecord(run) && run["wildfire"]) return save;
+  const out: RawSave = { ...save, boons: { kept: [], fresh: [] } };
+  const rewards = isRecord(run) ? run["rewards"] : undefined;
+  if (isRecord(run) && isRecord(rewards) && "boonOffer" in rewards) {
+    const rest = { ...rewards };
+    delete rest["boonOffer"];
+    delete rest["boonPick"];
+    out["run"] = { ...run, rewards: rest };
   }
   return out;
 }

@@ -614,14 +614,15 @@ export function ActMapWindow(props: {
       >
         <ActMapView state={props.state} run={props.run} game={props.game} big />
         <p className="sub act-map-legend">
-          {(
-            ["fight", "elite", "shrine", "hearth", "cache", "event", "marisha", "hunt"] as const
-          ).map((k) => (
-            <span key={k} className="legend-item">
-              <img src={nodeArt(k)} alt="" className="legend-node" />
-              {NODE_TEXT[k].name}
-            </span>
-          ))}
+          {(["fight", "elite", "shrine", "hearth", "cache", "event", "marisha", "hunt"] as const)
+            // Shrine nodes stand only on Wildfire maps (Boons burn only there).
+            .filter((k) => k !== "shrine" || !!props.run.wildfire)
+            .map((k) => (
+              <span key={k} className="legend-item">
+                <img src={nodeArt(k)} alt="" className="legend-node" />
+                {NODE_TEXT[k].name}
+              </span>
+            ))}
         </p>
       </Window>
     </WindowLayer>

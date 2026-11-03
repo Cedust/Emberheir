@@ -74,8 +74,8 @@ Endgame **Wildfire I–X**.
 - **Warden's Gate** (`notes/laengere-runs-v1.md`, Längere Runs Phase 1): Vor jeder Wand des neuesten Acts (den
   Gatekeepern auf Stage 5 und 10 und dem Boss) wählt man **Challenge** (Kampf; beim Boss bringt der Sieg The Harvest)
   oder **Wander**: zurück auf Stage 1 desselben Acts, um zu farmen. Life,
-  Flask, Boons und Bounty bleiben, die Act-Karte wird neu gewürfelt. Beim Wandern gibt es **keine neuen Shrines**
-  (keine Boons aus dem Farmen), Waymarks zahlen ihren Skill Point weiter nur einmal pro Run. Das Tor zeigt das
+  Flask und Bounty bleiben, die Act-Karte wird neu gewürfelt. Beim Wandern gibt es **keine neuen Shrines**
+  (keine Flask-Ladungen aus dem Farmen), Waymarks zahlen ihren Skill Point weiter nur einmal pro Run. Das Tor zeigt das
   Level der Wand, rot, solange der Held darunter liegt. Nicht im Wildfire, im Finale und nach dem letzten Prestige.
 - **Waymarks:** Stage 5, 10 und 15 jedes Acts. Der erste Sieg dort in einem Run gibt einen Skill Point.
 - **Act-Karte** (`notes/laengere-runs/act-karte-entwurf-v1.md`, Längere Runs Phase 2, Timo 21.10.2026; ersetzt die
@@ -91,7 +91,7 @@ Endgame **Wildfire I–X**.
   | Fight | ja | normaler Kampf (kann zufällig Elite oder Ember Thief sein) |
   | Elite | ja | sicherer Elite, ohne Shrine danach |
   | Thief's Trail | ja | nur bei offener Thief-Bounty, in den ersten zwei Abschnitten: sicherer Ember Thief |
-  | Shrine | nein | 1 aus 3 Boons; nur in den ersten zwei Abschnitten und solange Shrines brennen (nicht beim Wandern) |
+  | Shrine | nein | **nur im Wildfire:** 1 aus 3 Boons, in den ersten zwei Abschnitten (alte Act-Karten: +1 Flask-Ladung) |
   | Hearth | nein | Rast +25 % Life (Dry Season +60 %) **oder** +1 Flask-Ladung |
   | Cache | nein | ein Item-Pick, eine Rune oder Ember Coal |
   | Event | nein | eins von 8 Events (`content/src/events.ts`), jedes mit freiem **Walk On**; was man nicht bezahlen kann, ist ausgegraut mit Tooltip. Kein Preis nimmt mehr als die Hälfte einer Schicht |
@@ -101,7 +101,7 @@ Endgame **Wildfire I–X**.
   Events: Smoldering Altar (−20 % Life → Rune einen Rang höher), Ember Spring (+30 % Life oder +1 Flask), Trapped
   Chest (Item-Pick, 50 % −25 % Life), Ashen Challenger (nächster Kampf ein Elite mit 2 Items), Hedgehog Peddler
   (Acorns → Flask, Ash → 2 Ember Coal), Hunters' Camp (+20 % Life oder XP von 2 Kämpfen), Cursed Spark (1 aus 3 Boons,
-  Gegner +15 % Schaden bis zur nächsten Waymark; nur solange Shrines brennen), Lost Cub (−1 Flask → nächster
+  Gegner +15 % Schaden bis zur nächsten Waymark; nur im Wildfire), Lost Cub (−1 Flask → nächster
   Item-Pick mindestens Rare). Die Karte steht rechts in der Intermission und öffnet sich groß mit **M**. Die
   erreichbaren Knoten erscheinen als große Karten in der Mitte (auch ein Klick auf den Knoten wählt); gibt es
   mehr als einen Weg, wartet NEXT STAGE auf die Wahl. Groß lässt sich die Karte zoomen und verschieben. Zwischen
@@ -135,8 +135,9 @@ Endgame **Wildfire I–X**.
   Affixe bleiben frei. Gilt für alle Item-Picks (auch Cache, Eldrin's Cache) und Marishas Gamble. Vorher war gut jede
   dritte Karte nicht tragbar, bei Rüstung zwei von drei.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
-- **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
-  1 aus 3 **Stolen Fire Boons**.
+- **Ember Shrine** nach Stage 5 und 10 und nach zufälligen Elites auf Fight-Knoten (nicht beim Wandern). In den
+  Acts und im Finale füllt sie **1 Flask-Ladung** auf (wenn die Flask nicht voll ist). **Boons gibt es nur im Wildfire**
+  (Timo 2026-11-03: Boons sind Glück und sollen ein Bonus sein, kein Run darf von ihnen abhängen; siehe 5.5).
 - Boss: zusätzlich **Boss Hoard** (15 % auf eine Trophy des eigenen Wardens, ab Run 4; vorher 10 %) und sein **Echo** für das Heirloom.
 - **Act-Beute** (`notes/laengere-runs/act-beute-entwurf-v1.md`, Timo 21.10.2026): jeder Act hat eine **Home Rune**
   (Ashen Fields Bark, Rotwood Thorn, Ember Wastes Ember, Frost Peaks Rime, Storm Spires Volt, Void Rift Venom,
@@ -169,7 +170,6 @@ Endgame **Wildfire I–X**.
 - **Tod:** zurück ins Camp (Beginn des aktuellen Acts). Level, Gear, Inventar, Währungen und Punkte **bleiben**.
 - **Retreat:** freiwillig zurück ins Camp, wirkt wie ein Tod.
 - **Revisit:** geschaffte Acts über die Straßenkarte erneut spielen (Farmen).
-- Boons des laufenden Acts verbrennen bei Tod und Retreat, ein geschaffter Act behält sie bis zum Prestige.
 - **Life bleibt zwischen den Stages erhalten**, keine Regeneration. Heilung zwischen Stages nur über die **Ember Flask**
   (3 Ladungen à 35 % Max Life, voll im Camp, nur per Klick; Belt-Affix „of Plenty“ +1–2 Ladungen).
 - **Hearth Embers:** Ein gewonnener Waymark vor dem Boss (Stage 5 und 10) heilt 25 % Life, jedes Mal (nicht im
@@ -190,9 +190,9 @@ Endgame **Wildfire I–X**.
 ### 2.6 Finale und Endgame ✅
 - **The Last Ember** (nach dem 7. Prestige): 7 Stages ohne Loot und Level-Ups. Stage 1–6 sind die **Warden-Echos** der
   Acts 1–6 (Echo n hat n Boss-Fähigkeiten, Stärke steigt von 60 % auf 90 %), Stage 7 ist der **Harvester's Core** (100 %,
-  härtester Kampf). Nach jedem Echo 1 aus 3 Boons. Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe.
+  härtester Kampf). Nach jedem Echo +1 Flask-Ladung (keine Boons). Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe.
 - **Wildfire I–X** (nach dem Finale): Ein gewählter Act brennt erneut auf einer Stufe. Monster Level 92 (I) bis 110 (X).
-  Mehr Legendaries und Runes, keine Shrines. Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
+  Mehr Legendaries und Runes, **Ember Shrines mit Boons** (halbe Stärke, nach Stage 5/10 und als Knoten; verbrennen am Ende des Trips). Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
   Min-Maxing (`endgame-balance-v1.md`). Pro Stufe bis V +8 % Life, +6 % Schaden; darüber +20 % Life und +25 % Schaden
   pro Stufe (Schritt 7, vorher +35 % Life, +8 % Schaden: VI–VII waren zu leicht). **I–IV mit Vorsprung** (Timo
   28.10.2026, „I bis IV sind zu leicht“, 1,3–1,9 Versuche): I–IV haben +12 % Life und +18 % Schaden mehr, ab V
@@ -641,8 +641,11 @@ Endgame **Wildfire I–X**.
 
 ### 5.5 Stolen Fire Boons ✅
 - Funken aus dem Feuer der Wardens: eine Familie pro Boss (Ash, Rot, Cinder, Rime, Storm, Void) plus Hearth.
-- Biegen den Build bis zum Prestige (Slots Strike, Skill, Reaction, Heat exklusiv; Trigger, Passive stapeln),
-  Güte Spark/Flame/Blaze, Fusion Boons im Finale.
+- **Nur im Wildfire** (Timo 2026-11-03, `notes/boon-auswahl-v1.md` 7): Acts und Finale sind ohne Boons gebalanced,
+  dort gibt die Ember Shrine eine Flask-Ladung. Im Wildfire sind alle Familien offen, jeder Boon wirkt mit **halber
+  Stärke** (`BOONS.strength` 0,5), und alle Boons verbrennen, wenn der Trip endet (Sieg, Tod oder Retreat).
+- Biegen den Build für einen Trip (Slots Strike, Skill, Reaction, Heat exklusiv; Trigger, Passive stapeln),
+  Güte Spark/Flame/Blaze, Fusion Boons.
 - **49 Boons** (`notes/boon-auswahl-v1.md`, Timo 2026-11-02): jede Warden-Familie hat **einen Boon pro festem Slot**
   und **einen, der stapelt**; Hearth hat Heat, Reaction und vier stapelnde (Ember Ward bleibt für Barrier-Builds);
   7 Fusion, 6 Stolen (Attribute).
@@ -663,7 +666,7 @@ Endgame **Wildfire I–X**.
   1–2 Skills, Telegraphs (Conditions für Reaction Slots).
 - **Elites** (`elites-routen-v1.md`): 1–3 Modifier, zuerst einer der drei **Act-Modifier** (z. B. Rotwood: Sporeburst,
   Rootbound, Thornbark), dann allgemeine (Extra Fast, Stone Skin, Vampiric, Thorns, Enraged). Ihre Beute folgt dem
-  Thema der Modifier. Besserer Loot, Ember Coal, öffnen eine Ember Shrine.
+  Thema der Modifier. Besserer Loot, Ember Coal; auf Fight-Knoten öffnen sie eine Ember Shrine.
 - **Champions** (ab Run 3, 4 % pro Elite): drei Modifier, +30 % Life, eigener Hoard (sicher Epic, 15 % Legendary).
 - **Gegner-Plakette:** nur der Name als Titel; Typ als gemaltes Icon (Name beim Hovern), Rang als gemalte Marke +
   Wort (ELITE, CHAMPION, GATEKEEPER, BOSS), Modifier als Chips darunter.

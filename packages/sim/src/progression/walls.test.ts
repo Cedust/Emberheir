@@ -13,6 +13,12 @@ import {
 } from "./game";
 import { TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
 
+/** A stage kind's factors as the acts use them: times the acts' own pressure. */
+const inAct = (k: { readonly life: number; readonly damage: number }) => ({
+  life: k.life * PROGRESSION.actPressure.life,
+  damage: k.damage * PROGRESSION.actPressure.damage,
+});
+
 /** Two 15-stage acts: run 1 has only the first, run 2 both. */
 const LONG_ACT = { ...TEST_ACT, id: "long-act", stages: 15, shrineStages: [5, 10] };
 const NEXT_ACT = { ...LONG_ACT, id: "next-act", number: 2 };
@@ -84,7 +90,7 @@ describe("Walls of the newest act", () => {
     const walled = enemySetup(encounter, "long-act", data);
     expect(walled.baseLife).toBeGreaterThan(plain.baseLife ?? 0);
     expect(encounter.wall?.life ?? 1).toBeGreaterThan(1);
-    expect(encounter.pressure).toEqual(PROGRESSION.stageKinds.gate);
+    expect(encounter.pressure).toEqual(inAct(PROGRESSION.stageKinds.gate));
   });
 
   it("each stage kind has its own Life and damage; the boss hits a little softer", () => {
@@ -95,9 +101,9 @@ describe("Walls of the newest act", () => {
       return applyAction(s, data, { type: "startStage" }).run?.encounter;
     };
     const k = PROGRESSION.stageKinds;
-    expect(at(1)?.pressure).toEqual(k.normal);
-    expect(at(5)?.pressure).toEqual(k.gate);
-    expect(at(15)?.pressure).toEqual(k.boss);
+    expect(at(1)?.pressure).toEqual(inAct(k.normal));
+    expect(at(5)?.pressure).toEqual(inAct(k.gate));
+    expect(at(15)?.pressure).toEqual(inAct(k.boss));
     expect(k.boss.damage).toBeLessThan(k.normal.damage);
   });
 

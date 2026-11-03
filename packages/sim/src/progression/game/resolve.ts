@@ -24,7 +24,7 @@ import {
 import { requireRun } from "./guards";
 import { tripOmenEffects, tripOmens } from "./omens";
 import { omenPeril } from "../omens";
-import { boonAffinity, heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
+import { boonAffinity, heroBoons, heroSetup } from "./hero-build";
 import {
   actAffixFactor,
   addRunes,
@@ -36,6 +36,7 @@ import {
   tagAffixFactor,
 } from "./loot";
 import { meet } from "./companions";
+import { shrineRefill } from "./flask";
 import { toCamp } from "./run";
 import {
   type ActData,
@@ -211,21 +212,20 @@ export function resolveFight(state: GameState, data: GameData): GameState {
   );
   const found = items.flatMap((it) => (it.uniqueId ? [it.uniqueId] : []));
   const newTrophies = [...new Set(found)].filter((id) => !state.legacy.trophies.includes(id));
-  // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10 and Elites of an act this run has not
-  // cleared yet. Bosses have none: their moment belongs to the Hoard and the Echo.
-  // Wildfire has no Shrines: the Boons of the run carry the fire.
+  // Ember Shrine (Spielspaß Teil 1): after Stage 5 and 10 and Elites off the Elite nodes. Bosses
+  // have none: their moment belongs to the Hoard and the Echo. Boons burn only in the Wildfire
+  // (Timo 2026-11-03); in the acts the Shrine gives a Flask charge back (boon-auswahl-v1.md 7).
   // The node of the act map the fight stood on.
   const node = currentNode(run);
   // A walk past the Warden's Gate brings no new Shrines (laengere-runs-v1.md).
   const shrine =
-    !tier &&
     !run.wanders &&
-    (data.boons?.length ?? 0) > 0 &&
-    !state.progress.actsCleared.includes(act.id) &&
     rank !== "boss" &&
     // Elites of an Elite node pay in themed loot, not in Boons (neuausrichtung-v1.md 6.2).
     ((rank === "elite" && node?.kind !== "elite" && !encounter.challenge) ||
       act.shrineStages.includes(run.stage));
+  const boonShrine = shrine && !!tier && (data.boons?.length ?? 0) > 0;
+  const flask = shrine && !tier ? shrineRefill(state, data) : 0;
   const rest = (hearthEmbers(act, run.stage, tier) ? PROGRESSION.hearthEmbers : 0) * omen.restHeal;
   // The act boss leaves its Echo, one stage stronger once per run (Weapon Mastery).
   const echoDef = rank === "boss" ? data.echoes.find((e) => e.actId === act.id) : undefined;
@@ -237,12 +237,13 @@ export function resolveFight(state: GameState, data: GameData): GameState {
           stage: Math.min(MASTERY.maxEchoStage, (echoBefore?.stage ?? 0) + 1),
         }
       : undefined;
-  const boonOffer = shrine
+  const boonOffer = boonShrine
     ? rollBoonOffer(
         data.boons ?? [],
         data.boonFamilies ?? [],
         {
-          open: openBoonFamilies(data, act.number),
+          // The Wildfire burns after the Harvest: every family is open.
+          open: (data.boonFamilies ?? []).map((f) => f.id),
           active: heroBoons(state, data),
           damageTypes: boonAffinity(state, data),
           reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
@@ -279,6 +280,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
       wins: stats.wins + 1,
       bossKills: stats.bossKills + (rank === "boss" ? 1 : 0),
     },
+    ...(flask ? { flaskCharges: state.flaskCharges + flask } : {}),
     hero: {
       ...state.hero,
       // The first Echo goes straight onto the weapon.
@@ -345,6 +347,7 @@ export function resolveFight(state: GameState, data: GameData): GameState {
         ...(encounter.challenge ? { picks: PROGRESSION.challengePicks } : {}),
         ...(escaped ? { thief: "escaped" as const } : {}),
         ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
+        ...(flask ? { flask } : {}),
         ...(newTrophies.length ? { newTrophies } : {}),
         ...(echo ? { echo } : {}),
         ...(bountyDone ? { bountyDone: true } : {}),
@@ -390,8 +393,8 @@ function meetOnTheRoad(
 }
 
 /**
- * A fight of The Last Ember: no loot, no XP. A win offers Stolen Fire from every family (Fusions
- * likelier); the last win brings the flame home. A death ends the attempt.
+ * A fight of The Last Ember: no loot, no XP, no Boons (they burn only in the Wildfire). A win gives
+ * a Flask charge back; the last win brings the flame home. A death ends the attempt.
  */
 function resolveFinaleFight(
   state: GameState,
@@ -420,22 +423,11 @@ function resolveFinaleFight(
     });
     return { ...home, boons: EMPTY_BOONS, legacy: { ...home.legacy, finaleWon: true } };
   }
-  const [rng, next] = nextRng(state);
-  const boonOffer = rollBoonOffer(
-    data.boons ?? [],
-    data.boonFamilies ?? [],
-    {
-      open: (data.boonFamilies ?? []).map((f) => f.id),
-      active: heroBoons(state, data),
-      damageTypes: boonAffinity(state, data),
-      reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
-      fusionWeight: PROGRESSION.finaleFusionWeight,
-    },
-    rng,
-  );
+  const flask = shrineRefill(state, data);
   return {
-    ...next,
+    ...state,
     stats: won,
+    flaskCharges: state.flaskCharges + flask,
     run: {
       ...run,
       phase: "rewards",
@@ -453,7 +445,7 @@ function resolveFinaleFight(
         items: [],
         itemPick: { kind: "salvageAll" },
         salvagedAsh: 0,
-        ...(boonOffer.length ? { boonOffer, boonPick: null } : {}),
+        ...(flask ? { flask } : {}),
       },
     },
   };

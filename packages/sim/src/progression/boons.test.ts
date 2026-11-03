@@ -57,7 +57,7 @@ describe("Stolen Fire Boons", () => {
       // Kindled Strikes replaced Crushing Blow in the Strike slot.
       ["kindled-strikes", 1, "spark"],
     ]);
-    expect(boonScale(3, "flame")).toBeCloseTo(2 * 1.3);
+    expect(boonScale(3, "flame")).toBeCloseTo(2 * 1.3 * BOONS.strength);
     const grit = TEST_BOONS.find((b) => b.id === "grit");
     expect(grit && boonText(grit, 1.5)).toBe("+15 Armor");
   });
@@ -71,12 +71,12 @@ describe("Stolen Fire Boons", () => {
       TEST_BOONS,
     );
     const fx = boonEffects(active);
-    expect(fx.bonuses.armor).toBeCloseTo(15);
-    expect(fx.rules?.skillCostMultiplier).toBeCloseTo(0.9);
+    expect(fx.bonuses.armor).toBeCloseTo(15 * BOONS.strength);
+    expect(fx.rules?.skillCostMultiplier).toBeCloseTo(1 - 0.1 * BOONS.strength);
     expect(fx.triggers).toEqual([
       expect.objectContaining({
         id: "boon-crushing-blow",
-        effect: { kind: "weaponHit", multiplier: 1 },
+        effect: { kind: "weaponHit", multiplier: BOONS.strength },
       }),
     ]);
   });
@@ -118,64 +118,44 @@ describe("Stolen Fire Boons", () => {
     expect(openBoonFamilies(data, 2)).toEqual(["hearth", "ash", "cinder"]);
   });
 
-  it("the Shrine follows Shrine stages and Elites, not the boss; the pick is needed to go on", () => {
+  it("an act's Shrine gives a Flask charge back, no Boons; never past a full Flask or the boss", () => {
     let s = act(start(), { type: "setOut", actId: "test-act" });
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
-    expect(s.run?.rewards?.boonOffer).toBeUndefined();
+    expect(s.run?.rewards?.flask).toBeUndefined();
     s = act(s, { type: "salvageAll" }, { type: "continue" });
+    s = { ...s, flaskCharges: 1 };
     s = act(s, { type: "startStage" }, { type: "resolveFight" }, { type: "salvageAll" });
-    const offer = s.run?.rewards?.boonOffer ?? [];
-    expect(offer.length).toBeGreaterThan(0);
-    expect(s.run?.rewards && rewardsDone(s.run.rewards)).toBe(false);
-    expect(() => act(s, { type: "continue" })).toThrow();
-    s = act(s, { type: "pickBoon", index: 0 });
-    expect(() => act(s, { type: "pickBoon", index: 0 })).toThrow(/taken/);
-    expect(s.boons.fresh).toEqual([offer[0]]);
+    expect(s.run?.rewards?.boonOffer).toBeUndefined();
+    expect(s.run?.rewards?.flask).toBe(1);
+    expect(s.flaskCharges).toBe(2);
     expect(s.run?.rewards && rewardsDone(s.run.rewards)).toBe(true);
     // The boss's moment belongs to its Hoard and Echo: no Shrine.
     s = act(s, { type: "continue" }, { type: "startStage" }, { type: "resolveFight" });
     expect(s.run?.encounter?.boss).toBe(true);
-    expect(s.run?.rewards?.boonOffer).toBeUndefined();
-  });
-
-  it("death burns the current act's Boons, a cleared act keeps them", () => {
-    const s = start();
-    const withBoons: GameState = {
-      ...s,
-      boons: { kept: [spark("grit")], fresh: [spark("banked-coals")] },
-    };
-    expect(heroSetup(withBoons, data).setup.bonuses?.startingHeat).toBeCloseTo(30);
-    // Retreat: the fresh Boon burns.
-    let r = act(withBoons, { type: "setOut", actId: "test-act" }, { type: "retreat" });
-    expect(r.boons).toEqual({ kept: [spark("grit")], fresh: [] });
-    // Clearing the act keeps what was found there.
-    r = act(withBoons, { type: "setOut", actId: "test-act" });
-    for (let i = 0; i < 3 && r.run; i++) r = clearStage(r);
-    expect(r.run).toBeNull();
-    expect(r.boons.fresh).toEqual([]);
-    expect(r.boons.kept.slice(0, 2)).toEqual([spark("grit"), spark("banked-coals")]);
+    expect(s.run?.rewards?.flask).toBeUndefined();
+    // A full Flask takes nothing.
+    let full = act(start(), { type: "setOut", actId: "test-act" });
+    full = clearStage(full);
+    full = act(full, { type: "startStage" }, { type: "resolveFight" });
+    expect(full.run?.rewards?.flask).toBeUndefined();
+    expect(full.boons).toEqual(EMPTY_BOONS);
   });
 
   it("a walk past the Warden's Gate gives no Shrine", () => {
     let s = act(start(), { type: "setOut", actId: "test-act" });
-    s = { ...s, run: s.run && { ...s.run, wanders: 1 } };
+    s = { ...s, flaskCharges: 0, run: s.run && { ...s.run, wanders: 1 } };
     s = act(s, { type: "startStage" }, { type: "resolveFight" }, { type: "salvageAll" });
     s = act(s, { type: "continue" });
     s = act(s, { type: "startStage" }, { type: "resolveFight" });
-    expect(s.run?.rewards?.boonOffer).toBeUndefined();
+    expect(s.run?.rewards?.flask).toBeUndefined();
   });
 
-  it("Revisit Act gives no Shrine", () => {
-    let s: GameState = {
+  it("Boons still work on a hero who holds them", () => {
+    const withBoons: GameState = {
       ...start(),
-      legacy: { ...start().legacy, prestige: 2 },
-      progress: { ...start().progress, actsCleared: ["test-act"] },
+      boons: { kept: [spark("grit")], fresh: [spark("banked-coals")] },
     };
-    s = act(s, { type: "setOut", actId: "test-act" });
-    s = act(s, { type: "startStage" }, { type: "resolveFight" }, { type: "salvageAll" });
-    s = act(s, { type: "continue" });
-    s = act(s, { type: "startStage" }, { type: "resolveFight" });
-    expect(s.run?.rewards?.boonOffer).toBeUndefined();
+    expect(heroSetup(withBoons, data).setup.bonuses?.startingHeat).toBeCloseTo(30 * BOONS.strength);
   });
 });
 
@@ -196,13 +176,15 @@ describe("Boon chance scaling", () => {
       },
     } as const;
     const one = boonEffects(activeBoons({ kept: [spark("venom")], fresh: [] }, [def]));
-    expect(one.triggers[0]?.chance).toBeCloseTo(0.4);
+    expect(one.triggers[0]?.chance).toBeCloseTo(0.4 * BOONS.strength);
     const three = activeBoons(
       { kept: [{ id: "venom", grade: "blaze" }, spark("venom"), spark("venom")], fresh: [] },
       [def],
     );
-    expect(boonEffects(three).triggers[0]?.chance).toBe(1);
-    expect(boonText(def, three[0]?.scale ?? 1)).toBe("Attacks: 100 % chance to Poison");
+    // Rank III Blaze: 40 % × 2 × 1.6 × strength, capped at 100 %.
+    const chance = Math.min(1, 0.4 * 2 * 1.6 * BOONS.strength);
+    expect(boonEffects(three).triggers[0]?.chance).toBeCloseTo(chance);
+    expect(boonText({ ...def, value: 100 }, 2 * 1.6)).toBe("Attacks: 100 % chance to Poison");
   });
 });
 

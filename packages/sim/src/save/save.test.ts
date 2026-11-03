@@ -189,6 +189,8 @@ describe("Boon-Auswahl migration", () => {
       },
       run: {
         ...run,
+        // A Wildfire trip, so step 19 keeps its Boons.
+        wildfire: 1,
         rewards: {
           ...((run["rewards"] as object | null) ?? {}),
           boonOffer: [
@@ -208,5 +210,28 @@ describe("Boon-Auswahl migration", () => {
       "stoked-pyre",
       "permafrost",
     ]);
+  });
+
+  it("an act's Boons and an open Boon offer burn out: Boons live only in the Wildfire", () => {
+    const s = rich();
+    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
+    const run = raw["run"] as Record<string, unknown>;
+    const old = {
+      ...raw,
+      version: 19,
+      boons: { kept: [{ id: "brutality", grade: "flame" }], fresh: [] },
+      run: {
+        ...run,
+        rewards: {
+          ...((run["rewards"] as object | null) ?? {}),
+          boonOffer: [{ id: "stoked-pyre", grade: "flame" }],
+          boonPick: null,
+        },
+      },
+    };
+    const migrated = deserializeGame(JSON.stringify(old));
+    expect(migrated.boons).toEqual({ kept: [], fresh: [] });
+    expect(migrated.run?.rewards?.boonOffer).toBeUndefined();
+    expect(migrated.run?.rewards?.boonPick).toBeUndefined();
   });
 });

@@ -1,5 +1,7 @@
 import {
   type ActData,
+  levelCap,
+  PROGRESSION,
   applyAction,
   ashbornBlockReason,
   ashbornUnspent,
@@ -250,7 +252,9 @@ export function walkQuiet(
 /**
  * At the Warden's Gate (laengere-runs-v1.md) the autopilot reads the wall's level like a player:
  * below it (the Gate shows it red) it wanders on through the act to farm, at most
- * `GATE_WANDERS` walks per trip, then it challenges the Gatekeeper or the boss.
+ * `GATE_WANDERS` walks per trip, then it challenges the Gatekeeper or the boss. Like a player who
+ * keeps falling, it farms one level more past the wall for each death in the act, up to the Level
+ * Cap's headroom (Timo: walls are beaten by farming levels and gear, boon-auswahl-v1.md 7).
  */
 export const GATE_WANDERS = 4;
 
@@ -259,7 +263,9 @@ export function chooseGate(state: GameState, data: GameData): GameState {
   if (!run || run.phase !== "intermission" || !wardensGate(state, data, run)) return state;
   const act = getAct(data, run.actId);
   const wallLevel = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
-  if (state.hero.level >= wallLevel || (run.wanders ?? 0) >= GATE_WANDERS) return state;
+  const goal = wallLevel + Math.min(PROGRESSION.levelHeadroom, state.progress.deathsInAct);
+  const capped = Math.min(goal, levelCap(state.legacy.prestige));
+  if (state.hero.level >= capped || (run.wanders ?? 0) >= GATE_WANDERS) return state;
   return applyAction(state, data, { type: "wander" });
 }
 
