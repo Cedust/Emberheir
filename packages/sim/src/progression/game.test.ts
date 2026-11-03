@@ -40,7 +40,7 @@ import {
   rollRune,
 } from "./game";
 import { requiredLevel } from "../items/equipment";
-import { levelCap } from "./leveling";
+import { bossLevel, killPrice, levelCap } from "./leveling";
 import { Rng } from "../rng";
 import { TEST_ACT, TEST_GAME_DATA, TREE_SKILL, WEAK_ENEMY } from "./test-fixtures";
 
@@ -433,7 +433,6 @@ describe("game loop", () => {
     s = {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 6 },
-      wallet: { ...s.wallet, acorns: respecAcorns(0) },
       progress: { ...s.progress, met: ["liora"] },
     };
     s = act(
@@ -442,6 +441,11 @@ describe("game loop", () => {
       { type: "setRotationSkill", slot: 0, skillId: TREE_SKILL.id },
     );
     expect(spentInTree(data, s.hero.learned)).toBe(6);
+    // The price follows the invested points: 6 Skill Points, one kill each at the boss level.
+    const price = respecAcorns(s, data);
+    expect(price).toBe(killPrice(bossLevel(0), { acorns: 6 }).acorns);
+    expect(() => act(s, { type: "respecTree" })).toThrow(/Acorns/);
+    s = { ...s, wallet: { ...s.wallet, acorns: price } };
     s = act(s, { type: "respecTree" });
     expect(s.hero.learned).toEqual({});
     expect(s.hero.unspentSkillPoints).toBe(6);
@@ -455,10 +459,13 @@ describe("game loop", () => {
     s = {
       ...s,
       hero: { ...s.hero, unspentSkillPoints: 6 },
-      wallet: { ...s.wallet, acorns: 3 * forgetAcorns(0) },
       progress: { ...s.progress, met: ["liora"] },
     };
     s = act(s, { type: "learnNodes", nodeIds: ["a", "b", "b", "k"] });
+    // Per point like the whole tree: the 3-point Keystone costs three times a 1-point node.
+    const one = forgetAcorns(s, data, "b");
+    expect(forgetAcorns(s, data, "k")).toBe(3 * one);
+    s = { ...s, wallet: { ...s.wallet, acorns: 5 * one } };
     // "a" holds "b" and "k".
     expect(() => act(s, { type: "forgetNode", nodeId: "a" })).toThrow(/holdsOthers/);
     expect(() => act(s, { type: "forgetNode", nodeId: "start" })).toThrow(/start/);
@@ -466,7 +473,7 @@ describe("game loop", () => {
     expect(s.hero.learned).toEqual({ a: 1, b: 1 });
     // The Keystone gives back its 3 Skill Points.
     expect(s.hero.unspentSkillPoints).toBe(4);
-    expect(s.wallet.acorns).toBe(forgetAcorns(0));
+    expect(s.wallet.acorns).toBe(one);
   });
 
   it("the boss of the newest act starts the Prestige: the world burns, all items stay", () => {

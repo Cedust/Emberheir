@@ -120,7 +120,7 @@ export {
 } from "./item-rules";
 export { applyAction, type GameAction } from "./actions";
 export { requireCamp } from "./guards";
-export { heroAshborn, spendAshborn, resetAshborn } from "./ashborn";
+export { heroAshborn, spendAshborn, resetAshborn, ashbornResetAcorns } from "./ashborn";
 export {
   CRUCIBLE,
   crucibleBindCost,

@@ -12,6 +12,7 @@ import {
   newGame,
 } from "./game";
 import { TEST_BOON_DATA, TEST_GAME_DATA as data } from "./test-fixtures";
+import { bossLevel, killPrice } from "./leveling";
 
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -84,7 +85,9 @@ describe("Attributes v1", () => {
   it("Attribute respec at Kaelen: every point above the Class Array anew, for Acorns", () => {
     let s = act(fresh(), { type: "allocateAttributes", points: { strength: 4, vitality: 2 } });
     const target = plus(floor(), { dexterity: 3, intelligence: 3 });
-    const price = attributeRespecAcorns(0);
+    // Six points above the floor, four kills each at the boss level.
+    const price = attributeRespecAcorns(s, data);
+    expect(price).toBe(killPrice(bossLevel(0), { acorns: 24 }).acorns);
     expect(() => act(s, { type: "respecAttributes", attributes: target })).toThrow(/Acorns/);
     s = { ...s, wallet: { ...s.wallet, acorns: price } };
     s = act(s, { type: "respecAttributes", attributes: target });

@@ -409,14 +409,15 @@ export const PROGRESSION = {
   elitePhoenixFeatherChance: 0.1,
 
   /** Switching to another Battle Plan Capstone at Kaelen: Acorns of this many kills at boss level. */
-  capstoneChangeKills: 2,
+  capstoneChangeKills: 5,
 
   /**
-   * Skill Tree respec at Kaelen (level-v2.md section 7): moderately priced, about the Acorns of this
-   * many normal kills at the run's boss level. One node costs `respecNodeShare` of it.
+   * Respecs cost by the points they give back (economy-v2-plan.md W1, Timo 2026-11-03): the
+   * Acorns of this many normal kills at the run's boss level per invested point. Forgetting one
+   * node costs the same per point as the whole tree; a point of the Heirloom or an attribute
+   * weighs more than a Skill Point. Ashborn Points are counted at the hero's level.
    */
-  respecKills: 8,
-  respecNodeShare: 0.1,
+  respecKillsPerPoint: { tree: 1, heirloom: 4, attributes: 4, ashborn: 1 },
 
   /** Inventory grid (D2 style). */
   inventoryWidth: 10,

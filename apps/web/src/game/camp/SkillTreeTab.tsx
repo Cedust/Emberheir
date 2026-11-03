@@ -1,4 +1,5 @@
 import {
+  GAME_DATA,
   ITEM_CATALOG,
   SKILL_TREE,
   TREE_PLACEMENT,
@@ -257,7 +258,7 @@ export function SkillTreeTab(props: { state: GameState; game: GameApi; viewOnly:
     selectedCost.keystones <= preview.budget.keystones;
   const start = SKILL_TREE.classStarts?.[state.hero.classId];
   const committed = selected ? (state.hero.learned[selected.id] ?? 0) > 0 : false;
-  const forgetPrice = forgetAcorns(state.legacy.prestige);
+  const forgetPrice = selected ? forgetAcorns(state, GAME_DATA, selected.id) : 0;
   const forgetReason =
     selected && committed
       ? forgetBlockReason(SKILL_TREE, state.hero.learned, selected.id, start)

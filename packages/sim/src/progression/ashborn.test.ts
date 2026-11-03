@@ -9,7 +9,16 @@ import {
   gainAshbornXp,
 } from "./ashborn";
 import { PROGRESSION } from "./constants";
-import { type GameData, type GameState, applyAction, fail, heroSetup, newGame } from "./game";
+import {
+  type GameData,
+  type GameState,
+  applyAction,
+  ashbornResetAcorns,
+  fail,
+  heroSetup,
+  newGame,
+} from "./game";
+import { killPrice } from "./leveling";
 import { TEST_BOON_DATA, TEST_BOSS } from "./test-fixtures";
 
 /** Ashborn (neuausrichtung-v1.md 7.3). */
@@ -117,7 +126,11 @@ describe("Ashborn in the game", () => {
   });
 
   it("Old Nan gives every point back for Acorns", () => {
-    const spent = hero100({ level: 10, xp: 0, points: { life: 10 } }, ASHBORN.resetAcorns);
+    const ten = hero100({ level: 10, xp: 0, points: { life: 10 } }, 0);
+    // Ten points back, one kill each at the hero's level.
+    const price = ashbornResetAcorns(ten);
+    expect(price).toBe(killPrice(100, { acorns: 10 }).acorns);
+    const spent = { ...ten, wallet: { ...ten.wallet, acorns: price } };
     const reset = applyAction(spent, data, { type: "resetAshborn" });
     expect(reset.hero.ashborn).toMatchObject({ level: 10, points: {} });
     expect(reset.wallet.acorns).toBe(0);

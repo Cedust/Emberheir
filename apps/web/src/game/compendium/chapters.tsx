@@ -1098,7 +1098,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               Kaelen looks after everything you learn: the Ash Tree, your Heirloom and the Battle
-              Plan. Every reset costs <C id="acorns" />.
+              Plan. Every reset costs <C id="acorns" />, more for every point it gives back.
             </p>
             <p>
               His <B>Training Dummy</B> stands on the other side of the fire. Hit it to see where
