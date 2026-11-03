@@ -16,6 +16,7 @@ import {
   PROGRESSION,
   type BountyCache,
   bossLevel,
+  levelCap,
 } from "@emberheir/sim";
 import { applyAction, bookInto, closePhase, commit, type Ledger } from "./ledger";
 import { craftLikeAPlayer } from "./crafter";
@@ -93,19 +94,27 @@ export const FARM_TRIPS = 8;
 /**
  * The act to farm before setting out into `act`: the act before it, while the hero is below the
  * level of `act`'s first wall (its first Gatekeeper, or its boss). Only for the run's newest act.
+ * Like a player who keeps falling, it farms one level more for each death in the act (`deaths`),
+ * up to the Level Cap's headroom, as at the Warden's Gate (`chooseGate`): a hero who dies before
+ * the first Gate would otherwise never farm (boon-auswahl-v1.md 7).
  */
 function farmAct(
   state: GameState,
   data: GameData,
   act: ActData,
   acts: readonly ActData[],
+  deaths = 0,
 ): ActData | undefined {
   const index = acts.findIndex((a) => a.id === act.id);
   if (index !== acts.length - 1 || index < 1) return undefined;
   if (!isWallAct(data, act, state.legacy.prestige)) return undefined;
   const wall = gateStages(act)[0] ?? act.stages;
   const level = stageMonsterLevel(data, act, wall, state.legacy.prestige);
-  return state.hero.level < level ? acts[index - 1] : undefined;
+  const goal = Math.min(
+    level + Math.min(PROGRESSION.levelHeadroom, deaths),
+    levelCap(state.legacy.prestige),
+  );
+  return state.hero.level < goal ? acts[index - 1] : undefined;
 }
 
 /**
@@ -299,7 +308,7 @@ export function playGenerations(
       for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
         // Farming like a player (laengere-runs-v1.md): below the level of the newest act's first
         // wall, a trip through the act before it (no walls there) comes first.
-        const farm = farmAct(s, data, act, acts);
+        const farm = farmAct(s, data, act, acts, deathStages.length);
         if (farm && farmTrips < FARM_TRIPS) {
           farmTrips++;
           attempt--;
@@ -353,7 +362,7 @@ export function playGenerations(
           s = earn(s, quiet.state);
           visits += quiet.visits;
           const walked = s.run?.wanders ?? 0;
-          s = chooseGate(s, data);
+          s = chooseGate(s, data, deathStages.length);
           if ((s.run?.wanders ?? 0) > walked) {
             wanders++;
             continue;

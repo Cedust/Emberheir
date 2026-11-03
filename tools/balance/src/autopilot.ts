@@ -258,12 +258,16 @@ export function walkQuiet(
  */
 export const GATE_WANDERS = 4;
 
-export function chooseGate(state: GameState, data: GameData): GameState {
+export function chooseGate(
+  state: GameState,
+  data: GameData,
+  deaths = state.progress.deathsInAct,
+): GameState {
   const run = state.run;
   if (!run || run.phase !== "intermission" || !wardensGate(state, data, run)) return state;
   const act = getAct(data, run.actId);
   const wallLevel = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
-  const goal = wallLevel + Math.min(PROGRESSION.levelHeadroom, state.progress.deathsInAct);
+  const goal = wallLevel + Math.min(PROGRESSION.levelHeadroom, deaths);
   const capped = Math.min(goal, levelCap(state.legacy.prestige));
   if (state.hero.level >= capped || (run.wanders ?? 0) >= GATE_WANDERS) return state;
   return applyAction(state, data, { type: "wander" });
