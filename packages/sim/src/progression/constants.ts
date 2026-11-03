@@ -204,11 +204,14 @@ export const PROGRESSION = {
    * `cacheEmberCoal`.
    */
   bossEmberCoal: [1, 2],
-  eliteEmberCoalChance: 0.3,
+  eliteEmberCoalChance: 0.15,
   cacheEmberCoal: [1, 2],
 
-  /** Ash for one item: by rarity, × Item Tier. */
-  salvageAsh: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
+  /**
+   * Ash for one item: by rarity, × Item Tier. Flat steps (W8; before 2/4/8/16/32): late loot is
+   * Epic and Legendary, so doubling per rarity flooded the Ash wallet in runs 4–7.
+   */
+  salvageAsh: { normal: 2, magic: 3, rare: 4, epic: 6, legendary: 8 } satisfies Record<
     Rarity,
     number
   >,
@@ -464,8 +467,8 @@ export const CRAFTING = {
    * costs the Ash of n × this many kills at its level.
    */
   temperAshKills: 4,
-  /** Reforge at Thoric: the n-th Reforge on an item costs n × this much Ember Coal (W4). */
-  emberCoal: 1,
+  /** Reforge at Thoric: the n-th Reforge on an item costs n × this much Ember Coal (W4, W8). */
+  emberCoal: 2,
   /** Add Socket at the Runesmith, in kills: Acorns plus Ash × the new Socket count. */
   addSocketKills: { acorns: 2, ash: 3 },
   /**

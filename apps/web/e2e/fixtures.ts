@@ -43,7 +43,7 @@ export function saveAfterHarvestBoss(): string {
       unspentSkillPoints: 5,
       equipment: { ...base.hero.equipment, body: armor },
     },
-    wallet: { ...base.wallet, acorns: 400, ash: 380, emberCoal: 6, phoenixFeathers: 1 },
+    wallet: { ...base.wallet, acorns: 1200, ash: 380, emberCoal: 6, phoenixFeathers: 1 },
     progress: { ...base.progress, actsCleared: ["ashen-fields"] },
     stats: { fights: 16, wins: 15, deaths: 1, retreats: 0, bossKills: 1 },
     pendingPrestige: { actId: "ashen-fields", stage: 15, enemyName: "Gorrak, the Pit Brute" },
@@ -107,7 +107,7 @@ export function saveWithRunes(): string {
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15 },
-    wallet: { ...base.wallet, acorns: 400, runes: { ash: 3 } },
+    wallet: { ...base.wallet, acorns: 1000, runes: { ash: 3 } },
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields"],

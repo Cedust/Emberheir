@@ -11,7 +11,7 @@ export const BOUNTIES: readonly BountyDefinition[] = [
     name: "Elite Hunt",
     text: "Slay # Elites on this trip. Gatekeepers do not count.",
     goal: { kind: "elites", count: 2 },
-    bonus: { kind: "emberCoal", min: 4, max: 6 },
+    bonus: { kind: "emberCoal", min: 2, max: 3 },
     toAct: 3,
   },
   {
@@ -19,7 +19,7 @@ export const BOUNTIES: readonly BountyDefinition[] = [
     name: "Elite Hunt",
     text: "Slay # Elites on this trip. Gatekeepers do not count.",
     goal: { kind: "elites", count: 3 },
-    bonus: { kind: "emberCoal", min: 4, max: 6 },
+    bonus: { kind: "emberCoal", min: 2, max: 3 },
     fromAct: 4,
   },
   {

@@ -277,10 +277,12 @@ describe("crafting", () => {
     expect(reforged).toMatchObject({ id: RING.id, baseId: "test-ring", rarity: "rare", tier: 3 });
     expect(reforged?.lockedAffix).toBeUndefined();
     expect(reforged?.affixes).not.toEqual(RING.affixes);
-    expect(next.wallet.emberCoal).toBe(2);
-    // The second Reforge of the same item takes 2 Ember Coal, the third 3 (economy-v2-plan.md W4).
+    expect(next.wallet.emberCoal).toBe(s.wallet.emberCoal - CRAFTING.emberCoal);
+    // The second Reforge of the same item costs twice as much, the third three times (W4).
     expect(reforged?.reforges).toBe(1);
-    expect(craftCost({ kind: "reforge", itemId: RING.id }, reforged).emberCoal).toBe(2);
+    expect(craftCost({ kind: "reforge", itemId: RING.id }, reforged).emberCoal).toBe(
+      2 * CRAFTING.emberCoal,
+    );
     // Same seed and nonce: same result.
     expect(act(s, { type: "craft", request: { kind: "reforge", itemId: RING.id } })).toEqual(next);
   });
