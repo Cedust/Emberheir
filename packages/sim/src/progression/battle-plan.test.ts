@@ -174,8 +174,10 @@ describe("Battle Plan", () => {
     expect(s.wallet.acorns).toBe(500);
     // Slot 0 and 1 hold the Start Skill once (no duplicates), so slot 2 is the second fight slot.
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "echo", slot: 1 });
+    const price = capstoneChangeAcorns(s.legacy.prestige);
+    s = { ...s, wallet: { ...s.wallet, acorns: 500 + price } };
     s = act(s, plan({ capstone: { id: "crescendo", slot: 0 } }));
-    expect(s.wallet.acorns).toBe(500 - capstoneChangeAcorns(s.legacy.prestige));
+    expect(s.wallet.acorns).toBe(500);
     expect(heroSetup(s, data).setup.capstone).toEqual({ kind: "crescendo" });
     expect(() => act(s, plan({}))).toThrow(/removed/);
   });

@@ -26,6 +26,8 @@ describe("parseArgs", () => {
       json: "",
       budget: 0,
       curve: 0,
+      craft: 0,
+      economy: 0,
     });
   });
 
@@ -86,6 +88,8 @@ describe("parseArgs", () => {
       json: "out.json",
       budget: 0,
       curve: 0,
+      craft: 0,
+      economy: 0,
     });
   });
 

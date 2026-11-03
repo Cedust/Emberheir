@@ -49,15 +49,19 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Wildfire Bounties (endgame measurement 2026-10-28, V3): a done bounty may carry its Wildfire
   // tier (`bountyDone.wildfire`) and Eldrin's Cache its Cinderglass, both optional.
   17: {},
+  // Economy v2 (economy-v2-plan.md): an item counts its Tempers and Reforges (`item.tempers`,
+  // `item.reforges`), the Camp Marisha's gambles of this visit (`gambled`), all optional. Old
+  // items start at zero, so their next Temper is the cheap first one.
+  18: {},
   // Boon-Auswahl (boon-auswahl-v1.md): 69 → 49 Boons. A held Boon that is gone becomes the Boon of
   // its family in the same slot (or the family's stacking Boon), so a running trip keeps its
   // strength; an open Shrine offer gets the same swap and loses doubles.
-  18: { state: renameOldBoons },
+  19: { state: renameOldBoons },
   // Boons burn only in the Wildfire (boon-auswahl-v1.md 7): an act's Boons and offers go out.
-  19: { state: boonsOnlyInWildfire },
+  20: { state: boonsOnlyInWildfire },
 };
 
-/** Boons of save version 18 that are gone → the Boon that takes their place. */
+/** Boons of save version 19 that are gone → the Boon that takes their place. */
 export const OLD_BOONS: Readonly<Record<string, string>> = {
   hearthguard: "second-wind",
   "warm-hands": "banked-coals",

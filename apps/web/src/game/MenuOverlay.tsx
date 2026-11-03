@@ -5,82 +5,130 @@ import { SOUND_GROUPS, type SoundGroup } from "../ui/sound";
 import { Button } from "../ui/kit/Button";
 import { ActionIcon, actionIcon } from "../ui/actionIcons";
 import { Medallion, Window, WindowHeader, WindowLayer } from "../ui/kit/Window";
+import { playUiSound } from "../ui/sound";
 import { useEffect, useState } from "react";
 import { CreditsPanel } from "./Credits";
 
+type SettingsTab = "display" | "gameplay" | "sound";
+
+/** Plain text tabs with an underline: inside a window the painted tab plates look out of place. */
+const SETTINGS_TABS: readonly { id: SettingsTab; name: string }[] = [
+  { id: "display", name: "Display" },
+  { id: "gameplay", name: "Gameplay" },
+  { id: "sound", name: "Sound" },
+];
+
+/** Settings in three tabs. Both pages share one grid cell, so the window keeps its height. */
 export function SettingsPanel(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
+  const [tab, setTab] = useState<SettingsTab>("display");
   return (
     <div className="settings">
-      <h3 className="settings-head title-font">Display</h3>
-      <div className="setting-row">
-        <span>Theme</span>
-        <div className="segmented" role="radiogroup" aria-label="Theme">
-          {(["system", "light", "dark"] as const).map((t) => (
-            <button
-              key={t}
-              type="button"
-              role="radio"
-              aria-checked={settings.theme === t}
-              className={settings.theme === t ? "on" : ""}
-              onClick={() => update({ theme: t })}
-            >
-              {t === "system" ? "System" : t === "light" ? "Parchment" : "Scorched"}
-            </button>
+      <div className="settings-tabs" role="tablist" aria-label="Settings">
+        {SETTINGS_TABS.map((t) => (
+          <button
+            key={t.id}
+            type="button"
+            role="tab"
+            aria-selected={tab === t.id}
+            className={`settings-tab title-font${tab === t.id ? " on" : ""}`}
+            onClick={() => {
+              if (t.id !== tab) playUiSound("tab");
+              setTab(t.id);
+            }}
+          >
+            {t.name}
+          </button>
+        ))}
+      </div>
+      <div className="settings-pages">
+        <div
+          className="settings-page"
+          role="tabpanel"
+          aria-label="Display"
+          hidden={tab !== "display"}
+        >
+          <FullscreenRow />
+          <div className="setting-row">
+            <span>Theme</span>
+            <div className="segmented" role="radiogroup" aria-label="Theme">
+              {(["system", "light", "dark"] as const).map((t) => (
+                <button
+                  key={t}
+                  type="button"
+                  role="radio"
+                  aria-checked={settings.theme === t}
+                  className={settings.theme === t ? "on" : ""}
+                  onClick={() => update({ theme: t })}
+                >
+                  {t === "system" ? "System" : t === "light" ? "Parchment" : "Scorched"}
+                </button>
+              ))}
+            </div>
+          </div>
+          <QualityRow api={props.api} />
+        </div>
+        <div
+          className="settings-page"
+          role="tabpanel"
+          aria-label="Gameplay"
+          hidden={tab !== "gameplay"}
+        >
+          <OnOffRow
+            label="Damage Numbers"
+            tip="The numbers that fly up when a hit lands."
+            kind="Gameplay"
+            value={settings.damageNumbers}
+            onChange={(v) => update({ damageNumbers: v })}
+          />
+          <OnOffRow
+            label="Screen Shake"
+            tip="The arena shakes and zooms on big hits."
+            kind="Gameplay"
+            value={settings.screenShake}
+            onChange={(v) => update({ screenShake: v })}
+          />
+          <OnOffRow
+            label="Tips"
+            tip="Old Nan's short tips the first time you reach something new."
+            kind="Gameplay"
+            value={settings.tips}
+            onChange={(v) => update({ tips: v })}
+          />
+        </div>
+        <div className="settings-page" role="tabpanel" aria-label="Sound" hidden={tab !== "sound"}>
+          <OnOffRow
+            label="Music"
+            tip="The songs of the title, the Camp and the fights."
+            value={settings.music}
+            onChange={(v) => update({ music: v })}
+          />
+          <VolumeRow
+            label="Music Volume"
+            on={settings.music}
+            value={settings.musicVolume}
+            onChange={(v) => update({ musicVolume: v })}
+          />
+          <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
+          <VolumeRow
+            label="Volume"
+            on={settings.sound}
+            value={settings.volume}
+            onChange={(v) => update({ volume: v })}
+          />
+          {SOUND_GROUPS.map((g) => (
+            <OnOffRow
+              key={g}
+              label={GROUP_LABEL[g].name}
+              tip={GROUP_LABEL[g].explain}
+              sub
+              muted={!settings.sound}
+              value={settings.sounds[g]}
+              onChange={(v) => update({ sounds: { ...settings.sounds, [g]: v } })}
+            />
           ))}
         </div>
       </div>
-      <OnOffRow
-        label="Damage numbers"
-        value={settings.damageNumbers}
-        onChange={(v) => update({ damageNumbers: v })}
-      />
-      <OnOffRow
-        label="Screen shake"
-        value={settings.screenShake}
-        onChange={(v) => update({ screenShake: v })}
-      />
-      <QualityRow api={props.api} />
-      <FullscreenRow />
-      <OnOffRow
-        label="Tips"
-        tip="Old Nan's short tips the first time you reach something new."
-        kind="Game"
-        value={settings.tips}
-        onChange={(v) => update({ tips: v })}
-      />
-
-      <h3 className="settings-head title-font">Sound</h3>
-      <OnOffRow
-        label="Music"
-        tip="The songs of the title, the Camp and the fights."
-        value={settings.music}
-        onChange={(v) => update({ music: v })}
-      />
-      <VolumeRow
-        label="Music Volume"
-        on={settings.music}
-        value={settings.musicVolume}
-        onChange={(v) => update({ musicVolume: v })}
-      />
-      <OnOffRow label="Sound" value={settings.sound} onChange={(v) => update({ sound: v })} />
-      <VolumeRow
-        label="Volume"
-        on={settings.sound}
-        value={settings.volume}
-        onChange={(v) => update({ volume: v })}
-      />
-      {SOUND_GROUPS.map((g) => (
-        <OnOffRow
-          key={g}
-          label={GROUP_LABEL[g].name}
-          tip={GROUP_LABEL[g].explain}
-          sub
-          muted={!settings.sound}
-          value={settings.sounds[g]}
-          onChange={(v) => update({ sounds: { ...settings.sounds, [g]: v } })}
-        />
-      ))}
     </div>
   );
 }
@@ -107,14 +155,14 @@ const QUALITY_LABEL: Readonly<Record<GraphicsQuality, string>> = {
 function QualityRow(props: { api: SettingsApi }) {
   const { settings, update } = props.api;
   const hover = useNoteHover({
-    name: "Graphics quality",
+    name: "Graphics Quality",
     kind: "Display",
     explain: "Lower it if fights stutter: the arena draws a little softer, with fewer particles.",
   });
   return (
     <div className="setting-row">
-      <span {...hover}>Graphics quality</span>
-      <div className="segmented" role="radiogroup" aria-label="Graphics quality">
+      <span {...hover}>Graphics Quality</span>
+      <div className="segmented" role="radiogroup" aria-label="Graphics Quality">
         {(["high", "medium", "low"] as const).map((q) => (
           <button
             key={q}
@@ -212,8 +260,8 @@ function FullscreenRow() {
   };
   return (
     <div className="setting-row">
-      <span>Display</span>
-      <div className="segmented" role="radiogroup" aria-label="Display">
+      <span>Window Mode</span>
+      <div className="segmented" role="radiogroup" aria-label="Window Mode">
         {[false, true].map((v) => (
           <button
             key={String(v)}

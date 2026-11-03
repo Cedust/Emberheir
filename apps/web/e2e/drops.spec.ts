@@ -27,9 +27,9 @@ test("Boss Hoard: six cards turn over, take two, the trophy goes up on the Troph
   const drops = page.getByTestId("rune-drops");
   await expect(drops.getByLabel("Moss Rune")).toBeVisible();
   await expect(drops.locator(".rune-drop.home")).toHaveAccessibleName("Thorn Rune");
-  // Hovered, a Rune shows what it gives; the Home Rune says it is one.
+  // Hovered, a Rune shows what it gives; the act's own Rune says it is found often here.
   await drops.locator(".rune-drop.home").hover();
-  await expect(page.getByTestId("note-tooltip")).toContainText("Home Rune");
+  await expect(page.getByTestId("note-tooltip")).toContainText("Found often here");
   if (process.env.SHOTS) await page.screenshot({ path: `${process.env.SHOTS}/home-rune-drop.png` });
 
   const cards = page.getByTestId("hoard-card");

@@ -92,6 +92,7 @@ npm run balance -- --act 7 --build all --runs 3 --seed 31 --newest 1  # deaths a
 npm run balance -- --act 7 --build all --runs 3 --seed 31 --runes 0 --json out.json  # without Runes, raw reports
 npm run balance -- --act 7 --build all --runs 1 --seed 31 --boons 0  # a game without Boons (how much they carry)
 npm run balance -- --budget 1 --build all --mastery all --runs 3  # end-game damage budget: sources, what each layer is worth
+npm run balance -- --wildfire 10 --build sword-edge --runs 2 --craft 1 --economy 1  # economy ledger with a min-maxing crafter
 npm run format                       # Prettier
 ```
 

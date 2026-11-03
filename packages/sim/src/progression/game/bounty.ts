@@ -195,7 +195,7 @@ export function bountyCache(
     ...(cinderglass ? { cinderglass } : {}),
     // Like a Cache node: 1–2 Ember Coal, plus the bonus.
     emberCoal:
-      rng.int(...PROGRESSION.eliteEmberCoal) +
+      rng.int(...PROGRESSION.cacheEmberCoal) +
       (bonus.kind === "emberCoal" ? rng.int(bonus.min, bonus.max) : 0) +
       paid.reduce((n, r) => n + r.emberCoal, 0),
     ...(paid.some((r) => r.acorns) ? { acorns: paid.reduce((n, r) => n + r.acorns, 0) } : {}),

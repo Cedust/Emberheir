@@ -50,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 20;
+export const SAVE_VERSION = 21;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -586,6 +586,8 @@ export interface GameState {
   readonly lineage?: readonly string[];
   /** The Draught chosen in the Camp: brewed from a Flask charge at every set-out. */
   readonly draught?: string | null;
+  /** Marisha's gambles in this Camp visit (at most `CRAFTING.gambleStock`, restocked at set-out). */
+  readonly gambled?: number;
   /**
    * Power Codex (neuausrichtung-v1.md 8): Legendary Powers learned by salvaging, with the best
    * tier learned. It belongs to the account: the UI keeps one for all characters (like the

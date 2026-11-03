@@ -134,7 +134,7 @@ Endgame **Wildfire I–X**.
   unter den tragbaren. Die übrigen 25 % bleiben offen, damit der geteilte Stash auch Gear für andere Helden bekommt.
   Affixe bleiben frei. Gilt für alle Item-Picks (auch Cache, Eldrin's Cache) und Marishas Gamble. Vorher war gut jede
   dritte Karte nicht tragbar, bei Rüstung zwei von drei.
-- Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
+- Ember Coal und Runes fallen **passiv** in den Beutel (Boss 1–2 Ember Coal, Elite zu 15 % 1, normale Gegner keine, Cache-Knoten und Eldrin's Cache 1–2; Economy v2 03.11.2026: vorher Boss 4–6, Elite 1–2, normale 5 %, auch ein Min-Maxer gab nur 2 % davon aus).
 - **Ember Shrine** nach Stage 5 und 10 und nach zufälligen Elites auf Fight-Knoten (nicht beim Wandern). In den
   Acts füllt sie **1 Flask-Ladung** auf (wenn die Flask nicht voll ist). **Boons gibt es nur im Wildfire**
   (Timo 2026-11-03: Boons sind Glück und sollen ein Bonus sein, kein Run darf von ihnen abhängen; siehe 5.5).
@@ -212,7 +212,7 @@ Endgame **Wildfire I–X**.
   Boards: **Onslaught** (Damage, Crit Chance, Attack Speed, Ailment Effect, Penetration), **Aegis** (Life, Defenses,
   Resistances, Max Resistance bis +5 %, Tenacity, Block), **Mending** (Lifesteal, Ailment Healing, Barrier Recharge,
   Flask) und **Ignite** (Heat Gain, Starting Heat, Trigger Chance, Skill Cost). Verteilt im **Character Sheet**
-  (Tab „Ashborn“), zurückgesetzt bei **Old Nan** für 2.000 Acorns.
+  (Tab „Ashborn“), zurückgesetzt bei **Old Nan** für Acorns (1 Kill pro Punkt).
 - **Greater Affixes** und **Cinderglass**: siehe 5.3. **Ember Crucible**: siehe 5.3.
 
 ### 2.7 Camp ✅
@@ -223,7 +223,7 @@ Endgame **Wildfire I–X**.
 | **Thoric** | Blacksmith | Upgrade (Tier, mit Phoenix Feathers; hebt den Required Level mit), Reforge (Ember Coal; würfelt nur die Stat-Affixe neu, alle Trigger bleiben, Charms nicht), Salvage (→ Ash, lehrt den Trigger Codex und den Power Codex) |
 | **Liora** | Mystic | Temper (wie der Enchant aus Diablo 3: zwei Angebote für ein Stat-Affix, ein neues Affix oder derselbe Affix mit neuem Wert, oder behalten; bei festen Werten wie „+1 Strength“ zwei neue Affixe), Kindle (Trigger aus dem Trigger Codex bauen), nach The Last Ember **Awaken, Shift, Intensify** (Greater Affixes), **Ember Crucible** (gelernte Powers binden) |
 | **Nyssa** | Runesmith | Add Socket, Socket Rune, Combine Runes, Runeword Codex |
-| **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot). Odds wie die Karte eines normalen Gegners im Run, Legendary/Unique so oft wie auf der Karte eines Elites (Timo 26.10.2026; vorher eine Rarity-Stufe über den Drops) |
+| **Marisha** | Black Market | Gamble (Zufalls-Item für einen Slot). Odds wie die Karte eines Elites im Run, 10 Kills, 3 Gambles pro Camp-Besuch (Timo 03.11.2026; davor Odds einer normalen Karte, ein Gamble brachte im Schnitt nichts) |
 | **Eldrin** | Scout | **The Road**: Act-Wahl, Omen, Wildfire, Draught, **Bounties** (ein optionaler Auftrag pro Zug), The Last Ember, Set Out |
 | **Old Nan** | Hearthkeeper | Ratschläge, Compendium, **Reset** von Attributen und Ashborn (für Acorns; neu verteilt wird im Character Sheet) |
 
@@ -292,7 +292,7 @@ Endgame **Wildfire I–X**.
 
   | Bounty | Ziel | Bonus im Cache |
   |---|---|---|
-  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 4–6 Ember Coal |
+  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 2–3 Ember Coal |
   | Trail Hunt | 4–8 Kills auf den Gegner des Acts, dessen nächster Trail am nächsten ist (so viele Kills, wie ihm fehlen); die Karte bekommt einen Hunt-Knoten mehr für ihn | +5 Trail-Kills, eine Karte trägt sicher sein Hunt Affix |
   | Thief Chase (ab Act 2) | den Ember Thief fangen, bevor er flieht (Thief ×5 häufiger, Thief's Trail auf der Karte) | 4 Karten, 2 nehmen |
   | Dry Throat | den Boss schlagen, ohne auf diesem Zug aus der Flask zu trinken | alle Karten eine Rarity höher (im Boss-Fenster des Runs) |
@@ -308,20 +308,31 @@ Endgame **Wildfire I–X**.
 | Währung | Zweck |
 |---|---|
 | **Acorns** | universell: Respec, Sockets, Runes, Gamble |
-| **Ash** | aus Salvage und nicht gewählten Items; Crafting-Grundstoff |
+| **Ash** | aus Kämpfen, Salvage und nicht gewählten Items (Salvage: Normal 2, Magic 3, Rare 4, Epic 6, Legendary 8 × Item Tier; vorher 2/4/8/16/32); Crafting-Grundstoff |
 | **Ember Coal** | Reforge, Kindle |
 | **Phoenix Feathers** | Item-Upgrade um ein Tier (Bosse) |
 | **Runes** | Sockets und Runewords |
 | **Cinderglass** | nur aus dem Wildfire (Boss 1–2, +1 je 3 Peril, +1 ab VIII): Greater Affixes |
 
-- **Preise in Kämpfen** (Economy-Audit, Timo 26.10.2026, `economy-audit-v1.md`): Acorn- und Ash-Preise
-  zählen in normalen Kills auf dem Item Level (bei Resets auf dem Boss-Level des Runs), so wachsen Einnahme und Preis
-  gleich, egal wie lang ein Run ist. Temper 1 Kill Acorns + 6 Kills Ash; Add Socket 2 Kills Acorns + 3 Kills Ash × neue
-  Socket-Zahl; Upgrade 1 Feather + 1 Kill Acorns × Tier; Socket Rune ¼ Kill × Rang; Combine Runes ½ Kill × Rang;
-  Kindle 6 Kills Ash + 2 Coal; Respec von Tree, Attributen und Heirloom 8 Kills; Capstone-Wechsel 2 Kills; Crucible 20
-  Kills Ash. Gamble war schon 60 + 12 × Item Level (≈ 6 Kills). Reforge bleibt 1 Ember Coal, Ashborn-Reset 2.000
-  (nur auf Level 100, ≈ 10 Kills). Die Balance-CLI zeigt pro Run, was ein eifriger Crafter von den Einnahmen des
-  neuesten Acts ausgibt.
+**Currency Caps** (Timo 03.11.2026, feste Zahlen, wachsen nicht): Acorns 100.000, Ash 50.000, Ember Coal 150,
+Phoenix Feathers 50, Cinderglass 30, Runes 30 je Sorte. Was darüber hinaus käme, verfällt; ein voller Beutel
+wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ihren Stand, wachsen aber nicht.
+
+- **Preise in Kämpfen** (Economy-Audit, Timo 26.10.2026; Economy v2, Timo 03.11.2026, `economy-v2-plan.md`):
+  Acorn- und Ash-Preise zählen in normalen Kills auf dem Item Level (bei Resets auf dem Boss-Level des Runs), so
+  wachsen Einnahme und Preis gleich, egal wie lang ein Run ist. Preis = Nutzen: kleine Verbesserungen kosten Minuten,
+  große Viertelstunden.
+  - **Temper** (Liora): nur Ash, der n-te Temper auf demselben Item kostet n × 4 Kills (wie Enchant in Diablo 3).
+  - **Reforge** (Thoric): der n-te Reforge auf demselben Item kostet 2 × n Ember Coal.
+  - **Upgrade** (Thoric): 1 Phoenix Feather + Acorns von 3 Kills × neues Tier + Ash von 4 Kills × neues Tier (Timo 03.11.2026: Ash braucht spät eine zweite Senke).
+  - **Respecs nach investierten Punkten**: Ash Tree 1 Kill pro Skill Point (ein einzelner Node genauso pro Punkt),
+    Heirloom 4 Kills pro Mastery Point, Attribute 4 Kills pro Punkt, Ashborn 1 Kill pro Punkt auf Level 100,
+    Capstone-Wechsel 5 Kills.
+  - **Marisha** (Camp): 10 Kills, würfelt wie die Karte eines Elites, 3 Gambles pro Camp-Besuch.
+  - Add Socket 2 Kills Acorns + 3 Kills Ash × neue Socket-Zahl; Socket Rune ¼ Kill × Rang; Combine Runes ½ Kill × Rang;
+    Kindle 6 Kills Ash + 2 Coal; Crucible 20 Kills Ash + 3 Coal; Draught 3 Kills.
+  - Die Balance-CLI führt ein Kassenbuch pro Währung (`--economy 1`: jede Quelle und Senke pro Run, Finale und
+    Wildfire-Stufe) und hat einen Min-Maxer-Autopiloten, der im Camp nach erwartetem Nutzen craftet (`--craft 1`).
 
 ---
 

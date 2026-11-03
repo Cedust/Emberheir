@@ -179,7 +179,7 @@ describe("Boon-Auswahl migration", () => {
     const run = raw["run"] as Record<string, unknown>;
     const old = {
       ...raw,
-      version: 18,
+      version: 19,
       boons: {
         kept: [
           { id: "grit", grade: "flame" },
@@ -189,7 +189,7 @@ describe("Boon-Auswahl migration", () => {
       },
       run: {
         ...run,
-        // A Wildfire trip, so step 19 keeps its Boons.
+        // A Wildfire trip, so step 20 keeps its Boons.
         wildfire: 1,
         rewards: {
           ...((run["rewards"] as object | null) ?? {}),
@@ -218,7 +218,7 @@ describe("Boon-Auswahl migration", () => {
     const run = raw["run"] as Record<string, unknown>;
     const old = {
       ...raw,
-      version: 19,
+      version: 20,
       boons: { kept: [{ id: "brutality", grade: "flame" }], fresh: [] },
       run: {
         ...run,

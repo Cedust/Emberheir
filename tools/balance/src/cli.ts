@@ -21,7 +21,8 @@ import { simulateMatchup } from "./simulate";
 import { type PowerSample, powerCurve, powerProbe } from "./curve";
 import { PLAYTIME, median, runMinutes } from "./playtime";
 import { bountyRows } from "./bounties";
-import { EAGER, economyRows } from "./economy";
+import { type Ledger, meanLedger, newLedger } from "./ledger";
+import { printLedger } from "./ledger-report";
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -169,7 +170,8 @@ function runActMode(): void {
   });
   // `--boons 0`: no Shrine ever lights (no Boon content), the rest of the game unchanged.
   const data = args.boons ? GAME_DATA : { ...GAME_DATA, boons: [] };
-  const byPlay: { label: string; reports: ActRunReport[] }[] = [];
+  const byPlay: { label: string; reports: ActRunReport[]; ledger?: Ledger }[] = [];
+  const ledgers: Ledger[] = [];
   const samples: PowerSample[] = [];
   const probe = args.curve ? powerProbe(GAME_DATA, samples) : undefined;
   for (const { weapon: starterWeapon, build, mastery } of plays as {
@@ -178,8 +180,11 @@ function runActMode(): void {
     mastery?: string;
   }[]) {
     const label = `${build ? `${starterWeapon} (${build})` : starterWeapon}${mastery ? ` ${mastery}` : ""}`;
+    const own: Ledger[] = Array.from({ length: runs }, () => newLedger());
     const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(data, {
+        ledger: own[i] ?? newLedger(),
+        craft: args.craft > 0,
         seed: args.seed + i,
         starterWeapon,
         ...(build ? { build } : {}),
@@ -193,7 +198,8 @@ function runActMode(): void {
         ...(probe ? { onFight: probe } : {}),
       }),
     ).flat();
-    byPlay.push({ label, reports: all });
+    ledgers.push(...own);
+    byPlay.push({ label, reports: all, ledger: meanLedger(own) });
     const finale = GAME_DATA.finale;
     for (let tier = 1; tier <= args.wildfire; tier++) {
       const reports = all.filter((x) => x.act === 100 + tier);
@@ -247,6 +253,7 @@ function runActMode(): void {
   if (!args.newest) console.table(rows);
   printNewestActs(byPlay, generations, runs);
   if (probe) printCurve(samples);
+  if (args.economy) printLedger(meanLedger(ledgers));
   if (args.json) {
     writeFileSync(args.json, JSON.stringify({ args, plays: byPlay }, null, 1));
     console.log(`reports written to ${args.json}`);
@@ -329,12 +336,7 @@ function printNewestActs(
   printPlaytime(byPlay, generations, seeds);
   console.log("");
   console.log(
-    `Economy: income of the newest act per run, and what an eager crafter spends of it (${EAGER.items} items × ${EAGER.tempers} Temper and ${EAGER.reforges} Reforge, ${EAGER.sockets} Sockets, ${EAGER.gambles} Gambles, every Feather an Upgrade)`,
-  );
-  console.table(economyRows(all, generations));
-  console.log("");
-  console.log(
-    "Bounties: per run (all acts and builds pooled), done of taken by kind, Eldrin's Caches against the run's Ember Coal and Home Runes",
+    "Bounties: per run (all acts and builds pooled), done of taken by kind, Ember Coal from Eldrin's Caches, their Home Runes of all dropped",
   );
   console.table(bountyRows(all, generations));
 }

@@ -2,7 +2,6 @@ import {
   type ActData,
   levelCap,
   PROGRESSION,
-  applyAction,
   ashbornBlockReason,
   ashbornUnspent,
   ATTRIBUTE_RULES,
@@ -40,6 +39,7 @@ import {
   openBranches,
   takeBlockReason,
 } from "@emberheir/sim";
+import { applyAction, link } from "./ledger";
 import { type BuildPlan } from "./builds";
 import { actProfile, gearValue, upgradeGain } from "./gear-value";
 import { keptBases, wantsBase } from "./runes";
@@ -382,7 +382,7 @@ function spendAshborn(state: GameState, data: GameData): GameState {
 
 /** Kaelen: learns the Heirloom along the plan and wears the strongest Echo. */
 export function spendMastery(state: GameState, data: GameData, build?: BuildPlan): GameState {
-  let s = build ? learnHeirloom(state, data, build) : state;
+  let s = build ? link(state, learnHeirloom(state, data, build), "kaelen") : state;
   const echoes = Object.entries(s.legacy.echoes).sort((a, b) => b[1].stage - a[1].stage);
   const best = echoes[0]?.[0];
   if (best && s.hero.mastery.echo !== best) {

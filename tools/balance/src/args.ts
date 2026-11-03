@@ -49,6 +49,10 @@ export interface BalanceArgs {
    * per Monster Level) next to the monsters it meets.
    */
   curve: number;
+  /** Act mode: 1 = the autopilot crafts like a min-maxing player in the Camp (crafter.ts). */
+  craft: number;
+  /** Act mode: 1 = print the economy ledger (income by source, spending by sink, per run). */
+  economy: number;
 }
 
 export const GEAR_MODES = ["none", "normal", "magic", "rare", "epic", "mixed", "all"] as const;
@@ -77,6 +81,8 @@ const DEFAULTS: BalanceArgs = {
   json: "",
   budget: 0,
   curve: 0,
+  craft: 0,
+  economy: 0,
 };
 
 const NUMBER_FLAGS = {
@@ -94,6 +100,8 @@ const NUMBER_FLAGS = {
   "--newest": "newest",
   "--budget": "budget",
   "--curve": "curve",
+  "--craft": "craft",
+  "--economy": "economy",
 } as const;
 const STRING_FLAGS = {
   "--weapon": "weapon",

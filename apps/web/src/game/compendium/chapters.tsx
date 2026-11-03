@@ -914,13 +914,18 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         id: "currencies",
         title: "Currencies",
         body: (s) => (
-          <Facts
-            rows={[...CURRENCY_ORDER, ...(finaleWon(s) ? (["glass"] as const) : [])].map((id) => ({
-              icon: currencyIcon(id),
-              name: CURRENCIES[id].name,
-              text: CURRENCY_TEXT[id] ?? CURRENCIES[id].explain,
-            }))}
-          />
+          <>
+            <Facts
+              rows={[...CURRENCY_ORDER, ...(finaleWon(s) ? (["glass"] as const) : [])].map(
+                (id) => ({
+                  icon: currencyIcon(id),
+                  name: CURRENCIES[id].name,
+                  text: CURRENCY_TEXT[id] ?? CURRENCIES[id].explain,
+                }),
+              )}
+            />
+            <p>Your pouch has room for only so much. A full one turns orange, and more is lost.</p>
+          </>
         ),
       },
     ],
@@ -1110,7 +1115,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               Kaelen looks after everything you learn: the Ash Tree, your Heirloom and the Battle
-              Plan. Every reset costs <C id="acorns" />.
+              Plan. Every reset costs <C id="acorns" />, more for every point it gives back.
             </p>
             <p>
               His <B>Training Dummy</B> stands on the other side of the fire. Hit it to see where
@@ -1131,12 +1136,12 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: currencyIcon("feathers"),
                   name: "Upgrade",
-                  text: "Raises an item by one Tier. Its Affixes grow with it, and so does its level.",
+                  text: "Raises an item by one Tier. Its Affixes grow with it, and so does its level. Each Tier costs more than the last.",
                 },
                 {
                   icon: currencyIcon("coal"),
                   name: "Reforge",
-                  text: "Rolls all stat Affixes anew. Triggers stay.",
+                  text: "Rolls all stat Affixes anew. Triggers stay. Each Reforge of the same item costs more.",
                 },
                 {
                   icon: currencyIcon("ash"),
@@ -1158,7 +1163,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             <p>
               <B>Temper</B> offers two choices for one Affix: a new Affix or a new value. Pick one
               or keep the old Affix. After that, only that Affix can change until Thoric reforges
-              the item.
+              the item. Each Temper of the same item costs more <C id="ash" /> than the last.
             </p>
             <p>
               <B>Kindle</B> builds a Trigger from the Trigger Codex onto an item, for <C id="ash" />{" "}

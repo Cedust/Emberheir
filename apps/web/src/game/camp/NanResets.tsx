@@ -1,6 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
-  ASHBORN,
+  ashbornResetAcorns,
   ashbornSpent,
   attributeRespecAcorns,
   type GameState,
@@ -22,7 +22,7 @@ export function useNanResets(state: GameState, game: GameApi) {
   const [sure, setSure] = useState<"attributes" | "ashborn" | null>(null);
   const floor = heroClassOf(state, GAME_DATA).startingAttributes;
   const above = sumAttributes(state.hero.attributes) - sumAttributes(floor);
-  const price = attributeRespecAcorns(state.legacy.prestige);
+  const price = attributeRespecAcorns(state, GAME_DATA);
   const ashborn = ashbornSpent(heroAshborn(state));
   const rows = [
     {
@@ -38,7 +38,7 @@ export function useNanResets(state: GameState, game: GameApi) {
             id: "ashborn" as const,
             name: "Reset Ashborn",
             points: ashborn,
-            price: ASHBORN.resetAcorns,
+            price: ashbornResetAcorns(state),
             act: () => game.dispatch({ type: "resetAshborn" }),
           },
         ]

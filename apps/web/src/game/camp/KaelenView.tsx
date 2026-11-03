@@ -45,12 +45,12 @@ export function KaelenView(props: {
   const planEditable = props.planEditable ?? !viewOnly;
   const [tab, setTab] = useState<"tree" | "plan" | "mastery">(props.initialTab ?? "tree");
   const spent = spentInTree(GAME_DATA, state.hero.learned, state.hero.classId);
-  const respecPrice = respecAcorns(state.legacy.prestige);
+  const respecPrice = respecAcorns(state, GAME_DATA);
   const heirloom = GAME_DATA.weaponMastery[state.hero.weaponId];
   const heirloomSpent =
     (heirloom ? pointsSpent(heirloom, state.hero.mastery) : 0) > 0 ||
     Object.keys(state.hero.mastery.choices).length > 0;
-  const heirloomPrice = masteryRespecAcorns(state.legacy.prestige);
+  const heirloomPrice = masteryRespecAcorns(state, GAME_DATA);
   const tabs: TabItem<typeof tab>[] = [
     { id: "tree", name: "Ash Tree", art: <ActionIcon id="ash-tree" /> },
     { id: "mastery", name: "Heirloom", art: <ActionIcon id="heirloom" /> },

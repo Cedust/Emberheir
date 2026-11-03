@@ -64,7 +64,7 @@ export function LegacyView(props: {
   const selItem = wornIn(sel);
   const facts = [
     {
-      kind: "GENERATION",
+      kind: "HARVEST",
       value: String(generation),
       desc:
         generation === 1
@@ -88,7 +88,7 @@ export function LegacyView(props: {
       value: `${state.progress.rotationSlots} Slot${state.progress.rotationSlots === 1 ? "" : "s"}`,
     },
     {
-      kind: "THIS GENERATION",
+      kind: "THIS HARVEST",
       value: `${s.wins} / ${s.fights}`,
       desc: `Fights won. ${s.deaths} deaths, ${s.retreats} retreats, ${s.bossKills} boss kills in total.`,
     },
@@ -120,7 +120,7 @@ export function LegacyView(props: {
                 onChange={setTab}
               />
             }
-            right={<span className="gen-tag title-font">Generation {generation}</span>}
+            right={<span className="gen-tag title-font">Harvest {generation}</span>}
             onClose={props.onClose}
           />
         }
@@ -248,7 +248,7 @@ export function LegacyView(props: {
                 <span className="title-font section-title">Chronicle</span>
                 {legacy.chronicle.map((c) => (
                   <div key={c.generation} className="chronicle-row">
-                    <span className="mono">Gen {c.generation}</span>
+                    <span className="mono">Harvest {c.generation}</span>
                     <span>
                       {c.title ? <strong className="accent">{c.title}</strong> : null}
                       {c.title ? " · " : ""}
@@ -258,7 +258,7 @@ export function LegacyView(props: {
                   </div>
                 ))}
                 <div className="chronicle-row">
-                  <span className="mono accent">Gen {generation}</span>
+                  <span className="mono accent">Harvest {generation}</span>
                   <span>
                     <strong className="accent">{heroTitle(state, GAME_DATA)}</strong> · Now · The
                     Heir walks the Ashen Fields.

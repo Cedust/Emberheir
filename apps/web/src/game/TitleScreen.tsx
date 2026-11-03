@@ -1,6 +1,6 @@
 import { GAME_DATA, GAME_SUBTITLE, GAME_TITLE } from "@emberheir/content";
 import titleLogoUrl from "../assets/logo/title-logo.webp";
-import { SIM_VERSION, heroTitle } from "@emberheir/sim";
+import { type GameState, SIM_VERSION, heroTitle } from "@emberheir/sim";
 import { useState } from "react";
 import { PREVIEW_PR } from "../storage";
 import { Icon } from "../ui/Icon";
@@ -21,7 +21,7 @@ import { CreditsPanel } from "./Credits";
 import { SettingsPanel } from "./MenuOverlay";
 import { BackupPanel } from "./BackupPanel";
 import { CloudChoice, CloudPlate, useCloudStart } from "./cloud/CloudUi";
-import { whereText } from "./heirLine";
+import { continuePlace, whereText } from "./heirLine";
 import { loadDamagedSlots, loadLastSlot, loadSlots, saveSlot } from "./saves";
 import type { NewCharacter } from "./useGame";
 
@@ -153,11 +153,14 @@ function TitleMenu(props: TitleProps) {
         {(page === "main" || page === "settings" || page === "credits") && (
           <div className="menu-buttons">
             {lastSave && last !== null && (
-              <Button big variant="primary" onClick={() => props.onContinue(last)}>
+              <Button
+                big
+                variant="primary"
+                className="continue-btn"
+                onClick={() => props.onContinue(last)}
+              >
                 Continue
-                <small>
-                  {heroTitle(lastSave, GAME_DATA)} · {whereText(lastSave)}
-                </small>
+                <ContinueLine save={lastSave} />
               </Button>
             )}
             <Button
@@ -340,5 +343,26 @@ function TitleMenu(props: TitleProps) {
         {SIM_VERSION}
       </footer>
     </section>
+  );
+}
+
+/** Under Continue: "Cinderguard [12] · Ashen Fields [2]", the numbers are Level and Harvest. */
+function ContinueLine(props: { save: GameState }) {
+  const { save } = props;
+  const harvest = save.legacy.prestige + 1;
+  return (
+    <small className="continue-line">
+      <span>{heroTitle(save, GAME_DATA)}</span>
+      <span className="continue-chip" title={`Level ${save.hero.level}`}>
+        <span className="sr-only">Level </span>
+        {save.hero.level}
+      </span>
+      <span className="continue-dot" aria-hidden="true" />
+      <span>{continuePlace(save)}</span>
+      <span className="continue-chip" title={`Harvest ${harvest}`}>
+        <span className="sr-only">Harvest </span>
+        {harvest}
+      </span>
+    </small>
   );
 }

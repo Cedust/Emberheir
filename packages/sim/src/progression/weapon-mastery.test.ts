@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { TEST_SKILL, TEST_WEAPON } from "../combat/test-fixtures";
-import { bossLevel, levelCap } from "./leveling";
+import { bossLevel, killPrice, levelCap } from "./leveling";
 import {
   type GameAction,
   type GameState,
@@ -255,8 +255,13 @@ describe("Weapon Mastery in the game", () => {
   });
 
   it("Respec costs Acorns and keeps the Echo", () => {
-    let s = camp(3, masteryRespecAcorns(0));
+    let s = camp(3, 0);
     s = act(s, { type: "learnMastery", nodeId: "refine" });
+    // One Mastery Point back: 4 kills at the boss level.
+    const price = masteryRespecAcorns(s, data);
+    expect(price).toBe(killPrice(bossLevel(0), { acorns: 4 }).acorns);
+    expect(() => act(s, { type: "respecMastery" })).toThrow(/Acorns/);
+    s = { ...s, wallet: { ...s.wallet, acorns: price } };
     s = { ...s, hero: { ...s.hero, mastery: { ...s.hero.mastery, echo: "test-echo" } } };
     s = act(s, { type: "respecMastery" });
     expect(s.hero.mastery).toEqual({ ...EMPTY_MASTERY, echo: "test-echo" });

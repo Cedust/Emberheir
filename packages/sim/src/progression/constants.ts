@@ -198,16 +198,33 @@ export const PROGRESSION = {
   /** Each Rune rank drops this much less often than the one below it. */
   runeRankFalloff: 0.5,
   /**
-   * Ember Coal drop on their own like Runes: Elites and bosses always (min, max)... Elites 2–3
-   * before the runs grew longer (economy-audit-v1.md E2).
+   * Ember Coal drops on its own like Runes, sized to what Reforge and Kindle need
+   * (economy-v2-plan.md W4; before: bosses 4–6, Elites 1–2, normal enemies 5 %): bosses always
+   * (min, max), Elites sometimes one, normal enemies never. Cache nodes and Eldrin's Caches pay
+   * `cacheEmberCoal`.
    */
-  eliteEmberCoal: [1, 2],
-  bossEmberCoal: [4, 6],
-  /** ...normal enemies sometimes (15 % before the runs grew longer, economy-audit-v1.md E2). */
-  normalEmberCoalChance: 0.05,
+  /**
+   * Currency Caps (economy-v2-plan.md, Timo 2026-11-03: fixed caps, none that grow): the most the
+   * hero carries; more is lost. Well above the dearest price at Level 100 (a full respec ~20,000
+   * Acorns), reached only late in the Wildfire. Runes count per kind.
+   */
+  walletCap: {
+    acorns: 100_000,
+    ash: 50_000,
+    emberCoal: 150,
+    phoenixFeathers: 50,
+    cinderglass: 30,
+    runes: 30,
+  },
+  bossEmberCoal: [1, 2],
+  eliteEmberCoalChance: 0.15,
+  cacheEmberCoal: [1, 2],
 
-  /** Ash for one item: by rarity, × Item Tier. */
-  salvageAsh: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
+  /**
+   * Ash for one item: by rarity, × Item Tier. Flat steps (W8; before 2/4/8/16/32): late loot is
+   * Epic and Legendary, so doubling per rarity flooded the Ash wallet in runs 4–7.
+   */
+  salvageAsh: { normal: 2, magic: 3, rare: 4, epic: 6, legendary: 8 } satisfies Record<
     Rarity,
     number
   >,
@@ -419,14 +436,15 @@ export const PROGRESSION = {
   elitePhoenixFeatherChance: 0.1,
 
   /** Switching to another Battle Plan Capstone at Kaelen: Acorns of this many kills at boss level. */
-  capstoneChangeKills: 2,
+  capstoneChangeKills: 5,
 
   /**
-   * Skill Tree respec at Kaelen (level-v2.md section 7): moderately priced, about the Acorns of this
-   * many normal kills at the run's boss level. One node costs `respecNodeShare` of it.
+   * Respecs cost by the points they give back (economy-v2-plan.md W1, Timo 2026-11-03): the
+   * Acorns of this many normal kills at the run's boss level per invested point. Forgetting one
+   * node costs the same per point as the whole tree; a point of the Heirloom or an attribute
+   * weighs more than a Skill Point. Ashborn Points are counted at the hero's level.
    */
-  respecKills: 8,
-  respecNodeShare: 0.1,
+  respecKillsPerPoint: { tree: 1, heirloom: 4, attributes: 4, ashborn: 1 },
 
   /** Inventory grid (D2 style). */
   inventoryWidth: 10,
@@ -461,13 +479,21 @@ export const CRAFTING = {
    * Shift (to another affix, the rank stays), Intensify from rank I, II, III, IV to the next.
    */
   greater: { awaken: 3, shift: 1, intensify: [2, 4, 8, 16] },
-  /** Upgrade (+1 Tier) at Thoric: 1 Phoenix Feather + the Acorns of this many kills × current Tier. */
-  upgradeKillsPerTier: 1,
+  /**
+   * Upgrade (+1 Tier) at Thoric, the strongest craft (economy-v2-plan.md W3): 1 Phoenix Feather +
+   * the Acorns of this many kills × the new Tier.
+   */
+  upgradeKillsPerTier: 3,
+  /** ...plus the Ash of this many kills × the new Tier (W8: Ash had no second sink late). */
+  upgradeAshKillsPerTier: 4,
   upgradeFeathers: 1,
-  /** Temper (reroll one affix value) at Liora, in kills. */
-  temperKills: { acorns: 1, ash: 6 },
-  /** Reforge (reroll all affixes) at Thoric. */
-  emberCoal: 1,
+  /**
+   * Temper at Liora (economy-v2-plan.md W2, like Enchant in Diablo 3): the n-th Temper on an item
+   * costs the Ash of n × this many kills at its level.
+   */
+  temperAshKills: 4,
+  /** Reforge at Thoric: the n-th Reforge on an item costs n × this much Ember Coal (W4, W8). */
+  emberCoal: 2,
   /** Add Socket at the Runesmith, in kills: Acorns plus Ash × the new Socket count. */
   addSocketKills: { acorns: 2, ash: 3 },
   /**
@@ -478,11 +504,12 @@ export const CRAFTING = {
   combineRunesKillsPerRank: 0.5,
   combineRunesCount: 3,
   /**
-   * Marisha (Black Market): gamble prices. Her odds are a normal enemy's card (Timo 2026-10-26,
-   * economy-audit-v1.md E3), Legendaries and Uniques as often as on an Elite's card.
+   * Marisha (Black Market, economy-v2-plan.md W6, Timo 2026-11-03): a gamble costs the Acorns of
+   * this many kills at the goods' Item Level and rolls like an Elite's card; she has
+   * `gambleStock` gambles per Camp visit.
    */
-  gambleFlat: 60,
-  gamblePerItemLevel: 12,
+  gambleKills: 10,
+  gambleStock: 3,
 } as const;
 
 /** Trigger Codex (docs/design/trigger-codex-v1.md). Starting values for the balance CLI. */

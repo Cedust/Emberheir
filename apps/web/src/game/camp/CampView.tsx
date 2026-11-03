@@ -1,7 +1,6 @@
 import { GAME_DATA } from "@emberheir/content";
 import {
   finaleOpen,
-  flaskCapacity,
   type GameState,
   LINEAGE_STEPS,
   masteryPointsLeft,
@@ -72,7 +71,6 @@ export function CampView(props: {
   const kaelen = list.find((p) => p.id === "kaelen");
   const gear = heirGear(state);
   const cleared = state.progress.actsCleared.includes(act.id);
-  const flask = `${state.flaskCharges}/${flaskCapacity(state, GAME_DATA)}`;
   const focused = props.zoom !== false ? list.find((p) => p.id === props.focus) : undefined;
   const sceneH = size.h - 64;
   // Lean in on the focused persona: zoom around them, but never past the scene's edges.
@@ -98,7 +96,7 @@ export function CampView(props: {
         <div className="run-title">
           <span className="title-font">Camp at the {next.name}</span>
           <span className="sub">
-            {state.legacy.prestige > 0 ? `Generation ${state.legacy.prestige + 1} · ` : ""}
+            {state.legacy.prestige > 0 ? `Harvest ${state.legacy.prestige + 1} · ` : ""}
             {cleared
               ? `Act ${act.number} cleared · farm it again`
               : `Act ${act.number} · Boss: ${bossName(state, act)}`}
@@ -106,7 +104,7 @@ export function CampView(props: {
           </span>
         </div>
         <div className="grow" />
-        <Wallet state={state} className="camp-wallet" extra={[{ id: "flask", amount: flask }]} />
+        <Wallet state={state} className="camp-wallet" />
         <button type="button" className="icon-button" aria-label="Menu" onClick={props.onMenu}>
           <Icon name="menu" size={20} />
         </button>

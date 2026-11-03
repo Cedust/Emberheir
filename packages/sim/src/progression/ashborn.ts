@@ -53,8 +53,6 @@ export const ASHBORN = {
   /** XP of the first Ashborn Level; every further one costs `growth` of it more (linear). */
   baseXp: 12_000,
   growth: 0.04,
-  /** Acorns Old Nan takes to give every point back. */
-  resetAcorns: 2_000,
 } as const;
 
 export const EMPTY_ASHBORN: AshbornState = { level: 0, xp: 0, points: {} };

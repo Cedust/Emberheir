@@ -8,19 +8,26 @@ import {
   isFinaleAct,
   wildfireName,
 } from "@emberheir/sim";
+import { type GameIconId, GameIcon } from "../ui/gameIcons";
+import { ActionIcon } from "../ui/actionIcons";
 import { Button } from "../ui/kit/Button";
+import { backdropUrl } from "./battle/arenaBackdrop";
 import { PersonaPortrait } from "./camp/art/PersonaArt";
 import { PaintDefs } from "./camp/art/paint";
+
+/** One plaque on the notice: a painted icon, a small label and the fact itself. */
+interface Fact {
+  readonly k: string;
+  readonly v: string;
+  readonly tone: string;
+  readonly icon?: GameIconId | "map";
+}
 
 interface NoticeText {
   readonly title: string;
   readonly sub: string;
   readonly nan: string;
-  readonly facts: (
-    n: Notice,
-    act: ActData,
-    next: ActData | undefined,
-  ) => { k: string; v: string; tone: string }[];
+  readonly facts: (n: Notice, act: ActData, next: ActData | undefined) => Fact[];
 }
 
 type NoticeKind = Exclude<Notice["kind"], "prestige" | "ending">;
@@ -28,7 +35,12 @@ type NoticeKind = Exclude<Notice["kind"], "prestige" | "ending">;
 /** "Act 3 · Stage 4", or "The Last Ember · Stage 4". */
 const where = (act: ActData, stage: number, wildfire?: number) =>
   `${isFinaleAct(GAME_DATA, act.id) ? act.name : `Act ${act.number}`} · Stage ${stage}${wildfire ? ` · ${wildfireName(wildfire)}` : ""}`;
-const camp = (act: ActData) => (isFinaleAct(GAME_DATA, act.id) ? "Camp" : `Camp · ${act.name}`);
+
+/** What the Camp gives back after every trip that ended early. */
+const RESTORED: readonly Fact[] = [
+  { k: "LIFE", v: "Full again", tone: "good", icon: "life" },
+  { k: "FLASK", v: "Refilled", tone: "good", icon: "flask" },
+];
 
 const TEXT: Record<NoticeKind, NoticeText> = {
   death: {
@@ -36,29 +48,26 @@ const TEXT: Record<NoticeKind, NoticeText> = {
     sub: "You fell, and the ash gave you back.",
     nan: "The ash spat you back out. It does that. It likes you.",
     facts: (n, act) => [
-      { k: "FELL AT", v: where(act, n.stage, n.wildfire), tone: "text" },
-      { k: "BY", v: n.enemyName ?? "Unknown", tone: "rare" },
-      { k: "KEPT", v: "Everything", tone: "good" },
-      { k: "BACK TO", v: camp(act), tone: "accent" },
+      { k: "FELL AT", v: where(act, n.stage, n.wildfire), tone: "text", icon: "map" },
+      { k: "BY", v: n.enemyName ?? "Unknown", tone: "rare", icon: "physical" },
+      ...RESTORED,
     ],
   },
   retreat: {
     title: "RETREAT",
-    sub: "You left the fight and went back to camp.",
+    sub: "You slipped away from the fight and walked back to the fire.",
     nan: "Sensible. Dead heroes don't farm.",
     facts: (n, act) => [
-      { k: "LEFT AT", v: where(act, n.stage, n.wildfire), tone: "text" },
-      { k: "KEPT", v: "Everything", tone: "good" },
-      { k: "BACK TO", v: camp(act), tone: "accent" },
+      { k: "LEFT AT", v: where(act, n.stage, n.wildfire), tone: "text", icon: "map" },
+      ...RESTORED,
     ],
   },
   actCleared: {
     title: "ACT CLEARED",
     sub: "The boss is down and the caravan moves on.",
-    nan: "Gorrak is down. Liora finally agrees to see you.",
+    nan: "Gorrak is down. The road ahead is open, dear.",
     facts: (_n, act, next) => [
       { k: "CLEARED", v: act.name, tone: "text" },
-      ...(act.number === 1 ? [{ k: "NEW IN CAMP", v: "Liora · Eldrin", tone: "good" }] : []),
       {
         k: "ROAD AHEAD",
         v: next ? `Act ${next.number} · ${next.name}` : "Farm or rest",
@@ -89,7 +98,7 @@ const WILDFIRE_CLEARED: NoticeText = {
 
 /** Old Nan's word after each act boss. */
 const CLEARED_NAN: Record<string, string> = {
-  "ashen-fields": "Gorrak is down. Liora finally agrees to see you.",
+  "ashen-fields": "Gorrak is down. The road ahead is open, dear.",
   rotwood: "The Mother of Rot is compost now. The forest can finally breathe.",
   "ember-wastes": "The Cinder Tyrant cools into a very large paperweight.",
   "frost-peaks": "The Rime Warden shatters. Somebody pack a scarf for the next act.",
@@ -195,11 +204,14 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
   const next = GAME_DATA.acts.find((a) => a.number === act.number + 1);
   const nan =
     notice.kind === "actCleared" && !notice.wildfire ? (CLEARED_NAN[act.id] ?? text.nan) : text.nan;
+  // The act's own painting behind it, dimmed: the Heir looks back at where the trip ended.
+  const art = backdropUrl(isFinaleAct(GAME_DATA, act.id) ? 8 : act.number);
   return (
     <section
-      className={`screen notice-screen notice-${notice.kind}`}
+      className={`screen notice-screen notice-${notice.kind}${art ? " painted" : ""}`}
       aria-label={text.title}
       role="status"
+      style={art ? ({ "--notice-art": `url(${art})` } as React.CSSProperties) : undefined}
     >
       <PaintDefs />
       <Ash />
@@ -208,9 +220,17 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
         <p className="notice-sub">{text.sub}</p>
         <div className="notice-facts">
           {text.facts(notice, act, next).map((f) => (
-            <div key={f.k} className="fact">
-              <span className="eyebrow">{f.k}</span>
-              <span className={`title-font tone-${f.tone}`}>{f.v}</span>
+            <div key={f.k} className={`fact${f.icon ? " with-icon" : ""}`}>
+              {f.icon &&
+                (f.icon === "map" ? (
+                  <ActionIcon id="map" size={44} />
+                ) : (
+                  <GameIcon id={f.icon} size={44} />
+                ))}
+              <span className="fact-text">
+                <span className="eyebrow">{f.k}</span>
+                <span className={`title-font tone-${f.tone}`}>{f.v}</span>
+              </span>
             </div>
           ))}
         </div>
@@ -218,7 +238,10 @@ export function NoticeScreen(props: { notice: Notice; onDismiss: () => void }) {
           <span className="nan-portrait">
             <PersonaPortrait id="nan" />
           </span>
-          <span className="quote">Old Nan: &ldquo;{nan}&rdquo;</span>
+          <span className="quote">
+            <span className="nan-name title-font">Old Nan</span>
+            &ldquo;{nan}&rdquo;
+          </span>
         </div>
         <Button big variant="primary" onClick={props.onDismiss}>
           Wake at the Hearthfire

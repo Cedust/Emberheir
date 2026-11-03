@@ -271,7 +271,7 @@ export function PrestigeView(props: {
           header={
             <WindowHeader
               title="The Harvest"
-              sub={`Generation ${state.legacy.prestige + 2}`}
+              sub={`Harvest ${state.legacy.prestige + 1}`}
               medallion={<ClassEmblem classId={heroClass.id} size={44} />}
             />
           }
