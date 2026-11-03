@@ -103,7 +103,7 @@ function currencyNote(id: CurrencyId, amount: string, cap?: CurrencyCap): NoteHo
   const status = !cap
     ? `You have ${amount}`
     : cap.full
-      ? `Full (${fmt(cap.max)}): more is lost`
+      ? `Full (${fmt(cap.max)})`
       : `You have ${amount} of ${fmt(cap.max)}`;
   return { name: def.name, kind: def.kind, explain: def.explain, status };
 }
@@ -136,7 +136,7 @@ export function CurrencyChip(props: {
   amount: number | string;
   /** Gained since the last fight, shown as "+n". */
   gain?: number | undefined;
-  /** The currency's cap: a full pouch shows orange, the tooltip says more is lost. */
+  /** The currency's cap: a full pouch shows orange, the tooltip says it is full. */
   cap?: CurrencyCap | undefined;
 }) {
   const exact = typeof props.amount === "number" ? fmt(props.amount) : props.amount;
