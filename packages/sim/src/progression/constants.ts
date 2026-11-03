@@ -476,11 +476,12 @@ export const CRAFTING = {
   combineRunesKillsPerRank: 0.5,
   combineRunesCount: 3,
   /**
-   * Marisha (Black Market): gamble prices. Her odds are a normal enemy's card (Timo 2026-10-26,
-   * economy-audit-v1.md E3), Legendaries and Uniques as often as on an Elite's card.
+   * Marisha (Black Market, economy-v2-plan.md W6, Timo 2026-11-03): a gamble costs the Acorns of
+   * this many kills at the goods' Item Level and rolls like an Elite's card; she has
+   * `gambleStock` gambles per Camp visit.
    */
-  gambleFlat: 60,
-  gamblePerItemLevel: 12,
+  gambleKills: 10,
+  gambleStock: 3,
 } as const;
 
 /** Trigger Codex (docs/design/trigger-codex-v1.md). Starting values for the balance CLI. */

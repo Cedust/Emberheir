@@ -314,6 +314,7 @@ export const gameStateSchema: z.ZodType<GameState> = z.object({
   ),
   lineage: opt(z.array(id)),
   draught: opt(id.nullable()),
+  gambled: opt(count),
   powerCodex: opt(z.record(z.string(), int.positive())),
 });
 

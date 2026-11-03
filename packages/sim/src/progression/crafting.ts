@@ -130,6 +130,7 @@ export type CraftBlockReason =
   | "maxRank"
   | "sold"
   | "noStock"
+  | "soldOut"
   /** No room in the inventory for a bought item. */
   | "noRoom"
   | "runes"
@@ -422,6 +423,7 @@ export function craftBlockReason(
   }
   if (request.kind === "gamble") {
     if (!merchantSlots(data).includes(request.slot)) return "noStock";
+    if ((state.gambled ?? 0) >= CRAFTING.gambleStock) return "soldOut";
     if (!hasRoomFor(state, data, request.slot)) return "noRoom";
     return costBlockReason(state, craftCost(request, undefined, data, state));
   }
@@ -566,6 +568,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
     const trophy = item.uniqueId && !next.legacy.trophies.includes(item.uniqueId);
     return {
       ...next,
+      gambled: (next.gambled ?? 0) + 1,
       inventory: addToGrid(next.inventory, item, data.items) ?? fail("No room"),
       ...(trophy && item.uniqueId
         ? { legacy: { ...next.legacy, trophies: [...next.legacy.trophies, item.uniqueId] } }
@@ -754,8 +757,9 @@ export function merchantSlots(data: GameData): ItemSlot[] {
   return [...new Set(data.lootBases.map((id) => getBase(data.items, id).slot))];
 }
 
+/** A gamble's Acorns: `CRAFTING.gambleKills` normal kills at the goods' Item Level. */
 export function gamblePrice(itemLevel: number): number {
-  return CRAFTING.gambleFlat + CRAFTING.gamblePerItemLevel * itemLevel;
+  return killPrice(itemLevel, { acorns: CRAFTING.gambleKills }).acorns;
 }
 
 /** Whether a gamble for this slot would find room: checked with the slot's biggest base. */
@@ -769,11 +773,11 @@ export function hasRoomFor(state: GameState, data: GameData, slot: ItemSlot): bo
 }
 
 /**
- * Marisha's rarity odds in a run: those of a normal enemy's card (Timo 2026-10-26,
- * economy-audit-v1.md E3), no Pity.
+ * Marisha's rarity odds in a run: those of an Elite's card (Timo 2026-11-03, economy-v2-plan.md
+ * W6; before: a normal enemy's card, which made a gamble nearly worthless), no Pity.
  */
 export function gambleRarityWeights(prestige: number): Readonly<Record<Rarity, number>> {
-  return itemPickWeights("normal", 0, prestige);
+  return itemPickWeights("elite", 0, prestige);
 }
 
 /** Chance that a gamble turns Legendary (or Unique): as on an Elite's card. */

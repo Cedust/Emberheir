@@ -78,6 +78,7 @@ export const CRAFT_BLOCK_TEXT: Record<CraftBlockReason, string> = {
   maxRank: "Already the highest Rune",
   sold: "Sold",
   noStock: "Not in stock",
+  soldOut: "Sold out until you set out",
   noRoom: "No room in the inventory",
   runes: "Not enough Runes",
   unknownPart: "Part not learned",

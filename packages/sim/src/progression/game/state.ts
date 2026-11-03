@@ -584,6 +584,8 @@ export interface GameState {
   readonly lineage?: readonly string[];
   /** The Draught chosen in the Camp: brewed from a Flask charge at every set-out. */
   readonly draught?: string | null;
+  /** Marisha's gambles in this Camp visit (at most `CRAFTING.gambleStock`, restocked at set-out). */
+  readonly gambled?: number;
   /**
    * Power Codex (neuausrichtung-v1.md 8): Legendary Powers learned by salvaging, with the best
    * tier learned. It belongs to the account: the UI keeps one for all characters (like the

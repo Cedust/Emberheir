@@ -18,7 +18,7 @@ import {
   upgradedItem,
 } from "./crafting";
 import { requiredLevel } from "../items/equipment";
-import { type GameAction, type GameState, applyAction, newGame } from "./game";
+import { type GameAction, type GameState, applyAction, itemPickWeights, newGame } from "./game";
 import { TEST_GAME_DATA } from "./test-fixtures";
 
 const data = TEST_GAME_DATA;
@@ -418,12 +418,21 @@ describe("Sockets, Runes and Marisha", () => {
     const item = s.inventory[2]?.item;
     expect(item?.baseId).toBe("test-ring");
     expect(s.wallet.acorns).toBe(1000 - gamblePrice(merchantItemLevel(runeCamp(), data)));
-    // Run 1: Marisha rolls like a normal enemy's card, at most Magic (economy-audit-v1.md E3).
+    // Run 1: Marisha rolls like an Elite's card, Magic or Rare (economy-v2-plan.md W6).
     const early = new Set<string>();
     for (let seed = 0; seed < 200; seed++) {
       early.add(gambleItem(s, data, "ring", new Rng(seed)).rarity);
     }
-    expect([...early].sort()).toEqual(["magic", "normal"]);
+    expect([...early].sort()).toEqual(["magic", "rare"]);
+    expect(gambleRarityWeights(0)).toEqual(itemPickWeights("elite", 0, 0));
+    // Three gambles per Camp visit, then she is sold out until the next set-out.
+    let three = s;
+    for (let i = 0; i < 2; i++) three = craftIt(three, { kind: "gamble", slot: "ring" });
+    expect(three.gambled).toBe(3);
+    expect(craftBlockReason(three, data, { kind: "gamble", slot: "ring" })).toBe("soldOut");
+    const away = applyAction(three, data, { type: "setOut", actId: "test-act" });
+    expect(away.gambled).toBeUndefined();
+    expect(gamblePrice(10)).toBe(killPrice(10, { acorns: CRAFTING.gambleKills }).acorns);
     expect(gambleRarityWeights(0)).toMatchObject({ epic: 0, legendary: 0 });
     // From run 5 on, some gambles come out Legendary, as often as on an Elite's card.
     const late = { ...s, legacy: { ...s.legacy, prestige: 4 } };
