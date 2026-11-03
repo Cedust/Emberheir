@@ -309,14 +309,14 @@ describe("game loop", () => {
     expect(equipBlockReason(grown, data, high, "stash")).toBeUndefined();
   });
 
-  it("normal enemies now and then drop some Ember Coal", () => {
+  it("normal enemies drop no Ember Coal (economy-v2-plan.md W4)", () => {
     const drops = new Set<number>();
     for (let seed = 1; seed <= 40; seed++) {
       const s = act(start(seed), { type: "setOut", actId: "test-act" }, { type: "startStage" });
       if (s.run?.encounter?.eliteModifiers.length || s.run?.encounter?.thief) continue;
       drops.add(act(s, { type: "resolveFight" }).run?.rewards?.emberCoal ?? -1);
     }
-    expect([...drops].sort()).toEqual([0, 1]);
+    expect([...drops]).toEqual([0]);
   });
 
   it("drag & drop moves items inside the inventory and onto a chosen slot", () => {

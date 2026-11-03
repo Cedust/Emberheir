@@ -198,13 +198,14 @@ export const PROGRESSION = {
   /** Each Rune rank drops this much less often than the one below it. */
   runeRankFalloff: 0.5,
   /**
-   * Ember Coal drop on their own like Runes: Elites and bosses always (min, max)... Elites 2–3
-   * before the runs grew longer (economy-audit-v1.md E2).
+   * Ember Coal drops on its own like Runes, sized to what Reforge and Kindle need
+   * (economy-v2-plan.md W4; before: bosses 4–6, Elites 1–2, normal enemies 5 %): bosses always
+   * (min, max), Elites sometimes one, normal enemies never. Cache nodes and Eldrin's Caches pay
+   * `cacheEmberCoal`.
    */
-  eliteEmberCoal: [1, 2],
-  bossEmberCoal: [4, 6],
-  /** ...normal enemies sometimes (15 % before the runs grew longer, economy-audit-v1.md E2). */
-  normalEmberCoalChance: 0.05,
+  bossEmberCoal: [1, 2],
+  eliteEmberCoalChance: 0.3,
+  cacheEmberCoal: [1, 2],
 
   /** Ash for one item: by rarity, × Item Tier. */
   salvageAsh: { normal: 2, magic: 4, rare: 8, epic: 16, legendary: 32 } satisfies Record<
@@ -452,12 +453,18 @@ export const CRAFTING = {
    * Shift (to another affix, the rank stays), Intensify from rank I, II, III, IV to the next.
    */
   greater: { awaken: 3, shift: 1, intensify: [2, 4, 8, 16] },
-  /** Upgrade (+1 Tier) at Thoric: 1 Phoenix Feather + the Acorns of this many kills × current Tier. */
-  upgradeKillsPerTier: 1,
+  /**
+   * Upgrade (+1 Tier) at Thoric, the strongest craft (economy-v2-plan.md W3): 1 Phoenix Feather +
+   * the Acorns of this many kills × the new Tier.
+   */
+  upgradeKillsPerTier: 3,
   upgradeFeathers: 1,
-  /** Temper (reroll one affix value) at Liora, in kills. */
-  temperKills: { acorns: 1, ash: 6 },
-  /** Reforge (reroll all affixes) at Thoric. */
+  /**
+   * Temper at Liora (economy-v2-plan.md W2, like Enchant in Diablo 3): the n-th Temper on an item
+   * costs the Ash of n × this many kills at its level.
+   */
+  temperAshKills: 4,
+  /** Reforge at Thoric: the n-th Reforge on an item costs n × this much Ember Coal (W4). */
   emberCoal: 1,
   /** Add Socket at the Runesmith, in kills: Acorns plus Ash × the new Socket count. */
   addSocketKills: { acorns: 2, ash: 3 },

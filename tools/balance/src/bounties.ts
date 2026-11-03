@@ -27,7 +27,6 @@ export function bountyRows(reports: readonly ActRunReport[], generations: number
     let caches = 0;
     let coal = 0;
     let homeRunes = 0;
-    let incomeCoal = 0;
     let droppedHome = 0;
     for (const r of run) {
       const b = r.bounties;
@@ -43,7 +42,6 @@ export function bountyRows(reports: readonly ActRunReport[], generations: number
       caches += b.caches;
       coal += b.emberCoal;
       homeRunes += b.homeRunes;
-      incomeCoal += r.income?.emberCoal ?? 0;
       droppedHome += r.homeRunes ?? 0;
     }
     const all = (rec: Record<string, number>) => Object.values(rec).reduce((a, b) => a + b, 0);
@@ -59,7 +57,7 @@ export function bountyRows(reports: readonly ActRunReport[], generations: number
       trail: kind("trail"),
       thief: kind("thief"),
       dry: kind("dry"),
-      "cache coal": pct(coal, incomeCoal),
+      "cache coal": coal,
       "home runes": `${homeRunes} of ${homeRunes + droppedHome}`,
       caches,
     });

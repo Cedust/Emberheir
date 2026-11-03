@@ -1,4 +1,3 @@
-import { type Income, NO_INCOME, addIncome } from "./economy";
 import {
   type ActData,
   activeRuneword,
@@ -154,8 +153,6 @@ export interface ActRunReport {
   readonly farmTrips?: number;
   /** Quiet nodes of the act map visited (Shrine, Hearth, Cache, Event, Marisha). */
   readonly visits?: number;
-  /** Acorns, Ash, Ember Coal and Feathers the act's fights paid, farm trips included. */
-  readonly income?: Income;
   /** Hunt kills per enemy when the act ends (hunts-entwurf-v1.md). */
   readonly hunts?: Readonly<Record<string, number>>;
   /** Eldrin's Bounties of the act's trips (bounties-v2-plan.md B5). */
@@ -278,7 +275,6 @@ export function playGenerations(
       let visits = 0;
       let runesDropped = 0;
       let homeRunes = 0;
-      let income = NO_INCOME;
       const bounties = newBountyTally();
       const onCache = (cache: BountyCache) => tallyCache(bounties, data, cache);
       // A trip's bounty: taken at the set-out, done when the trip ends with it done.
@@ -291,11 +287,8 @@ export function playGenerations(
         const id = st.bountyDone?.id;
         if (id) bounties.done[id] = (bounties.done[id] ?? 0) + 1;
       };
-      // Every step's wallet gain is income: fights, picks (salvaged cards), quiet nodes, the Camp.
-      const earn = (from: GameState, to: GameState) => {
-        income = addIncome(income, from, to);
-        return commit(to);
-      };
+      // Every kept step goes into the economy ledger (fights, picks, quiet nodes, the Camp).
+      const earn = (_from: GameState, to: GameState) => commit(to);
       const countRunes = (st: GameState) => {
         const dropped = st.run?.phase === "rewards" ? (st.run.rewards?.runes ?? []) : [];
         const home = data.acts.find((a) => a.id === st.run?.actId)?.homeRune;
@@ -422,7 +415,6 @@ export function playGenerations(
         visits,
         runesDropped,
         homeRunes,
-        income,
         hunts: s.legacy.hunts ?? {},
         bounties,
       });

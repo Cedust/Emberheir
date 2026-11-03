@@ -21,7 +21,6 @@ import { simulateMatchup } from "./simulate";
 import { type PowerSample, powerCurve, powerProbe } from "./curve";
 import { PLAYTIME, median, runMinutes } from "./playtime";
 import { bountyRows } from "./bounties";
-import { EAGER, economyRows } from "./economy";
 import { type Ledger, meanLedger, newLedger } from "./ledger";
 import { printLedger } from "./ledger-report";
 
@@ -335,12 +334,7 @@ function printNewestActs(
   printPlaytime(byPlay, generations, seeds);
   console.log("");
   console.log(
-    `Economy: income of the newest act per run, and what an eager crafter spends of it (${EAGER.items} items × ${EAGER.tempers} Temper and ${EAGER.reforges} Reforge, ${EAGER.sockets} Sockets, ${EAGER.gambles} Gambles, every Feather an Upgrade)`,
-  );
-  console.table(economyRows(all, generations));
-  console.log("");
-  console.log(
-    "Bounties: per run (all acts and builds pooled), done of taken by kind, Eldrin's Caches against the run's Ember Coal and Home Runes",
+    "Bounties: per run (all acts and builds pooled), done of taken by kind, Ember Coal from Eldrin's Caches, their Home Runes of all dropped",
   );
   console.table(bountyRows(all, generations));
 }

@@ -231,6 +231,12 @@ export interface Item {
    * choice. Each option replaces that affix; keeping it drops the offer.
    */
   readonly temperOffer?: readonly AffixRoll[];
+  /**
+   * Tempers and Reforges done on this item so far (economy-v2-plan.md W2/W4): each one costs more
+   * than the last, so a perfect item is a long project, not one Camp visit.
+   */
+  readonly tempers?: number;
+  readonly reforges?: number;
   /** Normal items only: empty Sockets plus socketed Runes (`runes.length` ≤ `sockets`). */
   readonly sockets?: number;
   /** Socketed Rune ids in order. The right order in the right base makes a Runeword. */

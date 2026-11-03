@@ -73,10 +73,11 @@ describe("crafting", () => {
     const s = act(camp(), { type: "craft", request: { kind: "upgrade", itemId: RING.id } });
     expect(ring(s)).toMatchObject({ tier: 2, affixes: RING.affixes });
     expect(s.wallet.phoenixFeathers).toBe(1);
-    const oneTier = killPrice(RING.itemLevel, { acorns: CRAFTING.upgradeKillsPerTier }).acorns;
-    expect(s.wallet.acorns).toBe(1000 - oneTier);
+    // The price follows the new Tier: T1 → T2 costs 2 × the kills, T2 → T3 3 ×.
+    const toT2 = killPrice(RING.itemLevel, { acorns: 2 * CRAFTING.upgradeKillsPerTier }).acorns;
+    expect(s.wallet.acorns).toBe(1000 - toT2);
     expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).acorns).toBe(
-      killPrice(RING.itemLevel, { acorns: 2 * CRAFTING.upgradeKillsPerTier }).acorns,
+      killPrice(RING.itemLevel, { acorns: 3 * CRAFTING.upgradeKillsPerTier }).acorns,
     );
   });
 
@@ -124,7 +125,14 @@ describe("crafting", () => {
     // A new affix the ring does not carry, then the same affix with a new value.
     expect(["crit", "elemental"]).toContain(offer[0]?.affixId);
     expect(offer[1]?.affixId).toBe("life");
-    expect(s.wallet.ash).toBe(1000 - killPrice(RING.itemLevel, CRAFTING.temperKills).ash);
+    const first = killPrice(RING.itemLevel, { ash: CRAFTING.temperAshKills }).ash;
+    expect(s.wallet.ash).toBe(1000 - first);
+    expect(s.wallet.acorns).toBe(1000);
+    // Each further Temper on the same item costs one step more (like Enchant in Diablo 3).
+    expect(offered?.tempers).toBe(1);
+    expect(craftCost({ kind: "temper", itemId: RING.id, affixIndex: 1 }, offered).ash).toBe(
+      killPrice(RING.itemLevel, { ash: 2 * CRAFTING.temperAshKills }).ash,
+    );
     // Locked: only affix 1 can change now.
     expect(craftBlockReason(s, data, { kind: "temper", itemId: RING.id, affixIndex: 0 })).toBe(
       "locked",
@@ -270,6 +278,9 @@ describe("crafting", () => {
     expect(reforged?.lockedAffix).toBeUndefined();
     expect(reforged?.affixes).not.toEqual(RING.affixes);
     expect(next.wallet.emberCoal).toBe(2);
+    // The second Reforge of the same item takes 2 Ember Coal, the third 3 (economy-v2-plan.md W4).
+    expect(reforged?.reforges).toBe(1);
+    expect(craftCost({ kind: "reforge", itemId: RING.id }, reforged).emberCoal).toBe(2);
     // Same seed and nonce: same result.
     expect(act(s, { type: "craft", request: { kind: "reforge", itemId: RING.id } })).toEqual(next);
   });
@@ -306,7 +317,7 @@ describe("crafting", () => {
     const range = affixRollRange(item, "strength", data.items);
     const affix = data.items.affixes.get("strength");
     if (!range || affix?.kind !== "stat") throw new Error("missing");
-    let s: GameState = { ...camp({ ash: 10_000 }), inventory: [{ item, x: 0, y: 0 }] };
+    let s: GameState = { ...camp({ ash: 1_000_000 }), inventory: [{ item, x: 0, y: 0 }] };
     const index = item.affixes.findIndex((a) => a.affixId === "strength");
     if (index < 0) return;
     for (let i = 0; i < 30; i++) {

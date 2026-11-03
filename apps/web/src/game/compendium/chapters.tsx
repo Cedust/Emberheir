@@ -1124,7 +1124,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: currencyIcon("coal"),
                   name: "Reforge",
-                  text: "Rolls all stat Affixes anew. Triggers stay.",
+                  text: "Rolls all stat Affixes anew. Triggers stay. Each Reforge of the same item costs more.",
                 },
                 {
                   icon: currencyIcon("ash"),
@@ -1146,7 +1146,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
             <p>
               <B>Temper</B> offers two choices for one Affix: a new Affix or a new value. Pick one
               or keep the old Affix. After that, only that Affix can change until Thoric reforges
-              the item.
+              the item. Each Temper of the same item costs more <C id="ash" /> than the last.
             </p>
             <p>
               <B>Kindle</B> builds a Trigger from the Trigger Codex onto an item, for <C id="ash" />{" "}

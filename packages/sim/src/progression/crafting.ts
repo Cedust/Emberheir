@@ -234,13 +234,16 @@ export function craftCost(
     case "upgrade":
       return {
         ...NO_COST,
-        acorns: at({ acorns: CRAFTING.upgradeKillsPerTier * (item?.tier ?? 1) }).acorns,
+        acorns: at({ acorns: CRAFTING.upgradeKillsPerTier * ((item?.tier ?? 1) + 1) }).acorns,
         phoenixFeathers: CRAFTING.upgradeFeathers,
       };
     case "reforge":
-      return { ...NO_COST, emberCoal: CRAFTING.emberCoal };
+      return { ...NO_COST, emberCoal: CRAFTING.emberCoal * ((item?.reforges ?? 0) + 1) };
     case "temper":
-      return { ...NO_COST, ...at(CRAFTING.temperKills) };
+      return {
+        ...NO_COST,
+        ash: at({ ash: CRAFTING.temperAshKills * ((item?.tempers ?? 0) + 1) }).ash,
+      };
     case "temperChoose":
       return NO_COST;
     case "kindle":
@@ -619,6 +622,8 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         ...(item.sockets ? { sockets: item.sockets } : {}),
         ...(item.runes ? { runes: item.runes } : {}),
         ...(item.powerId ? { powerId: item.powerId } : {}),
+        ...(item.tempers ? { tempers: item.tempers } : {}),
+        reforges: (item.reforges ?? 0) + 1,
       };
       // A Greater trigger stays where its trigger went; a Greater stat keeps its rank on a random
       // new stat affix (neuausrichtung-v1.md 7.5).
@@ -642,6 +647,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
         ...item,
         lockedAffix: request.affixIndex,
         temperOffer,
+        tempers: (item.tempers ?? 0) + 1,
       });
     }
     case "temperChoose": {
