@@ -127,7 +127,7 @@ test("Ember Shrine: steal one of three Boons, it shows under the hero in the nex
   await expect(hall).toContainText("EMBER SHRINE");
   await expect(page.getByTestId("shrine").locator(".boon-card")).toHaveCount(3);
   // Brutality is held already: taking it again raises it to rank II, the card shows before → after.
-  await expect(page.getByTestId("boon-brutality")).toContainText("+10 → 15 % Physical Damage");
+  await expect(page.getByTestId("boon-brutality")).toContainText("+5 → 7.5 % Physical Damage");
   await expect(page.getByTestId("boon-brutality").getByTestId("boon-band")).toHaveText(
     "Rank I → II",
   );
