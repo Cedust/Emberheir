@@ -212,3 +212,4 @@ export {
   trainingDummy,
   wearing,
 } from "./dummy";
+export { walletCap, capWallet, fullCurrencies, type WalletCap } from "./wallet-cap";

@@ -31,6 +31,7 @@ import {
   useFlask,
 } from "./run";
 import { type GameData, type GameState } from "./state";
+import { capWallet } from "./wallet-cap";
 import { chooseNode, visitNode } from "./visits";
 import {
   allocateAttributes,
@@ -176,8 +177,16 @@ export type GameAction =
   /** The oldest Story Blip was shown. */
   | { readonly type: "dismissBlip" };
 
-/** Applies one action. Throws `GameActionError` if the action is not allowed right now. */
+/**
+ * Applies one action. Throws `GameActionError` if the action is not allowed right now. Currencies
+ * stop at their cap (`capWallet`), whatever the action paid.
+ */
 export function applyAction(state: GameState, data: GameData, action: GameAction): GameState {
+  const next = runAction(state, data, action);
+  return next === state ? next : capWallet(state, next);
+}
+
+function runAction(state: GameState, data: GameData, action: GameAction): GameState {
   switch (action.type) {
     case "setOut":
       return action.wildfire

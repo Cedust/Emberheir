@@ -203,6 +203,19 @@ export const PROGRESSION = {
    * (min, max), Elites sometimes one, normal enemies never. Cache nodes and Eldrin's Caches pay
    * `cacheEmberCoal`.
    */
+  /**
+   * Currency Caps (economy-v2-plan.md, Timo 2026-11-03: fixed caps, none that grow): the most the
+   * hero carries; more is lost. Well above the dearest price at Level 100 (a full respec ~20,000
+   * Acorns), reached only late in the Wildfire. Runes count per kind.
+   */
+  walletCap: {
+    acorns: 100_000,
+    ash: 50_000,
+    emberCoal: 150,
+    phoenixFeathers: 50,
+    cinderglass: 30,
+    runes: 30,
+  },
   bossEmberCoal: [1, 2],
   eliteEmberCoalChance: 0.15,
   cacheEmberCoal: [1, 2],

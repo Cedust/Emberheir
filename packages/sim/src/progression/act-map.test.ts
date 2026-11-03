@@ -302,6 +302,10 @@ describe("Quiet nodes", () => {
     expect(runes.wallet.runes[visit?.runes?.[0] ?? ""]).toBe(1);
     const coal = applyAction(s, data, { type: "visitNode", choice: 2 });
     expect(coal.wallet.emberCoal).toBe(s.wallet.emberCoal + (visit?.emberCoal ?? 0));
+    // A full pouch takes no more Ember Coal (Currency Caps).
+    const cap = PROGRESSION.walletCap.emberCoal;
+    const full = { ...s, wallet: { ...s.wallet, emberCoal: cap } };
+    expect(applyAction(full, data, { type: "visitNode", choice: 2 }).wallet.emberCoal).toBe(cap);
   });
 
   it("Shrine: a Boon offer like a fight's Shrine, not on a walk past the Gate", () => {

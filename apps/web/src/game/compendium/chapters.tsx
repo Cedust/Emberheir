@@ -913,13 +913,18 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
         id: "currencies",
         title: "Currencies",
         body: (s) => (
-          <Facts
-            rows={[...CURRENCY_ORDER, ...(finaleWon(s) ? (["glass"] as const) : [])].map((id) => ({
-              icon: currencyIcon(id),
-              name: CURRENCIES[id].name,
-              text: CURRENCY_TEXT[id] ?? CURRENCIES[id].explain,
-            }))}
-          />
+          <>
+            <Facts
+              rows={[...CURRENCY_ORDER, ...(finaleWon(s) ? (["glass"] as const) : [])].map(
+                (id) => ({
+                  icon: currencyIcon(id),
+                  name: CURRENCIES[id].name,
+                  text: CURRENCY_TEXT[id] ?? CURRENCIES[id].explain,
+                }),
+              )}
+            />
+            <p>Your pouch has room for only so much. A full one turns orange, and more is lost.</p>
+          </>
         ),
       },
     ],

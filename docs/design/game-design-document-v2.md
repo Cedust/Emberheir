@@ -314,6 +314,10 @@ Endgame **Wildfire I–X**.
 | **Runes** | Sockets und Runewords |
 | **Cinderglass** | nur aus dem Wildfire (Boss 1–2, +1 je 3 Peril, +1 ab VIII): Greater Affixes |
 
+**Currency Caps** (Timo 03.11.2026, feste Zahlen, wachsen nicht): Acorns 100.000, Ash 50.000, Ember Coal 150,
+Phoenix Feathers 50, Cinderglass 30, Runes 30 je Sorte. Was darüber hinaus käme, verfällt; ein voller Beutel
+wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ihren Stand, wachsen aber nicht.
+
 - **Preise in Kämpfen** (Economy-Audit, Timo 26.10.2026; Economy v2, Timo 03.11.2026, `economy-v2-plan.md`):
   Acorn- und Ash-Preise zählen in normalen Kills auf dem Item Level (bei Resets auf dem Boss-Level des Runs), so
   wachsen Einnahme und Preis gleich, egal wie lang ein Run ist. Preis = Nutzen: kleine Verbesserungen kosten Minuten,

@@ -15,6 +15,8 @@
   --k-on-wood-sub: #c2ab84;
   --k-ember: linear-gradient(180deg, #d9662a 0%, #a8401a 55%, #7d2b0e 100%);
   --k-short: #b3261e;
+  /* A full currency pouch (Currency Caps): ember orange. */
+  --k-full: #b84a00;
   --k-frame-shadow:
     0 0 0 5px var(--k-wood), 0 0 0 7px var(--k-brass-dark), 0 20px 48px rgb(0 0 0 / 0.5);
   --k-frame: url("../../assets/ui/window-frame.webp") 125 150 120 stretch;
@@ -25,12 +27,14 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     --k-short: #ff7a6a;
+    --k-full: #ff8a1f;
     --k-tile: url("../../assets/ui/tile-wood.webp");
   }
 }
 
 :root[data-theme="dark"] {
   --k-short: #ff7a6a;
+  --k-full: #ff8a1f;
   --k-tile: url("../../assets/ui/tile-wood.webp");
 }
 
@@ -570,6 +574,11 @@
 
 .stage .k-currency.k-down b {
   color: var(--k-short);
+}
+
+/* Currency Caps: a full pouch takes no more, so its number turns ember orange. */
+.stage .k-currency.k-full b {
+  color: var(--k-full);
 }
 
 .stage .k-currency.k-up .k-coin {
