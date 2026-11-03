@@ -59,7 +59,7 @@ describe("The Last Ember", () => {
     expect(s.legacy.finaleAttempts).toBe(1);
   });
 
-  it("a gauntlet of Warden echoes, one boss ability more each, then the Core; a Flask charge after each win", () => {
+  it("a gauntlet of Warden echoes, one boss ability more each, then the Core; no Flask charge back", () => {
     let s = act(atPrestige(PROGRESSION.finalPrestige), { type: "enterFinale" });
     const echoes = finaleEchoes(data);
     expect(echoes.map((a) => a.id)).toEqual(["test-act", "deadly-act", "final-act"]);
@@ -72,10 +72,10 @@ describe("The Last Ember", () => {
       const rewards = s.run?.rewards ?? fail("missing");
       expect(rewards.items).toEqual([]);
       expect(rewards.xp).toBe(0);
-      // No Boons in the finale (they burn only in the Wildfire): a Flask charge instead.
+      // No Boons in the finale (they burn only in the Wildfire), and the Flask is not refilled.
       expect(rewards.boonOffer).toBeUndefined();
-      expect(rewards.flask).toBe(1);
-      expect(s.flaskCharges).toBe(before + 1);
+      expect(rewards.flask).toBeUndefined();
+      expect(s.flaskCharges).toBe(before);
       s = act(s, { type: "continue" });
     }
     s = act(s, { type: "startStage" });

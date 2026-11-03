@@ -1037,7 +1037,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
           <>
             <p>
               After Stage 5 and 10 of an act an Ember Shrine refills one charge of your Ember Flask.
-              In The Last Ember every fallen Echo does the same. Drink now, or save it for the Boss.
+              Drink now, or save it for the Boss.
             </p>
           </>
         ),
@@ -1270,8 +1270,8 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
               it, each hotter than the last, and then the Harvester's Core.
             </p>
             <p>
-              There is no loot here. Each fallen Echo refills one Flask charge. Fall, and you start
-              again at the entrance.
+              There is no loot here, and no Shrine: your Flask has to last all seven fights. Fall,
+              and you start again at the entrance.
             </p>
           </>
         ),

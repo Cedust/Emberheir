@@ -136,7 +136,7 @@ Endgame **Wildfire I–X**.
   dritte Karte nicht tragbar, bei Rüstung zwei von drei.
 - Ember Coal und Runes fallen **passiv** in den Beutel (Elite 1–2 Ember Coal, Boss 4–6, normale Gegner 5 % auf 1; Economy-Audit 26.10.2026: vorher Elite 2–3 und 15 %, seit Längere Runs gab es Coal im Überfluss).
 - **Ember Shrine** nach Stage 5 und 10 und nach zufälligen Elites auf Fight-Knoten (nicht beim Wandern). In den
-  Acts und im Finale füllt sie **1 Flask-Ladung** auf (wenn die Flask nicht voll ist). **Boons gibt es nur im Wildfire**
+  Acts füllt sie **1 Flask-Ladung** auf (wenn die Flask nicht voll ist). **Boons gibt es nur im Wildfire**
   (Timo 2026-11-03: Boons sind Glück und sollen ein Bonus sein, kein Run darf von ihnen abhängen; siehe 5.5).
 - Boss: zusätzlich **Boss Hoard** (15 % auf eine Trophy des eigenen Wardens, ab Run 4; vorher 10 %) und sein **Echo** für das Heirloom.
 - **Act-Beute** (`notes/laengere-runs/act-beute-entwurf-v1.md`, Timo 21.10.2026): jeder Act hat eine **Home Rune**
@@ -190,7 +190,7 @@ Endgame **Wildfire I–X**.
 ### 2.6 Finale und Endgame ✅
 - **The Last Ember** (nach dem 7. Prestige): 7 Stages ohne Loot und Level-Ups. Stage 1–6 sind die **Warden-Echos** der
   Acts 1–6 (Echo n hat n Boss-Fähigkeiten, Stärke steigt von 60 % auf 90 %), Stage 7 ist der **Harvester's Core** (100 %,
-  härtester Kampf). Nach jedem Echo +1 Flask-Ladung (keine Boons). Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe.
+  härtester Kampf). Keine Boons und keine Flask-Ladung zwischen den Kämpfen: die Flask muss für alle 7 reichen (Timo 2026-11-03). Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe (2026-11-03: 3,6, Finale-Schaden 3,8).
 - **Wildfire I–X** (nach dem Finale): Ein gewählter Act brennt erneut auf einer Stufe. Monster Level 92 (I) bis 110 (X).
   Mehr Legendaries und Runes, **Ember Shrines mit Boons** (halbe Stärke, nach Stage 5/10 und als Knoten; verbrennen am Ende des Trips). Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
   Min-Maxing (`endgame-balance-v1.md`). Pro Stufe bis V +8 % Life, +6 % Schaden; darüber +20 % Life und +25 % Schaden
@@ -642,7 +642,7 @@ Endgame **Wildfire I–X**.
 ### 5.5 Stolen Fire Boons ✅
 - Funken aus dem Feuer der Wardens: eine Familie pro Boss (Ash, Rot, Cinder, Rime, Storm, Void) plus Hearth.
 - **Nur im Wildfire** (Timo 2026-11-03, `notes/boon-auswahl-v1.md` 7): Acts und Finale sind ohne Boons gebalanced,
-  dort gibt die Ember Shrine eine Flask-Ladung. Im Wildfire sind alle Familien offen, jeder Boon wirkt mit **halber
+  in den Acts gibt die Ember Shrine eine Flask-Ladung, im Finale gibt es nichts. Im Wildfire sind alle Familien offen, jeder Boon wirkt mit **halber
   Stärke** (`BOONS.strength` 0,5), und alle Boons verbrennen, wenn der Trip endet (Sieg, Tod oder Retreat).
 - Biegen den Build für einen Trip (Slots Strike, Skill, Reaction, Heat exklusiv; Trigger, Passive stapeln),
   Güte Spark/Flame/Blaze, Fusion Boons.

@@ -217,7 +217,8 @@ in den Acts brauchen eine frische Idee. Elite-Knoten geben schon heute keinen Sh
 
 **Gebaut:**
 - **Acts und The Last Ember ohne Boons.** Die Ember Shrine nach Stage 5 und 10 (und nach Elites auf Fight-Knoten)
-  füllt **1 Flask-Ladung** auf, wenn die Flask Platz hat; im Finale jedes gefallene Echo. Keine Shrine-Knoten und kein
+  füllt **1 Flask-Ladung** auf, wenn die Flask Platz hat. Im Finale gibt es nichts zwischen den Echoes (Timo
+  2026-11-03: die Flask einzuteilen ist die Spannung; erste Version gab 1 Ladung pro Echo, Finale 2,5 Anläufe). Keine Shrine-Knoten und kein
   Cursed Spark mehr auf Act-Karten (alte Karten: Shrine-Knoten = Flask-Ladung). Kein Währungs-Geschenk, die Economy
   ist schon voll.
 - **Wildfire:** Shrines nach Stage 5/10, Shrine-Knoten und Cursed Spark bieten Boons, alle Familien offen, jeder Boon
@@ -240,5 +241,8 @@ in den Acts brauchen eine frische Idee. Elite-Knoten geben schon heute keinen Sh
 Pro Act (neu): 2,8 / 2,9 / 3,0 / 4,3 / 3,1 / 4,1 / 5,0. Hängen bleiben Sword Winter in Act 4 (Frost-Act, bekannt) und
 Wand Storm am Harvester.
 
-Finale und Wildfire (neu, Anläufe der Builds, die es schaffen): The Last Ember 2,5 (vorher 2,8); Wildfire I–IV
+Finale ohne Flask-Ladungen: weiter 2,5 Anläufe (der Autopilot brauchte sie kaum). Finale-Schaden 3,3 → 3,8:
+**3,6 Anläufe** (Cinderguard 4,1, Ashstrider 2,9, Emberseer 4,0; Ziel 3–5).
+
+Wildfire (Anläufe der Builds, die es schaffen; erste Messung mit Finale 2,5 statt 2,8): Wildfire I–IV
 2,2–2,7, V 5,7 (Level-Wand), VI–VII 2,3 / 1,7, VIII 13 (die Hälfte schafft es), IX 23, X 3 von 48 (Min-Maxing).

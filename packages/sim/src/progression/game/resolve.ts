@@ -393,8 +393,9 @@ function meetOnTheRoad(
 }
 
 /**
- * A fight of The Last Ember: no loot, no XP, no Boons (they burn only in the Wildfire). A win gives
- * a Flask charge back; the last win brings the flame home. A death ends the attempt.
+ * A fight of The Last Ember: no loot, no XP, no Boons (they burn only in the Wildfire), no Flask
+ * charge back: the Flask the hero brings must last all seven fights (Timo 2026-11-03). The last
+ * win brings the flame home. A death ends the attempt.
  */
 function resolveFinaleFight(
   state: GameState,
@@ -423,11 +424,9 @@ function resolveFinaleFight(
     });
     return { ...home, boons: EMPTY_BOONS, legacy: { ...home.legacy, finaleWon: true } };
   }
-  const flask = shrineRefill(state, data);
   return {
     ...state,
     stats: won,
-    flaskCharges: state.flaskCharges + flask,
     run: {
       ...run,
       phase: "rewards",
@@ -445,7 +444,6 @@ function resolveFinaleFight(
         items: [],
         itemPick: { kind: "salvageAll" },
         salvagedAsh: 0,
-        ...(flask ? { flask } : {}),
       },
     },
   };

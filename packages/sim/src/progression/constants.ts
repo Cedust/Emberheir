@@ -303,8 +303,7 @@ export const PROGRESSION = {
   flaskStartCharges: 3,
   flaskHeal: 0.35,
   /**
-   * An Ember Shrine in the acts (after Stage 5 and 10) and after each fight of the finale gives
-   * this many Flask charges back (boon-auswahl-v1.md 7; Boons burn only in the Wildfire).
+   * An Ember Shrine in the acts (after Stage 5 and 10) gives this many Flask charges back (boon-auswahl-v1.md 7; Boons burn only in the Wildfire).
    */
   shrineFlaskCharges: 1,
 
@@ -360,13 +359,15 @@ export const PROGRESSION = {
    * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
    * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
    * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
-   * instead of the Run Pressure). Like the walls: mostly damage, little more Life.
+   * instead of the Run Pressure). Like the walls: mostly damage, little more Life. Damage 3.3 → 3.8
+   * when the finale lost its Boons and Flask refills (boon-auswahl-v1.md 7): 2.5 attempts were
+   * below the 3–5 the climax aims at.
    */
   finalPrestige: 7,
-  finale: { life: 0.5, damage: 3.3 },
+  finale: { life: 0.5, damage: 3.8 },
   /**
-   * The Warden echoes take this share of the finale's pressure, from the first to the last (Boons
-   * pile up on the way); the Harvester's Core takes all of it, the hardest fight of the finale.
+   * The Warden echoes take this share of the finale's pressure, from the first to the last; the
+   * Harvester's Core takes all of it, the hardest fight of the finale.
    */
   finaleRamp: { first: 0.6, last: 0.9 },
   /**
