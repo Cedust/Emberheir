@@ -49,6 +49,10 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // Wildfire Bounties (endgame measurement 2026-10-28, V3): a done bounty may carry its Wildfire
   // tier (`bountyDone.wildfire`) and Eldrin's Cache its Cinderglass, both optional.
   17: {},
+  // Economy v2 (economy-v2-plan.md): an item counts its Tempers and Reforges (`item.tempers`,
+  // `item.reforges`), the Camp Marisha's gambles of this visit (`gambled`), all optional. Old
+  // items start at zero, so their next Temper is the cheap first one.
+  18: {},
 };
 
 /** Bounties of save version 15 that are gone → the bounty a done one is paid as. */

@@ -1,9 +1,4 @@
-import {
-  ashbornBlockReason,
-  ashbornSpent,
-  EMPTY_ASHBORN,
-  type AshbornState,
-} from "../ashborn";
+import { ashbornBlockReason, ashbornSpent, EMPTY_ASHBORN, type AshbornState } from "../ashborn";
 import { PROGRESSION } from "../constants";
 import { killPrice } from "../leveling";
 import { requireCamp } from "./guards";
