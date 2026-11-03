@@ -79,6 +79,10 @@ describe("crafting", () => {
     expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).acorns).toBe(
       killPrice(RING.itemLevel, { acorns: 3 * CRAFTING.upgradeKillsPerTier }).acorns,
     );
+    // Ash as well, by the new Tier (W8).
+    expect(craftCost({ kind: "upgrade", itemId: "x" }, upgradedItem(RING)).ash).toBe(
+      killPrice(RING.itemLevel, { ash: 3 * CRAFTING.upgradeAshKillsPerTier }).ash,
+    );
   });
 
   it("Upgrade needs a Phoenix Feather and keeps equipped items usable", () => {

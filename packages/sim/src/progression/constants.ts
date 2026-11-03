@@ -461,6 +461,8 @@ export const CRAFTING = {
    * the Acorns of this many kills × the new Tier.
    */
   upgradeKillsPerTier: 3,
+  /** ...plus the Ash of this many kills × the new Tier (W8: Ash had no second sink late). */
+  upgradeAshKillsPerTier: 4,
   upgradeFeathers: 1,
   /**
    * Temper at Liora (economy-v2-plan.md W2, like Enchant in Diablo 3): the n-th Temper on an item

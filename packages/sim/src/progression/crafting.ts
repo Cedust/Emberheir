@@ -235,7 +235,10 @@ export function craftCost(
     case "upgrade":
       return {
         ...NO_COST,
-        acorns: at({ acorns: CRAFTING.upgradeKillsPerTier * ((item?.tier ?? 1) + 1) }).acorns,
+        ...at({
+          acorns: CRAFTING.upgradeKillsPerTier * ((item?.tier ?? 1) + 1),
+          ash: CRAFTING.upgradeAshKillsPerTier * ((item?.tier ?? 1) + 1),
+        }),
         phoenixFeathers: CRAFTING.upgradeFeathers,
       };
     case "reforge":
