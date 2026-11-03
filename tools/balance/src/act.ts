@@ -4,7 +4,6 @@ import {
   activeRuneword,
   actsInOrder,
   actsInRun,
-  applyAction,
   encounterFight,
   gateStages,
   isWallAct,
@@ -17,7 +16,10 @@ import {
   newGame,
   PROGRESSION,
   type BountyCache,
+  bossLevel,
 } from "@emberheir/sim";
+import { applyAction, bookInto, closePhase, commit, type Ledger } from "./ledger";
+import { craftLikeAPlayer } from "./crafter";
 import {
   autopilotPrestige,
   autopilotRewards,
@@ -70,6 +72,7 @@ function prepare(
   runes: boolean,
   memo: RuneMemo,
   onCache?: (cache: BountyCache) => void,
+  craft = false,
 ): GameState {
   let s = campSalvage(state, data, runes);
   s = campBounty(s, data, onCache);
@@ -77,7 +80,9 @@ function prepare(
   if (runes) s = autopilotRunes(s, data, act, memo);
   s = spendCinderglass(s, data);
   s = bindPowers(s, data);
-  return brewDraught(s, data, act);
+  s = brewDraught(s, data, act);
+  // The min-maxer crafts last, so the Draught's Acorns are put aside first.
+  return craft ? craftLikeAPlayer(s, data, act) : s;
 }
 
 /**
@@ -229,8 +234,14 @@ export function playGenerations(
     readonly onEndgame?: (state: GameState) => void;
     /** The autopilot uses Runes and Runewords (default); false measures without them. */
     readonly runes?: boolean;
+    /** Books every wallet change by source and sink, per run (economy-v2). */
+    readonly ledger?: Ledger;
+    /** The autopilot crafts like a min-maxing player in the Camp (Upgrade, Temper, Reforge, Gamble). */
+    readonly craft?: boolean;
   },
 ): ActRunReport[] {
+  const ledger = options.ledger ?? null;
+  const craft = options.craft ?? false;
   const runes = options.runes ?? true;
   const memo: RuneMemo = new Set();
   // Every start weapon belongs to one class (klassen-v2.md); the hero plays that class.
@@ -245,6 +256,7 @@ export function playGenerations(
   const build = planned && options.mastery ? withMainMastery(planned, options.mastery) : planned;
   const reports: ActRunReport[] = [];
   for (let generation = 1; generation <= options.generations; generation++) {
+    bookInto(ledger, `run ${generation}`, bossLevel(s.legacy.prestige), s);
     let allCleared = true;
     // Run n has acts 1..n (prestige-acts-v1.md); the newest act's boss brings The Harvest.
     const acts = actsInRun(data, s.legacy.prestige).filter((a) => a.number <= options.upToAct);
@@ -282,7 +294,7 @@ export function playGenerations(
       // Every step's wallet gain is income: fights, picks (salvaged cards), quiet nodes, the Camp.
       const earn = (from: GameState, to: GameState) => {
         income = addIncome(income, from, to);
-        return to;
+        return commit(to);
       };
       const countRunes = (st: GameState) => {
         const dropped = st.run?.phase === "rewards" ? (st.run.rewards?.runes ?? []) : [];
@@ -298,7 +310,7 @@ export function playGenerations(
         if (farm && farmTrips < FARM_TRIPS) {
           farmTrips++;
           attempt--;
-          s = earn(s, prepare(s, data, build, farm, runes, memo, onCache));
+          s = earn(s, prepare(s, data, build, farm, runes, memo, onCache, craft));
           const farmBounty = chooseBounty(s, data, farm.id);
           s = took(
             applyAction(s, data, {
@@ -329,7 +341,7 @@ export function playGenerations(
           s = applyAction(s, data, { type: "dismissNotice" });
           continue;
         }
-        s = earn(s, prepare(s, data, build, act, runes, memo, onCache));
+        s = earn(s, prepare(s, data, build, act, runes, memo, onCache, craft));
         const bounty = chooseBounty(s, data, act.id);
         s = took(
           applyAction(s, data, {
@@ -419,6 +431,7 @@ export function playGenerations(
         break;
       }
     }
+    closePhase(s);
     if (!allCleared || generation === options.generations || !s.pendingPrestige) break;
     s = autopilotPrestige(s, data, build);
   }
@@ -426,24 +439,29 @@ export function playGenerations(
     s = autopilotPrestige(s, data, build);
     if (s.legacy.prestige >= PROGRESSION.finalPrestige) {
       options.onEndgame?.(s);
+      bookInto(ledger, "finale", bossLevel(s.legacy.prestige), s);
       const finale = playFinale(
         s,
         data,
         options.generations + 1,
         options.maxAttempts,
         options.onFight,
-        { build, starterWeapon: options.starterWeapon, runes, memo },
+        { build, starterWeapon: options.starterWeapon, runes, memo, craft },
       );
       reports.push(finale.report);
       s = finale.state;
+      closePhase(s);
       for (let tier = 1; tier <= (options.wildfire ?? 0) && s.legacy.finaleWon; tier++) {
-        const fire = playWildfire(s, data, build, { ...options, runes, memo }, tier);
+        bookInto(ledger, `wildfire ${tier}`, bossLevel(s.legacy.prestige), s);
+        const fire = playWildfire(s, data, build, { ...options, runes, memo, craft }, tier);
         reports.push(fire.report);
         s = fire.state;
+        closePhase(s);
         if (!fire.report.cleared) break;
       }
     }
   }
+  bookInto(null);
   return reports;
 }
 
@@ -460,6 +478,7 @@ export function playWildfire(
     readonly maxAttempts: number;
     readonly runes?: boolean;
     readonly memo?: RuneMemo;
+    readonly craft?: boolean;
   },
   tier: number,
 ): { state: GameState; report: ActRunReport } {
@@ -478,7 +497,7 @@ export function playWildfire(
   const memo = options.memo ?? new Set<string>();
   let cleared = false;
   for (let attempt = 0; attempt < options.maxAttempts && !cleared; attempt++) {
-    s = prepare(s, data, build, act, runes, memo);
+    s = prepare(s, data, build, act, runes, memo, undefined, options.craft);
     const bounty = chooseBounty(s, data, act.id, tier);
     s = applyAction(s, data, {
       type: "setOut",
@@ -548,10 +567,11 @@ function farmLastAct(
   starterWeapon: string,
   runes: boolean,
   memo: RuneMemo,
+  craft = false,
 ): GameState {
   const act = actsInOrder(data).at(-1);
   if (!act) return state;
-  let s = prepare(state, data, build, act, runes, memo);
+  let s = prepare(state, data, build, act, runes, memo, undefined, craft);
   const bounty = chooseBounty(s, data, act.id);
   s = applyAction(s, data, {
     type: "setOut",
@@ -584,6 +604,7 @@ export function playFinale(
     readonly starterWeapon: string;
     readonly runes: boolean;
     readonly memo: RuneMemo;
+    readonly craft?: boolean;
   },
 ): { state: GameState; report: ActRunReport } {
   let s = state;
@@ -625,7 +646,7 @@ export function playFinale(
     cleared = s.notice?.kind === "ending";
     s = applyAction(s, data, { type: "dismissNotice" });
     if (!cleared && farm)
-      s = farmLastAct(s, data, farm.build, farm.starterWeapon, farm.runes, farm.memo);
+      s = farmLastAct(s, data, farm.build, farm.starterWeapon, farm.runes, farm.memo, farm.craft);
   }
   const report: ActRunReport = {
     generation,

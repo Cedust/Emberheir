@@ -1,11 +1,11 @@
 import {
-  applyAction,
   type BuildPlan,
   type GameData,
   type GameState,
   learnAshTree,
   setPlanBattlePlan,
 } from "@emberheir/sim";
+import { applyAction, link } from "./ledger";
 import { spendMastery } from "./autopilot";
 
 /** The autopilot at Kaelen: Heirloom, Ash Tree and Battle Plan along the build plan. */
@@ -15,8 +15,9 @@ export function spendSkillPoints(
   plan: BuildPlan | undefined,
 ): GameState {
   if (!plan || state.run) return state;
-  const s = fillWebSockets(learnAshTree(spendMastery(state, data, plan), data, plan), data);
-  return setPlanBattlePlan(s, data, plan);
+  const mastered = spendMastery(state, data, plan);
+  const s = fillWebSockets(link(mastered, learnAshTree(mastered, data, plan), "kaelen"), data);
+  return link(s, setPlanBattlePlan(s, data, plan), "kaelen");
 }
 
 /**

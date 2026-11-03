@@ -22,6 +22,8 @@ import { type PowerSample, powerCurve, powerProbe } from "./curve";
 import { PLAYTIME, median, runMinutes } from "./playtime";
 import { bountyRows } from "./bounties";
 import { EAGER, economyRows } from "./economy";
+import { type Ledger, meanLedger, newLedger } from "./ledger";
+import { printLedger } from "./ledger-report";
 
 const args = parseArgs(process.argv.slice(2));
 
@@ -167,7 +169,8 @@ function runActMode(): void {
         : [args.mastery];
     return masteries.map((mastery) => ({ ...p, mastery }));
   });
-  const byPlay: { label: string; reports: ActRunReport[] }[] = [];
+  const byPlay: { label: string; reports: ActRunReport[]; ledger?: Ledger }[] = [];
+  const ledgers: Ledger[] = [];
   const samples: PowerSample[] = [];
   const probe = args.curve ? powerProbe(GAME_DATA, samples) : undefined;
   for (const { weapon: starterWeapon, build, mastery } of plays as {
@@ -176,8 +179,11 @@ function runActMode(): void {
     mastery?: string;
   }[]) {
     const label = `${build ? `${starterWeapon} (${build})` : starterWeapon}${mastery ? ` ${mastery}` : ""}`;
+    const own: Ledger[] = Array.from({ length: runs }, () => newLedger());
     const all = Array.from({ length: runs }, (_, i) =>
       playGenerations(GAME_DATA, {
+        ledger: own[i] ?? newLedger(),
+        craft: args.craft > 0,
         seed: args.seed + i,
         starterWeapon,
         ...(build ? { build } : {}),
@@ -191,7 +197,8 @@ function runActMode(): void {
         ...(probe ? { onFight: probe } : {}),
       }),
     ).flat();
-    byPlay.push({ label, reports: all });
+    ledgers.push(...own);
+    byPlay.push({ label, reports: all, ledger: meanLedger(own) });
     const finale = GAME_DATA.finale;
     for (let tier = 1; tier <= args.wildfire; tier++) {
       const reports = all.filter((x) => x.act === 100 + tier);
@@ -245,6 +252,7 @@ function runActMode(): void {
   if (!args.newest) console.table(rows);
   printNewestActs(byPlay, generations, runs);
   if (probe) printCurve(samples);
+  if (args.economy) printLedger(meanLedger(ledgers));
   if (args.json) {
     writeFileSync(args.json, JSON.stringify({ args, plays: byPlay }, null, 1));
     console.log(`reports written to ${args.json}`);

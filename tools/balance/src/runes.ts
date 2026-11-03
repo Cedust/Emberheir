@@ -1,6 +1,5 @@
 import {
   type ActData,
-  applyAction,
   CRAFTING,
   type CraftRequest,
   type GameData,
@@ -13,6 +12,7 @@ import {
   type RunewordDefinition,
   targetSlot,
 } from "@emberheir/sim";
+import { applyAction } from "./ledger";
 import { actProfile, type DamageProfile, gearValue } from "./gear-value";
 
 /**
