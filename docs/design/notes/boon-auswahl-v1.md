@@ -208,3 +208,37 @@ Gemessen mit `--act 7 --build all --runs 1`, Seeds 31 und 41, vorher (main) und 
 - Fix: **Ember Ward bleibt** (Hearth hat vier stapelnde, 49 Boons). Die Build-Regel zählt nur Waffe
   (mit Ailment/Attunement) und Skills im Battle Plan.
 - Danach Staff Act 7 (4 Seeds): vorher 4,6 / nachher 4,2 Anläufe.
+
+## 7. Boons nur im Wildfire (Timo 2026-11-03)
+
+Timo: Boons sind Glückssache, ein Run darf nicht davon abhängen, welchen Boon man bekommt. 4,2 Anläufe ohne Boons
+klingen gut ("es soll nicht alles beim ersten Mal machbar sein"). Boons nur fürs Wildfire, halb so stark; Shrines
+in den Acts brauchen eine frische Idee. Elite-Knoten geben schon heute keinen Shrine.
+
+**Gebaut:**
+- **Acts und The Last Ember ohne Boons.** Die Ember Shrine nach Stage 5 und 10 (und nach Elites auf Fight-Knoten)
+  füllt **1 Flask-Ladung** auf, wenn die Flask Platz hat; im Finale jedes gefallene Echo. Keine Shrine-Knoten und kein
+  Cursed Spark mehr auf Act-Karten (alte Karten: Shrine-Knoten = Flask-Ladung). Kein Währungs-Geschenk, die Economy
+  ist schon voll.
+- **Wildfire:** Shrines nach Stage 5/10, Shrine-Knoten und Cursed Spark bieten Boons, alle Familien offen, jeder Boon
+  wirkt mit **halber Stärke** (`BOONS.strength` 0,5). Alle Boons verbrennen am Ende des Trips.
+- **Gegner der Acts −7 % Life und Schaden** (`PROGRESSION.actPressure` 0,93; nicht Finale, nicht Wildfire).
+- **Autopilot farmt wie ein Spieler:** vor einer Wand 1 Level mehr pro Tod im Act (bis zum Level Cap). Vorher farmte
+  er nie über das Level der Wand und blieb 11 von 48 Mal für immer hängen.
+- Save v20: Boons und offene Boon-Angebote eines Acts verschwinden.
+
+**Messung** (`--wildfire 10 --build all --runs 1`, Seeds 31 und 41, 24 Builds, Anläufe pro neuestem Act):
+
+| Stand | alle | Cinderguard | Ashstrider | Emberseer | hängen fest | Spielzeit Run 1–7 |
+|---|---|---|---|---|---|---|
+| main (mit Boons) | 2,67 | 2,61 | 3,22 | 1,94 | – | – |
+| PR #155 (49 Boons) | 2,27 | 2,39 | 2,37 | 1,94 | 1 / 48 | ≈ 12,5 h |
+| ohne Boons, alter Autopilot | 4,22 | 4,45 | 4,47 | 3,55 | 11 / 48 | – |
+| ohne Boons, farmender Autopilot | 4,40 | 4,02 | 5,01 | 4,01 | 5 / 48 | 15,3 h |
+| **neu: + Flask-Shrine + Acts −7 %** | **3,59** | **3,73** | **3,68** | **3,26** | **2 / 48** | **17,3 h** |
+
+Pro Act (neu): 2,8 / 2,9 / 3,0 / 4,3 / 3,1 / 4,1 / 5,0. Hängen bleiben Sword Winter in Act 4 (Frost-Act, bekannt) und
+Wand Storm am Harvester.
+
+Finale und Wildfire (neu, Anläufe der Builds, die es schaffen): The Last Ember 2,5 (vorher 2,8); Wildfire I–IV
+2,2–2,7, V 5,7 (Level-Wand), VI–VII 2,3 / 1,7, VIII 13 (die Hälfte schafft es), IX 23, X 3 von 48 (Min-Maxing).
