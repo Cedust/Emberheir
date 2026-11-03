@@ -134,7 +134,7 @@ Endgame **Wildfire I–X**.
   unter den tragbaren. Die übrigen 25 % bleiben offen, damit der geteilte Stash auch Gear für andere Helden bekommt.
   Affixe bleiben frei. Gilt für alle Item-Picks (auch Cache, Eldrin's Cache) und Marishas Gamble. Vorher war gut jede
   dritte Karte nicht tragbar, bei Rüstung zwei von drei.
-- Ember Coal und Runes fallen **passiv** in den Beutel (Boss 1–2 Ember Coal, Elite zu 15 % 1, normale Gegner keine, Cache-Knoten und Eldrin's Cache 1–2; Economy v2 03.11.2026: vorher Boss 4–6, Elite 1–2, normale 5 %, auch ein Min-Maxer gab nur 2 % davon aus).
+- Ember Coal und Runes fallen **passiv** in den Beutel (Boss 1–2 Ember Coal, Elite zu 15 % 1, normale Gegner keine, Cache-Knoten 1–2, Eldrin's Cache nur über die Elite Hunt; Economy v2 03.11.2026: vorher Boss 4–6, Elite 1–2, normale 5 %, auch ein Min-Maxer gab nur 2 % davon aus).
 - **Ember Shrine** nach Stage 5 und 10, nach zufälligen Elites auf Fight-Knoten und als Shrine-Knoten der Act-Karte (nur in Acts, die in diesem Run noch nicht geschafft sind):
   1 aus 3 **Stolen Fire Boons**.
 - Boss: zusätzlich **Boss Hoard** (15 % auf eine Trophy des eigenen Wardens, ab Run 4; vorher 10 %) und sein **Echo** für das Heirloom.
@@ -292,7 +292,7 @@ Endgame **Wildfire I–X**.
 
   | Bounty | Ziel | Bonus im Cache |
   |---|---|---|
-  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 2–3 Ember Coal |
+  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 3–4 Ember Coal (der einzige Coal im Cache, Timo 03.11.2026) |
   | Trail Hunt | 4–8 Kills auf den Gegner des Acts, dessen nächster Trail am nächsten ist (so viele Kills, wie ihm fehlen); die Karte bekommt einen Hunt-Knoten mehr für ihn | +5 Trail-Kills, eine Karte trägt sicher sein Hunt Affix |
   | Thief Chase (ab Act 2) | den Ember Thief fangen, bevor er flieht (Thief ×5 häufiger, Thief's Trail auf der Karte) | 4 Karten, 2 nehmen |
   | Dry Throat | den Boss schlagen, ohne auf diesem Zug aus der Flask zu trinken | alle Karten eine Rarity höher (im Boss-Fenster des Runs) |
