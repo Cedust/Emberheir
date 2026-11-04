@@ -90,7 +90,7 @@ Gesucht: Zahlen, die eine andere Zahl ausgleichen, statt selbst eine Regel zu se
 
 Jeder Schritt wird mit 8 Seeds gemessen und vor dem Einbau gezeigt.
 
-## 5. Stand nach Schritt 1–4 (2026-11-05)
+## 5. Stand nach Schritt 1–4 (2026-11-04)
 
 **Korrektur:** Starfall ist laut Heirloom ein Void-Pfad („Void · Corruption, Crits“). Der Autopilot spielt ihn richtig;
 der „Messfehler“ aus Abschnitt 4 war keiner.
@@ -142,6 +142,4 @@ Avalanche, Fire Aura). Test „Chill bremst alles, was der Gegner tut“ (nicht 
 | Ashstrider | 3,1 | 4,1 | 5,9 | 4,1 | 3,5 | 1,7 | 3,4 | 3,71 (3,75) |
 | Emberseer | 2,0 | 1,5 | 2,0 | 1,7 | 3,0 | 1,8 | 3,4 | 2,20 (2,53) |
 
-Act 7 wird für alle leichter (Harvester-Tode 89 → 48), Emberseer am meisten (viele ihrer Builds kühlen). Die Regel
-wäre genre-üblich und ersetzt die Sonderregel Cold Snap (Chill bremst nur das Ausholen), macht aber Emberseer noch
-leichter. Nur zusammen mit Punkt 5 sinnvoll.
+Act 7 wird für alle leichter (Harvester-Tode 89 → 48), Emberseer am meisten (viele ihrer Builds kühlen). Die Regel wäre genre-üblich (Cold Snap aus der Mastery bliebe ein Bonus obendrauf), macht aber Emberseer noch leichter. Nur zusammen mit Punkt 5 sinnvoll.
