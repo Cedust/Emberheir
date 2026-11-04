@@ -50,6 +50,16 @@ export const COMBAT = {
     evasionPerDexterity: 0.02,
     /** % more Barrier per Intelligence point (the Barrier itself comes from gear). */
     barrierPerIntelligence: 0.08,
+    /**
+     * Barrier Siphon per Intelligence point (emberseer-kurve-v1.md): Barrier is full at fight
+     * start and refills only from the damage you deal, this share of every hit and ailment tick
+     * per point, up to its max. It used to trickle back by time (3 % of max per s), which never
+     * grew with the fight: in Act 1 it covered a third of a boss's damage, at the Harvester a
+     * tenth. Damage grows with the monsters, so the Siphon keeps its footing all game, like
+     * Lifesteal does for weapon fighters. Tied to Intelligence so a small Barrier from a node or
+     * a charm stays small (a flat Siphon refilled it after every hit).
+     */
+    barrierSiphonPerIntelligence: 0.0025,
     // Resistance comes from gear for every class (Timo, PoE rule).
     allResistancePerIntelligence: 0,
     attackSpeedPerAgility: 0.03,
@@ -75,14 +85,6 @@ export const COMBAT = {
   /** Stacking Sunder of Weapon Mastery before nodes: no chance of its own, 5 % Armor per stack. */
   sunder: { chance: 0, perStack: 0.05, maxStacks: 5, duration: 5 },
 
-  /**
-   * Barrier (like Energy Shield): full at fight start and always trickles back (`steady` of its
-   * max per s), so it holds a long boss fight like Armor does. After `delay` s without a hit it
-   * refills fast (`perSecond`). The delay keeps it from refilling fully between the slow swings
-   * of early bosses; refilling slower than this made the Emberseer far too safe in Acts 2-3
-   * (Timo 2026-10-19).
-   */
-  barrierRecharge: { steady: 0.03, delay: 3, perSecond: 0.1 },
   /** Share of a blocked hit that a block stops (before Stoneguard). */
   blockReduction: 0.5,
   /**

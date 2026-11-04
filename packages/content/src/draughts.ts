@@ -35,11 +35,12 @@ export const DRAUGHTS: readonly DraughtDefinition[] = [
   {
     id: "ward-draught",
     name: "Ward Draught",
-    description: "+25 % Barrier, recharges 50 % faster",
-    explain: "Your Barrier grows and fills up again faster. Best for casters with Barrier gear.",
+    description: "+25 % Barrier, refills 50 % faster",
+    explain:
+      "Your Barrier grows, and your damage fills it up again faster. Best for casters with Barrier gear.",
     color: 0x8ec8f0,
     bonuses: { increasedBarrier: 0.25 },
-    rules: { barrierRecharge: 1.5 },
+    rules: { barrierSiphon: 1.5 },
   },
   {
     id: "vigor-draught",

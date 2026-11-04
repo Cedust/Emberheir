@@ -17,8 +17,8 @@ export interface AshbornPerPoint {
   readonly bonuses?: StatBonuses;
   /** Heals this share of the damage the hero's ailments deal over time. */
   readonly dotLifesteal?: number;
-  /** Barrier recharges this much faster (0.04 = +4 %). */
-  readonly barrierRecharge?: number;
+  /** Barrier Siphon this much stronger (0.04 = +4 %). */
+  readonly barrierSiphon?: number;
   /** Skills cost this much less Heat (0.01 = −1 %). */
   readonly skillCost?: number;
   /** Raises the cap of every Resistance. */
@@ -115,7 +115,7 @@ export function ashbornEffects(
     const p = v.perPoint;
     bonuses.push(scaleBonuses(p.bonuses, n));
     if (p.dotLifesteal) rules.push({ dotLifesteal: p.dotLifesteal * n });
-    if (p.barrierRecharge) rules.push({ barrierRecharge: 1 + p.barrierRecharge * n });
+    if (p.barrierSiphon) rules.push({ barrierSiphon: 1 + p.barrierSiphon * n });
     if (p.skillCost) rules.push({ skillCostMultiplier: 1 - p.skillCost * n });
     if (p.maxResistance) {
       const m = p.maxResistance * n;

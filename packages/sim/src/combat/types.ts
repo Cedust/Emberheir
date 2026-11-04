@@ -509,8 +509,8 @@ export interface CombatRules {
   readonly chilledDamage?: number;
   /** Merged bonuses against a Chilled enemy for the "more" pool. */
   readonly chilledMore?: number;
-  /** Multiplies how fast your Barrier recharges (Ward Draught, Barrier Notables). */
-  readonly barrierRecharge?: number;
+  /** Multiplies the Barrier Siphon, the share of your damage that refills Barrier (Ward Draught, Barrier Notables); 0 = none. */
+  readonly barrierSiphon?: number;
   /** Raises the Resistance cap of single elements (Fire Draught: +5 %). */
   readonly maxResistance?: Readonly<Partial<Record<Element, number>>>;
   /**

@@ -22,7 +22,7 @@ import {
   attackRate,
 } from "./fighter";
 import { addHeat, stepHeat, triggerThreshold } from "./heat";
-import { dealDamage, defaultAttack, extraAttack, heal, inflict, rechargeBarrier } from "./hits";
+import { dealDamage, defaultAttack, extraAttack, heal, inflict } from "./hits";
 import { PERK } from "./perks";
 import {
   actReaction,
@@ -58,7 +58,6 @@ import type { CombatantSetup, RotationSlot, Side, SkillDefinition } from "./type
 
 /** Ailments, DoT ticks and passive Heat. */
 function stepStatus(core: FightCore, f: Fighter, dt: number): void {
-  rechargeBarrier(core, f, dt);
   const source = core.fighters[other(f.side)];
   const swr = source.setup.weaponRules;
   const { states, ticks, expired } = stepAilments(f.ailments, dt, {
