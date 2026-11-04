@@ -703,8 +703,11 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
   jeden Gegner, so viel wie Armor von einem Physical Hit wegnimmt: Physical und Elemental kommen gleich schwer durch
   (Klassengerüst-Balance; vorher 30 %, das bremste jeden Element-Path). Act-Gegner mit Element-Thema haben 10–15 %
   in ihrem Element (Schritt 7, vorher 20–25 %: Element-Builds hingen im passenden Act, Cold in Act 4, Fire in Act 3).
-  Emberfall (Act 7) hat 10 % All Resistance (vorher 15 %), der Harvester 15 %; die Ash Revenant trifft Physical, so
-  stehen dort zwei Physical- und zwei Fire-Gegner.
+  Emberfall (Act 7) hat **keine** All Resistance obendrauf (nur die 10 % aller Gegner), der Harvester +5 % (zusammen
+  15 %, so viel wie seine Armor von einem Physical Hit nimmt). Vorher hatten alle Act-7-Gegner +10 % auf jedes Element
+  und der Harvester +15 % (25 % gegen 14 % Physical): Element-Builds kamen dort ein Viertel langsamer durch, Emberseer
+  töteten Bosse in Act 1–6 15–25 % schneller als die anderen und am Harvester 8 % langsamer (`emberseer-kurve-v1.md`,
+  2026-11-04). Die Ash Revenant trifft Physical, so stehen dort zwei Physical- und zwei Fire-Gegner.
 - **Skalierung** (`balancing-neustart-v1.md` Schritt 3): Das Monster Level bestimmt die Grundwerte über **eine
   Tabelle** (`MONSTER_TABLE`), gemessen am Autopilot-Helden: Monster-Life wächst wie der Schaden pro Sekunde des Helden,
   Monster-Schaden wie seine effektive Life (`npm run balance -- --act 7 --build all --mastery all --curve 1`). Dazu

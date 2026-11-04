@@ -84,3 +84,56 @@ Ashstrider ändern sich nur im Rauschen (±1 pro Zelle bei 4 Seeds); ihr kleines
 mehr die Ursache (Größe und Start ändern fast nichts); Kandidaten für einen nächsten Schritt: dass Emberseer Normal-
 Kämpfe fast ohne Life-Verlust überstehen (Barrier voll bei jedem Kampfbeginn) und ihr Schaden in den mittleren Acts.
 Finale und Wildfire sind noch nicht neu gemessen.
+
+## 6. Nachmessung (Timo 2026-11-04: Ursache von Act 2–6 und Wildfire)
+
+### Wildfire und Finale (`--wildfire 10 --build all --runs 1`, Seeds 31/41/51/61)
+
+Anläufe der Builds, die die Stufe erreichen (in Klammern: wie viele sie schaffen, wenn nicht alle):
+
+| | Finale | W I | W II | W III | W IV | W V | W VI | W VII | W VIII | W IX | W X |
+|---|---|---|---|---|---|---|---|---|---|---|---|
+| alt (main) Cinderguard | 3,5 | 1,6 | 2,6 | 1,9 | 2,2 | 3,3 | 2,8 | 1,6 | 12,9 (22 %) | 6,5 (50 %) | 14 (50 %) |
+| alt Ashstrider | 2,7 | 1,4 | 1,2 | 2,5 | 1,8 | 3,8 | 2,5 | 1,8 | 13,1 (61 %) | 10,9 (77 %) | 4,5 (24 %) |
+| alt Emberseer | 4,4 | 2,1 | 2,4 | 1,6 | 2,1 | 3,6 | 2,2 | 1,9 | 14,5 (10 %) | 2,5 | – (0 %) |
+| neu Cinderguard | 3,0 | 1,5 | 3,6 | 1,9 | 2,6 | 3,4 | 2,7 | 1,7 | 14,1 (57 %) | 14,9 (45 %) | 7,5 (44 %) |
+| neu Ashstrider | 2,9 | 1,2 | 1,4 | 2,3 | 1,6 | 4,0 | 2,1 | 1,7 | 11,7 (72 %) | 12,0 (46 %) | 9,4 (42 %) |
+| neu Emberseer | 4,6 | 2,6 | 1,4 | 1,6 | 2,0 | 2,9 | 2,1 | 1,9 | 18,4 (29 %) | 11,7 (43 %) | – (0 %) |
+
+Wildfire I–VII bleibt für alle Klassen gleich (1,2–4 Anläufe). In VIII schaffen es jetzt 29 % der Emberseer
+(vorher 10 %), Cinderguard 57 %, Ashstrider 72 %. Das Finale ist für Emberseer weiter das schwerste (4,6 gegen 3,0 /
+2,9). Wildfire X schafft kein Emberseer. Gemessen **vor** der Resistenz-Änderung unten.
+
+### Ursache von Act 2–6
+
+| Test (nur Emberseer) | A2 | A3 | A4 | A5 | A6 | A7 |
+|---|---|---|---|---|---|---|
+| Barrier Siphon (Stand PR) | 1,7 | 2,0 | 2,8 | 2,0 | 1,7 | 5,6 |
+| Barrier fest 50 % vom Life | 2,0 | 1,5 | 2,0 | 2,8 | 1,5 | 7,0 |
+| Barrier fest 35 % vom Life | 1,8 | 1,6 | 1,9 | 3,0 | 1,5 | 5,3 |
+| Barrier leer bei Kampfbeginn | 2,1 | 1,9 | 1,8 | 2,1 | 1,3 | 4,7 |
+| Schaden −15 % | 2,3 | 2,8 | 2,4 | 2,4 | 2,2 | 9,2 |
+
+- **Die Barrier ist es nicht mehr:** Größe, festes Verhältnis zum Life und leer starten ändern Act 2–6 nicht.
+- **Der Schaden ist es:** Emberseer töten Bosse in Act 1–6 15–25 % schneller als die beste andere Klasse
+  (Gegner-Life pro Sekunde), am Harvester 8 % langsamer. Sie nehmen in jedem Act 50–70 % mehr Rohschaden (kein Armor,
+  keine Evasion) und gleichen das mit Barrier und schnellerem Töten aus.
+- **Warum der Harvester anders ist: Element-Resistenzen.** In Act 3–6 widersteht jeder Gegner nur dem Element seines
+  Acts. Ein Emberseer trifft sonst auf 10 % (die Grundresistenz jedes Monsters), Physical auf etwa 10 % Armor
+  (Brutes mehr). In Emberfall hatte **jeder** Gegner +10 % auf jedes Element (20 %), der Harvester +15 % (25 %, gegen
+  Physical nur 14 %; der Code-Kommentar wollte „15 % each“ und hatte die Grundresistenz vergessen).
+
+**Gebaut:** Act-7-Gegner ohne All Resistance obendrauf, Harvester +5 % (15 %, gleich wie gegen Physical).
+
+| Klasse | A1–A6 | A7 vorher | A7 neu | alle |
+|---|---|---|---|---|
+| Cinderguard | unverändert | 4,1 | 3,9 | 3,14 |
+| Ashstrider | unverändert | 5,4 | 4,7 | 3,63 |
+| Emberseer | unverändert | 5,6 | 4,7 | 2,39 |
+
+Mit zusätzlich −12 % Emberseer-Schaden: Act 2–6 2,4 / 1,8 / 1,9 / 2,7 / 2,5 (Ø 2,3 statt 1,9), Act 7 wieder 5,5.
+Weniger Schaden allein macht Act 2–6 kaum schwerer, Act 7 aber deutlich.
+
+**Offen:** Emberseer bleiben in Act 2–6 die leichteste Klasse (Ø 1,9 gegen etwa 3,3). Finale und Wildfire mit der
+Resistenz-Änderung nicht neu gemessen (Harvester und Act-7-Gegner kommen dort vor, Element-Builds werden dort etwas
+leichter).
