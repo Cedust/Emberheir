@@ -719,7 +719,7 @@ const MACE = buildTree({
       color: C.storm,
       infusion: { damageType: "lightning", ailment: "shock", chance: 0.2 },
       techniques: [
-        technique("Guard", "+2 % Block Chance.", { bonuses: { blockChance: 0.02 } }),
+        versusAilment("Storm Hammer", "shock", 0.4),
         ailmentPower("Charged Head", "shock", 0.1),
       ],
       forks: [
