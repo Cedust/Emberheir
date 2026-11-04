@@ -1119,13 +1119,20 @@ export function dotBurst(
   return damage;
 }
 
-export function heal(core: FightCore, f: Fighter, amount: number): void {
-  // Black Flame: Corruption cuts healing like Burn (they do not stack).
+/**
+ * How much of a recovery still lands: Burn cuts healing and Barrier Siphon alike, and Black Flame
+ * makes Corruption do the same (they do not stack).
+ */
+function recoveryFactor(core: FightCore, f: Fighter): number {
   const blackFlame =
     f.ailments.corruption && core.fighters[other(f.side)].setup.rules?.corruptionStopsHeal
       ? 1 - COMBAT.burnHealingReduction
       : 1;
-  const factor = Math.min(healingFactor(f.ailments), blackFlame);
+  return Math.min(healingFactor(f.ailments), blackFlame);
+}
+
+export function heal(core: FightCore, f: Fighter, amount: number): void {
+  const factor = recoveryFactor(core, f);
   const healed = Math.min(f.stats.maxLife - f.life, Math.round(amount * factor));
   if (healed <= 0) return;
   f.life += healed;
@@ -1140,13 +1147,13 @@ export function heal(core: FightCore, f: Fighter, amount: number): void {
 
 /**
  * Barrier Siphon: part of the damage a fighter deals flows back into its Barrier, up to its max
- * (Barrier from skills above the max is kept). One "barrier" event when it is full again, so the
+ * (Barrier from skills above the max is kept). Burn cuts it like healing. One "barrier" event when it is full again, so the
  * arena shows it without spamming the log.
  */
 export function siphonBarrier(core: FightCore, f: Fighter, dealt: number): void {
   const max = f.stats.barrier;
   if (max <= 0 || f.barrier >= max || dealt <= 0) return;
-  const gain = Math.min(max - f.barrier, dealt * f.stats.barrierSiphon);
+  const gain = Math.min(max - f.barrier, dealt * f.stats.barrierSiphon * recoveryFactor(core, f));
   if (gain <= 0) return;
   f.barrier += gain;
   f.barrierSiphoned += gain;

@@ -3,6 +3,7 @@ import { COMBAT } from "./constants";
 import type { CombatEvent } from "./events";
 import { Fight, runFight } from "./fight";
 import { heavyHitCap } from "./fighter";
+import { siphonBarrier } from "./hits";
 import { PERK, type PerkId } from "./perks";
 import { mergeRules } from "./rules";
 import { deriveStats } from "./stats";
@@ -126,6 +127,28 @@ describe("Fight", () => {
     const siphon = 10 * COMBAT.heir.barrierSiphonPerIntelligence;
     expect(gain).toBeGreaterThan(0);
     expect(gain).toBeCloseTo(Math.min(full - before, dealt * siphon), 5);
+  });
+
+  it("halves the Barrier Siphon while the hero Burns, like healing", () => {
+    const hero = setup({
+      baseLife: 100,
+      attributeScale: "heir",
+      attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+      bonuses: { ...NO_CRIT, barrier: 2000 },
+    });
+    const siphonOf = (burning: boolean) => {
+      const fight = new Fight(hero, dummy({ baseLife: 100_000 }), 1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reach into the core
+      const core = (fight as any).core;
+      const f = core.fighters.hero;
+      f.barrier = 0;
+      if (burning) f.ailments = { burn: { damagePerSecond: 1, remaining: 4, nextTickIn: 1 } };
+      siphonBarrier(core, f, 1000);
+      return f.barrier;
+    };
+    const full = 1000 * 10 * COMBAT.heir.barrierSiphonPerIntelligence;
+    expect(siphonOf(false)).toBeCloseTo(full, 5);
+    expect(siphonOf(true)).toBeCloseTo(full * (1 - COMBAT.burnHealingReduction), 5);
   });
 
   it("refills no Barrier under Unyielding (Barrier Siphon 0)", () => {

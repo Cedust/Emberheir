@@ -412,7 +412,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|---|
 | Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert | Rend (Skill) |
 | Physical | **Poison** | 14 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
-| Fire | **Burn** | 22 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus, höchstens so viel wie ein normaler Burn (4 s) noch macht (Schritt 7) |
+| Fire | **Burn** | 22 %/s für 4 s, halbiert Heilung und Barrier Siphon des Getroffenen (Siphon seit 2026-11-04) | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus, höchstens so viel wie ein normaler Burn (4 s) noch macht (Schritt 7) |
 | Void | **Corruption** | 9 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
 | Cold | **Chill** | −25 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −40 %) | – |
 | Lightning | **Shock** | +10 % erlittener Schaden pro Stack, bis 3 Stacks, 3 s (mit Ailment Effect bis +50 %) | – |
@@ -443,7 +443,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|
 | **Armor** | Gear, STR | Reduktion = Armor / (Armor + 20 × Angreifer-Level), max. 90 % |
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
-| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt, dazu 0,2 % Barrier Siphon/Punkt) | voll bei Kampfbeginn; **Barrier Siphon**: pro INT-Punkt füllen 0,2 % von allem Schaden, den du machst (Treffer und Ailments), sie wieder auf (INT 10 = 2 %; zuerst 0,25 %, nach 8-Seed-Messung −20 %), nie über das Maximum. Kein Aufladen über Zeit mehr (2026-11-04, `emberseer-kurve-v1.md`: 3 %/s Aufladen wuchs nicht mit dem Gegnerschaden, Emberseer früh am leichtesten, am Harvester am schwersten). Unyielding: Siphon 0 |
+| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt, dazu 0,2 % Barrier Siphon/Punkt) | voll bei Kampfbeginn; **Barrier Siphon**: pro INT-Punkt füllen 0,2 % von allem Schaden, den du machst (Treffer und Ailments), sie wieder auf (INT 10 = 2 %; zuerst 0,25 %, nach 8-Seed-Messung −20 %), nie über das Maximum; Burn (und Black Flame) halbiert ihn wie Heilung. Kein Aufladen über Zeit mehr (2026-11-04, `emberseer-kurve-v1.md`: 3 %/s Aufladen wuchs nicht mit dem Gegnerschaden, Emberseer früh am leichtesten, am Harvester am schwersten). Unyielding: Siphon 0 |
 | **Block** | Shield | stoppt 50 % des Treffers, max. 75 % Chance |
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |

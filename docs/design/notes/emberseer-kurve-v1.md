@@ -160,3 +160,27 @@ Ash Revenant 1,2 pro Durchlauf (Cinderguard 0,4 / 0,9, Ashstrider 1,1 / 0,7).
 **Offen:** Emberseer sind in Act 2–4 weiter die leichteste Klasse (1,6–1,8 gegen 3,1–5,3; vor allem die Act-Bosse
 Mother of Rot, Cinder Tyrant, Rime Warden), in Act 7 leicht die schwerste (4,8 gegen 3,3–3,6). Der Act-7-Rest sind
 physische Gegner (Ash Revenant).
+
+## 8. Nachmessung Act 2–4 (Timo 2026-11-04)
+
+Heilung nach Quelle (4 Seeds, nur neue Acts): Gegen Bosse decken Heilung und Siphon bei allen Klassen etwa gleich viel
+(Emberseer 62–76 % des Rohschadens, Cinderguard/Ashstrider 55–80 %). Auch der Schaden pro Sekunde im Verhältnis zu
+Life + Barrier ist fast gleich. Unterschied: Emberseer kommen mit 95–99 % Life zum Boss, die anderen mit 85–91 %
+(in normalen Kämpfen trifft der Schaden zuerst die Barrier, der Siphon füllt sie wieder auf).
+
+Getestet (8 Seeds, Emberseer A1–A7):
+
+| Test | A1 | A2 | A3 | A4 | A5 | A6 | A7 | alle |
+|---|---|---|---|---|---|---|---|---|
+| Stand (Siphon 0,2 %) | 2,0 | 1,6 | 1,8 | 1,8 | 2,7 | 2,4 | 4,8 | 2,43 |
+| Barrier bleibt zwischen Stages leer | 2,0 | 1,7 | 1,9 | 2,0 | 2,0 | 2,1 | 4,7 | 2,34 |
+| Barrier fängt nur 50 % jedes Treffers | 2,2 | 2,0 | 1,9 | 2,8 | 3,7 | 2,4 | 4,5 | 2,78 |
+| Burn halbiert auch den Siphon (gebaut) | 2,0 | 1,6 | 1,9 | 2,0 | 2,0 | 2,0 | 5,3 | 2,42 |
+
+**Gebaut:** Burn und Black Flame halbieren Heilung und Barrier Siphon gleich (vorher traf die Heilungs-Sperre nur Life).
+Für die Balance fast ohne Wirkung, aber dieselbe Regel für alle Klassen. Cinderguard und Ashstrider bewegen sich in
+jedem Lauf um bis zu ±1,5 Versuche pro Act, obwohl die Tests sie kaum betreffen: Einzelne Zellen rauschen auch mit
+8 Seeds um etwa ±1.
+
+**Offen:** Emberseer bleiben in Act 2–4 am leichtesten; als Nächstes über die Act-Bosse (Mother of Rot, Cinder Tyrant)
+statt über die Barrier.

@@ -437,7 +437,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                   name: "Fire",
                   text: (
                     <>
-                      <S id="burn" /> hurts over time and halves the enemy's healing.
+                      <S id="burn" /> hurts over time and halves healing and Barrier Siphon.
                     </>
                   ),
                 },
