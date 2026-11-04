@@ -36,7 +36,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
   let hitMore = 0;
   let chilledDamage = 1;
   let chilledMore = 0;
-  let barrierRecharge = 1;
+  let barrierSiphon = 1;
   let skillDamage = 0;
   let ailmentChance = 0;
   let ailmentDuration = 0;
@@ -92,7 +92,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     const [chilledLess, chilledBonus] = damageSplit(r.chilledDamage, r.chilledMore);
     chilledDamage *= chilledLess;
     chilledMore += chilledBonus;
-    barrierRecharge *= r.barrierRecharge ?? 1;
+    barrierSiphon *= r.barrierSiphon ?? 1;
     skillDamage += r.skillDamage ?? 0;
     ailmentChance += r.ailmentChance ?? 0;
     ailmentDuration += r.ailmentDuration ?? 0;
@@ -136,7 +136,7 @@ export function mergeRules(...sources: readonly (CombatRules | undefined)[]): Co
     ...(hitMore ? { hitMore } : {}),
     ...(chilledDamage !== 1 ? { chilledDamage } : {}),
     ...(chilledMore ? { chilledMore } : {}),
-    ...(barrierRecharge !== 1 ? { barrierRecharge } : {}),
+    ...(barrierSiphon !== 1 ? { barrierSiphon } : {}),
     ...(skillDamage ? { skillDamage } : {}),
     ...(ailmentChance ? { ailmentChance } : {}),
     ...(ailmentDuration ? { ailmentDuration } : {}),

@@ -268,8 +268,9 @@ const REGIONS: readonly RegionSpec[] = [
             reach: [t("Iron Resolve", TENACITY), t("Bulk", ARMOR)],
             keystone: {
               name: "Unyielding",
-              description: "Your max Life is 30 % higher. Your Barrier no longer recharges.",
-              rules: { lifeMultiplier: 1.3, barrierRecharge: 0 },
+              description:
+                "Your max Life is 30 % higher. Your damage no longer refills your Barrier.",
+              rules: { lifeMultiplier: 1.3, barrierSiphon: 0 },
             },
           },
         ],
@@ -621,9 +622,9 @@ const REGIONS: readonly RegionSpec[] = [
       ],
       notable: {
         name: "Ever-Ward",
-        description: "+20 % Barrier. Your Barrier recharges 30 % faster.",
+        description: "+20 % Barrier. Your damage refills 30 % more Barrier.",
         bonuses: { increasedBarrier: 0.2 },
-        rules: { barrierRecharge: 1.3 },
+        rules: { barrierSiphon: 1.3 },
       },
     },
   },

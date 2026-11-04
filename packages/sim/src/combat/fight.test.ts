@@ -3,6 +3,7 @@ import { COMBAT } from "./constants";
 import type { CombatEvent } from "./events";
 import { Fight, runFight } from "./fight";
 import { heavyHitCap } from "./fighter";
+import { siphonBarrier } from "./hits";
 import { PERK, type PerkId } from "./perks";
 import { mergeRules } from "./rules";
 import { deriveStats } from "./stats";
@@ -67,7 +68,7 @@ describe("Fight", () => {
     expect(fight.snapshot().hero.life).toBe(40);
   });
 
-  it("gives the hero Barrier from gear, raised by Intelligence, that recharges in the fight", () => {
+  it("gives the hero Barrier from gear, raised by Intelligence, that does not refill by time", () => {
     const hero = dummy({
       baseLife: 100,
       attributeScale: "heir",
@@ -87,13 +88,87 @@ describe("Fight", () => {
     const hit = fight.snapshot().hero.barrier;
     expect(hit).toBeLessThan(full);
     expect(fight.snapshot().hero.life).toBe(100);
-    // Right after a hit it only trickles back...
-    fight.advance(1);
-    const trickle = fight.snapshot().hero.barrier;
-    expect(trickle - hit).toBeCloseTo(full * COMBAT.barrierRecharge.steady, 0);
-    // ...and a moment without a hit fills it up.
-    fight.advance(3.6);
-    expect(fight.snapshot().hero.barrier).toBeCloseTo(full);
+    // A hero that deals no damage gets nothing back, however long it waits.
+    fight.advance(4.5);
+    expect(fight.snapshot().hero.barrier).toBe(hit);
+  });
+
+  it("refills the Barrier by the Barrier Siphon: per Intelligence a share of the damage dealt", () => {
+    const hero = setup({
+      baseLife: 100,
+      attributeScale: "heir",
+      attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+      bonuses: { ...NO_CRIT, barrier: 2000 },
+    });
+    const enemy = setup({
+      weapon: { ...TEST_WEAPON, attacksPerSecond: 0.2 },
+      bonuses: NO_CRIT,
+      baseLife: 100_000,
+    });
+    const fight = new Fight(hero, enemy, 1);
+    const full = fight.snapshot().hero.barrier;
+    fight.advance(5.2);
+    const before = fight.snapshot().hero.barrier;
+    expect(before).toBeLessThan(full);
+    const from = fight.events.length;
+    fight.advance(4.5);
+    const dealt = fight.events
+      .slice(from)
+      .reduce(
+        (sum, e) =>
+          sum +
+          ((e.type === "hit" && e.side === "hero") || (e.type === "dot" && e.side === "enemy")
+            ? e.damage
+            : 0),
+        0,
+      );
+    expect(dealt).toBeGreaterThan(0);
+    const gain = fight.snapshot().hero.barrier - before;
+    const siphon = 10 * COMBAT.heir.barrierSiphonPerIntelligence;
+    expect(gain).toBeGreaterThan(0);
+    expect(gain).toBeCloseTo(Math.min(full - before, dealt * siphon), 5);
+  });
+
+  it("halves the Barrier Siphon while the hero Burns, like healing", () => {
+    const hero = setup({
+      baseLife: 100,
+      attributeScale: "heir",
+      attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+      bonuses: { ...NO_CRIT, barrier: 2000 },
+    });
+    const siphonOf = (burning: boolean) => {
+      const fight = new Fight(hero, dummy({ baseLife: 100_000 }), 1);
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any -- reach into the core
+      const core = (fight as any).core;
+      const f = core.fighters.hero;
+      f.barrier = 0;
+      if (burning) f.ailments = { burn: { damagePerSecond: 1, remaining: 4, nextTickIn: 1 } };
+      siphonBarrier(core, f, 1000);
+      return f.barrier;
+    };
+    const full = 1000 * 10 * COMBAT.heir.barrierSiphonPerIntelligence;
+    expect(siphonOf(false)).toBeCloseTo(full, 5);
+    expect(siphonOf(true)).toBeCloseTo(full * (1 - COMBAT.burnHealingReduction), 5);
+  });
+
+  it("refills no Barrier under Unyielding (Barrier Siphon 0)", () => {
+    const hero = setup({
+      baseLife: 100,
+      attributeScale: "heir",
+      attributes: { ...ZERO_ATTRIBUTES, intelligence: 10 },
+      bonuses: { ...NO_CRIT, barrier: 2000 },
+      rules: { barrierSiphon: 0 },
+    });
+    const enemy = setup({
+      weapon: { ...TEST_WEAPON, attacksPerSecond: 0.2 },
+      bonuses: NO_CRIT,
+      baseLife: 100_000,
+    });
+    const fight = new Fight(hero, enemy, 1);
+    fight.advance(5.2);
+    const before = fight.snapshot().hero.barrier;
+    fight.advance(4.5);
+    expect(fight.snapshot().hero.barrier).toBe(before);
   });
 
   it("gives no Barrier without Barrier gear, however much Intelligence", () => {

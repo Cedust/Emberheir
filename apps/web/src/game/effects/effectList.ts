@@ -527,7 +527,7 @@ export const EFFECTS: readonly EffectEntry[] = [
     kit: WAND,
     name: "Barrier-Gewinn",
     verdict: "keep",
-    what: "Der Held bekommt Barrier (eine Schicht vor dem Life, z. B. durch INT).",
+    what: "Der Held bekommt Barrier (eine Schicht vor dem Life), durch Skills oder wenn sein eigener Schaden sie wieder voll macht.",
     see: "Ein heller Ring und „+… Barrier“.",
     play: (p) => p.events([{ t: 0, type: "barrier", side: "hero", amount: 400 }]),
   },

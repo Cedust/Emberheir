@@ -648,7 +648,9 @@ export const VOIDBORN_MAW: EnemyDefinition = {
 
 /**
  * Act 7 (Emberfall) enemies: the end of the world, every element at once. Only 10 stages
- * (stage 91–100), then the Harvester.
+ * (stage 91–100), then the Harvester. No All Resistance on top of every monster's 10 %: with
+ * +10 % on every element Emberfall was the only act where each foe resisted each element
+ * (emberseer-kurve-v1.md).
  */
 export const ASH_REVENANT: EnemyDefinition = {
   id: "ash-revenant",
@@ -659,7 +661,7 @@ export const ASH_REVENANT: EnemyDefinition = {
   weapon: REVENANT_BLADE,
   skills: [HEAVY_SWING],
   baseLife: 400,
-  bonuses: { armor: 24, allResistance: 0.1 },
+  bonuses: { armor: 24 },
 };
 
 export const EMBER_WRAITH: EnemyDefinition = {
@@ -671,7 +673,6 @@ export const EMBER_WRAITH: EnemyDefinition = {
   weapon: WRAITH_FLAME,
   skills: [FIREBALL],
   baseLife: 265,
-  bonuses: { allResistance: 0.1 },
 };
 
 export const HARROW_HOUND: EnemyDefinition = {
@@ -683,7 +684,7 @@ export const HARROW_HOUND: EnemyDefinition = {
   weapon: HOUND_FANGS,
   skills: [RAKE],
   baseLife: 285,
-  bonuses: { evasion: 0.12, allResistance: 0.1 },
+  bonuses: { evasion: 0.12 },
 };
 
 export const CINDER_KNIGHT: EnemyDefinition = {
@@ -695,7 +696,7 @@ export const CINDER_KNIGHT: EnemyDefinition = {
   weapon: CINDER_LANCE,
   skills: [OBSIDIAN_SHELL],
   baseLife: 330,
-  bonuses: { blockChance: 0.12, allResistance: 0.1 },
+  bonuses: { blockChance: 0.12 },
   triggers: [
     {
       id: "cinder-ward",
@@ -736,8 +737,9 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   // damage from its attacks into Ash Aura).
   damage: 0.4,
   // As tough against Physical as against Elemental (Timo): about 15 % each at the hero's level
-  // (its Strength gives the Armor, COMBAT.monsterArmorPerLevel).
-  bonuses: { allResistance: 0.15 },
+  // (its Strength gives the Armor, COMBAT.monsterArmorPerLevel; every monster already resists
+  // 10 %, COMBAT.monsterResistance, so +5 % here; +15 % made it 25 %, emberseer-kurve-v1.md).
+  bonuses: { allResistance: 0.05 },
   telegraphs: [
     { skill: HARVEST_SWING, interval: 10, windup: 2 },
     { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66 },

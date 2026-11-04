@@ -1119,13 +1119,20 @@ export function dotBurst(
   return damage;
 }
 
-export function heal(core: FightCore, f: Fighter, amount: number): void {
-  // Black Flame: Corruption cuts healing like Burn (they do not stack).
+/**
+ * How much of a recovery still lands: Burn cuts healing and Barrier Siphon alike, and Black Flame
+ * makes Corruption do the same (they do not stack).
+ */
+function recoveryFactor(core: FightCore, f: Fighter): number {
   const blackFlame =
     f.ailments.corruption && core.fighters[other(f.side)].setup.rules?.corruptionStopsHeal
       ? 1 - COMBAT.burnHealingReduction
       : 1;
-  const factor = Math.min(healingFactor(f.ailments), blackFlame);
+  return Math.min(healingFactor(f.ailments), blackFlame);
+}
+
+export function heal(core: FightCore, f: Fighter, amount: number): void {
+  const factor = recoveryFactor(core, f);
   const healed = Math.min(f.stats.maxLife - f.life, Math.round(amount * factor));
   if (healed <= 0) return;
   f.life += healed;
@@ -1139,18 +1146,17 @@ export function heal(core: FightCore, f: Fighter, amount: number): void {
 }
 
 /**
- * Barrier (like PoE's Energy Shield): it always trickles back, and a moment without a hit fills
- * it up fast. One "barrier" event when it is full, so the arena shows it without spamming the log.
+ * Barrier Siphon: part of the damage a fighter deals flows back into its Barrier, up to its max
+ * (Barrier from skills above the max is kept). Burn cuts it like healing. One "barrier" event when it is full again, so the
+ * arena shows it without spamming the log.
  */
-export function rechargeBarrier(core: FightCore, f: Fighter, dt: number): void {
+export function siphonBarrier(core: FightCore, f: Fighter, dealt: number): void {
   const max = f.stats.barrier;
-  if (max <= 0 || f.barrier >= max) return;
-  const { steady, delay, perSecond } = COMBAT.barrierRecharge;
-  const rate = fightTime(core) - f.lastHitTakenAt < delay ? steady : perSecond;
-  const faster = f.setup.rules?.barrierRecharge ?? 1;
-  const gain = Math.min(max - f.barrier, max * rate * faster * dt);
+  if (max <= 0 || f.barrier >= max || dealt <= 0) return;
+  const gain = Math.min(max - f.barrier, dealt * f.stats.barrierSiphon * recoveryFactor(core, f));
+  if (gain <= 0) return;
   f.barrier += gain;
-  f.barrierRecharged += gain;
+  f.barrierSiphoned += gain;
   if (f.barrier >= max - 1e-6) {
     f.barrier = max;
     f.barrierBurstReady = true;
@@ -1158,9 +1164,9 @@ export function rechargeBarrier(core: FightCore, f: Fighter, dt: number): void {
       t: fightTime(core),
       type: "barrier",
       side: f.side,
-      amount: Math.round(f.barrierRecharged),
+      amount: Math.round(f.barrierSiphoned),
     });
-    f.barrierRecharged = 0;
+    f.barrierSiphoned = 0;
   }
 }
 
@@ -1185,8 +1191,12 @@ function barrierBurst(core: FightCore, f: Fighter): void {
   });
 }
 
-/** Barrier absorbs damage first, the rest goes to life. */
+/**
+ * Barrier absorbs damage first, the rest goes to life. All damage in a fight comes from the other
+ * fighter (hits, ailment ticks, bursts, Thorns), whose Barrier Siphon drinks from it.
+ */
 export function dealDamage(core: FightCore, f: Fighter, amount: number): void {
+  siphonBarrier(core, core.fighters[other(f.side)], amount);
   const absorbed = Math.min(f.barrier, amount);
   f.barrier -= absorbed;
   const broke = absorbed > 0 && f.barrier <= 0;

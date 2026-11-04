@@ -213,7 +213,7 @@ Endgame **Wildfire I–X**.
 - **Ashborn** (`neuausrichtung-v1.md` 7.3): Ab Level 100 fließt XP in **Ashborn-Level** (das erste kostet 12.000 XP,
   jedes weitere 4 % des ersten mehr). Jedes gibt einen Punkt, höchstens **100**, höchstens **15 pro Wert**, auf vier
   Boards: **Onslaught** (Damage, Crit Chance, Attack Speed, Ailment Effect, Penetration), **Aegis** (Life, Defenses,
-  Resistances, Max Resistance bis +5 %, Tenacity, Block), **Mending** (Lifesteal, Ailment Healing, Barrier Recharge,
+  Resistances, Max Resistance bis +5 %, Tenacity, Block), **Mending** (Lifesteal, Ailment Healing, Barrier Siphon,
   Flask) und **Ignite** (Heat Gain, Starting Heat, Trigger Chance, Skill Cost). Verteilt im **Character Sheet**
   (Tab „Ashborn“), zurückgesetzt bei **Old Nan** für Acorns (1 Kill pro Punkt).
 - **Greater Affixes** und **Cinderglass**: siehe 5.3. **Ember Crucible**: siehe 5.3.
@@ -369,7 +369,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|
 | **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (jeder 4. Angriff ist ein Mighty Hit, Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −25 %) / Titan |
 | **Dexterity** | +2 % Evasion; Hauptattribut des Ashstrider: +8 % Damage | Quick Reflexes / Ember Dance / True Shot |
-| **Intelligence** | +8 % Barrier; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
+| **Intelligence** | +8 % Barrier, +0,2 % Barrier Siphon; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
 | **Agility** | +3 % Attack Speed, +1,5 % Crit Chance | Hawkeye / Opportunist / Double Time |
 | **Wisdom** | +6 % Heat Gain, +5 % Ailment Effect, +4 % Trigger Chance | Inner Fire / Afterglow / Clarity (Payoffs +25 %) |
 | **Vitality** | +6 % Life, +3 % Tenacity | Second Breath / Thick Skin / Undying |
@@ -412,7 +412,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|---|
 | Physical | **Bleed** | 50 % des Treffers/s für 3 s, wird erneuert | Rend (Skill) |
 | Physical | **Poison** | 14 %/s für 5 s, stapelt bis 20 | **Overflow**: ein Stack über der Grenze platzt sofort |
-| Fire | **Burn** | 22 %/s für 4 s, halbiert die Heilung des Gegners | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus, höchstens so viel wie ein normaler Burn (4 s) noch macht (Schritt 7) |
+| Fire | **Burn** | 22 %/s für 4 s, halbiert Heilung und Barrier Siphon des Getroffenen (Siphon seit 2026-11-04) | **Combust**: Fire-Treffer auf Brennende lösen 25 % des Rest-Burns aus, höchstens so viel wie ein normaler Burn (4 s) noch macht (Schritt 7) |
 | Void | **Corruption** | 9 %/s, wächst pro Tick (+25 %, bis 12×), 6 s | **Collapse**: bei vollem Wachstum 4 s Schaden auf einmal, zurück auf halbes Wachstum |
 | Cold | **Chill** | −25 % Attack Speed und Heat Gain, 2 s (mit Ailment Effect bis −40 %) | – |
 | Lightning | **Shock** | +10 % erlittener Schaden pro Stack, bis 3 Stacks, 3 s (mit Ailment Effect bis +50 %) | – |
@@ -443,7 +443,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|
 | **Armor** | Gear, STR | Reduktion = Armor / (Armor + 20 × Angreifer-Level), max. 90 % |
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
-| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt) | voll bei Kampfbeginn, lädt immer 3 %/s, nach 3 s ohne Treffer 10 %/s (Timo 2026-10-19: vorher 1,5 s/20 %, Emberseer in Akt 2–3 zu sicher) |
+| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt, dazu 0,2 % Barrier Siphon/Punkt) | voll bei Kampfbeginn; **Barrier Siphon**: pro INT-Punkt füllen 0,2 % von allem Schaden, den du machst (Treffer und Ailments), sie wieder auf (INT 10 = 2 %; zuerst 0,25 %, nach 8-Seed-Messung −20 %), nie über das Maximum; Burn (und Black Flame) halbiert ihn wie Heilung. Kein Aufladen über Zeit mehr (2026-11-04, `emberseer-kurve-v1.md`: 3 %/s Aufladen wuchs nicht mit dem Gegnerschaden, Emberseer früh am leichtesten, am Harvester am schwersten). Unyielding: Siphon 0 |
 | **Block** | Shield | stoppt 50 % des Treffers, max. 75 % Chance |
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
@@ -703,8 +703,11 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
   jeden Gegner, so viel wie Armor von einem Physical Hit wegnimmt: Physical und Elemental kommen gleich schwer durch
   (Klassengerüst-Balance; vorher 30 %, das bremste jeden Element-Path). Act-Gegner mit Element-Thema haben 10–15 %
   in ihrem Element (Schritt 7, vorher 20–25 %: Element-Builds hingen im passenden Act, Cold in Act 4, Fire in Act 3).
-  Emberfall (Act 7) hat 10 % All Resistance (vorher 15 %), der Harvester 15 %; die Ash Revenant trifft Physical, so
-  stehen dort zwei Physical- und zwei Fire-Gegner.
+  Emberfall (Act 7) hat **keine** All Resistance obendrauf (nur die 10 % aller Gegner), der Harvester +5 % (zusammen
+  15 %, so viel wie seine Armor von einem Physical Hit nimmt). Vorher hatten alle Act-7-Gegner +10 % auf jedes Element
+  und der Harvester +15 % (25 % gegen 14 % Physical): Element-Builds kamen dort ein Viertel langsamer durch, Emberseer
+  töteten Bosse in Act 1–6 15–25 % schneller als die anderen und am Harvester 8 % langsamer (`emberseer-kurve-v1.md`,
+  2026-11-04). Die Ash Revenant trifft Physical, so stehen dort zwei Physical- und zwei Fire-Gegner.
 - **Skalierung** (`balancing-neustart-v1.md` Schritt 3): Das Monster Level bestimmt die Grundwerte über **eine
   Tabelle** (`MONSTER_TABLE`), gemessen am Autopilot-Helden: Monster-Life wächst wie der Schaden pro Sekunde des Helden,
   Monster-Schaden wie seine effektive Life (`npm run balance -- --act 7 --build all --mastery all --curve 1`). Dazu

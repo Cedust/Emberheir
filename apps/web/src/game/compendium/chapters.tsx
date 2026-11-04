@@ -91,7 +91,8 @@ const painting = (src: string | undefined) =>
 const ATTRIBUTE_TEXT: Record<Attribute, string> = {
   strength: "Thicker skin, so more Armor. A Cinderguard also hits harder with it.",
   dexterity: "Lighter feet, so more Evasion. An Ashstrider also hits harder with it.",
-  intelligence: "A sharper mind, so more Barrier. An Emberseer also hits harder with it.",
+  intelligence:
+    "A sharper mind, so more Barrier, and your Damage refills more of it. An Emberseer also hits harder with it.",
   agility: "Quicker hands: faster Attacks and more Crits.",
   wisdom: "More Heat, stronger Ailments, and Triggers that go off more often.",
   vitality: "A tougher body: more Life, and Ailments on you wear off sooner.",
@@ -436,7 +437,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                   name: "Fire",
                   text: (
                     <>
-                      <S id="burn" /> hurts over time and halves the enemy's healing.
+                      <S id="burn" /> hurts over time and halves healing and Barrier Siphon.
                     </>
                   ),
                 },
@@ -501,7 +502,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: statIcon("barrier"),
                   name: "Barrier",
-                  text: "Takes Damage before your Life and fills up again after a moment without hits.",
+                  text: "Takes Damage before your Life. Full at the start of a fight, your own Damage fills it up again.",
                 },
                 {
                   icon: statIcon("block"),

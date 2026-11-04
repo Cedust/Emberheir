@@ -92,7 +92,7 @@ const BUFF_PAINTED: Partial<Record<string, GameIconId>> = {
 
 /** What an ailment does, for its tooltip on the status rail (game-design-document-v2.md 4.2). */
 const AILMENT_EXPLAIN: Record<string, string> = {
-  burn: "Takes Fire damage over time and heals only half as much.",
+  burn: "Takes Fire damage over time. Healing and Barrier Siphon work only half as well.",
   chill: "Attacks and gains Heat slower.",
   shock: "Takes more damage from every hit. Stacks up to 3 times.",
   bleed: "Takes Physical damage over time.",

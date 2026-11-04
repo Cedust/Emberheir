@@ -79,8 +79,8 @@ export interface Fighter {
   poisonLockout: number;
   /** Fight time of the last hit taken (Steady Aim). */
   lastHitTakenAt: number;
-  /** Barrier recharged since it last started filling up (one event when it is full). */
-  barrierRecharged: number;
+  /** Barrier siphoned since it last started filling up (one event when it is full). */
+  barrierSiphoned: number;
   /** Fight time of the last own skill (Patient Draw). */
   lastSkillAt: number;
   /** Hunter's Mark: the target is marked. */
@@ -235,7 +235,7 @@ export function createFighter(side: Side, setup: CombatantSetup): Fighter {
     rampage: 0,
     poisonLockout: 0,
     lastHitTakenAt: 0,
-    barrierRecharged: 0,
+    barrierSiphoned: 0,
     lastSkillAt: 0,
     marked: false,
     perks: new Set(setup.perks ?? []),

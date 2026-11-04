@@ -102,10 +102,10 @@ export const ASHBORN_VALUES: readonly AshbornValue[] = [
   },
   {
     id: "barrier-recharge",
-    name: "Barrier Recharge",
+    name: "Barrier Siphon",
     board: "mending",
-    text: "Barrier recharges 4 % faster",
-    perPoint: { barrierRecharge: 0.04 },
+    text: "Your damage refills 4 % more Barrier",
+    perPoint: { barrierSiphon: 0.04 },
   },
   {
     id: "flask",

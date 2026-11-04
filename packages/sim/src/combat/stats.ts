@@ -21,6 +21,8 @@ export interface DerivedStats {
    * damage before Life and recharges during the fight.
    */
   readonly barrier: number;
+  /** Barrier Siphon: share of all damage dealt that refills the Barrier (hero: Intelligence). */
+  readonly barrierSiphon: number;
   /** All Resistance (from Intelligence and gear) before the element's own Resistance. */
   readonly resistance: number;
   /** Final Resistance per element: All Resistance + the element's own, capped. */
@@ -220,6 +222,11 @@ export function deriveStats(setup: CombatantSetup): DerivedStats {
     ),
     blockReduction: COMBAT.blockReduction,
     barrier: Math.round(Math.max(0, b.barrier) * (1 + step.barrier + b.increasedBarrier)),
+    barrierSiphon: heir
+      ? a.intelligence *
+        COMBAT.heir.barrierSiphonPerIntelligence *
+        (setup.rules?.barrierSiphon ?? 1)
+      : 0,
     resistance: clamp(allResistance, 0, COMBAT.maxResistance),
     fireResistance: resist(b.fireResistance, "fire"),
     coldResistance: resist(b.coldResistance, "cold"),
