@@ -53,7 +53,96 @@ export const MIGRATIONS: Readonly<Record<number, SaveMigration>> = {
   // `item.reforges`), the Camp Marisha's gambles of this visit (`gambled`), all optional. Old
   // items start at zero, so their next Temper is the cheap first one.
   18: {},
+  // Boon-Auswahl (boon-auswahl-v1.md): 69 → 49 Boons. A held Boon that is gone becomes the Boon of
+  // its family in the same slot (or the family's stacking Boon), so a running trip keeps its
+  // strength; an open Shrine offer gets the same swap and loses doubles.
+  19: { state: renameOldBoons },
+  // Boons burn only in the Wildfire (boon-auswahl-v1.md 7): an act's Boons and offers go out.
+  20: { state: boonsOnlyInWildfire },
 };
+
+/** Boons of save version 19 that are gone → the Boon that takes their place. */
+export const OLD_BOONS: Readonly<Record<string, string>> = {
+  hearthguard: "second-wind",
+  "warm-hands": "banked-coals",
+  "sundering-weight": "crushing-blow",
+  grit: "brutality",
+  stagger: "brutality",
+  "festering-edge": "serrated-edge",
+  bloodfeast: "fester",
+  "open-wounds": "fester",
+  melt: "stoked-pyre",
+  flashover: "stoked-pyre",
+  wildfire: "stoked-pyre",
+  shatter: "permafrost",
+  "ice-wall": "permafrost",
+  "frost-nip": "permafrost",
+  blur: "quickening",
+  conductor: "quickening",
+  "lightning-reflexes": "quickening",
+  "creeping-void": "hollow-mark",
+  "null-ward": "hollow-mark",
+  "void-mirror": "hollow-mark",
+};
+
+function renameBoonPicks(picks: unknown, dedupe = false): unknown {
+  if (!Array.isArray(picks)) return picks;
+  const seen = new Set<string>();
+  const out: unknown[] = [];
+  for (const pick of picks) {
+    if (!isRecord(pick) || typeof pick["id"] !== "string") {
+      out.push(pick);
+      continue;
+    }
+    const id = OLD_BOONS[pick["id"]] ?? pick["id"];
+    if (dedupe && seen.has(id)) continue;
+    seen.add(id);
+    out.push({ ...pick, id });
+  }
+  return out;
+}
+
+function renameOldBoons(save: RawSave): RawSave {
+  const out = { ...save };
+  const boons = save["boons"];
+  if (isRecord(boons)) {
+    out["boons"] = {
+      ...boons,
+      kept: renameBoonPicks(boons["kept"]),
+      fresh: renameBoonPicks(boons["fresh"]),
+    };
+  }
+  const run = save["run"];
+  const rewards = isRecord(run) ? run["rewards"] : undefined;
+  if (isRecord(run) && isRecord(rewards) && Array.isArray(rewards["boonOffer"])) {
+    const offer = renameBoonPicks(rewards["boonOffer"], true) as unknown[];
+    const picked = typeof rewards["boonPick"] === "number" ? rewards["boonPick"] : null;
+    out["run"] = {
+      ...run,
+      rewards: {
+        ...rewards,
+        boonOffer: offer,
+        // A pick already made stays made; an index past a dropped double points at the last card.
+        ...(picked !== null ? { boonPick: Math.min(picked, offer.length - 1) } : {}),
+      },
+    };
+  }
+  return out;
+}
+
+function boonsOnlyInWildfire(save: RawSave): RawSave {
+  const run = save["run"];
+  if (isRecord(run) && run["wildfire"]) return save;
+  const out: RawSave = { ...save, boons: { kept: [], fresh: [] } };
+  const rewards = isRecord(run) ? run["rewards"] : undefined;
+  if (isRecord(run) && isRecord(rewards) && "boonOffer" in rewards) {
+    const rest = { ...rewards };
+    delete rest["boonOffer"];
+    delete rest["boonPick"];
+    out["run"] = { ...run, rewards: rest };
+  }
+  return out;
+}
 
 /** Bounties of save version 15 that are gone → the bounty a done one is paid as. */
 export const OLD_BOUNTIES: Readonly<Record<string, string>> = {

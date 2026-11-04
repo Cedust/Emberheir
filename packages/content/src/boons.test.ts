@@ -1,17 +1,24 @@
 import { describe, expect, it } from "vitest";
-import { activeBoons, boonEffects, boonText, rollBoonOffer, Rng } from "@emberheir/sim";
+import {
+  activeBoons,
+  boonEffects,
+  boonText,
+  EXCLUSIVE_BOON_SLOTS,
+  rollBoonOffer,
+  Rng,
+} from "@emberheir/sim";
 import { BOON_FAMILIES, BOONS_CONTENT } from "./boons";
 import { GAME_DATA } from "./game";
 
 describe("Stolen Fire Boons", () => {
-  it("8 Boons per family plus Fusions and the Blaze attribute Boons, unique ids, a number on every card that has one", () => {
+  it("5 Boons per Warden family (Hearth 6) plus Fusions and the Blaze attribute Boons, unique ids, a number on every card that has one", () => {
     const families = new Set(BOON_FAMILIES.map((f) => f.id));
     expect(new Set(BOONS_CONTENT.map((b) => b.id)).size).toBe(BOONS_CONTENT.length);
     for (const f of families) {
       expect(
         BOONS_CONTENT.filter((b) => b.family === f && !b.fusion && !b.attributes),
         f,
-      ).toHaveLength(8);
+      ).toHaveLength(f === "hearth" ? 6 : 5);
     }
     const fusions = BOONS_CONTENT.filter((b) => b.fusion);
     expect(fusions.length).toBeGreaterThanOrEqual(6);
@@ -22,6 +29,26 @@ describe("Stolen Fire Boons", () => {
       expect(b.bonuses || b.rules || b.trigger || b.attributes, b.id).toBeTruthy();
       expect(boonText(b, 1)).not.toContain("#");
     }
+  });
+
+  it("a Warden family has one Boon per exclusive slot and one that stacks", () => {
+    for (const f of BOON_FAMILIES.filter((x) => x.id !== "hearth")) {
+      const own = BOONS_CONTENT.filter((b) => b.family === f.id && !b.fusion && !b.attributes);
+      for (const slot of EXCLUSIVE_BOON_SLOTS) {
+        expect(
+          own.filter((b) => b.slot === slot).map((b) => b.id),
+          `${f.id} ${slot}`,
+        ).toHaveLength(1);
+      }
+      expect(
+        own.filter((b) => !EXCLUSIVE_BOON_SLOTS.includes(b.slot)),
+        f.id,
+      ).toHaveLength(1);
+    }
+  });
+
+  it("a Boon without a number has one rank only (a rank-up would do nothing)", () => {
+    for (const b of BOONS_CONTENT.filter((x) => x.value === 0)) expect(b.maxRank, b.id).toBe(1);
   });
 
   it("every Warden act opens its family; Hearth is always open", () => {
@@ -51,7 +78,7 @@ describe("Stolen Fire Boons", () => {
       const offer = rollBoonOffer(
         BOONS_CONTENT,
         BOON_FAMILIES,
-        { open: ["hearth", "ash"], active: [], damageType: "physical", reactionSlot: false },
+        { open: ["hearth", "ash"], active: [], damageTypes: ["physical"], reactionSlot: false },
         new Rng(seed),
       );
       expect(offer).toHaveLength(3);

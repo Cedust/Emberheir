@@ -59,7 +59,7 @@ describe("The Last Ember", () => {
     expect(s.legacy.finaleAttempts).toBe(1);
   });
 
-  it("a gauntlet of Warden echoes, one boss ability more each, then the Core; Stolen Fire after each win", () => {
+  it("a gauntlet of Warden echoes, one boss ability more each, then the Core; no Flask charge back", () => {
     let s = act(atPrestige(PROGRESSION.finalPrestige), { type: "enterFinale" });
     const echoes = finaleEchoes(data);
     expect(echoes.map((a) => a.id)).toEqual(["test-act", "deadly-act", "final-act"]);
@@ -67,14 +67,16 @@ describe("The Last Ember", () => {
       s = act(s, { type: "startStage" });
       expect(s.run?.encounter).toMatchObject({ echo: echoes[stage - 1]?.id, boss: true });
       expect(s.run?.encounter?.eliteModifiers).toHaveLength(stage);
-      s = act(s, { type: "resolveFight" });
+      const before = Math.max(0, s.flaskCharges - 1);
+      s = act({ ...s, flaskCharges: before }, { type: "resolveFight" });
       const rewards = s.run?.rewards ?? fail("missing");
       expect(rewards.items).toEqual([]);
       expect(rewards.xp).toBe(0);
-      expect(rewards.boonOffer?.length).toBeGreaterThan(0);
-      // Every family is open, the Cinder one too (its act never ran).
-      s = act(s, { type: "pickBoon", index: 0 }, { type: "continue" });
-      expect(s.boons.fresh).toHaveLength(stage);
+      // No Boons in the finale (they burn only in the Wildfire), and the Flask is not refilled.
+      expect(rewards.boonOffer).toBeUndefined();
+      expect(rewards.flask).toBeUndefined();
+      expect(s.flaskCharges).toBe(before);
+      s = act(s, { type: "continue" });
     }
     s = act(s, { type: "startStage" });
     expect(s.run?.encounter).toMatchObject({ enemyId: "core", boss: true });

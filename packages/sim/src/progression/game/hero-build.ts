@@ -1,8 +1,10 @@
 import { mergeRules } from "../../combat/rules";
 import { sumBonuses } from "../../combat/stats";
 import {
+  type AilmentType,
   type Capstone,
   type CombatantSetup,
+  type DamageType,
   type ReactionSlot,
   type RotationSlot,
   type SkillDefinition,
@@ -246,6 +248,42 @@ export function openBoonFamilies(data: GameData, actNumber: number): string[] {
     .filter(
       (id) => !tied.has(id) || data.acts.some((a) => a.boonFamily === id && a.number <= actNumber),
     );
+}
+
+/** The damage type each ailment belongs to (Burn is Fire's, Bleed and Poison are Physical). */
+const AILMENT_DAMAGE: Readonly<Record<AilmentType, DamageType>> = {
+  burn: "fire",
+  chill: "cold",
+  shock: "lightning",
+  corruption: "void",
+  bleed: "physical",
+  poison: "physical",
+};
+
+/**
+ * The damage types the hero's build deals (boon-auswahl-v1.md 4.6): the weapon's (with its
+ * Attunement and its ailment), and every damage type and ailment of the skills in the Battle Plan.
+ * A Shrine prefers the Boon families of these types, so a Burn build sees Cinder even with a
+ * physical weapon. Gear triggers and stray ailment chances do not count: a lone proc on a ring
+ * would spread the offer over families the build never uses (balance check 2026-11-02).
+ */
+export function boonAffinity(state: GameState, data: GameData): DamageType[] {
+  const { setup } = heroSetup(state, data);
+  const types = new Set<DamageType>([setup.weapon.damageType]);
+  const ailment = (a: AilmentType) => types.add(AILMENT_DAMAGE[a]);
+  if (setup.weapon.ailment) ailment(setup.weapon.ailment);
+  const skills = [
+    ...setup.rotation.map((s) => s.skill),
+    ...(setup.reactions ?? []).map((r) => r.skill),
+  ];
+  for (const skill of skills) {
+    for (const hit of skill.hits) {
+      if (hit.damageType && !hit.infused) types.add(hit.damageType);
+      if (hit.infused) continue;
+      for (const c of hit.ailmentChances ?? []) if (c.chance > 0) ailment(c.ailment);
+    }
+  }
+  return [...types];
 }
 
 /** The character's class. */

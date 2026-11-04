@@ -140,7 +140,7 @@ function runActMode(): void {
     : Math.max(args.generations, last.number);
   console.log(`${GAME_TITLE} balance tool (sim ${SIM_VERSION}), act mode`);
   console.log(
-    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations} runes=${args.runes ? "on" : "off"}`,
+    `up to act=${last.name} runs=${runs} seed=${args.seed} attempts=${args.attempts} generations=${generations} runes=${args.runes ? "on" : "off"} boons=${args.boons ? "on" : "off"}`,
   );
   console.log("");
   const rows = [];
@@ -168,6 +168,8 @@ function runActMode(): void {
         : [args.mastery];
     return masteries.map((mastery) => ({ ...p, mastery }));
   });
+  // `--boons 0`: no Shrine ever lights (no Boon content), the rest of the game unchanged.
+  const data = args.boons ? GAME_DATA : { ...GAME_DATA, boons: [] };
   const byPlay: { label: string; reports: ActRunReport[]; ledger?: Ledger }[] = [];
   const ledgers: Ledger[] = [];
   const samples: PowerSample[] = [];
@@ -180,7 +182,7 @@ function runActMode(): void {
     const label = `${build ? `${starterWeapon} (${build})` : starterWeapon}${mastery ? ` ${mastery}` : ""}`;
     const own: Ledger[] = Array.from({ length: runs }, () => newLedger());
     const all = Array.from({ length: runs }, (_, i) =>
-      playGenerations(GAME_DATA, {
+      playGenerations(data, {
         ledger: own[i] ?? newLedger(),
         craft: args.craft > 0,
         seed: args.seed + i,

@@ -22,6 +22,7 @@ import {
 } from "./game";
 import { gamblePrice } from "./crafting";
 import { stageMonsterLevel } from "./game/acts";
+import { runWithout } from "./game/state";
 import { TEST_ACT, TEST_BOON_DATA } from "./test-fixtures";
 
 /** The act map (act-karte-entwurf-v1.md): lanes, nodes, the quiet nodes and their Events. */
@@ -308,11 +309,16 @@ describe("Quiet nodes", () => {
     expect(applyAction(full, data, { type: "visitNode", choice: 2 }).wallet.emberCoal).toBe(cap);
   });
 
-  it("Shrine: a Boon offer like a fight's Shrine, not on a walk past the Gate", () => {
-    const s = arrive(at(6, "shrine"));
+  it("Shrine: a Boon offer in the Wildfire; in an act (an old map) a Flask charge", () => {
+    const at6 = at(6, "shrine");
+    const s = arrive({ ...at6, run: at6.run && { ...at6.run, wildfire: 1 } });
     expect(s.run?.phase).toBe("rewards");
     expect(s.run?.rewards?.boonOffer?.length).toBeGreaterThan(0);
     expect(s.run?.rewards?.items).toEqual([]);
+    const flask = arrive({ ...at6, flaskCharges: 0 });
+    expect(flask.run?.rewards?.boonOffer).toBeUndefined();
+    expect(flask.run?.rewards?.flask).toBe(1);
+    expect(flask.flaskCharges).toBe(1);
   });
 
   it("Marisha: three slots a quarter cheaper, each offer once", () => {
@@ -392,19 +398,24 @@ describe("Events", () => {
     expect(trained.hero.xp + trained.hero.level).toBeGreaterThan(s.hero.xp + s.hero.level);
   });
 
-  it("Cursed Spark: a Boon, and enemies hit harder until the next Waymark", () => {
-    const s = applyAction(event("spark"), data, { type: "visitNode", choice: 0 });
+  it("Cursed Spark (Wildfire only): a Boon, and enemies hit harder until the next Waymark", () => {
+    const fire = (g: GameState) => ({ ...g, run: g.run && { ...g.run, wildfire: 1 } });
+    const s = applyAction(fire(event("spark")), data, { type: "visitNode", choice: 0 });
     expect(s.run?.rewards?.boonOffer?.length).toBeGreaterThan(0);
     expect(s.run?.curse).toEqual({ damage: 0.15, until: 10 });
     const picked = applyAction(s, data, { type: "pickBoon", index: 0 });
-    const on = applyAction(picked, data, { type: "continue" });
+    // Back in an act's pressure, to see the curse alone.
+    const tame = { ...picked, run: picked.run && runWithout(picked.run, "wildfire") };
+    const on = applyAction(tame, data, { type: "continue" });
     const next = on.run?.visit ? applyAction(on, data, { type: "continue" }) : on;
     if (next.run && !next.run.visit) {
       const fight = applyAction(next, data, { type: "startStage" }).run?.encounter;
       const kind = fight?.eliteModifiers.length
         ? PROGRESSION.stageKinds.elite
         : PROGRESSION.stageKinds.normal;
-      expect(fight?.pressure?.damage).toBeCloseTo(kind.damage * 1.15);
+      expect(fight?.pressure?.damage).toBeCloseTo(
+        kind.damage * PROGRESSION.actPressure.damage * 1.15,
+      );
     }
   });
 

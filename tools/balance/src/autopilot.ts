@@ -1,5 +1,7 @@
 import {
   type ActData,
+  levelCap,
+  PROGRESSION,
   ashbornBlockReason,
   ashbornUnspent,
   ATTRIBUTE_RULES,
@@ -31,7 +33,8 @@ import {
   type GameState,
   heroAshborn,
   heroBoons,
-  heroSetup,
+  boonAffinity,
+  boonFamilyFits,
   learnHeirloom,
   openBranches,
   takeBlockReason,
@@ -249,28 +252,35 @@ export function walkQuiet(
 /**
  * At the Warden's Gate (laengere-runs-v1.md) the autopilot reads the wall's level like a player:
  * below it (the Gate shows it red) it wanders on through the act to farm, at most
- * `GATE_WANDERS` walks per trip, then it challenges the Gatekeeper or the boss.
+ * `GATE_WANDERS` walks per trip, then it challenges the Gatekeeper or the boss. Like a player who
+ * keeps falling, it farms one level more past the wall for each death in the act, up to the Level
+ * Cap's headroom (Timo: walls are beaten by farming levels and gear, boon-auswahl-v1.md 7).
  */
 export const GATE_WANDERS = 4;
 
-export function chooseGate(state: GameState, data: GameData): GameState {
+export function chooseGate(
+  state: GameState,
+  data: GameData,
+  deaths = state.progress.deathsInAct,
+): GameState {
   const run = state.run;
   if (!run || run.phase !== "intermission" || !wardensGate(state, data, run)) return state;
   const act = getAct(data, run.actId);
   const wallLevel = stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
-  if (state.hero.level >= wallLevel || (run.wanders ?? 0) >= GATE_WANDERS) return state;
+  const goal = wallLevel + Math.min(PROGRESSION.levelHeadroom, deaths);
+  const capped = Math.min(goal, levelCap(state.legacy.prestige));
+  if (state.hero.level >= capped || (run.wanders ?? 0) >= GATE_WANDERS) return state;
   return applyAction(state, data, { type: "wander" });
 }
 
-/** Boon choice: a family that fits the weapon (or Hearth) first, then rank-ups, then the grade. */
+/** Boon choice: a family that fits the build (or Hearth) first, then rank-ups, then the grade. */
 export function bestBoon(state: GameState, data: GameData, offer: readonly BoonPick[]): number {
-  const damageType = heroSetup(state, data).setup.weapon.damageType;
+  const damageTypes = boonAffinity(state, data);
   const owned = new Set(heroBoons(state, data).map((b) => b.def.id));
   const value = (pick: BoonPick) => {
     const def = data.boons?.find((b) => b.id === pick.id);
     const family = data.boonFamilies?.find((f) => f.id === def?.family);
-    const fits =
-      !family || family.damageTypes.length === 0 || family.damageTypes.includes(damageType);
+    const fits = !family || boonFamilyFits(family, damageTypes);
     return (fits ? 10 : 0) + (owned.has(pick.id) ? 3 : 0) + BOON_GRADES.indexOf(pick.grade);
   };
   let best = 0;

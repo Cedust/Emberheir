@@ -21,7 +21,10 @@ const INNATES: Record<string, string> = {
 };
 
 /** Skills that share another skill's painting (Kaelen's sparring Lunge burns like Flame Dash). */
-const SHARED_ART: Record<string, string> = { "ember-lunge": "flame-dash" };
+const SHARED_ART: Record<string, string> = {
+  "ember-lunge": "flame-dash",
+  "hollow-swing": "heavy-swing",
+};
 
 const FORM_OF: Record<string, string> = Object.fromEntries(
   Object.values(WEAPON_MASTERY).flatMap((tree) =>
@@ -67,6 +70,7 @@ const SKILL_ICONS: Record<string, IconName> = {
   wither: "curse",
   "soul-harvest": "harvest",
   "heavy-swing": "slam",
+  "hollow-swing": "slam",
   "quick-cuts": "flurry",
   "cinder-spit": "fire",
   "flame-dash": "flame",

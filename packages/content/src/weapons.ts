@@ -623,7 +623,9 @@ export const MAW_JAWS: WeaponDefinition = {
   name: "Maw",
   defaultAttack: "Bite",
   damage: { min: 1.25, max: 1.8 },
-  damageType: "physical",
+  // Void since 2026-11-04 (like the Hollow Brute's Hollow Swing): the Void Rift's Physical comes
+  // from the Brute's Crush and the Maw's Rift Snap, so a caster with little Armor is not crushed.
+  damageType: "void",
   attacksPerSecond: 0.55,
   heatBehavior: "cooling",
   heatPerHit: 22,

@@ -4,7 +4,6 @@ import { battlePlanUnlocks } from "../battle-plan";
 import { rollBoonOffer } from "../boons";
 import { PROGRESSION } from "../constants";
 import { gambleItem, gamblePrice, hasRoomFor, merchantSlots } from "../crafting";
-import { DRAUGHT_FLASK_COST } from "../draughts";
 import { type EventDefinition, type EventOption } from "../events";
 import { addToGrid } from "../inventory";
 import { autoRewards, gainXp, levelCap, xpForKill } from "../leveling";
@@ -19,13 +18,12 @@ import {
 import { getAct, stageMonsterLevel } from "./acts";
 import { getBounty } from "./bounty";
 import { hasMet, meetMarisha } from "./companions";
-import { flaskCapacity } from "./flask";
+import { shrineRefill, tripFlaskCapacity } from "./flask";
 import { requireRun } from "./guards";
-import { heroBoons, heroSetup, openBoonFamilies } from "./hero-build";
+import { boonAffinity, heroBoons } from "./hero-build";
 import { actAffixFactor, addRunes, heroCanWear, rollItemChoices, rollRune } from "./loot";
 import { tripOmenEffects } from "./omens";
 import {
-  type ActData,
   fail,
   type GameData,
   type GameState,
@@ -35,19 +33,20 @@ import {
   runWithout,
 } from "./state";
 
+export { tripFlaskCapacity };
+
 /** The quiet nodes of the act map (act-karte-entwurf-v1.md): Shrine, Hearth, Cache, Event, Marisha. */
 
 /** Marisha on the Road gambles on this many slots, this much cheaper than in the Camp (Timo). */
 export const ROAD_GAMBLE = { slots: 3, discount: 0.25 } as const;
 
-/** Whether Shrines burn on this walk: not in a cleared act, not on a walk past the Gate. */
-export function shrinesBurn(state: GameState, data: GameData, run: RunState): boolean {
-  return (
-    !run.wildfire &&
-    !run.wanders &&
-    (data.boons?.length ?? 0) > 0 &&
-    !state.progress.actsCleared.includes(run.actId)
-  );
+/**
+ * Whether Shrines with Boons burn on this walk: only in the Wildfire (Timo 2026-11-03: Boons are
+ * the endgame's bonus, the acts are balanced without them). The Shrine nodes of the map and the
+ * Cursed Spark follow it.
+ */
+export function shrinesBurn(_state: GameState, data: GameData, run: RunState): boolean {
+  return !!run.wildfire && (data.boons?.length ?? 0) > 0;
 }
 
 /** What the act map of a walk may hold. */
@@ -76,15 +75,15 @@ function huntOptions(state: GameState, data: GameData, run: RunState): Pick<MapO
   return enemyIds.length ? { hunts: { enemyIds, kills: state.legacy.hunts ?? {} } } : {};
 }
 
-/** A Shrine's offer of three Boons. */
-export function shrineOffer(state: GameState, data: GameData, act: ActData, rng: Rng) {
+/** A Shrine's offer of three Boons (only in the Wildfire, where every family is open). */
+export function shrineOffer(state: GameState, data: GameData, rng: Rng) {
   return rollBoonOffer(
     data.boons ?? [],
     data.boonFamilies ?? [],
     {
-      open: openBoonFamilies(data, act.number),
+      open: (data.boonFamilies ?? []).map((f) => f.id),
       active: heroBoons(state, data),
-      damageType: heroSetup(state, data).setup.weapon.damageType,
+      damageTypes: boonAffinity(state, data),
       reactionSlot: battlePlanUnlocks(state.legacy.prestige).reactionSlots > 0,
     },
     rng,
@@ -122,11 +121,6 @@ const runeTier = (state: GameState, data: GameData, run: RunState) =>
 /** The act's Home Rune (act-beute-entwurf-v1.md A1). */
 const homeRune = (data: GameData, run: RunState) => getAct(data, run.actId).homeRune;
 
-/** Flask charges the trip may hold: the Flask's capacity minus a brewed Draught. */
-export function tripFlaskCapacity(state: GameState, data: GameData): number {
-  return flaskCapacity(state, data) - (state.run?.draught ? DRAUGHT_FLASK_COST : 0);
-}
-
 /**
  * The hero arrives at the node of `run.stage`: a quiet node gets its visit (a Shrine's offer
  * waits like a fight's rewards). Fights wait for `startStage`.
@@ -135,10 +129,24 @@ export function enterNode(state: GameState, data: GameData, run: RunState): Game
   const node = currentNode(run);
   if (!node || !isQuiet(node.kind)) return { ...state, run };
   const [rng, next] = nextRng(state);
-  const act = getAct(data, run.actId);
   switch (node.kind) {
     case "shrine": {
-      const boonOffer = shrineOffer(next, data, act, rng);
+      // A Shrine node of an act (a map drawn before Boons left the acts): a Flask charge back.
+      if (!shrinesBurn(next, data, run)) {
+        const flask = shrineRefill(next, data);
+        if (!flask) return { ...next, run: { ...run, visit: { kind: "shrine", done: true } } };
+        return {
+          ...next,
+          flaskCharges: next.flaskCharges + flask,
+          run: {
+            ...run,
+            phase: "rewards",
+            visit: { kind: "shrine", done: true },
+            rewards: quietRewards({ flask }),
+          },
+        };
+      }
+      const boonOffer = shrineOffer(next, data, rng);
       if (!boonOffer.length)
         return { ...next, run: { ...run, visit: { kind: "shrine", done: true } } };
       return {
@@ -476,7 +484,7 @@ function takeEventOption(
     levelsGained = leveled.levelsGained;
     s = { ...s, hero: { ...s.hero, level: leveled.level, xp: leveled.xp } };
   }
-  const boonOffer = gain.boons ? shrineOffer(s, data, getAct(data, r.actId), rng) : [];
+  const boonOffer = gain.boons && shrinesBurn(s, data, r) ? shrineOffer(s, data, rng) : [];
   if (gain.items) return withItemPick({ ...s, run: r }, data, r);
   if (xp || runes.length || boonOffer.length) {
     r = {

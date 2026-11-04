@@ -50,7 +50,7 @@ import {
  * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
  * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
  */
-export const SAVE_VERSION = 19;
+export const SAVE_VERSION = 21;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {
@@ -66,7 +66,7 @@ export interface ActData {
   readonly boss: EnemyDefinition;
   /** Nyssa (Runesmith) waits in this act; she joins after the first trip into it. */
   readonly runesmith?: boolean;
-  /** Stages with an Ember Shrine (5 and 10); Elites have one too. */
+  /** Stages with an Ember Shrine (5 and 10): Boons in the Wildfire, a Flask charge in the acts. */
   readonly shrineStages: readonly number[];
   /**
    * Normal fights offer an item pick on every this many'th normal fight of a trip (default
@@ -295,6 +295,8 @@ export interface Rewards {
   readonly cinderglass?: number;
   /** The stage was a Waymark reached for the first time this run: +1 Skill Point. */
   readonly waymark?: boolean;
+  /** An Ember Shrine of the acts or the finale gave this many Flask charges back. */
+  readonly flask?: number;
   /** Item pick: `picks` (default 1) of these. */
   readonly items: readonly Item[];
   /** Boss Hoard: how many cards the hero takes (missing = 1). */
@@ -315,7 +317,7 @@ export interface Rewards {
   readonly bountyDone?: boolean;
   /** What the Battle Plan did in this fight (missing in older saves). */
   readonly report?: FightReport;
-  /** Ember Shrine: 1 of these Boons (after Stage 5 and 10 and Elites). */
+  /** Ember Shrine of the Wildfire: 1 of these Boons (after Stage 5 and 10 and Elites). */
   readonly boonOffer?: readonly BoonPick[];
   readonly boonPick?: number | null;
   /** The enemy's hunt bar after this win. */

@@ -304,6 +304,12 @@ export const PROGRESSION = {
     boss: { life: 3, damage: 0.75 },
   },
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
+  /**
+   * Life and damage of every foe in the acts (not the finale, not the Wildfire) on top of its stage
+   * kind. The acts lost their Boons (Timo 2026-11-03, boon-auswahl-v1.md 7): without them the
+   * autopilot needed 4.4 attempts per newest act; this gives part of it back.
+   */
+  actPressure: { life: 0.93, damage: 0.93 },
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
@@ -313,6 +319,10 @@ export const PROGRESSION = {
    */
   flaskStartCharges: 3,
   flaskHeal: 0.35,
+  /**
+   * An Ember Shrine in the acts (after Stage 5 and 10) gives this many Flask charges back (boon-auswahl-v1.md 7; Boons burn only in the Wildfire).
+   */
+  shrineFlaskCharges: 1,
 
   /**
    * Eldrin's Bounties (bounties-v2-plan.md): while "catch the Ember Thief" is open, the thief
@@ -366,13 +376,15 @@ export const PROGRESSION = {
    * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
    * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
    * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
-   * instead of the Run Pressure). Like the walls: mostly damage, little more Life.
+   * instead of the Run Pressure). Like the walls: mostly damage, little more Life. Damage 3.3 → 3.8
+   * when the finale lost its Boons and Flask refills (boon-auswahl-v1.md 7): 2.5 attempts were
+   * below the 3–5 the climax aims at.
    */
   finalPrestige: 7,
-  finale: { life: 0.5, damage: 3.3 },
+  finale: { life: 0.5, damage: 3.8 },
   /**
-   * The Warden echoes take this share of the finale's pressure, from the first to the last (Boons
-   * pile up on the way); the Harvester's Core takes all of it, the hardest fight of the finale.
+   * The Warden echoes take this share of the finale's pressure, from the first to the last; the
+   * Harvester's Core takes all of it, the hardest fight of the finale.
    */
   finaleRamp: { first: 0.6, last: 0.9 },
   /**
@@ -418,8 +430,6 @@ export const PROGRESSION = {
   },
   /** Boss abilities of the Warden echoes: echo n has n of them (its list from the top), at most this many. */
   finaleEchoAbilities: 5,
-  /** Fusion Boons are this much likelier in the finale's Stolen Fire. */
-  finaleFusionWeight: 1,
 
   /** Phoenix Feathers (Upgrade at the Blacksmith): every boss, sometimes an Elite. */
   bossPhoenixFeathers: 1,

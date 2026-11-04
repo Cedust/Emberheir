@@ -920,6 +920,20 @@ export const HEX: SkillDefinition = {
 };
 
 /** Voidborn Maw: feeds the Corruption on you. */
+/**
+ * The Hollow Brute's swing: Heavy Swing as Void. Since the Boon rework (2026-11-04) the Void Rift
+ * mixes damage types like the Harvester: before, its Gatekeeper and boss hit almost only
+ * Physical and the Emberseer, with little Armor, fell there 7 times per clear (others 2-4).
+ */
+export const HOLLOW_SWING: SkillDefinition = {
+  ...HEAVY_SWING,
+  id: "hollow-swing",
+  name: "Hollow Swing",
+  tags: ["void", "direct", "melee"],
+  description: "200 % Weapon Damage as Void.",
+  hits: [{ kind: "weapon", multiplier: 2, damageType: "void" }],
+};
+
 export const CONSUME: SkillDefinition = {
   id: "consume",
   name: "Consume",
@@ -938,15 +952,18 @@ export const CONSUME: SkillDefinition = {
   effects: [{ kind: "advanceCorruption", ticks: 4 }],
 };
 
-/** Voidborn Maw's telegraph: the rift snaps shut. */
+/**
+ * Voidborn Maw's telegraph: the rift snaps shut on flesh. Physical since 2026-11-04: the Maw's
+ * Bite is Void now, so the boss still mixes damage types.
+ */
 export const RIFT_SNAP: SkillDefinition = {
   id: "rift-snap",
   name: "Rift Snap",
   type: "attack",
   heatCost: 0,
-  tags: ["void", "direct", "melee"],
-  description: "An announced bite for 700 % Weapon Damage as Void.",
-  hits: [{ kind: "weapon", multiplier: 7, damageType: "void" }],
+  tags: ["physical", "direct", "melee"],
+  description: "An announced bite for 700 % Weapon Damage as Physical.",
+  hits: [{ kind: "weapon", multiplier: 7, damageType: "physical" }],
 };
 
 // Act 7 (Emberfall) and The Ashen Harvester.

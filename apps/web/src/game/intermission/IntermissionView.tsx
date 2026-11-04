@@ -281,7 +281,9 @@ export function IntermissionView(props: {
             tip={{
               name: "Retreat to Camp",
               kind: "",
-              explain: "Gear and levels stay, this act's Boons burn.",
+              explain: run.wildfire
+                ? "Gear and levels stay, this trip's Boons burn."
+                : "Gear and levels stay.",
             }}
             onClick={() => game.dispatch({ type: "retreat" })}
           >

@@ -171,3 +171,67 @@ describe("version 16: Bounties v2", () => {
     expect(migrated.run?.bounty).toBeUndefined();
   });
 });
+
+describe("Boon-Auswahl migration", () => {
+  it("swaps a Boon that is gone for the one in its place and drops doubles from an open offer", () => {
+    const s = rich();
+    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
+    const run = raw["run"] as Record<string, unknown>;
+    const old = {
+      ...raw,
+      version: 19,
+      boons: {
+        kept: [
+          { id: "grit", grade: "flame" },
+          { id: "crushing-blow", grade: "spark" },
+        ],
+        fresh: [{ id: "wildfire", grade: "spark" }],
+      },
+      run: {
+        ...run,
+        // A Wildfire trip, so step 20 keeps its Boons.
+        wildfire: 1,
+        rewards: {
+          ...((run["rewards"] as object | null) ?? {}),
+          boonOffer: [
+            { id: "melt", grade: "spark" },
+            { id: "stoked-pyre", grade: "flame" },
+            { id: "frost-nip", grade: "spark" },
+          ],
+          boonPick: null,
+        },
+      },
+    };
+    // Without content data: the test game has its own Boons.
+    const migrated = deserializeGame(JSON.stringify(old));
+    expect(migrated.boons.kept.map((b) => b.id)).toEqual(["brutality", "crushing-blow"]);
+    expect(migrated.boons.fresh.map((b) => b.id)).toEqual(["stoked-pyre"]);
+    expect(migrated.run?.rewards?.boonOffer?.map((b) => b.id)).toEqual([
+      "stoked-pyre",
+      "permafrost",
+    ]);
+  });
+
+  it("an act's Boons and an open Boon offer burn out: Boons live only in the Wildfire", () => {
+    const s = rich();
+    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
+    const run = raw["run"] as Record<string, unknown>;
+    const old = {
+      ...raw,
+      version: 20,
+      boons: { kept: [{ id: "brutality", grade: "flame" }], fresh: [] },
+      run: {
+        ...run,
+        rewards: {
+          ...((run["rewards"] as object | null) ?? {}),
+          boonOffer: [{ id: "stoked-pyre", grade: "flame" }],
+          boonPick: null,
+        },
+      },
+    };
+    const migrated = deserializeGame(JSON.stringify(old));
+    expect(migrated.boons).toEqual({ kept: [], fresh: [] });
+    expect(migrated.run?.rewards?.boonOffer).toBeUndefined();
+    expect(migrated.run?.rewards?.boonPick).toBeUndefined();
+  });
+});

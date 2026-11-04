@@ -9,7 +9,9 @@ import type {
 
 /**
  * Stolen Fire Boons (docs/design/archiv/spielspass-umsetzung.md): one family per Warden, Hearth is always
- * open. Values are rank I at Spark grade; rank and grade scale them (see `BOONS` in the sim).
+ * open. Every Warden family holds one Boon per exclusive slot (Strike, Skill, Heat, Reaction) and
+ * one that stacks; Hearth has a Heat and a Reaction Boon and four that stack
+ * (docs/design/notes/boon-auswahl-v1.md: 69 → 49 Boons). Values are rank I at Spark grade; rank and grade scale them (see `BOONS` in the sim).
  * Percent stats are fractions (0.1 = 10 %), `value` is the number on the card.
  */
 export const BOON_FAMILIES: readonly BoonFamilyDefinition[] = [
@@ -48,7 +50,9 @@ function boon(
   name: string,
   text: string,
   value: number,
-  effect: Pick<BoonDefinition, "bonuses" | "rules" | "fusion"> & { readonly trigger?: TriggerBoon },
+  effect: Pick<BoonDefinition, "bonuses" | "rules" | "fusion" | "maxRank"> & {
+    readonly trigger?: TriggerBoon;
+  },
 ): BoonDefinition {
   const { trigger, ...rest } = effect;
   return {
@@ -84,14 +88,8 @@ const HEARTH: readonly BoonDefinition[] = [
       once: true,
     },
   }),
-  boon("hearth", "reaction", "Hearthguard", "Fight start: Barrier of # % Life", 10, {
-    trigger: { when: { kind: "fightStart" }, effect: { kind: "barrier", fraction: 0.1 } },
-  }),
   boon("hearth", "heat", "Banked Coals", "Start every fight with # Heat", 30, {
     bonuses: { startingHeat: 30 },
-  }),
-  boon("hearth", "heat", "Warm Hands", "Every 4 s: # Heat", 5, {
-    trigger: { when: { kind: "everySeconds", seconds: 4 }, effect: { kind: "heat", amount: 5 } },
   }),
   boon("hearth", "passive", "Old Nan's Broth", "+# % Lifesteal", 1.5, {
     bonuses: { lifesteal: 0.015 },
@@ -109,6 +107,7 @@ const HEARTH: readonly BoonDefinition[] = [
       effect: { kind: "heal", fraction: 0.02 },
     },
   }),
+  // Kept for casters: their defense is Barrier (boon-auswahl-v1.md, balance check 2026-11-02).
   boon("hearth", "trigger", "Ember Ward", "Hit taken: Barrier of # % Life", 5, {
     trigger: {
       when: { kind: "whenHit" },
@@ -126,9 +125,6 @@ const ASH: readonly BoonDefinition[] = [
       effect: { kind: "weaponHit", multiplier: 0.8 },
     },
   }),
-  boon("ash", "strike", "Sundering Weight", "Default Attack deals +# % damage", 20, {
-    rules: { defaultAttackDamage: 1.2 },
-  }),
   boon("ash", "skill", "Ashen Momentum", "Skills: +# % Physical Damage, stacks 5×", 5, {
     trigger: {
       when: { kind: "onSkillUse" },
@@ -141,20 +137,6 @@ const ASH: readonly BoonDefinition[] = [
   boon("ash", "passive", "Brutality", "+# % Physical Damage", 10, {
     bonuses: { physicalDamage: 0.1 },
   }),
-  boon("ash", "passive", "Grit", "Reflect # % of hits taken", 12, {
-    trigger: {
-      when: { kind: "whenHit" },
-      effect: { kind: "reflect", fraction: 0.12, cap: 0.03, damageType: "physical" },
-    },
-  }),
-  boon("ash", "trigger", "Stagger", "Crit: stun for # s", 0.5, {
-    trigger: {
-      when: { kind: "onCrit" },
-      effect: { kind: "stun", seconds: 0.5 },
-      chance: 0.4,
-      cooldown: 6,
-    },
-  }),
   boon("ash", "reaction", "Last Stand", "Below 50 % Life: +# % Physical Damage", 25, {
     trigger: {
       when: { kind: "lifeBelow", threshold: 0.5 },
@@ -165,9 +147,6 @@ const ASH: readonly BoonDefinition[] = [
 ];
 
 const ROT: readonly BoonDefinition[] = [
-  boon("rot", "strike", "Festering Edge", "Attacks: # % chance to Poison", 30, {
-    trigger: { when: EVERY_ATTACK, effect: ailment("poison"), chance: 0.3 },
-  }),
   boon("rot", "strike", "Serrated Edge", "Attacks: # % chance to Bleed", 20, {
     trigger: { when: EVERY_ATTACK, effect: ailment("bleed"), chance: 0.2 },
   }),
@@ -179,12 +158,6 @@ const ROT: readonly BoonDefinition[] = [
   }),
   boon("rot", "passive", "Fester", "Ailments deal +# % damage", 15, {
     rules: { dotDamage: 1.15 },
-  }),
-  boon("rot", "passive", "Bloodfeast", "Heal # % of ailment damage", 1.5, {
-    rules: { dotLifesteal: 0.015 },
-  }),
-  boon("rot", "trigger", "Open Wounds", "Crit: # % chance to Bleed", 30, {
-    trigger: { when: { kind: "onCrit" }, effect: ailment("bleed"), chance: 0.3 },
   }),
   boon("rot", "reaction", "Grave Hunger", "Below 40 % Life: +# % Lifesteal", 6, {
     trigger: {
@@ -208,21 +181,6 @@ const CINDER: readonly BoonDefinition[] = [
   boon("cinder", "passive", "Stoked Pyre", "+# % Elemental Damage", 10, {
     bonuses: { elementalDamage: 0.1 },
   }),
-  boon("cinder", "passive", "Melt", "+# % Elemental Penetration", 7, {
-    bonuses: { elementalPenetration: 0.07 },
-  }),
-  boon("cinder", "trigger", "Flashover", "Every 6 s: a flare for # % weapon damage", 80, {
-    trigger: {
-      when: { kind: "everySeconds", seconds: 6 },
-      effect: { kind: "weaponHit", multiplier: 0.8 },
-    },
-  }),
-  boon("cinder", "trigger", "Wildfire", "Crit: +# % Attack Speed, stacks 3×", 5, {
-    trigger: {
-      when: { kind: "onCrit" },
-      effect: { kind: "buff", stat: "attackSpeed", amount: 0.05, duration: 4, maxStacks: 3 },
-    },
-  }),
   boon("cinder", "reaction", "Blazing Defiance", "Below 30 % Life: +# % Elemental Damage", 30, {
     trigger: {
       when: { kind: "lifeBelow", threshold: 0.3 },
@@ -241,18 +199,11 @@ const RIME: readonly BoonDefinition[] = [
   }),
   boon("rime", "heat", "Cold Heart", "Heat no longer cools down", 0, {
     rules: { noHeatDecay: true },
-  }),
-  boon("rime", "passive", "Shatter", "+# % Crit Chance", 4, {
-    bonuses: { critChance: 0.04 },
-  }),
-  boon("rime", "passive", "Ice Wall", "+# % Block Chance", 5, {
-    bonuses: { blockChance: 0.05 },
+    // Nothing to grow: one rank (boon-auswahl-v1.md).
+    maxRank: 1,
   }),
   boon("rime", "passive", "Permafrost", "+# % Ailment Effect", 15, {
     bonuses: { ailmentEffect: 0.15 },
-  }),
-  boon("rime", "trigger", "Frost Nip", "Hit taken: # % chance to Chill", 25, {
-    trigger: { when: { kind: "whenHit" }, effect: ailment("chill"), chance: 0.25, cooldown: 3 },
   }),
   boon("rime", "reaction", "Ice Shell", "Enemy wind-up: Barrier of # % Life", 12, {
     trigger: { when: { kind: "enemyWindup" }, effect: { kind: "barrier", fraction: 0.12 } },
@@ -275,20 +226,6 @@ const STORM: readonly BoonDefinition[] = [
   }),
   boon("storm", "passive", "Quickening", "+# % Attack Speed", 6, {
     bonuses: { attackSpeed: 0.06 },
-  }),
-  boon("storm", "passive", "Blur", "+# % Evasion", 4, {
-    bonuses: { evasion: 0.04 },
-  }),
-  boon("storm", "passive", "Conductor", "+# % chance to Shock", 8, {
-    bonuses: { shockChance: 0.08 },
-  }),
-  boon("storm", "trigger", "Lightning Reflexes", "Evade: # % chance to strike back", 25, {
-    trigger: {
-      when: { kind: "onEvade" },
-      effect: { kind: "extraAttack" },
-      chance: 0.25,
-      cooldown: 2,
-    },
   }),
   boon("storm", "reaction", "Sidestep", "Enemy wind-up: +# % Evasion", 30, {
     trigger: {
@@ -319,20 +256,6 @@ const VOID: readonly BoonDefinition[] = [
   boon("void", "passive", "Hollow Mark", "+# % damage to enemies below 30 % Life", 15, {
     rules: { execute: { below: 0.3, bonus: 0.15 } },
   }),
-  boon("void", "passive", "Creeping Void", "+# % chance to Corrupt", 8, {
-    bonuses: { corruptionChance: 0.08 },
-  }),
-  boon("void", "passive", "Null Ward", "+# % Tenacity", 10, {
-    bonuses: { tenacity: 0.1 },
-  }),
-  boon("void", "trigger", "Void Mirror", "Hit taken: reflect # % of it", 30, {
-    trigger: {
-      when: { kind: "whenHit" },
-      effect: { kind: "reflect", fraction: 0.3, cap: 0.05, damageType: "void" },
-      chance: 0.25,
-      cooldown: 4,
-    },
-  }),
   boon("void", "reaction", "Event Horizon", "Below 30 % Life: Barrier of # % Life", 20, {
     trigger: {
       when: { kind: "lifeBelow", threshold: 0.3 },
@@ -354,6 +277,7 @@ const FUSIONS: readonly BoonDefinition[] = [
   boon("cinder", "passive", "Fever", "Your Burn also Poisons", 0, {
     fusion: ["rot", "cinder"],
     rules: { ailmentEcho: [{ from: "burn", to: "poison" }] },
+    maxRank: 1,
   }),
   boon("cinder", "trigger", "Steam Burst", "Crit: Steam Burst for # % weapon damage", 120, {
     fusion: ["cinder", "rime"],
@@ -366,6 +290,7 @@ const FUSIONS: readonly BoonDefinition[] = [
   boon("storm", "passive", "Galvanic Rot", "Your Shock also Bleeds", 0, {
     fusion: ["rot", "storm"],
     rules: { ailmentEcho: [{ from: "shock", to: "bleed" }] },
+    maxRank: 1,
   }),
   boon("storm", "trigger", "Hailstorm", "Every 5 s: a hailstone for # % weapon damage", 100, {
     fusion: ["rime", "storm"],

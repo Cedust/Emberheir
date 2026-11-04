@@ -126,6 +126,8 @@ export function setOutWildfire(
   return {
     ...brewed,
     notice: null,
+    // Boons burn only in the Wildfire, and only for one trip (boon-auswahl-v1.md 7).
+    boons: EMPTY_BOONS,
     run: {
       actId,
       stage: 1,
@@ -202,7 +204,7 @@ export function startStage(state: GameState, data: GameData): GameState {
     ? wildfireLevel(tier)
     : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
   const atBoss = run.stage >= stagesInAct(act);
-  const p = tier ? wildfirePressure(tier, atBoss) : { life: 1, damage: 1 };
+  const p = tier ? wildfirePressure(tier, atBoss) : PROGRESSION.actPressure;
   // Cursed Spark (an Event): enemies hit harder until the next Waymark.
   const cursed = run.curse && run.stage < run.curse.until ? 1 + run.curse.damage : 1;
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
@@ -309,9 +311,10 @@ export function startStage(state: GameState, data: GameData): GameState {
 
 /** Back to the Camp: flask refilled, life full, act progress and the trip's bounty gone. */
 export function toCamp(state: GameState, data: GameData, notice: Notice | null): GameState {
-  // Boons of the current act burn on death and Retreat; a cleared act keeps them.
+  // Boons of the current act burn on death and Retreat; a cleared act keeps them. Wildfire Boons
+  // last one trip.
   const lost = notice?.kind === "death" || notice?.kind === "retreat";
-  const { kept, fresh } = state.boons;
+  const { kept, fresh } = state.run?.wildfire ? EMPTY_BOONS : state.boons;
   // A done bounty stays done, even after a death: the Scout pays it in the Camp.
   const done = state.run?.bounty?.status === "done" ? state.run.bounty : undefined;
   return {

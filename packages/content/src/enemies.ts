@@ -22,6 +22,7 @@ import {
   GLACIAL_MEND,
   GORRAK_SLAM,
   HEAVY_SWING,
+  HOLLOW_SWING,
   ICE_BOLT,
   MOSS_MEND,
   OBSIDIAN_SHELL,
@@ -582,7 +583,7 @@ export const HOLLOW_BRUTE: EnemyDefinition = {
   description: "Empty inside, heavy outside.",
   attributes: { strength: 12, dexterity: 2, agility: 0, intelligence: 0, wisdom: 2, vitality: 14 },
   weapon: HOLLOW_FIST,
-  skills: [HEAVY_SWING],
+  skills: [HOLLOW_SWING],
   baseLife: 385,
   bonuses: { armor: 24, voidResistance: 0.15 },
 };

@@ -163,7 +163,13 @@ describe("Weapon Mastery content", () => {
     expect(setup.triggers?.some((t) => t.id === "echo-ashfall-wrath")).toBe(true);
     expect(setup.weaponRules?.extraAttacksPrecise).toBe(true);
     expect(setup.weaponRules?.extraAttacksTrigger).toBe(true);
-    expect(setup.weaponRules?.parry).toBeCloseTo(0.12);
+    // Biting Cold (3 ranks) and Shatterpoint: the Winter path's damage against Chilled foes.
+    const vsChill = (setup.weaponRules?.conditionalDamage ?? [])
+      .filter((c) => c.condition.kind === "enemyHas" && c.condition.ailment === "chill")
+      .reduce((sum, c) => sum + c.amount, 0);
+    expect(vsChill).toBeCloseTo(1.45);
+    // Parry comes from Perfect Timing, the other side of the fork.
+    expect(setup.weaponRules?.parry).toBeUndefined();
     expect(setup.weapon.precision).toBeCloseTo(0.85);
     expect(setup.weapon.damageType).toBe("cold");
     expect(setup.weapon.ailmentChances).toEqual([{ ailment: "chill", chance: 0.25 }]);

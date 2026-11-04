@@ -98,3 +98,16 @@ export function flaskCapacity(state: GameState, data: GameData): number {
   const belt = state.hero.equipment.belt;
   return PROGRESSION.flaskStartCharges + (belt ? itemFlaskCharges(belt, data.items) : 0);
 }
+
+/** Flask charges the trip may hold: the Flask's capacity minus a brewed Draught. */
+export function tripFlaskCapacity(state: GameState, data: GameData): number {
+  return flaskCapacity(state, data) - (state.run?.draught ? DRAUGHT_FLASK_COST : 0);
+}
+
+/**
+ * An Ember Shrine of the acts and the finale (boon-auswahl-v1.md 7): one Flask charge back, as
+ * long as the Flask has room. Returns the charges refilled (0 or 1).
+ */
+export function shrineRefill(state: GameState, data: GameData): number {
+  return state.flaskCharges < tripFlaskCapacity(state, data) ? PROGRESSION.shrineFlaskCharges : 0;
+}

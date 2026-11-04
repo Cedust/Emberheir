@@ -8318,12 +8318,46 @@
   animation: boon-pip 0.9s ease-in-out infinite alternate;
 }
 
-.stage .boon-replaces {
-  position: absolute;
-  bottom: -22px;
-  left: 0;
-  right: 0;
-  font-size: 13px;
+/* What the pick does, on top of the card (boon-auswahl-v1.md 3.1). */
+.stage .boon-band {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin: -18px -18px 2px;
+  padding: 5px 10px;
+  font-family: var(--font-title);
+  font-size: 15px;
+  font-weight: 700;
+  white-space: nowrap;
+  color: #fff6e4;
+  background: color-mix(in srgb, var(--heal) 78%, #000);
+  cursor: help;
+}
+
+.stage .boon-band.rankUp {
+  background: color-mix(in srgb, var(--rarity-legendary) 80%, #000);
+}
+
+.stage .boon-band.replaces {
+  background: color-mix(in srgb, var(--life) 82%, #000);
+}
+
+.stage .boon-sigil.mini {
+  width: 14px;
+  height: 14px;
+  margin: 0 2px;
+  border-width: 1.5px;
+  border-color: #fff6e4;
+}
+
+/* The held Boon the pick would replace: its effect, struck through. */
+.stage .boon-lost {
+  font-size: 14px;
+  line-height: 1.25;
+  text-decoration: line-through;
+  color: color-mix(in srgb, var(--life) 70%, var(--text));
 }
 
 .stage .boon-bar {
@@ -8374,6 +8408,74 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+}
+
+/* The four slots that hold one Boon each, empty ones too. */
+.stage .boon-sockets {
+  display: flex;
+  gap: 6px;
+}
+
+.stage .boon-socket {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  width: 54px;
+}
+
+.stage .boon-socket small {
+  font-size: 11px;
+  color: var(--text-sub);
+}
+
+.stage .boon-socket-empty {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  color: var(--text-sub);
+  cursor: help;
+}
+
+.stage .boon-socket-empty::before {
+  content: "";
+  position: absolute;
+  width: 28px;
+  height: 28px;
+  transform: rotate(45deg);
+  border: 2px dashed var(--slot-edge);
+  background: var(--slot-bg);
+}
+
+.stage .boon-socket-empty {
+  position: relative;
+}
+
+.stage .boon-socket-empty > svg {
+  position: relative;
+}
+
+.stage .boon-socket-empty.locked {
+  opacity: 0.55;
+}
+
+/* A Shrine card under the pointer lights the Boon or slot it would change. */
+.stage .boon-tile.lit-rankUp .boon-sigil.tile {
+  box-shadow: 0 0 14px 4px var(--rarity-legendary);
+  animation: boon-lit 0.8s ease-in-out infinite alternate;
+}
+
+.stage .boon-tile.lit-replaces .boon-sigil.tile {
+  box-shadow: 0 0 14px 4px var(--life);
+  animation: boon-lit 0.8s ease-in-out infinite alternate;
+}
+
+.stage .boon-socket-empty.lit-new::before {
+  border-style: solid;
+  border-color: var(--heal);
+  box-shadow: 0 0 12px 3px var(--heal);
 }
 
 .stage .boon-tiles {
@@ -8436,6 +8538,12 @@
   }
 }
 
+@keyframes boon-lit {
+  to {
+    filter: brightness(1.35);
+  }
+}
+
 @keyframes boon-pip {
   to {
     box-shadow: 0 0 8px var(--boon);
@@ -8445,7 +8553,8 @@
 @media (prefers-reduced-motion: reduce) {
   .stage .boon-card,
   .stage .boon-card.grade-blaze,
-  .stage .boon-pips span.new {
+  .stage .boon-pips span.new,
+  .stage .boon-tile .boon-sigil.tile {
     animation: none;
   }
 }

@@ -510,7 +510,7 @@ const SWORD = buildTree({
       color: C.frost,
       infusion: { damageType: "cold", ailment: "chill", chance: 0.25 },
       techniques: [
-        technique("Parry", "+4 % Parry.", { weaponRules: { parry: 0.04 } }),
+        versusAilment("Biting Cold", "chill", 0.4),
         ailmentPower("Frostbite", "chill", 0.1),
       ],
       forks: [
@@ -525,17 +525,22 @@ const SWORD = buildTree({
           ),
         ],
         [
-          notable("Perfect Timing", "Every Parry answers with a Riposte (once per second).", {
-            triggers: [
-              trigger(
-                "perfect-timing",
-                "Riposte",
-                { kind: "onParry" },
-                { kind: "extraAttack" },
-                { cooldown: 1 },
-              ),
-            ],
-          }),
+          notable(
+            "Perfect Timing",
+            "+12 % Parry. Every Parry answers with a Riposte (once per second).",
+            {
+              weaponRules: { parry: 0.12 },
+              triggers: [
+                trigger(
+                  "perfect-timing",
+                  "Riposte",
+                  { kind: "onParry" },
+                  { kind: "extraAttack" },
+                  { cooldown: 1 },
+                ),
+              ],
+            },
+          ),
           versusAilment("Shatterpoint", "chill", 0.25),
         ],
       ],
@@ -714,7 +719,7 @@ const MACE = buildTree({
       color: C.storm,
       infusion: { damageType: "lightning", ailment: "shock", chance: 0.2 },
       techniques: [
-        technique("Guard", "+2 % Block Chance.", { bonuses: { blockChance: 0.02 } }),
+        versusAilment("Storm Hammer", "shock", 0.4),
         ailmentPower("Charged Head", "shock", 0.1),
       ],
       forks: [
@@ -1138,14 +1143,14 @@ const DAGGER = buildTree({
       color: C.storm,
       infusion: { damageType: "lightning", ailment: "shock", chance: 0.15 },
       techniques: [
-        technique("Double Stab", "+5 % chance to stab a second time at once.", {
+        technique("Double Stab", "+15 % chance to stab a second time at once.", {
           triggers: [
             trigger(
               "double-stab",
               "Double Stab",
               { kind: "onHit" },
               { kind: "extraAttack" },
-              { chance: 0.05 },
+              { chance: 0.15 },
             ),
           ],
         }),
