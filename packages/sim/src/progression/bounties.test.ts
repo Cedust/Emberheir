@@ -175,7 +175,9 @@ describe("Eldrin's offer and Cache", () => {
     const cache = s.bountyCache;
     expect(cache?.items).toHaveLength(3);
     expect(cache?.picks).toBe(1);
+    // Only the bonus (4–6 here): Eldrin's Cache pays no base Ember Coal.
     expect(s.wallet.emberCoal - s0.wallet.emberCoal).toBeGreaterThanOrEqual(4);
+    expect(s.wallet.emberCoal - s0.wallet.emberCoal).toBeLessThanOrEqual(6);
     expect(() => act(s, { type: "turnInBounty" })).toThrow(/No bounty/);
     const taken = act(s, { type: "takeBountyItem", index: 1 });
     expect(taken.bountyCache).toBeUndefined();

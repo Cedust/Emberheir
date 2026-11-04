@@ -134,7 +134,7 @@ Endgame **Wildfire I–X**.
   unter den tragbaren. Die übrigen 25 % bleiben offen, damit der geteilte Stash auch Gear für andere Helden bekommt.
   Affixe bleiben frei. Gilt für alle Item-Picks (auch Cache, Eldrin's Cache) und Marishas Gamble. Vorher war gut jede
   dritte Karte nicht tragbar, bei Rüstung zwei von drei.
-- Ember Coal und Runes fallen **passiv** in den Beutel (Boss 1–2 Ember Coal, Elite zu 15 % 1, normale Gegner keine, Cache-Knoten und Eldrin's Cache 1–2; Economy v2 03.11.2026: vorher Boss 4–6, Elite 1–2, normale 5 %, auch ein Min-Maxer gab nur 2 % davon aus).
+- Ember Coal und Runes fallen **passiv** in den Beutel (Boss 1–2 Ember Coal, Elite zu 15 % 1, normale Gegner keine, Cache-Knoten 1–2, Eldrin's Cache nur über die Elite Hunt; Economy v2 03.11.2026: vorher Boss 4–6, Elite 1–2, normale 5 %, auch ein Min-Maxer gab nur 2 % davon aus).
 - **Ember Shrine** nach Stage 5 und 10 und nach zufälligen Elites auf Fight-Knoten (nicht beim Wandern). In den
   Acts füllt sie **1 Flask-Ladung** auf (wenn die Flask nicht voll ist). **Boons gibt es nur im Wildfire**
   (Timo 2026-11-03: Boons sind Glück und sollen ein Bonus sein, kein Run darf von ihnen abhängen; siehe 5.5).
@@ -292,7 +292,7 @@ Endgame **Wildfire I–X**.
 
   | Bounty | Ziel | Bonus im Cache |
   |---|---|---|
-  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 2–3 Ember Coal |
+  | Elite Hunt | 2 Elites (Act 1–3), 3 Elites (ab Act 4); **Gatekeeper zählen nicht** | 3–4 Ember Coal (der einzige Coal im Cache, Timo 03.11.2026) |
   | Trail Hunt | 4–8 Kills auf den Gegner des Acts, dessen nächster Trail am nächsten ist (so viele Kills, wie ihm fehlen); die Karte bekommt einen Hunt-Knoten mehr für ihn | +5 Trail-Kills, eine Karte trägt sicher sein Hunt Affix |
   | Thief Chase (ab Act 2) | den Ember Thief fangen, bevor er flieht (Thief ×5 häufiger, Thief's Trail auf der Karte) | 4 Karten, 2 nehmen |
   | Dry Throat | den Boss schlagen, ohne auf diesem Zug aus der Flask zu trinken | alle Karten eine Rarity höher (im Boss-Fenster des Runs) |
@@ -505,6 +505,13 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 | Staff | Hollow (Void, Corruption) | Smolder (Fire, Burn) | Glacial (Cold, Chill) |
 
 - Der Mace-Stun ersetzt ein Ailment (Quake: Stunned Sunder). Attunement gibt es nicht mehr, der Path übernimmt es.
+- **Schaden für die Verteidigungs-Paths** (Boon-Umbau 04.11.2026, ohne Boons hingen sie fest): Winter-Technik 1 ist
+  **Biting Cold** (+40 % Schaden gegen Chilled pro Rang, vorher +4 % Parry; die Parry, jetzt +12 %, sitzt in Perfect Timing),
+  Stormwall-Technik 1 ist **Storm Hammer** (+40 % gegen Shocked pro Rang, vorher +2 % Block), Static: **Double Stab**
+  15 % pro Rang (vorher 5 %). Sword Winter brauchte in den Frost Peaks 12+ Anläufe, Dagger Static in den Storm Spires 14.
+- **Void Rift mischt die Schadensarten** wie der Harvester (04.11.2026): Hollow Brute schlägt **Hollow Swing** (Heavy
+  Swing als Void), der Biss der Voidborn Maw ist Void, ihr Rift Snap physisch. Vorher traf das Act fast nur physisch und
+  die Emberseer brauchten dort 7 Anläufe (Ashstrider 1,8).
 - **Techniken** geben nur Werte, die es ausschließlich an der Waffe gibt: Precision, Damage Range, **Parry**, Sunder,
   Ailment-Wirkung der Waffe, Extra-Attack Damage, Innate Damage/Cost, Mighty-Hit-Schaden, Heat per Hit.
 - **Barbed Arrow** (Bow-Innate vor dem Heirloom, Schritt 5): 180 % (vorher 100 %, das schwächste Innate pro Heat;
