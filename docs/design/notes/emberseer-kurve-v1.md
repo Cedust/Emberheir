@@ -137,3 +137,26 @@ Weniger Schaden allein macht Act 2–6 kaum schwerer, Act 7 aber deutlich.
 **Offen:** Emberseer bleiben in Act 2–6 die leichteste Klasse (Ø 1,9 gegen etwa 3,3). Finale und Wildfire mit der
 Resistenz-Änderung nicht neu gemessen (Harvester und Act-7-Gegner kommen dort vor, Element-Builds werden dort etwas
 leichter).
+
+## 7. Siphon −20 % (Timo 2026-11-04)
+
+Timo wählte Siphon −20 %: 0,2 % pro INT-Punkt (INT 10 = 2 %). „Barrier wächst mit dem Level“ abgelehnt: nichts darf
+versteckt am Level hängen, die Barrier bleibt an Gear und Tier gebunden.
+
+Messung mit 8 Seeds (31–101, `--build all --newest 1`), weil 4 Seeds pro Zelle etwa ±1 Versuch rauschen:
+
+| Klasse | A1 | A2 | A3 | A4 | A5 | A6 | A7 | alle |
+|---|---|---|---|---|---|---|---|---|
+| Cinderguard main | 2,5 | 3,7 | 3,2 | 2,3 | 2,8 | 3,6 | 3,9 | 3,14 |
+| Cinderguard neu | 2,7 | 4,2 | 3,4 | 3,1 | 2,3 | 4,4 | 3,3 | 3,34 |
+| Ashstrider main | 2,9 | 3,7 | 5,9 | 3,3 | 3,6 | 1,5 | 4,2 | 3,59 |
+| Ashstrider neu | 3,1 | 3,9 | 5,3 | 3,4 | 3,4 | 1,7 | 3,6 | 3,47 |
+| Emberseer main | 1,9 | 1,4 | 2,2 | 2,5 | 3,3 | 3,3 | 10,0 | 3,50 |
+| Emberseer neu | 2,0 | 1,6 | 1,8 | 1,8 | 2,7 | 2,4 | 4,8 | 2,43 |
+
+Alle Klassen 3,40 → 3,16; nicht geschafft 8 → 2 (beide Axe Glacier). Act-7-Tode der Emberseer: Harvester 1,8,
+Ash Revenant 1,2 pro Durchlauf (Cinderguard 0,4 / 0,9, Ashstrider 1,1 / 0,7).
+
+**Offen:** Emberseer sind in Act 2–4 weiter die leichteste Klasse (1,6–1,8 gegen 3,1–5,3; vor allem die Act-Bosse
+Mother of Rot, Cinder Tyrant, Rime Warden), in Act 7 leicht die schwerste (4,8 gegen 3,3–3,6). Der Act-7-Rest sind
+physische Gegner (Ash Revenant).

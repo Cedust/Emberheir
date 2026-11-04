@@ -59,7 +59,7 @@ export const COMBAT = {
      * Lifesteal does for weapon fighters. Tied to Intelligence so a small Barrier from a node or
      * a charm stays small (a flat Siphon refilled it after every hit).
      */
-    barrierSiphonPerIntelligence: 0.0025,
+    barrierSiphonPerIntelligence: 0.002,
     // Resistance comes from gear for every class (Timo, PoE rule).
     allResistancePerIntelligence: 0,
     attackSpeedPerAgility: 0.03,

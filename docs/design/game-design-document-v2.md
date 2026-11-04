@@ -369,7 +369,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|
 | **Strength** | +6 % Armor; Hauptattribut des Cinderguard: +8 % Damage | Armorbreaker (jeder 4. Angriff ist ein Mighty Hit, Mighty Hits geben Sunder) / Stoneguard (Heavy Attacks −25 %) / Titan |
 | **Dexterity** | +2 % Evasion; Hauptattribut des Ashstrider: +8 % Damage | Quick Reflexes / Ember Dance / True Shot |
-| **Intelligence** | +8 % Barrier, +0,25 % Barrier Siphon; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
+| **Intelligence** | +8 % Barrier, +0,2 % Barrier Siphon; Hauptattribut des Emberseer: +8 % Damage | Attuned / Elemental Surge / **Barrier Burst** (bricht die Barrier, trifft sie mit 50 % der max. Barrier im Element der Waffe, setzt sicher ihr Ailment; wieder, wenn sie voll war) |
 | **Agility** | +3 % Attack Speed, +1,5 % Crit Chance | Hawkeye / Opportunist / Double Time |
 | **Wisdom** | +6 % Heat Gain, +5 % Ailment Effect, +4 % Trigger Chance | Inner Fire / Afterglow / Clarity (Payoffs +25 %) |
 | **Vitality** | +6 % Life, +3 % Tenacity | Second Breath / Thick Skin / Undying |
@@ -443,7 +443,7 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 |---|---|---|
 | **Armor** | Gear, STR | Reduktion = Armor / (Armor + 20 × Angreifer-Level), max. 90 % |
 | **Evasion** | Gear, AGI | weicht Angriffen aus (max. 50 %); **Deflect**: Spells mit derselben Chance halbiert (nur Held) |
-| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt, dazu 0,25 % Barrier Siphon/Punkt) | voll bei Kampfbeginn; **Barrier Siphon**: pro INT-Punkt füllen 0,25 % von allem Schaden, den du machst (Treffer und Ailments), sie wieder auf (INT 10 = 2,5 %), nie über das Maximum. Kein Aufladen über Zeit mehr (2026-11-04, `emberseer-kurve-v1.md`: 3 %/s Aufladen wuchs nicht mit dem Gegnerschaden, Emberseer früh am leichtesten, am Harvester am schwersten). Unyielding: Siphon 0 |
+| **Barrier** | Caster-Basen, Affix „Warded“, INT (+8 %/Punkt, dazu 0,2 % Barrier Siphon/Punkt) | voll bei Kampfbeginn; **Barrier Siphon**: pro INT-Punkt füllen 0,2 % von allem Schaden, den du machst (Treffer und Ailments), sie wieder auf (INT 10 = 2 %; zuerst 0,25 %, nach 8-Seed-Messung −20 %), nie über das Maximum. Kein Aufladen über Zeit mehr (2026-11-04, `emberseer-kurve-v1.md`: 3 %/s Aufladen wuchs nicht mit dem Gegnerschaden, Emberseer früh am leichtesten, am Harvester am schwersten). Unyielding: Siphon 0 |
 | **Block** | Shield | stoppt 50 % des Treffers, max. 75 % Chance |
 | **Parry** | nur Heirloom (Sword: Winter-Path, Keystone Perfect Parry) | ein gegnerischer Angriff (kein Spell) wird zum Glancing Blow: halber Schaden, keine Trigger des Gegners; max. 30 % |
 | **Resistances** | Gear, Draughts | Cap 75 %; **Ember Penalty** −10 % pro Prestige bis −60 % |
