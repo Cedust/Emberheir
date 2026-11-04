@@ -20,6 +20,12 @@ export const ITEMS = {
    * Base Life grows 4 % per level, 10 levels per tier (1.04^10 ≈ 1.48).
    */
   lifeGrowthPerTier: 0.48,
+  /**
+   * Runewords (runen-review-v1.md R1): their damage stats (Physical/Elemental Damage, Ailment
+   * Effect) grow × (1 + this × (tier − 1)) with the base's tier, so a Runeword forged into a
+   * better base is better and Runes stay worth having in the endgame.
+   */
+  runewordDamagePerTier: 0.08,
   /** Attribute Requirements grow by this many points per tier above 1. */
   requirementPerTier: 0,
   /**

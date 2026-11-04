@@ -311,6 +311,12 @@ export function maxRuneRank(actTier: number): number {
   return PROGRESSION.runeRankBase + PROGRESSION.runeRanksPerActTier * actTier;
 }
 
+/** Lowest Rune rank that drops at an Act Tier (runen-review-v1.md R2). */
+export function minRuneRank(actTier: number, topRank: number): number {
+  const floor = maxRuneRank(actTier) - PROGRESSION.runeFloorBelowMax;
+  return Math.max(1, Math.min(floor, topRank - PROGRESSION.runeFloorTopRanks + 1));
+}
+
 /** Runes a win drops: by chance per rank, lower Rune ranks far more often (like D2). */
 export function rollRuneDrops(
   data: GameData,
@@ -350,8 +356,11 @@ export function rollRune(
     const share = isHigh(homeRune) ? PROGRESSION.homeHighRuneShare : PROGRESSION.homeRuneShare;
     if (rng.chance(share)) return homeRune.id;
   }
-  const pool = [...data.items.runes.values()].filter((r) => r.rank <= max && (high || !isHigh(r)));
+  const min = minRuneRank(actTier, topRank);
+  const pool = [...data.items.runes.values()].filter(
+    (r) => r.rank >= min && r.rank <= max && (high || !isHigh(r)),
+  );
   const weight = (r: { rank: number }) =>
-    PROGRESSION.runeRankFalloff ** (r.rank - 1) * (isHigh(r) ? PROGRESSION.highRuneFactor : 1);
+    PROGRESSION.runeRankFalloff ** (r.rank - min) * (isHigh(r) ? PROGRESSION.highRuneFactor : 1);
   return pickWeighted(pool, weight, rng)?.id;
 }

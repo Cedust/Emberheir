@@ -12,6 +12,7 @@ import {
   itemSlotFor,
   kindleTargets,
   learnFromItem,
+  maxCombines,
   nextAct,
   PROGRESSION,
   salvageValue,
@@ -197,7 +198,7 @@ export function PersonaView(props: {
     block = CRAFT_BLOCK_TEXT.noAffixes;
   }
 
-  const run = () => {
+  const run = (req: CraftRequest | null = request) => {
     if (block) return;
     if (kind === "salvage" && item) {
       const names = learned.map((l) => partName(l.kind, l.id)).join(", ");
@@ -209,17 +210,17 @@ export function PersonaView(props: {
       setPulse((n) => n + 1);
       return;
     }
-    if (!request) return;
+    if (!req) return;
     // The sim is deterministic, so this preview is exactly what the dispatch will do.
     let after: GameState;
     try {
-      after = applyAction(state, GAME_DATA, { type: "craft", request });
+      after = applyAction(state, GAME_DATA, { type: "craft", request: req });
     } catch {
-      game.dispatch({ type: "craft", request });
+      game.dispatch({ type: "craft", request: req });
       return;
     }
-    const next = "itemId" in request ? findCraftItem(after, request.itemId)?.item : undefined;
-    switch (request.kind) {
+    const next = "itemId" in req ? findCraftItem(after, req.itemId)?.item : undefined;
+    switch (req.kind) {
       case "addSocket":
         setLast(`${next?.name ?? "Item"} now has ${next?.sockets ?? 0} Sockets`);
         break;
@@ -230,17 +231,20 @@ export function PersonaView(props: {
             word !== item?.name &&
             after.legacy.runewords.length > state.legacy.runewords.length
             ? `Runeword forged: ${word}!`
-            : `Socketed ${runeName(request.runeId)}`,
+            : `Socketed ${runeName(req.runeId)}`,
         );
-        if ((after.wallet.runes[request.runeId] ?? 0) === 0) setRuneId(null);
+        if ((after.wallet.runes[req.runeId] ?? 0) === 0) setRuneId(null);
         break;
       }
       case "combineRunes": {
         const made = Object.keys(after.wallet.runes).find(
           (id) => (after.wallet.runes[id] ?? 0) > (state.wallet.runes[id] ?? 0),
         );
-        setLast(`Three ${runeName(request.runeId)} became ${made ? runeName(made) : "?"}`);
-        if ((after.wallet.runes[request.runeId] ?? 0) < 3) setRuneId(null);
+        const times = req.times ?? 1;
+        const from =
+          times > 1 ? `${times * 3} ${runeName(req.runeId)}` : `Three ${runeName(req.runeId)}`;
+        setLast(`${from} became ${times > 1 ? `${times} ` : ""}${made ? runeName(made) : "?"}`);
+        if ((after.wallet.runes[req.runeId] ?? 0) < 3) setRuneId(null);
         break;
       }
       case "gamble": {
@@ -265,7 +269,7 @@ export function PersonaView(props: {
         }
         break;
       case "kindle": {
-        const index = request.affixIndex ?? item?.affixes.length ?? 0;
+        const index = req.affixIndex ?? item?.affixes.length ?? 0;
         if (next) setLast(`Kindled: ${affixText(next, index).text}`);
         break;
       }
@@ -275,7 +279,7 @@ export function PersonaView(props: {
         break;
       case "temperChoose": {
         const index = item?.lockedAffix;
-        const roll = request.option === null ? undefined : item?.temperOffer?.[request.option];
+        const roll = req.option === null ? undefined : item?.temperOffer?.[req.option];
         if (item && index !== undefined) {
           const from = affixText(item, index).text;
           setLast(
@@ -288,9 +292,15 @@ export function PersonaView(props: {
         break;
       }
     }
-    game.dispatch({ type: "craft", request });
+    game.dispatch({ type: "craft", request: req });
     setPulse((n) => n + 1);
   };
+
+  // Combine All (runen-review-v1.md R3): every Combine the pouch can pay, in one click.
+  const allTimes =
+    kind === "combine" && runeId && !block ? maxCombines(state, GAME_DATA, runeId) : 0;
+  const combineAll: Extract<CraftRequest, { kind: "combineRunes" }> | null =
+    allTimes >= 2 && runeId ? { kind: "combineRunes", runeId, times: allTimes } : null;
 
   const actionName =
     request?.kind === "temperChoose"
@@ -525,9 +535,16 @@ export function PersonaView(props: {
                     {actionName}
                   </HoldButton>
                 ) : (
-                  <Button variant="primary" big blocked={block} onClick={run}>
-                    {actionName}
-                  </Button>
+                  <>
+                    {combineAll && (
+                      <Button big onClick={() => run(combineAll)}>
+                        All ×{combineAll.times}
+                      </Button>
+                    )}
+                    <Button variant="primary" big blocked={block} onClick={() => run()}>
+                      {actionName}
+                    </Button>
+                  </>
                 )}
               </div>
             )}

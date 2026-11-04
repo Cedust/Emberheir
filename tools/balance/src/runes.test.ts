@@ -40,8 +40,9 @@ describe("autopilot Runes", () => {
   it("forges a Runeword into a kept base and wears it when it beats the worn item", () => {
     const s = autopilotRunes(camp({ ash: 1, moss: 1 }), GAME_DATA, GAME_DATA.acts[0], new Set());
     const helm = s.hero.equipment.helm;
-    expect(helm?.runes).toEqual(["ash", "moss"]);
-    expect(s.legacy.runewords).toContain("kindling");
+    // Bark + Moss make Kindling, Moss + Bark the Warden helm: the better one for the build wins.
+    expect([...(helm?.runes ?? [])].sort()).toEqual(["ash", "moss"]);
+    expect(s.legacy.runewords.some((w) => w === "kindling" || w === "warden")).toBe(true);
     expect(s.wallet.runes).toEqual({});
   });
 

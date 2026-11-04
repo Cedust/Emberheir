@@ -30,3 +30,24 @@ test("Marisha gambles a ring, Nyssa turns three Bark into Moss", async ({ page }
   await expect(runes.getByRole("radio", { name: /^Bark/ })).toContainText("0/3");
   expect(errors).toEqual([]);
 });
+
+test("Combine All turns every Bark Nyssa can pay into Moss at once", async ({ page }) => {
+  const errors: string[] = [];
+  page.on("pageerror", (e) => errors.push(e.message));
+  await seedSave(page, saveWithRunes({ ash: 10 }));
+  await page.goto("/");
+  await page.getByRole("button", { name: /Continue/ }).click();
+  await page.getByRole("button", { name: "Marisha, Black Market" }).click();
+  await page.getByRole("tab", { name: /Nyssa/ }).click();
+  await page
+    .getByRole("button", { name: /Combine Runes/ })
+    .first()
+    .click();
+  const runes = page.getByRole("radiogroup", { name: "Runes" });
+  await runes.getByRole("radio", { name: /^Bark/ }).click();
+  await page.locator(".cost-bar").getByRole("button", { name: "All ×3" }).click();
+  await expect(runes.getByRole("radio", { name: /^Moss/ })).toContainText("3/3");
+  await expect(runes.getByRole("radio", { name: /^Bark/ })).toContainText("1/3");
+  await expect(page.locator(".cost-bar")).toContainText("9 Bark became 3 Moss");
+  expect(errors).toEqual([]);
+});

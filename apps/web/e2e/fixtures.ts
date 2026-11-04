@@ -102,12 +102,12 @@ export function saveBountyDone(): string {
 }
 
 /** A Camp save after the first trip into the Rotwood: Nyssa has joined, three Bark Runes in the pouch. */
-export function saveWithRunes(): string {
+export function saveWithRunes(runes: Record<string, number> = { ash: 3 }): string {
   const base = newGame(GAME_DATA, { seed: 42, classId: "cinderguard" });
   const state: GameState = {
     ...base,
     hero: { ...base.hero, level: 15 },
-    wallet: { ...base.wallet, acorns: 1000, runes: { ash: 3 } },
+    wallet: { ...base.wallet, acorns: 1000, runes },
     progress: {
       ...base.progress,
       actsCleared: ["ashen-fields"],

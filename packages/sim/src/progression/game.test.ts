@@ -36,6 +36,7 @@ import {
   rewardsDone,
   addRunes,
   maxRuneRank,
+  minRuneRank,
   rollRuneDrops,
   rollRune,
 } from "./game";
@@ -688,6 +689,13 @@ describe("Runes in the run", () => {
     // Act Tier 1 allows up to rank 3; the pool is capped there.
     expect(maxRuneRank(1)).toBe(3);
     expect(rollRuneDrops(data, "normal", 1, new Rng(1)).length).toBeLessThanOrEqual(1);
+  });
+
+  it("the lowest Rune rank that drops rises with the Act Tier, up to the fourth-highest Rune", () => {
+    // Eight Runes as in the game: early tiers drop from Bark up, late tiers only Ember to Dusk.
+    expect([1, 2, 3, 4, 5, 6, 9].map((t) => minRuneRank(t, 8))).toEqual([1, 1, 1, 2, 4, 5, 5]);
+    // The test catalog's three Runes always drop from rank 1.
+    expect(minRuneRank(9, 3)).toBe(1);
   });
 
   it("the top Rune ranks never drop from normal enemies", () => {

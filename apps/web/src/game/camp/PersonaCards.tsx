@@ -66,7 +66,7 @@ export function AfterCard(props: {
   if (kind === "rune") {
     const runes = props.runeId ? [...(item.runes ?? []), props.runeId] : (item.runes ?? []);
     const slot = getBase(ITEM_CATALOG, item.baseId).slot;
-    const word = matchRuneword(ITEM_CATALOG, slot, item.sockets ?? 0, runes);
+    const word = matchRuneword(ITEM_CATALOG, slot, item.sockets ?? 0, runes, item.tier);
     return (
       <div
         className={`craft-card panel-card dashed ${word ? "special-runeword" : rarityClass(item)}`}

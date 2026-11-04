@@ -20,11 +20,14 @@ export function matchRuneword(
   slot: ItemSlot,
   sockets: number,
   runes: readonly string[],
+  /** The base's Item Tier: late words need a base of their `minTier`. */
+  tier: number,
 ): RunewordDefinition | undefined {
   if (runes.length === 0 || runes.length !== sockets) return undefined;
   return [...catalog.runewords.values()].find(
     (w) =>
       w.slots.includes(slot) &&
+      tier >= (w.minTier ?? 1) &&
       w.runes.length === runes.length &&
       w.runes.every((r, i) => r === runes[i]),
   );
@@ -34,7 +37,7 @@ export function matchRuneword(
 export function activeRuneword(item: Item, catalog: ItemCatalog): RunewordDefinition | undefined {
   if (item.rarity !== "normal" || !item.runes?.length) return undefined;
   const slot = getBase(catalog, item.baseId).slot;
-  return matchRuneword(catalog, slot, item.sockets ?? 0, item.runes);
+  return matchRuneword(catalog, slot, item.sockets ?? 0, item.runes, item.tier);
 }
 
 /** The single bonuses of all socketed Runes (they stay on top of a Runeword, as in D2). */

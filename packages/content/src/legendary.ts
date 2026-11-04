@@ -182,7 +182,8 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     name: "Kindling",
     runes: ["ash", "moss"],
     slots: ["offHand", "helm"],
-    bonuses: { physicalDamage: 0.25, lifesteal: 0.03, life: 20 },
+    // The cheapest word is a start, not the endgame (runen-review-v1.md R1): was 25 %.
+    bonuses: { physicalDamage: 0.15, lifesteal: 0.03, life: 20 },
   },
   {
     id: "splinter",
@@ -213,7 +214,8 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     name: "Bulwark",
     runes: ["ash", "moss", "ash"],
     slots: ["offHand"],
-    bonuses: { armor: 25, blockChance: 0.1, life: 30 },
+    // The Shield word of block builds (runen-review-v1.md R1).
+    bonuses: { armor: 40, blockChance: 0.15, life: 40 },
     triggers: [{ affixId: "iron-will", quality: 1 }],
   },
   {
@@ -221,7 +223,8 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     name: "Warden",
     runes: ["moss", "ash"],
     slots: ["helm"],
-    bonuses: { life: 30, allResistance: 0.08, tenacity: 0.1 },
+    // The caster's early helm: Barrier instead of raw Life (runen-review-v1.md R1).
+    bonuses: { barrier: 40, life: 20, allResistance: 0.1, tenacity: 0.1 },
   },
   {
     id: "bramble",
@@ -253,6 +256,45 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     slots: ["body"],
     bonuses: { allResistance: 0.2, attackSpeed: 0.15, life: 60 },
     triggers: [{ affixId: "static-charge", quality: 1 }],
+  },
+  // The defensive body word (Timo 2026-11-04): Life, Armor and Resistances for every class.
+  {
+    id: "emberhide",
+    name: "Emberhide",
+    runes: ["rime", "ember", "rime"],
+    slots: ["body"],
+    bonuses: { life: 50, armor: 20, allResistance: 0.1, tenacity: 0.08 },
+  },
+  // Late words (runen-review-v1.md R1): the goal for the high Runes, in two Sockets so every
+  // helm and off hand can carry them, and the 3-Socket body word for every class.
+  {
+    id: "eventide",
+    name: "Eventide",
+    runes: ["volt", "dusk"],
+    slots: ["helm", "offHand"],
+    bonuses: { physicalDamage: 0.2, elementalDamage: 0.2, critChance: 0.04, life: 30 },
+  },
+  {
+    id: "rimeguard",
+    name: "Rimeguard",
+    runes: ["rime", "volt"],
+    slots: ["helm", "offHand"],
+    bonuses: { life: 35, barrier: 20, allResistance: 0.1, ailmentEffect: 0.12 },
+  },
+  {
+    id: "gloaming",
+    name: "Gloaming",
+    runes: ["rime", "dusk", "volt"],
+    slots: ["body"],
+    // A late goal (Timo 2026-11-04): only in a Tier 7 base, so from run 6 on.
+    minTier: 7,
+    bonuses: {
+      physicalDamage: 0.12,
+      elementalDamage: 0.12,
+      ailmentEffect: 0.1,
+      life: 60,
+      allResistance: 0.1,
+    },
   },
 ];
 

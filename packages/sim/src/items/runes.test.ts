@@ -41,11 +41,21 @@ describe("Runes and Runewords", () => {
   });
 
   it("a Runeword needs the exact Runes in order, all Sockets filled, a fitting base", () => {
-    expect(matchRuneword(TEST_CATALOG, "mainHand", 2, ["ash", "thorn"])?.id).toBe("splinter");
-    expect(matchRuneword(TEST_CATALOG, "mainHand", 2, ["thorn", "ash"])).toBeUndefined();
-    expect(matchRuneword(TEST_CATALOG, "mainHand", 3, ["ash", "thorn"])).toBeUndefined();
-    expect(matchRuneword(TEST_CATALOG, "offHand", 2, ["ash", "thorn"])).toBeUndefined();
+    expect(matchRuneword(TEST_CATALOG, "mainHand", 2, ["ash", "thorn"], 1)?.id).toBe("splinter");
+    expect(matchRuneword(TEST_CATALOG, "mainHand", 2, ["thorn", "ash"], 1)).toBeUndefined();
+    expect(matchRuneword(TEST_CATALOG, "mainHand", 3, ["ash", "thorn"], 1)).toBeUndefined();
+    expect(matchRuneword(TEST_CATALOG, "offHand", 2, ["ash", "thorn"], 1)).toBeUndefined();
     expect(activeRuneword(axe(["ash", "thorn"]), TEST_CATALOG)?.id).toBe("splinter");
+    // A late word needs a base of its minimum Item Tier.
+    const late = {
+      ...TEST_CATALOG,
+      runewords: new Map(
+        [...TEST_CATALOG.runewords].map(([id, w]) => [id, { ...w, minTier: 3 }] as const),
+      ),
+    };
+    expect(matchRuneword(late, "mainHand", 2, ["ash", "thorn"], 2)).toBeUndefined();
+    expect(matchRuneword(late, "mainHand", 2, ["ash", "thorn"], 3)?.id).toBe("splinter");
+    expect(activeRuneword(axe(["ash", "thorn"]), late)).toBeUndefined();
     // Only Normal items carry Runewords.
     expect(activeRuneword(axe(["ash", "thorn"], 2, "magic"), TEST_CATALOG)).toBeUndefined();
   });

@@ -191,10 +191,18 @@ export const PROGRESSION = {
   highRuneRanks: 2,
   highRuneFactor: 0.3,
   /** Expected Runes per win by rank (fractions are chances, 1.5 = one plus 50 % a second). */
-  runeDrops: { normal: 0.06, elite: 0.5, boss: 1.5 } satisfies Record<EnemyRank, number>,
+  // Fewer but better Runes since the drop floor rises (runen-review-v1.md R2): was 0.06/0.5/1.5.
+  runeDrops: { normal: 0.04, elite: 0.35, boss: 1.2 } satisfies Record<EnemyRank, number>,
   /** Rune ranks that drop: base + per Act Tier (Act 1 → up to rank 3, Act 2 → 5). */
   runeRankBase: 1,
   runeRanksPerActTier: 2,
+  /**
+   * The lowest rank that drops rises too (runen-review-v1.md R2): the top rank of the Act Tier
+   * minus this, but at most the fourth-highest Rune, so late acts drop Ember to Dusk instead of a
+   * flood of Bark. The act's Home Rune still drops in its own act.
+   */
+  runeFloorBelowMax: 7,
+  runeFloorTopRanks: 4,
   /** Each Rune rank drops this much less often than the one below it. */
   runeRankFalloff: 0.5,
   /**

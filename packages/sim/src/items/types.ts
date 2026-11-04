@@ -283,6 +283,11 @@ export interface RunewordDefinition {
   /** Trigger affixes it grants, at a fixed quality. */
   readonly triggers?: readonly AffixRoll[];
   readonly rules?: CombatRules;
+  /**
+   * Late words (runen-review-v1.md): only a base of at least this Item Tier can carry it, so the
+   * word is a goal of the later runs.
+   */
+  readonly minTier?: number;
 }
 
 /**
