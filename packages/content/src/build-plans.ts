@@ -12,6 +12,8 @@ import {
  *
  * Every build takes its first Battle Plan skill close to the class's start, then the main
  * Mastery's skill and Keystone, then the Notables of its damage type and one Ash Tree Keystone.
+ * The Rotation lists the main skills first and then the early skills the build learned on the
+ * way, so no Rotation Slot stays empty while the main skill is still out of reach.
  * Weapon fighters with an elemental path swing their infused weapon (Steel and Blood attacks),
  * casters cast the spells of their element.
  */
@@ -55,10 +57,12 @@ const HEIRLOOM: Record<
     forks: { quake: [1, 0], stormwall: [0, 1] },
   },
   bow: {
+    heat: "heat-cooling",
     innate: "hooked-arrow",
     keystones: { toxin: "marked-prey", "fire-arrows": "marked-prey", storm: "rain-of-arrows" },
   },
   crossbow: {
+    heat: "heat-cooling",
     innate: "ballista-bolt",
     keystones: { "venom-bolts": "siege-engine", incendiary: "repeater", frost: "repeater" },
     forks: { "venom-bolts": [1, 0] },
@@ -144,7 +148,8 @@ function cinderguardKit(style: Style): Kit {
       "roots-unbroken",
       "steel-execute",
     ],
-    rotation: [MS, attack?.skill ?? "crushing-blow"],
+    // Crushing Blow stays in the plan until the element attack is learned (no empty slot).
+    rotation: [MS, ...(attack ? [attack.skill] : []), "crushing-blow"],
   };
 }
 
@@ -165,7 +170,7 @@ function ashstriderKit(style: Style): Kit {
         "venom-leeching-rot",
         "trunk-iron-bastion",
       ],
-      rotation: [MS, "toxic-burst"],
+      rotation: [MS, "toxic-burst", "envenom"],
     };
   }
   if (style === "bleed") {
@@ -219,7 +224,7 @@ function emberseerKit(style: Style): Kit {
         "void-soul-harvest",
         "frost-heart-of-winter",
       ],
-      rotation: [MS, "void-rift"],
+      rotation: [MS, "void-rift", "corrupt"],
     },
     cold: {
       nodes: [
@@ -234,7 +239,7 @@ function emberseerKit(style: Style): Kit {
         MN,
         "frost-deep-freeze",
       ],
-      rotation: [MS, "frost-nova"],
+      rotation: [MS, "frost-nova", "ice-lance"],
     },
     lightning: {
       nodes: [
@@ -250,7 +255,7 @@ function emberseerKit(style: Style): Kit {
         MN,
         "frost-heart-of-winter",
       ],
-      rotation: [MS, "chain-lightning"],
+      rotation: [MS, "chain-lightning", "corrupt"],
     },
     fire: {
       nodes: [
@@ -267,7 +272,7 @@ function emberseerKit(style: Style): Kit {
         "roots-arcane-conduit",
         MN,
       ],
-      rotation: [MS, "inferno"],
+      rotation: [MS, "inferno", "immolate", "corrupt"],
     },
   };
   return spells[style] ?? (spells.void as Kit);
