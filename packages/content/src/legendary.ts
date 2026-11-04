@@ -257,6 +257,14 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     bonuses: { allResistance: 0.2, attackSpeed: 0.15, life: 60 },
     triggers: [{ affixId: "static-charge", quality: 1 }],
   },
+  // The defensive body word (Timo 2026-11-04): Life, Armor and Resistances for every class.
+  {
+    id: "emberhide",
+    name: "Emberhide",
+    runes: ["rime", "ember", "rime"],
+    slots: ["body"],
+    bonuses: { life: 50, armor: 20, allResistance: 0.1, tenacity: 0.08 },
+  },
   // Late words (runen-review-v1.md R1): the goal for the high Runes, in two Sockets so every
   // helm and off hand can carry them, and the 3-Socket body word for every class.
   {
@@ -271,13 +279,15 @@ export const RUNEWORDS: readonly RunewordDefinition[] = [
     name: "Rimeguard",
     runes: ["rime", "volt"],
     slots: ["helm", "offHand"],
-    bonuses: { life: 50, barrier: 30, allResistance: 0.15, ailmentEffect: 0.2 },
+    bonuses: { life: 35, barrier: 20, allResistance: 0.1, ailmentEffect: 0.12 },
   },
   {
     id: "gloaming",
     name: "Gloaming",
     runes: ["rime", "dusk", "volt"],
     slots: ["body"],
+    // A late goal (Timo 2026-11-04): only in a Tier 7 base, so from run 6 on.
+    minTier: 7,
     bonuses: {
       physicalDamage: 0.12,
       elementalDamage: 0.12,

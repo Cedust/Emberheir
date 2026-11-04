@@ -632,12 +632,13 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 - **Affixe:** Stat-Affixe (Prefix oder Suffix) und **Trigger-Affixe** (Condition → Chance → Effect → Cooldown).
 - **Trigger Codex:** Salvage eines Items mit Trigger lehrt Condition und Effect. Liora baut daraus per **Kindle** einen
   Trigger auf ein Item (ein gekindelter Trigger pro Item, Roll bis 70 %).
-- **Runes und Runewords:** 8 Runes (Bark, Moss, Thorn, Venom, Ember, Rime, Volt, Dusk), 13 Runewords. Runeword Codex
+- **Runes und Runewords:** 8 Runes (Bark, Moss, Thorn, Venom, Ember, Rime, Volt, Dusk), 14 Runewords. Runeword Codex
   bei Nyssa, permanent. Runen-Review 03.11.2026 (`notes/runen/runen-review-v1.md`): Runeword-Damage (Physical,
   Elemental, Ailment Effect) wächst mit dem Tier der Basis (+8 % je Tier), Armor der Runes wie die Basis-Armor, damit
-  ein Runeword in einer besseren Basis besser ist. Drei späte Runewords aus den hohen Runes: **Eventide** (Volt + Dusk,
+  ein Runeword in einer besseren Basis besser ist. Ein Runeword kann eine Mindest-Tier der Basis haben (`minTier`). Drei späte Runewords aus den hohen Runes: **Eventide** (Volt + Dusk,
   Helm/Off Hand, Damage + Crit), **Rimeguard** (Rime + Volt, Helm/Off Hand, Life, Barrier, Resistances), **Gloaming**
-  (Rime + Dusk + Volt, Body, Damage + Life + Resistances). Kindling 15 % statt 25 % Physical Damage, Bulwark (Shield)
+  (Rime + Dusk + Volt, Body, Damage + Life + Resistances; nur in einer Basis ab Tier 7, also ab Run 6, Timo
+  04.11.2026) und das defensive Body-Wort **Emberhide** (Rime + Ember + Rime, Life, Armor, Resistances). Kindling 15 % statt 25 % Physical Damage, Bulwark (Shield)
   und Warden (Barrier-Helm für Caster) neu. Nyssa kann **Combine All** (alle bezahlbaren Dreier auf einmal).
 - **Crafting** (`notes/crafting/crafting-audit-v1.md`, Timo 28.10.2026): Reforge würfelt nur die Stat-Affixe neu,
   alle Trigger (gedroppt und gekindelt) bleiben mit ihrer Qualität, ein Greater auf einem Trigger auch; Charms haben nur

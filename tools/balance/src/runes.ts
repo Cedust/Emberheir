@@ -71,6 +71,7 @@ function wordsFor(data: GameData, item: Item): RunewordDefinition[] {
   return [...data.items.runewords.values()].filter(
     (w) =>
       w.slots.includes(base.slot) &&
+      item.tier >= (w.minTier ?? 1) &&
       w.runes.length >= sockets &&
       w.runes.length <= (base.maxSockets ?? 0),
   );

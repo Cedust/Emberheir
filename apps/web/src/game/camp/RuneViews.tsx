@@ -132,6 +132,7 @@ export function RuneBoard(props: {
               <span className="title-font">{known ? w.name : "? ? ?"}</span>
               <span className="sub small">
                 {slots} · {w.runes.length} Sockets
+                {w.minTier ? ` · Tier ${w.minTier}+ base` : ""}
               </span>
             </div>
             <div className="codex-runes">

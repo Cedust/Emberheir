@@ -614,7 +614,7 @@ export function craft(state: GameState, data: GameData, request: CraftRequest): 
     case "socketRune": {
       const runes = [...(item.runes ?? []), request.runeId];
       const slot = getBase(data.items, item.baseId).slot;
-      const word = matchRuneword(data.items, slot, item.sockets ?? 0, runes);
+      const word = matchRuneword(data.items, slot, item.sockets ?? 0, runes, item.tier);
       const socketed: Item = { ...item, runes, ...(word ? { name: word.name } : {}) };
       const placed = replaceItem(paid, location, socketed);
       if (!word || placed.legacy.runewords.includes(word.id)) return placed;
