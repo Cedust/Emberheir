@@ -182,3 +182,21 @@ Alle Builds auf Smoldering, 8 Seeds, Versuche pro neuestem Act:
 Ashstrider liegt jetzt gleichauf mit Cooling; Toxin Bow (3,71 statt 4,55), Venom Bolts Crossbow und
 Venom Dagger sind mit Smoldering am besten. Cold-Builds (Glacier Axe 9,1, Winter Sword 7,8) verlieren:
 Chill bremst die Angriffe des Gegners und damit die Heat. Das ist ein ehrlicher Zielkonflikt, kein Fehler.
+
+### Cooling neu (Timo 2026-11-05) und Form pro Build
+
+Cooling verliert 10 % der aktuellen Heat pro Sekunde (statt 1 Heat/s). Alle Builds auf Cooling: C 4,01,
+A 3,75, E 3,97 (vorher 3,35 / 3,75 / 3,52). Danach nimmt jeder Build die Form, mit der er am besten
+abschneidet: Steady 6 Builds (Thunder Sword, Quake Mace, Frost Crossbow, Static Dagger, Rime und
+Starfall Wand), Warming 10, Cooling 5, Smoldering 3 (Toxin Bow, Venom Bolts Crossbow, Venom Dagger).
+Jede Form ist damit für einige Builds die beste.
+
+Kontrollmessung mit diesen Forms (8 Seeds, Versuche pro neuestem Act, davor in Klammern):
+
+| Klasse      |   A1 |   A2 |   A3 |   A4 |   A5 |   A6 |   A7 |    alle     |
+| ----------- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | :---------: |
+| Cinderguard |  2,6 |  3,6 |  3,7 |  2,4 |  2,1 |  4,4 |  3,8 | 3,22 (3,35) |
+| Ashstrider  |  2,9 |  3,5 |  5,1 |  3,1 |  3,8 |  1,5 |  3,3 | 3,31 (3,75) |
+| Emberseer   |  2,0 |  1,8 |  2,4 |  1,7 |  2,2 |  2,0 |  5,6 | 2,51 (2,53) |
+
+Cinderguard und Ashstrider liegen jetzt gleichauf; Emberseer bleibt die leichteste Klasse (Punkt 5).

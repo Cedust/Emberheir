@@ -31,8 +31,9 @@ type Style = "bleed" | "stun" | "poison" | "fire" | "lightning" | "cold" | "void
 const HEIRLOOM: Record<
   string,
   {
+    /** Heat Form of the weapon's paths (Steady, the default, when left out). */
     heat?: string;
-    /** A path whose Heat Form differs from the weapon's (measured, see ausreisser-v1.md section 6). */
+    /** Paths whose Heat Form differs: each build takes the one it fares best with (measured, see ausreisser-v1.md section 6). */
     heats?: Record<string, string>;
     innate: string;
     innates?: Record<string, string>;
@@ -42,42 +43,48 @@ const HEIRLOOM: Record<
 > = {
   sword: {
     heat: "heat-cooling",
+    heats: { thunder: "heat-steady", winter: "heat-warming" },
     innate: "rising-strike",
     keystones: { edge: "deep-cuts", thunder: "flowing-blade", winter: "perfect-parry" },
     forks: { edge: [0, 1], winter: [1, 0] },
   },
   axe: {
-    heat: "heat-cooling",
+    heat: "heat-warming",
+    heats: { butcher: "heat-cooling" },
     innate: "gutting-lacerate",
     keystones: { butcher: "rampage", blaze: "executioner", glacier: "gore" },
     forks: { butcher: [0, 0] },
   },
   mace: {
-    heat: "heat-cooling",
+    heat: "heat-warming",
+    heats: { quake: "heat-steady" },
     innate: "bone-breaker",
     keystones: { quake: "siege", forge: "siege", stormwall: "bastion" },
     forks: { quake: [1, 0], stormwall: [0, 1] },
   },
   bow: {
     heat: "heat-cooling",
-    heats: { "fire-arrows": "heat-warming" },
+    heats: { "fire-arrows": "heat-warming", toxin: "heat-smoldering" },
     innate: "hooked-arrow",
     keystones: { toxin: "marked-prey", "fire-arrows": "marked-prey", storm: "rain-of-arrows" },
   },
   crossbow: {
     heat: "heat-cooling",
+    heats: { frost: "heat-steady", "venom-bolts": "heat-smoldering" },
     innate: "ballista-bolt",
     keystones: { "venom-bolts": "siege-engine", incendiary: "repeater", frost: "repeater" },
     forks: { "venom-bolts": [1, 0] },
   },
   dagger: {
     heat: "heat-cooling",
+    heats: { static: "heat-steady", venom: "heat-smoldering" },
     innate: "virulent-coat",
     keystones: { venom: "toxic-bloom", cutthroat: "assassinate", static: "shadowstep" },
     forks: { cutthroat: [1, 1] },
   },
   wand: {
     heat: "heat-warming",
+    heats: { rime: "heat-steady", starfall: "heat-steady" },
     innate: "barrage",
     keystones: { starfall: "wild-magic", storm: "wild-magic", rime: "prism" },
     forks: { rime: [1, 0] },
@@ -352,15 +359,15 @@ export const BUILD_PLANS: readonly BuildPlan[] = PATHS.map(([weapon, path, style
         : emberseerKit(style);
   const heirloom = HEIRLOOM[weapon] ?? { innate: "", keystones: {} };
   const forks = heirloom.forks?.[path];
+  // Steady is the default form: nothing to learn.
+  const heat = heirloom.heats?.[path] ?? heirloom.heat;
   return {
     id: `${weapon}-${path}`,
     name: `${title(path)} ${title(weapon)}`,
     classId,
     weapon,
     heirloom: {
-      ...((heirloom.heats?.[path] ?? heirloom.heat)
-        ? { heat: heirloom.heats?.[path] ?? heirloom.heat }
-        : {}),
+      ...(heat && heat !== "heat-steady" ? { heat } : {}),
       innate: heirloom.innates?.[path] ?? heirloom.innate,
       keystone: heirloom.keystones[path] ?? "",
       path,
