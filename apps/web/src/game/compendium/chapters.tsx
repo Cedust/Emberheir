@@ -363,7 +363,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: big(HEAT_FORM_ICONS.smoldering),
                   name: "Smoldering",
-                  text: "Heat comes mostly from hits you take.",
+                  text: "Heat comes mostly from enemy attacks, even blocked or dodged ones.",
                 },
               ]}
             />

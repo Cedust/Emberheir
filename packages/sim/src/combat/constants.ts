@@ -124,6 +124,12 @@ export const COMBAT = {
   /** Cooling: Heat per 1 % of max life lost to a hit, capped per hit. */
   heatPerPercentLifeTaken: 1,
   maxHeatFromHitTaken: 10,
+  /**
+   * Smoldering: every enemy Default Attack aimed at the hero gives Heat, landed, blocked or
+   * evaded alike, scaled to the enemy's weapon tempo so a normal attacker gives this per second
+   * (like Heat per Hit for the hero's own weapon).
+   */
+  smolderingHeatPerSecond: 12,
 
   // Ailments.
   /** Burn deals this fraction of the triggering hit as damage per second. */

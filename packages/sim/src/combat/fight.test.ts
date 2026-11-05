@@ -250,6 +250,33 @@ describe("Fight", () => {
       expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.9, 5);
     });
 
+    it("Smoldering gains Heat from every enemy attack, landed or blocked, by the enemy's tempo", () => {
+      const smoldering: WeaponDefinition = {
+        ...TEST_WEAPON,
+        heatBehavior: "smoldering",
+        attacksPerSecond: 0,
+      };
+      const run = (enemyAps: number, blockChance: number, attacks: number) => {
+        const hero = setup({ weapon: smoldering, bonuses: { blockChance } });
+        const enemy = setup({
+          bonuses: NO_CRIT,
+          weapon: { ...TEST_WEAPON, attacksPerSecond: enemyAps },
+        });
+        const fight = new Fight(hero, enemy, 1);
+        fight.advance(attacks / enemyAps + 0.01);
+        const blocks = ofType(fight.events, "hit").filter((e) => e.blocked).length;
+        return { heat: fight.snapshot().hero.heat, blocks };
+      };
+      const heat = (enemyAps: number) => run(enemyAps, 0, 1).heat;
+      expect(heat(1)).toBeCloseTo(COMBAT.smolderingHeatPerSecond, 5);
+      // Blocked attacks give the same Heat: good defense never costs Heat.
+      const blocking = run(1, 1, 4);
+      expect(blocking.blocks).toBeGreaterThan(0);
+      expect(blocking.heat).toBeCloseTo(4 * COMBAT.smolderingHeatPerSecond, 5);
+      // A slow attacker gives more per attack, the same per second.
+      expect(heat(0.5)).toBeCloseTo(2 * COMBAT.smolderingHeatPerSecond, 5);
+    });
+
     it("Heat from Hits Taken scales it; at 0 enemy hits give no Heat", () => {
       const cooling: WeaponDefinition = {
         ...TEST_WEAPON,

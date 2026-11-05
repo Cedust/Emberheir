@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
 import {
   addHeat,
+  heatFromEnemyAttack,
   heatFromHitTaken,
   heatFromOwnHit,
   heatGainMultiplier,
@@ -32,6 +33,13 @@ describe("Heat", () => {
     expect(heatFromHitTaken("cooling", 50, 100)).toBe(COMBAT.maxHeatFromHitTaken);
     expect(heatFromHitTaken("steady", 5, 100)).toBe(0);
     expect(heatFromHitTaken("warming", 5, 100)).toBe(0);
+  });
+
+  it("only Smoldering gains Heat from enemy attacks, scaled to the enemy's tempo", () => {
+    expect(heatFromEnemyAttack("smoldering", 1)).toBe(COMBAT.smolderingHeatPerSecond);
+    expect(heatFromEnemyAttack("smoldering", 0.5)).toBe(2 * COMBAT.smolderingHeatPerSecond);
+    expect(heatFromEnemyAttack("cooling", 1)).toBe(0);
+    expect(heatFromEnemyAttack("steady", 1)).toBe(0);
   });
 
   it("Warming gains 12 per second", () => {

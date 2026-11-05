@@ -111,7 +111,7 @@ export const HEAT_BEHAVIOR_NOTES: Record<HeatBehavior, NoteHover> = {
   smoldering: {
     name: "Smoldering",
     kind: "Heat · Heat Form",
-    explain: "Heat comes mostly from the hits you take. It never cools down.",
+    explain: "Every enemy attack gives Heat, even when you block or dodge it. It never cools down.",
   },
 };
 

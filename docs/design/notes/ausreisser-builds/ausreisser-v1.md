@@ -166,3 +166,19 @@ Runs 2-7; die Form gibt es ab Weapon Rank 3, Run 1 ist also gleich). Einzelne Bu
   eigene Treffer nur 30 %.
 - Cooling schlägt Steady fast immer: es verliert nur 1 Heat pro Sekunde für +25 % Heat per Hit.
   Zwei der vier Forms sind also keine echte Wahl (eine Designfrage, kein Fix im Build-Plan).
+
+### Smoldering neu (Timo 2026-11-05)
+
+Jeder Default Attack des Gegners gibt 12 Heat / sein Grundtempo (also etwa 12 Heat/s), auch geblockt
+oder ausgewichen; eigene Treffer weiter 30 %. Nur Cooling bekommt noch Heat aus erlittenem Schaden.
+Alle Builds auf Smoldering, 8 Seeds, Versuche pro neuestem Act:
+
+| Klasse      | Smoldering alt | Smoldering neu | beste Form |
+| ----------- | -------------: | -------------: | ---------: |
+| Cinderguard |           5,06 |           4,89 |       3,35 |
+| Ashstrider  |           5,24 |           3,75 |       3,75 |
+| Emberseer   |           4,38 |           3,85 |       2,53 |
+
+Ashstrider liegt jetzt gleichauf mit Cooling; Toxin Bow (3,71 statt 4,55), Venom Bolts Crossbow und
+Venom Dagger sind mit Smoldering am besten. Cold-Builds (Glacier Axe 9,1, Winter Sword 7,8) verlieren:
+Chill bremst die Angriffe des Gegners und damit die Heat. Das ist ein ehrlicher Zielkonflikt, kein Fehler.

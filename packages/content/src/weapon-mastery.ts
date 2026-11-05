@@ -204,7 +204,7 @@ const HEAT_FORMS: readonly (Omit<MasteryNode, "x" | "y"> & { readonly i: number 
     id: "heat-smoldering",
     name: "Smoldering",
     description:
-      "Heat comes from hits you take; your own hits give 30 %. Start with 20 Heat, +10 % Life.",
+      "Every enemy attack gives Heat, even when you block or dodge it; your own hits give 30 %. Start with 20 Heat, +10 % Life.",
     kind: "heatForm",
     group: "heatForm",
     effect: {

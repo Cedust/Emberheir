@@ -6,6 +6,7 @@ import {
   applyAction,
   buildMasteryWeapon,
   createEnemySetup,
+  deriveStats,
   getBase,
   heroSetup,
   heroWeaponName,
@@ -94,6 +95,25 @@ describe("Weapon Mastery content", () => {
         expect(Number.isFinite(result.final.enemy.life), `${id} ${node.id}`).toBe(true);
       }
     }
+  });
+
+  it("Smoldering lets enemy attacks feed the hero's Heat (heroes start without it)", () => {
+    const tree = WEAPON_MASTERY.mace;
+    const base = getBase(ITEM_CATALOG, "mace").weapon;
+    if (!tree || !base) throw new Error("mace");
+    const state: MasteryState = { ...EMPTY_MASTERY, choices: { heatForm: "heat-smoldering" } };
+    const build = buildMasteryWeapon(base, tree, state, 12, START_SKILLS[base.id]);
+    const stats = deriveStats({
+      name: "Heir",
+      level: 10,
+      attributes: GAME_DATA.startingAttributes,
+      weapon: build.weapon,
+      rotation: [],
+      bonuses: build.bonuses,
+      baseHeatFromHitsTaken: 0,
+    });
+    expect(build.weapon.heatBehavior).toBe("smoldering");
+    expect(stats.heatFromHitsTaken).toBe(1);
   });
 
   it("every path node fights without breaking the rules, with its Innate and a Reaction", () => {
