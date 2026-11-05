@@ -96,7 +96,7 @@ export const HEAT_BEHAVIOR_NOTES: Record<HeatBehavior, NoteHover> = {
   cooling: {
     name: "Cooling",
     kind: "Heat · melee",
-    explain: "Your hits fill Heat, and it cools down all the time. Keep swinging.",
+    explain: "Your hits fill Heat, but you lose 10 % of it every second. Spend it fast.",
   },
   steady: {
     name: "Steady",
@@ -111,7 +111,7 @@ export const HEAT_BEHAVIOR_NOTES: Record<HeatBehavior, NoteHover> = {
   smoldering: {
     name: "Smoldering",
     kind: "Heat · Heat Form",
-    explain: "Heat comes mostly from the hits you take. It never cools down.",
+    explain: "Every enemy attack gives Heat, even when you block or dodge it. It never cools down.",
   },
 };
 

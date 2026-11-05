@@ -119,11 +119,20 @@ export const COMBAT = {
   // Heat (docs/design/waffen-v1.md section 4).
   maxHeat: 100,
   warmingHeatPerSecond: 12,
-  /** Cooling: Heat drains at this rate all the time (Timo, after Playtest 2). */
-  coolingDecayPerSecond: 1,
+  /**
+   * Cooling: Heat drains all the time (Timo, after Playtest 2), this share of the current Heat
+   * per second, so saving up for big skills costs Heat (Timo 2026-11-05).
+   */
+  coolingDecayShare: 0.1,
   /** Cooling: Heat per 1 % of max life lost to a hit, capped per hit. */
   heatPerPercentLifeTaken: 1,
   maxHeatFromHitTaken: 10,
+  /**
+   * Smoldering: every enemy Default Attack aimed at the hero gives Heat, landed, blocked or
+   * evaded alike, scaled to the enemy's weapon tempo so a normal attacker gives this per second
+   * (like Heat per Hit for the hero's own weapon).
+   */
+  smolderingHeatPerSecond: 12,
 
   // Ailments.
   /** Burn deals this fraction of the triggering hit as damage per second. */

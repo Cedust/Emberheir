@@ -39,7 +39,7 @@ import {
   mark,
   weaponAilment,
 } from "./fighter";
-import { addHeat, heatFromHitTaken, heatFromOwnHit } from "./heat";
+import { addHeat, heatFromEnemyAttack, heatFromHitTaken, heatFromOwnHit } from "./heat";
 import { PERK } from "./perks";
 import { addBonus, addFactor, type DamagePool, emptyPool } from "./pools";
 import { damageSplit } from "./rules";
@@ -175,6 +175,13 @@ export function defaultAttack(core: FightCore, f: Fighter, fromTrigger = false):
   }
   const landed = result !== "miss";
   if (core.result) return;
+  // Smoldering: the attack fed the defender's Heat, whatever became of it.
+  target.heat = addHeat(
+    target.heat,
+    heatFromEnemyAttack(target.setup.weapon.heatBehavior, weapon.attacksPerSecond) *
+      target.stats.heatFromHitsTaken,
+    heatMultiplier(core, target),
+  );
   if (sunderStacks > 0 && result === "clean") {
     // The stacks it set off are gone; a stack this Bolt added stays.
     const left = sunderOn(target) - sunderStacks;

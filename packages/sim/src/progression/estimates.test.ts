@@ -46,6 +46,13 @@ describe("estimates", () => {
     expect(estimateRotation([{ heatCost: 20, threshold: 20 }], 0)).toEqual([]);
   });
 
+  it("Cooling makes saved-up skills wait longer, cheap ones barely", () => {
+    const wait = (cost: number, cooling: number) =>
+      estimateRotation([{ heatCost: cost, threshold: cost }], 10, 0, cooling)[0]?.wait ?? Infinity;
+    expect(wait(20, 0.1) / wait(20, 0)).toBeLessThan(1.15);
+    expect(wait(80, 0.1) / wait(80, 0)).toBeGreaterThan(1.5);
+  });
+
   it("compares an item with the equipped one", () => {
     const s = start();
     const ring: Item = {

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { COMBAT } from "./constants";
 import {
   addHeat,
+  heatFromEnemyAttack,
   heatFromHitTaken,
   heatFromOwnHit,
   heatGainMultiplier,
@@ -34,16 +35,29 @@ describe("Heat", () => {
     expect(heatFromHitTaken("warming", 5, 100)).toBe(0);
   });
 
+  it("only Smoldering gains Heat from enemy attacks, scaled to the enemy's tempo", () => {
+    expect(heatFromEnemyAttack("smoldering", 1)).toBe(COMBAT.smolderingHeatPerSecond);
+    expect(heatFromEnemyAttack("smoldering", 0.5)).toBe(2 * COMBAT.smolderingHeatPerSecond);
+    expect(heatFromEnemyAttack("cooling", 1)).toBe(0);
+    expect(heatFromEnemyAttack("steady", 1)).toBe(0);
+  });
+
   it("Warming gains 12 per second", () => {
     expect(stepHeat("warming", 0, 1, 1)).toBe(COMBAT.warmingHeatPerSecond);
     expect(stepHeat("warming", 0, 1, 1.5)).toBe(COMBAT.warmingHeatPerSecond * 1.5);
   });
 
-  it("Cooling cools down all the time, 1 Heat per second", () => {
-    expect(COMBAT.coolingDecayPerSecond).toBe(1);
-    expect(stepHeat("cooling", 50, 0.05, 1)).toBeCloseTo(50 - 0.05);
-    expect(stepHeat("cooling", 50, 2, 1)).toBeCloseTo(48);
-    expect(stepHeat("cooling", 0.1, 1, 1)).toBe(0);
+  it("Cooling loses 10 % of its current Heat per second", () => {
+    expect(COMBAT.coolingDecayShare).toBe(0.1);
+    expect(stepHeat("cooling", 50, 0.05, 1)).toBeCloseTo(50 - 50 * 0.1 * 0.05, 1);
+    expect(stepHeat("cooling", 80, 1, 1)).toBeCloseTo(80 * Math.exp(-0.1));
+    // Little Heat cools little, a full bar a lot; the same in small steps as in one.
+    expect(80 - stepHeat("cooling", 80, 1, 1)).toBeGreaterThan(
+      4 * (20 - stepHeat("cooling", 20, 1, 1)) - 1e-9,
+    );
+    let heat = 60;
+    for (let i = 0; i < 20; i++) heat = stepHeat("cooling", heat, 0.05, 1);
+    expect(heat).toBeCloseTo(stepHeat("cooling", 60, 1, 1));
   });
 
   it("Steady never decays", () => {

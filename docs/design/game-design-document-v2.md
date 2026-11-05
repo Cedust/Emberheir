@@ -392,9 +392,9 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 | Heat Form | Verhalten |
 |---|---|
 | **Steady** (Start) | Heat aus eigenen Treffern, verfällt nie |
-| **Cooling** | +25 % Heat per Hit, kühlt ohne Treffer ab |
+| **Cooling** | +25 % Heat per Hit, verliert 10 % der aktuellen Heat pro Sekunde |
 | **Warming** | steigt von selbst um 12/s, Treffer geben nichts |
-| **Smoldering** | Heat aus erlittenen Treffern, mehr Start-Heat und Life |
+| **Smoldering** | Heat aus jedem gegnerischen Angriff (auch geblockt/ausgewichen, 12/s beim Grundtempo des Gegners), eigene Treffer 30 %, mehr Start-Heat und Life |
 
 - Ist Heat ≥ **Trigger Threshold** des nächsten Rotation Slots, ersetzt der Skill die nächste Default Attack.
 - **Precision und Glancing Blows:** Jede Waffe hat eine Precision (60–80 %). Ein unsauberer Treffer ist ein Glancing Blow
