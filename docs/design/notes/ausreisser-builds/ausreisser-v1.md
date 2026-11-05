@@ -143,3 +143,26 @@ Avalanche, Fire Aura). Test „Chill bremst alles, was der Gegner tut“ (nicht 
 | Emberseer | 2,0 | 1,5 | 2,0 | 1,7 | 3,0 | 1,8 | 3,4 | 2,20 (2,53) |
 
 Act 7 wird für alle leichter (Harvester-Tode 89 → 48), Emberseer am meisten (viele ihrer Builds kühlen). Die Regel wäre genre-üblich (Cold Snap aus der Mastery bliebe ein Bonus obendrauf), macht aber Emberseer noch leichter. Nur zusammen mit Punkt 5 sinnvoll.
+
+## 6. Heat Form pro Build (2026-11-05, Timos Frage)
+
+Jeder Build hat alle sieben Runs einmal mit jeder Heat Form gespielt (8 Seeds, Versuche pro neuestem Act,
+Runs 2-7; die Form gibt es ab Weapon Rank 3, Run 1 ist also gleich). Einzelne Builds rauschen um etwa ±0,8.
+
+| Klasse      | Steady | Warming | Cooling | Smoldering |
+| ----------- | -----: | ------: | ------: | ---------: |
+| Cinderguard |   3,91 |    3,38 |    3,35 |       5,06 |
+| Ashstrider  |   3,85 |    3,90 |    3,75 |       5,24 |
+| Emberseer   |   3,16 |    2,53 |    3,52 |       4,38 |
+
+- Jede Klasse nutzt schon ihre beste Form (Nahkampf und Fernkampf Cooling, Caster Warming).
+- Das Waffentempo entscheidet es nicht: Heat per Hit ist 12 / Grund-Angriffe pro Sekunde, auf Steady
+  bekommt also jede Waffe etwa 12 Heat/s, wie bei Warming. Hit-Forms ziehen erst mit Attack Speed und
+  Skill-Treffern davon.
+- Klarer Abstand bei einem Build: Fire Arrows Bow (Cooling 7,16, Warming 5,27). Grenzfälle: Forge Mace
+  (Warming 3,79 statt 4,62), Frost Crossbow (Steady 3,12 statt 3,89).
+- Smoldering ist nie die beste Form und kostet etwa +1,4 Versuche: ein Treffer gibt 1 Heat pro 1 %
+  verlorenem Life (die meisten Treffer 3-8 %), ausgewichene, geblockte und Barrier-Treffer geben nichts,
+  eigene Treffer nur 30 %.
+- Cooling schlägt Steady fast immer: es verliert nur 1 Heat pro Sekunde für +25 % Heat per Hit.
+  Zwei der vier Forms sind also keine echte Wahl (eine Designfrage, kein Fix im Build-Plan).
