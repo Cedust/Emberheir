@@ -1,1 +1,0 @@
-var e={grade:0,accent:16738858,runes:[],keystone:null};export{e as t};
