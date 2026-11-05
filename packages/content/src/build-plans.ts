@@ -32,6 +32,8 @@ const HEIRLOOM: Record<
   string,
   {
     heat?: string;
+    /** A path whose Heat Form differs from the weapon's (measured, see ausreisser-v1.md section 6). */
+    heats?: Record<string, string>;
     innate: string;
     innates?: Record<string, string>;
     keystones: Record<string, string>;
@@ -58,6 +60,7 @@ const HEIRLOOM: Record<
   },
   bow: {
     heat: "heat-cooling",
+    heats: { "fire-arrows": "heat-warming" },
     innate: "hooked-arrow",
     keystones: { toxin: "marked-prey", "fire-arrows": "marked-prey", storm: "rain-of-arrows" },
   },
@@ -355,7 +358,9 @@ export const BUILD_PLANS: readonly BuildPlan[] = PATHS.map(([weapon, path, style
     classId,
     weapon,
     heirloom: {
-      ...(heirloom.heat ? { heat: heirloom.heat } : {}),
+      ...((heirloom.heats?.[path] ?? heirloom.heat)
+        ? { heat: heirloom.heats?.[path] ?? heirloom.heat }
+        : {}),
       innate: heirloom.innates?.[path] ?? heirloom.innate,
       keystone: heirloom.keystones[path] ?? "",
       path,
