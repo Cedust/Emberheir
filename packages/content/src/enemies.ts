@@ -717,7 +717,8 @@ export const ACT7_ENEMIES: readonly EnemyDefinition[] = [
 
 /**
  * The Ashen Harvester (gegner-bosse-v1.md section 6): three phases, each echoing two of the
- * Act bosses before it.
+ * Act bosses before it. A phase's echoes end with it (ausreisser-v1.md 5), so the Harvester
+ * hits like one boss at a time, not like six at once.
  * - Phase 1 (full Life): Gorrak's Slam and the Mother's Poison.
  * - Phase 2 (below 66 %): the Tyrant's Fire Aura and the Warden's Ice Barrier.
  * - Phase 3 (below 33 %): the Herald's mirror, the Maw's Corruption and an Enrage.
@@ -732,17 +733,17 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
   skills: [SOUL_REAP],
   baseLife: 260,
   boss: true,
-  // Its three phases echo six bosses at once: it hits like 40 % of a boss of its level (step 7:
-  // half made it half of the Act 7 deaths; 45 % until the endgame measurement 2026-10-28 moved
-  // damage from its attacks into Ash Aura).
-  damage: 0.4,
+  // It hits like half a boss of its level: its phases echo six bosses, but only one phase's
+  // echoes at a time (ausreisser-v1.md 5: 0.4 while all echoes kept running; step 7 0.5, until
+  // the endgame measurement 2026-10-28 0.45, which moved damage from its attacks into Ash Aura).
+  damage: 0.5,
   // As tough against Physical as against Elemental (Timo): about 15 % each at the hero's level
   // (its Strength gives the Armor, COMBAT.monsterArmorPerLevel; every monster already resists
   // 10 %, COMBAT.monsterResistance, so +5 % here; +15 % made it 25 %, emberseer-kurve-v1.md).
   bonuses: { allResistance: 0.05 },
   telegraphs: [
-    { skill: HARVEST_SWING, interval: 10, windup: 2 },
-    { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66 },
+    { skill: HARVEST_SWING, interval: 10, windup: 2, aboveLife: 0.66 },
+    { skill: ASHFALL, interval: 12, windup: 2, belowLife: 0.66, aboveLife: 0.33 },
     { skill: LAST_HARVEST, interval: 11, windup: 2, belowLife: 0.33 },
   ],
   triggers: [
@@ -751,6 +752,7 @@ export const ASHEN_HARVESTER: EnemyDefinition = {
       name: "Ash Aura",
       condition: { kind: "everySeconds", seconds: 2 },
       belowLife: 0.66,
+      aboveLife: 0.33,
       effect: {
         kind: "spellHit",
         name: "Ash Aura",

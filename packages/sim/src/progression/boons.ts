@@ -86,7 +86,7 @@ export const BOONS = {
   /**
    * Every Boon's effect is scaled by this (Timo 2026-11-03: Boons are a bonus, a run must not
    * hang on Shrine luck). Without Boons the autopilot needed 4.2 attempts per newest act and 10 of
-   * 48 build runs got stuck; the monsters of the acts took the power back (`PROGRESSION.actPressure`).
+   * 48 build runs got stuck; the monsters of the acts took the power back (part of `PROGRESSION.stageKinds`).
    */
   strength: 0.5,
   maxRank: 3,

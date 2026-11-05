@@ -302,22 +302,20 @@ export const PROGRESSION = {
    * One factor per stage kind (balancing-neustart-v1.md, step 3), on top of the Monster Level
    * (`MONSTER_TABLE`), everywhere: acts, finale and Wildfire. They replace the old fight-length,
    * boss-Life and Elite factors. Fights long enough to watch the build: normal 20–30 s, Elite
-   * 35–50 s, Gatekeeper 45–70 s, boss 60–100 s.
+   * 35–50 s, Gatekeeper 45–70 s, boss 60–100 s. The only other factors a foe takes are the place
+   * it stands in: the newest act's wall (`wall`), the finale (`finale`) or the Wildfire tier
+   * (`wildfire.pressure`), never a second number for the same question (ausreisser-v1.md 5).
    */
   stageKinds: {
-    normal: { life: 1.4, damage: 1 },
+    // The old `actPressure` 0.93 (the acts lost their Boons, boon-auswahl-v1.md 7) is part of
+    // every kind now (ausreisser-v1.md 5); the finale and the Wildfire tiers were raised to match.
+    normal: { life: 1.3, damage: 0.93 },
     // Step 4: Elites caused 22–33 % of the deaths (target 10–20 %); was Life 2.1, damage 1.05.
-    elite: { life: 2, damage: 1 },
-    gate: { life: 2.2, damage: 1 },
-    boss: { life: 3, damage: 0.75 },
+    elite: { life: 1.86, damage: 0.93 },
+    gate: { life: 2.05, damage: 0.93 },
+    boss: { life: 2.8, damage: 0.7 },
   },
   /** Number of Elite modifiers: 1 + one more every this many Monster Levels, at most 3. */
-  /**
-   * Life and damage of every foe in the acts (not the finale, not the Wildfire) on top of its stage
-   * kind. The acts lost their Boons (Timo 2026-11-03, boon-auswahl-v1.md 7): without them the
-   * autopilot needed 4.4 attempts per newest act; this gives part of it back.
-   */
-  actPressure: { life: 0.93, damage: 0.93 },
   monsterLevelsPerEliteModifier: 25,
   maxEliteModifiers: 3,
 
@@ -383,13 +381,12 @@ export const PROGRESSION = {
   /**
    * The Last Ember (M11): the Prestige after which the world no longer burns. Playtest 2: the
    * seventh, when all seven acts have fallen (no more Ascension runs). The finale's foes
-   * fight at the Monster Level of that run's Harvester with this Life and damage (its own value
-   * instead of the Run Pressure). Like the walls: mostly damage, little more Life. Damage 3.3 → 3.8
-   * when the finale lost its Boons and Flask refills (boon-auswahl-v1.md 7): 2.5 attempts were
-   * below the 3–5 the climax aims at.
+   * fight at the Monster Level of that run's Harvester with this Life and damage on top of the
+   * boss stage kind (the finale's own wall). Like the walls: mostly damage, little more Life. The
+   * climax aims at 3–5 attempts without Boons and Flask refills (boon-auswahl-v1.md 7).
    */
   finalPrestige: 7,
-  finale: { life: 0.5, damage: 3.8 },
+  finale: { life: 0.54, damage: 4.1 },
   /**
    * The Warden echoes take this share of the finale's pressure, from the first to the last; the
    * Harvester's Core takes all of it, the hardest fight of the finale.
@@ -399,33 +396,39 @@ export const PROGRESSION = {
    * Wildfire I–X (spielzeit-v1.md, C): the endgame after The Last Ember. Any act burns again at a
    * chosen tier. Monster Level is `baseLevel` + `levelsPerTier` × tier: 92 at I, 100 at V (the
    * hero's cap, the tier every build should clear), 110 at X (T10 loot from tier I on). Every
-   * stage takes its stage kind (`stageKinds`), the act boss also `boss`. Both rise by `life`/`damage` per tier above I
-   * and by the steeper `steep` rates per tier above `steep.from` (VI–X are meant to be really hard).
+   * stage takes its stage kind (`stageKinds`) and its tier's `pressure`, the act boss also `boss`.
    * Legendaries and Runes come more often. No new currency: the highest tier cleared is the goal.
    */
   wildfire: {
     tiers: 10,
     /**
-     * Life and damage of every act boss at Wildfire I (the Harvester included) on top of the
-     * boss's stage factor, before the tiers.
+     * Life and damage of every Wildfire stage per tier (I first) on top of its stage kind: one
+     * number per tier instead of a base rate, a steep rate and a head start (ausreisser-v1.md 5).
+     * I–IV start close to V (Timo 2026-10-28: "Wildfire I bis IV sind zu leicht"; their Monster
+     * Level is lower, so IV and V are about as hard); above V the hero is capped at level 100
+     * while the Monster Level keeps rising, so each tier climbs steeply (VI–X are meant to be
+     * really hard; step 7: more damage, less Life, the autopilot cleared VI and VII in under 2
+     * attempts and then stuck at VIII).
+     */
+    pressure: [
+      { life: 1.2, damage: 1.27 },
+      { life: 1.3, damage: 1.35 },
+      { life: 1.4, damage: 1.42 },
+      { life: 1.49, damage: 1.5 },
+      { life: 1.42, damage: 1.33 },
+      { life: 1.63, damage: 1.6 },
+      { life: 1.85, damage: 1.87 },
+      { life: 2.07, damage: 2.14 },
+      { life: 2.28, damage: 2.41 },
+      { life: 2.5, damage: 2.68 },
+    ],
+    /**
+     * The Wildfire's wall: every act boss (the Harvester included) takes this on top of the boss
+     * stage kind and its tier, like the newest act's boss takes `wall.boss`.
      */
     boss: { life: 0.6, damage: 3.3 },
     baseLevel: 90,
     levelsPerTier: 2,
-    life: 0.08,
-    damage: 0.06,
-    /**
-     * Above V the hero is capped at level 100 while Monster Levels keep rising. Step 7: more
-     * damage, less Life (was Life 0.35, damage 0.08): the autopilot cleared VI and VII in under 2
-     * attempts and then stuck at VIII.
-     */
-    steep: { from: 5, life: 0.2, damage: 0.25 },
-    /**
-     * I–IV start closer to V (Timo 2026-10-28: "Wildfire I bis IV sind zu leicht", 1.3–1.9
-     * attempts): this much more Life and damage on every tier below V, so V–X stay as they were.
-     * Fading from +25 % at I to none at V made I a wall (4 attempts) and left IV at 1.2.
-     */
-    early: { life: 0.12, damage: 0.18 },
     /** Boss abilities: `[a, b]` = a + one more every b tiers (1 at I, 4 at IX). */
     abilities: [1, 3] as const,
     legendaryPerTier: 0.1,

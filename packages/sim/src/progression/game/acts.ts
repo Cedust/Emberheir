@@ -265,25 +265,21 @@ export const wildfireLevel = (tier: number) =>
   PROGRESSION.wildfire.baseLevel + PROGRESSION.wildfire.levelsPerTier * tier;
 
 /**
- * Life and damage of a Wildfire stage on top of its stage kind (`PROGRESSION.stageKinds`), raised
- * per tier above I. The act boss also takes `PROGRESSION.wildfire.boss`. Above V each tier rises
- * steeply.
+ * Life and damage of a Wildfire stage on top of its stage kind (`PROGRESSION.stageKinds`): the
+ * tier's own row of `PROGRESSION.wildfire.pressure`. The act boss also takes the Wildfire's wall
+ * (`PROGRESSION.wildfire.boss`).
  */
 export function wildfirePressure(
   tier: number,
   boss = false,
 ): { readonly life: number; readonly damage: number } {
   const w = PROGRESSION.wildfire;
-  const p = boss ? w.boss : { life: 1, damage: 1 };
-  const gentle = Math.min(tier, w.steep.from) - 1;
-  const steep = Math.max(0, tier - w.steep.from);
-  // I–IV: a head start that is gone at V.
-  const early = tier < w.steep.from ? 1 : 0;
-  return {
-    life: p.life * (1 + w.life * gentle + w.steep.life * steep) * (1 + w.early.life * early),
-    damage:
-      p.damage * (1 + w.damage * gentle + w.steep.damage * steep) * (1 + w.early.damage * early),
+  const row = w.pressure[Math.min(Math.max(tier, 1), w.pressure.length) - 1] ?? {
+    life: 1,
+    damage: 1,
   };
+  const wall = boss ? w.boss : { life: 1, damage: 1 };
+  return { life: wall.life * row.life, damage: wall.damage * row.damage };
 }
 
 /** What the Prestige at `prestige` (1 = the first one) gives. */

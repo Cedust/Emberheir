@@ -73,7 +73,7 @@ export function tryTrigger(
   state: TriggerState,
   context: TriggerContext,
 ): void {
-  if (!triggerReady(state) || !phaseActive(f, state.spec.belowLife)) return;
+  if (!triggerReady(state) || !phaseActive(f, state.spec)) return;
   const chance = triggerChance(state.spec.chance ?? 1, f.stats.triggerChance);
   if (chance < 1 && !core.rng.chance(chance)) return;
   markFired(state);

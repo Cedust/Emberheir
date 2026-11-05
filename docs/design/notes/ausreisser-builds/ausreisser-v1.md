@@ -200,3 +200,42 @@ Kontrollmessung mit diesen Forms (8 Seeds, Versuche pro neuestem Act, davor in K
 | Emberseer   |  2,0 |  1,8 |  2,4 |  1,7 |  2,2 |  2,0 |  5,6 | 2,51 (2,53) |
 
 Cinderguard und Ashstrider liegen jetzt gleichauf; Emberseer bleibt die leichteste Klasse (Punkt 5).
+
+## 7. Punkt 5 gebaut: Faktor-Kette aufgeräumt (2026-11-05, Timo: Option A)
+
+Vorschlag und Optionen: `punkt5-vorschlag-v1.md` (Projektordner). Timo wählte A: nur aufräumen, die Schwierigkeit
+bleibt, Emberseer wird dadurch nicht fairer.
+
+Ein Gegner nimmt jetzt nur noch: Monster Level (`MONSTER_TABLE`) × Stage-Art (`stageKinds`) × den Faktor seines Orts
+(Wand im neuesten Act, Finale oder Wildfire-Stufe).
+
+- **`actPressure` 0,93 entfällt:** steckt in jeder Stage-Art (normal Life 1,3 / Schaden 0,93, Elite 1,86 / 0,93,
+  Gatekeeper 2,05 / 0,93, Boss 2,8 / 0,7). Finale (Life 0,54, Schaden 4,1) und Wildfire wurden passend angehoben,
+  weil sie die 0,93 vorher nicht hatten.
+- **Wildfire:** eine Zeile pro Stufe (`wildfire.pressure`) statt Grundrate × Steilrate × Vorsprung (`early` entfällt).
+  Die Zahlen sind dieselben; sichtbar wird, dass V weniger Faktor hat als IV (sein höheres Monster Level gleicht es aus).
+- **Harvester:** Jede Phase endet mit ihren Echos (neuer Baustein `aboveLife` an Triggern und Telegraphs, mit Test):
+  Harvest Swing nur Phase 1, Ashfall und Ash Aura nur Phase 2, The Last Harvest Phase 3. Er trifft wie ein Boss
+  nach dem anderen statt wie sechs auf einmal; sein Schaden steigt dafür von 0,4 auf 0,5.
+- Die Boss-Wand (`wall.boss`) bleibt: Sie ist die Regel „der neueste Act ist schwerer“, kein Ausgleich.
+
+Messung (8 Seeds 31–101, `--act 7 --generations 7 --build all --runs 1 --newest 1`, Versuche pro neuestem Act):
+
+| Stand | C A1–A7 | C alle | A A1–A7 | A alle | E A1–A7 | E alle |
+|---|---|---|---|---|---|---|
+| main (PR #161) | 2,6 3,6 3,7 2,4 2,1 4,5 3,8 | 3,23 | 2,9 3,5 5,1 3,1 3,8 1,5 3,3 | 3,31 | 2,0 1,8 2,4 1,7 2,2 2,0 5,6 | 2,51 |
+| Phasen, Schaden 0,4 | 2,7 3,5 3,4 2,3 2,1 4,3 3,7 | 3,14 | 2,9 3,6 5,3 3,5 3,3 1,4 2,6 | 3,24 | 2,0 1,8 2,5 1,7 2,4 1,9 4,3 | 2,35 |
+| **Phasen, Schaden 0,5** | 2,7 3,5 3,4 2,3 2,1 4,3 4,2 | **3,21** | 2,9 3,6 5,3 3,5 3,3 1,4 3,2 | **3,32** | 2,0 1,8 2,5 1,7 2,4 1,9 5,4 | **2,51** |
+| Phasen, Schaden 0,55 | … 5,1 | 3,35 | … 3,9 | 3,41 | … 6,1 | 2,61 |
+
+Act 1–6 bleiben im Rauschen gleich. Tode am Harvester: main 190, Phasen mit 0,4 nur 109, mit 0,5 219.
+
+Finale und Wildfire (`--wildfire 10 --build all --runs 2`, Seeds 31 und 41):
+
+| | Finale C / A / E (alle) | Wildfire I–VII | VIII geschafft | X geschafft |
+|---|---|---|---|---|
+| main | 3,1 / 2,5 / 4,5 (3,2) | 1,6 2,6 2,2 2,1 3,7 2,7 1,6 | 54 von 94 | 11 von 25 |
+| neu | 2,7 / 2,6 / 3,5 (2,9) | 1,4 2,4 2,1 2,0 4,1 2,6 2,0 | 46 von 93 | 7 von 25 |
+
+Mit zwei Seeds rauscht das Finale um etwa ±0,4 (derselbe Code gab einmal 3,6); I–VII sind gleich.
+Emberseer bleibt die leichteste Klasse in Act 1–6 (offen, siehe `punkt5-vorschlag-v1.md` Option B).

@@ -120,7 +120,7 @@ function nextHeavy(f: Fighter): FighterSnapshot["nextHeavy"] {
   if (f.windup) return null;
   let best: FighterSnapshot["nextHeavy"] = null;
   (f.setup.telegraphs ?? []).forEach((spec, i) => {
-    if (!phaseActive(f, spec.belowLife)) return;
+    if (!phaseActive(f, spec)) return;
     const left = Math.max(0, spec.interval - (f.telegraphTimers[i] ?? 0));
     if (!best || left < best.in)
       best = {

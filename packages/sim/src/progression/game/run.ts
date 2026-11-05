@@ -204,7 +204,7 @@ export function startStage(state: GameState, data: GameData): GameState {
     ? wildfireLevel(tier)
     : stageMonsterLevel(data, act, run.stage, state.legacy.prestige);
   const atBoss = run.stage >= stagesInAct(act);
-  const p = tier ? wildfirePressure(tier, atBoss) : PROGRESSION.actPressure;
+  const p = tier ? wildfirePressure(tier, atBoss) : { life: 1, damage: 1 };
   // Cursed Spark (an Event): enemies hit harder until the next Waymark.
   const cursed = run.curse && run.stage < run.curse.until ? 1 + run.curse.damage : 1;
   const wall = tier ? null : stageWall(data, act, run.stage, state.legacy.prestige);
