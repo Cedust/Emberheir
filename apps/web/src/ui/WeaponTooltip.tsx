@@ -53,7 +53,7 @@ const HEAT_FORM_NAMES = {
 
 const HEAT_FORM_TEXT = {
   steady: "Hits fill Heat. It never cools down.",
-  cooling: "Hits fill Heat, and it cools all the time.",
+  cooling: "Hits fill more Heat, but you lose 10 % of it every second.",
   warming: "Heat fills by itself every second.",
   smoldering: "Heat comes mostly from enemy attacks, even blocked or dodged ones.",
 } as const;

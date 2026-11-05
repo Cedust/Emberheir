@@ -96,7 +96,7 @@ export const HEAT_BEHAVIOR_NOTES: Record<HeatBehavior, NoteHover> = {
   cooling: {
     name: "Cooling",
     kind: "Heat · melee",
-    explain: "Your hits fill Heat, and it cools down all the time. Keep swinging.",
+    explain: "Your hits fill Heat, but you lose 10 % of it every second. Spend it fast.",
   },
   steady: {
     name: "Steady",

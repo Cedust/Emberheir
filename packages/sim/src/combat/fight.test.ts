@@ -244,10 +244,10 @@ describe("Fight", () => {
       };
       const fight = new Fight(setup({ weapon: cooling }), setup({ bonuses: NO_CRIT }), 1);
       fight.advance(1.1);
-      // Took a 10 damage hit at 1 s = 10 % of max life = 10 Heat, minus 1 Heat/s cooling since.
-      expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.1, 5);
+      // Took a 10 damage hit at 1 s = 10 % of max life = 10 Heat, cooling 10 % per second since.
+      expect(fight.snapshot().hero.heat).toBeCloseTo(10 * Math.exp(-0.1 * 0.1), 5);
       fight.advance(0.8);
-      expect(fight.snapshot().hero.heat).toBeCloseTo(10 - 0.9, 5);
+      expect(fight.snapshot().hero.heat).toBeCloseTo(10 * Math.exp(-0.1 * 0.9), 5);
     });
 
     it("Smoldering gains Heat from every enemy attack, landed or blocked, by the enemy's tempo", () => {

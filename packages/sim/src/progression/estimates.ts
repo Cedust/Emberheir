@@ -44,8 +44,8 @@ export function estimateDps(setup: CombatantSetup, stats: DerivedStats = deriveS
 }
 
 /**
- * Heat per second from own Default Attacks (Warming: per second) minus Cooling, without hits
- * taken.
+ * Heat per second from own Default Attacks (Warming: per second), without hits taken and before
+ * Cooling (which depends on the Heat held, see `coolingShare`).
  */
 export function heatPerSecond(setup: CombatantSetup, stats: DerivedStats = deriveStats(setup)) {
   const behavior: HeatBehavior = setup.weapon.heatBehavior;
@@ -53,10 +53,14 @@ export function heatPerSecond(setup: CombatantSetup, stats: DerivedStats = deriv
     behavior === "warming"
       ? COMBAT.warmingHeatPerSecond
       : setup.weapon.heatPerHit * stats.attackSpeed;
-  const gain = raw * (1 + stats.heatGain);
-  return behavior === "cooling" && !setup.rules?.noHeatDecay
-    ? Math.max(0, gain - COMBAT.coolingDecayPerSecond)
-    : gain;
+  return raw * (1 + stats.heatGain);
+}
+
+/** Share of the held Heat that cools off per second (Cooling without a rule that stops it). */
+export function coolingShare(setup: CombatantSetup): number {
+  return setup.weapon.heatBehavior === "cooling" && !setup.rules?.noHeatDecay
+    ? COMBAT.coolingDecayShare
+    : 0;
 }
 
 /** One step of "One rotation": a skill fires after waiting `wait` seconds for Heat. */
@@ -74,6 +78,7 @@ export function estimateRotation(
   slots: readonly { readonly heatCost: number; readonly threshold: number }[],
   rate: number,
   startingHeat = 0,
+  cooling = 0,
 ): RotationStep[] {
   if (slots.length === 0 || rate <= 0) return [];
   const dt = 0.05;
@@ -84,7 +89,7 @@ export function estimateRotation(
   const fired: RotationStep[] = [];
   while (fired.length < slots.length * 2 && time < 120) {
     time += dt;
-    heat = Math.min(COMBAT.maxHeat, heat + rate * dt);
+    heat = Math.min(COMBAT.maxHeat, heat * Math.exp(-cooling * dt) + rate * dt);
     const slot = slots[pointer % slots.length];
     if (slot && heat >= Math.min(COMBAT.maxHeat, Math.max(slot.heatCost, slot.threshold))) {
       heat -= slot.heatCost;

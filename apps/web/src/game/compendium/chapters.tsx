@@ -348,7 +348,7 @@ export const CHAPTERS: readonly CompendiumChapter[] = [
                 {
                   icon: big(HEAT_FORM_ICONS.cooling),
                   name: "Cooling",
-                  text: "Hits fill Heat, and it cools all the time. Most melee weapons.",
+                  text: "Hits fill more Heat, but you lose 10 % of it every second.",
                 },
                 {
                   icon: big(HEAT_FORM_ICONS.steady),

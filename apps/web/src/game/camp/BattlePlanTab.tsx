@@ -15,6 +15,7 @@ import {
   battlePlanUnlocks,
   damageShare,
   deriveStats,
+  coolingShare,
   estimateRotation,
   heatPerSecond,
   heroSetup,
@@ -191,7 +192,7 @@ export function BattlePlanTab(props: { state: GameState; game: GameApi }) {
     heatCost: r.skill.heatCost,
     threshold: triggerThreshold(r.skill.heatCost, r.threshold),
   }));
-  const chain = estimateRotation(slots, rate, stats.startingHeat);
+  const chain = estimateRotation(slots, rate, stats.startingHeat, coolingShare(setup));
   const unlocks = battlePlanUnlocks(state.legacy.prestige);
   const plan = state.hero.plan;
   const report = state.run?.rewards?.report;

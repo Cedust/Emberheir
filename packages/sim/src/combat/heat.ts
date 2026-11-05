@@ -3,7 +3,7 @@ import type { HeatBehavior } from "./types";
 
 /**
  * Heat rules per weapon behavior (docs/design/waffen-v1.md section 4):
- * - Cooling (melee): own hits (+ hits taken with the Skill Tree), always cools down.
+ * - Cooling: own hits (+ hits taken with the Skill Tree), loses 10 % of its Heat per second.
  * - Steady (bow, crossbow): own hits only, never decays.
  * - Warming (wand, staff): fixed gain per second, independent of Attack Speed.
  * - Smoldering (Weapon Mastery Heat Form): mostly from enemy attacks, never decays.
@@ -50,7 +50,7 @@ export function stepHeat(
   multiplier: number,
 ): number {
   if (behavior === "warming") return addHeat(heat, COMBAT.warmingHeatPerSecond * dt, multiplier);
-  if (behavior === "cooling") return Math.max(0, heat - COMBAT.coolingDecayPerSecond * dt);
+  if (behavior === "cooling") return heat * Math.exp(-COMBAT.coolingDecayShare * dt);
   return heat;
 }
 

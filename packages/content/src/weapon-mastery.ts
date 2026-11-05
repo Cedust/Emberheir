@@ -185,7 +185,7 @@ const HEAT_FORMS: readonly (Omit<MasteryNode, "x" | "y"> & { readonly i: number 
   {
     id: "heat-cooling",
     name: "Cooling",
-    description: "+25 % Heat per Hit, but Heat cools down without hits.",
+    description: "+25 % Heat per Hit, but you lose 10 % of your Heat every second.",
     kind: "heatForm",
     group: "heatForm",
     effect: { heatForm: "cooling", heatPerHit: 1.25 },
