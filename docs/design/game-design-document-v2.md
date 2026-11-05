@@ -193,13 +193,15 @@ Endgame **Wildfire I–X**.
 ### 2.6 Finale und Endgame ✅
 - **The Last Ember** (nach dem 7. Prestige): 7 Stages ohne Loot und Level-Ups. Stage 1–6 sind die **Warden-Echos** der
   Acts 1–6 (Echo n hat n Boss-Fähigkeiten, Stärke steigt von 60 % auf 90 %), Stage 7 ist der **Harvester's Core** (100 %,
-  härtester Kampf). Keine Boons und keine Flask-Ladung zwischen den Kämpfen: die Flask muss für alle 7 reichen (Timo 2026-11-03). Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe (2026-11-03: 3,6, Finale-Schaden 3,8).
+  härtester Kampf). Keine Boons und keine Flask-Ladung zwischen den Kämpfen: die Flask muss für alle 7 reichen (Timo 2026-11-03). Tod: zurück zum Eingang, beliebig viele Versuche. Ziel: 3–5 Anläufe (2026-11-03: 3,6). Finale-Faktor Life ×0,54, Schaden ×4,1 auf die Boss-Stage-Art (2026-11-05, vorher ×0,5/×3,8 auf die alte Boss-Art).
 - **Wildfire I–X** (nach dem Finale): Ein gewählter Act brennt erneut auf einer Stufe. Monster Level 92 (I) bis 110 (X).
   Mehr Legendaries und Runes, **Ember Shrines mit Boons** (halbe Stärke, nach Stage 5/10 und als Knoten; verbrennen am Ende des Trips). Ziel: I–V schafft jeder Build, VI–VII mit Gear-Farmen, VIII–X nur über
-  Min-Maxing (`endgame-balance-v1.md`). Pro Stufe bis V +8 % Life, +6 % Schaden; darüber +20 % Life und +25 % Schaden
-  pro Stufe (Schritt 7, vorher +35 % Life, +8 % Schaden: VI–VII waren zu leicht). **I–IV mit Vorsprung** (Timo
-  28.10.2026, „I bis IV sind zu leicht“, 1,3–1,9 Versuche): I–IV haben +12 % Life und +18 % Schaden mehr, ab V
-  fällt der Vorsprung weg, V–X bleiben gleich (`notes/endgame-messung/`).
+  Min-Maxing (`endgame-balance-v1.md`). **Eine Zeile pro Stufe** (`PROGRESSION.wildfire.pressure`, 2026-11-05 statt
+  Grundrate, Steilrate und Vorsprung): Life ×1,2 / 1,3 / 1,4 / 1,49 / 1,42 / 1,63 / 1,85 / 2,07 / 2,28 / 2,5, Schaden
+  ×1,27 / 1,35 / 1,42 / 1,5 / 1,33 / 1,6 / 1,87 / 2,14 / 2,41 / 2,68 (I bis X, auf die Stage-Art). I–IV starten nah an V
+  (Timo 28.10.2026, „I bis IV sind zu leicht“); ihr Monster Level ist niedriger, so sind IV und V etwa gleich schwer.
+  Über V steigt jede Stufe steil (Schritt 7: VI–VII waren zu leicht). Bosse nehmen dazu die Wildfire-Wand (Life ×0,6,
+  Schaden ×3,3).
 - **Wildfire-Omens** (`neuausrichtung-v1.md` 7.2): Vor jedem Wildfire-Zug wählt man beliebig viele aus 20 Omens, jedes mit
   **Peril 1–3**. Mindest-Peril: I–V 0, VI 2, VII 4, VIII 6, IX 8, X 10. **Jeder Punkt Peril** gibt +8 % XP und +5 %
   Legendary-Chance, je 4 Peril einen Rune-Rang mehr, je 3 Peril ein Cinderglass mehr am Boss.
@@ -712,16 +714,21 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
   Tabelle** (`MONSTER_TABLE`), gemessen am Autopilot-Helden: Monster-Life wächst wie der Schaden pro Sekunde des Helden,
   Monster-Schaden wie seine effektive Life (`npm run balance -- --act 7 --build all --mastery all --curve 1`). Dazu
   nur noch:
-  - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,4; Elite Life ×2 (Schritt 4); Gatekeeper
-    Life ×2,2; Boss Life ×3, Schaden ×0,75. Champions +30 % Life.
+  - **Stage-Art** (überall, auch Finale und Wildfire): normal Life ×1,3, Schaden ×0,93; Elite Life ×1,86, Schaden ×0,93
+    (Schritt 4); Gatekeeper Life ×2,05, Schaden ×0,93; Boss Life ×2,8, Schaden ×0,7. Champions +30 % Life. Darin steckt
+    der frühere Act-Faktor 0,93 (Ausgleich, als die Acts ihre Boons verloren); Finale und Wildfire wurden passend
+    angehoben (`ausreisser-v1.md` 5, 2026-11-05). Außer der Stage-Art nimmt ein Gegner nur noch den Faktor des Orts,
+    an dem er steht: **Wand** (neuester Act), **Finale** oder **Wildfire-Stufe**, nie zwei Zahlen für dieselbe Frage.
   - **Wand** im neuesten Act (Timo 19.10.: länger über Life, Run 1 darf fordern): Boss Run 1 Life ×3,25, Schaden ×2,6;
-    ab Run 2 Life ×3,5, Schaden ×6 (Schritt 7, vorher ×3/×3,5 und ×4,5/×6: Bosse machten 58 % der Tode, Bosskämpfe
+    ab Run 2 Life ×3,5, Schaden ×5,25 (Phase 5, davor ×6; Schritt 7, vorher ×3/×3,5 und ×4,5/×6: Bosse machten 58 % der Tode, Bosskämpfe
     im neuesten Act ab Act 4 dauerten 136–200 s). Davor steigt der Act im **Sägezahn** (`neuausrichtung-v1.md` 5.3): normale Stages 15 → 30 %, 25 → 35 %,
     30 → 40 % der Wand, die **Gatekeeper** auf Stage 5 und 10 (sicherer Elite) sind Spitzen mit 40 % und 45 %. Ein Gatekeeper braucht 4 Stages
     Anlauf für seine volle Spitze, sonst anteilig (Schritt 7: Emberfall hat 10 Stages, Gatekeeper auf Stage 3 und 7, der
     erste stand nach 2 Stages schon voll da und war der häufigste Tod in Act 7).
-  - Der Harvester trifft mit 40 % eines Bosses seines Levels (seine Phasen tragen sechs Boss-Mechaniken; Schritt 7
-    vorher 50 %, bis 28.10.2026 45 %). **Er mischt die Schadensarten wie seine Echos** (Timo 28.10.2026: „gegen jede
+  - Der Harvester trifft mit 50 % eines Bosses seines Levels. **Jede Phase endet mit ihren Echos** (2026-11-05):
+    Harvest Swing nur in Phase 1, Ashfall und Ash Aura nur in Phase 2, The Last Harvest in Phase 3; vorher liefen alle
+    weiter und er traf darum nur mit 40 % (Schritt 7 50 %, bis 28.10.2026 45 %). Bausteine `belowLife`/`aboveLife` an
+    Triggern und Telegraphs. **Er mischt die Schadensarten wie seine Echos** (Timo 28.10.2026: „gegen jede
     Klasse gleich fair“, nur am Harvester, die Barrier bleibt; vorher kamen 55–60 % seines Schadens als physischer
     Reap, das traf den Emberseer ohne Armor und Evasion am härtesten): Reap (Harvest Scythe) 1,5–2,1 statt 2,95–4,15,
     Harvest Swing 500 % (vorher 400 %), **Soul Reap ist Fire** (2,4–3,6, vorher Void 1,6–2,4), Ash Aura 1,25–1,8

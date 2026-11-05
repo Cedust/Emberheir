@@ -186,6 +186,8 @@ export interface TriggerSpec {
   readonly oncePerFight?: boolean;
   /** Boss phases: only active while own life is below this fraction. */
   readonly belowLife?: number;
+  /** Boss phases: only active while own life is at or above this fraction (the phase ends below it). */
+  readonly aboveLife?: number;
   readonly effect: TriggerEffect;
 }
 
@@ -415,6 +417,8 @@ export interface TelegraphSpec {
   readonly windup: number;
   /** Boss phases: only winds up while own life is below this fraction. */
   readonly belowLife?: number;
+  /** Boss phases: only winds up while own life is at or above this fraction (the phase ends below it). */
+  readonly aboveLife?: number;
 }
 
 /** Rule changes, e.g. from Keystones. They change rules, not just numbers. */

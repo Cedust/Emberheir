@@ -76,15 +76,14 @@ describe("Wildfire", () => {
     expect(wildfireLevel(10)).toBe(110);
     expect(encounter.wall).toBeUndefined();
     expect(wildfirePressure(3).life).toBeGreaterThan(wildfirePressure(1).life);
-    // Above V each tier climbs at the steep rate.
+    // One row per tier: Wildfire I–X read their own Life and damage.
     const w = PROGRESSION.wildfire;
-    const step = (t: number) => wildfirePressure(t + 1).life - wildfirePressure(t).life;
-    expect(step(w.steep.from)).toBeCloseTo(w.steep.life);
-    // I–IV get a head start that is gone at V: V climbs from I as if there were none.
-    expect(wildfirePressure(1).life).toBeCloseTo(1 + w.early.life);
-    expect(wildfirePressure(1).damage).toBeCloseTo(1 + w.early.damage);
-    expect(wildfirePressure(w.steep.from).life).toBeCloseTo(1 + w.life * (w.steep.from - 1));
-    expect(step(1)).toBeCloseTo(w.life * (1 + w.early.life));
+    expect(w.pressure).toHaveLength(w.tiers);
+    w.pressure.forEach((row, i) => expect(wildfirePressure(i + 1)).toEqual(row));
+    // Above V each tier climbs, and X is the hardest.
+    for (let t = 5; t < w.tiers; t++) {
+      expect(wildfirePressure(t + 1).damage).toBeGreaterThan(wildfirePressure(t).damage);
+    }
     const tierOne = enemySetup({ ...encounter, pressure: wildfirePressure(1) }, "final-act", data);
     expect(enemySetup(encounter, "final-act", data).baseLife).toBeGreaterThan(
       tierOne.baseLife ?? 0,

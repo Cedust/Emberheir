@@ -13,10 +13,10 @@ import {
 } from "./game";
 import { TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
 
-/** A stage kind's factors as the acts use them: times the acts' own pressure. */
+/** A stage kind's factors as the acts use them: the kind alone, no second act factor. */
 const inAct = (k: { readonly life: number; readonly damage: number }) => ({
-  life: k.life * PROGRESSION.actPressure.life,
-  damage: k.damage * PROGRESSION.actPressure.damage,
+  life: k.life,
+  damage: k.damage,
 });
 
 /** Two 15-stage acts: run 1 has only the first, run 2 both. */

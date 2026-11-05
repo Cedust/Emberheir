@@ -413,9 +413,7 @@ describe("Events", () => {
       const kind = fight?.eliteModifiers.length
         ? PROGRESSION.stageKinds.elite
         : PROGRESSION.stageKinds.normal;
-      expect(fight?.pressure?.damage).toBeCloseTo(
-        kind.damage * PROGRESSION.actPressure.damage * 1.15,
-      );
+      expect(fight?.pressure?.damage).toBeCloseTo(kind.damage * 1.15);
     }
   });
 

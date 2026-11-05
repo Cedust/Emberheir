@@ -432,9 +432,18 @@ export function dotFactor(
   return (1 + damageTaken(f) + cursed) * poolFactor(pool);
 }
 
-/** Boss phases: a trigger or telegraph with `belowLife` waits until life drops below it. */
-export function phaseActive(f: Fighter, belowLife: number | undefined): boolean {
-  return belowLife === undefined || f.life / f.stats.maxLife < belowLife;
+/**
+ * Boss phases: a trigger or telegraph with `belowLife` waits until life drops below it, one with
+ * `aboveLife` stops once life drops below that (its phase is over, the next phase's echo takes
+ * over).
+ */
+export function phaseActive(
+  f: Fighter,
+  phase: { readonly belowLife?: number; readonly aboveLife?: number },
+): boolean {
+  const share = f.life / f.stats.maxLife;
+  if (phase.belowLife !== undefined && share >= phase.belowLife) return false;
+  return phase.aboveLife === undefined || share >= phase.aboveLife;
 }
 
 /** A buff skill whose buff still runs, or a curse that still sits on the target. */

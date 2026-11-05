@@ -1342,6 +1342,31 @@ describe("M10 building blocks", () => {
     expect(ofType(late.events, "trigger").length).toBeGreaterThan(0);
     expect(ofType(late.events, "telegraph").length).toBeGreaterThan(0);
   });
+
+  it("boss phases: triggers and telegraphs with aboveLife stop when their phase is over", () => {
+    const enemy = dummy({
+      baseLife: 1000,
+      triggers: [
+        {
+          id: "phase-one-aura",
+          name: "Phase One Aura",
+          condition: { kind: "everySeconds", seconds: 1 },
+          aboveLife: 0.5,
+          effect: { kind: "heat", amount: 1 },
+        },
+      ],
+      telegraphs: [{ skill: SKILL_A, interval: 1, windup: 0.5, aboveLife: 0.5 }],
+    });
+    const early = new Fight(dummy(), enemy, 1);
+    early.advance(5);
+    expect(ofType(early.events, "trigger").length).toBeGreaterThan(0);
+    expect(ofType(early.events, "telegraph").length).toBeGreaterThan(0);
+    const late = new Fight(dummy(), { ...enemy, lifeFraction: 0.4 }, 1);
+    late.advance(5);
+    expect(ofType(late.events, "trigger")).toHaveLength(0);
+    expect(ofType(late.events, "telegraph")).toHaveLength(0);
+    expect(late.snapshot().enemy.nextHeavy).toBeNull();
+  });
 });
 
 describe("Battle Plan", () => {

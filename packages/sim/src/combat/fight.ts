@@ -165,7 +165,7 @@ function stepTelegraphs(core: FightCore, f: Fighter, dt: number): void {
   }
   for (let i = 0; i < telegraphs.length; i++) {
     const spec = telegraphs[i];
-    if (!spec || !phaseActive(f, spec.belowLife)) continue;
+    if (!spec || !phaseActive(f, spec)) continue;
     f.telegraphTimers[i] = (f.telegraphTimers[i] ?? 0) + dt;
     if ((f.telegraphTimers[i] ?? 0) + 1e-9 < spec.interval) continue;
     f.telegraphTimers[i] = 0;
