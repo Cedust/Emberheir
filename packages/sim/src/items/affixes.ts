@@ -110,12 +110,23 @@ export function lifeGrowth(tier: number): number {
   return (1 + ITEMS.lifeGrowthPerTier) ** (Math.max(1, Math.min(tier, ITEMS.maxTier)) - 1);
 }
 
+/** Growth factor of a flat Barrier value at a tier (`ITEMS.barrierStart`, `barrierGrowthPerTier`). */
+export function barrierGrowth(tier: number): number {
+  const t = Math.max(1, Math.min(tier, ITEMS.maxTier)) - 1;
+  return ITEMS.barrierStart * (1 + ITEMS.barrierGrowthPerTier) ** t;
+}
+
+/** Growth factor of a Life-like flat value (Life, Barrier, Thorns) at a tier. */
+export function lifeLikeGrowth(stat: string, tier: number): number {
+  return stat === "barrier" ? barrierGrowth(tier) : lifeGrowth(tier);
+}
+
 /** Raw (unrounded) value of an affix at a tier and quality. */
 export function rawAffixValue(def: AffixDefinition, tier: number, quality: number): number {
   const q = Math.min(1, Math.max(0, quality));
   const growth =
     def.kind === "stat" && isLifeLikeStat(def.stat)
-      ? lifeGrowth(tier)
+      ? lifeLikeGrowth(def.stat, tier)
       : tierGrowth(def.perTier, tier);
   return (def.value.min + (def.value.max - def.value.min) * q) * growth;
 }

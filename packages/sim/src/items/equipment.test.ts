@@ -11,7 +11,7 @@ import {
   scaledFlatBonuses,
   scaledRuneBonuses,
 } from "./equipment";
-import { lifeGrowth } from "./affixes";
+import { barrierGrowth, lifeGrowth } from "./affixes";
 import { ITEMS } from "./constants";
 import { TEST_AXE, TEST_CATALOG, TEST_SHIELD, TEST_SWORD, TEST_WAND } from "./test-fixtures";
 import type { Item } from "./types";
@@ -54,6 +54,17 @@ describe("equipment stats", () => {
       life: Math.round(10 * lifeGrowth(3)),
       armor: 10,
       critChance: 0.1,
+    });
+  });
+
+  it("flat Barrier starts below the Life curve and grows faster, so it keeps up late", () => {
+    expect(barrierGrowth(1)).toBe(ITEMS.barrierStart);
+    expect(barrierGrowth(1)).toBeLessThan(lifeGrowth(1));
+    expect(barrierGrowth(9) / lifeGrowth(9)).toBeGreaterThan(1.2);
+    expect(barrierGrowth(20)).toBe(barrierGrowth(ITEMS.maxTier));
+    expect(scaledFlatBonuses({ barrier: 100, life: 100 }, 5)).toEqual({
+      barrier: Math.round(100 * barrierGrowth(5)),
+      life: Math.round(100 * lifeGrowth(5)),
     });
   });
 

@@ -21,6 +21,15 @@ export const ITEMS = {
    */
   lifeGrowthPerTier: 0.48,
   /**
+   * Flat Barrier on items (option-b-analyse-v1.md): starts at this share of the Life curve at T1
+   * and grows faster per tier (T9 about +25 %, T10 about +35 % over Life). Life also gains many
+   * % sources over the game (VIT, Ash Tree), Barrier hardly any, so with the Life curve the
+   * Barrier fell from 60 % of Life in run 1 to 36 % in run 7. Visible on the item, not tied to
+   * the hero's level.
+   */
+  barrierStart: 0.75,
+  barrierGrowthPerTier: 0.58,
+  /**
    * Runewords (runen-review-v1.md R1): their damage stats (Physical/Elemental Damage, Ailment
    * Effect) grow × (1 + this × (tier − 1)) with the base's tier, so a Runeword forged into a
    * better base is better and Runes stay worth having in the endgame.
