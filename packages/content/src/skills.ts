@@ -181,7 +181,7 @@ export const CORRUPT: SkillDefinition = {
   type: "spell",
   heatCost: 40,
   tags: ["void", "over-time", "any"],
-  description: "Hit for Void damage and Corrupt the enemy. The Corruption starts 4 steps stronger.",
+  description: "Hit for Void damage and Corrupt the enemy. The Corruption starts 3 steps stronger.",
   hits: [
     {
       kind: "spell",
@@ -191,7 +191,7 @@ export const CORRUPT: SkillDefinition = {
       ailmentPower: 2,
     },
   ],
-  effects: [{ kind: "advanceCorruption", ticks: 4 }],
+  effects: [{ kind: "advanceCorruption", ticks: 3 }],
 };
 
 export const WITHER: SkillDefinition = {
@@ -294,7 +294,7 @@ export const VOID_RIFT: SkillDefinition = {
   heatCost: 55,
   tags: ["void", "over-time", "any"],
   description:
-    "Tear open a rift for Void damage and Corrupt the enemy. The Corruption starts 6 steps stronger.",
+    "Tear open a rift for Void damage and Corrupt the enemy. The Corruption starts 4 steps stronger.",
   hits: [
     {
       kind: "spell",
@@ -304,7 +304,7 @@ export const VOID_RIFT: SkillDefinition = {
       ailmentPower: 2,
     },
   ],
-  effects: [{ kind: "advanceCorruption", ticks: 6 }],
+  effects: [{ kind: "advanceCorruption", ticks: 4 }],
 };
 
 export const IRON_BASTION: SkillDefinition = {

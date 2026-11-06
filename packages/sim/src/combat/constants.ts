@@ -162,10 +162,13 @@ export const COMBAT = {
   /**
    * Corruption (Void): starts weak and grows with every tick by this fraction of its base damage,
    * up to `corruptionMaxRamp` ticks. Re-applying refreshes the duration and keeps the growth.
+   * Growth 25 % -> 15 % and Collapse 4 s -> 3 s (option-b-analyse-v1.md): the Void builds killed
+   * bosses about 60 % faster than other casters, and every recovery (Siphon, DoT healing) grew
+   * with it, so they almost never died in Acts 2-6.
    */
   corruptionDamagePerSecond: 0.09,
   corruptionDurationSeconds: 6,
-  corruptionRampPerTick: 0.25,
+  corruptionRampPerTick: 0.15,
   corruptionMaxRamp: 12,
 
   /**
@@ -176,7 +179,7 @@ export const COMBAT = {
    * at full growth deals `collapseSeconds` of its damage at once and falls back to half growth.
    */
   combustShare: 0.25,
-  collapseSeconds: 4,
+  collapseSeconds: 3,
 
   /**
    * Spell skills gain this much base damage per skill level above 1. Step 7: as much as attacks

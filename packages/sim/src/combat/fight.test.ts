@@ -467,6 +467,20 @@ describe("Fight", () => {
       expect(fight.snapshot().enemy.telegraph).toBeNull();
     });
 
+    it("Chill slows the time until the next Heavy Attack", () => {
+      const chilling: WeaponDefinition = {
+        ...TEST_WEAPON,
+        attacksPerSecond: 4,
+        damage: { min: 0, max: 0 },
+        ailmentChances: [{ ailment: "chill", chance: 1 }],
+      };
+      const fight = new Fight(dummy({ weapon: chilling }), boss(), 1);
+      fight.advance(4.01);
+      expect(ofType(fight.events, "telegraph")).toEqual([]);
+      fight.advance(4 / (1 - COMBAT.chillSlow) - 4 + 0.2);
+      expect(ofType(fight.events, "telegraph")).toHaveLength(1);
+    });
+
     it("a Heavy Attack hit takes at most its share of Life + Barrier, other hits are not capped", () => {
       const huge = { ...SLAM, hits: [{ kind: "weapon" as const, multiplier: 500 }] };
       const target = dummy({ baseLife: 400 });

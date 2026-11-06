@@ -640,11 +640,9 @@ const REGIONS: readonly RegionSpec[] = [
     spokes: [
       {
         nodes: [t("Umbra", BARRIER), s(CORRUPT), t("Dread", TENACITY)],
-        notable: n(
-          "Hollow Crown",
-          "Your hits deal 10 % more damage to Corrupted enemies. Heal 1 % of the damage your ailments deal.",
-          { conditionalDamage: [more(has("corruption"), 0.1)], dotLifesteal: 0.01 },
-        ),
+        notable: n("Hollow Crown", "Your hits deal 10 % more damage to Corrupted enemies.", {
+          conditionalDamage: [more(has("corruption"), 0.1)],
+        }),
       },
       {
         nodes: [t("Blight", LIFE), s(SOUL_HARVEST), t("Grim Ward", BARRIER)],
