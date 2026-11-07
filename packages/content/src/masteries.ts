@@ -924,7 +924,7 @@ const MASTERIES: readonly MasterySpec[] = [
     ),
     deeper: [
       ailmentEffect("Withering", 0.15),
-      dotLeech("Soul Drain"),
+      ailmentLonger("Lingering Dark", 0.1),
       ailmentChance("Spreading Hex", 0.1),
       ailmentCrown("Doom"),
     ],

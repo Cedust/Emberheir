@@ -77,6 +77,20 @@ describe("trigger helpers", () => {
     expect(stepTriggers([state], 4)).toEqual([0, 0]);
   });
 
+  it("a pace below 1 (Chill) slows everySeconds timers, not cooldowns", () => {
+    const state = createTriggerState(
+      trigger({
+        condition: { kind: "everySeconds", seconds: 2 },
+        effect: { kind: "heat", amount: 1 },
+        cooldown: 1,
+      }),
+    );
+    markFired(state);
+    expect(stepTriggers([state], 2, 0.75)).toEqual([]);
+    expect(triggerReady(state)).toBe(true);
+    expect(stepTriggers([state], 0.7, 0.75)).toEqual([0]);
+  });
+
   it("everyNthAttack matches every n-th attack", () => {
     const c = { kind: "everyNthAttack", n: 4 } as const;
     expect([1, 2, 3, 4, 5, 8].map((n) => isNthAttack(c, n))).toEqual([

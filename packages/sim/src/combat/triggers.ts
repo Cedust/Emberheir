@@ -38,15 +38,16 @@ export function markFired(state: TriggerState): void {
 
 /**
  * Advances cooldowns and `everySeconds` timers by `dt`. Returns how many times each
- * `everySeconds` trigger is due (index into `states`).
+ * `everySeconds` trigger is due (index into `states`). `pace` slows the timers (Chill: an aura
+ * of a Chilled fighter pulses slower); cooldowns always run at full speed.
  */
-export function stepTriggers(states: readonly TriggerState[], dt: number): number[] {
+export function stepTriggers(states: readonly TriggerState[], dt: number, pace = 1): number[] {
   const due: number[] = [];
   states.forEach((state, i) => {
     state.cooldownLeft = Math.max(0, state.cooldownLeft - dt);
     const condition = state.spec.condition;
     if (condition.kind !== "everySeconds" || condition.seconds <= 0) return;
-    state.timer += dt;
+    state.timer += dt * pace;
     while (state.timer + 1e-9 >= condition.seconds) {
       state.timer -= condition.seconds;
       due.push(i);

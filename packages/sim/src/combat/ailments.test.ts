@@ -165,9 +165,11 @@ describe("dotDamagePerSecond", () => {
     let states = applyAilment({}, "bleed", 3, 10); // 5/s
     states = applyAilment(states, "poison", 5, 10); // 10 × Poison per second
     states = applyAilment(states, "poison", 5, 10);
-    states = advanceCorruption(applyAilment(states, "corruption", 6, 100), 4); // base × 2
+    states = advanceCorruption(applyAilment(states, "corruption", 6, 100), 4); // grown 4 steps
     expect(dotDamagePerSecond(states)).toBeCloseTo(
-      5 + 200 * COMBAT.corruptionDamagePerSecond + 2 * 10 * COMBAT.poisonDamagePerSecond,
+      5 +
+        100 * COMBAT.corruptionDamagePerSecond * (1 + 4 * COMBAT.corruptionRampPerTick) +
+        2 * 10 * COMBAT.poisonDamagePerSecond,
     );
   });
 });

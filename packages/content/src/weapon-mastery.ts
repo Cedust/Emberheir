@@ -1906,7 +1906,7 @@ const STAFF = buildTree({
           }),
         ],
         [
-          notable("Collapse Deeper", "Collapse deals 6 s of the Corruption at once instead of 4.", {
+          notable("Collapse Deeper", "Collapse deals 5 s of the Corruption at once instead of 3.", {
             weaponRules: { collapseSeconds: 2 },
           }),
           notable("Void Hunger", "Corruption ticks heal you for 3 % of their damage.", {

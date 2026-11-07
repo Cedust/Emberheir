@@ -56,6 +56,8 @@ export {
   tierForItemLevel,
   tierGrowth,
   lifeGrowth,
+  lifeLikeGrowth,
+  barrierGrowth,
   isLifeLikeStat,
   unlockedStages,
   GREATER,

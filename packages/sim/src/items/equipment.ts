@@ -12,7 +12,7 @@ import {
 import {
   isLifeLikeStat,
   isPercentStat,
-  lifeGrowth,
+  lifeLikeGrowth,
   resolveTrigger,
   statAffixValue,
   tierGrowth,
@@ -90,7 +90,7 @@ export function scaledBaseStats(base: ItemBaseDefinition, tier: number): StatBon
   ][]) {
     result[key] = isPercentStat(key)
       ? value
-      : Math.round(value * (isLifeLikeStat(key) ? lifeGrowth(tier) : growth));
+      : Math.round(value * (isLifeLikeStat(key) ? lifeLikeGrowth(key, tier) : growth));
   }
   return result;
 }
@@ -118,7 +118,7 @@ export function scaledRuneBonuses(
     const value = bonuses[key];
     if (value === undefined) continue;
     const stat = key as AffixStat;
-    if (isLifeLikeStat(stat)) result[key] = Math.round(value * lifeGrowth(tier));
+    if (isLifeLikeStat(stat)) result[key] = Math.round(value * lifeLikeGrowth(stat, tier));
     else if (!isPercentStat(stat)) {
       result[key] = Math.round(value * tierGrowth(ITEMS.baseScalePerTier, tier));
     } else if (runeword && RUNEWORD_GROWING.has(key)) {
@@ -138,7 +138,7 @@ export function scaledFlatBonuses(bonuses: StatBonuses | undefined, tier: number
   for (const key of Object.keys(bonuses) as (keyof StatBonuses)[]) {
     const value = bonuses[key];
     if (value !== undefined && isLifeLikeStat(key))
-      result[key] = Math.round(value * lifeGrowth(tier));
+      result[key] = Math.round(value * lifeLikeGrowth(key, tier));
   }
   return result;
 }

@@ -1,5 +1,5 @@
 import { Rng } from "../rng";
-import { stepAilments } from "./ailments";
+import { chillFactor, stepAilments } from "./ailments";
 import { COMBAT } from "./constants";
 import { type CombatEvent, type FightResult, type FightSnapshot } from "./events";
 import {
@@ -125,7 +125,8 @@ function stepStatus(core: FightCore, f: Fighter, dt: number): void {
     f.buffs = buffs.buffs;
   }
 
-  for (const index of stepTriggers(f.triggers, dt)) {
+  // Chill slows everything a fighter does: attacks, Heat, timed triggers and telegraphs.
+  for (const index of stepTriggers(f.triggers, dt, chillFactor(f.ailments))) {
     const state = f.triggers[index];
     if (state) tryTrigger(core, f, state, {});
     if (core.result) return;
@@ -166,7 +167,7 @@ function stepTelegraphs(core: FightCore, f: Fighter, dt: number): void {
   for (let i = 0; i < telegraphs.length; i++) {
     const spec = telegraphs[i];
     if (!spec || !phaseActive(f, spec)) continue;
-    f.telegraphTimers[i] = (f.telegraphTimers[i] ?? 0) + dt;
+    f.telegraphTimers[i] = (f.telegraphTimers[i] ?? 0) + dt * chillFactor(f.ailments);
     if ((f.telegraphTimers[i] ?? 0) + 1e-9 < spec.interval) continue;
     f.telegraphTimers[i] = 0;
     f.windup = { index: i, remaining: spec.windup };
