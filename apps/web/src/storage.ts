@@ -12,6 +12,14 @@ export function storageKey(name: string, pr: string = PREVIEW_PR): string {
 }
 
 /**
+ * The keys of the save games (`emberheir.save.slot.0`). Release 1.0 started the saves over (Timo
+ * 2026-11-09): the test builds before it kept theirs under `emberheir.slot.0` and so on, which
+ * the game no longer reads.
+ */
+export const saveKey = (name: string, pr: string = PREVIEW_PR): string =>
+  storageKey(`save.${name}`, pr);
+
+/**
  * Reads a JSON value from the browser storage through its zod schema. Missing, broken or
  * wrongly shaped data gives `fallback`; a schema can repair single fields itself (`.catch`).
  */

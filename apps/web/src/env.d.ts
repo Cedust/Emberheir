@@ -1,6 +1,8 @@
 declare const __APP_VERSION__: string;
 declare const __BUILD_COMMIT__: string;
 declare const __BUILD_TIME__: string;
+/** Developer tools built in (src/devTools.ts, vite.config.ts). */
+declare const __DEV_TOOLS__: boolean;
 
 interface ImportMetaEnv {
   /** PR number of a PR preview build; unset for main and local builds. */

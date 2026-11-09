@@ -99,7 +99,7 @@ test("every Heir goes into a sealed backup file and comes back from it", async (
   // The save game in the browser is sealed: no plain text.
   await page.getByRole("button", { name: /Continue/ }).click();
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
-  const stored = await page.evaluate(() => localStorage.getItem("emberheir.slot.0") ?? "");
+  const stored = await page.evaluate(() => localStorage.getItem("emberheir.save.slot.0") ?? "");
   expect(stored.startsWith("EH1.")).toBe(true);
   expect(stored).not.toContain("cinderguard");
 
@@ -128,7 +128,7 @@ test("every Heir goes into a sealed backup file and comes back from it", async (
 test("a save changed by hand shows as damaged and can be deleted", async ({ page }) => {
   await page.addInitScript(() => {
     if (!sessionStorage.getItem("seeded")) {
-      localStorage.setItem("emberheir.slot.2", "EH1.bm90LWEtcmVhbC1zYXZl");
+      localStorage.setItem("emberheir.save.slot.2", "EH1.bm90LWEtcmVhbC1zYXZl");
       sessionStorage.setItem("seeded", "1");
     }
   });

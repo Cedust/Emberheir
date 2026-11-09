@@ -22,8 +22,15 @@ const APP_VERSION = (
   }
 ).version;
 
+/**
+ * Developer tools (src/devTools.ts) are built in for the dev server, PR previews and the
+ * Playwright build (`EMBERHEIR_DEV_TOOLS=1`, playwright.config.ts); the release on main has none.
+ */
+const devTools = (command: string) =>
+  command === "serve" || !!process.env.VITE_PREVIEW_PR || process.env.EMBERHEIR_DEV_TOOLS === "1";
+
 // GitHub Pages serves the site under /<repo>/, set via BASE_PATH in the deploy workflow.
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   base: process.env.BASE_PATH ?? "/",
   plugins: [react(), legalPages()],
   build: {
@@ -44,5 +51,6 @@ export default defineConfig({
     __APP_VERSION__: JSON.stringify(APP_VERSION),
     __BUILD_COMMIT__: JSON.stringify(gitCommit()),
     __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+    __DEV_TOOLS__: JSON.stringify(devTools(command)),
   },
-});
+}));

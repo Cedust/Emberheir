@@ -1,3 +1,4 @@
+import { devParam } from "../../devTools";
 import { ACTS, GAME_DATA } from "@emberheir/content";
 import {
   type CombatEvent,
@@ -49,7 +50,7 @@ interface PlaqueInfo {
 }
 
 /** `?dev` in the URL shows fight speed and Skip for testing (not part of the game design). */
-export const DEV_MODE = new URLSearchParams(window.location.search).has("dev");
+export const DEV_MODE = devParam("dev");
 const DEV_SPEEDS = [1, 4, 16] as const;
 /**
  * The DOM parts of the HUD (numbers, skill bar, rhythm) redraw at most this often. The Pixi

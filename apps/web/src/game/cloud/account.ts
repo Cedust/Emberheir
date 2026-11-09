@@ -1,12 +1,12 @@
 import { z } from "zod";
-import { parseStored, storageKey } from "../../storage";
+import { parseStored, saveKey, storageKey } from "../../storage";
 
 /**
  * Which account plays in this browser (cloud saves, Release 1.0). Leaf module: the save store
  * (saves.ts) reads it at start, the cloud sync (sync.ts) builds on it.
  *
  * A signed-in account keeps its Heirs apart from the guest's: every save key gets the account's
- * own prefix (`emberheir.account.<uid>.slot.0`). Signing in or out reloads the page, so the store
+ * own prefix (`emberheir.account.<uid>.save.slot.0`). Signing in or out reloads the page, so the store
  * never switches while the game runs.
  */
 type KeyValue = Pick<Storage, "getItem" | "setItem" | "removeItem">;
@@ -102,7 +102,7 @@ export interface SyncMeta {
   dirty: boolean;
 }
 
-const SYNC_KEY = storageKey("cloudSync");
+const SYNC_KEY = saveKey("cloudSync");
 const syncSchema = z.object({ revision: z.number().int().min(0), dirty: z.boolean() });
 const NO_SYNC: SyncMeta = { revision: 0, dirty: false };
 

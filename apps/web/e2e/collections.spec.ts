@@ -30,7 +30,7 @@ test("a full Lineage hangs the ancestor portrait", async ({ page }) => {
   page.on("pageerror", (e) => errors.push(e.message));
   await page.addInitScript(() => {
     localStorage.setItem(
-      "emberheir.lineage",
+      "emberheir.save.lineage",
       JSON.stringify({
         finishers: [1, 2, 3],
         classes: ["cinderguard", "ashstrider", "emberseer"],
@@ -63,7 +63,7 @@ test("the Lineage gives a new Heir its points, glowing, and they can be switched
   page.on("pageerror", (e) => errors.push(e.message));
   await page.addInitScript(() => {
     localStorage.setItem(
-      "emberheir.lineage",
+      "emberheir.save.lineage",
       JSON.stringify({ finishers: [1, 2], classes: ["cinderguard", "emberseer"] }),
     );
   });

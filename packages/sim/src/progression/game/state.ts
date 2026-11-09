@@ -46,11 +46,10 @@ import {
 
 /**
  * Bumped whenever the save game shape changes; each bump gets a step in `MIGRATIONS`
- * (`save/migrations.ts`). Started over at 9 with the Klassengerüst: older saves are dropped.
- * 10: three Ash Tree travel nodes became the element attacks (balancing-neustart step 4).
- * 11: a trip may hold its walks past the Warden's Gate. 12: the act map replaces the forks.
+ * (`save/migrations.ts`). Started over at 1 with Release 1.0: the saves of the test builds
+ * before it (up to version 21) no longer load.
  */
-export const SAVE_VERSION = 21;
+export const SAVE_VERSION = 1;
 
 /** One act for the run: its stages, enemies and boss. */
 export interface ActData {

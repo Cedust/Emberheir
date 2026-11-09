@@ -2,7 +2,9 @@ import { SAVE_VERSION } from "@emberheir/sim";
 import {
   BackupError,
   type KeyValueStore,
+  OldBackupError,
   backupOf,
+  backupWith,
   readBackup,
   restoreBackup,
   savesOf,
@@ -55,7 +57,16 @@ const hasHeir = (saves: Record<string, string>) =>
   Object.keys(saves).some((name) => name.startsWith("slot."));
 
 function replace(kv: KeyValueStore, saves: Record<string, string>): void {
-  restoreBackup(kv, { game: "emberheir", version: SAVE_VERSION, saves });
+  restoreBackup(kv, backupWith(saves));
+}
+
+function isOld(payload: string): boolean {
+  try {
+    readBackup(payload);
+    return false;
+  } catch (error) {
+    return error instanceof OldBackupError;
+  }
 }
 
 /** The guest's Heirs move into the account: the guest's title is empty afterwards. */
@@ -78,6 +89,9 @@ function adoptGuest(parts: SyncParts, saves: Record<string, string>, revision: n
  * | unchanged               | newer revision   | the cloud loads                              |
  * | changed                 | newer revision   | the player chooses                           |
  * | anything                | not reachable    | this device plays on                         |
+ *
+ * A cloud save of a test build before Release 1.0 no longer loads: it is deleted, and the cloud
+ * counts as empty.
  */
 export async function startSync(parts: SyncParts): Promise<StartOutcome> {
   const device = savesOf(parts.local);
@@ -87,6 +101,10 @@ export async function startSync(parts: SyncParts): Promise<StartOutcome> {
   let cloud;
   try {
     cloud = await parts.remote.read(parts.uid);
+    if (cloud !== null && isOld(cloud.payload)) {
+      await parts.remote.erase(parts.uid);
+      cloud = null;
+    }
   } catch {
     if (!hasHeir(device) && hasHeir(guest)) adoptGuest(parts, guest, known.revision);
     return { kind: "ready", state: "offline" };

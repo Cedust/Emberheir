@@ -19,18 +19,16 @@ import {
   hasMet,
 } from "@emberheir/sim";
 import { useState } from "react";
-import { PREVIEW_PR } from "../storage";
+import { DEV_TOOLS } from "../devTools";
 import { Icon } from "../ui/Icon";
 import type { GameApi } from "./useGame";
 
 /**
- * Cheat Mode (Timo 2026-10-08): on in every PR preview and in local dev builds, elsewhere with
- * `?cheat` in the address. It edits the save directly, so testers reach any point of the game.
+ * Cheat Mode (Timo 2026-10-08): on in every PR preview and in local dev builds, never in the
+ * release (devTools.ts, Timo 2026-11-09). It edits the save directly, so testers reach any point
+ * of the game.
  */
-export const CHEATS_ENABLED =
-  PREVIEW_PR !== "" ||
-  import.meta.env.DEV ||
-  new URLSearchParams(window.location.search).has("cheat");
+export const CHEATS_ENABLED = DEV_TOOLS;
 
 type Tab = "hero" | "builds" | "currency" | "items" | "progress";
 const TABS: { id: Tab; name: string }[] = [

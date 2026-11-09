@@ -1,23 +1,23 @@
 import { Suspense, lazy } from "react";
 import { GameApp } from "./game/GameApp";
+import { devParam } from "./devTools";
 import { CrashGuard } from "./ui/CrashGuard";
 
+// The developer pages (devTools.ts): `__DEV_TOOLS__` is `false` in the release build, so these
+// imports and their chunks are left out of it.
 /** `?uikit` shows the UI kit preview (ui-ux-plan-v1.md step 1) instead of the game. */
-const UiKitPreview = lazy(() =>
-  import("./ui/kit/UiKitPreview").then((m) => ({ default: m.UiKitPreview })),
-);
+const UiKitPreview = __DEV_TOOLS__
+  ? lazy(() => import("./ui/kit/UiKitPreview").then((m) => ({ default: m.UiKitPreview })))
+  : null;
 /** `?effects` shows every battle effect on its own (performance-kampfeffekte-v1.md). */
-const EffectGallery = lazy(() =>
-  import("./game/effects/EffectGallery").then((m) => ({ default: m.EffectGallery })),
-);
+const EffectGallery = __DEV_TOOLS__
+  ? lazy(() => import("./game/effects/EffectGallery").then((m) => ({ default: m.EffectGallery })))
+  : null;
 /** `?sfx` plays every battle sound with its arena moment. */
-const SfxGallery = lazy(() =>
-  import("./game/effects/SfxGallery").then((m) => ({ default: m.SfxGallery })),
-);
+const SfxGallery = __DEV_TOOLS__
+  ? lazy(() => import("./game/effects/SfxGallery").then((m) => ({ default: m.SfxGallery })))
+  : null;
 const PARAMS = new URLSearchParams(window.location.search);
-const SHOW_KIT = PARAMS.has("uikit");
-const SHOW_EFFECTS = PARAMS.has("effects");
-const SHOW_SFX = PARAMS.has("sfx");
 /** `?crashtest` breaks the game on purpose, to see (and test) the crash screen. */
 const CRASH_TEST = PARAMS.has("crashtest");
 
@@ -26,21 +26,21 @@ function CrashTest(): never {
 }
 
 export function App() {
-  if (SHOW_KIT) {
+  if (UiKitPreview && devParam("uikit")) {
     return (
       <Suspense fallback={null}>
         <UiKitPreview />
       </Suspense>
     );
   }
-  if (SHOW_SFX) {
+  if (SfxGallery && devParam("sfx")) {
     return (
       <Suspense fallback={null}>
         <SfxGallery />
       </Suspense>
     );
   }
-  if (SHOW_EFFECTS) {
+  if (EffectGallery && devParam("effects")) {
     return (
       <Suspense fallback={null}>
         <EffectGallery />

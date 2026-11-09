@@ -11,7 +11,13 @@ import {
 import { TEST_GAME_DATA as data } from "../progression/test-fixtures";
 import { Rng } from "../rng";
 import type { SaveMigration } from "./migrations";
-import { deserializeGame, deserializeStash, serializeGame, serializeStash } from "./save";
+import {
+  SaveGameError,
+  deserializeGame,
+  deserializeStash,
+  serializeGame,
+  serializeStash,
+} from "./save";
 
 const act = (state: GameState, ...actions: GameAction[]) =>
   actions.reduce((s, a) => applyAction(s, data, a), state);
@@ -59,7 +65,7 @@ describe("save games", () => {
     expect(() => deserializeGame("null")).toThrow(/object/);
     expect(() => deserializeGame(JSON.stringify({ ...s, version: undefined }))).toThrow(/version/);
     expect(() => deserializeGame(JSON.stringify({ ...s, version: 99 }))).toThrow(/newer/);
-    // A version without a migration step (none before 1 here) is not supported.
+    // A version without a migration step is not supported.
     expect(() =>
       deserializeGame(JSON.stringify({ ...s, version: 1 }), data, { to: 3, migrations: {} }),
     ).toThrow(/not supported/);
@@ -125,113 +131,12 @@ describe("migrations", () => {
   });
 });
 
-describe("the Klassengerüst", () => {
-  it("drops saves and stashes from before version 9 instead of converting them", () => {
-    const old = { ...JSON.parse(serializeGame(start())), version: 8 };
-    expect(() => deserializeGame(JSON.stringify(old), data)).toThrow(/not supported/);
-    expect(() => deserializeStash(JSON.stringify({ version: 8, items: [] }))).toThrow(
-      /not supported/,
-    );
-  });
-});
-
-describe("version 10: element attacks", () => {
-  it("moves a learned travel node onto the element attack that replaced it", () => {
-    const s = start();
-    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
-    const hero = raw["hero"] as Record<string, unknown>;
-    const old = {
-      ...raw,
-      version: 9,
-      hero: { ...hero, learned: { ...(hero["learned"] as object), "storm-steady-mind": 1 } },
-    };
-    const migrated = deserializeGame(JSON.stringify(old), data);
-    expect(migrated.hero.learned["storm-storm-strike"]).toBe(1);
-    expect(migrated.hero.learned["storm-steady-mind"]).toBeUndefined();
-  });
-});
-
-describe("version 16: Bounties v2", () => {
-  it("pays a done Culling as a Trail Hunt and drops an open Hale and Whole", () => {
-    const s = act(start(), { type: "setOut", actId: "test-act" });
-    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
-    const run = raw["run"] as Record<string, unknown>;
-    const old = {
-      ...raw,
-      version: 15,
-      bountyDone: { id: "culling", enemyId: "weakling", actId: "test-act" },
-      run: { ...run, bounty: { id: "hale-and-whole", progress: 0, status: "open" } },
-    };
-    const migrated = deserializeGame(JSON.stringify(old), data);
-    expect(migrated.bountyDone).toEqual({
-      id: "trail-hunt",
-      enemyId: "weakling",
-      actId: "test-act",
-    });
-    expect(migrated.run?.bounty).toBeUndefined();
-  });
-});
-
-describe("Boon-Auswahl migration", () => {
-  it("swaps a Boon that is gone for the one in its place and drops doubles from an open offer", () => {
-    const s = rich();
-    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
-    const run = raw["run"] as Record<string, unknown>;
-    const old = {
-      ...raw,
-      version: 19,
-      boons: {
-        kept: [
-          { id: "grit", grade: "flame" },
-          { id: "crushing-blow", grade: "spark" },
-        ],
-        fresh: [{ id: "wildfire", grade: "spark" }],
-      },
-      run: {
-        ...run,
-        // A Wildfire trip, so step 20 keeps its Boons.
-        wildfire: 1,
-        rewards: {
-          ...((run["rewards"] as object | null) ?? {}),
-          boonOffer: [
-            { id: "melt", grade: "spark" },
-            { id: "stoked-pyre", grade: "flame" },
-            { id: "frost-nip", grade: "spark" },
-          ],
-          boonPick: null,
-        },
-      },
-    };
-    // Without content data: the test game has its own Boons.
-    const migrated = deserializeGame(JSON.stringify(old));
-    expect(migrated.boons.kept.map((b) => b.id)).toEqual(["brutality", "crushing-blow"]);
-    expect(migrated.boons.fresh.map((b) => b.id)).toEqual(["stoked-pyre"]);
-    expect(migrated.run?.rewards?.boonOffer?.map((b) => b.id)).toEqual([
-      "stoked-pyre",
-      "permafrost",
-    ]);
-  });
-
-  it("an act's Boons and an open Boon offer burn out: Boons live only in the Wildfire", () => {
-    const s = rich();
-    const raw = JSON.parse(serializeGame(s)) as Record<string, unknown>;
-    const run = raw["run"] as Record<string, unknown>;
-    const old = {
-      ...raw,
-      version: 20,
-      boons: { kept: [{ id: "brutality", grade: "flame" }], fresh: [] },
-      run: {
-        ...run,
-        rewards: {
-          ...((run["rewards"] as object | null) ?? {}),
-          boonOffer: [{ id: "stoked-pyre", grade: "flame" }],
-          boonPick: null,
-        },
-      },
-    };
-    const migrated = deserializeGame(JSON.stringify(old));
-    expect(migrated.boons).toEqual({ kept: [], fresh: [] });
-    expect(migrated.run?.rewards?.boonOffer).toBeUndefined();
-    expect(migrated.run?.rewards?.boonPick).toBeUndefined();
+describe("Release 1.0", () => {
+  it("drops saves and stashes of the test builds before it (versions 9 to 21)", () => {
+    for (const version of [9, 21]) {
+      const old = { ...JSON.parse(serializeGame(start())), version };
+      expect(() => deserializeGame(JSON.stringify(old), data)).toThrow(SaveGameError);
+      expect(() => deserializeStash(JSON.stringify({ version, items: [] }))).toThrow(SaveGameError);
+    }
   });
 });

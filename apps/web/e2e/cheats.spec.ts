@@ -5,7 +5,7 @@ test("Cheat Mode: level, Heirloom Points, acorns, an item and the next act", asy
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveAfterAct1());
-  await page.goto("/?cheat");
+  await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: /Cheats/ }).click();
@@ -37,20 +37,11 @@ test("Cheat Mode: level, Heirloom Points, acorns, an item and the next act", asy
   expect(errors).toEqual([]);
 });
 
-test("Cheat Mode is off without ?cheat outside PR previews", async ({ page }) => {
-  await seedSave(page, saveAfterAct1());
-  await page.goto("/");
-  await page.getByRole("button", { name: /Continue/ }).click();
-  await page.keyboard.press("Escape");
-  await expect(page.getByRole("dialog", { name: "Menu" })).toBeVisible();
-  await expect(page.getByRole("button", { name: /Cheats/ })).toHaveCount(0);
-});
-
 test("Cheat Mode: become one of the 24 builds at its last stage", async ({ page }) => {
   const errors: string[] = [];
   page.on("pageerror", (e) => errors.push(e.message));
   await seedSave(page, saveAfterAct1());
-  await page.goto("/?cheat");
+  await page.goto("/");
   await page.getByRole("button", { name: /Continue/ }).click();
   await page.keyboard.press("Escape");
   await page.getByRole("button", { name: /Cheats/ }).click();

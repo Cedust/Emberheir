@@ -391,7 +391,7 @@ export function GameApp() {
               />
             )}
           </Presence>
-          {state && overlay === "cheats" && (
+          {CHEATS_ENABLED && state && overlay === "cheats" && (
             <CheatPanel state={state} game={game} onClose={() => setOverlay(null)} />
           )}
           {game.error && (
