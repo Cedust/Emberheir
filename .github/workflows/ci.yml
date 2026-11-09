@@ -26,6 +26,9 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build
+      # The release has no developer tools (apps/web/src/devTools.ts): no gallery pages in it.
+      - name: Release build has no developer pages
+        run: "! ls apps/web/dist/assets | grep -E 'EffectGallery|SfxGallery|UiKitPreview'"
       - run: npm run balance -- --runs 100
 
   e2e:

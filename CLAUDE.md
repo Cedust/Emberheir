@@ -31,7 +31,9 @@ folder (`/mnt/project-files/design/`); copy changes over when a milestone depend
 - Save games go through `packages/sim/src/save/`: a zod schema typed against `GameState`, and a
   migration table. A change to the save shape bumps `SAVE_VERSION` and adds a migration step; a
   change to items goes into the step's `item` function, so it reaches the shared stash too.
-  Add the ended version's real saves to `tools/balance/fixtures/old-saves/` (README there). In
+  Add the ended version's real saves to `tools/balance/fixtures/old-saves/` (README there). The
+  format started over at version 1 with Release 1.0 (keys `emberheir.save.*`); never load the
+  test builds' saves from before it. In
   the browser and in backups the saves are sealed (`apps/web/src/game/saveCodec.ts`): never change
   its key. Cloud saves (sign-in, Firestore, Cloudflare Pages, legal pages) are set up as in
   `docs/cloud-setup.md`; Pixi modules that create an `Application` import `pixiNoEval.ts` (the
@@ -101,6 +103,13 @@ npm run format                       # Prettier
 
 In the Claude Code cloud container Chromium is preinstalled; `@playwright/test` is pinned to
 the matching version, do not run `playwright install` there.
+
+## Developer tools
+
+Cheat Mode (F8), `?dev`, `?effects`, `?sfx` and `?uikit` exist only in the dev server, PR previews
+and the Playwright build (`apps/web/src/devTools.ts`, `__DEV_TOOLS__` in `vite.config.ts`). The
+release on `main` is built without them (Timo 2026-11-09); CI checks its files. A new developer
+page or cheat goes behind `__DEV_TOOLS__` too.
 
 ## Preview
 

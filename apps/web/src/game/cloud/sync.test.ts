@@ -1,9 +1,10 @@
 import { SAVE_VERSION } from "@emberheir/sim";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { storageKey } from "../../storage";
+import { saveKey } from "../../storage";
 import { type KeyValueStore, backupOf, savesOf } from "../saves";
 import { AccountKeys, readSync, writeSync } from "./account";
 import { CloudError, type CloudRemote, type CloudSnapshot, type CloudWrite } from "./remote";
+import { seal } from "../saveCodec";
 import { CloudPusher, type SyncState, resolveChoice, startSync } from "./sync";
 
 function memory(): KeyValueStore & { data: Map<string, string> } {
@@ -46,7 +47,7 @@ function cloud(initial?: CloudSnapshot) {
 
 const heir = (name: string) => JSON.stringify({ name });
 function withHeirs(kv: KeyValueStore, ...names: string[]): KeyValueStore {
-  names.forEach((n, i) => kv.setItem(storageKey(`slot.${i}`), heir(n)));
+  names.forEach((n, i) => kv.setItem(saveKey(`slot.${i}`), heir(n)));
   return kv;
 }
 function snapshot(revision: number, ...names: string[]): CloudSnapshot {
@@ -61,9 +62,9 @@ describe("the account's keys", () => {
   it("keep an account's saves apart from the guest's and other keys as they are", () => {
     const kv = memory();
     const account = new AccountKeys(kv, "u1");
-    account.setItem(storageKey("slot.0"), "a");
-    expect(kv.data.get(storageKey("account.u1.slot.0"))).toBe("a");
-    expect(kv.getItem(storageKey("slot.0"))).toBeNull();
+    account.setItem(saveKey("slot.0"), "a");
+    expect(kv.data.get("emberheir.account.u1.save.slot.0")).toBe("a");
+    expect(kv.getItem(saveKey("slot.0"))).toBeNull();
     account.setItem("other", "b");
     expect(kv.data.get("other")).toBe("b");
   });
@@ -139,6 +140,18 @@ describe("the sync at start", () => {
       kind: "newer",
     });
     expect(heirNames(local)).toEqual(["Here"]);
+  });
+
+  it("deletes a cloud save of a test build before 1.0 and counts the cloud as empty", async () => {
+    const local = withHeirs(memory(), "Here");
+    const old = seal(JSON.stringify({ game: "emberheir", version: 21, saves: { "slot.0": "{}" } }));
+    const c = cloud({ payload: old, revision: 7, saveVersion: 21 });
+    expect(await startSync({ uid: "u1", local, guest: null, remote: c.remote })).toEqual({
+      kind: "ready",
+      state: "pending",
+    });
+    expect(c.docs.size).toBe(0);
+    expect(readSync(local)).toEqual({ revision: 0, dirty: true });
   });
 });
 

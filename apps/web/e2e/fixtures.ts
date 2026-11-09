@@ -55,8 +55,8 @@ export function saveAfterHarvestBoss(): string {
 export async function seedSave(page: Page, json: string): Promise<void> {
   await page.addInitScript((save) => {
     if (!sessionStorage.getItem("seeded")) {
-      localStorage.setItem("emberheir.slot.0", save);
-      localStorage.setItem("emberheir.lastSlot", "0");
+      localStorage.setItem("emberheir.save.slot.0", save);
+      localStorage.setItem("emberheir.save.lastSlot", "0");
       sessionStorage.setItem("seeded", "1");
     }
   }, json);

@@ -4,7 +4,7 @@ import { SAVE_VERSION, applyAction, deserializeGame, serializeGame } from "@embe
 import { describe, expect, it } from "vitest";
 
 /**
- * Real save games of every save version since the Klassengerüst (version 9): the autopilot
+ * Real save games of every ended save version since Release 1.0 (version 1): the autopilot
  * played the game of the last commit of each version (the 12th fight and the rewards of the 40th, a
  * Sword and a Staff hero) and saved. Each one has to load in today's game and play on.
  * A new SAVE_VERSION adds its file (see fixtures/old-saves/README.md).
@@ -18,9 +18,9 @@ interface OldSaves {
 }
 
 describe("old save games", () => {
-  it("cover every version from 9 to the one before today's", () => {
+  it("cover every version from 1 to the one before today's", () => {
     const versions = files.map((f) => Number(/^v(\d+)\.json$/.exec(f)?.[1])).sort((a, b) => a - b);
-    expect(versions).toEqual(Array.from({ length: SAVE_VERSION - 9 }, (_, i) => 9 + i));
+    expect(versions).toEqual(Array.from({ length: SAVE_VERSION - 1 }, (_, i) => 1 + i));
   });
 
   for (const file of files) {

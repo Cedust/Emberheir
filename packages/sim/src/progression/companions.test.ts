@@ -1,6 +1,4 @@
 import { describe, expect, it } from "vitest";
-import { deserializeGame, serializeGame } from "../save";
-import { MIGRATIONS } from "../save/migrations";
 import { type GameAction, type GameData, type GameState, applyAction, newGame } from "./game";
 import { DEADLY_ACT, TEST_ACT, TEST_GAME_DATA } from "./test-fixtures";
 
@@ -63,24 +61,5 @@ describe("Camp personas met on the road", () => {
     expect(() => act(s, { type: "craft", request: { kind: "gamble", slot: "ring" } })).toThrow(
       /merchant|Marisha/i,
     );
-  });
-
-  it("old saves keep everyone who was in the Camp", () => {
-    const s = start();
-    const old = {
-      ...JSON.parse(serializeGame(s)),
-      version: 14,
-      progress: {
-        actsCleared: [],
-        deathsInAct: 0,
-        trainerUnlocked: true,
-        rotationSlots: 1,
-        runesmithUnlocked: false,
-        waymarks: [],
-      },
-    };
-    const migrated = deserializeGame(JSON.stringify(old), data, { migrations: MIGRATIONS });
-    expect(migrated.progress.met).toEqual(["kaelen", "marisha", "liora"]);
-    expect(migrated.progress).not.toHaveProperty("trainerUnlocked");
   });
 });

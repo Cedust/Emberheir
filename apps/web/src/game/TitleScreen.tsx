@@ -1,3 +1,4 @@
+import { devParam } from "../devTools";
 import { GAME_DATA, GAME_SUBTITLE, GAME_TITLE } from "@emberheir/content";
 import titleLogoUrl from "../assets/logo/title-logo.webp";
 import { type GameState, SIM_VERSION, heroTitle } from "@emberheir/sim";
@@ -26,7 +27,7 @@ import { loadDamagedSlots, loadLastSlot, loadSlots, saveSlot } from "./saves";
 import type { NewCharacter } from "./useGame";
 
 /** The Combat Lab is a developer tool: it only shows with ?dev in the address. */
-const DEV = new URLSearchParams(window.location.search).has("dev");
+const DEV = devParam("dev");
 
 /**
  * The story intro plays before every new Heir. Browser tests start straight at the class

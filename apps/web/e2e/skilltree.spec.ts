@@ -54,8 +54,9 @@ test("The Mastery step deepens the main Mastery", async ({ page }) => {
   await page.getByRole("button", { name: "Let It Burn" }).click();
   await expect(page.getByRole("region", { name: "Camp" })).toBeVisible();
   expect(
-    JSON.parse(unseal(await page.evaluate(() => localStorage.getItem("emberheir.slot.0") ?? "")))
-      .legacy?.branches,
+    JSON.parse(
+      unseal(await page.evaluate(() => localStorage.getItem("emberheir.save.slot.0") ?? "")),
+    ).legacy?.branches,
   ).toEqual(["vanquisher", "vanquisher"]);
 });
 

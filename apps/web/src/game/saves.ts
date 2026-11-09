@@ -9,7 +9,7 @@ import {
   serializeStash,
 } from "@emberheir/sim";
 import { z } from "zod";
-import { parseStored, storageKey } from "../storage";
+import { parseStored, saveKey } from "../storage";
 import { saveStorage, savesWritten } from "./cloud/account";
 import { SaveSealError, isSealed, seal, unseal } from "./saveCodec";
 
@@ -27,21 +27,21 @@ export interface KeyValueStore {
   removeItem(key: string): void;
 }
 
-const LAST_KEY = storageKey("lastSlot");
-export const slotKey = (slot: number) => storageKey(`slot.${slot}`);
+const LAST_KEY = saveKey("lastSlot");
+export const slotKey = (slot: number) => saveKey(`slot.${slot}`);
 /** The shared stash with the save version its items were written in (`serializeStash`). */
-export const STASH_KEY = storageKey("stash");
+export const STASH_KEY = saveKey("stash");
 /**
  * Lineage (spielzeit-v1.md, D): the seeds of the characters that won the finale. Shared by every
  * slot like the stash; its length is the Lineage step.
  */
-export const LINEAGE_KEY = storageKey("lineage");
+export const LINEAGE_KEY = saveKey("lineage");
 
 /**
  * Power Codex (neuausrichtung-v1.md 8): Legendary Powers learned by any character, with the best
  * tier. Shared by every slot like the stash.
  */
-export const POWER_CODEX_KEY = storageKey("powerCodex");
+export const POWER_CODEX_KEY = saveKey("powerCodex");
 const powerCodexSchema = z.record(z.string(), z.number().int().positive());
 
 /** The storage names of everything that belongs to the save games (sealed, and in a backup). */
@@ -51,30 +51,20 @@ const SAVE_NAMES = [
   "lineage",
   "powerCodex",
 ];
-const SEALED_KEYS = new Set(SAVE_NAMES.map((n) => storageKey(n)));
-/** Set once the plain saves from before 1.0 were sealed. */
-const SEALED_MARK = storageKey("sealed");
+const SEALED_KEYS = new Set(SAVE_NAMES.map((n) => saveKey(n)));
 
 /**
  * The browser storage with the save games sealed (saveCodec.ts): they go in sealed and come out
  * as JSON. Other keys (settings, last slot) stay as they are. A sealed save that was changed
  * throws `SaveSealError`.
  *
- * Saves from before 1.0 are plain JSON: the first start seals them once. After that a plain save
- * does not load, unless `allowPlain` (the Playwright tests seed plain saves).
+ * A plain save does not load, unless `allowPlain` (the Playwright tests seed plain saves).
  */
 export class SealedStore implements KeyValueStore {
   constructor(
     private readonly kv: KeyValueStore,
     private readonly allowPlain = false,
-  ) {
-    if (kv.getItem(SEALED_MARK) === "1") return;
-    for (const key of SEALED_KEYS) {
-      const text = kv.getItem(key);
-      if (text !== null && !isSealed(text)) kv.setItem(key, seal(text));
-    }
-    kv.setItem(SEALED_MARK, "1");
-  }
+  ) {}
 
   getItem(key: string): string | null {
     const text = this.kv.getItem(key);
@@ -368,6 +358,8 @@ export const loadDamagedSlots = () => withStore((s) => s.damagedSlots(), [] as n
  */
 const backupSchema = z.object({
   game: z.literal("emberheir"),
+  /** Set from Release 1.0 on; the backups of the test builds before it have none. */
+  release: z.literal(1).optional(),
   version: z.number().int(),
   saves: z.record(z.string(), z.string()),
 });
@@ -375,18 +367,29 @@ export type Backup = z.infer<typeof backupSchema>;
 
 export class BackupError extends Error {}
 
+/** A backup (or cloud save) of a test build before Release 1.0: it no longer loads. */
+export class OldBackupError extends BackupError {}
+
+/** A backup of this release with these save games. */
+export const backupWith = (saves: Record<string, string>): Backup => ({
+  game: "emberheir",
+  release: 1,
+  version: SAVE_VERSION,
+  saves,
+});
+
 /** Every save game in `kv` by storage name (a damaged one is left out). */
 export function savesOf(kv: KeyValueStore): Record<string, string> {
   const saves: Record<string, string> = {};
   for (const name of SAVE_NAMES) {
-    const text = readOrNull(kv, storageKey(name));
+    const text = readOrNull(kv, saveKey(name));
     if (text !== null) saves[name] = text;
   }
   return saves;
 }
 
 export function backupOf(kv: KeyValueStore): string {
-  return seal(JSON.stringify({ game: "emberheir", version: SAVE_VERSION, saves: savesOf(kv) }));
+  return seal(JSON.stringify(backupWith(savesOf(kv))));
 }
 
 /** Opens a backup file's text. Throws `BackupError` with what to tell the player. */
@@ -399,6 +402,9 @@ export function readBackup(text: string): Backup {
   }
   const parsed = parseStored<Backup | null>(json, backupSchema, null);
   if (!parsed) throw new BackupError("This is not an Emberheir backup.");
+  if (parsed.release !== 1) {
+    throw new OldBackupError("This backup is from before Emberheir 1.0 and no longer loads.");
+  }
   if (parsed.version > SAVE_VERSION) {
     throw new BackupError("This backup is from a newer version of Emberheir.");
   }
@@ -409,8 +415,8 @@ export function readBackup(text: string): Backup {
 export function restoreBackup(kv: KeyValueStore, backup: Backup): void {
   for (const name of SAVE_NAMES) {
     const text = backup.saves[name];
-    if (text === undefined) kv.removeItem(storageKey(name));
-    else kv.setItem(storageKey(name), text);
+    if (text === undefined) kv.removeItem(saveKey(name));
+    else kv.setItem(saveKey(name), text);
   }
   // Continue picks up the backup's first Heir.
   const first = Array.from({ length: SLOT_COUNT }, (_, i) => i).find(

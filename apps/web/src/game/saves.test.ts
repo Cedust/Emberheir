@@ -14,6 +14,7 @@ import {
   SLOT_COUNT,
   STASH_KEY,
   BackupError,
+  OldBackupError,
   SaveStore,
   SealedStore,
   backupOf,
@@ -23,7 +24,7 @@ import {
   type KeyValueStore,
 } from "./saves";
 import { isSealed, seal } from "./saveCodec";
-import { storageKey } from "../storage";
+import { saveKey } from "../storage";
 
 function memory(): KeyValueStore & { data: Map<string, string>; writes: string[] } {
   const data = new Map<string, string>();
@@ -102,7 +103,7 @@ describe("shared stash", () => {
     const store = new SaveStore(kv);
     const first = stashed(hero("cinderguard"), ["a"]);
     store.write(0, first);
-    expect(kv.writes).toEqual([STASH_KEY, slotKey(0), "emberheir.lastSlot"]);
+    expect(kv.writes).toEqual([STASH_KEY, slotKey(0), "emberheir.save.lastSlot"]);
     kv.writes.length = 0;
     // An action that leaves the stash alone saves the slot only.
     const next = { ...first, flaskCharges: first.flaskCharges - 1 };
@@ -225,27 +226,26 @@ describe("sealed save games in the browser storage", () => {
     const stored = raw.data.get(slotKey(0)) ?? "";
     expect(isSealed(stored)).toBe(true);
     expect(stored).not.toContain("cinderguard");
-    expect(raw.data.get(storageKey("lastSlot"))).toBe("0");
+    expect(raw.data.get(saveKey("lastSlot"))).toBe("0");
     expect(new SaveStore(new SealedStore(raw)).slot(0)?.hero.classId).toBe("cinderguard");
   });
 
-  it("seal the plain saves from before 1.0 once, then refuse plain ones", () => {
+  it("refuse plain saves unless the Playwright tests seed them", () => {
     const raw = memory();
-    raw.data.set(slotKey(1), serializeGame(hero("ashstrider")));
-    raw.data.set(LINEAGE_KEY, JSON.stringify({ finishers: [7], classes: ["emberseer"] }));
-    const store = new SaveStore(new SealedStore(raw));
-    expect(isSealed(raw.data.get(slotKey(1)) ?? "")).toBe(true);
-    expect(isSealed(raw.data.get(LINEAGE_KEY) ?? "")).toBe(true);
-    expect(store.slot(1)?.hero.classId).toBe("ashstrider");
-    expect(store.lineageClasses()).toEqual(["emberseer"]);
-
-    // A plain save written by hand after that does not load, and is not overwritten.
     raw.data.set(slotKey(2), serializeGame(hero("emberseer")));
-    const later = new SaveStore(new SealedStore(raw));
-    expect(later.slot(2)).toBeNull();
-    expect(later.damagedSlots()).toEqual([2]);
-    // Unless plain saves are allowed (the Playwright tests seed them).
+    const store = new SaveStore(new SealedStore(raw));
+    expect(store.slot(2)).toBeNull();
+    expect(store.damagedSlots()).toEqual([2]);
     expect(new SaveStore(new SealedStore(raw, true)).slot(2)?.hero.classId).toBe("emberseer");
+  });
+
+  it("never read the saves of the test builds before 1.0", () => {
+    const raw = memory();
+    raw.data.set("emberheir.slot.0", seal(serializeGame(hero("ashstrider"))));
+    raw.data.set("emberheir.lastSlot", "0");
+    const store = new SaveStore(new SealedStore(raw));
+    expect(store.allSlots().every((s) => s === null)).toBe(true);
+    expect(store.lastSlot()).toBeNull();
   });
 
   it("show a changed save as damaged until it is deleted", () => {
@@ -291,5 +291,10 @@ describe("backups", () => {
     expect(() => readBackup(seal(JSON.stringify({ game: "other" })))).toThrow(BackupError);
     const text = backupOf(new SealedStore(memory()));
     expect(() => readBackup(text.slice(0, -3) + "xyz")).toThrow(BackupError);
+  });
+
+  it("refuse a backup of a test build before 1.0", () => {
+    const old = seal(JSON.stringify({ game: "emberheir", version: 21, saves: { "slot.0": "{}" } }));
+    expect(() => readBackup(old)).toThrow(OldBackupError);
   });
 });

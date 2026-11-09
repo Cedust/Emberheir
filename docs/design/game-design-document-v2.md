@@ -266,7 +266,7 @@ Endgame **Wildfire I–X**.
   Training Dummy schlägt, darunter die Waffen als gemalte Bretter. Rechts Class Trait, die Waffe (Innate, Speed,
   Power), ihre drei Heirloom-Paths als „Playstyles“ (Schadensart + Ailment) und die drei Masteries; Erklärungen
   stehen im Hover. Danach die 6 freien Attributpunkte. Der Heir hat **keinen Namen** mehr: überall steht der Titel.
-  Die Combat Lab gibt es nur mit `?dev` in der Adresse.
+  Die Combat Lab gibt es nur mit `?dev` in der Adresse (nicht im Release).
 
 - **Supply Wagon:** gemeinsamer Stash aller Charakter-Slots. Währungen bleiben pro Charakter. Großer Stash links,
   Paperdoll und Tasche rechts (wie PoE); Details beim Hovern, Rechtsklick oder Ctrl+Klick schiebt ein Item hinüber.
@@ -789,6 +789,12 @@ wird im Wallet orange, der Tooltip sagt es. Alte Saves über dem Cap behalten ih
 - **Spielstände (Release 1.0):** im Browser und in Backups versiegelt (gepackt und verschlüsselt, kein Klartext); ein von Hand
   geänderter Spielstand lädt nicht und steht als „Damaged save“ im Slot, bis man ihn löscht. Unter Characters
   gehen alle Heirs in eine `.ember`-Datei (Export) und zurück (Import ersetzt alle Heirs nach Rückfrage).
+  **Neustart zu 1.0.0** (Timo 09.11.2026): das Spielstand-Format beginnt bei Version 1. Spielstände, Backups und
+  Cloud-Stände der Testversionen davor (Version 9 bis 21) laden nicht mehr: sie liegen unter alten Schlüsseln, die
+  das Spiel nicht mehr liest, ein altes Backup wird abgelehnt, ein alter Cloud-Stand gelöscht. Settings bleiben.
+- **Entwickler-Werkzeuge nur außerhalb des Release** (Timo 09.11.2026): Cheat Mode (F8), `?dev` (Kampftempo, Skip,
+  Combat Lab) und die Seiten `?effects`, `?sfx` und `?uikit` gibt es nur im lokalen Dev-Server, in PR-Previews
+  und im Playwright-Build. Das Release auf `main` (GitHub Pages und Cloudflare) wird ohne sie gebaut.
 - **Cloud Save (Release 1.0, wie Crucible):** freiwillige Anmeldung mit Google oder GitHub (Button oben rechts im Titel).
   Ein Konto hält seine Heirs getrennt von denen des Gasts; sie liegen zuerst lokal und gehen 30 s nach der letzten
   Änderung (sofort beim Verlassen des Tabs) als ein versiegeltes Dokument nach Firestore. Beim Start gleicht das Spiel

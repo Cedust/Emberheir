@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { z } from "zod";
-import { parseStored, storageKey } from "./storage";
+import { parseStored, saveKey, storageKey } from "./storage";
 
 describe("storageKey", () => {
   it("keeps the main keys unchanged", () => {
@@ -9,6 +9,8 @@ describe("storageKey", () => {
 
   it("separates PR previews", () => {
     expect(storageKey("save", "7")).toBe("emberheir.pr-7.save");
+    expect(saveKey("slot.0", "")).toBe("emberheir.save.slot.0");
+    expect(saveKey("slot.0", "7")).toBe("emberheir.pr-7.save.slot.0");
   });
 });
 

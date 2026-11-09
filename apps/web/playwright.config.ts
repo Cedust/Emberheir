@@ -15,5 +15,7 @@ export default defineConfig({
     command: `npm run build && npm run preview -- --port ${port} --strictPort`,
     url: `http://localhost:${port}`,
     reuseExistingServer: !process.env.CI,
+    // The tests use the developer tools (Cheat Mode, ?dev, the galleries); the release has none.
+    env: { EMBERHEIR_DEV_TOOLS: "1" },
   },
 });
