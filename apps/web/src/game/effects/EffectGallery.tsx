@@ -11,10 +11,10 @@ import {
   EFFECTS,
   type EffectEntry,
   GROUPS,
-  type GroupId,
   type Kit,
   type Player,
   VERDICT_LABEL,
+  type Verdict,
 } from "./effectList";
 import { CHOICE_LABEL, type Choice, exportReview, loadReview, saveReview, setPick } from "./review";
 import "./effects.css";
@@ -46,21 +46,52 @@ const reducedMotion = () =>
 export function EffectGallery() {
   return (
     <Stage>
-      <Gallery />
+      <Gallery config={EFFECT_GALLERY} />
     </Stage>
   );
 }
 
-function Gallery() {
+/** What one gallery shows: the Effect Gallery and the SFX Gallery share the page. */
+export interface GalleryConfig {
+  readonly title: string;
+  readonly intro: string;
+  readonly entries: readonly EffectEntry[];
+  readonly groups: readonly { readonly id: string; readonly name: string }[];
+  /** Name of the list (screen readers, tests). */
+  readonly listName: string;
+  /** The card's second line: what one sees, or what one hears. */
+  readonly seeLabel: string;
+  readonly reviewKey?: string;
+  readonly exportKind: string;
+  readonly filePrefix: string;
+  /** Warns when Sound or the Battle sounds are switched off. */
+  readonly needsSound?: boolean;
+}
+
+const EFFECT_GALLERY: GalleryConfig = {
+  title: "Effect Gallery",
+  intro:
+    "Jeder Kampfeffekt einzeln, so wie er jetzt im Spiel ist. Klick einen an, er spielt in der Arena rechts.",
+  entries: EFFECTS,
+  groups: GROUPS,
+  listName: "Effekte",
+  seeLabel: "Was man sieht",
+  exportKind: "emberheir-effect-review",
+  filePrefix: "effekt-auswahl",
+};
+
+export function Gallery(props: { config: GalleryConfig }) {
+  const { config } = props;
+  const entries = config.entries;
   const { settings } = useSettings();
   const stage = useStageSize();
-  const [group, setGroup] = useState<GroupId>("hits");
-  const [picked, setPicked] = useState<EffectEntry>(EFFECTS[0] as EffectEntry);
+  const [group, setGroup] = useState<string>(config.groups[0]?.id ?? "");
+  const [picked, setPicked] = useState<EffectEntry>(entries[0] as EffectEntry);
   const [repeat, setRepeat] = useState(true);
   const [numbers, setNumbers] = useState(true);
   const [mountId, setMountId] = useState(0);
   const [ready, setReady] = useState<number | null>(null);
-  const [review, setReview] = useState(loadReview);
+  const [review, setReview] = useState(() => loadReview(config.reviewKey));
   const [copied, setCopied] = useState(false);
   const hostRef = useRef<HTMLDivElement | null>(null);
   const sceneRef = useRef<ArenaScene | null>(null);
@@ -83,6 +114,7 @@ function Gallery() {
     const host = hostRef.current;
     if (!host) return;
     const scene = new ArenaScene();
+    scene.sound = true;
     scene.showNumbers = numbers;
     scene.motion = settings.screenShake && !reducedMotion();
     scene.quality = settings.graphicsQuality;
@@ -138,23 +170,23 @@ function Gallery() {
     };
   }, [ready, picked, repeat, base]);
 
-  const list = EFFECTS.filter((e) => e.group === group);
+  const list = entries.filter((e) => e.group === group);
   const pick = review[picked.id] ?? {};
-  const decided = EFFECTS.filter((e) => review[e.id]?.choice).length;
+  const decided = entries.filter((e) => review[e.id]?.choice).length;
   const update = (change: { choice?: Choice | undefined; note?: string }) => {
     const next = setPick(review, picked.id, {
       ...pick,
       ...change,
     });
     setReview(next);
-    saveReview(next);
+    saveReview(next, config.reviewKey);
   };
-  const json = () => exportReview(EFFECTS, review, new Date());
+  const json = () => exportReview(entries, review, new Date(), config.exportKind);
   const download = () => {
     const url = URL.createObjectURL(new Blob([json()], { type: "application/json" }));
     const a = document.createElement("a");
     a.href = url;
-    a.download = `effekt-auswahl-${new Date().toISOString().slice(0, 10)}.json`;
+    a.download = `${config.filePrefix}-${new Date().toISOString().slice(0, 10)}.json`;
     a.click();
     URL.revokeObjectURL(url);
   };
@@ -167,8 +199,13 @@ function Gallery() {
       })
       .catch(() => {});
   };
-  const counts = { keep: 0, change: 0 };
-  for (const e of EFFECTS) counts[e.verdict] += 1;
+  const counts: Record<Verdict, number> = { keep: 0, change: 0, new: 0 };
+  for (const e of entries) counts[e.verdict] += 1;
+  const summary = (["new", "change", "keep"] as const)
+    .filter((v) => counts[v] > 0)
+    .map((v) => `${counts[v]} ${VERDICT_LABEL[v]}`)
+    .join(" · ");
+  const soundOff = config.needsSound && (!settings.sound || !settings.sounds.battle);
   const act = enemyLook.act;
   const gradient =
     ACTS.find((a) => a.number === act)?.arenaGradient ?? (act === 8 ? FINALE_GRADIENT : null);
@@ -177,17 +214,18 @@ function Gallery() {
     <div className="fx-gallery">
       <aside className="fx-panel" style={{ width: PANEL_W }}>
         <header className="fx-head">
-          <h1 className="title-font">Effect Gallery</h1>
+          <h1 className="title-font">{config.title}</h1>
           <p>
-            Jeder Kampfeffekt einzeln, so wie er jetzt im Spiel ist. Klick einen an, er spielt in
-            der Arena rechts.{" "}
-            <span className="fx-sum">
-              {counts.change} {VERDICT_LABEL.change} · {counts.keep} {VERDICT_LABEL.keep}
-            </span>
+            {config.intro} <span className="fx-sum">{summary}</span>
           </p>
+          {soundOff && (
+            <p className="fx-sound-off" role="alert">
+              Sound oder „Battle“ ist in den Settings aus: hier bleibt es still.
+            </p>
+          )}
         </header>
         <nav className="fx-groups" aria-label="Gruppen">
-          {GROUPS.map((g) => (
+          {config.groups.map((g) => (
             <button
               key={g.id}
               type="button"
@@ -199,7 +237,7 @@ function Gallery() {
             </button>
           ))}
         </nav>
-        <ul className="fx-list" aria-label="Effekte">
+        <ul className="fx-list" aria-label={config.listName}>
           {list.map((e) => (
             <li key={e.id}>
               <button
@@ -228,7 +266,7 @@ function Gallery() {
         </ul>
         <div className="fx-export">
           <span className="mono" data-testid="fx-progress">
-            {decided} / {EFFECTS.length} entschieden
+            {decided} / {entries.length} entschieden
           </span>
           <button type="button" onClick={download}>
             Exportieren (JSON)
@@ -270,7 +308,7 @@ function Gallery() {
           <dl>
             <dt>Was passiert</dt>
             <dd>{picked.what}</dd>
-            <dt>Was man sieht</dt>
+            <dt>{config.seeLabel}</dt>
             <dd>{picked.see}</dd>
             {picked.before && (
               <>

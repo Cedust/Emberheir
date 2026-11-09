@@ -5,7 +5,15 @@
 export type DropSound = "flip" | "rare" | "legendary" | "unique" | "rune" | "highRune";
 
 /** Kinds of sound the player can switch off one by one (Settings). */
-export const SOUND_GROUPS = ["hover", "click", "window", "coin", "loot", "notice"] as const;
+export const SOUND_GROUPS = [
+  "hover",
+  "click",
+  "window",
+  "coin",
+  "loot",
+  "notice",
+  "battle",
+] as const;
 export type SoundGroup = (typeof SOUND_GROUPS)[number];
 
 let enabled = true;
@@ -17,6 +25,7 @@ let groups: Readonly<Record<SoundGroup, boolean>> = {
   coin: true,
   loot: true,
   notice: true,
+  battle: true,
 };
 let ctx: AudioContext | null = null;
 let master: GainNode | null = null;
@@ -52,6 +61,15 @@ function audio(group: SoundGroup): AudioContext | null {
   } catch {
     return null;
   }
+}
+
+/**
+ * The context and the master volume node of a kind of sound, or `null` while that kind is off
+ * (the battle sounds in game/battle/battleSfx.ts play through it).
+ */
+export function soundOutput(group: SoundGroup): { ac: AudioContext; out: AudioNode } | null {
+  const ac = audio(group);
+  return ac ? { ac, out: out(ac) } : null;
 }
 
 /** One enveloped oscillator note. */
