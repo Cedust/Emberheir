@@ -111,6 +111,12 @@ and the Playwright build (`apps/web/src/devTools.ts`, `__DEV_TOOLS__` in `vite.c
 release on `main` is built without them (Timo 2026-11-09); CI checks its files. A new developer
 page or cheat goes behind `__DEV_TOOLS__` too.
 
+## Releases
+
+The game's version is the root `package.json` version. A new version gets its section in
+`CHANGELOG.md` in the same PR; when it reaches `main`, `.github/workflows/release.yml` tags it
+(`v<version>`) and publishes that section as the GitHub Release.
+
 ## Preview
 
 Every push to `main` deploys `apps/web` to GitHub Pages:
