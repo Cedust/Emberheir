@@ -202,6 +202,8 @@ test("Bounty: a done bounty opens Eldrin's Cache, one item goes into the invento
   await expect(cache).toHaveCount(0);
   // Eldrin offers two new bounties for the next trip.
   await expect(page.getByLabel("Bounty done")).toHaveCount(0);
+  // Until one is taken, Eldrin keeps his "!" (Timo 2026-11-10).
+  await expect(page.getByLabel("Bounty to choose")).toHaveCount(1);
   const offer = page.getByRole("radiogroup", { name: "Bounty" });
   await expect(offer.getByRole("radio")).toHaveCount(2);
   await page.mouse.move(0, 0);
@@ -212,5 +214,7 @@ test("Bounty: a done bounty opens Eldrin's Cache, one item goes into the invento
   await expect(page.getByLabel("Eldrin, The Road")).toHaveCount(0);
   await page.getByRole("button", { name: "Eldrin, Scout" }).click();
   await expect(page.getByRole("radiogroup", { name: "Bounty" })).toContainText("BOUNTY ·");
+  await page.getByRole("radiogroup", { name: "Bounty" }).getByRole("radio").first().click();
+  await expect(page.getByLabel("Bounty to choose")).toHaveCount(0);
   expect(errors).toEqual([]);
 });
