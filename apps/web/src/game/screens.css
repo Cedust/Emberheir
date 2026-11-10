@@ -1344,14 +1344,13 @@
 
 /* --- camp ----------------------------------------------------------------------------------- */
 
+/* The painted logo (Hearthfire beside the word, tools/art/cut_logo.py), small like the bar. */
 .stage .camp-header .logo {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  font-size: 22px;
-  font-weight: 900;
-  letter-spacing: 4px;
-  color: var(--accent);
+  display: block;
+  height: 44px;
+  width: auto;
+  user-select: none;
+  filter: drop-shadow(0 0 10px rgb(255 120 40 / 0.35)) drop-shadow(0 2px 3px rgb(0 0 0 / 0.6));
 }
 
 .stage .diamond {

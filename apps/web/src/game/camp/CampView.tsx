@@ -1,3 +1,4 @@
+import headerLogoUrl from "../../assets/logo/header-logo.webp";
 import { GAME_DATA } from "@emberheir/content";
 import {
   finaleOpen,
@@ -79,19 +80,19 @@ export function CampView(props: {
         transformOrigin: `${Math.round(ox + focused.x)}px ${Math.round(Math.min(sceneH, Math.max(0, focused.y - 64 - FIG_H / 2)))}px`,
       }
     : undefined;
+  // Eldrin's "!": a done bounty or an open Cache, or an offer no bounty was taken from yet
+  // (Timo 2026-11-10: otherwise the bounties are easy to miss).
+  const bountyPaid = !!(state.bountyDone || state.bountyCache);
+  const bountyOpen = plan.bounties.length > 0 && plan.bounty === null;
   const markers: Partial<Record<string, number | "!">> = {
     heir: state.hero.unspentAttributePoints,
     kaelen: state.hero.unspentSkillPoints + masteryPointsLeft(state, GAME_DATA),
-    eldrin: state.bountyDone || state.bountyCache ? "!" : 0,
+    eldrin: bountyPaid || bountyOpen ? "!" : 0,
   };
   return (
     <section className="screen camp" aria-label="Camp">
       <header className="camp-header bar-top">
-        <div className="logo title-font">
-          <span className="diamond" />
-          EMBERHEIR
-          <span className="diamond" />
-        </div>
+        <img className="logo" src={headerLogoUrl} alt="Emberheir" draggable={false} />
         <div className="divider" />
         <div className="run-title">
           <span className="title-font">Camp at the {next.name}</span>
@@ -161,7 +162,13 @@ export function CampView(props: {
                   <span
                     className={`camp-marker${marker === "!" ? " quest" : ""}`}
                     style={markerSpot(p, w, h)}
-                    aria-label={p.id === "eldrin" ? "Bounty done" : `${marker} points waiting`}
+                    aria-label={
+                      p.id !== "eldrin"
+                        ? `${marker} points waiting`
+                        : bountyPaid
+                          ? "Bounty done"
+                          : "Bounty to choose"
+                    }
                   >
                     <Marker value={marker} />
                   </span>

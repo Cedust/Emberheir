@@ -61,3 +61,22 @@ tw = 1200
 title = title.resize((tw, round(title.height * tw / title.width)), Image.Resampling.LANCZOS)
 title.save(f'{ASSETS}title-logo.webp', quality=88, method=6)
 print('emblem', emblem.size, 'title', title.size)
+
+# Camp top bar logo: the Hearthfire beside the painted word, side by side (the bar is only 64 px
+# tall). The word is cut from the title logo below the brazier; the brazier's feet that reach into
+# the letters' row are cleared. Kept at 2.5x its ~44 stage px, so it stays sharp at 4K.
+HEADER_H = 110
+word = title.crop((0, 258, title.width, title.height))
+feet = Image.new('L', word.size, 255)
+ImageDraw.Draw(feet).rectangle((470, 0, 720, 24), fill=0)
+word.putalpha(Image.composite(word.getchannel('A'), Image.new('L', word.size, 0), feet))
+word = word.crop(word.getchannel('A').point(lambda a: 255 if a > 8 else 0).getbbox())
+word_h = round(HEADER_H * 0.62)
+word = word.resize((round(word.width * word_h / word.height), word_h), Image.Resampling.LANCZOS)
+fire = emblem.resize((HEADER_H, HEADER_H), Image.Resampling.LANCZOS)
+gap = round(HEADER_H * 0.08)
+header = Image.new('RGBA', (fire.width + gap + word.width, HEADER_H), (0, 0, 0, 0))
+header.alpha_composite(fire, (0, 0))
+header.alpha_composite(word, (fire.width + gap, (HEADER_H - word_h) // 2 + round(HEADER_H * 0.06)))
+header.save(f'{ASSETS}header-logo.webp', quality=90, method=6)
+print('header', header.size)
